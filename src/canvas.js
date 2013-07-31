@@ -670,7 +670,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             this.setFlatness(value);
             break;
           case 'Font':
-            this.setFont(state[1], state[2]);
+            this.setFont(value[0], value[1]);
             break;
           case 'CA':
             this.current.strokeAlpha = state[1];

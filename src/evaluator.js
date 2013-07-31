@@ -153,24 +153,51 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
   var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
-  function createOperatorList(fnArray, argsArray, dependencies) {
-    return {
-      queue: {
-        fnArray: fnArray || [],
-        argsArray: argsArray || []
-      },
-      dependencies: dependencies || {}
-    };
-  }
-
   PartialEvaluator.prototype = {
+    hasBlendModes: function PartialEvaluator_hasBlendModes(resources) {
+      if (!isDict(resources)) {
+        return false;
+      }
+
+      var nodes = [resources];
+      while (nodes.length) {
+        var node = nodes.shift();
+        // First check the current resources for blend modes.
+        var graphicStates = node.get('ExtGState');
+        if (isDict(graphicStates)) {
+          graphicStates = graphicStates.getAll();
+          for (var key in graphicStates) {
+            var graphicState = graphicStates[key];
+            var bm = graphicState['BM'];
+            if (isName(bm) && bm.name !== 'Normal') {
+              return true;
+            }
+          }
+        }
+        // Descend into the XObjects to look for more resources and blend modes.
+        var xObjects = node.get('XObject');
+        if (!isDict(xObjects)) {
+          continue;
+        }
+        xObjects = xObjects.getAll();
+        for (var key in xObjects) {
+          var xObject = xObjects[key];
+          if (!isStream(xObject)) {
+            continue;
+          }
+          var xResources = xObject.dict.get('Resources');
+          if (isDict(xResources)) {
+            nodes.push(xResources);
+          }
+        }
+      }
+      return false;
+    },
 
     buildFormXObject: function PartialEvaluator_buildFormXObject(resources,
-                                                                 xobj, smask) {
+                                                                 xobj, smask,
+                                                                 operatorList) {
       var self = this;
-      var promise = new Promise();
-      var fnArray = [];
-      var argsArray = [];
 
       var matrix = xobj.dict.get('Matrix');
       var bbox = xobj.dict.get('BBox');
@@ -191,44 +218,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // There is also a group colorspace, but since we put everything in
           // RGB I'm not sure we need it.
         }
-        fnArray.push('beginGroup');
-        argsArray.push([groupOptions]);
+        operatorList.addOp('beginGroup', [groupOptions]);
       }
 
-      fnArray.push('paintFormXObjectBegin');
-      argsArray.push([matrix, bbox]);
+      operatorList.addOp('paintFormXObjectBegin', [matrix, bbox]);
 
-      // Pass in the current `queue` object. That means the `fnArray`
-      // and the `argsArray` in this scope is reused and new commands
-      // are added to them.
-      var opListPromise = this.getOperatorList(xobj,
-          xobj.dict.get('Resources') || resources);
-      opListPromise.then(function(data) {
-        var queue = data.queue;
-        var dependencies = data.dependencies;
-        Util.prependToArray(queue.fnArray, fnArray);
-        Util.prependToArray(queue.argsArray, argsArray);
-        self.insertDependencies(queue, dependencies);
+      this.getOperatorList(xobj, xobj.dict.get('Resources') || resources,
+                           operatorList);
+      operatorList.addOp('paintFormXObjectEnd', []);
 
-        queue.fnArray.push('paintFormXObjectEnd');
-        queue.argsArray.push([]);
-
-        if (group) {
-          queue.fnArray.push('endGroup');
-          queue.argsArray.push([groupOptions]);
-        }
-
-        promise.resolve({
-          queue: queue,
-          dependencies: dependencies
-        });
-      });
-
-      return promise;
+      if (group) {
+        operatorList.addOp('endGroup', [groupOptions]);
+      }
     },
 
     buildPaintImageXObject: function PartialEvaluator_buildPaintImageXObject(
-                                resources, image, inline) {
+                                resources, image, inline, operatorList) {
       var self = this;
       var dict = image.dict;
       var w = dict.get('Width', 'W');
@@ -236,13 +241,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (PDFJS.maxImageSize !== -1 && w * h > PDFJS.maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
-        return null;
+        return;
       }
-
-      var dependencies = {};
-      var retData = {
-        dependencies: dependencies
-      };
 
       var imageMask = dict.get('ImageMask', 'IM') || false;
       if (imageMask) {
@@ -259,10 +259,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var decode = dict.get('Decode', 'D');
         var inverseDecode = !!decode && decode[0] > 0;
 
-        retData.fn = 'paintImageMaskXObject';
-        retData.args = [PDFImage.createMask(imgArray, width, height,
-                                            inverseDecode)];
-        return retData;
+        operatorList.addOp('paintImageMaskXObject',
+          [PDFImage.createMask(imgArray, width, height,
+                                            inverseDecode)]
+        );
+        return;
       }
 
       var softMask = dict.get('SMask', 'SM') || false;
@@ -276,64 +277,53 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
         var imgData = imageObj.getImageData();
-        retData.fn = 'paintInlineImageXObject';
-        retData.args = [imgData];
-        return retData;
+        operatorList.addOp('paintInlineImageXObject', [imgData]);
+        return;
       }
 
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
       var uniquePrefix = this.uniquePrefix || '';
       var objId = 'img_' + uniquePrefix + (++this.idCounters.obj);
-      dependencies[objId] = true;
-      retData.args = [objId, w, h];
+      operatorList.addDependency(objId);
+      var args = [objId, w, h];
 
       if (!softMask && !mask && image instanceof JpegStream &&
           image.isNativelySupported(this.xref, resources)) {
         // These JPEGs don't need any more processing so we can just send it.
-        retData.fn = 'paintJpegXObject';
+        operatorList.addOp('paintJpegXObject', args);
         this.handler.send(
             'obj', [objId, this.pageIndex, 'JpegStream', image.getIR()]);
-        return retData;
+        return;
       }
 
-      retData.fn = 'paintImageXObject';
 
       PDFImage.buildImage(function(imageObj) {
           var imgData = imageObj.getImageData();
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData]);
         }, self.handler, self.xref, resources, image, inline);
 
-      return retData;
+      operatorList.addOp('paintImageXObject', args);
     },
 
     handleTilingType: function PartialEvaluator_handleTilingType(
-                          fn, args, resources, pattern, patternDict) {
-      var self = this;
+                          fn, args, resources, pattern, patternDict,
+                          operatorList) {
       // Create an IR of the pattern code.
-      var promise = new Promise();
-      var opListPromise = this.getOperatorList(pattern,
-          patternDict.get('Resources') || resources);
-      opListPromise.then(function(data) {
-        var opListData = createOperatorList([], [], data.dependencies);
-        var queue = opListData.queue;
-
-        // Add the dependencies that are required to execute the
-        // operatorList.
-        self.insertDependencies(queue, data.dependencies);
-        queue.fnArray.push(fn);
-        queue.argsArray.push(
-          TilingPattern.getIR(data.queue, patternDict, args));
-        promise.resolve(opListData);
-      });
-
-      return promise;
+      var tilingOpList = this.getOperatorList(pattern,
+                                  patternDict.get('Resources') || resources);
+      // Add the dependencies to the parent operator list so they are resolved
+      // before sub operator list is executed synchronously.
+      operatorList.addDependencies(tilingOpList.dependencies);
+      operatorList.addOp(fn, TilingPattern.getIR({
+                               fnArray: tilingOpList.fnArray,
+                               argsArray: tilingOpList.argsArray
+                              }, patternDict, args));
     },
 
     handleSetFont: function PartialEvaluator_handleSetFont(
-                      resources, fontArgs, font) {
+                      resources, fontArgs, fontRef, operatorList) {
 
-      var promise = new Promise();
       // TODO(mack): Not needed?
       var fontName;
       if (fontArgs) {
@@ -341,69 +331,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         fontName = fontArgs[0].name;
       }
       var self = this;
-      var fontPromise = this.loadFont(fontName, font, this.xref, resources);
-      fontPromise.then(function(data) {
-        var font = data.font;
-        var loadedName = font.loadedName;
-        if (!font.sent) {
-          var fontData = font.translated.exportData();
+      var font = this.loadFont(fontName, fontRef, this.xref, resources,
+                               operatorList);
+      var loadedName = font.loadedName;
+      if (!font.sent) {
+        var fontData = font.translated.exportData();
 
-          self.handler.send('commonobj', [
-            loadedName,
-            'Font',
-            fontData
-          ]);
-          font.sent = true;
-        }
-
-        // Ensure the font is ready before the font is set
-        // and later on used for drawing.
-        // OPTIMIZE: This should get insert to the operatorList only once per
-        // page.
-        var fnArray = [];
-        var argsArray = [];
-        var queue = {
-          fnArray: fnArray,
-          argsArray: argsArray
-        };
-        var dependencies = data.dependencies;
-        dependencies[loadedName] = true;
-        self.insertDependencies(queue, dependencies);
-        if (fontArgs) {
-          fontArgs[0] = loadedName;
-          fnArray.push('setFont');
-          argsArray.push(fontArgs);
-        }
-        promise.resolve({
-          loadedName: loadedName,
-          queue: queue,
-          dependencies: dependencies
-        });
-      });
-      return promise;
-    },
-
-    insertDependencies: function PartialEvaluator_insertDependencies(
-                            queue, dependencies) {
-
-      var fnArray = queue.fnArray;
-      var argsArray = queue.argsArray;
-      var depList = Object.keys(dependencies);
-      if (depList.length) {
-        fnArray.push('dependency');
-        argsArray.push(depList);
+        self.handler.send('commonobj', [
+          loadedName,
+          'Font',
+          fontData
+        ]);
+        font.sent = true;
       }
+
+      return loadedName;
     },
 
-    setGState: function PartialEvaluator_setGState(resources, gState) {
+    setGState: function PartialEvaluator_setGState(resources, gState,
+                                                   operatorList) {
 
       var self = this;
-      var opListData = createOperatorList();
-      var queue = opListData.queue;
-      var fnArray = queue.fnArray;
-      var argsArray = queue.argsArray;
-      var dependencies = opListData.dependencies;
-
       // TODO(mack): This should be rewritten so that this function returns
       // what should be added to the queue during each iteration
       function setGStateForKey(gStateObj, key, value) {
@@ -422,21 +370,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'Font':
-            var promise = new Promise();
-            self.handleSetFont(resources, null, value[0]).then(function(data) {
-              var gState = ['Font', data.loadedName, value[1]];
-              promise.resolve({
-                gState: gState,
-                queue: data.queue,
-                dependencies: data.dependencies
-              });
-            });
-            gStateObj.push(['promise', promise]);
+            var loadedName = self.handleSetFont(resources, null, value[0],
+                                                operatorList);
+            operatorList.addDependency(loadedName);
+            gStateObj.push([key, [loadedName, value[1]]]);
             break;
           case 'BM':
-            if (!isName(value) || value.name !== 'Normal') {
-              queue.transparency = true;
-            }
             gStateObj.push([key, value]);
             break;
           case 'SMask':
@@ -477,47 +416,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         setGStateForKey(gStateObj, key, value);
       }
 
-      var promises = [];
-      var indices = [];
-      for (var i = 0, n = gStateObj.length; i < n; ++i) {
-        var value = gStateObj[i];
-        if (value[0] === 'promise') {
-          promises.push(value[1]);
-          indices.push(i);
-        }
-      }
-
-      var promise = new Promise();
-      Promise.all(promises).then(function(datas) {
-        for (var i = 0, n = datas.length; i < n; ++i) {
-          var data = datas[i];
-          var index = indices[i];
-          gStateObj[index] = data.gState;
-          var subQueue = data.queue;
-          Util.concatenateToArray(fnArray, subQueue.fnArray);
-          Util.concatenateToArray(argsArray, subQueue.argsArray);
-          queue.transparency = subQueue.transparency || queue.transparency;
-          Util.extendObj(dependencies, data.dependencies);
-        }
-        fnArray.push('setGState');
-        argsArray.push([gStateObj]);
-        promise.resolve(opListData);
-      });
-
-      return promise;
+      operatorList.addOp('setGState', [gStateObj]);
     },
 
     loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
-                                                 resources) {
-      function errorFont(promise) {
-        promise.resolve({
-          font: {
-            translated: new ErrorFont('Font ' + fontName + ' is not available'),
-            loadedName: 'g_font_error'
-          },
-          dependencies: {}
-        });
-        return promise;
+                                                 resources,
+                                                 parentOperatorList) {
+
+      function errorFont() {
+        return {
+          translated: new ErrorFont('Font ' + fontName + ' is not available'),
+          loadedName: 'g_font_error'
+        };
       }
 
       var fontRef;
@@ -530,20 +440,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           fontRef = fontRes.getRaw(fontName);
         } else {
           warn('fontRes not available');
-          return errorFont(new Promise());
+          return errorFont();
         }
       }
       if (this.fontCache.has(fontRef)) {
         return this.fontCache.get(fontRef);
       }
 
-      var promise = new Promise();
-      this.fontCache.put(fontRef, promise);
 
       font = xref.fetchIfRef(fontRef);
       if (!isDict(font)) {
-        return errorFont(promise);
+        return errorFont();
       }
+      this.fontCache.put(fontRef, font);
 
       // keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page
@@ -562,55 +471,37 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (font.translated.loadCharProcs) {
         var charProcs = font.get('CharProcs').getAll();
         var fontResources = font.get('Resources') || resources;
-        var opListPromises = [];
         var charProcKeys = Object.keys(charProcs);
+        var charProcOperatorList = {};
         for (var i = 0, n = charProcKeys.length; i < n; ++i) {
           var key = charProcKeys[i];
           var glyphStream = charProcs[key];
-          opListPromises.push(
-            this.getOperatorList(glyphStream, fontResources));
-        }
-        Promise.all(opListPromises).then(function(datas) {
-          var charProcOperatorList = {};
-          var dependencies = {};
-          for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-            var key = charProcKeys[i];
-            var data = datas[i];
-            charProcOperatorList[key] = data.queue;
-            Util.extendObj(dependencies, data.dependencies);
+          var operatorList = this.getOperatorList(glyphStream, fontResources);
+          charProcOperatorList[key] = operatorList.getIR();
+          if (!parentOperatorList) {
+            continue;
           }
-          font.translated.charProcOperatorList = charProcOperatorList;
-          font.loaded = true;
-          promise.resolve({
-            font: font,
-            dependencies: dependencies
-          });
-        }.bind(this));
+          // Add the dependencies to the parent operator list so they are
+          // resolved before sub operator list is executed synchronously.
+          parentOperatorList.addDependencies(charProcOperatorList.dependencies);
+        }
+        font.translated.charProcOperatorList = charProcOperatorList;
+        font.loaded = true;
       } else {
         font.loaded = true;
-        promise.resolve({
-          font: font,
-          dependencies: {}
-        });
       }
-      return promise;
+      return font;
     },
 
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
-                                                               resources) {
+                                                               resources,
+                                                               operatorList) {
 
       var self = this;
       var xref = this.xref;
       var handler = this.handler;
 
-      var fnArray = [];
-      var argsArray = [];
-      var queue = {
-        transparency: false,
-        fnArray: fnArray,
-        argsArray: argsArray
-      };
-      var dependencies = {};
+      operatorList = operatorList || new OperatorList();
 
       resources = resources || new Dict();
       var xobjs = resources.get('XObject') || new Dict();
@@ -621,6 +512,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var promise = new Promise();
       var args = [];
+      nextOp:
       while (true) {
 
         var obj = parser.getObj();
@@ -677,10 +569,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var typeNum = dict.get('PatternType');
 
               if (typeNum == TILING_PATTERN) {
-                var patternPromise = self.handleTilingType(
-                    fn, args, resources, pattern, dict);
-                fn = 'promise';
-                args = [patternPromise];
+                self.handleTilingType(fn, args, resources, pattern, dict,
+                                      operatorList);
+                args = [];
+                continue;
               } else if (typeNum == SHADING_PATTERN) {
                 var shading = dict.get('Shading');
                 var matrix = dict.get('Matrix');
@@ -706,37 +598,28 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               );
 
               if ('Form' == type.name) {
-                fn = 'promise';
-                args = [self.buildFormXObject(resources, xobj)];
+                self.buildFormXObject(resources, xobj, null, operatorList);
+                args = [];
+                continue;
               } else if ('Image' == type.name) {
-                var data = self.buildPaintImageXObject(
-                    resources, xobj, false);
-                if (!data) {
-                  args = [];
-                  continue;
-                }
-                Util.extendObj(dependencies, data.dependencies);
-                self.insertDependencies(queue, data.dependencies);
-                fn = data.fn;
-                args = data.args;
+                self.buildPaintImageXObject(resources, xobj, false,
+                                            operatorList);
+                args = [];
+                continue;
               } else {
                 error('Unhandled XObject subtype ' + type.name);
               }
             }
           } else if (cmd == 'Tf') { // eagerly collect all fonts
-            fn = 'promise';
-            args = [self.handleSetFont(resources, args)];
+            var loadedName = self.handleSetFont(resources, args, null,
+                                                operatorList);
+            operatorList.addDependency(loadedName);
+            fn = 'setFont';
+            args[0] = loadedName;
           } else if (cmd == 'EI') {
-            var data = self.buildPaintImageXObject(
-                resources, args[0], true);
-            if (!data) {
-              args = [];
-              continue;
-            }
-            Util.extendObj(dependencies, data.dependencies);
-            self.insertDependencies(queue, data.dependencies);
-            fn = data.fn;
-            args = data.args;
+            self.buildPaintImageXObject(resources, args[0], true, operatorList);
+            args = [];
+            continue;
           }
 
           switch (fn) {
@@ -768,12 +651,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
 
               var gState = extGState.get(dictName.name);
-              fn = 'promise';
-              args = [self.setGState(resources, gState)];
+              self.setGState(resources, gState, operatorList);
+              args = [];
+              continue nextOp;
           } // switch
 
-          fnArray.push(fn);
-          argsArray.push(args);
+          operatorList.addOp(fn, args);
           args = [];
           parser.saveState();
         } else if (obj !== null && obj !== undefined) {
@@ -782,163 +665,86 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      var subQueuePromises = [];
-      for (var i = 0; i < fnArray.length; ++i) {
-        if (fnArray[i] === 'promise') {
-          subQueuePromises.push(argsArray[i][0]);
-        }
-      }
-      Promise.all(subQueuePromises).then(function(datas) {
-        // TODO(mack): Optimize by using repositioning elements
-        // in original queue rather than creating new queue
-
-        for (var i = 0, n = datas.length; i < n; ++i) {
-          var data = datas[i];
-          var subQueue = data.queue;
-          queue.transparency = subQueue.transparency || queue.transparency;
-          Util.extendObj(dependencies, data.dependencies);
-        }
-
-        var newFnArray = [];
-        var newArgsArray = [];
-        var currOffset = 0;
-        var subQueueIdx = 0;
-        for (var i = 0, n = fnArray.length; i < n; ++i) {
-          var offset = i + currOffset;
-          if (fnArray[i] === 'promise') {
-            var data = datas[subQueueIdx++];
-            var subQueue = data.queue;
-            var subQueueFnArray = subQueue.fnArray;
-            var subQueueArgsArray = subQueue.argsArray;
-            for (var j = 0, nn = subQueueFnArray.length; j < nn; ++j) {
-              newFnArray[offset + j] = subQueueFnArray[j];
-              newArgsArray[offset + j] = subQueueArgsArray[j];
-            }
-            currOffset += subQueueFnArray.length - 1;
-          } else {
-            newFnArray[offset] = fnArray[i];
-            newArgsArray[offset] = argsArray[i];
-          }
-        }
-
-        promise.resolve({
-          queue: {
-            fnArray: newFnArray,
-            argsArray: newArgsArray,
-            transparency: queue.transparency
-          },
-          dependencies: dependencies
-        });
-      });
-
-      return promise;
+      return operatorList;
     },
 
     getTextContent: function PartialEvaluator_getTextContent(
-                                                    stream, resources) {
+                                                    stream, resources, state) {
 
+      var bidiTexts;
       var SPACE_FACTOR = 0.35;
       var MULTI_SPACE_FACTOR = 1.5;
+
+      if (!state) {
+        bidiTexts = [];
+        state = {
+          bidiTexts: bidiTexts
+        };
+      } else {
+        bidiTexts = state.bidiTexts;
+      }
+
       var self = this;
+      var xref = this.xref;
 
-      var statePromise = new Promise();
-
-      function handleSetFont(fontName, fontRef, resources) {
-        var promise = new Promise();
-        self.loadFont(fontName, fontRef, self.xref, resources).then(
-          function(data) {
-            promise.resolve(data.font.translated);
-          }
-        );
-        return promise;
+      function handleSetFont(fontName, fontRef) {
+        return self.loadFont(fontName, fontRef, xref, resources, null);
       }
 
-      function getBidiText(str, startLevel, vertical) {
-        if (str) {
-          return PDFJS.bidi(str, -1, vertical);
-        }
-      }
-
-      resources = this.xref.fetchIfRef(resources) || new Dict();
+      resources = xref.fetchIfRef(resources) || new Dict();
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
 
       var parser = new Parser(new Lexer(stream), false);
+      var res = resources;
+      var args = [], obj;
 
-      var chunkPromises = [];
-      var fontPromise;
-      var args = [];
-
-      while (true) {
-        var obj = parser.getObj();
-        if (isEOF(obj)) {
-          break;
-        }
-
+      var chunk = '';
+      var font = null;
+      while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           switch (cmd) {
             // TODO: Add support for SAVE/RESTORE and XFORM here.
             case 'Tf':
-              fontPromise = handleSetFont(args[0].name, null, resources);
-              //.translated;
+              font = handleSetFont(args[0].name).translated;
               break;
             case 'TJ':
-              var chunkPromise = new Promise();
-              chunkPromises.push(chunkPromise);
-              fontPromise.then(function(items, chunkPromise, font) {
-                var chunk = '';
-                for (var j = 0, jj = items.length; j < jj; j++) {
-                  if (typeof items[j] === 'string') {
-                    chunk += fontCharsToUnicode(items[j], font);
-                  } else if (items[j] < 0 && font.spaceWidth > 0) {
-                    var fakeSpaces = -items[j] / font.spaceWidth;
-                    if (fakeSpaces > MULTI_SPACE_FACTOR) {
-                      fakeSpaces = Math.round(fakeSpaces);
-                      while (fakeSpaces--) {
-                        chunk += ' ';
-                      }
-                    } else if (fakeSpaces > SPACE_FACTOR) {
+              var items = args[0];
+              for (var j = 0, jj = items.length; j < jj; j++) {
+                if (typeof items[j] === 'string') {
+                  chunk += fontCharsToUnicode(items[j], font);
+                } else if (items[j] < 0 && font.spaceWidth > 0) {
+                  var fakeSpaces = -items[j] / font.spaceWidth;
+                  if (fakeSpaces > MULTI_SPACE_FACTOR) {
+                    fakeSpaces = Math.round(fakeSpaces);
+                    while (fakeSpaces--) {
                       chunk += ' ';
                     }
+                  } else if (fakeSpaces > SPACE_FACTOR) {
+                    chunk += ' ';
                   }
                 }
-                chunkPromise.resolve(
-                    getBidiText(chunk, -1, font.vertical));
-              }.bind(null, args[0], chunkPromise));
+              }
               break;
             case 'Tj':
-              var chunkPromise = new Promise();
-              chunkPromises.push(chunkPromise);
-              fontPromise.then(function(charCodes, chunkPromise, font) {
-                var chunk = fontCharsToUnicode(charCodes, font);
-                chunkPromise.resolve(
-                    getBidiText(chunk, -1, font.vertical));
-              }.bind(null, args[0], chunkPromise));
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case '\'':
-              // For search, adding a extra white space for line breaks
-              // would be better here, but that causes too much spaces in
-              // the text-selection divs.
-              var chunkPromise = new Promise();
-              chunkPromises.push(chunkPromise);
-              fontPromise.then(function(charCodes, chunkPromise, font) {
-                var chunk = fontCharsToUnicode(charCodes, font);
-                chunkPromise.resolve(
-                    getBidiText(chunk, -1, font.vertical));
-              }.bind(null, args[0], chunkPromise));
+              // For search, adding a extra white space for line breaks would be
+              // better here, but that causes too much spaces in the
+              // text-selection divs.
+              chunk += fontCharsToUnicode(args[0], font);
               break;
             case '"':
               // Note comment in "'"
-              var chunkPromise = new Promise();
-              chunkPromises.push(chunkPromise);
-              fontPromise.then(function(charCodes, chunkPromise, font) {
-                var chunk = fontCharsToUnicode(charCodes, font);
-                chunkPromise.resolve(
-                    getBidiText(chunk, -1, font.vertical));
-              }.bind(null, args[2], chunkPromise));
+              chunk += fontCharsToUnicode(args[2], font);
               break;
             case 'Do':
+              // Set the chunk such that the following if won't add something
+              // to the state.
+              chunk = '';
+
               if (args[0].code) {
                 break;
               }
@@ -951,8 +757,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var xobj = xobjs.get(name);
               if (!xobj)
                 break;
-              assertWellFormed(isStream(xobj),
-                               'XObject should be a stream');
+              assertWellFormed(isStream(xobj), 'XObject should be a stream');
 
               var type = xobj.dict.get('Subtype');
               assertWellFormed(
@@ -963,11 +768,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if ('Form' !== type.name)
                 break;
 
-              var chunkPromise = self.getTextContent(
+              state = this.getTextContent(
                 xobj,
-                xobj.dict.get('Resources') || resources
+                xobj.dict.get('Resources') || resources,
+                state
               );
-              chunkPromises.push(chunkPromise);
               break;
             case 'gs':
               var dictName = args[0];
@@ -980,37 +785,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               for (var i = 0; i < gsState.length; i++) {
                 if (gsState[i] === 'Font') {
-                  fontPromise = handleSetFont(
-                      args[0].name, null, resources);
+                  font = handleSetFont(args[0].name).translated;
                 }
               }
               break;
           } // switch
 
+          if (chunk !== '') {
+            var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
+            bidiTexts.push(bidiText);
+
+            chunk = '';
+          }
+
           args = [];
-          parser.saveState();
         } else if (obj !== null && obj !== undefined) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
         }
       } // while
 
-      Promise.all(chunkPromises).then(function(datas) {
-        var bidiTexts = [];
-        for (var i = 0, n = datas.length; i < n; ++i) {
-          var bidiText = datas[i];
-          if (!bidiText) {
-            continue;
-          } else if (isArray(bidiText)) {
-            Util.concatenateToArray(bidiTexts, bidiText);
-          } else {
-            bidiTexts.push(bidiText);
-          }
-        }
-        statePromise.resolve(bidiTexts);
-      });
-
-      return statePromise;
+      return state;
     },
 
     extractDataStructures: function
@@ -1637,6 +1432,74 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 
   return PartialEvaluator;
+})();
+
+
+var OperatorList = (function OperatorListClosure() {
+  var CHUNK_SIZE = 100;
+
+  function OperatorList(messageHandler, pageIndex) {
+    this.messageHandler = messageHandler;
+    this.fnArray = [];
+    this.argsArray = [];
+    this.dependencies = {},
+    this.pageIndex = pageIndex;
+  }
+
+  OperatorList.prototype = {
+
+    addOp: function(fn, args) {
+      this.fnArray.push(fn);
+      this.argsArray.push(args);
+      if (this.messageHandler && this.fnArray.length >= CHUNK_SIZE) {
+        this.flush();
+      }
+    },
+
+    addDependency: function(dependency) {
+      if (dependency in this.dependencies) {
+        return;
+      }
+      this.dependencies[dependency] = true;
+      this.addOp('dependency', [dependency]);
+    },
+
+    addDependencies: function(dependencies) {
+      for (var key in dependencies) {
+        this.addDependency(key);
+      }
+    },
+
+    addOpList: function(opList) {
+      Util.concatenateToArray(this.fnArray, opList.fnArray);
+      Util.concatenateToArray(this.argsArray, opList.argsArray);
+      Util.extendObj(this.dependencies, opList.dependencies);
+    },
+
+    getIR: function() {
+      return {
+        fnArray: this.fnArray,
+        argsArray: this.argsArray
+      };
+    },
+
+    flush: function(lastChunk) {
+      PartialEvaluator.optimizeQueue(this);
+      this.messageHandler.send('RenderPageChunk', {
+        operatorList: {
+          fnArray: this.fnArray,
+          argsArray: this.argsArray,
+          lastChunk: lastChunk
+        },
+        pageIndex: this.pageIndex
+      });
+      this.dependencies = [];
+      this.fnArray = [];
+      this.argsArray = [];
+    }
+  };
+
+  return OperatorList;
 })();
 
 var EvalState = (function EvalStateClosure() {
