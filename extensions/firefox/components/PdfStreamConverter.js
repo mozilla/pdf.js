@@ -720,6 +720,15 @@ PdfStreamConverter.prototype = {
     // Change the content type so we don't get stuck in a loop.
     aRequest.setProperty('contentType', aRequest.contentType);
     aRequest.contentType = 'text/html';
+    if (isHttpRequest) {
+      // We trust PDF viewer, using no CSP
+      aRequest.setResponseHeader('Content-Security-Policy', '', false);
+      aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
+                                 false);
+      aRequest.setResponseHeader('X-Content-Security-Policy', '', false);
+      aRequest.setResponseHeader('X-Content-Security-Policy-Report-Only', '',
+                                 false);
+    }
 
     if (!rangeRequest) {
       // Creating storage for PDF data
