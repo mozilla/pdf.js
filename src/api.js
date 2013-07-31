@@ -17,7 +17,7 @@
 /* globals CanvasGraphics, combineUrl, createScratchCanvas, error, ErrorFont,
            Font, FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
            MessageHandler, PDFJS, PDFObjects, Promise, StatTimer, warn,
-           WorkerMessageHandler, PasswordResponses */
+           WorkerMessageHandler, PasswordResponses, Util */
 
  'use strict';
 
@@ -222,6 +222,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.objs = new PDFObjects();
     this.renderInProgress = false;
     this.cleanupAfterRender = false;
+    this.renderTasks = [];
   }
   PDFPageProxy.prototype = {
     /**
@@ -289,20 +290,24 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      *                               rendering call the function that is the
      *                               first argument to the callback.
      * }.
-     * @return {Promise} A promise that is resolved when the page finishes
-     * rendering.
+     * @return {RenderTask} An extended promise that is resolved when the page
+     * finishes rendering (see RenderTask).
      */
     render: function PDFPageProxy_render(params) {
       this.renderInProgress = true;
-
-      var promise = new Promise();
       var stats = this.stats;
       stats.time('Overall');
+
       // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.displayReadyPromise = new Promise();
         this.destroyed = false;
+        this.operatorList = {
+          fnArray: [],
+          argsArray: [],
+          lastChunk: false
+        };
 
         this.stats.time('Page Request');
         this.transport.messageHandler.send('RenderPageRequest', {
@@ -310,128 +315,48 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         });
       }
 
+      var internalRenderTask = new InternalRenderTask(complete, params,
+                                       this.objs, this.commonObjs,
+                                       this.operatorList, this.pageNumber);
+      this.renderTasks.push(internalRenderTask);
+      var renderTask = new RenderTask(internalRenderTask);
+
       var self = this;
-      function complete(error) {
-        self.renderInProgress = false;
-        if (self.destroyed || self.cleanupAfterRender) {
-          delete self.displayReadyPromise;
-          delete self.operatorList;
-          self.objs.clear();
-        }
-
-        if (error)
-          promise.reject(error);
-        else
-          promise.resolve();
-      }
-      var continueCallback = params.continueCallback;
-
-      // Once the operatorList and fonts are loaded, do the actual rendering.
       this.displayReadyPromise.then(
-        function pageDisplayReadyPromise() {
+        function pageDisplayReadyPromise(transparency) {
           if (self.destroyed) {
             complete();
             return;
           }
-
-          var gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-            this.objs, params.textLayer, params.imageLayer);
-          try {
-            this.display(gfx, params.viewport, complete, continueCallback);
-          } catch (e) {
-            complete(e);
-          }
-        }.bind(this),
+          stats.time('Rendering');
+          internalRenderTask.initalizeGraphics(transparency);
+          internalRenderTask.operatorListChanged();
+        },
         function pageDisplayReadPromiseError(reason) {
           complete(reason);
         }
       );
 
-      return promise;
-    },
-    /**
-     * For internal use only.
-     */
-    startRenderingFromOperatorList:
-      function PDFPageProxy_startRenderingFromOperatorList(operatorList,
-                                                           fonts) {
-      var self = this;
-      this.operatorList = operatorList;
+      function complete(error) {
+        var i = self.renderTasks.indexOf(internalRenderTask);
+        if (i >= 0) {
+            self.renderTasks.splice(i, 1);
+        }
 
-      this.ensureFonts(fonts,
-        function pageStartRenderingFromOperatorListEnsureFonts() {
-          self.displayReadyPromise.resolve();
+        if (self.renderTasks.length === 0 &&
+            (self.destroyed || self.cleanupAfterRender)) {
+          self._destroy();
         }
-      );
-    },
-    /**
-     * For internal use only.
-     */
-    ensureFonts: function PDFPageProxy_ensureFonts(fonts, callback) {
-      this.stats.time('Font Loading');
-      // Convert the font names to the corresponding font obj.
-      var fontObjs = [];
-      for (var i = 0, ii = fonts.length; i < ii; i++) {
-        var obj = this.commonObjs.getData(fonts[i]);
-        if (obj.error) {
-          warn('Error during font loading: ' + obj.error);
-          continue;
+        if (error) {
+          renderTask.reject(error);
+        } else {
+          renderTask.resolve();
         }
-        if (!obj.coded) {
-          this.transport.embeddedFontsUsed = true;
-        }
-        fontObjs.push(obj);
+        stats.timeEnd('Rendering');
+        stats.timeEnd('Overall');
       }
 
-      // Load all the fonts
-      FontLoader.bind(
-        fontObjs,
-        function pageEnsureFontsFontObjs(fontObjs) {
-          this.stats.timeEnd('Font Loading');
-
-          callback.call(this);
-        }.bind(this)
-      );
-    },
-    /**
-     * For internal use only.
-     */
-    display: function PDFPageProxy_display(gfx, viewport, callback,
-                                           continueCallback) {
-      var stats = this.stats;
-      stats.time('Rendering');
-
-      var operatorList = this.operatorList;
-      gfx.beginDrawing(viewport, operatorList.transparency);
-
-      var startIdx = 0;
-      var length = operatorList.fnArray.length;
-      var stepper = null;
-      if (PDFJS.pdfBug && 'StepperManager' in globalScope &&
-          globalScope['StepperManager'].enabled) {
-        stepper = globalScope['StepperManager'].create(this.pageNumber - 1);
-        stepper.init(operatorList);
-        stepper.nextBreakPoint = stepper.getNextBreakPoint();
-      }
-
-      var continueWrapper;
-      if (continueCallback)
-        continueWrapper = function() { continueCallback(next); };
-      else
-        continueWrapper = next;
-
-      var self = this;
-      function next() {
-        startIdx = gfx.executeOperatorList(operatorList, startIdx,
-                                           continueWrapper, stepper);
-        if (startIdx == length) {
-          gfx.endDrawing();
-          stats.timeEnd('Rendering');
-          stats.timeEnd('Overall');
-          if (callback) callback();
-        }
-      }
-      continueWrapper();
+      return renderTask;
     },
     /**
      * @return {Promise} That is resolved with the a {string} that is the text
@@ -466,10 +391,38 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     destroy: function PDFPageProxy_destroy() {
       this.destroyed = true;
 
-      if (!this.renderInProgress) {
-        delete this.operatorList;
-        delete this.displayReadyPromise;
-        this.objs.clear();
+      if (this.renderTasks.length === 0) {
+        this._destroy();
+      }
+    },
+    /**
+     * For internal use only. Does the actual cleanup.
+     */
+    _destroy: function PDFPageProxy__destroy() {
+      delete this.operatorList;
+      delete this.displayReadyPromise;
+      this.objs.clear();
+    },
+    /**
+     * For internal use only.
+     */
+    _startRenderPage: function PDFPageProxy_startRenderPage(transparency) {
+      this.displayReadyPromise.resolve(transparency);
+    },
+    /**
+     * For internal use only.
+     */
+    _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk) {
+      // Add the new chunk to the current operator list.
+      Util.concatenateToArray(this.operatorList.fnArray,
+                              operatorListChunk.fnArray);
+      Util.concatenateToArray(this.operatorList.argsArray,
+                              operatorListChunk.argsArray);
+      this.operatorList.lastChunk = operatorListChunk.lastChunk;
+
+      // Notify all the rendering tasks there are more operators to be consumed.
+      for (var i = 0; i < this.renderTasks.length; i++) {
+        this.renderTasks[i].operatorListChanged();
       }
     }
   };
@@ -644,12 +597,17 @@ var WorkerTransport = (function WorkerTransportClosure() {
         promise.resolve(annotations);
       }, this);
 
-      messageHandler.on('RenderPage', function transportRender(data) {
+      messageHandler.on('StartRenderPage', function transportRender(data) {
         var page = this.pageCache[data.pageIndex];
-        var depFonts = data.depFonts;
 
         page.stats.timeEnd('Page Request');
-        page.startRenderingFromOperatorList(data.operatorList, depFonts);
+        page._startRenderPage(data.transparency);
+      }, this);
+
+      messageHandler.on('RenderPageChunk', function transportRender(data) {
+        var page = this.pageCache[data.pageIndex];
+
+        page._renderPageChunk(data.operatorList);
       }, this);
 
       messageHandler.on('commonobj', function transportObj(data) {
@@ -662,14 +620,22 @@ var WorkerTransport = (function WorkerTransportClosure() {
           case 'Font':
             var exportedData = data[2];
 
-            // At this point, only the font object is created but the font is
-            // not yet attached to the DOM. This is done in `FontLoader.bind`.
             var font;
-            if ('error' in exportedData)
+            if ('error' in exportedData) {
               font = new ErrorFont(exportedData.error);
-            else
+              warn('Error during font loading: ' + font.error);
+              this.commonObjs.resolve(id, font);
+              break;
+            } else {
               font = new Font(exportedData);
-            this.commonObjs.resolve(id, font);
+            }
+
+            FontLoader.bind(
+              [font],
+              function fontReady(fontObjs) {
+                this.commonObjs.resolve(id, font);
+              }.bind(this)
+            );
             break;
           default:
             error('Got unknown common object type ' + type);
@@ -813,4 +779,130 @@ var WorkerTransport = (function WorkerTransportClosure() {
   };
   return WorkerTransport;
 
+})();
+
+/**
+ * RenderTask is basically a promise but adds a cancel function to terminate it.
+ */
+var RenderTask = (function RenderTaskClosure() {
+  function RenderTask(internalRenderTask) {
+    this.internalRenderTask = internalRenderTask;
+    Promise.call(this);
+  }
+
+  RenderTask.prototype = Object.create(Promise.prototype);
+
+  /**
+   * Cancel the rendering task. If the task is curently rendering it will not be
+   * cancelled until graphics pauses with a timeout. The promise that this
+   * object extends will resolved when cancelled.
+   */
+  RenderTask.prototype.cancel = function RenderTask_cancel() {
+    this.internalRenderTask.cancel();
+  };
+
+  return RenderTask;
+})();
+
+var InternalRenderTask = (function InternalRenderTaskClosure() {
+
+  function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
+                              pageNumber) {
+    this.callback = callback;
+    this.params = params;
+    this.objs = objs;
+    this.commonObjs = commonObjs;
+    this.operatorListIdx = null;
+    this.operatorList = operatorList;
+    this.pageNumber = pageNumber;
+    this.running = false;
+    this.graphicsReadyCallback = null;
+    this.graphicsReady = false;
+    this.cancelled = false;
+  }
+
+  InternalRenderTask.prototype = {
+
+    initalizeGraphics:
+        function InternalRenderTask_initalizeGraphics(transparency) {
+
+      if (this.cancelled) {
+        return;
+      }
+      if (PDFJS.pdfBug && 'StepperManager' in globalScope &&
+          globalScope.StepperManager.enabled) {
+        this.stepper = globalScope.StepperManager.create(this.pageNumber - 1);
+        this.stepper.init(this.operatorList);
+        this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
+      }
+
+      var params = this.params;
+      this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
+                                    this.objs, params.textLayer,
+                                    params.imageLayer);
+
+      this.gfx.beginDrawing(params.viewport, transparency);
+      this.operatorListIdx = 0;
+      this.graphicsReady = true;
+      if (this.graphicsReadyCallback) {
+        this.graphicsReadyCallback();
+      }
+    },
+
+    cancel: function InternalRenderTask_cancel() {
+      this.running = false;
+      this.cancelled = true;
+      this.callback();
+    },
+
+    operatorListChanged: function InternalRenderTask_operatorListChanged() {
+      if (!this.graphicsReady) {
+        if (!this.graphicsReadyCallback) {
+          this.graphicsReadyCallback = this._continue.bind(this);
+        }
+        return;
+      }
+
+      if (this.stepper) {
+        this.stepper.updateOperatorList(this.operatorList);
+      }
+
+      if (this.running) {
+        return;
+      }
+      this._continue();
+    },
+
+    _continue: function InternalRenderTask__continue() {
+      this.running = true;
+      if (this.cancelled) {
+        return;
+      }
+      if (this.params.continueCallback) {
+        this.params.continueCallback(this._next.bind(this));
+      } else {
+        this._next();
+      }
+    },
+
+    _next: function InternalRenderTask__next() {
+      if (this.cancelled) {
+        return;
+      }
+      this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
+                                        this.operatorListIdx,
+                                        this._continue.bind(this),
+                                        this.stepper);
+      if (this.operatorListIdx === this.operatorList.fnArray.length) {
+        this.running = false;
+        if (this.operatorList.lastChunk) {
+          this.gfx.endDrawing();
+          this.callback();
+        }
+      }
+    }
+
+  };
+
+  return InternalRenderTask;
 })();

@@ -398,31 +398,11 @@ var WorkerMessageHandler = {
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
         // Pre compile the pdf page and fetch the fonts/images.
-        page.getOperatorList(handler).then(function(opListData) {
-
-          var operatorList = opListData.queue;
-          var dependency = Object.keys(opListData.dependencies);
-
-          // The following code does quite the same as
-          // Page.prototype.startRendering, but stops at one point and sends the
-          // result back to the main thread.
+        page.getOperatorList(handler).then(function(operatorList) {
 
           log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
               Date.now() - start, operatorList.fnArray.length);
 
-          // Filter the dependecies for fonts.
-          var fonts = {};
-          for (var i = 0, ii = dependency.length; i < ii; i++) {
-            var dep = dependency[i];
-            if (dep.indexOf('g_font_') === 0) {
-              fonts[dep] = true;
-            }
-          }
-          handler.send('RenderPage', {
-            pageIndex: data.pageIndex,
-            operatorList: operatorList,
-            depFonts: Object.keys(fonts)
-          });
         }, function(e) {
 
           var minimumStackMessage =

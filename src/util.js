@@ -903,14 +903,14 @@ var StatTimer = (function StatTimerClosure() {
       if (!this.enabled)
         return;
       if (name in this.started)
-        throw 'Timer is already running for ' + name;
+        warn('Timer is already running for ' + name);
       this.started[name] = Date.now();
     },
     timeEnd: function StatTimer_timeEnd(name) {
       if (!this.enabled)
         return;
       if (!(name in this.started))
-        throw 'Timer has not been started for ' + name;
+        warn('Timer has not been started for ' + name);
       this.times.push({
         'name': name,
         'start': this.started[name],

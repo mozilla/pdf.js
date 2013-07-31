@@ -16,7 +16,7 @@
  */
 /* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
            stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
-           Promise, isArray, ObjectLoader, isValidUrl */
+           Promise, isArray, ObjectLoader, isValidUrl, OperatorList */
 
 'use strict';
 
@@ -162,13 +162,7 @@ var Annotation = (function AnnotationClosure() {
       var promise = new Promise();
 
       if (!this.appearance) {
-        promise.resolve({
-          queue: {
-            fnArray: [],
-            argsArray: []
-          },
-          dependency: {}
-        });
+        promise.resolve(new OperatorList());
         return promise;
       }
 
@@ -192,19 +186,11 @@ var Annotation = (function AnnotationClosure() {
       var border = data.border;
 
       resourcesPromise.then(function(resources) {
-        var listPromise = evaluator.getOperatorList(this.appearance, resources);
-        listPromise.then(function(appearanceStreamData) {
-          var fnArray = appearanceStreamData.queue.fnArray;
-          var argsArray = appearanceStreamData.queue.argsArray;
-
-          fnArray.unshift('beginAnnotation');
-          argsArray.unshift([data.rect, transform, matrix]);
-
-          fnArray.push('endAnnotation');
-          argsArray.push([]);
-
-          promise.resolve(appearanceStreamData);
-        });
+        var opList = new OperatorList();
+        opList.addOp('beginAnnotation', [data.rect, transform, matrix]);
+        evaluator.getOperatorList(this.appearance, resources, opList);
+        opList.addOp('endAnnotation', []);
+        promise.resolve(opList);
       }.bind(this));
 
       return promise;
@@ -284,7 +270,7 @@ var Annotation = (function AnnotationClosure() {
   };
 
   Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, pageQueue, pdfManager, dependencies, partialEvaluator) {
+      annotations, opList, pdfManager, partialEvaluator) {
 
     function reject(e) {
       annotationsReadyPromise.reject(e);
@@ -296,22 +282,13 @@ var Annotation = (function AnnotationClosure() {
     for (var i = 0, n = annotations.length; i < n; ++i) {
       annotationPromises.push(annotations[i].getOperatorList(partialEvaluator));
     }
-
     Promise.all(annotationPromises).then(function(datas) {
-      var fnArray = pageQueue.fnArray;
-      var argsArray = pageQueue.argsArray;
-      fnArray.push('beginAnnotations');
-      argsArray.push([]);
+      opList.addOp('beginAnnotations', []);
       for (var i = 0, n = datas.length; i < n; ++i) {
-        var annotationData = datas[i];
-        var annotationQueue = annotationData.queue;
-        Util.concatenateToArray(fnArray, annotationQueue.fnArray);
-        Util.concatenateToArray(argsArray, annotationQueue.argsArray);
-        Util.extendObj(dependencies, annotationData.dependencies);
+        var annotOpList = datas[i];
+        opList.addOpList(annotOpList);
       }
-      fnArray.push('endAnnotations');
-      argsArray.push([]);
-
+      opList.addOp('endAnnotations', []);
       annotationsReadyPromise.resolve();
     }, reject);
 
@@ -458,8 +435,8 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
     getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator) {
 
-
       var promise = new Promise();
+      var opList = new OperatorList();
       var data = this.data;
 
       // Even if there is an appearance stream, ignore it. This is the
@@ -467,65 +444,44 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
       var defaultAppearance = data.defaultAppearance;
       if (!defaultAppearance) {
-        promise.resolve({
-          queue: {
-            fnArray: [],
-            argsArray: []
-          },
-          dependency: {}
-        });
+        promise.resolve(opList);
         return promise;
       }
 
       // Include any font resources found in the default appearance
 
       var stream = new Stream(stringToBytes(defaultAppearance));
-      var listPromise = evaluator.getOperatorList(stream, this.fieldResources);
-      listPromise.then(function(appearanceStreamData) {
-        var appearanceFnArray = appearanceStreamData.queue.fnArray;
-        var appearanceArgsArray = appearanceStreamData.queue.argsArray;
-        var fnArray = [];
-        var argsArray = [];
+      evaluator.getOperatorList(stream, this.fieldResources, opList);
+      var appearanceFnArray = opList.fnArray;
+      var appearanceArgsArray = opList.argsArray;
+      var fnArray = [];
+      var argsArray = [];
 
-        // TODO(mack): Add support for stroke color
-        data.rgb = [0, 0, 0];
-        for (var i = 0, n = fnArray.length; i < n; ++i) {
-          var fnName = appearanceFnArray[i];
-          var args = appearanceArgsArray[i];
-          if (fnName === 'dependency') {
-            var dependency = args[i];
-            if (dependency.indexOf('g_font_') === 0) {
-              data.fontRefName = dependency;
-            }
-            fnArray.push(fnName);
-            argsArray.push(args);
-          } else if (fnName === 'setFont') {
-            data.fontRefName = args[0];
-            var size = args[1];
-            if (size < 0) {
-              data.fontDirection = -1;
-              data.fontSize = -size;
-            } else {
-              data.fontDirection = 1;
-              data.fontSize = size;
-            }
-          } else if (fnName === 'setFillRGBColor') {
-            data.rgb = args;
-          } else if (fnName === 'setFillGray') {
-            var rgbValue = args[0] * 255;
-            data.rgb = [rgbValue, rgbValue, rgbValue];
+      // TODO(mack): Add support for stroke color
+      data.rgb = [0, 0, 0];
+      // TODO THIS DOESN'T MAKE ANY SENSE SINCE THE fnArray IS EMPTY!
+      for (var i = 0, n = fnArray.length; i < n; ++i) {
+        var fnName = appearanceFnArray[i];
+        var args = appearanceArgsArray[i];
+
+        if (fnName === 'setFont') {
+          data.fontRefName = args[0];
+          var size = args[1];
+          if (size < 0) {
+            data.fontDirection = -1;
+            data.fontSize = -size;
+          } else {
+            data.fontDirection = 1;
+            data.fontSize = size;
           }
+        } else if (fnName === 'setFillRGBColor') {
+          data.rgb = args;
+        } else if (fnName === 'setFillGray') {
+          var rgbValue = args[0] * 255;
+          data.rgb = [rgbValue, rgbValue, rgbValue];
         }
-        promise.resolve({
-          queue: {
-            fnArray: fnArray,
-            argsArray: argsArray
-          },
-          dependency: {}
-        });
-
-      });
-
+      }
+      promise.resolve(opList);
       return promise;
     }
   });
@@ -557,13 +513,7 @@ var TextAnnotation = (function TextAnnotationClosure() {
 
     getOperatorList: function TextAnnotation_getOperatorList(evaluator) {
       var promise = new Promise();
-      promise.resolve({
-        queue: {
-          fnArray: [],
-          argsArray: []
-        },
-        dependency: {}
-      });
+      promise.resolve(new OperatorList());
       return promise;
     },
 
