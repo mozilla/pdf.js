@@ -664,6 +664,28 @@ var FontLoader = {
       // font after the desired fonts and then test for the loading of that
       // test font.
 
+      function int32(data, offset) {
+        return (data.charCodeAt(offset) << 24) |
+               (data.charCodeAt(offset + 1) << 16) |
+               (data.charCodeAt(offset + 2) << 8) |
+               (data.charCodeAt(offset + 3) & 0xff);
+      }
+
+      function string32(value) {
+        return String.fromCharCode((value >> 24) & 0xff) +
+               String.fromCharCode((value >> 16) & 0xff) +
+               String.fromCharCode((value >> 8) & 0xff) +
+               String.fromCharCode(value & 0xff);
+      }
+
+      function spliceString(s, offset, remove, insert) {
+        var chunk1 = data.substr(0, offset);
+        var chunk2 = data.substr(offset + remove);
+        return chunk1 + insert + chunk2;
+      }
+
+      var i, ii;
+
       var canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
@@ -695,10 +717,21 @@ var FontLoader = {
       // TODO: This could maybe be made faster by avoiding the btoa of the full
       // font by splitting it in chunks before hand and padding the font id.
       var data = this.loadTestFont;
-      var COMMENT_OFFSET = 973;
-      var chunk1 = data.substr(0, COMMENT_OFFSET);
-      var chunk2 = data.substr(COMMENT_OFFSET + loadTestFontId.length);
-      data = chunk1 + loadTestFontId + chunk2;
+      var COMMENT_OFFSET = 976; // has to be on 4 byte boundary (for checksum)
+      data = spliceString(data, COMMENT_OFFSET, loadTestFontId.length,
+                          loadTestFontId);
+      // CFF checksum is important for IE, adjusting it
+      var CFF_CHECKSUM_OFFSET = 16;
+      var XXXX_VALUE = 0x58585858; // the "comment" filled with 'X'
+      var checksum = int32(data, CFF_CHECKSUM_OFFSET);
+      for (i = 0, ii = loadTestFontId.length - 3; i < ii; i += 4) {
+        checksum = (checksum - XXXX_VALUE + int32(loadTestFontId, i)) | 0;
+      }
+      if (i < loadTestFontId.length) { // align to 4 bytes boundary
+        checksum = (checksum - XXXX_VALUE +
+                    int32(loadTestFontId + 'XXX', i)) | 0;
+      }
+      data = spliceString(data, CFF_CHECKSUM_OFFSET, 4, string32(checksum));
 
       var url = 'url(data:font/opentype;base64,' + btoa(data) + ');';
       var rule = '@font-face { font-family:"' + loadTestFontId + '";src:' +
@@ -706,8 +739,9 @@ var FontLoader = {
       FontLoader.insertRule(rule);
 
       var names = [];
-      for (var i = 0, ii = fonts.length; i < ii; i++)
+      for (i = 0, ii = fonts.length; i < ii; i++) {
         names.push(fonts[i].loadedName);
+      }
       names.push(loadTestFontId);
 
       var div = document.createElement('div');
@@ -715,7 +749,7 @@ var FontLoader = {
                        'visibility: hidden;' +
                        'width: 10px; height: 10px;' +
                        'position: absolute; top: 0px; left: 0px;');
-      for (var i = 0, ii = names.length; i < ii; ++i) {
+      for (i = 0, ii = names.length; i < ii; ++i) {
         var span = document.createElement('span');
         span.textContent = 'Hi';
         span.style.fontFamily = names[i];
