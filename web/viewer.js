@@ -1553,8 +1553,12 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.update = function pageViewUpdate(scale, rotation) {
-    this.renderingState = RenderingStates.INITIAL;
+    if (this.renderTask) {
+      this.renderTask.cancel();
+      this.renderTask = null;
+    }
     this.resume = null;
+    this.renderingState = RenderingStates.INITIAL;
 
     if (typeof rotation !== 'undefined') {
       this.rotation = rotation;
@@ -1818,13 +1822,9 @@ var PageView = function pageView(container, id, scale,
     // Rendering area
 
     var self = this;
-    var renderingWasReset = false;
     function pageViewDrawCallback(error) {
-      if (renderingWasReset) {
-        return;
-      }
-
       self.renderingState = RenderingStates.FINISHED;
+      self.renderTask = null;
 
       if (self.loadingIconDiv) {
         div.removeChild(self.loadingIconDiv);
@@ -1874,12 +1874,6 @@ var PageView = function pageView(container, id, scale,
       viewport: this.viewport,
       textLayer: textLayer,
       continueCallback: function pdfViewcContinueCallback(cont) {
-        if (self.renderingState === RenderingStates.INITIAL) {
-          // The page update() was called, we just need to abort any rendering.
-          renderingWasReset = true;
-          return;
-        }
-
         if (PDFView.highestPriorityPage !== 'page' + self.id) {
           self.renderingState = RenderingStates.PAUSED;
           self.resume = function resumeCallback() {
@@ -1891,7 +1885,9 @@ var PageView = function pageView(container, id, scale,
         cont();
       }
     };
-    this.pdfPage.render(renderContext).then(
+    this.renderTask = this.pdfPage.render(renderContext);
+
+    this.renderTask.then(
       function pdfPageRenderCallback() {
         pageViewDrawCallback(null);
       },

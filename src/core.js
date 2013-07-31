@@ -18,7 +18,8 @@
            isArrayBuffer, isDict, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
            StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
-           MissingDataException, Promise, Annotation, ObjectLoader */
+           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
+           */
 
 'use strict';
 
@@ -183,33 +184,35 @@ var Page = (function PageClosure() {
       dataPromises.then(function(data) {
         var contentStream = data[0];
 
-        partialEvaluator.getOperatorList(contentStream, self.resources).then(
-          function(data) {
-            pageListPromise.resolve(data);
-          },
-          reject
-        );
+
+        var opList = new OperatorList(handler, self.pageIndex);
+
+        handler.send('StartRenderPage', {
+          transparency: partialEvaluator.hasBlendModes(self.resources),
+          pageIndex: self.pageIndex
+        });
+        partialEvaluator.getOperatorList(contentStream, self.resources, opList);
+        pageListPromise.resolve(opList);
       });
 
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
       Promise.all([pageListPromise, annotationsPromise]).then(function(datas) {
-        var pageData = datas[0];
-        var pageQueue = pageData.queue;
+        var pageOpList = datas[0];
         var annotations = datas[1];
 
         if (annotations.length === 0) {
-          PartialEvaluator.optimizeQueue(pageQueue);
-          promise.resolve(pageData);
+          PartialEvaluator.optimizeQueue(pageOpList);
+          pageOpList.flush(true);
+          promise.resolve(pageOpList);
           return;
         }
 
-        var dependencies = pageData.dependencies;
         var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageQueue, pdfManager, dependencies, partialEvaluator);
+          annotations, pageOpList, pdfManager, partialEvaluator);
         annotationsReadyPromise.then(function () {
-          PartialEvaluator.optimizeQueue(pageQueue);
-
-          promise.resolve(pageData);
+          PartialEvaluator.optimizeQueue(pageOpList);
+          pageOpList.flush(true);
+          promise.resolve(pageOpList);
         }, reject);
       }, reject);
 
@@ -244,12 +247,9 @@ var Page = (function PageClosure() {
               self.pageIndex, 'p' + self.pageIndex + '_',
               self.idCounters);
 
-        partialEvaluator.getTextContent(
-            contentStream, self.resources).then(function(bidiTexts) {
-          textContentPromise.resolve({
-            bidiTexts: bidiTexts
-          });
-        });
+        var bidiTexts = partialEvaluator.getTextContent(contentStream,
+                                                        self.resources);
+        textContentPromise.resolve(bidiTexts);
       });
 
       return textContentPromise;
