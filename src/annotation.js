@@ -96,7 +96,7 @@ var Annotation = (function AnnotationClosure() {
       data.borderWidth = borderStyle.has('W') ? borderStyle.get('W') : 1;
     } else {
       var borderArray = dict.get('Border') || [0, 0, 1];
-      data.borderWidth = borderArray[2];
+      data.borderWidth = borderArray[2] || 0;
     }
 
     this.appearance = getDefaultAppearance(dict);
