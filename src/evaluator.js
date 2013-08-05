@@ -333,6 +333,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var self = this;
       var font = this.loadFont(fontName, fontRef, this.xref, resources,
                                operatorList);
+      this.state.font = font;
       var loadedName = font.loadedName;
       if (!font.sent) {
         var fontData = font.translated.exportData();
@@ -620,6 +621,29 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             self.buildPaintImageXObject(resources, args[0], true, operatorList);
             args = [];
             continue;
+          } else if (cmd === 'q') { // save
+            var old = this.state;
+            this.stateStack.push(this.state);
+            this.state = old.clone();
+          } else if (cmd === 'Q') { // restore
+            var prev = this.stateStack.pop();
+            if (prev) {
+              this.state = prev;
+            }
+          } else if (cmd === 'Tj') { // showText
+            args[0] = this.state.font.translated.charsToGlyphs(args[0]);
+          } else if (cmd === 'TJ') { // showSpacedText
+            var arr = args[0];
+            var arrLength = arr.length;
+            for (var i = 0; i < arrLength; ++i) {
+              if (isString(arr[i])) {
+                arr[i] = this.state.font.translated.charsToGlyphs(arr[i]);
+              }
+            }
+          } else if (cmd === '\'') { // nextLineShowText
+            args[0] = this.state.font.translated.charsToGlyphs(args[0]);
+          } else if (cmd === '"') { // nextLineSetSpacingShowText
+            args[2] = this.state.font.translated.charsToGlyphs(args[2]);
           }
 
           switch (fn) {
@@ -1504,23 +1528,12 @@ var OperatorList = (function OperatorListClosure() {
 
 var EvalState = (function EvalStateClosure() {
   function EvalState() {
-    // Are soft masks and alpha values shapes or opacities?
-    this.alphaIsShape = false;
-    this.fontSize = 0;
-    this.textMatrix = IDENTITY_MATRIX;
-    this.leading = 0;
-    // Start of text line (in text coordinates)
-    this.lineX = 0;
-    this.lineY = 0;
-    // Character and word spacing
-    this.charSpacing = 0;
-    this.wordSpacing = 0;
-    this.textHScale = 1;
-    // Color spaces
-    this.fillColorSpace = null;
-    this.strokeColorSpace = null;
+    this.font = null;
   }
   EvalState.prototype = {
+    clone: function CanvasExtraState_clone() {
+      return Object.create(this);
+    },
   };
   return EvalState;
 })();
