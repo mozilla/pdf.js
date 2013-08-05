@@ -1560,7 +1560,6 @@ var PageView = function pageView(container, id, scale,
   this.update = function pageViewUpdate(scale, rotation) {
     if (this.renderTask) {
       this.renderTask.cancel();
-      this.renderTask = null;
     }
     this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
@@ -1828,8 +1827,18 @@ var PageView = function pageView(container, id, scale,
 
     var self = this;
     function pageViewDrawCallback(error) {
+      // The renderTask may have been replaced by a new one, so only remove the
+      // reference to the renderTask if it matches the one that is triggering
+      // this callback.
+      if (renderTask === self.renderTask) {
+        self.renderTask = null;
+      }
+
+      if (error === 'cancelled') {
+        return;
+      }
+
       self.renderingState = RenderingStates.FINISHED;
-      self.renderTask = null;
 
       if (self.loadingIconDiv) {
         div.removeChild(self.loadingIconDiv);
@@ -1890,7 +1899,7 @@ var PageView = function pageView(container, id, scale,
         cont();
       }
     };
-    this.renderTask = this.pdfPage.render(renderContext);
+    var renderTask = this.renderTask = this.pdfPage.render(renderContext);
 
     this.renderTask.then(
       function pdfPageRenderCallback() {
