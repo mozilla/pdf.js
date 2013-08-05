@@ -251,45 +251,28 @@ var PDFView = {
     }, true);
   },
 
-  getPageTop: function pdfViewGetPageTop(id) {
-    return (this.pages[id - 1].el.offsetTop + this.pages[id - 1].el.clientTop);
-  },
-
-  setScale: function pdfViewSetScale(value, resetAutoSettings, noScroll) {
-    if (this.currentScale === value) {
+  setScale: function pdfViewSetScale(val, resetAutoSettings, noScroll) {
+    if (val == this.currentScale)
       return;
-    }
 
-    var pages = this.pages, page = this.page;
-    var currentPage = pages[page - 1], dest = null;
-    if (!noScroll && !this.isPresentationMode) {
-      // Obtain the current scroll position before resizing the pages.
-      var topLeft = currentPage.getPagePoint(this.container.scrollLeft,
-        (this.container.scrollTop - this.getPageTop(page)));
-      dest = [null, { name: 'XYZ' }, Math.round(topLeft[0]),
-              Math.round(topLeft[1]), null];
-    }
+    var pages = this.pages;
+    for (var i = 0; i < pages.length; i++)
+      pages[i].update(val * CSS_UNITS);
 
-    for (var i = 0; i < pages.length; i++) {
-      pages[i].update(value * CSS_UNITS);
-    }
-    this.currentScale = value;
-
-    if (!noScroll) {
-      currentPage.scrollIntoView(dest);
-    }
+    if (!noScroll && this.currentScale != val)
+      this.pages[this.page - 1].scrollIntoView();
+    this.currentScale = val;
 
     var event = document.createEvent('UIEvents');
     event.initUIEvent('scalechange', false, false, window, 0);
-    event.scale = value;
+    event.scale = val;
     event.resetAutoSettings = resetAutoSettings;
     window.dispatchEvent(event);
   },
 
   parseScale: function pdfViewParseScale(value, resetAutoSettings, noScroll) {
-    if ('custom' === value) {
+    if ('custom' == value)
       return;
-    }
 
     var scale = parseFloat(value);
     this.currentScaleValue = value;
@@ -1062,14 +1045,14 @@ var PDFView = {
     } else if (storedHash) {
       this.setHash(storedHash);
     } else if (scale) {
-      this.parseScale(scale, true, true);
+      this.parseScale(scale, true);
       this.page = 1;
     }
 
     if (PDFView.currentScale === UNKNOWN_SCALE) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.parseScale(DEFAULT_SCALE, true, true);
+      this.parseScale(DEFAULT_SCALE, true);
     }
   },
 
@@ -1394,28 +1377,15 @@ var PDFView = {
 
   enterPresentationMode: function pdfViewEnterPresentationMode() {
     this.isPresentationMode = true;
+    this.page = this.presentationModeArgs.page;
     this.parseScale('page-fit', true);
-    // Since 'resize' events are fired when entering presentation mode,
-    // add this call to the end of the rendering queue to prevent
-    // the page from being scrolled partially out of view.
-    setTimeout(function() {
-      this.page = this.presentationModeArgs.page;
-    }.bind(this), 0);
-
     this.showPresentationControls();
   },
 
   exitPresentationMode: function pdfViewExitPresentationMode() {
     this.isPresentationMode = false;
-    var currentPage = this.pages[this.page - 1];
-    this.parseScale(this.presentationModeArgs.previousScale, true, true);
-    // Since 'resize' events are fired when exiting from presentation mode,
-    // add this call to the end of the rendering queue to make sure
-    // that the current page is scrolled into view properly.
-    setTimeout(function() {
-      currentPage.scrollIntoView();
-    }, 0);
-
+    this.parseScale(this.presentationModeArgs.previousScale);
+    this.page = this.page;
     this.clearMouseScrollState();
     this.hidePresentationControls();
     this.presentationModeArgs = null;
@@ -1469,9 +1439,14 @@ var PDFView = {
     this.renderHighestPriority();
 
     var currentPage = this.pages[this.page - 1];
-    if (currentPage) {
-      currentPage.scrollIntoView();
+    if (!currentPage) {
+      return;
     }
+
+    // Wait for presentation mode to take effect
+    setTimeout(function() {
+      currentPage.scrollIntoView();
+    }, 0);
   },
 
   /**
