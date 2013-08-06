@@ -852,7 +852,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     cancel: function InternalRenderTask_cancel() {
       this.running = false;
       this.cancelled = true;
-      this.callback();
+      this.callback('cancelled');
     },
 
     operatorListChanged: function InternalRenderTask_operatorListChanged() {
