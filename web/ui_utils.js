@@ -118,6 +118,13 @@ function scrollIntoView(element, spot) {
 }
 
 /**
+ * Event handler to suppress context menu.
+ */
+function noContextMenuHandler(e) {
+  e.preventDefault();
+}
+
+/**
  * Returns the filename or guessed filename from the url (see issue 3455).
  * url {String} The original PDF location.
  * @return {String} Guessed PDF file name.
