@@ -17,7 +17,7 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
-           PDFHistory */
+           PDFHistory, noContextMenuHandler */
 
 'use strict';
 
@@ -796,11 +796,9 @@ var PDFView = {
       moreInfoButton.removeAttribute('hidden');
       lessInfoButton.setAttribute('hidden', 'true');
     };
-    moreInfoButton.oncontextmenu =
-    lessInfoButton.oncontextmenu =
-    closeButton.oncontextmenu = function(e) {
-      e.preventDefault();
-    };
+    moreInfoButton.oncontextmenu = noContextMenuHandler;
+    lessInfoButton.oncontextmenu = noContextMenuHandler;
+    closeButton.oncontextmenu = noContextMenuHandler;
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
     errorMoreInfo.value = moreInfoText;
@@ -2218,7 +2216,16 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //var file = window.location.href.split('#')[0];
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
+  var fileInput = document.createElement('input');
+  fileInput.id = 'fileInput';
+  fileInput.className = 'fileInput';
+  fileInput.setAttribute('type', 'file');
+  fileInput.setAttribute('style',
+    'visibility: hidden; position: fixed; right: 0; top: 0');
+  fileInput.oncontextmenu = noContextMenuHandler;
+  document.body.appendChild(fileInput);
+
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
   } else {
@@ -2310,6 +2317,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     }
   });
 
+  // Suppress context menus for some controls
+  document.getElementById('scaleSelect').oncontextmenu = noContextMenuHandler;
+
   var mainContainer = document.getElementById('mainContainer');
   var outerContainer = document.getElementById('outerContainer');
   mainContainer.addEventListener('transitionend', function(e) {
@@ -2365,10 +2375,12 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.presentationMode();
     });
 
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
   document.getElementById('openFile').addEventListener('click',
     function() {
       document.getElementById('fileInput').click();
     });
+//#endif
 
   document.getElementById('print').addEventListener('click',
     function() {
