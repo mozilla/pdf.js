@@ -114,26 +114,50 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           this.clow &= 0xFFFF;
         }
       },
-      readBit: function ArithmeticDecoder_readBit(cx) {
-        var qeIcx = QeTable[cx.index].qe;
+      readBit: function ArithmeticDecoder_readBit(contexts, pos) {
+        // contexts are packed into 1 byte: 
+        // highest 7 bits carry cx.index, lowest bit carries cx.mps
+        var cx_index = contexts[pos] >> 1, cx_mps = contexts[pos] & 1;
+        var qeTableIcx = QeTable[cx_index];
+        var qeIcx = qeTableIcx.qe;
+        var nmpsIcx = qeTableIcx.nmps;
+        var nlpsIcx = qeTableIcx.nlps;
+        var switchIcx = qeTableIcx.switchFlag;
+        var d;
         this.a -= qeIcx;
 
         if (this.chigh < qeIcx) {
-          var d = this.exchangeLps(cx);
-          this.renormD();
-          return d;
+          // exchangeLps
+          if (this.a < qeIcx) {
+            this.a = qeIcx;
+            d = cx_mps;
+            cx_index = nmpsIcx;
+          } else {
+            this.a = qeIcx;
+            d = 1 - cx_mps;
+            if (switchIcx) {
+              cx_mps = d;
+            }
+            cx_index = nlpsIcx;
+          }
         } else {
           this.chigh -= qeIcx;
-          if ((this.a & 0x8000) === 0) {
-            var d = this.exchangeMps(cx);
-            this.renormD();
-            return d;
+          if ((this.a & 0x8000) !== 0) {
+            return cx_mps;
+          }
+          // exchangeMps
+          if (this.a < qeIcx) {
+            d = 1 - cx_mps;
+            if (switchIcx) {
+              cx_mps = d;
+            }
+            cx_index = nlpsIcx;
           } else {
-            return cx.mps;
+            d = cx_mps;
+            cx_index = nmpsIcx;
           }
         }
-      },
-      renormD: function ArithmeticDecoder_renormD() {
+        // renormD;
         do {
           if (this.ct === 0)
             this.byteIn();
@@ -143,39 +167,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           this.clow = (this.clow << 1) & 0xFFFF;
           this.ct--;
         } while ((this.a & 0x8000) === 0);
-      },
-      exchangeMps: function ArithmeticDecoder_exchangeMps(cx) {
-        var d;
-        var qeTableIcx = QeTable[cx.index];
-        if (this.a < qeTableIcx.qe) {
-          d = 1 - cx.mps;
 
-          if (qeTableIcx.switchFlag == 1) {
-            cx.mps = 1 - cx.mps;
-          }
-          cx.index = qeTableIcx.nlps;
-        } else {
-          d = cx.mps;
-          cx.index = qeTableIcx.nmps;
-        }
-        return d;
-      },
-      exchangeLps: function ArithmeticDecoder_exchangeLps(cx) {
-        var d;
-        var qeTableIcx = QeTable[cx.index];
-        if (this.a < qeTableIcx.qe) {
-          this.a = qeTableIcx.qe;
-          d = cx.mps;
-          cx.index = qeTableIcx.nmps;
-        } else {
-          this.a = qeTableIcx.qe;
-          d = 1 - cx.mps;
-
-          if (qeTableIcx.switchFlag == 1) {
-            cx.mps = 1 - cx.mps;
-          }
-          cx.index = qeTableIcx.nlps;
-        }
+        contexts[pos] = cx_index << 1 | cx_mps;
         return d;
       }
     };
@@ -190,7 +183,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     getContexts: function(id) {
       if (id in this)
         return this[id];
-      return (this[id] = []);
+      return (this[id] = new Int8Array(1<<16));
     }
   };
 
@@ -220,10 +213,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var state = 1, v = 0, s;
     var toRead = 32, offset = 4436; // defaults for state 7
     while (state) {
-      var cx = contexts[prev];
-      if (!cx)
-        contexts[prev] = cx = {index: 0, mps: 0};
-      var bit = decoder.readBit(cx);
+      var bit = decoder.readBit(contexts, prev);
       prev = prev < 256 ? (prev << 1) | bit :
         (((prev << 1) | bit) & 511) | 256;
       switch (state) {
@@ -278,10 +268,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var prev = 1;
     for (var i = 0; i < codeLength; i++) {
-      var cx = contexts[prev];
-      if (!cx)
-        contexts[prev] = cx = {index: 0, mps: 0};
-      var bit = decoder.readBit(cx);
+      var bit = decoder.readBit(contexts, prev);
       prev = (prev * 2) + bit;
     }
     if (codeLength < 31)
@@ -398,10 +385,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var ltp = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
-        var cx = contexts[pseudoPixelContext];
-        if (!cx)
-          contexts[pseudoPixelContext] = cx = {index: 0, mps: 0};
-        var sltp = decoder.readBit(cx);
+        var sltp = decoder.readBit(contexts, pseudoPixelContext);
         ltp ^= sltp;
       }
       if (ltp) {
@@ -423,10 +407,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           else
             contextLabel = (contextLabel << 1) | bitmap[i0][j0];
         }
-        var cx = contexts[contextLabel];
-        if (!cx)
-          contexts[contextLabel] = cx = {index: 0, mps: 0};
-        var pixel = decoder.readBit(cx);
+        var pixel = decoder.readBit(contexts, contextLabel);
         row[j] = pixel;
       }
     }
@@ -469,10 +450,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var ltp = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
-        var cx = contexts[pseudoPixelContext];
-        if (!cx)
-          contexts[pseudoPixelContext] = cx = {index: 0, mps: 0};
-        var sltp = decoder.readBit(cx);
+        var sltp = decoder.readBit(contexts, pseudoPixelContext);
         ltp ^= sltp;
       }
       var row = new Uint8Array(width);
@@ -497,10 +475,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           else
             contextLabel = (contextLabel << 1) | referenceBitmap[i0][j0];
         }
-        var cx = contexts[contextLabel];
-        if (!cx)
-          contexts[contextLabel] = cx = {index: 0, mps: 0};
-        var pixel = decoder.readBit(cx);
+        var pixel = decoder.readBit(contexts, contextLabel);
         row[j] = pixel;
       }
     }
