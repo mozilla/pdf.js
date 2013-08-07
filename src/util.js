@@ -770,8 +770,12 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         var now = Date.now();
         for (var i = 0; i < this.unhandledRejections.length; i++) {
           if (now - this.unhandledRejections[i].time > REJECTION_TIMEOUT) {
-            warn('Unhandled rejection: ' +
-                 this.unhandledRejections[i].promise._value);
+            var unhandled = this.unhandledRejections[i].promise._value;
+            var msg = 'Unhandled rejection: ' + unhandled;
+            if (unhandled.stack) {
+              msg += '\n' + unhandled.stack;
+            }
+            warn(msg);
             this.unhandledRejections.splice(i);
             i--;
           }
