@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals error, info, input, isArray, isDict, isName, isStream, isString,
-           PDFFunction, warn */
+           PDFFunction, warn, shadow */
 
 'use strict';
 
@@ -127,11 +127,11 @@ var ColorSpace = (function ColorSpaceClosure() {
 
     switch (name) {
       case 'DeviceGrayCS':
-        return new DeviceGrayCS();
+        return this.singletons.gray;
       case 'DeviceRgbCS':
-        return new DeviceRgbCS();
+        return this.singletons.rgb;
       case 'DeviceCmykCS':
-        return new DeviceCmykCS();
+        return this.singletons.cmyk;
       case 'PatternCS':
         var basePatternCS = IR[1];
         if (basePatternCS)
@@ -279,6 +279,18 @@ var ColorSpace = (function ColorSpaceClosure() {
         return false;
     }
     return true;
+  };
+
+  ColorSpace.singletons = {
+    get gray() {
+      return shadow(this, 'gray', new DeviceGrayCS());
+    },
+    get rgb() {
+      return shadow(this, 'rgb', new DeviceRgbCS());
+    },
+    get cmyk() {
+      return shadow(this, 'cmyk', new DeviceCmykCS());
+    }
   };
 
   return ColorSpace;

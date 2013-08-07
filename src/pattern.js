@@ -398,7 +398,7 @@ var TilingPattern = (function TilingPatternClosure() {
           context.strokeStyle = ctx.strokeStyle;
           break;
         case PaintType.UNCOLORED:
-          var rgbColor = new DeviceRgbCS().getRgb(color, 0);
+          var rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
           var cssColor = Util.makeCssRgb(rgbColor);
           context.fillStyle = cssColor;
           context.strokeStyle = cssColor;
