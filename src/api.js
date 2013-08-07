@@ -220,8 +220,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
-    this.renderInProgress = false;
+    this.receivingOperatorList  = false;
     this.cleanupAfterRender = false;
+    this.pendingDestroy = false;
     this.renderTasks = [];
   }
   PDFPageProxy.prototype = {
@@ -294,15 +295,18 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * finishes rendering (see RenderTask).
      */
     render: function PDFPageProxy_render(params) {
-      this.renderInProgress = true;
       var stats = this.stats;
       stats.time('Overall');
+
+      // If there was a pending destroy cancel it so no cleanup happens during
+      // this call to render.
+      this.pendingDestroy = false;
 
       // If there is no displayReadyPromise yet, then the operatorList was never
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
+        this.receivingOperatorList = true;
         this.displayReadyPromise = new Promise();
-        this.destroyed = false;
         this.operatorList = {
           fnArray: [],
           argsArray: [],
@@ -324,7 +328,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var self = this;
       this.displayReadyPromise.then(
         function pageDisplayReadyPromise(transparency) {
-          if (self.destroyed) {
+          if (self.pendingDestroy) {
             complete();
             return;
           }
@@ -343,10 +347,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
             self.renderTasks.splice(i, 1);
         }
 
-        if (self.renderTasks.length === 0 &&
-            (self.destroyed || self.cleanupAfterRender)) {
-          self._destroy();
+        if (self.cleanupAfterRender) {
+          self.pendingDestroy = true;
         }
+        self._tryDestroy();
+
         if (error) {
           renderTask.reject(error);
         } else {
@@ -389,19 +394,24 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * Destroys resources allocated by the page.
      */
     destroy: function PDFPageProxy_destroy() {
-      this.destroyed = true;
-
-      if (this.renderTasks.length === 0) {
-        this._destroy();
-      }
+      this.pendingDestroy = true;
+      this._tryDestroy();
     },
     /**
-     * For internal use only. Does the actual cleanup.
+     * For internal use only. Attempts to clean up if rendering is in a state
+     * where that's possible.
      */
-    _destroy: function PDFPageProxy__destroy() {
+    _tryDestroy: function PDFPageProxy__destroy() {
+      if (!this.pendingDestroy ||
+          this.renderTasks.length !== 0 ||
+          this.receivingOperatorList) {
+        return;
+      }
+
       delete this.operatorList;
       delete this.displayReadyPromise;
       this.objs.clear();
+      this.pendingDestroy = false;
     },
     /**
      * For internal use only.
@@ -423,6 +433,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // Notify all the rendering tasks there are more operators to be consumed.
       for (var i = 0; i < this.renderTasks.length; i++) {
         this.renderTasks[i].operatorListChanged();
+      }
+
+      if (operatorListChunk.lastChunk) {
+        this.receivingOperatorList = false;
+        this._tryDestroy();
       }
     }
   };
