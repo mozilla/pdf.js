@@ -1614,6 +1614,52 @@ var PageView = function pageView(container, id, scale,
       link.className = 'internalLink';
     }
 
+    function bindNamedAction(link, action) {
+      link.onclick = function pageViewSetupNamedActionOnClick() {
+        // See PDF reference, table 8.45 - Named action
+        switch (action) {
+          case 'GoToPage':
+            document.getElementById('pageNumber').focus();
+            break;
+
+          case 'GoBack':
+            PDFHistory.back();
+            break;
+
+          case 'GoForward':
+            PDFHistory.forward();
+            break;
+
+          case 'Find':
+            if (!PDFView.supportsIntegratedFind) {
+              PDFFindBar.toggle();
+            }
+            break;
+
+          case 'NextPage':
+            PDFView.page++;
+            break;
+
+          case 'PrevPage':
+            PDFView.page--;
+            break;
+
+          case 'LastPage':
+            PDFView.page = PDFView.pages.length;
+            break;
+
+          case 'FirstPage':
+            PDFView.page = 1;
+            break;
+
+          default:
+            break; // No action according to spec
+        }
+        return false;
+      };
+      link.className = 'internalLink';
+    }
+
     pdfPage.getAnnotations().then(function(annotationsData) {
       viewport = viewport.clone({ dontFlip: true });
       for (var i = 0; i < annotationsData.length; i++) {
@@ -1646,7 +1692,11 @@ var PageView = function pageView(container, id, scale,
         CustomStyle.setProp('transformOrigin', element, transformOriginStr);
 
         if (data.subtype === 'Link' && !data.url) {
-          bindLink(element, ('dest' in data) ? data.dest : null);
+          if (data.action) {
+            bindNamedAction(element, data.action);
+          } else {
+            bindLink(element, ('dest' in data) ? data.dest : null);
+          }
         }
 
         annotationsDiv.appendChild(element);
