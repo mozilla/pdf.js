@@ -457,9 +457,13 @@ var PDFDocument = (function PDFDocumentClosure() {
         PDFFormatVersion: this.pdfFormatVersion,
         IsAcroFormPresent: !!this.acroForm
       };
-      if (this.xref.trailer.has('Info')) {
-        var infoDict = this.xref.trailer.get('Info');
-
+      var infoDict;
+      try {
+        infoDict = this.xref.trailer.get('Info');
+      } catch (err) {
+        info('The document information dictionary is invalid.');
+      }
+      if (infoDict) {
         var validEntries = DocumentInfoValidators.entries;
         // Only fill the document info with valid entries from the spec.
         for (var key in validEntries) {
@@ -468,7 +472,7 @@ var PDFDocument = (function PDFDocumentClosure() {
             // Make sure the value conforms to the spec.
             if (validEntries[key](value)) {
               docInfo[key] = typeof value !== 'string' ? value :
-                             stringToPDFString(value);
+                stringToPDFString(value);
             } else {
               info('Bad value in document info for "' + key + '"');
             }
