@@ -34,6 +34,8 @@ var MAX_SCALE = 4.0;
 var SETTINGS_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
+var THUMBS_VIEW_PADDING = 10;
+var THUMBS_VIEW_PADDING_TINY = 5;
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -2612,18 +2614,50 @@ window.addEventListener('pagechange', function pagechange(evt) {
     var selected = document.querySelector('.thumbnail.selected');
     if (selected)
       selected.classList.remove('selected');
+    var thumbsView = document.getElementById('thumbnailView');
     var thumbnail = document.getElementById('thumbnailContainer' + page);
     thumbnail.classList.add('selected');
     var visibleThumbs = PDFView.getVisibleThumbs();
     var numVisibleThumbs = visibleThumbs.views.length;
     // If the thumbnail isn't currently visible scroll it into view.
     if (numVisibleThumbs > 0) {
-      var first = visibleThumbs.first.id;
+      var firstVisible = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
-      var last = numVisibleThumbs > 1 ?
-                  visibleThumbs.last.id : first;
-      if (page <= first || page >= last)
-        scrollIntoView(thumbnail);
+      var lastVisible = numVisibleThumbs > 1 ?
+                  visibleThumbs.last.id : firstVisible;
+
+      // Last completely visible thumbnail but not the last of the PDF
+      if (page === lastVisible && page !== PDFView.pages.length) {
+        var topGapHeight = (thumbHeight * 2) - thumbViewHeight +
+                           THUMBS_VIEW_PADDING_TINY;
+        scrollIntoView(thumbnail, {top: topGapHeight});
+      }
+
+      // If the thumbnail is not completely visible
+      if (page <= firstVisible || page >= lastVisible) {
+          var topGapHeight = 0;
+          if (page === firstVisible) {
+            // Top thumbnail not completely visible
+            if (page === 1) {
+              topGapHeight = -THUMBS_VIEW_PADDING;
+            } else {
+              topGapHeight = -THUMBS_VIEW_PADDING_TINY;
+            }
+          } else {
+            // Bottom thumbnail not completely visible
+            var thumbHeight = thumbnail.offsetHeight;
+            var thumbViewHeight = thumbsView.offsetHeight;
+            if (page === PDFView.pages.length) {
+              topGapHeight = thumbHeight - thumbViewHeight +
+                             THUMBS_VIEW_PADDING;
+            } else {
+              topGapHeight = (thumbHeight * 2) - thumbViewHeight +
+                             THUMBS_VIEW_PADDING_TINY;
+            }
+          }
+        scrollIntoView(thumbnail, {top: topGapHeight});
+      }
+
     }
 
   }
