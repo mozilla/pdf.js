@@ -629,6 +629,8 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         }
         data.url = url;
         data.dest = action.get('D');
+      } else if (linkType === 'Named') {
+        data.action = action.get('N').name;
       } else {
         TODO('unrecognized link type: ' + linkType);
       }
