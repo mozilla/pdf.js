@@ -1283,6 +1283,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue3521.pdf",
+       "file": "pdfs/issue3521.pdf",
+       "md5": "df95d31443e20a38efa29c3a635a045b",
+       "rounds": 1,
+       "type": "eq",
+       "about": "Support for CMap GBKp-EUC-H"
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",
