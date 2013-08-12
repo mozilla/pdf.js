@@ -16,7 +16,7 @@
  */
 /* globals assertWellFormed, bytesToString, CipherTransformFactory, error, info,
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
-           isStream, JpegStream, Lexer, log, Page, Parser, Promise, shadow,
+           isStream, Lexer, log, Page, Parser, Promise, shadow,
            stringToPDFString, stringToUTF8String, warn, isString, assert,
            Promise, MissingDataException, XRefParseException, Stream,
            ChunkedStream */
@@ -1088,109 +1088,6 @@ var NameTree = (function NameTreeClosure() {
     }
   };
   return NameTree;
-})();
-
-/**
- * A PDF document and page is built of many objects. E.g. there are objects
- * for fonts, images, rendering code and such. These objects might get processed
- * inside of a worker. The `PDFObjects` implements some basic functions to
- * manage these objects.
- */
-var PDFObjects = (function PDFObjectsClosure() {
-  function PDFObjects() {
-    this.objs = {};
-  }
-
-  PDFObjects.prototype = {
-    /**
-     * Internal function.
-     * Ensures there is an object defined for `objId`.
-     */
-    ensureObj: function PDFObjects_ensureObj(objId) {
-      if (this.objs[objId])
-        return this.objs[objId];
-
-      var obj = {
-        promise: new Promise(objId),
-        data: null,
-        resolved: false
-      };
-      this.objs[objId] = obj;
-
-      return obj;
-    },
-
-    /**
-     * If called *without* callback, this returns the data of `objId` but the
-     * object needs to be resolved. If it isn't, this function throws.
-     *
-     * If called *with* a callback, the callback is called with the data of the
-     * object once the object is resolved. That means, if you call this
-     * function and the object is already resolved, the callback gets called
-     * right away.
-     */
-    get: function PDFObjects_get(objId, callback) {
-      // If there is a callback, then the get can be async and the object is
-      // not required to be resolved right now
-      if (callback) {
-        this.ensureObj(objId).promise.then(callback);
-        return null;
-      }
-
-      // If there isn't a callback, the user expects to get the resolved data
-      // directly.
-      var obj = this.objs[objId];
-
-      // If there isn't an object yet or the object isn't resolved, then the
-      // data isn't ready yet!
-      if (!obj || !obj.resolved)
-        error('Requesting object that isn\'t resolved yet ' + objId);
-
-      return obj.data;
-    },
-
-    /**
-     * Resolves the object `objId` with optional `data`.
-     */
-    resolve: function PDFObjects_resolve(objId, data) {
-      var obj = this.ensureObj(objId);
-
-      obj.resolved = true;
-      obj.data = data;
-      obj.promise.resolve(data);
-    },
-
-    isResolved: function PDFObjects_isResolved(objId) {
-      var objs = this.objs;
-
-      if (!objs[objId]) {
-        return false;
-      } else {
-        return objs[objId].resolved;
-      }
-    },
-
-    hasData: function PDFObjects_hasData(objId) {
-      return this.isResolved(objId);
-    },
-
-    /**
-     * Returns the data of `objId` if object exists, null otherwise.
-     */
-    getData: function PDFObjects_getData(objId) {
-      var objs = this.objs;
-      if (!objs[objId] || !objs[objId].resolved) {
-        return null;
-      } else {
-        return objs[objId].data;
-      }
-    },
-
-    clear: function PDFObjects_clear() {
-      this.objs = {};
-    }
-  };
-  return PDFObjects;
 })();
 
 /**

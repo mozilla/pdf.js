@@ -14,40 +14,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ /* globals PDFJS, Util */
 
 'use strict';
 
 // List of files to include;
 var files = [
-  'network.js',
-  'chunked_stream.js',
-  'pdf_manager.js',
-  'core.js',
-  'util.js',
-  'canvas.js',
-  'obj.js',
-  'annotation.js',
-  'function.js',
-  'charsets.js',
-  'cidmaps.js',
-  'colorspace.js',
-  'crypto.js',
-  'evaluator.js',
-  'fonts.js',
-  'glyphlist.js',
-  'image.js',
-  'metrics.js',
-  'parser.js',
-  'pattern.js',
-  'stream.js',
-  'worker.js',
-  'jpx.js',
-  'jbig2.js',
-  'bidi.js',
+  'shared/util.js',
+  'shared/colorspace.js',
+  'shared/pattern.js',
+  'shared/function.js',
+  'shared/annotation.js',
+  'core/network.js',
+  'core/chunked_stream.js',
+  'core/pdf_manager.js',
+  'core/core.js',
+  'core/obj.js',
+  'core/charsets.js',
+  'core/cidmaps.js',
+  'core/crypto.js',
+  'core/evaluator.js',
+  'core/fonts.js',
+  'core/glyphlist.js',
+  'core/image.js',
+  'core/metrics.js',
+  'core/parser.js',
+  'core/stream.js',
+  'core/worker.js',
+  'core/jpx.js',
+  'core/jbig2.js',
+  'core/bidi.js',
   '../external/jpgjs/jpg.js'
 ];
 
+function loadInOrder(index, path, files) {
+  if (index >= files.length) {
+    PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+    return;
+  }
+  // Skip shared files since they will already be loaded.
+  if (files[index].indexOf('shared/') >= 0) {
+    loadInOrder(++index, path, files);
+    return;
+  }
+  Util.loadScript(path + files[index],
+                  loadInOrder.bind(null, ++index, path, files));
+}
+
 // Load all the files.
-for (var i = 0; i < files.length; i++) {
-  importScripts(files[i]);
+if (typeof PDFJS === 'undefined' || !PDFJS.fakeWorkerFilesLoadedPromise) {
+  for (var i = 0; i < files.length; i++) {
+    importScripts(files[i]);
+  }
+} else {
+  var src = PDFJS.workerSrc;
+  loadInOrder(0, src.substr(0, src.indexOf('worker_loader.js')), files);
 }

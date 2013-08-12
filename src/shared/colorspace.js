@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, info, input, isArray, isDict, isName, isStream, isString,
+/* globals error, info, isArray, isDict, isName, isStream, isString,
            PDFFunction, warn, shadow */
 
 'use strict';

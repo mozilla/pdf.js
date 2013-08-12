@@ -15,30 +15,13 @@
  * limitations under the License.
  */
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-           isArrayBuffer, isDict, isName, isStream, isString, Lexer,
+           isArrayBuffer, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
+           StreamsSequenceStream, stringToPDFString, Util, XRef,
            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
            */
 
 'use strict';
-
-var globalScope = (typeof window === 'undefined') ? this : window;
-
-var isWorker = (typeof window == 'undefined');
-
-var ERRORS = 0, WARNINGS = 1, INFOS = 5;
-var verbosity = WARNINGS;
-
-// The global PDFJS object exposes the API
-// In production, it will be declared outside a global wrapper
-// In development, it will be declared here
-if (!globalScope.PDFJS) {
-  globalScope.PDFJS = {};
-}
-
-globalScope.PDFJS.pdfBug = false;
-
 
 var Page = (function PageClosure() {
 

@@ -496,12 +496,3 @@ var PDFImage = (function PDFImageClosure() {
   };
   return PDFImage;
 })();
-
-function loadJpegStream(id, imageData, objs) {
-  var img = new Image();
-  img.onload = (function loadJpegStream_onloadClosure() {
-    objs.resolve(id, img);
-  });
-  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-}
-

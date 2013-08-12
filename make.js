@@ -29,6 +29,8 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
     SRC_DIR = 'src/',
     BUILD_TARGET = BUILD_DIR + 'pdf.js',
+    BUILD_WORKER_TARGET = BUILD_DIR + 'pdf.worker.js',
+    BUILD_TARGETS = [BUILD_TARGET, BUILD_WORKER_TARGET],
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
     EXTENSION_SRC_DIR = 'extensions/',
@@ -107,7 +109,7 @@ target.generic = function() {
       ['web/locale', GENERIC_DIR + '/web']
     ],
     preprocess: [
-      [BUILD_TARGET, GENERIC_DIR + BUILD_TARGET],
+      [BUILD_TARGETS, GENERIC_DIR + BUILD_DIR],
       [COMMON_WEB_FILES_PREPROCESS, GENERIC_DIR + '/web']
     ]
   };
@@ -231,72 +233,93 @@ target.bundle = function(args) {
   cd(ROOT_DIR);
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
+  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
 
-  var SRC_FILES =
-       ['network.js',
-        'chunked_stream.js',
-        'pdf_manager.js',
-        'core.js',
-        'util.js',
-        'api.js',
-        'canvas.js',
-        'obj.js',
-        'annotation.js',
-        'function.js',
-        'charsets.js',
-        'cidmaps.js',
-        'colorspace.js',
-        'crypto.js',
-        'evaluator.js',
-        'fonts.js',
-        'font_renderer.js',
-        'glyphlist.js',
-        'image.js',
-        'metrics.js',
-        'parser.js',
-        'pattern.js',
-        'stream.js',
-        'worker.js',
-        'jpx.js',
-        'jbig2.js',
-        'bidi.js',
-        'metadata.js'];
-
-  for (var i = 0, length = excludes.length; i < length; ++i) {
-    var exclude = excludes[i];
-    var index = SRC_FILES.indexOf(exclude);
-    if (index >= 0) {
-      SRC_FILES.splice(index, 1);
+  function bundle(filename, dir, SRC_FILES, EXT_SRC_FILES) {
+    for (var i = 0, length = excludes.length; i < length; ++i) {
+      var exclude = excludes[i];
+      var index = SRC_FILES.indexOf(exclude);
+      if (index >= 0) {
+        SRC_FILES.splice(index, 1);
+      }
     }
-  }
 
-  var EXT_SRC_FILES = [
-        '../external/jpgjs/jpg.js'];
+    var bundle = cat(SRC_FILES),
+        bundleVersion = EXTENSION_VERSION,
+        bundleBuild = exec('git log --format="%h" -n 1',
+          {silent: true}).output.replace('\n', '');
+
+    crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
+
+    // Strip out all the vim/license headers.
+    bundle = bundle.replace(reg, '');
+
+    // Append external files last since we don't want to modify them.
+    bundle += cat(EXT_SRC_FILES);
+
+    // This just preprocesses the empty pdf.js file, we don't actually want to
+    // preprocess everything yet since other build targets use this file.
+    builder.preprocess(filename, dir,
+                           {BUNDLE: bundle,
+                            BUNDLE_VERSION: bundleVersion,
+                            BUNDLE_BUILD: bundleBuild});
+  }
 
   if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
 
+  var MAIN_SRC_FILES = [
+    'shared/util.js',
+    'shared/colorspace.js',
+    'shared/pattern.js',
+    'shared/function.js',
+    'shared/annotation.js',
+    'display/api.js',
+    'display/metadata.js',
+    'display/canvas.js',
+    'display/font_loader.js',
+    'display/font_renderer.js'
+  ];
+
+  var WORKER_SRC_FILES = [
+    'shared/util.js',
+    'shared/pattern.js',
+    'shared/function.js',
+    'shared/annotation.js',
+    'core/network.js',
+    'core/chunked_stream.js',
+    'core/pdf_manager.js',
+    'core/core.js',
+    'core/obj.js',
+    'core/charsets.js',
+    'core/cidmaps.js',
+    'shared/colorspace.js',
+    'core/crypto.js',
+    'core/evaluator.js',
+    'core/fonts.js',
+    'core/glyphlist.js',
+    'core/image.js',
+    'core/metrics.js',
+    'core/parser.js',
+    'core/stream.js',
+    'core/worker.js',
+    'core/jpx.js',
+    'core/jbig2.js',
+    'core/bidi.js'
+  ];
+
+  var EXT_SRC_FILES = [
+    '../external/jpgjs/jpg.js'
+  ];
+
   cd(SRC_DIR);
-  var bundle = cat(SRC_FILES),
-      bundleVersion = EXTENSION_VERSION,
-      bundleBuild = exec('git log --format="%h" -n 1',
-        {silent: true}).output.replace('\n', '');
 
-  crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
-
-  // Strip out all the vim/license headers.
-  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
-  bundle = bundle.replace(reg, '');
-
-  // Append external files last since we don't want to modify them.
-  bundle += cat(EXT_SRC_FILES);
-
-  // This just preprocesses the empty pdf.js file, we don't actually want to
-  // preprocess everything yet since other build targets use this file.
-  builder.preprocess('pdf.js', ROOT_DIR + BUILD_TARGET,
-                         {BUNDLE: bundle,
-                          BUNDLE_VERSION: bundleVersion,
-                          BUNDLE_BUILD: bundleBuild});
+  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, MAIN_SRC_FILES, []);
+  var srcCopy = ROOT_DIR + BUILD_DIR + 'pdf.worker.js.temp';
+  cp('pdf.js', srcCopy);
+  bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, WORKER_SRC_FILES,
+         EXT_SRC_FILES);
+  rm(srcCopy);
 };
 
 function cleanupJSSource(file) {
@@ -382,7 +405,7 @@ target.firefox = function() {
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.locale();
-  target.bundle({ excludes: ['network.js'] });
+  target.bundle({ excludes: ['core/network.js'] });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -408,8 +431,8 @@ target.firefox = function() {
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      [BUILD_TARGET, FIREFOX_BUILD_CONTENT_DIR + BUILD_TARGET],
-      [SRC_DIR + 'network.js', FIREFOX_BUILD_CONTENT_DIR]
+      [BUILD_TARGETS, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR],
+      [SRC_DIR + 'core/network.js', FIREFOX_BUILD_CONTENT_DIR]
     ],
     preprocessCSS: [
       ['firefox', 'web/viewer.css',
@@ -494,7 +517,7 @@ target.mozcentral = function() {
          'content',
          'LICENSE'];
 
-  target.bundle({ excludes: ['network.js'] });
+  target.bundle({ excludes: ['core/network.js'] });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -522,8 +545,8 @@ target.mozcentral = function() {
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
-      [BUILD_TARGET, MOZCENTRAL_CONTENT_DIR + BUILD_TARGET],
-      [SRC_DIR + 'network.js', MOZCENTRAL_CONTENT_DIR]
+      [BUILD_TARGETS, MOZCENTRAL_CONTENT_DIR + BUILD_DIR],
+      [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR]
     ],
     preprocessCSS: [
       ['firefox', 'web/viewer.css', MOZCENTRAL_CONTENT_DIR + '/web/viewer.css']
@@ -596,7 +619,7 @@ target.b2g = function() {
     ],
     preprocess: [
       ['web/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
-      [BUILD_TARGET, B2G_BUILD_CONTENT_DIR + BUILD_TARGET]
+      [BUILD_TARGETS, B2G_BUILD_CONTENT_DIR + BUILD_DIR]
     ]
   };
   builder.build(setup);
@@ -640,7 +663,7 @@ target.chrome = function() {
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
-      [BUILD_TARGET, CHROME_BUILD_CONTENT_DIR + BUILD_TARGET],
+      [BUILD_TARGETS, CHROME_BUILD_CONTENT_DIR + BUILD_DIR],
       [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
     ]
   };

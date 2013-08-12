@@ -16,10 +16,10 @@
  */
 /* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error,
            ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
-           IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
+           info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util, MissingDataException, Promise,
+           TilingPattern, TODO, warn, Util, Promise,
            RefSetCache, isRef */
 
 'use strict';
