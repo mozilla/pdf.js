@@ -1613,6 +1613,53 @@ var PageView = function pageView(container, id, scale,
       };
       link.className = 'internalLink';
     }
+    function bindNamedAction(link, action) {
+      link.onclick = function pageViewSetupNamedActionOnClick() {
+        // See PDF reference, table 8.45 - Named action
+        console.log('Click with action', action);
+        switch (action) {
+          case 'GoToPage':
+            document.getElementById('pageNumber').focus();
+            break;
+
+          case 'GoBack':
+            PDFHistory.back();
+            // TODO implement
+            break;
+
+          case 'GoForward':
+            PDFHistory.forward();
+            // TODO implement
+            break;
+
+          case 'Find':
+            PDFFindBar.toggle();
+            break;
+
+          case 'NextPage':
+            PDFView.page++;
+            break;
+
+          case 'PrevPage':
+            PDFView.page--;
+            break;
+
+          case 'LastPage':
+            PDFView.page = PDFView.pages.length;
+            break;
+
+          case 'FirstPage':
+            PDFView.page = 1;
+            break;
+
+          default:
+            // No action according to spec
+        }
+
+        return false;
+      };
+      link.className = 'internalLink';
+    }
 
     function bindNamedAction(link, action) {
       link.onclick = function pageViewSetupNamedActionOnClick() {
