@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals NotImplementedException, MissingDataException, Promise, Stream,
-           PDFDocument, ChunkedStream, ChunkedStreamManager */
+           PDFDocument, ChunkedStreamManager */
 
 'use strict';
 

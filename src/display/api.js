@@ -14,10 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CanvasGraphics, combineUrl, createScratchCanvas, error, ErrorFont,
-           Font, FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
-           MessageHandler, PDFJS, PDFObjects, Promise, StatTimer, warn,
-           WorkerMessageHandler, PasswordResponses, Util */
+/* globals CanvasGraphics, combineUrl, createScratchCanvas, error,
+           FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
+           MessageHandler, PDFJS, Promise, StatTimer, warn,
+           PasswordResponses, Util, loadScript,
+           FontFace */
 
  'use strict';
 
@@ -344,7 +345,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       function complete(error) {
         var i = self.renderTasks.indexOf(internalRenderTask);
         if (i >= 0) {
-            self.renderTasks.splice(i, 1);
+          self.renderTasks.splice(i, 1);
         }
 
         if (self.cleanupAfterRender) {
@@ -502,8 +503,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
     // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
     globalScope.PDFJS.disableWorker = true;
-    this.setupFakeWorker();
-    workerInitializedPromise.resolve();
+    this.loadFakeWorkerFiles().then(function() {
+      this.setupFakeWorker();
+      workerInitializedPromise.resolve();
+    }.bind(this));
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
@@ -516,6 +519,24 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       });
     },
+
+    loadFakeWorkerFiles: function WorkerTransport_loadFakeWorkerFiles() {
+      if (!PDFJS.fakeWorkerFilesLoadedPromise) {
+        PDFJS.fakeWorkerFilesLoadedPromise = new Promise();
+        // In the developer build load worker_loader which in turn loads all the
+        // other files and resolves the promise. In production only the
+        // pdf.worker.js file is needed.
+//#if !PRODUCTION
+        Util.loadScript(PDFJS.workerSrc);
+//#else
+//      Util.loadScript(PDFJS.workerSrc, function() {
+//        PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+//      });
+//#endif
+      }
+      return PDFJS.fakeWorkerFilesLoadedPromise;
+    },
+
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');
       // If we don't use a worker, just post/sendMessage to the main thread.
@@ -531,7 +552,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       // If the main thread is our worker, setup the handling for the messages
       // the main thread sends to it self.
-      WorkerMessageHandler.setup(messageHandler);
+      PDFJS.WorkerMessageHandler.setup(messageHandler);
     },
 
     setupMessageHandler:
@@ -642,7 +663,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               this.commonObjs.resolve(id, error);
               break;
             } else {
-              font = new Font(exportedData);
+              font = new FontFace(exportedData);
             }
 
             FontLoader.bind(
@@ -797,6 +818,108 @@ var WorkerTransport = (function WorkerTransportClosure() {
 })();
 
 /**
+ * A PDF document and page is built of many objects. E.g. there are objects
+ * for fonts, images, rendering code and such. These objects might get processed
+ * inside of a worker. The `PDFObjects` implements some basic functions to
+ * manage these objects.
+ */
+var PDFObjects = (function PDFObjectsClosure() {
+  function PDFObjects() {
+    this.objs = {};
+  }
+
+  PDFObjects.prototype = {
+    /**
+     * Internal function.
+     * Ensures there is an object defined for `objId`.
+     */
+    ensureObj: function PDFObjects_ensureObj(objId) {
+      if (this.objs[objId])
+        return this.objs[objId];
+
+      var obj = {
+        promise: new Promise(objId),
+        data: null,
+        resolved: false
+      };
+      this.objs[objId] = obj;
+
+      return obj;
+    },
+
+    /**
+     * If called *without* callback, this returns the data of `objId` but the
+     * object needs to be resolved. If it isn't, this function throws.
+     *
+     * If called *with* a callback, the callback is called with the data of the
+     * object once the object is resolved. That means, if you call this
+     * function and the object is already resolved, the callback gets called
+     * right away.
+     */
+    get: function PDFObjects_get(objId, callback) {
+      // If there is a callback, then the get can be async and the object is
+      // not required to be resolved right now
+      if (callback) {
+        this.ensureObj(objId).promise.then(callback);
+        return null;
+      }
+
+      // If there isn't a callback, the user expects to get the resolved data
+      // directly.
+      var obj = this.objs[objId];
+
+      // If there isn't an object yet or the object isn't resolved, then the
+      // data isn't ready yet!
+      if (!obj || !obj.resolved)
+        error('Requesting object that isn\'t resolved yet ' + objId);
+
+      return obj.data;
+    },
+
+    /**
+     * Resolves the object `objId` with optional `data`.
+     */
+    resolve: function PDFObjects_resolve(objId, data) {
+      var obj = this.ensureObj(objId);
+
+      obj.resolved = true;
+      obj.data = data;
+      obj.promise.resolve(data);
+    },
+
+    isResolved: function PDFObjects_isResolved(objId) {
+      var objs = this.objs;
+
+      if (!objs[objId]) {
+        return false;
+      } else {
+        return objs[objId].resolved;
+      }
+    },
+
+    hasData: function PDFObjects_hasData(objId) {
+      return this.isResolved(objId);
+    },
+
+    /**
+     * Returns the data of `objId` if object exists, null otherwise.
+     */
+    getData: function PDFObjects_getData(objId) {
+      var objs = this.objs;
+      if (!objs[objId] || !objs[objId].resolved) {
+        return null;
+      } else {
+        return objs[objId].data;
+      }
+    },
+
+    clear: function PDFObjects_clear() {
+      this.objs = {};
+    }
+  };
+  return PDFObjects;
+})();
+/*
  * RenderTask is basically a promise but adds a cancel function to terminate it.
  */
 var RenderTask = (function RenderTaskClosure() {
