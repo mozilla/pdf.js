@@ -1102,7 +1102,7 @@ html[dir='rtl'] .outlineItem > a {
 }
 
 canvas {
-  margin: auto;
+  margin: 0;
   display: block;
 }
 
