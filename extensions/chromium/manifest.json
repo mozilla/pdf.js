@@ -12,12 +12,22 @@
     "webRequest", "webRequestBlocking",
     "<all_urls>",
     "tabs",
-    "webNavigation"
+    "webNavigation",
+    "streamsPrivate"
   ],
+  /* FOR demo & debugging purposes only! This key is required to get access to the streams API.
+   * This key forces the extension ID to be gbkeegbaiigmenfmjfclcdgdpimamgkj (= Chrome Office Viewer)
+   * This comment has been added to prevent it from being uploaded to the Chrome Web Store.
+   * Remove it when the PDF.js extensionID is whitelisted for the streamsPrivate API.
+   */
+  "key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC4zyYTii0VTKI7W2U6fDeAvs3YCVZeAt7C62IC64IDCMHvWy7SKMpOPjfg5v1PgYkFm+fGsCsVLN8NaF7fzYMVtjLc5bqhqPAi56Qidrqh1HxPAAYhwFQd5BVGhZmh1fySHXFPE8VI2tIHwRrASOtx67jbSEk4nBAcJz6n+eGq8QIDAQAB",
   "content_scripts": [{
     "matches": ["file://*/*"],
     "js": ["nothing.js"]
   }],
+  "mime_types": [
+    "application/pdf"
+  ],
   "background": {
     "page": "pdfHandler.html"
   },
