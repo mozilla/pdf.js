@@ -2259,11 +2259,17 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   PDFView.initialize();
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//#if !(FIREFOX || MOZCENTRAL)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
   var file = params.file || DEFAULT_URL;
 //#else
 //var file = window.location.href.split('#')[0];
+//#endif
+
+//#if CHROME
+//if (location.protocol !== 'chrome-extension:') {
+//  file = location.href.split('#')[0];
+//}
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || CHROME)
