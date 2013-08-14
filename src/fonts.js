@@ -5823,9 +5823,9 @@ var CFFFont = (function CFFFontClosure() {
       } else {
         for (var charcode in encoding)
           inverseEncoding[encoding[charcode]] = charcode | 0;
-        if (charsets[0] === '.notdef') {
-          gidStart = 1;
-        }
+      }
+      if (charsets[0] === '.notdef') {
+        gidStart = 1;
       }
 
       for (var i = gidStart, ii = charsets.length; i < ii; i++) {
