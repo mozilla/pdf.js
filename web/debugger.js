@@ -228,6 +228,25 @@ var Stepper = (function StepperClosure() {
     return d;
   }
 
+  function glyphsToString(glyphs) {
+    var out = '';
+    for (var i = 0; i < glyphs.length; i++) {
+      if (glyphs[i] === null) {
+        out += ' ';
+      } else {
+        out += glyphs[i].fontChar;
+      }
+    }
+    return out;
+  }
+
+  var glyphCommands = {
+    'showText': 0,
+    'showSpacedText': 0,
+    'nextLineShowText': 0,
+    'nextLineSetSpacingShowText': 2
+  };
+
   function Stepper(panel, pageIndex, initialBreakPoints) {
     this.panel = panel;
     this.breakPoint = 0;
@@ -281,8 +300,29 @@ var Stepper = (function StepperClosure() {
         breakCell.appendChild(cbox);
         line.appendChild(breakCell);
         line.appendChild(c('td', i.toString()));
-        line.appendChild(c('td', operatorList.fnArray[i]));
-        line.appendChild(c('td', args.join(', ')));
+        var fn = operatorList.fnArray[i];
+        var decArgs = args;
+        if (fn in glyphCommands) {
+          var glyphIndex = glyphCommands[fn];
+          var glyphs = args[glyphIndex];
+          var decArgs = args.slice();
+          var newArg;
+          if (fn === 'showSpacedText') {
+            newArg = [];
+            for (var j = 0; j < glyphs.length; j++) {
+              if (typeof glyphs[j] === 'number') {
+                newArg.push(glyphs[j]);
+              } else {
+                newArg.push(glyphsToString(glyphs[j]));
+              }
+            }
+          } else {
+            newArg = glyphsToString(glyphs);
+          }
+          decArgs[glyphIndex] = newArg;
+        }
+        line.appendChild(c('td', fn));
+        line.appendChild(c('td', JSON.stringify(decArgs)));
       }
     },
     getNextBreakPoint: function getNextBreakPoint() {
