@@ -670,15 +670,19 @@ var PDFView = {
   },
 
   /**
-   * For the firefox extension we prefix the full url on anchor links so they
-   * don't come up as resource:// urls and so open in new tab/window works.
-   * @param {String} anchor The anchor hash include the #.
+   * Prefix the full url on anchor links to make sure that links are resolved
+   * relative to the current URL instead of the one defined in <base href>.
+   * @param {String} anchor The anchor hash, including the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
     return anchor;
 //#else
+//#if CHROME
+//  return location.href.split('#')[0] + anchor;
+//#else
 //  return this.url.split('#')[0] + anchor;
+//#endif
 //#endif
   },
 
@@ -1459,14 +1463,35 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
+//#if CHROME
+//(function rewriteUrlClosure() {
+//  // Run this code outside DOMContentLoaded to make sure that the URL
+//  // is rewritten as soon as possible.
+//  if (location.origin + '/' !== chrome.extension.getURL('/')) {
+//    DEFAULT_URL = window.location.href.split('#')[0];
+//  } else {
+//    var params = PDFView.parseQueryString(document.location.search.slice(1));
+//    DEFAULT_URL = params.file || DEFAULT_URL;
+//
+//    // Example: chrome-extension://.../http://example.com/file.pdf
+//    var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
+//    history.replaceState(history.state, '', humanReadableUrl);
+//  }
+//})();
+//#endif
+
 document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   PDFView.initialize();
 
-//#if !(FIREFOX || MOZCENTRAL)
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
   var file = params.file || DEFAULT_URL;
 //#else
+//#if CHROME
+//var file = DEFAULT_URL;
+//#else
 //var file = window.location.href.split('#')[0];
+//#endif
 //#endif
 
 //#if CHROME
