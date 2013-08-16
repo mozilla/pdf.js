@@ -16,7 +16,7 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           isString, Pattern, TilingPattern, TODO, Util, warn, assert, info */
+           Pattern, TilingPattern, TODO, Util, warn, assert, info */
 
 'use strict';
 
