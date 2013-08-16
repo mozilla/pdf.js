@@ -226,6 +226,7 @@ target.locale = function() {
 //
 target.bundle = function(args) {
   args = args || {};
+  var defines = args.defines || DEFINES;
   var excludes = args.excludes || [];
 
   target.buildnumber();
@@ -259,10 +260,10 @@ target.bundle = function(args) {
 
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
-    builder.preprocess(filename, dir,
+    builder.preprocess(filename, dir, builder.merge(defines,
                            {BUNDLE: bundle,
                             BUNDLE_VERSION: bundleVersion,
-                            BUNDLE_BUILD: bundleBuild});
+                            BUNDLE_BUILD: bundleBuild}));
   }
 
   if (!test('-d', BUILD_DIR))
@@ -405,7 +406,7 @@ target.firefox = function() {
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.locale();
-  target.bundle({ excludes: ['core/network.js'] });
+  target.bundle({ excludes: ['core/network.js'], defines: defines });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -517,7 +518,7 @@ target.mozcentral = function() {
          'content',
          'LICENSE'];
 
-  target.bundle({ excludes: ['core/network.js'] });
+  target.bundle({ excludes: ['core/network.js'], defines: defines });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -599,7 +600,7 @@ target.b2g = function() {
   var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
       B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
   var defines = builder.merge(DEFINES, { B2G: true });
-  target.bundle({});
+  target.bundle({ defines: defines });
 
   // Clear out everything in the b2g build directory
   cd(ROOT_DIR);
@@ -639,7 +640,7 @@ target.chrome = function() {
   var CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
-  target.bundle({});
+  target.bundle({ defines: defines });
   cd(ROOT_DIR);
 
   // Clear out everything in the chrome extension build directory
