@@ -15,99 +15,14 @@
  * limitations under the License.
  */
 /* globals error, globalScope, InvalidPDFException, log,
-           MissingPDFException, PasswordException, PDFDocument, PDFJS, Promise,
-           Stream, UnknownErrorException, warn, NetworkManager, LocalPdfManager,
-           NetworkPdfManager, XRefParseException, NotImplementedException,
-           isInt, PasswordResponses */
+           MissingPDFException, PasswordException, PDFJS, Promise,
+           UnknownErrorException, NetworkManager, LocalPdfManager,
+           NetworkPdfManager, XRefParseException,
+           isInt, PasswordResponses, MessageHandler */
 
 'use strict';
 
-function MessageHandler(name, comObj) {
-  this.name = name;
-  this.comObj = comObj;
-  this.callbackIndex = 1;
-  var callbacks = this.callbacks = {};
-  var ah = this.actionHandler = {};
-
-  ah['console_log'] = [function ahConsoleLog(data) {
-    log.apply(null, data);
-  }];
-  // If there's no console available, console_error in the
-  // action handler will do nothing.
-  if ('console' in globalScope) {
-    ah['console_error'] = [function ahConsoleError(data) {
-      globalScope['console'].error.apply(null, data);
-    }];
-  } else {
-    ah['console_error'] = [function ahConsoleError(data) {
-      log.apply(null, data);
-    }];
-  }
-  ah['_warn'] = [function ah_Warn(data) {
-    warn(data);
-  }];
-
-  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
-    var data = event.data;
-    if (data.isReply) {
-      var callbackId = data.callbackId;
-      if (data.callbackId in callbacks) {
-        var callback = callbacks[callbackId];
-        delete callbacks[callbackId];
-        callback(data.data);
-      } else {
-        error('Cannot resolve callback ' + callbackId);
-      }
-    } else if (data.action in ah) {
-      var action = ah[data.action];
-      if (data.callbackId) {
-        var promise = new Promise();
-        promise.then(function(resolvedData) {
-          comObj.postMessage({
-            isReply: true,
-            callbackId: data.callbackId,
-            data: resolvedData
-          });
-        });
-        action[0].call(action[1], data.data, promise);
-      } else {
-        action[0].call(action[1], data.data);
-      }
-    } else {
-      error('Unkown action from worker: ' + data.action);
-    }
-  };
-}
-
-MessageHandler.prototype = {
-  on: function messageHandlerOn(actionName, handler, scope) {
-    var ah = this.actionHandler;
-    if (ah[actionName]) {
-      error('There is already an actionName called "' + actionName + '"');
-    }
-    ah[actionName] = [handler, scope];
-  },
-  /**
-   * Sends a message to the comObj to invoke the action with the supplied data.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {function} [callback] Optional callback that will handle a reply.
-   */
-  send: function messageHandlerSend(actionName, data, callback) {
-    var message = {
-      action: actionName,
-      data: data
-    };
-    if (callback) {
-      var callbackId = this.callbackIndex++;
-      this.callbacks[callbackId] = callback;
-      message.callbackId = callbackId;
-    }
-    this.comObj.postMessage(message);
-  }
-};
-
-var WorkerMessageHandler = {
+var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfManager;
 

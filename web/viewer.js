@@ -49,7 +49,7 @@ var FindStates = {
 
 PDFJS.imageResourcesPath = './images/';
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
-//PDFJS.workerSrc = '../build/pdf.js';
+//PDFJS.workerSrc = '../build/pdf.worker.js';
 //#endif
 
 var mozL10n = document.mozL10n || document.webL10n;

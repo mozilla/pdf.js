@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals CFFDictDataMap, CFFDictPrivateDataMap, CFFEncodingMap, CFFStrings,
-           Components, Dict, dump, error, isNum, log, netscape, Stream, warn */
+           Components, Dict, dump, error, isNum, log, netscape, Stream */
 
 'use strict';
 
