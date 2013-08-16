@@ -65,7 +65,7 @@ var PDFHistory = {
         // is opened in the web viewer.
         this.reInitialized = true;
       }
-      window.history.replaceState({ fingerprint: this.fingerprint }, '', '');
+      window.history.replaceState({ fingerprint: this.fingerprint }, '');
     }
 
     var self = this;
@@ -270,9 +270,9 @@ var PDFHistory = {
       }
     }
     if (overwrite || this.uid === 0) {
-      window.history.replaceState(this._stateObj(params), '', '');
+      window.history.replaceState(this._stateObj(params), '');
     } else {
-      window.history.pushState(this._stateObj(params), '', '');
+      window.history.pushState(this._stateObj(params), '');
     }
     this.currentUid = this.uid++;
     this.current = params;
