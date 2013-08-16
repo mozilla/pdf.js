@@ -202,21 +202,8 @@ canvas {
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
-  -moz-transition: width 200ms;
-  -ms-transition: width 200ms;
   -webkit-transition: width 200ms;
   transition: width 200ms;
-}
-
-@-moz-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
-}
-@-ms-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
 }
 
 @-webkit-keyframes progressIndeterminate {
@@ -232,8 +219,6 @@ canvas {
 
 #loadingBar .progress.indeterminate {
   background-color: #999;
-  -moz-transition: none;
-  -ms-transition: none;
   -webkit-transition: none;
   transition: none;
 }
@@ -248,8 +233,6 @@ canvas {
   background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
   background-size: 100% 100% no-repeat;
 
-  -moz-animation: progressIndeterminate 2s linear infinite;
-  -ms-animation: progressIndeterminate 2s linear infinite;
   -webkit-animation: progressIndeterminate 2s linear infinite;
   animation: progressIndeterminate 2s linear infinite;
 }

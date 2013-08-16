@@ -139,25 +139,17 @@ html[dir='rtl'] .innerCenter {
   visibility: hidden;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
-  -ms-transition-duration: 200ms;
-  -ms-transition-timing-function: ease;
-  -o-transition-duration: 200ms;
-  -o-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
 
 }
 html[dir='ltr'] #sidebarContainer {
   -webkit-transition-property: left;
-  -ms-transition-property: left;
-  -o-transition-property: left;
   transition-property: left;
   left: -200px;
 }
 html[dir='rtl'] #sidebarContainer {
   -webkit-transition-property: right;
-  -ms-transition-property: right;
-  -o-transition-property: right;
   transition-property: right;
   right: -200px;
 }
@@ -182,24 +174,16 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   min-width: 320px;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
-  -ms-transition-duration: 200ms;
-  -ms-transition-timing-function: ease;
-  -o-transition-duration: 200ms;
-  -o-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
 html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
   -webkit-transition-property: left;
-  -ms-transition-property: left;
-  -o-transition-property: left;
   transition-property: left;
   left: 200px;
 }
 html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
   -webkit-transition-property: right;
-  -ms-transition-property: right;
-  -o-transition-property: right;
   transition-property: right;
   right: 200px;
 }
@@ -290,15 +274,8 @@ html[dir='rtl'] #sidebarContent {
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
-  -ms-transition: width 200ms;
   -webkit-transition: width 200ms;
   transition: width 200ms;
-}
-
-@-ms-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
 }
 
 @-webkit-keyframes progressIndeterminate {
@@ -315,7 +292,6 @@ html[dir='rtl'] #sidebarContent {
 
 #loadingBar .progress.indeterminate {
   background-color: #999;
-  -ms-transition: none;
   -webkit-transition: none;
   transition: none;
 }
@@ -331,7 +307,6 @@ html[dir='rtl'] #sidebarContent {
   background-size: 100% 100%;
   background-repeat: no-repeat;
 
-  -ms-animation: progressIndeterminate 2s linear infinite;
   -webkit-animation: progressIndeterminate 2s linear infinite;
   animation: progressIndeterminate 2s linear infinite;
 }
@@ -516,12 +491,6 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 150ms;
   -webkit-transition-timing-function: ease;
-  -ms-transition-property: background-color, border-color, box-shadow;
-  -ms-transition-duration: 150ms;
-  -ms-transition-timing-function: ease;
-  -o-transition-property: background-color, border-color, box-shadow;
-  -o-transition-duration: 150ms;
-  -o-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -579,12 +548,6 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   -webkit-transition-property: padding;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: ease;
-  -ms-transition-property: padding;
-  -ms-transition-duration: 10ms;
-  -ms-transition-timing-function: ease;
-  -o-transition-property: padding;
-  -o-transition-duration: 10ms;
-  -o-transition-timing-function: ease;
   transition-property: padding;
   transition-duration: 10ms;
   transition-timing-function: ease;
@@ -607,12 +570,6 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 150ms;
   -webkit-transition-timing-function: ease;
-  -ms-transition-property: background-color, border-color, box-shadow;
-  -ms-transition-duration: 150ms;
-  -ms-transition-timing-function: ease;
-  -o-transition-property: background-color, border-color, box-shadow;
-  -o-transition-duration: 150ms;
-  -o-transition-timing-function: ease;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 150ms;
   transition-timing-function: ease;
@@ -651,12 +608,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: linear;
-  -ms-transition-property: background-color, border-color, box-shadow;
-  -ms-transition-duration: 10ms;
-  -ms-transition-timing-function: linear;
-  -o-transition-property: background-color, border-color, box-shadow;
-  -o-transition-duration: 10ms;
-  -o-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
@@ -673,12 +624,6 @@ html[dir='rtl'] .dropdownToolbarButton {
   -webkit-transition-property: background-color, border-color, box-shadow;
   -webkit-transition-duration: 10ms;
   -webkit-transition-timing-function: linear;
-  -ms-transition-property: background-color, border-color, box-shadow;
-  -ms-transition-duration: 10ms;
-  -ms-transition-timing-function: linear;
-  -o-transition-property: background-color, border-color, box-shadow;
-  -o-transition-duration: 10ms;
-  -o-transition-timing-function: linear;
   transition-property: background-color, border-color, box-shadow;
   transition-duration: 10ms;
   transition-timing-function: linear;
