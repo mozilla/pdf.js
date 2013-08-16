@@ -23,6 +23,16 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue1293",
+       "file": "pdfs/issue1293.pdf",
+       "md5": "0a744b3bbf2fd8da0131fd3c01dd1e30",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "load",
+       "about": "PDF with undefined stream length."
+    },
     {  "id": "issue2881",
        "file": "pdfs/issue2881.pdf",
        "md5": "ea6ade27d2cb146676d23dcd6605d5ee",

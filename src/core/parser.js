@@ -208,8 +208,10 @@ var Parser = (function ParserClosure() {
 
       // get length
       var length = this.fetchIfRef(dict.get('Length'));
-      if (!isInt(length))
-        error('Bad ' + length + ' attribute in stream');
+      if (!isInt(length)) {
+        info('Bad ' + length + ' attribute in stream');
+        length = 0;
+      }
 
       // skip over the stream data
       stream.pos = pos + length;
