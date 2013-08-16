@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump, NetworkManager */
+           dump, NetworkManager, PdfJsTelemetry */
 
 'use strict';
 
@@ -41,6 +41,9 @@ Cu.import('resource://pdf.js/network.js');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
+
+XPCOMUtils.defineLazyModuleGetter(this, 'PdfJsTelemetry',
+  'resource://pdf.js/PdfJsTelemetry.jsm');
 
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
@@ -194,6 +197,12 @@ PdfDataListener.prototype = {
 function ChromeActions(domWindow, contentDispositionFilename) {
   this.domWindow = domWindow;
   this.contentDispositionFilename = contentDispositionFilename;
+  this.telemetryState = {
+    documentInfo: false,
+    firstPageInfo: false,
+    streamTypesUsed: [],
+    startAt: Date.now()
+  };
 }
 
 ChromeActions.prototype = {
@@ -321,11 +330,48 @@ ChromeActions.prototype = {
   supportsDocumentColors: function() {
     return getBoolPref('browser.display.use_document_colors', true);
   },
+  reportTelemetry: function (data) {
+    var probeInfo = JSON.parse(data);
+    switch (probeInfo.type) {
+      case 'documentInfo':
+        if (!this.telemetryState.documentInfo) {
+          PdfJsTelemetry.onDocumentVersion(probeInfo.version | 0);
+          PdfJsTelemetry.onDocumentGenerator(probeInfo.generator | 0);
+          if (probeInfo.formType) {
+            PdfJsTelemetry.onForm(probeInfo.formType === 'acroform');
+          }
+          this.telemetryState.documentInfo = true;
+        }
+        break;
+      case 'pageInfo':
+        if (!this.telemetryState.firstPageInfo) {
+          var duration = Date.now() - this.telemetryState.startAt;
+          PdfJsTelemetry.onTimeToView(duration);
+          this.telemetryState.firstPageInfo = true;
+        }
+        break;
+      case 'streamInfo':
+        if (!Array.isArray(probeInfo.streamTypes)) {
+          break;
+        }
+        for (var i = 0; i < probeInfo.streamTypes.length; i++) {
+          var streamTypeId = probeInfo.streamTypes[i] | 0;
+          if (streamTypeId >= 0 && streamTypeId < 10 &&
+              !this.telemetryState.streamTypesUsed[streamTypeId]) {
+            PdfJsTelemetry.onStreamType(streamTypeId);
+            this.telemetryState.streamTypesUsed[streamTypeId] = true;
+          }
+        }
+        break;
+    }
+  },
   fallback: function(url, sendResponse) {
     var self = this;
     var domWindow = this.domWindow;
     var strings = getLocalizedStrings('chrome.properties');
     var message = getLocalizedString(strings, 'unsupported_feature');
+
+    PdfJsTelemetry.onFallback();
 
     var notificationBox = null;
     try {
@@ -729,6 +775,9 @@ PdfStreamConverter.prototype = {
       aRequest.setResponseHeader('X-Content-Security-Policy-Report-Only', '',
                                  false);
     }
+
+    PdfJsTelemetry.onViewerIsUsed();
+    PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
 
     if (!rangeRequest) {
       // Creating storage for PDF data

@@ -326,7 +326,22 @@ var PDFDocument = (function PDFDocumentClosure() {
   PDFDocument.prototype = {
     parse: function PDFDocument_parse(recoveryMode) {
       this.setup(recoveryMode);
-      this.acroForm = this.catalog.catDict.get('AcroForm');
+      try {
+        // checking if AcroForm is present
+        this.acroForm = this.catalog.catDict.get('AcroForm');
+        if (this.acroForm) {
+          this.xfa = this.acroForm.get('XFA');
+          var fields = this.acroForm.get('Fields');
+          if ((!fields || !isArray(fields) || fields.length === 0) &&
+              !this.xfa) {
+            // no fields and no XFA -- not a form (?)
+            this.acroForm = null;
+          }
+        }
+      } catch (ex) {
+        info('Something wrong with AcroForm entry');
+        this.acroForm = null;
+      }
     },
 
     get linearization() {
@@ -438,7 +453,8 @@ var PDFDocument = (function PDFDocumentClosure() {
     get documentInfo() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
-        IsAcroFormPresent: !!this.acroForm
+        IsAcroFormPresent: !!this.acroForm,
+        IsXFAPresent: !!this.xfa
       };
       var infoDict;
       try {
