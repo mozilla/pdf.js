@@ -489,7 +489,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
     var loaded = false;
     script.setAttribute('src', src);
     if (callback) {
-      script.onreadystatechange = script.onload = function() {
+      script.onload = function() {
         if (!loaded) {
           callback();
         }
