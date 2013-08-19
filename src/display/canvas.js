@@ -16,25 +16,13 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           Pattern, TilingPattern, TODO, Util, warn, assert, info */
+           Pattern, TilingPattern, TODO, Util, warn, assert, info,
+           TextRenderingMode */
 
 'use strict';
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
-
-var TextRenderingMode = {
-  FILL: 0,
-  STROKE: 1,
-  FILL_STROKE: 2,
-  INVISIBLE: 3,
-  FILL_ADD_TO_PATH: 4,
-  STROKE_ADD_TO_PATH: 5,
-  FILL_STROKE_ADD_TO_PATH: 6,
-  ADD_TO_PATH: 7,
-  FILL_STROKE_MASK: 3,
-  ADD_TO_PATH_FLAG: 4
-};
 
 // Minimal font size that would be used during canvas fillText operations.
 var MIN_FONT_SIZE = 16;
@@ -1007,7 +995,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var addToPath;
       if (font.disableFontFace || isAddToPathSet) {
-        addToPath = font.renderer.getPathGenerator(character);
+        addToPath = font.getPathGenerator(this.commonObjs, character);
       }
 
       if (font.disableFontFace) {

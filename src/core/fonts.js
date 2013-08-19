@@ -18,7 +18,7 @@
            ExpertSubsetCharset, FileReaderSync, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, Stream,
            stringToBytes, TextDecoder, TODO, warn, Lexer, Util,
-           FONT_IDENTITY_MATRIX */
+           FONT_IDENTITY_MATRIX, FontRendererFactory, shadow */
 
 'use strict';
 
@@ -2791,6 +2791,10 @@ var Font = (function FontClosure() {
     font: null,
     mimetype: null,
     encoding: null,
+    get renderer() {
+      var renderer = FontRendererFactory.create(this);
+      return shadow(this, 'renderer', renderer);
+    },
 
     exportData: function Font_exportData() {
       var data = {};

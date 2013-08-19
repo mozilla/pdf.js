@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, shadow, isWorker, assert, warn, FontRendererFactory,
-           bytesToString, globalScope */
+/* globals PDFJS, shadow, isWorker, assert, warn, bytesToString, globalScope */
 
 'use strict';
 
@@ -267,6 +266,7 @@ var FontLoader = {
 
 var FontFace = (function FontFaceClosure() {
   function FontFace(name, file, properties) {
+    this.compiledGlyphs = {};
     if (arguments.length === 1) {
       // importing translated data
       var data = arguments[0];
@@ -277,10 +277,6 @@ var FontFace = (function FontFaceClosure() {
     }
   }
   FontFace.prototype = {
-    get renderer() {
-      var renderer = FontRendererFactory.create(this);
-      return shadow(this, 'renderer', renderer);
-    },
     bindDOM: function FontFace_bindDOM() {
       if (!this.data)
         return null;
@@ -305,6 +301,14 @@ var FontFace = (function FontFaceClosure() {
         globalScope['FontInspector'].fontAdded(this, url);
 
       return rule;
+    },
+    getPathGenerator: function (objs, character) {
+      if (!(character in this.compiledGlyphs)) {
+        var js = objs.get(this.loadedName + '_path_' + character);
+        /*jshint -W054 */
+        this.compiledGlyphs[character] = new Function('c', 'size', js);
+      }
+      return this.compiledGlyphs[character];
     }
   };
   return FontFace;

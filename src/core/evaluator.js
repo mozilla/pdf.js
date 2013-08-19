@@ -20,7 +20,7 @@
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
            TilingPattern, TODO, warn, Util, Promise,
-           RefSetCache, isRef */
+           RefSetCache, isRef, TextRenderingMode */
 
 'use strict';
 
@@ -349,6 +349,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return loadedName;
     },
 
+    handleText: function PartialEvaluator_handleText(chars) {
+      var font = this.state.font.translated;
+      var glyphs = font.charsToGlyphs(chars);
+      var isAddToPathSet = !!(this.state.textRenderingMode &
+                              TextRenderingMode.ADD_TO_PATH_FLAG);
+      if (isAddToPathSet || PDFJS.disableFontFace) {
+        for (var i = 0; i < glyphs.length; i++) {
+          if (glyphs[i] === null) {
+            continue;
+          }
+          var fontChar = glyphs[i].fontChar;
+          if (!font.renderer.hasBuiltPath(fontChar)) {
+            var path = font.renderer.getPathJs(fontChar);
+            this.handler.send('commonobj', [
+              font.loadedName + '_path_' + fontChar,
+              'FontPath',
+              path
+            ]);
+          }
+        }
+      }
+
+      return glyphs;
+    },
+
     setGState: function PartialEvaluator_setGState(resources, gState,
                                                    operatorList) {
 
@@ -631,19 +656,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               this.state = prev;
             }
           } else if (cmd === 'Tj') { // showText
-            args[0] = this.state.font.translated.charsToGlyphs(args[0]);
+            args[0] = this.handleText(args[0]);
           } else if (cmd === 'TJ') { // showSpacedText
             var arr = args[0];
             var arrLength = arr.length;
             for (var i = 0; i < arrLength; ++i) {
               if (isString(arr[i])) {
-                arr[i] = this.state.font.translated.charsToGlyphs(arr[i]);
+                arr[i] = this.handleText(arr[i]);
               }
             }
           } else if (cmd === '\'') { // nextLineShowText
-            args[0] = this.state.font.translated.charsToGlyphs(args[0]);
+            args[0] = this.handleText(args[0]);
           } else if (cmd === '"') { // nextLineSetSpacingShowText
-            args[2] = this.state.font.translated.charsToGlyphs(args[2]);
+            args[2] = this.handleText(args[2]);
+          } else if (cmd === 'Tr') { // setTextRenderingMode
+            this.state.textRenderingMode = args[0];
           }
 
           switch (fn) {
@@ -1529,6 +1556,7 @@ var OperatorList = (function OperatorListClosure() {
 var EvalState = (function EvalStateClosure() {
   function EvalState() {
     this.font = null;
+    this.textRenderingMode = TextRenderingMode.FILL;
   }
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {

@@ -278,8 +278,7 @@ target.bundle = function(args) {
     'display/api.js',
     'display/metadata.js',
     'display/canvas.js',
-    'display/font_loader.js',
-    'display/font_renderer.js'
+    'display/font_loader.js'
   ];
 
   var WORKER_SRC_FILES = [
@@ -298,6 +297,7 @@ target.bundle = function(args) {
     'core/crypto.js',
     'core/evaluator.js',
     'core/fonts.js',
+    'core/font_renderer.js',
     'core/glyphlist.js',
     'core/image.js',
     'core/metrics.js',

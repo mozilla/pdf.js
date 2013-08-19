@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, Stream, GlyphsUnicode, CFFParser, Encodings */
+/* globals error, Stream, GlyphsUnicode, CFFParser, Encodings, Util */
 
 'use strict';
 
@@ -585,18 +585,14 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     parse(code);
   }
 
-  function TrueTypeCompiled(glyphs, cmap, fontMatrix) {
-    this.glyphs = glyphs;
-    this.cmap = cmap;
-    this.fontMatrix = fontMatrix || [0.000488, 0, 0, 0.000488, 0, 0];
+  var noop = '';
 
-    this.compiledGlyphs = [];
+  function CompiledFont(fontMatrix) {
+    this.compiledGlyphs = {};
+    this.fontMatrix = fontMatrix;
   }
-
-  var noop = function () {};
-
-  TrueTypeCompiled.prototype = {
-    getPathGenerator: function (unicode) {
+  CompiledFont.prototype = {
+    getPathJs: function (unicode) {
       var gid = lookupCmap(this.cmap, unicode);
       var fn = this.compiledGlyphs[gid];
       if (!fn) {
@@ -604,6 +600,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
       return fn;
     },
+
     compileGlyph: function (code) {
       if (!code || code.length === 0 || code[0] === 14) {
         return noop;
@@ -614,23 +611,47 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       js.push('c.transform(' + this.fontMatrix.join(',') + ');');
       js.push('c.scale(size, -size);');
 
-      var stack = [], x = 0, y = 0;
-      compileGlyf(code, js, this);
+      this.compileGlyphImpl(code, js);
 
       js.push('c.restore();');
 
-      /*jshint -W054 */
-      return new Function('c', 'size', js.join('\n'));
+      return js.join('\n');
+    },
+
+    compileGlyphImpl: function () {
+      error('Children classes should implement this.');
+    },
+
+    hasBuiltPath: function (unicode) {
+      var gid = lookupCmap(this.cmap, unicode);
+      return gid in this.compiledGlyphs;
     }
   };
 
+  function TrueTypeCompiled(glyphs, cmap, fontMatrix) {
+    fontMatrix = fontMatrix || [0.000488, 0, 0, 0.000488, 0, 0];
+    CompiledFont.call(this, fontMatrix);
+
+    this.glyphs = glyphs;
+    this.cmap = cmap;
+
+    this.compiledGlyphs = [];
+  }
+
+  Util.inherit(TrueTypeCompiled, CompiledFont, {
+    compileGlyphImpl: function (code, js) {
+      compileGlyf(code, js, this);
+    }
+  });
+
   function Type2Compiled(cffInfo, cmap, fontMatrix, glyphNameMap) {
+    fontMatrix = fontMatrix || [0.001, 0, 0, 0.001, 0, 0];
+    CompiledFont.call(this, fontMatrix);
     this.glyphs = cffInfo.glyphs;
     this.gsubrs = cffInfo.gsubrs || [];
     this.subrs = cffInfo.subrs || [];
     this.cmap = cmap;
     this.glyphNameMap = glyphNameMap || GlyphsUnicode;
-    this.fontMatrix = fontMatrix || [0.001, 0, 0, 0.001, 0, 0];
 
     this.compiledGlyphs = [];
     this.gsubrsBias = this.gsubrs.length < 1240 ? 107 :
@@ -639,34 +660,12 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                      this.subrs.length < 33900 ? 1131 : 32768;
   }
 
-  Type2Compiled.prototype = {
-    getPathGenerator: function (unicode) {
-      var gid = lookupCmap(this.cmap, unicode);
-      var fn = this.compiledGlyphs[gid];
-      if (!fn) {
-        this.compiledGlyphs[gid] = fn = this.compileGlyph(this.glyphs[gid]);
-      }
-      return fn;
-    },
-    compileGlyph: function (code) {
-      if (!code || code.length === 0 || code[0] === 14) {
-        return noop;
-      }
-
-      var js = [];
-      js.push('c.save();');
-      js.push('c.transform(' + this.fontMatrix.join(',') + ');');
-      js.push('c.scale(size, -size);');
-
-      var stack = [], x = 0, y = 0;
+  Util.inherit(Type2Compiled, CompiledFont, {
+    compileGlyphImpl: function (code, js) {
       compileCharString(code, js, this);
-
-      js.push('c.restore();');
-
-      /*jshint -W054 */
-      return new Function('c', 'size', js.join('\n'));
     }
-  };
+  });
+
 
   return {
     create: function FontRendererFactory_create(font) {
