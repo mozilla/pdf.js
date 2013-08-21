@@ -68,6 +68,56 @@ function setStream(tabId, pdfUrl, streamUrl) {
   urlToStream[tabId][pdfUrl].push(streamUrl);
 }
 
+// http://crbug.com/276898 - the onExecuteMimeTypeHandler event is sometimes
+// dispatched in the wrong incognito profile. To work around the bug, transfer
+// the stream information from the incognito session when the bug is detected.
+function transferStreamToIncognitoProfile(tabId, pdfUrl) {
+  if (chrome.extension.inIncognitoContext) {
+    console.log('Already within incognito profile. Aborted stream transfer.');
+    return;
+  }
+  var streamUrl = getStream(tabId, pdfUrl);
+  console.log('Attempting to transfer stream info to a different profile...');
+  var itemId = 'streamInfo:' + window.performance.now();
+  var items = {};
+  items[itemId] = {
+    tabId: tabId,
+    pdfUrl: pdfUrl,
+    streamUrl: streamUrl
+  };
+  // The key will be removed whenever an incognito session is started,
+  // or when an incognito session is active.
+  chrome.storage.local.set(items, function() {
+    chrome.extension.isAllowedIncognitoAccess(function(isAllowedAccess) {
+      if (!isAllowedAccess) {
+        // If incognito is disabled, forget about the stream.
+        console.warn('Incognito is disabled, unexpected unknown stream.');
+        chrome.storage.local.remove(items);
+      }
+    });
+  });
+}
+if (chrome.extension.inIncognitoContext) {
+  var importStream = function(itemId, streamInfo) {
+    if (itemId.lastIndexOf('streamInfo:', 0) !== 0) return;
+    console.log('Importing stream info from non-incognito profile', streamInfo);
+    handleStream('', streamInfo.pdfUrl, streamInfo.streamUrl, streamInfo.tabId);
+    chrome.storage.local.remove(itemId);
+  };
+  var handleStorageItems = function(items) {
+    Object.keys(items).forEach(function(itemId) {
+      var item = items[itemId];
+      if (item.oldValue && !item.newValue) return; // storage remove event
+      if (item.newValue) item = item.newValue;     // storage setter event
+      importStream(itemId, item);
+    });
+  };
+  // Parse information that was set before the event pages were ready.
+  chrome.storage.local.get(null, handleStorageItems);
+  chrome.storage.onChanged.addListener(handleStorageItems);
+}
+// End of work-around for crbug 276898
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === 'getPDFStream') {
     var pdfUrl = message.data;
@@ -117,7 +167,8 @@ function handleStream(mimeType, pdfUrl, streamUrl, tabId) {
       if (details.length > 0) {
         if (details.length !== 1) {
           // (Rare case) Multiple frames with same URL.
-          // TODO(rob): Find a better way to handle this case.
+          // TODO(rob): Find a better way to handle this case
+          //            (e.g. open in new tab).
           console.warn('More than one frame found for tabId ' + tabId +
             ' with URL ' + pdfUrl + '. Using first frame.');
         }
@@ -133,6 +184,10 @@ function handleStream(mimeType, pdfUrl, streamUrl, tabId) {
       }
     } else {
       console.warn('Unable to get frame information for tabId ' + tabId);
+      // This branch may occur when a new incognito session is launched.
+      // The event is dispatched in the non-incognito session while it should
+      // be dispatched in the incognito session. See http://crbug.com/276898
+      transferStreamToIncognitoProfile(tabId, pdfUrl);
     }
   });
 }

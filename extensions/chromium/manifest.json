@@ -13,6 +13,7 @@
     "<all_urls>",
     "tabs",
     "webNavigation",
+    "storage",
     "streamsPrivate"
   ],
   /* FOR demo & debugging purposes only! This key is required to get access to the streams API.
