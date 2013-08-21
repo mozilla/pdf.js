@@ -32,7 +32,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_WORKER_TARGET = BUILD_DIR + 'pdf.worker.js',
     BUILD_TARGETS = [BUILD_TARGET, BUILD_WORKER_TARGET],
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
-    CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
+    CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
     EXTENSION_SRC_DIR = 'extensions/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
@@ -144,7 +144,7 @@ target.web = function() {
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
   cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
-     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chrome/');
+     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
   cp('-R', 'test/features', GH_PAGES_DIR);
 
@@ -641,7 +641,7 @@ target.chrome = function() {
   echo('### Building Chrome extension');
   var defines = builder.merge(DEFINES, {CHROME: true});
 
-  var CHROME_BUILD_DIR = BUILD_DIR + '/chrome/',
+  var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
   target.bundle({ defines: defines });
@@ -657,11 +657,11 @@ target.chrome = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
-      [['extensions/chrome/*.json',
-        'extensions/chrome/*.html',
-        'extensions/chrome/*.js',
-        'extensions/chrome/*.css',
-        'extensions/chrome/icon*.png',],
+      [['extensions/chromium/*.json',
+        'extensions/chromium/*.html',
+        'extensions/chromium/*.js',
+        'extensions/chromium/*.css',
+        'extensions/chromium/icon*.png',],
        CHROME_BUILD_DIR],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
@@ -1073,7 +1073,7 @@ target.lint = function() {
                     'test/reporter.js',
                     'test/unit/',
                     'extensions/firefox/',
-                    'extensions/chrome/'
+                    'extensions/chromium/'
                     ];
 
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
