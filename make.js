@@ -353,7 +353,7 @@ target.extension = function() {
 
   target.locale();
   target.firefox();
-  target.chrome();
+  target.chromium();
 };
 
 target.buildnumber = function() {
@@ -635,10 +635,10 @@ target.b2g = function() {
 //
 // make chrome
 //
-target.chrome = function() {
+target.chromium = function() {
   cd(ROOT_DIR);
   echo();
-  echo('### Building Chrome extension');
+  echo('### Building Chromium extension');
   var defines = builder.merge(DEFINES, {CHROME: true});
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
