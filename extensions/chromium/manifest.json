@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "PDF Viewer",
   "version": "PDFJSSCRIPT_VERSION",
-  "description": "Uses HTML5 to display PDF files directly in Chrome.",
+  "description": "Uses HTML5 to display PDF files directly in the browser.",
   "icons": {
     "128": "icon128.png",
     "48": "icon48.png",
