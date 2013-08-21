@@ -254,7 +254,7 @@ let PdfJs = {
     this._pdfStreamConverterFactory.unregister();
     delete this._pdfStreamConverterFactory;
 
-    this._pdfRedirectorFactory.unregister;
+    this._pdfRedirectorFactory.unregister();
     delete this._pdfRedirectorFactory;
     Svc.pluginHost.unregisterPlayPreviewMimeType(PDF_CONTENT_TYPE);
 
