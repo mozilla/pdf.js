@@ -138,7 +138,7 @@ target.web = function() {
   mkdir('-p', GH_PAGES_DIR + '/web/images');
   mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
-  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chrome');
+  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chromium');
 
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
