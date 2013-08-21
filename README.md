@@ -42,11 +42,11 @@ The Chromium extension is still somewhat experimental but it can be installed tw
 ways:
 
 + [Unofficial Version](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm) - *This extension is maintained by a PDF.js contributor.*
-+ Build Your Own - Get the code as explained below and issue `node make extension`. Then open
++ Build Your Own - Get the code as explained below and issue `node make chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
-directory `build/chrome`.
+directory `build/chromium`.
 
-The version of the extension for the Opera browser can be found at the [Opera add-ons](https://addons.opera.com/en/extensions/details/pdf-viewer/).
+The version of the extension for the Opera browser can be found at the [Opera add-ons catalog](https://addons.opera.com/en/extensions/details/pdf-viewer/).
 
 ## Getting the Code
 
