@@ -827,6 +827,8 @@ var PDFView = {
       };
     }
 
+    PDFFindController.reset();
+
     this.pdfDocument = pdfDocument;
 
     var errorWrapper = document.getElementById('errorWrapper');
