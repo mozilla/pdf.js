@@ -4128,7 +4128,7 @@ var Font = (function FontClosure() {
         properties.seacMap = seacMap;
       }
 
-      if (!properties.hasEncoding && (properties.subtype == 'Type1C' ||
+      if (properties.overridableEncoding && (properties.subtype == 'Type1C' ||
           properties.subtype == 'CIDFontType0C')) {
         var encoding = [];
         for (var i = 0; i < charstrings.length; ++i) {
@@ -5534,8 +5534,20 @@ var CFFFont = (function CFFFontClosure() {
           }
         }
       } else {
-        for (var charcode in encoding)
-          inverseEncoding[encoding[charcode]] = charcode | 0;
+        for (var charcode in encoding) {
+          var gid = encoding[charcode];
+          if (gid in inverseEncoding) {
+            // Glyphs can be multiply-encoded if there was an encoding
+            // supplement. Convert to an array and append the charcode.
+            var previousCharcode = inverseEncoding[gid];
+            if (!isArray(previousCharcode)) {
+              inverseEncoding[gid] = [previousCharcode];
+            }
+            inverseEncoding[gid].push(charcode | 0);
+          } else {
+            inverseEncoding[gid] = charcode | 0;
+          }
+        }
         if (charsets[0] === '.notdef') {
           gidStart = 1;
         }
@@ -5544,22 +5556,30 @@ var CFFFont = (function CFFFontClosure() {
       for (var i = gidStart, ii = charsets.length; i < ii; i++) {
         var glyph = charsets[i];
 
-        var code = inverseEncoding[i];
-        if (!code || isSpecialUnicode(code)) {
-          unassignedUnicodeItems.push(i);
-          continue;
+        var codes = inverseEncoding[i];
+        if (!isArray(codes)) {
+          codes = [codes];
         }
-        charstrings.push({
-          unicode: code,
-          code: code,
-          gid: i,
-          glyph: glyph
-        });
-        unicodeUsed[code] = true;
+
+        for (var j = 0; j < codes.length; j++) {
+          var code = codes[j];
+
+          if (!code || isSpecialUnicode(code)) {
+            unassignedUnicodeItems.push(i, code);
+            continue;
+          }
+          charstrings.push({
+            unicode: code,
+            code: code,
+            gid: i,
+            glyph: glyph
+          });
+          unicodeUsed[code] = true;
+        }
       }
 
       var nextUnusedUnicode = CMAP_GLYPH_OFFSET;
-      for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; ++j) {
+      for (var j = 0, jj = unassignedUnicodeItems.length; j < jj; j += 2) {
         var i = unassignedUnicodeItems[j];
         // giving unicode value anyway
         while (nextUnusedUnicode in unicodeUsed)
@@ -5567,7 +5587,7 @@ var CFFFont = (function CFFFontClosure() {
         var unicode = nextUnusedUnicode++;
         charstrings.push({
           unicode: unicode,
-          code: inverseEncoding[i] || 0,
+          code: unassignedUnicodeItems[j + 1] || 0,
           gid: i,
           glyph: charsets[i]
         });
@@ -6136,7 +6156,7 @@ var CFFParser = (function CFFParserClosure() {
         for (var i = 0; i < supplementsCount; i++) {
           var code = bytes[pos++];
           var sid = (bytes[pos++] << 8) + (bytes[pos++] & 0xff);
-          encoding[code] = properties.differences.indexOf(strings.get(sid));
+          encoding[code] = charset.indexOf(strings.get(sid));
         }
       }
 
