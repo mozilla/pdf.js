@@ -174,8 +174,6 @@ var PDFView = {
   currentScale: UNKNOWN_SCALE,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
-  startedTextExtraction: false,
-  pageText: [],
   container: null,
   thumbnailContainer: null,
   initialized: false,
@@ -864,8 +862,6 @@ var PDFView = {
     this.pageRotation = 0;
 
     var pages = this.pages = [];
-    this.pageText = [];
-    this.startedTextExtraction = false;
     var pagesRefMap = this.pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
 
