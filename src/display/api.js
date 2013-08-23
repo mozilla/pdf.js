@@ -30,6 +30,16 @@
 PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
 
 /**
+ * By default fonts are converted to OpenType fonts and loaded via font face
+ * rules. If disabled, the font will be rendered using a built in font renderer
+ * that constructs the glyphs with primitive path commands.
+ * @var {Boolean}
+ */
+PDFJS.disableFontFace = PDFJS.disableFontFace === undefined ?
+                        false :
+                        PDFJS.disableFontFace;
+
+/**
  * This is the main entry point for loading a PDF and interacting with it.
  * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
  * is used, which means it must follow the same origin rules that any XHR does
@@ -673,6 +683,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
               }.bind(this)
             );
             break;
+          case 'FontPath':
+            this.commonObjs.resolve(id, data[2]);
+            break;
           default:
             error('Got unknown common object type ' + type);
         }
@@ -770,7 +783,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.messageHandler.send('GetDocRequest', {
         source: source,
         disableRange: PDFJS.disableRange,
-        maxImageSize: PDFJS.maxImageSize
+        maxImageSize: PDFJS.maxImageSize,
+        disableFontFace: PDFJS.disableFontFace
       });
     },
 

@@ -1063,6 +1063,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue3584",
+      "file": "pdfs/issue3584.pdf",
+      "md5": "7a00646865a840eefc76f05c588b60ce",
+      "rounds": 1,
+      "type": "eq",
+      "about": "CFF font that is drawn with clipping."
+    },
     {  "id": "annotation-tx",
       "file": "pdfs/annotation-tx.pdf",
       "md5": "56321ea830be9c4f8437ca17ac535b2d",
