@@ -897,6 +897,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "helloworld-bad",
+      "file": "pdfs/helloworld-bad.pdf",
+      "md5": "bf5ab1cf7fe3a502c3754f55e6ceeabd",
+      "rounds": 1,
+      "type": "load"
+    },
     {  "id": "issue818",
       "file": "pdfs/issue818.pdf",
       "md5": "dd2f8a5bd65164ad74da2b45a6ca90cc",
