@@ -311,17 +311,23 @@ var PDFView = {
     selectScaleOption(value);
   },
 
-  zoomIn: function pdfViewZoomIn() {
-    var newScale = (this.currentScale * DEFAULT_SCALE_DELTA).toFixed(2);
-    newScale = Math.ceil(newScale * 10) / 10;
-    newScale = Math.min(MAX_SCALE, newScale);
+  zoomIn: function pdfViewZoomIn(ticks) {
+    var newScale = this.currentScale;
+    do {
+      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
+      newScale = Math.ceil(newScale * 10) / 10;
+      newScale = Math.min(MAX_SCALE, newScale);
+    } while (--ticks && newScale < MAX_SCALE);
     this.parseScale(newScale, true);
   },
 
-  zoomOut: function pdfViewZoomOut() {
-    var newScale = (this.currentScale / DEFAULT_SCALE_DELTA).toFixed(2);
-    newScale = Math.floor(newScale * 10) / 10;
-    newScale = Math.max(MIN_SCALE, newScale);
+  zoomOut: function pdfViewZoomOut(ticks) {
+    var newScale = this.currentScale;
+    do {
+      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
+      newScale = Math.floor(newScale * 10) / 10;
+      newScale = Math.max(MIN_SCALE, newScale);
+    } while (--ticks && newScale > MIN_SCALE);
     this.parseScale(newScale, true);
   },
 
@@ -1554,6 +1560,8 @@ var PageView = function pageView(container, id, scale,
   this.textContent = null;
   this.textLayer = null;
 
+  this.annotationLayer = null;
+
   var anchor = document.createElement('a');
   anchor.name = '' + this.id;
 
@@ -1607,6 +1615,8 @@ var PageView = function pageView(container, id, scale,
       div.removeChild(div.lastChild);
     div.removeAttribute('data-loaded');
 
+    this.annotationLayer = null;
+
     delete this.canvas;
 
     this.loadingIconDiv = document.createElement('div');
@@ -1628,7 +1638,9 @@ var PageView = function pageView(container, id, scale,
     enumerable: true
   });
 
-  function setupAnnotations(annotationsDiv, pdfPage, viewport) {
+  var self = this;
+
+  function setupAnnotations(pageDiv, pdfPage, viewport) {
 
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
@@ -1687,6 +1699,12 @@ var PageView = function pageView(container, id, scale,
     }
 
     pdfPage.getAnnotations().then(function(annotationsData) {
+      if (self.annotationLayer) {
+        // If an annotationLayer already exists, delete it to avoid creating
+        // duplicate annotations when rapidly re-zooming the document.
+        pageDiv.removeChild(self.annotationLayer);
+        self.annotationLayer = null;
+      }
       viewport = viewport.clone({ dontFlip: true });
       for (var i = 0; i < annotationsData.length; i++) {
         var data = annotationsData[i];
@@ -1725,7 +1743,13 @@ var PageView = function pageView(container, id, scale,
           }
         }
 
-        annotationsDiv.appendChild(element);
+        if (!self.annotationLayer) {
+          var annotationLayerDiv = document.createElement('div');
+          annotationLayerDiv.className = 'annotationLayer';
+          pageDiv.appendChild(annotationLayerDiv);
+          self.annotationLayer = annotationLayerDiv;
+        }
+        self.annotationLayer.appendChild(element);
       }
     });
   }
@@ -2554,8 +2578,7 @@ window.addEventListener('DOMMouseScroll', function(evt) {
 
     var ticks = evt.detail;
     var direction = (ticks > 0) ? 'zoomOut' : 'zoomIn';
-    for (var i = 0, length = Math.abs(ticks); i < length; i++)
-      PDFView[direction]();
+    PDFView[direction](Math.abs(ticks));
   } else if (PDFView.isPresentationMode) {
     var FIREFOX_DELTA_FACTOR = -40;
     PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
