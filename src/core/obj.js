@@ -758,6 +758,9 @@ var XRef = (function XRefClosure() {
         if (ch === 37) { // %-comment
           do {
             ++position;
+            if (position >= length) {
+              break;
+            }
             ch = buffer[position];
           } while (ch !== 13 && ch !== 10);
           continue;
