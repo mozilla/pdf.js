@@ -912,6 +912,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         break;
       case 51: // EndOfFile
         break;
+      case 62: // 7.4.15 defines 2 extension types which
+               // are comments and can be ignored.
+        break;
       default:
         error('JBIG2 error: segment type ' + header.typeName + '(' +
               header.type + ') is not implemented');
