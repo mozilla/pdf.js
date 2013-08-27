@@ -31,8 +31,8 @@ function isPdfDownloadable(details) {
   // if the file is displayed in the main frame.
   if (details.type == 'main_frame')
     return false;
-  var cdHeader = getHeaderFromHeaders(details.responseHeaders,
-                                      'content-disposition');
+  var cdHeader = details.responseHeaders &&
+    getHeaderFromHeaders(details.responseHeaders, 'content-disposition');
   return cdHeader && /^attachment/i.test(cdHeader.value);
 }
 

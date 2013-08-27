@@ -23,6 +23,16 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue1293",
+       "file": "pdfs/issue1293.pdf",
+       "md5": "0a744b3bbf2fd8da0131fd3c01dd1e30",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "load",
+       "about": "PDF with undefined stream length."
+    },
     {  "id": "issue2881",
        "file": "pdfs/issue2881.pdf",
        "md5": "ea6ade27d2cb146676d23dcd6605d5ee",
@@ -887,6 +897,12 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "helloworld-bad",
+      "file": "pdfs/helloworld-bad.pdf",
+      "md5": "bf5ab1cf7fe3a502c3754f55e6ceeabd",
+      "rounds": 1,
+      "type": "load"
+    },
     {  "id": "issue818",
       "file": "pdfs/issue818.pdf",
       "md5": "dd2f8a5bd65164ad74da2b45a6ca90cc",
@@ -1052,6 +1068,13 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue3584",
+      "file": "pdfs/issue3584.pdf",
+      "md5": "7a00646865a840eefc76f05c588b60ce",
+      "rounds": 1,
+      "type": "eq",
+      "about": "CFF font that is drawn with clipping."
     },
     {  "id": "annotation-tx",
       "file": "pdfs/annotation-tx.pdf",
@@ -1283,6 +1306,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue3521.pdf",
+       "file": "pdfs/issue3521.pdf",
+       "md5": "df95d31443e20a38efa29c3a635a045b",
+       "rounds": 1,
+       "type": "eq",
+       "about": "Support for CMap GBKp-EUC-H"
+    },
     {  "id": "issue2829",
       "file": "pdfs/issue2829.pdf",
       "md5": "f32b28cf8792f6ccc470446bfbb38584",
@@ -1310,5 +1340,14 @@
        "firstPage": 1,
        "lastPage": 1,
        "type": "eq"
+    },
+    {  "id": "issue2853",
+       "file": "pdfs/issue2853.pdf",
+       "md5": "9f0ad95ef0b243ee8813c4eca0f7a042",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "load"
     }
 ]

@@ -1,44 +1,27 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-           isArrayBuffer, isDict, isName, isStream, isString, Lexer,
-           Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, TODO, Util, warn, XRef,
-           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
-           */
+isArrayBuffer, isName, isStream, isString, Lexer,
+Linearization, NullStream, PartialEvaluator, shadow, Stream,
+StreamsSequenceStream, stringToPDFString, Util, XRef,
+MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
+*/
 
 'use strict';
-
-var globalScope = (typeof window === 'undefined') ? this : window;
-
-var isWorker = (typeof window == 'undefined');
-
-var ERRORS = 0, WARNINGS = 1, INFOS = 5;
-var verbosity = WARNINGS;
-
-// The global PDFJS object exposes the API
-// In production, it will be declared outside a global wrapper
-// In development, it will be declared here
-if (!globalScope.PDFJS) {
-  globalScope.PDFJS = {};
-}
-
-globalScope.PDFJS.pdfBug = false;
-
 
 var Page = (function PageClosure() {
 
@@ -282,12 +265,12 @@ var Page = (function PageClosure() {
 })();
 
 /**
- * The `PDFDocument` holds all the data of the PDF file. Compared to the
- * `PDFDoc`, this one doesn't have any job management code.
- * Right now there exists one PDFDocument on the main thread + one object
- * for each worker. If there is no worker support enabled, there are two
- * `PDFDocument` objects on the main thread created.
- */
+* The `PDFDocument` holds all the data of the PDF file. Compared to the
+* `PDFDoc`, this one doesn't have any job management code.
+* Right now there exists one PDFDocument on the main thread + one object
+* for each worker. If there is no worker support enabled, there are two
+* `PDFDocument` objects on the main thread created.
+*/
 var PDFDocument = (function PDFDocumentClosure() {
   function PDFDocument(pdfManager, arg, password) {
     if (isStream(arg))
@@ -343,7 +326,22 @@ var PDFDocument = (function PDFDocumentClosure() {
   PDFDocument.prototype = {
     parse: function PDFDocument_parse(recoveryMode) {
       this.setup(recoveryMode);
-      this.acroForm = this.catalog.catDict.get('AcroForm');
+      try {
+        // checking if AcroForm is present
+        this.acroForm = this.catalog.catDict.get('AcroForm');
+        if (this.acroForm) {
+          this.xfa = this.acroForm.get('XFA');
+          var fields = this.acroForm.get('Fields');
+          if ((!fields || !isArray(fields) || fields.length === 0) &&
+              !this.xfa) {
+            // no fields and no XFA -- not a form (?)
+            this.acroForm = null;
+          }
+        }
+      } catch (ex) {
+        info('Something wrong with AcroForm entry');
+        this.acroForm = null;
+      }
     },
 
     get linearization() {
@@ -455,11 +453,16 @@ var PDFDocument = (function PDFDocumentClosure() {
     get documentInfo() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
-        IsAcroFormPresent: !!this.acroForm
+        IsAcroFormPresent: !!this.acroForm,
+        IsXFAPresent: !!this.xfa
       };
-      if (this.xref.trailer.has('Info')) {
-        var infoDict = this.xref.trailer.get('Info');
-
+      var infoDict;
+      try {
+        infoDict = this.xref.trailer.get('Info');
+      } catch (err) {
+        info('The document information dictionary is invalid.');
+      }
+      if (infoDict) {
         var validEntries = DocumentInfoValidators.entries;
         // Only fill the document info with valid entries from the spec.
         for (var key in validEntries) {
@@ -468,7 +471,7 @@ var PDFDocument = (function PDFDocumentClosure() {
             // Make sure the value conforms to the spec.
             if (validEntries[key](value)) {
               docInfo[key] = typeof value !== 'string' ? value :
-                             stringToPDFString(value);
+                stringToPDFString(value);
             } else {
               info('Bad value in document info for "' + key + '"');
             }
@@ -510,4 +513,3 @@ var PDFDocument = (function PDFDocumentClosure() {
 
   return PDFDocument;
 })();
-

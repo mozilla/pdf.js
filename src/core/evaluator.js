@@ -1,26 +1,26 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error,
-           ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
-           IDENTITY_MATRIX, info, isArray, isCmd, isDict, isEOF, isName, isNum,
-           isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
-           Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util, MissingDataException, Promise,
-           RefSetCache, isRef */
+ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
+info, isArray, isCmd, isDict, isEOF, isName, isNum,
+isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
+Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
+TilingPattern, TODO, warn, Util, Promise,
+RefSetCache, isRef, TextRenderingMode */
 
 'use strict';
 
@@ -349,6 +349,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return loadedName;
     },
 
+    handleText: function PartialEvaluator_handleText(chars) {
+      var font = this.state.font.translated;
+      var glyphs = font.charsToGlyphs(chars);
+      var isAddToPathSet = !!(this.state.textRenderingMode &
+                              TextRenderingMode.ADD_TO_PATH_FLAG);
+      if (font.data && (isAddToPathSet || PDFJS.disableFontFace)) {
+        for (var i = 0; i < glyphs.length; i++) {
+          if (glyphs[i] === null) {
+            continue;
+          }
+          var fontChar = glyphs[i].fontChar;
+          if (!font.renderer.hasBuiltPath(fontChar)) {
+            var path = font.renderer.getPathJs(fontChar);
+            this.handler.send('commonobj', [
+              font.loadedName + '_path_' + fontChar,
+              'FontPath',
+              path
+            ]);
+          }
+        }
+      }
+
+      return glyphs;
+    },
+
     setGState: function PartialEvaluator_setGState(resources, gState,
                                                    operatorList) {
 
@@ -631,19 +656,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               this.state = prev;
             }
           } else if (cmd === 'Tj') { // showText
-            args[0] = this.state.font.translated.charsToGlyphs(args[0]);
+            args[0] = this.handleText(args[0]);
           } else if (cmd === 'TJ') { // showSpacedText
             var arr = args[0];
             var arrLength = arr.length;
             for (var i = 0; i < arrLength; ++i) {
               if (isString(arr[i])) {
-                arr[i] = this.state.font.translated.charsToGlyphs(arr[i]);
+                arr[i] = this.handleText(arr[i]);
               }
             }
           } else if (cmd === '\'') { // nextLineShowText
-            args[0] = this.state.font.translated.charsToGlyphs(args[0]);
+            args[0] = this.handleText(args[0]);
           } else if (cmd === '"') { // nextLineSetSpacingShowText
-            args[2] = this.state.font.translated.charsToGlyphs(args[2]);
+            args[2] = this.handleText(args[2]);
+          } else if (cmd === 'Tr') { // setTextRenderingMode
+            this.state.textRenderingMode = args[0];
           }
 
           switch (fn) {
@@ -1196,9 +1223,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var composite = false;
       if (type.name == 'Type0') {
         // If font is a composite
-        //  - get the descendant font
-        //  - set the type according to the descendant font
-        //  - get the FontDescriptor from the descendant font
+        // - get the descendant font
+        // - set the type according to the descendant font
+        // - get the FontDescriptor from the descendant font
         var df = dict.get('DescendantFonts');
         if (!df)
           error('Descendant fonts are not specified');
@@ -1529,6 +1556,7 @@ var OperatorList = (function OperatorListClosure() {
 var EvalState = (function EvalStateClosure() {
   function EvalState() {
     this.font = null;
+    this.textRenderingMode = TextRenderingMode.FILL;
   }
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {
@@ -1537,4 +1565,3 @@ var EvalState = (function EvalStateClosure() {
   };
   return EvalState;
 })();
-

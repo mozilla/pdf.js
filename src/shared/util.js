@@ -14,10 +14,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, DeviceCmykCS, Dict, globalScope, INFOS, MozBlobBuilder, Name,
-           PDFJS, Ref, WARNINGS, verbosity */
+/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref */
 
 'use strict';
+
+var globalScope = (typeof window === 'undefined') ? this : window;
+
+var isWorker = (typeof window == 'undefined');
+
+var ERRORS = 0, WARNINGS = 1, INFOS = 5;
+var verbosity = WARNINGS;
+
+var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
+
+var TextRenderingMode = {
+  FILL: 0,
+  STROKE: 1,
+  FILL_STROKE: 2,
+  INVISIBLE: 3,
+  FILL_ADD_TO_PATH: 4,
+  STROKE_ADD_TO_PATH: 5,
+  FILL_STROKE_ADD_TO_PATH: 6,
+  ADD_TO_PATH: 7,
+  FILL_STROKE_MASK: 3,
+  ADD_TO_PATH_FLAG: 4
+};
+
+// The global PDFJS object exposes the API
+// In production, it will be declared outside a global wrapper
+// In development, it will be declared here
+if (!globalScope.PDFJS) {
+  globalScope.PDFJS = {};
+}
+
+globalScope.PDFJS.pdfBug = false;
+
 
 // Use only for debugging purposes. This should not be used in any code that is
 // in mozilla master.
@@ -281,12 +312,8 @@ var Util = PDFJS.Util = (function UtilClosure() {
   };
 
   Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
-    var cs = new DeviceCmykCS();
-    Util.makeCssCmyk = function makeCssCmyk(cmyk) {
-      var rgb = cs.getRgb(cmyk, 0);
-      return Util.makeCssRgb(rgb);
-    };
-    return Util.makeCssCmyk(cmyk);
+    var rgb = ColorSpace.singletons.cmyk.getRgb(cmyk, 0);
+    return Util.makeCssRgb(rgb);
   };
 
   // Concatenates two transformation matrices together and returns the result.
@@ -468,6 +495,21 @@ var Util = PDFJS.Util = (function UtilClosure() {
     for (var prop in prototype) {
       sub.prototype[prop] = prototype[prop];
     }
+  };
+
+  Util.loadScript = function Util_loadScript(src, callback) {
+    var script = document.createElement('script');
+    var loaded = false;
+    script.setAttribute('src', src);
+    if (callback) {
+      script.onload = function() {
+        if (!loaded) {
+          callback();
+        }
+        loaded = true;
+      };
+    }
+    document.getElementsByTagName('head')[0].appendChild(script);
   };
 
   return Util;
@@ -770,8 +812,12 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         var now = Date.now();
         for (var i = 0; i < this.unhandledRejections.length; i++) {
           if (now - this.unhandledRejections[i].time > REJECTION_TIMEOUT) {
-            warn('Unhandled rejection: ' +
-                 this.unhandledRejections[i].promise._value);
+            var unhandled = this.unhandledRejections[i].promise._value;
+            var msg = 'Unhandled rejection: ' + unhandled;
+            if (unhandled.stack) {
+              msg += '\n' + unhandled.stack;
+            }
+            warn(msg);
             this.unhandledRejections.splice(i);
             i--;
           }
@@ -948,3 +994,96 @@ PDFJS.createBlob = function createBlob(data, contentType) {
   bb.append(data);
   return bb.getBlob(contentType);
 };
+
+function MessageHandler(name, comObj) {
+  this.name = name;
+  this.comObj = comObj;
+  this.callbackIndex = 1;
+  var callbacks = this.callbacks = {};
+  var ah = this.actionHandler = {};
+
+  ah['console_log'] = [function ahConsoleLog(data) {
+    log.apply(null, data);
+  }];
+  // If there's no console available, console_error in the
+  // action handler will do nothing.
+  if ('console' in globalScope) {
+    ah['console_error'] = [function ahConsoleError(data) {
+      globalScope['console'].error.apply(null, data);
+    }];
+  } else {
+    ah['console_error'] = [function ahConsoleError(data) {
+      log.apply(null, data);
+    }];
+  }
+  ah['_warn'] = [function ah_Warn(data) {
+    warn(data);
+  }];
+
+  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
+    var data = event.data;
+    if (data.isReply) {
+      var callbackId = data.callbackId;
+      if (data.callbackId in callbacks) {
+        var callback = callbacks[callbackId];
+        delete callbacks[callbackId];
+        callback(data.data);
+      } else {
+        error('Cannot resolve callback ' + callbackId);
+      }
+    } else if (data.action in ah) {
+      var action = ah[data.action];
+      if (data.callbackId) {
+        var promise = new Promise();
+        promise.then(function(resolvedData) {
+          comObj.postMessage({
+            isReply: true,
+            callbackId: data.callbackId,
+            data: resolvedData
+          });
+        });
+        action[0].call(action[1], data.data, promise);
+      } else {
+        action[0].call(action[1], data.data);
+      }
+    } else {
+      error('Unkown action from worker: ' + data.action);
+    }
+  };
+}
+
+MessageHandler.prototype = {
+  on: function messageHandlerOn(actionName, handler, scope) {
+    var ah = this.actionHandler;
+    if (ah[actionName]) {
+      error('There is already an actionName called "' + actionName + '"');
+    }
+    ah[actionName] = [handler, scope];
+  },
+  /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * @param {String} actionName Action to call.
+   * @param {JSON} data JSON data to send.
+   * @param {function} [callback] Optional callback that will handle a reply.
+   */
+  send: function messageHandlerSend(actionName, data, callback) {
+    var message = {
+      action: actionName,
+      data: data
+    };
+    if (callback) {
+      var callbackId = this.callbackIndex++;
+      this.callbacks[callbackId] = callback;
+      message.callbackId = callbackId;
+    }
+    this.comObj.postMessage(message);
+  }
+};
+
+function loadJpegStream(id, imageData, objs) {
+  var img = new Image();
+  img.onload = (function loadJpegStream_onloadClosure() {
+    objs.resolve(id, img);
+  });
+  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+}

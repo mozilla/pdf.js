@@ -16,25 +16,13 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           isString, Pattern, TilingPattern, TODO, Util, warn, assert, info */
+           Pattern, TilingPattern, TODO, Util, warn, assert, info,
+           TextRenderingMode */
 
 'use strict';
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
-
-var TextRenderingMode = {
-  FILL: 0,
-  STROKE: 1,
-  FILL_STROKE: 2,
-  INVISIBLE: 3,
-  FILL_ADD_TO_PATH: 4,
-  STROKE_ADD_TO_PATH: 5,
-  FILL_STROKE_ADD_TO_PATH: 6,
-  ADD_TO_PATH: 7,
-  FILL_STROKE_MASK: 3,
-  ADD_TO_PATH_FLAG: 4
-};
 
 // Minimal font size that would be used during canvas fillText operations.
 var MIN_FONT_SIZE = 16;
@@ -358,9 +346,9 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.textRenderingMode = TextRenderingMode.FILL;
     this.textRise = 0;
     // Color spaces
-    this.fillColorSpace = new DeviceGrayCS();
+    this.fillColorSpace = ColorSpace.singletons.gray;
     this.fillColorSpaceObj = null;
-    this.strokeColorSpace = new DeviceGrayCS();
+    this.strokeColorSpace = ColorSpace.singletons.gray;
     this.strokeColorSpaceObj = null;
     this.fillColorObj = null;
     this.strokeColorObj = null;
@@ -1007,7 +995,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var addToPath;
       if (font.disableFontFace || isAddToPathSet) {
-        addToPath = font.renderer.getPathGenerator(character);
+        addToPath = font.getPathGenerator(this.commonObjs, character);
       }
 
       if (font.disableFontFace) {
@@ -1354,8 +1342,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
     setStrokeGray: function CanvasGraphics_setStrokeGray(gray) {
-      if (!(this.current.strokeColorSpace instanceof DeviceGrayCS))
-        this.current.strokeColorSpace = new DeviceGrayCS();
+      this.current.strokeColorSpace = ColorSpace.singletons.gray;
 
       var rgbColor = this.current.strokeColorSpace.getRgb(arguments, 0);
       var color = Util.makeCssRgb(rgbColor);
@@ -1363,8 +1350,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.strokeColor = color;
     },
     setFillGray: function CanvasGraphics_setFillGray(gray) {
-      if (!(this.current.fillColorSpace instanceof DeviceGrayCS))
-        this.current.fillColorSpace = new DeviceGrayCS();
+      this.current.fillColorSpace = ColorSpace.singletons.gray;
 
       var rgbColor = this.current.fillColorSpace.getRgb(arguments, 0);
       var color = Util.makeCssRgb(rgbColor);
@@ -1372,8 +1358,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.fillColor = color;
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
-      if (!(this.current.strokeColorSpace instanceof DeviceRgbCS))
-        this.current.strokeColorSpace = new DeviceRgbCS();
+      this.current.strokeColorSpace = ColorSpace.singletons.rgb;
 
       var rgbColor = this.current.strokeColorSpace.getRgb(arguments, 0);
       var color = Util.makeCssRgb(rgbColor);
@@ -1381,8 +1366,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.strokeColor = color;
     },
     setFillRGBColor: function CanvasGraphics_setFillRGBColor(r, g, b) {
-      if (!(this.current.fillColorSpace instanceof DeviceRgbCS))
-        this.current.fillColorSpace = new DeviceRgbCS();
+      this.current.fillColorSpace = ColorSpace.singletons.rgb;
 
       var rgbColor = this.current.fillColorSpace.getRgb(arguments, 0);
       var color = Util.makeCssRgb(rgbColor);
@@ -1390,16 +1374,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.fillColor = color;
     },
     setStrokeCMYKColor: function CanvasGraphics_setStrokeCMYKColor(c, m, y, k) {
-      if (!(this.current.strokeColorSpace instanceof DeviceCmykCS))
-        this.current.strokeColorSpace = new DeviceCmykCS();
+      this.current.strokeColorSpace = ColorSpace.singletons.cmyk;
 
       var color = Util.makeCssCmyk(arguments);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillCMYKColor: function CanvasGraphics_setFillCMYKColor(c, m, y, k) {
-      if (!(this.current.fillColorSpace instanceof DeviceCmykCS))
-        this.current.fillColorSpace = new DeviceCmykCS();
+      this.current.fillColorSpace = ColorSpace.singletons.cmyk;
 
       var color = Util.makeCssCmyk(arguments);
       this.ctx.fillStyle = color;

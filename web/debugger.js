@@ -1,19 +1,19 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals PDFJS */
 
 'use strict';
@@ -228,6 +228,25 @@ var Stepper = (function StepperClosure() {
     return d;
   }
 
+  function glyphsToString(glyphs) {
+    var out = '';
+    for (var i = 0; i < glyphs.length; i++) {
+      if (glyphs[i] === null) {
+        out += ' ';
+      } else {
+        out += glyphs[i].fontChar;
+      }
+    }
+    return out;
+  }
+
+  var glyphCommands = {
+    'showText': 0,
+    'showSpacedText': 0,
+    'nextLineShowText': 0,
+    'nextLineSetSpacingShowText': 2
+  };
+
   function Stepper(panel, pageIndex, initialBreakPoints) {
     this.panel = panel;
     this.breakPoint = 0;
@@ -281,8 +300,29 @@ var Stepper = (function StepperClosure() {
         breakCell.appendChild(cbox);
         line.appendChild(breakCell);
         line.appendChild(c('td', i.toString()));
-        line.appendChild(c('td', operatorList.fnArray[i]));
-        line.appendChild(c('td', args.join(', ')));
+        var fn = operatorList.fnArray[i];
+        var decArgs = args;
+        if (fn in glyphCommands) {
+          var glyphIndex = glyphCommands[fn];
+          var glyphs = args[glyphIndex];
+          var decArgs = args.slice();
+          var newArg;
+          if (fn === 'showSpacedText') {
+            newArg = [];
+            for (var j = 0; j < glyphs.length; j++) {
+              if (typeof glyphs[j] === 'number') {
+                newArg.push(glyphs[j]);
+              } else {
+                newArg.push(glyphsToString(glyphs[j]));
+              }
+            }
+          } else {
+            newArg = glyphsToString(glyphs);
+          }
+          decArgs[glyphIndex] = newArg;
+        }
+        line.appendChild(c('td', fn));
+        line.appendChild(c('td', JSON.stringify(decArgs)));
       }
     },
     getNextBreakPoint: function getNextBreakPoint() {
@@ -420,14 +460,14 @@ var PDFBug = (function PDFBugClosure() {
     },
     init: function init() {
       /*
-       * Basic Layout:
-       * PDFBug
-       *  Controls
-       *  Panels
-       *    Panel
-       *    Panel
-       *    ...
-       */
+* Basic Layout:
+* PDFBug
+* Controls
+* Panels
+* Panel
+* Panel
+* ...
+*/
       var ui = document.createElement('div');
       ui.id = 'PDFBug';
 

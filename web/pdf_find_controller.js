@@ -87,6 +87,12 @@ var PDFFindController = {
     }
   },
 
+  reset: function pdfFindControllerReset() {
+    this.startedTextExtraction = false;
+    this.extractTextPromises = [];
+    this.active = false;
+  },
+
   calcFindMatch: function(pageIndex) {
     var pageContent = this.pageContents[pageIndex];
     var query = this.state.query;

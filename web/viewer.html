@@ -41,35 +41,15 @@ limitations under the License.
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
-    <script type="text/javascript" src="../src/network.js"></script>
-    <script type="text/javascript" src="../src/chunked_stream.js"></script>
-    <script type="text/javascript" src="../src/pdf_manager.js"></script>
-    <script type="text/javascript" src="../src/core.js"></script>
-    <script type="text/javascript" src="../src/util.js"></script>
-    <script type="text/javascript" src="../src/api.js"></script>
-    <script type="text/javascript" src="../src/canvas.js"></script>
-    <script type="text/javascript" src="../src/obj.js"></script>
-    <script type="text/javascript" src="../src/annotation.js"></script>
-    <script type="text/javascript" src="../src/function.js"></script>
-    <script type="text/javascript" src="../src/charsets.js"></script>
-    <script type="text/javascript" src="../src/cidmaps.js"></script>
-    <script type="text/javascript" src="../src/colorspace.js"></script>
-    <script type="text/javascript" src="../src/crypto.js"></script>
-    <script type="text/javascript" src="../src/evaluator.js"></script>
-    <script type="text/javascript" src="../src/fonts.js"></script>
-    <script type="text/javascript" src="../src/font_renderer.js"></script>
-    <script type="text/javascript" src="../src/glyphlist.js"></script>
-    <script type="text/javascript" src="../src/image.js"></script>
-    <script type="text/javascript" src="../src/metrics.js"></script>
-    <script type="text/javascript" src="../src/parser.js"></script>
-    <script type="text/javascript" src="../src/pattern.js"></script>
-    <script type="text/javascript" src="../src/stream.js"></script>
-    <script type="text/javascript" src="../src/worker.js"></script>
-    <script type="text/javascript" src="../src/jpx.js"></script>
-    <script type="text/javascript" src="../src/jbig2.js"></script>
-    <script type="text/javascript" src="../src/bidi.js"></script>
-    <script type="text/javascript" src="../src/metadata.js"></script>
-    <script type="text/javascript" src="../external/jpgjs/jpg.js"></script>
+    <script type="text/javascript" src="../src/shared/util.js"></script>
+    <script type="text/javascript" src="../src/shared/colorspace.js"></script>
+    <script type="text/javascript" src="../src/shared/pattern.js"></script>
+    <script type="text/javascript" src="../src/shared/function.js"></script>
+    <script type="text/javascript" src="../src/shared/annotation.js"></script>
+    <script type="text/javascript" src="../src/display/api.js"></script>
+    <script type="text/javascript" src="../src/display/metadata.js"></script>
+    <script type="text/javascript" src="../src/display/canvas.js"></script>
+    <script type="text/javascript" src="../src/display/font_loader.js"></script>
     <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script>
 <!--#endif-->
 
@@ -80,6 +60,7 @@ limitations under the License.
 <!--#if !PRODUCTION-->
     <script type="text/javascript" src="ui_utils.js"></script>
     <script type="text/javascript" src="download_manager.js"></script>
+    <script type="text/javascript" src="thumbnail_view.js"></script>
     <script type="text/javascript" src="text_layer_builder.js"></script>
     <script type="text/javascript" src="pdf_find_bar.js"></script>
     <script type="text/javascript" src="pdf_find_controller.js"></script>
@@ -158,8 +139,6 @@ limitations under the License.
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
-                <input id="fileInput" class="fileInput" type="file" oncontextmenu="return false;" style="visibility: hidden; position: fixed; right: 0; top: 0" />
-
                 <button id="presentationMode" class="toolbarButton presentationMode hiddenSmallView" title="Switch to Presentation Mode" tabindex="12" data-l10n-id="presentation_mode">
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
                 </button>
@@ -190,7 +169,7 @@ limitations under the License.
                      </button>
                   </div>
                   <span id="scaleSelectContainer" class="dropdownToolbarButton">
-                     <select id="scaleSelect" title="Zoom" oncontextmenu="return false;" tabindex="11" data-l10n-id="zoom">
+                     <select id="scaleSelect" title="Zoom" tabindex="11" data-l10n-id="zoom">
                       <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
                       <option id="pageActualOption" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
                       <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Fit Page</option>

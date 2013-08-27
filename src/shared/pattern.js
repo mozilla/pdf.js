@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CanvasGraphics, ColorSpace, createScratchCanvas, DeviceRgbCS, error,
+/* globals CanvasGraphics, ColorSpace, DeviceRgbCS, error,
            info, isArray, isPDFFunction, isStream, PDFFunction, TODO, Util,
            warn, CachedCanvases */
 
@@ -398,7 +398,7 @@ var TilingPattern = (function TilingPatternClosure() {
           context.strokeStyle = ctx.strokeStyle;
           break;
         case PaintType.UNCOLORED:
-          var rgbColor = new DeviceRgbCS().getRgb(color, 0);
+          var rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
           var cssColor = Util.makeCssRgb(rgbColor);
           context.fillStyle = cssColor;
           context.strokeStyle = cssColor;

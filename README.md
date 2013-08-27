@@ -36,14 +36,17 @@ available that are updated at a different rate:
 + [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This version is updated every time new code is merged into the PDF.js codebase. This should be quite stable but still might break from time to time.
 + [Stable Version](https://addons.mozilla.org/firefox/addon/pdfjs) - After version 24 of Firefox is released we no longer plan to support the stable extension. The stable version will then be considered whatever is built into Firefox.
 
-#### Chrome
-The Chrome extension is still somewhat experimental but it can be installed two
+#### Chrome and Opera
+
+The Chromium extension is still somewhat experimental but it can be installed two
 ways:
 
 + [Unofficial Version](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm) - *This extension is maintained by a PDF.js contributor.*
-+ Build Your Own - Get the code as explained below and issue `node make extension`. Then open
++ Build Your Own - Get the code as explained below and issue `node make chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
-directory `build/chrome`.
+directory `build/chromium`.
+
+The version of the extension for the Opera browser can be found at the [Opera add-ons catalog](https://addons.opera.com/en/extensions/details/pdf-viewer/).
 
 ## Getting the Code
 

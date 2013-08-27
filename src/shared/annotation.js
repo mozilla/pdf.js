@@ -1,22 +1,22 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
-           stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
-           Promise, isArray, ObjectLoader, isValidUrl, OperatorList */
+stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
+Promise, isArray, ObjectLoader, isValidUrl, OperatorList */
 
 'use strict';
 
@@ -100,6 +100,7 @@ var Annotation = (function AnnotationClosure() {
     }
 
     this.appearance = getDefaultAppearance(dict);
+    data.hasAppearance = !!this.appearance;
   }
 
   Annotation.prototype = {
@@ -135,7 +136,7 @@ var Annotation = (function AnnotationClosure() {
         data &&
         (!data.annotationFlags ||
          !(data.annotationFlags & 0x22)) && // Hidden or NoView
-        data.rect                            // rectangle is nessessary
+        data.rect // rectangle is nessessary
       );
     },
 
@@ -406,7 +407,7 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   var parent = WidgetAnnotation.prototype;
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
     hasHtml: function TextWidgetAnnotation_hasHtml() {
-      return !!this.data.fieldValue;
+      return !this.data.hasAppearance && !!this.data.fieldValue;
     },
 
     getHtmlElement: function TextWidgetAnnotation_getHtmlElement(commonObjs) {
@@ -434,6 +435,9 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     },
 
     getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator) {
+      if (this.appearance) {
+        return Annotation.prototype.getOperatorList.call(this, evaluator);
+      }
 
       var promise = new Promise();
       var opList = new OperatorList();
@@ -629,6 +633,8 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         }
         data.url = url;
         data.dest = action.get('D');
+      } else if (linkType === 'Named') {
+        data.action = action.get('N').name;
       } else {
         TODO('unrecognized link type: ' + linkType);
       }
