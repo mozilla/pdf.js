@@ -1,23 +1,23 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
-           PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
-           getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
-           PDFHistory, ThumbnailView, noContextMenuHandler */
+PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
+getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
+PDFHistory, ThumbnailView, noContextMenuHandler */
 
 'use strict';
 
@@ -92,11 +92,11 @@ var Settings = (function SettingsClosure() {
     }).bind(this);
 
 //#if B2G
-//  asyncStorage.getItem('database', resolvePromise);
+// asyncStorage.getItem('database', resolvePromise);
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//  resolvePromise(FirefoxCom.requestSync('getDatabase', null));
+// resolvePromise(FirefoxCom.requestSync('getDatabase', null));
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
@@ -135,11 +135,11 @@ var Settings = (function SettingsClosure() {
       var database = JSON.stringify(this.database);
 
 //#if B2G
-//    asyncStorage.setItem('database', database);
+// asyncStorage.setItem('database', database);
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//    FirefoxCom.requestSync('setDatabase', database);
+// FirefoxCom.requestSync('setDatabase', database);
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
@@ -393,7 +393,7 @@ var PDFView = {
     var support = false;
 //#if !(FIREFOX || MOZCENTRAL)
 //#else
-//  support = FirefoxCom.requestSync('supportsIntegratedFind');
+// support = FirefoxCom.requestSync('supportsIntegratedFind');
 //#endif
     Object.defineProperty(this, 'supportsIntegratedFind', { value: support,
                                                             enumerable: true,
@@ -406,7 +406,7 @@ var PDFView = {
     var support = true;
 //#if !(FIREFOX || MOZCENTRAL)
 //#else
-//  support = FirefoxCom.requestSync('supportsDocumentFonts');
+// support = FirefoxCom.requestSync('supportsDocumentFonts');
 //#endif
     Object.defineProperty(this, 'supportsDocumentFonts', { value: support,
                                                            enumerable: true,
@@ -419,7 +419,7 @@ var PDFView = {
     var support = true;
 //#if !(FIREFOX || MOZCENTRAL)
 //#else
-//  support = FirefoxCom.requestSync('supportsDocumentColors');
+// support = FirefoxCom.requestSync('supportsDocumentColors');
 //#endif
     Object.defineProperty(this, 'supportsDocumentColors', { value: support,
                                                             enumerable: true,
@@ -524,7 +524,7 @@ var PDFView = {
   setTitle: function pdfViewSetTitle(title) {
     document.title = title;
 //#if B2G
-//  document.getElementById('activityTitle').textContent = title;
+// document.getElementById('activityTitle').textContent = title;
 //#endif
   },
 
@@ -581,8 +581,8 @@ var PDFView = {
           var loadingErrorMessage = mozL10n.get('invalid_file_error', null,
                                         'Invalid or corrupted PDF file.');
 //#if B2G
-//        window.alert(loadingErrorMessage);
-//        return window.close();
+// window.alert(loadingErrorMessage);
+// return window.close();
 //#endif
         }
 
@@ -592,8 +592,8 @@ var PDFView = {
                                         'Missing PDF file.');
 
 //#if B2G
-//        window.alert(loadingErrorMessage);
-//        return window.close();
+// window.alert(loadingErrorMessage);
+// return window.close();
 //#endif
         }
 
@@ -636,19 +636,19 @@ var PDFView = {
 
   fallback: function pdfViewFallback() {
 //#if !(FIREFOX || MOZCENTRAL)
-//  return;
+// return;
 //#else
-//  // Only trigger the fallback once so we don't spam the user with messages
-//  // for one PDF.
-//  if (this.fellback)
-//    return;
-//  this.fellback = true;
-//  var url = this.url.split('#')[0];
-//  FirefoxCom.request('fallback', url, function response(download) {
-//    if (!download)
-//      return;
-//    PDFView.download();
-//  });
+// // Only trigger the fallback once so we don't spam the user with messages
+// // for one PDF.
+// if (this.fellback)
+// return;
+// this.fellback = true;
+// var url = this.url.split('#')[0];
+// FirefoxCom.request('fallback', url, function response(download) {
+// if (!download)
+// return;
+// PDFView.download();
+// });
 //#endif
   },
 
@@ -722,26 +722,26 @@ var PDFView = {
   },
 
   /**
-   * For the firefox extension we prefix the full url on anchor links so they
-   * don't come up as resource:// urls and so open in new tab/window works.
-   * @param {String} anchor The anchor hash include the #.
-   */
+* For the firefox extension we prefix the full url on anchor links so they
+* don't come up as resource:// urls and so open in new tab/window works.
+* @param {String} anchor The anchor hash include the #.
+*/
   getAnchorUrl: function getAnchorUrl(anchor) {
 //#if !(FIREFOX || MOZCENTRAL)
     return anchor;
 //#else
-//  return this.url.split('#')[0] + anchor;
+// return this.url.split('#')[0] + anchor;
 //#endif
   },
 
 
   /**
-   * Show the error box.
-   * @param {String} message A message that is human readable.
-   * @param {Object} moreInfo (optional) Further information about the error
-   *                            that is more technical.  Should have a 'message'
-   *                            and optionally a 'stack' property.
-   */
+* Show the error box.
+* @param {String} message A message that is human readable.
+* @param {Object} moreInfo (optional) Further information about the error
+* that is more technical. Should have a 'message'
+* and optionally a 'stack' property.
+*/
   error: function pdfViewError(message, moreInfo) {
     var moreInfoText = mozL10n.get('error_version_info',
       {version: PDFJS.version || '?', build: PDFJS.build || '?'},
@@ -801,8 +801,8 @@ var PDFView = {
     lessInfoButton.setAttribute('hidden', 'true');
     errorMoreInfo.value = moreInfoText;
 //#else
-//  console.error(message + '\n' + moreInfoText);
-//  this.fallback();
+// console.error(message + '\n' + moreInfoText);
+// this.fallback();
 //#endif
   },
 
@@ -948,7 +948,7 @@ var PDFView = {
       if (!self.isViewerEmbedded) {
         self.container.focus();
 //#if (FIREFOX || MOZCENTRAL)
-//      self.container.blur();
+// self.container.blur();
 //#endif
       }
     });
@@ -1020,31 +1020,31 @@ var PDFView = {
       }
 
 //#if (FIREFOX || MOZCENTRAL)
-//    var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
-//    var generatorId = 0;
-//    var KNOWN_GENERATORS = ["acrobat distiller", "acrobat pdfwritter",
-//     "adobe livecycle", "adobe pdf library", "adobe photoshop", "ghostscript",
-//     "tcpdf", "cairo", "dvipdfm", "dvips", "pdftex", "pdfkit", "itext",
-//     "prince", "quarkxpress", "mac os x", "microsoft", "openoffice", "oracle",
-//     "luradocument", "pdf-xchange", "antenna house", "aspose.cells", "fpdf"];
-//    var generatorId = 0;
-//    if (info.Producer) {
-//      KNOWN_GENERATORS.some(function (generator, s, i) {
-//        if (generator.indexOf(s) < 0) {
-//          return false;
-//        }
-//        generatorId = i + 1;
-//        return true;
-//      }.bind(null, info.Producer.toLowerCase()));
-//    }
-//    var formType = !info.IsAcroFormPresent ? null : info.IsXFAPresent ?
-//                   'xfa' : 'acroform';
-//    FirefoxCom.request('reportTelemetry', JSON.stringify({
-//      type: 'documentInfo',
-//      version: versionId,
-//      generator: generatorId,
-//      formType: formType
-//    }));
+// var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
+// var generatorId = 0;
+// var KNOWN_GENERATORS = ["acrobat distiller", "acrobat pdfwritter",
+// "adobe livecycle", "adobe pdf library", "adobe photoshop", "ghostscript",
+// "tcpdf", "cairo", "dvipdfm", "dvips", "pdftex", "pdfkit", "itext",
+// "prince", "quarkxpress", "mac os x", "microsoft", "openoffice", "oracle",
+// "luradocument", "pdf-xchange", "antenna house", "aspose.cells", "fpdf"];
+// var generatorId = 0;
+// if (info.Producer) {
+// KNOWN_GENERATORS.some(function (generator, s, i) {
+// if (generator.indexOf(s) < 0) {
+// return false;
+// }
+// generatorId = i + 1;
+// return true;
+// }.bind(null, info.Producer.toLowerCase()));
+// }
+// var formType = !info.IsAcroFormPresent ? null : info.IsXFAPresent ?
+// 'xfa' : 'acroform';
+// FirefoxCom.request('reportTelemetry', JSON.stringify({
+// type: 'documentInfo',
+// version: versionId,
+// generator: generatorId,
+// formType: formType
+// }));
 //#endif
     });
   },
@@ -1474,12 +1474,12 @@ var PDFView = {
   },
 
   /**
-   * This function flips the page in presentation mode if the user scrolls up
-   * or down with large enough motion and prevents page flipping too often.
-   *
-   * @this {PDFView}
-   * @param {number} mouseScrollDelta The delta value from the mouse event.
-   */
+* This function flips the page in presentation mode if the user scrolls up
+* or down with large enough motion and prevents page flipping too often.
+*
+* @this {PDFView}
+* @param {number} mouseScrollDelta The delta value from the mouse event.
+*/
   mouseScroll: function pdfViewMouseScroll(mouseScrollDelta) {
     var MOUSE_SCROLL_COOLDOWN_TIME = 50;
 
@@ -1528,11 +1528,11 @@ var PDFView = {
   },
 
   /**
-   * This function clears the member attributes used with mouse scrolling in
-   * presentation mode.
-   *
-   * @this {PDFView}
-   */
+* This function clears the member attributes used with mouse scrolling in
+* presentation mode.
+*
+* @this {PDFView}
+*/
   clearMouseScrollState: function pdfViewClearMouseScrollState() {
     this.mouseScrollTimeStamp = 0;
     this.mouseScrollDelta = 0;
@@ -1893,8 +1893,8 @@ var PageView = function pageView(container, id, scale,
       ctx.scale(outputScale.sx, outputScale.sy);
     }
 //#if (FIREFOX || MOZCENTRAL)
-//  // Checking if document fonts are used only once
-//  var checkIfDocumentFontsUsed = !PDFView.pdfDocument.embeddedFontsUsed;
+// // Checking if document fonts are used only once
+// var checkIfDocumentFontsUsed = !PDFView.pdfDocument.embeddedFontsUsed;
 //#endif
 
     // Rendering area
@@ -1920,21 +1920,21 @@ var PageView = function pageView(container, id, scale,
       }
 
 //#if (FIREFOX || MOZCENTRAL)
-//    if (checkIfDocumentFontsUsed && PDFView.pdfDocument.embeddedFontsUsed &&
-//        PDFJS.disableFontFace) {
-//      console.error(mozL10n.get('web_fonts_disabled', null,
-//        'Web fonts are disabled: unable to use embedded PDF fonts.'));
-//      PDFView.fallback();
-//    }
-//    if (self.textLayer && self.textLayer.textDivs &&
-//        self.textLayer.textDivs.length > 0 &&
-//        !PDFView.supportsDocumentColors) {
-//      console.error(mozL10n.get('document_colors_disabled', null,
-//        'PDF documents are not allowed to use their own colors: ' +
-//        '\'Allow pages to choose their own colors\' ' +
-//        'is deactivated in the browser.'));
-//      PDFView.fallback();
-//    }
+// if (checkIfDocumentFontsUsed && PDFView.pdfDocument.embeddedFontsUsed &&
+// PDFJS.disableFontFace) {
+// console.error(mozL10n.get('web_fonts_disabled', null,
+// 'Web fonts are disabled: unable to use embedded PDF fonts.'));
+// PDFView.fallback();
+// }
+// if (self.textLayer && self.textLayer.textDivs &&
+// self.textLayer.textDivs.length > 0 &&
+// !PDFView.supportsDocumentColors) {
+// console.error(mozL10n.get('document_colors_disabled', null,
+// 'PDF documents are not allowed to use their own colors: ' +
+// '\'Allow pages to choose their own colors\' ' +
+// 'is deactivated in the browser.'));
+// PDFView.fallback();
+// }
 //#endif
       if (error) {
         PDFView.error(mozL10n.get('rendering_error', null,
@@ -1955,10 +1955,10 @@ var PageView = function pageView(container, id, scale,
       div.dispatchEvent(event);
 
 //#if (FIREFOX || MOZCENTRAL)
-//    FirefoxCom.request('reportTelemetry', JSON.stringify({
-//      type: 'pageInfo'
-//    }));
-//    // TODO add stream types report here
+// FirefoxCom.request('reportTelemetry', JSON.stringify({
+// type: 'pageInfo'
+// }));
+// // TODO add stream types report here
 //#endif
       callback();
     }
@@ -2128,7 +2128,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
 //#if CHROME
 //if (location.protocol !== 'chrome-extension:') {
-//  file = location.href.split('#')[0];
+// file = location.href.split('#')[0];
 //}
 //#endif
 
@@ -2183,7 +2183,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
 //if (!PDFView.supportsDocumentFonts) {
-//  PDFJS.disableFontFace = true;
+// PDFJS.disableFontFace = true;
 //}
 //#endif
 
@@ -2225,7 +2225,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     document.getElementById('viewFind').classList.add('hidden');
   }
 
-  // Listen for warnings to trigger the fallback UI.  Errors should be caught
+  // Listen for warnings to trigger the fallback UI. Errors should be caught
   // and call PDFView.error() so we don't need to listen for those.
   PDFJS.LogManager.addLogger({
     warn: function() {
@@ -2821,12 +2821,12 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
-//  var url = activity.source.data.url;
-//  PDFJS.maxImageSize = 1024 * 1024;
-//  PDFView.open(url);
-//  var cancelButton = document.getElementById('activityClose');
-//  cancelButton.addEventListener('click', function() {
-//    activity.postResult('close');
-//  });
+// var url = activity.source.data.url;
+// PDFJS.maxImageSize = 1024 * 1024;
+// PDFView.open(url);
+// var cancelButton = document.getElementById('activityClose');
+// cancelButton.addEventListener('click', function() {
+// activity.postResult('close');
+// });
 //});
 //#endif

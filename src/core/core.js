@@ -1,25 +1,25 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-           isArrayBuffer, isName, isStream, isString, Lexer,
-           Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, Util, XRef,
-           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
-           */
+isArrayBuffer, isName, isStream, isString, Lexer,
+Linearization, NullStream, PartialEvaluator, shadow, Stream,
+StreamsSequenceStream, stringToPDFString, Util, XRef,
+MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
+*/
 
 'use strict';
 
@@ -265,12 +265,12 @@ var Page = (function PageClosure() {
 })();
 
 /**
- * The `PDFDocument` holds all the data of the PDF file. Compared to the
- * `PDFDoc`, this one doesn't have any job management code.
- * Right now there exists one PDFDocument on the main thread + one object
- * for each worker. If there is no worker support enabled, there are two
- * `PDFDocument` objects on the main thread created.
- */
+* The `PDFDocument` holds all the data of the PDF file. Compared to the
+* `PDFDoc`, this one doesn't have any job management code.
+* Right now there exists one PDFDocument on the main thread + one object
+* for each worker. If there is no worker support enabled, there are two
+* `PDFDocument` objects on the main thread created.
+*/
 var PDFDocument = (function PDFDocumentClosure() {
   function PDFDocument(pdfManager, arg, password) {
     if (isStream(arg))
@@ -513,4 +513,3 @@ var PDFDocument = (function PDFDocumentClosure() {
 
   return PDFDocument;
 })();
-

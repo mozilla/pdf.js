@@ -1,24 +1,24 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
-           ExpertSubsetCharset, FileReaderSync, GlyphsUnicode,
-           info, isArray, isNum, ISOAdobeCharset, Stream,
-           stringToBytes, TextDecoder, TODO, warn, Lexer, Util,
-           FONT_IDENTITY_MATRIX, FontRendererFactory, shadow */
+ExpertSubsetCharset, FileReaderSync, GlyphsUnicode,
+info, isArray, isNum, ISOAdobeCharset, Stream,
+stringToBytes, TextDecoder, TODO, warn, Lexer, Util,
+FONT_IDENTITY_MATRIX, FontRendererFactory, shadow */
 
 'use strict';
 
@@ -289,9 +289,9 @@ var Encodings = {
 };
 
 /**
- * Hold a map of decoded fonts and of the standard fourteen Type1
- * fonts and their acronyms.
- */
+* Hold a map of decoded fonts and of the standard fourteen Type1
+* fonts and their acronyms.
+*/
 var stdFontMap = {
   'ArialNarrow': 'Helvetica',
   'ArialNarrow-Bold': 'Helvetica-Bold',
@@ -344,9 +344,9 @@ var stdFontMap = {
 };
 
 /**
- * Holds the map of the non-standard fonts that might be included as a standard
- * fonts without glyph data.
- */
+* Holds the map of the non-standard fonts that might be included as a standard
+* fonts without glyph data.
+*/
 var nonStdFontMap = {
   'ComicSansMS': 'Comic Sans MS',
   'ComicSansMS-Bold': 'Comic Sans MS-Bold',
@@ -657,7 +657,7 @@ var UnicodeRanges = [
   { 'begin': 0x10190, 'end': 0x101CF }, // Ancient Symbols
   { 'begin': 0x101D0, 'end': 0x101FF }, // Phaistos Disc
   { 'begin': 0x102A0, 'end': 0x102DF }, // Carian
-  { 'begin': 0x1F030, 'end': 0x1F09F }  // Domino Tiles
+  { 'begin': 0x1F030, 'end': 0x1F09F } // Domino Tiles
 ];
 
 var MacStandardGlyphOrdering = [
@@ -2147,13 +2147,13 @@ function adjustWidths(properties) {
 }
 
 /**
- * 'Font' is the class the outside world should use, it encapsulate all the font
- * decoding logics whatever type it is (assuming the font type is supported).
- *
- * For example to read a Type1 font and to attach it to the document:
- *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
- *   type1Font.bind();
- */
+* 'Font' is the class the outside world should use, it encapsulate all the font
+* decoding logics whatever type it is (assuming the font type is supported).
+*
+* For example to read a Type1 font and to attach it to the document:
+* var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
+* type1Font.bind();
+*/
 var Font = (function FontClosure() {
   function Font(name, file, properties) {
 
@@ -2433,7 +2433,7 @@ var Font = (function FontClosure() {
 
     var numTables = ranges[ranges.length - 1][1] > 0xFFFF ? 2 : 1;
     var cmap = '\x00\x00' + // version
-               string16(numTables) +  // numTables
+               string16(numTables) + // numTables
                '\x00\x03' + // platformID
                '\x00\x01' + // encodingID
                string32(4 + numTables * 8); // start of the table record
@@ -2664,7 +2664,7 @@ var Font = (function FontClosure() {
            string16(properties.italicAngle ? 1 : 0) + // fsSelection
            string16(firstCharIndex ||
                     properties.firstChar) + // usFirstCharIndex
-           string16(lastCharIndex || properties.lastChar) +  // usLastCharIndex
+           string16(lastCharIndex || properties.lastChar) + // usLastCharIndex
            string16(typoAscent) + // sTypoAscender
            string16(typoDescent) + // sTypoDescender
            '\x00\x64' + // sTypoLineGap (7%-10% of the unitsPerEM value)
@@ -2676,7 +2676,7 @@ var Font = (function FontClosure() {
            string16(properties.capHeight) + // sCapHeight
            string16(0) + // usDefaultChar
            string16(firstCharIndex || properties.firstChar) + // usBreakChar
-           '\x00\x03';  // usMaxContext
+           '\x00\x03'; // usMaxContext
   }
 
   function createPostTable(properties) {
@@ -2689,7 +2689,7 @@ var Font = (function FontClosure() {
            '\x00\x00\x00\x00' + // minMemType42
            '\x00\x00\x00\x00' + // maxMemType42
            '\x00\x00\x00\x00' + // minMemType1
-           '\x00\x00\x00\x00';  // maxMemType1
+           '\x00\x00\x00\x00'; // maxMemType1
   }
 
   function createNameTable(name, proto) {
@@ -2698,16 +2698,16 @@ var Font = (function FontClosure() {
     }
 
     var strings = [
-      proto[0][0] || 'Original licence',  // 0.Copyright
-      proto[0][1] || name,                // 1.Font family
-      proto[0][2] || 'Unknown',           // 2.Font subfamily (font weight)
-      proto[0][3] || 'uniqueID',          // 3.Unique ID
-      proto[0][4] || name,                // 4.Full font name
-      proto[0][5] || 'Version 0.11',      // 5.Version
-      proto[0][6] || '',                  // 6.Postscript name
-      proto[0][7] || 'Unknown',           // 7.Trademark
-      proto[0][8] || 'Unknown',           // 8.Manufacturer
-      proto[0][9] || 'Unknown'            // 9.Designer
+      proto[0][0] || 'Original licence', // 0.Copyright
+      proto[0][1] || name, // 1.Font family
+      proto[0][2] || 'Unknown', // 2.Font subfamily (font weight)
+      proto[0][3] || 'uniqueID', // 3.Unique ID
+      proto[0][4] || name, // 4.Full font name
+      proto[0][5] || 'Version 0.11', // 5.Version
+      proto[0][6] || '', // 6.Postscript name
+      proto[0][7] || 'Unknown', // 7.Trademark
+      proto[0][8] || 'Unknown', // 8.Manufacturer
+      proto[0][9] || 'Unknown' // 9.Designer
     ];
 
     // Mac want 1-byte per character strings while Windows want
@@ -2729,9 +2729,9 @@ var Font = (function FontClosure() {
 
     var namesRecordCount = strings.length * platforms.length;
     var nameTable =
-      '\x00\x00' +                           // format
-      string16(namesRecordCount) +           // Number of names Record
-      string16(namesRecordCount * 12 + 6);   // Storage
+      '\x00\x00' + // format
+      string16(namesRecordCount) + // Number of names Record
+      string16(namesRecordCount * 12 + 6); // Storage
 
     // Build the name records field
     var strOffset = 0;
@@ -2873,9 +2873,9 @@ var Font = (function FontClosure() {
       }
 
       /**
-       * Read the appropriate subtable from the cmap according to 9.6.6.4 from
-       * PDF spec
-       */
+* Read the appropriate subtable from the cmap according to 9.6.6.4 from
+* PDF spec
+*/
       function readCmapTable(cmap, font, hasEncoding, isSymbolicFont) {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
@@ -2896,14 +2896,14 @@ var Font = (function FontClosure() {
 
           // The following block implements the following from the spec:
           //
-          //   When the font has no Encoding entry, or the font descriptor’s
-          //   Symbolic flag is set (in which case the Encoding entry
-          //   is ignored), this shall occur:
-          //      - If the font contains a (3, 0) subtable, the range of
-          //      - Otherwise, the (1, 0) subtable will be used.
-          //   Otherwise, if the font does have an encoding:
-          //      - Use the (3, 1) cmap subtable
-          //      - Otherwise, use the (1, 0) subtable if present
+          // When the font has no Encoding entry, or the font descriptor’s
+          // Symbolic flag is set (in which case the Encoding entry
+          // is ignored), this shall occur:
+          // - If the font contains a (3, 0) subtable, the range of
+          // - Otherwise, the (1, 0) subtable will be used.
+          // Otherwise, if the font does have an encoding:
+          // - Use the (3, 1) cmap subtable
+          // - Otherwise, use the (1, 0) subtable if present
           //
           // The following diverges slightly from the above spec in order
           // to handle the case that hasEncoding and isSymbolicFont are both
@@ -3867,10 +3867,10 @@ var Font = (function FontClosure() {
         // TODO(mack): If the (3, 0) cmap table used, then the font is
         // symbolic. The range of charcodes in the cmap table should be
         // one of the following:
-        //   -> 0x0000 - 0x00FF
-        //   -> 0xF000 - 0xF0FF
-        //   -> 0xF100 - 0xF1FF
-        //   -> 0xF200 - 0xF2FF
+        // -> 0x0000 - 0x00FF
+        // -> 0xF000 - 0xF0FF
+        // -> 0xF100 - 0xF1FF
+        // -> 0xF200 - 0xF2FF
         // If it is not, we should change not consider this a symbolic font
         this.isSymbolicFont = cmapTable.isSymbolicFont;
 
@@ -4181,7 +4181,7 @@ var Font = (function FontClosure() {
               '\x00\x11' + // lowestRecPPEM
               '\x00\x00' + // fontDirectionHint
               '\x00\x00' + // indexToLocFormat
-              '\x00\x00');  // glyphDataFormat
+              '\x00\x00'); // glyphDataFormat
         })(),
 
         // Horizontal header
@@ -4587,43 +4587,43 @@ var ErrorFont = (function ErrorFontClosure() {
 })();
 
 /*
- * CharStrings are encoded following the the CharString Encoding sequence
- * describe in Chapter 6 of the "Adobe Type1 Font Format" specification.
- * The value in a byte indicates a command, a number, or subsequent bytes
- * that are to be interpreted in a special way.
- *
- * CharString Number Encoding:
- *  A CharString byte containing the values from 32 through 255 inclusive
- *  indicate an integer. These values are decoded in four ranges.
- *
- * 1. A CharString byte containing a value, v, between 32 and 246 inclusive,
- * indicate the integer v - 139. Thus, the integer values from -107 through
- * 107 inclusive may be encoded in single byte.
- *
- * 2. A CharString byte containing a value, v, between 247 and 250 inclusive,
- * indicates an integer involving the next byte, w, according to the formula:
- * [(v - 247) x 256] + w + 108
- *
- * 3. A CharString byte containing a value, v, between 251 and 254 inclusive,
- * indicates an integer involving the next byte, w, according to the formula:
- * -[(v - 251) * 256] - w - 108
- *
- * 4. A CharString containing the value 255 indicates that the next 4 bytes
- * are a two complement signed integer. The first of these bytes contains the
- * highest order bits, the second byte contains the next higher order bits
- * and the fourth byte contain the lowest order bits.
- *
- *
- * CharString Command Encoding:
- *  CharStrings commands are encoded in 1 or 2 bytes.
- *
- *  Single byte commands are encoded in 1 byte that contains a value between
- *  0 and 31 inclusive.
- *  If a command byte contains the value 12, then the value in the next byte
- *  indicates a command. This "escape" mechanism allows many extra commands
- * to be encoded and this encoding technique helps to minimize the length of
- * the charStrings.
- */
+* CharStrings are encoded following the the CharString Encoding sequence
+* describe in Chapter 6 of the "Adobe Type1 Font Format" specification.
+* The value in a byte indicates a command, a number, or subsequent bytes
+* that are to be interpreted in a special way.
+*
+* CharString Number Encoding:
+* A CharString byte containing the values from 32 through 255 inclusive
+* indicate an integer. These values are decoded in four ranges.
+*
+* 1. A CharString byte containing a value, v, between 32 and 246 inclusive,
+* indicate the integer v - 139. Thus, the integer values from -107 through
+* 107 inclusive may be encoded in single byte.
+*
+* 2. A CharString byte containing a value, v, between 247 and 250 inclusive,
+* indicates an integer involving the next byte, w, according to the formula:
+* [(v - 247) x 256] + w + 108
+*
+* 3. A CharString byte containing a value, v, between 251 and 254 inclusive,
+* indicates an integer involving the next byte, w, according to the formula:
+* -[(v - 251) * 256] - w - 108
+*
+* 4. A CharString containing the value 255 indicates that the next 4 bytes
+* are a two complement signed integer. The first of these bytes contains the
+* highest order bits, the second byte contains the next higher order bits
+* and the fourth byte contain the lowest order bits.
+*
+*
+* CharString Command Encoding:
+* CharStrings commands are encoded in 1 or 2 bytes.
+*
+* Single byte commands are encoded in 1 byte that contains a value between
+* 0 and 31 inclusive.
+* If a command byte contains the value 12, then the value in the next byte
+* indicates a command. This "escape" mechanism allows many extra commands
+* to be encoded and this encoding technique helps to minimize the length of
+* the charStrings.
+*/
 var Type1CharString = (function Type1CharStringClosure() {
   var COMMAND_MAP = {
     'hstem': [1],
@@ -4911,19 +4911,19 @@ var Type1CharString = (function Type1CharStringClosure() {
 })();
 
 /*
- * Type1Parser encapsulate the needed code for parsing a Type1 font
- * program. Some of its logic depends on the Type2 charstrings
- * structure.
- * Note: this doesn't really parse the font since that would require evaluation
- * of PostScript, but it is possible in most cases to extract what we need
- * without a full parse.
- */
+* Type1Parser encapsulate the needed code for parsing a Type1 font
+* program. Some of its logic depends on the Type2 charstrings
+* structure.
+* Note: this doesn't really parse the font since that would require evaluation
+* of PostScript, but it is possible in most cases to extract what we need
+* without a full parse.
+*/
 var Type1Parser = (function Type1ParserClosure() {
   /*
-   * Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
-   * of Plaintext Bytes. The function took a key as a parameter which can be
-   * for decrypting the eexec block of for decoding charStrings.
-   */
+* Decrypt a Sequence of Ciphertext Bytes to Produce the Original Sequence
+* of Plaintext Bytes. The function took a key as a parameter which can be
+* for decrypting the eexec block of for decoding charStrings.
+*/
   var EEXEC_ENCRYPT_KEY = 55665;
   var CHAR_STRS_ENCRYPT_KEY = 4330;
 
@@ -5026,9 +5026,9 @@ var Type1Parser = (function Type1ParserClosure() {
     },
 
     /*
-     * Returns an object containing a Subrs array and a CharStrings
-     * array extracted from and eexec encrypted block of data
-     */
+* Returns an object containing a Subrs array and a CharStrings
+* array extracted from and eexec encrypted block of data
+*/
     extractFontProgram: function Type1Parser_extractFontProgram() {
       var stream = this.stream;
 
@@ -5213,9 +5213,9 @@ var Type1Parser = (function Type1ParserClosure() {
 })();
 
 /**
- * The CFF class takes a Type1 file and wrap it into a
- * 'Compact Font Format' which itself embed Type2 charstrings.
- */
+* The CFF class takes a Type1 file and wrap it into a
+* 'Compact Font Format' which itself embed Type2 charstrings.
+*/
 var CFFStandardStrings = [
   '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar', 'percent',
   'ampersand', 'quoteright', 'parenleft', 'parenright', 'asterisk', 'plus',
@@ -5970,16 +5970,16 @@ var CFFParser = (function CFFParserClosure() {
                 valid = false;
               }
             }
-          } else if (value >= 32 && value <= 246) {  // number
+          } else if (value >= 32 && value <= 246) { // number
             stack[stackSize] = value - 139;
             stackSize++;
-          } else if (value >= 247 && value <= 254) {  // number (+1 bytes)
+          } else if (value >= 247 && value <= 254) { // number (+1 bytes)
             stack[stackSize] = value < 251 ?
               ((value - 247) << 8) + data[j] + 108 :
               -((value - 251) << 8) - data[j] - 108;
             j++;
             stackSize++;
-          } else if (value == 255) {  // number (32 bit)
+          } else if (value == 255) { // number (32 bit)
             stack[stackSize] = ((data[j] << 24) | (data[j + 1] << 16) |
               (data[j + 2] << 8) | data[j + 3]) / 65536;
             j += 4;
@@ -6598,7 +6598,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
         // Rules based off of some mailing list discussions:
         // - If main font has a matrix and subfont doesn't, use the main matrix.
         // - If no main font matrix and there is a subfont matrix, use the
-        //   subfont matrix.
+        // subfont matrix.
         // - If both have matrices, concat together.
         // - If neither have matrices, use default.
         // To make this work on all platforms we move the top matrix into each
