@@ -466,7 +466,7 @@ var PDFBug = (function PDFBugClosure() {
        *  Panels
        *    Panel
        *    Panel
-       *    	...
+       *    ...
        */
       var ui = document.createElement('div');
       ui.id = 'PDFBug';

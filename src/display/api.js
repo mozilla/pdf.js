@@ -298,7 +298,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      *   imageLayer(optional): An object that has beginLayout, endLayout and
      *                         appendImage functions.,
      *   continueCallback(optional): A function that will be called each time
-     *                               the rendering is paused. To continue
+     *                               the rendering is paused.  To continue
      *                               rendering call the function that is the
      *                               first argument to the callback.
      * }.
