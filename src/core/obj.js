@@ -408,6 +408,10 @@ var Catalog = (function CatalogClosure() {
     },
 
     getPage: function Catalog_getPage(pageIndex) {
+      assert(
+        pageIndex >= 0 && pageIndex < this.numPages,
+        'Page index is out of bounds'
+      );
       if (!(pageIndex in this.pagePromises)) {
         this.pagePromises[pageIndex] = new Promise();
       }
