@@ -184,6 +184,7 @@ var PDFView = {
   thumbnailViewScroll: null,
   isPresentationMode: false,
   presentationModeArgs: null,
+  wasRightMouseButtonPressedInPresentationMode: false,
   pageRotation: 0,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
@@ -2423,6 +2424,8 @@ function updateViewarea() {
 
   // Update the current bookmark in the browsing history.
   PDFHistory.updateCurrentBookmark(pdfOpenParams, pageNumber);
+
+  PDFView.wasRightMouseButtonPressedInPresentationMode = false;
 }
 
 window.addEventListener('resize', function webViewerResize(evt) {
@@ -2569,17 +2572,25 @@ window.addEventListener('mousemove', function mousemove(evt) {
 }, false);
 
 window.addEventListener('mousedown', function mousedown(evt) {
-  if (PDFView.isPresentationMode && evt.button === 0) {
-    // Enable clicking of links in presentation mode.
-    // Note: Only links that point to the currently loaded PDF document works.
-    var targetHref = evt.target.href;
-    var internalLink = targetHref && (targetHref.replace(/#.*$/, '') ===
-                                      window.location.href.replace(/#.*$/, ''));
-    if (!internalLink) {
-      // Unless an internal link was clicked, advance a page in presentation
-      // mode.
-      evt.preventDefault();
-      PDFView.page++;
+  if (PDFView.isPresentationMode) {
+    if (evt.button === 0) {
+      if (PDFView.wasRightMouseButtonPressedInPresentationMode) {
+        PDFView.wasRightMouseButtonPressedInPresentationMode = false;
+        return;
+      }
+      // Enable clicking of links in presentation mode.
+      // Note: Only links that point to the currently loaded PDF document works.
+      var targetHref = evt.target.href;
+      var internalLink = targetHref && (targetHref.replace(/#.*$/, '') ===
+        window.location.href.replace(/#.*$/, ''));
+      if (!internalLink) {
+        // Unless an internal link was clicked, advance a page in presentation
+        // mode.
+        evt.preventDefault();
+        PDFView.page++;
+      }
+    } else if (evt.button === 2) {
+      PDFView.wasRightMouseButtonPressedInPresentationMode = true;
     }
   }
 }, false);
