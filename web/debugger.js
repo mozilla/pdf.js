@@ -462,11 +462,11 @@ var PDFBug = (function PDFBugClosure() {
       /*
        * Basic Layout:
        * PDFBug
-       * Controls
-       * Panels
-       *   Panel
-       *   Panel
-       *   ...
+       *  Controls
+       *  Panels
+       *    Panel
+       *    Panel
+       *    	...
        */
       var ui = document.createElement('div');
       ui.id = 'PDFBug';
