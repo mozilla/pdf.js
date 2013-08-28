@@ -48,10 +48,10 @@ PDFJS.disableFontFace = PDFJS.disableFontFace === undefined ?
  * @param {string|TypedAray|object} source Can be an url to where a PDF is
  * located, a typed array (Uint8Array) already populated with data or
  * and parameter object with the following possible fields:
- * - url - The URL of the PDF.
- * - data - A typed array with PDF data.
- * - httpHeaders - Basic authentication headers.
- * - password - For decrypting password-protected PDFs.
+ *  - url - The URL of the PDF.
+ *  - data - A typed array with PDF data.
+ *  - httpHeaders - Basic authentication headers.
+ *  - password - For decrypting password-protected PDFs.
  *
  * @param {object} pdfDataRangeTransport is optional. It is used if you want
  * to manually serve range requests for data in the PDF. See viewer.js for
@@ -163,12 +163,12 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * tree outline (if it has one) of the PDF. The tree is in the format of:
      * [
      * {
-     * title: string,
-     * bold: boolean,
-     * italic: boolean,
-     * color: rgb array,
-     * dest: dest obj,
-     * items: array of more items like this
+     *  title: string,
+     *  bold: boolean,
+     *  italic: boolean,
+     *  color: rgb array,
+     *  dest: dest obj,
+     *  items: array of more items like this
      * },
      * ...
      * ].
@@ -181,7 +181,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     },
     /**
      * @return {Promise} A promise that is resolved with an {object} that has
-     * info and metadata properties. Info is an {object} filled with anything
+     * info and metadata properties.  Info is an {object} filled with anything
      * available in the information dictionary and similarly metadata is a
      * {Metadata} object with information from the metadata section of the PDF.
      */
@@ -231,7 +231,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.stats.enabled = !!globalScope.PDFJS.enableStats;
     this.commonObjs = transport.commonObjs;
     this.objs = new PDFObjects();
-    this.receivingOperatorList = false;
+    this.receivingOperatorList =  false;
     this.cleanupAfterRender = false;
     this.pendingDestroy = false;
     this.renderTasks = [];
@@ -292,15 +292,15 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * Begins the process of rendering a page to the desired context.
      * @param {object} params A parameter object that supports:
      * {
-     * canvasContext(required): A 2D context of a DOM Canvas object.,
-     * textLayer(optional): An object that has beginLayout, endLayout, and
-     * appendText functions.,
-     * imageLayer(optional): An object that has beginLayout, endLayout and
-     * appendImage functions.,
-     * continueCallback(optional): A function that will be called each time
-     * the rendering is paused. To continue
-     * rendering call the function that is the
-     * first argument to the callback.
+     *  canvasContext(required): A 2D context of a DOM Canvas object.,
+     *  textLayer(optional): An object that has beginLayout, endLayout, and
+     *                       appendText functions.,
+     *  imageLayer(optional): An object that has beginLayout, endLayout and
+     *                        appendImage functions.,
+     *  continueCallback(optional): A function that will be called each time
+     *                              the rendering is paused. To continue
+     *                              rendering call the function that is the
+     *                              first argument to the callback.
      * }.
      * @return {RenderTask} An extended promise that is resolved when the page
      * finishes rendering (see RenderTask).
@@ -540,7 +540,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         Util.loadScript(PDFJS.workerSrc);
 //#else
 //      Util.loadScript(PDFJS.workerSrc, function() {
-//      PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+//        PDFJS.fakeWorkerFilesLoadedPromise.resolve();
 //      });
 //#endif
       }

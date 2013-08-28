@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-            isArrayBuffer, isName, isStream, isString, Lexer,
-            Linearization, NullStream, PartialEvaluator, shadow, Stream,
-            StreamsSequenceStream, stringToPDFString, Util, XRef,
-            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
-            */
+           isArrayBuffer, isName, isStream, isString, Lexer,
+           Linearization, NullStream, PartialEvaluator, shadow, Stream,
+           StreamsSequenceStream, stringToPDFString, Util, XRef,
+           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
+           */
 
 'use strict';
 

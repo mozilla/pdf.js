@@ -2151,8 +2151,8 @@ function adjustWidths(properties) {
  * decoding logics whatever type it is (assuming the font type is supported).
  *
  * For example to read a Type1 font and to attach it to the document:
- * var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
- * type1Font.bind();
+ *   var type1Font = new Font("MyFontName", binaryFile, propertiesObject);
+ *   type1Font.bind();
  */
 var Font = (function FontClosure() {
   function Font(name, file, properties) {
@@ -3870,7 +3870,7 @@ var Font = (function FontClosure() {
         //   -> 0x0000 - 0x00FF
         //   -> 0xF000 - 0xF0FF
         //   -> 0xF100 - 0xF1FF
-        // -> 0xF200 - 0xF2FF
+        //   -> 0xF200 - 0xF2FF
         // If it is not, we should change not consider this a symbolic font
         this.isSymbolicFont = cmapTable.isSymbolicFont;
 
@@ -4593,8 +4593,8 @@ var ErrorFont = (function ErrorFontClosure() {
  * that are to be interpreted in a special way.
  *
  * CharString Number Encoding:
- * A CharString byte containing the values from 32 through 255 inclusive
- * indicate an integer. These values are decoded in four ranges.
+ *  A CharString byte containing the values from 32 through 255 inclusive
+ *  indicate an integer. These values are decoded in four ranges.
  *
  * 1. A CharString byte containing a value, v, between 32 and 246 inclusive,
  * indicate the integer v - 139. Thus, the integer values from -107 through
@@ -4615,15 +4615,15 @@ var ErrorFont = (function ErrorFontClosure() {
  *
  *
  * CharString Command Encoding:
- * CharStrings commands are encoded in 1 or 2 bytes.
+ *  CharStrings commands are encoded in 1 or 2 bytes.
  *
- * Single byte commands are encoded in 1 byte that contains a value between
- * 0 and 31 inclusive.
- * If a command byte contains the value 12, then the value in the next byte
- * indicates a command. This "escape" mechanism allows many extra commands
+ *  Single byte commands are encoded in 1 byte that contains a value between
+ *  0 and 31 inclusive.
+ *  If a command byte contains the value 12, then the value in the next byte
+ *  indicates a command. This "escape" mechanism allows many extra commands
  * to be encoded and this encoding technique helps to minimize the length of
  * the charStrings.
-*/
+ */
 var Type1CharString = (function Type1CharStringClosure() {
   var COMMAND_MAP = {
     'hstem': [1],

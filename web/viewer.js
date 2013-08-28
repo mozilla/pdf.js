@@ -739,8 +739,8 @@ var PDFView = {
    * Show the error box.
    * @param {String} message A message that is human readable.
    * @param {Object} moreInfo (optional) Further information about the error
-   * that is more technical. Should have a 'message'
-   * and optionally a 'stack' property.
+   *                            that is more technical. Should have a 'message'
+   *                            and optionally a 'stack' property.
    */
   error: function pdfViewError(message, moreInfo) {
     var moreInfoText = mozL10n.get('error_version_info',
@@ -1926,14 +1926,14 @@ var PageView = function pageView(container, id, scale,
 //        'Web fonts are disabled: unable to use embedded PDF fonts.'));
 //      PDFView.fallback();
 //    }
-//   if (self.textLayer && self.textLayer.textDivs &&
-//       self.textLayer.textDivs.length > 0 &&
-//       !PDFView.supportsDocumentColors) {
-//     console.error(mozL10n.get('document_colors_disabled', null,
-//       'PDF documents are not allowed to use their own colors: ' +
-//       '\'Allow pages to choose their own colors\' ' +
-//       'is deactivated in the browser.'));
-//     PDFView.fallback();
+//    if (self.textLayer && self.textLayer.textDivs &&
+//        self.textLayer.textDivs.length > 0 &&
+//        !PDFView.supportsDocumentColors) {
+//      console.error(mozL10n.get('document_colors_disabled', null,
+//        'PDF documents are not allowed to use their own colors: ' +
+//        '\'Allow pages to choose their own colors\' ' +
+//        'is deactivated in the browser.'));
+//      PDFView.fallback();
 //    }
 //#endif
       if (error) {
