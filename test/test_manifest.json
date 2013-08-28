@@ -996,6 +996,14 @@
       "type": "eq",
       "about": "CFF CID font with font matrices in main top dict and sub top dict."
     },
+    {  "id": "issue3566",
+      "file": "pdfs/issue3566.pdf",
+      "md5": "e9ab02aa769f4c040a6fa52f00d6e3f0",
+      "rounds": 1,
+      "type": "eq",
+      "lastPage": 1,
+      "about": "CFF font with multiply-encoded glyph and no pdf encoding dict."
+    },
     {  "id": "issue1878",
       "file": "pdfs/issue1878.pdf",
       "md5": "b4fb0ce7c19368e7104dce3d0d34bcb3",
