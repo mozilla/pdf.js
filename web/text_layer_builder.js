@@ -129,8 +129,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = geom.fontFamily;
-    textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
-    textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
+   //textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
+    //textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
 
     // The content of the div is set in the `setTextContent` function.
 
