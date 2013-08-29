@@ -800,8 +800,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case 'Td':
               var item = args[0];
               var a = item[0], b = item[1];
-              //bidiText.x += a;
-              //bidiText.y += b;
+              bidiText.x += a;
+              bidiText.y += b;
               break;
             case 'cm':
               var items = args[0];
@@ -812,8 +812,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var a = array[0], b = array[1], c = array[2];
               var d = array[3], e = array[4], f = array[5];
               CTM  = state.transform(a, b, c, d, e, f);
-              //bidiText.x = CTM[4];
-              //bidiText.y = CTM[5];
+              bidiText.x = CTM[4];
+              bidiText.y = CTM[5];
               break;
             case 'TJ':
               var items = args[0];
@@ -898,7 +898,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           } // switch
 
           if (chunk !== '') {
-            bidiText.str = PDFJS.bidi(chunk, -1, font.vertical);
+            bidiText = PDFJS.bidi(chunk, -1, font.vertical);
             bidiTexts.push(bidiText);
 
             chunk = '';
