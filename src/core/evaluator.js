@@ -799,16 +799,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             case 'Td':
               var item = args[0];
-              var a = item[0], b = item[1];
+              var a = item.x, b = item.y;
               bidiText.x += a;
               bidiText.y += b;
               break;
             case 'cm':
-              var items = args[0];
-              var array;
-              for (var j = 0, jj = items.length; j < jj; j++) {
-                array[j] = items[j];
-              }
+              var array = args[0];
               var a = array[0], b = array[1], c = array[2];
               var d = array[3], e = array[4], f = array[5];
               CTM  = state.transform(a, b, c, d, e, f);
