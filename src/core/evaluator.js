@@ -808,8 +808,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var a = array[0], b = array[1], c = array[2];
               var d = array[3], e = array[4], f = array[5];
               CTM  = state.transform(a, b, c, d, e, f);
-              bidiText.x = CTM[4];
-              bidiText.y = CTM[5];
+              //bidiText.x = CTM[4];
+              //bidiText.y = CTM[5];
               break;
             case 'TJ':
               var items = args[0];
