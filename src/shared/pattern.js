@@ -269,7 +269,7 @@ var TilingPattern = (function TilingPatternClosure() {
     UNCOLORED: 2
   };
 
-  var MAX_PATTERN_SIZE = 8192;
+  var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
   function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
     this.name = IR[1][0].name;
@@ -303,7 +303,7 @@ var TilingPattern = (function TilingPatternClosure() {
   };
 
   TilingPattern.prototype = {
-    createPatternCanvas: function TilinPattern_createPatternCanvas(tmpCanvas) {
+    createPatternCanvas: function TilinPattern_createPatternCanvas(owner) {
       var operatorList = this.operatorList;
       var bbox = this.bbox;
       var xstep = this.xstep;
@@ -343,12 +343,10 @@ var TilingPattern = (function TilingPatternClosure() {
       height = Math.min(Math.ceil(Math.abs(height * combinedScale[1])),
                         MAX_PATTERN_SIZE);
 
-      tmpCanvas.width = width;
-      tmpCanvas.height = height;
-
-      // set the new canvas element context as the graphics context
-      var tmpCtx = tmpCanvas.getContext('2d');
+      var tmpCanvas = CachedCanvases.getCanvas('pattern', width, height, true);
+      var tmpCtx = tmpCanvas.context;
       var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
+      graphics.groupLevel = owner.groupLevel;
 
       this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
 
@@ -362,6 +360,7 @@ var TilingPattern = (function TilingPatternClosure() {
       this.clipBbox(graphics, bbox, x0, y0, x1, y1);
 
       graphics.executeOperatorList(operatorList);
+      return tmpCanvas.canvas;
     },
 
     setScale: function TilingPattern_setScale(width, height, xstep, ystep) {
@@ -408,9 +407,8 @@ var TilingPattern = (function TilingPatternClosure() {
       }
     },
 
-    getPattern: function TilingPattern_getPattern() {
-      var temporaryPatternCanvas = CachedCanvases.getCanvas('pattern');
-      this.createPatternCanvas(temporaryPatternCanvas);
+    getPattern: function TilingPattern_getPattern(ctx, owner) {
+      var temporaryPatternCanvas = this.createPatternCanvas(owner);
 
       var ctx = this.ctx;
       ctx.setTransform.apply(ctx, this.baseTransform);
