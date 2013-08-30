@@ -788,7 +788,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var chunk = '';
       var font = null;
       var bidiText;
-      var CTM = [1, 1, 1, 1, 51, 51];
+      var CTM = [1, 1, 1, 1, 1, 1];
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
@@ -799,7 +799,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             case 'Td':
               var item = args[0];
-              var a = item.x, b = item.y;
+              var a = item[0], b = item[1];
               bidiText.x += a;
               bidiText.y += b;
               break;
