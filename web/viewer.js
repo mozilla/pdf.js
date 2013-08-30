@@ -1871,7 +1871,8 @@ var PageView = function pageView(container, id, scale,
           textLayerDiv ? new TextLayerBuilder({
               textLayerDiv: textLayerDiv,
               pageIndex: this.id - 1,
-              lastScrollSource: PDFView
+              lastScrollSource: PDFView,
+              viewport: this.viewport
           }) : null;
 
     if (outputScale.scaled) {

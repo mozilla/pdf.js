@@ -752,6 +752,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var chunk = '';
       var font = null;
+      var bidiText;
+      var charSpace = 0, wordSpace = 0;
       while (!isEOF(obj = parser.getObj())) {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
@@ -759,6 +761,56 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             // TODO: Add support for SAVE/RESTORE and XFORM here.
             case 'Tf':
               font = handleSetFont(args[0].name).translated;
+              this.state.fontSize = args[1];
+              break;
+            case 'Ts':
+              this.state.textRise = args[0];
+              break;
+            case 'Tz':
+              this.state.textHScale = args[0] / 100;
+              break;
+            case 'TL':
+              this.state.leading = args[0];
+              break;
+            case 'Td':
+              this.state.translateTextMatrix(args[0], args[1]);
+              break;
+            case 'TD':
+              this.state.leading = - args[1];
+              this.state.translateTextMatrix(args[0], args[1]);
+              break;
+            case 'T*':
+              this.state.translateTextMatrix(0, - this.state.leading);
+              break;
+            case 'Tm':
+              var matrix = [];
+              for (var j = 0, jj = args.length; j < jj; j++) {
+                matrix[j] = args[j];
+              }
+              this.state.textMatrix = this.state.setTextMatrix(
+                                          matrix[0], matrix[1], matrix[2],
+                                          matrix[3], matrix[4], matrix[5]);
+              break;
+            case 'Tc':
+              charSpace = args[0];
+              break;
+            case 'Tw':
+              wordSpace = args[0];
+              break;
+            case 'q':
+              var old = this.state;
+              this.stateStack.push(this.state);
+              this.state = old.clone();
+              break;
+            case 'Q':
+              var prev = this.stateStack.pop();
+              if (prev) {
+                this.state = prev;
+              }
+              break;
+            case 'cm':
+              this.state.ctm = this.state.tranformCTM(args[0], args[1], args[2],
+                                   args[3], args[4], args[5]);
               break;
             case 'TJ':
               var items = args[0];
@@ -843,7 +895,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           } // switch
 
           if (chunk !== '') {
-            var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
+            this.state.calcRenderMatrix();
+            var vscale = Math.sqrt((this.state.renderMatrix[2] *
+                                   this.state.renderMatrix[2]) +
+                                   (this.state.renderMatrix[3] *
+                                   this.state.renderMatrix[3]));
+            var angle = Math.atan2(this.state.renderMatrix[1],
+                                  this.state.renderMatrix[0]);
+            bidiText = PDFJS.bidi(chunk, -1, font.vertical);
+            bidiText.x = this.state.renderMatrix[4] -
+                         (this.state.fontSize * vscale * Math.sin(angle));
+            bidiText.y = this.state.renderMatrix[5] +
+                         (this.state.fontSize * vscale * Math.cos(angle));
             bidiTexts.push(bidiText);
 
             chunk = '';
@@ -1557,10 +1620,60 @@ var EvalState = (function EvalStateClosure() {
   function EvalState() {
     this.font = null;
     this.textRenderingMode = TextRenderingMode.FILL;
+    this.fontSize = 0;
+    this.ctm = [1, 0, 0, 1, 0, 0];
+    this.textMatrix = [1, 0, 0, 1, 0, 0];
+    //textState variables
+    this.leading = 0;
+    this.textHScale = 1;
+    this.textRise = 0;
+    this.renderMatrix = [1, 0, 0, 1, 0, 0];
   }
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {
       return Object.create(this);
+    },
+    setTextMatrix: function Canvas_setTextMatrix(a, b, c, d, e, f) {
+      return this.textMatrix = [a, b, c, d, e, f];
+    },
+    transformCTM: function Canvas_ctxTransform(a, b, c, d, e, f) {
+      var m = this.ctm;
+      return this.ctm = [
+        m[0] * a + m[2] * b,
+        m[1] * a + m[3] * b,
+        m[0] * c + m[2] * d,
+        m[1] * c + m[3] * d,
+        m[0] * e + m[2] * f + m[4],
+        m[1] * e + m[3] * f + m[5]
+      ];
+    },
+    translateTextMatrix: function Canvas_textMatrixTranslate(x, y) {
+      var m = this.textMatrix;
+      m[4] = m[0] * x + m[2] * y + m[4];
+      m[5] = m[1] * x + m[3] * y + m[5];
+    },
+    calcRenderMatrix: function RenderingMatrix() {
+      var tm = this.textMatrix;
+      var cm = this.ctm;
+      var a = this.fontSize;
+      var b = a * this.textHScale;
+      var c = this.textRise;
+      var matrix = [
+        tm[0] * cm[0] + tm[1] * cm[2],
+        tm[0] * cm[1] + tm[1] * cm[3],
+        tm[2] * cm[0] + tm[3] * cm[2],
+        tm[2] * cm[1] + tm[3] * cm[3],
+        tm[4] * cm[0] + tm[5] * cm[2] + cm[4],
+        tm[4] * cm[1] + tm[5] * cm[3] + cm[5]
+      ];
+      this.renderMatrix = [
+        b * matrix[0],
+        b * matrix[1],
+        a * matrix[2],
+        a * matrix[3],
+        c * matrix[2] + matrix[4],
+        c * matrix[3] + matrix[5]
+      ];
     },
   };
   return EvalState;
