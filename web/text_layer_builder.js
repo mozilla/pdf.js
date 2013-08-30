@@ -157,8 +157,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       }
 
       textDiv.textContent = bidiText.str;
-    //  textDiv.style.left = bidiText.x;
-    //  textDiv.style.top = bidiText.y;
+      textDiv.style.left = bidiText.x;
+      textDiv.style.top = bidiText.y;
       // bidiText.dir may be 'ttb' for vertical texts.
       textDiv.dir = bidiText.dir;
     }
