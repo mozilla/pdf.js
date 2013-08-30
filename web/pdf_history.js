@@ -231,6 +231,22 @@ var PDFHistory = {
                                                             beforeUnload) {
     if (!(this.currentBookmark && this.currentPage)) {
       return null;
+    } else if (this.updatePreviousBookmark) {
+      this.updatePreviousBookmark = false;
+    }
+    if (this.uid > 0 && !(this.previousBookmark && this.previousPage)) {
+      // Prevent the history from getting stuck in the current state,
+      // effectively preventing the user from going back/forward in the history.
+      //
+      // This happens if the current position in the document didn't change when
+      // the history was previously updated. The reasons for this are either:
+      // 1. The current zoom value is such that the document does not need to,
+      //    or cannot, be scrolled to display the destination.
+      // 2. The previous destination is broken, and doesn't actally point to a
+      //    position within the document.
+      //    (This is either due to a bad PDF generator, or the user making a
+      //     mistake when entering a destination in the hash parameters.)
+      return null;
     }
     if ((!this.current.dest && !onlyCheckPage) || beforeUnload) {
       if (this.previousBookmark === this.currentBookmark) {
@@ -265,7 +281,8 @@ var PDFHistory = {
     if (addPrevious && !overwrite) {
       var previousParams = this._getPreviousParams();
       if (previousParams) {
-        var replacePrevious = (this.current.hash !== this.previousHash);
+        var replacePrevious = (!this.current.dest &&
+                               this.current.hash !== this.previousHash);
         this._pushToHistory(previousParams, false, replacePrevious);
       }
     }
