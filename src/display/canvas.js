@@ -158,19 +158,24 @@ function addContextCurrentTransform(ctx) {
 var CachedCanvases = (function CachedCanvasesClosure() {
   var cache = {};
   return {
-    getCanvas: function CachedCanvases_getCanvas(id, width, height) {
-      var canvas;
+    getCanvas: function CachedCanvases_getCanvas(id, width, height,
+                                                 trackTransform) {
+      var canvasEntry;
       if (id in cache) {
-        canvas = cache[id];
-        canvas.width = width;
-        canvas.height = height;
+        canvasEntry = cache[id];
+        canvasEntry.canvas.width = width;
+        canvasEntry.canvas.height = height;
         // reset canvas transform for emulated mozCurrentTransform, if needed
-        canvas.getContext('2d').setTransform(1, 0, 0, 1, 0, 0);
+        canvasEntry.context.setTransform(1, 0, 0, 1, 0, 0);
       } else {
-        canvas = createScratchCanvas(width, height);
-        cache[id] = canvas;
+        var canvas = createScratchCanvas(width, height);
+        var ctx = canvas.getContext('2d');
+        if (trackTransform) {
+          addContextCurrentTransform(ctx);
+        }
+        cache[id] = canvasEntry = {canvas: canvas, context: ctx};
       }
-      return canvas;
+      return canvasEntry;
     },
     clear: function () {
       cache = {};
@@ -399,6 +404,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // spec 8.7.2 NOTE 1.
     this.baseTransform = null;
     this.baseTransformStack = [];
+    this.groupLevel = 0;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -745,7 +751,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // for patterns, we transform to pattern space, calculate
         // the pattern, call stroke, and restore to user space
         ctx.save();
-        ctx.strokeStyle = strokeColor.getPattern(ctx);
+        ctx.strokeStyle = strokeColor.getPattern(ctx, this);
         ctx.stroke();
         ctx.restore();
       } else {
@@ -769,7 +775,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (fillColor && fillColor.hasOwnProperty('type') &&
           fillColor.type === 'Pattern') {
         ctx.save();
-        ctx.fillStyle = fillColor.getPattern(ctx);
+        ctx.fillStyle = fillColor.getPattern(ctx, this);
         needRestore = true;
       }
 
@@ -1393,7 +1399,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       this.save();
       var pattern = Pattern.shadingFromIR(patternIR);
-      ctx.fillStyle = pattern.getPattern(ctx);
+      ctx.fillStyle = pattern.getPattern(ctx, this);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
@@ -1505,9 +1511,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var drawnWidth = Math.max(Math.ceil(bounds[2] - bounds[0]), 1);
       var drawnHeight = Math.max(Math.ceil(bounds[3] - bounds[1]), 1);
 
-      var scratchCanvas = createScratchCanvas(drawnWidth, drawnHeight);
-      var groupCtx = scratchCanvas.getContext('2d');
-      addContextCurrentTransform(groupCtx);
+      var scratchCanvas = CachedCanvases.getCanvas(
+        'groupAt' + this.groupLevel, drawnWidth, drawnHeight, true);
+      var groupCtx = scratchCanvas.context;
       // Since we created a new canvas that is just the size of the bounding box
       // we have to translate the group ctx.
       var offsetX = bounds[0];
@@ -1519,7 +1525,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // location.
       currentCtx.setTransform(1, 0, 0, 1, 0, 0);
       currentCtx.translate(offsetX, offsetY);
-
       // The transparency group inherits all off the current graphics state
       // except the blend mode, soft mask, and alpha constants.
       copyCtxState(currentCtx, groupCtx);
@@ -1531,9 +1536,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ['CA', 1]
       ]);
       this.groupStack.push(currentCtx);
+      this.groupLevel++;
     },
 
     endGroup: function CanvasGraphics_endGroup(group) {
+      this.groupLevel--;
       var groupCtx = this.ctx;
       this.ctx = this.groupStack.pop();
       // Turn off image smoothing to avoid sub pixel interpolation which can
@@ -1626,7 +1633,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var maskCanvas = CachedCanvases.getCanvas('maskCanvas', width, height);
-      var maskCtx = maskCanvas.getContext('2d');
+      var maskCtx = maskCanvas.context;
       maskCtx.save();
 
       putBinaryImageData(maskCtx, img);
@@ -1636,12 +1643,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fillColor = this.current.fillColor;
       maskCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
                           fillColor.type === 'Pattern') ?
-                          fillColor.getPattern(maskCtx) : fillColor;
+                          fillColor.getPattern(maskCtx, this) : fillColor;
       maskCtx.fillRect(0, 0, width, height);
 
       maskCtx.restore();
 
-      this.paintInlineImageXObject(maskCanvas);
+      this.paintInlineImageXObject(maskCanvas.canvas);
     },
 
     paintImageMaskXObjectGroup:
@@ -1653,7 +1660,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var width = image.width, height = image.height;
 
         var maskCanvas = CachedCanvases.getCanvas('maskCanvas', width, height);
-        var maskCtx = maskCanvas.getContext('2d');
+        var maskCtx = maskCanvas.context;
         maskCtx.save();
 
         putBinaryImageData(maskCtx, image);
@@ -1663,7 +1670,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var fillColor = this.current.fillColor;
         maskCtx.fillStyle = (fillColor && fillColor.hasOwnProperty('type') &&
                             fillColor.type === 'Pattern') ?
-                            fillColor.getPattern(maskCtx) : fillColor;
+                            fillColor.getPattern(maskCtx, this) : fillColor;
         maskCtx.fillRect(0, 0, width, height);
 
         maskCtx.restore();
@@ -1671,7 +1678,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.save();
         ctx.transform.apply(ctx, image.transform);
         ctx.scale(1, -1);
-        ctx.drawImage(maskCanvas, 0, 0, width, height,
+        ctx.drawImage(maskCanvas.canvas, 0, 0, width, height,
                       0, -1, 1, 1);
         ctx.restore();
       }
@@ -1706,9 +1713,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         imgToPaint = imgData;
       } else {
         var tmpCanvas = CachedCanvases.getCanvas('inlineImage', width, height);
-        var tmpCtx = tmpCanvas.getContext('2d');
+        var tmpCtx = tmpCanvas.context;
         putBinaryImageData(tmpCtx, imgData);
-        imgToPaint = tmpCanvas;
+        imgToPaint = tmpCanvas.canvas;
       }
 
       var paintWidth = width, paintHeight = height;
@@ -1729,11 +1736,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
         var tmpCanvas = CachedCanvases.getCanvas(tmpCanvasId,
                                                  newWidth, newHeight);
-        tmpCtx = tmpCanvas.getContext('2d');
+        tmpCtx = tmpCanvas.context;
         tmpCtx.clearRect(0, 0, newWidth, newHeight);
         tmpCtx.drawImage(imgToPaint, 0, 0, paintWidth, paintHeight,
                                      0, 0, newWidth, newHeight);
-        imgToPaint = tmpCanvas;
+        imgToPaint = tmpCanvas.canvas;
         paintWidth = newWidth;
         paintHeight = newHeight;
         tmpCanvasId = tmpCanvasId === 'prescale1' ? 'prescale2' : 'prescale1';
@@ -1761,7 +1768,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var h = imgData.height;
 
       var tmpCanvas = CachedCanvases.getCanvas('inlineImage', w, h);
-      var tmpCtx = tmpCanvas.getContext('2d');
+      var tmpCtx = tmpCanvas.context;
       putBinaryImageData(tmpCtx, imgData);
 
       for (var i = 0, ii = map.length; i < ii; i++) {
@@ -1769,7 +1776,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.save();
         ctx.transform.apply(ctx, entry.transform);
         ctx.scale(1, -1);
-        ctx.drawImage(tmpCanvas, entry.x, entry.y, entry.w, entry.h,
+        ctx.drawImage(tmpCanvas.canvas, entry.x, entry.y, entry.w, entry.h,
                       0, -1, 1, 1);
         if (this.imageLayer) {
           var position = this.getCanvasPosition(entry.x, entry.y);
