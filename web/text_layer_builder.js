@@ -36,6 +36,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.pageIdx = options.pageIndex;
   this.matches = [];
   this.lastScrollSource = options.lastScrollSource;
+  this.isViewerInPresentationMode = options.isViewerInPresentationMode;
 
   if(typeof PDFFindController === 'undefined') {
       window.PDFFindController = null;
@@ -304,8 +305,9 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
       var isSelected = isSelectedPage && i === selectedMatchIdx;
       var highlightSuffix = (isSelected ? ' selected' : '');
-      if (isSelected)
-        scrollIntoView(textDivs[begin.divIdx], {top: -50});
+      if (isSelected && !this.isViewerInPresentationMode) {
+        scrollIntoView(textDivs[begin.divIdx], { top: -50 });
+      }
 
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
