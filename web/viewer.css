@@ -1064,12 +1064,14 @@ canvas {
   background-color: white;
 }
 
-.page > a {
+.page > a,
+.annotationLayer > a {
   display: block;
   position: absolute;
 }
 
-.page > a:hover {
+.page > a:hover,
+.annotationLayer > a:hover {
   opacity: 0.2;
   background: #ff0;
   box-shadow: 0px 2px 10px #ff0;
