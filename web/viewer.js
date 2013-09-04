@@ -1653,6 +1653,7 @@ var PageView = function pageView(container, id, scale,
     }
 
     function bindNamedAction(link, action) {
+      link.href = PDFView.getAnchorUrl('');
       link.onclick = function pageViewSetupNamedActionOnClick() {
         // See PDF reference, table 8.45 - Named action
         switch (action) {
