@@ -400,6 +400,10 @@ var PDFView = {
         document.mozFullScreenEnabled === false ||
         document.webkitFullscreenEnabled === false ) {
       support = false;
+    } else if (this.isViewerEmbedded) {
+      // Need to check if the viewer is embedded as well, to prevent issues with
+      // presentation mode when the viewer is embedded in '<object>' tags.
+      support = false;
     }
 
     Object.defineProperty(this, 'supportsFullscreen', { value: support,
@@ -1392,6 +1396,9 @@ var PDFView = {
   },
 
   presentationMode: function pdfViewPresentationMode() {
+    if (!this.supportsFullscreen) {
+      return false;
+    }
     var isPresentationMode = document.fullscreenElement ||
                              document.mozFullScreen ||
                              document.webkitIsFullScreen;
