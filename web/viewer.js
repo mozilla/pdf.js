@@ -17,7 +17,7 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
-           PDFHistory, ThumbnailView, noContextMenuHandler */
+           PDFHistory, ThumbnailView, noContextMenuHandler, SecondaryToolbar */
 
 'use strict';
 
@@ -167,6 +167,7 @@ var currentPageNumber = 1;
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
 //#include pdf_history.js
+//#include secondary_toolbar.js
 
 var PDFView = {
   pages: [],
@@ -204,21 +205,34 @@ var PDFView = {
     this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
                      this.renderHighestPriority.bind(this));
 
+    SecondaryToolbar.initialize({
+      toolbar: document.getElementById('secondaryToolbar'),
+      toggleButton: document.getElementById('secondaryToolbarToggle'),
+      presentationMode: document.getElementById('secondaryPresentationMode'),
+      openFile: document.getElementById('secondaryOpenFile'),
+      print: document.getElementById('secondaryPrint'),
+      download: document.getElementById('secondaryDownload'),
+      firstPage: document.getElementById('firstPage'),
+      lastPage: document.getElementById('lastPage'),
+      pageRotateCw: document.getElementById('pageRotateCw'),
+      pageRotateCcw: document.getElementById('pageRotateCcw')
+    });
+
     PDFFindBar.initialize({
-        bar: document.getElementById('findbar'),
-        toggleButton: document.getElementById('viewFind'),
-        findField: document.getElementById('findInput'),
-        highlightAllCheckbox: document.getElementById('findHighlightAll'),
-        caseSensitiveCheckbox: document.getElementById('findMatchCase'),
-        findMsg: document.getElementById('findMsg'),
-        findStatusIcon: document.getElementById('findStatusIcon'),
-        findPreviousButton: document.getElementById('findPrevious'),
-        findNextButton: document.getElementById('findNext')
+      bar: document.getElementById('findbar'),
+      toggleButton: document.getElementById('viewFind'),
+      findField: document.getElementById('findInput'),
+      highlightAllCheckbox: document.getElementById('findHighlightAll'),
+      caseSensitiveCheckbox: document.getElementById('findMatchCase'),
+      findMsg: document.getElementById('findMsg'),
+      findStatusIcon: document.getElementById('findStatusIcon'),
+      findPreviousButton: document.getElementById('findPrevious'),
+      findNextButton: document.getElementById('findNext')
     });
 
     PDFFindController.initialize({
-        pdfPageSource: this,
-        integratedFind: this.supportsIntegratedFind
+      pdfPageSource: this,
+      integratedFind: this.supportsIntegratedFind
     });
 
     this.initialized = true;
@@ -1410,6 +1424,9 @@ var PDFView = {
     this.page = this.presentationModeArgs.page;
     this.parseScale('page-fit', true);
     this.showPresentationControls();
+
+    var viewer = document.getElementById('viewer');
+    viewer.setAttribute('contextmenu', 'viewerContextMenu');
   },
 
   exitPresentationMode: function pdfViewExitPresentationMode() {
@@ -1419,6 +1436,9 @@ var PDFView = {
     this.clearMouseScrollState();
     this.hidePresentationControls();
     this.presentationModeArgs = null;
+
+    var viewer = document.getElementById('viewer');
+    viewer.removeAttribute('contextmenu');
 
     // Ensure that the thumbnail of the current page is visible
     // when exiting presentation mode.
@@ -2169,11 +2189,13 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     document.getElementById('openFile').setAttribute('hidden', 'true');
+    document.getElementById('secondaryOpenFile').setAttribute('hidden', 'true');
   } else {
     document.getElementById('fileInput').value = null;
   }
 //#else
 //document.getElementById('openFile').setAttribute('hidden', 'true');
+//document.getElementById('secondaryOpenFile').setAttribute('hidden', 'true');
 //#endif
 
   // Special debugging flags in the hash section of the URL.
@@ -2240,10 +2262,13 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   if (!PDFView.supportsPrinting) {
     document.getElementById('print').classList.add('hidden');
+    document.getElementById('secondaryPrint').classList.add('hidden');
   }
 
   if (!PDFView.supportsFullscreen) {
     document.getElementById('presentationMode').classList.add('hidden');
+    document.getElementById('secondaryPresentationMode').
+      classList.add('hidden');
   }
 
   if (PDFView.supportsIntegratedFind) {
@@ -2311,28 +2336,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.zoomOut();
     });
 
-  document.getElementById('presentationMode').addEventListener('click',
-    function() {
-      PDFView.presentationMode();
-    });
-
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
-  document.getElementById('openFile').addEventListener('click',
-    function() {
-      document.getElementById('fileInput').click();
-    });
-//#endif
-
-  document.getElementById('print').addEventListener('click',
-    function() {
-      window.print();
-    });
-
-  document.getElementById('download').addEventListener('click',
-    function() {
-      PDFView.download();
-    });
-
   document.getElementById('pageNumber').addEventListener('click',
     function() {
       this.select();
@@ -2353,25 +2356,29 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       PDFView.parseScale(this.value);
     });
 
-  document.getElementById('firstPage').addEventListener('click',
-    function() {
-      PDFView.page = 1;
-    });
+  document.getElementById('presentationMode').addEventListener('click',
+    SecondaryToolbar.presentationModeClick.bind(SecondaryToolbar));
 
-  document.getElementById('lastPage').addEventListener('click',
-    function() {
-      PDFView.page = PDFView.pdfDocument.numPages;
-    });
+  document.getElementById('openFile').addEventListener('click',
+    SecondaryToolbar.openFileClick.bind(SecondaryToolbar));
 
-  document.getElementById('pageRotateCcw').addEventListener('click',
-    function() {
-      PDFView.rotatePages(-90);
-    });
+  document.getElementById('print').addEventListener('click',
+    SecondaryToolbar.printClick.bind(SecondaryToolbar));
 
-  document.getElementById('pageRotateCw').addEventListener('click',
-    function() {
-      PDFView.rotatePages(90);
-    });
+  document.getElementById('download').addEventListener('click',
+    SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
+
+  document.getElementById('contextFirstPage').addEventListener('click',
+    SecondaryToolbar.firstPageClick.bind(SecondaryToolbar));
+
+  document.getElementById('contextLastPage').addEventListener('click',
+    SecondaryToolbar.lastPageClick.bind(SecondaryToolbar));
+
+  document.getElementById('contextPageRotateCw').addEventListener('click',
+    SecondaryToolbar.pageRotateCwClick.bind(SecondaryToolbar));
+
+  document.getElementById('contextPageRotateCcw').addEventListener('click',
+    SecondaryToolbar.pageRotateCcwClick.bind(SecondaryToolbar));
 
 //#if (FIREFOX || MOZCENTRAL)
 //PDFView.setTitleUsingUrl(file);
@@ -2458,6 +2465,9 @@ window.addEventListener('resize', function webViewerResize(evt) {
     PDFView.parseScale(document.getElementById('scaleSelect').value);
   }
   updateViewarea();
+
+  // Set the 'max-height' CSS property of the secondary toolbar.
+  SecondaryToolbar.setMaxHeight(PDFView.container);
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
@@ -2486,6 +2496,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
+  document.getElementById('secondaryDownload').setAttribute('hidden', 'true');
 }, true);
 
 function selectScaleOption(value) {
@@ -2506,10 +2517,10 @@ function selectScaleOption(value) {
 window.addEventListener('localized', function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
-  // Adjust the width of the zoom box to fit the content.
-  // Note: This is only done if the zoom box is actually visible,
-  // since otherwise element.clientWidth will return 0.
   PDFView.animationStartedPromise.then(function() {
+    // Adjust the width of the zoom box to fit the content.
+    // Note: This is only done if the zoom box is actually visible,
+    // since otherwise element.clientWidth will return 0.
     var container = document.getElementById('scaleSelectContainer');
     if (container.clientWidth > 0) {
       var select = document.getElementById('scaleSelect');
@@ -2520,6 +2531,9 @@ window.addEventListener('localized', function localized(evt) {
       container.setAttribute('style', 'min-width: ' + width + 'px; ' +
                                       'max-width: ' + width + 'px;');
     }
+
+    // Set the 'max-height' CSS property of the secondary toolbar.
+    SecondaryToolbar.setMaxHeight(PDFView.container);
   });
 }, true);
 
@@ -2609,9 +2623,13 @@ window.addEventListener('mousedown', function mousedown(evt) {
 }, false);
 
 window.addEventListener('click', function click(evt) {
-  if (PDFView.isPresentationMode && evt.button === 0) {
+  if (!PDFView.isPresentationMode) {
+    if (SecondaryToolbar.isOpen && PDFView.container.contains(evt.target)) {
+      SecondaryToolbar.close();
+    }
+  } else if (evt.button === 0) {
     // Necessary since preventDefault() in 'mousedown' won't stop
-    // the event propagation in all circumstances.
+    // the event propagation in all circumstances in presentation mode.
     evt.preventDefault();
   }
 }, false);
@@ -2670,6 +2688,7 @@ window.addEventListener('keydown', function keydown(evt) {
     switch (evt.keyCode) {
       case 80: // p
         PDFView.presentationMode();
+        SecondaryToolbar.close();
         handled = true;
         break;
     }
@@ -2685,7 +2704,10 @@ window.addEventListener('keydown', function keydown(evt) {
   var curElement = document.activeElement || document.querySelector(':focus');
   if (curElement && (curElement.tagName.toUpperCase() === 'INPUT' ||
                      curElement.tagName.toUpperCase() === 'SELECT')) {
-    return;
+    // Make sure that the secondary toolbar is closed when Escape is pressed.
+    if (evt.keyCode !== 27) { // 'Esc'
+      return;
+    }
   }
   var controlsElement = document.getElementById('toolbar');
   while (curElement) {
@@ -2717,6 +2739,10 @@ window.addEventListener('keydown', function keydown(evt) {
         handled = true;
         break;
       case 27: // esc key
+        if (SecondaryToolbar.isOpen) {
+          SecondaryToolbar.close();
+          handled = true;
+        }
         if (!PDFView.supportsIntegratedFind && PDFFindBar.opened) {
           PDFFindBar.close();
           handled = true;
