@@ -1262,16 +1262,8 @@ var PDFView = {
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
-    if (!this.isPresentationMode) {
-      return this.getVisibleElements(this.container, this.pages, true);
-    } else {
-      // The algorithm in getVisibleElements is broken in presentation mode.
-      var visible = [], page = this.page;
-      var currentPage = this.pages[page - 1];
-      visible.push({ id: currentPage.id, view: currentPage });
-
-      return { first: currentPage, last: currentPage, views: visible};
-    }
+    return this.getVisibleElements(this.container, this.pages,
+                                   !this.isPresentationMode);
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
@@ -1760,12 +1752,11 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
+      if (PDFView.isPresentationMode) { // Avoid breaking presentation mode.
+        dest = null;
+      }
       if (!dest) {
         scrollIntoView(div);
-        return;
-      }
-      if (PDFView.isPresentationMode) { // Avoid breaking presentation mode.
-        PDFView.page = id;
         return;
       }
 
@@ -1893,11 +1884,12 @@ var PageView = function pageView(container, id, scale,
       div.appendChild(textLayerDiv);
     }
     var textLayer = this.textLayer =
-          textLayerDiv ? new TextLayerBuilder({
-              textLayerDiv: textLayerDiv,
-              pageIndex: this.id - 1,
-              lastScrollSource: PDFView
-          }) : null;
+      textLayerDiv ? new TextLayerBuilder({
+        textLayerDiv: textLayerDiv,
+        pageIndex: this.id - 1,
+        lastScrollSource: PDFView,
+        isViewerInPresentationMode: PDFView.isPresentationMode
+      }) : null;
 
     if (outputScale.scaled) {
       var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
@@ -2386,8 +2378,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
 function updateViewarea() {
 
-  if (!PDFView.initialized)
+  if (!PDFView.initialized) {
     return;
+  }
   var visible = PDFView.getVisiblePages();
   var visiblePages = visible.views;
   if (visiblePages.length === 0) {
@@ -2403,9 +2396,9 @@ function updateViewarea() {
        i < ii; ++i) {
     var page = visiblePages[i];
 
-    if (page.percent < 100)
+    if (page.percent < 100) {
       break;
-
+    }
     if (page.id === PDFView.page) {
       stillFullyVisible = true;
       break;
@@ -2416,11 +2409,9 @@ function updateViewarea() {
     currentId = visiblePages[0].id;
   }
 
-  if (!PDFView.isPresentationMode) {
-    updateViewarea.inProgress = true; // used in "set page"
-    PDFView.page = currentId;
-    updateViewarea.inProgress = false;
-  }
+  updateViewarea.inProgress = true; // used in "set page"
+  PDFView.page = currentId;
+  updateViewarea.inProgress = false;
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
