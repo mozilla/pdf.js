@@ -65,6 +65,7 @@ limitations under the License.
     <script type="text/javascript" src="pdf_find_bar.js"></script>
     <script type="text/javascript" src="pdf_find_controller.js"></script>
     <script type="text/javascript" src="pdf_history.js"></script>
+    <script type="text/javascript" src="secondary_toolbar.js"></script> 
 <!--#endif-->
 
     <script type="text/javascript" src="debugger.js"></script>
@@ -97,22 +98,61 @@ limitations under the License.
       <div id="mainContainer">
         <div class="findbar hidden doorHanger hiddenSmallView" id="findbar">
           <label for="findInput" class="toolbarLabel" data-l10n-id="find_label">Find:</label>
-          <input id="findInput" class="toolbarField" tabindex="21">
+          <input id="findInput" class="toolbarField" tabindex="41">
           <div class="splitToolbarButton">
-            <button class="toolbarButton findPrevious" title="" id="findPrevious" tabindex="22" data-l10n-id="find_previous">
+            <button class="toolbarButton findPrevious" title="" id="findPrevious" tabindex="42" data-l10n-id="find_previous">
               <span data-l10n-id="find_previous_label">Previous</span>
             </button>
             <div class="splitToolbarButtonSeparator"></div>
-            <button class="toolbarButton findNext" title="" id="findNext" tabindex="23" data-l10n-id="find_next">
+            <button class="toolbarButton findNext" title="" id="findNext" tabindex="43" data-l10n-id="find_next">
               <span data-l10n-id="find_next_label">Next</span>
             </button>
           </div>
           <input type="checkbox" id="findHighlightAll" class="toolbarField">
-          <label for="findHighlightAll" class="toolbarLabel" tabindex="24" data-l10n-id="find_highlight">Highlight all</label>
+          <label for="findHighlightAll" class="toolbarLabel" tabindex="44" data-l10n-id="find_highlight">Highlight all</label>
           <input type="checkbox" id="findMatchCase" class="toolbarField">
-          <label for="findMatchCase" class="toolbarLabel" tabindex="25" data-l10n-id="find_match_case_label">Match case</label>
+          <label for="findMatchCase" class="toolbarLabel" tabindex="45" data-l10n-id="find_match_case_label">Match case</label>
           <span id="findMsg" class="toolbarLabel"></span>
-        </div>
+        </div>  <!-- findbar -->
+
+        <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
+          <div id="secondaryToolbarButtonContainer">
+            <button id="secondaryPresentationMode" class="secondaryToolbarButton presentationMode visibleLargeView" title="Switch to Presentation Mode" tabindex="18" data-l10n-id="presentation_mode">
+              <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
+            </button>
+
+            <button id="secondaryOpenFile" class="secondaryToolbarButton openFile visibleLargeView" title="Open File" tabindex="19" data-l10n-id="open_file">
+              <span data-l10n-id="open_file_label">Open</span>
+            </button>
+
+            <button id="secondaryPrint" class="secondaryToolbarButton print visibleMediumView" title="Print" tabindex="20" data-l10n-id="print">
+              <span data-l10n-id="print_label">Print</span>
+            </button>
+
+            <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="21" data-l10n-id="download">
+              <span data-l10n-id="download_label">Download</span>
+            </button>
+
+            <div class="horizontalToolbarSeparator visibleLargeView"></div>
+
+            <button id="firstPage" class="secondaryToolbarButton firstPage" title="Go to First Page" tabindex="22" data-l10n-id="first_page">
+              <span data-l10n-id="first_page_label">Go to First Page</span>
+            </button>
+            <button id="lastPage" class="secondaryToolbarButton lastPage" title="Go to Last Page" tabindex="23" data-l10n-id="last_page">
+              <span data-l10n-id="last_page_label">Go to Last Page</span>
+            </button>
+
+            <div class="horizontalToolbarSeparator"></div>
+
+            <button id="pageRotateCw" class="secondaryToolbarButton rotateCw" title="Rotate Clockwise" tabindex="24" data-l10n-id="page_rotate_cw">
+              <span data-l10n-id="page_rotate_cw_label">Rotate Clockwise</span>
+            </button>
+            <button id="pageRotateCcw" class="secondaryToolbarButton rotateCcw" title="Rotate Counterclockwise" tabindex="25" data-l10n-id="page_rotate_ccw">
+              <span data-l10n-id="page_rotate_ccw_label">Rotate Counterclockwise</span>
+            </button>
+          </div>
+        </div>  <!-- secondaryToolbar -->
+
         <div class="toolbar">
           <div id="toolbarContainer">
             <div id="toolbarViewer">
@@ -139,23 +179,29 @@ limitations under the License.
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
-                <button id="presentationMode" class="toolbarButton presentationMode hiddenSmallView" title="Switch to Presentation Mode" tabindex="12" data-l10n-id="presentation_mode">
+                <button id="presentationMode" class="toolbarButton presentationMode hiddenLargeView" title="Switch to Presentation Mode" tabindex="12" data-l10n-id="presentation_mode">
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
                 </button>
 
-                <button id="openFile" class="toolbarButton openFile hiddenSmallView" title="Open File" tabindex="13" data-l10n-id="open_file">
-                   <span data-l10n-id="open_file_label">Open</span>
+                <button id="openFile" class="toolbarButton openFile hiddenLargeView" title="Open File" tabindex="13" data-l10n-id="open_file">
+                  <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
-                <button id="print" class="toolbarButton print" title="Print" tabindex="14" data-l10n-id="print">
+                <button id="print" class="toolbarButton print hiddenMediumView" title="Print" tabindex="14" data-l10n-id="print">
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton download" title="Download" tabindex="15" data-l10n-id="download">
+                <button id="download" class="toolbarButton download hiddenMediumView" title="Download" tabindex="15" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
                 <a href="#" id="viewBookmark" class="toolbarButton bookmark hiddenSmallView" title="Current view (copy or open in new window)" tabindex="16" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
+
+                <div class="verticalToolbarSeparator hiddenSmallView"></div>
+                
+                <button id="secondaryToolbarToggle" class="toolbarButton" title="Tools" tabindex="17" data-l10n-id="tools">
+                  <span data-l10n-id="tools_label">Tools</span>
+                </button> 
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
@@ -196,14 +242,14 @@ limitations under the License.
         </div>
 
         <menu type="context" id="viewerContextMenu">
-          <menuitem id="firstPage" label="First Page"
-                    data-l10n-id="first_page" ></menuitem>
-          <menuitem id="lastPage" label="Last Page"
-                    data-l10n-id="last_page" ></menuitem>
-          <menuitem id="pageRotateCcw" label="Rotate Counter-Clockwise"
-                    data-l10n-id="page_rotate_ccw" ></menuitem>
-          <menuitem id="pageRotateCw" label="Rotate Clockwise"
-                    data-l10n-id="page_rotate_cw" ></menuitem>
+          <menuitem id="contextFirstPage" label="First Page"
+                    data-l10n-id="first_page"></menuitem>
+          <menuitem id="contextLastPage" label="Last Page"
+                    data-l10n-id="last_page"></menuitem>
+          <menuitem id="contextPageRotateCw" label="Rotate Clockwise"
+                    data-l10n-id="page_rotate_cw"></menuitem>
+          <menuitem id="contextPageRotateCcw" label="Rotate Counter-Clockwise"
+                    data-l10n-id="page_rotate_ccw"></menuitem>
         </menu>
 
 <!--#if (FIREFOX || MOZCENTRAL) -->
@@ -211,7 +257,7 @@ limitations under the License.
 <!--#else -->
         <div id="viewerContainer" tabindex="0">
 <!--#endif -->
-          <div id="viewer" contextmenu="viewerContextMenu"></div>
+          <div id="viewer"></div>
         </div>
 
         <div id="errorWrapper" hidden='true'>
