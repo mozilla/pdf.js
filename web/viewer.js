@@ -162,8 +162,6 @@ var Settings = (function SettingsClosure() {
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
-// TODO: Enable the FindBar *AFTER* the pagesPromise in the load function
-// got resolved
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
 //#include pdf_history.js
@@ -940,6 +938,8 @@ var PDFView = {
         });
         pagePromises.push(pagePromise);
       }
+
+      PDFFindController.firstPagePromise.resolve();
 
       PDFJS.Promise.all(pagePromises).then(function(pages) {
         pagesPromise.resolve(pages);
