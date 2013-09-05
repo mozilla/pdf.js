@@ -1259,7 +1259,6 @@ canvas {
 }
 
 .annotText > img:hover {
-  cursor: pointer;
   opacity: 1;
 }
 

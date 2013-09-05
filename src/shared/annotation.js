@@ -571,15 +571,23 @@ var TextAnnotation = (function TextAnnotationClosure() {
             e.appendChild(document.createElement('br'));
         }
         text.appendChild(e);
-        image.addEventListener('mouseover', function annotationImageOver() {
+
+        var showAnnotation = function showAnnotation() {
           container.style.zIndex += 1;
           content.removeAttribute('hidden');
-        }, false);
+        };
 
-        image.addEventListener('mouseout', function annotationImageOut() {
-          container.style.zIndex -= 1;
-          content.setAttribute('hidden', true);
-        }, false);
+        var hideAnnotation = function hideAnnotation(e) {
+          if (e.toElement || e.relatedTarget) { // No context menu is used
+            container.style.zIndex -= 1;
+            content.setAttribute('hidden', true);
+          }
+        };
+
+        content.addEventListener('mouseover', showAnnotation, false);
+        content.addEventListener('mouseout', hideAnnotation, false);
+        image.addEventListener('mouseover', showAnnotation, false);
+        image.addEventListener('mouseout', hideAnnotation, false);
       }
 
       content.appendChild(title);
