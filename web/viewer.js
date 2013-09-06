@@ -1904,11 +1904,12 @@ var PageView = function pageView(container, id, scale,
       div.appendChild(textLayerDiv);
     }
     var textLayer = this.textLayer =
-          textLayerDiv ? new TextLayerBuilder({
-              textLayerDiv: textLayerDiv,
-              pageIndex: this.id - 1,
-              lastScrollSource: PDFView
-          }) : null;
+      textLayerDiv ? new TextLayerBuilder({
+        textLayerDiv: textLayerDiv,
+        pageIndex: this.id - 1,
+        lastScrollSource: PDFView,
+        isViewerInPresentationMode: PDFView.isPresentationMode
+      }) : null;
 
     if (outputScale.scaled) {
       var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
