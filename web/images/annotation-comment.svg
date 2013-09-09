@@ -2,7 +2,8 @@
 <svg
    xmlns="http://www.w3.org/2000/svg"
    height="40"
-   width="40">
+   width="40"
+   viewBox="0 0 40 40">
   <rect
      style="fill:#ffff00;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
      width="33.76017"

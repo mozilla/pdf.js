@@ -543,7 +543,6 @@ var TextAnnotation = (function TextAnnotationClosure() {
       container.className = 'annotText';
 
       var image = document.createElement('img');
-      image.style.width = container.style.width;
       image.style.height = container.style.height;
       var iconName = item.name;
       image.src = PDFJS.imageResourcesPath + 'annotation-' +
