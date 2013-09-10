@@ -1,0 +1,30 @@
+﻿# This is a combination of 3 commits.
+# The first commit's message is:
+Norwegian and Welsh locales added
+
+Norsk (no), Cymreag (cy)
+
+# This is the 2nd commit message:
+
+Secondary toolbar localisations added
+
+# This is the 3rd commit message:
+
+Small nits
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# HEAD detached from d7e9c33
+# You are currently editing a commit while rebasing branch 'master' on 'da1c944'.
+#
+# Changes to be committed:
+#   (use "git reset HEAD^1 <file>..." to unstage)
+#
+#	new file:   l10n/cy/chrome.properties
+#	new file:   l10n/cy/metadata.inc
+#	new file:   l10n/cy/viewer.properties
+#	new file:   l10n/no/chrome.properties
+#	new file:   l10n/no/metadata.inc
+#	new file:   l10n/no/viewer.properties
+#
+
