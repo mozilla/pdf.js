@@ -525,7 +525,11 @@ var PageView = function pageView(container, id, scale,
     CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
 
     var printContainer = document.getElementById('printContainer');
-    printContainer.appendChild(canvas);
+    var canvasWrapper = document.createElement('div');
+    canvasWrapper.style.width = viewport.width + 'pt';
+    canvasWrapper.style.height = viewport.height + 'pt';
+    canvasWrapper.appendChild(canvas);
+    printContainer.appendChild(canvasWrapper);
 
     var self = this;
     canvas.mozPrintCallback = function(obj) {
