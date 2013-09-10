@@ -64,6 +64,20 @@ select {
   cursor: none;
 }
 
+#viewerContainer:-ms-fullscreen {
+  top: 0px !important;
+  border-top: 2px solid transparent;
+  width: 100%;
+  height: 100%;
+  overflow: hidden !important;
+  cursor: none;
+}
+
+#viewerContainer:-ms-fullscreen::-ms-backdrop {
+  background-color: #404040;
+  background-image: url(images/texture.png);
+}
+
 #viewerContainer:fullscreen {
   top: 0px;
   border-top: 2px solid transparent;
@@ -83,6 +97,10 @@ select {
   margin-bottom: 100%;
 }
 
+:-ms-fullscreen .page {
+  margin-bottom: 100% !important;
+}
+
 :fullscreen .page {
   margin-bottom: 100%;
 }
@@ -93,6 +111,10 @@ select {
 
 :-moz-full-screen a:not(.internalLink) {
   display: none;
+}
+
+:-ms-fullscreen a:not(.internalLink) {
+  display: none !important;
 }
 
 :fullscreen a:not(.internalLink) {

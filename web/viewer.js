@@ -392,11 +392,12 @@ var PDFView = {
   get supportsFullscreen() {
     var doc = document.documentElement;
     var support = doc.requestFullscreen || doc.mozRequestFullScreen ||
-                  doc.webkitRequestFullScreen;
+                  doc.webkitRequestFullScreen || doc.msRequestFullscreen;
 
     if (document.fullscreenEnabled === false ||
         document.mozFullScreenEnabled === false ||
-        document.webkitFullscreenEnabled === false ) {
+        document.webkitFullscreenEnabled === false ||
+        document.msFullscreenEnabled === false) {
       support = false;
     }
 
@@ -1386,7 +1387,8 @@ var PDFView = {
   presentationMode: function pdfViewPresentationMode() {
     var isPresentationMode = document.fullscreenElement ||
                              document.mozFullScreen ||
-                             document.webkitIsFullScreen;
+                             document.webkitIsFullScreen ||
+                             document.msFullscreenElement;
 
     if (isPresentationMode) {
       return false;
@@ -1399,6 +1401,8 @@ var PDFView = {
       wrapper.mozRequestFullScreen();
     } else if (document.documentElement.webkitRequestFullScreen) {
       wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+    } else if (document.documentElement.msRequestFullscreen) {
+      wrapper.msRequestFullscreen();
     } else {
       return false;
     }
@@ -2830,7 +2834,8 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   function presentationModeChange(e) {
     var isPresentationMode = document.fullscreenElement ||
                              document.mozFullScreen ||
-                             document.webkitIsFullScreen;
+                             document.webkitIsFullScreen ||
+                             document.msFullscreenElement;
 
     if (isPresentationMode) {
       PDFView.enterPresentationMode();
@@ -2843,6 +2848,7 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   window.addEventListener('mozfullscreenchange', presentationModeChange, false);
   window.addEventListener('webkitfullscreenchange', presentationModeChange,
                           false);
+  window.addEventListener('MSFullscreenChange', presentationModeChange, false);
 })();
 
 (function animationStartedClosure() {
