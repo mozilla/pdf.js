@@ -181,6 +181,7 @@ var PDFView = {
   sidebarOpen: false,
   pageViewScroll: null,
   thumbnailViewScroll: null,
+  pendingPrintRequest: false,
   isPresentationMode: false,
   presentationModeArgs: null,
   pageRotation: 0,
@@ -1108,6 +1109,15 @@ var PDFView = {
     if (pageView) {
       this.renderView(pageView, 'page');
       return;
+    } else if (this.pendingPrintRequest) {
+      pageView = this.getFirstUnfinishedPage();
+      if (pageView) {
+        this.renderView(pageView, 'page');
+      } else {
+        this.pendingPrintRequest = false;
+        window.print();
+      }
+      return;
     }
     // No pages needed rendering so check thumbnails.
     if (this.sidebarOpen) {
@@ -1154,6 +1164,15 @@ var PDFView = {
     }
     // Everything that needs to be rendered has been.
     return false;
+  },
+
+  getFirstUnfinishedPage: function pdfViewGetFirstUnfinishedPage() {
+    var views = this.pages;
+    for (var i = 0, ii = views.length; i < ii ; ++i) {
+      if (!this.isViewFinished(views[i])) {
+        return views[i];
+      }
+    }
   },
 
   isViewFinished: function pdfViewNeedsRendering(view) {
@@ -1381,6 +1400,17 @@ var PDFView = {
     var div = document.getElementById('printContainer');
     while (div.hasChildNodes())
       div.removeChild(div.lastChild);
+  },
+
+  print: function pdfViewDoPrintRequest() {
+    if (PDFView.supportsPrinting) {
+      window.print();
+      return;
+    }
+    if (!this.pendingPrintRequest) {
+      this.pendingPrintRequest = true;
+      this.renderHighestPriority();
+    }
   },
 
   presentationMode: function pdfViewPresentationMode() {
@@ -2252,11 +2282,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     PDFBug.init();
   }
 
-  if (!PDFView.supportsPrinting) {
-    document.getElementById('print').classList.add('hidden');
-    document.getElementById('secondaryPrint').classList.add('hidden');
-  }
-
   if (!PDFView.supportsFullscreen) {
     document.getElementById('presentationMode').classList.add('hidden');
     document.getElementById('secondaryPresentationMode').
@@ -2648,6 +2673,22 @@ window.addEventListener('keydown', function keydown(evt) {
           handled = true;
         }
         break;
+      case 80: // p
+//#if GENERIC
+        if ((cmd & 4) && navigator.userAgent.indexOf('Firefox') > 0) {
+          // Ctrl/Cmd + Shift + P = "New Private Window" in Firefox
+          break;
+        }
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
+        if (cmd & 4) {
+          // Ctrl/Cmd + Shift + P = "New Private Window" in Firefox
+          break;
+        }
+//#endif
+        PDFView.print();
+        handled = true;
+        break;
       case 61: // FF/Mac '='
       case 107: // FF '+' and '='
       case 187: // Chrome '+'
@@ -2818,13 +2859,15 @@ window.addEventListener('keydown', function keydown(evt) {
   }
 });
 
-window.addEventListener('beforeprint', function beforePrint(evt) {
-  PDFView.beforePrint();
-});
+if (PDFView.supportsPrinting) {
+  window.addEventListener('beforeprint', function beforePrint(evt) {
+    PDFView.beforePrint();
+  });
 
-window.addEventListener('afterprint', function afterPrint(evt) {
-  PDFView.afterPrint();
-});
+  window.addEventListener('afterprint', function afterPrint(evt) {
+    PDFView.afterPrint();
+  });
+}
 
 (function presentationModeClosure() {
   function presentationModeChange(e) {
