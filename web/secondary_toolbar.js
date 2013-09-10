@@ -69,7 +69,7 @@ var SecondaryToolbar = {
   },
 
   printClick: function secondaryToolbarPrintClick(evt) {
-    window.print();
+    PDFView.print();
     this.close(evt.target);
   },
 
