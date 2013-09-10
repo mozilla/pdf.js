@@ -66,11 +66,10 @@ select {
 
 #viewerContainer:-ms-fullscreen {
   top: 0px !important;
-  position: absolute;
   border-top: 2px solid transparent;
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  overflow: hidden !important;
   cursor: none;
 }
 
@@ -99,7 +98,7 @@ select {
 }
 
 :-ms-fullscreen .page {
-  margin-bottom: 100%;
+  margin-bottom: 100% !important;
 }
 
 :fullscreen .page {
@@ -115,7 +114,7 @@ select {
 }
 
 :-ms-fullscreen a:not(.internalLink) {
-  display: none;
+  display: none !important;
 }
 
 :fullscreen a:not(.internalLink) {
