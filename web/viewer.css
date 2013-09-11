@@ -937,6 +937,10 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-rotateCw.png);
 }
 
+.secondaryToolbarButton.savePageAsImage::before {
+  content: url(images/secondaryToolbarButton-savePageAsImage.png);
+}
+
 .verticalToolbarSeparator {
   display: block;
   padding: 8px 0;
