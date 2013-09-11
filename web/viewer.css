@@ -104,24 +104,28 @@ select {
 }
 
 /* outer/inner center provides horizontal center */
+.outerCenter {
+  pointer-events: none;
+  position: relative;
+}
 html[dir='ltr'] .outerCenter {
   float: right;
-  position: relative;
   right: 50%;
 }
 html[dir='rtl'] .outerCenter {
   float: left;
-  position: relative;
   left: 50%;
+}
+.innerCenter {
+  pointer-events: auto;
+  position: relative;
 }
 html[dir='ltr'] .innerCenter {
   float: right;
-  position: relative;
   right: -50%;
 }
 html[dir='rtl'] .innerCenter {
   float: left;
-  position: relative;
   left: -50%;
 }
 
@@ -1430,12 +1434,12 @@ canvas {
   html[dir='ltr'] #outerContainer.sidebarMoving .outerCenter,
   html[dir='ltr'] #outerContainer.sidebarOpen .outerCenter {
     float: left;
-    left: 185px;
+    left: 205px;
   }
   html[dir='rtl'] #outerContainer.sidebarMoving .outerCenter,
   html[dir='rtl'] #outerContainer.sidebarOpen .outerCenter {
     float: right;
-    right: 185px;
+    right: 205px;
   }
 }
 
@@ -1479,11 +1483,11 @@ canvas {
 
   html[dir='ltr'] .outerCenter {
     float: left;
-    left: 185px;
+    left: 205px;
   }
   html[dir='rtl'] .outerCenter {
     float: right;
-    right: 185px;
+    right: 205px;
   }
 
   #outerContainer .hiddenLargeView,
