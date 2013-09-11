@@ -38,6 +38,7 @@ var SecondaryToolbar = {
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
+    this.savePageAsImage = options.savePageAsImage;
 
     // Attach the event listeners.
     this.toggleButton.addEventListener('click', this.toggle.bind(this));
@@ -55,6 +56,9 @@ var SecondaryToolbar = {
       this.pageRotateCwClick.bind(this));
     this.pageRotateCcw.addEventListener('click',
       this.pageRotateCcwClick.bind(this));
+      
+    this.savePageAsImage.addEventListener('click',
+      this.savePageAsImageClick.bind(this));
   },
 
   // Event handling functions.
