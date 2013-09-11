@@ -2376,7 +2376,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   document.getElementById('contextPageRotateCcw').addEventListener('click',
     SecondaryToolbar.pageRotateCcwClick.bind(SecondaryToolbar));
-    
+
   document.getElementById('contextSavePageAsImage').addEventListener('click',
     SecondaryToolbar.savePageAsImageClick.bind(SecondaryToolbar));
 

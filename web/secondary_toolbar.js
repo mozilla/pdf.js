@@ -56,7 +56,7 @@ var SecondaryToolbar = {
       this.pageRotateCwClick.bind(this));
     this.pageRotateCcw.addEventListener('click',
       this.pageRotateCcwClick.bind(this));
-      
+
     this.savePageAsImage.addEventListener('click',
       this.savePageAsImageClick.bind(this));
   },
@@ -97,9 +97,10 @@ var SecondaryToolbar = {
   pageRotateCcwClick: function secondaryToolbarPageRotateCcwClick(evt) {
     PDFView.rotatePages(-90);
   },
-  
+
   savePageAsImageClick: function secondaryToolbarSavePageAsImageClick(evt) {
-    var dataUrl = document.getElementById('page' + PDFView.page).toDataURL('image/png'),
+    var dataUrl = document.getElementById('page' + PDFView.page)
+        .toDataURL('image/png'),
         a = document.createElement('a');
     if (a.click) {
       // Use a.click() if available. Otherwise, Chrome might show
