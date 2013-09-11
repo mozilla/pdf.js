@@ -213,8 +213,7 @@ var PDFView = {
       firstPage: document.getElementById('firstPage'),
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
-      pageRotateCcw: document.getElementById('pageRotateCcw'),
-      savePageAsImage: document.getElementById('savePageAsImage')
+      pageRotateCcw: document.getElementById('pageRotateCcw')
     });
 
     PDFFindBar.initialize({
