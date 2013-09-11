@@ -38,7 +38,6 @@ var SecondaryToolbar = {
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
-    this.savePageAsImage = options.savePageAsImage;
 
     // Attach the event listeners.
     this.toggleButton.addEventListener('click', this.toggle.bind(this));
@@ -56,9 +55,6 @@ var SecondaryToolbar = {
       this.pageRotateCwClick.bind(this));
     this.pageRotateCcw.addEventListener('click',
       this.pageRotateCcwClick.bind(this));
-      
-    this.savePageAsImage.addEventListener('click',
-      this.savePageAsImageClick.bind(this));
   },
 
   // Event handling functions.
@@ -98,8 +94,34 @@ var SecondaryToolbar = {
     PDFView.rotatePages(-90);
   },
   
-  savePageAsImageClick: function secondaryToolbarPageRotateCcwClick(evt) {
-    //document.getElementByID('page' + PDFView.page).toDataURL();
+  savePageAsImageClick: function secondaryToolbarSavePageAsImageClick(evt) {
+    var dataUrl = document.getElementById('page' + PDFView.page).toDataURL('image/png'),
+        a = document.createElement('a');
+    if (a.click) {
+      // Use a.click() if available. Otherwise, Chrome might show
+      // "Unsafe JavaScript attempt to initiate a navigation change
+      //  for frame with URL" and not open the PDF at all.
+      // Supported by (not mentioned = untested):
+      // - Firefox 6 - 19 (4- does not support a.click, 5 ignores a.click)
+      // - Chrome 19 - 26 (18- does not support a.click)
+      // - Opera 9 - 12.15
+      // - Internet Explorer 6 - 10
+      // - Safari 6 (5.1- does not support a.click)
+      a.href = dataUrl;
+      a.target = '_parent';
+      // Use a.download if available. This increases the likelihood that
+      // the file is downloaded instead of opened by another PDF plugin.
+      if ('download' in a) {
+        a.download = 'page' + PDFView.page + '.png';
+      }
+      // <a> must be in the document for IE and recent Firefox versions.
+      // (otherwise .click() is ignored)
+      (document.body || document.documentElement).appendChild(a);
+      a.click();
+      a.parentNode.removeChild(a);
+    } else {
+      window.open(dataUrl, '_parent');
+    }
   },
 
   // Misc. functions for interacting with the toolbar.
