@@ -904,9 +904,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                   this.state.renderMatrix[0]);
             bidiText = PDFJS.bidi(chunk, -1, font.vertical);
             bidiText.x = this.state.renderMatrix[4] -
-                         (this.state.fontSize * vscale * Math.sin(angle));
+                         (this.state.fontSize * Math.sin(angle));
             bidiText.y = this.state.renderMatrix[5] +
-                         (this.state.fontSize * vscale * Math.cos(angle));
+                         (this.state.fontSize * Math.cos(angle));
             bidiTexts.push(bidiText);
 
             chunk = '';
