@@ -213,7 +213,8 @@ var PDFView = {
       firstPage: document.getElementById('firstPage'),
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
-      pageRotateCcw: document.getElementById('pageRotateCcw')
+      pageRotateCcw: document.getElementById('pageRotateCcw'),
+      savePageAsImage: document.getElementById('savePageAsImage')
     });
 
     PDFFindBar.initialize({
@@ -651,6 +652,21 @@ var PDFView = {
       },
       noData // Error occurred try downloading with just the url.
     ).then(null, noData);
+  },
+
+  downloadPageAsImage: function pdfViewDownloadPageAsImage() {
+    var pageCanvas = document.getElementById('page' + this.page);
+    if (pageCanvas !== null) {
+      var url = pageCanvas.toDataURL('image/png');
+      var filename = 'page' + this.page + '.png';
+      var downloadManager = new DownloadManager();
+      downloadManager.onerror = function (err) {
+        PDFView.error('Image failed to download.');
+      };
+      downloadManager.downloadUrl(url, filename);
+    } else {
+      PDFView.error('Page ' + this.page + ' not found.');
+    }
   },
 
   fallback: function pdfViewFallback() {
@@ -2375,6 +2391,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   document.getElementById('contextPageRotateCcw').addEventListener('click',
     SecondaryToolbar.pageRotateCcwClick.bind(SecondaryToolbar));
+
+  document.getElementById('contextSavePageAsImage').addEventListener('click',
+    SecondaryToolbar.savePageAsImageClick.bind(SecondaryToolbar));
 
 //#if (FIREFOX || MOZCENTRAL)
 //PDFView.setTitleUsingUrl(file);

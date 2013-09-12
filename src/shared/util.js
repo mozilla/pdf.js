@@ -150,6 +150,7 @@ function isValidUrl(url, allowRelative) {
   }
   var protocol = url.substr(0, colon);
   switch (protocol) {
+    case 'data':
     case 'http':
     case 'https':
     case 'ftp':
