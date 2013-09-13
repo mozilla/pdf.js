@@ -896,10 +896,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           if (chunk !== '') {
             this.state.calcRenderMatrix();
-            var vscale = Math.sqrt((this.state.renderMatrix[2] *
-                                   this.state.renderMatrix[2]) +
-                                   (this.state.renderMatrix[3] *
-                                   this.state.renderMatrix[3]));
             var angle = Math.atan2(this.state.renderMatrix[1],
                                   this.state.renderMatrix[0]);
             bidiText = PDFJS.bidi(chunk, -1, font.vertical);
