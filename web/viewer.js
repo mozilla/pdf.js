@@ -1908,6 +1908,12 @@ var PageView = function pageView(container, id, scale,
       div.appendChild(textLayerDiv);
     }
     var textLayer = this.textLayer =
+          textLayerDiv ? new TextLayerBuilder({
+              textLayerDiv: textLayerDiv,
+              pageIndex: this.id - 1,
+              lastScrollSource: PDFView,
+              viewport: this.viewport
+          }) : null;
       textLayerDiv ? new TextLayerBuilder({
         textLayerDiv: textLayerDiv,
         pageIndex: this.id - 1,

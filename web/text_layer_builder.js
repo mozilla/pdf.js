@@ -36,6 +36,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.pageIdx = options.pageIndex;
   this.matches = [];
   this.lastScrollSource = options.lastScrollSource;
+  this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
 
   if(typeof PDFFindController === 'undefined') {
@@ -130,8 +131,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = geom.fontFamily;
-    textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
-    textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
+   //textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
+   //textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
 
     // The content of the div is set in the `setTextContent` function.
 
@@ -156,8 +157,10 @@ var TextLayerBuilder = function textLayerBuilder(options) {
         textDiv.dataset.isWhitespace = true;
         continue;
       }
-
       textDiv.textContent = bidiText.str;
+      var arr = this.viewport.convertToViewportPoint(bidiText.x, bidiText.y);
+      textDiv.style.left = arr[0] + 'px';
+      textDiv.style.top = arr[1] + 'px';
       // bidiText.dir may be 'ttb' for vertical texts.
       textDiv.dir = bidiText.dir;
     }
