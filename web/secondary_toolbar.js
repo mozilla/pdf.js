@@ -96,6 +96,9 @@ var SecondaryToolbar = {
 
   // Misc. functions for interacting with the toolbar.
   setMaxHeight: function secondaryToolbarSetMaxHeight(container) {
+    if (!container) {
+      return;
+    }
     this.newContainerHeight = container.clientHeight;
     if (this.previousContainerHeight === this.newContainerHeight) {
       return;
