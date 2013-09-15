@@ -19,6 +19,12 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+/*
+  Additional modifications for PDF.js project:
+    - Disables language initialization on page loading;
+    - Removes consoleWarn and consoleLog and use console.log/warn directly.
+    - Removes window._ assignment.
+*/
 
 /*jshint browser: true, devel: true, es5: true, globalstrict: true */
 'use strict';
@@ -45,29 +51,6 @@ document.webL10n = (function(window, document, undefined) {
    */
 
   var gAsyncResourceLoading = true; // read-only
-
-
-  /**
-   * Debug helpers
-   *
-   *   gDEBUG == 0: don't display any console message
-   *   gDEBUG == 1: display only warnings, not logs
-   *   gDEBUG == 2: display all console messages
-   */
-
-  var gDEBUG = 1;
-
-  function consoleLog(message) {
-    if (gDEBUG >= 2) {
-      console.log('[l10n] ' + message);
-    }
-  }
-
-  function consoleWarn(message) {
-    if (gDEBUG) {
-      console.warn('[l10n] ' + message);
-    }
-  }
 
 
   /**
@@ -102,7 +85,7 @@ document.webL10n = (function(window, document, undefined) {
       try {
         args = JSON.parse(l10nArgs);
       } catch (e) {
-        consoleWarn('could not parse arguments for #' + l10nId);
+        console.warn('could not parse arguments for #' + l10nId);
       }
     }
     return { id: l10nId, args: args };
@@ -118,7 +101,7 @@ document.webL10n = (function(window, document, undefined) {
   function xhrLoadText(url, onSuccess, onFailure, asynchronous) {
     onSuccess = onSuccess || function _onSuccess(data) {};
     onFailure = onFailure || function _onFailure() {
-      consoleWarn(url + ' not found.');
+      console.warn(url + ' not found.');
     };
 
     var xhr = new XMLHttpRequest();
@@ -298,11 +281,11 @@ document.webL10n = (function(window, document, undefined) {
       // we might have a pre-compiled dictionary instead
       var dict = getL10nDictionary();
       if (dict && dict.locales && dict.default_locale) {
-        consoleLog('using the embedded JSON directory, early way out');
+        console.log('using the embedded JSON directory, early way out');
         gL10nData = dict.locales[lang] || dict.locales[dict.default_locale];
         callback();
       } else {
-        consoleLog('no resource to load, early way out');
+        console.log('no resource to load, early way out');
       }
       // early way out
       fireL10nReadyEvent(lang);
@@ -329,7 +312,7 @@ document.webL10n = (function(window, document, undefined) {
       this.load = function(lang, callback) {
         var applied = lang;
         parseResource(href, lang, callback, function() {
-          consoleWarn(href + ' not found.');
+          console.warn(href + ' not found.');
           applied = '';
         });
         return applied; // return lang if found, an empty string if not found
@@ -340,7 +323,7 @@ document.webL10n = (function(window, document, undefined) {
       var resource = new L10nResourceLink(langLinks[i]);
       var rv = resource.load(lang, onResourceLoaded);
       if (rv != lang) { // lang not found, used default resource instead
-        consoleWarn('"' + lang + '" resource not found');
+        console.warn('"' + lang + '" resource not found');
         gLanguage = '';
       }
     }
@@ -761,7 +744,7 @@ document.webL10n = (function(window, document, undefined) {
     // return a function that gives the plural form name for a given integer
     var index = locales2rules[lang.replace(/-.*$/, '')];
     if (!(index in pluralRules)) {
-      consoleWarn('plural form unknown for [' + lang + ']');
+      console.warn('plural form unknown for [' + lang + ']');
       return function() { return 'other'; };
     }
     return pluralRules[index];
@@ -808,7 +791,7 @@ document.webL10n = (function(window, document, undefined) {
   function getL10nData(key, args, fallback) {
     var data = gL10nData[key];
     if (!data) {
-      consoleWarn('#' + key + ' is undefined.');
+      console.warn('#' + key + ' is undefined.');
       if (!fallback) {
         return null;
       }
@@ -871,7 +854,7 @@ document.webL10n = (function(window, document, undefined) {
       } else if (arg in gL10nData) {
         sub = gL10nData[arg][gTextProp];
       } else {
-        consoleLog('argument {{' + arg + '}} for #' + key + ' is undefined.');
+        console.log('argument {{' + arg + '}} for #' + key + ' is undefined.');
         return str;
       }
 
@@ -891,7 +874,7 @@ document.webL10n = (function(window, document, undefined) {
     // get the related l10n object
     var data = getL10nData(l10n.id, l10n.args);
     if (!data) {
-      consoleWarn('#' + l10n.id + ' is undefined.');
+      console.warn('#' + l10n.id + ' is undefined.');
       return;
     }
 
@@ -959,151 +942,6 @@ document.webL10n = (function(window, document, undefined) {
     translateElement(element);
   }
 
-
-  /**
-   * Startup & Public API
-   *
-   * Warning: this part of the code contains browser-specific chunks --
-   * that's where obsolete browsers, namely IE8 and earlier, are handled.
-   *
-   * Unlike the rest of the lib, this section is not shared with FirefoxOS/Gaia.
-   */
-
-  // load the default locale on startup
-  function l10nStartup() {
-    gReadyState = 'interactive';
-
-    // most browsers expose the UI language as `navigator.language'
-    // but IE uses `navigator.userLanguage' instead
-    var userLocale = navigator.language || navigator.userLanguage;
-    consoleLog('loading [' + userLocale + '] resources, ' +
-        (gAsyncResourceLoading ? 'asynchronously.' : 'synchronously.'));
-
-    // load the default locale and translate the document if required
-    if (document.documentElement.lang === userLocale) {
-      loadLocale(userLocale);
-    } else {
-      loadLocale(userLocale, translateFragment);
-    }
-  }
-
-  // browser-specific startup
-  if (document.addEventListener) { // modern browsers and IE9+
-    if (document.readyState === 'loading') {
-      // the document is not fully loaded yet: wait for DOMContentLoaded.
-      document.addEventListener('DOMContentLoaded', l10nStartup);
-    } else {
-      // l10n.js is being loaded with <script defer> or <script async>,
-      // the DOM is ready for parsing.
-      window.setTimeout(l10nStartup);
-    }
-  } else if (window.attachEvent) { // IE8 and before (= oldIE)
-    // TODO: check if jQuery is loaded (CSS selector + JSON + events)
-
-    // dummy `console.log' and `console.warn' functions
-    if (!window.console) {
-      consoleLog = function(message) {}; // just ignore console.log calls
-      consoleWarn = function(message) {
-        if (gDEBUG) {
-          alert('[l10n] ' + message); // vintage debugging, baby!
-        }
-      };
-    }
-
-    // XMLHttpRequest for IE6
-    if (!window.XMLHttpRequest) {
-      xhrLoadText = function(url, onSuccess, onFailure, asynchronous) {
-        onSuccess = onSuccess || function _onSuccess(data) {};
-        onFailure = onFailure || function _onFailure() {
-          consoleWarn(url + ' not found.');
-        };
-        var xhr = new ActiveXObject('Microsoft.XMLHTTP');
-        xhr.open('GET', url, asynchronous);
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState == 4) {
-            if (xhr.status == 200) {
-              onSuccess(xhr.responseText);
-            } else {
-              onFailure();
-            }
-          }
-        };
-        xhr.send(null);
-      };
-    }
-
-    // worst hack ever for IE6 and IE7
-    if (!window.JSON) {
-      getL10nAttributes = function(element) {
-        if (!element)
-          return {};
-        var l10nId = element.getAttribute('data-l10n-id'),
-            l10nArgs = element.getAttribute('data-l10n-args'),
-            args = {};
-        if (l10nArgs) try {
-          args = eval(l10nArgs); // XXX yeah, I know...
-        } catch (e) {
-          consoleWarn('could not parse arguments for #' + l10nId);
-        }
-        return { id: l10nId, args: args };
-      };
-    }
-
-    // override `getTranslatableChildren' and `getL10nResourceLinks'
-    if (!document.querySelectorAll) {
-      getTranslatableChildren = function(element) {
-        if (!element)
-          return [];
-        var nodes = element.getElementsByTagName('*'),
-            l10nElements = [],
-            n = nodes.length;
-        for (var i = 0; i < n; i++) {
-          if (nodes[i].getAttribute('data-l10n-id'))
-            l10nElements.push(nodes[i]);
-        }
-        return l10nElements;
-      };
-      getL10nResourceLinks = function() {
-        var links = document.getElementsByTagName('link'),
-            l10nLinks = [],
-            n = links.length;
-        for (var i = 0; i < n; i++) {
-          if (links[i].type == 'application/l10n')
-            l10nLinks.push(links[i]);
-        }
-        return l10nLinks;
-      };
-    }
-
-    // override `getL10nDictionary'
-    if (!window.JSON || !document.querySelectorAll) {
-      getL10nDictionary = function() {
-        var scripts = document.getElementsByName('script');
-        for (var i = 0; i < scripts.length; i++) {
-          if (scripts[i].type == 'application/l10n') {
-            return eval(scripts[i].innerHTML);
-          }
-        }
-        return null;
-      };
-    }
-
-    // fire non-standard `localized' DOM events
-    if (document.createEventObject && !document.createEvent) {
-      fireL10nReadyEvent = function(lang) {
-        // hack to simulate a custom event in IE:
-        // to catch this event, add an event handler to `onpropertychange'
-        document.documentElement.localized = 1;
-      };
-    }
-
-    // startup for IE<9
-    window.attachEvent('onload', function() {
-      gTextProp = document.body.textContent ? 'textContent' : 'innerText';
-      l10nStartup();
-    });
-  }
-
   // cross-browser API (sorry, oldIE doesn't support getters & setters)
   return {
     // get a localized string
@@ -1164,9 +1002,3 @@ document.webL10n = (function(window, document, undefined) {
     }
   };
 }) (window, document);
-
-// gettext-like shortcut for document.webL10n.get
-if (window._ === undefined) {
-  var _ = document.webL10n.get;
-}
-
