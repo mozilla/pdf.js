@@ -91,7 +91,7 @@ var PDFFindController = {
 
   reset: function pdfFindControllerReset() {
     this.startedTextExtraction = false;
-    this.extractTextPromises = [];
+    this.extractTextPromises.length = 0;
     this.active = false;
   },
 
@@ -138,7 +138,7 @@ var PDFFindController = {
     }
     this.startedTextExtraction = true;
 
-    this.pageContents = [];
+    this.pageContents.length = 0;
     for (var i = 0, ii = this.pdfPageSource.pdfDocument.numPages; i < ii; i++) {
       this.extractTextPromises.push(new PDFJS.Promise());
     }
@@ -218,7 +218,7 @@ var PDFFindController = {
       this.hadMatch = false;
       this.resumeCallback = null;
       this.resumePageIdx = null;
-      this.pageMatches = [];
+      this.pageMatches.length = 0;
       var self = this;
 
       for (var i = 0; i < numPages; i++) {

@@ -520,8 +520,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
-      this.pageCache = [];
-      this.pagePromises = [];
+      this.pageCache.length = 0;
+      this.pagePromises.length = 0;
       var self = this;
       this.messageHandler.send('Terminate', null, function () {
         if (self.worker) {
