@@ -851,7 +851,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       if (deferred._status === STATUS_REJECTED) {
         return;
       }
-      results = [];
+      results.length = 0;
       deferred.reject(reason);
     }
     for (var i = 0, ii = promises.length; i < ii; ++i) {

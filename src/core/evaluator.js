@@ -1544,9 +1544,9 @@ var OperatorList = (function OperatorListClosure() {
         },
         pageIndex: this.pageIndex
       });
-      this.dependencies = [];
-      this.fnArray = [];
-      this.argsArray = [];
+      this.dependencies.length = 0;
+      this.fnArray.length = 0;
+      this.argsArray.length = 0;
     }
   };
 
