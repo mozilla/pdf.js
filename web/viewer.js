@@ -17,7 +17,8 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
-           PDFHistory, ThumbnailView, noContextMenuHandler, SecondaryToolbar */
+           PDFHistory, ThumbnailView, noContextMenuHandler, SecondaryToolbar,
+           GestureDetector */
 
 'use strict';
 
@@ -162,6 +163,7 @@ var Settings = (function SettingsClosure() {
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
+//#include gesture_detector.js
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
 //#include pdf_history.js
@@ -202,6 +204,14 @@ var PDFView = {
     this.thumbnailViewScroll = {};
     this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
                      this.renderHighestPriority.bind(this));
+
+    var gestureDetector = new GestureDetector(container);
+    gestureDetector.startDetecting();
+    container.addEventListener('transform', function handleTransform(e) {
+      var x = container.offsetWidth / 2;
+      var y = container.offsetHeight / 2;
+      PDFView.parseScale(x/y);
+    });
 
     SecondaryToolbar.initialize({
       toolbar: document.getElementById('secondaryToolbar'),
