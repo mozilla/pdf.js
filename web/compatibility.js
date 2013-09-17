@@ -458,7 +458,15 @@ if (typeof PDFJS === 'undefined') {
   // Last tested with version 6.0.4.
   var isSafari = Object.prototype.toString.call(
                   window.HTMLElement).indexOf('Constructor') > 0;
-  if (isSafari) {
+
+  // Older versions of Android (pre 3.0) has issues with range requests, see:
+  // https://github.com/mozilla/pdf.js/issues/3381.
+  // Make sure that we only match webkit-based Android browsers,
+  // since Firefox/Fennec works as expected.
+  var regex = /Android\s[0-2][^\d]/;
+  var isOldAndroid = regex.test(navigator.userAgent);
+
+  if (isSafari || isOldAndroid) {
     PDFJS.disableRange = true;
   }
 })();
