@@ -449,9 +449,8 @@ html[dir='ltr'] #toolbarViewerLeft {
   margin-left: -1px;
 }
 html[dir='rtl'] #toolbarViewerRight {
-  margin-left: -1px;
+  margin-right: -1px;
 }
-
 
 html[dir='ltr'] #toolbarViewerLeft,
 html[dir='rtl'] #toolbarViewerRight {
@@ -780,6 +779,7 @@ html[dir='rtl'] #findNext {
   top: 4px;
   left: 7px;
 }
+
 html[dir="ltr"] .secondaryToolbarButton::before {
   left: 4px;
 }
@@ -787,18 +787,23 @@ html[dir="rtl"] .secondaryToolbarButton::before {
   right: 4px;
 }
 
-.toolbarButton#sidebarToggle::before {
+html[dir='ltr'] .toolbarButton#sidebarToggle::before {
   content: url(images/toolbarButton-sidebarToggle.png);
 }
+html[dir='rtl'] .toolbarButton#sidebarToggle::before {
+  content: url(images/toolbarButton-sidebarToggle-rtl.png);
+}
 
-.toolbarButton#secondaryToolbarToggle::before {
+html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
   content: url(images/toolbarButton-secondaryToolbarToggle.png);
+}
+html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
+  content: url(images/toolbarButton-secondaryToolbarToggle-rtl.png);
 }
 
 html[dir='ltr'] .toolbarButton.findPrevious::before {
   content: url(images/findbarButton-previous.png);
 }
-
 html[dir='rtl'] .toolbarButton.findPrevious::before {
   content: url(images/findbarButton-previous-rtl.png);
 }
@@ -806,7 +811,6 @@ html[dir='rtl'] .toolbarButton.findPrevious::before {
 html[dir='ltr'] .toolbarButton.findNext::before {
   content: url(images/findbarButton-next.png);
 }
-
 html[dir='rtl'] .toolbarButton.findNext::before {
   content: url(images/findbarButton-next-rtl.png);
 }
@@ -814,7 +818,6 @@ html[dir='rtl'] .toolbarButton.findNext::before {
 html[dir='ltr'] .toolbarButton.pageUp::before {
   content: url(images/toolbarButton-pageUp.png);
 }
-
 html[dir='rtl'] .toolbarButton.pageUp::before {
   content: url(images/toolbarButton-pageUp-rtl.png);
 }
@@ -822,7 +825,6 @@ html[dir='rtl'] .toolbarButton.pageUp::before {
 html[dir='ltr'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-pageDown.png);
 }
-
 html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-pageDown-rtl.png);
 }
@@ -845,6 +847,7 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-print.png);
   left: 6px;
 }
+
 html[dir="ltr"] .secondaryToolbarButton.print::before {
   left: 3px;
 }
@@ -883,8 +886,11 @@ html[dir="rtl"] .secondaryToolbarButton.print::before {
   content: url(images/toolbarButton-viewThumbnail.png);
 }
 
-#viewOutline.toolbarButton::before {
+html[dir="ltr"] #viewOutline.toolbarButton::before {
   content: url(images/toolbarButton-viewOutline.png);
+}
+html[dir="rtl"] #viewOutline.toolbarButton::before {
+  content: url(images/toolbarButton-viewOutline-rtl.png);
 }
 
 #viewFind.toolbarButton::before {
