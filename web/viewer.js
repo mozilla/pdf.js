@@ -2719,6 +2719,20 @@ window.addEventListener('keydown', function keydown(evt) {
     curElement = curElement.parentNode;
   }
 
+//#if GENERIC
+  var EMULATED_SPACEBAR_SCROLL_OFFSET = 35;
+
+  // Hack to make scrolling using the spacebar completely browser agnostic.
+  // (Needed for spacebar scrolling to work in the web viewer in Firefox.)
+  var emulateSpacebar = function(scrollDown) {
+    var viewerContainer = PDFView.container;
+    var top = (viewerContainer.scrollTop - EMULATED_SPACEBAR_SCROLL_OFFSET +
+               (scrollDown ? 1 : -1) * viewerContainer.clientHeight);
+    scrollIntoView(viewerContainer.firstElementChild, { top: top });
+    handled = true;
+  };
+//#endif
+
   if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
       case 38: // up arrow
@@ -2756,6 +2770,11 @@ window.addEventListener('keydown', function keydown(evt) {
       case 32: // spacebar
         if (!PDFView.isPresentationMode &&
             PDFView.currentScaleValue !== 'page-fit') {
+//#if GENERIC
+          if (evt.keyCode === 32) {
+            emulateSpacebar(true);
+          }
+//#endif
           break;
         }
         /* falls through */
@@ -2795,6 +2814,9 @@ window.addEventListener('keydown', function keydown(evt) {
       case 32: // spacebar
         if (!PDFView.isPresentationMode &&
             PDFView.currentScaleValue !== 'page-fit') {
+//#if GENERIC
+          emulateSpacebar(false);
+//#endif
           break;
         }
         PDFView.page--;
