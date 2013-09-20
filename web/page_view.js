@@ -87,8 +87,9 @@ var PageView = function pageView(container, id, scale,
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
 
-    while (div.hasChildNodes())
+    while (div.hasChildNodes()) {
       div.removeChild(div.lastChild);
+    }
     div.removeAttribute('data-loaded');
 
     this.annotationLayer = null;
@@ -121,8 +122,9 @@ var PageView = function pageView(container, id, scale,
     function bindLink(link, dest) {
       link.href = PDFView.getDestinationHash(dest);
       link.onclick = function pageViewSetupLinksOnclick() {
-        if (dest)
+        if (dest) {
           PDFView.navigateTo(dest);
+        }
         return false;
       };
       link.className = 'internalLink';
@@ -236,83 +238,83 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
-      if (PDFView.isPresentationMode) { // Avoid breaking presentation mode.
-        dest = null;
-      }
-      if (!dest) {
-        scrollIntoView(div);
+    if (PDFView.isPresentationMode) { // Avoid breaking presentation mode.
+      dest = null;
+    }
+    if (!dest) {
+      scrollIntoView(div);
+      return;
+    }
+
+    var x = 0, y = 0;
+    var width = 0, height = 0, widthScale, heightScale;
+    var scale = 0;
+    switch (dest[1].name) {
+      case 'XYZ':
+        x = dest[2];
+        y = dest[3];
+        scale = dest[4];
+        // If x and/or y coordinates are not supplied, default to
+        // _top_ left of the page (not the obvious bottom left,
+        // since aligning the bottom of the intended page with the
+        // top of the window is rarely helpful).
+        x = x !== null ? x : 0;
+        y = y !== null ? y : this.height / this.scale;
+        break;
+      case 'Fit':
+      case 'FitB':
+        scale = 'page-fit';
+        break;
+      case 'FitH':
+      case 'FitBH':
+        y = dest[2];
+        scale = 'page-width';
+        break;
+      case 'FitV':
+      case 'FitBV':
+        x = dest[2];
+        scale = 'page-height';
+        break;
+      case 'FitR':
+        x = dest[2];
+        y = dest[3];
+        width = dest[4] - x;
+        height = dest[5] - y;
+        widthScale = (PDFView.container.clientWidth - SCROLLBAR_PADDING) /
+          width / CSS_UNITS;
+        heightScale = (PDFView.container.clientHeight - SCROLLBAR_PADDING) /
+          height / CSS_UNITS;
+        scale = Math.min(widthScale, heightScale);
+        break;
+      default:
         return;
-      }
+    }
 
-      var x = 0, y = 0;
-      var width = 0, height = 0, widthScale, heightScale;
-      var scale = 0;
-      switch (dest[1].name) {
-        case 'XYZ':
-          x = dest[2];
-          y = dest[3];
-          scale = dest[4];
-          // If x and/or y coordinates are not supplied, default to
-          // _top_ left of the page (not the obvious bottom left,
-          // since aligning the bottom of the intended page with the
-          // top of the window is rarely helpful).
-          x = x !== null ? x : 0;
-          y = y !== null ? y : this.height / this.scale;
-          break;
-        case 'Fit':
-        case 'FitB':
-          scale = 'page-fit';
-          break;
-        case 'FitH':
-        case 'FitBH':
-          y = dest[2];
-          scale = 'page-width';
-          break;
-        case 'FitV':
-        case 'FitBV':
-          x = dest[2];
-          scale = 'page-height';
-          break;
-        case 'FitR':
-          x = dest[2];
-          y = dest[3];
-          width = dest[4] - x;
-          height = dest[5] - y;
-          widthScale = (PDFView.container.clientWidth - SCROLLBAR_PADDING) /
-            width / CSS_UNITS;
-          heightScale = (PDFView.container.clientHeight - SCROLLBAR_PADDING) /
-            height / CSS_UNITS;
-          scale = Math.min(widthScale, heightScale);
-          break;
-        default:
-          return;
-      }
+    if (scale && scale !== PDFView.currentScale) {
+      PDFView.parseScale(scale, true, true);
+    } else if (PDFView.currentScale === UNKNOWN_SCALE) {
+      PDFView.parseScale(DEFAULT_SCALE, true, true);
+    }
 
-      if (scale && scale !== PDFView.currentScale) {
-        PDFView.parseScale(scale, true, true);
-      } else if (PDFView.currentScale === UNKNOWN_SCALE) {
-        PDFView.parseScale(DEFAULT_SCALE, true, true);
-      }
+    if (scale === 'page-fit' && !dest[4]) {
+      scrollIntoView(div);
+      return;
+    }
 
-      if (scale === 'page-fit' && !dest[4]) {
-        scrollIntoView(div);
-        return;
-      }
+    var boundingRect = [
+      this.viewport.convertToViewportPoint(x, y),
+      this.viewport.convertToViewportPoint(x + width, y + height)
+    ];
+    setTimeout(function pageViewScrollIntoViewRelayout() {
+      // letting page to re-layout before scrolling
+      var scale = PDFView.currentScale;
+      var x = Math.min(boundingRect[0][0], boundingRect[1][0]);
+      var y = Math.min(boundingRect[0][1], boundingRect[1][1]);
+      var width = Math.abs(boundingRect[0][0] - boundingRect[1][0]);
+      var height = Math.abs(boundingRect[0][1] - boundingRect[1][1]);
 
-      var boundingRect = [
-        this.viewport.convertToViewportPoint(x, y),
-        this.viewport.convertToViewportPoint(x + width, y + height)
-      ];
-      setTimeout(function pageViewScrollIntoViewRelayout() {
-        // letting page to re-layout before scrolling
-        var scale = PDFView.currentScale;
-        var x = Math.min(boundingRect[0][0], boundingRect[1][0]);
-        var y = Math.min(boundingRect[0][1], boundingRect[1][1]);
-        var width = Math.abs(boundingRect[0][0] - boundingRect[1][0]);
-        var height = Math.abs(boundingRect[0][1] - boundingRect[1][1]);
-
-        scrollIntoView(div, {left: x, top: y, width: width, height: height});
-      }, 0);
+      scrollIntoView(div, {left: x, top: y, width: width, height: height});
+    }, 0);
   };
 
   this.getTextContent = function pageviewGetTextContent() {
@@ -445,8 +447,9 @@ var PageView = function pageView(container, id, scale,
 
       self.stats = pdfPage.stats;
       self.updateStats();
-      if (self.onAfterDraw)
+      if (self.onAfterDraw) {
         self.onAfterDraw();
+      }
 
       cache.push(self);
 
@@ -547,10 +550,11 @@ var PageView = function pageView(container, id, scale,
         console.error(error);
         // Tell the printEngine that rendering this canvas/page has failed.
         // This will make the print proces stop.
-        if ('abort' in obj)
+        if ('abort' in obj) {
           obj.abort();
-        else
+        } else {
           obj.done();
+        }
         self.pdfPage.destroy();
       });
     };
