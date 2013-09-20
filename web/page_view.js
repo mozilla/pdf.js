@@ -357,9 +357,13 @@ var PageView = function pageView(container, id, scale,
     this.canvas = canvas;
 
     var scale = this.scale;
-    var outputScale = getOutputScale();
+    var ctx = canvas.getContext('2d');
+    var outputScale = getOutputScale(ctx);
+
     canvas.width = Math.floor(viewport.width) * outputScale.sx;
     canvas.height = Math.floor(viewport.height) * outputScale.sy;
+    canvas.style.width = Math.floor(viewport.width) + 'px';
+    canvas.style.height = Math.floor(viewport.height) + 'px';
 
     var textLayerDiv = null;
     if (!PDFJS.disableTextLayer) {
@@ -377,25 +381,19 @@ var PageView = function pageView(container, id, scale,
         viewport: this.viewport,
         isViewerInPresentationMode: PDFView.isPresentationMode
       }) : null;
-
-    if (outputScale.scaled) {
-      var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
-                                (1 / outputScale.sy) + ')';
-      CustomStyle.setProp('transform' , canvas, cssScale);
-      CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
-      if (textLayerDiv) {
-        CustomStyle.setProp('transform' , textLayerDiv, cssScale);
-        CustomStyle.setProp('transformOrigin' , textLayerDiv, '0% 0%');
-      }
-    }
-
-    var ctx = canvas.getContext('2d');
     // TODO(mack): use data attributes to store these
     ctx._scaleX = outputScale.sx;
     ctx._scaleY = outputScale.sy;
     if (outputScale.scaled) {
       ctx.scale(outputScale.sx, outputScale.sy);
     }
+    if (outputScale.scaled && textLayerDiv) {
+      var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
+                                (1 / outputScale.sy) + ')';
+      CustomStyle.setProp('transform' , textLayerDiv, cssScale);
+      CustomStyle.setProp('transformOrigin' , textLayerDiv, '0% 0%');
+    }
+
 //#if (FIREFOX || MOZCENTRAL)
 //  // Checking if document fonts are used only once
 //  var checkIfDocumentFontsUsed = !PDFView.pdfDocument.embeddedFontsUsed;
