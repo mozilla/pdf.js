@@ -1919,6 +1919,7 @@ var PageView = function pageView(container, id, scale,
         textLayerDiv: textLayerDiv,
         pageIndex: this.id - 1,
         lastScrollSource: PDFView,
+        viewport: this.viewport,
         isViewerInPresentationMode: PDFView.isPresentationMode
       }) : null;
 
