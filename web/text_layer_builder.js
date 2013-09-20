@@ -36,6 +36,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.pageIdx = options.pageIndex;
   this.matches = [];
   this.lastScrollSource = options.lastScrollSource;
+  this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
 
   if(typeof PDFFindController === 'undefined') {
@@ -158,6 +159,12 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       }
 
       textDiv.textContent = bidiText.str;
+      // TODO refactor text layer to use text content position
+      /**
+       * var arr = this.viewport.convertToViewportPoint(bidiText.x, bidiText.y);
+       * textDiv.style.left = arr[0] + 'px';
+       * textDiv.style.top = arr[1] + 'px';
+       */
       // bidiText.dir may be 'ttb' for vertical texts.
       textDiv.dir = bidiText.dir;
     }
