@@ -1434,6 +1434,10 @@ canvas {
     display: block;
   }
 
+  .fileInput {
+    display: none;
+  }
+
   /* Rules for browsers that support mozPrintCallback */
   body[data-mozPrintCallback] #outerContainer {
     display: none;
