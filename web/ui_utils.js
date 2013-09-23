@@ -82,8 +82,14 @@ function getFileName(url) {
                     scales. The scaled property is set to false if scaling is
                     not required, true otherwise.
  */
-function getOutputScale() {
-  var pixelRatio = 'devicePixelRatio' in window ? window.devicePixelRatio : 1;
+function getOutputScale(ctx) {
+  var devicePixelRatio = window.devicePixelRatio || 1;
+  var backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+                          ctx.mozBackingStorePixelRatio ||
+                          ctx.msBackingStorePixelRatio ||
+                          ctx.oBackingStorePixelRatio ||
+                          ctx.backingStorePixelRatio || 1;
+  var pixelRatio = devicePixelRatio / backingStoreRatio;
   return {
     sx: pixelRatio,
     sy: pixelRatio,
