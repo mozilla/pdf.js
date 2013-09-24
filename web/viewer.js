@@ -18,7 +18,7 @@
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
            PDFHistory, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar */
+           SecondaryToolbar, PasswordPrompt */
 
 'use strict';
 
@@ -167,6 +167,7 @@ var currentPageNumber = 1;
 //#include pdf_find_controller.js
 //#include pdf_history.js
 //#include secondary_toolbar.js
+//#include password_prompt.js
 
 var PDFView = {
   pages: [],
@@ -215,6 +216,14 @@ var PDFView = {
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
       pageRotateCcw: document.getElementById('pageRotateCcw')
+    });
+
+    PasswordPrompt.initialize({
+      overlayContainer: document.getElementById('overlayContainer'),
+      passwordField: document.getElementById('password'),
+      passwordText: document.getElementById('passwordText'),
+      passwordSubmit: document.getElementById('passwordSubmit'),
+      passwordCancel: document.getElementById('passwordCancel')
     });
 
     PDFFindBar.initialize({
@@ -572,18 +581,9 @@ var PDFView = {
     var self = this;
     self.loading = true;
     var passwordNeeded = function passwordNeeded(updatePassword, reason) {
-      var promptString = mozL10n.get('request_password', null,
-                                'PDF is protected by a password:');
-
-      if (reason === PDFJS.PasswordResponses.INCORRECT_PASSWORD) {
-        promptString += '\n' + mozL10n.get('invalid_password', null,
-                                'Invalid Password.');
-      }
-
-      password = prompt(promptString);
-      if (password && password.length > 0) {
-        return updatePassword(password);
-      }
+      PasswordPrompt.updatePassword = updatePassword;
+      PasswordPrompt.reason = reason;
+      PasswordPrompt.show();
     };
 
     function getDocumentProgress(progressData) {
@@ -2092,6 +2092,10 @@ window.addEventListener('click', function click(evt) {
 }, false);
 
 window.addEventListener('keydown', function keydown(evt) {
+  if (PasswordPrompt.visible) {
+    return;
+  }
+
   var handled = false;
   var cmd = (evt.ctrlKey ? 1 : 0) |
             (evt.altKey ? 2 : 0) |
