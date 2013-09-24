@@ -19,7 +19,7 @@ describe('api', function() {
     });
     waitsFor(function() {
       return data !== undefined;
-    }, 10000);
+    }, 20000);
   }
   describe('PDFJS', function() {
     describe('getDocument', function() {
