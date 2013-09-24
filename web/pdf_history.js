@@ -202,10 +202,14 @@ var PDFHistory = {
       }
       return;
     }
-    if (this.nextHashParam && this.nextHashParam === params.hash) {
-      this.nextHashParam = null;
-      this.updatePreviousBookmark = true;
-      return;
+    if (this.nextHashParam) {
+      if (this.nextHashParam === params.hash) {
+        this.nextHashParam = null;
+        this.updatePreviousBookmark = true;
+        return;
+      } else {
+        this.nextHashParam = null;
+      }
     }
 
     if (params.hash) {
