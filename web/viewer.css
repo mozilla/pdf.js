@@ -547,6 +547,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .splitToolbarButton > .toolbarButton:hover,
 .splitToolbarButton > .toolbarButton:focus,
 .dropdownToolbarButton:hover,
+.promptButton:hover,
 .toolbarButton.textButton:hover,
 .toolbarButton.textButton:focus {
   background-color: hsla(0,0%,0%,.2);
@@ -603,6 +604,7 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 
 .toolbarButton,
 .dropdownToolbarButton,
+.promptButton,
 .secondaryToolbarButton {
   min-width: 16px;
   padding: 2px 6px 0;
@@ -625,10 +627,12 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 }
 
 html[dir='ltr'] .toolbarButton,
+html[dir='ltr'] .promptButton,
 html[dir='ltr'] .dropdownToolbarButton {
   margin: 3px 2px 4px 0;
 }
 html[dir='rtl'] .toolbarButton,
+html[dir='rtl'] .promptButton,
 html[dir='rtl'] .dropdownToolbarButton {
   margin: 3px 0 4px 2px;
 }
@@ -636,6 +640,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton:hover,
 .toolbarButton:focus,
 .dropdownToolbarButton,
+.promptButton,
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus {
   background-color: hsla(0,0%,0%,.12);
@@ -649,6 +654,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .toolbarButton:hover:active,
+.promptButton:hover:active,
 .dropdownToolbarButton:hover:active,
 .secondaryToolbarButton:hover:active {
   background-color: hsla(0,0%,0%,.2);
@@ -720,6 +726,12 @@ html[dir='rtl'] .dropdownToolbarButton {
 
 .dropdownToolbarButton > select > option {
   background: hsl(0,0%,24%);
+}
+
+.promptButton {
+  margin: 3px 2px 4px 5px !important;
+  line-height: 16px;
+  padding: 2px 6px 3px 6px;
 }
 
 #customScaleOption {
@@ -1324,6 +1336,60 @@ canvas {
   padding: 3px;
   margin: 3px;
   width: 98%;
+}
+
+#overlayContainer {
+  display: table;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: hsla(0,0%,0%,.2);
+  z-index: 10000;
+}
+
+#promptContainer {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+
+#promptContainer > * {
+  display: inline-block;
+}
+
+.prompt {
+  display: table;
+  padding: 15px;
+  border-spacing: 4px;
+  color: hsl(0,0%,85%);
+  line-height: 14px;
+  text-align: center;
+  background-color: #474747; /* fallback */
+  background-image: url(images/texture.png),
+                    linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
+              inset 0 1px 1px hsla(0,0%,0%,.15),
+              inset 0 -1px 0 hsla(0,0%,100%,.05),
+              0 1px 0 hsla(0,0%,0%,.15),
+              0 1px 1px hsla(0,0%,0%,.1);
+}
+
+.prompt > .row {
+  display: table-row;
+}
+
+.prompt > .row > * {
+  display: table-cell;
+}
+
+.prompt .toolbarField {
+  margin: 5px 0;
+  width: 200px;
+}
+
+.prompt .toolbarField:hover,
+.prompt .toolbarField:focus {
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
 }
 
 .clearBoth {

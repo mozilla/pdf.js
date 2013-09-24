@@ -67,6 +67,7 @@ limitations under the License.
     <script type="text/javascript" src="pdf_find_controller.js"></script>
     <script type="text/javascript" src="pdf_history.js"></script>
     <script type="text/javascript" src="secondary_toolbar.js"></script>
+    <script type="text/javascript" src="password_prompt.js"></script>
 <!--#endif-->
 
     <script type="text/javascript" src="debugger.js"></script>
@@ -280,6 +281,23 @@ limitations under the License.
           <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
         </div>
       </div> <!-- mainContainer -->
+
+      <div id="overlayContainer" class="hidden">
+        <div id="promptContainer">
+          <div id="passwordContainer" class="prompt doorHanger">
+            <div class="row">
+              <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
+            </div>
+            <div class="row">
+              <input type="password" id="password" class="toolbarField" />
+            </div>
+            <div class="row">
+              <button id="passwordCancel" class="promptButton"><span data-l10n-id="password_cancel">Cancel</span></button>
+              <button id="passwordSubmit" class="promptButton"><span data-l10n-id="password_ok">OK</span></button>
+            </div>
+          </div>
+        </div>
+      </div> 
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
