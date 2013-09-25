@@ -869,6 +869,13 @@
       "link": true,
       "type": "eq"
     },
+    { "id": "bug898853.pdf",
+      "file": "pdfs/bug898853.pdf",
+      "md5": "37c37702bf98d33f9f74e2380c4d1a3f",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Has a multi-byte char codes."
+    },
     {  "id": "issue1912",
       "file": "pdfs/issue1912.pdf",
       "md5": "15305b7c2cba971e7423de3f6ad38fef",
