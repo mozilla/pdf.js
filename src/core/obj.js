@@ -408,6 +408,12 @@ var Catalog = (function CatalogClosure() {
     },
 
     getPage: function Catalog_getPage(pageIndex) {
+      if (pageIndex < 0 || pageIndex >= this.numPages ||
+          (pageIndex|0) !== pageIndex) {
+        var pagePromise = new Promise();
+        pagePromise.reject(new Error('Invalid page index'));
+        return pagePromise;
+      }
       if (!(pageIndex in this.pagePromises)) {
         this.pagePromises[pageIndex] = new Promise();
       }
