@@ -63,6 +63,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
       if (this.passwordChangedPromise) {
         this.passwordChangedPromise.resolve();
       }
+    },
+
+    terminate: function BasePdfManager_terminate() {
+      return new NotImplementedException();
     }
   };
 
@@ -113,6 +117,11 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
   LocalPdfManager.prototype.onLoadedStream =
       function LocalPdfManager_getLoadedStream() {
     return this.loadedStream;
+  };
+
+  LocalPdfManager.prototype.terminate =
+      function LocalPdfManager_terminate() {
+    return;
   };
 
   return LocalPdfManager;
@@ -190,6 +199,11 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
   NetworkPdfManager.prototype.onLoadedStream =
       function NetworkPdfManager_getLoadedStream() {
     return this.streamManager.onLoadedStream();
+  };
+
+  NetworkPdfManager.prototype.terminate =
+      function NetworkPdfManager_terminate() {
+    this.streamManager.networkManager.abortAllRequests();
   };
 
   return NetworkPdfManager;

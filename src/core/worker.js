@@ -368,7 +368,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     });
 
     handler.on('Terminate', function wphTerminate(data, promise) {
-      pdfManager.streamManager.networkManager.abortAllRequests();
+      pdfManager.terminate();
       promise.resolve();
     });
   }
