@@ -18,7 +18,7 @@
            ExpertSubsetCharset, FileReaderSync, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, Stream,
            stringToBytes, TextDecoder, TODO, warn, Lexer, Util,
-           FONT_IDENTITY_MATRIX, FontRendererFactory, shadow */
+           FONT_IDENTITY_MATRIX, FontRendererFactory, shadow, isString */
 
 'use strict';
 
@@ -2182,6 +2182,7 @@ var Font = (function FontClosure() {
     this.composite = properties.composite;
     this.wideChars = properties.wideChars;
     this.hasEncoding = properties.hasEncoding;
+    this.cmap = properties.cmap;
 
     this.fontMatrix = properties.fontMatrix;
     if (properties.type == 'Type3') {
@@ -3701,7 +3702,7 @@ var Font = (function FontClosure() {
 
       var dupFirstEntry = false;
       if (properties.type == 'CIDFontType2' && properties.toUnicode &&
-          properties.toUnicode[0] > 0) {
+          properties.toUnicode[0] > '\u0000') {
         // oracle's defect (see 3427), duplicating first entry
         dupFirstEntry = true;
         numGlyphs++;
@@ -4250,8 +4251,12 @@ var Font = (function FontClosure() {
         var unicode = toUnicode[i];
         var fontCharCode = typeof unicode === 'object' ? unusedUnicode++ :
           unicode;
-        if (typeof unicode !== 'undefined')
+        if (typeof unicode !== 'undefined') {
+          if (isString(fontCharCode) && fontCharCode.length === 1) {
+            fontCharCode = fontCharCode.charCodeAt(0);
+          }
           result[i] = fontCharCode;
+        }
       }
       return result;
     },
@@ -4264,7 +4269,7 @@ var Font = (function FontClosure() {
         var isIdentityMap = toUnicode.length === 0;
         for (var i = firstChar, ii = lastChar; i <= ii; i++) {
           // TODO missing map the character according font's CMap
-          map[i] = isIdentityMap ? i : toUnicode[i];
+          map[i] = isIdentityMap ? String.fromCharCode(i) : toUnicode[i];
         }
       } else {
         for (var i = firstChar, ii = lastChar; i <= ii; i++) {
@@ -4272,7 +4277,7 @@ var Font = (function FontClosure() {
           if (!glyph)
             glyph = properties.baseEncoding[i];
           if (!!glyph && (glyph in GlyphsUnicode))
-            map[i] = GlyphsUnicode[glyph];
+            map[i] = String.fromCharCode(GlyphsUnicode[glyph]);
         }
       }
       this.toUnicode = map;
@@ -4535,15 +4540,15 @@ var Font = (function FontClosure() {
           warn('Unsupported CMap: ' + cidEncoding);
         }
       }
-      if (!converter && this.wideChars) {
+      if (!converter && this.cmap) {
+        var i = 0;
         // composite fonts have multi-byte strings convert the string from
         // single-byte to multi-byte
-        // XXX assuming CIDFonts are two-byte - later need to extract the
-        // correct byte encoding according to the PDF spec
-        var length = chars.length - 1; // looping over two bytes at a time so
-                                       // loop should never end on the last byte
-        for (var i = 0; i < length; i++) {
-          var charcode = int16([chars.charCodeAt(i++), chars.charCodeAt(i)]);
+        while (i < chars.length) {
+          var c = this.cmap.readCharCode(chars, i);
+          var charcode = c[0];
+          var length = c[1];
+          i += length;
           var glyph = this.charToGlyph(charcode);
           glyphs.push(glyph);
           // placing null after each word break charcode (ASCII SPACE)

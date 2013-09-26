@@ -306,7 +306,8 @@ target.bundle = function(args) {
     'core/worker.js',
     'core/jpx.js',
     'core/jbig2.js',
-    'core/bidi.js'
+    'core/bidi.js',
+    'core/cmap.js'
   ];
 
   var EXT_SRC_FILES = [

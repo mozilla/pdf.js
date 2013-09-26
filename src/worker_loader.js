@@ -34,6 +34,7 @@ var files = [
   'core/cidmaps.js',
   'core/crypto.js',
   'core/evaluator.js',
+  'core/cmap.js',
   'core/fonts.js',
   'core/font_renderer.js',
   'core/glyphlist.js',
