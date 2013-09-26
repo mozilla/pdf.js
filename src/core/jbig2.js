@@ -572,10 +572,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var decoder = decodingContext.decoder;
     var contextCache = decodingContext.contextCache;
-
-    if (transposed)
-      error('JBIG2 error: transposed is not supported');
-
     var stripT = -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
     var firstS = 0;
     var i = 0;
@@ -610,28 +606,60 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
-        for (var t2 = 0; t2 < symbolHeight; t2++) {
-          var row = bitmap[offsetT + t2];
-          if (!row) continue;
-          var symbolRow = symbolBitmap[t2];
-          switch (combinationOperator) {
-            case 0: // OR
-              for (var s2 = 0; s2 < symbolWidth; s2++)
-                row[offsetS + s2] |= symbolRow[s2];
-              break;
-            case 2: // XOR
-              for (var s2 = 0; s2 < symbolWidth; s2++)
-                row[offsetS + s2] ^= symbolRow[s2];
-              break;
-            default:
-              error('JBIG2 error: operator ' + combinationOperator +
-                    ' is not supported');
+        if (transposed) {
+          // Place Symbol Bitmap from T1,S1  
+          for (var s2 = 0; s2 < symbolHeight; s2++) {
+            var row = bitmap[offsetS + s2];
+            if (!row) {
+              continue;
+            }
+            var symbolRow = symbolBitmap[s2];
+            // To ignore Parts of Symbol bitmap which goes
+            // outside bitmap region
+            var maxWidth = Math.min(width - offsetT, symbolWidth);
+            switch (combinationOperator) {
+              case 0: // OR
+                for (var t2 = 0; t2 < maxWidth; t2++) {
+                  row[offsetT + t2] |= symbolRow[t2];
+                }
+                break;
+              case 2: // XOR
+                for (var t2 = 0; t2 < maxWidth; t2++) {
+                  row[offsetT + t2] ^= symbolRow[t2];
+                }
+                break;
+              default:
+                error('JBIG2 error: operator ' + combinationOperator +
+                      ' is not supported');
+            }
           }
+          currentS += symbolHeight - 1;
+        } else {
+          for (var t2 = 0; t2 < symbolHeight; t2++) {
+            var row = bitmap[offsetT + t2];
+            if (!row) {
+              continue;
+            }
+            var symbolRow = symbolBitmap[t2];
+            switch (combinationOperator) {
+              case 0: // OR
+                for (var s2 = 0; s2 < symbolWidth; s2++) {
+                  row[offsetS + s2] |= symbolRow[s2];
+                }
+                break;
+              case 2: // XOR
+                for (var s2 = 0; s2 < symbolWidth; s2++) {
+                  row[offsetS + s2] ^= symbolRow[s2];
+                }
+                break;
+              default:
+                error('JBIG2 error: operator ' + combinationOperator +
+                      ' is not supported');
+            }
+          }
+          currentS += symbolWidth - 1;
         }
-
-        currentS += symbolWidth - 1;
         i++;
-
         var deltaS = decodeInteger(contextCache, 'IADS', decoder); // 6.4.8
         if (deltaS === null)
           break; // OOB
