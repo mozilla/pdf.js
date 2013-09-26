@@ -43,50 +43,30 @@ function getDOMWindow(aChannel) {
 }
 
 function getObjectUrl(window) {
-  var url;
-  var element = window.frameElement;
-  var isOverlay = false;
-  var params = {};
-  if (element) {
-    var tagName = element.nodeName;
-    while (tagName != 'EMBED' && tagName != 'OBJECT') {
-      // plugin overlay skipping until the target plugin is found
-      isOverlay = true;
-      element = element.parentNode;
-      if (!element)
-        throw 'Plugin element is not found';
-      tagName = element.nodeName;
-    }
-    if (tagName == 'EMBED') {
-      for (var i = 0; i < element.attributes.length; ++i) {
-        params[element.attributes[i].localName] = element.attributes[i].value;
-      }
-      url = params.src;
-    } else {
-      for (var i = 0; i < element.childNodes.length; ++i) {
-        var paramElement = element.childNodes[i];
-        if (paramElement.nodeType != Ci.nsIDOMNode.ELEMENT_NODE ||
-            paramElement.nodeName != 'PARAM') {
-          continue;
-        }
-
-        params[paramElement.getAttribute('name')] =
-          paramElement.getAttribute('value');
-      }
-      var dataAttribute = element.getAttribute('data');
-      url = dataAttribute || params.movie || params.src;
-    }
+  // PlayPreview overlay "belongs" to the embed/object tag and consists of DIV
+  // and IFRAME. Starting from IFRAME and looking for first object tag.
+  var element = window.frameElement, containerElement;
+  if (!element) {
+    return null; // iframe tag
   }
-  if (!url) {
-    return url; // src is not specified
+  var tagName = element.nodeName;
+  while (tagName !== 'EMBED' && tagName !== 'OBJECT') {
+    containerElement = element;
+    element = element.parentNode;
+    if (!element) {
+      return null; // object tag was not found
+    }
+    tagName = element.nodeName;
   }
 
-  var element = window.frameElement;
-  // XXX base uri?
-  var baseUri = !element ? null :
-    Services.io.newURI(element.ownerDocument.location.href, null, null);
+  // Checking if overlay is a proper PlayPreview overlay.
+  for (var i = 0; i < element.children.length; i++) {
+    if (element.children[i] === containerElement) {
+      return null; // invalid plugin element overlay
+    }
+  }
 
-  return Services.io.newURI(url, null, baseUri).spec;
+  return element.srcURI.spec;
 }
 
 function PdfRedirector() {
