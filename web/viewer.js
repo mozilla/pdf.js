@@ -205,6 +205,23 @@ var PDFView = {
     this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
                      this.renderHighestPriority.bind(this));
 
+    PDFFindBar.initialize({
+      bar: document.getElementById('findbar'),
+      toggleButton: document.getElementById('viewFind'),
+      findField: document.getElementById('findInput'),
+      highlightAllCheckbox: document.getElementById('findHighlightAll'),
+      caseSensitiveCheckbox: document.getElementById('findMatchCase'),
+      findMsg: document.getElementById('findMsg'),
+      findStatusIcon: document.getElementById('findStatusIcon'),
+      findPreviousButton: document.getElementById('findPrevious'),
+      findNextButton: document.getElementById('findNext')
+    });
+
+    PDFFindController.initialize({
+      pdfPageSource: this,
+      integratedFind: this.supportsIntegratedFind
+    });
+
     SecondaryToolbar.initialize({
       toolbar: document.getElementById('secondaryToolbar'),
       toggleButton: document.getElementById('secondaryToolbarToggle'),
@@ -224,23 +241,6 @@ var PDFView = {
       passwordText: document.getElementById('passwordText'),
       passwordSubmit: document.getElementById('passwordSubmit'),
       passwordCancel: document.getElementById('passwordCancel')
-    });
-
-    PDFFindBar.initialize({
-      bar: document.getElementById('findbar'),
-      toggleButton: document.getElementById('viewFind'),
-      findField: document.getElementById('findInput'),
-      highlightAllCheckbox: document.getElementById('findHighlightAll'),
-      caseSensitiveCheckbox: document.getElementById('findMatchCase'),
-      findMsg: document.getElementById('findMsg'),
-      findStatusIcon: document.getElementById('findStatusIcon'),
-      findPreviousButton: document.getElementById('findPrevious'),
-      findNextButton: document.getElementById('findNext')
-    });
-
-    PDFFindController.initialize({
-      pdfPageSource: this,
-      integratedFind: this.supportsIntegratedFind
     });
 
     this.initialized = true;
@@ -1012,8 +1012,19 @@ var PDFView = {
                     PDFView.animationStartedPromise];
     PDFJS.Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
-        self.outline = new DocumentOutlineView(outline);
-        document.getElementById('viewOutline').disabled = !outline;
+        self.outline = DocumentOutlineView.create(outline, {
+          outerContainer: document.getElementById('outerContainer'),
+          outlineButton: document.getElementById('viewOutline'),
+          outlineView: document.getElementById('outlineView'),
+          toolbarToggleButton: document.getElementById('outlineOptionsToggle'),
+          toolbar: document.getElementById('outlineOptions'),
+          expandTopOutlineItems:
+            document.getElementById('expandTopOutlineItems'),
+          expandAllOutlineItems:
+            document.getElementById('expandAllOutlineItems'),
+          collapseAllOutlineItems:
+            document.getElementById('collapseAllOutlineItems')
+        });
       });
     });
 
@@ -1244,20 +1255,19 @@ var PDFView = {
   },
 
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
-    var thumbsView = document.getElementById('thumbnailView');
-    var outlineView = document.getElementById('outlineView');
-
+    var sidebarContainer = document.getElementById('sidebarContainer');
     var thumbsButton = document.getElementById('viewThumbnail');
     var outlineButton = document.getElementById('viewOutline');
 
     switch (view) {
       case 'thumbs':
-        var wasOutlineViewVisible = thumbsView.classList.contains('hidden');
+        var wasOutlineViewVisible =
+          sidebarContainer.classList.contains('outlineViewVisible');
 
         thumbsButton.classList.add('toggled');
         outlineButton.classList.remove('toggled');
-        thumbsView.classList.remove('hidden');
-        outlineView.classList.add('hidden');
+        sidebarContainer.classList.remove('outlineViewVisible');
+        sidebarContainer.classList.add('thumbnailViewVisible');
 
         PDFView.renderHighestPriority();
 
@@ -1272,11 +1282,8 @@ var PDFView = {
       case 'outline':
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.add('toggled');
-        thumbsView.classList.add('hidden');
-        outlineView.classList.remove('hidden');
-
-        if (outlineButton.getAttribute('disabled'))
-          return;
+        sidebarContainer.classList.remove('thumbnailViewVisible');
+        sidebarContainer.classList.add('outlineViewVisible');
         break;
     }
   },
@@ -2157,6 +2164,10 @@ window.addEventListener('keydown', function keydown(evt) {
       case 27: // esc key
         if (SecondaryToolbar.isOpen) {
           SecondaryToolbar.close();
+          handled = true;
+        }
+        if (DocumentOutlineView.toolbarOpened) {
+          DocumentOutlineView.closeToolbar();
           handled = true;
         }
         if (!PDFView.supportsIntegratedFind && PDFFindBar.opened) {

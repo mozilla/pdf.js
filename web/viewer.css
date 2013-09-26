@@ -175,6 +175,12 @@ html[dir='rtl'] #sidebarContainer {
   right: -200px;
 }
 
+#sidebarContainer.thumbnailViewVisible #outlineView,
+#sidebarContainer.outlineViewVisible #thumbnailView,
+#sidebarContainer.thumbnailViewVisible #outlineOptionsToggle {
+  display: none;
+}
+
 #outerContainer.sidebarMoving > #sidebarContainer,
 #outerContainer.sidebarOpen > #sidebarContainer {
   visibility: visible;
@@ -372,17 +378,27 @@ html[dir='rtl'] .findbar {
   height: auto;
   z-index: 30000;
 }
-html[dir='ltr'] .secondaryToolbar {
+
+html[dir='ltr'] #secondaryToolbar {
   right: 4px;
 }
-html[dir='rtl'] .secondaryToolbar {
+html[dir='rtl'] #secondaryToolbar {
   left: 4px;
 }
 
-#secondaryToolbarButtonContainer {
+html[dir='ltr'] #outlineOptions {
+  left: 164px;
+}
+html[dir='rtl'] #outlineOptions {
+  right: 164px;
+}
+
+.buttonContainer {
+  min-width: 200px;
   max-width: 200px;
   max-height: 400px;
   overflow-y: auto;
+  margin-bottom: -4px;
 }
 
 .doorHanger,
@@ -905,6 +921,19 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   content: url(images/toolbarButton-viewOutline-rtl.png);
 }
 
+#outlineOptionsToggle {
+  position: relative;
+}
+html[dir='ltr'] #outlineOptionsToggle {
+  float: right;
+}
+html[dir='rtl'] #outlineOptionsToggle {
+  float: left;
+}
+#outlineOptionsToggle.toolbarButton::before {
+  content: url(images/toolbarButton-outlineOptionsToggle.png);
+}
+
 #viewFind.toolbarButton::before {
   content: url(images/toolbarButton-search.png);
 }
@@ -928,8 +957,9 @@ html[dir="rtl"] .secondaryToolbarButton {
   text-align: right;
 }
 
-#secondaryToolbarButtonContainer :last-child {
-  margin-bottom: 0;
+#outlineOptions .secondaryToolbarButton {
+  padding-left: 4px;
+  padding-right: 4px;
 }
 
 html[dir="ltr"] .secondaryToolbarButton > span {
@@ -1512,7 +1542,7 @@ canvas {
   }
 
   /* Rules for browsers that don't support mozPrintCallback. */
-  #sidebarContainer, #secondaryToolbar, .toolbar, #loadingBox, #errorWrapper, .textLayer {
+  #sidebarContainer, .secondaryToolbar, .toolbar, #loadingBox, #errorWrapper, .textLayer {
     display: none;
   }
   #viewerContainer {

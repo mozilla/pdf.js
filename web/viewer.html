@@ -79,23 +79,44 @@ limitations under the License.
   <body tabindex="1">
     <div id="outerContainer" class="loadingInProgress">
 
-      <div id="sidebarContainer">
+      <div id="sidebarContainer" class="thumbnailViewVisible">
         <div id="toolbarSidebar">
           <div class="splitToolbarButton toggled">
             <button id="viewThumbnail" class="toolbarButton group toggled" title="Show Thumbnails" tabindex="2" data-l10n-id="thumbs">
-               <span data-l10n-id="thumbs_label">Thumbnails</span>
+              <span data-l10n-id="thumbs_label">Thumbnails</span>
             </button>
             <button id="viewOutline" class="toolbarButton group" title="Show Document Outline" tabindex="3" data-l10n-id="outline">
-               <span data-l10n-id="outline_label">Document Outline</span>
+              <span data-l10n-id="outline_label">Document Outline</span>
             </button>
           </div>
+          <button id="outlineOptionsToggle" class="toolbarButton" title="Outline Options" tabindex="" data-l10n-id="outline_options_toggle">
+            <span data-l10n-id="outline_options_toggle_label">Outline Options</span>
+          </button>
         </div>
         <div id="sidebarContent">
           <div id="thumbnailView">
           </div>
-          <div id="outlineView" class="hidden">
+          <div id="outlineView">
           </div>
         </div>
+
+        <div id="outlineOptions" class="secondaryToolbar hidden doorHanger">
+          <div class="buttonContainer">
+            <button id="expandTopOutlineItems" class="secondaryToolbarButton" title="Expand top level Outline Items" tabindex="" data-l10n-id="expand_top_outlineItems">
+              <span data-l10n-id="expand_top_outlineItems_label">Expand top level Outline Items</span>
+            </button>
+            <button id="expandAllOutlineItems" class="secondaryToolbarButton" title="Expand all Outline Items" tabindex="" data-l10n-id="expand_all_outlineItems">
+              <span data-l10n-id="expand_all_outlineItems_label">Expand all Outline Items</span>
+            </button>
+
+            <div class="horizontalToolbarSeparator"></div>
+
+            <button id="collapseAllOutlineItems" class="secondaryToolbarButton" title="Collapse all Outline Items" tabindex="" data-l10n-id="collapse_all_outlineItems">
+              <span data-l10n-id="collapse_all_outlineItems_label">Collapse all Outline Items</span>
+            </button>
+          </div>
+        </div>
+
       </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
@@ -119,7 +140,7 @@ limitations under the License.
         </div>  <!-- findbar -->
 
         <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
-          <div id="secondaryToolbarButtonContainer">
+          <div class="buttonContainer">
             <button id="secondaryPresentationMode" class="secondaryToolbarButton presentationMode visibleLargeView" title="Switch to Presentation Mode" tabindex="18" data-l10n-id="presentation_mode">
               <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
             </button>
