@@ -1116,37 +1116,73 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   -moz-user-select: none;
 }
 
-html[dir='ltr'] .outlineItem > .outlineItems {
-  margin-left: 20px;
+#outlineView ul {
+  list-style: none;
+}
+html[dir='ltr'] #outlineView ul {
+  padding-left: 14px;
+}
+html[dir='rtl'] #outlineView ul {
+  padding-right: 14px;
 }
 
-html[dir='rtl'] .outlineItem > .outlineItems {
-  margin-right: 20px;
+html[dir='ltr'] #outlineView ul > ul {
+  margin-left: -6px;
+}
+html[dir='rtl'] #outlineView ul > ul {
+  margin-right: -6px;
 }
 
-.outlineItem > a {
+#outlineView li {
+  position: relative;
+  border-radius: 2px;
+  margin-bottom: 1px;
+  cursor: pointer;
+}
+
+#outlineView li:before {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.15);
+  top: 4px;
+  clip: rect(1px, 13px, 13px, 0px);
+}
+html[dir='ltr'] #outlineView li:before {
+  left: -14px;
+}
+html[dir='rtl'] #outlineView li:before {
+  right: -14px;
+}
+
+.collapsed > li:before {
+  content: url(images/outlineItem-collapsed.png);
+}
+.expanded > li:before {
+  content: url(images/outlineItem-expanded.png);
+}
+
+#outlineView li > a {
   text-decoration: none;
   display: inline-block;
-  min-width: 95%;
+  min-width: 98%; /* Fallback for browsers that doesn't support 'calc'. */
+  min-width: calc(100% - 4px);
   height: auto;
-  margin-bottom: 1px;
-  border-radius: 2px;
+  border-radius: inherit;
   color: hsla(0,0%,100%,.8);
   font-size: 13px;
   line-height: 15px;
   -moz-user-select: none;
+  cursor: default;
   white-space: normal;
+  padding: 2px 0 5px 0;
+}
+html[dir='ltr'] #outlineView li > a {
+  padding-left: 4px;
+}
+html[dir='rtl'] #outlineView li > a {
+  padding-right: 4px;
 }
 
-html[dir='ltr'] .outlineItem > a {
-  padding: 2px 0 5px 10px;
-}
-
-html[dir='rtl'] .outlineItem > a {
-  padding: 2px 10px 5px 0;
-}
-
-.outlineItem > a:hover {
+#outlineView a:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -1156,7 +1192,7 @@ html[dir='rtl'] .outlineItem > a {
   color: hsla(0,0%,100%,.9);
 }
 
-.outlineItem.selected {
+#outlineView li.selected {
   background-color: hsla(0,0%,100%,.08);
   background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;

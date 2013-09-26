@@ -25,9 +25,9 @@ var DocumentOutlineView = function documentOutlineView(outline) {
     outlineView.removeChild(outlineView.firstChild);
 
   if (!outline) {
-    if (!outlineView.classList.contains('hidden'))
+    if (!outlineView.classList.contains('hidden')) {
       PDFView.switchSidebarView('thumbs');
-
+    }
     return;
   }
 
@@ -45,21 +45,24 @@ var DocumentOutlineView = function documentOutlineView(outline) {
     var i, n = levelData.items.length;
     for (i = 0; i < n; i++) {
       var item = levelData.items[i];
-      var div = document.createElement('div');
-      div.className = 'outlineItem';
+      var ul = document.createElement('ul');
+      var li = document.createElement('li');
+      ul.appendChild(li);
       var a = document.createElement('a');
       bindItemLink(a, item);
       a.textContent = item.title;
-      div.appendChild(a);
+      li.appendChild(a);
 
       if (item.items.length > 0) {
-        var itemsDiv = document.createElement('div');
-        itemsDiv.className = 'outlineItems';
-        div.appendChild(itemsDiv);
-        queue.push({parent: itemsDiv, items: item.items});
+        var subItems = document.createElement('ul');
+        ul.appendChild(subItems);
+        // ul.className = 'collapsed';
+        // li.nextSibling.classList.add('hidden');
+        ul.className = 'expanded';
+        queue.push({parent: subItems, items: item.items});
       }
 
-      levelData.parent.appendChild(div);
+      levelData.parent.appendChild(ul);
     }
   }
 };
