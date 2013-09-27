@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-           isArrayBuffer, isName, isStream, isString, Lexer,
+           isArrayBuffer, isName, isStream, isString, Lexer, warn,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
            StreamsSequenceStream, stringToPDFString, Util, XRef,
            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
@@ -170,11 +170,22 @@ var Page = (function PageClosure() {
 
         var opList = new OperatorList(handler, self.pageIndex);
 
+        var transparency;
+        try {
+          transparency = partialEvaluator.hasBlendModes(self.resources);
+        } catch(e) {
+          warn('Insufficient data to display a part of the Page');
+        }
         handler.send('StartRenderPage', {
-          transparency: partialEvaluator.hasBlendModes(self.resources),
+          transparency: transparency,
           pageIndex: self.pageIndex
         });
-        partialEvaluator.getOperatorList(contentStream, self.resources, opList);
+        try {
+          partialEvaluator.getOperatorList(contentStream,
+            self.resources, opList);
+        } catch(e) {
+          warn('Insufficient data to display a part of the Page');
+        }
         pageListPromise.resolve(opList);
       });
 
@@ -229,12 +240,14 @@ var Page = (function PageClosure() {
               pdfManager, self.xref, handler,
               self.pageIndex, 'p' + self.pageIndex + '_',
               self.idCounters);
-
-        var bidiTexts = partialEvaluator.getTextContent(contentStream,
-                                                        self.resources);
-        textContentPromise.resolve(bidiTexts);
+        try {
+          var bidiTexts = partialEvaluator.getTextContent(contentStream,
+                                                          self.resources);
+          textContentPromise.resolve(bidiTexts);
+        } catch(ex) {
+          warn('Insufficient data to display a part of the Page');
+        }
       });
-
       return textContentPromise;
     },
 
