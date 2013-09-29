@@ -676,6 +676,12 @@ var PDFView = {
 //#endif
   },
 
+  getDestinationPageNumber: function pdfViewGetDestinationPageNumber(destRef) {
+    return (destRef instanceof Object ?
+            this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
+            (destRef + 1));
+  },
+
   navigateTo: function pdfViewNavigateTo(dest) {
     var destString = '';
     var self = this;
@@ -683,9 +689,7 @@ var PDFView = {
     var goToDestination = function(destRef) {
       self.pendingRefStr = null;
       // dest array looks like that: <page-ref> </XYZ|FitXXX> <args..>
-      var pageNumber = destRef instanceof Object ?
-        self.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
-        (destRef + 1);
+      var pageNumber = self.getDestinationPageNumber(destRef);
       if (pageNumber) {
         if (pageNumber > self.pages.length) {
           pageNumber = self.pages.length;
@@ -721,9 +725,7 @@ var PDFView = {
       return PDFView.getAnchorUrl('#' + escape(dest));
     if (dest instanceof Array) {
       var destRef = dest[0]; // see navigateTo method for dest format
-      var pageNumber = destRef instanceof Object ?
-        this.pagesRefMap[destRef.num + ' ' + destRef.gen + ' R'] :
-        (destRef + 1);
+      var pageNumber = this.getDestinationPageNumber(destRef);
       if (pageNumber) {
         var pdfOpenParams = PDFView.getAnchorUrl('#page=' + pageNumber);
         var destKind = dest[1];
@@ -1013,7 +1015,6 @@ var PDFView = {
     PDFJS.Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
         self.outline = DocumentOutlineView.create(outline, {
-          outerContainer: document.getElementById('outerContainer'),
           outlineButton: document.getElementById('viewOutline'),
           outlineView: document.getElementById('outlineView'),
           toolbarToggleButton: document.getElementById('outlineOptionsToggle'),
@@ -1873,6 +1874,9 @@ function updateViewarea() {
 
   // Update the current bookmark in the browsing history.
   PDFHistory.updateCurrentBookmark(pdfOpenParams, pageNumber);
+
+  // Highlight the currently active outline item.
+  DocumentOutlineView.selectOutlineItem(pageNumber);
 }
 
 window.addEventListener('resize', function webViewerResize(evt) {
@@ -2044,6 +2048,9 @@ window.addEventListener('click', function click(evt) {
   if (!PDFView.isPresentationMode) {
     if (SecondaryToolbar.isOpen && PDFView.container.contains(evt.target)) {
       SecondaryToolbar.close();
+    }
+    if (DocumentOutlineView.toolbarOpened) {
+      DocumentOutlineView.closeToolbar();
     }
   } else if (evt.button === 0) {
     // Necessary since preventDefault() in 'mousedown' won't stop

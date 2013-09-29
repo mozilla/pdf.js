@@ -20,12 +20,14 @@
 
 var DocumentOutlineView = {
   initialized: false,
+  outlineExists: false,
   toolbarOpened: false,
+  selectableOutlineItems: {},
+  selectedOutlineItem: null,
 
   initialize: function documentOutlineViewInitialize(options) {
     this.initialized = true;
 
-    this.outerContainer = options.outerContainer;
     this.outlineButton = options.outlineButton;
     this.outlineView = options.outlineView;
     this.toolbarToggleButton = options.toolbarToggleButton;
@@ -37,7 +39,6 @@ var DocumentOutlineView = {
     this.collapseAllOutlineItems = options.collapseAllOutlineItems;
 
     // Attach the event listeners.
-    this.outerContainer.addEventListener('click', this.closeToolbar.bind(this));
     this.outlineView.addEventListener('click',
       this.outlineViewClick.bind(this));
     this.toolbarToggleButton.addEventListener('click',
@@ -48,15 +49,55 @@ var DocumentOutlineView = {
   create: function documentOutlineViewCreate(outline, options) {
     if (!this.initialized) {
       this.initialize(options);
+    } else {
+      this.selectableOutlineItems = {};
+      this.selectedOutlineItem = null;
     }
+
     while (this.outlineView.firstChild) {
       this.outlineView.removeChild(this.outlineView.firstChild);
     }
-    this.outlineButton.disabled = !outline;
-    if (!outline) {
+
+    this.outlineExists = !!outline;
+    this.outlineButton.disabled = !this.outlineExists;
+    if (!this.outlineExists) {
       PDFView.switchSidebarView('thumbs');
       return;
     }
+
+    /**
+     * Enable highlighting of the current outline item,
+     * by computing which item is placed highest up on the page.
+     */
+    var buildSelectableOutlineItems = function(dest, domObj) {
+      if (typeof dest === 'string') {
+        dest = PDFView.destinations[dest];
+      }
+      var pageNumber = PDFView.getDestinationPageNumber(dest[0]);
+      if (!pageNumber) {
+        return;
+      }
+      var verticalPos = null;
+      switch (dest[1].name) {
+        case 'XYZ':
+          verticalPos = dest[3];
+          break;
+        case 'FitH':
+        case 'FitBH':
+          verticalPos = dest[2];
+          break;
+        case 'FitR':
+          verticalPos = dest[3];
+          break;
+      }
+      var currentEntry = this.selectableOutlineItems[pageNumber];
+      if (currentEntry && (!(currentEntry.y && verticalPos) ||
+                           currentEntry.y >= verticalPos)) {
+        return;
+      }
+      this.selectableOutlineItems[pageNumber] = { node: domObj,
+                                                  y: verticalPos };
+    }.bind(this);
 
     function bindItemLink(domObj, item) {
       domObj.href = PDFView.getDestinationHash(item.dest);
@@ -64,6 +105,8 @@ var DocumentOutlineView = {
         PDFView.navigateTo(item.dest);
         return false;
       };
+
+      buildSelectableOutlineItems(item.dest, domObj);
     }
 
     var queue = [{ parent: this.outlineView, items: outline }];
@@ -90,6 +133,31 @@ var DocumentOutlineView = {
 
         levelData.parent.appendChild(ul);
       }
+    }
+    // If the document is loaded in a position that corresponds to
+    // a selectable outline item, ensure that it is highlighted.
+    this.selectOutlineItem(PDFView.page);
+  },
+
+  selectOutlineItem: function documentOutlineViewSelectOutlineItem(pageNumber) {
+    if (!this.outlineExists) {
+      return;
+    }
+    var previouslySelected = this.selectedOutlineItem, currentlySelected;
+    if (this.selectableOutlineItems[pageNumber]) {
+      var currentNode = this.selectableOutlineItems[pageNumber].node;
+      if (currentNode) {
+        currentlySelected = currentNode.parentNode;
+        if (previouslySelected !== currentlySelected) {
+          currentlySelected.classList.add('selected');
+          this.selectedOutlineItem = currentlySelected;
+        }
+      }
+    } else {
+      this.selectedOutlineItem = null;
+    }
+    if (previouslySelected && previouslySelected !== currentlySelected) {
+      previouslySelected.classList.remove('selected');
     }
   },
 

@@ -398,7 +398,6 @@ html[dir='rtl'] #outlineOptions {
 }
 
 .buttonContainer {
-  min-width: 200px;
   max-width: 200px;
   max-height: 400px;
   overflow-y: auto;
