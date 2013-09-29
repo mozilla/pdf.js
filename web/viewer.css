@@ -391,10 +391,10 @@ html[dir='rtl'] #secondaryToolbar {
 }
 
 html[dir='ltr'] #outlineOptions {
-  left: 164px;
+  right: -182px;
 }
 html[dir='rtl'] #outlineOptions {
-  right: 164px;
+  left: -182px;
 }
 
 .buttonContainer {
@@ -1174,23 +1174,23 @@ html[dir='rtl'] #outlineView ul > ul {
   cursor: pointer;
 }
 
-#outlineView li:before {
+#outlineView li::before {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.15);
   top: 4px;
   clip: rect(1px, 13px, 13px, 0px);
 }
-html[dir='ltr'] #outlineView li:before {
+html[dir='ltr'] #outlineView li::before {
   left: -14px;
 }
-html[dir='rtl'] #outlineView li:before {
+html[dir='rtl'] #outlineView li::before {
   right: -14px;
 }
 
-.collapsed > li:before {
+.collapsed > li::before {
   content: url(images/outlineItem-collapsed.png);
 }
-.expanded > li:before {
+.expanded > li::before {
   content: url(images/outlineItem-expanded.png);
 }
 

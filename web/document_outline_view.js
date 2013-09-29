@@ -66,7 +66,7 @@ var DocumentOutlineView = {
       };
     }
 
-    var queue = [{ parent: outlineView, items: outline }];
+    var queue = [{ parent: this.outlineView, items: outline }];
     while (queue.length > 0) {
       var levelData = queue.shift();
       var i, n = levelData.items.length;
@@ -107,7 +107,7 @@ var DocumentOutlineView = {
     }
   },
 
-  _toggleMultipleItems: function documentOutlineView_toggleMultipleItem(
+  _toggleMultipleItems: function documentOutlineView_toggleMultipleItems(
       parentElement, expand, allItems) {
     var children = parentElement.childNodes;
     var childElement, nextElement;
@@ -151,7 +151,7 @@ var DocumentOutlineView = {
       default:
         evt.stopPropagation();
         return;
-    } 
+    }
   },
 
   openToolbar: function documentOutlineViewOpenToolbar() {
