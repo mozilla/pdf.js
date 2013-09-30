@@ -5523,7 +5523,7 @@ var CFFFont = (function CFFFontClosure() {
     getCharStrings: function CFFFont_getCharStrings() {
       var cff = this.cff;
       var charsets = cff.charset.charset;
-      var encoding = cff.encoding ? cff.encoding.encoding : null;
+      var encoding = cff.encoding ? cff.encoding.encoding : {};
       var charstrings = [];
       var unicodeUsed = [];
       var unassignedUnicodeItems = [];
@@ -5531,16 +5531,17 @@ var CFFFont = (function CFFFontClosure() {
       var gidStart = 0;
       // Even though the CFF font may not actually be a CID font is could have
       // CID information in the font descriptor.
-      if (this.properties.cidSystemInfo) {
+      if (this.properties.cidSystemInfo && this.cff.isCIDFont) {
         // According to section 9.7.4.2 if the font is actually a CID font then
-        // we should use the charset to map CIDs to GIDs. If it is not actually
-        // a CID font then CIDs can be mapped directly to GIDs.
-        if (this.cff.isCIDFont) {
-          inverseEncoding = charsets;
-        } else {
-          for (var i = 0, ii = charsets.length; i < charsets.length; i++) {
-            inverseEncoding.push(i);
-          }
+        // we should use the charset to map CIDs to GIDs.
+        inverseEncoding = charsets;
+      } else if (this.properties.cidSystemInfo && !this.cff.isCIDFont &&
+                 Object.getOwnPropertyNames(encoding).length === 0) {
+        // If it is not actually a CID font then CIDs should be mapped directly
+        // to GIDs. However, there are also some fonts that have an encoding so
+        // only directly map if there was no encoding.
+        for (var i = 0, ii = charsets.length; i < charsets.length; i++) {
+          inverseEncoding.push(i);
         }
       } else {
         for (var charcode in encoding) {
