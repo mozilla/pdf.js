@@ -63,7 +63,12 @@ var DownloadManager = (function DownloadManagerClosure() {
         return; // restricted/invalid URL
       }
 
-      download(url + '#pdfjs.action=download', filename);
+      var protocol = url.substr(0, url.indexOf(':'));
+      if (protocol !== 'data') {
+        url += '#pdfjs.action=download';
+      }
+
+      download(url, filename);
     },
 
     download: function DownloadManager_download(blob, url, filename) {
