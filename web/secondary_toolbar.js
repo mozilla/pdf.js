@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, SCROLLBAR_PADDING */
+/* globals PDFView, PresentationMode, SCROLLBAR_PADDING */
 
 'use strict';
 
@@ -59,7 +59,7 @@ var SecondaryToolbar = {
 
   // Event handling functions.
   presentationModeClick: function secondaryToolbarPresentationModeClick(evt) {
-    PDFView.presentationMode();
+    PresentationMode.request();
     this.close();
   },
 

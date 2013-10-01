@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, PDFView */
+/* globals PDFJS, PDFView, PresentationMode */
 
 'use strict';
 
@@ -264,7 +264,7 @@ var PDFHistory = {
       return null;
     }
     var params = { hash: this.currentBookmark, page: this.currentPage };
-    if (PDFView.isPresentationMode) {
+    if (PresentationMode.active) {
       params.hash = null;
     }
     return params;
