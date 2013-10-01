@@ -121,7 +121,20 @@ select {
   display: none;
 }
 
-#viewerContainer.presentationControls {
+:-webkit-full-screen .textLayer > div {
+  cursor: none;
+}
+
+:-moz-full-screen .textLayer > div {
+  cursor: none;
+}
+
+:fullscreen .textLayer > div {
+  cursor: none;
+}
+
+#viewerContainer.presentationControls,
+#viewerContainer.presentationControls .textLayer > div {
   cursor: default;
 }
 
