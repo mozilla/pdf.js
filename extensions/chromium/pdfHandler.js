@@ -169,3 +169,24 @@ chrome.webRequest.onHeadersReceived.addListener(
     types: ['main_frame', 'sub_frame']
   },
   ['blocking','responseHeaders']);
+
+chrome.webRequest.onBeforeRequest.addListener(
+  function(details) {
+    if (isPdfDownloadable(details))
+      return;
+
+    // NOTE: The manifest file has declared an empty content script
+    // at file://*/* to make sure that the viewer can load the PDF file
+    // through XMLHttpRequest. Necessary to deal with http://crbug.com/302548
+    var viewerUrl = getViewerURL(details.url);
+
+    return { redirectUrl: viewerUrl };
+  },
+  {
+    urls: [
+      'file://*/*.pdf',
+      'file://*/*.PDF'
+    ],
+    types: ['main_frame', 'sub_frame']
+  },
+  ['blocking']);
