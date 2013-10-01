@@ -15,17 +15,15 @@
     "webNavigation"
   ],
   "content_scripts": [{
-      "matches": [
-          "*://*/*.pdf*",
-          "*://*/*.PDF*"
-       ],
-       "css": ["hide-xhtml-error.css"]
+    "matches": ["file://*/*"],
+    "js": ["nothing.js"]
   }],
   "background": {
     "page": "pdfHandler.html"
   },
+  "incognito": "split",
   "web_accessible_resources": [
-    "patch-worker.js",
-    "content/*"
+    "getFrameId",
+    "content/web/viewer.html"
   ]
 }
