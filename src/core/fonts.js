@@ -5529,18 +5529,22 @@ var CFFFont = (function CFFFontClosure() {
       var unassignedUnicodeItems = [];
       var inverseEncoding = [];
       var gidStart = 0;
-      // Even though the CFF font may not actually be a CID font is could have
-      // CID information in the font descriptor.
-      if (this.properties.cidSystemInfo) {
-        // According to section 9.7.4.2 if the font is actually a CID font then
-        // we should use the charset to map CIDs to GIDs. If it is not actually
-        // a CID font then CIDs can be mapped directly to GIDs.
+      // According to section 9.7.4.2 CIDFontType0C glyph selection should be
+      // handled differently.
+      if (this.properties.subtype === 'CIDFontType0C') {
         if (this.cff.isCIDFont) {
+          // If the font is actually a CID font then we should use the charset
+          // to map CIDs to GIDs.
           inverseEncoding = charsets;
         } else {
-          for (var i = 0, ii = charsets.length; i < charsets.length; i++) {
+          // If it is NOT actually a CID font then CIDs should be mapped
+          // directly to GIDs.
+          inverseEncoding = [];
+          for (var i = 0, ii = cff.charStrings.count; i < ii; i++) {
             inverseEncoding.push(i);
           }
+          // Use the identity map for charsets as well.
+          charsets = inverseEncoding;
         }
       } else {
         for (var charcode in encoding) {
