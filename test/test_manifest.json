@@ -1162,6 +1162,13 @@
       "type": "eq",
       "about": "A CIDFontType0 font with a CFF font that isn't actually CID."
     },
+    {  "id": "bug921409",
+      "file": "pdfs/bug921409.pdf",
+      "md5": "920e88dde0f5436ebe0df0281e1c30ca",
+      "rounds": 1,
+      "type": "eq",
+      "about": "A CIDFontType0 font that actually has a Type1C font file."
+    },
     {  "id": "noembed-identity-2",
       "file": "pdfs/noembed-identity-2.pdf",
       "md5": "13b7d9ab9579d45c10bc8d499d087f21",
