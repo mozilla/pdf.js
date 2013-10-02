@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFView, PDFHistory, PDFFindBar, PDFJS, mozL10n,
-           CustomStyle, scrollIntoView, SCROLLBAR_PADDING, CSS_UNITS,
-           UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale, TextLayerBuilder,
-           cache, Stats */
+           CustomStyle, PresentationMode, scrollIntoView, SCROLLBAR_PADDING,
+           CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale,
+           TextLayerBuilder, cache, Stats */
 
 'use strict';
 
@@ -238,7 +238,7 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
-    if (PDFView.isPresentationMode) { // Avoid breaking presentation mode.
+    if (PresentationMode.active) { // Avoid breaking presentation mode.
       dest = null;
     }
     if (!dest) {
@@ -379,7 +379,7 @@ var PageView = function pageView(container, id, scale,
         pageIndex: this.id - 1,
         lastScrollSource: PDFView,
         viewport: this.viewport,
-        isViewerInPresentationMode: PDFView.isPresentationMode
+        isViewerInPresentationMode: PresentationMode.active
       }) : null;
     // TODO(mack): use data attributes to store these
     ctx._scaleX = outputScale.sx;
