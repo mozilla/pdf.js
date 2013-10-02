@@ -1251,6 +1251,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (textSelection) {
         geom.canvasWidth = canvasWidth;
+        geom.spaceWidth = current.wordSpacing;
         if (vertical) {
           var VERTICAL_TEXT_ROTATION = Math.PI / 2;
           geom.angle += VERTICAL_TEXT_ROTATION;
