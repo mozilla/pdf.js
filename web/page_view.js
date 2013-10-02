@@ -17,7 +17,7 @@
 /* globals RenderingStates, PDFView, PDFHistory, PDFFindBar, PDFJS, mozL10n,
            CustomStyle, PresentationMode, scrollIntoView, SCROLLBAR_PADDING,
            CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale,
-           TextLayerBuilder, cache, Stats */
+           TextLayerBuilder, cache, Stats, USE_ONLY_CSS_ZOOM */
 
 'use strict';
 
@@ -36,6 +36,8 @@ var PageView = function pageView(container, id, scale,
   this.textContent = null;
   this.textLayer = null;
 
+  this.zoomLayer = null;
+
   this.annotationLayer = null;
 
   var anchor = document.createElement('a');
@@ -53,42 +55,36 @@ var PageView = function pageView(container, id, scale,
   this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
-    this.viewport = pdfPage.getViewport(this.scale);
+    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS);
     this.stats = pdfPage.stats;
-    this.update();
+    this.reset();
   };
 
   this.destroy = function pageViewDestroy() {
-    this.update();
+    this.zoomLayer = null;
+    this.reset();
     if (this.pdfPage) {
       this.pdfPage.destroy();
     }
   };
 
-  this.update = function pageViewUpdate(scale, rotation) {
+  this.reset = function pageViewReset() {
     if (this.renderTask) {
       this.renderTask.cancel();
     }
     this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
 
-    if (typeof rotation !== 'undefined') {
-      this.rotation = rotation;
-    }
-
-    this.scale = scale || this.scale;
-
-    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = this.viewport.clone({
-      scale: this.scale,
-      rotation: totalRotation
-    });
-
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
 
-    while (div.hasChildNodes()) {
-      div.removeChild(div.lastChild);
+    var childNodes = div.childNodes;
+    for (var i = div.childNodes.length - 1; i >= 0; i--) {
+      var node = childNodes[i];
+      if (this.zoomLayer && this.zoomLayer === node) {
+        continue;
+      }
+      div.removeChild(node);
     }
     div.removeAttribute('data-loaded');
 
@@ -99,6 +95,47 @@ var PageView = function pageView(container, id, scale,
     this.loadingIconDiv = document.createElement('div');
     this.loadingIconDiv.className = 'loadingIcon';
     div.appendChild(this.loadingIconDiv);
+  };
+
+  this.update = function pageViewUpdate(scale, rotation) {
+    this.scale = scale || this.scale;
+
+    if (typeof rotation !== 'undefined') {
+      this.rotation = rotation;
+    }
+
+    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = this.viewport.clone({
+      scale: this.scale * CSS_UNITS,
+      rotation: totalRotation
+    });
+
+    if (USE_ONLY_CSS_ZOOM && this.canvas) {
+      this.cssZoom(this.canvas);
+      return;
+    } else if (this.canvas && !this.zoomLayer) {
+      this.zoomLayer = this.canvas.parentNode;
+      this.zoomLayer.style.position = 'absolute';
+    }
+    if (this.zoomLayer) {
+      this.cssZoom(this.zoomLayer.firstChild);
+    }
+    this.reset();
+  };
+
+  this.cssZoom = function pageViewRescale(canvas) {
+    // Need to adjust canvas, canvas wrapepr, and page container.
+    canvas.style.width = canvas.parentNode.style.width = div.style.width =
+        Math.floor(this.viewport.width) + 'px';
+    canvas.style.height = canvas.parentNode.style.height = div.style.height =
+        Math.floor(this.viewport.height) + 'px';
+    if (this.textLayer) {
+      var scale = (this.viewport.width / canvas.width);
+      var cssScale = 'scale(' + scale + ', ' + scale + ')';
+      var textLayerDiv = this.textLayer.textLayerDiv;
+      CustomStyle.setProp('transform', textLayerDiv, cssScale);
+      CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
+    }
   };
 
   Object.defineProperty(this, 'width', {
@@ -360,8 +397,15 @@ var PageView = function pageView(container, id, scale,
     var ctx = canvas.getContext('2d');
     var outputScale = getOutputScale(ctx);
 
-    canvas.width = Math.floor(viewport.width) * outputScale.sx;
-    canvas.height = Math.floor(viewport.height) * outputScale.sy;
+    if (USE_ONLY_CSS_ZOOM) {
+      // Use a scale that will give a 100% width canvas.
+      outputScale.sx *= 1 / (viewport.scale / CSS_UNITS);
+      outputScale.sy *= 1 / (viewport.scale / CSS_UNITS);
+      outputScale.scaled = true;
+    }
+
+    canvas.width = Math.floor(viewport.width * outputScale.sx);
+    canvas.height = Math.floor(viewport.height * outputScale.sy);
     canvas.style.width = Math.floor(viewport.width) + 'px';
     canvas.style.height = Math.floor(viewport.height) + 'px';
 
@@ -419,6 +463,11 @@ var PageView = function pageView(container, id, scale,
       if (self.loadingIconDiv) {
         div.removeChild(self.loadingIconDiv);
         delete self.loadingIconDiv;
+      }
+
+      if (self.zoomLayer) {
+        div.removeChild(self.zoomLayer);
+        self.zoomLayer = null;
       }
 
 //#if (FIREFOX || MOZCENTRAL)
