@@ -202,15 +202,9 @@ canvas {
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
-  -webkit-transition: width 200ms;
   transition: width 200ms;
 }
 
-@-webkit-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
-}
 @keyframes progressIndeterminate {
   0% { left: 0%; }
   50% { left: 100%; }
@@ -219,7 +213,6 @@ canvas {
 
 #loadingBar .progress.indeterminate {
   background-color: #999;
-  -webkit-transition: none;
   transition: none;
 }
 
@@ -233,7 +226,6 @@ canvas {
   background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
   background-size: 100% 100% no-repeat;
 
-  -webkit-animation: progressIndeterminate 2s linear infinite;
   animation: progressIndeterminate 2s linear infinite;
 }
 
