@@ -18,10 +18,15 @@
 
 'use strict';
 
-// Settings Manager - This is a utility for saving settings
-// First we see if localStorage is available
-// If not, we use FUEL in FF
-// Use asyncStorage for B2G
+/**
+ * Settings Manager - This is a utility for saving settings.
+ *
+ * The way that settings are stored depends on how PDF.js is built,
+ * for 'node make <flag>' the following cases exist:
+ *  - FIREFOX or MOZCENTRAL - uses about:config.
+ *  - B2G                   - uses asyncStorage.
+ *  - GENERIC or CHROME     - uses localStorage, if it is available.
+ */
 var Settings = (function SettingsClosure() {
 //#if !(FIREFOX || MOZCENTRAL || B2G)
   var isLocalStorageEnabled = (function localStorageEnabledTest() {
@@ -29,8 +34,8 @@ var Settings = (function SettingsClosure() {
     // The additional localStorage call is to get around a FF quirk, see
     // bug #495747 in bugzilla
     try {
-      return 'localStorage' in window && window['localStorage'] !== null &&
-          localStorage;
+      return ('localStorage' in window && window['localStorage'] !== null &&
+              localStorage);
     } catch (e) {
       return false;
     }
@@ -55,36 +60,40 @@ var Settings = (function SettingsClosure() {
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
-    if (isLocalStorageEnabled)
+    if (isLocalStorageEnabled) {
       resolvePromise(localStorage.getItem('database'));
+    }
 //#endif
   }
 
   Settings.prototype = {
     initialize: function settingsInitialize(database) {
       database = JSON.parse(database);
-      if (!('files' in database))
+      if (!('files' in database)) {
         database.files = [];
-      if (database.files.length >= SETTINGS_MEMORY)
+      }
+      if (database.files.length >= SETTINGS_MEMORY) {
         database.files.shift();
+      }
       var index;
       for (var i = 0, length = database.files.length; i < length; i++) {
         var branch = database.files[i];
-        if (branch.fingerprint == this.fingerprint) {
+        if (branch.fingerprint === this.fingerprint) {
           index = i;
           break;
         }
       }
-      if (typeof index != 'number')
+      if (typeof index !== 'number') {
         index = database.files.push({fingerprint: this.fingerprint}) - 1;
+      }
       this.file = database.files[index];
       this.database = database;
     },
 
     set: function settingsSet(name, val) {
-      if (!this.initializedPromise.isResolved)
+      if (!this.initializedPromise.isResolved) {
         return;
-
+      }
       var file = this.file;
       file[name] = val;
       var database = JSON.stringify(this.database);
@@ -98,15 +107,16 @@ var Settings = (function SettingsClosure() {
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
-      if (isLocalStorageEnabled)
+      if (isLocalStorageEnabled) {
         localStorage.setItem('database', database);
+      }
 //#endif
     },
 
     get: function settingsGet(name, defaultValue) {
-      if (!this.initializedPromise.isResolved)
+      if (!this.initializedPromise.isResolved) {
         return defaultValue;
-
+      }
       return this.file[name] || defaultValue;
     }
   };
