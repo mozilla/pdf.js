@@ -127,7 +127,9 @@ var PageView = function pageView(container, id, scale,
         }
         return false;
       };
-      link.className = 'internalLink';
+      if (dest) {
+        link.className = 'internalLink';
+      }
     }
 
     function bindNamedAction(link, action) {
