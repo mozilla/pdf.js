@@ -1728,6 +1728,7 @@ function updateViewarea() {
   });
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;
+  document.getElementById('secondaryViewBookmark').href = href;
 
   // Update the current bookmark in the browsing history.
   PDFHistory.updateCurrentBookmark(pdfOpenParams, pageNumber);
@@ -1771,6 +1772,8 @@ window.addEventListener('change', function webViewerChange(evt) {
 
   // URL does not reflect proper document location - hiding some icons.
   document.getElementById('viewBookmark').setAttribute('hidden', 'true');
+  document.getElementById('secondaryViewBookmark').
+    setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
   document.getElementById('secondaryDownload').setAttribute('hidden', 'true');
 }, true);
