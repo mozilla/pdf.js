@@ -400,6 +400,7 @@ html[dir='rtl'] .secondaryToolbar {
   max-width: 200px;
   max-height: 400px;
   overflow-y: auto;
+  margin-bottom: -4px;
 }
 
 .doorHanger,
@@ -894,20 +895,25 @@ html[dir="rtl"] .secondaryToolbarButton.print::before {
   content: url(images/toolbarButton-download.png);
 }
 
-.toolbarButton.bookmark {
+.toolbarButton.bookmark,
+.secondaryToolbarButton.bookmark {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  margin-top: 3px;
   padding-top: 4px;
+  text-decoration: none;
+}
+.secondaryToolbarButton.bookmark {
+  padding-top: 5px;
 }
 
-#viewBookmark[href='#'] {
+.bookmark[href='#'] {
   opacity: .5;
   pointer-events: none;
 }
 
-.toolbarButton.bookmark::before {
+.toolbarButton.bookmark::before,
+.secondaryToolbarButton.bookmark::before {
   content: url(images/toolbarButton-bookmark.png);
 }
 
@@ -944,9 +950,11 @@ html[dir="rtl"] .secondaryToolbarButton {
   padding-right: 24px;
   text-align: right;
 }
-
-#secondaryToolbarButtonContainer :last-child {
-  margin-bottom: 0;
+html[dir="ltr"] .secondaryToolbarButton.bookmark {
+  padding-left: 27px;
+}
+html[dir="rtl"] .secondaryToolbarButton.bookmark {
+  padding-right: 27px;
 }
 
 html[dir="ltr"] .secondaryToolbarButton > span {
