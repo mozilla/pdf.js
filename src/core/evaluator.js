@@ -567,12 +567,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           } else {
             if (args.length < opSpec.numArgs) {
-              // If we receive too few args, it's not possible to possible
+              // If we receive too few args, it's not possible
               // to execute the command, so skip the command
               info('Command ' + fn + ': because expected ' +
                    opSpec.numArgs + ' args, but received ' + args.length +
                    ' args; skipping');
-              args = [];
+              args.length = 0;
               continue;
             } else if (args.length > opSpec.numArgs) {
               info('Command ' + fn + ': expected ' + opSpec.numArgs +
@@ -597,7 +597,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if (typeNum == TILING_PATTERN) {
                 self.handleTilingType(fn, args, resources, pattern, dict,
                                       operatorList);
-                args = [];
+                args = []; // create a new array
                 continue;
               } else if (typeNum == SHADING_PATTERN) {
                 var shading = dict.get('Shading');
@@ -625,12 +625,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               if ('Form' == type.name) {
                 self.buildFormXObject(resources, xobj, null, operatorList);
-                args = [];
+                args.length = 0;
                 continue;
               } else if ('Image' == type.name) {
                 self.buildPaintImageXObject(resources, xobj, false,
                                             operatorList);
-                args = [];
+                args = []; // create a new array
                 continue;
               } else {
                 error('Unhandled XObject subtype ' + type.name);
@@ -644,7 +644,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             args[0] = loadedName;
           } else if (cmd == 'EI') {
             self.buildPaintImageXObject(resources, args[0], true, operatorList);
-            args = [];
+            args.length = 0;
             continue;
           } else if (cmd === 'q') { // save
             var old = this.state;
@@ -703,12 +703,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               var gState = extGState.get(dictName.name);
               self.setGState(resources, gState, operatorList);
-              args = [];
+              args.length = 0;
               continue nextOp;
           } // switch
 
           operatorList.addOp(fn, args);
-          args = [];
+          args = []; // create a new array
           parser.saveState();
         } else if (obj !== null && obj !== undefined) {
           args.push(obj instanceof Dict ? obj.getAll() : obj);
@@ -906,7 +906,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             chunk = '';
           }
 
-          args = [];
+          args.length = 0;
         } else if (obj !== null && obj !== undefined) {
           assertWellFormed(args.length <= 33, 'Too many arguments');
           args.push(obj);
@@ -1507,9 +1507,9 @@ var OperatorList = (function OperatorListClosure() {
         },
         pageIndex: this.pageIndex
       });
-      this.dependencies = [];
-      this.fnArray = [];
-      this.argsArray = [];
+      this.dependencies.length = 0;
+      this.fnArray.length = 0;
+      this.argsArray.length = 0;
     }
   };
 

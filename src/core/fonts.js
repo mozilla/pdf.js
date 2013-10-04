@@ -4351,7 +4351,7 @@ var Font = (function FontClosure() {
       }
       if (cidEncoding.indexOf('Identity-') !== 0) {
         // input is already Unicode for non-Identity CMap encodings.
-        this.cidToUnicode = [];
+        this.cidToUnicode.length = 0;
         // For CIDFontType2, however, we need cid-to-Unicode conversion
         // to rebuild cmap.
         if (properties.type == 'CIDFontType2') {
@@ -4360,7 +4360,7 @@ var Font = (function FontClosure() {
       } else {
         // We don't have to do reverse conversions if the string is
         // already CID.
-        this.unicodeToCID = [];
+        this.unicodeToCID.length = 0;
       }
     },
 
@@ -4669,14 +4669,14 @@ var Type1CharString = (function Type1CharStringClosure() {
           switch (value) {
             case 1: // hstem
               if (!HINTING_ENABLED) {
-                this.stack = [];
+                this.stack.length = 0;
                 break;
               }
               error = this.executeCommand(2, COMMAND_MAP.hstem);
               break;
             case 3: // vstem
               if (!HINTING_ENABLED) {
-                this.stack = [];
+                this.stack.length = 0;
                 break;
               }
               error = this.executeCommand(2, COMMAND_MAP.vstem);
@@ -4710,7 +4710,7 @@ var Type1CharString = (function Type1CharStringClosure() {
             case 9: // closepath
               // closepath is a Type1 command that does not take argument and is
               // useless in Type2 and it can simply be ignored.
-              this.stack = [];
+              this.stack.length = 0;
               break;
             case 10: // callsubr
               if (this.stack.length < 1) {
@@ -4763,11 +4763,11 @@ var Type1CharString = (function Type1CharStringClosure() {
               // dotsection is a Type1 command to specify some hinting feature
               // for dots that do not take a parameter and it can safely be
               // ignored for Type2.
-              this.stack = [];
+              this.stack.length = 0;
               break;
             case (12 << 8) + 1: // vstem3
               if (!HINTING_ENABLED) {
-                this.stack = [];
+                this.stack.length = 0;
                 break;
               }
               // [vh]stem3 are Type1 only and Type2 supports [vh]stem with
@@ -4777,7 +4777,7 @@ var Type1CharString = (function Type1CharStringClosure() {
               break;
             case (12 << 8) + 2: // hstem3
               if (!HINTING_ENABLED) {
-                 this.stack = [];
+                 this.stack.length = 0;
                 break;
               }
               // See vstem3.
@@ -4858,7 +4858,7 @@ var Type1CharString = (function Type1CharStringClosure() {
               break;
             case (12 << 8) + 33: // setcurrentpoint
               // Ignore for now.
-              this.stack = [];
+              this.stack.length = 0;
               break;
             default:
               warn('Unknown type 1 charstring command of "' + value + '"');
@@ -4906,7 +4906,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       if (keepStack) {
         this.stack.splice(start, howManyArgs);
       } else {
-        this.stack = [];
+        this.stack.length = 0;
       }
       return false;
     }
@@ -5539,7 +5539,7 @@ var CFFFont = (function CFFFontClosure() {
         } else {
           // If it is NOT actually a CID font then CIDs should be mapped
           // directly to GIDs.
-          inverseEncoding = [];
+          inverseEncoding.length = 0;
           for (var i = 0, ii = cff.charStrings.count; i < ii; i++) {
             inverseEncoding.push(i);
           }
@@ -5871,7 +5871,7 @@ var CFFParser = (function CFFParserClosure() {
           if (b === 12)
             b = (b << 8) | dict[++pos];
           entries.push([b, operands]);
-          operands = [];
+          operands = []; // create a new array
           ++pos;
         } else {
           operands.push(parseOperand());
