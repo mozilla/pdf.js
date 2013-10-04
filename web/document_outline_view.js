@@ -35,6 +35,7 @@ var DocumentOutlineView = {
 
     // Define the toolbar buttons.
     this.expandTopOutlineItems = options.expandTopOutlineItems;
+    this.collapseTopOutlineItems = options.collapseTopOutlineItems;
     this.expandAllOutlineItems = options.expandAllOutlineItems;
     this.collapseAllOutlineItems = options.collapseAllOutlineItems;
 
@@ -208,7 +209,10 @@ var DocumentOutlineView = {
   toolbarClick: function documentOutlineViewToolbarClick(evt) {
     switch (evt.target) {
       case this.expandTopOutlineItems:
-        this._toggleMultipleItems(this.outlineView, true, false);
+        this._toggleMultipleItems(this.outlineView, true);
+        break;
+      case this.collapseTopOutlineItems:
+        this._toggleMultipleItems(this.outlineView, false);
         break;
       case this.expandAllOutlineItems:
         this._toggleMultipleItems(this.outlineView, true, true);

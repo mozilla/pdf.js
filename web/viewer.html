@@ -105,13 +105,17 @@ limitations under the License.
             <button id="expandTopOutlineItems" class="secondaryToolbarButton" title="Expand top level Outline Items" tabindex="5" data-l10n-id="expand_top_outline_items">
               <span data-l10n-id="expand_top_outline_items_label">Expand top level Outline Items</span>
             </button>
-            <button id="expandAllOutlineItems" class="secondaryToolbarButton" title="Expand all Outline Items" tabindex="6" data-l10n-id="expand_all_outline_items">
-              <span data-l10n-id="expand_all_outline_items_label">Expand all Outline Items</span>
+            <button id="collapseTopOutlineItems" class="secondaryToolbarButton" title="Collapse top level Outline Items" tabindex="6" data-l10n-id="collapse_top_outline_items">
+              <span data-l10n-id="collapse_top_outline_items">Collapse top level Outline Items</span>
             </button>
 
             <div class="horizontalToolbarSeparator"></div>
 
-            <button id="collapseAllOutlineItems" class="secondaryToolbarButton" title="Collapse all Outline Items" tabindex="7" data-l10n-id="collapse_all_outline_items">
+            <button id="expandAllOutlineItems" class="secondaryToolbarButton" title="Expand all Outline Items" tabindex="7" data-l10n-id="expand_all_outline_items">
+              <span data-l10n-id="expand_all_outline_items_label">Expand all Outline Items</span>
+            </button>
+
+            <button id="collapseAllOutlineItems" class="secondaryToolbarButton" title="Collapse all Outline Items" tabindex="8" data-l10n-id="collapse_all_outline_items">
               <span data-l10n-id="collapse_all_outline_items_label">Collapse all Outline Items</span>
             </button>
           </div>
@@ -141,37 +145,37 @@ limitations under the License.
 
         <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
           <div class="buttonContainer">
-            <button id="secondaryPresentationMode" class="secondaryToolbarButton presentationMode visibleLargeView" title="Switch to Presentation Mode" tabindex="22" data-l10n-id="presentation_mode">
+            <button id="secondaryPresentationMode" class="secondaryToolbarButton presentationMode visibleLargeView" title="Switch to Presentation Mode" tabindex="23" data-l10n-id="presentation_mode">
               <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
             </button>
 
-            <button id="secondaryOpenFile" class="secondaryToolbarButton openFile visibleLargeView" title="Open File" tabindex="23" data-l10n-id="open_file">
+            <button id="secondaryOpenFile" class="secondaryToolbarButton openFile visibleLargeView" title="Open File" tabindex="24" data-l10n-id="open_file">
               <span data-l10n-id="open_file_label">Open</span>
             </button>
 
-            <button id="secondaryPrint" class="secondaryToolbarButton print visibleMediumView" title="Print" tabindex="24" data-l10n-id="print">
+            <button id="secondaryPrint" class="secondaryToolbarButton print visibleMediumView" title="Print" tabindex="25" data-l10n-id="print">
               <span data-l10n-id="print_label">Print</span>
             </button>
 
-            <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="25" data-l10n-id="download">
+            <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="26" data-l10n-id="download">
               <span data-l10n-id="download_label">Download</span>
             </button>
 
             <div class="horizontalToolbarSeparator visibleLargeView"></div>
 
-            <button id="firstPage" class="secondaryToolbarButton firstPage" title="Go to First Page" tabindex="26" data-l10n-id="first_page">
+            <button id="firstPage" class="secondaryToolbarButton firstPage" title="Go to First Page" tabindex="27" data-l10n-id="first_page">
               <span data-l10n-id="first_page_label">Go to First Page</span>
             </button>
-            <button id="lastPage" class="secondaryToolbarButton lastPage" title="Go to Last Page" tabindex="27" data-l10n-id="last_page">
+            <button id="lastPage" class="secondaryToolbarButton lastPage" title="Go to Last Page" tabindex="28" data-l10n-id="last_page">
               <span data-l10n-id="last_page_label">Go to Last Page</span>
             </button>
 
             <div class="horizontalToolbarSeparator"></div>
 
-            <button id="pageRotateCw" class="secondaryToolbarButton rotateCw" title="Rotate Clockwise" tabindex="28" data-l10n-id="page_rotate_cw">
+            <button id="pageRotateCw" class="secondaryToolbarButton rotateCw" title="Rotate Clockwise" tabindex="29" data-l10n-id="page_rotate_cw">
               <span data-l10n-id="page_rotate_cw_label">Rotate Clockwise</span>
             </button>
-            <button id="pageRotateCcw" class="secondaryToolbarButton rotateCcw" title="Rotate Counterclockwise" tabindex="29" data-l10n-id="page_rotate_ccw">
+            <button id="pageRotateCcw" class="secondaryToolbarButton rotateCcw" title="Rotate Counterclockwise" tabindex="30" data-l10n-id="page_rotate_ccw">
               <span data-l10n-id="page_rotate_ccw_label">Rotate Counterclockwise</span>
             </button>
           </div>
@@ -181,65 +185,67 @@ limitations under the License.
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="8" data-l10n-id="toggle_sidebar">
+                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="9" data-l10n-id="toggle_sidebar">
                   <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton group hiddenSmallView" title="Find in Document" tabindex="9" data-l10n-id="findbar">
+                <button id="viewFind" class="toolbarButton group hiddenSmallView" title="Find in Document" tabindex="10" data-l10n-id="findbar">
                    <span data-l10n-id="findbar_label">Find</span>
                 </button>
                 <div class="splitToolbarButton">
-                  <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="10" data-l10n-id="previous">
+                  <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="11" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>
                   </button>
                   <div class="splitToolbarButtonSeparator"></div>
-                  <button class="toolbarButton pageDown" title="Next Page" id="next" tabindex="11" data-l10n-id="next">
+                  <button class="toolbarButton pageDown" title="Next Page" id="next" tabindex="12" data-l10n-id="next">
                     <span data-l10n-id="next_label">Next</span>
                   </button>
                 </div>
                 <label id="pageNumberLabel" class="toolbarLabel" for="pageNumber" data-l10n-id="page_label">Page: </label>
-                <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" tabindex="12">
+                <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" tabindex="13">
                 </input>
                 <span id="numPages" class="toolbarLabel"></span>
               </div>
               <div id="toolbarViewerRight">
-                <button id="presentationMode" class="toolbarButton presentationMode hiddenLargeView" title="Switch to Presentation Mode" tabindex="16" data-l10n-id="presentation_mode">
+                <button id="presentationMode" class="toolbarButton presentationMode hiddenLargeView" title="Switch to Presentation Mode" tabindex="17" data-l10n-id="presentation_mode">
                   <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
                 </button>
 
-                <button id="openFile" class="toolbarButton openFile hiddenLargeView" title="Open File" tabindex="17" data-l10n-id="open_file">
+                <button id="openFile" class="toolbarButton openFile hiddenLargeView" title="Open File" tabindex="18" data-l10n-id="open_file">
                   <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
-                <button id="print" class="toolbarButton print hiddenMediumView" title="Print" tabindex="18" data-l10n-id="print">
+                <button id="print" class="toolbarButton print hiddenMediumView" title="Print" tabindex="19" data-l10n-id="print">
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <button id="download" class="toolbarButton download hiddenMediumView" title="Download" tabindex="19" data-l10n-id="download">
+                <button id="download" class="toolbarButton download hiddenMediumView" title="Download" tabindex="20" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
                 <!-- <div class="toolbarButtonSpacer"></div> -->
-                <a href="#" id="viewBookmark" class="toolbarButton bookmark hiddenSmallView" title="Current view (copy or open in new window)" tabindex="20" data-l10n-id="bookmark"><span data-l10n-id="bookmark_label">Current View</span></a>
+                <a href="#" id="viewBookmark" class="toolbarButton bookmark hiddenSmallView" title="Current view (copy or open in new window)" tabindex="21" data-l10n-id="bookmark">
+                  <span data-l10n-id="bookmark_label">Current View</span>
+                </a>
 
                 <div class="verticalToolbarSeparator hiddenSmallView"></div>
                 
-                <button id="secondaryToolbarToggle" class="toolbarButton" title="Tools" tabindex="21" data-l10n-id="tools">
+                <button id="secondaryToolbarToggle" class="toolbarButton" title="Tools" tabindex="22" data-l10n-id="tools">
                   <span data-l10n-id="tools_label">Tools</span>
                 </button> 
               </div>
               <div class="outerCenter">
                 <div class="innerCenter" id="toolbarViewerMiddle">
                   <div class="splitToolbarButton">
-                    <button id="zoomOut" class="toolbarButton zoomOut" title="Zoom Out" tabindex="13" data-l10n-id="zoom_out">
+                    <button id="zoomOut" class="toolbarButton zoomOut" title="Zoom Out" tabindex="14" data-l10n-id="zoom_out">
                       <span data-l10n-id="zoom_out_label">Zoom Out</span>
                     </button>
                     <div class="splitToolbarButtonSeparator"></div>
-                    <button id="zoomIn" class="toolbarButton zoomIn" title="Zoom In" tabindex="14" data-l10n-id="zoom_in">
+                    <button id="zoomIn" class="toolbarButton zoomIn" title="Zoom In" tabindex="15" data-l10n-id="zoom_in">
                       <span data-l10n-id="zoom_in_label">Zoom In</span>
                      </button>
                   </div>
                   <span id="scaleSelectContainer" class="dropdownToolbarButton">
-                     <select id="scaleSelect" title="Zoom" tabindex="15" data-l10n-id="zoom">
+                     <select id="scaleSelect" title="Zoom" tabindex="16" data-l10n-id="zoom">
                       <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="page_scale_auto">Automatic Zoom</option>
                       <option id="pageActualOption" value="page-actual" data-l10n-id="page_scale_actual">Actual Size</option>
                       <option id="pageFitOption" value="page-fit" data-l10n-id="page_scale_fit">Fit Page</option>

@@ -1021,6 +1021,8 @@ var PDFView = {
           toolbar: document.getElementById('outlineOptions'),
           expandTopOutlineItems:
             document.getElementById('expandTopOutlineItems'),
+          collapseTopOutlineItems:
+            document.getElementById('collapseTopOutlineItems'),
           expandAllOutlineItems:
             document.getElementById('expandAllOutlineItems'),
           collapseAllOutlineItems:
