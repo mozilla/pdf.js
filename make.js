@@ -283,6 +283,7 @@ target.bundle = function(args) {
 
   var WORKER_SRC_FILES = [
     'shared/util.js',
+    'shared/colorspace.js',
     'shared/pattern.js',
     'shared/function.js',
     'shared/annotation.js',
@@ -293,9 +294,9 @@ target.bundle = function(args) {
     'core/obj.js',
     'core/charsets.js',
     'core/cidmaps.js',
-    'shared/colorspace.js',
     'core/crypto.js',
     'core/evaluator.js',
+    'core/cmap.js',
     'core/fonts.js',
     'core/font_renderer.js',
     'core/glyphlist.js',
@@ -306,8 +307,7 @@ target.bundle = function(args) {
     'core/worker.js',
     'core/jpx.js',
     'core/jbig2.js',
-    'core/bidi.js',
-    'core/cmap.js'
+    'core/bidi.js'
   ];
 
   var EXT_SRC_FILES = [
