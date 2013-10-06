@@ -18,32 +18,37 @@
 
 'use strict';
 
+var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
+var SELECTOR = 'presentationControls';
+
 var PresentationMode = {
   active: false,
   args: null,
 
+  initialize: function presentationModeInitialize(options) {
+    this.container = options.container;
+  },
+
+  get isFullscreen() {
+    return (document.fullscreenElement ||
+            document.mozFullScreen ||
+            document.webkitIsFullScreen ||
+            document.msFullscreenElement);
+  },
+
   request: function presentationModeRequest() {
-    if (!PDFView.supportsFullscreen) {
-      return false;
-    }
-    var isPresentationMode = document.fullscreenElement ||
-                             document.mozFullScreen ||
-                             document.webkitIsFullScreen ||
-                             document.msFullscreenElement;
-
-    if (isPresentationMode) {
+    if (!PDFView.supportsFullscreen || this.isFullscreen) {
       return false;
     }
 
-    var wrapper = document.getElementById('viewerContainer');
-    if (document.documentElement.requestFullscreen) {
-      wrapper.requestFullscreen();
-    } else if (document.documentElement.mozRequestFullScreen) {
-      wrapper.mozRequestFullScreen();
-    } else if (document.documentElement.webkitRequestFullScreen) {
-      wrapper.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-    } else if (document.documentElement.msRequestFullscreen) {
-      wrapper.msRequestFullscreen();
+    if (this.container.requestFullscreen) {
+      this.container.requestFullscreen();
+    } else if (this.container.mozRequestFullScreen) {
+      this.container.mozRequestFullScreen();
+    } else if (this.container.webkitRequestFullScreen) {
+      this.container.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+    } else if (this.container.msRequestFullscreen) {
+      this.container.msRequestFullscreen();
     } else {
       return false;
     }
@@ -62,10 +67,11 @@ var PresentationMode = {
     PDFView.page = this.args.page;
     PDFView.parseScale('page-fit', true);
 
-    this.showControls();
+    window.addEventListener('mousemove', this.mouseMove, false);
+    window.addEventListener('mousedown', this.mouseDown, false);
 
-    var viewer = document.getElementById('viewer');
-    viewer.setAttribute('contextmenu', 'viewerContextMenu');
+    this.showControls();
+    this.container.setAttribute('contextmenu', 'viewerContextMenu');
   },
 
   exit: function presentationModeExit() {
@@ -75,12 +81,13 @@ var PresentationMode = {
     PDFView.parseScale(this.args.previousScale);
     PDFView.page = page;
 
+    window.removeEventListener('mousemove', this.mouseMove, false);
+    window.removeEventListener('mousedown', this.mouseDown, false);
+
     this.hideControls();
     this.args = null;
     PDFView.clearMouseScrollState();
-
-    var viewer = document.getElementById('viewer');
-    viewer.removeAttribute('contextmenu');
+    this.container.removeAttribute('contextmenu');
 
     // Ensure that the thumbnail of the current page is visible
     // when exiting presentation mode.
@@ -88,15 +95,13 @@ var PresentationMode = {
   },
 
   showControls: function presentationModeShowControls() {
-    var DELAY_BEFORE_HIDING_CONTROLS = 3000;
-    var wrapper = document.getElementById('viewerContainer');
     if (this.controlsTimeout) {
       clearTimeout(this.controlsTimeout);
     } else {
-      wrapper.classList.add('presentationControls');
+      this.container.classList.add(SELECTOR);
     }
     this.controlsTimeout = setTimeout(function hideControlsTimeout() {
-      wrapper.classList.remove('presentationControls');
+      this.container.classList.remove(SELECTOR);
       delete this.controlsTimeout;
     }.bind(this), DELAY_BEFORE_HIDING_CONTROLS);
   },
@@ -105,44 +110,33 @@ var PresentationMode = {
     if (!this.controlsTimeout) {
       return;
     }
+    this.container.classList.remove(SELECTOR);
     clearTimeout(this.controlsTimeout);
     delete this.controlsTimeout;
+  },
 
-    var wrapper = document.getElementById('viewerContainer');
-    wrapper.classList.remove('presentationControls');
+  mouseMove: function presentationModeMouseMove(evt) {
+    PresentationMode.showControls();
+  },
+
+  mouseDown: function presentationModeMouseDown(evt) {
+    if (evt.button === 0) {
+      // Enable clicking of links in presentation mode. Please note:
+      // Only links pointing to destinations in the current PDF document work.
+      var isInternalLink = (evt.target.href &&
+                            evt.target.classList.contains('internalLink'));
+      if (!isInternalLink) {
+        // Unless an internal link was clicked, advance one page.
+        evt.preventDefault();
+        PDFView.page += (evt.shiftKey ? -1 : 1);
+      }
+    }
   }
 };
 
-window.addEventListener('mousemove', function mousemove(evt) {
-  if (PresentationMode.active) {
-    PresentationMode.showControls();
-  }
-}, false);
-
-window.addEventListener('mousedown', function mousedown(evt) {
-  if (PresentationMode.active && evt.button === 0) {
-    // Enable clicking of links in presentation mode.
-    // Note: Only links that point to the currently loaded PDF document works.
-    var targetHref = evt.target.href;
-    var internalLink = targetHref && (targetHref.replace(/#.*$/, '') ===
-                                      window.location.href.replace(/#.*$/, ''));
-    if (!internalLink) {
-      // Unless an internal link was clicked, advance a page in presentation
-      // mode.
-      evt.preventDefault();
-      PDFView.page++;
-    }
-  }
-}, false);
-
 (function presentationModeClosure() {
   function presentationModeChange(e) {
-    var isPresentationMode = document.fullscreenElement ||
-                             document.mozFullScreen ||
-                             document.webkitIsFullScreen ||
-                             document.msFullscreenElement;
-
-    if (isPresentationMode) {
+    if (PresentationMode.isFullscreen) {
       PresentationMode.enter();
     } else {
       PresentationMode.exit();

@@ -147,6 +147,10 @@ var PDFView = {
       passwordCancel: document.getElementById('passwordCancel')
     });
 
+    PresentationMode.initialize({
+      container: container
+    });
+
     this.initialized = true;
     container.addEventListener('scroll', function() {
       self.lastScroll = Date.now();
