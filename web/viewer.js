@@ -1557,6 +1557,14 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     document.getElementById('viewFind').classList.add('hidden');
   }
 
+  if (PDFView.isViewerEmbedded) {
+    // If the viewer is embedded, let the viewBookmark buttons default to
+    // opening the current view in a new window.
+    var TARGET = '_blank';
+    document.getElementById('viewBookmark').target = TARGET;
+    document.getElementById('secondaryViewBookmark').target = TARGET;
+ }
+
   // Listen for warnings to trigger the fallback UI.  Errors should be caught
   // and call PDFView.error() so we don't need to listen for those.
   PDFJS.LogManager.addLogger({
@@ -1818,6 +1826,21 @@ window.addEventListener('localized', function localized(evt) {
     // Set the 'max-height' CSS property of the secondary toolbar.
     SecondaryToolbar.setMaxHeight(PDFView.container);
   });
+
+  if (PDFView.isViewerEmbedded) {
+    var FALLBACK_STRING = 'Open Current View in new Window';
+    var title = mozL10n.get('bookmark_embedded.title', null, FALLBACK_STRING);
+    var label = mozL10n.get('bookmark_embedded_label', null, FALLBACK_STRING);
+
+    var viewBookmark = document.getElementById('viewBookmark');
+    var secondaryViewBookmark =
+      document.getElementById('secondaryViewBookmark');
+
+    viewBookmark.title = title;
+    viewBookmark.firstElementChild.textContent = label;
+    secondaryViewBookmark.title = title;
+    secondaryViewBookmark.firstElementChild.textContent = label;
+  }
 }, true);
 
 window.addEventListener('scalechange', function scalechange(evt) {
