@@ -148,7 +148,12 @@ var PDFView = {
     });
 
     PresentationMode.initialize({
-      container: container
+      container: container,
+      secondaryToolbar: SecondaryToolbar,
+      firstPage: document.getElementById('contextFirstPage'),
+      lastPage: document.getElementById('contextLastPage'),
+      pageRotateCw: document.getElementById('contextPageRotateCw'),
+      pageRotateCcw: document.getElementById('contextPageRotateCcw')
     });
 
     this.initialized = true;
@@ -1649,18 +1654,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   document.getElementById('download').addEventListener('click',
     SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
-
-  document.getElementById('contextFirstPage').addEventListener('click',
-    SecondaryToolbar.firstPageClick.bind(SecondaryToolbar));
-
-  document.getElementById('contextLastPage').addEventListener('click',
-    SecondaryToolbar.lastPageClick.bind(SecondaryToolbar));
-
-  document.getElementById('contextPageRotateCw').addEventListener('click',
-    SecondaryToolbar.pageRotateCwClick.bind(SecondaryToolbar));
-
-  document.getElementById('contextPageRotateCcw').addEventListener('click',
-    SecondaryToolbar.pageRotateCcwClick.bind(SecondaryToolbar));
 
 //#if (FIREFOX || MOZCENTRAL)
 //PDFView.setTitleUsingUrl(file);
