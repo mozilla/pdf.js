@@ -514,7 +514,7 @@ var PageView = function pageView(container, id, scale,
     // Use the same hack we use for high dpi displays for printing to get better
     // output until bug 811002 is fixed in FF.
     var PRINT_OUTPUT_SCALE = 2;
-    var canvas = this.canvas = document.createElement('canvas');
+    var canvas = document.createElement('canvas');
     canvas.width = Math.floor(viewport.width) * PRINT_OUTPUT_SCALE;
     canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
     canvas.style.width = (PRINT_OUTPUT_SCALE * viewport.width) + 'pt';
@@ -525,7 +525,11 @@ var PageView = function pageView(container, id, scale,
     CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
 
     var printContainer = document.getElementById('printContainer');
-    printContainer.appendChild(canvas);
+    var canvasWrapper = document.createElement('div');
+    canvasWrapper.style.width = viewport.width + 'pt';
+    canvasWrapper.style.height = viewport.height + 'pt';
+    canvasWrapper.appendChild(canvas);
+    printContainer.appendChild(canvasWrapper);
 
     var self = this;
     canvas.mozPrintCallback = function(obj) {

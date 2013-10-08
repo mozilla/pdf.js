@@ -309,5 +309,8 @@ limitations under the License.
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
+<!--#if !(FIREFOX || MOZCENTRAL)-->
+<!--#include viewer-snippet-mozPrintCallback-polyfill.html-->
+<!--#endif--->
   </body>
 </html>
