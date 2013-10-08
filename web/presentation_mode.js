@@ -24,9 +24,34 @@ var SELECTOR = 'presentationControls';
 var PresentationMode = {
   active: false,
   args: null,
+  contextMenuOpen: false,
 
   initialize: function presentationModeInitialize(options) {
     this.container = options.container;
+    this.secondaryToolbar = options.secondaryToolbar;
+
+    this.firstPage = options.firstPage;
+    this.lastPage = options.lastPage;
+    this.pageRotateCw = options.pageRotateCw;
+    this.pageRotateCcw = options.pageRotateCcw;
+
+    this.firstPage.addEventListener('click', function() {
+      this.contextMenuOpen = false;
+      this.secondaryToolbar.firstPageClick();
+    }.bind(this));
+    this.lastPage.addEventListener('click', function() {
+      this.contextMenuOpen = false;
+      this.secondaryToolbar.lastPageClick();
+    }.bind(this));
+
+    this.pageRotateCw.addEventListener('click', function() {
+      this.contextMenuOpen = false;
+      this.secondaryToolbar.pageRotateCwClick();
+    }.bind(this));
+    this.pageRotateCcw.addEventListener('click', function() {
+      this.contextMenuOpen = false;
+      this.secondaryToolbar.pageRotateCcwClick();
+    }.bind(this));
   },
 
   get isFullscreen() {
@@ -69,8 +94,10 @@ var PresentationMode = {
 
     window.addEventListener('mousemove', this.mouseMove, false);
     window.addEventListener('mousedown', this.mouseDown, false);
+    window.addEventListener('contextmenu', this.contextMenu, false);
 
     this.showControls();
+    this.contextMenuOpen = false;
     this.container.setAttribute('contextmenu', 'viewerContextMenu');
   },
 
@@ -83,11 +110,13 @@ var PresentationMode = {
 
     window.removeEventListener('mousemove', this.mouseMove, false);
     window.removeEventListener('mousedown', this.mouseDown, false);
+    window.removeEventListener('contextmenu', this.contextMenu, false);
 
     this.hideControls();
     this.args = null;
     PDFView.clearMouseScrollState();
     this.container.removeAttribute('contextmenu');
+    this.contextMenuOpen = false;
 
     // Ensure that the thumbnail of the current page is visible
     // when exiting presentation mode.
@@ -120,6 +149,13 @@ var PresentationMode = {
   },
 
   mouseDown: function presentationModeMouseDown(evt) {
+    var self = PresentationMode;
+    if (self.contextMenuOpen) {
+      self.contextMenuOpen = false;
+      evt.preventDefault();
+      return;
+    }
+
     if (evt.button === 0) {
       // Enable clicking of links in presentation mode. Please note:
       // Only links pointing to destinations in the current PDF document work.
@@ -131,6 +167,10 @@ var PresentationMode = {
         PDFView.page += (evt.shiftKey ? -1 : 1);
       }
     }
+  },
+
+  contextMenu: function presentationModeContextMenu(evt) {
+    PresentationMode.contextMenuOpen = true;
   }
 };
 
