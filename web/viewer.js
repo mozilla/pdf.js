@@ -56,6 +56,11 @@ PDFJS.imageResourcesPath = './images/';
 var mozL10n = document.mozL10n || document.webL10n;
 
 //#include ui_utils.js
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+//#include mozPrintCallback_polyfill.js
+//#endif
+
 //#if GENERIC || CHROME
 //#include download_manager.js
 //#endif
