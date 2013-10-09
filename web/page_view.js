@@ -398,9 +398,11 @@ var PageView = function pageView(container, id, scale,
     var outputScale = getOutputScale(ctx);
 
     if (USE_ONLY_CSS_ZOOM) {
-      // Use a scale that will give a 100% width canvas.
-      outputScale.sx *= 1 / (viewport.scale / CSS_UNITS);
-      outputScale.sy *= 1 / (viewport.scale / CSS_UNITS);
+      var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+      // Use a scale that will make the canvas be the original intended size
+      // of the page.
+      outputScale.sx *= actualSizeViewport.width / viewport.width;
+      outputScale.sy *= actualSizeViewport.height / viewport.height;
       outputScale.scaled = true;
     }
 
