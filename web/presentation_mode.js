@@ -25,6 +25,9 @@ var PresentationMode = {
   active: false,
   args: null,
   contextMenuOpen: false,
+//#if (GENERIC || CHROME)
+  prevCoords: { x: null, y: null },
+//#endif
 
   initialize: function presentationModeInitialize(options) {
     this.container = options.container;
@@ -145,6 +148,19 @@ var PresentationMode = {
   },
 
   mouseMove: function presentationModeMouseMove(evt) {
+//#if (GENERIC || CHROME)
+    // Workaround for a bug in WebKit browsers that causes the 'mousemove' event
+    // to be fired when the cursor is changed. For details, see:
+    // http://code.google.com/p/chromium/issues/detail?id=103041.
+
+    var currCoords = { x: evt.clientX, y: evt.clientY };
+    var prevCoords = PresentationMode.prevCoords;
+    PresentationMode.prevCoords = currCoords;
+
+    if (currCoords.x === prevCoords.x && currCoords.y === prevCoords.y) {
+      return;
+    }
+//#endif
     PresentationMode.showControls();
   },
 
