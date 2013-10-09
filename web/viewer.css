@@ -1078,6 +1078,11 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 .thumbnail {
   float: left;
+  margin-bottom: 5px;
+}
+
+#thumbnailView > a:last-of-type > .thumbnail {
+  margin-bottom: 10px;
 }
 
 .thumbnail:not([data-loaded]) {
