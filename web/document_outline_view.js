@@ -163,16 +163,15 @@ var DocumentOutlineView = {
   },
 
   _toggleItem: function documentOutlineView_toggleItem(
-      currentElement, nextElement, expand, condition) {
-    var currentState = currentElement.classList;
-    if (expand && currentState.contains('collapsed')) {
-      currentState.remove('collapsed');
-      currentState.add('expanded');
+      currentElement, nextElement, expand) {
+    if ((expand || !expand) && currentElement.classList.contains('collapsed')) {
+      currentElement.classList.remove('collapsed');
+      currentElement.classList.add('expanded');
       nextElement.classList.remove('hidden');
-    } else if ((!expand || condition) && currentState.contains('expanded')) {
+    } else if (!expand && currentElement.classList.contains('expanded')) {
       nextElement.classList.add('hidden');
-      currentState.remove('expanded');
-      currentState.add('collapsed');
+      currentElement.classList.remove('expanded');
+      currentElement.classList.add('collapsed');
     }
   },
 
@@ -202,12 +201,18 @@ var DocumentOutlineView = {
     }
     if (item) {
       this._toggleItem(item.parentNode, item.nextSibling,
-                       true, (item === target));
+                       (item !== target ? true : null));
     }
   },
 
   toolbarClick: function documentOutlineViewToolbarClick(evt) {
-    switch (evt.target) {
+    var target = evt.target;
+//#if (GENERIC || CHROME)
+    if (target.nodeName.toUpperCase() === 'SPAN') {
+      target = target.parentNode;
+    }
+//#endif
+    switch (target) {
       case this.expandTopOutlineItems:
         this._toggleMultipleItems(this.outlineView, true);
         break;

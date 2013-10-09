@@ -1176,8 +1176,9 @@ html[dir='rtl'] #outlineView ul > ul {
 #outlineView li::before {
   position: absolute;
   background-color: rgba(255, 255, 255, 0.15);
-  top: 4px;
-  clip: rect(1px, 13px, 13px, 0px);
+  top: 5px;
+  height: 12px;
+  line-height: 12px;
 }
 html[dir='ltr'] #outlineView li::before {
   left: -14px;
@@ -1202,7 +1203,7 @@ html[dir='rtl'] #outlineView li::before {
   border-radius: inherit;
   color: hsla(0,0%,100%,.8);
   font-size: 13px;
-  line-height: 15px;
+  line-height: 16px;
   -moz-user-select: none;
   cursor: default;
   white-space: normal;
