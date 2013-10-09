@@ -124,7 +124,7 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.cssZoom = function pageViewRescale(canvas) {
-    // Need to adjust canvas, canvas wrapepr, and page container.
+    // Need to adjust canvas, canvas wrapper, and page container.
     canvas.style.width = canvas.parentNode.style.width = div.style.width =
         Math.floor(this.viewport.width) + 'px';
     canvas.style.height = canvas.parentNode.style.height = div.style.height =
