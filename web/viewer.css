@@ -20,6 +20,8 @@
 
 html {
   height: 100%;
+  /* Font size is needed to make the activity bar the corect size. */
+  font-size: 10px;
 }
 
 body {
@@ -167,6 +169,7 @@ html[dir='rtl'] .innerCenter {
 #outerContainer {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 #sidebarContainer {
