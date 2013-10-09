@@ -102,6 +102,47 @@ limitations under the License.
         </div>
       </div>  <!-- sidebarContainer -->
 
+      <button id="secondaryToolbarToggle" class="toolbarButton" title="Tools" tabindex="17" data-l10n-id="tools">
+        <span data-l10n-id="tools_label">Tools</span>
+      </button>
+      <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
+        <div id="secondaryToolbarButtonContainer">
+          <button id="secondaryPresentationMode" class="secondaryToolbarButton presentationMode visibleLargeView" title="Switch to Presentation Mode" tabindex="18" data-l10n-id="presentation_mode">
+            <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
+          </button>
+
+          <button id="secondaryOpenFile" class="secondaryToolbarButton openFile visibleLargeView" title="Open File" tabindex="19" data-l10n-id="open_file">
+            <span data-l10n-id="open_file_label">Open</span>
+          </button>
+
+          <button id="secondaryPrint" class="secondaryToolbarButton print visibleMediumView" title="Print" tabindex="20" data-l10n-id="print">
+            <span data-l10n-id="print_label">Print</span>
+          </button>
+
+          <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="21" data-l10n-id="download">
+            <span data-l10n-id="download_label">Download</span>
+          </button>
+
+          <div class="horizontalToolbarSeparator visibleLargeView"></div>
+
+          <button id="firstPage" class="secondaryToolbarButton firstPage" title="Go to First Page" tabindex="22" data-l10n-id="first_page">
+            <span data-l10n-id="first_page_label">Go to First Page</span>
+          </button>
+          <button id="lastPage" class="secondaryToolbarButton lastPage" title="Go to Last Page" tabindex="23" data-l10n-id="last_page">
+            <span data-l10n-id="last_page_label">Go to Last Page</span>
+          </button>
+
+          <div class="horizontalToolbarSeparator"></div>
+
+          <button id="pageRotateCw" class="secondaryToolbarButton rotateCw" title="Rotate Clockwise" tabindex="24" data-l10n-id="page_rotate_cw">
+            <span data-l10n-id="page_rotate_cw_label">Rotate Clockwise</span>
+          </button>
+          <button id="pageRotateCcw" class="secondaryToolbarButton rotateCcw" title="Rotate Counterclockwise" tabindex="25" data-l10n-id="page_rotate_ccw">
+            <span data-l10n-id="page_rotate_ccw_label">Rotate Counterclockwise</span>
+          </button>
+        </div>
+      </div>  <!-- secondaryToolbar -->
+
       <div id="mainContainer">
         <div id="findbar">
           <input id="findInput">
@@ -148,10 +189,14 @@ limitations under the License.
           </div>
         </div>
         <menu type="context" id="viewerContextMenu">
-          <menuitem id="firstPage"></menuitem>
-          <menuitem id="lastPage"></menuitem>
-          <menuitem id="pageRotateCcw"></menuitem>
-          <menuitem id="pageRotateCw"></menuitem>
+          <menuitem id="contextFirstPage" label="First Page"
+                    data-l10n-id="first_page"></menuitem>
+          <menuitem id="contextLastPage" label="Last Page"
+                    data-l10n-id="last_page"></menuitem>
+          <menuitem id="contextPageRotateCw" label="Rotate Clockwise"
+                    data-l10n-id="page_rotate_cw"></menuitem>
+          <menuitem id="contextPageRotateCcw" label="Rotate Counter-Clockwise"
+                    data-l10n-id="page_rotate_ccw"></menuitem>
         </menu>
 
       </div> <!-- mainContainer -->

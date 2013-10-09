@@ -35,6 +35,10 @@ var MAX_SCALE = 4.0;
 var SETTINGS_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
+var USE_ONLY_CSS_ZOOM = false;
+//#if B2G
+//USE_ONLY_CSS_ZOOM = true;
+//#endif
 var RenderingStates = {
   INITIAL: 0,
   RUNNING: 1,
@@ -195,7 +199,7 @@ var PDFView = {
 
     var pages = this.pages;
     for (var i = 0; i < pages.length; i++)
-      pages[i].update(val * CSS_UNITS);
+      pages[i].update(val);
 
     if (!noScroll && this.currentScale != val)
       this.pages[this.page - 1].scrollIntoView();
@@ -226,9 +230,9 @@ var PDFView = {
     }
 
     var pageWidthScale = (container.clientWidth - SCROLLBAR_PADDING) /
-                          currentPage.width * currentPage.scale / CSS_UNITS;
+                          currentPage.width * currentPage.scale;
     var pageHeightScale = (container.clientHeight - VERTICAL_PADDING) /
-                           currentPage.height * currentPage.scale / CSS_UNITS;
+                           currentPage.height * currentPage.scale;
     switch (value) {
       case 'page-actual':
         scale = 1;
@@ -817,7 +821,7 @@ var PDFView = {
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
     firstPagePromise.then(function(pdfPage) {
-      var viewport = pdfPage.getViewport(scale || 1.0);
+      var viewport = pdfPage.getViewport((scale || 1.0) * CSS_UNITS);
       var pagePromises = [];
       for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         var viewportClone = viewport.clone();
@@ -1512,6 +1516,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   if ('disableHistory' in hashParams) {
     PDFJS.disableHistory = (hashParams['disableHistory'] === 'true');
+  }
+
+  if ('useOnlyCssZoom' in hashParams) {
+    USE_ONLY_CSS_ZOOM = (hashParams['useOnlyCssZoom'] === 'true');
   }
 
 //#if !(FIREFOX || MOZCENTRAL)
