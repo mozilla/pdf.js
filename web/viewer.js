@@ -35,6 +35,7 @@ var MAX_SCALE = 4.0;
 var SETTINGS_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
+var THUMBNAIL_SCROLL_MARGIN = -19;
 var USE_ONLY_CSS_ZOOM = false;
 //#if B2G
 //USE_ONLY_CSS_ZOOM = true;
@@ -1854,22 +1855,23 @@ window.addEventListener('pagechange', function pagechange(evt) {
   if (PDFView.previousPageNumber !== page) {
     document.getElementById('pageNumber').value = page;
     var selected = document.querySelector('.thumbnail.selected');
-    if (selected)
+    if (selected) {
       selected.classList.remove('selected');
+    }
     var thumbnail = document.getElementById('thumbnailContainer' + page);
     thumbnail.classList.add('selected');
     var visibleThumbs = PDFView.getVisibleThumbs();
     var numVisibleThumbs = visibleThumbs.views.length;
-    // If the thumbnail isn't currently visible scroll it into view.
+
+    // If the thumbnail isn't currently visible, scroll it into view.
     if (numVisibleThumbs > 0) {
       var first = visibleThumbs.first.id;
       // Account for only one thumbnail being visible.
-      var last = numVisibleThumbs > 1 ?
-                  visibleThumbs.last.id : first;
-      if (page <= first || page >= last)
-        scrollIntoView(thumbnail);
+      var last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
+      if (page <= first || page >= last) {
+        scrollIntoView(thumbnail, { top: THUMBNAIL_SCROLL_MARGIN });
+      }
     }
-
   }
   document.getElementById('previous').disabled = (page <= 1);
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
