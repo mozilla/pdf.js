@@ -1018,6 +1018,13 @@
       "link": true,
       "type": "load"
     },
+    { "id": "bigboundingbox",
+      "file": "pdfs/bigboundingbox.pdf",
+      "md5": "e5c5e2cb80826d6ebf535413865270cd",
+      "rounds": 1,
+      "type": "eq",
+      "about": "When the bounding box for the xobject is transformed it creates a huge bounding box."
+    },
     {  "id": "issue2386",
       "file": "pdfs/issue2386.pdf",
       "md5": "7dc787639aa6765214e9ff5494d231ed",
