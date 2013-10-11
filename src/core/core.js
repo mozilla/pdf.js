@@ -17,7 +17,7 @@
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
            isArrayBuffer, isName, isStream, isString, Lexer,
            Linearization, NullStream, PartialEvaluator, shadow, Stream,
-           StreamsSequenceStream, stringToPDFString, Util, XRef,
+           StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
            */
 
@@ -481,22 +481,16 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'documentInfo', docInfo);
     },
     get fingerprint() {
-      var xref = this.xref, fileID;
+      var xref = this.xref, hash, fileID = '';
+
       if (xref.trailer.has('ID')) {
-        fileID = '';
-        var id = xref.trailer.get('ID')[0];
-        id.split('').forEach(function(el) {
-          fileID += Number(el.charCodeAt(0)).toString(16);
-        });
+        hash = stringToBytes(xref.trailer.get('ID')[0]);
       } else {
-        // If we got no fileID, then we generate one,
-        // from the first 100 bytes of PDF
-        var data = this.stream.bytes.subarray(0, 100);
-        var hash = calculateMD5(data, 0, data.length);
-        fileID = '';
-        for (var i = 0, length = hash.length; i < length; i++) {
-          fileID += Number(hash[i]).toString(16);
-        }
+        hash = calculateMD5(this.stream.bytes.subarray(0, 100), 0, 100);
+      }
+
+      for (var i = 0, n = hash.length; i < n; i++) {
+        fileID += hash[i].toString(16);
       }
 
       return shadow(this, 'fingerprint', fileID);
