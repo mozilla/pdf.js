@@ -55,7 +55,7 @@ chrome.webRequest.onBeforeRequest.addListener(
       return; // Doesn't work in incognito mode, so don't redirect.
 
     var viewerPage = 'content/web/viewer.html';
-    var url = chrome.extension.getURL(viewerPage) +
+    var url = chrome.runtime.getURL(viewerPage) +
       '?file=' + encodeURIComponent(details.url);
     return { redirectUrl: url };
   },
