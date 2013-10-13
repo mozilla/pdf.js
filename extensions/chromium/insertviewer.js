@@ -19,7 +19,7 @@ limitations under the License.
 
 'use strict';
 
-var VIEWER_URL = chrome.extension.getURL('content/web/viewer.html');
+var VIEWER_URL = chrome.runtime.getURL('content/web/viewer.html');
 var BASE_URL = VIEWER_URL.replace(/[^\/]+$/, '');
 
 function getViewerURL(pdf_url) {
@@ -72,7 +72,7 @@ function replaceDocumentWithViewer(url) {
     // the correct permissions. Fix it:
     script = document.createElement('script');
     script.onload = loadNextScript;
-    script.src = chrome.extension.getURL('patch-worker.js');
+    script.src = chrome.runtime.getURL('patch-worker.js');
     scripts.push(script);
 
     while (x.response.scripts.length) {
@@ -132,10 +132,10 @@ function renderPDF(url) {
 // Activate the content script only once per frame (until reload)
 if (!window.hasRun) {
   window.hasRun = true;
-  chrome.extension.onMessage.addListener(function listener(message) {
+  chrome.runtime.onMessage.addListener(function listener(message) {
     if (message && message.type === 'showPDFViewer' &&
         message.url === location.href) {
-          chrome.extension.onMessage.removeListener(listener);
+          chrome.runtime.onMessage.removeListener(listener);
           showViewer(message.url);
         }
   });
