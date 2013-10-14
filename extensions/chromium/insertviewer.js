@@ -19,6 +19,14 @@ limitations under the License.
 
 'use strict';
 
+if (!chrome.runtime) {
+  // Chrome 21-
+  chrome.runtime = chrome.extension;
+} else if (!chrome.runtime.onMessage) {
+  // Chrome 22-25
+  chrome.runtime.onMessage = chrome.extension.onMessage;
+}
+
 var VIEWER_URL = chrome.runtime.getURL('content/web/viewer.html');
 var BASE_URL = VIEWER_URL.replace(/[^\/]+$/, '');
 
