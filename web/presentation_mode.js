@@ -59,9 +59,13 @@ var PresentationMode = {
 
   get isFullscreen() {
     return (document.fullscreenElement ||
+//#if (FIREFOX || MOZCENTRAL || B2G)
+//          document.mozFullScreen);
+//#else
             document.mozFullScreen ||
             document.webkitIsFullScreen ||
             document.msFullscreenElement);
+//#endif
   },
 
   request: function presentationModeRequest() {
@@ -73,10 +77,12 @@ var PresentationMode = {
       this.container.requestFullscreen();
     } else if (this.container.mozRequestFullScreen) {
       this.container.mozRequestFullScreen();
+//#if !(FIREFOX || MOZCENTRAL || B2G)
     } else if (this.container.webkitRequestFullScreen) {
       this.container.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
     } else if (this.container.msRequestFullscreen) {
       this.container.msRequestFullscreen();
+//#endif
     } else {
       return false;
     }
@@ -201,7 +207,9 @@ var PresentationMode = {
 
   window.addEventListener('fullscreenchange', presentationModeChange, false);
   window.addEventListener('mozfullscreenchange', presentationModeChange, false);
+//#if !(FIREFOX || MOZCENTRAL || B2G)
   window.addEventListener('webkitfullscreenchange', presentationModeChange,
                           false);
   window.addEventListener('MSFullscreenChange', presentationModeChange, false);
+//#endif
 })();

@@ -324,13 +324,23 @@ var PDFView = {
 
   get supportsFullscreen() {
     var doc = document.documentElement;
-    var support = doc.requestFullscreen || doc.mozRequestFullScreen ||
-                  doc.webkitRequestFullScreen || doc.msRequestFullscreen;
+    var support = (doc.requestFullscreen ||
+//#if (FIREFOX || MOZCENTRAL || B2G)
+//                 doc.mozRequestFullScreen);
+//#else
+                   doc.mozRequestFullScreen ||
+                   doc.webkitRequestFullScreen ||
+                   doc.msRequestFullscreen);
+//#endif
 
     if (document.fullscreenEnabled === false ||
+//#if (FIREFOX || MOZCENTRAL || B2G)
+//      document.mozFullScreenEnabled === false) {
+//#else
         document.mozFullScreenEnabled === false ||
         document.webkitFullscreenEnabled === false ||
         document.msFullscreenEnabled === false) {
+//#endif
       support = false;
     } else if (this.isViewerEmbedded) {
       // Need to check if the viewer is embedded as well, to prevent issues with
