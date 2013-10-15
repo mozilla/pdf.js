@@ -330,9 +330,9 @@ var PageView = function pageView(container, id, scale,
     }
 
     if (scale && scale !== PDFView.currentScale) {
-      PDFView.parseScale(scale, true, true);
+      PDFView.setScale(scale, true, true);
     } else if (PDFView.currentScale === UNKNOWN_SCALE) {
-      PDFView.parseScale(DEFAULT_SCALE, true, true);
+      PDFView.setScale(DEFAULT_SCALE, true, true);
     }
 
     if (scale === 'page-fit' && !dest[4]) {
