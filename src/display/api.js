@@ -36,8 +36,54 @@ PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
  * @var {Boolean}
  */
 PDFJS.disableFontFace = PDFJS.disableFontFace === undefined ?
-                        false :
-                        PDFJS.disableFontFace;
+                        false : PDFJS.disableFontFace;
+
+/**
+ * Path for image resources, mainly for annotation icons. Include trailing
+ * slash.
+ * @var {String}
+ */
+PDFJS.imageResourcesPath = PDFJS.imageResourcesPath === undefined ?
+                           '' : PDFJS.imageResourcesPath;
+
+/**
+ * Disable the web worker and run all code on the main thread. This will happen
+ * automatically if the browser doesn't support workers or sending typed arrays
+ * to workers.
+ * @var {Boolean}
+ */
+PDFJS.disableWorker = PDFJS.disableWorker === undefined ?
+                      false : PDFJS.disableWorker;
+
+/**
+ * Path and filename of the worker file. Required when the worker is enabled.
+ * @var {String}
+ */
+PDFJS.workerSrc = PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc;
+
+/**
+ * Disable range request loading of PDF files. When enabled and if the server
+ * supports partial content requests then the PDF will be fetched in chunks.
+ * Enabled(false) by default.
+ * @var {Boolean}
+ */
+PDFJS.disableRange = PDFJS.disableRange === undefined ?
+                     false : PDFJS.disableRange;
+
+/**
+ * Disable pre-fetching of PDF file data. When range requests are enabled PDF.js
+ * will automatically keep fetching more data even if it isn't needed to display
+ * the current page. This default behavior can be disabled.
+ * @var {Boolean}
+ */
+PDFJS.disableAutoFetch = PDFJS.disableAutoFetch === undefined ?
+                         false : PDFJS.disableAutoFetch;
+
+/**
+ * Enables special hooks for debugging PDF.js.
+ * @var {Boolean}
+ */
+PDFJS.pdfBug = PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug;
 
 /**
  * This is the main entry point for loading a PDF and interacting with it.
@@ -479,7 +525,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     // as it arrives on the worker. Chrome added this with version 15.
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
-      if (typeof workerSrc === 'undefined') {
+      if (!workerSrc) {
         error('No PDFJS.workerSrc specified');
       }
 
