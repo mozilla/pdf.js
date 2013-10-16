@@ -100,6 +100,19 @@ function replaceDocumentWithViewer(url) {
     //  fails to find elements, even when they appear in the doc)
     document.body.innerHTML += '';
 
+    if (navigator.platform === 'MacIntel') {
+      // Fix rendering bug specific to Chromium on Mac (#3803)
+      var requestAnimationFrame = window.requestAnimationFrame ||
+                                  window.webkitRequestAnimationFrame;
+      requestAnimationFrame(function() {
+        // Force repaint
+        document.body.style.display = 'inline-block';
+        // jshint expr:true
+        document.body.offsetHeight;
+        document.body.style.display = '';
+      });
+    }
+
     // Load all scripts
     loadNextScript();
 
