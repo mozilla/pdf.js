@@ -1692,6 +1692,19 @@ var JpxImage = (function JpxImageClosure() {
       }
       return ll;
     };
+    Transform.prototype.expand = function expand(buffer, bufferPadding, step) {
+        // Section F.3.7 extending... using max extension of 4
+        var i1 = bufferPadding - 1, j1 = bufferPadding + 1;
+        var i2 = bufferPadding + step - 2, j2 = bufferPadding + step;
+        buffer[i1--] = buffer[j1++];
+        buffer[j2++] = buffer[i2--];
+        buffer[i1--] = buffer[j1++];
+        buffer[j2++] = buffer[i2--];
+        buffer[i1--] = buffer[j1++];
+        buffer[j2++] = buffer[i2--];
+        buffer[i1--] = buffer[j1++];
+        buffer[j2++] = buffer[i2--];
+    };
     Transform.prototype.iterate = function Transform_iterate(ll, hl, lh, hh,
                                                             u0, v0) {
       var llWidth = ll.width, llHeight = ll.height, llItems = ll.items;
@@ -1745,18 +1758,7 @@ var JpxImage = (function JpxImageClosure() {
         for (var u = 0; u < width; u++, k++, l++)
           buffer[l] = items[k];
 
-        // Section F.3.7 extending... using max extension of 4
-        var i1 = bufferPadding - 1, j1 = bufferPadding + 1;
-        var i2 = bufferPadding + width - 2, j2 = bufferPadding + width;
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-
+        this.expand(buffer, bufferPadding, width);
         this.filter(buffer, bufferPadding, width, u0, bufferOut);
 
         k = v * width;
@@ -1780,18 +1782,7 @@ var JpxImage = (function JpxImageClosure() {
         for (var v = 0; v < height; v++, k += width, l++)
           buffer[l] = items[k];
 
-        // Section F.3.7 extending... using max extension of 4
-        var i1 = bufferPadding - 1, j1 = bufferPadding + 1;
-        var i2 = bufferPadding + height - 2, j2 = bufferPadding + height;
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
-
+        this.expand(buffer, bufferPadding, height);
         this.filter(buffer, bufferPadding, height, v0, bufferOut);
 
         k = u;
