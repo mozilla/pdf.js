@@ -93,7 +93,7 @@ var PresentationMode = {
     this.active = true;
 
     PDFView.page = this.args.page;
-    PDFView.parseScale('page-fit', true);
+    PDFView.setScale('page-fit', true);
 
     window.addEventListener('mousemove', this.mouseMove, false);
     window.addEventListener('mousedown', this.mouseDown, false);
@@ -108,7 +108,7 @@ var PresentationMode = {
     this.active = false;
 
     var page = PDFView.page;
-    PDFView.parseScale(this.args.previousScale);
+    PDFView.setScale(this.args.previousScale);
     PDFView.page = page;
 
     window.removeEventListener('mousemove', this.mouseMove, false);
