@@ -20,7 +20,7 @@
            PasswordResponses, Util, loadScript,
            FontFace */
 
- 'use strict';
+'use strict';
 
 /**
  * The maximum allowed image size in total pixels e.g. width * height. Images
@@ -64,7 +64,7 @@ PDFJS.workerSrc = PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc;
 /**
  * Disable range request loading of PDF files. When enabled and if the server
  * supports partial content requests then the PDF will be fetched in chunks.
- * Enabled(false) by default.
+ * Enabled (false) by default.
  * @var {Boolean}
  */
 PDFJS.disableRange = PDFJS.disableRange === undefined ?
