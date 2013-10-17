@@ -33,6 +33,8 @@ var PresentationMode = {
     this.container = options.container;
     this.secondaryToolbar = options.secondaryToolbar;
 
+    this.viewer = this.container.firstElementChild;
+
     this.firstPage = options.firstPage;
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
@@ -65,7 +67,8 @@ var PresentationMode = {
   },
 
   request: function presentationModeRequest() {
-    if (!PDFView.supportsFullscreen || this.isFullscreen) {
+    if (!PDFView.supportsFullscreen || this.isFullscreen ||
+        !this.viewer.hasChildNodes()) {
       return false;
     }
 
