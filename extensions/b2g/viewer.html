@@ -22,9 +22,8 @@ limitations under the License.
 
 
     <link rel="stylesheet" href="viewer.css"/>
-    <link rel="resource" type="application/l10n" href="locale.properties"/>
+    <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
     <link rel="stylesheet" href="/shared/style/headers.css" type="text/css" />
-    <link rel="stylesheet" href="viewer-b2g.css" type="text/css" />
     <script type="text/javascript" src="l10n.js"></script>
     <script type="text/javascript" src="../build/pdf.js"></script>
     <script type="text/javascript" src="/shared/js/async_storage.js"></script>
@@ -123,6 +122,10 @@ limitations under the License.
             <span data-l10n-id="download_label">Download</span>
           </button>
 
+          <a href="#" id="secondaryViewBookmark" class="secondaryToolbarButton bookmark visibleSmallView" title="Current view (copy or open in new window)" tabindex="22" data-l10n-id="bookmark">
+              <span data-l10n-id="bookmark_label">Current View</span>
+          </a>
+
           <div class="horizontalToolbarSeparator visibleLargeView"></div>
 
           <button id="firstPage" class="secondaryToolbarButton firstPage" title="Go to First Page" tabindex="22" data-l10n-id="first_page">
@@ -200,6 +203,24 @@ limitations under the License.
         </menu>
 
       </div> <!-- mainContainer -->
+
+      <div id="overlayContainer" class="hidden">
+        <div id="promptContainer">
+          <div id="passwordContainer" class="prompt doorHanger">
+            <div class="row">
+              <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
+            </div>
+            <div class="row">
+              <input type="password" id="password" class="toolbarField" />
+            </div>
+            <div class="row">
+              <button id="passwordCancel" class="promptButton"><span data-l10n-id="password_cancel">Cancel</span></button>
+              <button id="passwordSubmit" class="promptButton"><span data-l10n-id="password_ok">OK</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="printContainer"></div>
     </div>
     <!-- END STUBS -->
