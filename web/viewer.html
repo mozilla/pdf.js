@@ -26,6 +26,9 @@ limitations under the License.
 <!--#if FIREFOX || MOZCENTRAL-->
 <!--#include viewer-snippet-firefox-extension.html-->
 <!--#endif-->
+<!--#if CHROME-->
+<!--#include viewer-snippet-chrome-extension.html-->
+<!--#endif-->
 
     <link rel="stylesheet" href="viewer.css"/>
 <!--#if !PRODUCTION-->
@@ -53,7 +56,7 @@ limitations under the License.
     <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script>
 <!--#endif-->
 
-<!--#if GENERIC || CHROME-->
+<!--#if GENERIC -->
 <!--#include viewer-snippet.html-->
 <!--#endif-->
 

@@ -19,6 +19,12 @@ limitations under the License.
 
 'use strict';
 
+var VIEWER_URL = chrome.extension.getURL('content/web/viewer.html');
+
+function getViewerURL(pdf_url) {
+  return VIEWER_URL + '?file=' + encodeURIComponent(pdf_url);
+}
+
 /**
  * @param {Object} details First argument of the webRequest.onHeadersReceived
  *                         event. The property "url" is read.
@@ -34,62 +40,6 @@ function isPdfDownloadable(details) {
   var cdHeader = details.responseHeaders &&
     getHeaderFromHeaders(details.responseHeaders, 'content-disposition');
   return cdHeader && /^attachment/i.test(cdHeader.value);
-}
-
-/**
- * Insert the content script in a tab which renders the PDF viewer.
- * @param {number} tabId ID of the tab used by the Chrome APIs.
- * @param {string} url URL of the PDF file. Used to detect whether the viewer
- *                     should be activated in a specific (i)frame.
- */
-function insertPDFJSForTab(tabId, url) {
-  chrome.tabs.executeScript(tabId, {
-    file: 'insertviewer.js',
-    allFrames: true,
-    runAt: 'document_start'
-  }, function() {
-    chrome.tabs.sendMessage(tabId, {
-      type: 'showPDFViewer',
-      url: url
-    });
-  });
-}
-
-/**
- * Try to render the PDF viewer when (a frame within) a tab unloads.
- * This indicates that a PDF file may be loading.
- * @param {number} tabId ID of the tab used by the Chrome APIs.
- * @param {string} url The URL of the pdf file.
- */
-function activatePDFJSForTab(tabId, url) {
-  if (!chrome.webNavigation) {
-    // Opera... does not support the webNavigation API.
-    activatePDFJSForTabFallbackForOpera(tabId, url);
-    return;
-  }
-  var listener = function webNavigationEventListener(details) {
-    if (details.tabId === tabId) {
-      insertPDFJSForTab(tabId, url);
-      chrome.webNavigation.onCommitted.removeListener(listener);
-    }
-  };
-  var urlFilter = {
-    url: [{ urlEquals: url.split('#', 1)[0] }]
-  };
-  chrome.webNavigation.onCommitted.addListener(listener, urlFilter);
-}
-
-/**
- * Fallback for Opera.
- * @see activatePDFJSForTab
- **/
-function activatePDFJSForTabFallbackForOpera(tabId, url) {
-  chrome.tabs.onUpdated.addListener(function listener(_tabId) {
-    if (tabId === _tabId) {
-      insertPDFJSForTab(tabId, url);
-      chrome.tabs.onUpdated.removeListener(listener);
-    }
-  });
 }
 
 /**
@@ -159,23 +109,58 @@ chrome.webRequest.onHeadersReceived.addListener(
       return getHeadersWithContentDispositionAttachment(details);
     }
 
-    // Replace frame's content with the PDF viewer.
-    // This approach maintains the friendly URL in the location bar.
-    activatePDFJSForTab(details.tabId, details.url);
+    var viewerUrl = getViewerURL(details.url);
 
-    return {
-      responseHeaders: [
-        // Set Cache-Control header to avoid downloading a file twice
-        // NOTE: This does not behave as desired, Chrome's network stack is
-        // oblivious for Cache control header modifications.
-        {name:'Cache-Control',value:'max-age=600'},
-        // Temporary render response as XHTML.
-        // Since PDFs are never valid XHTML, the garbage is not going to be
-        // rendered. insertviewer.js will quickly replace the document with
-        // the PDF.js viewer.
-        {name:'Content-Type',value:'application/xhtml+xml; charset=US-ASCII'},
-      ]
-    };
+    // Replace frame with viewer
+    // TODO: When http://crbug.com/280464 is fixed, use
+    // return { redirectUrl: viewerUrl };
+
+    if (details.frameId === 0) {
+      // Main frame. Just replace the tab and be done!
+      chrome.tabs.update(details.tabId, {
+        url: viewerUrl
+      });
+      return { cancel: true };
+    } else {
+      // Sub frame. Requires some more work...
+      // The navigation will be cancelled at the end of the webRequest cycle.
+      chrome.webNavigation.onErrorOccurred.addListener(function listener(nav) {
+        if (nav.tabId !== details.tabId || nav.frameId !== details.frameId) {
+          return;
+        }
+        chrome.webNavigation.onErrorOccurred.removeListener(listener);
+
+        // Locate frame and insert viewer
+        chrome.tabs.executeScriptInFrame(details.tabId, {
+          frameId: details.frameId,
+          code: 'location.href = ' + JSON.stringify(viewerUrl) + ';'
+        }, function(result) {
+          if (!result) {
+            console.warn('Frame not found! Opening viewer in new tab...');
+            chrome.tabs.create({
+              url: viewerUrl
+            });
+          }
+        });
+      }, {
+        url: [{ urlEquals: details.url.split('#', 1)[0] }]
+      });
+      // Prevent frame from rendering by using X-Frame-Options.
+      // Do not use { cancel: true }, because that makes the frame inaccessible
+      // to the content script that has to replace the frame's URL.
+      return {
+        responseHeaders: [{
+          name: 'X-Content-Type-Options',
+          value: 'nosniff'
+        }, {
+          name: 'X-Frame-Options',
+          value: 'deny'
+        }]
+      };
+    }
+
+    // Immediately abort the request, because the frame that initiated the
+    // request will be replaced with the PDF Viewer (within a split second).
   },
   {
     urls: [
@@ -184,3 +169,24 @@ chrome.webRequest.onHeadersReceived.addListener(
     types: ['main_frame', 'sub_frame']
   },
   ['blocking','responseHeaders']);
+
+chrome.webRequest.onBeforeRequest.addListener(
+  function(details) {
+    if (isPdfDownloadable(details))
+      return;
+
+    // NOTE: The manifest file has declared an empty content script
+    // at file://*/* to make sure that the viewer can load the PDF file
+    // through XMLHttpRequest. Necessary to deal with http://crbug.com/302548
+    var viewerUrl = getViewerURL(details.url);
+
+    return { redirectUrl: viewerUrl };
+  },
+  {
+    urls: [
+      'file://*/*.pdf',
+      'file://*/*.PDF'
+    ],
+    types: ['main_frame', 'sub_frame']
+  },
+  ['blocking']);
