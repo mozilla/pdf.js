@@ -675,17 +675,16 @@ var PDFView = {
    * @param {String} anchor The anchor hash, including the #.
    */
   getAnchorUrl: function getAnchorUrl(anchor) {
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//#if (GENERIC || B2G)
     return anchor;
-//#else
-//#if CHROME
-//  return location.href.split('#')[0] + anchor;
-//#else
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
 //  return this.url.split('#')[0] + anchor;
 //#endif
+//#if CHROME
+//  return location.href.split('#')[0] + anchor;
 //#endif
   },
-
 
   /**
    * Show the error box.
@@ -1483,15 +1482,15 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   PDFView.initialize();
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//#if (GENERIC || B2G)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
   var file = params.file || DEFAULT_URL;
-//#else
-//#if CHROME
-//var file = DEFAULT_URL;
-//#else
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
 //var file = window.location.href.split('#')[0];
 //#endif
+//#if CHROME
+//var file = DEFAULT_URL;
 //#endif
 
 //#if CHROME
