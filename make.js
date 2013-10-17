@@ -33,6 +33,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_TARGETS = [BUILD_TARGET, BUILD_WORKER_TARGET],
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
+    B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
     EXTENSION_SRC_DIR = 'extensions/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
@@ -127,6 +128,7 @@ target.generic = function() {
 target.web = function() {
   target.generic();
   target.extension();
+  target.b2g();
 
   echo();
   echo('### Creating web site');
@@ -139,6 +141,7 @@ target.web = function() {
   mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chromium');
+  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/b2g');
 
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
@@ -147,6 +150,7 @@ target.web = function() {
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
   cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
   cp('-R', 'test/features', GH_PAGES_DIR);
+  cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
 
   cd(GH_PAGES_DIR);
   exec('git init');
@@ -602,8 +606,7 @@ target.b2g = function() {
 
   echo();
   echo('### Building B2G (Firefox OS App)');
-  var B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
-      B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
+  var B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
   var defines = builder.merge(DEFINES, { B2G: true });
   target.bundle({ defines: defines });
 
