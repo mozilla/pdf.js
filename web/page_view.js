@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFView, PDFHistory, PDFFindBar, PDFJS, mozL10n,
-           CustomStyle, PresentationMode, scrollIntoView, SCROLLBAR_PADDING,
-           CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale,
-           TextLayerBuilder, cache, Stats, USE_ONLY_CSS_ZOOM */
+           CustomStyle, PresentationMode, PageWiseScrollMode, scrollIntoView,
+           SCROLLBAR_PADDING, CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE,
+           getOutputScale, TextLayerBuilder, cache, Stats, USE_ONLY_CSS_ZOOM */
 
 'use strict';
 
@@ -327,6 +327,8 @@ var PageView = function pageView(container, id, scale,
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
     if (PresentationMode.active) { // Avoid breaking presentation mode.
       dest = null;
+    } else if (PageWiseScrollMode.active) {
+      PageWiseScrollMode.setScrollFlags();
     }
     if (!dest) {
       scrollIntoView(div);
@@ -392,16 +394,34 @@ var PageView = function pageView(container, id, scale,
       this.viewport.convertToViewportPoint(x, y),
       this.viewport.convertToViewportPoint(x + width, y + height)
     ];
-    setTimeout(function pageViewScrollIntoViewRelayout() {
-      // letting page to re-layout before scrolling
-      var scale = PDFView.currentScale;
+
+    var getScrollParams = function(pageWiseScroll) {
       var x = Math.min(boundingRect[0][0], boundingRect[1][0]);
       var y = Math.min(boundingRect[0][1], boundingRect[1][1]);
       var width = Math.abs(boundingRect[0][0] - boundingRect[1][0]);
       var height = Math.abs(boundingRect[0][1] - boundingRect[1][1]);
 
-      scrollIntoView(div, {left: x, top: y, width: width, height: height});
-    }, 0);
+      if (pageWiseScroll) {
+        var hiddenHeight = (Math.floor(this.height) -
+                            PDFView.container.clientHeight);
+        if (hiddenHeight < 0) {
+          return null;
+        }
+        y = Math.min(y, hiddenHeight);
+      }
+      return { left: x, top: y, width: width, height: height };
+    }.bind(this);
+
+    if (PageWiseScrollMode.active) {
+      // When page wise scrolling is active, avoid flickering on page change
+      // by not forcing re-layout before scrolling.
+      scrollIntoView(div, getScrollParams(true));
+    } else {
+      setTimeout(function pageViewScrollIntoViewReLayout() {
+        // Letting page re-layout before scrolling.
+        scrollIntoView(div, getScrollParams());
+      }, 0);
+    }
   };
 
   this.getTextContent = function pageviewGetTextContent() {
@@ -477,7 +497,8 @@ var PageView = function pageView(container, id, scale,
         pageIndex: this.id - 1,
         lastScrollSource: PDFView,
         viewport: this.viewport,
-        isViewerInPresentationMode: PresentationMode.active
+        isViewerInPresentationMode: PresentationMode.active,
+        pageWiseScrollMode: PageWiseScrollMode
       }) : null;
     // TODO(mack): use data attributes to store these
     ctx._scaleX = outputScale.sx;

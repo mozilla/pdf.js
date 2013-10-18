@@ -18,7 +18,8 @@
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
            PDFHistory, Settings, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PresentationMode */
+           SecondaryToolbar, PasswordPrompt, PresentationMode,
+           PageWiseScrollMode */
 
 'use strict';
 
@@ -33,6 +34,7 @@ var VERTICAL_PADDING = 5;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
 var SETTINGS_MEMORY = 20;
+var FIREFOX_DELTA_FACTOR = -40;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
@@ -84,6 +86,7 @@ var currentPageNumber = 1;
 //#include secondary_toolbar.js
 //#include password_prompt.js
 //#include presentation_mode.js
+//#include page_wise_scroll_mode.js
 
 var PDFView = {
   pages: [],
@@ -138,6 +141,7 @@ var PDFView = {
 
     SecondaryToolbar.initialize({
       toolbar: document.getElementById('secondaryToolbar'),
+      pageWiseScrollMode: PageWiseScrollMode,
       toggleButton: document.getElementById('secondaryToolbarToggle'),
       presentationMode: document.getElementById('secondaryPresentationMode'),
       openFile: document.getElementById('secondaryOpenFile'),
@@ -146,7 +150,9 @@ var PDFView = {
       firstPage: document.getElementById('firstPage'),
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
-      pageRotateCcw: document.getElementById('pageRotateCcw')
+      pageRotateCcw: document.getElementById('pageRotateCcw'),
+      scrollModeContinuous: document.getElementById('scrollModeContinuous'),
+      scrollModePageWise: document.getElementById('scrollModePageWise')
     });
 
     PasswordPrompt.initialize({
@@ -166,6 +172,13 @@ var PDFView = {
       pageRotateCcw: document.getElementById('contextPageRotateCcw')
     });
 
+    PageWiseScrollMode.initialize({
+      presentationMode: PresentationMode,
+      scrollModeContinuous: document.getElementById('scrollModeContinuous'),
+      scrollModePageWise: document.getElementById('scrollModePageWise')
+    });
+
+
     this.initialized = true;
     container.addEventListener('scroll', function() {
       self.lastScroll = Date.now();
@@ -184,12 +197,18 @@ var PDFView = {
     viewAreaElement.addEventListener('scroll', function webViewerScroll(evt) {
       var currentY = viewAreaElement.scrollTop;
       var lastY = state.lastY;
-      if (currentY > lastY)
+      if (currentY > lastY) {
         state.down = true;
-      else if (currentY < lastY)
+      } else if (currentY < lastY) {
         state.down = false;
+      }
       // else do nothing and use previous value
       state.lastY = currentY;
+
+      // Handle page wise scrolling.
+      if (viewAreaElement === PDFView.container && PageWiseScrollMode.active) {
+        PageWiseScrollMode.attemptScrolling(state);
+      }
       callback();
     }, true);
   },
@@ -275,6 +294,12 @@ var PDFView = {
       newScale = Math.max(MIN_SCALE, newScale);
     } while (--ticks && newScale > MIN_SCALE);
     this.setScale(newScale, true);
+  },
+
+  get isContinuousScrollAllowed() {
+    return (PageWiseScrollMode.active ?
+            PageWiseScrollMode.isContinuousScrollAllowed :
+            (this.currentScaleValue !== 'page-fit' ? true : false));
   },
 
   set page(val) {
@@ -395,8 +420,7 @@ var PDFView = {
   },
 
   get isHorizontalScrollbarEnabled() {
-    var div = document.getElementById('viewerContainer');
-    return div.scrollWidth > div.clientWidth;
+    return this.container.scrollWidth > this.container.clientWidth;
   },
 
   initPassiveLoading: function pdfViewInitPassiveLoading() {
@@ -887,9 +911,11 @@ var PDFView = {
         var zoom = store.get('zoom', PDFView.currentScale);
         var left = store.get('scrollLeft', '0');
         var top = store.get('scrollTop', '0');
+        var pageWiseScroll = store.get('pageWiseScroll', '0');
 
-        storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
-                     left + ',' + top;
+        storedHash = ('page=' + pageNum) +
+                     ('&zoom=' + zoom + ',' + left + ',' + top) +
+                     ('&pageWiseScroll=' + pageWiseScroll);
       }
       // Initialize the browsing history.
       PDFHistory.initialize(self.documentFingerprint);
@@ -1122,6 +1148,9 @@ var PDFView = {
     if (hash.indexOf('=') >= 0) {
       var params = PDFView.parseQueryString(hash);
       // borrowing syntax from "Parameters for Opening PDF Files"
+      if ('pageWiseScroll' in params) {
+        PageWiseScrollMode.hashParams = params.pageWiseScroll;
+      }
       if ('nameddest' in params) {
         PDFHistory.updateNextHashParam(params.nameddest);
         PDFView.navigateTo(params.nameddest);
@@ -1346,8 +1375,11 @@ var PDFView = {
   },
 
   /**
-   * This function flips the page in presentation mode if the user scrolls up
-   * or down with large enough motion and prevents page flipping too often.
+   * This function flips the page in presentation mode,
+   * and in normal mode when page wise scrolling is active and
+   * the current page is shorter than the viewer container height,
+   * if the user scrolls up or down with large enough motion
+   * and prevents page flipping too often.
    *
    * @this {PDFView}
    * @param {number} mouseScrollDelta The delta value from the mouse event.
@@ -1707,8 +1739,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
 function updateViewarea() {
 
-  if (!PDFView.initialized)
+  if (!PDFView.initialized) {
     return;
+  }
   var visible = PDFView.getVisiblePages();
   var visiblePages = visible.views;
   if (visiblePages.length === 0) {
@@ -1724,9 +1757,9 @@ function updateViewarea() {
        i < ii; ++i) {
     var page = visiblePages[i];
 
-    if (page.percent < 100)
+    if (page.percent < 100) {
       break;
-
+    }
     if (page.id === PDFView.page) {
       stillFullyVisible = true;
       break;
@@ -1754,6 +1787,11 @@ function updateViewarea() {
     (PDFView.container.scrollTop - firstPage.y));
   pdfOpenParams += ',' + Math.round(topLeft[0]) + ',' + Math.round(topLeft[1]);
 
+  var pageWiseScroll = PageWiseScrollMode.hashParams;
+  if (pageWiseScroll) {
+    pdfOpenParams += '&pageWiseScroll=' + pageWiseScroll;
+  }
+
   var store = PDFView.store;
   store.initializedPromise.then(function() {
     store.set('exists', true);
@@ -1761,6 +1799,7 @@ function updateViewarea() {
     store.set('zoom', normalizedScaleValue);
     store.set('scrollLeft', Math.round(topLeft[0]));
     store.set('scrollTop', Math.round(topLeft[1]));
+    store.set('pageWiseScroll', pageWiseScroll);
   });
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;
@@ -1781,6 +1820,9 @@ window.addEventListener('resize', function webViewerResize(evt) {
 
   // Set the 'max-height' CSS property of the secondary toolbar.
   SecondaryToolbar.setMaxHeight(PDFView.container);
+
+  // If page wise scrolling is active, ensure that the current page is visible.
+  PageWiseScrollMode.scrollPageIntoView();
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
@@ -1911,7 +1953,10 @@ window.addEventListener('DOMMouseScroll', function(evt) {
     var direction = (ticks > 0) ? 'zoomOut' : 'zoomIn';
     PDFView[direction](Math.abs(ticks));
   } else if (PresentationMode.active) {
-    var FIREFOX_DELTA_FACTOR = -40;
+    PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
+  } else if (PageWiseScrollMode.active &&
+             !PageWiseScrollMode.isContinuousScrollAllowed) {
+    evt.preventDefault();
     PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
   }
 }, false);
@@ -2019,8 +2064,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 38: // up arrow
       case 33: // pg up
       case 8: // backspace
-        if (!PresentationMode.active &&
-            PDFView.currentScaleValue !== 'page-fit') {
+        if (!PresentationMode.active && PDFView.isContinuousScrollAllowed) {
           break;
         }
         /* in presentation mode */
@@ -2049,8 +2093,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 40: // down arrow
       case 34: // pg down
       case 32: // spacebar
-        if (!PresentationMode.active &&
-            PDFView.currentScaleValue !== 'page-fit') {
+        if (!PresentationMode.active && PDFView.isContinuousScrollAllowed) {
           break;
         }
         /* falls through */
@@ -2067,14 +2110,15 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
 
       case 36: // home
-        if (PresentationMode.active) {
+        if (PresentationMode.active || PDFView.page > 1) {
           PDFView.page = 1;
           handled = true;
         }
         break;
       case 35: // end
-        if (PresentationMode.active) {
-          PDFView.page = PDFView.pdfDocument.numPages;
+        var lastPage = PDFView.pdfDocument.numPages;
+        if (PresentationMode.active || PDFView.page < lastPage) {
+          PDFView.page = lastPage;
           handled = true;
         }
         break;
@@ -2088,8 +2132,7 @@ window.addEventListener('keydown', function keydown(evt) {
   if (cmd === 4) { // shift-key
     switch (evt.keyCode) {
       case 32: // spacebar
-        if (!PresentationMode.active &&
-            PDFView.currentScaleValue !== 'page-fit') {
+        if (!PresentationMode.active && PDFView.isContinuousScrollAllowed) {
           break;
         }
         PDFView.page--;
