@@ -38,6 +38,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.lastScrollSource = options.lastScrollSource;
   this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
+  this.pageWiseScrollMode = options.pageWiseScrollMode;
 
   if(typeof PDFFindController === 'undefined') {
       window.PDFFindController = null;
@@ -313,7 +314,12 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       var isSelected = isSelectedPage && i === selectedMatchIdx;
       var highlightSuffix = (isSelected ? ' selected' : '');
       if (isSelected && !this.isViewerInPresentationMode) {
-        scrollIntoView(textDivs[begin.divIdx], { top: -50 });
+        if (!this.pageWiseScrollMode.active) {
+          scrollIntoView(textDivs[begin.divIdx], { top: -50 });
+        } else {
+          this.pageWiseScrollMode.scrollSearchResultIntoView(
+            textDivs[begin.divIdx], { top: -50 });
+        }
       }
 
       // Match inside new div.

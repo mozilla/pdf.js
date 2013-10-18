@@ -983,6 +983,14 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-rotateCw.png);
 }
 
+.secondaryToolbarButton.scrollModeContinuous::before {
+  content: url(images/secondaryToolbarButton-scrollModeContinuous.png);
+}
+
+.secondaryToolbarButton.scrollModePageWise::before {
+  content: url(images/secondaryToolbarButton-scrollModePageWise.png);
+}
+
 .verticalToolbarSeparator {
   display: block;
   padding: 8px 0;

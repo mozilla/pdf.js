@@ -25,6 +25,7 @@ var SecondaryToolbar = {
 
   initialize: function secondaryToolbarInitialize(options) {
     this.toolbar = options.toolbar;
+    this.pageWiseScrollMode = options.pageWiseScrollMode;
     this.buttonContainer = this.toolbar.firstElementChild;
 
     // Define the toolbar buttons.
@@ -33,10 +34,14 @@ var SecondaryToolbar = {
     this.openFile = options.openFile;
     this.print = options.print;
     this.download = options.download;
+
     this.firstPage = options.firstPage;
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
+
+    this.scrollModeContinuous = options.scrollModeContinuous;
+    this.scrollModePageWise = options.scrollModePageWise;
 
     // Attach the event listeners.
     var elements = [
@@ -48,13 +53,21 @@ var SecondaryToolbar = {
       { element: this.firstPage, handler: this.firstPageClick },
       { element: this.lastPage, handler: this.lastPageClick },
       { element: this.pageRotateCw, handler: this.pageRotateCwClick },
-      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick }
+      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
+      { element: this.scrollModeContinuous,
+        handler: this.pageWiseScrollMode.disable,
+        scope: this.pageWiseScrollMode },
+      { element: this.scrollModePageWise,
+        handler: this.pageWiseScrollMode.enable,
+        scope: this.pageWiseScrollMode }
     ];
-
+    var element, handler, scope;
     for (var item in elements) {
-      var element = elements[item].element;
+      element = elements[item].element;
       if (element) {
-        element.addEventListener('click', elements[item].handler.bind(this));
+        handler = elements[item].handler;
+        scope = (elements[item].scope || this);
+        element.addEventListener('click', handler.bind(scope));
       }
     }
   },
