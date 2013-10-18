@@ -111,29 +111,77 @@ var PageView = function pageView(container, id, scale,
     });
 
     if (USE_ONLY_CSS_ZOOM && this.canvas) {
-      this.cssZoom(this.canvas);
+      this.cssTransform(this.canvas);
       return;
     } else if (this.canvas && !this.zoomLayer) {
       this.zoomLayer = this.canvas.parentNode;
       this.zoomLayer.style.position = 'absolute';
     }
     if (this.zoomLayer) {
-      this.cssZoom(this.zoomLayer.firstChild);
+      this.cssTransform(this.zoomLayer.firstChild);
     }
     this.reset();
   };
 
-  this.cssZoom = function pageViewRescale(canvas) {
-    // Need to adjust canvas, canvas wrapper, and page container.
+  this.cssTransform = function pageCssTransform(canvas) {
+    // Scale canvas, canvas wrapper, and page container.
+    var width = this.viewport.width;
+    var height = this.viewport.height;
     canvas.style.width = canvas.parentNode.style.width = div.style.width =
-        Math.floor(this.viewport.width) + 'px';
+        Math.floor(width) + 'px';
     canvas.style.height = canvas.parentNode.style.height = div.style.height =
-        Math.floor(this.viewport.height) + 'px';
+        Math.floor(height) + 'px';
+    // The canvas may have been originally rotated, so rotate relative to that.
+    var relativeRotation = this.viewport.rotation - canvas._viewport.rotation;
+    var absRotation = Math.abs(relativeRotation);
+    var scaleX = 1, scaleY = 1;
+    if (absRotation === 90 || absRotation === 270) {
+      // Scale x and y because of the rotation.
+      scaleX = height / width;
+      scaleY = width / height;
+    }
+    var cssTransform = 'rotate(' + relativeRotation + 'deg) ' +
+                       'scale(' + scaleX + ',' + scaleY + ')';
+    CustomStyle.setProp('transform', canvas, cssTransform);
+
     if (this.textLayer) {
-      var scale = (this.viewport.width / canvas.width);
-      var cssScale = 'scale(' + scale + ', ' + scale + ')';
+      // Rotating the text layer is more complicated since the divs inside the
+      // the text layer are rotated.
+      // TODO: This could probably be simplified by drawing the text layer in
+      // one orientation then rotating overall.
+      var textRelativeRotation = this.viewport.rotation -
+                                 this.textLayer.viewport.rotation;
+      var textAbsRotation = Math.abs(textRelativeRotation);
+      var scale = (width / canvas.width);
+      if (textAbsRotation === 90 || textAbsRotation === 270) {
+        scale = width / canvas.height;
+      }
       var textLayerDiv = this.textLayer.textLayerDiv;
-      CustomStyle.setProp('transform', textLayerDiv, cssScale);
+      var transX, transY;
+      switch (textAbsRotation) {
+        case 0:
+          transX = transY = 0;
+          break;
+        case 90:
+          transX = 0;
+          transY = '-' + textLayerDiv.style.height;
+          break;
+        case 180:
+          transX = '-' + textLayerDiv.style.width;
+          transY = '-' + textLayerDiv.style.height;
+          break;
+        case 270:
+          transX = '-' + textLayerDiv.style.width;
+          transY = 0;
+          break;
+        default:
+          console.error('Bad rotation value.');
+          break;
+      }
+      CustomStyle.setProp('transform', textLayerDiv,
+                          'rotate(' + textAbsRotation + 'deg) ' +
+                            'scale(' + scale + ', ' + scale + ') ' +
+                            'translate(' + transX + ', ' + transY + ')');
       CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
     }
   };
@@ -412,6 +460,8 @@ var PageView = function pageView(container, id, scale,
     canvas.height = Math.floor(viewport.height * outputScale.sy);
     canvas.style.width = Math.floor(viewport.width) + 'px';
     canvas.style.height = Math.floor(viewport.height) + 'px';
+    // Add the viewport so it's known what it was originally drawn with.
+    canvas._viewport = viewport;
 
     var textLayerDiv = null;
     if (!PDFJS.disableTextLayer) {
