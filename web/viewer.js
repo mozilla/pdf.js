@@ -138,8 +138,10 @@ var PDFView = {
 
     SecondaryToolbar.initialize({
       toolbar: document.getElementById('secondaryToolbar'),
+      presentationMode: PresentationMode,
       toggleButton: document.getElementById('secondaryToolbarToggle'),
-      presentationMode: document.getElementById('secondaryPresentationMode'),
+      presentationModeButton:
+        document.getElementById('secondaryPresentationMode'),
       openFile: document.getElementById('secondaryOpenFile'),
       print: document.getElementById('secondaryPrint'),
       download: document.getElementById('secondaryDownload'),
@@ -1918,7 +1920,7 @@ window.addEventListener('DOMMouseScroll', function(evt) {
 
 window.addEventListener('click', function click(evt) {
   if (!PresentationMode.active) {
-    if (SecondaryToolbar.isOpen && PDFView.container.contains(evt.target)) {
+    if (SecondaryToolbar.opened && PDFView.container.contains(evt.target)) {
       SecondaryToolbar.close();
     }
   } else if (evt.button === 0) {
@@ -2037,7 +2039,7 @@ window.addEventListener('keydown', function keydown(evt) {
         handled = true;
         break;
       case 27: // esc key
-        if (SecondaryToolbar.isOpen) {
+        if (SecondaryToolbar.opened) {
           SecondaryToolbar.close();
           handled = true;
         }

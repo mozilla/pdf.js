@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, PresentationMode, SCROLLBAR_PADDING */
+/* globals PDFView, SCROLLBAR_PADDING */
 
 'use strict';
 
@@ -25,11 +25,12 @@ var SecondaryToolbar = {
 
   initialize: function secondaryToolbarInitialize(options) {
     this.toolbar = options.toolbar;
+    this.presentationMode = options.presentationMode;
     this.buttonContainer = this.toolbar.firstElementChild;
 
     // Define the toolbar buttons.
     this.toggleButton = options.toggleButton;
-    this.presentationMode = options.presentationMode;
+    this.presentationModeButton = options.presentationModeButton;
     this.openFile = options.openFile;
     this.print = options.print;
     this.download = options.download;
@@ -41,7 +42,8 @@ var SecondaryToolbar = {
     // Attach the event listeners.
     var elements = [
       { element: this.toggleButton, handler: this.toggle },
-      { element: this.presentationMode, handler: this.presentationModeClick },
+      { element: this.presentationModeButton,
+        handler: this.presentationModeClick },
       { element: this.openFile, handler: this.openFileClick },
       { element: this.print, handler: this.printClick },
       { element: this.download, handler: this.downloadClick },
@@ -61,7 +63,7 @@ var SecondaryToolbar = {
 
   // Event handling functions.
   presentationModeClick: function secondaryToolbarPresentationModeClick(evt) {
-    PresentationMode.request();
+    this.presentationMode.request();
     this.close();
   },
 
@@ -98,7 +100,7 @@ var SecondaryToolbar = {
 
   // Misc. functions for interacting with the toolbar.
   setMaxHeight: function secondaryToolbarSetMaxHeight(container) {
-    if (!container) {
+    if (!container || !this.buttonContainer) {
       return;
     }
     this.newContainerHeight = container.clientHeight;
@@ -136,9 +138,5 @@ var SecondaryToolbar = {
     } else {
       this.open();
     }
-  },
-
-  get isOpen() {
-    return this.opened;
   }
 };
