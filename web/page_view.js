@@ -327,6 +327,7 @@ var PageView = function pageView(container, id, scale,
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
     if (PresentationMode.active) { // Avoid breaking presentation mode.
       dest = null;
+      PDFView.setScale(PDFView.currentScaleValue, true, true);
     }
     if (!dest) {
       scrollIntoView(div);

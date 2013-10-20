@@ -397,8 +397,8 @@ var PDFView = {
   },
 
   get isHorizontalScrollbarEnabled() {
-    var div = document.getElementById('viewerContainer');
-    return div.scrollWidth > div.clientWidth;
+    return (PresentationMode.active ? false :
+            (this.container.scrollWidth > this.container.clientWidth));
   },
 
   initPassiveLoading: function pdfViewInitPassiveLoading() {
