@@ -74,6 +74,75 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include firefoxcom.js
 //#endif
 
+// Preferences Manager - utility for storing persistant settings.
+// The preferences are stored in about:config,
+// hence only Firefox is currently supported.
+var Preferences = (function PreferencesClosure() {
+  function Preferences() {
+    this.initializedPromise = new PDFJS.Promise();
+
+    var resolvePromise = (function preferencesResolvePromise(prefString) {
+      this.initialize(prefString || '{}');
+      this.initializedPromise.resolve();
+    }).bind(this);
+
+//#if (FIREFOX || MOZCENTRAL)
+//  resolvePromise(FirefoxCom.requestSync('getUserPrefs'));
+//#else
+    resolvePromise();
+//#endif
+  }
+
+  Preferences.prototype = {
+    initialize: function preferencesInitialize(prefString) {
+      this.prefObj = JSON.parse(prefString);
+    },
+
+    reload: function preferencesReload() {
+      if (!this.initializedPromise.isResolved) {
+        return;
+      }
+
+//#if (FIREFOX || MOZCENTRAL)
+//    this.initialize(FirefoxCom.requestSync('getUserPrefs'));
+//#endif
+    },
+
+    reset: function preferencesReset() {
+      if (!this.initializedPromise.isResolved) {
+        return;
+      }
+      this.prefObj = {};
+
+//#if (FIREFOX || MOZCENTRAL)
+//    this.initialize(FirefoxCom.requestSync('resetUserPrefs'));
+//#endif
+    },
+
+    set: function preferencesSet(name, value) {
+      if (!this.initializedPromise.isResolved) {
+        return;
+      }
+      var pref = {};
+      pref[name] = value;
+      var prefString = JSON.stringify(pref);
+
+//#if (FIREFOX || MOZCENTRAL)
+//    this.initialize(FirefoxCom.requestSync('setUserPrefs', prefString));
+//#endif
+    },
+
+    get: function preferencesGet(name) {
+      if (!this.initializedPromise.isResolved) {
+        return null;
+      }
+      return this.prefObj[name];
+    }
+  };
+
+  return Preferences;
+})();
+
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
@@ -813,6 +882,7 @@ var PDFView = {
 
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
+    var prefs = PDFView.prefs = new Preferences();
 
     this.pageRotation = 0;
 
@@ -882,16 +952,21 @@ var PDFView = {
     });
 
     var storePromise = store.initializedPromise;
-    PDFJS.Promise.all([firstPagePromise, storePromise]).then(function() {
+    var prefsPromise = prefs.initializedPromise;
+    PDFJS.Promise.all([firstPagePromise, storePromise, prefsPromise]).
+        then(function() {
+      var defaultZoomValue = prefs.get('defaultZoomValue');
       var storedHash = null;
       if (store.get('exists', false)) {
         var pageNum = store.get('page', '1');
-        var zoom = store.get('zoom', PDFView.currentScale);
+        var zoom = defaultZoomValue || store.get('zoom', PDFView.currentScale);
         var left = store.get('scrollLeft', '0');
         var top = store.get('scrollTop', '0');
 
         storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
                      left + ',' + top;
+      } else if (defaultZoomValue) {
+        storedHash = 'page=1&zoom=' + defaultZoomValue;
       }
       // Initialize the browsing history.
       PDFHistory.initialize(self.documentFingerprint);
@@ -943,6 +1018,13 @@ var PDFView = {
       pdfDocument.getOutline().then(function(outline) {
         self.outline = new DocumentOutlineView(outline);
         document.getElementById('viewOutline').disabled = !outline;
+
+        if (outline && prefs.get('ifAvailableShowOutlineOnLoad')) {
+          if (!self.sidebarOpen) {
+            document.getElementById('sidebarToggle').click();
+          }
+          self.switchSidebarView('outline');
+        }
       });
     });
 
