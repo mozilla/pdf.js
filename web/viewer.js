@@ -2015,6 +2015,11 @@ window.addEventListener('keydown', function keydown(evt) {
       return; // ignoring if the 'toolbar' element is focused
     curElement = curElement.parentNode;
   }
+//#if (FIREFOX || MOZCENTRAL)
+//// Workaround for issue in Firefox, that prevents scroll keys from working
+//// when elements with 'tabindex' are focused.
+//PDFView.container.blur();
+//#endif
 
   if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
