@@ -262,6 +262,33 @@ html[dir='rtl'] #sidebarContent {
   cursor: default;
 }
 
+#outerContainer.toolbarToogle #viewerContainer {
+  -webkit-transition-property: top;
+  -webkit-transition-duration: 200ms;
+  -webkit-transition-timing-function: ease;
+  transition-property: top;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+#outerContainer.toolbarToogle #toolbar {
+  -webkit-transition-property: top;
+  -webkit-transition-duration: 200ms;
+  -webkit-transition-timing-function: ease;
+  transition-property: top;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+  visibility: visible;
+}
+
+#outerContainer.toolbarClosed #toolbar {
+  top: -32px;
+}
+
+#outerContainer.toolbarClosed #viewerContainer {
+  top: 0;
+}
+
 #toolbarContainer {
   width: 100%;
 }
@@ -1621,6 +1648,13 @@ canvas {
   #outerContainer .visibleLargeView,
   #outerContainer .visibleMediumView {
     display: none;
+  }
+  #outerContainer.toolbarToogle #sidebarContainer {
+    -webkit-transition-property: top, left;
+    transition-property: top, left;
+  }
+  #outerContainer.toolbarClosed #sidebarContainer {
+    top: 0;
   }
 }
 

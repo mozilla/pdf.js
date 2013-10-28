@@ -36,6 +36,7 @@ var SETTINGS_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
+var DELAY_TOOLBAR_CLOSE = 250;
 var USE_ONLY_CSS_ZOOM = false;
 //#if B2G
 //USE_ONLY_CSS_ZOOM = true;
@@ -97,6 +98,7 @@ var PDFView = {
   fellback: false,
   pdfDocument: null,
   sidebarOpen: false,
+  toolbarClosed: false,
   pageViewScroll: null,
   thumbnailViewScroll: null,
   pageRotation: 0,
@@ -1157,6 +1159,64 @@ var PDFView = {
                                  'thumbs' : 'outline');
         } else if (params.pagemode === 'none' && this.sidebarOpen) {
           toggle.click();
+        }
+      }
+      if ('toolbar' in params) {
+        var outerContainer = document.getElementById('outerContainer');
+        var toolbar = document.getElementById('toolbar');
+        var toolbarHeight = toolbar.clientHeight;
+        var timeout;
+        var closeToolbar = function() {
+          PDFView.toolbarClosed = true;
+          outerContainer.classList.add('toolbarClosed');
+          if (SecondaryToolbar.opened) {
+            SecondaryToolbar.close();
+          }
+          if (PDFFindBar.opened) {
+            PDFFindBar.close();
+          }
+          PDFView.renderHighestPriority();
+        };
+        var openToolbar = function() {
+          PDFView.toolbarClosed = false;
+          outerContainer.classList.remove('toolbarClosed');
+          PDFView.renderHighestPriority();
+        };
+
+        if (!this.autoToolbar) {
+          this.autoToolbar = function(evt) {
+            if (evt.clientY < toolbarHeight) {
+              if (timeout) {
+                timeout = clearTimeout(timeout);
+              }
+              if (PDFView.toolbarClosed){
+                openToolbar();
+              }
+            } else if (timeout) {
+              // Don't close the toolbar if the secondaryToolbar is being used
+              if (SecondaryToolbar.opened &&
+                  SecondaryToolbar.toolbar.contains(evt.target)) {
+                timeout = clearTimeout(timeout);
+              }
+              // Don't close the toolbar if the findbar is being used
+              if (PDFFindBar.opened &&
+                  PDFFindBar.bar.contains(evt.target)) {
+                timeout = clearTimeout(timeout);
+              }
+            } else if (!PDFView.toolbarClosed && !timeout) {
+              timeout = setTimeout(closeToolbar, DELAY_TOOLBAR_CLOSE);
+            }
+          };
+        }
+
+        if (params.toolbar === '0') {
+          outerContainer.classList.add('toolbarToogle');
+          window.addEventListener('mousemove', this.autoToolbar, false);
+          closeToolbar();
+        } else {
+          outerContainer.classList.remove('toolbarToogle');
+          window.removeEventListener('mousemove', this.autoToolbar, false);
+          openToolbar();
         }
       }
     } else if (/^\d+$/.test(hash)) { // page number
