@@ -36,6 +36,7 @@ var PDFHistory = {
     this.previousHash = window.location.hash.substring(1);
     this.currentBookmark = '';
     this.currentPage = 0;
+    this.skipUpdateBookmark = false;
     this.updatePreviousBookmark = false;
     this.previousBookmark = '';
     this.previousPage = 0;
@@ -159,9 +160,20 @@ var PDFHistory = {
     }
   },
 
+  skipNextUpdateCurrentBookmark:
+      function pdfHistorySkipNextUpdateCurrentBookmark() {
+    if (this.initialized) {
+      this.skipUpdateBookmark = true;
+    }
+  },
+
   updateCurrentBookmark: function pdfHistoryUpdateCurrentBookmark(bookmark,
                                                                   pageNum) {
     if (this.initialized) {
+      if (this.skipUpdateBookmark) {
+        this.skipUpdateBookmark = false;
+        return;
+      }
       this.currentBookmark = bookmark.substring(1);
       this.currentPage = pageNum | 0;
       this._updatePreviousBookmark();
