@@ -347,7 +347,7 @@ var PageView = function pageView(container, id, scale,
         // since aligning the bottom of the intended page with the
         // top of the window is rarely helpful).
         x = x !== null ? x : 0;
-        y = y !== null ? y : this.height / this.scale;
+        y = y !== null ? y : (this.height / this.scale) / CSS_UNITS;
         break;
       case 'Fit':
       case 'FitB':
