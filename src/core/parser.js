@@ -298,10 +298,15 @@ var Parser = (function ParserClosure() {
         return new NullStream(stream);
       }
       if (name == 'FlateDecode' || name == 'Fl') {
-        if (params) {
-          return new PredictorStream(new FlateStream(stream), params);
+        try {
+          if (params) {
+            return new PredictorStream(new FlateStream(stream), params);
+          }
+          return new FlateStream(stream);
+        } catch (e) {
+          warn('Invalid Stream - ' + e);
+          return new NullStream(stream);
         }
-        return new FlateStream(stream);
       }
       if (name == 'LZWDecode' || name == 'LZW') {
         var earlyChange = 1;
