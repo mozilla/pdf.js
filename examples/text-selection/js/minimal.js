@@ -54,7 +54,7 @@ window.onload = function () {
             });
 
         //The following few lines of code set up scaling on the context if we are on a HiDPI display
-        var outputScale = getOutputScale();
+        var outputScale = getOutputScale(context);
         if (outputScale.scaled) {
             var cssScale = 'scale(' + (1 / outputScale.sx) + ', ' +
                 (1 / outputScale.sy) + ')';
