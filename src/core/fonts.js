@@ -3507,6 +3507,11 @@ var Font = (function FontClosure() {
                 callstack.push({data: data, i: i, stackTop: stack.length - 1});
                 functionsCalled.push(funcId);
                 var pc = ttContext.functionsDefined[funcId];
+                if (!pc) {
+                  warn('TT: CALL non-existent function');
+                  ttContext.hintsValid = false;
+                  return;
+                }
                 data = pc.data;
                 i = pc.i;
               }
@@ -3527,6 +3532,11 @@ var Font = (function FontClosure() {
               lastEndf = i;
             } else {
               var pc = callstack.pop();
+              if (!pc) {
+                warn('TT: ENDF bad stack');
+                ttContext.hintsValid = false;
+                return;
+              }
               var funcId = functionsCalled.pop();
               data = pc.data;
               i = pc.i;
