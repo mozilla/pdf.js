@@ -5291,13 +5291,33 @@ var CFFStandardStrings = [
 
 // Type1Font is also a CIDFontType0.
 var Type1Font = function Type1Font(name, file, properties) {
+  // Some bad generators embed pfb file as is, we have to strip 6-byte headers.
+  // Also, length1 and length2 might be off by 6 bytes as well.
+  // http://www.math.ubc.ca/~cass/piscript/type1.pdf
+  var PFB_HEADER_SIZE = 6;
+  var headerBlockLength = properties.length1;
+  var eexecBlockLength = properties.length2;
+  var pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
+  var pfbHeaderPresent = pfbHeader[0] == 0x80 && pfbHeader[1] == 0x01;
+  if (pfbHeaderPresent) {
+    file.skip(PFB_HEADER_SIZE);
+    headerBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
+                        (pfbHeader[3] << 8) | pfbHeader[2];
+  }
+
   // Get the data block containing glyphs and subrs informations
-  var headerBlock = new Stream(file.getBytes(properties.length1));
+  var headerBlock = new Stream(file.getBytes(headerBlockLength));
   var headerBlockParser = new Type1Parser(headerBlock);
   headerBlockParser.extractFontHeader(properties);
 
+  if (pfbHeaderPresent) {
+    pfbHeader = file.getBytes(PFB_HEADER_SIZE);
+    eexecBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
+                       (pfbHeader[3] << 8) | pfbHeader[2];
+  }
+
   // Decrypt the data blocks and retrieve it's content
-  var eexecBlock = new Stream(file.getBytes(properties.length2));
+  var eexecBlock = new Stream(file.getBytes(eexecBlockLength));
   var eexecBlockParser = new Type1Parser(eexecBlock, true);
   var data = eexecBlockParser.extractFontProgram();
   for (var info in data.properties)
