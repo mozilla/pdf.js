@@ -960,7 +960,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // The Symbolic attribute can be misused for regular fonts
       // Heuristic: we have to check if the font is a standard one also
       if (!!(flags & FontFlags.Symbolic)) {
-        baseEncoding = !properties.file ? Encodings.symbolsEncoding :
+        baseEncoding = !properties.file ? Encodings.SymbolSetEncoding :
                                           Encodings.MacRomanEncoding;
       }
       if (dict.has('Encoding')) {
