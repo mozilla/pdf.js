@@ -3672,6 +3672,9 @@ var Font = (function FontClosure() {
         if (VALID_TABLES.indexOf(table.tag) < 0) {
           continue; // skipping table if it's not a required or optional table
         }
+        if (table.length === 0) {
+          continue; // skipping empty tables
+        }
         tables[table.tag] = table;
       }
 
