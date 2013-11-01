@@ -3077,6 +3077,17 @@ var Font = (function FontClosure() {
           error('cmap table has unsupported format: ' + format);
         }
 
+        // removing duplicate entries
+        mappings.sort(function (a, b) {
+          return a.charcode - b.charcode;
+        });
+        for (var i = 1; i < mappings.length; i++) {
+          if (mappings[i - 1].charcode === mappings[i].charcode) {
+            mappings.splice(i, 1);
+            i--;
+          }
+        }
+
         return {
           platformId: potentialTable.platformId,
           encodingId: potentialTable.encodingId,
@@ -3758,7 +3769,6 @@ var Font = (function FontClosure() {
       if (isTrueType) {
         var isGlyphLocationsLong = int16([tables.head.data[50],
                                           tables.head.data[51]]);
-
         sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
                                isGlyphLocationsLong, hintsValid, dupFirstEntry);
       }
