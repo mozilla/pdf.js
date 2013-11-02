@@ -3262,6 +3262,13 @@ var Font = (function FontClosure() {
           };
         }
         var locaData = loca.data;
+        var locaDataSize = itemSize * (1 + numGlyphs);
+        // is loca.data too short or long?
+        if (locaData.length !== locaDataSize) {
+          locaData = new Uint8Array(locaDataSize);
+          locaData.set(loca.data.subarray(0, locaDataSize));
+          loca.data = locaData;
+        }
         // removing the invalid glyphs
         var oldGlyfData = glyf.data;
         var oldGlyfDataLength = oldGlyfData.length;
@@ -3305,9 +3312,7 @@ var Font = (function FontClosure() {
             glyf.data.set(newGlyfData.subarray(0, writeOffset));
           }
           glyf.data.set(newGlyfData.subarray(0, firstEntryLength), writeOffset);
-          loca.data = new Uint8Array(locaData.length + itemSize);
-          loca.data.set(locaData);
-          itemEncode(loca.data, locaData.length,
+          itemEncode(loca.data, locaData.length - itemSize,
                      writeOffset + firstEntryLength);
         } else {
           glyf.data = newGlyfData.subarray(0, writeOffset);
