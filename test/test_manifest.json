@@ -33,6 +33,15 @@
        "type": "load",
        "about": "PDF with undefined stream length."
     },
+    {  "id": "issue3879",
+       "file": "pdfs/issue3879.pdf",
+       "md5": "1cd1f1c3271515a14e65ff2980e14663",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 2,
+       "lastPage": 2,
+       "type": "eq"
+    },
     {  "id": "issue2833",
        "file": "pdfs/issue2833.pdf",
        "md5": "7bc6e17c41586155c188d7408bcb9ab5",
