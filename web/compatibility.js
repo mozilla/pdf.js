@@ -361,11 +361,15 @@ if (typeof PDFJS === 'undefined') {
     if (index >= 0 && remove)
       list.splice(index, 1);
     element.className = list.join(' ');
+    return (index >= 0);
   }
 
   var classListPrototype = {
     add: function(name) {
       changeList(this.element, name, true, false);
+    },
+    contains: function(name) {
+      return changeList(this.element, name, false, false);
     },
     remove: function(name) {
       changeList(this.element, name, false, true);
