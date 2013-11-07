@@ -1745,8 +1745,8 @@ function updateViewarea() {
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
-  var normalizedScaleValue = currentScaleValue == currentScale ?
-    currentScale * 100 : currentScaleValue;
+  var normalizedScaleValue = parseFloat(currentScaleValue) === currentScale ?
+    Math.round(currentScale * 10000) / 100 : currentScaleValue;
 
   var pageNumber = firstPage.id;
   var pdfOpenParams = '#page=' + pageNumber;

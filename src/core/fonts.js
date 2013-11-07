@@ -226,8 +226,8 @@ var Encodings = {
     'oacute', 'ocircumflex', 'otilde', 'odieresis', 'divide', 'oslash',
     'ugrave', 'uacute', 'ucircumflex', 'udieresis', 'yacute', 'thorn',
     'ydieresis'],
-  symbolsEncoding: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
-    '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+  SymbolSetEncoding: ['', '', '', '', '', '', '', '', '', '', '', '', '', '',
+    '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
     'space', 'exclam', 'universal', 'numbersign', 'existential', 'percent',
     'ampersand', 'suchthat', 'parenleft', 'parenright', 'asteriskmath', 'plus',
     'comma', 'minus', 'period', 'slash', 'zero', 'one', 'two', 'three', 'four',
@@ -3507,6 +3507,11 @@ var Font = (function FontClosure() {
                 callstack.push({data: data, i: i, stackTop: stack.length - 1});
                 functionsCalled.push(funcId);
                 var pc = ttContext.functionsDefined[funcId];
+                if (!pc) {
+                  warn('TT: CALL non-existent function');
+                  ttContext.hintsValid = false;
+                  return;
+                }
                 data = pc.data;
                 i = pc.i;
               }
@@ -3527,6 +3532,11 @@ var Font = (function FontClosure() {
               lastEndf = i;
             } else {
               var pc = callstack.pop();
+              if (!pc) {
+                warn('TT: ENDF bad stack');
+                ttContext.hintsValid = false;
+                return;
+              }
               var funcId = functionsCalled.pop();
               data = pc.data;
               i = pc.i;
@@ -5195,19 +5205,34 @@ var Type1Parser = (function Type1ParserClosure() {
 
               for (var j = 0; j < size; j++) {
                 var token = this.getToken();
-                if (token === 'dup') {
-                  var index = this.readInt();
-                  this.getToken(); // read in '/'
-                  var glyph = this.getToken();
-                  encoding[index] = glyph;
-                  this.getToken(); // read the in 'put'
+                // skipping till first dup or def (e.g. ignoring for statement)
+                while (token !== 'dup' && token !== 'def') {
+                  token = this.getToken();
+                  if (token === null) {
+                    return; // invalid header
+                  }
                 }
+                if (token === 'def') {
+                  break; // read all array data
+                }
+                var index = this.readInt();
+                this.getToken(); // read in '/'
+                var glyph = this.getToken();
+                encoding[index] = glyph;
+                this.getToken(); // read the in 'put'
               }
             }
             if (properties.overridableEncoding && encoding) {
               properties.baseEncoding = encoding;
               break;
             }
+            break;
+          case 'FontBBox':
+            var fontBBox = this.readNumberArray();
+            // adjusting ascent/descent
+            properties.ascent = fontBBox[3];
+            properties.descent = fontBBox[1];
+            properties.ascentScaled = true;
             break;
         }
       }
@@ -5291,13 +5316,33 @@ var CFFStandardStrings = [
 
 // Type1Font is also a CIDFontType0.
 var Type1Font = function Type1Font(name, file, properties) {
+  // Some bad generators embed pfb file as is, we have to strip 6-byte headers.
+  // Also, length1 and length2 might be off by 6 bytes as well.
+  // http://www.math.ubc.ca/~cass/piscript/type1.pdf
+  var PFB_HEADER_SIZE = 6;
+  var headerBlockLength = properties.length1;
+  var eexecBlockLength = properties.length2;
+  var pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
+  var pfbHeaderPresent = pfbHeader[0] == 0x80 && pfbHeader[1] == 0x01;
+  if (pfbHeaderPresent) {
+    file.skip(PFB_HEADER_SIZE);
+    headerBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
+                        (pfbHeader[3] << 8) | pfbHeader[2];
+  }
+
   // Get the data block containing glyphs and subrs informations
-  var headerBlock = new Stream(file.getBytes(properties.length1));
+  var headerBlock = new Stream(file.getBytes(headerBlockLength));
   var headerBlockParser = new Type1Parser(headerBlock);
   headerBlockParser.extractFontHeader(properties);
 
+  if (pfbHeaderPresent) {
+    pfbHeader = file.getBytes(PFB_HEADER_SIZE);
+    eexecBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
+                       (pfbHeader[3] << 8) | pfbHeader[2];
+  }
+
   // Decrypt the data blocks and retrieve it's content
-  var eexecBlock = new Stream(file.getBytes(properties.length2));
+  var eexecBlock = new Stream(file.getBytes(eexecBlockLength));
   var eexecBlockParser = new Type1Parser(eexecBlock, true);
   var data = eexecBlockParser.extractFontProgram();
   for (var info in data.properties)

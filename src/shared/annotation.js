@@ -616,7 +616,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     if (action) {
       var linkType = action.get('S').name;
       if (linkType === 'URI') {
-        var url = action.get('URI');
+        var url = addDefaultProtocolToUrl(action.get('URI'));
         // TODO: pdf spec mentions urls can be relative to a Base
         // entry in the dictionary.
         if (!isValidUrl(url, false)) {
@@ -650,6 +650,14 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       var dest = dict.get('Dest');
       data.dest = isName(dest) ? dest.name : dest;
     }
+  }
+
+  // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
+  function addDefaultProtocolToUrl(url) {
+    if (url.indexOf('www.') === 0) {
+      return ('http://' + url);
+    }
+    return url;
   }
 
   Util.inherit(LinkAnnotation, Annotation, {

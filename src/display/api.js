@@ -540,11 +540,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
           if (supportTypedArray) {
             this.worker = worker;
             this.setupMessageHandler(messageHandler);
+            workerInitializedPromise.resolve();
           } else {
             globalScope.PDFJS.disableWorker = true;
-            this.setupFakeWorker();
+            this.loadFakeWorkerFiles().then(function() {
+              this.setupFakeWorker();
+              workerInitializedPromise.resolve();
+            }.bind(this));
           }
-          workerInitializedPromise.resolve();
         }.bind(this));
 
         var testObj = new Uint8Array(1);
