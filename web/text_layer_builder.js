@@ -82,7 +82,21 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       var width = ctx.measureText(textDiv.textContent).width;
 
       if (width > 0) {
-        var textScale = textDiv.dataset.canvasWidth / width;
+        var textScale;
+        var spacing = parseFloat(textDiv.dataset.spacing);
+
+        if (spacing && spacing > 0) {
+          var fontSize = parseFloat(textDiv.style.fontSize);
+          var noSpaces = textDiv.textContent.replace(/\s+$/, '')
+                          .split(' ').length - 1;
+          // adjust the textScale by the addition the product of 
+          // spacing, number of spaces and font size
+          textScale = (parseFloat(textDiv.dataset.canvasWidth) +
+                      (spacing * noSpaces * fontSize)) / width;
+        } else {
+          textScale = textDiv.dataset.canvasWidth / width;
+        }
+
         var rotation = textDiv.dataset.angle;
         var transform = 'scale(' + textScale + ', 1)';
         transform = 'rotate(' + rotation + 'deg) ' + transform;
@@ -133,6 +147,10 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     textDiv.style.fontFamily = geom.fontFamily;
     textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
     textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
+
+    if (!isNaN(geom.spaceWidth)) {
+      textDiv.dataset.spacing = Math.abs(geom.spaceWidth);
+    }
 
     // The content of the div is set in the `setTextContent` function.
 
