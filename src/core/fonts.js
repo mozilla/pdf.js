@@ -3175,6 +3175,10 @@ var Font = (function FontClosure() {
             coordinatesLength += repeat * xyLength;
           }
         }
+        // glyph without coordinates will be rejected
+        if (coordinatesLength === 0) {
+          return 0;
+        }
         var glyphDataLength = j + coordinatesLength;
         if (glyphDataLength > glyf.length) {
           // not enough data for coordinates
