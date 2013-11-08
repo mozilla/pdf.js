@@ -4575,8 +4575,10 @@ var Font = (function FontClosure() {
           var glyph = this.charToGlyph(charcode);
           glyphs.push(glyph);
           // placing null after each word break charcode (ASCII SPACE)
-          if (charcode == 0x20)
+          // Ignore occurences of 0x20 in multiple-byte codes.
+          if (length === 1 && chars.charCodeAt(i - 1) === 0x20) {
             glyphs.push(null);
+          }
         }
       }
       else {

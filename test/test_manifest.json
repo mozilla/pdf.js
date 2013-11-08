@@ -1436,5 +1436,14 @@
        "firstPage": 1,
        "lastPage": 2,
        "type": "eq"
+    },
+    {  "id": "issue3205",
+       "file": "pdfs/issue3205.pdf",
+       "md5": "e833326f69f2fdf7c1c8438fe1d3b622",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 4,
+       "lastPage": 4,
+       "type": "eq"
     }
 ]
