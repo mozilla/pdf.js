@@ -3729,7 +3729,14 @@ var Font = (function FontClosure() {
       var numGlyphs = int16(font.getBytes(2));
       var maxFunctionDefs = 0;
       if (version >= 0x00010000 && tables.maxp.length >= 22) {
-        font.pos += 14;
+        // maxZones can be invalid
+        font.pos += 8;
+        var maxZones = int16(font.getBytes(2));
+        if (maxZones > 2) { // reset to 2 if font has invalid maxZones
+          tables.maxp.data[14] = 0;
+          tables.maxp.data[15] = 2;
+        }
+        font.pos += 4;
         maxFunctionDefs = int16(font.getBytes(2));
       }
 
