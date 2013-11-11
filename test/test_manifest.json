@@ -198,6 +198,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "bug868745",
+       "file": "pdfs/bug868745.pdf",
+       "md5": "86111ea5097dd7daffcdea891ad1b348",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "thuluthfont-pdf",
        "file": "pdfs/ThuluthFeatures.pdf",
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
