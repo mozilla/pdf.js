@@ -301,7 +301,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       PDFImage.buildImage(function(imageObj) {
           var imgData = imageObj.getImageData();
-          self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData]);
+          self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
+                            null, [imgData.data.buffer]);
         }, self.handler, self.xref, resources, image, inline);
 
       operatorList.addOp(OPS.paintImageXObject, args);
@@ -1457,14 +1458,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     }
   };
 
-
   return PartialEvaluator;
 })();
 
 var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 100;
 
-  function OperatorList(messageHandler, pageIndex) {
+    function getTransfers(queue) {
+      var transfers = [];
+      var fnArray = queue.fnArray, argsArray = queue.argsArray;
+      for (var i = 0, ii = queue.length; i < ii; i++) {
+        switch (fnArray[i]) {
+          case OPS.paintInlineImageXObject:
+          case OPS.paintInlineImageXObjectGroup:
+          case OPS.paintImageMaskXObject:
+            var arg = argsArray[i][0]; // first param in imgData
+            transfers.push(arg.data.buffer);
+            break;
+        }
+      }
+      return transfers;
+    }
+
+
+    function OperatorList(messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
     // When there isn't a message handler the fn array needs to be able to grow
     // since we can't flush the operators.
@@ -1529,6 +1546,7 @@ var OperatorList = (function OperatorListClosure() {
 
     flush: function(lastChunk) {
       PartialEvaluator.optimizeQueue(this);
+      var transfers = getTransfers(this);
       this.messageHandler.send('RenderPageChunk', {
         operatorList: {
           fnArray: this.fnArray,
@@ -1537,7 +1555,7 @@ var OperatorList = (function OperatorListClosure() {
           length: this.length
         },
         pageIndex: this.pageIndex
-      });
+      }, null, transfers);
       this.dependencies = [];
       this.fnIndex = 0;
       this.argsArray = [];
@@ -1546,6 +1564,7 @@ var OperatorList = (function OperatorListClosure() {
 
   return OperatorList;
 })();
+
 var TextState = (function TextStateClosure() {
   function TextState() {
     this.fontSize = 0;
