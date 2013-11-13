@@ -17,7 +17,7 @@
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
            Pattern, TilingPattern, TODO, Util, warn, assert, info,
-           TextRenderingMode */
+           TextRenderingMode, OPS */
 
 'use strict';
 
@@ -538,7 +538,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var commonObjs = this.commonObjs;
       var objs = this.objs;
-      var fnName;
+      var fnId;
       var slowCommands = this.slowCommands;
 
       while (true) {
@@ -547,10 +547,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           return i;
         }
 
-        fnName = fnArray[i];
+        fnId = fnArray[i];
 
-        if (fnName !== 'dependency') {
-          this[fnName].apply(this, argsArray[i]);
+        if (fnId !== OPS.dependency) {
+          this[fnId].apply(this, argsArray[i]);
         } else {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
@@ -580,7 +580,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        if (continueCallback && slowCommands[fnName] && Date.now() > endTime) {
+        if (continueCallback && slowCommands[fnId] && Date.now() > endTime) {
           setTimeout(continueCallback, 0);
           return i;
         }
@@ -1866,6 +1866,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ];
     }
   };
+
+  for (var op in OPS) {
+    CanvasGraphics.prototype[OPS[op]] = CanvasGraphics.prototype[op];
+  }
 
   return CanvasGraphics;
 })();

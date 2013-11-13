@@ -16,7 +16,7 @@
  */
 /* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
            stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
-           Promise, isArray, ObjectLoader, isValidUrl, OperatorList */
+           Promise, isArray, ObjectLoader, isValidUrl, OperatorList, OPS */
 
 'use strict';
 
@@ -188,9 +188,9 @@ var Annotation = (function AnnotationClosure() {
 
       resourcesPromise.then(function(resources) {
         var opList = new OperatorList();
-        opList.addOp('beginAnnotation', [data.rect, transform, matrix]);
+        opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
         evaluator.getOperatorList(this.appearance, resources, opList);
-        opList.addOp('endAnnotation', []);
+        opList.addOp(OPS.endAnnotation, []);
         promise.resolve(opList);
       }.bind(this));
 
@@ -284,12 +284,12 @@ var Annotation = (function AnnotationClosure() {
       annotationPromises.push(annotations[i].getOperatorList(partialEvaluator));
     }
     Promise.all(annotationPromises).then(function(datas) {
-      opList.addOp('beginAnnotations', []);
+      opList.addOp(OPS.beginAnnotations, []);
       for (var i = 0, n = datas.length; i < n; ++i) {
         var annotOpList = datas[i];
         opList.addOpList(annotOpList);
       }
-      opList.addOp('endAnnotations', []);
+      opList.addOp(OPS.endAnnotations, []);
       annotationsReadyPromise.resolve();
     }, reject);
 
@@ -465,10 +465,10 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       data.rgb = [0, 0, 0];
       // TODO THIS DOESN'T MAKE ANY SENSE SINCE THE fnArray IS EMPTY!
       for (var i = 0, n = fnArray.length; i < n; ++i) {
-        var fnName = appearanceFnArray[i];
+        var fnId = appearanceFnArray[i];
         var args = appearanceArgsArray[i];
 
-        if (fnName === 'setFont') {
+        if (fnId === OPS.setFont) {
           data.fontRefName = args[0];
           var size = args[1];
           if (size < 0) {
@@ -478,9 +478,9 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
             data.fontDirection = 1;
             data.fontSize = size;
           }
-        } else if (fnName === 'setFillRGBColor') {
+        } else if (fnId === OPS.setFillRGBColor) {
           data.rgb = args;
-        } else if (fnName === 'setFillGray') {
+        } else if (fnId === OPS.setFillGray) {
           var rgbValue = args[0] * 255;
           data.rgb = [rgbValue, rgbValue, rgbValue];
         }

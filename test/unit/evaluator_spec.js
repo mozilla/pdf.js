@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, PartialEvaluator, StringStream */
+/* globals expect, it, describe, PartialEvaluator, StringStream, OPS */
 
 'use strict';
 
@@ -39,7 +39,7 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(1);
-      expect(result.fnArray[0]).toEqual('save');
+      expect(result.fnArray[0]).toEqual(OPS.save);
       expect(result.argsArray[0].length).toEqual(0);
     });
 
@@ -51,7 +51,7 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(1);
-      expect(result.fnArray[0]).toEqual('restore');
+      expect(result.fnArray[0]).toEqual(OPS.restore);
     });
 
     it('should handle two glued operations', function() {
@@ -64,8 +64,8 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, resources);
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(2);
-      expect(result.fnArray[0]).toEqual('paintXObject');
-      expect(result.fnArray[1]).toEqual('restore');
+      expect(result.fnArray[0]).toEqual(OPS.paintXObject);
+      expect(result.fnArray[1]).toEqual(OPS.restore);
     });
 
     it('should handle tree glued operations', function() {
@@ -76,9 +76,9 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual('save');
-      expect(result.fnArray[1]).toEqual('save');
-      expect(result.fnArray[2]).toEqual('save');
+      expect(result.fnArray[0]).toEqual(OPS.save);
+      expect(result.fnArray[1]).toEqual(OPS.save);
+      expect(result.fnArray[2]).toEqual(OPS.save);
     });
 
     it('should handle three glued operations #2', function() {
@@ -91,9 +91,9 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, resources);
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual('eoFillStroke');
-      expect(result.fnArray[1]).toEqual('fillStroke');
-      expect(result.fnArray[2]).toEqual('eoFill');
+      expect(result.fnArray[0]).toEqual(OPS.eoFillStroke);
+      expect(result.fnArray[1]).toEqual(OPS.fillStroke);
+      expect(result.fnArray[2]).toEqual(OPS.eoFill);
     });
 
     it('should handle glued operations and operands', function() {
@@ -104,8 +104,8 @@ describe('evaluator', function() {
       var result  = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(2);
-      expect(result.fnArray[0]).toEqual('save');
-      expect(result.fnArray[1]).toEqual('setTextRise');
+      expect(result.fnArray[0]).toEqual(OPS.save);
+      expect(result.fnArray[1]).toEqual(OPS.setTextRise);
       expect(result.argsArray.length).toEqual(2);
       expect(result.argsArray[1].length).toEqual(1);
       expect(result.argsArray[1][0]).toEqual(5);
@@ -119,9 +119,9 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual('setFlatness');
-      expect(result.fnArray[1]).toEqual('setRenderingIntent');
-      expect(result.fnArray[2]).toEqual('save');
+      expect(result.fnArray[0]).toEqual(OPS.setFlatness);
+      expect(result.fnArray[1]).toEqual(OPS.setRenderingIntent);
+      expect(result.fnArray[2]).toEqual(OPS.save);
       expect(result.argsArray.length).toEqual(3);
       expect(result.argsArray[0].length).toEqual(1);
       expect(result.argsArray[0][0]).toEqual(true);
@@ -141,7 +141,7 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(result.argsArray[0][0]).toEqual(5);
       expect(result.argsArray[0][1]).toEqual(1);
-      expect(result.fnArray[0]).toEqual('setCharWidth');
+      expect(result.fnArray[0]).toEqual(OPS.setCharWidth);
     });
     it('should execute if too many arguments', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
@@ -152,7 +152,7 @@ describe('evaluator', function() {
       expect(result.argsArray[0][0]).toEqual(5);
       expect(result.argsArray[0][1]).toEqual(1);
       expect(result.argsArray[0][2]).toEqual(4);
-      expect(result.fnArray[0]).toEqual('setCharWidth');
+      expect(result.fnArray[0]).toEqual(OPS.setCharWidth);
     });
     it('should skip if too few arguments', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
