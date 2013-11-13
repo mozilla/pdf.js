@@ -456,37 +456,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   var EO_CLIP = {};
 
   CanvasGraphics.prototype = {
-    slowCommands: {
-      'stroke': true,
-      'closeStroke': true,
-      'fill': true,
-      'eoFill': true,
-      'fillStroke': true,
-      'eoFillStroke': true,
-      'closeFillStroke': true,
-      'closeEOFillStroke': true,
-      'showText': true,
-      'showSpacedText': true,
-      'setStrokeColorSpace': true,
-      'setFillColorSpace': true,
-      'setStrokeColor': true,
-      'setStrokeColorN': true,
-      'setFillColor': true,
-      'setFillColorN': true,
-      'setStrokeGray': true,
-      'setFillGray': true,
-      'setStrokeRGBColor': true,
-      'setFillRGBColor': true,
-      'setStrokeCMYKColor': true,
-      'setFillCMYKColor': true,
-      'paintJpegXObject': true,
-      'paintImageXObject': true,
-      'paintInlineImageXObject': true,
-      'paintInlineImageXObjectGroup': true,
-      'paintImageMaskXObject': true,
-      'paintImageMaskXObjectGroup': true,
-      'shadingFill': true
-    },
 
     beginDrawing: function CanvasGraphics_beginDrawing(viewport, transparency) {
       // For pdfs that use blend modes we have to clear the canvas else certain
@@ -539,7 +508,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var commonObjs = this.commonObjs;
       var objs = this.objs;
       var fnId;
-      var slowCommands = this.slowCommands;
 
       while (true) {
         if (stepper && i === stepper.nextBreakPoint) {
@@ -580,7 +548,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // If the execution took longer then a certain amount of time, shedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        if (continueCallback && slowCommands[fnId] && Date.now() > endTime) {
+        if (continueCallback && Date.now() > endTime) {
           setTimeout(continueCallback, 0);
           return i;
         }
