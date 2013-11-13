@@ -611,6 +611,15 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue3848",
+      "file": "pdfs/issue3848.pdf",
+      "md5": "2498cf0650cc97ceca3e24dfa0425a73",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "load",
+      "about": "Document tree with pages and page nodes on the same level."
+    },
     {  "id": "issue1015",
       "file": "pdfs/issue1015.pdf",
       "md5": "b61503d1b445742b665212866afb60e2",

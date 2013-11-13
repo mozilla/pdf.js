@@ -188,6 +188,14 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getPage(number);
     },
     /**
+     * @param {object} Must have 'num' and 'gen' properties.
+     * @return {Promise} A promise that is resolved with the page index that is
+     * associated with the reference.
+     */
+    getPageIndex: function PDFDocumentProxy_getPageIndex(ref) {
+      return this.transport.getPageIndex(ref);
+    },
+    /**
      * @return {Promise} A promise that is resolved with a lookup table for
      * mapping named destinations to reference numbers.
      */
@@ -858,6 +866,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var promise = new PDFJS.Promise('Page ' + pageNumber);
       this.pagePromises[pageIndex] = promise;
       this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
+      return promise;
+    },
+
+    getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
+      var promise = new PDFJS.Promise();
+      this.messageHandler.send('GetPageIndex', { ref: ref },
+        function (pageIndex) {
+          promise.resolve(pageIndex);
+        }
+      );
       return promise;
     },
 

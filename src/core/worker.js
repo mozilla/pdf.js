@@ -18,7 +18,7 @@
            MissingPDFException, PasswordException, PDFJS, Promise,
            UnknownErrorException, NetworkManager, LocalPdfManager,
            NetworkPdfManager, XRefParseException,
-           isInt, PasswordResponses, MessageHandler */
+           isInt, PasswordResponses, MessageHandler, Ref */
 
 'use strict';
 
@@ -193,7 +193,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
       var onSuccess = function(doc) {
         handler.send('GetDoc', { pdfInfo: doc });
-        pdfManager.ensureModel('traversePages', []).then(null, onFailure);
       };
 
       var onFailure = function(e) {
@@ -268,6 +267,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           handler.send('GetPage', { pageInfo: page });
         });
       });
+    });
+
+    handler.on('GetPageIndex', function wphSetupGetPageIndex(data, promise) {
+      var ref = new Ref(data.ref.num, data.ref.gen);
+      pdfManager.pdfModel.catalog.getPageIndex(ref).then(function (pageIndex) {
+        promise.resolve(pageIndex);
+      }, promise.reject.bind(promise));
     });
 
     handler.on('GetDestinations',

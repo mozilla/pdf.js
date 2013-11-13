@@ -494,10 +494,6 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'fingerprint', fileID);
     },
 
-    traversePages: function PDFDocument_traversePages() {
-      this.catalog.traversePages();
-    },
-
     getPage: function PDFDocument_getPage(pageIndex) {
       return this.catalog.getPage(pageIndex);
     }
