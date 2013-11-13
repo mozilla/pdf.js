@@ -20,7 +20,7 @@
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
            TilingPattern, TODO, warn, Util, Promise,
-           RefSetCache, isRef, TextRenderingMode, CMapFactory */
+           RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS */
 
 'use strict';
 
@@ -45,98 +45,99 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   // If variableArgs === false: exactly `numArgs` expected
   var OP_MAP = {
     // Graphic state
-    w: { fnName: 'setLineWidth', numArgs: 1, variableArgs: false },
-    J: { fnName: 'setLineCap', numArgs: 1, variableArgs: false },
-    j: { fnName: 'setLineJoin', numArgs: 1, variableArgs: false },
-    M: { fnName: 'setMiterLimit', numArgs: 1, variableArgs: false },
-    d: { fnName: 'setDash', numArgs: 2, variableArgs: false },
-    ri: { fnName: 'setRenderingIntent', numArgs: 1, variableArgs: false },
-    i: { fnName: 'setFlatness', numArgs: 1, variableArgs: false },
-    gs: { fnName: 'setGState', numArgs: 1, variableArgs: false },
-    q: { fnName: 'save', numArgs: 0, variableArgs: false },
-    Q: { fnName: 'restore', numArgs: 0, variableArgs: false },
-    cm: { fnName: 'transform', numArgs: 6, variableArgs: false },
+    w: { id: OPS.setLineWidth, numArgs: 1, variableArgs: false },
+    J: { id: OPS.setLineCap, numArgs: 1, variableArgs: false },
+    j: { id: OPS.setLineJoin, numArgs: 1, variableArgs: false },
+    M: { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false },
+    d: { id: OPS.setDash, numArgs: 2, variableArgs: false },
+    ri: { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false },
+    i: { id: OPS.setFlatness, numArgs: 1, variableArgs: false },
+    gs: { id: OPS.setGState, numArgs: 1, variableArgs: false },
+    q: { id: OPS.save, numArgs: 0, variableArgs: false },
+    Q: { id: OPS.restore, numArgs: 0, variableArgs: false },
+    cm: { id: OPS.transform, numArgs: 6, variableArgs: false },
 
     // Path
-    m: { fnName: 'moveTo', numArgs: 2, variableArgs: false },
-    l: { fnName: 'lineTo', numArgs: 2, variableArgs: false },
-    c: { fnName: 'curveTo', numArgs: 6, variableArgs: false },
-    v: { fnName: 'curveTo2', numArgs: 4, variableArgs: false },
-    y: { fnName: 'curveTo3', numArgs: 4, variableArgs: false },
-    h: { fnName: 'closePath', numArgs: 0, variableArgs: false },
-    re: { fnName: 'rectangle', numArgs: 4, variableArgs: false },
-    S: { fnName: 'stroke', numArgs: 0, variableArgs: false },
-    s: { fnName: 'closeStroke', numArgs: 0, variableArgs: false },
-    f: { fnName: 'fill', numArgs: 0, variableArgs: false },
-    F: { fnName: 'fill', numArgs: 0, variableArgs: false },
-    'f*': { fnName: 'eoFill', numArgs: 0, variableArgs: false },
-    B: { fnName: 'fillStroke', numArgs: 0, variableArgs: false },
-    'B*': { fnName: 'eoFillStroke', numArgs: 0, variableArgs: false },
-    b: { fnName: 'closeFillStroke', numArgs: 0, variableArgs: false },
-    'b*': { fnName: 'closeEOFillStroke', numArgs: 0, variableArgs: false },
-    n: { fnName: 'endPath', numArgs: 0, variableArgs: false },
+    m: { id: OPS.moveTo, numArgs: 2, variableArgs: false },
+    l: { id: OPS.lineTo, numArgs: 2, variableArgs: false },
+    c: { id: OPS.curveTo, numArgs: 6, variableArgs: false },
+    v: { id: OPS.curveTo2, numArgs: 4, variableArgs: false },
+    y: { id: OPS.curveTo3, numArgs: 4, variableArgs: false },
+    h: { id: OPS.closePath, numArgs: 0, variableArgs: false },
+    re: { id: OPS.rectangle, numArgs: 4, variableArgs: false },
+    S: { id: OPS.stroke, numArgs: 0, variableArgs: false },
+    s: { id: OPS.closeStroke, numArgs: 0, variableArgs: false },
+    f: { id: OPS.fill, numArgs: 0, variableArgs: false },
+    F: { id: OPS.fill, numArgs: 0, variableArgs: false },
+    'f*': { id: OPS.eoFill, numArgs: 0, variableArgs: false },
+    B: { id: OPS.fillStroke, numArgs: 0, variableArgs: false },
+    'B*': { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false },
+    b: { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false },
+    'b*': { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false },
+    n: { id: OPS.endPath, numArgs: 0, variableArgs: false },
 
     // Clipping
-    W: { fnName: 'clip', numArgs: 0, variableArgs: false },
-    'W*': { fnName: 'eoClip', numArgs: 0, variableArgs: false },
+    W: { id: OPS.clip, numArgs: 0, variableArgs: false },
+    'W*': { id: OPS.eoClip, numArgs: 0, variableArgs: false },
 
     // Text
-    BT: { fnName: 'beginText', numArgs: 0, variableArgs: false },
-    ET: { fnName: 'endText', numArgs: 0, variableArgs: false },
-    Tc: { fnName: 'setCharSpacing', numArgs: 1, variableArgs: false },
-    Tw: { fnName: 'setWordSpacing', numArgs: 1, variableArgs: false },
-    Tz: { fnName: 'setHScale', numArgs: 1, variableArgs: false },
-    TL: { fnName: 'setLeading', numArgs: 1, variableArgs: false },
-    Tf: { fnName: 'setFont', numArgs: 2, variableArgs: false },
-    Tr: { fnName: 'setTextRenderingMode', numArgs: 1, variableArgs: false },
-    Ts: { fnName: 'setTextRise', numArgs: 1, variableArgs: false },
-    Td: { fnName: 'moveText', numArgs: 2, variableArgs: false },
-    TD: { fnName: 'setLeadingMoveText', numArgs: 2, variableArgs: false },
-    Tm: { fnName: 'setTextMatrix', numArgs: 6, variableArgs: false },
-    'T*': { fnName: 'nextLine', numArgs: 0, variableArgs: false },
-    Tj: { fnName: 'showText', numArgs: 1, variableArgs: false },
-    TJ: { fnName: 'showSpacedText', numArgs: 1, variableArgs: false },
-    '\'': { fnName: 'nextLineShowText', numArgs: 1, variableArgs: false },
-    '"': { fnName: 'nextLineSetSpacingShowText', numArgs: 3,
+    BT: { id: OPS.beginText, numArgs: 0, variableArgs: false },
+    ET: { id: OPS.endText, numArgs: 0, variableArgs: false },
+    Tc: { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false },
+    Tw: { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false },
+    Tz: { id: OPS.setHScale, numArgs: 1, variableArgs: false },
+    TL: { id: OPS.setLeading, numArgs: 1, variableArgs: false },
+    Tf: { id: OPS.setFont, numArgs: 2, variableArgs: false },
+    Tr: { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false },
+    Ts: { id: OPS.setTextRise, numArgs: 1, variableArgs: false },
+    Td: { id: OPS.moveText, numArgs: 2, variableArgs: false },
+    TD: { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false },
+    Tm: { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false },
+    'T*': { id: OPS.nextLine, numArgs: 0, variableArgs: false },
+    Tj: { id: OPS.showText, numArgs: 1, variableArgs: false },
+    TJ: { id: OPS.showSpacedText, numArgs: 1, variableArgs: false },
+    '\'': { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false },
+    '"': { id: OPS.nextLineSetSpacingShowText, numArgs: 3,
       variableArgs: false },
 
     // Type3 fonts
-    d0: { fnName: 'setCharWidth', numArgs: 2, variableArgs: false },
-    d1: { fnName: 'setCharWidthAndBounds', numArgs: 6, variableArgs: false },
+    d0: { id: OPS.setCharWidth, numArgs: 2, variableArgs: false },
+    d1: { id: OPS.setCharWidthAndBounds, numArgs: 6, variableArgs: false },
 
     // Color
-    CS: { fnName: 'setStrokeColorSpace', numArgs: 1, variableArgs: false },
-    cs: { fnName: 'setFillColorSpace', numArgs: 1, variableArgs: false },
-    SC: { fnName: 'setStrokeColor', numArgs: 4, variableArgs: true },
-    SCN: { fnName: 'setStrokeColorN', numArgs: 33, variableArgs: true },
-    sc: { fnName: 'setFillColor', numArgs: 4, variableArgs: true },
-    scn: { fnName: 'setFillColorN', numArgs: 33, variableArgs: true },
-    G: { fnName: 'setStrokeGray', numArgs: 1, variableArgs: false },
-    g: { fnName: 'setFillGray', numArgs: 1, variableArgs: false },
-    RG: { fnName: 'setStrokeRGBColor', numArgs: 3, variableArgs: false },
-    rg: { fnName: 'setFillRGBColor', numArgs: 3, variableArgs: false },
-    K: { fnName: 'setStrokeCMYKColor', numArgs: 4, variableArgs: false },
-    k: { fnName: 'setFillCMYKColor', numArgs: 4, variableArgs: false },
+    CS: { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false },
+    cs: { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false },
+    SC: { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true },
+    SCN: { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true },
+    sc: { id: OPS.setFillColor, numArgs: 4, variableArgs: true },
+    scn: { id: OPS.setFillColorN, numArgs: 33, variableArgs: true },
+    G: { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false },
+    g: { id: OPS.setFillGray, numArgs: 1, variableArgs: false },
+    RG: { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false },
+    rg: { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false },
+    K: { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false },
+    k: { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false },
 
     // Shading
-    sh: { fnName: 'shadingFill', numArgs: 1, variableArgs: false },
+    sh: { id: OPS.shadingFill, numArgs: 1, variableArgs: false },
 
     // Images
-    BI: { fnName: 'beginInlineImage', numArgs: 0, variableArgs: false },
-    ID: { fnName: 'beginImageData', numArgs: 0, variableArgs: false },
-    EI: { fnName: 'endInlineImage', numArgs: 1, variableArgs: false },
+    BI: { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false },
+    ID: { id: OPS.beginImageData, numArgs: 0, variableArgs: false },
+    EI: { id: OPS.endInlineImage, numArgs: 1, variableArgs: false },
 
     // XObjects
-    Do: { fnName: 'paintXObject', numArgs: 1, variableArgs: false },
-    MP: { fnName: 'markPoint', numArgs: 1, variableArgs: false },
-    DP: { fnName: 'markPointProps', numArgs: 2, variableArgs: false },
-    BMC: { fnName: 'beginMarkedContent', numArgs: 1, variableArgs: false },
-    BDC: { fnName: 'beginMarkedContentProps', numArgs: 2, variableArgs: false },
-    EMC: { fnName: 'endMarkedContent', numArgs: 0, variableArgs: false },
+    Do: { id: OPS.paintXObject, numArgs: 1, variableArgs: false },
+    MP: { id: OPS.markPoint, numArgs: 1, variableArgs: false },
+    DP: { id: OPS.markPointProps, numArgs: 2, variableArgs: false },
+    BMC: { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false },
+    BDC: { id: OPS.beginMarkedContentProps, numArgs: 2,
+      variableArgs: false },
+    EMC: { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false },
 
     // Compatibility
-    BX: { fnName: 'beginCompat', numArgs: 0, variableArgs: false },
-    EX: { fnName: 'endCompat', numArgs: 0, variableArgs: false },
+    BX: { id: OPS.beginCompat, numArgs: 0, variableArgs: false },
+    EX: { id: OPS.endCompat, numArgs: 0, variableArgs: false },
 
     // (reserved partial commands for the lexer)
     BM: null,
@@ -218,17 +219,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // There is also a group colorspace, but since we put everything in
           // RGB I'm not sure we need it.
         }
-        operatorList.addOp('beginGroup', [groupOptions]);
+        operatorList.addOp(OPS.beginGroup, [groupOptions]);
       }
 
-      operatorList.addOp('paintFormXObjectBegin', [matrix, bbox]);
+      operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
       this.getOperatorList(xobj, xobj.dict.get('Resources') || resources,
                            operatorList);
-      operatorList.addOp('paintFormXObjectEnd', []);
+      operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
       if (group) {
-        operatorList.addOp('endGroup', [groupOptions]);
+        operatorList.addOp(OPS.endGroup, [groupOptions]);
       }
     },
 
@@ -259,7 +260,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var decode = dict.get('Decode', 'D');
         var inverseDecode = !!decode && decode[0] > 0;
 
-        operatorList.addOp('paintImageMaskXObject',
+        operatorList.addOp(OPS.paintImageMaskXObject,
           [PDFImage.createMask(imgArray, width, height,
                                             inverseDecode)]
         );
@@ -277,7 +278,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
         var imgData = imageObj.getImageData();
-        operatorList.addOp('paintInlineImageXObject', [imgData]);
+        operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
 
@@ -291,7 +292,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!softMask && !mask && image instanceof JpegStream &&
           image.isNativelySupported(this.xref, resources)) {
         // These JPEGs don't need any more processing so we can just send it.
-        operatorList.addOp('paintJpegXObject', args);
+        operatorList.addOp(OPS.paintJpegXObject, args);
         this.handler.send(
             'obj', [objId, this.pageIndex, 'JpegStream', image.getIR()]);
         return;
@@ -303,7 +304,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData]);
         }, self.handler, self.xref, resources, image, inline);
 
-      operatorList.addOp('paintImageXObject', args);
+      operatorList.addOp(OPS.paintImageXObject, args);
     },
 
     handleTilingType: function PartialEvaluator_handleTilingType(
@@ -442,7 +443,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         setGStateForKey(gStateObj, key, value);
       }
 
-      operatorList.addOp('setGState', [gStateObj]);
+      operatorList.addOp(OPS.setGState, [gStateObj]);
     },
 
     loadFont: function PartialEvaluator_loadFont(fontName, font, xref,
@@ -557,7 +558,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             continue;
           }
 
-          var fn = opSpec.fnName;
+          var fn = opSpec.id;
 
           // Validate the number of arguments for the command
           if (opSpec.variableArgs) {
@@ -640,7 +641,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var loadedName = self.handleSetFont(resources, args, null,
                                                 operatorList);
             operatorList.addDependency(loadedName);
-            fn = 'setFont';
+            fn = OPS.setFont;
             args[0] = loadedName;
           } else if (cmd == 'EI') {
             self.buildPaintImageXObject(resources, args[0], true, operatorList);
@@ -675,11 +676,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           switch (fn) {
             // Parse the ColorSpace data to a raw format.
-            case 'setFillColorSpace':
-            case 'setStrokeColorSpace':
+            case OPS.setFillColorSpace:
+            case OPS.setStrokeColorSpace:
               args = [ColorSpace.parseToIR(args[0], xref, resources)];
               break;
-            case 'shadingFill':
+            case OPS.shadingFill:
               var shadingRes = resources.get('Shading');
               if (!shadingRes)
                 error('No shading resource found');
@@ -692,9 +693,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   shading, null, xref, resources);
               var patternIR = shadingFill.getIR();
               args = [patternIR];
-              fn = 'shadingFill';
+              fn = OPS.shadingFill;
               break;
-            case 'setGState':
+            case OPS.setGState:
               var dictName = args[0];
               var extGState = resources.get('ExtGState');
 
@@ -1330,6 +1331,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   PartialEvaluator.optimizeQueue =
       function PartialEvaluator_optimizeQueue(queue) {
 
+    function squash(array, index, howMany, element) {
+      if (isArray(array)) {
+        array.splice(index, howMany, element);
+      } else {
+        // Replace the element.
+        array[index] = element;
+        // Shift everything after the element up.
+        var sub = array.subarray(index + howMany);
+        array.set(sub, index + 1);
+      }
+    }
+
     var fnArray = queue.fnArray, argsArray = queue.argsArray;
     // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
     // searching for (save, transform, paintInlineImageXObject, restore)+
@@ -1337,10 +1350,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
     var MAX_WIDTH = 1000;
     var IMAGE_PADDING = 1;
-    for (var i = 0, ii = fnArray.length; i < ii; i++) {
-      if (fnArray[i] === 'paintInlineImageXObject' &&
-          fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
-          fnArray[i + 1] === 'restore') {
+    for (var i = 0, ii = argsArray.length; i < ii; i++) {
+      if (fnArray[i] === OPS.paintInlineImageXObject &&
+          fnArray[i - 2] === OPS.save && fnArray[i - 1] === OPS.transform &&
+          fnArray[i + 1] === OPS.restore) {
         var j = i - 2;
         for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
         }
@@ -1405,21 +1418,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
         }
         // replacing queue items
-        fnArray.splice(j, count * 4, ['paintInlineImageXObjectGroup']);
+        squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
         argsArray.splice(j, count * 4,
           [{width: imgWidth, height: imgHeight, data: imgData}, map]);
         i = j;
-        ii = fnArray.length;
+        ii = argsArray.length;
       }
     }
     // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
     // searching for (save, transform, paintImageMaskXObject, restore)+
     var MIN_IMAGES_IN_MASKS_BLOCK = 10;
     var MAX_IMAGES_IN_MASKS_BLOCK = 100;
-    for (var i = 0, ii = fnArray.length; i < ii; i++) {
-      if (fnArray[i] === 'paintImageMaskXObject' &&
-          fnArray[i - 2] === 'save' && fnArray[i - 1] === 'transform' &&
-          fnArray[i + 1] === 'restore') {
+    for (var i = 0, ii = argsArray.length; i < ii; i++) {
+      if (fnArray[i] === OPS.paintImageMaskXObject &&
+          fnArray[i - 2] === OPS.save && fnArray[i - 1] === OPS.transform &&
+          fnArray[i + 1] === OPS.restore) {
         var j = i - 2;
         for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
         }
@@ -1436,10 +1449,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             height: maskParams.height, transform: transform});
         }
         // replacing queue items
-        fnArray.splice(j, count * 4, ['paintImageMaskXObjectGroup']);
+        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectGroup);
         argsArray.splice(j, count * 4, [images]);
         i = j;
-        ii = fnArray.length;
+        ii = argsArray.length;
       }
     }
   };
@@ -1448,25 +1461,40 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   return PartialEvaluator;
 })();
 
-
 var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 100;
 
   function OperatorList(messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
-    this.fnArray = [];
+    // When there isn't a message handler the fn array needs to be able to grow
+    // since we can't flush the operators.
+    if (messageHandler) {
+      this.fnArray = new Uint8Array(CHUNK_SIZE);
+    } else {
+      this.fnArray = [];
+    }
     this.argsArray = [];
     this.dependencies = {},
     this.pageIndex = pageIndex;
+    this.fnIndex = 0;
   }
 
   OperatorList.prototype = {
 
+    get length() {
+      return this.argsArray.length;
+    },
+
     addOp: function(fn, args) {
-      this.fnArray.push(fn);
-      this.argsArray.push(args);
-      if (this.messageHandler && this.fnArray.length >= CHUNK_SIZE) {
-        this.flush();
+      if (this.messageHandler) {
+        this.fnArray[this.fnIndex++] = fn;
+        this.argsArray.push(args);
+        if (this.fnIndex >= CHUNK_SIZE) {
+          this.flush();
+        }
+      } else {
+        this.fnArray.push(fn);
+        this.argsArray.push(args);
       }
     },
 
@@ -1475,7 +1503,7 @@ var OperatorList = (function OperatorListClosure() {
         return;
       }
       this.dependencies[dependency] = true;
-      this.addOp('dependency', [dependency]);
+      this.addOp(OPS.dependency, [dependency]);
     },
 
     addDependencies: function(dependencies) {
@@ -1485,15 +1513,17 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOpList: function(opList) {
-      Util.concatenateToArray(this.fnArray, opList.fnArray);
-      Util.concatenateToArray(this.argsArray, opList.argsArray);
       Util.extendObj(this.dependencies, opList.dependencies);
+      for (var i = 0, ii = opList.length; i < ii; i++) {
+        this.addOp(opList.fnArray[i], opList.argsArray[i]);
+      }
     },
 
     getIR: function() {
       return {
         fnArray: this.fnArray,
-        argsArray: this.argsArray
+        argsArray: this.argsArray,
+        length: this.length
       };
     },
 
@@ -1503,12 +1533,13 @@ var OperatorList = (function OperatorListClosure() {
         operatorList: {
           fnArray: this.fnArray,
           argsArray: this.argsArray,
-          lastChunk: lastChunk
+          lastChunk: lastChunk,
+          length: this.length
         },
         pageIndex: this.pageIndex
       });
       this.dependencies = [];
-      this.fnArray = [];
+      this.fnIndex = 0;
       this.argsArray = [];
     }
   };
