@@ -198,6 +198,12 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "bug868745",
+       "file": "pdfs/bug868745.pdf",
+       "md5": "86111ea5097dd7daffcdea891ad1b348",
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "thuluthfont-pdf",
        "file": "pdfs/ThuluthFeatures.pdf",
        "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
@@ -1304,6 +1310,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue3438",
+      "file": "pdfs/issue3438.pdf",
+      "md5": "5aa3340b0920b65a377f697587668f89",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "bug886717",
       "file": "pdfs/bug886717.pdf",
       "md5": "8ba614192797a1324765610231a1bc9d",
@@ -1366,6 +1378,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue1171.pdf",
+       "file": "pdfs/issue1171.pdf",
+       "md5": "2a6188a42a5874c7874b88eebd4acaf0",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3521.pdf",
        "file": "pdfs/issue3521.pdf",
        "md5": "df95d31443e20a38efa29c3a635a045b",
@@ -1383,6 +1401,20 @@
     {  "id": "issue2956",
       "file": "pdfs/issue2956.pdf",
       "md5": "d8f68cbbb4bf54cde9f7f878acb6d7cd",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "issue2799",
+      "file": "pdfs/issue2799.pdf",
+      "md5": "3d3224eae54bbae5fc76224a2af49486",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {  "id": "issue3025",
+      "file": "pdfs/issue3025.pdf",
+      "md5": "8e4e8eacbd7c4c248deeca0ec49d38da",
       "rounds": 1,
       "type": "eq"
     },
@@ -1423,6 +1455,15 @@
        "link": true,
        "firstPage": 1,
        "lastPage": 2,
+       "type": "eq"
+    },
+    {  "id": "issue3205",
+       "file": "pdfs/issue3205.pdf",
+       "md5": "e833326f69f2fdf7c1c8438fe1d3b622",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 4,
+       "lastPage": 4,
        "type": "eq"
     }
 ]

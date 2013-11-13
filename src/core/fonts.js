@@ -3077,6 +3077,17 @@ var Font = (function FontClosure() {
           error('cmap table has unsupported format: ' + format);
         }
 
+        // removing duplicate entries
+        mappings.sort(function (a, b) {
+          return a.charcode - b.charcode;
+        });
+        for (var i = 1; i < mappings.length; i++) {
+          if (mappings[i - 1].charcode === mappings[i].charcode) {
+            mappings.splice(i, 1);
+            i--;
+          }
+        }
+
         return {
           platformId: potentialTable.platformId,
           encodingId: potentialTable.encodingId,
@@ -3163,6 +3174,10 @@ var Font = (function FontClosure() {
             i += repeat;
             coordinatesLength += repeat * xyLength;
           }
+        }
+        // glyph without coordinates will be rejected
+        if (coordinatesLength === 0) {
+          return 0;
         }
         var glyphDataLength = j + coordinatesLength;
         if (glyphDataLength > glyf.length) {
@@ -3262,6 +3277,13 @@ var Font = (function FontClosure() {
           };
         }
         var locaData = loca.data;
+        var locaDataSize = itemSize * (1 + numGlyphs);
+        // is loca.data too short or long?
+        if (locaData.length !== locaDataSize) {
+          locaData = new Uint8Array(locaDataSize);
+          locaData.set(loca.data.subarray(0, locaDataSize));
+          loca.data = locaData;
+        }
         // removing the invalid glyphs
         var oldGlyfData = glyf.data;
         var oldGlyfDataLength = oldGlyfData.length;
@@ -3305,9 +3327,7 @@ var Font = (function FontClosure() {
             glyf.data.set(newGlyfData.subarray(0, writeOffset));
           }
           glyf.data.set(newGlyfData.subarray(0, firstEntryLength), writeOffset);
-          loca.data = new Uint8Array(locaData.length + itemSize);
-          loca.data.set(locaData);
-          itemEncode(loca.data, locaData.length,
+          itemEncode(loca.data, locaData.length - itemSize,
                      writeOffset + firstEntryLength);
         } else {
           glyf.data = newGlyfData.subarray(0, writeOffset);
@@ -3636,7 +3656,7 @@ var Font = (function FontClosure() {
         }
       }
 
-      function sanitizeTTPrograms(fpgm, prep) {
+      function sanitizeTTPrograms(fpgm, prep, cvt) {
         var ttContext = {
           functionsDefined: [],
           functionsUsed: [],
@@ -3652,6 +3672,11 @@ var Font = (function FontClosure() {
         }
         if (fpgm) {
           checkInvalidFunctions(ttContext, maxFunctionDefs);
+        }
+        if (cvt && (cvt.length & 1)) {
+          var cvtData = new Uint8Array(cvt.length + 1);
+          cvtData.set(cvt.data);
+          cvt.data = cvtData;
         }
         return ttContext.hintsValid;
       }
@@ -3671,6 +3696,9 @@ var Font = (function FontClosure() {
         var table = readTableEntry(font);
         if (VALID_TABLES.indexOf(table.tag) < 0) {
           continue; // skipping table if it's not a required or optional table
+        }
+        if (table.length === 0) {
+          continue; // skipping empty tables
         }
         tables[table.tag] = table;
       }
@@ -3706,7 +3734,14 @@ var Font = (function FontClosure() {
       var numGlyphs = int16(font.getBytes(2));
       var maxFunctionDefs = 0;
       if (version >= 0x00010000 && tables.maxp.length >= 22) {
-        font.pos += 14;
+        // maxZones can be invalid
+        font.pos += 8;
+        var maxZones = int16(font.getBytes(2));
+        if (maxZones > 2) { // reset to 2 if font has invalid maxZones
+          tables.maxp.data[14] = 0;
+          tables.maxp.data[15] = 2;
+        }
+        font.pos += 4;
         maxFunctionDefs = int16(font.getBytes(2));
       }
 
@@ -3721,10 +3756,11 @@ var Font = (function FontClosure() {
       }
 
       var hintsValid = sanitizeTTPrograms(tables.fpgm, tables.prep,
-                                          maxFunctionDefs);
+                                          tables['cvt '], maxFunctionDefs);
       if (!hintsValid) {
         delete tables.fpgm;
         delete tables.prep;
+        delete tables['cvt '];
       }
 
       // Tables needs to be written by ascendant alphabetic order
@@ -3758,7 +3794,6 @@ var Font = (function FontClosure() {
       if (isTrueType) {
         var isGlyphLocationsLong = int16([tables.head.data[50],
                                           tables.head.data[51]]);
-
         sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
                                isGlyphLocationsLong, hintsValid, dupFirstEntry);
       }
@@ -4562,8 +4597,10 @@ var Font = (function FontClosure() {
           var glyph = this.charToGlyph(charcode);
           glyphs.push(glyph);
           // placing null after each word break charcode (ASCII SPACE)
-          if (charcode == 0x20)
+          // Ignore occurences of 0x20 in multiple-byte codes.
+          if (length === 1 && chars.charCodeAt(i - 1) === 0x20) {
             glyphs.push(null);
+          }
         }
       }
       else {
