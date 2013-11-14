@@ -373,6 +373,11 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     });
 
+    handler.on('Cleanup', function wphCleanup(data, promise) {
+      pdfManager.cleanup();
+      promise.resolve(true);
+    });
+
     handler.on('Terminate', function wphTerminate(data, promise) {
       pdfManager.terminate();
       promise.resolve();

@@ -67,12 +67,16 @@ var PageView = function pageView(container, id, scale,
     }
   };
 
-  this.reset = function pageViewReset() {
+  this.resetRenderingState = function  pageViewResetRenderingState() {
     if (this.renderTask) {
       this.renderTask.cancel();
     }
     this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
+  };
+
+  this.reset = function pageViewReset() {
+    this.resetRenderingState();
 
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';

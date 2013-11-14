@@ -189,7 +189,7 @@ var RefSet = (function RefSetClosure() {
 
 var RefSetCache = (function RefSetCacheClosure() {
   function RefSetCache() {
-    this.dict = {};
+    this.dict = Object.create(null);
   }
 
   RefSetCache.prototype = {
@@ -203,6 +203,16 @@ var RefSetCache = (function RefSetCacheClosure() {
 
     put: function RefSetCache_put(ref, obj) {
       this.dict['R' + ref.num + '.' + ref.gen] = obj;
+    },
+
+    forEach: function RefSetCache_forEach(fn, thisArg) {
+      for (var i in this.dict) {
+        fn.call(thisArg, this.dict[i]);
+      }
+    },
+
+    clear: function RefSetCache_clear() {
+      this.dict = Object.create(null);
     }
   };
 
@@ -214,6 +224,7 @@ var Catalog = (function CatalogClosure() {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.catDict = xref.getCatalogObj();
+    this.fontCache = new RefSetCache();
     assertWellFormed(isDict(this.catDict),
       'catalog object is not a dictionary');
 
@@ -400,13 +411,22 @@ var Catalog = (function CatalogClosure() {
       return shadow(this, 'javaScript', javaScript);
     },
 
+    cleanup: function Catalog_cleanup() {
+      this.fontCache.forEach(function (font) {
+        delete font.sent;
+        delete font.translated;
+      });
+      this.fontCache.clear();
+    },
+
     getPage: function Catalog_getPage(pageIndex) {
       if (!(pageIndex in this.pagePromises)) {
         this.pagePromises[pageIndex] = this.getPageDict(pageIndex).then(
           function (a) {
             var dict = a[0];
             var ref = a[1];
-            return new Page(this.pdfManager, this.xref, pageIndex, dict, ref);
+            return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
+                            this.fontCache);
           }.bind(this)
         );
       }
