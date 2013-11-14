@@ -217,14 +217,7 @@ var Catalog = (function CatalogClosure() {
     assertWellFormed(isDict(this.catDict),
       'catalog object is not a dictionary');
 
-    // Stores state as we traverse the pages catalog so that we can resume
-    // parsing if an exception is thrown
-    this.traversePagesQueue = [{
-      pagesDict: this.toplevelPagesDict,
-      posInKids: 0
-    }];
     this.pagePromises = [];
-    this.currPageIndex = 0;
   }
 
   Catalog.prototype = {
@@ -408,58 +401,146 @@ var Catalog = (function CatalogClosure() {
     },
 
     getPage: function Catalog_getPage(pageIndex) {
-      if (pageIndex < 0 || pageIndex >= this.numPages ||
-          (pageIndex|0) !== pageIndex) {
-        var pagePromise = new Promise();
-        pagePromise.reject(new Error('Invalid page index'));
-        return pagePromise;
-      }
       if (!(pageIndex in this.pagePromises)) {
-        this.pagePromises[pageIndex] = new Promise();
+        this.pagePromises[pageIndex] = this.getPageDict(pageIndex).then(
+          function (a) {
+            var dict = a[0];
+            var ref = a[1];
+            return new Page(this.pdfManager, this.xref, pageIndex, dict, ref);
+          }.bind(this)
+        );
       }
       return this.pagePromises[pageIndex];
     },
 
-    // Traverses pages in DFS order so that pages are processed in increasing
-    // order
-    traversePages: function Catalog_traversePages() {
-      var queue = this.traversePagesQueue;
-      while (queue.length) {
-        var queueItem = queue[queue.length - 1];
-        var pagesDict = queueItem.pagesDict;
+    getPageDict: function Catalog_getPageDict(pageIndex) {
+      var promise = new Promise();
+      var nodesToVisit = [this.catDict.getRaw('Pages')];
+      var currentPageIndex = 0;
+      var xref = this.xref;
 
-        var kids = pagesDict.get('Kids');
-        assert(isArray(kids), 'page dictionary kids object is not an array');
-        if (queueItem.posInKids >= kids.length) {
-          queue.pop();
-          continue;
-        }
-        var kidRef = kids[queueItem.posInKids];
-        assert(isRef(kidRef), 'page dictionary kid is not a reference');
+      function next() {
+        while (nodesToVisit.length) {
+          var currentNode = nodesToVisit.pop();
 
-        var kid = this.xref.fetch(kidRef);
-        if (isDict(kid, 'Page') || (isDict(kid) && !kid.has('Kids'))) {
-          var pageIndex = this.currPageIndex++;
-          var page = new Page(this.pdfManager, this.xref, pageIndex, kid,
-                              kidRef);
-          if (!(pageIndex in this.pagePromises)) {
-            this.pagePromises[pageIndex] = new Promise();
+          if (isRef(currentNode)) {
+            xref.fetchAsync(currentNode).then(function (obj) {
+              if ((isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids')))) {
+                if (pageIndex === currentPageIndex) {
+                  promise.resolve([obj, currentNode]);
+                } else {
+                  currentPageIndex++;
+                  next();
+                }
+                return;
+              }
+              nodesToVisit.push(obj);
+              next();
+            }.bind(this), promise.reject.bind(promise));
+            return;
           }
-          this.pagePromises[pageIndex].resolve(page);
 
-        } else { // must be a child page dictionary
+          // must be a child page dictionary
           assert(
-            isDict(kid),
+            isDict(currentNode),
             'page dictionary kid reference points to wrong type of object'
           );
+          var count = currentNode.get('Count');
+          // Skip nodes where the page can't be.
+          if (currentPageIndex + count <= pageIndex) {
+            currentPageIndex += count;
+            continue;
+          }
 
-          queue.push({
-            pagesDict: kid,
-            posInKids: 0
-          });
+          var kids = currentNode.get('Kids');
+          assert(isArray(kids), 'page dictionary kids object is not an array');
+          if (count === kids.length) {
+            // Nodes that don't have the page have been skipped and this is the
+            // bottom of the tree which means the page requested must be a
+            // descendant of this pages node. Ideally we would just resolve the
+            // promise with the page ref here, but there is the case where more
+            // pages nodes could link to single a page (see issue 3666 pdf). To
+            // handle this push it back on the queue so if it is a pages node it
+            // will be descended into.
+            nodesToVisit = [kids[pageIndex - currentPageIndex]];
+            currentPageIndex = pageIndex;
+            continue;
+          } else {
+            for (var last = kids.length - 1; last >= 0; last--) {
+              nodesToVisit.push(kids[last]);
+            }
+          }
         }
-        ++queueItem.posInKids;
+        promise.reject('Page index ' + pageIndex + ' not found.');
       }
+      next();
+      return promise;
+    },
+
+    getPageIndex: function Catalog_getPageIndex(ref) {
+      // The page tree nodes have the count of all the leaves below them. To get
+      // how many pages are before we just have to walk up the tree and keep
+      // adding the count of siblings to the left of the node.
+      var xref = this.xref;
+      function pagesBeforeRef(kidRef) {
+        var total = 0;
+        var parentRef;
+        return xref.fetchAsync(kidRef).then(function (node) {
+          if (!node) {
+            return null;
+          }
+          parentRef = node.getRaw('Parent');
+          return node.getAsync('Parent');
+        }).then(function (parent) {
+          if (!parent) {
+            return null;
+          }
+          return parent.getAsync('Kids');
+        }).then(function (kids) {
+          if (!kids) {
+            return null;
+          }
+          var kidPromises = [];
+          var found = false;
+          for (var i = 0; i < kids.length; i++) {
+            var kid = kids[i];
+            assert(isRef(kid), 'kids must be an ref');
+            if (kid.num == kidRef.num) {
+              found = true;
+              break;
+            }
+            kidPromises.push(xref.fetchAsync(kid).then(function (kid) {
+              if (kid.has('Count')) {
+                var count = kid.get('Count');
+                total += count;
+              } else { // page leaf node
+                total++;
+              }
+            }));
+          }
+          if (!found) {
+            error('kid ref not found in parents kids');
+          }
+          return Promise.all(kidPromises).then(function () {
+            return [total, parentRef];
+          });
+        });
+      }
+
+      var total = 0;
+      function next(ref) {
+        return pagesBeforeRef(ref).then(function (args) {
+          if (!args) {
+            return total;
+          }
+          var count = args[0];
+          var parentRef = args[1];
+          total += count;
+          return next(parentRef);
+        });
+      }
+
+      return next(ref);
     }
   };
 

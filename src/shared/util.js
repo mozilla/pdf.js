@@ -355,7 +355,7 @@ var MissingDataException = (function MissingDataExceptionClosure() {
   function MissingDataException(begin, end) {
     this.begin = begin;
     this.end = end;
-    this.message = 'Missing data [begin, end)';
+    this.message = 'Missing data [' + begin + ', ' + end + ')';
   }
 
   MissingDataException.prototype = new Error();
@@ -928,7 +928,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
   /**
    * Builds a promise that is resolved when all the passed in promises are
    * resolved.
-   * @param {Promise[]} promises Array of promises to wait for.
+   * @param {array} array of data and/or promises to wait for.
    * @return {Promise} New dependant promise.
    */
   Promise.all = function Promise_all(promises) {
@@ -948,7 +948,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     }
     for (var i = 0, ii = promises.length; i < ii; ++i) {
       var promise = promises[i];
-      promise.then((function(i) {
+      var resolve = (function(i) {
         return function(value) {
           if (deferred._status === STATUS_REJECTED) {
             return;
@@ -958,9 +958,22 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
           if (unresolved === 0)
             deferred.resolve(results);
         };
-      })(i), reject);
+      })(i);
+      if (Promise.isPromise(promise)) {
+        promise.then(resolve, reject);
+      } else {
+        resolve(promise);
+      }
     }
     return deferred;
+  };
+
+  /**
+   * Checks if the value is likely a promise (has a 'then' function).
+   * @return {boolean} true if x is thenable
+   */
+  Promise.isPromise = function Promise_isPromise(value) {
+    return value && typeof value.then === 'function';
   };
 
   Promise.prototype = {
@@ -976,7 +989,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
 
       if (status == STATUS_RESOLVED &&
-          value && typeof(value.then) === 'function') {
+          Promise.isPromise(value)) {
         value.then(this._updateStatus.bind(this, STATUS_RESOLVED),
                    this._updateStatus.bind(this, STATUS_REJECTED));
         return;
