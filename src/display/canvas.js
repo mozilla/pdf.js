@@ -545,7 +545,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           return i;
         }
 
-        // If the execution took longer then a certain amount of time, shedule
+        // If the execution took longer then a certain amount of time, schedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
         if (continueCallback && Date.now() > endTime) {
