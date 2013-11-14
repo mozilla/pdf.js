@@ -5611,6 +5611,9 @@ var CFFFont = (function CFFFontClosure() {
       var unassignedUnicodeItems = [];
       var inverseEncoding = [];
       var gidStart = 0;
+      if (charsets[0] === '.notdef') {
+        gidStart = 1;
+      }
       // According to section 9.7.4.2 CIDFontType0C glyph selection should be
       // handled differently.
       if (this.properties.subtype === 'CIDFontType0C') {
@@ -5642,9 +5645,6 @@ var CFFFont = (function CFFFontClosure() {
           } else {
             inverseEncoding[gid] = charcode | 0;
           }
-        }
-        if (charsets[0] === '.notdef') {
-          gidStart = 1;
         }
       }
 
