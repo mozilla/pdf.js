@@ -144,11 +144,12 @@ var PDFFindBar = {
   },
 
   open: function() {
-    if (this.opened) return;
+    if (!this.opened) {
+      this.opened = true;
+      this.toggleButton.classList.add('toggled');
+      this.bar.classList.remove('hidden');
+    }
 
-    this.opened = true;
-    this.toggleButton.classList.add('toggled');
-    this.bar.classList.remove('hidden');
     this.findField.select();
     this.findField.focus();
   },
