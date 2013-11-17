@@ -1580,8 +1580,11 @@ var TextState = (function TextStateClosure() {
     push: function TextState_push() {
       this.stateStack.push(this.ctm.slice());
     },
-    pop: function TextStae_pop() {
-      this.ctm = this.stateStack.pop();
+    pop: function TextState_pop() {
+      var prev = this.stateStack.pop();
+      if (prev) {
+        this.ctm = prev;
+      }
     },
     initialiseTextObj: function TextState_initialiseTextObj() {
       var m = this.textMatrix;
