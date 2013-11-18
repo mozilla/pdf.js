@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump, NetworkManager, PdfJsTelemetry */
+           dump, NetworkManager, PdfJsTelemetry, DEFAULT_PREFERENCES */
 
 'use strict';
 
@@ -33,11 +33,15 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
 const MAX_DATABASE_LENGTH = 4096;
+const MAX_STRING_PREF_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 Cu.import('resource://pdf.js/network.js');
+
+// Load the default preferences.
+Cu.import('resource://pdf.js/default_preferences.js');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
@@ -58,12 +62,20 @@ function getChromeWindow(domWindow) {
   return containingBrowser.ownerDocument.defaultView;
 }
 
+function setBoolPref(pref, value) {
+  Services.prefs.setBoolPref(pref, value);
+}
+
 function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
   } catch (ex) {
     return def;
   }
+}
+
+function setIntPref(pref, value) {
+  Services.prefs.setIntPref(pref, value);
 }
 
 function getIntPref(pref, def) {
@@ -431,6 +443,62 @@ ChromeActions.prototype = {
     }
     getChromeWindow(this.domWindow).gFindBar
                                    .updateControlState(result, findPrevious);
+  },
+  setPreferences: function(prefs) {
+    var prefValue, defaultValue, prefName, prefType, defaultType;
+
+    for (var key in DEFAULT_PREFERENCES) {
+      prefValue = prefs[key];
+      defaultValue = DEFAULT_PREFERENCES[key];
+      prefName = (PREF_PREFIX + '.' + key);
+
+      if (!prefValue || prefValue === defaultValue) {
+        Services.prefs.clearUserPref(prefName);
+      } else {
+        prefType = typeof prefValue;
+        defaultType = typeof defaultValue;
+
+        if (prefType !== defaultType) {
+          continue;
+        }
+        switch (defaultType) {
+          case 'boolean':
+            setBoolPref(prefName, prefValue);
+            break;
+          case 'number':
+            setIntPref(prefName, prefValue);
+            break;
+          case 'string':
+            // Protect against adding arbitrarily long strings in about:config.
+            if (prefValue.length <= MAX_STRING_PREF_LENGTH) {
+              setStringPref(prefName, prefValue);
+            }
+            break;
+        }
+      }
+    }
+  },
+  getPreferences: function() {
+    var currentPrefs = {};
+    var defaultValue, prefName;
+
+    for (var key in DEFAULT_PREFERENCES) {
+      defaultValue = DEFAULT_PREFERENCES[key];
+      prefName = (PREF_PREFIX + '.' + key);
+
+      switch (typeof defaultValue) {
+        case 'boolean':
+          currentPrefs[key] = getBoolPref(prefName, defaultValue);
+          break;
+        case 'number':
+          currentPrefs[key] = getIntPref(prefName, defaultValue);
+          break;
+        case 'string':
+          currentPrefs[key] = getStringPref(prefName, defaultValue);
+          break;
+      }
+    }
+    return JSON.stringify(currentPrefs);
   }
 };
 

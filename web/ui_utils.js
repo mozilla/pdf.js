@@ -240,3 +240,16 @@ var Cache = function cacheCache(size) {
   };
 };
 
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+var isLocalStorageEnabled = (function isLocalStorageEnabledClosure() {
+  // Feature test as per http://diveintohtml5.info/storage.html
+  // The additional localStorage call is to get around a FF quirk, see
+  // bug #495747 in bugzilla
+  try {
+    return ('localStorage' in window && window['localStorage'] !== null &&
+            localStorage);
+  } catch (e) {
+    return false;
+  }
+})();
+//#endif

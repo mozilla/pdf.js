@@ -16,8 +16,8 @@
  */
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
-           getFileName, getOutputScale, scrollIntoView, getPDFFileNameFromURL,
-           PDFHistory, Settings, PageView, ThumbnailView, noContextMenuHandler,
+           getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
+           Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
            SecondaryToolbar, PasswordPrompt, PresentationMode */
 
 'use strict';
@@ -63,6 +63,7 @@ PDFJS.imageResourcesPath = './images/';
 var mozL10n = document.mozL10n || document.webL10n;
 
 //#include ui_utils.js
+//#include preferences.js
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
 //#include mozPrintCallback_polyfill.js
@@ -235,6 +236,10 @@ var PDFView = {
         case 'auto':
           scale = Math.min(MAX_AUTO_SCALE, pageWidthScale);
           break;
+        default:
+          console.error('pdfViewSetScale: \'' + value +
+                        '\' is an unknown zoom value.');
+          return;
       }
     }
     this.currentScaleValue = value;
@@ -814,6 +819,7 @@ var PDFView = {
       mozL10n.get('page_of', {pageCount: pagesCount}, 'of {{pageCount}}');
     document.getElementById('pageNumber').max = pagesCount;
 
+    var prefs = PDFView.prefs = new Preferences();
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new Settings(id);
 
@@ -858,17 +864,24 @@ var PDFView = {
       });
     });
 
+    var prefsPromise = prefs.initializedPromise;
     var storePromise = store.initializedPromise;
-    PDFJS.Promise.all([firstPagePromise, storePromise]).then(function() {
+    PDFJS.Promise.all([firstPagePromise, prefsPromise, storePromise]).
+        then(function() {
+      var showPreviousViewOnLoad = prefs.get('showPreviousViewOnLoad');
+      var defaultZoomValue = prefs.get('defaultZoomValue');
+
       var storedHash = null;
-      if (store.get('exists', false)) {
+      if (showPreviousViewOnLoad && store.get('exists', false)) {
         var pageNum = store.get('page', '1');
-        var zoom = store.get('zoom', PDFView.currentScale);
+        var zoom = defaultZoomValue || store.get('zoom', PDFView.currentScale);
         var left = store.get('scrollLeft', '0');
         var top = store.get('scrollTop', '0');
 
         storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
                      left + ',' + top;
+      } else if (defaultZoomValue) {
+        storedHash = 'page=1&zoom=' + defaultZoomValue;
       }
       // Initialize the browsing history.
       PDFHistory.initialize(self.documentFingerprint);
@@ -920,6 +933,13 @@ var PDFView = {
       pdfDocument.getOutline().then(function(outline) {
         self.outline = new DocumentOutlineView(outline);
         document.getElementById('viewOutline').disabled = !outline;
+
+        if (outline && prefs.get('ifAvailableShowOutlineOnLoad')) {
+          if (!self.sidebarOpen) {
+            document.getElementById('sidebarToggle').click();
+          }
+          self.switchSidebarView('outline');
+        }
       });
     });
 
