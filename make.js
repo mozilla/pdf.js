@@ -436,7 +436,8 @@ target.firefox = function() {
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
-       FIREFOX_BUILD_CONTENT_DIR + '/web']
+       FIREFOX_BUILD_CONTENT_DIR + '/web'],
+      ['web/default_preferences.js', FIREFOX_BUILD_CONTENT_DIR]
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
@@ -551,7 +552,8 @@ target.mozcentral = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
-      ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web']
+      ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web'],
+      ['web/default_preferences.js', MOZCENTRAL_CONTENT_DIR]
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
