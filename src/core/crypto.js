@@ -449,7 +449,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   function prepareKeyData(fileId, password, ownerPassword, userPassword,
                           flags, revision, keyLength, encryptMetadata) {
-    var hashData = new Uint8Array(100), i = 0, j, n;
+    var hashDataSize = 40 + ownerPassword.length + fileId.length;
+    var hashData = new Uint8Array(hashDataSize), i = 0, j, n;
     if (password) {
       n = Math.min(32, password.length);
       for (; i < n; ++i)
