@@ -23,6 +23,15 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue3925",
+       "file": "pdfs/issue3925.pdf",
+       "md5": "c5c895deecf7a7565393587e0d61be2b",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "text"
+    },
     {  "id": "issue1293",
        "file": "pdfs/issue1293.pdf",
        "md5": "0a744b3bbf2fd8da0131fd3c01dd1e30",
