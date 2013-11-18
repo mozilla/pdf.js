@@ -51,7 +51,7 @@ globalScope.PDFJS.pdfBug = false;
 
 // All the possible operations for an operator list.
 var OPS = PDFJS.OPS = {
-  // Intentially start from 1 so it is easy to spot bad operators that will be
+  // Intentionally start from 1 so it is easy to spot bad operators that will be
   // 0's.
   dependency: 1,
   setLineWidth: 2,
