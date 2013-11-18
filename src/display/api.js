@@ -56,7 +56,9 @@ PDFJS.disableWorker = PDFJS.disableWorker === undefined ?
                       false : PDFJS.disableWorker;
 
 /**
- * Path and filename of the worker file. Required when the worker is enabled.
+ * Path and filename of the worker file. Required when the worker is enabled in
+ * development mode. If unspecified in the production build, the worker will be
+ * loaded based on the location of the pdf.js file.
  * @var {String}
  */
 PDFJS.workerSrc = PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc;
