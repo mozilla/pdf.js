@@ -276,6 +276,9 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     dataLoaded: function PDFDocumentProxy_dataLoaded() {
       return this.transport.dataLoaded();
     },
+    cleanup: function PDFDocumentProxy_cleanup() {
+      this.transport.startCleanup();
+    },
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
     }
@@ -907,6 +910,21 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       );
       return promise;
+    },
+
+    startCleanup: function WorkerTransport_startCleanup() {
+      this.messageHandler.send('Cleanup', null,
+        function endCleanup() {
+          for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
+            var page = this.pageCache[i];
+            if (page) {
+              page.destroy();
+            }
+          }
+          this.commonObjs.clear();
+          FontLoader.clear();
+        }.bind(this)
+      );
     }
   };
   return WorkerTransport;

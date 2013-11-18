@@ -26,7 +26,7 @@
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
-                            uniquePrefix, idCounters) {
+                            uniquePrefix, idCounters, fontCache) {
     this.state = new EvalState();
     this.stateStack = [];
 
@@ -36,7 +36,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.pageIndex = pageIndex;
     this.uniquePrefix = uniquePrefix;
     this.idCounters = idCounters;
-    this.fontCache = new RefSetCache();
+    this.fontCache = fontCache;
   }
 
   // Specifies properties for each command

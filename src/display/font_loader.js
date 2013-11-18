@@ -33,6 +33,12 @@ var FontLoader = {
     var styleSheet = styleElement.sheet;
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
   },
+  clear: function fontLoaderClear() {
+    var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
+    if (styleElement) {
+      styleElement.parentNode.removeChild(styleElement);
+    }
+  },
 //#if !(MOZCENTRAL)
   get loadTestFont() {
     // This is a CFF font with 1 glyph for '.' that fills its entire width and
