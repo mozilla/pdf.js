@@ -452,7 +452,7 @@ ChromeActions.prototype = {
       defaultValue = DEFAULT_PREFERENCES[key];
       prefName = (PREF_PREFIX + '.' + key);
 
-      if (!prefValue || prefValue === defaultValue) {
+      if (prefValue === undefined || prefValue === defaultValue) {
         Services.prefs.clearUserPref(prefName);
       } else {
         prefType = typeof prefValue;
