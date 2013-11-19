@@ -1065,8 +1065,9 @@ var PDFView = {
 
   cleanup: function pdfViewCleanup() {
     for (var i = 0, ii = this.pages.length; i < ii; i++) {
-      if (this.pages[i]) {
-        this.pages[i].resetRenderingState();
+      if (this.pages[i] &&
+          this.pages[i].renderingState !== RenderingStates.FINISHED) {
+        this.pages[i].reset();
       }
     }
     this.pdfDocument.cleanup();
