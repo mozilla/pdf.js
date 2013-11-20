@@ -617,9 +617,13 @@ var WorkerTransport = (function WorkerTransportClosure() {
 //#if !PRODUCTION
         Util.loadScript(PDFJS.workerSrc);
 //#else
-//      Util.loadScript(PDFJS.workerSrc, function() {
+//      if (PDFJS.workerSrc != 'none') {
+//        Util.loadScript(PDFJS.workerSrc, function() {
+//          PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+//        });
+//      } else {
 //        PDFJS.fakeWorkerFilesLoadedPromise.resolve();
-//      });
+//      }
 //#endif
       }
       return PDFJS.fakeWorkerFilesLoadedPromise;
