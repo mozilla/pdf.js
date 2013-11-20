@@ -982,6 +982,9 @@ var XRef = (function XRefClosure() {
           // Recursively get previous dictionary, if any
           obj = dict.get('Prev');
           if (isInt(obj)) {
+            if (obj == startXRef) {
+              error('Invalid XRef prev');
+            }
             this.startXRefQueue.push(obj);
           } else if (isRef(obj)) {
             // The spec says Prev must not be a reference, i.e. "/Prev NNN"
