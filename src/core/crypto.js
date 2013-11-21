@@ -565,8 +565,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       keyLength < 40 || (keyLength % 8) !== 0)
       error('invalid key length');
     // prepare keys
-    var ownerPassword = stringToBytes(dict.get('O'));
-    var userPassword = stringToBytes(dict.get('U'));
+    var ownerPassword = stringToBytes(dict.get('O')).subarray(0, 32);
+    var userPassword = stringToBytes(dict.get('U')).subarray(0, 32);
     var flags = dict.get('P');
     var revision = dict.get('R');
     var encryptMetadata = algorithm == 4 &&  // meaningful when V is 4
