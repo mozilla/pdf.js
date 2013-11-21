@@ -106,6 +106,9 @@ PDFJS.postMessageTransfers = PDFJS.postMessageTransfers === undefined ?
  *  - data  - A typed array with PDF data.
  *  - httpHeaders - Basic authentication headers.
  *  - password - For decrypting password-protected PDFs.
+ *  - initialData - A typed array with the first portion or all of the pdf data.
+ *                  Used by the extension since some data is already loaded
+ *                  before the switch to range requests. 
  *
  * @param {object} pdfDataRangeTransport is optional. It is used if you want
  * to manually serve range requests for data in the PDF. See viewer.js for

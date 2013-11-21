@@ -143,7 +143,8 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
       msgHandler: msgHandler,
       httpHeaders: args.httpHeaders,
       chunkedViewerLoading: args.chunkedViewerLoading,
-      disableAutoFetch: args.disableAutoFetch
+      disableAutoFetch: args.disableAutoFetch,
+      initialData: args.initialData
     };
     this.streamManager = new ChunkedStreamManager(args.length, CHUNK_SIZE,
                                                   args.url, params);

@@ -507,9 +507,12 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
    * This is for range requests
    */
   function RangedChromeActions(
-              domWindow, contentDispositionFilename, originalRequest) {
+              domWindow, contentDispositionFilename, originalRequest,
+              dataListener) {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
+    this.dataListener = dataListener;
+    this.originalRequest = originalRequest;
 
     this.pdfUrl = originalRequest.URI.spec;
     this.contentLength = originalRequest.contentLength;
@@ -555,11 +558,15 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
   proto.constructor = RangedChromeActions;
 
   proto.initPassiveLoading = function RangedChromeActions_initPassiveLoading() {
+    this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+    this.originalRequest = null;
     this.domWindow.postMessage({
       pdfjsLoadAction: 'supportsRangedLoading',
       pdfUrl: this.pdfUrl,
-      length: this.contentLength
+      length: this.contentLength,
+      data: this.dataListener.getData()
     }, '*');
+    this.dataListener = null;
 
     return true;
   };
@@ -760,8 +767,8 @@ PdfStreamConverter.prototype = {
    * 1. asyncConvertData stores the listener
    * 2. onStartRequest creates a new channel, streams the viewer
    * 3. If range requests are supported:
-   *      3.1. Suspends and cancels the request so we can issue range
-   *          requests instead.
+   *      3.1. Leave the request open until the viewer is ready to switch to
+   *           range requests.
    *
    *    If range rquests are not supported:
    *      3.1. Read the stream as it's loaded in onDataAvailable to send
@@ -847,18 +854,12 @@ PdfStreamConverter.prototype = {
     PdfJsTelemetry.onViewerIsUsed();
     PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
 
-    if (!rangeRequest) {
-      // Creating storage for PDF data
-      var contentLength = aRequest.contentLength;
-      this.dataListener = new PdfDataListener(contentLength);
-      this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
-                          .createInstance(Ci.nsIBinaryInputStream);
-    } else {
-      // Suspend the request so we're not consuming any of the stream,
-      // but we can't cancel the request yet. Otherwise, the original
-      // listener will think we do not want to go the new PDF url
-      aRequest.suspend();
-    }
+
+    // Creating storage for PDF data
+    var contentLength = aRequest.contentLength;
+    this.dataListener = new PdfDataListener(contentLength);
+    this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
+                        .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
     var ioService = Services.io;
@@ -884,12 +885,8 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         var actions;
         if (rangeRequest) {
-          // We are going to be issuing range requests, so cancel the
-          // original request
-          aRequest.resume();
-          aRequest.cancel(Cr.NS_BINDING_ABORTED);
-          actions = new RangedChromeActions(domWindow,
-              contentDispositionFilename, aRequest);
+          actions = new RangedChromeActions(
+              domWindow, contentDispositionFilename, aRequest, dataListener);
         } else {
           actions = new StandardChromeActions(
               domWindow, contentDispositionFilename, dataListener);

@@ -452,7 +452,8 @@ var PDFView = {
       switch (args.pdfjsLoadAction) {
         case 'supportsRangedLoading':
           PDFView.open(args.pdfUrl, 0, undefined, pdfDataRangeTransport, {
-            length: args.length
+            length: args.length,
+            initialData: args.data
           });
           break;
         case 'range':

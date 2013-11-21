@@ -30,6 +30,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     this.numChunksLoaded = 0;
     this.numChunks = Math.ceil(length / chunkSize);
     this.manager = manager;
+    this.initialDataLength = 0;
   }
 
   // required methods for a stream. if a particular stream does not
@@ -77,8 +78,23 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       }
     },
 
+    onReceiveInitialData: function (data) {
+      this.bytes.set(data);
+      this.initialDataLength = data.length;
+      var endChunk = this.end === data.length ?
+                     this.numChunks : Math.floor(data.length / this.chunkSize);
+      for (var i = 0; i < endChunk; i++) {
+        this.loadedChunks[i] = true;
+        ++this.numChunksLoaded;
+      }
+    },
+
     ensureRange: function ChunkedStream_ensureRange(begin, end) {
       if (begin >= end) {
+        return;
+      }
+
+      if (end <= this.initialDataLength) {
         return;
       }
 
@@ -243,9 +259,24 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     this.callbacksByRequest = {};
 
     this.loadedStream = new Promise();
+    if (args.initialData) {
+      this.setInitialData(args.initialData);
+    }
   }
 
   ChunkedStreamManager.prototype = {
+
+    setInitialData: function ChunkedStreamManager_setInitialData(data) {
+      this.stream.onReceiveInitialData(data);
+      if (this.stream.allChunksLoaded()) {
+        this.loadedStream.resolve(this.stream);
+      } else if (this.msgHandler) {
+        this.msgHandler.send('DocProgress', {
+          loaded: data.length,
+          total: this.length
+        });
+      }
+    },
 
     onLoadedStream: function ChunkedStreamManager_getLoadedStream() {
       return this.loadedStream;
