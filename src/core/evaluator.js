@@ -540,7 +540,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var promise = new Promise();
       var args = [];
-      nextOp:
       while (true) {
 
         var obj = parser.getObj();
@@ -584,98 +583,113 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           // TODO figure out how to type-check vararg functions
 
-          if ((cmd == 'SCN' || cmd == 'scn') &&
-               !args[args.length - 1].code) {
-            // compile tiling patterns
-            var patternName = args[args.length - 1];
-            // SCN/scn applies patterns along with normal colors
-            var pattern;
-            if (isName(patternName) &&
-                (pattern = patterns.get(patternName.name))) {
-
-              var dict = isStream(pattern) ? pattern.dict : pattern;
-              var typeNum = dict.get('PatternType');
-
-              if (typeNum == TILING_PATTERN) {
-                self.handleTilingType(fn, args, resources, pattern, dict,
-                                      operatorList);
-                args = [];
-                continue;
-              } else if (typeNum == SHADING_PATTERN) {
-                var shading = dict.get('Shading');
-                var matrix = dict.get('Matrix');
-                var pattern = Pattern.parseShading(shading, matrix, xref,
-                                                    resources);
-                args = pattern.getIR();
-              } else {
-                error('Unkown PatternType ' + typeNum);
-              }
-            }
-          } else if (cmd == 'Do' && !args[0].code) {
-            // eagerly compile XForm objects
-            var name = args[0].name;
-            var xobj = xobjs.get(name);
-            if (xobj) {
-              assertWellFormed(
-                  isStream(xobj), 'XObject should be a stream');
-
-              var type = xobj.dict.get('Subtype');
-              assertWellFormed(
-                isName(type),
-                'XObject should have a Name subtype'
-              );
-
-              if ('Form' == type.name) {
-                self.buildFormXObject(resources, xobj, null, operatorList);
-                args = [];
-                continue;
-              } else if ('Image' == type.name) {
-                self.buildPaintImageXObject(resources, xobj, false,
-                                            operatorList);
-                args = [];
-                continue;
-              } else {
-                error('Unhandled XObject subtype ' + type.name);
-              }
-            }
-          } else if (cmd == 'Tf') { // eagerly collect all fonts
-            var loadedName = self.handleSetFont(resources, args, null,
-                                                operatorList);
-            operatorList.addDependency(loadedName);
-            fn = OPS.setFont;
-            args[0] = loadedName;
-          } else if (cmd == 'EI') {
-            self.buildPaintImageXObject(resources, args[0], true, operatorList);
-            args = [];
-            continue;
-          } else if (cmd === 'q') { // save
-            var old = this.state;
-            this.stateStack.push(this.state);
-            this.state = old.clone();
-          } else if (cmd === 'Q') { // restore
-            var prev = this.stateStack.pop();
-            if (prev) {
-              this.state = prev;
-            }
-          } else if (cmd === 'Tj') { // showText
-            args[0] = this.handleText(args[0]);
-          } else if (cmd === 'TJ') { // showSpacedText
-            var arr = args[0];
-            var arrLength = arr.length;
-            for (var i = 0; i < arrLength; ++i) {
-              if (isString(arr[i])) {
-                arr[i] = this.handleText(arr[i]);
-              }
-            }
-          } else if (cmd === '\'') { // nextLineShowText
-            args[0] = this.handleText(args[0]);
-          } else if (cmd === '"') { // nextLineSetSpacingShowText
-            args[2] = this.handleText(args[2]);
-          } else if (cmd === 'Tr') { // setTextRenderingMode
-            this.state.textRenderingMode = args[0];
-          }
-
           switch (fn) {
+            case OPS.setStrokeColorN:
+            case OPS.setFillColorN:
+              if (args[args.length - 1].code) {
+                break;
+              }
+              // compile tiling patterns
+              var patternName = args[args.length - 1];
+              // SCN/scn applies patterns along with normal colors
+              var pattern;
+              if (isName(patternName) &&
+                  (pattern = patterns.get(patternName.name))) {
+
+                var dict = isStream(pattern) ? pattern.dict : pattern;
+                var typeNum = dict.get('PatternType');
+
+                if (typeNum == TILING_PATTERN) {
+                  self.handleTilingType(fn, args, resources, pattern, dict,
+                                        operatorList);
+                  args = [];
+                  continue;
+                } else if (typeNum == SHADING_PATTERN) {
+                  var shading = dict.get('Shading');
+                  var matrix = dict.get('Matrix');
+                  var pattern = Pattern.parseShading(shading, matrix, xref,
+                                                      resources);
+                  args = pattern.getIR();
+                } else {
+                  error('Unkown PatternType ' + typeNum);
+                }
+              }
+              break;
+            case OPS.paintXObject:
+              if (args[0].code) {
+                break;
+              }
+              // eagerly compile XForm objects
+              var name = args[0].name;
+              var xobj = xobjs.get(name);
+              if (xobj) {
+                assertWellFormed(
+                    isStream(xobj), 'XObject should be a stream');
+
+                var type = xobj.dict.get('Subtype');
+                assertWellFormed(
+                  isName(type),
+                  'XObject should have a Name subtype'
+                );
+
+                if ('Form' == type.name) {
+                  self.buildFormXObject(resources, xobj, null, operatorList);
+                  args = [];
+                  continue;
+                } else if ('Image' == type.name) {
+                  self.buildPaintImageXObject(resources, xobj, false,
+                                              operatorList);
+                  args = [];
+                  continue;
+                } else {
+                  error('Unhandled XObject subtype ' + type.name);
+                }
+              }
+              break;
+            case OPS.setFont:
+              // eagerly collect all fonts
+              var loadedName = self.handleSetFont(resources, args, null,
+                                                  operatorList);
+              operatorList.addDependency(loadedName);
+              args[0] = loadedName;
+              break;
+            case OPS.endInlineImage:
+              self.buildPaintImageXObject(resources, args[0], true,
+                                          operatorList);
+              args = [];
+              continue;
+            case OPS.save:
+              var old = this.state;
+              this.stateStack.push(this.state);
+              this.state = old.clone();
+              break;
+            case OPS.restore:
+              var prev = this.stateStack.pop();
+              if (prev) {
+                this.state = prev;
+              }
+              break;
+            case OPS.showText:
+              args[0] = this.handleText(args[0]);
+              break;
+            case OPS.showSpacedText:
+              var arr = args[0];
+              var arrLength = arr.length;
+              for (var i = 0; i < arrLength; ++i) {
+                if (isString(arr[i])) {
+                  arr[i] = this.handleText(arr[i]);
+                }
+              }
+              break;
+            case OPS.nextLineShowText:
+              args[0] = this.handleText(args[0]);
+              break;
+            case OPS.nextLineSetSpacingShowText:
+              args[2] = this.handleText(args[2]);
+              break;
+            case OPS.setTextRenderingMode:
+              this.state.textRenderingMode = args[0];
+              break;
             // Parse the ColorSpace data to a raw format.
             case OPS.setFillColorSpace:
             case OPS.setStrokeColorSpace:
@@ -706,7 +720,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var gState = extGState.get(dictName.name);
               self.setGState(resources, gState, operatorList);
               args = [];
-              continue nextOp;
+              continue;
           } // switch
 
           operatorList.addOp(fn, args);
