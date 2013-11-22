@@ -2012,6 +2012,11 @@ window.addEventListener('keydown', function keydown(evt) {
         SecondaryToolbar.presentationModeClick();
         handled = true;
         break;
+      case 71: // g
+        // focuses input#pageNumber field
+        document.getElementById('pageNumber').select();
+        handled = true;
+        break;
     }
   }
 
