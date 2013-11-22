@@ -50,5 +50,16 @@ limitations under the License.
         CRX_BASE_URL + 'chrome-extension*'
       ]
   }, ['blocking']);
+
+  // When session restore is used, viewer pages may be loaded before the
+  // webRequest event listener is attached (= page not found).
+  // Reload these tabs.
+  chrome.tabs.query({
+    url: CRX_BASE_URL + '*://*'
+  }, function(tabsFromLastSession) {
+    for (var i = 0; i < tabsFromLastSession.length; ++i) {
+      chrome.tabs.reload(tabsFromLastSession[i].id);
+    }
+  });
   console.log('Set up extension URL router.');
 })();
