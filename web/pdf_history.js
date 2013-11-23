@@ -132,16 +132,18 @@ var PDFHistory = {
 
   _pushOrReplaceState: function pdfHistory_pushOrReplaceState(stateObj,
                                                               replace) {
-    // In Firefox, 'urlParam' needs to be undefined in order to prevent issues
-    // when local files are opened.
-    var urlParam;
-//#if (GENERIC || CHROME)
-    urlParam = document.URL;
-//#endif
     if (replace) {
-      window.history.replaceState(stateObj, '', urlParam);
+//#if (GENERIC || CHROME)
+      window.history.replaceState(stateObj, '', document.URL);
+//#else
+//    window.history.replaceState(stateObj, '');
+//#endif
     } else {
-      window.history.pushState(stateObj, '', urlParam);
+//#if (GENERIC || CHROME)
+      window.history.pushState(stateObj, '', document.URL);
+//#else
+//    window.history.pushState(stateObj, '');
+//#endif
     }
   },
 
