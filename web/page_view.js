@@ -371,7 +371,7 @@ var PageView = function pageView(container, id, scale,
           width / CSS_UNITS;
         heightScale = (PDFView.container.clientHeight - SCROLLBAR_PADDING) /
           height / CSS_UNITS;
-        scale = Math.min(widthScale, heightScale);
+        scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
         return;
