@@ -295,7 +295,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       var requestId = this.currRequestId++;
 
       var chunksNeeded;
-      this.chunksNeededByRequest[requestId] = chunksNeeded = {};
+      this.chunksNeededByRequest[requestId] = chunksNeeded = [];
       for (var i = 0, ii = chunks.length; i < ii; i++) {
         if (!this.stream.hasChunk(chunks[i])) {
           chunksNeeded[chunks[i]] = true;
