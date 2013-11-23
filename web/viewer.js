@@ -209,7 +209,7 @@ var PDFView = {
     var number = parseFloat(value);
     var scale;
 
-    if (number) {
+    if (number > 0) {
       scale = number;
       resetAutoSettings = true;
     } else {
