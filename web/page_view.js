@@ -28,7 +28,7 @@ var PageView = function pageView(container, id, scale,
   this.rotation = 0;
   this.scale = scale || 1.0;
   this.viewport = defaultViewport;
-  this.pdfPageRotate = defaultViewport.rotate;
+  this.pdfPageRotate = defaultViewport.rotation;
 
   this.renderingState = RenderingStates.INITIAL;
   this.resume = null;
@@ -54,18 +54,11 @@ var PageView = function pageView(container, id, scale,
   this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
-    this.updateViewport();
+    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS, totalRotation);
     this.stats = pdfPage.stats;
     this.reset();
   };
-
-  this.updateViewport = function pageViewUpdateViewport() {
-    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = this.viewport.clone({
-      scale: this.scale * CSS_UNITS,
-      rotation: totalRotation
-    });
-  },
 
   this.destroy = function pageViewDestroy() {
     this.zoomLayer = null;
@@ -111,7 +104,11 @@ var PageView = function pageView(container, id, scale,
       this.rotation = rotation;
     }
 
-    this.updateViewport();
+    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = this.viewport.clone({
+      scale: this.scale * CSS_UNITS,
+      rotation: totalRotation
+    });
 
     if (USE_ONLY_CSS_ZOOM && this.canvas) {
       this.cssTransform(this.canvas);
