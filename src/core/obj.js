@@ -977,6 +977,8 @@ var XRef = (function XRefClosure() {
 
             if (!dict)
               error('Failed to read XRef stream');
+          } else {
+            error('Invalid XRef stream header');
           }
 
           // Recursively get previous dictionary, if any
