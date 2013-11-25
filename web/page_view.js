@@ -455,8 +455,8 @@ var PageView = function pageView(container, id, scale,
       outputScale.scaled = true;
     }
 
-    canvas.width = Math.floor(viewport.width * outputScale.sx);
-    canvas.height = Math.floor(viewport.height * outputScale.sy);
+    canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
+    canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
     canvas.style.width = Math.floor(viewport.width) + 'px';
     canvas.style.height = Math.floor(viewport.height) + 'px';
     // Add the viewport so it's known what it was originally drawn with.
@@ -489,6 +489,8 @@ var PageView = function pageView(container, id, scale,
                                 (1 / outputScale.sy) + ')';
       CustomStyle.setProp('transform' , textLayerDiv, cssScale);
       CustomStyle.setProp('transformOrigin' , textLayerDiv, '0% 0%');
+      textLayerDiv.dataset._scaleX = outputScale.sx;
+      textLayerDiv.dataset._scaleY = outputScale.sy;
     }
 
 //#if (FIREFOX || MOZCENTRAL)
