@@ -379,16 +379,16 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     // chunks as possible
     groupChunks: function ChunkedStreamManager_groupChunks(chunks) {
       var groupedChunks = [];
-      var beginChunk;
-      var prevChunk;
+      var beginChunk = -1;
+      var prevChunk = -1;
       for (var i = 0; i < chunks.length; ++i) {
         var chunk = chunks[i];
 
-        if (!beginChunk) {
+        if (beginChunk < 0) {
           beginChunk = chunk;
         }
 
-        if (prevChunk && prevChunk + 1 !== chunk) {
+        if (prevChunk >= 0 && prevChunk + 1 !== chunk) {
           groupedChunks.push({
             beginChunk: beginChunk, endChunk: prevChunk + 1});
           beginChunk = chunk;
