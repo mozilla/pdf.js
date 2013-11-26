@@ -28,12 +28,11 @@ var PageView = function pageView(container, id, scale,
   this.rotation = 0;
   this.scale = scale || 1.0;
   this.viewport = defaultViewport;
-  this.pdfPageRotate = defaultViewport.rotate;
+  this.pdfPageRotate = defaultViewport.rotation;
 
   this.renderingState = RenderingStates.INITIAL;
   this.resume = null;
 
-  this.textContent = null;
   this.textLayer = null;
 
   this.zoomLayer = null;
@@ -55,7 +54,8 @@ var PageView = function pageView(container, id, scale,
   this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
-    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS);
+    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS, totalRotation);
     this.stats = pdfPage.stats;
     this.reset();
   };
@@ -372,7 +372,7 @@ var PageView = function pageView(container, id, scale,
           width / CSS_UNITS;
         heightScale = (PDFView.container.clientHeight - SCROLLBAR_PADDING) /
           height / CSS_UNITS;
-        scale = Math.min(widthScale, heightScale);
+        scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
         return;
@@ -406,10 +406,9 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.getTextContent = function pageviewGetTextContent() {
-    if (!this.textContent) {
-      this.textContent = this.pdfPage.getTextContent();
-    }
-    return this.textContent;
+    return PDFView.getPage(this.id).then(function(pdfPage) {
+      return pdfPage.getTextContent();
+    });
   };
 
   this.draw = function pageviewDraw(callback) {
@@ -457,8 +456,8 @@ var PageView = function pageView(container, id, scale,
       outputScale.scaled = true;
     }
 
-    canvas.width = Math.floor(viewport.width * outputScale.sx);
-    canvas.height = Math.floor(viewport.height * outputScale.sy);
+    canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
+    canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
     canvas.style.width = Math.floor(viewport.width) + 'px';
     canvas.style.height = Math.floor(viewport.height) + 'px';
     // Add the viewport so it's known what it was originally drawn with.
@@ -491,6 +490,8 @@ var PageView = function pageView(container, id, scale,
                                 (1 / outputScale.sy) + ')';
       CustomStyle.setProp('transform' , textLayerDiv, cssScale);
       CustomStyle.setProp('transformOrigin' , textLayerDiv, '0% 0%');
+      textLayerDiv.dataset._scaleX = outputScale.sx;
+      textLayerDiv.dataset._scaleY = outputScale.sy;
     }
 
 //#if (FIREFOX || MOZCENTRAL)

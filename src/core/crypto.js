@@ -449,7 +449,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   function prepareKeyData(fileId, password, ownerPassword, userPassword,
                           flags, revision, keyLength, encryptMetadata) {
-    var hashData = new Uint8Array(100), i = 0, j, n;
+    var hashDataSize = 40 + ownerPassword.length + fileId.length;
+    var hashData = new Uint8Array(hashDataSize), i = 0, j, n;
     if (password) {
       n = Math.min(32, password.length);
       for (; i < n; ++i)
@@ -564,8 +565,8 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       keyLength < 40 || (keyLength % 8) !== 0)
       error('invalid key length');
     // prepare keys
-    var ownerPassword = stringToBytes(dict.get('O'));
-    var userPassword = stringToBytes(dict.get('U'));
+    var ownerPassword = stringToBytes(dict.get('O')).subarray(0, 32);
+    var userPassword = stringToBytes(dict.get('U')).subarray(0, 32);
     var flags = dict.get('P');
     var revision = dict.get('R');
     var encryptMetadata = algorithm == 4 &&  // meaningful when V is 4

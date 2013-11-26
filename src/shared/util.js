@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref */
+/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL */
 
 'use strict';
 
@@ -49,6 +49,98 @@ if (!globalScope.PDFJS) {
 
 globalScope.PDFJS.pdfBug = false;
 
+// All the possible operations for an operator list.
+var OPS = PDFJS.OPS = {
+  // Intentionally start from 1 so it is easy to spot bad operators that will be
+  // 0's.
+  dependency: 1,
+  setLineWidth: 2,
+  setLineCap: 3,
+  setLineJoin: 4,
+  setMiterLimit: 5,
+  setDash: 6,
+  setRenderingIntent: 7,
+  setFlatness: 8,
+  setGState: 9,
+  save: 10,
+  restore: 11,
+  transform: 12,
+  moveTo: 13,
+  lineTo: 14,
+  curveTo: 15,
+  curveTo2: 16,
+  curveTo3: 17,
+  closePath: 18,
+  rectangle: 19,
+  stroke: 20,
+  closeStroke: 21,
+  fill: 22,
+  eoFill: 23,
+  fillStroke: 24,
+  eoFillStroke: 25,
+  closeFillStroke: 26,
+  closeEOFillStroke: 27,
+  endPath: 28,
+  clip: 29,
+  eoClip: 30,
+  beginText: 31,
+  endText: 32,
+  setCharSpacing: 33,
+  setWordSpacing: 34,
+  setHScale: 35,
+  setLeading: 36,
+  setFont: 37,
+  setTextRenderingMode: 38,
+  setTextRise: 39,
+  moveText: 40,
+  setLeadingMoveText: 41,
+  setTextMatrix: 42,
+  nextLine: 43,
+  showText: 44,
+  showSpacedText: 45,
+  nextLineShowText: 46,
+  nextLineSetSpacingShowText: 47,
+  setCharWidth: 48,
+  setCharWidthAndBounds: 49,
+  setStrokeColorSpace: 50,
+  setFillColorSpace: 51,
+  setStrokeColor: 52,
+  setStrokeColorN: 53,
+  setFillColor: 54,
+  setFillColorN: 55,
+  setStrokeGray: 56,
+  setFillGray: 57,
+  setStrokeRGBColor: 58,
+  setFillRGBColor: 59,
+  setStrokeCMYKColor: 60,
+  setFillCMYKColor: 61,
+  shadingFill: 62,
+  beginInlineImage: 63,
+  beginImageData: 64,
+  endInlineImage: 65,
+  paintXObject: 66,
+  markPoint: 67,
+  markPointProps: 68,
+  beginMarkedContent: 69,
+  beginMarkedContentProps: 70,
+  endMarkedContent: 71,
+  beginCompat: 72,
+  endCompat: 73,
+  paintFormXObjectBegin: 74,
+  paintFormXObjectEnd: 75,
+  beginGroup: 76,
+  endGroup: 77,
+  beginAnnotations: 78,
+  endAnnotations: 79,
+  beginAnnotation: 80,
+  endAnnotation: 81,
+  paintJpegXObject: 82,
+  paintImageMaskXObject: 83,
+  paintImageMaskXObjectGroup: 84,
+  paintImageXObject: 85,
+  paintInlineImageXObject: 86,
+  paintInlineImageXObjectGroup: 87
+};
 
 // Use only for debugging purposes. This should not be used in any code that is
 // in mozilla master.
@@ -263,7 +355,7 @@ var MissingDataException = (function MissingDataExceptionClosure() {
   function MissingDataException(begin, end) {
     this.begin = begin;
     this.end = end;
-    this.message = 'Missing data [begin, end)';
+    this.message = 'Missing data [' + begin + ', ' + end + ')';
   }
 
   MissingDataException.prototype = new Error();
@@ -836,7 +928,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
   /**
    * Builds a promise that is resolved when all the passed in promises are
    * resolved.
-   * @param {Promise[]} promises Array of promises to wait for.
+   * @param {array} array of data and/or promises to wait for.
    * @return {Promise} New dependant promise.
    */
   Promise.all = function Promise_all(promises) {
@@ -856,7 +948,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     }
     for (var i = 0, ii = promises.length; i < ii; ++i) {
       var promise = promises[i];
-      promise.then((function(i) {
+      var resolve = (function(i) {
         return function(value) {
           if (deferred._status === STATUS_REJECTED) {
             return;
@@ -866,9 +958,22 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
           if (unresolved === 0)
             deferred.resolve(results);
         };
-      })(i), reject);
+      })(i);
+      if (Promise.isPromise(promise)) {
+        promise.then(resolve, reject);
+      } else {
+        resolve(promise);
+      }
     }
     return deferred;
+  };
+
+  /**
+   * Checks if the value is likely a promise (has a 'then' function).
+   * @return {boolean} true if x is thenable
+   */
+  Promise.isPromise = function Promise_isPromise(value) {
+    return value && typeof value.then === 'function';
   };
 
   Promise.prototype = {
@@ -884,7 +989,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       }
 
       if (status == STATUS_RESOLVED &&
-          value && typeof(value.then) === 'function') {
+          Promise.isPromise(value)) {
         value.then(this._updateStatus.bind(this, STATUS_RESOLVED),
                    this._updateStatus.bind(this, STATUS_REJECTED));
         return;
@@ -995,10 +1100,38 @@ PDFJS.createBlob = function createBlob(data, contentType) {
   return bb.getBlob(contentType);
 };
 
+PDFJS.createObjectURL = (function createObjectURLClosure() {
+  if (typeof URL !== 'undefined' && URL.createObjectURL) {
+    return function createObjectURL(data, contentType) {
+      var blob = PDFJS.createBlob(data, contentType);
+      return URL.createObjectURL(blob);
+    };
+  }
+
+  // Blob/createObjectURL is not available, falling back to data schema.
+  var digits =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+  return function createObjectURL(data, contentType) {
+    var buffer = 'data:' + contentType + ';base64,';
+    for (var i = 0, ii = data.length; i < ii; i += 3) {
+      var b1 = data[i] & 0xFF;
+      var b2 = data[i + 1] & 0xFF;
+      var b3 = data[i + 2] & 0xFF;
+      var d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
+      var d3 = i + 1 < ii ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
+      var d4 = i + 2 < ii ? (b3 & 0x3F) : 64;
+      buffer += digits[d1] + digits[d2] + digits[d3] + digits[d4];
+    }
+    return buffer;
+  };
+})();
+
 function MessageHandler(name, comObj) {
   this.name = name;
   this.comObj = comObj;
   this.callbackIndex = 1;
+  this.postMessageTransfers = true;
   var callbacks = this.callbacks = {};
   var ah = this.actionHandler = {};
 
@@ -1065,8 +1198,9 @@ MessageHandler.prototype = {
    * @param {String} actionName Action to call.
    * @param {JSON} data JSON data to send.
    * @param {function} [callback] Optional callback that will handle a reply.
+   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
    */
-  send: function messageHandlerSend(actionName, data, callback) {
+  send: function messageHandlerSend(actionName, data, callback, transfers) {
     var message = {
       action: actionName,
       data: data
@@ -1076,14 +1210,18 @@ MessageHandler.prototype = {
       this.callbacks[callbackId] = callback;
       message.callbackId = callbackId;
     }
-    this.comObj.postMessage(message);
+    if (transfers && this.postMessageTransfers) {
+      this.comObj.postMessage(message, transfers);
+    } else {
+      this.comObj.postMessage(message);
+    }
   }
 };
 
-function loadJpegStream(id, imageData, objs) {
+function loadJpegStream(id, imageUrl, objs) {
   var img = new Image();
   img.onload = (function loadJpegStream_onloadClosure() {
     objs.resolve(id, img);
   });
-  img.src = 'data:image/jpeg;base64,' + window.btoa(imageData);
+  img.src = imageUrl;
 }

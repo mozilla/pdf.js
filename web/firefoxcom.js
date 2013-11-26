@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals Preferences, PDFJS */
 
 'use strict';
 
@@ -102,3 +103,14 @@ var DownloadManager = (function DownloadManagerClosure() {
 
   return DownloadManager;
 })();
+
+Preferences.prototype.writeToStorage = function(prefObj) {
+  FirefoxCom.requestSync('setPreferences', prefObj);
+};
+
+Preferences.prototype.readFromStorage = function() {
+  var readFromStoragePromise = new PDFJS.Promise();
+  var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences'));
+  readFromStoragePromise.resolve(readPrefs);
+  return readFromStoragePromise;
+};

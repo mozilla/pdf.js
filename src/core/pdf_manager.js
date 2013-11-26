@@ -46,6 +46,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
       return this.pdfModel.getPage(pageIndex);
     },
 
+    cleanup: function BasePdfManager_cleanup() {
+      return this.pdfModel.cleanup();
+    },
+
     ensure: function BasePdfManager_ensure(obj, prop, args) {
       return new NotImplementedException();
     },
@@ -139,7 +143,8 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
       msgHandler: msgHandler,
       httpHeaders: args.httpHeaders,
       chunkedViewerLoading: args.chunkedViewerLoading,
-      disableAutoFetch: args.disableAutoFetch
+      disableAutoFetch: args.disableAutoFetch,
+      initialData: args.initialData
     };
     this.streamManager = new ChunkedStreamManager(args.length, CHUNK_SIZE,
                                                   args.url, params);

@@ -21,6 +21,9 @@ onmessage = function (e) {
   case 'test':
     postMessage({action: 'test', result: data.data instanceof Uint8Array});
     break;
+  case 'test-transfers':
+    postMessage({action: 'test-transfers', result: data.data[0] === 255});
+    break;
   case 'xhr':
     var xhr = new XMLHttpRequest();
     var responseExists = 'response' in xhr;

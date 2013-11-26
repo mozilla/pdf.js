@@ -18,7 +18,7 @@
            MissingPDFException, PasswordException, PDFJS, Promise,
            UnknownErrorException, NetworkManager, LocalPdfManager,
            NetworkPdfManager, XRefParseException,
-           isInt, PasswordResponses, MessageHandler */
+           isInt, PasswordResponses, MessageHandler, Ref */
 
 'use strict';
 
@@ -173,6 +173,9 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         handler.send('test', false);
         return;
       }
+      // making sure postMessage transfers are working
+      var supportTransfers = data[0] === 255;
+      handler.postMessageTransfers = supportTransfers;
       // check if the response property is supported by xhr
       var xhr = new XMLHttpRequest();
       var responseExists = 'response' in xhr;
@@ -186,14 +189,16 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         handler.send('test', false);
         return;
       }
-      handler.send('test', true);
+      handler.send('test', {
+        supportTypedArray: true,
+        supportTransfers: supportTransfers
+      });
     });
 
     handler.on('GetDocRequest', function wphSetupDoc(data) {
 
       var onSuccess = function(doc) {
         handler.send('GetDoc', { pdfInfo: doc });
-        pdfManager.ensureModel('traversePages', []).then(null, onFailure);
       };
 
       var onFailure = function(e) {
@@ -268,6 +273,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           handler.send('GetPage', { pageInfo: page });
         });
       });
+    });
+
+    handler.on('GetPageIndex', function wphSetupGetPageIndex(data, promise) {
+      var ref = new Ref(data.ref.num, data.ref.gen);
+      pdfManager.pdfModel.catalog.getPageIndex(ref).then(function (pageIndex) {
+        promise.resolve(pageIndex);
+      }, promise.reject.bind(promise));
     });
 
     handler.on('GetDestinations',
@@ -365,6 +377,11 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           promise.reject(e);
         });
       });
+    });
+
+    handler.on('Cleanup', function wphCleanup(data, promise) {
+      pdfManager.cleanup();
+      promise.resolve(true);
     });
 
     handler.on('Terminate', function wphTerminate(data, promise) {

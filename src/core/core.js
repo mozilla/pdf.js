@@ -25,12 +25,13 @@
 
 var Page = (function PageClosure() {
 
-  function Page(pdfManager, xref, pageIndex, pageDict, ref) {
+  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
     this.xref = xref;
     this.ref = ref;
+    this.fontCache = fontCache;
     this.idCounters = {
       obj: 0
     };
@@ -160,7 +161,7 @@ var Page = (function PageClosure() {
       var partialEvaluator = new PartialEvaluator(
             pdfManager, this.xref, handler,
             this.pageIndex, 'p' + this.pageIndex + '_',
-            this.idCounters);
+            this.idCounters, this.fontCache);
 
       var dataPromises = Promise.all(
           [contentStreamPromise, resourcesPromise], reject);
@@ -184,7 +185,6 @@ var Page = (function PageClosure() {
         var annotations = datas[1];
 
         if (annotations.length === 0) {
-          PartialEvaluator.optimizeQueue(pageOpList);
           pageOpList.flush(true);
           promise.resolve(pageOpList);
           return;
@@ -193,7 +193,6 @@ var Page = (function PageClosure() {
         var annotationsReadyPromise = Annotation.appendToOperatorList(
           annotations, pageOpList, pdfManager, partialEvaluator);
         annotationsReadyPromise.then(function () {
-          PartialEvaluator.optimizeQueue(pageOpList);
           pageOpList.flush(true);
           promise.resolve(pageOpList);
         }, reject);
@@ -228,7 +227,7 @@ var Page = (function PageClosure() {
         var partialEvaluator = new PartialEvaluator(
               pdfManager, self.xref, handler,
               self.pageIndex, 'p' + self.pageIndex + '_',
-              self.idCounters);
+              self.idCounters, self.fontCache);
 
         var bidiTexts = partialEvaluator.getTextContent(contentStream,
                                                         self.resources);
@@ -496,12 +495,12 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'fingerprint', fileID);
     },
 
-    traversePages: function PDFDocument_traversePages() {
-      this.catalog.traversePages();
-    },
-
     getPage: function PDFDocument_getPage(pageIndex) {
       return this.catalog.getPage(pageIndex);
+    },
+
+    cleanup: function PDFDocument_cleanup() {
+      return this.catalog.cleanup();
     }
   };
 

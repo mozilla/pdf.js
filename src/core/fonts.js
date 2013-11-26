@@ -3163,8 +3163,8 @@ var Font = (function FontClosure() {
         for (var i = 0; i < flagsCount; i++) {
           var flag = glyf[j++];
           if (flag & 0xC0) {
-            // reserved flags must be zero, rejecting
-            return 0;
+            // reserved flags must be zero, cleaning up
+            glyf[j - 1] = flag & 0x3F;
           }
           var xyLength = ((flag & 2) ? 1 : (flag & 16) ? 0 : 2) +
                          ((flag & 4) ? 1 : (flag & 32) ? 0 : 2);
@@ -5611,6 +5611,9 @@ var CFFFont = (function CFFFontClosure() {
       var unassignedUnicodeItems = [];
       var inverseEncoding = [];
       var gidStart = 0;
+      if (charsets[0] === '.notdef') {
+        gidStart = 1;
+      }
       // According to section 9.7.4.2 CIDFontType0C glyph selection should be
       // handled differently.
       if (this.properties.subtype === 'CIDFontType0C') {
@@ -5642,9 +5645,6 @@ var CFFFont = (function CFFFontClosure() {
           } else {
             inverseEncoding[gid] = charcode | 0;
           }
-        }
-        if (charsets[0] === '.notdef') {
-          gidStart = 1;
         }
       }
 

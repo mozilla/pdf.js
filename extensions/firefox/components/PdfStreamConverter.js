@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump, NetworkManager, PdfJsTelemetry */
+           dump, NetworkManager, PdfJsTelemetry, DEFAULT_PREFERENCES */
 
 'use strict';
 
@@ -33,11 +33,15 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
 const MAX_DATABASE_LENGTH = 4096;
+const MAX_STRING_PREF_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 Cu.import('resource://pdf.js/network.js');
+
+// Load the default preferences.
+Cu.import('resource://pdf.js/default_preferences.js');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
@@ -58,12 +62,20 @@ function getChromeWindow(domWindow) {
   return containingBrowser.ownerDocument.defaultView;
 }
 
+function setBoolPref(pref, value) {
+  Services.prefs.setBoolPref(pref, value);
+}
+
 function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
   } catch (ex) {
     return def;
   }
+}
+
+function setIntPref(pref, value) {
+  Services.prefs.setIntPref(pref, value);
 }
 
 function getIntPref(pref, def) {
@@ -431,6 +443,62 @@ ChromeActions.prototype = {
     }
     getChromeWindow(this.domWindow).gFindBar
                                    .updateControlState(result, findPrevious);
+  },
+  setPreferences: function(prefs) {
+    var prefValue, defaultValue, prefName, prefType, defaultType;
+
+    for (var key in DEFAULT_PREFERENCES) {
+      prefValue = prefs[key];
+      defaultValue = DEFAULT_PREFERENCES[key];
+      prefName = (PREF_PREFIX + '.' + key);
+
+      if (prefValue === undefined || prefValue === defaultValue) {
+        Services.prefs.clearUserPref(prefName);
+      } else {
+        prefType = typeof prefValue;
+        defaultType = typeof defaultValue;
+
+        if (prefType !== defaultType) {
+          continue;
+        }
+        switch (defaultType) {
+          case 'boolean':
+            setBoolPref(prefName, prefValue);
+            break;
+          case 'number':
+            setIntPref(prefName, prefValue);
+            break;
+          case 'string':
+            // Protect against adding arbitrarily long strings in about:config.
+            if (prefValue.length <= MAX_STRING_PREF_LENGTH) {
+              setStringPref(prefName, prefValue);
+            }
+            break;
+        }
+      }
+    }
+  },
+  getPreferences: function() {
+    var currentPrefs = {};
+    var defaultValue, prefName;
+
+    for (var key in DEFAULT_PREFERENCES) {
+      defaultValue = DEFAULT_PREFERENCES[key];
+      prefName = (PREF_PREFIX + '.' + key);
+
+      switch (typeof defaultValue) {
+        case 'boolean':
+          currentPrefs[key] = getBoolPref(prefName, defaultValue);
+          break;
+        case 'number':
+          currentPrefs[key] = getIntPref(prefName, defaultValue);
+          break;
+        case 'string':
+          currentPrefs[key] = getStringPref(prefName, defaultValue);
+          break;
+      }
+    }
+    return JSON.stringify(currentPrefs);
   }
 };
 
@@ -439,9 +507,12 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
    * This is for range requests
    */
   function RangedChromeActions(
-              domWindow, contentDispositionFilename, originalRequest) {
+              domWindow, contentDispositionFilename, originalRequest,
+              dataListener) {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
+    this.dataListener = dataListener;
+    this.originalRequest = originalRequest;
 
     this.pdfUrl = originalRequest.URI.spec;
     this.contentLength = originalRequest.contentLength;
@@ -487,11 +558,15 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
   proto.constructor = RangedChromeActions;
 
   proto.initPassiveLoading = function RangedChromeActions_initPassiveLoading() {
+    this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+    this.originalRequest = null;
     this.domWindow.postMessage({
       pdfjsLoadAction: 'supportsRangedLoading',
       pdfUrl: this.pdfUrl,
-      length: this.contentLength
+      length: this.contentLength,
+      data: this.dataListener.getData()
     }, '*');
+    this.dataListener = null;
 
     return true;
   };
@@ -692,8 +767,8 @@ PdfStreamConverter.prototype = {
    * 1. asyncConvertData stores the listener
    * 2. onStartRequest creates a new channel, streams the viewer
    * 3. If range requests are supported:
-   *      3.1. Suspends and cancels the request so we can issue range
-   *          requests instead.
+   *      3.1. Leave the request open until the viewer is ready to switch to
+   *           range requests.
    *
    *    If range rquests are not supported:
    *      3.1. Read the stream as it's loaded in onDataAvailable to send
@@ -779,18 +854,12 @@ PdfStreamConverter.prototype = {
     PdfJsTelemetry.onViewerIsUsed();
     PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
 
-    if (!rangeRequest) {
-      // Creating storage for PDF data
-      var contentLength = aRequest.contentLength;
-      this.dataListener = new PdfDataListener(contentLength);
-      this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
-                          .createInstance(Ci.nsIBinaryInputStream);
-    } else {
-      // Suspend the request so we're not consuming any of the stream,
-      // but we can't cancel the request yet. Otherwise, the original
-      // listener will think we do not want to go the new PDF url
-      aRequest.suspend();
-    }
+
+    // Creating storage for PDF data
+    var contentLength = aRequest.contentLength;
+    this.dataListener = new PdfDataListener(contentLength);
+    this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
+                        .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
     var ioService = Services.io;
@@ -816,12 +885,8 @@ PdfStreamConverter.prototype = {
         var domWindow = getDOMWindow(channel);
         var actions;
         if (rangeRequest) {
-          // We are going to be issuing range requests, so cancel the
-          // original request
-          aRequest.resume();
-          aRequest.cancel(Cr.NS_BINDING_ABORTED);
-          actions = new RangedChromeActions(domWindow,
-              contentDispositionFilename, aRequest);
+          actions = new RangedChromeActions(
+              domWindow, contentDispositionFilename, aRequest, dataListener);
         } else {
           actions = new StandardChromeActions(
               domWindow, contentDispositionFilename, dataListener);

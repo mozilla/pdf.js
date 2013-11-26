@@ -65,8 +65,7 @@ var PDFHistory = {
         // is opened in the web viewer.
         this.reInitialized = true;
       }
-      window.history.replaceState({ fingerprint: this.fingerprint }, '',
-          document.URL);
+      this._pushOrReplaceState({ fingerprint: this.fingerprint }, true);
     }
 
     var self = this;
@@ -129,6 +128,23 @@ var PDFHistory = {
     return (state && state.uid >= 0 &&
             state.fingerprint && this.fingerprint === state.fingerprint &&
             state.target && state.target.hash) ? true : false;
+  },
+
+  _pushOrReplaceState: function pdfHistory_pushOrReplaceState(stateObj,
+                                                              replace) {
+    if (replace) {
+//#if (GENERIC || CHROME)
+      window.history.replaceState(stateObj, '', document.URL);
+//#else
+//    window.history.replaceState(stateObj, '');
+//#endif
+    } else {
+//#if (GENERIC || CHROME)
+      window.history.pushState(stateObj, '', document.URL);
+//#else
+//    window.history.pushState(stateObj, '');
+//#endif
+    }
   },
 
   get isHashChangeUnlocked() {
@@ -291,11 +307,8 @@ var PDFHistory = {
         this._pushToHistory(previousParams, false, replacePrevious);
       }
     }
-    if (overwrite || this.uid === 0) {
-      window.history.replaceState(this._stateObj(params), '', document.URL);
-    } else {
-      window.history.pushState(this._stateObj(params), '', document.URL);
-    }
+    this._pushOrReplaceState(this._stateObj(params),
+                             (overwrite || this.uid === 0));
     this.currentUid = this.uid++;
     this.current = params;
     this.updatePreviousBookmark = true;

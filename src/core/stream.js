@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals bytesToString, ColorSpace, Dict, EOF, error, info, Jbig2Image,
-           JpegImage, JpxImage, Lexer, Util */
+           JpegImage, JpxImage, Lexer, Util, PDFJS */
 
 'use strict';
 
@@ -832,7 +832,7 @@ var JpegStream = (function JpegStreamClosure() {
     }
   };
   JpegStream.prototype.getIR = function JpegStream_getIR() {
-    return bytesToString(this.bytes);
+    return PDFJS.createObjectURL(this.bytes, 'image/jpeg');
   };
   /**
    * Checks if the image can be decoded and displayed by the browser without any

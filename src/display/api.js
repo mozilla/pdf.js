@@ -56,7 +56,9 @@ PDFJS.disableWorker = PDFJS.disableWorker === undefined ?
                       false : PDFJS.disableWorker;
 
 /**
- * Path and filename of the worker file. Required when the worker is enabled.
+ * Path and filename of the worker file. Required when the worker is enabled in
+ * development mode. If unspecified in the production build, the worker will be
+ * loaded based on the location of the pdf.js file.
  * @var {String}
  */
 PDFJS.workerSrc = PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc;
@@ -86,6 +88,12 @@ PDFJS.disableAutoFetch = PDFJS.disableAutoFetch === undefined ?
 PDFJS.pdfBug = PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug;
 
 /**
+ * Enables transfer usage in postMessage for ArrayBuffers.
+ * @var {boolean}
+ */
+PDFJS.postMessageTransfers = PDFJS.postMessageTransfers === undefined ?
+                             true : PDFJS.postMessageTransfers;
+/**
  * This is the main entry point for loading a PDF and interacting with it.
  * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
  * is used, which means it must follow the same origin rules that any XHR does
@@ -98,6 +106,9 @@ PDFJS.pdfBug = PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug;
  *  - data  - A typed array with PDF data.
  *  - httpHeaders - Basic authentication headers.
  *  - password - For decrypting password-protected PDFs.
+ *  - initialData - A typed array with the first portion or all of the pdf data.
+ *                  Used by the extension since some data is already loaded
+ *                  before the switch to range requests. 
  *
  * @param {object} pdfDataRangeTransport is optional. It is used if you want
  * to manually serve range requests for data in the PDF. See viewer.js for
@@ -188,6 +199,14 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getPage(number);
     },
     /**
+     * @param {object} Must have 'num' and 'gen' properties.
+     * @return {Promise} A promise that is resolved with the page index that is
+     * associated with the reference.
+     */
+    getPageIndex: function PDFDocumentProxy_getPageIndex(ref) {
+      return this.transport.getPageIndex(ref);
+    },
+    /**
      * @return {Promise} A promise that is resolved with a lookup table for
      * mapping named destinations to reference numbers.
      */
@@ -261,6 +280,9 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      */
     dataLoaded: function PDFDocumentProxy_dataLoaded() {
       return this.transport.dataLoaded();
+    },
+    cleanup: function PDFDocumentProxy_cleanup() {
+      this.transport.startCleanup();
     },
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
@@ -481,10 +503,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      */
     _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk) {
       // Add the new chunk to the current operator list.
-      Util.concatenateToArray(this.operatorList.fnArray,
-                              operatorListChunk.fnArray);
-      Util.concatenateToArray(this.operatorList.argsArray,
-                              operatorListChunk.argsArray);
+      for (var i = 0, ii = operatorListChunk.length; i < ii; i++) {
+        this.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
+        this.operatorList.argsArray.push(operatorListChunk.argsArray[i]);
+      }
       this.operatorList.lastChunk = operatorListChunk.lastChunk;
 
       // Notify all the rendering tasks there are more operators to be consumed.
@@ -536,9 +558,13 @@ var WorkerTransport = (function WorkerTransportClosure() {
         var messageHandler = new MessageHandler('main', worker);
         this.messageHandler = messageHandler;
 
-        messageHandler.on('test', function transportTest(supportTypedArray) {
+        messageHandler.on('test', function transportTest(data) {
+          var supportTypedArray = data && data.supportTypedArray;
           if (supportTypedArray) {
             this.worker = worker;
+            if (!data.supportTransfers) {
+              PDFJS.postMessageTransfers = false;
+            }
             this.setupMessageHandler(messageHandler);
             workerInitializedPromise.resolve();
           } else {
@@ -550,10 +576,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
           }
         }.bind(this));
 
-        var testObj = new Uint8Array(1);
-        // Some versions of Opera throw a DATA_CLONE_ERR on
-        // serializing the typed array.
-        messageHandler.send('test', testObj);
+        var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
+        // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
+        // typed array. Also, checking if we can use transfers.
+        try {
+          messageHandler.send('test', testObj, null, [testObj.buffer]);
+        } catch (ex) {
+          info('Cannot use postMessage transfers');
+          testObj[0] = 0;
+          messageHandler.send('test', testObj);
+        }
         return;
       } catch (e) {
         info('The worker has been disabled.');
@@ -791,7 +823,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('JpegDecode', function(data, promise) {
-        var imageData = data[0];
+        var imageUrl = data[0];
         var components = data[1];
         if (components != 3 && components != 1)
           error('Only 3 component or 1 component can be returned');
@@ -821,8 +853,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
           }
           promise.resolve({ data: buf, width: width, height: height});
         }).bind(this);
-        var src = 'data:image/jpeg;base64,' + window.btoa(imageData);
-        img.src = src;
+        img.src = imageUrl;
       });
     },
 
@@ -861,6 +892,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return promise;
     },
 
+    getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
+      var promise = new PDFJS.Promise();
+      this.messageHandler.send('GetPageIndex', { ref: ref },
+        function (pageIndex) {
+          promise.resolve(pageIndex);
+        }
+      );
+      return promise;
+    },
+
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
       this.messageHandler.send('GetAnnotationsRequest',
         { pageIndex: pageIndex });
@@ -874,6 +915,21 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       );
       return promise;
+    },
+
+    startCleanup: function WorkerTransport_startCleanup() {
+      this.messageHandler.send('Cleanup', null,
+        function endCleanup() {
+          for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
+            var page = this.pageCache[i];
+            if (page) {
+              page.destroy();
+            }
+          }
+          this.commonObjs.clear();
+          FontLoader.clear();
+        }.bind(this)
+      );
     }
   };
   return WorkerTransport;
@@ -1094,7 +1150,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
                                         this.operatorListIdx,
                                         this._continue.bind(this),
                                         this.stepper);
-      if (this.operatorListIdx === this.operatorList.fnArray.length) {
+      if (this.operatorListIdx === this.operatorList.argsArray.length) {
         this.running = false;
         if (this.operatorList.lastChunk) {
           this.gfx.endDrawing();

@@ -17,7 +17,7 @@
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
            Pattern, TilingPattern, TODO, Util, warn, assert, info,
-           TextRenderingMode */
+           TextRenderingMode, OPS */
 
 'use strict';
 
@@ -456,37 +456,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   var EO_CLIP = {};
 
   CanvasGraphics.prototype = {
-    slowCommands: {
-      'stroke': true,
-      'closeStroke': true,
-      'fill': true,
-      'eoFill': true,
-      'fillStroke': true,
-      'eoFillStroke': true,
-      'closeFillStroke': true,
-      'closeEOFillStroke': true,
-      'showText': true,
-      'showSpacedText': true,
-      'setStrokeColorSpace': true,
-      'setFillColorSpace': true,
-      'setStrokeColor': true,
-      'setStrokeColorN': true,
-      'setFillColor': true,
-      'setFillColorN': true,
-      'setStrokeGray': true,
-      'setFillGray': true,
-      'setStrokeRGBColor': true,
-      'setFillRGBColor': true,
-      'setStrokeCMYKColor': true,
-      'setFillCMYKColor': true,
-      'paintJpegXObject': true,
-      'paintImageXObject': true,
-      'paintInlineImageXObject': true,
-      'paintInlineImageXObjectGroup': true,
-      'paintImageMaskXObject': true,
-      'paintImageMaskXObjectGroup': true,
-      'shadingFill': true
-    },
 
     beginDrawing: function CanvasGraphics_beginDrawing(viewport, transparency) {
       // For pdfs that use blend modes we have to clear the canvas else certain
@@ -538,8 +507,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       var commonObjs = this.commonObjs;
       var objs = this.objs;
-      var fnName;
-      var slowCommands = this.slowCommands;
+      var fnId;
 
       while (true) {
         if (stepper && i === stepper.nextBreakPoint) {
@@ -547,10 +515,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           return i;
         }
 
-        fnName = fnArray[i];
+        fnId = fnArray[i];
 
-        if (fnName !== 'dependency') {
-          this[fnName].apply(this, argsArray[i]);
+        if (fnId !== OPS.dependency) {
+          this[fnId].apply(this, argsArray[i]);
         } else {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
@@ -577,10 +545,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           return i;
         }
 
-        // If the execution took longer then a certain amount of time, shedule
+        // If the execution took longer then a certain amount of time, schedule
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
-        if (continueCallback && slowCommands[fnName] && Date.now() > endTime) {
+        if (continueCallback && Date.now() > endTime) {
           setTimeout(continueCallback, 0);
           return i;
         }
@@ -1866,6 +1834,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ];
     }
   };
+
+  for (var op in OPS) {
+    CanvasGraphics.prototype[OPS[op]] = CanvasGraphics.prototype[op];
+  }
 
   return CanvasGraphics;
 })();
