@@ -780,9 +780,14 @@ var PDFView = {
   },
 
   load: function pdfViewLoad(pdfDocument, scale) {
+    var self = this;
+    var onePageRendered = new PDFJS.Promise();
     function bindOnAfterDraw(pageView, thumbnailView) {
       // when page is painted, using the image as thumbnail base
       pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
+        if (!onePageRendered.isResolved) {
+          onePageRendered.resolve();
+        }
         thumbnailView.setImage(pageView.canvas);
       };
     }
@@ -831,7 +836,6 @@ var PDFView = {
     var thumbnails = this.thumbnails = [];
 
     var pagesPromise = this.pagesPromise = new PDFJS.Promise();
-    var self = this;
 
     var firstPagePromise = pdfDocument.getPage(1);
 
@@ -839,7 +843,6 @@ var PDFView = {
     // viewport for all pages
     firstPagePromise.then(function(pdfPage) {
       var viewport = pdfPage.getViewport((scale || 1.0) * CSS_UNITS);
-      var pagePromises = [];
       for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         var viewportClone = viewport.clone();
         var pageView = new PageView(container, pageNum, scale,
@@ -850,14 +853,33 @@ var PDFView = {
         bindOnAfterDraw(pageView, thumbnailView);
         pages.push(pageView);
         thumbnails.push(thumbnailView);
-        if (!PDFJS.disableAutoFetch) {
-          pagePromises.push(pdfDocument.getPage(pageNum).then(
-            function (pageView, pdfPage) {
-              pageView.setPdfPage(pdfPage);
-            }.bind(this, pageView)
-          ));
-        }
       }
+
+      // Fetch all the pages since the viewport is needed before printing
+      // starts to create the correct size canvas. Wait until one page is
+      // rendered so we don't tie up too many resources early on.
+      onePageRendered.then(function () {
+        if (!PDFJS.disableAutoFetch) {
+          var getPagesLeft = pagesCount;
+          for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+            pdfDocument.getPage(pageNum).then(function (pageNum, pdfPage) {
+              var pageView = pages[pageNum - 1];
+              if (!pageView.pdfPage) {
+                pageView.setPdfPage(pdfPage);
+              }
+              var refStr = pdfPage.ref.num + ' ' + pdfPage.ref.gen + ' R';
+              pagesRefMap[refStr] = pageNum;
+              getPagesLeft--;
+              if (!getPagesLeft) {
+                pagesPromise.resolve();
+              }
+            }.bind(null, pageNum));
+          }
+        } else {
+          // XXX: Printing is semi-broken with auto fetch disabled.
+          pagesPromise.resolve();
+        }
+      });
 
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('documentload', true, true, {});
@@ -866,10 +888,6 @@ var PDFView = {
       PDFView.loadingBar.setWidth(container);
 
       PDFFindController.firstPagePromise.resolve();
-
-      PDFJS.Promise.all(pagePromises).then(function(pages) {
-        pagesPromise.resolve(pages);
-      });
     });
 
     var prefsPromise = prefs.initializedPromise;
