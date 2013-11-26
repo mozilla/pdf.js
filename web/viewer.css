@@ -258,7 +258,7 @@ html[dir='rtl'] #sidebarContent {
 }
 
 .toolbar {
-  position: relative;
+  position: fixed;
   left: 0;
   right: 0;
   z-index: 9999;
