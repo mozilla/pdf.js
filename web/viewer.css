@@ -1377,7 +1377,49 @@ canvas {
   width: 100%;
   height: 100%;
   background-color: hsla(0,0%,0%,.2);
-  z-index: 10000;
+  z-index: 1000000;
+}
+
+#preferencesContainer {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+#preferencesContainer > * {
+  display: inline-block;
+  display: inline-block;
+  padding: 6px;
+  border-spacing: 4px;
+  max-width: 350px;
+  max-height: 350px;
+  color: hsl(0,0%,85%);
+  font-size: 12px;
+  line-height: 14px;
+  text-align: left;
+  cursor: default;
+  background-color: #474747; /* fallback */
+  background-image: url(images/texture.png),
+                    linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
+              inset 0 1px 1px hsla(0,0%,0%,.15),
+              inset 0 -1px 0 hsla(0,0%,100%,.05),
+              0 1px 0 hsla(0,0%,0%,.15),
+              0 1px 1px hsla(0,0%,0%,.1);
+}
+#preferencesContainer .caption {
+  font-weight: bold;
+}
+#preferencesContainer .row {
+  display: table-row;
+}
+#preferencesContainer .row > * {
+  display: table-cell;
+}
+#preferencesReset {
+  float: left;
+}
+#preferencesClose {
+  float: right;
 }
 
 #promptContainer {

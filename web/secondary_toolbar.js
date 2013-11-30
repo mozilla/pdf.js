@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, SCROLLBAR_PADDING */
+/* globals PDFView, SCROLLBAR_PADDING, PreferencesUI */
 
 'use strict';
 
@@ -38,6 +38,7 @@ var SecondaryToolbar = {
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
+    this.openPreferencesUI = document.getElementById('openPreferencesUI');
 
     // Attach the event listeners.
     var elements = [
@@ -50,13 +51,17 @@ var SecondaryToolbar = {
       { element: this.firstPage, handler: this.firstPageClick },
       { element: this.lastPage, handler: this.lastPageClick },
       { element: this.pageRotateCw, handler: this.pageRotateCwClick },
-      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick }
+      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
+      { element: this.openPreferencesUI, handler: this.openPreferencesUIClick }
     ];
 
+    var element, handler, scope;
     for (var item in elements) {
-      var element = elements[item].element;
+      element = elements[item].element;
       if (element) {
-        element.addEventListener('click', elements[item].handler.bind(this));
+        handler = elements[item].handler;
+        scope = (elements[item].scope || this);
+        element.addEventListener('click', handler.bind(scope));
       }
     }
   },
@@ -96,6 +101,11 @@ var SecondaryToolbar = {
 
   pageRotateCcwClick: function secondaryToolbarPageRotateCcwClick(evt) {
     PDFView.rotatePages(-90);
+  },
+
+  openPreferencesUIClick: function secondaryToolbarOpenPreferencesUIClick(evt) {
+    this.close();
+    PreferencesUI.open();
   },
 
   // Misc. functions for interacting with the toolbar.

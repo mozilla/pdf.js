@@ -62,6 +62,7 @@ var PasswordPrompt = {
     }
     this.visible = true;
     this.overlayContainer.classList.remove('hidden');
+    this.overlayContainer.firstElementChild.classList.remove('hidden');
     this.passwordField.focus();
 
     var promptString = mozL10n.get('password_label', null,
@@ -82,6 +83,7 @@ var PasswordPrompt = {
     this.visible = false;
     this.passwordField.value = '';
     this.overlayContainer.classList.add('hidden');
+    this.overlayContainer.firstElementChild.classList.add('hidden');
   },
 
   verifyPassword: function passwordPromptVerifyPassword() {
