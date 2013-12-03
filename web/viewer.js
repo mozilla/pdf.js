@@ -17,8 +17,9 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
-           Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PresentationMode */
+           Preferences, ViewHistory, PageView, ThumbnailView,
+           noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
+           PresentationMode */
 
 'use strict';
 
@@ -33,7 +34,7 @@ var VERTICAL_PADDING = 5;
 var MAX_AUTO_SCALE = 1.25;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
-var SETTINGS_MEMORY = 20;
+var VIEW_HISTORY_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
@@ -64,6 +65,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 
 //#include ui_utils.js
 //#include preferences.js
+//#include view_history.js
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
 //#include mozPrintCallback_polyfill.js
@@ -80,7 +82,6 @@ var mozL10n = document.mozL10n || document.webL10n;
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
-//#include settings.js
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
 //#include pdf_history.js
@@ -827,7 +828,7 @@ var PDFView = {
 
     var prefs = PDFView.prefs = new Preferences();
     PDFView.documentFingerprint = id;
-    var store = PDFView.store = new Settings(id);
+    var store = PDFView.store = new ViewHistory(prefs, id);
 
     this.pageRotation = 0;
 
@@ -898,16 +899,18 @@ var PDFView = {
       var defaultZoomValue = prefs.get('defaultZoomValue');
 
       var storedHash = null;
-      if (showPreviousViewOnLoad && store.get('exists', false)) {
-        var pageNum = store.get('page', '1');
-        var zoom = defaultZoomValue || store.get('zoom', PDFView.currentScale);
-        var left = store.get('scrollLeft', '0');
-        var top = store.get('scrollTop', '0');
+      if (showPreviousViewOnLoad && store.get('exists')) {
+        var pageNum = store.get('page');
+        var zoom = defaultZoomValue || store.get('zoom');
+        var left = store.get('scrollLeft');
+        var top = store.get('scrollTop');
 
-        storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
-                     left + ',' + top;
-      } else if (defaultZoomValue) {
-        storedHash = 'page=1&zoom=' + defaultZoomValue;
+        storedHash = ('page=' + pageNum) +
+                     ('&zoom=' + zoom + ',' + left + ',' + top);
+      } else {
+        if (defaultZoomValue) {
+          storedHash = 'page=1&zoom=' + defaultZoomValue;
+        }
       }
       // Initialize the browsing history.
       PDFHistory.initialize(self.documentFingerprint);
@@ -1805,11 +1808,13 @@ function updateViewarea() {
 
   var store = PDFView.store;
   store.initializedPromise.then(function() {
-    store.set('exists', true);
-    store.set('page', pageNumber);
-    store.set('zoom', normalizedScaleValue);
-    store.set('scrollLeft', Math.round(topLeft[0]));
-    store.set('scrollTop', Math.round(topLeft[1]));
+    store.setMultiple({
+      exists: true,
+      page: pageNumber,
+      zoom: normalizedScaleValue,
+      scrollLeft: Math.round(topLeft[0]),
+      scrollTop: Math.round(topLeft[1])
+    });
   });
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;

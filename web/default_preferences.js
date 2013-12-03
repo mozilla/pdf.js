@@ -21,6 +21,7 @@
 var EXPORTED_SYMBOLS = ['DEFAULT_PREFERENCES'];
 
 var DEFAULT_PREFERENCES = {
+  database: '{}',
   showPreviousViewOnLoad: true,
   defaultZoomValue: '',
   ifAvailableShowOutlineOnLoad: false
