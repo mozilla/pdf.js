@@ -32,7 +32,6 @@ const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
-const MAX_DATABASE_LENGTH = 4096;
 const MAX_STRING_PREF_LENGTH = 4096;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
@@ -294,19 +293,6 @@ ChromeActions.prototype = {
 
       channel.asyncOpen(listener, null);
     });
-  },
-  setDatabase: function(data) {
-    if (this.isInPrivateBrowsing())
-      return;
-    // Protect against something sending tons of data to setDatabase.
-    if (data.length > MAX_DATABASE_LENGTH)
-      return;
-    setStringPref(PREF_PREFIX + '.database', data);
-  },
-  getDatabase: function() {
-    if (this.isInPrivateBrowsing())
-      return '{}';
-    return getStringPref(PREF_PREFIX + '.database', '{}');
   },
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
