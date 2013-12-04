@@ -203,8 +203,8 @@ var PDFFindController = {
   },
 
   nextMatch: function() {
-    var pages = this.pdfPageSource.pages;
     var previous = this.state.findPrevious;
+    var currentPageIndex = this.pdfPageSource.page - 1;
     var numPages = this.pdfPageSource.pages.length;
 
     this.active = true;
@@ -213,7 +213,7 @@ var PDFFindController = {
       // Need to recalculate the matches, reset everything.
       this.dirtyMatch = false;
       this.selected.pageIdx = this.selected.matchIdx = -1;
-      this.offset.pageIdx = previous ? numPages - 1 : 0;
+      this.offset.pageIdx = currentPageIndex;
       this.offset.matchIdx = null;
       this.hadMatch = false;
       this.resumeCallback = null;
