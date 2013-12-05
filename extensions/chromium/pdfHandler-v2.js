@@ -19,7 +19,11 @@ limitations under the License.
 
 'use strict';
 
-// Hash map of "<pdf url>": "<stream url>"
+//
+// Stream URL storage manager
+//
+
+// Hash map of "<tab id>": { "<pdf url>": ["<stream url>", ...], ... }
 var urlToStream = {};
 
 // Note: Execution of this script stops when the streamsPrivate API is
@@ -28,17 +32,55 @@ var urlToStream = {};
 // when the streamsPrivate API is unavailable.
 chrome.streamsPrivate.onExecuteMimeTypeHandler.addListener(handleStream);
 
+// Chrome before 27 does not support tabIds on stream events.
+var streamSupportsTabId = true;
+// "tabId" used for Chrome before 27.
+var STREAM_NO_TABID = 0;
+
+function hasStream(tabId, pdfUrl) {
+  var streams = urlToStream[streamSupportsTabId ? tabId : STREAM_NO_TABID];
+  return streams && streams[pdfUrl] && streams[pdfUrl].length > 0;
+}
+
+/**
+* Get stream URL for a given tabId and PDF url. The retrieved stream URL
+* will be removed from the list.
+* @return {string|undefined} The blob:-URL
+*/
+function getStream(tabId, pdfUrl) {
+  if (!streamSupportsTabId) tabId = STREAM_NO_TABID;
+  if (hasStream(tabId, pdfUrl)) {
+    var streamUrl = urlToStream[tabId][pdfUrl].shift();
+    if (urlToStream[tabId][pdfUrl].length === 0) {
+      delete urlToStream[tabId][pdfUrl];
+      if (Object.keys(urlToStream[tabId]).length === 0) {
+        delete urlToStream[tabId];
+      }
+    }
+    return streamUrl;
+  }
+}
+
+function setStream(tabId, pdfUrl, streamUrl) {
+  tabId = tabId || STREAM_NO_TABID;
+  if (!urlToStream[tabId]) urlToStream[tabId] = {};
+  if (!urlToStream[tabId][pdfUrl]) urlToStream[tabId][pdfUrl] = [];
+  urlToStream[tabId][pdfUrl].push(streamUrl);
+}
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === 'getPDFStream') {
     var pdfUrl = message.data;
-    var streamUrl = urlToStream[pdfUrl];
-    // The stream can be used only once.
-    delete urlToStream[pdfUrl];
+    var streamUrl = getStream(sender.tab.id, pdfUrl);
     sendResponse({
       streamUrl: streamUrl
     });
   }
 });
+
+//
+// PDF detection and activation of PDF viewer.
+//
 
 /**
  * Callback for when we receive a stream
@@ -52,12 +94,51 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 function handleStream(mimeType, pdfUrl, streamUrl, tabId) {
   console.log('Intercepted ' + mimeType + ' in tab ' + tabId + ' with URL ' +
               pdfUrl + '\nAvailable as: ' + streamUrl);
-  urlToStream[pdfUrl] = streamUrl;
+  streamSupportsTabId = typeof tabId === 'number';
+
+  setStream(tabId, pdfUrl, streamUrl);
+
+  if (!tabId) { // Chrome doesn't set the tabId before v27
+    // PDF.js targets Chrome 28+ because of fatal bugs in incognito mode
+    // for older versions of Chrome. So, don't bother implementing a fallback.
+    // For those who are interested, either loop through all tabs, or use the
+    // webNavigation.onBeforeNavigate event to map pdfUrls to tab + frame IDs.
+    return;
+  }
+
+  // Check if the frame has already been rendered.
+  chrome.webNavigation.getAllFrames({
+    tabId: tabId
+  }, function(details) {
+    if (details) {
+      details = details.filter(function(frame) {
+        return frame.url === pdfUrl;
+      });
+      if (details.length > 0) {
+        if (details.length !== 1) {
+          // (Rare case) Multiple frames with same URL.
+          // TODO(rob): Find a better way to handle this case.
+          console.warn('More than one frame found for tabId ' + tabId +
+            ' with URL ' + pdfUrl + '. Using first frame.');
+        }
+        details = details[0];
+        details = {
+          tabId: tabId,
+          frameId: details.frameId,
+          url: details.url
+        };
+        handleWebNavigation(details);
+      } else {
+        console.warn('No webNavigation frames found for tabId ' + tabId);
+      }
+    } else {
+      console.warn('Unable to get frame information for tabId ' + tabId);
+    }
+  });
 }
 
 /**
- * Callback for when a navigation error has occurred.
- * This event is triggered when the chrome.streamsPrivate API has intercepted
+ * This method is called when the chrome.streamsPrivate API has intercepted
  *  the PDF stream. This method detects such streams, finds the frame where
  *  the request was made, and loads the viewer in that frame.
  *
@@ -67,39 +148,35 @@ function handleStream(mimeType, pdfUrl, streamUrl, tabId) {
  * @param details.frameId {number} 0 indicates the navigation happens in the tab
  *                                 content window; a positive value indicates
  *                                 navigation in a subframe.
- * @param details.error {string}
  */
-function webNavigationOnErrorOccurred(details) {
+function handleWebNavigation(details) {
   var tabId = details.tabId;
   var frameId = details.frameId;
   var pdfUrl = details.url;
 
-  if (details.error === 'net::ERR_ABORTED') {
-    if (!urlToStream[pdfUrl]) {
-      console.log('No saved PDF stream found for ' + pdfUrl);
-      return;
-    }
-    var viewerUrl = getViewerURL(pdfUrl);
+  if (!hasStream(tabId, pdfUrl)) {
+    console.log('No PDF stream found in tab ' + tabId + ' for ' + pdfUrl);
+    return;
+  }
 
-    if (frameId === 0) { // Main frame
-      console.log('Going to render PDF Viewer in main frame for ' + pdfUrl);
-      chrome.tabs.update(tabId, {
-        url: viewerUrl
-      });
-    } else {
-      console.log('Going to render PDF Viewer in sub frame for ' + pdfUrl);
-      // Non-standard Chrome API. chrome.tabs.executeScriptInFrame and docs
-      // is available at https://github.com/Rob--W/chrome-api
-      chrome.tabs.executeScriptInFrame(tabId, {
-        frameId: frameId,
-        code: 'location.href = ' + JSON.stringify(viewerUrl) + ';'
-      }, function(result) {
-        if (!result) { // Did the tab disappear? Is the frame inaccessible?
-          console.warn('Frame not found, viewer not rendered in tab ' + tabId);
-        }
-      });
-    }
+  var viewerUrl = getViewerURL(pdfUrl);
+
+  if (frameId === 0) { // Main frame
+    console.log('Going to render PDF Viewer in main frame for ' + pdfUrl);
+    chrome.tabs.update(tabId, {
+      url: viewerUrl
+    });
+  } else {
+    console.log('Going to render PDF Viewer in sub frame for ' + pdfUrl);
+    // Non-standard Chrome API. chrome.tabs.executeScriptInFrame and docs
+    // is available at https://github.com/Rob--W/chrome-api
+    chrome.tabs.executeScriptInFrame(tabId, {
+      frameId: frameId,
+      code: 'location.href = ' + JSON.stringify(viewerUrl) + ';'
+    }, function(result) {
+      if (!result) { // Did the tab disappear? Is the frame inaccessible?
+        console.warn('Frame not found, viewer not rendered in tab ' + tabId);
+      }
+    });
   }
 }
-
-chrome.webNavigation.onErrorOccurred.addListener(webNavigationOnErrorOccurred);
