@@ -1433,6 +1433,11 @@ canvas {
   background: white;
   color: black;
   margin-top: 5px;
+
+  visibility: hidden;
+  position: fixed;
+  right: 0;
+  top: 0;
 }
 
 #PDFBug {
