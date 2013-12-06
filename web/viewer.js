@@ -18,7 +18,7 @@
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PresentationMode */
+           SecondaryToolbar, PasswordPrompt, PresentationMode, PreferencesUI */
 
 'use strict';
 
@@ -87,6 +87,7 @@ var currentPageNumber = 1;
 //#include secondary_toolbar.js
 //#include password_prompt.js
 //#include presentation_mode.js
+//#include preferences_ui.js
 
 var PDFView = {
   pages: [],
@@ -171,6 +172,8 @@ var PDFView = {
       pageRotateCw: document.getElementById('contextPageRotateCw'),
       pageRotateCcw: document.getElementById('contextPageRotateCcw')
     });
+
+    PreferencesUI.initialize();
 
     this.initialized = true;
     container.addEventListener('scroll', function() {

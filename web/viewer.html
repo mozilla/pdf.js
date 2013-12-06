@@ -75,6 +75,7 @@ limitations under the License.
     <script type="text/javascript" src="secondary_toolbar.js"></script>
     <script type="text/javascript" src="password_prompt.js"></script>
     <script type="text/javascript" src="presentation_mode.js"></script>
+    <script type="text/javascript" src="preferences_ui.js"></script>
 <!--#endif-->
 
     <script type="text/javascript" src="debugger.js"></script>
@@ -162,6 +163,12 @@ limitations under the License.
             </button>
             <button id="pageRotateCcw" class="secondaryToolbarButton rotateCcw" title="Rotate Counterclockwise" tabindex="26" data-l10n-id="page_rotate_ccw">
               <span data-l10n-id="page_rotate_ccw_label">Rotate Counterclockwise</span>
+            </button>
+
+            <div class="horizontalToolbarSeparator"></div>
+
+            <button id="openPreferencesUI" class="secondaryToolbarButton" title="Preferences..." tabindex="27" data-l10n-id="">
+              <span data-l10n-id="">Preferences...</span>
             </button>
           </div>
         </div>  <!-- secondaryToolbar -->
@@ -291,7 +298,7 @@ limitations under the License.
       </div> <!-- mainContainer -->
 
       <div id="overlayContainer" class="hidden">
-        <div id="promptContainer">
+        <div id="promptContainer" class="hidden">
           <div id="passwordContainer" class="prompt doorHanger">
             <div class="row">
               <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
@@ -303,6 +310,33 @@ limitations under the License.
               <button id="passwordCancel" class="promptButton"><span data-l10n-id="password_cancel">Cancel</span></button>
               <button id="passwordSubmit" class="promptButton"><span data-l10n-id="password_ok">OK</span></button>
             </div>
+          </div>
+        </div>
+
+        <div id="preferencesContainer" class="hidden">
+          <div class="doorHanger">
+            <div class="row">
+              <span class="toolbarLabel caption" data-l10n-id="">Preferences</span>
+            </div>
+            <div class="row">
+              <label for="showPreviousViewOnLoad" class="toolbarLabel" data-l10n-id="">showPreviousViewOnLoad</label>
+              <input type="checkbox" id="showPreviousViewOnLoad" class="toolbarField" tabindex="">
+            </div>
+            <div class="row">
+               <label for="ifAvailableShowOutlineOnLoad" class="toolbarLabel" data-l10n-id="">ifAvailableShowOutlineOnLoad</label>
+               <input type="checkbox" id="ifAvailableShowOutlineOnLoad" class="toolbarField" tabindex="">
+            </div>
+            <div class="row">
+              <label for="defaultZoomValue" class="toolbarLabel" data-l10n-id="">defaultZoomValue</label>
+              <input id="defaultZoomValue" class="toolbarField" tabindex="">
+            </div>
+
+            <button id="preferencesReset" class="" title="Reset" tabindex="" data-l10n-id="">
+              <span data-l10n-id="">Reset</span>
+            </button>
+            <button id="preferencesClose" class="" title="Close" tabindex="" data-l10n-id="">
+              <span data-l10n-id="">Close</span>
+            </button>
           </div>
         </div>
       </div> 
