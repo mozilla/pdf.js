@@ -983,6 +983,10 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-rotateCw.png);
 }
 
+.secondaryToolbarButton.handTool::before {
+  content: url(images/secondaryToolbarButton-handTool.png);
+}
+
 .verticalToolbarSeparator {
   display: block;
   padding: 8px 0;
@@ -1492,6 +1496,30 @@ canvas {
 #viewer.textLayer-shadow .textLayer > div {
   background-color: rgba(255,255,255, .6);
   color: black;
+}
+
+.grab-to-pan-grab * {
+  cursor: url("images/grab.cur"), move !important;
+  cursor: -webkit-grab !important;
+  cursor: -moz-grab !important;
+}
+.grab-to-pan-grabbing,
+.grab-to-pan-grabbing * {
+  cursor: url("images/grabbing.cur"), move !important;
+  cursor: -webkit-grabbing !important;
+  cursor: -moz-grabbing !important;
+}
+.grab-to-pan-grab input,
+.grab-to-pan-grab textarea,
+.grab-to-pan-grab button,
+.grab-to-pan-grab button *,
+.grab-to-pan-grab select,
+.grab-to-pan-grab option {
+  cursor: auto !important;
+}
+.grab-to-pan-grab a[href],
+.grab-to-pan-grab a[href] * {
+  cursor: pointer !important;
 }
 
 @page {
