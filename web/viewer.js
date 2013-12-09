@@ -18,7 +18,7 @@
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PresentationMode */
+           SecondaryToolbar, PasswordPrompt, PresentationMode, HandTool */
 
 'use strict';
 
@@ -87,6 +87,7 @@ var currentPageNumber = 1;
 //#include secondary_toolbar.js
 //#include password_prompt.js
 //#include presentation_mode.js
+//#include hand_tool.js
 
 var PDFView = {
   pages: [],
@@ -138,6 +139,11 @@ var PDFView = {
     PDFFindController.initialize({
       pdfPageSource: this,
       integratedFind: this.supportsIntegratedFind
+    });
+
+    HandTool.initialize({
+      container: container,
+      toggleHandTool: document.getElementById('toggleHandTool')
     });
 
     SecondaryToolbar.initialize({
@@ -2138,6 +2144,11 @@ window.addEventListener('keydown', function keydown(evt) {
         }
         break;
 
+      case 72: // 'h'
+        if (!PresentationMode.active) {
+          HandTool.toggle();
+        }
+        break;
       case 82: // 'r'
         PDFView.rotatePages(90);
         break;

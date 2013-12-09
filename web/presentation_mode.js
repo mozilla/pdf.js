@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, scrollIntoView */
+/* globals PDFView, scrollIntoView, HandTool */
 
 'use strict';
 
@@ -103,6 +103,7 @@ var PresentationMode = {
     window.addEventListener('contextmenu', this.contextMenu, false);
 
     this.showControls();
+    HandTool.enterPresentationMode();
     this.contextMenuOpen = false;
     this.container.setAttribute('contextmenu', 'viewerContextMenu');
   },
@@ -121,6 +122,7 @@ var PresentationMode = {
     this.hideControls();
     this.args = null;
     PDFView.clearMouseScrollState();
+    HandTool.exitPresentationMode();
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
 
