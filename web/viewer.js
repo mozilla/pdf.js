@@ -206,19 +206,37 @@ var PDFView = {
     }, true);
   },
 
+  _setScaleUpdatePages: function pdfView_setScaleUpdatePages(
+      newScale, newValue, resetAutoSettings, noScroll) {
+    this.currentScaleValue = newValue;
+    if (newScale === this.currentScale) {
+      return;
+    }
+    for (var i = 0, ii = this.pages.length; i < ii; i++) {
+      this.pages[i].update(newScale);
+    }
+    this.currentScale = newScale;
+
+    if (!noScroll) {
+      this.pages[this.page - 1].scrollIntoView();
+    }
+    var event = document.createEvent('UIEvents');
+    event.initUIEvent('scalechange', false, false, window, 0);
+    event.scale = newScale;
+    event.resetAutoSettings = resetAutoSettings;
+    window.dispatchEvent(event);
+  },
+
   setScale: function pdfViewSetScale(value, resetAutoSettings, noScroll) {
     if (value === 'custom') {
       return;
     }
-    var pages = this.pages;
-    var currentPage = pages[this.page - 1];
-    var number = parseFloat(value);
-    var scale;
+    var scale = parseFloat(value);
 
-    if (number > 0) {
-      scale = number;
-      resetAutoSettings = true;
+    if (scale > 0) {
+      this._setScaleUpdatePages(scale, value, true, noScroll);
     } else {
+      var currentPage = this.pages[this.page - 1];
       if (!currentPage) {
         return;
       }
@@ -247,28 +265,8 @@ var PDFView = {
                         '\' is an unknown zoom value.');
           return;
       }
-    }
-    this.currentScaleValue = value;
+      this._setScaleUpdatePages(scale, value, resetAutoSettings, noScroll);
 
-    if (scale === this.currentScale) {
-      return;
-    }
-    for (var i = 0, ii = pages.length; i < ii; i++) {
-      pages[i].update(scale);
-    }
-    this.currentScale = scale;
-
-    if (!noScroll) {
-      currentPage.scrollIntoView();
-    }
-
-    var event = document.createEvent('UIEvents');
-    event.initUIEvent('scalechange', false, false, window, 0);
-    event.scale = scale;
-    event.resetAutoSettings = resetAutoSettings;
-    window.dispatchEvent(event);
-
-    if (!number) {
       selectScaleOption(value);
     }
   },
