@@ -1503,12 +1503,14 @@ canvas {
   cursor: url("images/grab.cur"), move !important;
   cursor: -webkit-grab !important;
   cursor: -moz-grab !important;
+  cursor: grab !important;
 }
 .grab-to-pan-grabbing,
 .grab-to-pan-grabbing * {
   cursor: url("images/grabbing.cur"), move !important;
   cursor: -webkit-grabbing !important;
   cursor: -moz-grabbing !important;
+  cursor: grabbing !important;
 }
 .grab-to-pan-grab input,
 .grab-to-pan-grab textarea,
