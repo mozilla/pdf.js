@@ -42,6 +42,16 @@
        "type": "load",
        "about": "PDF with undefined stream length."
     },
+    {  "id": "bug946506",
+       "file": "pdfs/bug946506.pdf",
+       "md5": "c28911b5c31bdc337c2ce404c5971cfc",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq",
+       "about": "Fonts referenced only by name and not by an object identifier."
+    },
     {  "id": "issue3879",
        "file": "pdfs/issue3879.pdf",
        "md5": "1cd1f1c3271515a14e65ff2980e14663",

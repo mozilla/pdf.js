@@ -475,16 +475,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return this.fontCache.get(fontRef);
       }
 
-
       font = xref.fetchIfRef(fontRef);
       if (!isDict(font)) {
         return errorFont();
       }
-      this.fontCache.put(fontRef, font);
+      // Workaround for bad PDF generators that doesn't reference fonts
+      // properly, i.e. by not using an object identifier.
+      // Check if the fontRef is a Dict (as opposed to a standard object),
+      // in which case we don't cache the font and instead reference it by
+      // fontName in font.loadedName below.
+      var fontRefIsDict = isDict(fontRef);
+      if (!fontRefIsDict) {
+        this.fontCache.put(fontRef, font);
+      }
 
       // keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page
-      font.loadedName = 'g_font_' + fontRef.num + '_' + fontRef.gen;
+      font.loadedName = 'g_font_' + (fontRefIsDict ?
+        fontName.replace(/\W/g, '') : (fontRef.num + '_' + fontRef.gen));
 
       if (!font.translated) {
         var translated;
