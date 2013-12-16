@@ -217,7 +217,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * @return {Promise} A promise that is resolved with an array of all the
      * JavaScript strings in the name tree.
      */
-    getJavaScript: function PDFDocumentProxy_getDestinations() {
+    getJavaScript: function PDFDocumentProxy_getJavaScript() {
       var promise = new PDFJS.Promise();
       var js = this.pdfInfo.javaScript;
       promise.resolve(js);
