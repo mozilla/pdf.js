@@ -568,9 +568,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             this.setupMessageHandler(messageHandler);
             workerInitializedPromise.resolve();
           } else {
-            globalScope.PDFJS.disableWorker = true;
-            this.loadFakeWorkerFiles().then(function() {
-              this.setupFakeWorker();
+            this.setupFakeWorker().then(function() {
               workerInitializedPromise.resolve();
             }.bind(this));
           }
@@ -593,9 +591,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     }
     // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
-    globalScope.PDFJS.disableWorker = true;
-    this.loadFakeWorkerFiles().then(function() {
-      this.setupFakeWorker();
+    this.setupFakeWorker().then(function() {
       workerInitializedPromise.resolve();
     }.bind(this));
   }
@@ -611,7 +607,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    loadFakeWorkerFiles: function WorkerTransport_loadFakeWorkerFiles() {
+    setupFakeWorker: function WorkerTransport_setupFakeWorker() {
+      globalScope.PDFJS.disableWorker = true;
       if (!PDFJS.fakeWorkerFilesLoadedPromise) {
         PDFJS.fakeWorkerFilesLoadedPromise = new Promise();
         // In the developer build load worker_loader which in turn loads all the
@@ -625,10 +622,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 //      });
 //#endif
       }
-      return PDFJS.fakeWorkerFilesLoadedPromise;
-    },
 
-    setupFakeWorker: function WorkerTransport_setupFakeWorker() {
       warn('Setting up fake worker.');
       // If we don't use a worker, just post/sendMessage to the main thread.
       var fakeWorker = {
@@ -644,6 +638,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       // If the main thread is our worker, setup the handling for the messages
       // the main thread sends to it self.
       PDFJS.WorkerMessageHandler.setup(messageHandler);
+
+      return PDFJS.fakeWorkerFilesLoadedPromise;
     },
 
     setupMessageHandler:
