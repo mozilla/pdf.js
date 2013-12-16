@@ -205,8 +205,14 @@ html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
 html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   right: 0px;
 }
+html[dir='ltr'] #outerContainer.sidebarOpen .toolbar {
+  left: 200px;
+}
+html[dir='rtl'] #outerContainer.sidebarOpen .toolbar {
+  right: 200px;
+}
 
-#mainContainer {
+#mainContainer, .toolbar {
   position: absolute;
   top: 0;
   right: 0;
@@ -218,12 +224,14 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   transition-duration: 200ms;
   transition-timing-function: ease;
 }
-html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
+html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer,
+html[dir='ltr'] #outerContainer.sidebarOpen  .toolbar {
   -webkit-transition-property: left;
   transition-property: left;
   left: 200px;
 }
-html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer,
+html[dir='rtl'] #outerContainer.sidebarOpen  .toolbar {
   -webkit-transition-property: right;
   transition-property: right;
   right: 200px;
@@ -258,7 +266,7 @@ html[dir='rtl'] #sidebarContent {
 }
 
 .toolbar {
-  position: relative;
+  position: fixed;
   left: 0;
   right: 0;
   z-index: 9999;
@@ -1636,6 +1644,13 @@ canvas {
     left: 0px;
   }
   html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+    right: 0px;
+  }
+
+  html[dir='ltr'] #outerContainer.sidebarOpen .toolbar {
+    left: 0px;
+  }
+  html[dir='rtl'] #outerContainer.sidebarOpen .toolbar {
     right: 0px;
   }
 
