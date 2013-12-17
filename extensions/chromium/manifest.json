@@ -21,6 +21,14 @@
   "background": {
     "page": "pdfHandler.html"
   },
+  "page_action": {
+    "default_icon": {
+      "19": "icon19.png",
+      "38": "icon38.png"
+    },
+    "default_title": "Show PDF URL",
+    "default_popup": "pageActionPopup.html"
+  },
   "incognito": "split",
   "web_accessible_resources": [
     "getFrameId",
