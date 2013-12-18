@@ -93,6 +93,18 @@ PDFJS.pdfBug = PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug;
  */
 PDFJS.postMessageTransfers = PDFJS.postMessageTransfers === undefined ?
                              true : PDFJS.postMessageTransfers;
+
+/**
+ * Controls the logging level.
+ * The constants from PDFJS.VERBOSITY_LEVELS should be used:
+ * - errors
+ * - warnings [default]
+ * - infos
+ * @var {Number}
+ */
+PDFJS.verbosity = PDFJS.verbosity === undefined ?
+                  PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity;
+
 /**
  * This is the main entry point for loading a PDF and interacting with it.
  * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
@@ -864,7 +876,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         source: source,
         disableRange: PDFJS.disableRange,
         maxImageSize: PDFJS.maxImageSize,
-        disableFontFace: PDFJS.disableFontFace
+        disableFontFace: PDFJS.disableFontFace,
+        verbosity: PDFJS.verbosity
       });
     },
 
