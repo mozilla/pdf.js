@@ -545,6 +545,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     // all requirements to run parts of pdf.js in a web worker.
     // Right now, the requirement is, that an Uint8Array is still an Uint8Array
     // as it arrives on the worker. Chrome added this with version 15.
+//#if !SINGLE_FILE
     if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
       var workerSrc = PDFJS.workerSrc;
       if (!workerSrc) {
@@ -591,6 +592,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         info('The worker has been disabled.');
       }
     }
+//#endif    
     // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
     globalScope.PDFJS.disableWorker = true;
@@ -619,7 +621,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
         // pdf.worker.js file is needed.
 //#if !PRODUCTION
         Util.loadScript(PDFJS.workerSrc);
-//#else
+//#endif
+//#if PRODUCTION && SINGLE_FILE
+//      PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+//#endif
+//#if PRODUCTION && !SINGLE_FILE
 //      Util.loadScript(PDFJS.workerSrc, function() {
 //        PDFJS.fakeWorkerFilesLoadedPromise.resolve();
 //      });
