@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals bytesToString, ColorSpace, Dict, EOF, error, info, Jbig2Image,
-           JpegImage, JpxImage, Lexer, Util, PDFJS */
+           JpegImage, JpxImage, Lexer, Util, PDFJS, isArray, warn */
 
 'use strict';
 
@@ -976,6 +976,16 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
     var jbig2Image = new Jbig2Image();
 
     var chunks = [], decodeParams = this.dict.get('DecodeParms');
+
+    // According to the PDF specification, DecodeParms can be either
+    // a dictionary, or an array whose elements are dictionaries.
+    if (isArray(decodeParams)) {
+      if (decodeParams.length > 1) {
+        warn('JBIG2 - \'DecodeParms\' array with multiple elements ' +
+             'not supported.');
+      }
+      decodeParams = decodeParams[0];
+    }
     if (decodeParams && decodeParams.has('JBIG2Globals')) {
       var globalsStream = decodeParams.get('JBIG2Globals');
       var globals = globalsStream.getBytes();
