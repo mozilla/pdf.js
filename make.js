@@ -52,7 +52,8 @@ var DEFINES = {
   FIREFOX: false,
   MOZCENTRAL: false,
   B2G: false,
-  CHROME: false
+  CHROME: false,
+  SINGLE_FILE: false
 };
 
 //
@@ -273,23 +274,22 @@ target.bundle = function(args) {
   if (!test('-d', BUILD_DIR))
     mkdir(BUILD_DIR);
 
-  var MAIN_SRC_FILES = [
+  var SHARED_SRC_FILES = [
     'shared/util.js',
     'shared/colorspace.js',
     'shared/pattern.js',
     'shared/function.js',
     'shared/annotation.js',
+  ];
+
+  var MAIN_SRC_FILES = SHARED_SRC_FILES.concat([
     'display/api.js',
     'display/metadata.js',
     'display/canvas.js',
     'display/font_loader.js'
-  ];
+  ]);
 
   var WORKER_SRC_FILES = [
-    'shared/util.js',
-    'shared/pattern.js',
-    'shared/function.js',
-    'shared/annotation.js',
     'core/network.js',
     'core/chunked_stream.js',
     'core/pdf_manager.js',
@@ -297,7 +297,6 @@ target.bundle = function(args) {
     'core/obj.js',
     'core/charsets.js',
     'core/cidmaps.js',
-    'shared/colorspace.js',
     'core/crypto.js',
     'core/evaluator.js',
     'core/fonts.js',
@@ -314,6 +313,12 @@ target.bundle = function(args) {
     'core/cmap.js'
   ];
 
+  if (!defines.SINGLE_FILE) {
+    // We want shared_src_files in both pdf.js and pdf.worker.js
+    // unless it's being built in singlefile mode.
+    WORKER_SRC_FILES = SHARED_SRC_FILES.concat(WORKER_SRC_FILES);
+  }
+
   var EXT_SRC_FILES = [
     '../external/jpgjs/jpg.js'
   ];
@@ -326,6 +331,50 @@ target.bundle = function(args) {
   bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, WORKER_SRC_FILES,
          EXT_SRC_FILES);
   rm(srcCopy);
+};
+
+//
+// make singlefile
+// Concatenates pdf.js and pdf.worker.js into one big pdf.combined.js, and
+// flags the script loader to not attempt to load the separate worker JS file.
+//
+target.singlefile = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating singlefile build');
+
+  var SINGLE_FILE_DIR = BUILD_DIR + '/singlefile/';
+  var SINGLE_FILE_TARGET = BUILD_DIR + 'pdf.combined.js';
+
+  var defines = builder.merge(DEFINES, {SINGLE_FILE: true});
+  target.bundle({defines: defines});
+
+  cd(ROOT_DIR);
+
+  rm('-rf', SINGLE_FILE_DIR);
+  mkdir('-p', SINGLE_FILE_DIR);
+  mkdir('-p', SINGLE_FILE_DIR + BUILD_DIR);
+
+  var setup = {
+    defines: defines,
+    copy: [],
+    preprocess: [
+      [BUILD_TARGETS, SINGLE_FILE_DIR + BUILD_DIR]
+    ]
+  };
+  builder.build(setup);
+
+  cd(SINGLE_FILE_DIR);
+
+  echo();
+  echo('### Concatenating pdf.js and pdf.worker.js into pdf.combined.js');
+  var pdfJs = cat(BUILD_TARGET);
+  pdfJs += cat(BUILD_WORKER_TARGET);
+  pdfJs.to(SINGLE_FILE_TARGET);
+
+  rm(BUILD_TARGET);
+  rm(BUILD_WORKER_TARGET);
+
 };
 
 function cleanupJSSource(file) {
