@@ -260,6 +260,8 @@ var PDFView = {
 
     if (!noScroll) {
       currentPage.scrollIntoView();
+    } else {
+      PDFHistory.skipNextUpdateCurrentBookmark();
     }
 
     var event = document.createEvent('UIEvents');
