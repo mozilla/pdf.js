@@ -14,39 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, SETTINGS_MEMORY */
+/* globals PDFJS, VIEW_HISTORY_MEMORY, isLocalStorageEnabled */
 
 'use strict';
 
 /**
- * Settings Manager - This is a utility for saving settings.
+ * View History - This is a utility for saving various view parameters for
+ *                recently opened files.
  *
- * The way that settings are stored depends on how PDF.js is built,
+ * The way that the view parameters are stored depends on how PDF.js is built,
  * for 'node make <flag>' the following cases exist:
  *  - FIREFOX or MOZCENTRAL - uses about:config.
  *  - B2G                   - uses asyncStorage.
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
-var Settings = (function SettingsClosure() {
-//#if !(FIREFOX || MOZCENTRAL || B2G)
-  var isLocalStorageEnabled = (function localStorageEnabledTest() {
-    // Feature test as per http://diveintohtml5.info/storage.html
-    // The additional localStorage call is to get around a FF quirk, see
-    // bug #495747 in bugzilla
-    try {
-      return ('localStorage' in window && window['localStorage'] !== null &&
-              localStorage);
-    } catch (e) {
-      return false;
-    }
-  })();
-//#endif
-
-  function Settings(fingerprint) {
+var ViewHistory = (function ViewHistoryClosure() {
+  function ViewHistory(fingerprint) {
     this.fingerprint = fingerprint;
     this.initializedPromise = new PDFJS.Promise();
 
-    var resolvePromise = (function settingsResolvePromise(db) {
+    var resolvePromise = (function ViewHistoryResolvePromise(db) {
       this.initialize(db || '{}');
       this.initializedPromise.resolve();
     }).bind(this);
@@ -66,13 +53,13 @@ var Settings = (function SettingsClosure() {
 //#endif
   }
 
-  Settings.prototype = {
-    initialize: function settingsInitialize(database) {
+  ViewHistory.prototype = {
+    initialize: function ViewHistory_initialize(database) {
       database = JSON.parse(database);
       if (!('files' in database)) {
         database.files = [];
       }
-      if (database.files.length >= SETTINGS_MEMORY) {
+      if (database.files.length >= VIEW_HISTORY_MEMORY) {
         database.files.shift();
       }
       var index;
@@ -90,7 +77,7 @@ var Settings = (function SettingsClosure() {
       this.database = database;
     },
 
-    set: function settingsSet(name, val) {
+    set: function ViewHistory_set(name, val) {
       if (!this.initializedPromise.isResolved) {
         return;
       }
@@ -113,7 +100,7 @@ var Settings = (function SettingsClosure() {
 //#endif
     },
 
-    get: function settingsGet(name, defaultValue) {
+    get: function ViewHistory_get(name, defaultValue) {
       if (!this.initializedPromise.isResolved) {
         return defaultValue;
       }
@@ -121,5 +108,5 @@ var Settings = (function SettingsClosure() {
     }
   };
 
-  return Settings;
+  return ViewHistory;
 })();
