@@ -56,7 +56,7 @@ var Settings = (function SettingsClosure() {
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//  resolvePromise(FirefoxCom.requestSync('getDatabase', null));
+//  resolvePromise(localStorage.getItem('pdfjs.database'));
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
@@ -103,7 +103,7 @@ var Settings = (function SettingsClosure() {
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//    FirefoxCom.requestSync('setDatabase', database);
+//    localStorage.setItem('pdfjs.database', database);
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
