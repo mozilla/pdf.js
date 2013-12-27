@@ -717,18 +717,15 @@ var CalGrayCS = (function CalGrayCSClosure() {
     },
     getRgbBuffer: function CalGrayCS_getRgbBuffer(src, srcOffset, count,
                                                   dest, destOffset, bits) {
-      // TODO: This part is copied from DeviceGray. Make this utility function.
+      var length = count * 3;
       var scale = 255 / ((1 << bits) - 1);
       var j = srcOffset, q = destOffset;
-      for (var i = 0; i < count; ++i) {
-        var c = (scale * src[j++]) | 0;
-        dest[q++] = c;
-        dest[q++] = c;
-        dest[q++] = c;
+      for (var i = 0; i < length; ++i) {
+        dest[q++] = (scale * src[j++]) | 0;
       }
     },
     getOutputLength: function CalGrayCS_getOutputLength(inputLength) {
-      return inputLength * 3;
+      return inputLength;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
     createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
