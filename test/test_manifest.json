@@ -76,6 +76,15 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue3903",
+       "file": "pdfs/issue3903.pdf",
+       "md5": "c9a4a8012e15cf3b10d671982ce35a92",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue2391-1",
       "file": "pdfs/issue2391-1.pdf",
       "md5": "25ae9cb959612e7b343b55da63af2716",
