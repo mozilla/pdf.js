@@ -317,6 +317,10 @@ target.bundle = function(args) {
     // We want shared_src_files in both pdf.js and pdf.worker.js
     // unless it's being built in singlefile mode.
     WORKER_SRC_FILES = SHARED_SRC_FILES.concat(WORKER_SRC_FILES);
+  } else {
+    // In singlefile mode, all of the src files will be bundled into
+    // the main pdf.js outuput.
+    MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
   }
 
   var EXT_SRC_FILES = [
@@ -367,9 +371,8 @@ target.singlefile = function() {
   cd(SINGLE_FILE_DIR);
 
   echo();
-  echo('### Concatenating pdf.js and pdf.worker.js into pdf.combined.js');
+  echo('### Moving pdf.js to pdf.combined.js');
   var pdfJs = cat(BUILD_TARGET);
-  pdfJs += cat(BUILD_WORKER_TARGET);
   pdfJs.to(SINGLE_FILE_TARGET);
 
   rm(BUILD_TARGET);
