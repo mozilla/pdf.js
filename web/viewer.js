@@ -1371,7 +1371,7 @@ var PDFView = {
       div.removeChild(div.lastChild);
   },
 
-  rotatePages: function pdfViewPageRotation(delta) {
+  rotatePages: function pdfViewRotatePages(delta) {
 
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
 
