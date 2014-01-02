@@ -36,6 +36,15 @@
      </Description>
     </em:targetApplication>
 
+    <!-- Conkeror -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{a79fe89b-6662-4ff4-8e88-09950ad4dfde}</em:id>
+        <em:minVersion>0.1</em:minVersion>
+        <em:maxVersion>9.9</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+
     <em:bootstrap>true</em:bootstrap>
     <em:creator>Mozilla</em:creator>
     <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>
