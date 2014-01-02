@@ -22,9 +22,6 @@ var globalScope = (typeof window === 'undefined') ? this : window;
 
 var isWorker = (typeof window == 'undefined');
 
-var ERRORS = 0, WARNINGS = 1, INFOS = 5;
-var verbosity = WARNINGS;
-
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 var TextRenderingMode = {
@@ -48,6 +45,12 @@ if (!globalScope.PDFJS) {
 }
 
 globalScope.PDFJS.pdfBug = false;
+
+PDFJS.VERBOSITY_LEVELS = {
+  errors: 0,
+  warnings: 1,
+  infos: 5
+};
 
 // All the possible operations for an operator list.
 var OPS = PDFJS.OPS = {
@@ -157,7 +160,7 @@ var log = (function() {
 // for things that are helpful to devs, such as warning that Workers were
 // disabled, which is important to devs but not end users.
 function info(msg) {
-  if (verbosity >= INFOS) {
+  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.infos) {
     log('Info: ' + msg);
     PDFJS.LogManager.notify('info', msg);
   }
@@ -165,7 +168,7 @@ function info(msg) {
 
 // Non-fatal warnings that should trigger the fallback UI.
 function warn(msg) {
-  if (verbosity >= WARNINGS) {
+  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.warnings) {
     log('Warning: ' + msg);
     PDFJS.LogManager.notify('warn', msg);
   }

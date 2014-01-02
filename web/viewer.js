@@ -1604,6 +1604,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     USE_ONLY_CSS_ZOOM = (hashParams['useOnlyCssZoom'] === 'true');
   }
 
+  if ('verbosity' in hashParams) {
+    PDFJS.verbosity = hashParams['verbosity'] | 0;
+  }
+
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = navigator.language;
   if ('locale' in hashParams)
