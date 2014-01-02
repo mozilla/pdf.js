@@ -17,8 +17,9 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
-           Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PresentationMode, HandTool */
+           Preferences, ViewHistory, PageView, ThumbnailView,
+           noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
+           PresentationMode, HandTool */
 
 'use strict';
 
@@ -33,7 +34,7 @@ var VERTICAL_PADDING = 5;
 var MAX_AUTO_SCALE = 1.25;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
-var SETTINGS_MEMORY = 20;
+var VIEW_HISTORY_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
@@ -80,7 +81,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
-//#include settings.js
+//#include view_history.js
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
 //#include pdf_history.js
@@ -832,7 +833,7 @@ var PDFView = {
 
     var prefs = PDFView.prefs = new Preferences();
     PDFView.documentFingerprint = id;
-    var store = PDFView.store = new Settings(id);
+    var store = PDFView.store = new ViewHistory(id);
 
     this.pageRotation = 0;
 
