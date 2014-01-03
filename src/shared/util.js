@@ -156,21 +156,19 @@ var log = (function() {
   }
 })();
 
-// A notice for devs that will not trigger the fallback UI.  These are good
-// for things that are helpful to devs, such as warning that Workers were
-// disabled, which is important to devs but not end users.
+// A notice for devs. These are good for things that are helpful to devs, such
+// as warning that Workers were disabled, which is important to devs but not
+// end users.
 function info(msg) {
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.infos) {
     log('Info: ' + msg);
-    PDFJS.LogManager.notify('info', msg);
   }
 }
 
-// Non-fatal warnings that should trigger the fallback UI.
+// Non-fatal warnings.
 function warn(msg) {
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.warnings) {
     log('Warning: ' + msg);
-    PDFJS.LogManager.notify('warn', msg);
   }
 }
 
@@ -188,13 +186,8 @@ function error(msg) {
     log('Error: ' + msg);
   }
   log(backtrace());
-  PDFJS.LogManager.notify('error', msg);
+  UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
   throw new Error(msg);
-}
-
-// Missing features that should trigger the fallback UI.
-function TODO(what) {
-  warn('TODO: ' + what);
 }
 
 function backtrace() {
@@ -209,6 +202,31 @@ function assert(cond, msg) {
   if (!cond)
     error(msg);
 }
+
+var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
+  unknown: 'unknown',
+  forms: 'forms',
+  javaScript: 'javaScript',
+  smask: 'smask',
+  shadingPattern: 'shadingPattern',
+  font: 'font'
+};
+
+var UnsupportedManager = PDFJS.UnsupportedManager =
+  (function UnsupportedManagerClosure() {
+  var listeners = [];
+  return {
+    listen: function (cb) {
+      listeners.push(cb);
+    },
+    notify: function (featureId) {
+      warn('Unsupported feature "' + featureId + '"');
+      for (var i = 0, ii = listeners.length; i < ii; i++) {
+        listeners[i](featureId);
+      }
+    }
+  };
+})();
 
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.
@@ -262,22 +280,6 @@ function assertWellFormed(cond, msg) {
   if (!cond)
     error(msg);
 }
-
-var LogManager = PDFJS.LogManager = (function LogManagerClosure() {
-  var loggers = [];
-  return {
-    addLogger: function logManager_addLogger(logger) {
-      loggers.push(logger);
-    },
-    notify: function(type, message) {
-      for (var i = 0, ii = loggers.length; i < ii; i++) {
-        var logger = loggers[i];
-        if (logger[type])
-          logger[type](message);
-      }
-    }
-  };
-})();
 
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
@@ -1152,8 +1154,8 @@ function MessageHandler(name, comObj) {
       log.apply(null, data);
     }];
   }
-  ah['_warn'] = [function ah_Warn(data) {
-    warn(data);
+  ah['_unsupported_feature'] = [function ah_unsupportedFeature(data) {
+    UnsupportedManager.notify(data);
   }];
 
   comObj.onmessage = function messageHandlerComObjOnMessage(event) {

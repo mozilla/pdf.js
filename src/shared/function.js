@@ -1,6 +1,5 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals EOF, error, isArray, isBool, Lexer, TODO */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals EOF, error, isArray, isBool, Lexer, info */
 
 'use strict';
 
@@ -122,7 +122,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       if (order !== 1) {
         // No description how cubic spline interpolation works in PDF32000:2008
         // As in poppler, ignoring order, linear interpolation may work as good
-        TODO('No support for cubic spline interpolation: ' + order);
+        info('No support for cubic spline interpolation: ' + order);
       }
 
       var encode = dict.get('Encode');

@@ -17,7 +17,7 @@
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
            ExpertSubsetCharset, FileReaderSync, GlyphsUnicode,
            info, isArray, isNum, ISOAdobeCharset, Stream,
-           stringToBytes, TextDecoder, TODO, warn, Lexer, Util,
+           stringToBytes, TextDecoder, warn, Lexer, Util,
            FONT_IDENTITY_MATRIX, FontRendererFactory, shadow, isString */
 
 'use strict';
@@ -495,7 +495,7 @@ function sjis83pvToUnicode(str) {
     // TODO: 83pv has incompatible mappings in ed40..ee9c range.
     return decodeBytes(bytes, 'shift_jis', true);
   } catch (e) {
-    TODO('Unsupported 83pv character found');
+    warn('Unsupported 83pv character found');
     // Just retry without checking errors for now.
     return decodeBytes(bytes, 'shift_jis');
   }
@@ -507,7 +507,7 @@ function sjis90pvToUnicode(str) {
     // TODO: 90pv has incompatible mappings in 8740..879c and eb41..ee9c.
     return decodeBytes(bytes, 'shift_jis', true);
   } catch (e) {
-    TODO('Unsupported 90pv character found');
+    warn('Unsupported 90pv character found');
     // Just retry without checking errors for now.
     return decodeBytes(bytes, 'shift_jis');
   }
@@ -4339,7 +4339,7 @@ var Font = (function FontClosure() {
       var cidEncoding = properties.cidEncoding;
       if (properties.toUnicode) {
         if (cidEncoding && cidEncoding.indexOf('Identity-') !== 0) {
-          TODO('Need to create a reverse mapping from \'ToUnicode\' CMap');
+          warn('Need to create a reverse mapping from \'ToUnicode\' CMap');
         }
         return; // 'ToUnicode' CMap will be used
       }
