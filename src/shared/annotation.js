@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Util, isDict, isName, stringToPDFString, TODO, Dict, Stream,
+/* globals Util, isDict, isName, stringToPDFString, warn, Dict, Stream,
            stringToBytes, PDFJS, isWorker, assert, NotImplementedException,
            Promise, isArray, ObjectLoader, isValidUrl, OperatorList, OPS */
 
@@ -266,7 +266,7 @@ var Annotation = (function AnnotationClosure() {
     if (annotation.isViewable()) {
       return annotation;
     } else {
-      TODO('unimplemented annotation type: ' + subtype);
+      warn('unimplemented annotation type: ' + subtype);
     }
   };
 
@@ -358,7 +358,7 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
   Util.inherit(WidgetAnnotation, Annotation, {
     isViewable: function WidgetAnnotation_isViewable() {
       if (this.data.fieldType === 'Sig') {
-        TODO('unimplemented annotation type: Widget signature');
+        warn('unimplemented annotation type: Widget signature');
         return false;
       }
 
@@ -643,7 +643,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       } else if (linkType === 'Named') {
         data.action = action.get('N').name;
       } else {
-        TODO('unrecognized link type: ' + linkType);
+        warn('unrecognized link type: ' + linkType);
       }
     } else if (dict.has('Dest')) {
       // simple destination link

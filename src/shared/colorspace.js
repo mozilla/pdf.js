@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals error, info, isArray, isDict, isName, isStream, isString,
-           PDFFunction, warn, shadow, TODO */
+           PDFFunction, warn, shadow */
 
 'use strict';
 
@@ -671,7 +671,7 @@ var CalGrayCS = (function CalGrayCSClosure() {
     }
 
     if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
-      TODO(this.name + ', BlackPoint: XB: ' + this.XB + ', YB: ' + this.YB +
+      warn(this.name + ', BlackPoint: XB: ' + this.XB + ', YB: ' + this.YB +
            ', ZB: ' + this.ZB + ', only default values are supported.');
     }
 
