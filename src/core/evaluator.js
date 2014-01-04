@@ -19,9 +19,9 @@
            info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, warn, Util, Promise, UnsupportedManager,
+           TilingPattern, warn, Util, Promise, LegacyPromise,
            RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
-           UNSUPPORTED_FEATURES */
+           UNSUPPORTED_FEATURES, UnsupportedManager */
 
 'use strict';
 
@@ -548,7 +548,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // dictionary
       var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
 
-      var promise = new Promise();
+      var promise = new LegacyPromise();
       var args = [];
       while (true) {
 

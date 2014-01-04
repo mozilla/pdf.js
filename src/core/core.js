@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 /* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-           isArrayBuffer, isName, isStream, isString, Lexer,
-           Linearization, NullStream, PartialEvaluator, shadow, Stream,
+           isArrayBuffer, isName, isStream, isString, LegacyPromise,
+           Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
            */
@@ -123,7 +123,7 @@ var Page = (function PageClosure() {
         // TODO: add async inheritPageProp and remove this.
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
-      var promise = new Promise();
+      var promise = new LegacyPromise();
       this.resourcesPromise.then(function resourceSuccess() {
         var objectLoader = new ObjectLoader(this.resources.map,
                                             keys,
@@ -136,13 +136,13 @@ var Page = (function PageClosure() {
     },
     getOperatorList: function Page_getOperatorList(handler) {
       var self = this;
-      var promise = new Promise();
+      var promise = new LegacyPromise();
 
       function reject(e) {
         promise.reject(e);
       }
 
-      var pageListPromise = new Promise();
+      var pageListPromise = new LegacyPromise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
@@ -208,7 +208,7 @@ var Page = (function PageClosure() {
 
       var self = this;
 
-      var textContentPromise = new Promise();
+      var textContentPromise = new LegacyPromise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',

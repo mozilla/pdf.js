@@ -80,10 +80,13 @@ describe('api', function() {
     });
   });
   describe('Page', function() {
-    var promise = new Promise();
+    var resolvePromise;
+    var promise = new Promise(function (resolve) {
+      resolvePromise = resolve;
+    });
     PDFJS.getDocument(basicApiUrl).then(function(doc) {
       doc.getPage(1).then(function(data) {
-        promise.resolve(data);
+        resolvePromise(data);
       });
     });
     var page;

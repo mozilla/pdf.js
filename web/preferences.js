@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_PREFERENCES, PDFJS, isLocalStorageEnabled */
+/* globals DEFAULT_PREFERENCES, PDFJS, isLocalStorageEnabled, Promise */
 
 'use strict';
 
@@ -23,7 +23,9 @@
 var Preferences = (function PreferencesClosure() {
   function Preferences() {
     this.prefs = {};
+    this.isInitializedPromiseResolved = false;
     this.initializedPromise = this.readFromStorage().then(function(prefObj) {
+      this.isInitializedPromiseResolved = true;
       if (prefObj) {
         this.prefs = prefObj;
       }
@@ -36,19 +38,19 @@ var Preferences = (function PreferencesClosure() {
     },
 
     readFromStorage: function Preferences_readFromStorage() {
-      var readFromStoragePromise = new PDFJS.Promise();
+      var readFromStoragePromise = Promise.resolve();
       return readFromStoragePromise;
     },
 
     reset: function Preferences_reset() {
-      if (this.initializedPromise.isResolved) {
+      if (this.isInitializedPromiseResolved) {
         this.prefs = {};
         this.writeToStorage(this.prefs);
       }
     },
 
     set: function Preferences_set(name, value) {
-      if (!this.initializedPromise.isResolved) {
+      if (!this.isInitializedPromiseResolved) {
         return;
       } else if (DEFAULT_PREFERENCES[name] === undefined) {
         console.error('Preferences_set: \'' + name + '\' is undefined.');
@@ -79,7 +81,7 @@ var Preferences = (function PreferencesClosure() {
       if (defaultPref === undefined) {
         console.error('Preferences_get: \'' + name + '\' is undefined.');
         return;
-      } else if (this.initializedPromise.isResolved) {
+      } else if (this.isInitializedPromiseResolved) {
         var pref = this.prefs[name];
 
         if (pref !== undefined) {
@@ -99,10 +101,11 @@ var Preferences = (function PreferencesClosure() {
 //};
 //
 //Preferences.prototype.readFromStorage = function() {
-//  var readFromStoragePromise = new PDFJS.Promise();
-//  asyncStorage.getItem('preferences', function(prefString) {
-//    var readPrefs = JSON.parse(prefString);
-//    readFromStoragePromise.resolve(readPrefs);
+//  var readFromStoragePromise = new Promise(function (resolve) {
+//    asyncStorage.getItem('preferences', function(prefString) {
+//      var readPrefs = JSON.parse(prefString);
+//      resolve(readPrefs);
+//    });
 //  });
 //  return readFromStoragePromise;
 //};
@@ -116,11 +119,12 @@ Preferences.prototype.writeToStorage = function(prefObj) {
 };
 
 Preferences.prototype.readFromStorage = function() {
-  var readFromStoragePromise = new PDFJS.Promise();
-  if (isLocalStorageEnabled) {
-    var readPrefs = JSON.parse(localStorage.getItem('preferences'));
-    readFromStoragePromise.resolve(readPrefs);
-  }
+  var readFromStoragePromise = new Promise(function (resolve) {
+    if (isLocalStorageEnabled) {
+      var readPrefs = JSON.parse(localStorage.getItem('preferences'));
+      resolve(readPrefs);
+    }
+  });
   return readFromStoragePromise;
 };
 //#endif
