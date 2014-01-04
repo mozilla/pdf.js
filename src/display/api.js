@@ -17,7 +17,7 @@
 /* globals CanvasGraphics, combineUrl, createScratchCanvas, error,
            FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
            MessageHandler, PDFJS, Promise, StatTimer, warn,
-           PasswordResponses, Util, loadScript,
+           PasswordResponses, Util, loadScript, LegacyPromise,
            FontFace */
 
 'use strict';
@@ -161,8 +161,8 @@ PDFJS.getDocument = function getDocument(source,
     params[key] = source[key];
   }
 
-  workerInitializedPromise = new PDFJS.Promise();
-  workerReadyPromise = new PDFJS.Promise();
+  workerInitializedPromise = new PDFJS.LegacyPromise();
+  workerReadyPromise = new PDFJS.LegacyPromise();
   transport = new WorkerTransport(workerInitializedPromise,
       workerReadyPromise, pdfDataRangeTransport, progressCallback);
   workerInitializedPromise.then(function transportInitialized() {
@@ -230,7 +230,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * JavaScript strings in the name tree.
      */
     getJavaScript: function PDFDocumentProxy_getJavaScript() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       var js = this.pdfInfo.javaScript;
       promise.resolve(js);
       return promise;
@@ -251,7 +251,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * ].
      */
     getOutline: function PDFDocumentProxy_getOutline() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       var outline = this.pdfInfo.outline;
       promise.resolve(outline);
       return promise;
@@ -263,7 +263,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * {Metadata} object with information from the metadata section of the PDF.
      */
     getMetadata: function PDFDocumentProxy_getMetadata() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       var info = this.pdfInfo.info;
       var metadata = this.pdfInfo.metadata;
       promise.resolve({
@@ -273,7 +273,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return promise;
     },
     isEncrypted: function PDFDocumentProxy_isEncrypted() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       promise.resolve(this.pdfInfo.encrypted);
       return promise;
     },
@@ -282,7 +282,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * the raw data from the PDF.
      */
     getData: function PDFDocumentProxy_getData() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       this.transport.getData(promise);
       return promise;
     },
@@ -363,7 +363,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       if (this.annotationsPromise)
         return this.annotationsPromise;
 
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       this.annotationsPromise = promise;
       this.transport.getAnnotations(this.pageInfo.pageIndex);
       return promise;
@@ -397,7 +397,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // requested before. Make the request and create the promise.
       if (!this.displayReadyPromise) {
         this.receivingOperatorList = true;
-        this.displayReadyPromise = new Promise();
+        this.displayReadyPromise = new LegacyPromise();
         this.operatorList = {
           fnArray: [],
           argsArray: [],
@@ -444,9 +444,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         self._tryDestroy();
 
         if (error) {
-          renderTask.reject(error);
+          renderTask.promise.reject(error);
         } else {
-          renderTask.resolve();
+          renderTask.promise.resolve();
         }
         stats.timeEnd('Rendering');
         stats.timeEnd('Overall');
@@ -459,7 +459,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * content from the page.
      */
     getTextContent: function PDFPageProxy_getTextContent() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       this.transport.messageHandler.send('GetTextContent', {
           pageIndex: this.pageNumber - 1
         },
@@ -473,7 +473,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * Stub for future feature.
      */
     getOperationList: function PDFPageProxy_getOperationList() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       var operationList = { // not implemented
         dependencyFontsID: null,
         operatorList: null
@@ -627,7 +627,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     loadFakeWorkerFiles: function WorkerTransport_loadFakeWorkerFiles() {
       if (!PDFJS.fakeWorkerFilesLoadedPromise) {
-        PDFJS.fakeWorkerFilesLoadedPromise = new Promise();
+        PDFJS.fakeWorkerFilesLoadedPromise = new LegacyPromise();
         // In the developer build load worker_loader which in turn loads all the
         // other files and resolves the promise. In production only the
         // pdf.worker.js file is needed.
@@ -840,7 +840,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
           error(data.error);
       }, this);
 
-      messageHandler.on('JpegDecode', function(data, promise) {
+      messageHandler.on('JpegDecode', function(data, deferred) {
         var imageUrl = data[0];
         var components = data[1];
         if (components != 3 && components != 1)
@@ -869,7 +869,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               buf[j] = data[i];
             }
           }
-          promise.resolve({ data: buf, width: width, height: height});
+          deferred.resolve({ data: buf, width: width, height: height});
         }).bind(this);
         img.src = imageUrl;
       });
@@ -894,7 +894,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     dataLoaded: function WorkerTransport_dataLoaded() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       this.messageHandler.send('DataLoaded', null, function(args) {
         promise.resolve(args);
       });
@@ -905,14 +905,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var pageIndex = pageNumber - 1;
       if (pageIndex in this.pagePromises)
         return this.pagePromises[pageIndex];
-      var promise = new PDFJS.Promise('Page ' + pageNumber);
+      var promise = new PDFJS.LegacyPromise();
       this.pagePromises[pageIndex] = promise;
       this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
       return promise;
     },
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       this.messageHandler.send('GetPageIndex', { ref: ref },
         function (pageIndex) {
           promise.resolve(pageIndex);
@@ -927,7 +927,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getDestinations: function WorkerTransport_getDestinations() {
-      var promise = new PDFJS.Promise();
+      var promise = new PDFJS.LegacyPromise();
       this.messageHandler.send('GetDestinations', null,
         function transportDestinations(destinations) {
           promise.resolve(destinations);
@@ -976,7 +976,7 @@ var PDFObjects = (function PDFObjectsClosure() {
         return this.objs[objId];
 
       var obj = {
-        promise: new Promise(objId),
+        promise: new LegacyPromise(),
         data: null,
         resolved: false
       };
@@ -1057,16 +1057,12 @@ var PDFObjects = (function PDFObjectsClosure() {
   };
   return PDFObjects;
 })();
-/*
- * RenderTask is basically a promise but adds a cancel function to terminate it.
- */
+
 var RenderTask = (function RenderTaskClosure() {
   function RenderTask(internalRenderTask) {
     this.internalRenderTask = internalRenderTask;
-    Promise.call(this);
+    this.promise = new PDFJS.LegacyPromise();
   }
-
-  RenderTask.prototype = Object.create(Promise.prototype);
 
   /**
    * Cancel the rendering task. If the task is curently rendering it will not be

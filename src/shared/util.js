@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL */
+/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL,
+           Promise */
 
 'use strict';
 
@@ -810,6 +811,24 @@ function isPDFFunction(v) {
 }
 
 /**
+ * Legacy support for PDFJS Promise implementation.
+ * TODO remove eventually
+ */
+var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
+  return function LegacyPromise() {
+    var resolve, reject;
+    var promise = new Promise(function (resolve_, reject_) {
+      resolve = resolve_;
+      reject = reject_;
+    });
+    promise.resolve = resolve;
+    promise.reject = reject;
+    return promise;
+  };
+})();
+
+/**
+ * Polyfill for Promises:
  * The following promise implementation tries to generally implment the
  * Promise/A+ spec. Some notable differences from other promise libaries are:
  * - There currently isn't a seperate deferred and promise object.
@@ -818,7 +837,40 @@ function isPDFFunction(v) {
  * Based off of the work in:
  * https://bugzilla.mozilla.org/show_bug.cgi?id=810490
  */
-var Promise = PDFJS.Promise = (function PromiseClosure() {
+(function PromiseClosure() {
+  if (globalScope.Promise) {
+    // Promises existing in the DOM/Worker, checking presence of all/resolve
+    if (typeof globalScope.Promise.all !== 'function') {
+      globalScope.Promise.all = function (iterable) {
+        var count = 0, results = [], resolve, reject;
+        var promise = new globalScope.Promise(function (resolve_, reject_) {
+          resolve = resolve_;
+          reject = reject_;
+        });
+        iterable.forEach(function (p, i) {
+          count++;
+          p.then(function (result) {
+            results[i] = result;
+            count--;
+            if (count === 0) {
+              resolve(results);
+            }
+          }, reject);
+        });
+        if (count === 0) {
+          resolve(results);
+        }
+        return promise;
+      };
+    }
+    if (typeof globalScope.Promise.resolve !== 'function') {
+      globalScope.Promise.resolve = function (x) {
+        return new globalScope.Promise(function (resolve) { resolve(x); });
+      };
+    }
+    return;
+  }
+//#if !MOZCENTRAL
   var STATUS_PENDING = 0;
   var STATUS_RESOLVED = 1;
   var STATUS_REJECTED = 2;
@@ -851,6 +903,8 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     },
 
     runHandlers: function runHandlers() {
+      var RUN_TIMEOUT = 1; // ms
+      var timeoutAt = Date.now() + RUN_TIMEOUT;
       while (this.handlers.length > 0) {
         var handler = this.handlers.shift();
 
@@ -876,6 +930,14 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         }
 
         handler.nextPromise._updateStatus(nextStatus, nextValue);
+        if (Date.now() >= timeoutAt) {
+          break;
+        }
+      }
+
+      if (this.handlers.length > 0) {
+        setTimeout(this.runHandlers.bind(this), 0);
+        return;
       }
 
       this.running = false;
@@ -926,9 +988,10 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     }
   };
 
-  function Promise() {
+  function Promise(resolver) {
     this._status = STATUS_PENDING;
     this._handlers = [];
+    resolver.call(this, this._resolve.bind(this), this._reject.bind(this));
   }
   /**
    * Builds a promise that is resolved when all the passed in promises are
@@ -937,11 +1000,15 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
    * @return {Promise} New dependant promise.
    */
   Promise.all = function Promise_all(promises) {
-    var deferred = new Promise();
+    var resolveAll, rejectAll;
+    var deferred = new Promise(function (resolve, reject) {
+      resolveAll = resolve;
+      rejectAll = reject;
+    });
     var unresolved = promises.length;
     var results = [];
     if (unresolved === 0) {
-      deferred.resolve(results);
+      resolveAll(results);
       return deferred;
     }
     function reject(reason) {
@@ -949,7 +1016,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
         return;
       }
       results = [];
-      deferred.reject(reason);
+      rejectAll(reason);
     }
     for (var i = 0, ii = promises.length; i < ii; ++i) {
       var promise = promises[i];
@@ -961,7 +1028,7 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
           results[i] = value;
           unresolved--;
           if (unresolved === 0)
-            deferred.resolve(results);
+            resolveAll(results);
         };
       })(i);
       if (Promise.isPromise(promise)) {
@@ -979,6 +1046,14 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
    */
   Promise.isPromise = function Promise_isPromise(value) {
     return value && typeof value.then === 'function';
+  };
+  /**
+   * Creates resolved promise
+   * @param x resolve value
+   * @returns {Promise}
+   */
+  Promise.resolve = function Promise_resolve(x) {
+    return new Promise(function (resolve) { resolve(x); });
   };
 
   Promise.prototype = {
@@ -1011,24 +1086,19 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
       HandlerManager.scheduleHandlers(this);
     },
 
-    get isResolved() {
-      return this._status === STATUS_RESOLVED;
-    },
-
-    get isRejected() {
-      return this._status === STATUS_REJECTED;
-    },
-
-    resolve: function Promise_resolve(value) {
+    _resolve: function Promise_resolve(value) {
       this._updateStatus(STATUS_RESOLVED, value);
     },
 
-    reject: function Promise_reject(reason) {
+    _reject: function Promise_reject(reason) {
       this._updateStatus(STATUS_REJECTED, reason);
     },
 
     then: function Promise_then(onResolve, onReject) {
-      var nextPromise = new Promise();
+      var nextPromise = new Promise(function (resolve, reject) {
+        this.resolve = reject;
+        this.reject = reject;
+      });
       this._handlers.push({
         thisPromise: this,
         onResolve: onResolve,
@@ -1040,7 +1110,10 @@ var Promise = PDFJS.Promise = (function PromiseClosure() {
     }
   };
 
-  return Promise;
+  globalScope.Promise = Promise;
+//#else
+//throw new Error('DOM Promise is not present');
+//#endif
 })();
 
 var StatTimer = (function StatTimerClosure() {
@@ -1172,7 +1245,12 @@ function MessageHandler(name, comObj) {
     } else if (data.action in ah) {
       var action = ah[data.action];
       if (data.callbackId) {
-        var promise = new Promise();
+        var deferred = {};
+        var promise = new Promise(function (resolve, reject) {
+          deferred.resolve = resolve;
+          deferred.reject = reject;
+        });
+        deferred.promise = promise;
         promise.then(function(resolvedData) {
           comObj.postMessage({
             isReply: true,
@@ -1180,7 +1258,7 @@ function MessageHandler(name, comObj) {
             data: resolvedData
           });
         });
-        action[0].call(action[1], data.data, promise);
+        action[0].call(action[1], data.data, deferred);
       } else {
         action[0].call(action[1], data.data);
       }
