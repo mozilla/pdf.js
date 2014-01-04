@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals ColorSpace, error, isArray, isStream, JpegStream, Name, Promise,
-           Stream, TODO, warn */
+           Stream, warn */
 
 'use strict';
 
@@ -54,7 +54,7 @@ var PDFImage = (function PDFImageClosure() {
     if (image.getParams) {
       // JPX/JPEG2000 streams directly contain bits per component
       // and color space mode information.
-      TODO('get params from actual stream');
+      warn('get params from actual stream');
       // var bits = ...
       // var colorspace = ...
     }
@@ -87,7 +87,7 @@ var PDFImage = (function PDFImageClosure() {
     if (!this.imageMask) {
       var colorSpace = dict.get('ColorSpace', 'CS');
       if (!colorSpace) {
-        TODO('JPX images (which don"t require color spaces');
+        warn('JPX images (which don"t require color spaces');
         colorSpace = new Name('DeviceRGB');
       }
       this.colorSpace = ColorSpace.parse(colorSpace, xref, res);

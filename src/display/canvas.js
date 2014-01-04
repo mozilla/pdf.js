@@ -16,7 +16,7 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           Pattern, TilingPattern, TODO, Util, warn, assert, info,
+           Pattern, TilingPattern, Util, warn, assert, info,
            TextRenderingMode, OPS */
 
 'use strict';
@@ -1460,7 +1460,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // TODO knockout - supposedly possible with the clever use of compositing
       // modes.
       if (group.knockout) {
-        TODO('Support knockout groups.');
+        warn('Knockout groups not supported.');
       }
 
       var currentTransform = currentCtx.mozCurrentTransform;

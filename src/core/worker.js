@@ -429,15 +429,12 @@ var workerConsole = {
 if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
 
-  // Add a logger so we can pass warnings on to the main thread, errors will
-  // throw an exception which will be forwarded on automatically.
-  PDFJS.LogManager.addLogger({
-    warn: function(msg) {
-      globalScope.postMessage({
-        action: '_warn',
-        data: msg
-      });
-    }
+  // Listen for unsupported features so we can pass them on to the main thread.
+  PDFJS.UnsupportedManager.listen(function (msg) {
+    globalScope.postMessage({
+      action: '_unsupported_feature',
+      data: msg
+    });
   });
 
   var handler = new MessageHandler('worker_processor', this);

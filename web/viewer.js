@@ -599,7 +599,7 @@ var PDFView = {
     ).then(null, noData);
   },
 
-  fallback: function pdfViewFallback() {
+  fallback: function pdfViewFallback(featureId) {
 //#if !(FIREFOX || MOZCENTRAL)
 //  return;
 //#else
@@ -935,7 +935,7 @@ var PDFView = {
         pdfDocument.getJavaScript().then(function(javaScript) {
           if (javaScript.length) {
             console.warn('Warning: JavaScript is not supported');
-            PDFView.fallback();
+            PDFView.fallback(PDFJS.UNSUPPORTED_FEATURES.javaScript);
           }
           // Hack to support auto printing.
           var regex = /\bprint\s*\(/g;
@@ -1000,7 +1000,7 @@ var PDFView = {
 
       if (info.IsAcroFormPresent) {
         console.warn('Warning: AcroForm/XFA is not supported');
-        PDFView.fallback();
+        PDFView.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
 
 //#if (FIREFOX || MOZCENTRAL)
@@ -1661,13 +1661,8 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     document.getElementById('viewFind').classList.add('hidden');
   }
 
-  // Listen for warnings to trigger the fallback UI.  Errors should be caught
-  // and call PDFView.error() so we don't need to listen for those.
-  PDFJS.LogManager.addLogger({
-    warn: function() {
-      PDFView.fallback();
-    }
-  });
+  // Listen for unsuporrted features to trigger the fallback UI.
+  PDFJS.UnsupportedManager.listen(PDFView.fallback.bind(PDFView));
 
   // Suppress context menus for some controls
   document.getElementById('scaleSelect').oncontextmenu = noContextMenuHandler;
