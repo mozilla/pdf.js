@@ -22,6 +22,9 @@
 var HandTool = {
   initialize: function handToolInitialize(options) {
     var toggleHandTool = options.toggleHandTool;
+    if (!toggleHandTool) {
+      return;
+    }
     this.handTool = new GrabToPan({
       element: options.container,
       onActiveChanged: function(isActive) {
@@ -43,6 +46,9 @@ var HandTool = {
   },
 
   toggle: function handToolToggle() {
+    if (!this.handTool) {
+      return;
+    }
     this.handTool.toggle();
   },
 
