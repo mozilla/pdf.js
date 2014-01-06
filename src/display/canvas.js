@@ -17,7 +17,7 @@
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
            Pattern, TilingPattern, Util, warn, assert, info,
-           TextRenderingMode, OPS */
+           TextRenderingMode, OPS, Promise */
 
 'use strict';
 
@@ -508,6 +508,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var commonObjs = this.commonObjs;
       var objs = this.objs;
       var fnId;
+      var deferred = Promise.resolve();
 
       while (true) {
         if (stepper && i === stepper.nextBreakPoint) {
@@ -549,7 +550,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // to continue exeution after a short delay.
         // However, this is only possible if a 'continueCallback' is passed in.
         if (continueCallback && Date.now() > endTime) {
-          setTimeout(continueCallback, 0);
+          deferred.then(continueCallback);
           return i;
         }
 

@@ -16,7 +16,7 @@
 
 'use strict';
 
-/* globals PDFFindBar, PDFJS, FindStates, FirefoxCom */
+/* globals PDFFindBar, PDFJS, FindStates, FirefoxCom, Promise */
 
 /**
  * Provides a "search" or "find" functionality for the PDF.
@@ -64,8 +64,6 @@ var PDFFindController = {
 
   integratedFind: false,
 
-  firstPagePromise: new PDFJS.Promise(),
-
   initialize: function(options) {
     if(typeof PDFFindBar === 'undefined' || PDFFindBar === null) {
         throw 'PDFFindController cannot be initialized ' +
@@ -82,6 +80,9 @@ var PDFFindController = {
       'findcasesensitivitychange'
     ];
 
+    this.firstPagePromise = new Promise(function (resolve) {
+      this.resolveFirstPage = resolve;
+    }.bind(this));
     this.handleEvent = this.handleEvent.bind(this);
 
     for (var i = 0; i < events.length; i++) {
@@ -139,8 +140,11 @@ var PDFFindController = {
     this.startedTextExtraction = true;
 
     this.pageContents = [];
+    var extractTextPromisesResolves = [];
     for (var i = 0, ii = this.pdfPageSource.pdfDocument.numPages; i < ii; i++) {
-      this.extractTextPromises.push(new PDFJS.Promise());
+      this.extractTextPromises.push(new Promise(function (resolve) {
+        extractTextPromisesResolves.push(resolve);
+      }));
     }
 
     var self = this;
@@ -158,7 +162,7 @@ var PDFFindController = {
           // Store the pageContent as a string.
           self.pageContents.push(str);
 
-          self.extractTextPromises[pageIndex].resolve(pageIndex);
+          extractTextPromisesResolves[pageIndex](pageIndex);
           if ((pageIndex + 1) < self.pdfPageSource.pages.length)
             extractPageText(pageIndex + 1);
         }

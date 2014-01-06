@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, VIEW_HISTORY_MEMORY, isLocalStorageEnabled */
+/* globals PDFJS, VIEW_HISTORY_MEMORY, isLocalStorageEnabled, Promise */
 
 'use strict';
 
@@ -31,11 +31,16 @@
 var ViewHistory = (function ViewHistoryClosure() {
   function ViewHistory(fingerprint) {
     this.fingerprint = fingerprint;
-    this.initializedPromise = new PDFJS.Promise();
+    var initializedPromiseResolve;
+    this.isInitializedPromiseResolved = false;
+    this.initializedPromise = new Promise(function (resolve) {
+      initializedPromiseResolve = resolve;
+    });
 
     var resolvePromise = (function ViewHistoryResolvePromise(db) {
+      this.isInitializedPromiseResolved = true;
       this.initialize(db || '{}');
-      this.initializedPromise.resolve();
+      initializedPromiseResolve();
     }).bind(this);
 
 //#if B2G
@@ -78,7 +83,7 @@ var ViewHistory = (function ViewHistoryClosure() {
     },
 
     set: function ViewHistory_set(name, val) {
-      if (!this.initializedPromise.isResolved) {
+      if (!this.isInitializedPromiseResolved) {
         return;
       }
       var file = this.file;
@@ -101,7 +106,7 @@ var ViewHistory = (function ViewHistoryClosure() {
     },
 
     get: function ViewHistory_get(name, defaultValue) {
-      if (!this.initializedPromise.isResolved) {
+      if (!this.isInitializedPromiseResolved) {
         return defaultValue;
       }
       return this.file[name] || defaultValue;

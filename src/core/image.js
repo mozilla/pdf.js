@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals ColorSpace, error, isArray, isStream, JpegStream, Name, Promise,
-           Stream, warn */
+           Stream, warn, LegacyPromise */
 
 'use strict';
 
@@ -129,9 +129,9 @@ var PDFImage = (function PDFImageClosure() {
    */
   PDFImage.buildImage = function PDFImage_buildImage(callback, handler, xref,
                                                      res, image, inline) {
-    var imageDataPromise = new Promise();
-    var smaskPromise = new Promise();
-    var maskPromise = new Promise();
+    var imageDataPromise = new LegacyPromise();
+    var smaskPromise = new LegacyPromise();
+    var maskPromise = new LegacyPromise();
     // The image data and smask data may not be ready yet, wait till both are
     // resolved.
     Promise.all([imageDataPromise, smaskPromise, maskPromise]).then(
