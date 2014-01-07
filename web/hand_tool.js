@@ -36,9 +36,8 @@ var HandTool = {
           toggleHandTool.firstElementChild.textContent =
             mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
         }
-    }
+      }
     });
-    toggleHandTool.addEventListener('click', this.handTool.toggle, false);
     // TODO: Read global prefs and call this.handTool.activate() if needed.
   },
 
