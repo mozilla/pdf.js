@@ -29,7 +29,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
 
   this.pdfPage = undefined;
   this.viewport = defaultViewport;
-  this.pdfPageRotate = defaultViewport.rotate;
+  this.pdfPageRotate = defaultViewport.rotation;
 
   this.rotation = 0;
   this.pageWidth = this.viewport.width;
@@ -66,20 +66,16 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
   this.setPdfPage = function thumbnailViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
-    this.viewport = pdfPage.getViewport(1);
+    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+    this.viewport = pdfPage.getViewport(1, totalRotation);
     this.update();
   };
 
-  this.update = function thumbnailViewUpdate(rot) {
-    if (!this.pdfPage) {
-      return;
+  this.update = function thumbnailViewUpdate(rotation) {
+    if (rotation !== undefined) {
+      this.rotation = rotation;
     }
-
-    if (rot !== undefined) {
-      this.rotation = rot;
-    }
-
-    var totalRotation = (this.rotation + this.pdfPage.rotate) % 360;
+    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
     this.viewport = this.viewport.clone({
       scale: 1,
       rotation: totalRotation
@@ -165,7 +161,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
         cont();
       }
     };
-    this.pdfPage.render(renderContext).then(
+    this.pdfPage.render(renderContext).promise.then(
       function pdfPageRenderCallback() {
         self.renderingState = RenderingStates.FINISHED;
         callback();
@@ -179,8 +175,17 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
   };
 
   this.setImage = function thumbnailViewSetImage(img) {
-    if (this.hasImage || !img)
+    if (!this.pdfPage) {
+      var promise = PDFView.getPage(this.id);
+      promise.then(function(pdfPage) {
+        this.setPdfPage(pdfPage);
+        this.setImage(img);
+      }.bind(this));
       return;
+    }
+    if (this.hasImage || !img) {
+      return;
+    }
     this.renderingState = RenderingStates.FINISHED;
     var ctx = this.getPageDrawContext();
     ctx.drawImage(img, 0, 0, img.width, img.height,

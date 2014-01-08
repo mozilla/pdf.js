@@ -17,8 +17,9 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
-           Preferences, Settings, PageView, ThumbnailView, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PresentationMode, HandTool */
+           Preferences, ViewHistory, PageView, ThumbnailView,
+           noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
+           PresentationMode, HandTool, Promise */
 
 'use strict';
 
@@ -33,7 +34,7 @@ var VERTICAL_PADDING = 5;
 var MAX_AUTO_SCALE = 1.25;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 4.0;
-var SETTINGS_MEMORY = 20;
+var VIEW_HISTORY_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
@@ -80,7 +81,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
-//#include settings.js
+//#include view_history.js
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
 //#include pdf_history.js
@@ -295,7 +296,6 @@ var PDFView = {
 
   set page(val) {
     var pages = this.pages;
-    var input = document.getElementById('pageNumber');
     var event = document.createEvent('UIEvents');
     event.initUIEvent('pagechange', false, false, window, 0);
 
@@ -314,13 +314,13 @@ var PDFView = {
 
     // checking if the this.page was called from the updateViewarea function:
     // avoiding the creation of two "set page" method (internal and public)
-    if (updateViewarea.inProgress)
+    if (updateViewarea.inProgress) {
       return;
-
+    }
     // Avoid scrolling the first page during loading
-    if (this.loading && val == 1)
+    if (this.loading && val === 1) {
       return;
-
+    }
     pages[val - 1].scrollIntoView();
   },
 
@@ -599,7 +599,7 @@ var PDFView = {
     ).then(null, noData);
   },
 
-  fallback: function pdfViewFallback() {
+  fallback: function pdfViewFallback(featureId) {
 //#if !(FIREFOX || MOZCENTRAL)
 //  return;
 //#else
@@ -787,12 +787,17 @@ var PDFView = {
 
   load: function pdfViewLoad(pdfDocument, scale) {
     var self = this;
-    var onePageRendered = new PDFJS.Promise();
+    var isOnePageRenderedResolved = false;
+    var resolveOnePageRendered = null;
+    var onePageRendered = new Promise(function (resolve) {
+      resolveOnePageRendered = resolve;
+    });
     function bindOnAfterDraw(pageView, thumbnailView) {
       // when page is painted, using the image as thumbnail base
       pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
-        if (!onePageRendered.isResolved) {
-          onePageRendered.resolve();
+        if (!isOnePageRenderedResolved) {
+          isOnePageRenderedResolved = true;
+          resolveOnePageRendered();
         }
         thumbnailView.setImage(pageView.canvas);
       };
@@ -833,7 +838,7 @@ var PDFView = {
 
     var prefs = PDFView.prefs = new Preferences();
     PDFView.documentFingerprint = id;
-    var store = PDFView.store = new Settings(id);
+    var store = PDFView.store = new ViewHistory(id);
 
     this.pageRotation = 0;
 
@@ -841,7 +846,11 @@ var PDFView = {
     var pagesRefMap = this.pagesRefMap = {};
     var thumbnails = this.thumbnails = [];
 
-    var pagesPromise = this.pagesPromise = new PDFJS.Promise();
+    var resolvePagesPromise;
+    var pagesPromise = new Promise(function (resolve) {
+      resolvePagesPromise = resolve;
+    });
+    this.pagesPromise = pagesPromise;
 
     var firstPagePromise = pdfDocument.getPage(1);
 
@@ -877,13 +886,13 @@ var PDFView = {
               pagesRefMap[refStr] = pageNum;
               getPagesLeft--;
               if (!getPagesLeft) {
-                pagesPromise.resolve();
+                resolvePagesPromise();
               }
             }.bind(null, pageNum));
           }
         } else {
           // XXX: Printing is semi-broken with auto fetch disabled.
-          pagesPromise.resolve();
+          resolvePagesPromise();
         }
       });
 
@@ -893,12 +902,12 @@ var PDFView = {
 
       PDFView.loadingBar.setWidth(container);
 
-      PDFFindController.firstPagePromise.resolve();
+      PDFFindController.resolveFirstPage();
     });
 
     var prefsPromise = prefs.initializedPromise;
     var storePromise = store.initializedPromise;
-    PDFJS.Promise.all([firstPagePromise, prefsPromise, storePromise]).
+    Promise.all([firstPagePromise, prefsPromise, storePromise]).
         then(function() {
       var showPreviousViewOnLoad = prefs.get('showPreviousViewOnLoad');
       var defaultZoomValue = prefs.get('defaultZoomValue');
@@ -935,7 +944,7 @@ var PDFView = {
         pdfDocument.getJavaScript().then(function(javaScript) {
           if (javaScript.length) {
             console.warn('Warning: JavaScript is not supported');
-            PDFView.fallback();
+            PDFView.fallback(PDFJS.UNSUPPORTED_FEATURES.javaScript);
           }
           // Hack to support auto printing.
           var regex = /\bprint\s*\(/g;
@@ -961,7 +970,7 @@ var PDFView = {
     // outline depends on destinations and pagesRefMap
     var promises = [pagesPromise, destinationsPromise,
                     PDFView.animationStartedPromise];
-    PDFJS.Promise.all(promises).then(function() {
+    Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
         self.outline = new DocumentOutlineView(outline);
         document.getElementById('viewOutline').disabled = !outline;
@@ -1000,7 +1009,7 @@ var PDFView = {
 
       if (info.IsAcroFormPresent) {
         console.warn('Warning: AcroForm/XFA is not supported');
-        PDFView.fallback();
+        PDFView.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
 
 //#if (FIREFOX || MOZCENTRAL)
@@ -1141,7 +1150,7 @@ var PDFView = {
     return false;
   },
 
-  isViewFinished: function pdfViewNeedsRendering(view) {
+  isViewFinished: function pdfViewIsViewFinished(view) {
     return view.renderingState === RenderingStates.FINISHED;
   },
 
@@ -1371,7 +1380,7 @@ var PDFView = {
       div.removeChild(div.lastChild);
   },
 
-  rotatePages: function pdfViewPageRotation(delta) {
+  rotatePages: function pdfViewRotatePages(delta) {
 
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
 
@@ -1530,6 +1539,7 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //    // Example: chrome-extension://.../http://example.com/file.pdf
 //    var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
 //    history.replaceState(history.state, '', humanReadableUrl);
+//    chrome.runtime.sendMessage('showPageAction');
 //  }
 //})();
 //#endif
@@ -1603,6 +1613,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     USE_ONLY_CSS_ZOOM = (hashParams['useOnlyCssZoom'] === 'true');
   }
 
+  if ('verbosity' in hashParams) {
+    PDFJS.verbosity = hashParams['verbosity'] | 0;
+  }
+
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = navigator.language;
   if ('locale' in hashParams)
@@ -1656,13 +1670,8 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
     document.getElementById('viewFind').classList.add('hidden');
   }
 
-  // Listen for warnings to trigger the fallback UI.  Errors should be caught
-  // and call PDFView.error() so we don't need to listen for those.
-  PDFJS.LogManager.addLogger({
-    warn: function() {
-      PDFView.fallback();
-    }
-  });
+  // Listen for unsuporrted features to trigger the fallback UI.
+  PDFJS.UnsupportedManager.listen(PDFView.fallback.bind(PDFView));
 
   // Suppress context menus for some controls
   document.getElementById('scaleSelect').oncontextmenu = noContextMenuHandler;
@@ -2212,9 +2221,10 @@ window.addEventListener('afterprint', function afterPrint(evt) {
                               window.oRequestAnimationFrame ||
                               window.msRequestAnimationFrame ||
                               function startAtOnce(callback) { callback(); };
-  PDFView.animationStartedPromise = new PDFJS.Promise();
-  requestAnimationFrame(function onAnimationFrame() {
-    PDFView.animationStartedPromise.resolve();
+  PDFView.animationStartedPromise = new Promise(function (resolve) {
+    requestAnimationFrame(function onAnimationFrame() {
+      resolve();
+    });
   });
 })();
 

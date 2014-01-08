@@ -17,7 +17,7 @@
 /* globals error, globalScope, InvalidPDFException, log,
            MissingPDFException, PasswordException, PDFJS, Promise,
            UnknownErrorException, NetworkManager, LocalPdfManager,
-           NetworkPdfManager, XRefParseException,
+           NetworkPdfManager, XRefParseException, LegacyPromise,
            isInt, PasswordResponses, MessageHandler, Ref */
 
 'use strict';
@@ -27,7 +27,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     var pdfManager;
 
     function loadDocument(recoveryMode) {
-      var loadDocumentPromise = new Promise();
+      var loadDocumentPromise = new LegacyPromise();
 
       var parseSuccess = function parseSuccess() {
         var numPagesPromise = pdfManager.ensureModel('numPages');
@@ -71,7 +71,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     }
 
     function getPdfManager(data) {
-      var pdfManagerPromise = new Promise();
+      var pdfManagerPromise = new LegacyPromise();
 
       var source = data.source;
       var disableRange = data.disableRange;
@@ -230,6 +230,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       PDFJS.maxImageSize = data.maxImageSize === undefined ?
                            -1 : data.maxImageSize;
       PDFJS.disableFontFace = data.disableFontFace;
+      PDFJS.verbosity = data.verbosity;
 
       getPdfManager(data).then(function pdfManagerReady() {
         loadDocument(false).then(onSuccess, function loadFailure(ex) {
@@ -238,7 +239,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             if (ex instanceof PasswordException) {
               // after password exception prepare to receive a new password
               // to repeat loading
-              pdfManager.passwordChangedPromise = new Promise();
+              pdfManager.passwordChangedPromise =
+                new LegacyPromise();
               pdfManager.passwordChangedPromise.then(pdfManagerReady);
             }
 
@@ -275,31 +277,31 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     });
 
-    handler.on('GetPageIndex', function wphSetupGetPageIndex(data, promise) {
+    handler.on('GetPageIndex', function wphSetupGetPageIndex(data, deferred) {
       var ref = new Ref(data.ref.num, data.ref.gen);
       pdfManager.pdfModel.catalog.getPageIndex(ref).then(function (pageIndex) {
-        promise.resolve(pageIndex);
-      }, promise.reject.bind(promise));
+        deferred.resolve(pageIndex);
+      }, deferred.reject);
     });
 
     handler.on('GetDestinations',
-      function wphSetupGetDestinations(data, promise) {
+      function wphSetupGetDestinations(data, deferred) {
         pdfManager.ensureCatalog('destinations').then(function(destinations) {
-          promise.resolve(destinations);
+          deferred.resolve(destinations);
         });
       }
     );
 
-    handler.on('GetData', function wphSetupGetData(data, promise) {
+    handler.on('GetData', function wphSetupGetData(data, deferred) {
       pdfManager.requestLoadedStream();
       pdfManager.onLoadedStream().then(function(stream) {
-        promise.resolve(stream.bytes);
+        deferred.resolve(stream.bytes);
       });
     });
 
-    handler.on('DataLoaded', function wphSetupDataLoaded(data, promise) {
+    handler.on('DataLoaded', function wphSetupDataLoaded(data, deferred) {
       pdfManager.onLoadedStream().then(function(stream) {
-        promise.resolve({ length: stream.bytes.byteLength });
+        deferred.resolve({ length: stream.bytes.byteLength });
       });
     });
 
@@ -364,29 +366,29 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('GetTextContent', function wphExtractText(data, promise) {
+    handler.on('GetTextContent', function wphExtractText(data, deferred) {
       pdfManager.getPage(data.pageIndex).then(function(page) {
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
         page.extractTextContent().then(function(textContent) {
-          promise.resolve(textContent);
+          deferred.resolve(textContent);
           log('text indexing: page=%d - time=%dms', pageNum,
               Date.now() - start);
         }, function (e) {
           // Skip errored pages
-          promise.reject(e);
+          deferred.reject(e);
         });
       });
     });
 
-    handler.on('Cleanup', function wphCleanup(data, promise) {
+    handler.on('Cleanup', function wphCleanup(data, deferred) {
       pdfManager.cleanup();
-      promise.resolve(true);
+      deferred.resolve(true);
     });
 
-    handler.on('Terminate', function wphTerminate(data, promise) {
+    handler.on('Terminate', function wphTerminate(data, deferred) {
       pdfManager.terminate();
-      promise.resolve();
+      deferred.resolve();
     });
   }
 };
@@ -428,15 +430,12 @@ var workerConsole = {
 if (typeof window === 'undefined') {
   globalScope.console = workerConsole;
 
-  // Add a logger so we can pass warnings on to the main thread, errors will
-  // throw an exception which will be forwarded on automatically.
-  PDFJS.LogManager.addLogger({
-    warn: function(msg) {
-      globalScope.postMessage({
-        action: '_warn',
-        data: msg
-      });
-    }
+  // Listen for unsupported features so we can pass them on to the main thread.
+  PDFJS.UnsupportedManager.listen(function (msg) {
+    globalScope.postMessage({
+      action: '_unsupported_feature',
+      data: msg
+    });
   });
 
   var handler = new MessageHandler('worker_processor', this);

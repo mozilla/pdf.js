@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals CustomStyle, PDFFindController, scrollIntoView */
 
 'use strict';
 
-/* globals CustomStyle, PDFFindController, scrollIntoView */
+var FIND_SCROLL_OFFSET_TOP = -50;
+var FIND_SCROLL_OFFSET_LEFT = -400;
 
 /**
  * TextLayerBuilder provides text-selection
@@ -310,7 +312,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       var isSelected = isSelectedPage && i === selectedMatchIdx;
       var highlightSuffix = (isSelected ? ' selected' : '');
       if (isSelected && !this.isViewerInPresentationMode) {
-        scrollIntoView(textDivs[begin.divIdx], { top: -50 });
+        scrollIntoView(textDivs[begin.divIdx], { top: FIND_SCROLL_OFFSET_TOP,
+                                               left: FIND_SCROLL_OFFSET_LEFT });
       }
 
       // Match inside new div.

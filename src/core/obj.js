@@ -19,7 +19,7 @@
            isStream, Lexer, log, Page, Parser, Promise, shadow,
            stringToPDFString, stringToUTF8String, warn, isString, assert,
            Promise, MissingDataException, XRefParseException, Stream,
-           ChunkedStream */
+           ChunkedStream, LegacyPromise */
 
 'use strict';
 
@@ -97,7 +97,7 @@ var Dict = (function DictClosure() {
         if (xref) {
           return xref.fetchIfRefAsync(value);
         }
-        promise = new Promise();
+        promise = new LegacyPromise();
         promise.resolve(value);
         return promise;
       }
@@ -106,7 +106,7 @@ var Dict = (function DictClosure() {
         if (xref) {
           return xref.fetchIfRefAsync(value);
         }
-        promise = new Promise();
+        promise = new LegacyPromise();
         promise.resolve(value);
         return promise;
       }
@@ -114,7 +114,7 @@ var Dict = (function DictClosure() {
       if (xref) {
         return xref.fetchIfRefAsync(value);
       }
-      promise = new Promise();
+      promise = new LegacyPromise();
       promise.resolve(value);
       return promise;
     },
@@ -434,7 +434,7 @@ var Catalog = (function CatalogClosure() {
     },
 
     getPageDict: function Catalog_getPageDict(pageIndex) {
-      var promise = new Promise();
+      var promise = new LegacyPromise();
       var nodesToVisit = [this.catDict.getRaw('Pages')];
       var currentPageIndex = 0;
       var xref = this.xref;
@@ -1120,14 +1120,14 @@ var XRef = (function XRefClosure() {
     },
     fetchIfRefAsync: function XRef_fetchIfRefAsync(obj) {
       if (!isRef(obj)) {
-        var promise = new Promise();
+        var promise = new LegacyPromise();
         promise.resolve(obj);
         return promise;
       }
       return this.fetchAsync(obj);
     },
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
-      var promise = new Promise();
+      var promise = new LegacyPromise();
       var tryFetch = function (promise) {
         try {
           promise.resolve(this.fetch(ref, suppressEncryption));
@@ -1254,7 +1254,7 @@ var ObjectLoader = (function() {
 
     load: function ObjectLoader_load() {
       var keys = this.keys;
-      this.promise = new Promise();
+      this.promise = new LegacyPromise();
       // Don't walk the graph if all the data is already loaded.
       if (!(this.xref.stream instanceof ChunkedStream) ||
           this.xref.stream.getMissingChunks().length === 0) {

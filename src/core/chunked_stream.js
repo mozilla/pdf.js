@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals assert, MissingDataException, isInt, NetworkManager, Promise,
-           isEmptyObj */
+           isEmptyObj, LegacyPromise */
 
 'use strict';
 
@@ -258,7 +258,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     this.requestsByChunk = {};
     this.callbacksByRequest = {};
 
-    this.loadedStream = new Promise();
+    this.loadedStream = new LegacyPromise();
     if (args.initialData) {
       this.setInitialData(args.initialData);
     }

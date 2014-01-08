@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals error, info, isArray, isDict, isName, isStream, isString,
-           PDFFunction, warn, shadow, TODO */
+           PDFFunction, warn, shadow */
 
 'use strict';
 
@@ -639,8 +639,8 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
 var CalGrayCS = (function CalGrayCSClosure() {
   function CalGrayCS(whitePoint, blackPoint, gamma) {
     this.name = 'CalGray';
-    this.numComps = 3;
-    this.defaultColor = new Float32Array([0, 0, 0]);
+    this.numComps = 1;
+    this.defaultColor = new Float32Array([0]);
 
     if (!whitePoint) {
       error('WhitePoint missing - required for color space CalGray');
@@ -671,7 +671,7 @@ var CalGrayCS = (function CalGrayCSClosure() {
     }
 
     if (this.XB !== 0 || this.YB !== 0 || this.ZB !== 0) {
-      TODO(this.name + ', BlackPoint: XB: ' + this.XB + ', YB: ' + this.YB +
+      warn(this.name + ', BlackPoint: XB: ' + this.XB + ', YB: ' + this.YB +
            ', ZB: ' + this.ZB + ', only default values are supported.');
     }
 
@@ -682,6 +682,33 @@ var CalGrayCS = (function CalGrayCSClosure() {
     }
   }
 
+  function convertToRgb(cs, src, srcOffset, dest, destOffset, scale) {
+    // A represents a gray component of a calibrated gray space.
+    // A <---> AG in the spec
+    var A = src[srcOffset] * scale;
+    var AG = Math.pow(A, cs.G);
+
+    // Computes intermediate variables M, L, N as per spec.
+    // Except if other than default BlackPoint values are used.
+    var M = cs.XW * AG;
+    var L = cs.YW * AG;
+    var N = cs.ZW * AG;
+
+    // Decode XYZ, as per spec.
+    var X = M;
+    var Y = L;
+    var Z = N;
+
+    // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
+    // This yields values in range [0, 100].
+    var Lstar = Math.max(116 * Math.pow(Y, 1 / 3) - 16, 0);
+
+    // Convert values to rgb range [0, 255].
+    dest[destOffset] = Lstar * 255 / 100;
+    dest[destOffset + 1] = Lstar * 255 / 100;
+    dest[destOffset + 2] = Lstar * 255 / 100;
+  }
+
   CalGrayCS.prototype = {
     getRgb: function CalGrayCS_getRgb(src, srcOffset) {
       var rgb = new Uint8Array(3);
@@ -690,41 +717,16 @@ var CalGrayCS = (function CalGrayCSClosure() {
     },
     getRgbItem: function CalGrayCS_getRgbItem(src, srcOffset,
                                               dest, destOffset) {
-      // A represents a gray component of a calibrated gray space.
-      // A <---> AG in the spec
-      var A = src[srcOffset];
-      var AG = Math.pow(A, this.G);
-
-      // Computes intermediate variables M, L, N as per spec.
-      // Except if other than default BlackPoint values are used.
-      var M = this.XW * AG;
-      var L = this.YW * AG;
-      var N = this.ZW * AG;
-
-      // Decode XYZ, as per spec.
-      var X = M;
-      var Y = L;
-      var Z = N;
-
-      // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
-      // This yields values in range [0, 100].
-      var Lstar = Math.max(116 * Math.pow(Y, 1 / 3) - 16, 0);
-
-      // Convert values to rgb range [0, 255].
-      dest[destOffset] = Lstar * 255 / 100;
-      dest[destOffset + 1] = Lstar * 255 / 100;
-      dest[destOffset + 2] = Lstar * 255 / 100;
+      convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
     getRgbBuffer: function CalGrayCS_getRgbBuffer(src, srcOffset, count,
                                                   dest, destOffset, bits) {
-      // TODO: This part is copied from DeviceGray. Make this utility function.
-      var scale = 255 / ((1 << bits) - 1);
-      var j = srcOffset, q = destOffset;
+      var scale = 1 / ((1 << bits) - 1);
+
       for (var i = 0; i < count; ++i) {
-        var c = (scale * src[j++]) | 0;
-        dest[q++] = c;
-        dest[q++] = c;
-        dest[q++] = c;
+        convertToRgb(this, src, srcOffset, dest, destOffset, scale);
+        srcOffset += 1;
+        destOffset += 3;
       }
     },
     getOutputLength: function CalGrayCS_getOutputLength(inputLength) {

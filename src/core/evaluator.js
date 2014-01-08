@@ -19,8 +19,9 @@
            info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, TODO, warn, Util, Promise,
-           RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS */
+           TilingPattern, warn, Util, Promise, LegacyPromise,
+           RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
+           UNSUPPORTED_FEATURES, UnsupportedManager */
 
 'use strict';
 
@@ -407,9 +408,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'SMask':
-            // We support the default so don't trigger the TODO.
+            // We support the default so don't trigger a warning bar.
             if (!isName(value) || value.name != 'None')
-              TODO('graphic state operator ' + key);
+              UnsupportedManager.notify(UNSUPPORTED_FEATURES.smask);
             break;
           // Only generate info log messages for the following since
           // they are unlikey to have a big impact on the rendering.
@@ -475,22 +476,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return this.fontCache.get(fontRef);
       }
 
-
       font = xref.fetchIfRef(fontRef);
       if (!isDict(font)) {
         return errorFont();
       }
-      this.fontCache.put(fontRef, font);
+      // Workaround for bad PDF generators that doesn't reference fonts
+      // properly, i.e. by not using an object identifier.
+      // Check if the fontRef is a Dict (as opposed to a standard object),
+      // in which case we don't cache the font and instead reference it by
+      // fontName in font.loadedName below.
+      var fontRefIsDict = isDict(fontRef);
+      if (!fontRefIsDict) {
+        this.fontCache.put(fontRef, font);
+      }
 
       // keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page
-      font.loadedName = 'g_font_' + fontRef.num + '_' + fontRef.gen;
+      font.loadedName = 'g_font_' + (fontRefIsDict ?
+        fontName.replace(/\W/g, '') : (fontRef.num + '_' + fontRef.gen));
 
       if (!font.translated) {
         var translated;
         try {
           translated = this.translateFont(font, xref);
         } catch (e) {
+          UnsupportedManager.notify(UNSUPPORTED_FEATURES.font);
           translated = new ErrorFont(e instanceof Error ? e.message : e);
         }
         font.translated = translated;
@@ -538,7 +548,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // dictionary
       var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
 
-      var promise = new Promise();
+      var promise = new LegacyPromise();
       var args = [];
       while (true) {
 

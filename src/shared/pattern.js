@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 /* globals CanvasGraphics, ColorSpace, DeviceRgbCS, error,
-           info, isArray, isPDFFunction, isStream, PDFFunction, TODO, Util,
-           warn, CachedCanvases */
+           info, isArray, isPDFFunction, isStream, PDFFunction, Util,
+           warn, CachedCanvases, UnsupportedManager, UNSUPPORTED_FEATURES */
 
 'use strict';
 
@@ -55,7 +55,7 @@ var Pattern = (function PatternClosure() {
         // Both radial and axial shadings are handled by RadialAxial shading.
         return new Shadings.RadialAxial(dict, matrix, xref, res);
       default:
-        TODO('Unsupported shading type: ' + type);
+        UnsupportedManager.notify(UNSUPPORTED_FEATURES.shadingPattern);
         return new Shadings.Dummy();
     }
   };
@@ -315,7 +315,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var commonObjs = this.commonObjs;
       var ctx = this.ctx;
 
-      TODO('TilingType: ' + tilingType);
+      info('TilingType: ' + tilingType);
 
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
 

@@ -269,7 +269,10 @@ function nextPage(task, loadError) {
         clear(ctx);
 
         var drawContext, textLayerBuilder;
-        var initPromise = new Promise();
+        var resolveInitPromise;
+        var initPromise = new Promise(function (resolve) {
+          resolveInitPromise = resolve;
+        });
         if (task.type == 'text') {
           // using dummy canvas for pdf context drawing operations
           if (!dummyCanvas) {
@@ -281,12 +284,12 @@ function nextPage(task, loadError) {
 
           page.getTextContent().then(function(textContent) {
             textLayerBuilder.setTextContent(textContent);
-            initPromise.resolve();
+            resolveInitPromise();
           });
         } else {
           drawContext = ctx;
           textLayerBuilder = new NullTextLayerBuilder();
-          initPromise.resolve();
+          resolveInitPromise();
         }
         var renderContext = {
           canvasContext: drawContext,
@@ -300,7 +303,7 @@ function nextPage(task, loadError) {
           snapshotCurrentPage(task, error);
         });
         initPromise.then(function () {
-          page.render(renderContext).then(function() {
+          page.render(renderContext).promise.then(function() {
             completeRender(false);
           },
           function(error) {
