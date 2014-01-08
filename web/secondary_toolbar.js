@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, SCROLLBAR_PADDING */
+/* globals PDFView, SCROLLBAR_PADDING, HandTool */
 
 'use strict';
 
@@ -38,6 +38,7 @@ var SecondaryToolbar = {
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
+    this.handToolButton = options.handToolButton;
 
     // Attach the event listeners.
     var elements = [
@@ -50,7 +51,8 @@ var SecondaryToolbar = {
       { element: this.firstPage, handler: this.firstPageClick },
       { element: this.lastPage, handler: this.lastPageClick },
       { element: this.pageRotateCw, handler: this.pageRotateCwClick },
-      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick }
+      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
+      { element: this.handToolButton, handler: this.handToolClick }
     ];
 
     for (var item in elements) {
@@ -96,6 +98,10 @@ var SecondaryToolbar = {
 
   pageRotateCcwClick: function secondaryToolbarPageRotateCcwClick(evt) {
     PDFView.rotatePages(-90);
+  },
+
+  handToolClick: function secondaryToolbarHandToolClick(evt) {
+    HandTool.toggle();
   },
 
   // Misc. functions for interacting with the toolbar.
