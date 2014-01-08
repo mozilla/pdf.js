@@ -919,10 +919,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           if (chunk !== '') {
             var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
             var renderParams = textState.calcRenderParams();
-            bidiText.x = renderParams.renderMatrix[4] - (textState.fontSize *
-                           renderParams.vScale * Math.sin(renderParams.angle));
-            bidiText.y = renderParams.renderMatrix[5] + (textState.fontSize *
-                           renderParams.vScale * Math.cos(renderParams.angle));
+            var fontHeight = textState.fontSize * renderParams.vScale;
+            var fontAscent = font.ascent ? font.ascent * fontHeight :
+              font.descent ? (1 + font.descent) * fontHeight : fontHeight;
+            bidiText.x = renderParams.renderMatrix[4] - (fontAscent *
+                           Math.sin(renderParams.angle));
+            bidiText.y = renderParams.renderMatrix[5] + (fontAscent *
+                           Math.cos(renderParams.angle));
             if (bidiText.dir == 'ttb') {
               bidiText.x += renderParams.vScale / 2;
               bidiText.y -= renderParams.vScale;

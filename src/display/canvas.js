@@ -954,6 +954,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       geometry.fontName = font.loadedName;
       geometry.fontFamily = font.fallbackName;
       geometry.fontSize = this.current.fontSize;
+      geometry.ascent = font.ascent;
+      geometry.descent = font.descent;
       return geometry;
     },
 

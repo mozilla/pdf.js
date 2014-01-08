@@ -197,12 +197,14 @@ SimpleTextLayerBuilder.prototype = {
     var ctx = this.ctx, viewport = this.viewport;
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = geom.fontSize * Math.abs(geom.vScale);
+    var fontAscent = geom.ascent ? geom.ascent * fontHeight :
+      geom.descent ? (1 + geom.descent) * fontHeight : fontHeight;
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'yellow';
-    ctx.translate(geom.x + (fontHeight * Math.sin(geom.angle)),
-                  geom.y - (fontHeight * Math.cos(geom.angle)));
+    ctx.translate(geom.x + (fontAscent * Math.sin(geom.angle)),
+                  geom.y - (fontAscent * Math.cos(geom.angle)));
     ctx.rotate(geom.angle);
     ctx.rect(0, 0, geom.canvasWidth * Math.abs(geom.hScale), fontHeight);
     ctx.stroke();
