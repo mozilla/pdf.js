@@ -984,10 +984,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                           Encodings.WinAnsiEncoding :
                           Encodings.StandardEncoding;
       // The Symbolic attribute can be misused for regular fonts
-      // Heuristic: we have to check if the font is a standard one also
+      // Heuristic: we have to check if the font is a standard one or
+      // toUnicode is provided
       if (!!(flags & FontFlags.Symbolic)) {
-        baseEncoding = !properties.file ? Encodings.SymbolSetEncoding :
-                                          Encodings.MacRomanEncoding;
+        baseEncoding = !properties.file && !properties.toUnicode ?
+          Encodings.SymbolSetEncoding : Encodings.MacRomanEncoding;
       }
       if (dict.has('Encoding')) {
         var encoding = dict.get('Encoding');
