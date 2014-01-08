@@ -41,7 +41,10 @@ var SecondaryToolbar = {
 
     // Attach the event listeners.
     var elements = [
+      // Button to toggle the visibility of the secondary toolbar:
       { element: this.toggleButton, handler: this.toggle },
+      // All items within the secondary toolbar
+      // (except for toggleHandTool, hand_tool.js is responsible for it):
       { element: this.presentationModeButton,
         handler: this.presentationModeClick },
       { element: this.openFile, handler: this.openFileClick },
