@@ -987,10 +987,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                           Encodings.WinAnsiEncoding :
                           Encodings.StandardEncoding;
       // The Symbolic attribute can be misused for regular fonts
-      // Heuristic: we have to check if the font is a standard one or
-      // toUnicode is provided
+      // Heuristic: we have to check if the font is a standard one and has
+      // Symbolic font name
       if (!!(flags & FontFlags.Symbolic)) {
-        baseEncoding = !properties.file && !properties.toUnicode ?
+        baseEncoding = !properties.file && /Symbol/i.test(properties.name) ?
           Encodings.SymbolSetEncoding : Encodings.MacRomanEncoding;
       }
       if (dict.has('Encoding')) {
@@ -1259,6 +1259,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           var properties = {
             type: type.name,
+            name: baseFontName,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
             flags: flags,
@@ -1317,6 +1318,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var properties = {
         type: type.name,
+        name: fontName.name,
         subtype: subtype,
         file: fontFile,
         length1: length1,
