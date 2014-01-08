@@ -19,7 +19,7 @@
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, ViewHistory, PageView, ThumbnailView,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
-           PresentationMode, HandTool, Promise */
+           PresentationMode, HandTool, Promise, TouchEvents */
 
 'use strict';
 
@@ -89,6 +89,7 @@ var currentPageNumber = 1;
 //#include password_prompt.js
 //#include presentation_mode.js
 //#include hand_tool.js
+//#include touch_events.js
 
 var PDFView = {
   pages: [],
@@ -124,6 +125,11 @@ var PDFView = {
     this.thumbnailViewScroll = {};
     this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
                      this.renderHighestPriority.bind(this));
+
+    TouchEvents.initialize({
+      container: container,
+      pinchToZoom: true
+    });
 
     PDFFindBar.initialize({
       bar: document.getElementById('findbar'),
