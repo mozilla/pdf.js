@@ -609,7 +609,7 @@ var PDFView = {
 //    return;
 //  this.fellback = true;
 //  var url = this.url.split('#')[0];
-//  FirefoxCom.request('fallback', url, function response(download) {
+//  FirefoxCom.request('fallback', featureId, url, function response(download) {
 //    if (!download)
 //      return;
 //    PDFView.download();
