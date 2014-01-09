@@ -98,6 +98,29 @@ var Annotation = (function AnnotationClosure() {
     } else {
       var borderArray = dict.get('Border') || [0, 0, 1];
       data.borderWidth = borderArray[2] || 0;
+
+      // TODO: implement proper support for annotations with line dash patterns.
+      var dashArray = borderArray[3];
+      if (dashArray && isArray(dashArray)) {
+        var dashArrayLength = dashArray.length;
+        if (dashArrayLength > 0) {
+          // According to the PDF specification: the elements in a dashArray
+          // shall be numbers that are nonnegative and not all equal to zero.
+          var isInvalid = false;
+          var numPositive = 0;
+          for (var i = 0; i < dashArrayLength; i++) {
+            if (!(+dashArray[i] >= 0)) {
+              isInvalid = true;
+              break;
+            } else if (dashArray[i] > 0) {
+              numPositive++;
+            }
+          }
+          if (isInvalid || numPositive === 0) {
+            data.borderWidth = 0;
+          }
+        }
+      }
     }
 
     this.appearance = getDefaultAppearance(dict);
