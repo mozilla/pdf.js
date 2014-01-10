@@ -336,6 +336,11 @@ var PageView = function pageView(container, id, scale,
 
     var x = 0, y = 0;
     var width = 0, height = 0, widthScale, heightScale;
+    var changeOrientation = !!(this.rotation % 180);
+    var pageWidth = (changeOrientation ? this.height : this.width) /
+      this.scale / CSS_UNITS;
+    var pageHeight = (changeOrientation ? this.width : this.height) /
+      this.scale / CSS_UNITS;
     var scale = 0;
     switch (dest[1].name) {
       case 'XYZ':
@@ -347,7 +352,7 @@ var PageView = function pageView(container, id, scale,
         // since aligning the bottom of the intended page with the
         // top of the window is rarely helpful).
         x = x !== null ? x : 0;
-        y = y !== null ? y : (this.height / this.scale) / CSS_UNITS;
+        y = y !== null ? y : pageHeight;
         break;
       case 'Fit':
       case 'FitB':
@@ -361,6 +366,8 @@ var PageView = function pageView(container, id, scale,
       case 'FitV':
       case 'FitBV':
         x = dest[2];
+        width = pageWidth;
+        height = pageHeight;
         scale = 'page-height';
         break;
       case 'FitR':
