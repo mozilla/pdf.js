@@ -1179,18 +1179,17 @@ PDFJS.createBlob = function createBlob(data, contentType) {
 };
 
 PDFJS.createObjectURL = (function createObjectURLClosure() {
-  if (typeof URL !== 'undefined' && URL.createObjectURL) {
-    return function createObjectURL(data, contentType) {
-      var blob = PDFJS.createBlob(data, contentType);
-      return URL.createObjectURL(blob);
-    };
-  }
-
   // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
   return function createObjectURL(data, contentType) {
+    if (!PDFJS.disableCreateObjectURL &&
+        typeof URL !== 'undefined' && URL.createObjectURL) {
+      var blob = PDFJS.createBlob(data, contentType);
+      return URL.createObjectURL(blob);
+    }
+
     var buffer = 'data:' + contentType + ';base64,';
     for (var i = 0, ii = data.length; i < ii; i += 3) {
       var b1 = data[i] & 0xFF;
