@@ -75,6 +75,7 @@ limitations under the License.
     <script type="text/javascript" src="secondary_toolbar.js"></script>
     <script type="text/javascript" src="password_prompt.js"></script>
     <script type="text/javascript" src="presentation_mode.js"></script>
+    <script type="text/javascript" src="two_page_view_mode.js"></script>
     <script type="text/javascript" src="grab_to_pan.js"></script>
     <script type="text/javascript" src="hand_tool.js"></script>
 <!--#endif-->
@@ -168,7 +169,19 @@ limitations under the License.
 
             <div class="horizontalToolbarSeparator"></div>
 
-            <button id="toggleHandTool" class="secondaryToolbarButton handTool" title="Enable hand tool" tabindex="27" data-l10n-id="hand_tool_enable">
+            <button id="onePageView" class="secondaryToolbarButton onePageView toggled" title="One Page View" tabindex="27" data-l10n-id="one_page_view">
+              <span data-l10n-id="one_page_view_label">One Page View</span>
+            </button>
+            <button id="twoPageView" class="secondaryToolbarButton twoPageView" title="Two Page View" tabindex="28" data-l10n-id="two_page_view">
+              <span data-l10n-id="two_page_view_label">Two Page View</span>
+            </button>
+            <button id="twoPageViewShowCoverPage" class="secondaryToolbarButton twoPageViewShowCoverPage toggled hidden" title="Show Cover Page" tabindex="29" data-l10n-id="two_page_view_show_cover_page">
+              <span data-l10n-id="two_page_view_show_cover_page_label">Show Cover Page</span>
+            </button>
+
+            <div class="horizontalToolbarSeparator"></div>
+
+            <button id="toggleHandTool" class="secondaryToolbarButton handTool" title="Enable hand tool" tabindex="30" data-l10n-id="hand_tool_enable">
               <span data-l10n-id="hand_tool_enable_label">Enable hand tool</span>
             </button>
           </div>
