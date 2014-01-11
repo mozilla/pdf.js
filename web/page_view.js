@@ -400,16 +400,10 @@ var PageView = function pageView(container, id, scale,
       this.viewport.convertToViewportPoint(x, y),
       this.viewport.convertToViewportPoint(x + width, y + height)
     ];
-    setTimeout(function pageViewScrollIntoViewRelayout() {
-      // letting page to re-layout before scrolling
-      var scale = PDFView.currentScale;
-      var x = Math.min(boundingRect[0][0], boundingRect[1][0]);
-      var y = Math.min(boundingRect[0][1], boundingRect[1][1]);
-      var width = Math.abs(boundingRect[0][0] - boundingRect[1][0]);
-      var height = Math.abs(boundingRect[0][1] - boundingRect[1][1]);
+    var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
+    var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
-      scrollIntoView(div, {left: x, top: y, width: width, height: height});
-    }, 0);
+    scrollIntoView(div, { left: left, top: top });
   };
 
   this.getTextContent = function pageviewGetTextContent() {
