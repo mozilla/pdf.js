@@ -39,16 +39,12 @@ var PageView = function pageView(container, id, scale,
 
   this.annotationLayer = null;
 
-  var anchor = document.createElement('a');
-  anchor.name = '' + this.id;
-
   var div = this.el = document.createElement('div');
   div.id = 'pageContainer' + this.id;
   div.className = 'page';
   div.style.width = Math.floor(this.viewport.width) + 'px';
   div.style.height = Math.floor(this.viewport.height) + 'px';
 
-  container.appendChild(anchor);
   container.appendChild(div);
 
   this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
@@ -225,37 +221,29 @@ var PageView = function pageView(container, id, scale,
           case 'GoToPage':
             document.getElementById('pageNumber').focus();
             break;
-
           case 'GoBack':
             PDFHistory.back();
             break;
-
           case 'GoForward':
             PDFHistory.forward();
             break;
-
           case 'Find':
             if (!PDFView.supportsIntegratedFind) {
               PDFFindBar.toggle();
             }
             break;
-
-          case 'NextPage':
-            PDFView.page++;
-            break;
-
           case 'PrevPage':
-            PDFView.page--;
+            PDFView.previousPage();
             break;
-
-          case 'LastPage':
-            PDFView.page = PDFView.pages.length;
+          case 'NextPage':
+            PDFView.nextPage();
             break;
-
           case 'FirstPage':
             PDFView.page = 1;
             break;
-
+          case 'LastPage':
+            PDFView.page = PDFView.lastPageNumber;
+            break;
           default:
             break; // No action according to spec
         }

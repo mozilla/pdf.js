@@ -185,7 +185,11 @@ var PresentationMode = {
       if (!isInternalLink) {
         // Unless an internal link was clicked, advance one page.
         evt.preventDefault();
-        PDFView.page += (evt.shiftKey ? -1 : 1);
+        if (evt.shiftKey) {
+          PDFView.previousPage();
+        } else {
+          PDFView.nextPage();
+        }
       }
     }
   },
