@@ -20,6 +20,7 @@
 
 var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
 var SELECTOR = 'presentationControls';
+var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1000; // in ms
 
 var PresentationMode = {
   active: false,
@@ -66,11 +67,38 @@ var PresentationMode = {
             document.msFullscreenElement);
   },
 
+  /**
+   * Initialize a timeout that is used to reset PDFView.currentPosition when the
+   * browser transitions to fullscreen mode. Since resize events are triggered
+   * multiple times during the switch to fullscreen mode, this is necessary in
+   * order to prevent the page from being scrolled partially, or completely,
+   * out of view when Presentation Mode is enabled.
+   * Note: This is only an issue at certain zoom levels, e.g. 'page-width'.
+   */
+  _setSwitchInProgress: function presentationMode_setSwitchInProgress() {
+    if (this.switchInProgress) {
+      clearTimeout(this.switchInProgress);
+    }
+    this.switchInProgress = setTimeout(function switchInProgressTimeout() {
+      delete this.switchInProgress;
+    }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
+
+    PDFView.currentPosition = null;
+  },
+
+  _resetSwitchInProgress: function presentationMode_resetSwitchInProgress() {
+    if (this.switchInProgress) {
+      clearTimeout(this.switchInProgress);
+      delete this.switchInProgress;
+    }
+  },
+
   request: function presentationModeRequest() {
     if (!PDFView.supportsFullscreen || this.isFullscreen ||
         !this.viewer.hasChildNodes()) {
       return false;
     }
+    this._setSwitchInProgress();
 
     if (this.container.requestFullscreen) {
       this.container.requestFullscreen();
@@ -94,9 +122,15 @@ var PresentationMode = {
 
   enter: function presentationModeEnter() {
     this.active = true;
+    this._resetSwitchInProgress();
 
-    PDFView.page = this.args.page;
-    PDFView.setScale('page-fit', true);
+    // Ensure that the correct page is scrolled into view when entering
+    // Presentation Mode, by waiting until fullscreen mode in enabled.
+    // Note: This is only necessary in non-Mozilla browsers.
+    setTimeout(function enterPresentationModeTimeout() {
+      PDFView.page = this.args.page;
+      PDFView.setScale('page-fit', true);
+    }.bind(this), 0);
 
     window.addEventListener('mousemove', this.mouseMove, false);
     window.addEventListener('mousedown', this.mouseDown, false);
@@ -109,18 +143,25 @@ var PresentationMode = {
   },
 
   exit: function presentationModeExit() {
-    this.active = false;
-
     var page = PDFView.page;
-    PDFView.setScale(this.args.previousScale);
-    PDFView.page = page;
+
+    // Ensure that the correct page is scrolled into view when exiting
+    // Presentation Mode, by waiting until fullscreen mode is disabled.
+    // Note: This is only necessary in non-Mozilla browsers.
+    setTimeout(function exitPresentationModeTimeout() {
+      PDFView.setScale(this.args.previousScale);
+      PDFView.page = page;
+      // Keep Presentation Mode active until the page is scrolled into view,
+      // to prevent issues in non-Mozilla browsers.
+      this.active = false;
+      this.args = null;
+    }.bind(this), 0);
 
     window.removeEventListener('mousemove', this.mouseMove, false);
     window.removeEventListener('mousedown', this.mouseDown, false);
     window.removeEventListener('contextmenu', this.contextMenu, false);
 
     this.hideControls();
-    this.args = null;
     PDFView.clearMouseScrollState();
     HandTool.exitPresentationMode();
     this.container.removeAttribute('contextmenu');
