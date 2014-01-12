@@ -184,6 +184,10 @@ var PageView = function pageView(container, id, scale,
                             'translate(' + transX + ', ' + transY + ')');
       CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
     }
+
+    if (USE_ONLY_CSS_ZOOM && this.annotationLayer) {
+      setupAnnotations(div, this.pdfPage, this.viewport);
+    }
   };
 
   Object.defineProperty(this, 'width', {
