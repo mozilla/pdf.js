@@ -1567,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //}
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//#if !(FIREFOX || MOZCENTRAL || CHROME || B2G)
   var fileInput = document.createElement('input');
   fileInput.id = 'fileInput';
   fileInput.className = 'fileInput';
