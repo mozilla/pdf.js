@@ -30,6 +30,16 @@ body {
   background-image: url(images/texture.png);
 }
 
+body.sidebarResizing #mainContainer {
+  transition: none;
+  cursor: col-resize;
+}
+
+body.sidebarResizing #outerContainer,
+body.sidebarResizing #outerContainer a {
+  cursor: col-resize !important;
+}
+
 body,
 input,
 button,
@@ -178,7 +188,6 @@ html[dir='rtl'] .innerCenter {
   -webkit-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
-
 }
 html[dir='ltr'] #sidebarContainer {
   -webkit-transition-property: left;
@@ -200,6 +209,72 @@ html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
 }
 html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   right: 0px;
+}
+
+html[dir='ltr'] #sidebarResizer {
+  width: 5px;
+  float: right;
+  height: 100%;
+  background-color: #222;
+  border-right:1px solid 3a3a3a;
+  z-index: 100;
+  cursor: col-resize;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -5px;
+}
+
+html[dir='ltr'] #sidebarResizer #arrowBox {
+  width: 5px;
+  left: 5px;
+  height: 30px;
+  top: 50%;
+  position: absolute;
+  background-color: #c7c7c7;
+  border-top-right-radius: 1px;
+  border-bottom-right-radius: 1px;
+}
+
+html[dir='ltr'] #sidebarResizer #arrowBox #arrow {
+  position: absolute;
+  top: 34%;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 5px solid #222;
+}
+
+html[dir='rtl'] #sidebarResizer {
+  width: 5px;
+  float: left;
+  height: 100%;
+  background-color: #222;
+  border-right:1px solid 3a3a3a;
+  z-index: 100;
+  cursor: col-resize;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+}
+
+html[dir='rtl'] #sidebarResizer #arrowBox {
+  width: 5px;
+  right: 5px;
+  height: 30px;
+  top: 50%;
+  position: absolute;
+  background-color: #c7c7c7;
+  border-top-left-radius: 1px;
+  border-bottom-left-radius: 1px;
+}
+
+html[dir='rtl'] #sidebarResizer #arrowBox #arrow {
+  position: absolute;
+  top: 34%;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 5px solid #222;
 }
 
 #mainContainer {
@@ -266,7 +341,6 @@ html[dir='rtl'] #sidebarContent {
 }
 
 #toolbarSidebar {
-  width: 200px;
   height: 32px;
   background-color: #424242; /* fallback */
   background-image: url(images/texture.png),
@@ -1073,7 +1147,6 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 #thumbnailView {
   position: absolute;
-  width: 120px;
   top: 0;
   bottom: 0;
   padding: 10px 40px 0;
@@ -1141,10 +1214,9 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 
 #outlineView {
   position: absolute;
-  width: 192px;
   top: 0;
   bottom: 0;
-  padding: 4px 4px 0;
+  padding: 4px 0 0 0;
   overflow: auto;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -1161,7 +1233,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
 .outlineItem > a {
   text-decoration: none;
   display: inline-block;
-  min-width: 95%;
+  min-width: 94%;
   height: auto;
   margin-bottom: 1px;
   border-radius: 2px;
@@ -1608,6 +1680,15 @@ canvas {
   .sidebarOpen .visibleLargeView {
     display: inherit;
   }
+  #sidebarResizer {
+    display: none;
+  }
+  #sidebarContainer, #sidebarContent {
+    width: 200px !important;
+  }
+  #mainContainer {
+    left: 0 !important;
+  }
 }
 
 @media all and (max-width: 860px) {
@@ -1616,6 +1697,15 @@ canvas {
   }
   .sidebarOpen .visibleMediumView {
     display: inherit;
+  }
+  #sidebarResizer {
+    display: none;
+  }
+  #sidebarContainer, #sidebarContent {
+    width: 200px !important;
+  }
+  #mainContainer {
+    left: 0 !important;
   }
 }
 
@@ -1656,6 +1746,15 @@ canvas {
   #outerContainer .visibleMediumView {
     display: none;
   }
+  #sidebarResizer {
+    display: none;
+  }
+  #sidebarContainer, #sidebarContent {
+    width: 200px !important;
+  }
+  #mainContainer {
+    left: 0 !important;
+  }
 }
 
 @media all and (max-width: 700px) {
@@ -1665,6 +1764,15 @@ canvas {
   #outerContainer .visibleLargeView {
     display: inherit;
   }
+  #sidebarResizer {
+    display: none;
+  }
+  #sidebarContainer, #sidebarContent {
+    width: 200px !important;
+  }
+  #mainContainer {
+    left: 0 !important;
+  }
 }
 
 @media all and (max-width: 660px) {
@@ -1673,6 +1781,15 @@ canvas {
   }
   #outerContainer .visibleMediumView {
     display: inherit;
+  }
+  #sidebarResizer {
+    display: none;
+  }
+  #sidebarContainer, #sidebarContent {
+    width: 200px !important;
+  }
+  #mainContainer {
+    left: 0 !important;
   }
 }
 
@@ -1695,6 +1812,15 @@ canvas {
   }
   .toolbarButtonSpacer {
     width: 0;
+  }
+  #sidebarResizer {
+    display: none;
+  }
+  #sidebarContainer, #sidebarContent {
+    width: 200px !important;
+  }
+  #mainContainer {
+    left: 0 !important;
   }
 }
 
