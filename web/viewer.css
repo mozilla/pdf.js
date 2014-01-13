@@ -47,8 +47,7 @@ select {
 #viewerContainer:-webkit-full-screen {
   top: 0px;
   border-top: 2px solid transparent;
-  background-color: #404040;
-  background-image: url(images/texture.png);
+  background-color: #000;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -58,8 +57,7 @@ select {
 #viewerContainer:-moz-full-screen {
   top: 0px;
   border-top: 2px solid transparent;
-  background-color: #404040;
-  background-image: url(images/texture.png);
+  background-color: #000;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -76,15 +74,13 @@ select {
 }
 
 #viewerContainer:-ms-fullscreen::-ms-backdrop {
-  background-color: #404040;
-  background-image: url(images/texture.png);
+  background-color: #000;
 }
 
 #viewerContainer:fullscreen {
   top: 0px;
   border-top: 2px solid transparent;
-  background-color: #404040;
-  background-image: url(images/texture.png);
+  background-color: #000;
   width: 100%;
   height: 100%;
   overflow: hidden;
