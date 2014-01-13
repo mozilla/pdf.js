@@ -1567,13 +1567,12 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //}
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//#if !(FIREFOX || MOZCENTRAL)
   var fileInput = document.createElement('input');
   fileInput.id = 'fileInput';
   fileInput.className = 'fileInput';
   fileInput.setAttribute('type', 'file');
-  fileInput.setAttribute('style',
-    'visibility: hidden; position: fixed; right: 0; top: 0');
+  fileInput.setAttribute('accept', 'application/pdf');
   fileInput.oncontextmenu = noContextMenuHandler;
   document.body.appendChild(fileInput);
 
