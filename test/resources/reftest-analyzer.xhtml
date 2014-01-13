@@ -109,8 +109,8 @@ var gMagPixPaths = [];     // 2D array of array-of-two <path> objects used in th
 var gMagWidth = 5;         // number of zoomed in pixels to show horizontally
 var gMagHeight = 5;        // number of zoomed in pixels to show vertically
 var gMagZoom = 16;         // size of the zoomed in pixels
-var gImage1Data;           // ImageData object for the reference image
-var gImage2Data;           // ImageData object for the test output image
+var gImage1Data;           // ImageData object for the test output image
+var gImage2Data;           // ImageData object for the reference image
 var gFlashingPixels = [];  // array of <path> objects that should be flashed due to pixel color mismatch
 var gPath = '';            // path taken from #web= and prepended to ref/snp urls
 var gSelected = null;      // currently selected comparison
@@ -538,8 +538,8 @@ window.addEventListener('keydown', function keydown(event) {
       <table>
         <tbody>
           <tr><th>Pixel at:</th><td colspan="2" id="coords"/></tr>
-          <tr><th>Image 1:</th><td id="pix1rgb"></td><td id="pix1hex"></td></tr>
-          <tr><th>Image 2:</th><td id="pix2rgb"></td><td id="pix2hex"></td></tr>
+          <tr><th>Test:</th><td id="pix1rgb"></td><td id="pix1hex"></td></tr>
+          <tr><th>Reference:</th><td id="pix2rgb"></td><td id="pix2hex"></td></tr>
         </tbody>
       </table>
       <div>
@@ -563,8 +563,8 @@ window.addEventListener('keydown', function keydown(event) {
   <div id="itemlist"></div>
   <div id="images" style="display:none">
     <form id="imgcontrols">
-    <label><input type="radio" name="which" value="0" onchange="show_image(1)" checked="checked" />Image 1</label>
-    <label><input type="radio" name="which" value="1" onchange="show_image(2)" />Image 2</label>
+    <label><input type="radio" name="which" value="0" onchange="show_image(1)" checked="checked" />Test</label>
+    <label><input type="radio" name="which" value="1" onchange="show_image(2)" />Reference</label>
     <label><input type="checkbox" onchange="show_differences(this)" />Circle differences</label>
     </form>
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="800px" height="1000px" viewbox="0 0 800 1000" id="svg">

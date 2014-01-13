@@ -52,6 +52,15 @@
        "type": "eq",
        "about": "Fonts referenced only by name and not by an object identifier."
     },
+    {  "id": "bug921760",
+       "file": "pdfs/bug921760.pdf",
+       "md5": "1aa136d786a65b0d7cce7bdb3c58c6c3",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue3879",
        "file": "pdfs/issue3879.pdf",
        "md5": "1cd1f1c3271515a14e65ff2980e14663",
@@ -783,6 +792,12 @@
     {  "id": "issue1350",
       "file": "pdfs/issue1350.pdf",
       "md5": "92f72a04a4d9d05b2dd433b51f32ab1f",
+      "rounds": 1,
+      "type": "eq"
+    },
+    {  "id": "bug864847",
+      "file": "pdfs/bug864847.pdf",
+      "md5": "2b62cbba5d40a769be8e611eb5b61bfe",
       "rounds": 1,
       "type": "eq"
     },
