@@ -1572,8 +1572,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   fileInput.id = 'fileInput';
   fileInput.className = 'fileInput';
   fileInput.setAttribute('type', 'file');
-  fileInput.setAttribute('style',
-    'visibility: hidden; position: fixed; right: 0; top: 0');
   fileInput.oncontextmenu = noContextMenuHandler;
   document.body.appendChild(fileInput);
 
