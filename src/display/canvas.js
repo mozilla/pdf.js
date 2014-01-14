@@ -431,6 +431,34 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     ctx.putImageData(tmpImgData, 0, 0);
   }
 
+  function putBinaryImageMask(ctx, imgData) {
+    var width = imgData.width, height = imgData.height;
+    var tmpImgData = ctx.createImageData(width, height);
+    var data = imgData.data;
+    var tmpImgDataPixels = tmpImgData.data;
+    var dataPos = 0;
+
+    // Expand the mask so it can be used by the canvas.  Any required inversion
+    // has already been handled.
+    var tmpPos = 3; // alpha component offset
+    for (var i = 0; i < height; i++) {
+      var mask = 0;
+      for (var j = 0; j < width; j++) {
+        if (!mask) {
+          var elem = data[dataPos++];
+          mask = 128;
+        }
+        if (!(elem & mask)) {
+          tmpImgDataPixels[tmpPos] = 255;
+        }
+        tmpPos += 4;
+        mask >>= 1;
+      }
+    }
+
+    ctx.putImageData(tmpImgData, 0, 0);
+  }
+
   function copyCtxState(sourceCtx, destCtx) {
     var properties = ['strokeStyle', 'fillStyle', 'fillRule', 'globalAlpha',
                       'lineWidth', 'lineCap', 'lineJoin', 'miterLimit',
@@ -1611,7 +1639,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var maskCtx = maskCanvas.context;
       maskCtx.save();
 
-      putBinaryImageData(maskCtx, img);
+      putBinaryImageMask(maskCtx, img);
 
       maskCtx.globalCompositeOperation = 'source-in';
 
@@ -1638,7 +1666,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var maskCtx = maskCanvas.context;
         maskCtx.save();
 
-        putBinaryImageData(maskCtx, image);
+        putBinaryImageMask(maskCtx, image);
 
         maskCtx.globalCompositeOperation = 'source-in';
 

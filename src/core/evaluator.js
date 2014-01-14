@@ -262,8 +262,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var inverseDecode = !!decode && decode[0] > 0;
 
         operatorList.addOp(OPS.paintImageMaskXObject,
-          [PDFImage.createMask(imgArray, width, height,
-                                            inverseDecode)]
+          [PDFImage.createMask(imgArray, width, height, inverseDecode)]
         );
         return;
       }

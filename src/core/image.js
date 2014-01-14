@@ -209,26 +209,21 @@ var PDFImage = (function PDFImageClosure() {
 
   PDFImage.createMask = function PDFImage_createMask(imgArray, width, height,
                                                      inverseDecode) {
-    var buffer = new Uint8Array(width * height * 4);
-    var imgArrayPos = 0;
-    var i, j, mask, buf;
-    // removing making non-masked pixels transparent
-    var bufferPos = 3; // alpha component offset
-    for (i = 0; i < height; i++) {
-      mask = 0;
-      for (j = 0; j < width; j++) {
-        if (!mask) {
-          buf = imgArray[imgArrayPos++];
-          mask = 128;
-        }
-        if (!(buf & mask) !== inverseDecode) {
-          buffer[bufferPos] = 255;
-        }
-        bufferPos += 4;
-        mask >>= 1;
+    // Copy imgArray into a typed array (inverting if necessary) so it can be
+    // transferred to the main thread.
+    var length = ((width + 7) >> 3) * height;
+    var data = new Uint8Array(length);
+    if (inverseDecode) {
+      for (var i = 0; i < length; i++) {
+        data[i] = ~imgArray[i];
+      }
+    } else {
+      for (var i = 0; i < length; i++) {
+        data[i] = imgArray[i];
       }
     }
-    return {data: buffer, width: width, height: height};
+
+    return {data: data, width: width, height: height};
   };
 
   PDFImage.prototype = {
