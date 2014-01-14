@@ -419,12 +419,17 @@ var PageView = function pageView(container, id, scale,
   this.draw = function pageviewDraw(callback) {
     var pdfPage = this.pdfPage;
 
+    if (this.pagePdfPromise) {
+      return;
+    }
     if (!pdfPage) {
       var promise = PDFView.getPage(this.id);
       promise.then(function(pdfPage) {
+        delete this.pagePdfPromise;
         this.setPdfPage(pdfPage);
         this.draw(callback);
       }.bind(this));
+      this.pagePdfPromise = promise;
       return;
     }
 
