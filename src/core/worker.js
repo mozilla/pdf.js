@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, globalScope, InvalidPDFException, log,
+/* globals error, globalScope, InvalidPDFException, info,
            MissingPDFException, PasswordException, PDFJS, Promise,
            UnknownErrorException, NetworkManager, LocalPdfManager,
            NetworkPdfManager, XRefParseException, LegacyPromise,
@@ -331,7 +331,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         page.getOperatorList(handler).then(function(operatorList) {
 
-          log('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
+          info('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
               Date.now() - start, operatorList.fnArray.length);
 
         }, function(e) {
@@ -373,7 +373,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var start = Date.now();
         page.extractTextContent().then(function(textContent) {
           deferred.resolve(textContent);
-          log('text indexing: page=%d - time=%dms', pageNum,
+          info('text indexing: page=%d - time=%dms', pageNum,
               Date.now() - start);
         }, function (e) {
           // Skip errored pages
@@ -421,15 +421,18 @@ var workerConsole = {
   timeEnd: function timeEnd(name) {
     var time = consoleTimer[name];
     if (!time) {
-      error('Unkown timer name ' + name);
+      error('Unknown timer name ' + name);
     }
     this.log('Timer:', name, Date.now() - time);
   }
 };
 
+
 // Worker thread?
 if (typeof window === 'undefined') {
-  globalScope.console = workerConsole;
+  if (!('console' in globalScope)) {
+    globalScope.console = workerConsole;
+  }
 
   // Listen for unsupported features so we can pass them on to the main thread.
   PDFJS.UnsupportedManager.listen(function (msg) {

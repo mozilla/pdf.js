@@ -27,11 +27,13 @@
 //
 //var EXPORTED_SYMBOLS = ['NetworkManager'];
 //
-//function log(aMsg) {
-//  var msg = 'network.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
-//  Services.console.logStringMessage(msg);
-//  // TODO(mack): dump() doesn't seem to work here...
-//  dump(msg + '\n');
+//var console = {
+//  log: function console_log(aMsg) {
+//    var msg = 'network.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
+//    Services.console.logStringMessage(msg);
+//    // TODO(mack): dump() doesn't seem to work here...
+//    dump(msg + '\n');
+//  }
 //}
 //#endif
 

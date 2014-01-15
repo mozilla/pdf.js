@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals CFFDictDataMap, CFFDictPrivateDataMap, CFFEncodingMap, CFFStrings,
-           Components, Dict, dump, error, isNum, log, netscape, Stream */
+           Components, Dict, dump, error, isNum, netscape, Stream */
 
 'use strict';
 
@@ -43,7 +43,6 @@ function readCharset(aStream, aCharstrings) {
     for (var i = 1; i < count + 1; i++) {
       var sid = aStream.getByte() << 8 | aStream.getByte();
       charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
-      //log(CFFStrings[sid] + "::" + charset[CFFStrings[sid]]);
     }
   } else if (format == 1) {
     for (var i = 1; i < count + 1; i++) {
@@ -52,8 +51,6 @@ function readCharset(aStream, aCharstrings) {
       var numLeft = aStream.getByte();
       for (var j = 0; j <= numLeft; j++) {
         var sid = first++;
-        if (CFFStrings[sid] == 'three')
-          log(aCharstrings[j]);
         charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[j]);
       }
     }
@@ -263,8 +260,9 @@ var Type2Parser = function type2Parser(aFilePath) {
   var debug = false;
 
   function dump(aStr) {
-    if (debug)
-      log(aStr);
+    if (debug) {
+      console.log(aStr);
+    }
   }
 
   function parseAsToken(aString, aMap) {
