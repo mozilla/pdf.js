@@ -94,7 +94,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }
 
       var networkManager = new NetworkManager(source.url, {
-        httpHeaders: source.httpHeaders
+        httpHeaders: source.httpHeaders,
+        withCredentials: source.withCredentials
       });
       var fullRequestXhrId = networkManager.requestFull({
         onHeadersReceived: function onHeadersReceived() {

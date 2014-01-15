@@ -117,6 +117,9 @@ PDFJS.verbosity = PDFJS.verbosity === undefined ?
  *  - url   - The URL of the PDF.
  *  - data  - A typed array with PDF data.
  *  - httpHeaders - Basic authentication headers.
+ *  - withCredentials - Indicates whether or not cross-site Access-Control 
+ *                      requests should be made using credentials such as
+ *                      cookies or authorization headers. The default is false.
  *  - password - For decrypting password-protected PDFs.
  *  - initialData - A typed array with the first portion or all of the pdf data.
  *                  Used by the extension since some data is already loaded

@@ -44,6 +44,7 @@ var NetworkManager = (function NetworkManagerClosure() {
     this.url = url;
     args = args || {};
     this.httpHeaders = args.httpHeaders || {};
+    this.withCredentials = args.withCredentials || false;
     this.getXhr = args.getXhr ||
       function NetworkManager_getXhr() {
 //#if B2G
@@ -96,6 +97,7 @@ var NetworkManager = (function NetworkManagerClosure() {
       };
 
       xhr.open('GET', this.url);
+      xhr.withCredentials = this.withCredentials;
       for (var property in this.httpHeaders) {
         var value = this.httpHeaders[property];
         if (typeof value === 'undefined') {
