@@ -17,7 +17,21 @@ limitations under the License.
 */
 /* globals chrome, URL, getViewerURL */
 
+(function() {
 'use strict';
+
+if (!chrome.streamsPrivate) {
+  // Aww, PDF.js is still not whitelisted... See http://crbug.com/326949
+  console.warn('streamsPrivate not available, PDF from FTP or POST ' +
+               'requests will not be displayed using this extension! ' +
+               'See http://crbug.com/326949');
+  chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+    if (message && message.action === 'getPDFStream') {
+      sendResponse();
+    }
+  });
+  return;
+}
 
 //
 // Stream URL storage manager
@@ -26,10 +40,6 @@ limitations under the License.
 // Hash map of "<tab id>": { "<pdf url>": ["<stream url>", ...], ... }
 var urlToStream = {};
 
-// Note: Execution of this script stops when the streamsPrivate API is
-// not available, because an error will be thrown. Don't bother with
-// catching and handling the error, because it is a great way to see
-// when the streamsPrivate API is unavailable.
 chrome.streamsPrivate.onExecuteMimeTypeHandler.addListener(handleStream);
 
 // Chrome before 27 does not support tabIds on stream events.
@@ -235,3 +245,5 @@ function handleWebNavigation(details) {
     });
   }
 }
+
+})();
