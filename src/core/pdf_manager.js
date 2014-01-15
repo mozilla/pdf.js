@@ -142,6 +142,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
     var params = {
       msgHandler: msgHandler,
       httpHeaders: args.httpHeaders,
+      withCredentials: args.withCredentials,
       chunkedViewerLoading: args.chunkedViewerLoading,
       disableAutoFetch: args.disableAutoFetch,
       initialData: args.initialData
