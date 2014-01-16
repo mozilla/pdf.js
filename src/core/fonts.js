@@ -2253,6 +2253,8 @@ var Font = (function FontClosure() {
     this.wideChars = properties.wideChars;
     this.hasEncoding = properties.hasEncoding;
     this.cmap = properties.cmap;
+    this.ascent = properties.ascent / PDF_GLYPH_SPACE_UNITS;
+    this.descent = properties.descent / PDF_GLYPH_SPACE_UNITS;
 
     this.fontMatrix = properties.fontMatrix;
     if (properties.type == 'Type3') {
