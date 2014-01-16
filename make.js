@@ -572,12 +572,7 @@ target.mozcentral = function() {
          '../../LICENSE'],
       DEFAULT_LOCALE_FILES =
         [LOCALE_SRC_DIR + 'en-US/viewer.properties',
-         LOCALE_SRC_DIR + 'en-US/chrome.properties'],
-      FIREFOX_MC_EXTENSION_FILES =
-        ['chrome.manifest',
-         'components',
-         'content',
-         'LICENSE'];
+         LOCALE_SRC_DIR + 'en-US/chrome.properties'];
 
   target.bundle({ excludes: ['core/network.js'], defines: defines });
   cd(ROOT_DIR);
@@ -639,16 +634,6 @@ target.mozcentral = function() {
       MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
   sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'true',
       MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
-
-  // List all files for mozilla-central
-  cd(MOZCENTRAL_EXTENSION_DIR);
-  var extensionFiles = '';
-  find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file) {
-    if (test('-f', file))
-      extensionFiles += file + '\n';
-  });
-  extensionFiles.to('extension-files');
-  cd(ROOT_DIR);
 
   // Copy test files
   mkdir('-p', MOZCENTRAL_TEST_DIR);
