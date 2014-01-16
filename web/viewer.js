@@ -615,11 +615,13 @@ var PDFView = {
 //    return;
 //  this.fellback = true;
 //  var url = this.url.split('#')[0];
-//  FirefoxCom.request('fallback', featureId, url, function response(download) {
-//    if (!download)
-//      return;
-//    PDFView.download();
-//  });
+//  FirefoxCom.request('fallback', { featureId: featureId, url: url },
+//    function response(download) {
+//      if (!download) {
+//        return;
+//      }
+//      PDFView.download();
+//    });
 //#endif
   },
 
