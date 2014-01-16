@@ -377,7 +377,10 @@ ChromeActions.prototype = {
         break;
     }
   },
-  fallback: function(featureId, url, sendResponse) {
+  fallback: function(args, sendResponse) {
+    var featureId = args.featureId;
+    var url = args.url;
+
     var self = this;
     var domWindow = this.domWindow;
     var strings = getLocalizedStrings('chrome.properties');
