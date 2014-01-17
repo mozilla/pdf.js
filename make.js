@@ -572,7 +572,10 @@ target.mozcentral = function() {
          '../../LICENSE'],
       DEFAULT_LOCALE_FILES =
         [LOCALE_SRC_DIR + 'en-US/viewer.properties',
-         LOCALE_SRC_DIR + 'en-US/chrome.properties'];
+         LOCALE_SRC_DIR + 'en-US/chrome.properties'],
+      FIREFOX_MC_EXCLUDED_FILES =
+        ['icon.png',
+         'icon64.png'];
 
   target.bundle({ excludes: ['core/network.js'], defines: defines });
   cd(ROOT_DIR);
@@ -620,6 +623,15 @@ target.mozcentral = function() {
     if (file.match(/^\./))
       rm('-f', file);
   });
+
+  // Remove excluded files
+  cd(MOZCENTRAL_EXTENSION_DIR);
+  FIREFOX_MC_EXCLUDED_FILES.forEach(function(file) {
+    if (test('-f', file)) {
+      rm('-r', file);
+    }
+  });
+  cd(ROOT_DIR);
 
   // Copy default localization files
   cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
