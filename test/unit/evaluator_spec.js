@@ -35,11 +35,11 @@ describe('evaluator', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
                                            new XrefMock(), new HandlerMock(),
                                            'prefix');
-      var stream = new StringStream('qTT');
+      var stream = new StringStream('fTT');
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(1);
-      expect(result.fnArray[0]).toEqual(OPS.save);
+      expect(result.fnArray[0]).toEqual(OPS.fill);
       expect(result.argsArray[0].length).toEqual(0);
     });
 
@@ -72,13 +72,13 @@ describe('evaluator', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
                                            new XrefMock(), new HandlerMock(),
                                            'prefix');
-      var stream = new StringStream('qqq');
+      var stream = new StringStream('fff');
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual(OPS.save);
-      expect(result.fnArray[1]).toEqual(OPS.save);
-      expect(result.fnArray[2]).toEqual(OPS.save);
+      expect(result.fnArray[0]).toEqual(OPS.fill);
+      expect(result.fnArray[1]).toEqual(OPS.fill);
+      expect(result.fnArray[2]).toEqual(OPS.fill);
     });
 
     it('should handle three glued operations #2', function() {
@@ -100,11 +100,11 @@ describe('evaluator', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
                                            new XrefMock(), new HandlerMock(),
                                            'prefix');
-      var stream = new StringStream('q5 Ts');
+      var stream = new StringStream('f5 Ts');
       var result  = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(2);
-      expect(result.fnArray[0]).toEqual(OPS.save);
+      expect(result.fnArray[0]).toEqual(OPS.fill);
       expect(result.fnArray[1]).toEqual(OPS.setTextRise);
       expect(result.argsArray.length).toEqual(2);
       expect(result.argsArray[1].length).toEqual(1);
@@ -115,13 +115,13 @@ describe('evaluator', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
                                            new XrefMock(), new HandlerMock(),
                                            'prefix');
-      var stream = new StringStream('trueifalserinullq');
+      var stream = new StringStream('trueifalserinullh');
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(!!result.fnArray && !!result.argsArray).toEqual(true);
       expect(result.fnArray.length).toEqual(3);
       expect(result.fnArray[0]).toEqual(OPS.setFlatness);
       expect(result.fnArray[1]).toEqual(OPS.setRenderingIntent);
-      expect(result.fnArray[2]).toEqual(OPS.save);
+      expect(result.fnArray[2]).toEqual(OPS.closePath);
       expect(result.argsArray.length).toEqual(3);
       expect(result.argsArray[0].length).toEqual(1);
       expect(result.argsArray[0][0]).toEqual(true);
@@ -162,6 +162,19 @@ describe('evaluator', function() {
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
       expect(result.argsArray).toEqual([]);
       expect(result.fnArray).toEqual([]);
+    });
+    it('should close opened saves', function() {
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+        new XrefMock(), new HandlerMock(),
+        'prefix');
+      var stream = new StringStream('qq');
+      var result = evaluator.getOperatorList(stream, new ResourcesMock());
+      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(result.fnArray.length).toEqual(4);
+      expect(result.fnArray[0]).toEqual(OPS.save);
+      expect(result.fnArray[1]).toEqual(OPS.save);
+      expect(result.fnArray[2]).toEqual(OPS.restore);
+      expect(result.fnArray[3]).toEqual(OPS.restore);
     });
   });
 });

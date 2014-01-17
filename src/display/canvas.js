@@ -376,7 +376,6 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
-    this.paintFormXObjectDepth = 0;
 
     this.old = old;
   }
@@ -1453,7 +1452,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintFormXObjectBegin: function CanvasGraphics_paintFormXObjectBegin(matrix,
                                                                         bbox) {
       this.save();
-      this.current.paintFormXObjectDepth++;
       this.baseTransformStack.push(this.baseTransform);
 
       if (matrix && isArray(matrix) && 6 == matrix.length)
@@ -1471,12 +1469,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintFormXObjectEnd: function CanvasGraphics_paintFormXObjectEnd() {
-      var depth = this.current.paintFormXObjectDepth;
-      do {
-        this.restore();
-        // some pdf don't close all restores inside object
-        // closing those for them
-      } while (this.current.paintFormXObjectDepth >= depth);
+      this.restore();
       this.baseTransform = this.baseTransformStack.pop();
     },
 
