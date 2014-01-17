@@ -326,38 +326,39 @@ var PDFImage = (function PDFImageClosure() {
       }
       return output;
     },
-    getOpacity: function PDFImage_getOpacity(width, height, image) {
+    fillOpacity: function PDFImage_fillOpacity(rgbaBuf, width, height,
+                                               actualHeight, image) {
       var smask = this.smask;
       var mask = this.mask;
-      var originalWidth = this.width;
-      var originalHeight = this.height;
-      var buf;
+      var alphaBuf;
 
       if (smask) {
         var sw = smask.width;
         var sh = smask.height;
-        buf = new Uint8Array(sw * sh);
-        smask.fillGrayBuffer(buf);
+        alphaBuf = new Uint8Array(sw * sh);
+        smask.fillGrayBuffer(alphaBuf);
         if (sw != width || sh != height)
-          buf = PDFImage.resize(buf, smask.bpc, 1, sw, sh, width, height);
+          alphaBuf = PDFImage.resize(alphaBuf, smask.bpc, 1, sw, sh, width,
+                                     height);
       } else if (mask) {
         if (mask instanceof PDFImage) {
           var sw = mask.width;
           var sh = mask.height;
-          buf = new Uint8Array(sw * sh);
+          alphaBuf = new Uint8Array(sw * sh);
           mask.numComps = 1;
-          mask.fillGrayBuffer(buf);
+          mask.fillGrayBuffer(alphaBuf);
 
-          // Need to invert values in buffer
+          // Need to invert values in rgbaBuf
           for (var i = 0, ii = sw * sh; i < ii; ++i)
-            buf[i] = 255 - buf[i];
+            alphaBuf[i] = 255 - alphaBuf[i];
 
           if (sw != width || sh != height)
-            buf = PDFImage.resize(buf, mask.bpc, 1, sw, sh, width, height);
+            alphaBuf = PDFImage.resize(alphaBuf, mask.bpc, 1, sw, sh, width,
+                                       height);
         } else if (isArray(mask)) {
           // Color key mask: if any of the compontents are outside the range
           // then they should be painted.
-          buf = new Uint8Array(width * height);
+          alphaBuf = new Uint8Array(width * height);
           var numComps = this.numComps;
           for (var i = 0, ii = width * height; i < ii; ++i) {
             var opacity = 0;
@@ -370,17 +371,23 @@ var PDFImage = (function PDFImageClosure() {
                 break;
               }
             }
-            buf[i] = opacity;
+            alphaBuf[i] = opacity;
           }
         } else {
           error('Unknown mask format.');
         }
-      } else {
-        buf = new Uint8Array(width * height);
-        for (var i = 0, ii = width * height; i < ii; ++i)
-          buf[i] = 255;
       }
-      return buf;
+
+      if (alphaBuf) {
+        for (var i = 0, j = 3, ii = width * actualHeight; i < ii; ++i, j += 4) {
+          rgbaBuf[j] = alphaBuf[i];
+        }
+      } else {
+        // Common case: no mask (and no need to allocate the extra buffer).
+        for (var i = 0, j = 3, ii = width * actualHeight; i < ii; ++i, j += 4) {
+          rgbaBuf[j] = 255;
+        }
+      }
     },
     undoPreblend: function PDFImage_undoPreblend(buffer, width, height) {
       var matte = this.smask && this.smask.matte;
@@ -424,9 +431,10 @@ var PDFImage = (function PDFImageClosure() {
       var actualHeight = 0 | (imgArray.length / rowBytes *
                          height / originalHeight);
       var comps = this.getComponents(imgArray);
-      // Build opacity here since color key masking needs to be perormed on
+
+      // Handle opacity here since color key masking needs to be performed on
       // undecoded values.
-      var opacity = this.getOpacity(width, height, comps);
+      this.fillOpacity(buffer, width, height, actualHeight, comps);
 
       if (this.needsDecode) {
         this.decodeBuffer(comps);
@@ -437,14 +445,13 @@ var PDFImage = (function PDFImageClosure() {
         rgbBuf = PDFImage.resize(rgbBuf, this.bpc, 3, originalWidth,
                                 originalHeight, width, height);
       var compsPos = 0;
-      var opacityPos = 0;
       var length = width * actualHeight * 4;
 
       for (var i = 0; i < length; i += 4) {
         buffer[i] = rgbBuf[compsPos++];
         buffer[i + 1] = rgbBuf[compsPos++];
         buffer[i + 2] = rgbBuf[compsPos++];
-        buffer[i + 3] = opacity[opacityPos++];
+        // buffer[i + 3] was filled by fillOpacity().
       }
 
       this.undoPreblend(buffer, width, actualHeight);
