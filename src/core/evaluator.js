@@ -597,24 +597,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     getTextContent: function PartialEvaluator_getTextContent(
-                                                    stream, resources, state) {
+                                                 stream, resources, textState) {
 
-      var bidiTexts;
+      textState = textState || new TextState();
+
+      var bidiTexts = [];
       var SPACE_FACTOR = 0.35;
       var MULTI_SPACE_FACTOR = 1.5;
-      var textState;
-
-      if (!state) {
-        textState = new TextState();
-        bidiTexts = [];
-        state = {
-          textState: textState,
-          bidiTexts: bidiTexts
-        };
-      } else {
-        bidiTexts = state.bidiTexts;
-        textState = state.textState;
-      }
 
       var self = this;
       var xref = this.xref;
@@ -734,11 +723,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if ('Form' !== type.name)
                 break;
 
-              state = this.getTextContent(
+              var formTexts = this.getTextContent(
                 xobj,
                 xobj.dict.get('Resources') || resources,
-                state
+                textState
               );
+              Util.concatenateToArray(bidiTexts, formTexts);
               break;
             case OPS.setGState:
               var dictName = args[0];
@@ -758,7 +748,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           } // switch
 
           if (chunk !== '') {
-            var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
+            var bidiResult = PDFJS.bidi(chunk, -1, font.vertical);
+            var bidiText = {
+              str: bidiResult.str,
+              dir: bidiResult.dir
+            };
             var renderParams = textState.calcRenderParams(preprocessor.ctm);
             bidiText.x = renderParams.renderMatrix[4] - (textState.fontSize *
                            renderParams.vScale * Math.sin(renderParams.angle));
@@ -775,13 +769,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               bidiText.x += renderParams.vScale / 2;
               bidiText.y -= renderParams.vScale;
             }
+            bidiText.angle = renderParams.angle;
+            bidiText.size = fontHeight;
             bidiTexts.push(bidiText);
 
             chunk = '';
           }
       } // while
 
-      return state;
+      return bidiTexts;
     },
 
     extractDataStructures: function
