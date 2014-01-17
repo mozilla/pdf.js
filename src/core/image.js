@@ -439,20 +439,9 @@ var PDFImage = (function PDFImageClosure() {
       if (this.needsDecode) {
         this.decodeBuffer(comps);
       }
-      var rgbBuf = this.colorSpace.createRgbBuffer(comps,
-                                    originalWidth * originalHeight, bpc);
-      if (originalWidth != width || originalHeight != height)
-        rgbBuf = PDFImage.resize(rgbBuf, this.bpc, 3, originalWidth,
-                                originalHeight, width, height);
-      var compsPos = 0;
-      var length = width * actualHeight * 4;
 
-      for (var i = 0; i < length; i += 4) {
-        buffer[i] = rgbBuf[compsPos++];
-        buffer[i + 1] = rgbBuf[compsPos++];
-        buffer[i + 2] = rgbBuf[compsPos++];
-        // buffer[i + 3] was filled by fillOpacity().
-      }
+      this.colorSpace.fillRgb(buffer, originalWidth, originalHeight, width,
+                              height, actualHeight, bpc, comps);
 
       this.undoPreblend(buffer, width, actualHeight);
     },
