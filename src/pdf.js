@@ -47,3 +47,13 @@ if (!PDFJS.workerSrc && typeof document !== 'undefined') {
   })();
 }
 //#endif
+
+function search(searchQuery){
+    if (!searchQuery || searchQuery.length == 0){
+      return;
+    }
+    PDFFindBar.open(); 
+    PDFFindBar.findField.value = searchQuery;
+    PDFFindBar.highlightAll= true;
+    PDFFindBar.findNextButton.click();
+}

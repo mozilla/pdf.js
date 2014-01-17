@@ -23,8 +23,7 @@
 
 'use strict';
 
-var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
-var DEFAULT_SCALE = 'auto';
+var DEFAULT_SCALE = '1'; // 1 = set default zoom to 100%
 var DEFAULT_SCALE_DELTA = 1.1;
 var UNKNOWN_SCALE = 0;
 var CACHE_SIZE = 20;
@@ -39,8 +38,11 @@ var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
 var USE_ONLY_CSS_ZOOM = false;
+var PDFJS_APP_PATH = '/assets/pdfjs/';
+var DEFAULT_URL = PDFJS_APP_PATH + 'compressed.tracemonkey-pldi-09.pdf';
 var CLEANUP_TIMEOUT = 30000;
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
+
 //#if B2G
 //USE_ONLY_CSS_ZOOM = true;
 //#endif
@@ -57,9 +59,9 @@ var FindStates = {
   FIND_PENDING: 3
 };
 
-PDFJS.imageResourcesPath = './images/';
+PDFJS.imageResourcesPath = PDFJS_APP_PATH + '/images/';
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
-//PDFJS.workerSrc = '../build/pdf.worker.js';
+//PDFJS.workerSrc = PDFJS_APP_PATH + '/pdf.worker.js';
 //#endif
 
 var mozL10n = document.mozL10n || document.webL10n;
@@ -110,7 +112,7 @@ var PDFView = {
   mouseScrollDelta: 0,
   lastScroll: 0,
   previousPageNumber: 1,
-  isViewerEmbedded: (window.parent !== window),
+  isViewerEmbedded: false,
   idleTimeout: null,
   currentPosition: null,
 
