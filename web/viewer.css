@@ -1207,22 +1207,6 @@ html[dir='rtl'] .outlineItem > a {
   cursor: default;
 }
 
-#findScrollView {
-  position: absolute;
-  top: 10px;
-  bottom: 10px;
-  left: 10px;
-  width: 280px;
-}
-
-#sidebarControls {
-  position:absolute;
-  width: 180px;
-  height: 32px;
-  left: 15px;
-  bottom: 35px;
-}
-
 .canvasWrapper {
   overflow: hidden;
 }
