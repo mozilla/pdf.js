@@ -427,19 +427,52 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return;
     }
 
-    var tmpImgData = ctx.createImageData(imgData.width, imgData.height);
+    // Put the image data to the canvas in chunks, rather than putting the
+    // whole image at once.  This saves JS memory, because the ImageData object
+    // is smaller. It also possibly saves C++ memory within the implementation
+    // of putImageData(). (E.g. in Firefox we make two short-lived copies of
+    // the data passed to putImageData()). |n| shouldn't be too small, however,
+    // because too many putImageData() calls will slow things down.
 
-    var data = imgData.data;
-    var tmpImgDataPixels = tmpImgData.data;
-    if ('set' in tmpImgDataPixels)
-      tmpImgDataPixels.set(data);
-    else {
-      // Copy over the imageData pixel by pixel.
-      for (var i = 0, ii = tmpImgDataPixels.length; i < ii; i++)
-        tmpImgDataPixels[i] = data[i];
+    var rowsInFullChunks = 16;
+    var fullChunks = (imgData.height / rowsInFullChunks) | 0;
+    var rowsInLastChunk = imgData.height - fullChunks * rowsInFullChunks;
+    var elemsInFullChunks = imgData.width * rowsInFullChunks * 4;
+    var elemsInLastChunk = imgData.width * rowsInLastChunk * 4;
+
+    var chunkImgData = ctx.createImageData(imgData.width, rowsInFullChunks);
+    var srcPos = 0;
+    var src = imgData.data;
+    var dst = chunkImgData.data;
+    var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
+
+    // Do all the full-size chunks.
+    for (var i = 0; i < fullChunks; i++) {
+      if (haveSetAndSubarray) {
+        dst.set(src.subarray(srcPos, srcPos + elemsInFullChunks));
+        srcPos += elemsInFullChunks;
+      } else {
+        for (var j = 0; j < elemsInFullChunks; j++) {
+          chunkImgData.data[j] = imgData.data[srcPos++];
+        }
+      }
+      ctx.putImageData(chunkImgData, 0, i * rowsInFullChunks);
     }
 
-    ctx.putImageData(tmpImgData, 0, 0);
+    // Do the final, partial chunk, if required.
+    if (rowsInLastChunk !== 0) {
+      if (haveSetAndSubarray) {
+        dst.set(src.subarray(srcPos, srcPos + elemsInLastChunk));
+        srcPos += elemsInLastChunk;
+      } else {
+        for (var j = 0; j < elemsInLastChunk; j++) {
+          chunkImgData.data[j] = imgData.data[srcPos++];
+        }
+      }
+      // This (conceptually) puts pixels past the bounds of the canvas.  But
+      // that's ok; any such pixels are ignored.
+      ctx.putImageData(chunkImgData, 0, fullChunks * rowsInFullChunks);
+    }
   }
 
   function putBinaryImageMask(ctx, imgData) {
