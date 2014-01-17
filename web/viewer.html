@@ -35,7 +35,7 @@ limitations under the License.
     <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
 <!--#endif-->
 
-<!--#if !(FIREFOX || MOZCENTRAL || CHROME)-->
+<!--#if !(FIREFOX || MOZCENTRAL || CHROME || MINIFIED)-->
     <script type="text/javascript" src="compatibility.js"></script>
 <!--#endif-->
 
@@ -56,7 +56,7 @@ limitations under the License.
     <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script>
 <!--#endif-->
 
-<!--#if GENERIC -->
+<!--#if (GENERIC && !MINIFIED) -->
 <!--#include viewer-snippet.html-->
 <!--#endif-->
 
@@ -79,8 +79,12 @@ limitations under the License.
     <script type="text/javascript" src="hand_tool.js"></script>
 <!--#endif-->
 
+<!--#if !MINIFIED -->
     <script type="text/javascript" src="debugger.js"></script>
     <script type="text/javascript" src="viewer.js"></script>
+<!--#else-->
+<!--#include viewer-snippet-minified.html-->
+<!--#endif-->
 
   </head>
 

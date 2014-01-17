@@ -38,6 +38,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
+    MINIFIED_DIR = BUILD_DIR + 'minified/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
     PYTHON_BIN = 'python2.7',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
@@ -53,6 +54,7 @@ var DEFINES = {
   MOZCENTRAL: false,
   B2G: false,
   CHROME: false,
+  MINIFIED: false,
   SINGLE_FILE: false
 };
 
@@ -389,6 +391,83 @@ function cleanupJSSource(file) {
 
   content.to(file);
 }
+
+//
+// make minified
+// Builds the minified production viewer that should be compatible with most
+// modern HTML5 browsers. Requires Google Closure Compiler.
+//
+target.minified = function() {
+  var compilerPath = process.env['CLOSURE_COMPILER'];
+  if (!compilerPath) {
+    echo('### Closure Compiler is not set. Specify CLOSURE_COMPILER variable');
+    exit(1);
+  }
+
+  target.bundle({});
+  target.locale();
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating minified viewer');
+
+  rm('-rf', MINIFIED_DIR);
+  mkdir('-p', MINIFIED_DIR);
+  mkdir('-p', MINIFIED_DIR + BUILD_DIR);
+  mkdir('-p', MINIFIED_DIR + '/web');
+
+  var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
+
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
+      ['web/viewer.css', MINIFIED_DIR + '/web'],
+      ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
+      ['web/locale', MINIFIED_DIR + '/web']
+    ],
+    preprocess: [
+      [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
+      [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + '/web']
+    ]
+  };
+  builder.build(setup);
+
+  var viewerFiles = [
+    'web/compatibility.js',
+    'external/webL10n/l10n.js',
+    MINIFIED_DIR + BUILD_DIR + 'pdf.js',
+    MINIFIED_DIR + '/web/viewer.js'
+  ];
+  var cmdPrefix = 'java -jar \"' + compilerPath + '\" ' +
+    '--language_in ECMASCRIPT5 ' +
+    '--warning_level QUIET ' +
+    '--compilation_level SIMPLE_OPTIMIZATIONS ';
+
+  echo();
+  echo('### Minifying js files');
+
+  exec(cmdPrefix + viewerFiles.map(function(s) {
+    return '--js \"' + s + '\"';
+  }).join(' ') +
+    ' --js_output_file \"' + MINIFIED_DIR + '/web/pdf.viewer.js\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.min.js' + '\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.worker.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.worker.min.js' + '\"');
+
+  echo();
+  echo('### Cleaning js files');
+
+  rm(MINIFIED_DIR + '/web/viewer.js');
+  rm(MINIFIED_DIR + '/web/debugger.js');
+  rm(MINIFIED_DIR + '/build/pdf.js');
+  rm(MINIFIED_DIR + '/build/pdf.worker.js');
+  mv(MINIFIED_DIR + '/build/pdf.min.js',
+     MINIFIED_DIR + '/build/pdf.js');
+  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
+     MINIFIED_DIR + '/build/pdf.worker.js');
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 //
