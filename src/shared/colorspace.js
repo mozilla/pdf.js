@@ -69,10 +69,9 @@ var ColorSpace = (function ColorSpaceClosure() {
      * Creates the output buffer and converts the specified number of the color
      * values to the RGB colors, similar to the getRgbBuffer.
      */
-    createRgbBuffer: function ColorSpace_createRgbBuffer(src, srcOffset,
-                                                         count, bits) {
+    createRgbBuffer: function ColorSpace_createRgbBuffer(src, count, bits) {
       if (this.isPassthrough(bits)) {
-        return src.subarray(srcOffset);
+        return src;
       }
       var dest = new Uint8Array(count * 3);
       var numComponentColors = 1 << bits;
@@ -96,14 +95,14 @@ var ColorSpace = (function ColorSpaceClosure() {
 
         var destOffset = 0;
         for (var i = 0; i < count; ++i) {
-          var key = src[srcOffset++] * 3;
+          var key = src[i] * 3;
           dest[destOffset++] = colorMap[key];
           dest[destOffset++] = colorMap[key + 1];
           dest[destOffset++] = colorMap[key + 2];
         }
         return dest;
       }
-      this.getRgbBuffer(src, srcOffset, count, dest, 0, bits);
+      this.getRgbBuffer(src, 0, count, dest, 0, bits);
       return dest;
     },
     /**
