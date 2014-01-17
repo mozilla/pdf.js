@@ -38,6 +38,10 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
+    KB_DIR = BUILD_DIR + 'kb/pdfjs/',
+    KB_BUILD_TARGET = KB_DIR + 'pdf.js',
+    KB_BUILD_WORKER_TARGET = KB_DIR + 'pdf.worker.js',
+    KB_BUILD_TARGETS = [KB_BUILD_TARGET, KB_BUILD_WORKER_TARGET],
     REPO = 'git@github.com:mozilla/pdf.js.git',
     PYTHON_BIN = 'python2.7',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
@@ -119,6 +123,49 @@ target.generic = function() {
 
   cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
 };
+
+
+
+//
+// make viewer
+// Builds the generic production viewer that should be compatible with most
+// modern HTML5 browsers.
+//
+target.kb_viewer = function() {
+  target.bundle({});
+  target.locale();
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating custom kb viewer');
+
+  rm('-rf', KB_DIR);
+  mkdir('-p', KB_DIR);
+
+  var defines = builder.merge(DEFINES, {GENERIC: true});
+
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, KB_DIR],
+      ['external/webL10n/l10n.js', KB_DIR],
+      ['web/viewer.css', KB_DIR],
+      ['web/compatibility.js', KB_DIR],
+      ['web/locale', KB_DIR]
+    ],
+    preprocess: [
+      [BUILD_TARGETS, KB_DIR],
+      [COMMON_WEB_FILES_PREPROCESS, KB_DIR]
+    ]
+  };
+  builder.build(setup);
+
+  cleanupJSSource(KB_DIR + '/viewer.js');
+  rm('-rf', BUILD_DIR + '/pdf.js');
+  rm('-rf', BUILD_DIR + '/pdf.worker.js');
+
+};
+
 
 //
 // make web

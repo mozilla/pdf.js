@@ -2721,6 +2721,7 @@ var Font = (function FontClosure() {
     }
     var winAscent = override.yMax || typoAscent;
     var winDescent = -override.yMin || -typoDescent;
+    var x31 = '\x31';
 
     return '\x00\x03' + // version
            '\x02\x24' + // xAvgCharWidth
@@ -2735,7 +2736,7 @@ var Font = (function FontClosure() {
            '\x02\xBB' + // ySuperScriptYSize
            '\x00\x00' + // ySuperScriptXOffset
            '\x01\xDF' + // ySuperScriptYOffset
-           '\x00\x31' + // yStrikeOutSize
+           '\x00'+x31 + // yStrikeOutSize
            '\x01\x02' + // yStrikeOutPosition
            '\x00\x00' + // sFamilyClass
            '\x00\x00\x06' +

@@ -25,7 +25,7 @@ var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1000; // in ms
 var PresentationMode = {
   active: false,
   args: null,
-  contextMenuOpen: false,
+  contextMenuOpen: true,
 //#if (GENERIC || CHROME)
   prevCoords: { x: null, y: null },
 //#endif
@@ -161,7 +161,7 @@ var PresentationMode = {
     window.removeEventListener('mousedown', this.mouseDown, false);
     window.removeEventListener('contextmenu', this.contextMenu, false);
 
-    this.hideControls();
+    this.showControls();
     PDFView.clearMouseScrollState();
     HandTool.exitPresentationMode();
     this.container.removeAttribute('contextmenu');

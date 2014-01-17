@@ -39,6 +39,7 @@ var PDFFindBar = {
   findNextButton: null,
 
   initialize: function(options) {
+    options.highlightAllCheckbox.checked=true;
     if(typeof PDFFindController === 'undefined' || PDFFindController === null) {
         throw 'PDFFindBar cannot be initialized ' +
             'without a PDFFindController instance.';

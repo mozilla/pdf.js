@@ -713,6 +713,8 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
       element.style.height = height + 'px';
 
       element.href = this.data.url || '';
+      element.target = '_blank';
+
       return element;
     }
   });
