@@ -16,7 +16,7 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           Pattern, TilingPattern, Util, warn, assert, info,
+           Pattern, TilingPattern, Util, warn, assert, info, shadow,
            TextRenderingMode, OPS, Promise */
 
 'use strict';
@@ -1084,6 +1084,23 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
+    get isFontSubpixelAAEnabled() {
+      // Checks if anti-aliasing is enabled when scaled text is painted.
+      // On Windows GDI scaled fonts looks bad.
+      var ctx = document.createElement('canvas').getContext('2d');
+      ctx.scale(1.5, 1);
+      ctx.fillText('I', 0, 10);
+      var data = ctx.getImageData(0, 0, 10, 10).data;
+      var enabled = false;
+      for (var i = 3; i < data.length; i += 4) {
+        if (data[i] > 0 && data[i] < 255) {
+          enabled = true;
+          break;
+        }
+      }
+      return shadow(this, 'isFontSubpixelAAEnabled', enabled);
+    },
+
     showText: function CanvasGraphics_showText(glyphs, skipTextSelection) {
       var ctx = this.ctx;
       var current = this.current;
@@ -1198,7 +1215,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               scaledY = 0;
             }
 
-            if (font.remeasure && width > 0) {
+            if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
               // some standard fonts may not have the exact width, trying to
               // rescale per character
               var measuredWidth = ctx.measureText(character).width * 1000 /
