@@ -698,7 +698,7 @@ var Linearization = (function LinearizationClosure() {
           obj > 0) {
         return obj;
       }
-      error('"' + name + '" field in linearization table is invalid');
+      info('"' + name + '" field in linearization table is invalid');
     },
     getHint: function Linearization_getHint(index) {
       var linDict = this.linDict;
@@ -710,7 +710,7 @@ var Linearization = (function LinearizationClosure() {
           obj2 > 0) {
         return obj2;
       }
-      error('Hints table in linearization table is invalid: ' + index);
+      info('Hints table in linearization table is invalid: ' + index);
     },
     get length() {
       if (!isDict(this.linDict))
