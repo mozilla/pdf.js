@@ -19,7 +19,7 @@
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, ViewHistory, PageView, ThumbnailView,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
-           PresentationMode, HandTool, Promise */
+           PresentationMode, HandTool, Promise, SidebarResizer */
 
 'use strict';
 
@@ -1531,6 +1531,8 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
+//#include sidebar_resizer.js
+
 //#if CHROME
 //(function rewriteUrlClosure() {
 //  // Run this code outside DOMContentLoaded to make sure that the URL
@@ -1686,6 +1688,15 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 
   var mainContainer = document.getElementById('mainContainer');
   var outerContainer = document.getElementById('outerContainer');
+
+  SidebarResizer.initialize({
+    mainContainer: document.getElementById('mainContainer'),
+    sidebarContainer: document.getElementById('sidebarContainer'),
+    sidebarContent: document.getElementById('sidebarContent'),
+    sidebarResizer: document.getElementById('sidebarResizer'),
+    outlineView: document.getElementById('outlineView')
+  });
+
   mainContainer.addEventListener('transitionend', function(e) {
     if (e.target == mainContainer) {
       var event = document.createEvent('UIEvents');
@@ -1700,6 +1711,10 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
       this.classList.toggle('toggled');
       outerContainer.classList.add('sidebarMoving');
       outerContainer.classList.toggle('sidebarOpen');
+      document.getElementById('sidebarResizer').classList.toggle('hidden');
+      if (PDFView.sidebarOpen) {
+        SidebarResizer.revert();
+      }
       PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
       PDFView.renderHighestPriority();
     });
