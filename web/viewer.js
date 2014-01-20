@@ -524,6 +524,10 @@ var PDFView = {
       }
     }
 
+    // Terminate worker of the previous document if any.
+    if (this.pdfDocument) {
+      this.pdfDocument.destroy();
+    }
     this.pdfDocument = null;
     var self = this;
     self.loading = true;
