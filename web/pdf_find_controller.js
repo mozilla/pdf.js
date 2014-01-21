@@ -150,9 +150,7 @@ var PDFFindController = {
     var self = this;
     function extractPageText(pageIndex) {
       self.pdfPageSource.pages[pageIndex].getTextContent().then(
-        function textContentResolved(data) {
-          // Build the find string.
-          var bidiTexts = data.bidiTexts;
+        function textContentResolved(bidiTexts) {
           var str = '';
 
           for (var i = 0; i < bidiTexts.length; i++) {
