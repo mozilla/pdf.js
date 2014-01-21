@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals error, info, isArray, isDict, isName, isStream, isString,
-           PDFFunction, warn, shadow */
+           PDFFunction, PDFImage, shadow, warn */
 
 'use strict';
 
@@ -46,17 +46,22 @@ var ColorSpace = (function ColorSpaceClosure() {
      * The colors are located in the src array starting from the srcOffset.
      * The result is placed into the dest array starting from the destOffset.
      * The src array items shall be in [0,2^bits) range, the dest array items
-     * will be in [0,255] range.
+     * will be in [0,255] range. alpha01 indicates how many alpha components
+     * there are in the dest array; it will be either 0 (RGB array) or 1 (RGBA
+     * array).
      */
     getRgbBuffer: function ColorSpace_getRgbBuffer(src, srcOffset, count,
-                                                   dest, destOffset, bits) {
+                                                   dest, destOffset, bits,
+                                                   alpha01) {
       error('Should not call ColorSpace.getRgbBuffer');
     },
     /**
-     * Determines amount of the bytes is required to store the reslut of the
-     * conversion that done by the getRgbBuffer method.
+     * Determines the number of bytes required to store the result of the
+     * conversion done by the getRgbBuffer method. As in getRgbBuffer,
+     * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
      */
-    getOutputLength: function ColorSpace_getOutputLength(inputLength) {
+    getOutputLength: function ColorSpace_getOutputLength(inputLength,
+                                                         alpha01) {
       error('Should not call ColorSpace.getOutputLength');
     },
     /**
@@ -66,45 +71,84 @@ var ColorSpace = (function ColorSpaceClosure() {
       return false;
     },
     /**
-     * Creates the output buffer and converts the specified number of the color
-     * values to the RGB colors, similar to the getRgbBuffer.
+     * Fills in the RGB colors in an RGBA buffer.
      */
-    createRgbBuffer: function ColorSpace_createRgbBuffer(src, srcOffset,
-                                                         count, bits) {
-      if (this.isPassthrough(bits)) {
-        return src.subarray(srcOffset);
-      }
-      var dest = new Uint8Array(count * 3);
-      var numComponentColors = 1 << bits;
-      // Optimization: create a color map when there is just one component and
-      // we are converting more colors than the size of the color map. We
-      // don't build the map if the colorspace is gray or rgb since those
-      // methods are faster than building a map. This mainly offers big speed
-      // ups for indexed and alternate colorspaces.
-      if (this.numComps === 1 && count > numComponentColors &&
+    fillRgb: function ColorSpace_fillRgb(rgbaBuf, originalWidth,
+                                         originalHeight, width, height,
+                                         actualHeight, bpc, comps) {
+      var count = originalWidth * originalHeight;
+      var rgbBuf = null;
+      var numComponentColors = 1 << bpc;
+      var needsResizing = originalHeight != height || originalWidth != width;
+
+      if (this.isPassthrough(bpc)) {
+        rgbBuf = comps;
+
+      } else if (this.numComps === 1 && count > numComponentColors &&
           this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
+        // Optimization: create a color map when there is just one component and
+        // we are converting more colors than the size of the color map. We
+        // don't build the map if the colorspace is gray or rgb since those
+        // methods are faster than building a map. This mainly offers big speed
+        // ups for indexed and alternate colorspaces.
+        //
         // TODO it may be worth while to cache the color map. While running
         // testing I never hit a cache so I will leave that out for now (perhaps
         // we are reparsing colorspaces too much?).
-        var allColors = bits <= 8 ? new Uint8Array(numComponentColors) :
-                                    new Uint16Array(numComponentColors);
+        var allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
+                                   new Uint16Array(numComponentColors);
         for (var i = 0; i < numComponentColors; i++) {
           allColors[i] = i;
         }
         var colorMap = new Uint8Array(numComponentColors * 3);
-        this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bits);
+        this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc,
+                          /* alpha01 = */ 0);
 
-        var destOffset = 0;
-        for (var i = 0; i < count; ++i) {
-          var key = src[srcOffset++] * 3;
-          dest[destOffset++] = colorMap[key];
-          dest[destOffset++] = colorMap[key + 1];
-          dest[destOffset++] = colorMap[key + 2];
+        if (!needsResizing) {
+          // Fill in the RGB values directly into |rgbaBuf|.
+          var rgbaPos = 0;
+          for (var i = 0; i < count; ++i) {
+            var key = comps[i] * 3;
+            rgbaBuf[rgbaPos++] = colorMap[key];
+            rgbaBuf[rgbaPos++] = colorMap[key + 1];
+            rgbaBuf[rgbaPos++] = colorMap[key + 2];
+            rgbaPos++;
+          }
+        } else {
+          rgbBuf = new Uint8Array(count * 3);
+          var rgbPos = 0;
+          for (var i = 0; i < count; ++i) {
+            var key = comps[i] * 3;
+            rgbBuf[rgbPos++] = colorMap[key];
+            rgbBuf[rgbPos++] = colorMap[key + 1];
+            rgbBuf[rgbPos++] = colorMap[key + 2];
+          }
         }
-        return dest;
+      } else {
+        if (!needsResizing) {
+          // Fill in the RGB values directly into |rgbaBuf|.
+          this.getRgbBuffer(comps, 0, width * actualHeight, rgbaBuf, 0, bpc,
+                            /* alpha01 = */ 1);
+        } else {
+          rgbBuf = new Uint8Array(count * 3);
+          this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc,
+                            /* alpha01 = */ 0);
+        }
       }
-      this.getRgbBuffer(src, srcOffset, count, dest, 0, bits);
-      return dest;
+
+      if (rgbBuf) {
+        if (needsResizing) {
+          rgbBuf = PDFImage.resize(rgbBuf, bpc, 3, originalWidth,
+                                   originalHeight, width, height);
+        }
+        var rgbPos = 0;
+        var actualLength = width * actualHeight * 4;
+        for (var i = 0; i < actualLength; i += 4) {
+          rgbaBuf[i] = rgbBuf[rgbPos++];
+          rgbaBuf[i + 1] = rgbBuf[rgbPos++];
+          rgbaBuf[i + 2] = rgbBuf[rgbPos++];
+        }
+      }
     },
     /**
      * True if the colorspace has components in the default range of [0, 1].
@@ -336,13 +380,15 @@ var AlternateCS = (function AlternateCSClosure() {
       this.base.getRgbItem(tinted, 0, dest, destOffset);
     },
     getRgbBuffer: function AlternateCS_getRgbBuffer(src, srcOffset, count,
-                                                    dest, destOffset, bits) {
+                                                    dest, destOffset, bits,
+                                                    alpha01) {
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
       var baseNumComps = base.numComps;
       var usesZeroToOneRange = base.usesZeroToOneRange;
-      var isPassthrough = base.isPassthrough(8) || !usesZeroToOneRange;
+      var isPassthrough = (base.isPassthrough(8) || !usesZeroToOneRange) &&
+                          alpha01 === 0;
       var pos = isPassthrough ? destOffset : 0;
       var baseBuf = isPassthrough ? dest : new Uint8Array(baseNumComps * count);
       var numComps = this.numComps;
@@ -363,15 +409,17 @@ var AlternateCS = (function AlternateCSClosure() {
         }
       }
       if (!isPassthrough) {
-        base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8);
+        base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
       }
     },
-    getOutputLength: function AlternateCS_getOutputLength(inputLength) {
+    getOutputLength: function AlternateCS_getOutputLength(inputLength,
+                                                          alpha01) {
       return this.base.getOutputLength(inputLength *
-                                       this.base.numComps / this.numComps);
+                                       this.base.numComps / this.numComps,
+                                       alpha01);
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function AlternateCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
@@ -432,23 +480,25 @@ var IndexedCS = (function IndexedCSClosure() {
       this.base.getRgbItem(this.lookup, start, dest, destOffset);
     },
     getRgbBuffer: function IndexedCS_getRgbBuffer(src, srcOffset, count,
-                                                  dest, destOffset) {
+                                                  dest, destOffset, bits,
+                                                  alpha01) {
       var base = this.base;
       var numComps = base.numComps;
-      var outputDelta = base.getOutputLength(numComps);
+      var outputDelta = base.getOutputLength(numComps, alpha01);
       var lookup = this.lookup;
 
       for (var i = 0; i < count; ++i) {
         var lookupPos = src[srcOffset++] * numComps;
-        base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8);
+        base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
         destOffset += outputDelta;
       }
     },
-    getOutputLength: function IndexedCS_getOutputLength(inputLength) {
-      return this.base.getOutputLength(inputLength * this.base.numComps);
+    getOutputLength: function IndexedCS_getOutputLength(inputLength, alpha01) {
+      return this.base.getOutputLength(inputLength * this.base.numComps,
+                                       alpha01);
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function IndexedCS_isDefaultDecode(decodeMap) {
       // indexed color maps shouldn't be changed
       return true;
@@ -478,7 +528,8 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
       dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
     },
     getRgbBuffer: function DeviceGrayCS_getRgbBuffer(src, srcOffset, count,
-                                                     dest, destOffset, bits) {
+                                                     dest, destOffset, bits,
+                                                     alpha01) {
       var scale = 255 / ((1 << bits) - 1);
       var j = srcOffset, q = destOffset;
       for (var i = 0; i < count; ++i) {
@@ -486,13 +537,15 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
         dest[q++] = c;
         dest[q++] = c;
         dest[q++] = c;
+        q += alpha01;
       }
     },
-    getOutputLength: function DeviceGrayCS_getOutputLength(inputLength) {
-      return inputLength * 3;
+    getOutputLength: function DeviceGrayCS_getOutputLength(inputLength,
+                                                           alpha01) {
+      return inputLength * (3 + alpha01);
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function DeviceGrayCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
@@ -523,25 +576,29 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       dest[destOffset + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
     },
     getRgbBuffer: function DeviceRgbCS_getRgbBuffer(src, srcOffset, count,
-                                                    dest, destOffset, bits) {
-      var length = count * 3;
-      if (bits == 8) {
-        dest.set(src.subarray(srcOffset, srcOffset + length), destOffset);
+                                                    dest, destOffset, bits,
+                                                    alpha01) {
+      if (bits === 8 && alpha01 === 0) {
+        dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
         return;
       }
       var scale = 255 / ((1 << bits) - 1);
       var j = srcOffset, q = destOffset;
-      for (var i = 0; i < length; ++i) {
+      for (var i = 0; i < count; ++i) {
         dest[q++] = (scale * src[j++]) | 0;
+        dest[q++] = (scale * src[j++]) | 0;
+        dest[q++] = (scale * src[j++]) | 0;
+        q += alpha01;
       }
     },
-    getOutputLength: function DeviceRgbCS_getOutputLength(inputLength) {
-      return inputLength;
+    getOutputLength: function DeviceRgbCS_getOutputLength(inputLength,
+                                                          alpha01) {
+      return (inputLength * (3 + alpha01) / 3) | 0;
     },
     isPassthrough: function DeviceRgbCS_isPassthrough(bits) {
       return bits == 8;
     },
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function DeviceRgbCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
@@ -611,19 +668,21 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
       convertToRgb(src, srcOffset, 1, dest, destOffset);
     },
     getRgbBuffer: function DeviceCmykCS_getRgbBuffer(src, srcOffset, count,
-                                                     dest, destOffset, bits) {
+                                                     dest, destOffset, bits,
+                                                     alpha01) {
       var scale = 1 / ((1 << bits) - 1);
       for (var i = 0; i < count; i++) {
         convertToRgb(src, srcOffset, scale, dest, destOffset);
         srcOffset += 4;
-        destOffset += 3;
+        destOffset += 3 + alpha01;
       }
     },
-    getOutputLength: function DeviceCmykCS_getOutputLength(inputLength) {
-      return (inputLength >> 2) * 3;
+    getOutputLength: function DeviceCmykCS_getOutputLength(inputLength,
+                                                           alpha01) {
+      return (inputLength / 4 * (3 + alpha01)) | 0;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function DeviceCmykCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
@@ -720,20 +779,21 @@ var CalGrayCS = (function CalGrayCSClosure() {
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
     getRgbBuffer: function CalGrayCS_getRgbBuffer(src, srcOffset, count,
-                                                  dest, destOffset, bits) {
+                                                  dest, destOffset, bits,
+                                                  alpha01) {
       var scale = 1 / ((1 << bits) - 1);
 
       for (var i = 0; i < count; ++i) {
         convertToRgb(this, src, srcOffset, dest, destOffset, scale);
         srcOffset += 1;
-        destOffset += 3;
+        destOffset += 3 + alpha01;
       }
     },
-    getOutputLength: function CalGrayCS_getOutputLength(inputLength) {
-      return inputLength * 3;
+    getOutputLength: function CalGrayCS_getOutputLength(inputLength, alpha01) {
+      return inputLength * (3 + alpha01);
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function CalGrayCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
@@ -861,16 +921,17 @@ var LabCS = (function LabCSClosure() {
       convertToRgb(this, src, srcOffset, false, dest, destOffset);
     },
     getRgbBuffer: function LabCS_getRgbBuffer(src, srcOffset, count,
-                                              dest, destOffset, bits) {
+                                              dest, destOffset, bits,
+                                              alpha01) {
       var maxVal = (1 << bits) - 1;
       for (var i = 0; i < count; i++) {
         convertToRgb(this, src, srcOffset, maxVal, dest, destOffset);
         srcOffset += 3;
-        destOffset += 3;
+        destOffset += 3 + alpha01;
       }
     },
-    getOutputLength: function LabCS_getOutputLength(inputLength) {
-      return inputLength;
+    getOutputLength: function LabCS_getOutputLength(inputLength, alpha01) {
+      return (inputLength * (3 + alpha01) / 3) | 0;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
     isDefaultDecode: function LabCS_isDefaultDecode(decodeMap) {
