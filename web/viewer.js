@@ -19,7 +19,7 @@
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, ViewHistory, PageView, ThumbnailView,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
-           PresentationMode, HandTool, Promise */
+           PresentationMode, HandTool, Promise, DocumentProperties */
 
 'use strict';
 
@@ -90,6 +90,7 @@ var currentPageNumber = 1;
 //#include password_prompt.js
 //#include presentation_mode.js
 //#include hand_tool.js
+//#include document_properties.js
 
 var PDFView = {
   pages: [],
@@ -162,7 +163,9 @@ var PDFView = {
       firstPage: document.getElementById('firstPage'),
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
-      pageRotateCcw: document.getElementById('pageRotateCcw')
+      pageRotateCcw: document.getElementById('pageRotateCcw'),
+      documentProperties: DocumentProperties,
+      documentPropertiesButton: document.getElementById('documentProperties')
     });
 
     PasswordPrompt.initialize({
@@ -180,6 +183,23 @@ var PDFView = {
       lastPage: document.getElementById('contextLastPage'),
       pageRotateCw: document.getElementById('contextPageRotateCw'),
       pageRotateCcw: document.getElementById('contextPageRotateCcw')
+    });
+
+    DocumentProperties.initialize({
+      overlayContainer: document.getElementById('overlayContainer'),
+      closeButton: document.getElementById('documentPropertiesClose'),
+      fileNameField: document.getElementById('fileNameField'),
+      fileSizeField: document.getElementById('fileSizeField'),
+      titleField: document.getElementById('titleField'),
+      authorField: document.getElementById('authorField'),
+      subjectField: document.getElementById('subjectField'),
+      keywordsField: document.getElementById('keywordsField'),
+      creationDateField: document.getElementById('creationDateField'),
+      modificationDateField: document.getElementById('modificationDateField'),
+      creatorField: document.getElementById('creatorField'),
+      producerField: document.getElementById('producerField'),
+      versionField: document.getElementById('versionField'),
+      pageCountField: document.getElementById('pageCountField')
     });
 
     this.initialized = true;
