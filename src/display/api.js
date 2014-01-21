@@ -1112,7 +1112,7 @@ var RenderTask = (function RenderTaskClosure() {
      */
     cancel: function RenderTask_cancel() {
       this.internalRenderTask.cancel();
-      this.reject(new Error('Rendering is cancelled'));
+      this.promise.reject(new Error('Rendering is cancelled'));
     }
   };
 
