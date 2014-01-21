@@ -925,10 +925,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     dataLoaded: function WorkerTransport_dataLoaded() {
+      if (this.dataLoadedPromise) {
+        return this.dataLoadedPromise;
+      }
       var promise = new PDFJS.LegacyPromise();
       this.messageHandler.send('DataLoaded', null, function(args) {
         promise.resolve(args);
       });
+      this.dataLoadedPromise = promise;
       return promise;
     },
 
