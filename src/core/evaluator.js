@@ -858,7 +858,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         } else if (isName(encoding)) {
           overridableEncoding = false;
           hasEncoding = true;
-          baseEncoding = Encodings[encoding.name];
+          var currentEncoding = Encodings[encoding.name];
+
+          // Some bad PDF files contain fonts whose encoding name is not among
+          // the predefined encodings, causing baseEncoding to be undefined.
+          // In this case, fallback to using the baseEncoding as defined above
+          // and let the font override the encoding if one is available.
+          if (currentEncoding) {
+            baseEncoding = currentEncoding;
+          } else {
+            overridableEncoding = true;
+          }
         } else {
           error('Encoding is not a Name nor a Dict');
         }
