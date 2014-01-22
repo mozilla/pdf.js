@@ -101,7 +101,7 @@ var Annotation = (function AnnotationClosure() {
 
       // TODO: implement proper support for annotations with line dash patterns.
       var dashArray = borderArray[3];
-      if (dashArray && isArray(dashArray)) {
+      if (data.borderWidth > 0 && dashArray && isArray(dashArray)) {
         var dashArrayLength = dashArray.length;
         if (dashArrayLength > 0) {
           // According to the PDF specification: the elements in a dashArray
