@@ -79,6 +79,10 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include firefoxcom.js
 //#endif
 
+//#if CHROME
+//#include chromecom.js
+//#endif
+
 var cache = new Cache(CACHE_SIZE);
 var currentPageNumber = 1;
 
@@ -1797,8 +1801,38 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //return;
 //#endif
 
-//#if !B2G
+//#if !B2G && !CHROME
   PDFView.open(file, 0);
+//#endif
+
+//#if CHROME
+//ChromeCom.request('getPDFStream', file, function(response) {
+//  if (response) {
+//    // We will only get a response when the streamsPrivate API is available.
+//
+//    var isFTPFile = /^ftp:/i.test(file);
+//    var streamUrl = response.streamUrl;
+//    if (streamUrl) {
+//      console.log('Found data stream for ' + file);
+//      // The blob stream can be used only once, so disable range requests.
+//      PDFJS.disableRange = true;
+//      PDFView.open(streamUrl, 0);
+//      PDFView.setTitleUsingUrl(file);
+//      return;
+//    }
+//    if (isFTPFile) {
+//      // Stream not found, and it's loaded from FTP. Reload the page, because
+//      // it is not possible to get resources over ftp using XMLHttpRequest.
+//      // NOTE: This will not lead to an infinite redirect loop, because
+//      // if the file exists, then the streamsPrivate API will capture the
+//      // stream and send back the response. If the stream does not exist, then
+//      // a "Webpage not available" error will be shown (not the PDF Viewer).
+//      location.replace(file);
+//      return;
+//    }
+//  }
+//  PDFView.open(file, 0);
+//});
 //#endif
 }, true);
 

@@ -12,12 +12,22 @@
     "webRequest", "webRequestBlocking",
     "<all_urls>",
     "tabs",
-    "webNavigation"
+    "webNavigation",
+    "storage",
+    "streamsPrivate"
   ],
   "content_scripts": [{
-    "matches": ["file://*/*"],
+    "matches": [
+      "http://*/*",
+      "https://*/*",
+      "ftp://*/*",
+      "file://*/*"
+    ],
     "js": ["nothing.js"]
   }],
+  "mime_types": [
+    "application/pdf"
+  ],
   "background": {
     "page": "pdfHandler.html"
   },
