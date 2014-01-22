@@ -1486,6 +1486,16 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   text-align: right;
 }
 
+#documentPropertiesContainer .row span {
+  width: 125px;
+  word-wrap: break-word;
+}
+
+#documentPropertiesContainer .row p {
+  max-width: 225px;
+  word-wrap: break-word;
+}
+
 #documentPropertiesContainer .buttonRow {
   margin-top: 10px;
   text-align: center;

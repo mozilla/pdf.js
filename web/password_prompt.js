@@ -48,7 +48,7 @@ var PasswordPrompt = {
         }
       }.bind(this));
 
-    this.overlayContainer.addEventListener('keydown',
+    window.addEventListener('keydown',
       function (e) {
         if (e.keyCode === 27) { // Esc key
           this.hide();

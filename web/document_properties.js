@@ -14,12 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, mozL10n */
+/* globals PDFView, mozL10n, getPDFFileNameFromURL */
 
 'use strict';
 
 var DocumentProperties = {
   overlayContainer: null,
+  fileName: '',
   fileSize: '',
   visible: false,
 
@@ -58,10 +59,21 @@ var DocumentProperties = {
     if (options.closeButton) {
       options.closeButton.addEventListener('click', this.hide.bind(this));
     }
+
+    // Bind the event listener for the Esc key (to close the dialog).
+    window.addEventListener('keydown',
+      function (e) {
+        if (e.keyCode === 27) { // Esc key
+          this.hide();
+        }
+      }.bind(this));
   },
 
   getProperties: function documentPropertiesGetProperties() {
     var self = this;
+
+    // Get the file name.
+    this.fileName = getPDFFileNameFromURL(PDFView.url);
 
     // Get the file size.
     PDFView.pdfDocument.dataLoaded().then(function(data) {
@@ -71,7 +83,7 @@ var DocumentProperties = {
     // Get the other document properties.
     PDFView.pdfDocument.getMetadata().then(function(data) {
       var fields = [
-        { field: self.fileNameField, content: PDFView.url },
+        { field: self.fileNameField, content: self.fileName },
         { field: self.fileSizeField, content: self.fileSize },
         { field: self.titleField, content: data.info.Title },
         { field: self.authorField, content: data.info.Author },
@@ -99,14 +111,17 @@ var DocumentProperties = {
   },
 
   setFileSize: function documentPropertiesSetFileSize(fileSize) {
-    var kb = Math.round(fileSize / 1024);
+    var kb = fileSize / 1024;
     if (kb < 1024) {
-      this.fileSize = mozL10n.get('document_properties_kb',
-                                  {size_kb: kb}, '{{size_kb}} KB');
+      this.fileSize = mozL10n.get('document_properties_kb', {
+        size_kb: (+kb.toPrecision(3)).toLocaleString(),
+        size_b: fileSize.toLocaleString()
+      }, '{{size_kb}} KB ({{size_b}} bytes)');
     } else {
-      var mb = Math.round((kb / 1024) * 100) / 100;
-      this.fileSize = mozL10n.get('document_properties_mb',
-                                  {size_mb: mb}, '{{size_mb}} MB');
+      this.fileSize = mozL10n.get('document_properties_mb', {
+        size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
+        size_b: fileSize.toLocaleString()
+      }, '{{size_mb}} MB ({{size_b}} bytes)');
     }
   },
 
