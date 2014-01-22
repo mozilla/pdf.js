@@ -640,7 +640,13 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     if (action) {
       var linkType = action.get('S').name;
       if (linkType === 'URI') {
-        var url = addDefaultProtocolToUrl(action.get('URI'));
+        var url = action.get('URI');
+        if (isName(url)) {
+          // Some bad PDFs do not put parentheses around relative URLs.
+          url = '/' + url.name;
+        } else {
+          url = addDefaultProtocolToUrl(url);
+        }
         // TODO: pdf spec mentions urls can be relative to a Base
         // entry in the dictionary.
         if (!isValidUrl(url, false)) {

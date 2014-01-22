@@ -223,7 +223,7 @@ var UnsupportedManager = PDFJS.UnsupportedManager =
 function combineUrl(baseUrl, url) {
   if (!url)
     return baseUrl;
-  if (url.indexOf(':') >= 0)
+  if (/^[a-z][a-z0-9+\-.]*:/i.test(url))
     return url;
   if (url.charAt(0) == '/') {
     // absolute path
@@ -247,11 +247,13 @@ function isValidUrl(url, allowRelative) {
   if (!url) {
     return false;
   }
-  var colon = url.indexOf(':');
-  if (colon < 0) {
+  // RFC 3986 (http://tools.ietf.org/html/rfc3986#section-3.1)
+  // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+  var protocol = /^[a-z][a-z0-9+\-.]*(?=:)/i.exec(url);
+  if (!protocol) {
     return allowRelative;
   }
-  var protocol = url.substr(0, colon);
+  protocol = protocol[0].toLowerCase();
   switch (protocol) {
     case 'http':
     case 'https':
