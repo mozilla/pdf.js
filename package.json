@@ -1,8 +1,8 @@
 {
   "name": "pdf.js",
-  "version": "0.7.169",
+  "version": "0.8.0",
   "dependencies": {
-    "jshint": "git://github.com/jshint/jshint.git#42ace75a"
+    "jshint": "1.1.x"
   },
   "scripts": {
     "test": "node make lint"
