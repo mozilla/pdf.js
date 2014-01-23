@@ -1134,7 +1134,7 @@ target.lint = function() {
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
   if (!test('-f', jshintPath)) {
     echo('jshint is not installed -- installing...');
-    exec('npm install jshint');
+    exec('npm install jshint@1.1'); // TODO read version from package.json
   }
 
   exit(exec('"' + jshintPath + '" --reporter test/reporter.js ' +
