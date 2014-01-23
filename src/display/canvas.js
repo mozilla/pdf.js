@@ -433,45 +433,81 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // of putImageData(). (E.g. in Firefox we make two short-lived copies of
     // the data passed to putImageData()). |n| shouldn't be too small, however,
     // because too many putImageData() calls will slow things down.
+    //
+    // Note: as written, if the last chunk is partial, the putImageData() call
+    // will (conceptually) put pixels past the bounds of the canvas.  But
+    // that's ok; any such pixels are ignored.
 
-    var rowsInFullChunks = 16;
-    var fullChunks = (imgData.height / rowsInFullChunks) | 0;
-    var rowsInLastChunk = imgData.height - fullChunks * rowsInFullChunks;
-    var elemsInFullChunks = imgData.width * rowsInFullChunks * 4;
-    var elemsInLastChunk = imgData.width * rowsInLastChunk * 4;
+    var fullChunkHeight = 16;
+    var fracChunks = imgData.height / fullChunkHeight;
+    var fullChunks = Math.floor(fracChunks);
+    var totalChunks = Math.ceil(fracChunks);
+    var partialChunkHeight = imgData.height - fullChunks * fullChunkHeight;
 
-    var chunkImgData = ctx.createImageData(imgData.width, rowsInFullChunks);
+    var chunkImgData = ctx.createImageData(imgData.width, fullChunkHeight);
     var srcPos = 0;
     var src = imgData.data;
     var dst = chunkImgData.data;
-    var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
 
-    // Do all the full-size chunks.
-    for (var i = 0; i < fullChunks; i++) {
-      if (haveSetAndSubarray) {
-        dst.set(src.subarray(srcPos, srcPos + elemsInFullChunks));
-        srcPos += elemsInFullChunks;
-      } else {
-        for (var j = 0; j < elemsInFullChunks; j++) {
-          chunkImgData.data[j] = imgData.data[srcPos++];
-        }
-      }
-      ctx.putImageData(chunkImgData, 0, i * rowsInFullChunks);
-    }
+    // There are multiple forms in which the pixel data can be passed, and
+    // imgData.kind tells us which one this is.
 
-    // Do the final, partial chunk, if required.
-    if (rowsInLastChunk !== 0) {
-      if (haveSetAndSubarray) {
-        dst.set(src.subarray(srcPos, srcPos + elemsInLastChunk));
-        srcPos += elemsInLastChunk;
-      } else {
-        for (var j = 0; j < elemsInLastChunk; j++) {
-          chunkImgData.data[j] = imgData.data[srcPos++];
+    if (imgData.kind === 'grayscale_1bpp') {
+      // Grayscale, 1 bit per pixel (i.e. black-and-white).
+      var srcData = imgData.data;
+      var destData = chunkImgData.data;
+      var alpha = 255;
+      var origLength = imgData.origLength;
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var destPos = 0;
+        for (var j = 0; j < thisChunkHeight; j++) {
+          var mask = 0;
+          var srcByte = 0;
+          for (var k = 0; k < imgData.width; k++) {
+            if (srcPos >= origLength) {
+              // We ran out of input. Make all remaining pixels transparent.
+              alpha = 0;
+            }
+            if (mask === 0) {
+              srcByte = srcData[srcPos++];
+              mask = 128;
+            }
+
+            var c = (+!!(srcByte & mask)) * 255;
+            destData[destPos++] = c;
+            destData[destPos++] = c;
+            destData[destPos++] = c;
+            destData[destPos++] = alpha;
+
+            mask >>= 1;
+          }
         }
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
-      // This (conceptually) puts pixels past the bounds of the canvas.  But
-      // that's ok; any such pixels are ignored.
-      ctx.putImageData(chunkImgData, 0, fullChunks * rowsInFullChunks);
+
+    } else if (imgData.kind === 'rgba_32bpp') {
+      // RGBA, 32-bits per pixel.
+      var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
+
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var elemsInThisChunk = imgData.width * thisChunkHeight * 4;
+        if (haveSetAndSubarray) {
+          dst.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
+          srcPos += elemsInThisChunk;
+        } else {
+          for (var j = 0; j < elemsInThisChunk; j++) {
+            chunkImgData.data[j] = imgData.data[srcPos++];
+          }
+        }
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
+      }
+
+    } else {
+        error('bad image kind: ' + imgData.kind);
     }
   }
 

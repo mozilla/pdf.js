@@ -267,10 +267,10 @@ var PDFImage = (function PDFImageClosure() {
       var bpc = this.bpc;
 
       // This image doesn't require any extra work.
-      if (bpc === 8)
+      if (bpc === 8) {
         return buffer;
+      }
 
-      var bufferLength = buffer.length;
       var width = this.width;
       var height = this.height;
       var numComps = this.numComps;
@@ -417,7 +417,14 @@ var PDFImage = (function PDFImageClosure() {
         buffer[i + 2] = clamp((buffer[i + 2] - matteRgb[2]) * k + matteRgb[2]);
       }
     },
-    fillRgbaBuffer: function PDFImage_fillRgbaBuffer(buffer, width, height) {
+    createImageData: function PDFImage_createImageData() {
+      var drawWidth = this.drawWidth;
+      var drawHeight = this.drawHeight;
+      var imgData = {       // other fields are filled in below
+        width: drawWidth,
+        height: drawHeight,
+      };
+
       var numComps = this.numComps;
       var originalWidth = this.width;
       var originalHeight = this.height;
@@ -429,21 +436,46 @@ var PDFImage = (function PDFImageClosure() {
 
       // imgArray can be incomplete (e.g. after CCITT fax encoding)
       var actualHeight = 0 | (imgArray.length / rowBytes *
-                         height / originalHeight);
+                         drawHeight / originalHeight);
+
+      // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
+      // without any complications, we pass a same-sized copy to the main
+      // thread rather than expanding by 32x to RGBA form. This saves *lots* of
+      // memory for many scanned documents. It's also much faster.
+      if (this.colorSpace.name === 'DeviceGray' && bpc === 1 &&
+          !this.smask && !this.mask && !this.needsDecode &&
+          drawWidth === originalWidth && drawHeight === originalHeight) {
+        imgData.kind = 'grayscale_1bpp';
+
+        // We must make a copy of imgArray, otherwise it'll be neutered upon
+        // transfer which will break any code that subsequently reuses it.
+        var newArray = new Uint8Array(imgArray.length);
+        newArray.set(imgArray);
+        imgData.data = newArray;
+        imgData.origLength = imgArray.length;
+        return imgData;
+      }
+
       var comps = this.getComponents(imgArray);
+
+      var rgbaBuf = new Uint8Array(drawWidth * drawHeight * 4);
 
       // Handle opacity here since color key masking needs to be performed on
       // undecoded values.
-      this.fillOpacity(buffer, width, height, actualHeight, comps);
+      this.fillOpacity(rgbaBuf, drawWidth, drawHeight, actualHeight, comps);
 
       if (this.needsDecode) {
         this.decodeBuffer(comps);
       }
 
-      this.colorSpace.fillRgb(buffer, originalWidth, originalHeight, width,
-                              height, actualHeight, bpc, comps);
+      this.colorSpace.fillRgb(rgbaBuf, originalWidth, originalHeight, drawWidth,
+                              drawHeight, actualHeight, bpc, comps);
 
-      this.undoPreblend(buffer, width, actualHeight);
+      this.undoPreblend(rgbaBuf, drawWidth, actualHeight);
+
+      imgData.kind = 'rgba_32bpp';
+      imgData.data = rgbaBuf;
+      return imgData;
     },
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
@@ -467,18 +499,6 @@ var PDFImage = (function PDFImageClosure() {
       var scale = 255 / ((1 << bpc) - 1);
       for (var i = 0; i < length; ++i)
         buffer[i] = (scale * comps[i]) | 0;
-    },
-    getImageData: function PDFImage_getImageData() {
-      var drawWidth = this.drawWidth;
-      var drawHeight = this.drawHeight;
-      var imgData = {
-        width: drawWidth,
-        height: drawHeight,
-        data: new Uint8Array(drawWidth * drawHeight * 4)
-      };
-      var pixels = imgData.data;
-      this.fillRgbaBuffer(pixels, drawWidth, drawHeight);
-      return imgData;
     },
     getImageBytes: function PDFImage_getImageBytes(length) {
       this.image.reset();
