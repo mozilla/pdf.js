@@ -18,13 +18,17 @@
 
 'use strict';
 
-// List of files to include;
-var files = [
+// List of shared files to include;
+var sharedFiles = [
   'shared/util.js',
   'shared/colorspace.js',
   'shared/pattern.js',
   'shared/function.js',
-  'shared/annotation.js',
+  'shared/annotation.js'
+];
+
+// List of other files to include;
+var otherFiles = [
   'core/network.js',
   'core/chunked_stream.js',
   'core/pdf_manager.js',
@@ -54,21 +58,22 @@ function loadInOrder(index, path, files) {
     PDFJS.fakeWorkerFilesLoadedPromise.resolve();
     return;
   }
-  // Skip shared files since they will already be loaded.
-  if (files[index].indexOf('shared/') >= 0) {
-    loadInOrder(++index, path, files);
-    return;
-  }
-  Util.loadScript(path + files[index],
+  PDFJS.Util.loadScript(path + files[index],
                   loadInOrder.bind(null, ++index, path, files));
 }
 
 // Load all the files.
 if (typeof PDFJS === 'undefined' || !PDFJS.fakeWorkerFilesLoadedPromise) {
+  var files = sharedFiles.concat(otherFiles);
   for (var i = 0; i < files.length; i++) {
     importScripts(files[i]);
   }
 } else {
   var src = PDFJS.workerSrc;
-  loadInOrder(0, src.substr(0, src.indexOf('worker_loader.js')), files);
+  var path = src.substr(0, src.indexOf('worker_loader.js'));
+  // If Util is available, we assume that shared files are already loaded. Can
+  // happen that they are not if PDF.js is bundled inside a special namespace.
+  var skipShared = typeof Util !== 'undefined';
+  var files = skipShared ? otherFiles : sharedFiles.concat(otherFiles);
+  loadInOrder(0, path, files);
 }
