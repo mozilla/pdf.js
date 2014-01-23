@@ -376,6 +376,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
+    this.activeSMask = null; // nonclonable field (see the save method below)
 
     this.old = old;
   }
@@ -416,6 +417,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.baseTransform = null;
     this.baseTransformStack = [];
     this.groupLevel = 0;
+    this.smaskStack = [];
+    this.smaskCounter = 0;
+    this.tempSMask = null;
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
@@ -520,6 +524,74 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       destCtx.mozDash = sourceCtx.mozDash;
       destCtx.mozDashOffset = sourceCtx.mozDashOffset;
     }
+  }
+
+  function composeSMask(ctx, smask, layerCtx) {
+    var mask = smask.canvas;
+    var maskCtx = smask.context;
+    var width = mask.width, height = mask.height;
+
+    var removeBackdropFn;
+    if (smask.backdrop) {
+      var cs = smask.colorSpace || ColorSpace.singletons.rgb;
+      var backdrop = cs.getRgb(smask.backdrop, 0);
+      removeBackdropFn = function (r0, g0, b0, layerDataBytes) {
+        var length = layerDataBytes.length;
+        for (var i = 3; i < length; i += 4) {
+          var alpha = layerDataBytes[i];
+          if (alpha !== 0 && alpha !== 255) {
+            var r = ((layerDataBytes[i - 3] * 255 -
+              r0 * (255 - alpha)) / alpha) | 0;
+            layerDataBytes[i - 3] = r < 0 ? 0 : r > 255 ? 255 : r;
+            var g = ((layerDataBytes[i - 2] * 255 -
+              g0 * (255 - alpha)) / alpha) | 0;
+            layerDataBytes[i - 2] = g < 0 ? 0 : g > 255 ? 255 : g;
+            var b = ((layerDataBytes[i - 1] * 255 -
+              b0 * (255 - alpha)) / alpha) | 0;
+            layerDataBytes[i - 1] = b < 0 ? 0 : b > 255 ? 255 : b;
+          }
+        }
+      }.bind(null, backdrop[0], backdrop[1], backdrop[2]);
+    } else {
+      removeBackdropFn = function () {};
+    }
+
+    var composeFn;
+    if (smask.subtype === 'Luminosity') {
+      composeFn = function (maskDataBytes, layerDataBytes) {
+        var length = maskDataBytes.length;
+        for (var i = 3; i < length; i += 4) {
+          var y = ((maskDataBytes[i - 3] * 77) +     // * 0.3 / 255 * 0x10000
+                   (maskDataBytes[i - 2] * 152) +    // * 0.59 ....
+                   (maskDataBytes[i - 1] * 28)) | 0; // * 0.11 ....
+          layerDataBytes[i] = (layerDataBytes[i] * y) >> 16;
+        }
+      };
+    } else {
+      composeFn = function (maskDataBytes, layerDataBytes) {
+        var length = maskDataBytes.length;
+        for (var i = 3; i < length; i += 4) {
+          var alpha = maskDataBytes[i];
+          layerDataBytes[i] = (layerDataBytes[i] * alpha / 255) | 0;
+        }
+      };
+    }
+
+    // processing image in chunks to save memory
+    var chunkSize = 16;
+    for (var row = 0; row < height; row += chunkSize) {
+      var chunkHeight = Math.min(chunkSize, height - row);
+      var maskData = maskCtx.getImageData(0, row, width, chunkHeight);
+      var layerData = layerCtx.getImageData(0, row, width, chunkHeight);
+
+      removeBackdropFn(layerData.data);
+      composeFn(maskData.data, layerData.data);
+
+      maskCtx.putImageData(layerData, 0, row);
+    }
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(mask, smask.offsetX, smask.offsetY);
   }
 
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
@@ -730,18 +802,70 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
               this.ctx.globalCompositeOperation = 'source-over';
             }
             break;
+          case 'SMask':
+            if (this.current.activeSMask) {
+              this.endSMaskGroup();
+            }
+            this.current.activeSMask = value ? this.tempSMask : null;
+            if (this.current.activeSMask) {
+              this.beginSMaskGroup();
+            }
+            this.tempSMask = null;
+            break;
         }
       }
+    },
+    beginSMaskGroup: function CanvasGraphics_beginSMaskGroup() {
+
+      var activeSMask = this.current.activeSMask;
+      var drawnWidth = activeSMask.canvas.width;
+      var drawnHeight = activeSMask.canvas.height;
+      var cacheId = 'smaskGroupAt' + this.groupLevel;
+      var scratchCanvas = CachedCanvases.getCanvas(
+        cacheId, drawnWidth, drawnHeight, true);
+
+      var currentCtx = this.ctx;
+      var currentTransform = currentCtx.mozCurrentTransform;
+      this.ctx.save();
+
+      var groupCtx = scratchCanvas.context;
+      groupCtx.translate(-activeSMask.offsetX, -activeSMask.offsetY);
+      groupCtx.transform.apply(groupCtx, currentTransform);
+
+      copyCtxState(currentCtx, groupCtx);
+      this.ctx = groupCtx;
+      this.setGState([
+        ['BM', 'Normal'],
+        ['ca', 1],
+        ['CA', 1]
+      ]);
+      this.groupStack.push(currentCtx);
+      this.groupLevel++;
+    },
+    endSMaskGroup: function CanvasGraphics_endSMaskGroup() {
+      var groupCtx = this.ctx;
+      this.groupLevel--;
+      this.ctx = this.groupStack.pop();
+
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
+      this.ctx.restore();
     },
     save: function CanvasGraphics_save() {
       this.ctx.save();
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
+      if (this.current.activeSMask) {
+        this.current.activeSMask = null;
+      }
     },
     restore: function CanvasGraphics_restore() {
       var prev = this.stateStack.pop();
       if (prev) {
+        if (this.current.activeSMask) {
+          this.endSMaskGroup();
+        }
+
         this.current = prev;
         this.ctx.restore();
       }
@@ -1571,9 +1695,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var drawnWidth = Math.max(Math.ceil(bounds[2] - bounds[0]), 1);
       var drawnHeight = Math.max(Math.ceil(bounds[3] - bounds[1]), 1);
 
+      var cacheId = 'groupAt' + this.groupLevel;
+      if (group.smask) {
+        // Using two cache entries is case if masks are used one after another.
+        cacheId +=  '_smask_' + ((this.smaskCounter++) % 2);
+      }
       var scratchCanvas = CachedCanvases.getCanvas(
-        'groupAt' + this.groupLevel, drawnWidth, drawnHeight, true);
+        cacheId, drawnWidth, drawnHeight, true);
       var groupCtx = scratchCanvas.context;
+
       // Since we created a new canvas that is just the size of the bounding box
       // we have to translate the group ctx.
       var offsetX = bounds[0];
@@ -1581,16 +1711,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       groupCtx.translate(-offsetX, -offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
-      // Setup the current ctx so when the group is popped we draw it the right
-      // location.
-      currentCtx.setTransform(1, 0, 0, 1, 0, 0);
-      currentCtx.translate(offsetX, offsetY);
+      if (group.smask) {
+        // Saving state and cached mask to be used in setGState.
+        this.smaskStack.push({
+          canvas: scratchCanvas.canvas,
+          context: groupCtx,
+          offsetX: offsetX,
+          offsetY: offsetY,
+          subtype: group.smask.subtype,
+          backdrop: group.smask.backdrop,
+          colorSpace: group.colorSpace && ColorSpace.fromIR(group.colorSpace)
+        });
+      } else {
+        // Setup the current ctx so when the group is popped we draw it at the
+        // right location.
+        currentCtx.setTransform(1, 0, 0, 1, 0, 0);
+        currentCtx.translate(offsetX, offsetY);
+      }
       // The transparency group inherits all off the current graphics state
       // except the blend mode, soft mask, and alpha constants.
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
-        ['SMask', 'None'],
         ['BM', 'Normal'],
         ['ca', 1],
         ['CA', 1]
@@ -1610,7 +1752,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else {
         this.ctx.mozImageSmoothingEnabled = false;
       }
-      this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      if (group.smask) {
+        this.tempSMask = this.smaskStack.pop();
+      } else {
+        this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      }
       this.restore();
     },
 
