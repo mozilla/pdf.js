@@ -96,7 +96,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var groupOptions = {
           matrix: matrix,
           bbox: bbox,
-          smask: !!smask,
+          smask: smask,
           isolated: false,
           knockout: false
         };
@@ -105,8 +105,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (isName(groupSubtype) && groupSubtype.name === 'Transparency') {
           groupOptions.isolated = group.get('I') || false;
           groupOptions.knockout = group.get('K') || false;
-          // There is also a group colorspace, but since we put everything in
-          // RGB I'm not sure we need it.
+          var colorSpace = group.get('CS');
+          groupOptions.colorSpace = colorSpace ?
+            ColorSpace.parseToIR(colorSpace, this.xref, resources) : null;
         }
         operatorList.addOp(OPS.beginGroup, [groupOptions]);
       }
@@ -196,6 +197,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addOp(OPS.paintImageXObject, args);
     },
 
+    handleSMask: function PartialEvaluator_handleSmask(smask, resources,
+                                                       operatorList) {
+      var smaskContent = smask.get('G');
+      var smaskOptions = {
+        subtype: smask.get('S').name,
+        backdrop: smask.get('BC')
+      };
+
+      this.buildFormXObject(resources, smaskContent, smaskOptions,
+                            operatorList);
+    },
+
     handleTilingType: function PartialEvaluator_handleTilingType(
                           fn, args, resources, pattern, patternDict,
                           operatorList) {
@@ -265,7 +278,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     setGState: function PartialEvaluator_setGState(resources, gState,
-                                                   operatorList) {
+                                                   operatorList, xref) {
 
       var self = this;
       // TODO(mack): This should be rewritten so that this function returns
@@ -295,9 +308,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'SMask':
-            // We support the default so don't trigger a warning bar.
-            if (!isName(value) || value.name != 'None')
-              UnsupportedManager.notify(UNSUPPORTED_FEATURES.smask);
+            if (isName(value) && value.name === 'None') {
+              gStateObj.push([key, false]);
+              break;
+            }
+            var dict = xref.fetchIfRef(value);
+            if (isDict(dict)) {
+              self.handleSMask(dict, resources, operatorList);
+              gStateObj.push([key, true]);
+            } else {
+              warn('Unsupported SMask type');
+            }
+
             break;
           // Only generate info log messages for the following since
           // they are unlikey to have a big impact on the rendering.
@@ -579,7 +601,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
 
               var gState = extGState.get(dictName.name);
-              self.setGState(resources, gState, operatorList);
+              self.setGState(resources, gState, operatorList, xref);
               args = [];
               continue;
           } // switch
