@@ -38,11 +38,13 @@ var callbacks = {};
 
 chrome.webRequest.onBeforeRequest.addListener(function showFrameId(details) {
     // Positive integer frameId >= 0
-    // Since an image is used as a data transport, we add 1 to get a non-zero height.
+    // Since an image is used as a data transport, we add 1 to get a non-zero width.
     var frameId = details.frameId + 1;
-    // Assume that the frameId fits in two bytes - which is a very reasonable assumption.
-    var width = String.fromCharCode(frameId & 0xFF, frameId & 0xFF00);
-    var height = '\x01\x00';
+    // Assume that the frameId fits in three bytes - which is a very reasonable assumption.
+    var width = String.fromCharCode(frameId & 0xFF, (frameId >> 8) & 0xFF);
+    // When frameId > 0xFFFF, use the height to convey the additional information.
+    // Again, add 1 to make sure that the height is non-zero.
+    var height = String.fromCharCode((frameId >> 16) + 1, 0);
     // Convert data to base64 to avoid loss of bytes
     var image = 'data:image/gif;base64,' + btoa(
                 // 4749 4638 3961 (GIF header)
@@ -207,7 +209,8 @@ var DETECT_FRAME = '' + function checkFrame(window, identifier, frameId, code) {
         // Do NOT use new Image(), because of http://crbug.com/245296 in Chrome 27-29
         i = window.document.createElement('img');
         i.onload = function() {
-            window.__executeScript_frameId__ = this.naturalWidth - 1;
+            window.__executeScript_frameId__ = (this.naturalWidth - 1) +
+                                               (this.naturalHeight - 1 << 16);
             evalAsContentScript();
         };
         // Trigger webRequest event to get frameId

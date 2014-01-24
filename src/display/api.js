@@ -25,7 +25,7 @@
 /**
  * The maximum allowed image size in total pixels e.g. width * height. Images
  * above this value will not be drawn. Use -1 for no limit.
- * @var {Number}
+ * @var {number}
  */
 PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
 
@@ -33,7 +33,7 @@ PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
  * By default fonts are converted to OpenType fonts and loaded via font face
  * rules. If disabled, the font will be rendered using a built in font renderer
  * that constructs the glyphs with primitive path commands.
- * @var {Boolean}
+ * @var {boolean}
  */
 PDFJS.disableFontFace = PDFJS.disableFontFace === undefined ?
                         false : PDFJS.disableFontFace;
@@ -41,7 +41,7 @@ PDFJS.disableFontFace = PDFJS.disableFontFace === undefined ?
 /**
  * Path for image resources, mainly for annotation icons. Include trailing
  * slash.
- * @var {String}
+ * @var {string}
  */
 PDFJS.imageResourcesPath = PDFJS.imageResourcesPath === undefined ?
                            '' : PDFJS.imageResourcesPath;
@@ -50,7 +50,7 @@ PDFJS.imageResourcesPath = PDFJS.imageResourcesPath === undefined ?
  * Disable the web worker and run all code on the main thread. This will happen
  * automatically if the browser doesn't support workers or sending typed arrays
  * to workers.
- * @var {Boolean}
+ * @var {boolean}
  */
 PDFJS.disableWorker = PDFJS.disableWorker === undefined ?
                       false : PDFJS.disableWorker;
@@ -59,7 +59,7 @@ PDFJS.disableWorker = PDFJS.disableWorker === undefined ?
  * Path and filename of the worker file. Required when the worker is enabled in
  * development mode. If unspecified in the production build, the worker will be
  * loaded based on the location of the pdf.js file.
- * @var {String}
+ * @var {string}
  */
 PDFJS.workerSrc = PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc;
 
@@ -67,7 +67,7 @@ PDFJS.workerSrc = PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc;
  * Disable range request loading of PDF files. When enabled and if the server
  * supports partial content requests then the PDF will be fetched in chunks.
  * Enabled (false) by default.
- * @var {Boolean}
+ * @var {boolean}
  */
 PDFJS.disableRange = PDFJS.disableRange === undefined ?
                      false : PDFJS.disableRange;
@@ -76,14 +76,14 @@ PDFJS.disableRange = PDFJS.disableRange === undefined ?
  * Disable pre-fetching of PDF file data. When range requests are enabled PDF.js
  * will automatically keep fetching more data even if it isn't needed to display
  * the current page. This default behavior can be disabled.
- * @var {Boolean}
+ * @var {boolean}
  */
 PDFJS.disableAutoFetch = PDFJS.disableAutoFetch === undefined ?
                          false : PDFJS.disableAutoFetch;
 
 /**
  * Enables special hooks for debugging PDF.js.
- * @var {Boolean}
+ * @var {boolean}
  */
 PDFJS.pdfBug = PDFJS.pdfBug === undefined ? false : PDFJS.pdfBug;
 
@@ -95,15 +95,38 @@ PDFJS.postMessageTransfers = PDFJS.postMessageTransfers === undefined ?
                              true : PDFJS.postMessageTransfers;
 
 /**
+ * Disables URL.createObjectURL usage.
+ * @var {boolean}
+ */
+PDFJS.disableCreateObjectURL = PDFJS.disableCreateObjectURL === undefined ?
+                               false : PDFJS.disableCreateObjectURL;
+
+/**
  * Controls the logging level.
  * The constants from PDFJS.VERBOSITY_LEVELS should be used:
  * - errors
  * - warnings [default]
  * - infos
- * @var {Number}
+ * @var {number}
  */
 PDFJS.verbosity = PDFJS.verbosity === undefined ?
                   PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity;
+
+/**
+ * Document initialization / loading parameters object.
+ *
+ * @typedef {Object} DocumentInitParameters
+ * @property {string}     url   - The URL of the PDF.
+ * @property {TypedArray} data  - A typed array with PDF data.
+ * @property {Object}     httpHeaders - Basic authentication headers.
+ * @property {boolean}    withCredentials - Indicates whether or not cross-site
+ *   Access-Control requests should be made using credentials such as cookies
+ *   or authorization headers. The default is false.
+ * @property {string}     password - For decrypting password-protected PDFs.
+ * @property {TypedArray} initialData - A typed array with the first portion or
+ *   all of the pdf data. Used by the extension since some data is already
+ *   loaded before the switch to range requests.
+ */
 
 /**
  * This is the main entry point for loading a PDF and interacting with it.
@@ -111,18 +134,11 @@ PDFJS.verbosity = PDFJS.verbosity === undefined ?
  * is used, which means it must follow the same origin rules that any XHR does
  * e.g. No cross domain requests without CORS.
  *
- * @param {string|TypedAray|object} source Can be an url to where a PDF is
- * located, a typed array (Uint8Array) already populated with data or
- * and parameter object with the following possible fields:
- *  - url   - The URL of the PDF.
- *  - data  - A typed array with PDF data.
- *  - httpHeaders - Basic authentication headers.
- *  - password - For decrypting password-protected PDFs.
- *  - initialData - A typed array with the first portion or all of the pdf data.
- *                  Used by the extension since some data is already loaded
- *                  before the switch to range requests. 
+ * @param {string|TypedArray|DocumentInitParameters} source Can be a url to
+ * where a PDF is located, a typed array (Uint8Array) already populated with
+ * data or parameter object.
  *
- * @param {object} pdfDataRangeTransport is optional. It is used if you want
+ * @param {Object} pdfDataRangeTransport is optional. It is used if you want
  * to manually serve range requests for data in the PDF. See viewer.js for
  * an example of pdfDataRangeTransport's interface.
  *
@@ -131,7 +147,8 @@ PDFJS.verbosity = PDFJS.verbosity === undefined ?
  * parameters: function that needs to be called with new password and reason
  * (see {PasswordResponses}).
  *
- * @return {Promise} A promise that is resolved with {PDFDocumentProxy} object.
+ * @return {Promise} A promise that is resolved with {@link PDFDocumentProxy}
+ *   object.
  */
 PDFJS.getDocument = function getDocument(source,
                                          pdfDataRangeTransport,
@@ -175,13 +192,14 @@ PDFJS.getDocument = function getDocument(source,
 /**
  * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
  * properties that can be read synchronously.
+ * @class
  */
 var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   function PDFDocumentProxy(pdfInfo, transport) {
     this.pdfInfo = pdfInfo;
     this.transport = transport;
   }
-  PDFDocumentProxy.prototype = {
+  PDFDocumentProxy.prototype = /** @lends PDFDocumentProxy.prototype */ {
     /**
      * @return {number} Total number of pages the PDF contains.
      */
@@ -203,15 +221,16 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.embeddedFontsUsed;
     },
     /**
-     * @param {number} The page number to get. The first page is 1.
-     * @return {Promise} A promise that is resolved with a {PDFPageProxy}
+     * @param {number} pageNumber The page number to get. The first page is 1.
+     * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
      * object.
      */
-    getPage: function PDFDocumentProxy_getPage(number) {
-      return this.transport.getPage(number);
+    getPage: function PDFDocumentProxy_getPage(pageNumber) {
+      return this.transport.getPage(pageNumber);
     },
     /**
-     * @param {object} Must have 'num' and 'gen' properties.
+     * @param {{num: number, gen: number}} ref The page reference. Must have
+     *   the 'num' and 'gen' properties.
      * @return {Promise} A promise that is resolved with the page index that is
      * associated with the reference.
      */
@@ -236,7 +255,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return promise;
     },
     /**
-     * @return {Promise} A promise that is resolved with an {array} that is a
+     * @return {Promise} A promise that is resolved with an {Array} that is a
      * tree outline (if it has one) of the PDF. The tree is in the format of:
      * [
      *  {
@@ -257,8 +276,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return promise;
     },
     /**
-     * @return {Promise} A promise that is resolved with an {object} that has
-     * info and metadata properties.  Info is an {object} filled with anything
+     * @return {Promise} A promise that is resolved with an {Object} that has
+     * info and metadata properties.  Info is an {Object} filled with anything
      * available in the information dictionary and similarly metadata is a
      * {Metadata} object with information from the metadata section of the PDF.
      */
@@ -270,11 +289,6 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
         info: info,
         metadata: metadata ? new PDFJS.Metadata(metadata) : null
       });
-      return promise;
-    },
-    isEncrypted: function PDFDocumentProxy_isEncrypted() {
-      var promise = new PDFJS.LegacyPromise();
-      promise.resolve(this.pdfInfo.encrypted);
       return promise;
     },
     /**
@@ -293,9 +307,15 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     dataLoaded: function PDFDocumentProxy_dataLoaded() {
       return this.transport.dataLoaded();
     },
+    /**
+     * Cleans up resources allocated by the document, e.g. created @font-face.
+     */
     cleanup: function PDFDocumentProxy_cleanup() {
       this.transport.startCleanup();
     },
+    /**
+     * Destroys current document instance and terminates worker.
+     */
     destroy: function PDFDocumentProxy_destroy() {
       this.transport.destroy();
     }
@@ -303,6 +323,22 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
   return PDFDocumentProxy;
 })();
 
+/**
+ * Page text content part.
+ *
+ * @typedef {Object} BidiText
+ * @property {string} str - text content.
+ * @property {string} dir - text direction: 'ttb', 'ltr' or 'rtl'.
+ * @property {number} x - x position of the text on the page.
+ * @property {number} y - y position of the text on the page.
+ * @property {number} angle - text rotation.
+ * @property {number} size - font size.
+ */
+
+/**
+ * Proxy to a PDFPage in the worker thread.
+ * @class
+ */
 var PDFPageProxy = (function PDFPageProxyClosure() {
   function PDFPageProxy(pageInfo, transport) {
     this.pageInfo = pageInfo;
@@ -316,7 +352,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.pendingDestroy = false;
     this.renderTasks = [];
   }
-  PDFPageProxy.prototype = {
+  PDFPageProxy.prototype = /** @lends PDFPageProxy.prototype */ {
     /**
      * @return {number} Page number of the page. First page is 1.
      */
@@ -330,14 +366,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return this.pageInfo.rotate;
     },
     /**
-     * @return {object} The reference that points to this page. It has 'num' and
+     * @return {Object} The reference that points to this page. It has 'num' and
      * 'gen' properties.
      */
     get ref() {
       return this.pageInfo.ref;
     },
     /**
-     * @return {array} An array of the visible portion of the PDF page in the
+     * @return {Array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */
     get view() {
@@ -356,7 +392,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return new PDFJS.PageViewport(this.view, scale, rotate, 0, 0);
     },
     /**
-     * @return {Promise} A promise that is resolved with an {array} of the
+     * @return {Promise} A promise that is resolved with an {Array} of the
      * annotation objects.
      */
     getAnnotations: function PDFPageProxy_getAnnotations() {
@@ -370,7 +406,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
     /**
      * Begins the process of rendering a page to the desired context.
-     * @param {object} params A parameter object that supports:
+     * @param {Object} params A parameter object that supports:
      * {
      *   canvasContext(required): A 2D context of a DOM Canvas object.,
      *   textLayer(optional): An object that has beginLayout, endLayout, and
@@ -455,8 +491,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return renderTask;
     },
     /**
-     * @return {Promise} That is resolved with the a {string} that is the text
-     * content from the page.
+     * @return {Promise} That is resolved with the array of {@link BidiText}
+     * objects that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent() {
       var promise = new PDFJS.LegacyPromise();
@@ -470,18 +506,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return promise;
     },
     /**
-     * Stub for future feature.
-     */
-    getOperationList: function PDFPageProxy_getOperationList() {
-      var promise = new PDFJS.LegacyPromise();
-      var operationList = { // not implemented
-        dependencyFontsID: null,
-        operatorList: null
-      };
-      promise.resolve(operationList);
-      return promise;
-    },
-    /**
      * Destroys resources allocated by the page.
      */
     destroy: function PDFPageProxy_destroy() {
@@ -491,6 +515,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     /**
      * For internal use only. Attempts to clean up if rendering is in a state
      * where that's possible.
+     * @ignore
      */
     _tryDestroy: function PDFPageProxy__destroy() {
       if (!this.pendingDestroy ||
@@ -506,12 +531,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
     /**
      * For internal use only.
+     * @ignore
      */
     _startRenderPage: function PDFPageProxy_startRenderPage(transparency) {
       this.displayReadyPromise.resolve(transparency);
     },
     /**
      * For internal use only.
+     * @ignore
      */
     _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk) {
       // Add the new chunk to the current operator list.
@@ -534,8 +561,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
   };
   return PDFPageProxy;
 })();
+
 /**
  * For internal use only.
+ * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
   function WorkerTransport(workerInitializedPromise, workerReadyPromise,
@@ -619,6 +648,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.pagePromises = [];
       var self = this;
       this.messageHandler.send('Terminate', null, function () {
+        FontLoader.clear();
         if (self.worker) {
           self.worker.terminate();
         }
@@ -883,6 +913,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         disableRange: PDFJS.disableRange,
         maxImageSize: PDFJS.maxImageSize,
         disableFontFace: PDFJS.disableFontFace,
+        disableCreateObjectURL: PDFJS.disableCreateObjectURL,
         verbosity: PDFJS.verbosity
       });
     },
@@ -894,10 +925,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     dataLoaded: function WorkerTransport_dataLoaded() {
+      if (this.dataLoadedPromise) {
+        return this.dataLoadedPromise;
+      }
       var promise = new PDFJS.LegacyPromise();
       this.messageHandler.send('DataLoaded', null, function(args) {
         promise.resolve(args);
       });
+      this.dataLoadedPromise = promise;
       return promise;
     },
 
@@ -960,6 +995,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
  * for fonts, images, rendering code and such. These objects might get processed
  * inside of a worker. The `PDFObjects` implements some basic functions to
  * manage these objects.
+ * @ignore
  */
 var PDFObjects = (function PDFObjectsClosure() {
   function PDFObjects() {
@@ -1058,24 +1094,39 @@ var PDFObjects = (function PDFObjectsClosure() {
   return PDFObjects;
 })();
 
+/**
+ * Allows controlling of the rendering tasks.
+ * @class
+ */
 var RenderTask = (function RenderTaskClosure() {
   function RenderTask(internalRenderTask) {
     this.internalRenderTask = internalRenderTask;
+    /**
+     * Promise for rendering task completion.
+     * @type {Promise}
+     */
     this.promise = new PDFJS.LegacyPromise();
   }
 
-  /**
-   * Cancel the rendering task. If the task is curently rendering it will not be
-   * cancelled until graphics pauses with a timeout. The promise that this
-   * object extends will resolved when cancelled.
-   */
-  RenderTask.prototype.cancel = function RenderTask_cancel() {
-    this.internalRenderTask.cancel();
+  RenderTask.prototype = /** @lends RenderTask.prototype */ {
+    /**
+     * Cancels the rendering task. If the task is currently rendering it will
+     * not be cancelled until graphics pauses with a timeout. The promise that
+     * this object extends will resolved when cancelled.
+     */
+    cancel: function RenderTask_cancel() {
+      this.internalRenderTask.cancel();
+      this.promise.reject(new Error('Rendering is cancelled'));
+    }
   };
 
   return RenderTask;
 })();
 
+/**
+ * For internal use only.
+ * @ignore
+ */
 var InternalRenderTask = (function InternalRenderTaskClosure() {
 
   function InternalRenderTask(callback, params, objs, commonObjs, operatorList,

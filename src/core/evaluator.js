@@ -40,119 +40,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.fontCache = fontCache;
   }
 
-  // Specifies properties for each command
-  //
-  // If variableArgs === true: [0, `numArgs`] expected
-  // If variableArgs === false: exactly `numArgs` expected
-  var OP_MAP = {
-    // Graphic state
-    w: { id: OPS.setLineWidth, numArgs: 1, variableArgs: false },
-    J: { id: OPS.setLineCap, numArgs: 1, variableArgs: false },
-    j: { id: OPS.setLineJoin, numArgs: 1, variableArgs: false },
-    M: { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false },
-    d: { id: OPS.setDash, numArgs: 2, variableArgs: false },
-    ri: { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false },
-    i: { id: OPS.setFlatness, numArgs: 1, variableArgs: false },
-    gs: { id: OPS.setGState, numArgs: 1, variableArgs: false },
-    q: { id: OPS.save, numArgs: 0, variableArgs: false },
-    Q: { id: OPS.restore, numArgs: 0, variableArgs: false },
-    cm: { id: OPS.transform, numArgs: 6, variableArgs: false },
-
-    // Path
-    m: { id: OPS.moveTo, numArgs: 2, variableArgs: false },
-    l: { id: OPS.lineTo, numArgs: 2, variableArgs: false },
-    c: { id: OPS.curveTo, numArgs: 6, variableArgs: false },
-    v: { id: OPS.curveTo2, numArgs: 4, variableArgs: false },
-    y: { id: OPS.curveTo3, numArgs: 4, variableArgs: false },
-    h: { id: OPS.closePath, numArgs: 0, variableArgs: false },
-    re: { id: OPS.rectangle, numArgs: 4, variableArgs: false },
-    S: { id: OPS.stroke, numArgs: 0, variableArgs: false },
-    s: { id: OPS.closeStroke, numArgs: 0, variableArgs: false },
-    f: { id: OPS.fill, numArgs: 0, variableArgs: false },
-    F: { id: OPS.fill, numArgs: 0, variableArgs: false },
-    'f*': { id: OPS.eoFill, numArgs: 0, variableArgs: false },
-    B: { id: OPS.fillStroke, numArgs: 0, variableArgs: false },
-    'B*': { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false },
-    b: { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false },
-    'b*': { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false },
-    n: { id: OPS.endPath, numArgs: 0, variableArgs: false },
-
-    // Clipping
-    W: { id: OPS.clip, numArgs: 0, variableArgs: false },
-    'W*': { id: OPS.eoClip, numArgs: 0, variableArgs: false },
-
-    // Text
-    BT: { id: OPS.beginText, numArgs: 0, variableArgs: false },
-    ET: { id: OPS.endText, numArgs: 0, variableArgs: false },
-    Tc: { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false },
-    Tw: { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false },
-    Tz: { id: OPS.setHScale, numArgs: 1, variableArgs: false },
-    TL: { id: OPS.setLeading, numArgs: 1, variableArgs: false },
-    Tf: { id: OPS.setFont, numArgs: 2, variableArgs: false },
-    Tr: { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false },
-    Ts: { id: OPS.setTextRise, numArgs: 1, variableArgs: false },
-    Td: { id: OPS.moveText, numArgs: 2, variableArgs: false },
-    TD: { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false },
-    Tm: { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false },
-    'T*': { id: OPS.nextLine, numArgs: 0, variableArgs: false },
-    Tj: { id: OPS.showText, numArgs: 1, variableArgs: false },
-    TJ: { id: OPS.showSpacedText, numArgs: 1, variableArgs: false },
-    '\'': { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false },
-    '"': { id: OPS.nextLineSetSpacingShowText, numArgs: 3,
-      variableArgs: false },
-
-    // Type3 fonts
-    d0: { id: OPS.setCharWidth, numArgs: 2, variableArgs: false },
-    d1: { id: OPS.setCharWidthAndBounds, numArgs: 6, variableArgs: false },
-
-    // Color
-    CS: { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false },
-    cs: { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false },
-    SC: { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true },
-    SCN: { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true },
-    sc: { id: OPS.setFillColor, numArgs: 4, variableArgs: true },
-    scn: { id: OPS.setFillColorN, numArgs: 33, variableArgs: true },
-    G: { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false },
-    g: { id: OPS.setFillGray, numArgs: 1, variableArgs: false },
-    RG: { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false },
-    rg: { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false },
-    K: { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false },
-    k: { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false },
-
-    // Shading
-    sh: { id: OPS.shadingFill, numArgs: 1, variableArgs: false },
-
-    // Images
-    BI: { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false },
-    ID: { id: OPS.beginImageData, numArgs: 0, variableArgs: false },
-    EI: { id: OPS.endInlineImage, numArgs: 1, variableArgs: false },
-
-    // XObjects
-    Do: { id: OPS.paintXObject, numArgs: 1, variableArgs: false },
-    MP: { id: OPS.markPoint, numArgs: 1, variableArgs: false },
-    DP: { id: OPS.markPointProps, numArgs: 2, variableArgs: false },
-    BMC: { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false },
-    BDC: { id: OPS.beginMarkedContentProps, numArgs: 2,
-      variableArgs: false },
-    EMC: { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false },
-
-    // Compatibility
-    BX: { id: OPS.beginCompat, numArgs: 0, variableArgs: false },
-    EX: { id: OPS.endCompat, numArgs: 0, variableArgs: false },
-
-    // (reserved partial commands for the lexer)
-    BM: null,
-    BD: null,
-    'true': null,
-    fa: null,
-    fal: null,
-    fals: null,
-    'false': null,
-    nu: null,
-    nul: null,
-    'null': null
-  };
-
   var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
   PartialEvaluator.prototype = {
@@ -198,7 +85,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     buildFormXObject: function PartialEvaluator_buildFormXObject(resources,
                                                                  xobj, smask,
-                                                                 operatorList) {
+                                                                 operatorList,
+                                                                 state) {
       var self = this;
 
       var matrix = xobj.dict.get('Matrix');
@@ -208,7 +96,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var groupOptions = {
           matrix: matrix,
           bbox: bbox,
-          smask: !!smask,
+          smask: smask,
           isolated: false,
           knockout: false
         };
@@ -217,8 +105,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (isName(groupSubtype) && groupSubtype.name === 'Transparency') {
           groupOptions.isolated = group.get('I') || false;
           groupOptions.knockout = group.get('K') || false;
-          // There is also a group colorspace, but since we put everything in
-          // RGB I'm not sure we need it.
+          var colorSpace = group.get('CS');
+          groupOptions.colorSpace = colorSpace ?
+            ColorSpace.parseToIR(colorSpace, this.xref, resources) : null;
         }
         operatorList.addOp(OPS.beginGroup, [groupOptions]);
       }
@@ -226,7 +115,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
       this.getOperatorList(xobj, xobj.dict.get('Resources') || resources,
-                           operatorList);
+                           operatorList, state);
       operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
       if (group) {
@@ -262,8 +151,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var inverseDecode = !!decode && decode[0] > 0;
 
         operatorList.addOp(OPS.paintImageMaskXObject,
-          [PDFImage.createMask(imgArray, width, height,
-                                            inverseDecode)]
+          [PDFImage.createMask(imgArray, width, height, inverseDecode)]
         );
         return;
       }
@@ -307,6 +195,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }, self.handler, self.xref, resources, image, inline);
 
       operatorList.addOp(OPS.paintImageXObject, args);
+    },
+
+    handleSMask: function PartialEvaluator_handleSmask(smask, resources,
+                                                       operatorList) {
+      var smaskContent = smask.get('G');
+      var smaskOptions = {
+        subtype: smask.get('S').name,
+        backdrop: smask.get('BC')
+      };
+
+      this.buildFormXObject(resources, smaskContent, smaskOptions,
+                            operatorList);
     },
 
     handleTilingType: function PartialEvaluator_handleTilingType(
@@ -378,7 +278,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     setGState: function PartialEvaluator_setGState(resources, gState,
-                                                   operatorList) {
+                                                   operatorList, xref) {
 
       var self = this;
       // TODO(mack): This should be rewritten so that this function returns
@@ -408,9 +308,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'SMask':
-            // We support the default so don't trigger a warning bar.
-            if (!isName(value) || value.name != 'None')
-              UnsupportedManager.notify(UNSUPPORTED_FEATURES.smask);
+            if (isName(value) && value.name === 'None') {
+              gStateObj.push([key, false]);
+              break;
+            }
+            var dict = xref.fetchIfRef(value);
+            if (isDict(dict)) {
+              self.handleSMask(dict, resources, operatorList);
+              gStateObj.push([key, true]);
+            } else {
+              warn('Unsupported SMask type');
+            }
+
             break;
           // Only generate info log messages for the following since
           // they are unlikey to have a big impact on the rendering.
@@ -533,7 +442,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
                                                                resources,
-                                                               operatorList) {
+                                                               operatorList,
+                                                               evaluatorState) {
 
       var self = this;
       var xref = this.xref;
@@ -544,54 +454,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       resources = resources || new Dict();
       var xobjs = resources.get('XObject') || new Dict();
       var patterns = resources.get('Pattern') || new Dict();
-      // TODO(mduan): pass array of knownCommands rather than OP_MAP
-      // dictionary
-      var parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
+      var preprocessor = new EvaluatorPreprocessor(stream, xref);
+      if (evaluatorState) {
+        preprocessor.setState(evaluatorState);
+      }
 
       var promise = new LegacyPromise();
-      var args = [];
-      while (true) {
-
-        var obj = parser.getObj();
-
-        if (isEOF(obj)) {
-          break;
-        }
-
-        if (isCmd(obj)) {
-          var cmd = obj.cmd;
-
-          // Check that the command is valid
-          var opSpec = OP_MAP[cmd];
-          if (!opSpec) {
-            warn('Unknown command "' + cmd + '"');
-            continue;
-          }
-
-          var fn = opSpec.id;
-
-          // Validate the number of arguments for the command
-          if (opSpec.variableArgs) {
-            if (args.length > opSpec.numArgs) {
-              info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
-                  '] args, but received ' + args.length + ' args');
-            }
-          } else {
-            if (args.length < opSpec.numArgs) {
-              // If we receive too few args, it's not possible to possible
-              // to execute the command, so skip the command
-              info('Command ' + fn + ': because expected ' +
-                   opSpec.numArgs + ' args, but received ' + args.length +
-                   ' args; skipping');
-              args = [];
-              continue;
-            } else if (args.length > opSpec.numArgs) {
-              info('Command ' + fn + ': expected ' + opSpec.numArgs +
-                  ' args, but received ' + args.length + ' args');
-            }
-          }
-
-          // TODO figure out how to type-check vararg functions
+      var operation;
+      while ((operation = preprocessor.read())) {
+          var args = operation.args;
+          var fn = operation.fn;
 
           switch (fn) {
             case OPS.setStrokeColorN:
@@ -643,7 +515,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 );
 
                 if ('Form' == type.name) {
-                  self.buildFormXObject(resources, xobj, null, operatorList);
+                  self.buildFormXObject(resources, xobj, null, operatorList,
+                                        preprocessor.getState());
                   args = [];
                   continue;
                 } else if ('Image' == type.name) {
@@ -728,42 +601,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
 
               var gState = extGState.get(dictName.name);
-              self.setGState(resources, gState, operatorList);
+              self.setGState(resources, gState, operatorList, xref);
               args = [];
               continue;
           } // switch
 
           operatorList.addOp(fn, args);
-          args = [];
-          parser.saveState();
-        } else if (obj !== null && obj !== undefined) {
-          args.push(obj instanceof Dict ? obj.getAll() : obj);
-          assertWellFormed(args.length <= 33, 'Too many arguments');
-        }
+      }
+
+      // some pdf don't close all restores inside object/form
+      // closing those for them
+      for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
+        operatorList.addOp(OPS.restore, []);
       }
 
       return operatorList;
     },
 
     getTextContent: function PartialEvaluator_getTextContent(
-                                                    stream, resources, state) {
+                                                 stream, resources, textState) {
 
-      var bidiTexts;
+      textState = textState || new TextState();
+
+      var bidiTexts = [];
       var SPACE_FACTOR = 0.35;
       var MULTI_SPACE_FACTOR = 1.5;
-      var textState;
-
-      if (!state) {
-        textState = new TextState();
-        bidiTexts = [];
-        state = {
-          textState: textState,
-          bidiTexts: bidiTexts
-        };
-      } else {
-        bidiTexts = state.bidiTexts;
-        textState = state.textState;
-      }
 
       var self = this;
       var xref = this.xref;
@@ -776,65 +638,55 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
 
-      var parser = new Parser(new Lexer(stream), false);
+      var preprocessor = new EvaluatorPreprocessor(stream, xref);
       var res = resources;
-      var args = [], obj;
 
       var chunk = '';
       var font = null;
       var charSpace = 0, wordSpace = 0;
-      while (!isEOF(obj = parser.getObj())) {
-        if (isCmd(obj)) {
-          var cmd = obj.cmd;
-          switch (cmd) {
+      var operation;
+      while ((operation = preprocessor.read())) {
+          var fn = operation.fn;
+          var args = operation.args;
+          switch (fn) {
             // TODO: Add support for SAVE/RESTORE and XFORM here.
-            case 'Tf':
+            case OPS.setFont:
               font = handleSetFont(args[0].name).translated;
               textState.fontSize = args[1];
               break;
-            case 'Ts':
+            case OPS.setTextRise:
               textState.textRise = args[0];
               break;
-            case 'Tz':
+            case OPS.setHScale:
               textState.textHScale = args[0] / 100;
               break;
-            case 'TL':
+            case OPS.setLeading:
               textState.leading = args[0];
               break;
-            case 'Td':
+            case OPS.moveText:
               textState.translateTextMatrix(args[0], args[1]);
               break;
-            case 'TD':
+            case OPS.setLeadingMoveText:
               textState.leading = -args[1];
               textState.translateTextMatrix(args[0], args[1]);
               break;
-            case 'T*':
+            case OPS.nextLine:
               textState.translateTextMatrix(0, -textState.leading);
               break;
-            case 'Tm':
+            case OPS.setTextMatrix:
               textState.setTextMatrix(args[0], args[1],
                                        args[2], args[3], args[4], args[5]);
               break;
-            case 'Tc':
+            case OPS.setCharSpacing:
               charSpace = args[0];
               break;
-            case 'Tw':
+            case OPS.setWordSpacing:
               wordSpace = args[0];
               break;
-            case 'q':
-              textState.push();
-              break;
-            case 'Q':
-              textState.pop();
-              break;
-            case 'BT':
+            case OPS.beginText:
               textState.initialiseTextObj();
               break;
-            case 'cm':
-              textState.transformCTM(args[0], args[1], args[2],
-                                args[3], args[4], args[5]);
-              break;
-            case 'TJ':
+            case OPS.showSpacedText:
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
@@ -852,20 +704,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 }
               }
               break;
-            case 'Tj':
+            case OPS.showText:
               chunk += fontCharsToUnicode(args[0], font);
               break;
-            case '\'':
+            case OPS.nextLineShowText:
               // For search, adding a extra white space for line breaks would be
               // better here, but that causes too much spaces in the
               // text-selection divs.
               chunk += fontCharsToUnicode(args[0], font);
               break;
-            case '"':
+            case OPS.nextLineSetSpacingShowText:
               // Note comment in "'"
               chunk += fontCharsToUnicode(args[2], font);
               break;
-            case 'Do':
+            case OPS.paintXObject:
               // Set the chunk such that the following if won't add something
               // to the state.
               chunk = '';
@@ -893,13 +745,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               if ('Form' !== type.name)
                 break;
 
-              state = this.getTextContent(
+              var formTexts = this.getTextContent(
                 xobj,
                 xobj.dict.get('Resources') || resources,
-                state
+                textState
               );
+              Util.concatenateToArray(bidiTexts, formTexts);
               break;
-            case 'gs':
+            case OPS.setGState:
               var dictName = args[0];
               var extGState = resources.get('ExtGState');
 
@@ -917,29 +770,36 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           } // switch
 
           if (chunk !== '') {
-            var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
-            var renderParams = textState.calcRenderParams();
+            var bidiResult = PDFJS.bidi(chunk, -1, font.vertical);
+            var bidiText = {
+              str: bidiResult.str,
+              dir: bidiResult.dir
+            };
+            var renderParams = textState.calcRenderParams(preprocessor.ctm);
             bidiText.x = renderParams.renderMatrix[4] - (textState.fontSize *
                            renderParams.vScale * Math.sin(renderParams.angle));
             bidiText.y = renderParams.renderMatrix[5] + (textState.fontSize *
                            renderParams.vScale * Math.cos(renderParams.angle));
+            var fontHeight = textState.fontSize * renderParams.vScale;
+            var fontAscent = font.ascent ? font.ascent * fontHeight :
+              font.descent ? (1 + font.descent) * fontHeight : fontHeight;
+            bidiText.x = renderParams.renderMatrix[4] - (fontAscent *
+                           Math.sin(renderParams.angle));
+            bidiText.y = renderParams.renderMatrix[5] + (fontAscent *
+                           Math.cos(renderParams.angle));
             if (bidiText.dir == 'ttb') {
               bidiText.x += renderParams.vScale / 2;
               bidiText.y -= renderParams.vScale;
             }
+            bidiText.angle = renderParams.angle;
+            bidiText.size = fontHeight;
             bidiTexts.push(bidiText);
 
             chunk = '';
           }
-
-          args = [];
-        } else if (obj !== null && obj !== undefined) {
-          assertWellFormed(args.length <= 33, 'Too many arguments');
-          args.push(obj);
-        }
       } // while
 
-      return state;
+      return bidiTexts;
     },
 
     extractDataStructures: function
@@ -984,10 +844,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                           Encodings.WinAnsiEncoding :
                           Encodings.StandardEncoding;
       // The Symbolic attribute can be misused for regular fonts
-      // Heuristic: we have to check if the font is a standard one or
-      // toUnicode is provided
+      // Heuristic: we have to check if the font is a standard one and has
+      // Symbolic font name
       if (!!(flags & FontFlags.Symbolic)) {
-        baseEncoding = !properties.file && !properties.toUnicode ?
+        baseEncoding = !properties.file && /Symbol/i.test(properties.name) ?
           Encodings.SymbolSetEncoding : Encodings.MacRomanEncoding;
       }
       if (dict.has('Encoding')) {
@@ -1016,7 +876,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         } else if (isName(encoding)) {
           overridableEncoding = false;
           hasEncoding = true;
-          baseEncoding = Encodings[encoding.name];
+          var currentEncoding = Encodings[encoding.name];
+
+          // Some bad PDF files contain fonts whose encoding name is not among
+          // the predefined encodings, causing baseEncoding to be undefined.
+          // In this case, fallback to using the baseEncoding as defined above
+          // and let the font override the encoding if one is available.
+          if (currentEncoding) {
+            baseEncoding = currentEncoding;
+          } else {
+            overridableEncoding = true;
+          }
         } else {
           error('Encoding is not a Name nor a Dict');
         }
@@ -1256,6 +1126,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           var properties = {
             type: type.name,
+            name: baseFontName,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
             flags: flags,
@@ -1314,6 +1185,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var properties = {
         type: type.name,
+        name: fontName.name,
         subtype: subtype,
         file: fontFile,
         length1: length1,
@@ -1593,7 +1465,6 @@ var OperatorList = (function OperatorListClosure() {
 var TextState = (function TextStateClosure() {
   function TextState() {
     this.fontSize = 0;
-    this.ctm = [1, 0, 0, 1, 0, 0];
     this.textMatrix = [1, 0, 0, 1, 0, 0];
     this.stateStack = [];
     //textState variables
@@ -1602,15 +1473,6 @@ var TextState = (function TextStateClosure() {
     this.textRise = 0;
   }
   TextState.prototype = {
-    push: function TextState_push() {
-      this.stateStack.push(this.ctm.slice());
-    },
-    pop: function TextState_pop() {
-      var prev = this.stateStack.pop();
-      if (prev) {
-        this.ctm = prev;
-      }
-    },
     initialiseTextObj: function TextState_initialiseTextObj() {
       var m = this.textMatrix;
       m[0] = 1, m[1] = 0, m[2] = 0, m[3] = 1, m[4] = 0, m[5] = 0;
@@ -1619,24 +1481,13 @@ var TextState = (function TextStateClosure() {
       var m = this.textMatrix;
       m[0] = a, m[1] = b, m[2] = c, m[3] = d, m[4] = e, m[5] = f;
     },
-    transformCTM: function TextState_transformCTM(a, b, c, d, e, f) {
-      var m = this.ctm;
-      var m0 = m[0], m1 = m[1], m2 = m[2], m3 = m[3], m4 = m[4], m5 = m[5];
-      m[0] = m0 * a + m2 * b;
-      m[1] = m1 * a + m3 * b;
-      m[2] = m0 * c + m2 * d;
-      m[3] = m1 * c + m3 * d;
-      m[4] = m0 * e + m2 * f + m4;
-      m[5] = m1 * e + m3 * f + m5;
-    },
     translateTextMatrix: function TextState_translateTextMatrix(x, y) {
       var m = this.textMatrix;
       m[4] = m[0] * x + m[2] * y + m[4];
       m[5] = m[1] * x + m[3] * y + m[5];
     },
-    calcRenderParams: function TextState_calcRenderingParams() {
+    calcRenderParams: function TextState_calcRenderingParams(cm) {
       var tm = this.textMatrix;
-      var cm = this.ctm;
       var a = this.fontSize;
       var b = a * this.textHScale;
       var c = this.textRise;
@@ -1679,3 +1530,218 @@ var EvalState = (function EvalStateClosure() {
   return EvalState;
 })();
 
+var EvaluatorPreprocessor = (function EvaluatorPreprocessor() {
+  // Specifies properties for each command
+  //
+  // If variableArgs === true: [0, `numArgs`] expected
+  // If variableArgs === false: exactly `numArgs` expected
+  var OP_MAP = {
+    // Graphic state
+    w: { id: OPS.setLineWidth, numArgs: 1, variableArgs: false },
+    J: { id: OPS.setLineCap, numArgs: 1, variableArgs: false },
+    j: { id: OPS.setLineJoin, numArgs: 1, variableArgs: false },
+    M: { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false },
+    d: { id: OPS.setDash, numArgs: 2, variableArgs: false },
+    ri: { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false },
+    i: { id: OPS.setFlatness, numArgs: 1, variableArgs: false },
+    gs: { id: OPS.setGState, numArgs: 1, variableArgs: false },
+    q: { id: OPS.save, numArgs: 0, variableArgs: false },
+    Q: { id: OPS.restore, numArgs: 0, variableArgs: false },
+    cm: { id: OPS.transform, numArgs: 6, variableArgs: false },
+
+    // Path
+    m: { id: OPS.moveTo, numArgs: 2, variableArgs: false },
+    l: { id: OPS.lineTo, numArgs: 2, variableArgs: false },
+    c: { id: OPS.curveTo, numArgs: 6, variableArgs: false },
+    v: { id: OPS.curveTo2, numArgs: 4, variableArgs: false },
+    y: { id: OPS.curveTo3, numArgs: 4, variableArgs: false },
+    h: { id: OPS.closePath, numArgs: 0, variableArgs: false },
+    re: { id: OPS.rectangle, numArgs: 4, variableArgs: false },
+    S: { id: OPS.stroke, numArgs: 0, variableArgs: false },
+    s: { id: OPS.closeStroke, numArgs: 0, variableArgs: false },
+    f: { id: OPS.fill, numArgs: 0, variableArgs: false },
+    F: { id: OPS.fill, numArgs: 0, variableArgs: false },
+    'f*': { id: OPS.eoFill, numArgs: 0, variableArgs: false },
+    B: { id: OPS.fillStroke, numArgs: 0, variableArgs: false },
+    'B*': { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false },
+    b: { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false },
+    'b*': { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false },
+    n: { id: OPS.endPath, numArgs: 0, variableArgs: false },
+
+    // Clipping
+    W: { id: OPS.clip, numArgs: 0, variableArgs: false },
+    'W*': { id: OPS.eoClip, numArgs: 0, variableArgs: false },
+
+    // Text
+    BT: { id: OPS.beginText, numArgs: 0, variableArgs: false },
+    ET: { id: OPS.endText, numArgs: 0, variableArgs: false },
+    Tc: { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false },
+    Tw: { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false },
+    Tz: { id: OPS.setHScale, numArgs: 1, variableArgs: false },
+    TL: { id: OPS.setLeading, numArgs: 1, variableArgs: false },
+    Tf: { id: OPS.setFont, numArgs: 2, variableArgs: false },
+    Tr: { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false },
+    Ts: { id: OPS.setTextRise, numArgs: 1, variableArgs: false },
+    Td: { id: OPS.moveText, numArgs: 2, variableArgs: false },
+    TD: { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false },
+    Tm: { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false },
+    'T*': { id: OPS.nextLine, numArgs: 0, variableArgs: false },
+    Tj: { id: OPS.showText, numArgs: 1, variableArgs: false },
+    TJ: { id: OPS.showSpacedText, numArgs: 1, variableArgs: false },
+    '\'': { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false },
+    '"': { id: OPS.nextLineSetSpacingShowText, numArgs: 3,
+      variableArgs: false },
+
+    // Type3 fonts
+    d0: { id: OPS.setCharWidth, numArgs: 2, variableArgs: false },
+    d1: { id: OPS.setCharWidthAndBounds, numArgs: 6, variableArgs: false },
+
+    // Color
+    CS: { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false },
+    cs: { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false },
+    SC: { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true },
+    SCN: { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true },
+    sc: { id: OPS.setFillColor, numArgs: 4, variableArgs: true },
+    scn: { id: OPS.setFillColorN, numArgs: 33, variableArgs: true },
+    G: { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false },
+    g: { id: OPS.setFillGray, numArgs: 1, variableArgs: false },
+    RG: { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false },
+    rg: { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false },
+    K: { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false },
+    k: { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false },
+
+    // Shading
+    sh: { id: OPS.shadingFill, numArgs: 1, variableArgs: false },
+
+    // Images
+    BI: { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false },
+    ID: { id: OPS.beginImageData, numArgs: 0, variableArgs: false },
+    EI: { id: OPS.endInlineImage, numArgs: 1, variableArgs: false },
+
+    // XObjects
+    Do: { id: OPS.paintXObject, numArgs: 1, variableArgs: false },
+    MP: { id: OPS.markPoint, numArgs: 1, variableArgs: false },
+    DP: { id: OPS.markPointProps, numArgs: 2, variableArgs: false },
+    BMC: { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false },
+    BDC: { id: OPS.beginMarkedContentProps, numArgs: 2,
+      variableArgs: false },
+    EMC: { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false },
+
+    // Compatibility
+    BX: { id: OPS.beginCompat, numArgs: 0, variableArgs: false },
+    EX: { id: OPS.endCompat, numArgs: 0, variableArgs: false },
+
+    // (reserved partial commands for the lexer)
+    BM: null,
+    BD: null,
+    'true': null,
+    fa: null,
+    fal: null,
+    fals: null,
+    'false': null,
+    nu: null,
+    nul: null,
+    'null': null
+  };
+
+  function EvaluatorPreprocessor(stream, xref) {
+    // TODO(mduan): pass array of knownCommands rather than OP_MAP
+    // dictionary
+    this.parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
+    this.ctm = new Float32Array([1, 0, 0, 1, 0, 0]);
+    this.savedStates = [];
+  }
+  EvaluatorPreprocessor.prototype = {
+    get savedStatesDepth() {
+      return this.savedStates.length;
+    },
+    read: function EvaluatorPreprocessor_read() {
+      var args = [];
+      while (true) {
+        var obj = this.parser.getObj();
+        if (isEOF(obj)) {
+          return null; // no more commands
+        }
+        if (!isCmd(obj)) {
+          // argument
+          if (obj !== null && obj !== undefined) {
+            args.push(obj instanceof Dict ? obj.getAll() : obj);
+            assertWellFormed(args.length <= 33, 'Too many arguments');
+          }
+          continue;
+        }
+
+        var cmd = obj.cmd;
+        // Check that the command is valid
+        var opSpec = OP_MAP[cmd];
+        if (!opSpec) {
+          warn('Unknown command "' + cmd + '"');
+          continue;
+        }
+
+        var fn = opSpec.id;
+
+        // Validate the number of arguments for the command
+        if (opSpec.variableArgs) {
+          if (args.length > opSpec.numArgs) {
+            info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
+              '] args, but received ' + args.length + ' args');
+          }
+        } else {
+          if (args.length < opSpec.numArgs) {
+            // If we receive too few args, it's not possible to possible
+            // to execute the command, so skip the command
+            info('Command ' + fn + ': because expected ' +
+              opSpec.numArgs + ' args, but received ' + args.length +
+              ' args; skipping');
+            args = [];
+            continue;
+          } else if (args.length > opSpec.numArgs) {
+            info('Command ' + fn + ': expected ' + opSpec.numArgs +
+              ' args, but received ' + args.length + ' args');
+          }
+        }
+
+        // TODO figure out how to type-check vararg functions
+
+        this.preprocessCommand(fn, args);
+
+        return {fn: fn, args: args};
+      }
+    },
+    getState: function EvaluatorPreprocessor_getState() {
+      return {
+        ctm: this.ctm
+      };
+    },
+    setState: function EvaluatorPreprocessor_setState(state) {
+      this.ctm = state.ctm;
+    },
+    preprocessCommand: function EvaluatorPreprocessor_preprocessCommand(fn,
+                                                                        args) {
+      switch (fn | 0) {
+        case OPS.save:
+          this.savedStates.push(this.getState());
+          break;
+        case OPS.restore:
+          var previousState = this.savedStates.pop();
+          if (previousState) {
+            this.setState(previousState);
+          }
+          break;
+        case OPS.transform:
+          var ctm = this.ctm;
+          var m = new Float32Array(6);
+          m[0] = ctm[0] * args[0] + ctm[2] * args[1];
+          m[1] = ctm[1] * args[0] + ctm[3] * args[1];
+          m[2] = ctm[0] * args[2] + ctm[2] * args[3];
+          m[3] = ctm[1] * args[2] + ctm[3] * args[3];
+          m[4] = ctm[0] * args[4] + ctm[2] * args[5] + ctm[4];
+          m[5] = ctm[1] * args[4] + ctm[3] * args[5] + ctm[5];
+          this.ctm = m;
+          break;
+      }
+    }
+  };
+  return EvaluatorPreprocessor;
+})();

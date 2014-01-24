@@ -573,11 +573,9 @@ target.mozcentral = function() {
       DEFAULT_LOCALE_FILES =
         [LOCALE_SRC_DIR + 'en-US/viewer.properties',
          LOCALE_SRC_DIR + 'en-US/chrome.properties'],
-      FIREFOX_MC_EXTENSION_FILES =
-        ['chrome.manifest',
-         'components',
-         'content',
-         'LICENSE'];
+      FIREFOX_MC_EXCLUDED_FILES =
+        ['icon.png',
+         'icon64.png'];
 
   target.bundle({ excludes: ['core/network.js'], defines: defines });
   cd(ROOT_DIR);
@@ -626,6 +624,15 @@ target.mozcentral = function() {
       rm('-f', file);
   });
 
+  // Remove excluded files
+  cd(MOZCENTRAL_EXTENSION_DIR);
+  FIREFOX_MC_EXCLUDED_FILES.forEach(function(file) {
+    if (test('-f', file)) {
+      rm('-r', file);
+    }
+  });
+  cd(ROOT_DIR);
+
   // Copy default localization files
   cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
 
@@ -639,16 +646,6 @@ target.mozcentral = function() {
       MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
   sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'true',
       MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
-
-  // List all files for mozilla-central
-  cd(MOZCENTRAL_EXTENSION_DIR);
-  var extensionFiles = '';
-  find(FIREFOX_MC_EXTENSION_FILES).forEach(function(file) {
-    if (test('-f', file))
-      extensionFiles += file + '\n';
-  });
-  extensionFiles.to('extension-files');
-  cd(ROOT_DIR);
 
   // Copy test files
   mkdir('-p', MOZCENTRAL_TEST_DIR);
@@ -1137,7 +1134,7 @@ target.lint = function() {
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
   if (!test('-f', jshintPath)) {
     echo('jshint is not installed -- installing...');
-    exec('npm install jshint');
+    exec('npm install jshint@1.1'); // TODO read version from package.json
   }
 
   exit(exec('"' + jshintPath + '" --reporter test/reporter.js ' +

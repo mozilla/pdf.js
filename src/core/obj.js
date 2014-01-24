@@ -16,7 +16,7 @@
  */
 /* globals assertWellFormed, bytesToString, CipherTransformFactory, error, info,
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
-           isStream, Lexer, log, Page, Parser, Promise, shadow,
+           isStream, Lexer, Page, Parser, Promise, shadow,
            stringToPDFString, stringToUTF8String, warn, isString, assert,
            Promise, MissingDataException, XRefParseException, Stream,
            ChunkedStream, LegacyPromise */
@@ -999,7 +999,7 @@ var XRef = (function XRefClosure() {
         if (e instanceof MissingDataException) {
           throw e;
         }
-        log('(while reading XRef): ' + e);
+        info('(while reading XRef): ' + e);
       }
 
       if (recoveryMode)

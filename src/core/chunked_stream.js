@@ -242,7 +242,8 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       };
       this.networkManager = new NetworkManager(this.url, {
         getXhr: getXhr,
-        httpHeaders: args.httpHeaders
+        httpHeaders: args.httpHeaders,
+        withCredentials: args.withCredentials
       });
       this.sendRequest = function ChunkedStreamManager_sendRequest(begin, end) {
         this.networkManager.requestRange(begin, end, {

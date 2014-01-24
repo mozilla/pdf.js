@@ -442,6 +442,14 @@ if (typeof PDFJS === 'undefined') {
   }
 })();
 
+// Checks if possible to use URL.createObjectURL()
+(function checkOnBlobSupport() {
+  // sometimes IE loosing the data created with createObjectURL(), see #3977
+  if (navigator.userAgent.indexOf('Trident') >= 0) {
+    PDFJS.disableCreateObjectURL = true;
+  }
+})();
+
 // Checks if navigator.language is supported
 (function checkNavigatorLanguage() {
   if ('language' in navigator)

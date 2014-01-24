@@ -62,7 +62,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var self = this;
     var textDivs = this.textDivs;
-    var bidiTexts = this.textContent.bidiTexts;
+    var bidiTexts = this.textContent;
     var textLayerDiv = this.textLayerDiv;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
@@ -130,8 +130,10 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = geom.fontFamily;
-    textDiv.style.left = (geom.x + (fontHeight * Math.sin(geom.angle))) + 'px';
-    textDiv.style.top = (geom.y - (fontHeight * Math.cos(geom.angle))) + 'px';
+    var fontAscent = geom.ascent ? geom.ascent * fontHeight :
+      geom.descent ? (1 + geom.descent) * fontHeight : fontHeight;
+    textDiv.style.left = (geom.x + (fontAscent * Math.sin(geom.angle))) + 'px';
+    textDiv.style.top = (geom.y - (fontAscent * Math.cos(geom.angle))) + 'px';
 
     // The content of the div is set in the `setTextContent` function.
 
@@ -147,7 +149,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     this.divContentDone = true;
 
     var textDivs = this.textDivs;
-    var bidiTexts = this.textContent.bidiTexts;
+    var bidiTexts = this.textContent;
 
     for (var i = 0; i < bidiTexts.length; i++) {
       var bidiText = bidiTexts[i];
@@ -179,7 +181,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.convertMatches = function textLayerBuilderConvertMatches(matches) {
     var i = 0;
     var iIndex = 0;
-    var bidiTexts = this.textContent.bidiTexts;
+    var bidiTexts = this.textContent;
     var end = bidiTexts.length - 1;
     var queryLen = PDFFindController === null ?
         0 : PDFFindController.state.query.length;
@@ -238,7 +240,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       return;
     }
 
-    var bidiTexts = this.textContent.bidiTexts;
+    var bidiTexts = this.textContent;
     var textDivs = this.textDivs;
     var prevEnd = null;
     var isSelectedPage = PDFFindController === null ?
@@ -353,7 +355,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     // Clear out all matches.
     var matches = this.matches;
     var textDivs = this.textDivs;
-    var bidiTexts = this.textContent.bidiTexts;
+    var bidiTexts = this.textContent;
     var clearedUntilDivIdx = -1;
 
     // Clear out all current matches.
