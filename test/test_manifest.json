@@ -399,6 +399,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug866395",
+       "file": "pdfs/bug866395.pdf",
+       "md5": "f03bc77e84637241980b09a0a220f575",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "fips197",
        "file": "pdfs/fips197.pdf",
        "md5": "4742c3f470cd8c4686a0dbb3da808b71",

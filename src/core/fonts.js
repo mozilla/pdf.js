@@ -2278,7 +2278,13 @@ var Font = (function FontClosure() {
 
     this.toFontChar = this.buildToFontChar(this.toUnicode);
 
-    if (!file) {
+    if (!file || +file.length === 0) {
+      // Some bad PDF generators include empty font files,
+      // try to recover by assuming that no file exists.
+      if (!!file) {
+        warn('Font file is empty in "' + name + '"');
+      }
+
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
       var fontName = name.replace(/[,_]/g, '-');
@@ -5959,9 +5965,13 @@ var CFFParser = (function CFFParserClosure() {
     parseHeader: function CFFParser_parseHeader() {
       var bytes = this.bytes;
       var offset = 0;
+      var bytesLength = bytes.length;
 
-      while (bytes[offset] != 1)
+      // Prevent an infinite loop, by checking that the offset is within the
+      // bounds of the bytes array. Necessary in empty, or invalid, font files.
+      while (offset < bytesLength && bytes[offset] !== 1) {
         ++offset;
+      }
 
       if (offset !== 0) {
         info('cff data is shifted');
