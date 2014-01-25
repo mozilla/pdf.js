@@ -277,7 +277,6 @@ target.bundle = function(args) {
   var SHARED_SRC_FILES = [
     'shared/util.js',
     'shared/colorspace.js',
-    'shared/pattern.js',
     'shared/function.js',
     'shared/annotation.js',
   ];
@@ -286,6 +285,7 @@ target.bundle = function(args) {
     'display/api.js',
     'display/metadata.js',
     'display/canvas.js',
+    'display/pattern_helper.js',
     'display/font_loader.js'
   ]);
 
@@ -298,6 +298,7 @@ target.bundle = function(args) {
     'core/charsets.js',
     'core/cidmaps.js',
     'core/crypto.js',
+    'core/pattern.js',
     'core/evaluator.js',
     'core/fonts.js',
     'core/font_renderer.js',

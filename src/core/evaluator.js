@@ -19,7 +19,7 @@
            info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           TilingPattern, warn, Util, Promise, LegacyPromise,
+           getTilingPatternIR, warn, Util, Promise, LegacyPromise,
            RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
            UNSUPPORTED_FEATURES, UnsupportedManager */
 
@@ -218,7 +218,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Add the dependencies to the parent operator list so they are resolved
       // before sub operator list is executed synchronously.
       operatorList.addDependencies(tilingOpList.dependencies);
-      operatorList.addOp(fn, TilingPattern.getIR({
+      operatorList.addOp(fn, getTilingPatternIR({
                                fnArray: tilingOpList.fnArray,
                                argsArray: tilingOpList.argsArray
                               }, patternDict, args));
