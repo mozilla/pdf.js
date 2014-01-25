@@ -1588,6 +1588,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#endif
 //#if CHROME
 //var file = DEFAULT_URL;
+//// XHR cannot get data from drive:-URLs, so expand to filesystem: (Chrome OS)
+//file = file.replace(/^drive:/i,
+//  'filesystem:' + location.origin + '/external/');
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || CHROME || B2G)
