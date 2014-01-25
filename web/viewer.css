@@ -178,7 +178,6 @@ html[dir='rtl'] .innerCenter {
   -webkit-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
-
 }
 html[dir='ltr'] #sidebarContainer {
   -webkit-transition-property: left;
@@ -196,10 +195,20 @@ html[dir='rtl'] #sidebarContainer {
   visibility: visible;
 }
 html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
-  left: 0px;
+  left: 0px !important;
 }
 html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
-  right: 0px;
+  right: 0px !important;
+}
+
+#outerContainer.sidebarExpanded #sidebarContainer {
+  width: 433px;
+}
+html[dir='ltr'] #outerContainer.sidebarExpanded #sidebarContainer {
+  left: -433px;
+}
+html[dir='rtl'] #outerContainer.sidebarExpanded #sidebarContainer {
+  right: -433px;
 }
 
 #mainContainer {
@@ -225,12 +234,19 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
   right: 200px;
 }
 
+html[dir='ltr'] #outerContainer.sidebarOpen.sidebarExpanded > #mainContainer {
+  left: 433px;
+}
+html[dir='rtl'] #outerContainer.sidebarOpen.sidebarExpanded > #mainContainer {
+  right: 433px;
+}
+
 #sidebarContent {
   top: 32px;
   bottom: 0;
   overflow: auto;
   position: absolute;
-  width: 200px;
+  width: inherit;
   background-color: hsla(0,0%,0%,.1);
 }
 html[dir='ltr'] #sidebarContent {
@@ -271,7 +287,6 @@ html[dir='rtl'] #viewerContainer {
 }
 
 #toolbarSidebar {
-  width: 200px;
   height: 32px;
   background-color: #424242; /* fallback */
   background-image: url(images/texture.png),
@@ -1008,6 +1023,30 @@ html[dir="rtl"] .secondaryToolbarButton > span {
   content: url(images/secondaryToolbarButton-documentProperties.png);
 }
 
+#resizeSidebar {
+  position: relative;
+}
+html[dir='ltr'] #resizeSidebar {
+  float: right;
+}
+html[dir='rtl'] #resizeSidebar {
+  float: left;
+}
+
+html[dir='ltr'] #resizeSidebar::before {
+  content: url(images/toolbarButton-expandSidebar.png);
+}
+html[dir='ltr'] #resizeSidebar.sidebarExpanded::before {
+  content: url(images/toolbarButton-shrinkSidebar.png);
+}
+
+html[dir='rtl'] #resizeSidebar::before {
+  content: url(images/toolbarButton-expandSidebar-rtl.png);
+}
+html[dir='rtl'] #resizeSidebar.sidebarExpanded::before {
+  content: url(images/toolbarButton-shrinkSidebar-rtl.png);
+}
+
 .verticalToolbarSeparator {
   display: block;
   padding: 8px 0;
@@ -1098,7 +1137,6 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 #thumbnailView {
   position: absolute;
-  width: 120px;
   top: 0;
   bottom: 0;
   padding: 10px 40px 0;
@@ -1166,13 +1204,16 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 
 #outlineView {
   position: absolute;
-  width: 192px;
   top: 0;
   bottom: 0;
   padding: 4px 4px 0;
   overflow: auto;
   -webkit-user-select: none;
   -moz-user-select: none;
+}
+
+#outerContainer.sidebarExpanded #outlineView {
+  width: 425px;
 }
 
 html[dir='ltr'] .outlineItem > .outlineItems {
@@ -1678,7 +1719,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 }
 
 @media all and (max-width: 900px) {
-  .sidebarOpen .hiddenLargeView {
+  .sidebarOpen .hiddenLargeView, #resizeSidebar {
     display: none;
   }
   .sidebarOpen .visibleLargeView {
@@ -1687,7 +1728,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 }
 
 @media all and (max-width: 860px) {
-  .sidebarOpen .hiddenMediumView {
+  .sidebarOpen .hiddenMediumView, #resizeSidebar {
     display: none;
   }
   .sidebarOpen .visibleMediumView {
@@ -1729,13 +1770,13 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
     display: inherit;
   }
   #outerContainer .visibleLargeView,
-  #outerContainer .visibleMediumView {
+  #outerContainer .visibleMediumView, #resizeSidebar {
     display: none;
   }
 }
 
 @media all and (max-width: 700px) {
-  #outerContainer .hiddenLargeView {
+  #outerContainer .hiddenLargeView, #resizeSidebar {
     display: none;
   }
   #outerContainer .visibleLargeView {
@@ -1744,7 +1785,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 }
 
 @media all and (max-width: 660px) {
-  #outerContainer .hiddenMediumView {
+  #outerContainer .hiddenMediumView, #resizeSidebar {
     display: none;
   }
   #outerContainer .visibleMediumView {
@@ -1753,7 +1794,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 }
 
 @media all and (max-width: 600px) {
-  .hiddenSmallView {
+  .hiddenSmallView, #resizeSidebar {
     display: none;
   }
   .visibleSmallView {
@@ -1775,7 +1816,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 }
 
 @media all and (max-width: 510px) {
-  #scaleSelectContainer, #pageNumberLabel {
+  #scaleSelectContainer, #pageNumberLabel, #resizeSidebar {
     display: none;
   }
 }
