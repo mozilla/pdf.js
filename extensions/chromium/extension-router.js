@@ -96,10 +96,7 @@ limitations under the License.
 
   chrome.runtime.onMessage.addListener(function(message, sender) {
     if (message === 'showPageAction' && sender.tab) {
-      if (sender.tab.url === sender.url) {
-        // Only respond to messages from the top-level frame
-        showPageAction(sender.tab.id, sender.url);
-      }
+      showPageAction(sender.tab.id, sender.tab.url);
     }
   });
 

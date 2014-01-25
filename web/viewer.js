@@ -1573,7 +1573,9 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //    // Example: chrome-extension://.../http://example.com/file.pdf
 //    var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
 //    history.replaceState(history.state, '', humanReadableUrl);
-//    chrome.runtime.sendMessage('showPageAction');
+//    if (top === window) {
+//      chrome.runtime.sendMessage('showPageAction');
+//    }
 //  }
 //})();
 //#endif
