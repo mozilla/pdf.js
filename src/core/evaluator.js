@@ -909,8 +909,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       } else if (isStream(cmapObj)) {
         var cmap = CMapFactory.create(cmapObj).map;
         // Convert UTF-16BE
-        for (var i in cmap) {
-          var token = cmap[i];
+        // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
+        //  to iterate over all keys.
+        cmap.forEach(function(token, i) {
           var str = [];
           for (var k = 0; k < token.length; k += 2) {
             var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
@@ -923,7 +924,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
           }
           cmap[i] = String.fromCharCode.apply(String, str);
-        }
+        });
         return cmap;
       }
       return charToUnicode;
