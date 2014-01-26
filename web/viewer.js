@@ -446,6 +446,7 @@ var PDFView = {
             (this.container.scrollWidth > this.container.clientWidth));
   },
 
+//#if (FIREFOX || MOZCENTRAL)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     var pdfDataRangeTransport = {
       rangeListeners: [],
@@ -482,6 +483,11 @@ var PDFView = {
     };
 
     window.addEventListener('message', function windowMessage(e) {
+      if (e.source !== null) {
+        // The message MUST originate from Chrome code.
+        console.warn('Rejected untrusted message from ' + e.origin);
+        return;
+      }
       var args = e.data;
 
       if (typeof args !== 'object' || !('pdfjsLoadAction' in args))
@@ -514,6 +520,7 @@ var PDFView = {
     });
     FirefoxCom.requestSync('initPassiveLoading', null);
   },
+//#endif
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
