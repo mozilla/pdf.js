@@ -540,15 +540,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (var i = 3; i < length; i += 4) {
           var alpha = layerDataBytes[i];
           if (alpha !== 0 && alpha !== 255) {
-            var r = ((layerDataBytes[i - 3] * 255 -
-              r0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 3] = r < 0 ? 0 : r > 255 ? 255 : r;
-            var g = ((layerDataBytes[i - 2] * 255 -
-              g0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 2] = g < 0 ? 0 : g > 255 ? 255 : g;
-            var b = ((layerDataBytes[i - 1] * 255 -
-              b0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 1] = b < 0 ? 0 : b > 255 ? 255 : b;
+            var a0 = alpha / 255;
+            var a1 = 1 - a0;
+            layerDataBytes[i - 3] = (a0 * layerDataBytes[i - 3] - a1 * r0) | 0;
+            layerDataBytes[i - 2] = (a0 * layerDataBytes[i - 2] - a1 * g0) | 0;
+            layerDataBytes[i - 1] = (a0 * layerDataBytes[i - 1] - a1 * b0) | 0;
           }
         }
       }.bind(null, backdrop[0], backdrop[1], backdrop[2]);
