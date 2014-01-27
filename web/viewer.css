@@ -35,6 +35,7 @@ input,
 button,
 select {
   font: message-box;
+  outline: none;
 }
 
 .hidden {
@@ -920,6 +921,7 @@ html[dir="rtl"] .secondaryToolbarButton.print::before {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+  outline: none;
   padding-top: 4px;
   text-decoration: none;
 }
