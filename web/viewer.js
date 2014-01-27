@@ -17,7 +17,7 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
-           Preferences, ViewHistory, PageView, ThumbnailView,
+           Preferences, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
            PresentationMode, HandTool, Promise, DocumentProperties */
 
@@ -1821,8 +1821,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //    var streamUrl = response.streamUrl;
 //    if (streamUrl) {
 //      console.log('Found data stream for ' + file);
-//      // The blob stream can be used only once, so disable range requests.
-//      PDFJS.disableRange = true;
 //      PDFView.open(streamUrl, 0);
 //      PDFView.setTitleUsingUrl(file);
 //      return;
@@ -1936,21 +1934,28 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
   }
 });
 
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
 window.addEventListener('change', function webViewerChange(evt) {
   var files = evt.target.files;
   if (!files || files.length === 0)
     return;
 
-  // Read the local file into a Uint8Array.
-  var fileReader = new FileReader();
-  fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
-    var buffer = evt.target.result;
-    var uint8Array = new Uint8Array(buffer);
-    PDFView.open(uint8Array, 0);
-  };
-
   var file = files[0];
-  fileReader.readAsArrayBuffer(file);
+
+  if (!PDFJS.disableCreateObjectURL &&
+      typeof URL !== 'undefined' && URL.createObjectURL) {
+    PDFView.open(URL.createObjectURL(file), 0);
+  } else {
+    // Read the local file into a Uint8Array.
+    var fileReader = new FileReader();
+    fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
+      var buffer = evt.target.result;
+      var uint8Array = new Uint8Array(buffer);
+      PDFView.open(uint8Array, 0);
+    };
+    fileReader.readAsArrayBuffer(file);
+  }
+
   PDFView.setTitleUsingUrl(file.name);
 
   // URL does not reflect proper document location - hiding some icons.
@@ -1960,6 +1965,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.getElementById('download').setAttribute('hidden', 'true');
   document.getElementById('secondaryDownload').setAttribute('hidden', 'true');
 }, true);
+//#endif
 
 function selectScaleOption(value) {
   var options = document.getElementById('scaleSelect').options;

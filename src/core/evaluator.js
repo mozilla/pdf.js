@@ -166,7 +166,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
-        var imgData = imageObj.getImageData();
+        var imgData = imageObj.createImageData();
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
@@ -189,7 +189,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 
       PDFImage.buildImage(function(imageObj) {
-          var imgData = imageObj.getImageData();
+          var imgData = imageObj.createImageData();
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
                             null, [imgData.data.buffer]);
         }, self.handler, self.xref, resources, image, inline);
@@ -1318,7 +1318,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // replacing queue items
         squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
         argsArray.splice(j, count * 4,
-          [{width: imgWidth, height: imgHeight, data: imgData}, map]);
+          [{width: imgWidth, height: imgHeight, kind: 'rgba_32bpp',
+            data: imgData}, map]);
         i = j;
         ii = argsArray.length;
       }
