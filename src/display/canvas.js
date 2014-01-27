@@ -531,29 +531,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     var maskCtx = smask.context;
     var width = mask.width, height = mask.height;
 
-    var removeBackdropFn;
+    var addBackdropFn;
     if (smask.backdrop) {
       var cs = smask.colorSpace || ColorSpace.singletons.rgb;
       var backdrop = cs.getRgb(smask.backdrop, 0);
-      removeBackdropFn = function (r0, g0, b0, layerDataBytes) {
-        var length = layerDataBytes.length;
+      addBackdropFn = function (r0, g0, b0, bytes) {
+        var length = bytes.length;
         for (var i = 3; i < length; i += 4) {
-          var alpha = layerDataBytes[i];
-          if (alpha !== 0 && alpha !== 255) {
-            var r = ((layerDataBytes[i - 3] * 255 -
-              r0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 3] = r < 0 ? 0 : r > 255 ? 255 : r;
-            var g = ((layerDataBytes[i - 2] * 255 -
-              g0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 2] = g < 0 ? 0 : g > 255 ? 255 : g;
-            var b = ((layerDataBytes[i - 1] * 255 -
-              b0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 1] = b < 0 ? 0 : b > 255 ? 255 : b;
+          var alpha = bytes[i] / 255;
+          if (alpha === 0) {
+            bytes[i - 3] = r0;
+            bytes[i - 2] = g0;
+            bytes[i - 1] = b0;
+          } else if (alpha < 1) {
+            var alpha_ = 1 - alpha;
+            bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) | 0;
+            bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) | 0;
+            bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) | 0;
           }
         }
       }.bind(null, backdrop[0], backdrop[1], backdrop[2]);
     } else {
-      removeBackdropFn = function () {};
+      addBackdropFn = function () {};
     }
 
     var composeFn;
@@ -584,7 +583,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var maskData = maskCtx.getImageData(0, row, width, chunkHeight);
       var layerData = layerCtx.getImageData(0, row, width, chunkHeight);
 
-      removeBackdropFn(layerData.data);
+      addBackdropFn(maskData.data);
       composeFn(maskData.data, layerData.data);
 
       maskCtx.putImageData(layerData, 0, row);
