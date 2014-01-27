@@ -45,6 +45,7 @@ var otherFiles = [
   'core/image.js',
   'core/metrics.js',
   'core/parser.js',
+  'core/ps_parser.js',
   'core/stream.js',
   'core/worker.js',
   'core/jpx.js',
