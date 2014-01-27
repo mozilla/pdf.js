@@ -15,13 +15,18 @@
  * limitations under the License.
  */
 /* globals ColorSpace, PDFFunction, Util, error, warn, info, isArray, isStream,
-           isPDFFunction, UnsupportedManager, UNSUPPORTED_FEATURES */
+           assert, isPDFFunction, UnsupportedManager, UNSUPPORTED_FEATURES */
 
 'use strict';
 
 var PatternType = {
+  FUNCTION_BASED: 1,
   AXIAL: 2,
-  RADIAL: 3
+  RADIAL: 3,
+  FREE_FORM_MESH: 4,
+  LATTICE_FORM_MESH: 5,
+  COONS_PATCH_MESH: 6,
+  TENSOR_PATCH_MESH: 7
 };
 
 var Pattern = (function PatternClosure() {
@@ -49,6 +54,11 @@ var Pattern = (function PatternClosure() {
       case PatternType.RADIAL:
         // Both radial and axial shadings are handled by RadialAxial shading.
         return new Shadings.RadialAxial(dict, matrix, xref, res);
+      case PatternType.FREE_FORM_MESH:
+      case PatternType.LATTICE_FORM_MESH:
+      case PatternType.COONS_PATCH_MESH:
+      case PatternType.TENSOR_PATCH_MESH:
+        return new Shadings.Mesh(shading, matrix, xref, res);
       default:
         UnsupportedManager.notify(UNSUPPORTED_FEATURES.shadingPattern);
         return new Shadings.Dummy();
@@ -211,6 +221,537 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
   };
 
   return RadialAxial;
+})();
+
+// All mesh shading. For now, they will be presented as set of the triangles
+// to be drawn on the canvas and rgb color for each vertex.
+Shadings.Mesh = (function MeshClosure() {
+  function MeshStreamReader(stream, context) {
+    this.stream = stream;
+    this.context = context;
+    this.buffer = 0;
+    this.bufferLength = 0;
+  }
+  MeshStreamReader.prototype = {
+    get hasData() {
+      if (this.stream.end) {
+        return this.stream.pos < this.stream.end;
+      }
+      if (this.bufferLength > 0) {
+        return true;
+      }
+      var nextByte = this.stream.getByte();
+      if (nextByte < 0) {
+        return false;
+      }
+      this.buffer = nextByte;
+      this.bufferLength = 8;
+      return true;
+    },
+    readBits: function MeshStreamReader_readBits(n) {
+      var buffer = this.buffer;
+      var bufferLength = this.bufferLength;
+      if (n === 32) {
+        if (bufferLength === 0) {
+          return ((this.stream.getByte() << 24) |
+            (this.stream.getByte() << 16) | (this.stream.getByte() << 8) |
+            this.stream.getByte()) >>> 0;
+        }
+        buffer = (buffer << 24) | (this.stream.getByte() << 16) |
+          (this.stream.getByte() << 8) | this.stream.getByte();
+        var nextByte = this.stream.getByte();
+        this.buffer = nextByte & ((1 << bufferLength) - 1);
+        return ((buffer << (8 - bufferLength)) |
+          ((nextByte & 0xFF) >> bufferLength)) >>> 0;
+      }
+      if (n === 8 && bufferLength === 0) {
+        return this.stream.getByte();
+      }
+      while (bufferLength < n) {
+        buffer = (buffer << 8) | this.stream.getByte();
+        bufferLength += 8;
+      }
+      bufferLength -= n;
+      this.bufferLength = bufferLength;
+      this.buffer = buffer & ((1 << bufferLength) - 1);
+      return buffer >> bufferLength;
+    },
+    align: function MeshStreamReader_align() {
+      this.buffer = 0;
+      this.bufferLength = 0;
+    },
+    readFlag: function MeshStreamReader_readFlag() {
+      return this.readBits(this.context.bitsPerFlag);
+    },
+    readCoordinate: function MeshStreamReader_readCoordinate() {
+      var bitsPerCoordinate = this.context.bitsPerCoordinate;
+      var xi = this.readBits(bitsPerCoordinate);
+      var yi = this.readBits(bitsPerCoordinate);
+      var decode = this.context.decode;
+      var scale = bitsPerCoordinate < 32 ? 1 / ((1 << bitsPerCoordinate) - 1) :
+        2.3283064365386963e-10; // 2 ^ -32
+      return [
+        xi * scale * (decode[1] - decode[0]) + decode[0],
+        yi * scale * (decode[3] - decode[2]) + decode[2]
+      ];
+    },
+    readComponents: function MeshStreamReader_readComponents() {
+      var numComps = this.context.numComps;
+      var bitsPerComponent = this.context.bitsPerComponent;
+      var scale = bitsPerComponent < 32 ? 1 / ((1 << bitsPerComponent) - 1) :
+        2.3283064365386963e-10; // 2 ^ -32
+      var decode = this.context.decode;
+      var components = [];
+      for (var i = 0, j = 4; i < numComps; i++, j += 2) {
+        var ci = this.readBits(bitsPerComponent);
+        components.push(ci * scale * (decode[j + 1] - decode[j]) + decode[j]);
+      }
+      if (this.context.colorFn) {
+        components = this.context.colorFn(components);
+      }
+      return this.context.colorSpace.getRgb(components, 0);
+    }
+  };
+
+  function decodeType4Shading(mesh, reader) {
+    var coords = mesh.coords;
+    var colors = mesh.colors;
+    var operators = [];
+    var ps = []; // not maintaining cs since that will match ps
+    var verticesLeft = 0; // assuming we have all data to start a new triangle
+    while (reader.hasData) {
+      var f = reader.readFlag();
+      var coord = reader.readCoordinate();
+      var color = reader.readComponents();
+      if (verticesLeft === 0) { // ignoring flags if we started a triangle
+        assert(0 <= f && f <= 2, 'Unknown type4 flag');
+        switch (f) {
+          case 0:
+            verticesLeft = 3;
+            break;
+          case 1:
+            ps.push(ps[ps.length - 2], ps[ps.length - 1]);
+            verticesLeft = 1;
+            break;
+          case 2:
+            ps.push(ps[ps.length - 3], ps[ps.length - 1]);
+            verticesLeft = 1;
+            break;
+        }
+        operators.push(f);
+      }
+      ps.push(coords.length);
+      coords.push(coord);
+      colors.push(color);
+      verticesLeft--;
+
+      reader.align();
+    }
+
+    var psPacked = new Int32Array(ps);
+
+    mesh.figures.push({
+      type: 'triangles',
+      coords: psPacked,
+      colors: psPacked
+    });
+  }
+
+  function decodeType5Shading(mesh, reader, verticesPerRow) {
+    var coords = mesh.coords;
+    var colors = mesh.colors;
+    var operators = [];
+    var ps = []; // not maintaining cs since that will match ps
+    while (reader.hasData) {
+      var coord = reader.readCoordinate();
+      var color = reader.readComponents();
+      ps.push(coords.length);
+      coords.push(coord);
+      colors.push(color);
+    }
+
+    var psPacked = new Int32Array(ps);
+
+    mesh.figures.push({
+      type: 'lattice',
+      coords: psPacked,
+      colors: psPacked,
+      verticesPerRow: verticesPerRow
+    });
+  }
+
+  var SPLIT_PATCH_CHUNKS_AMOUNT = 4;
+  var B = (function buildB() {
+    var lut = [];
+    for (var i = 0; i <= SPLIT_PATCH_CHUNKS_AMOUNT; i++) {
+      var t = i / SPLIT_PATCH_CHUNKS_AMOUNT, t_ = 1 - t;
+      lut.push(new Float32Array([t_ * t_ * t_, 3 * t * t_ * t_,
+        3 * t * t * t_, t * t * t]));
+    }
+    return lut;
+  })();
+
+  function buildFigureFromPatch(mesh, pi, ci) {
+    if (SPLIT_PATCH_CHUNKS_AMOUNT < 3) {
+      mesh.figures.push({
+        type: 'lattice',
+        coords: new Int32Array([pi[0], pi[3], pi[12], pi[15]]),
+        colors: new Int32Array(ci),
+        verticesPerRow: 2
+      });
+      return;
+    }
+
+    var coords = mesh.coords, colors = mesh.colors;
+    var verticesPerRow = SPLIT_PATCH_CHUNKS_AMOUNT + 1;
+    var figureCoords = new Int32Array((SPLIT_PATCH_CHUNKS_AMOUNT + 1) *
+      verticesPerRow);
+    var figureColors = new Int32Array((SPLIT_PATCH_CHUNKS_AMOUNT + 1) *
+      verticesPerRow);
+    var k = 0;
+    var cl = new Uint8Array(3), cr = new Uint8Array(3);
+    var c0 = colors[ci[0]], c1 = colors[ci[1]],
+      c2 = colors[ci[2]], c3 = colors[ci[3]];
+    for (var row = 0; row <= SPLIT_PATCH_CHUNKS_AMOUNT; row++) {
+      cl[0] = ((c0[0] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
+        c2[0] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+      cl[1] = ((c0[1] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
+        c2[1] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+      cl[2] = ((c0[2] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
+        c2[2] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+
+      cr[0] = ((c1[0] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
+        c3[0] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+      cr[1] = ((c1[1] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
+        c3[1] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+      cr[2] = ((c1[2] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
+        c3[2] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+
+      for (var col = 0; col <= SPLIT_PATCH_CHUNKS_AMOUNT; col++, k++) {
+        if ((row === 0 || row === SPLIT_PATCH_CHUNKS_AMOUNT) &&
+          (col === 0 || col === SPLIT_PATCH_CHUNKS_AMOUNT)) {
+          continue;
+        }
+        var x = 0, y = 0;
+        var q = 0;
+        for (var i = 0; i <= 3; i++) {
+          for (var j = 0; j <= 3; j++, q++) {
+            var m = B[row][i] * B[col][j];
+            x += coords[pi[q]][0] * m;
+            y += coords[pi[q]][1] * m;
+          }
+        }
+        figureCoords[k] = coords.length;
+        coords.push([x, y]);
+        figureColors[k] = colors.length;
+        var newColor = new Uint8Array(3);
+        newColor[0] = ((cl[0] * (SPLIT_PATCH_CHUNKS_AMOUNT - col) +
+          cr[0] * col) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+        newColor[1] = ((cl[1] * (SPLIT_PATCH_CHUNKS_AMOUNT - col) +
+          cr[1] * col) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+        newColor[2] = ((cl[2] * (SPLIT_PATCH_CHUNKS_AMOUNT - col) +
+          cr[2] * col) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+        colors.push(newColor);
+      }
+    }
+    figureCoords[0] = pi[0];
+    figureColors[0] = ci[0];
+    figureCoords[SPLIT_PATCH_CHUNKS_AMOUNT] = pi[3];
+    figureColors[SPLIT_PATCH_CHUNKS_AMOUNT] = ci[1];
+    figureCoords[verticesPerRow * SPLIT_PATCH_CHUNKS_AMOUNT] = pi[12];
+    figureColors[verticesPerRow * SPLIT_PATCH_CHUNKS_AMOUNT] = ci[2];
+    figureCoords[verticesPerRow * verticesPerRow - 1] = pi[15];
+    figureColors[verticesPerRow * verticesPerRow - 1] = ci[3];
+
+    mesh.figures.push({
+      type: 'lattice',
+      coords: figureCoords,
+      colors: figureColors,
+      verticesPerRow: verticesPerRow
+    });
+  }
+
+  function decodeType6Shading(mesh, reader) {
+    // A special case of Type 7. The p11, p12, p21, p22 automatically filled
+    var coords = mesh.coords;
+    var colors = mesh.colors;
+    var ps = new Int32Array(16); // p00, p10, ..., p30, p01, ..., p33
+    var cs = new Int32Array(4); // c00, c30, c03, c33
+    while (reader.hasData) {
+      var f = reader.readFlag();
+      assert(0 <= f && f <= 3, 'Unknown type6 flag');
+      var i, ii;
+      var pi = coords.length;
+      for (i = 0, ii = (f !== 0 ? 8 : 12); i < ii; i++) {
+        coords.push(reader.readCoordinate());
+      }
+      var ci = colors.length;
+      for (i = 0, ii = (f !== 0 ? 2 : 4); i < ii; i++) {
+        colors.push(reader.readComponents());
+      }
+      var tmp1, tmp2, tmp3, tmp4;
+      switch (f) {
+        case 0:
+          ps[12] = pi + 3; ps[13] = pi + 4;  ps[14] = pi + 5;  ps[15] = pi + 6;
+          ps[ 8] = pi + 2; /* values for 5, 6, 9, 10 are    */ ps[11] = pi + 7;
+          ps[ 4] = pi + 1; /* calculated below              */ ps[ 7] = pi + 8;
+          ps[ 0] = pi;     ps[ 1] = pi + 11; ps[ 2] = pi + 10; ps[ 3] = pi + 9;
+          cs[2] = ci + 1; cs[3] = ci + 2;
+          cs[0] = ci;     cs[1] = ci + 3;
+          break;
+        case 1:
+          tmp1 = ps[12]; tmp2 = ps[13]; tmp3 = ps[14]; tmp4 = ps[15];
+          ps[12] = pi + 5; ps[13] = pi + 4;  ps[14] = pi + 3;  ps[15] = pi + 2;
+          ps[ 8] = pi + 6; /* values for 5, 6, 9, 10 are    */ ps[11] = pi + 1;
+          ps[ 4] = pi + 7; /* calculated below              */ ps[ 7] = pi;
+          ps[ 0] = tmp1;   ps[ 1] = tmp2;    ps[ 2] = tmp3;    ps[ 3] = tmp4;
+          tmp1 = cs[2]; tmp2 = cs[3];
+          cs[2] = ci + 1; cs[3] = ci;
+          cs[0] = tmp1;   cs[1] = tmp2;
+          break;
+        case 2:
+          ps[12] = ps[15]; ps[13] = pi + 7; ps[14] = pi + 6;   ps[15] = pi + 5;
+          ps[ 8] = ps[11]; /* values for 5, 6, 9, 10 are    */ ps[11] = pi + 4;
+          ps[ 4] = ps[7];  /* calculated below              */ ps[ 7] = pi + 3;
+          ps[ 0] = ps[3];  ps[ 1] = pi;     ps[ 2] = pi + 1;   ps[ 3] = pi + 2;
+          cs[2] = cs[3]; cs[3] = ci + 1;
+          cs[0] = cs[1]; cs[1] = ci;
+          break;
+        case 3:
+          ps[12] = ps[0];  ps[13] = ps[1];   ps[14] = ps[2];   ps[15] = ps[3];
+          ps[ 8] = pi;     /* values for 5, 6, 9, 10 are    */ ps[11] = pi + 7;
+          ps[ 4] = pi + 1; /* calculated below              */ ps[ 7] = pi + 6;
+          ps[ 0] = pi + 2; ps[ 1] = pi + 3;  ps[ 2] = pi + 4;  ps[ 3] = pi + 5;
+          cs[2] = cs[0]; cs[3] = cs[1];
+          cs[0] = ci;    cs[1] = ci + 1;
+          break;
+      }
+      // set p11, p12, p21, p22
+      ps[5] = coords.length;
+      coords.push([
+        (-4 * coords[ps[0]][0] - coords[ps[15]][0] +
+          6 * (coords[ps[4]][0] + coords[ps[1]][0]) -
+          2 * (coords[ps[12]][0] + coords[ps[3]][0]) +
+          3 * (coords[ps[13]][0] + coords[ps[7]][0])) / 9,
+        (-4 * coords[ps[0]][1] - coords[ps[15]][1] +
+          6 * (coords[ps[4]][1] + coords[ps[1]][1]) -
+          2 * (coords[ps[12]][1] + coords[ps[3]][1]) +
+          3 * (coords[ps[13]][1] + coords[ps[7]][1])) / 9
+      ]);
+      ps[6] = coords.length;
+      coords.push([
+        (-4 * coords[ps[3]][0] - coords[ps[12]][0] +
+          6 * (coords[ps[2]][0] + coords[ps[7]][0]) -
+          2 * (coords[ps[0]][0] + coords[ps[15]][0]) +
+          3 * (coords[ps[4]][0] + coords[ps[14]][0])) / 9,
+        (-4 * coords[ps[3]][1] - coords[ps[12]][1] +
+          6 * (coords[ps[2]][1] + coords[ps[7]][1]) -
+          2 * (coords[ps[0]][1] + coords[ps[15]][1]) +
+          3 * (coords[ps[4]][1] + coords[ps[14]][1])) / 9
+      ]);
+      ps[9] = coords.length;
+      coords.push([
+        (-4 * coords[ps[12]][0] - coords[ps[3]][0] +
+          6 * (coords[ps[8]][0] + coords[ps[13]][0]) -
+          2 * (coords[ps[0]][0] + coords[ps[15]][0]) +
+          3 * (coords[ps[11]][0] + coords[ps[1]][0])) / 9,
+        (-4 * coords[ps[12]][1] - coords[ps[3]][1] +
+          6 * (coords[ps[8]][1] + coords[ps[13]][1]) -
+          2 * (coords[ps[0]][1] + coords[ps[15]][1]) +
+          3 * (coords[ps[11]][1] + coords[ps[1]][1])) / 9
+      ]);
+      ps[10] = coords.length;
+      coords.push([
+        (-4 * coords[ps[15]][0] - coords[ps[0]][0] +
+          6 * (coords[ps[11]][0] + coords[ps[14]][0]) -
+          2 * (coords[ps[12]][0] + coords[ps[3]][0]) +
+          3 * (coords[ps[2]][0] + coords[ps[8]][0])) / 9,
+        (-4 * coords[ps[15]][1] - coords[ps[0]][1] +
+          6 * (coords[ps[11]][1] + coords[ps[14]][1]) -
+          2 * (coords[ps[12]][1] + coords[ps[3]][1]) +
+          3 * (coords[ps[2]][1] + coords[ps[8]][1])) / 9
+      ]);
+      buildFigureFromPatch(mesh, ps, cs);
+    }
+  }
+
+  function decodeType7Shading(mesh, reader) {
+    var coords = mesh.coords;
+    var colors = mesh.colors;
+    var ps = new Int32Array(16); // p00, p10, ..., p30, p01, ..., p33
+    var cs = new Int32Array(4); // c00, c30, c03, c33
+    while (reader.hasData) {
+      var f = reader.readFlag();
+      assert(0 <= f && f <= 3, 'Unknown type7 flag');
+      var i, ii;
+      var pi = coords.length;
+      for (i = 0, ii = (f !== 0 ? 12 : 16); i < ii; i++) {
+        coords.push(reader.readCoordinate());
+      }
+      var ci = colors.length;
+      for (i = 0, ii = (f !== 0 ? 2 : 4); i < ii; i++) {
+        colors.push(reader.readComponents());
+      }
+      var tmp1, tmp2, tmp3, tmp4;
+      switch (f) {
+        case 0:
+          ps[12] = pi + 3; ps[13] = pi + 4;  ps[14] = pi + 5;  ps[15] = pi + 6;
+          ps[ 8] = pi + 2; ps[ 9] = pi + 13; ps[10] = pi + 14; ps[11] = pi + 7;
+          ps[ 4] = pi + 1; ps[ 5] = pi + 12; ps[ 6] = pi + 15; ps[ 7] = pi + 8;
+          ps[ 0] = pi;     ps[ 1] = pi + 11; ps[ 2] = pi + 10; ps[ 3] = pi + 9;
+          cs[2] = ci + 1; cs[3] = ci + 2;
+          cs[0] = ci;     cs[1] = ci + 3;
+          break;
+        case 1:
+          tmp1 = ps[12]; tmp2 = ps[13]; tmp3 = ps[14]; tmp4 = ps[15];
+          ps[12] = pi + 5; ps[13] = pi + 4;  ps[14] = pi + 3;  ps[15] = pi + 2;
+          ps[ 8] = pi + 6; ps[ 9] = pi + 11; ps[10] = pi + 10; ps[11] = pi + 1;
+          ps[ 4] = pi + 7; ps[ 5] = pi + 8;  ps[ 6] = pi + 9;  ps[ 7] = pi;
+          ps[ 0] = tmp1;   ps[ 1] = tmp2;    ps[ 2] = tmp3;    ps[ 3] = tmp4;
+          tmp1 = cs[2]; tmp2 = cs[3];
+          cs[2] = ci + 1; cs[3] = ci;
+          cs[0] = tmp1;   cs[1] = tmp2;
+          break;
+        case 2:
+          ps[12] = ps[15]; ps[13] = pi + 7; ps[14] = pi + 6;  ps[15] = pi + 5;
+          ps[ 8] = ps[11]; ps[ 9] = pi + 8; ps[10] = pi + 11; ps[11] = pi + 4;
+          ps[ 4] = ps[7];  ps[ 5] = pi + 9; ps[ 6] = pi + 10; ps[ 7] = pi + 3;
+          ps[ 0] = ps[3];  ps[ 1] = pi;     ps[ 2] = pi + 1;  ps[ 3] = pi + 2;
+          cs[2] = cs[3]; cs[3] = ci + 1;
+          cs[0] = cs[1]; cs[1] = ci;
+          break;
+        case 3:
+          ps[12] = ps[0];  ps[13] = ps[1];   ps[14] = ps[2];   ps[15] = ps[3];
+          ps[ 8] = pi;     ps[ 9] = pi + 9;  ps[10] = pi + 8;  ps[11] = pi + 7;
+          ps[ 4] = pi + 1; ps[ 5] = pi + 10; ps[ 6] = pi + 11; ps[ 7] = pi + 6;
+          ps[ 0] = pi + 2; ps[ 1] = pi + 3;  ps[ 2] = pi + 4;  ps[ 3] = pi + 5;
+          cs[2] = cs[0]; cs[3] = cs[1];
+          cs[0] = ci;    cs[1] = ci + 1;
+          break;
+      }
+      buildFigureFromPatch(mesh, ps, cs);
+    }
+  }
+
+  function Mesh(stream, matrix, xref, res) {
+    assert(isStream(stream), 'Mesh data is not a stream');
+    var dict = stream.dict;
+    this.matrix = matrix;
+    this.shadingType = dict.get('ShadingType');
+    this.type = 'Pattern';
+    this.bbox = dict.get('BBox');
+    var cs = dict.get('ColorSpace', 'CS');
+    cs = ColorSpace.parse(cs, xref, res);
+    this.cs = cs;
+    this.background = dict.has('Background') ?
+      cs.getRgb(dict.get('Background'), 0) : null;
+
+    var fnObj = dict.get('Function');
+    var fn;
+    if (!fnObj) {
+      fn = null;
+    } else if (isArray(fnObj)) {
+      var fnArray = [];
+      for (var j = 0, jj = fnObj.length; j < jj; j++) {
+        var obj = xref.fetchIfRef(fnObj[j]);
+        if (!isPDFFunction(obj)) {
+          error('Invalid function');
+        }
+        fnArray.push(PDFFunction.parse(xref, obj));
+      }
+      fn = function radialAxialColorFunction(arg) {
+        var out = [];
+        for (var i = 0, ii = fnArray.length; i < ii; i++) {
+          out.push(fnArray[i](arg)[0]);
+        }
+        return out;
+      };
+    } else {
+      if (!isPDFFunction(fnObj)) {
+        error('Invalid function');
+      }
+      fn = PDFFunction.parse(xref, fnObj);
+    }
+
+    this.coords = [];
+    this.colors = [];
+    this.figures = [];
+
+    var decodeContext = {
+      bitsPerCoordinate: dict.get('BitsPerCoordinate'),
+      bitsPerComponent: dict.get('BitsPerComponent'),
+      bitsPerFlag: dict.get('BitsPerFlag'),
+      decode: dict.get('Decode'),
+      colorFn: fn,
+      colorSpace: cs,
+      numComps: fn ? 1 : cs.numComps
+    };
+    var reader = new MeshStreamReader(stream, decodeContext);
+
+    switch (this.shadingType) {
+      case PatternType.FREE_FORM_MESH:
+        decodeType4Shading(this, reader);
+        break;
+      case PatternType.LATTICE_FORM_MESH:
+        var verticesPerRow = dict.get('VerticesPerRow') | 0;
+        assert(verticesPerRow >= 2, 'Invalid VerticesPerRow');
+        decodeType5Shading(this, reader, verticesPerRow);
+        break;
+      case PatternType.COONS_PATCH_MESH:
+        decodeType6Shading(this, reader);
+        break;
+      case PatternType.TENSOR_PATCH_MESH:
+        decodeType7Shading(this, reader);
+        break;
+      default:
+        error('Unsupported mesh type.');
+        break;
+    }
+
+    // calculate bounds
+    var minX = this.coords[0][0], minY = this.coords[0][1],
+        maxX = minX, maxY = minY;
+    for (var i = 1, ii = this.coords.length; i < ii; i++) {
+      var x = this.coords[i][0], y = this.coords[i][1];
+      minX = minX > x ? x : minX;
+      minY = minY > y ? y : minY;
+      maxX = maxX < x ? x : maxX;
+      maxY = maxY < y ? y : maxY;
+    }
+    this.bounds = [minX, minY, maxX, maxY];
+  }
+
+  Mesh.prototype = {
+    getIR: function Mesh_getIR() {
+      var type = this.shadingType;
+      var i, ii, j;
+      var coords = this.coords;
+      var coordsPacked = new Float32Array(coords.length * 2);
+      for (i = 0, j = 0, ii = coords.length; i < ii; i++) {
+        var xy = coords[i];
+        coordsPacked[j++] = xy[0];
+        coordsPacked[j++] = xy[1];
+      }
+      var colors = this.colors;
+      var colorsPacked = new Uint8Array(colors.length * 3);
+      for (i = 0, j = 0, ii = colors.length; i < ii; i++) {
+        var c = colors[i];
+        colorsPacked[j++] = c[0];
+        colorsPacked[j++] = c[1];
+        colorsPacked[j++] = c[2];
+      }
+      var figures = this.figures;
+      var bbox = this.bbox;
+      var bounds = this.bounds;
+      var matrix = this.matrix;
+      var background = this.background;
+
+      return ['Mesh', type, coordsPacked, colorsPacked, figures, bounds,
+        matrix, bbox, background];
+    }
+  };
+
+  return Mesh;
 })();
 
 Shadings.Dummy = (function DummyClosure() {
