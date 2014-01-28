@@ -296,11 +296,10 @@ var PDFFindController = {
   },
 
   nextPageMatch: function() {
-    if (this.resumePageIdx !== null)
+    if (this.resumePageIdx !== null) {
       console.error('There can only be one pending page.');
-    // done boolean to remove do-while construct per review of PR 4131
-    var done = false;
-    while (!done) {
+    }
+    do {
       var pageIdx = this.offset.pageIdx;
       var matches = this.pageMatches[pageIdx];
       if (!matches) {
@@ -309,8 +308,7 @@ var PDFFindController = {
         this.resumePageIdx = pageIdx;
         break;
       }
-      done = this.matchesReady(matches);
-    }
+    } while (!this.matchesReady(matches));
   },
 
   advanceOffsetPage: function(previous) {
