@@ -234,7 +234,11 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       PDFJS.disableCreateObjectURL = data.disableCreateObjectURL;
       PDFJS.verbosity = data.verbosity;
 
-      getPdfManager(data).then(function pdfManagerReady() {
+      getPdfManager(data).then(function () {
+        pdfManager.onLoadedStream().then(function(stream) {
+          handler.send('DataLoaded', { length: stream.bytes.byteLength });
+        });
+      }).then(function pdfManagerReady() {
         loadDocument(false).then(onSuccess, function loadFailure(ex) {
           // Try again with recoveryMode == true
           if (!(ex instanceof XRefParseException)) {
@@ -298,12 +302,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       pdfManager.requestLoadedStream();
       pdfManager.onLoadedStream().then(function(stream) {
         deferred.resolve(stream.bytes);
-      });
-    });
-
-    handler.on('DataLoaded', function wphSetupDataLoaded(data, deferred) {
-      pdfManager.onLoadedStream().then(function(stream) {
-        deferred.resolve({ length: stream.bytes.byteLength });
       });
     });
 
