@@ -847,7 +847,7 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    pdfDocument.dataLoaded().then(function() {
+    pdfDocument.getDownloadInfo().then(function() {
       PDFView.loadingBar.hide();
       var outerContainer = document.getElementById('outerContainer');
       outerContainer.classList.remove('loadingInProgress');
