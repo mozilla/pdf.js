@@ -302,10 +302,11 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     },
     /**
      * @return {Promise} A promise that is resolved when the document's data
-     * is loaded
+     * is loaded. It is resolved with an {Object} that contains the length
+     * property that indicates size of the PDF data in bytes.
      */
-    dataLoaded: function PDFDocumentProxy_dataLoaded() {
-      return this.transport.dataLoaded();
+    getDownloadInfo: function PDFDocumentProxy_getDownloadInfo() {
+      return this.transport.downloadInfoPromise;
     },
     /**
      * Cleans up resources allocated by the document, e.g. created @font-face.
@@ -578,7 +579,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.pageCache = [];
     this.pagePromises = [];
     this.embeddedFontsUsed = false;
-
+    this.downloadInfoPromise = new PDFJS.LegacyPromise();
     this.passwordCallback = null;
 
     // If worker support isn't disabled explicit and the browser has worker
@@ -758,6 +759,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyPromise.reject(data.exception.message, data.exception);
       }, this);
 
+      messageHandler.on('DataLoaded', function transportPage(data) {
+        this.downloadInfoPromise.resolve(data);
+      }, this);
+
       messageHandler.on('GetPage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PDFPageProxy(pageInfo, this);
@@ -922,18 +927,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.messageHandler.send('GetData', null, function(data) {
         promise.resolve(data);
       });
-    },
-
-    dataLoaded: function WorkerTransport_dataLoaded() {
-      if (this.dataLoadedPromise) {
-        return this.dataLoadedPromise;
-      }
-      var promise = new PDFJS.LegacyPromise();
-      this.messageHandler.send('DataLoaded', null, function(args) {
-        promise.resolve(args);
-      });
-      this.dataLoadedPromise = promise;
-      return promise;
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, promise) {
