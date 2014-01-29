@@ -442,13 +442,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // will (conceptually) put pixels past the bounds of the canvas.  But
     // that's ok; any such pixels are ignored.
 
+    var height = imgData.height, width = imgData.width;
     var fullChunkHeight = 16;
-    var fracChunks = imgData.height / fullChunkHeight;
+    var fracChunks = height / fullChunkHeight;
     var fullChunks = Math.floor(fracChunks);
     var totalChunks = Math.ceil(fracChunks);
-    var partialChunkHeight = imgData.height - fullChunks * fullChunkHeight;
+    var partialChunkHeight = height - fullChunks * fullChunkHeight;
 
-    var chunkImgData = ctx.createImageData(imgData.width, fullChunkHeight);
+    var chunkImgData = ctx.createImageData(width, fullChunkHeight);
     var srcPos = 0;
     var src = imgData.data;
     var dst = chunkImgData.data;
@@ -460,8 +461,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var srcData = imgData.data;
       var destData = chunkImgData.data;
-      var alpha = 255;
+      var destDataLength = destData.length;
       var origLength = imgData.origLength;
+      for (var i = 3; i < destDataLength; i += 4) {
+        destData[i] = 255;
+      }
       for (var i = 0; i < totalChunks; i++) {
         var thisChunkHeight =
           (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
@@ -469,25 +473,37 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         for (var j = 0; j < thisChunkHeight; j++) {
           var mask = 0;
           var srcByte = 0;
-          for (var k = 0; k < imgData.width; k++) {
-            if (srcPos >= origLength) {
-              // We ran out of input. Make all remaining pixels transparent.
-              alpha = 0;
-            }
+          for (var k = 0; k < width; k++, destPos += 4) {
             if (mask === 0) {
+              if (srcPos >= origLength) {
+                break;
+              }
               srcByte = srcData[srcPos++];
               mask = 128;
             }
 
-            var c = (+!!(srcByte & mask)) * 255;
-            destData[destPos++] = c;
-            destData[destPos++] = c;
-            destData[destPos++] = c;
-            destData[destPos++] = alpha;
+            if ((srcByte & mask)) {
+              destData[destPos] = 255;
+              destData[destPos + 1] = 255;
+              destData[destPos + 2] = 255;
+            } else {
+              destData[destPos] = 0;
+              destData[destPos + 1] = 0;
+              destData[destPos + 2] = 0;
+            }
 
             mask >>= 1;
           }
         }
+        if (destPos < destDataLength) {
+          // We ran out of input. Make all remaining pixels transparent.
+          destPos += 3;
+          do {
+            destData[destPos] = 0;
+            destPos += 4;
+          } while (destPos < destDataLength);
+        }
+
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
 
