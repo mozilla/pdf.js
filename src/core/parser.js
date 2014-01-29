@@ -400,15 +400,15 @@ var Lexer = (function LexerClosure() {
       strBuf.length = 0;
       strBuf.push(String.fromCharCode(ch));
       while ((ch = this.nextChar()) >= 0) {
-        if (ch === 0x2E && !floating) { // '.'
+        if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
+          strBuf.push(String.fromCharCode(ch));
+        } else if (ch === 0x2E && !floating) { // '.'
           strBuf.push('.');
           floating = true;
         } else if (ch === 0x2D) { // '-'
           // ignore minus signs in the middle of numbers to match
           // Adobe's behavior
           warn('Badly formated number');
-        } else if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
-          strBuf.push(String.fromCharCode(ch));
         } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
           floating = true;
         } else {
