@@ -148,21 +148,21 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     }
   }
 
-  function createMeshCanvas(owner, bounds, coords, colors, figures,
+  function createMeshCanvas(bounds, combinesScale, coords, colors, figures,
                             backgroundColor) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
-    var EXPECTED_SCALE = 1.5;
+    var EXPECTED_SCALE = 1.1;
     // MAX_PATTERN_SIZE is used to avoid OOM situation.
     var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
     var boundsWidth = bounds[2] - bounds[0];
     var boundsHeight = bounds[3] - bounds[1];
 
-    var width = Math.min(Math.ceil(Math.abs(boundsWidth * EXPECTED_SCALE)),
-      MAX_PATTERN_SIZE);
-    var height = Math.min(Math.ceil(Math.abs(boundsHeight * EXPECTED_SCALE)),
-      MAX_PATTERN_SIZE);
+    var width = Math.min(Math.ceil(Math.abs(boundsWidth * combinesScale[0] *
+      EXPECTED_SCALE)), MAX_PATTERN_SIZE);
+    var height = Math.min(Math.ceil(Math.abs(boundsHeight * combinesScale[1] *
+      EXPECTED_SCALE)), MAX_PATTERN_SIZE);
     var scaleX = width / boundsWidth;
     var scaleY = height / boundsHeight;
 
@@ -206,10 +206,24 @@ ShadingIRs.Mesh = {
     return {
       type: 'Pattern',
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
+        var combinedScale;
+        // Obtain scale from matrix and current transformation matrix.
+        if (shadingFill) {
+          combinedScale = Util.singularValueDecompose2dScale(
+            ctx.mozCurrentTransform);
+        } else {
+          var matrixScale = Util.singularValueDecompose2dScale(matrix);
+          var curMatrixScale = Util.singularValueDecompose2dScale(
+            owner.baseTransform);
+          combinedScale = [matrixScale[0] * curMatrixScale[0],
+            matrixScale[1] * curMatrixScale[1]];
+        }
+
+
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
         // TODO consider using WebGL or asm.js to perform rasterization
-        var temporaryPatternCanvas = createMeshCanvas(owner, bounds,
+        var temporaryPatternCanvas = createMeshCanvas(bounds, combinedScale,
           coords, colors, figures, shadingFill ? null : background);
 
         if (!shadingFill) {
