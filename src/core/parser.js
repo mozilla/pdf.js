@@ -396,6 +396,7 @@ var Lexer = (function LexerClosure() {
     getNumber: function Lexer_getNumber() {
       var floating = false;
       var ch = this.currentChar;
+      var allDigits = ch >= 0x30 && ch <= 0x39;
       var strBuf = this.strBuf;
       strBuf.length = 0;
       strBuf.push(String.fromCharCode(ch));
@@ -405,20 +406,33 @@ var Lexer = (function LexerClosure() {
         } else if (ch === 0x2E && !floating) { // '.'
           strBuf.push('.');
           floating = true;
+          allDigits = false;
         } else if (ch === 0x2D) { // '-'
           // ignore minus signs in the middle of numbers to match
           // Adobe's behavior
           warn('Badly formated number');
+          allDigits = false;
         } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
           floating = true;
+          allDigits = false;
         } else {
           // the last character doesn't belong to us
           break;
         }
       }
-      var value = parseFloat(strBuf.join(''));
-      if (isNaN(value))
-        error('Invalid floating point number: ' + value);
+      var value;
+      if (allDigits) {
+        value = 0;
+        var charCodeOfZero = 48;    // '0'
+        for (var i = 0, ii = strBuf.length; i < ii; i++) {
+          value = value * 10 + (strBuf[i].charCodeAt(0) - charCodeOfZero);
+        }
+      } else {
+        value = parseFloat(strBuf.join(''));
+        if (isNaN(value)) {
+          error('Invalid floating point number: ' + value);
+        }
+      }
       return value;
     },
     getString: function Lexer_getString() {
