@@ -98,7 +98,10 @@
   var hasAttachEvent = !!document.attachEvent;
 
   window.addEventListener('keydown', function(event) {
-    if (event.keyCode === 80/*P*/ && (event.ctrlKey || event.metaKey)) {
+    // Intercept Cmd/Ctrl + P in all browsers.
+    // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
+    if (event.keyCode === 80/*P*/ && (event.ctrlKey || event.metaKey) &&
+        !event.altKey && (!event.shiftKey || window.chrome || window.opera)) {
       window.print();
       if (hasAttachEvent) {
         // Only attachEvent can cancel Ctrl + P dialog in IE <=10
