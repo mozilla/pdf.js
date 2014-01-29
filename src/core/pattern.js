@@ -380,63 +380,82 @@ Shadings.Mesh = (function MeshClosure() {
     });
   }
 
-  var SPLIT_PATCH_CHUNKS_AMOUNT = 4;
-  var B = (function buildB() {
-    var lut = [];
-    for (var i = 0; i <= SPLIT_PATCH_CHUNKS_AMOUNT; i++) {
-      var t = i / SPLIT_PATCH_CHUNKS_AMOUNT, t_ = 1 - t;
-      lut.push(new Float32Array([t_ * t_ * t_, 3 * t * t_ * t_,
-        3 * t * t * t_, t * t * t]));
+  var MIN_SPLIT_PATCH_CHUNKS_AMOUNT = 3;
+  var MAX_SPLIT_PATCH_CHUNKS_AMOUNT = 20;
+
+  var TRIANGLE_DENSITY = 20; // count of triangles per entire mesh bounds
+
+  var getB = (function getBClosure() {
+    function buildB(count) {
+      var lut = [];
+      for (var i = 0; i <= count; i++) {
+        var t = i / count, t_ = 1 - t;
+        lut.push(new Float32Array([t_ * t_ * t_, 3 * t * t_ * t_,
+          3 * t * t * t_, t * t * t]));
+      }
+      return lut;
     }
-    return lut;
+    var cache = [];
+    return function getB(count) {
+      if (!cache[count]) {
+        cache[count] = buildB(count);
+      }
+      return cache[count];
+    };
   })();
 
-  function buildFigureFromPatch(mesh, pi, ci) {
-    if (SPLIT_PATCH_CHUNKS_AMOUNT < 3) {
-      mesh.figures.push({
-        type: 'lattice',
-        coords: new Int32Array([pi[0], pi[3], pi[12], pi[15]]),
-        colors: new Int32Array(ci),
-        verticesPerRow: 2
-      });
-      return;
-    }
+  function buildFigureFromPatch(mesh, index) {
+    var figure = mesh.figures[index];
+    assert(figure.type === 'patch', 'Unexpected patch mesh figure');
 
     var coords = mesh.coords, colors = mesh.colors;
-    var verticesPerRow = SPLIT_PATCH_CHUNKS_AMOUNT + 1;
-    var figureCoords = new Int32Array((SPLIT_PATCH_CHUNKS_AMOUNT + 1) *
-      verticesPerRow);
-    var figureColors = new Int32Array((SPLIT_PATCH_CHUNKS_AMOUNT + 1) *
-      verticesPerRow);
+    var pi = figure.coords;
+    var ci = figure.colors;
+
+    var figureMinX = Math.min(coords[pi[0]][0], coords[pi[3]][0],
+                              coords[pi[12]][0], coords[pi[15]][0]);
+    var figureMinY = Math.min(coords[pi[0]][1], coords[pi[3]][1],
+                              coords[pi[12]][1], coords[pi[15]][1]);
+    var figureMaxX = Math.max(coords[pi[0]][0], coords[pi[3]][0],
+                              coords[pi[12]][0], coords[pi[15]][0]);
+    var figureMaxY = Math.max(coords[pi[0]][1], coords[pi[3]][1],
+                              coords[pi[12]][1], coords[pi[15]][1]);
+    var splitXBy = Math.ceil((figureMaxX - figureMinX) * TRIANGLE_DENSITY /
+                             (mesh.bounds[2] - mesh.bounds[0]));
+    splitXBy = Math.max(MIN_SPLIT_PATCH_CHUNKS_AMOUNT,
+               Math.min(MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitXBy));
+    var splitYBy = Math.ceil((figureMaxY - figureMinY) * TRIANGLE_DENSITY /
+                             (mesh.bounds[3] - mesh.bounds[1]));
+    splitYBy = Math.max(MIN_SPLIT_PATCH_CHUNKS_AMOUNT,
+               Math.min(MAX_SPLIT_PATCH_CHUNKS_AMOUNT, splitYBy));
+
+    var verticesPerRow = splitXBy + 1;
+    var figureCoords = new Int32Array((splitYBy + 1) * verticesPerRow);
+    var figureColors = new Int32Array((splitYBy + 1) * verticesPerRow);
     var k = 0;
     var cl = new Uint8Array(3), cr = new Uint8Array(3);
     var c0 = colors[ci[0]], c1 = colors[ci[1]],
       c2 = colors[ci[2]], c3 = colors[ci[3]];
-    for (var row = 0; row <= SPLIT_PATCH_CHUNKS_AMOUNT; row++) {
-      cl[0] = ((c0[0] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
-        c2[0] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
-      cl[1] = ((c0[1] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
-        c2[1] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
-      cl[2] = ((c0[2] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
-        c2[2] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+    var bRow = getB(splitYBy), bCol = getB(splitXBy);
+    for (var row = 0; row <= splitYBy; row++) {
+      cl[0] = ((c0[0] * (splitYBy - row) + c2[0] * row) / splitYBy) | 0;
+      cl[1] = ((c0[1] * (splitYBy - row) + c2[1] * row) / splitYBy) | 0;
+      cl[2] = ((c0[2] * (splitYBy - row) + c2[2] * row) / splitYBy) | 0;
 
-      cr[0] = ((c1[0] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
-        c3[0] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
-      cr[1] = ((c1[1] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
-        c3[1] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
-      cr[2] = ((c1[2] * (SPLIT_PATCH_CHUNKS_AMOUNT - row) +
-        c3[2] * row) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+      cr[0] = ((c1[0] * (splitYBy - row) + c3[0] * row) / splitYBy) | 0;
+      cr[1] = ((c1[1] * (splitYBy - row) + c3[1] * row) / splitYBy) | 0;
+      cr[2] = ((c1[2] * (splitYBy - row) + c3[2] * row) / splitYBy) | 0;
 
-      for (var col = 0; col <= SPLIT_PATCH_CHUNKS_AMOUNT; col++, k++) {
-        if ((row === 0 || row === SPLIT_PATCH_CHUNKS_AMOUNT) &&
-          (col === 0 || col === SPLIT_PATCH_CHUNKS_AMOUNT)) {
+      for (var col = 0; col <= splitXBy; col++, k++) {
+        if ((row === 0 || row === splitYBy) &&
+            (col === 0 || col === splitXBy)) {
           continue;
         }
         var x = 0, y = 0;
         var q = 0;
         for (var i = 0; i <= 3; i++) {
           for (var j = 0; j <= 3; j++, q++) {
-            var m = B[row][i] * B[col][j];
+            var m = bRow[row][i] * bCol[col][j];
             x += coords[pi[q]][0] * m;
             y += coords[pi[q]][1] * m;
           }
@@ -445,30 +464,27 @@ Shadings.Mesh = (function MeshClosure() {
         coords.push([x, y]);
         figureColors[k] = colors.length;
         var newColor = new Uint8Array(3);
-        newColor[0] = ((cl[0] * (SPLIT_PATCH_CHUNKS_AMOUNT - col) +
-          cr[0] * col) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
-        newColor[1] = ((cl[1] * (SPLIT_PATCH_CHUNKS_AMOUNT - col) +
-          cr[1] * col) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
-        newColor[2] = ((cl[2] * (SPLIT_PATCH_CHUNKS_AMOUNT - col) +
-          cr[2] * col) / SPLIT_PATCH_CHUNKS_AMOUNT) | 0;
+        newColor[0] = ((cl[0] * (splitXBy - col) + cr[0] * col) / splitXBy) | 0;
+        newColor[1] = ((cl[1] * (splitXBy - col) + cr[1] * col) / splitXBy) | 0;
+        newColor[2] = ((cl[2] * (splitXBy - col) + cr[2] * col) / splitXBy) | 0;
         colors.push(newColor);
       }
     }
     figureCoords[0] = pi[0];
     figureColors[0] = ci[0];
-    figureCoords[SPLIT_PATCH_CHUNKS_AMOUNT] = pi[3];
-    figureColors[SPLIT_PATCH_CHUNKS_AMOUNT] = ci[1];
-    figureCoords[verticesPerRow * SPLIT_PATCH_CHUNKS_AMOUNT] = pi[12];
-    figureColors[verticesPerRow * SPLIT_PATCH_CHUNKS_AMOUNT] = ci[2];
-    figureCoords[verticesPerRow * verticesPerRow - 1] = pi[15];
-    figureColors[verticesPerRow * verticesPerRow - 1] = ci[3];
+    figureCoords[splitXBy] = pi[3];
+    figureColors[splitXBy] = ci[1];
+    figureCoords[verticesPerRow * splitYBy] = pi[12];
+    figureColors[verticesPerRow * splitYBy] = ci[2];
+    figureCoords[verticesPerRow * splitYBy + splitXBy] = pi[15];
+    figureColors[verticesPerRow * splitYBy + splitXBy] = ci[3];
 
-    mesh.figures.push({
+    mesh.figures[index] = {
       type: 'lattice',
       coords: figureCoords,
       colors: figureColors,
       verticesPerRow: verticesPerRow
-    });
+    };
   }
 
   function decodeType6Shading(mesh, reader) {
@@ -571,7 +587,11 @@ Shadings.Mesh = (function MeshClosure() {
           2 * (coords[ps[12]][1] + coords[ps[3]][1]) +
           3 * (coords[ps[2]][1] + coords[ps[8]][1])) / 9
       ]);
-      buildFigureFromPatch(mesh, ps, cs);
+      mesh.figures.push({
+        type: 'patch',
+        coords: new Int32Array(ps), // making copies of ps and cs
+        colors: new Int32Array(cs)
+      });
     }
   }
 
@@ -629,8 +649,25 @@ Shadings.Mesh = (function MeshClosure() {
           cs[0] = ci;    cs[1] = ci + 1;
           break;
       }
-      buildFigureFromPatch(mesh, ps, cs);
+      mesh.figures.push({
+        type: 'patch',
+        coords: new Int32Array(ps), // making copies of ps and cs
+        colors: new Int32Array(cs)
+      });
     }
+  }
+
+  function updateBounds(mesh) {
+    var minX = mesh.coords[0][0], minY = mesh.coords[0][1],
+      maxX = minX, maxY = minY;
+    for (var i = 1, ii = mesh.coords.length; i < ii; i++) {
+      var x = mesh.coords[i][0], y = mesh.coords[i][1];
+      minX = minX > x ? x : minX;
+      minY = minY > y ? y : minY;
+      maxX = maxX < x ? x : maxX;
+      maxY = maxY < y ? y : maxY;
+    }
+    mesh.bounds = [minX, minY, maxX, maxY];
   }
 
   function Mesh(stream, matrix, xref, res) {
@@ -688,6 +725,7 @@ Shadings.Mesh = (function MeshClosure() {
     };
     var reader = new MeshStreamReader(stream, decodeContext);
 
+    var patchMesh = false;
     switch (this.shadingType) {
       case PatternType.FREE_FORM_MESH:
         decodeType4Shading(this, reader);
@@ -699,26 +737,26 @@ Shadings.Mesh = (function MeshClosure() {
         break;
       case PatternType.COONS_PATCH_MESH:
         decodeType6Shading(this, reader);
+        patchMesh = true;
         break;
       case PatternType.TENSOR_PATCH_MESH:
         decodeType7Shading(this, reader);
+        patchMesh = true;
         break;
       default:
         error('Unsupported mesh type.');
         break;
     }
 
-    // calculate bounds
-    var minX = this.coords[0][0], minY = this.coords[0][1],
-        maxX = minX, maxY = minY;
-    for (var i = 1, ii = this.coords.length; i < ii; i++) {
-      var x = this.coords[i][0], y = this.coords[i][1];
-      minX = minX > x ? x : minX;
-      minY = minY > y ? y : minY;
-      maxX = maxX < x ? x : maxX;
-      maxY = maxY < y ? y : maxY;
+    if (patchMesh) {
+      // dirty bounds calculation for determining, how dense shall be triangles
+      updateBounds(this);
+      for (var i = 0, ii = this.figures.length; i < ii; i++) {
+        buildFigureFromPatch(this, i);
+      }
     }
-    this.bounds = [minX, minY, maxX, maxY];
+    // calculate bounds
+    updateBounds(this);
   }
 
   Mesh.prototype = {
