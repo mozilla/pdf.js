@@ -24,12 +24,13 @@ var Preferences = (function PreferencesClosure() {
   function Preferences() {
     this.prefs = {};
     this.isInitializedPromiseResolved = false;
-    this.initializedPromise = this.readFromStorage().then(function(prefObj) {
-      this.isInitializedPromiseResolved = true;
-      if (prefObj) {
-        this.prefs = prefObj;
-      }
-    }.bind(this));
+    this.initializedPromise = this.readFromStorage(DEFAULT_PREFERENCES).then(
+      function(prefObj) {
+        this.isInitializedPromiseResolved = true;
+        if (prefObj) {
+          this.prefs = prefObj;
+        }
+      }.bind(this));
   }
 
   Preferences.prototype = {
@@ -37,7 +38,7 @@ var Preferences = (function PreferencesClosure() {
       return;
     },
 
-    readFromStorage: function Preferences_readFromStorage() {
+    readFromStorage: function Preferences_readFromStorage(prefObj) {
       var readFromStoragePromise = Promise.resolve();
       return readFromStoragePromise;
     },
@@ -45,7 +46,7 @@ var Preferences = (function PreferencesClosure() {
     reset: function Preferences_reset() {
       if (this.isInitializedPromiseResolved) {
         this.prefs = {};
-        this.writeToStorage(this.prefs);
+        this.writeToStorage(DEFAULT_PREFERENCES);
       }
     },
 
@@ -68,6 +69,12 @@ var Preferences = (function PreferencesClosure() {
         } else {
           console.error('Preferences_set: \'' + value + '\' is a \"' +
                         valueType + '\", expected a \"' + defaultType + '\".');
+          return;
+        }
+      } else {
+        if (valueType === 'number' && (value | 0) !== value) {
+          console.error('Preferences_set: \'' + value +
+                        '\' must be an \"integer\".');
           return;
         }
       }
@@ -97,13 +104,13 @@ var Preferences = (function PreferencesClosure() {
 
 //#if B2G
 //Preferences.prototype.writeToStorage = function(prefObj) {
-//  asyncStorage.setItem('preferences', JSON.stringify(prefObj));
+//  asyncStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
 //};
 //
-//Preferences.prototype.readFromStorage = function() {
+//Preferences.prototype.readFromStorage = function(prefObj) {
 //  var readFromStoragePromise = new Promise(function (resolve) {
-//    asyncStorage.getItem('preferences', function(prefString) {
-//      var readPrefs = JSON.parse(prefString);
+//    asyncStorage.getItem('pdfjs.preferences', function(prefStr) {
+//      var readPrefs = JSON.parse(prefStr);
 //      resolve(readPrefs);
 //    });
 //  });
@@ -114,14 +121,14 @@ var Preferences = (function PreferencesClosure() {
 //#if !(FIREFOX || MOZCENTRAL || B2G)
 Preferences.prototype.writeToStorage = function(prefObj) {
   if (isLocalStorageEnabled) {
-    localStorage.setItem('preferences', JSON.stringify(prefObj));
+    localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
   }
 };
 
-Preferences.prototype.readFromStorage = function() {
+Preferences.prototype.readFromStorage = function(prefObj) {
   var readFromStoragePromise = new Promise(function (resolve) {
     if (isLocalStorageEnabled) {
-      var readPrefs = JSON.parse(localStorage.getItem('preferences'));
+      var readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
       resolve(readPrefs);
     }
   });

@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, dump, XPCOMUtils, PdfStreamConverter,
-           PdfRedirector, APP_SHUTDOWN */
+           PdfRedirector, APP_SHUTDOWN, DEFAULT_PREFERENCES */
 
 'use strict';
 
@@ -54,6 +54,27 @@ function log(str) {
   if (!getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false))
     return;
   dump(str + '\n');
+}
+
+function initializeDefaultPreferences() {
+  Cu.import('resource://' + RESOURCE_NAME + '/default_preferences.js');
+
+  var defaultBranch = Services.prefs.getDefaultBranch(EXT_PREFIX + '.');
+  var defaultValue;
+  for (var key in DEFAULT_PREFERENCES) {
+    defaultValue = DEFAULT_PREFERENCES[key];
+    switch (typeof defaultValue) {
+      case 'boolean':
+        defaultBranch.setBoolPref(key, defaultValue);
+        break;
+      case 'number':
+        defaultBranch.setIntPref(key, defaultValue);
+        break;
+      case 'string':
+        defaultBranch.setCharPref(key, defaultValue);
+        break;
+    }
+  }
 }
 
 // Factory that registers/unregisters a constructor as a component.
@@ -124,6 +145,8 @@ function startup(aData, aReason) {
     Ph.registerPlayPreviewMimeType('application/pdf', true,
       'data:application/x-moz-playpreview-pdfjs;,');
   }
+
+  initializeDefaultPreferences();
 }
 
 function shutdown(aData, aReason) {

@@ -108,9 +108,10 @@ Preferences.prototype.writeToStorage = function(prefObj) {
   FirefoxCom.requestSync('setPreferences', prefObj);
 };
 
-Preferences.prototype.readFromStorage = function() {
+Preferences.prototype.readFromStorage = function(prefObj) {
   var readFromStoragePromise = new Promise(function (resolve) {
-    var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences'));
+    var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences',
+                                                      prefObj));
     resolve(readPrefs);
   });
   return readFromStoragePromise;
