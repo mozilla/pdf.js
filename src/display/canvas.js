@@ -671,9 +671,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var transform = viewport.transform;
-      this.baseTransform = transform.slice();
+
       this.ctx.save();
       this.ctx.transform.apply(this.ctx, transform);
+
+      this.baseTransform = this.ctx.mozCurrentTransform.slice();
 
       if (this.textLayer) {
         this.textLayer.beginLayout();
@@ -1550,10 +1552,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs,
                                         this.commonObjs, this.baseTransform);
-      } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
-        var pattern = getShadingPatternFromIR(IR);
       } else {
-        error('Unkown IR type ' + IR[0]);
+        var pattern = getShadingPatternFromIR(IR);
       }
       return pattern;
     },
@@ -1634,7 +1634,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       this.save();
       var pattern = getShadingPatternFromIR(patternIR);
-      ctx.fillStyle = pattern.getPattern(ctx, this);
+      ctx.fillStyle = pattern.getPattern(ctx, this, true);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {
