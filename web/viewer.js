@@ -118,6 +118,7 @@ var PDFView = {
   isViewerEmbedded: (window.parent !== window),
   idleTimeout: null,
   currentPosition: null,
+  isViewerRtl: false,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -1983,7 +1984,9 @@ function selectScaleOption(value) {
 }
 
 window.addEventListener('localized', function localized(evt) {
-  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
+  var textDirection = mozL10n.getDirection();
+  document.getElementsByTagName('html')[0].dir = textDirection;
+  PDFView.isViewerRtl = (textDirection === 'rtl');
 
   PDFView.animationStartedPromise.then(function() {
     // Adjust the width of the zoom box to fit the content.

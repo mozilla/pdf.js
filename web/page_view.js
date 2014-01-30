@@ -328,6 +328,14 @@ var PageView = function pageView(container, id, scale,
     return this.viewport.convertToPdfPoint(x, y);
   };
 
+  function getLeftScrollPosition(pos) {
+    if (pos !== undefined && ((self.width | 0) >
+                         (PDFView.container.clientWidth - SCROLLBAR_PADDING))) {
+      return pos;
+    }
+    return (PDFView.isViewerRtl ? 1 : -1) * PDFView.container.scrollWidth;
+  }
+
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
     if (PresentationMode.active) { // Avoid breaking presentation mode.
       dest = null;
@@ -404,7 +412,8 @@ var PageView = function pageView(container, id, scale,
       this.viewport.convertToViewportPoint(x, y),
       this.viewport.convertToViewportPoint(x + width, y + height)
     ];
-    var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
+    var left = getLeftScrollPosition(Math.min(boundingRect[0][0],
+                                              boundingRect[1][0]));
     var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
     scrollIntoView(div, { left: left, top: top });
