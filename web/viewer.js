@@ -2168,12 +2168,6 @@ window.addEventListener('keydown', function keydown(evt) {
       return;
     }
   }
-  var controlsElement = document.getElementById('toolbar');
-  while (curElement) {
-    if (curElement === controlsElement && !PresentationMode.active)
-      return; // ignoring if the 'toolbar' element is focused
-    curElement = curElement.parentNode;
-  }
 //#if (FIREFOX || MOZCENTRAL)
 //// Workaround for issue in Firefox, that prevents scroll keys from working
 //// when elements with 'tabindex' are focused.
