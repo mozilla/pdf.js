@@ -393,47 +393,85 @@ var Lexer = (function LexerClosure() {
     nextChar: function Lexer_nextChar() {
       return (this.currentChar = this.stream.getByte());
     },
+    peekChar: function Lexer_peekChar() {
+      return this.stream.peekBytes(1)[0];
+    },
     getNumber: function Lexer_getNumber() {
-      var floating = false;
       var ch = this.currentChar;
-      var allDigits = ch >= 0x30 && ch <= 0x39;
-      var strBuf = this.strBuf;
-      strBuf.length = 0;
-      strBuf.push(String.fromCharCode(ch));
+      var eNotation = false;
+      var divideBy = 0; // different from 0 if it's a floating point value
+
+      var sign = 1;
+
+
+      if (ch === 0x2D) { // '-'
+        sign = -1;
+        ch = this.nextChar();
+      } else if (ch === 0x2B) { // '+'
+        ch = this.nextChar();
+      }
+      if (ch === 0x2E) { // '.'
+        divideBy = 10;
+        ch = this.nextChar();
+      }
+
+      if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+        error('Invalid number: ' + String.fromCharCode(ch));
+        return 0;
+      }
+
+      var baseValue = ch - 0x30; // '0'
+      var powerValue = 0;
+      var powerValueSign = 1;
+
       while ((ch = this.nextChar()) >= 0) {
-        if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
-          strBuf.push(String.fromCharCode(ch));
-        } else if (ch === 0x2E && !floating) { // '.'
-          strBuf.push('.');
-          floating = true;
-          allDigits = false;
+        if (0x30 <= ch && ch <= 0x39) { // '0' - '9'
+          var currentDigit = ch - 0x30; // '0'
+          if (eNotation) { // We are after an 'e' or 'E'
+            powerValue = powerValue * 10 + currentDigit;
+          } else {
+            if (divideBy !== 0) { // We are after a point
+              divideBy *= 10;
+            }
+            baseValue = baseValue * 10 + currentDigit;
+          }
+        } else if (ch === 0x2E) { // '.'
+          if (divideBy === 0) {
+            divideBy = 1;
+          } else {
+            // A number can have only one '.'
+            break;
+          }
         } else if (ch === 0x2D) { // '-'
           // ignore minus signs in the middle of numbers to match
           // Adobe's behavior
           warn('Badly formated number');
-          allDigits = false;
         } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
-          floating = true;
-          allDigits = false;
+          // 'E' can be either a scientific notation or the beginning of a new
+          // operator
+          var hasE = true;
+          ch = this.peekChar();
+          if (ch === 0x2B || ch === 0x2D) { // '+', '-'
+            powerValueSign = (ch === 0x2D) ? -1 : 1;
+            this.nextChar(); // Consume the sign character
+          } else if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+            // The 'E' must be the beginning of a new operator
+            break;
+          }
+          eNotation = true;
         } else {
           // the last character doesn't belong to us
           break;
         }
       }
-      var value;
-      if (allDigits) {
-        value = 0;
-        var charCodeOfZero = 48;    // '0'
-        for (var i = 0, ii = strBuf.length; i < ii; i++) {
-          value = value * 10 + (strBuf[i].charCodeAt(0) - charCodeOfZero);
-        }
-      } else {
-        value = parseFloat(strBuf.join(''));
-        if (isNaN(value)) {
-          error('Invalid floating point number: ' + value);
-        }
+
+      if (divideBy !== 0) {
+        baseValue /= divideBy;
       }
-      return value;
+      if (eNotation) {
+        baseValue *= Math.pow(10, powerValueSign * powerValue);
+      }
+      return sign * baseValue;
     },
     getString: function Lexer_getString() {
       var numParen = 1;

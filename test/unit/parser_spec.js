@@ -14,6 +14,30 @@ describe('parser', function() {
       expect(result).toEqual(11.234);
     });
 
+    it('should parse PostScript numbers', function() {
+      var numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.', '0.0',
+                    '123', '-98', '43445', '0', '+17'];
+      for (var i=0, ii=numbers.length; i<ii; i++) {
+        var num = numbers[i];
+        var input = new StringStream(num);
+        var lexer = new Lexer(input);
+        var result = lexer.getNumber();
+
+        expect(result).toEqual(parseFloat(num));
+      }
+    });
+
+
+    it('should handle glued numbers and operators', function() {
+      var input = new StringStream('123ET');
+      var lexer = new Lexer(input);
+      var value = lexer.getNumber();
+
+      expect(value).toEqual(123);
+      // The lexer must not have consumed the 'E'
+      expect(lexer.currentChar).toEqual(0x45); // 'E'
+    });
+
     it('should stop parsing strings at the end of stream', function() {
       var input = new StringStream('(1$4)');
       input.getByte = function(super_getByte) {
