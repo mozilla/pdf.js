@@ -2301,9 +2301,8 @@ var LZWStream = (function LZWStreamClosure() {
         dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
         dictionaryValues[nextCode] = currentSequence[0];
         nextCode++;
-        codeLength = (nextCode + earlyChange) & (nextCode + earlyChange - 1) ?
-          codeLength : Math.min(Math.log(nextCode + earlyChange) /
-          0.6931471805599453 + 1, 12) | 0;
+        if (nextCode + earlyChange >= (1 << codeLength) && codeLength < 12)
+          codeLength++;
       }
       prevCode = code;
 
