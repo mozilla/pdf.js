@@ -43,6 +43,7 @@ var CLEANUP_TIMEOUT = 30000;
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 //#if B2G
 //USE_ONLY_CSS_ZOOM = true;
+//PDFJS.disableTextLayer = true;
 //#endif
 var RenderingStates = {
   INITIAL: 0,
