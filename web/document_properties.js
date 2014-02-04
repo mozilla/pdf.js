@@ -76,7 +76,7 @@ var DocumentProperties = {
     this.fileName = getPDFFileNameFromURL(PDFView.url);
 
     // Get the file size.
-    PDFView.pdfDocument.dataLoaded().then(function(data) {
+    PDFView.pdfDocument.getDownloadInfo().then(function(data) {
       self.setFileSize(data.length);
     });
 

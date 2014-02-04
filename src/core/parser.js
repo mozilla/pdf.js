@@ -335,6 +335,13 @@ var Lexer = (function LexerClosure() {
     this.stream = stream;
     this.nextChar();
 
+    // While lexing, we build up many strings one char at a time. Using += for
+    // this can result in lots of garbage strings. It's better to build an
+    // array of single-char strings and then join() them together at the end.
+    // And reusing a single array (i.e. |this.strBuf|) over and over for this
+    // purpose uses less memory than using a new array for each string.
+    this.strBuf = [];
+
     // The PDFs might have "glued" commands with other commands, operands or
     // literals, e.g. "q1". The knownCommands is a dictionary of the valid
     // commands and their prefixes. The prefixes are built the following way:
@@ -386,36 +393,91 @@ var Lexer = (function LexerClosure() {
     nextChar: function Lexer_nextChar() {
       return (this.currentChar = this.stream.getByte());
     },
+    peekChar: function Lexer_peekChar() {
+      return this.stream.peekBytes(1)[0];
+    },
     getNumber: function Lexer_getNumber() {
-      var floating = false;
       var ch = this.currentChar;
-      var str = String.fromCharCode(ch);
+      var eNotation = false;
+      var divideBy = 0; // different from 0 if it's a floating point value
+
+      var sign = 1;
+
+
+      if (ch === 0x2D) { // '-'
+        sign = -1;
+        ch = this.nextChar();
+      } else if (ch === 0x2B) { // '+'
+        ch = this.nextChar();
+      }
+      if (ch === 0x2E) { // '.'
+        divideBy = 10;
+        ch = this.nextChar();
+      }
+
+      if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+        error('Invalid number: ' + String.fromCharCode(ch));
+        return 0;
+      }
+
+      var baseValue = ch - 0x30; // '0'
+      var powerValue = 0;
+      var powerValueSign = 1;
+
       while ((ch = this.nextChar()) >= 0) {
-        if (ch === 0x2E && !floating) { // '.'
-          str += '.';
-          floating = true;
+        if (0x30 <= ch && ch <= 0x39) { // '0' - '9'
+          var currentDigit = ch - 0x30; // '0'
+          if (eNotation) { // We are after an 'e' or 'E'
+            powerValue = powerValue * 10 + currentDigit;
+          } else {
+            if (divideBy !== 0) { // We are after a point
+              divideBy *= 10;
+            }
+            baseValue = baseValue * 10 + currentDigit;
+          }
+        } else if (ch === 0x2E) { // '.'
+          if (divideBy === 0) {
+            divideBy = 1;
+          } else {
+            // A number can have only one '.'
+            break;
+          }
         } else if (ch === 0x2D) { // '-'
           // ignore minus signs in the middle of numbers to match
           // Adobe's behavior
           warn('Badly formated number');
-        } else if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
-          str += String.fromCharCode(ch);
         } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
-          floating = true;
+          // 'E' can be either a scientific notation or the beginning of a new
+          // operator
+          var hasE = true;
+          ch = this.peekChar();
+          if (ch === 0x2B || ch === 0x2D) { // '+', '-'
+            powerValueSign = (ch === 0x2D) ? -1 : 1;
+            this.nextChar(); // Consume the sign character
+          } else if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+            // The 'E' must be the beginning of a new operator
+            break;
+          }
+          eNotation = true;
         } else {
           // the last character doesn't belong to us
           break;
         }
       }
-      var value = parseFloat(str);
-      if (isNaN(value))
-        error('Invalid floating point number: ' + value);
-      return value;
+
+      if (divideBy !== 0) {
+        baseValue /= divideBy;
+      }
+      if (eNotation) {
+        baseValue *= Math.pow(10, powerValueSign * powerValue);
+      }
+      return sign * baseValue;
     },
     getString: function Lexer_getString() {
       var numParen = 1;
       var done = false;
-      var str = '';
+      var strBuf = this.strBuf;
+      strBuf.length = 0;
 
       var ch = this.nextChar();
       while (true) {
@@ -427,14 +489,14 @@ var Lexer = (function LexerClosure() {
             break;
           case 0x28: // '('
             ++numParen;
-            str += '(';
+            strBuf.push('(');
             break;
           case 0x29: // ')'
             if (--numParen === 0) {
               this.nextChar(); // consume strings ')'
               done = true;
             } else {
-              str += ')';
+              strBuf.push(')');
             }
             break;
           case 0x5C: // '\\'
@@ -445,24 +507,24 @@ var Lexer = (function LexerClosure() {
                 done = true;
                 break;
               case 0x6E: // 'n'
-                str += '\n';
+                strBuf.push('\n');
                 break;
               case 0x72: // 'r'
-                str += '\r';
+                strBuf.push('\r');
                 break;
               case 0x74: // 't'
-                str += '\t';
+                strBuf.push('\t');
                 break;
               case 0x62: // 'b'
-                str += '\b';
+                strBuf.push('\b');
                 break;
               case 0x66: // 'f'
-                str += '\f';
+                strBuf.push('\f');
                 break;
               case 0x5C: // '\'
               case 0x28: // '('
               case 0x29: // ')'
-                str += String.fromCharCode(ch);
+                strBuf.push(String.fromCharCode(ch));
                 break;
               case 0x30: case 0x31: case 0x32: case 0x33: // '0'-'3'
               case 0x34: case 0x35: case 0x36: case 0x37: // '4'-'7'
@@ -478,17 +540,17 @@ var Lexer = (function LexerClosure() {
                   }
                 }
 
-                str += String.fromCharCode(x);
+                strBuf.push(String.fromCharCode(x));
                 break;
               case 0x0A: case 0x0D: // LF, CR
                 break;
               default:
-                str += String.fromCharCode(ch);
+                strBuf.push(String.fromCharCode(ch));
                 break;
             }
             break;
           default:
-            str += String.fromCharCode(ch);
+            strBuf.push(String.fromCharCode(ch));
             break;
         }
         if (done) {
@@ -498,10 +560,12 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         }
       }
-      return str;
+      return strBuf.join('');
     },
     getName: function Lexer_getName() {
-      var str = '', ch;
+      var ch;
+      var strBuf = this.strBuf;
+      strBuf.length = 0;
       while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
         if (ch === 0x23) { // '#'
           ch = this.nextChar();
@@ -510,23 +574,23 @@ var Lexer = (function LexerClosure() {
             var x2 = toHexDigit(this.nextChar());
             if (x2 == -1)
               error('Illegal digit in hex char in name: ' + x2);
-            str += String.fromCharCode((x << 4) | x2);
+            strBuf.push(String.fromCharCode((x << 4) | x2));
           } else {
-            str += '#';
-            str += String.fromCharCode(ch);
+            strBuf.push('#', String.fromCharCode(ch));
           }
         } else {
-          str += String.fromCharCode(ch);
+          strBuf.push(String.fromCharCode(ch));
         }
       }
-      if (str.length > 128) {
+      if (strBuf.length > 128) {
         error('Warning: name token is longer than allowed by the spec: ' +
-              str.length);
+              strBuf.length);
       }
-      return new Name(str);
+      return new Name(strBuf.join(''));
     },
     getHexString: function Lexer_getHexString() {
-      var str = '';
+      var strBuf = this.strBuf;
+      strBuf.length = 0;
       var ch = this.currentChar;
       var isFirstHex = true;
       var firstDigit;
@@ -556,13 +620,13 @@ var Lexer = (function LexerClosure() {
               ch = this.nextChar();
               continue;
             }
-            str += String.fromCharCode((firstDigit << 4) | secondDigit);
+            strBuf.push(String.fromCharCode((firstDigit << 4) | secondDigit));
           }
           isFirstHex = !isFirstHex;
           ch = this.nextChar();
         }
       }
-      return str;
+      return strBuf.join('');
     },
     getObj: function Lexer_getObj() {
       // skip whitespace and comments

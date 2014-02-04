@@ -23,7 +23,8 @@
       "ftp://*/*",
       "file://*/*"
     ],
-    "js": ["nothing.js"]
+    "run_at": "document_start",
+    "js": ["contentscript.js"]
   }],
   "mime_types": [
     "application/pdf"

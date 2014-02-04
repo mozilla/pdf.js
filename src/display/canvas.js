@@ -16,8 +16,8 @@
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
            FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           Pattern, TilingPattern, Util, warn, assert, info, shadow,
-           TextRenderingMode, OPS, Promise */
+           TilingPattern, OPS, Promise, Util, warn, assert, info, shadow,
+           TextRenderingMode, getShadingPatternFromIR */
 
 'use strict';
 
@@ -437,45 +437,97 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // of putImageData(). (E.g. in Firefox we make two short-lived copies of
     // the data passed to putImageData()). |n| shouldn't be too small, however,
     // because too many putImageData() calls will slow things down.
+    //
+    // Note: as written, if the last chunk is partial, the putImageData() call
+    // will (conceptually) put pixels past the bounds of the canvas.  But
+    // that's ok; any such pixels are ignored.
 
-    var rowsInFullChunks = 16;
-    var fullChunks = (imgData.height / rowsInFullChunks) | 0;
-    var rowsInLastChunk = imgData.height - fullChunks * rowsInFullChunks;
-    var elemsInFullChunks = imgData.width * rowsInFullChunks * 4;
-    var elemsInLastChunk = imgData.width * rowsInLastChunk * 4;
+    var height = imgData.height, width = imgData.width;
+    var fullChunkHeight = 16;
+    var fracChunks = height / fullChunkHeight;
+    var fullChunks = Math.floor(fracChunks);
+    var totalChunks = Math.ceil(fracChunks);
+    var partialChunkHeight = height - fullChunks * fullChunkHeight;
 
-    var chunkImgData = ctx.createImageData(imgData.width, rowsInFullChunks);
+    var chunkImgData = ctx.createImageData(width, fullChunkHeight);
     var srcPos = 0;
     var src = imgData.data;
     var dst = chunkImgData.data;
-    var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
 
-    // Do all the full-size chunks.
-    for (var i = 0; i < fullChunks; i++) {
-      if (haveSetAndSubarray) {
-        dst.set(src.subarray(srcPos, srcPos + elemsInFullChunks));
-        srcPos += elemsInFullChunks;
-      } else {
-        for (var j = 0; j < elemsInFullChunks; j++) {
-          chunkImgData.data[j] = imgData.data[srcPos++];
-        }
-      }
-      ctx.putImageData(chunkImgData, 0, i * rowsInFullChunks);
-    }
+    // There are multiple forms in which the pixel data can be passed, and
+    // imgData.kind tells us which one this is.
 
-    // Do the final, partial chunk, if required.
-    if (rowsInLastChunk !== 0) {
-      if (haveSetAndSubarray) {
-        dst.set(src.subarray(srcPos, srcPos + elemsInLastChunk));
-        srcPos += elemsInLastChunk;
-      } else {
-        for (var j = 0; j < elemsInLastChunk; j++) {
-          chunkImgData.data[j] = imgData.data[srcPos++];
-        }
+    if (imgData.kind === 'grayscale_1bpp') {
+      // Grayscale, 1 bit per pixel (i.e. black-and-white).
+      var srcData = imgData.data;
+      var destData = chunkImgData.data;
+      var destDataLength = destData.length;
+      var origLength = imgData.origLength;
+      for (var i = 3; i < destDataLength; i += 4) {
+        destData[i] = 255;
       }
-      // This (conceptually) puts pixels past the bounds of the canvas.  But
-      // that's ok; any such pixels are ignored.
-      ctx.putImageData(chunkImgData, 0, fullChunks * rowsInFullChunks);
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var destPos = 0;
+        for (var j = 0; j < thisChunkHeight; j++) {
+          var mask = 0;
+          var srcByte = 0;
+          for (var k = 0; k < width; k++, destPos += 4) {
+            if (mask === 0) {
+              if (srcPos >= origLength) {
+                break;
+              }
+              srcByte = srcData[srcPos++];
+              mask = 128;
+            }
+
+            if ((srcByte & mask)) {
+              destData[destPos] = 255;
+              destData[destPos + 1] = 255;
+              destData[destPos + 2] = 255;
+            } else {
+              destData[destPos] = 0;
+              destData[destPos + 1] = 0;
+              destData[destPos + 2] = 0;
+            }
+
+            mask >>= 1;
+          }
+        }
+        if (destPos < destDataLength) {
+          // We ran out of input. Make all remaining pixels transparent.
+          destPos += 3;
+          do {
+            destData[destPos] = 0;
+            destPos += 4;
+          } while (destPos < destDataLength);
+        }
+
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
+      }
+
+    } else if (imgData.kind === 'rgba_32bpp') {
+      // RGBA, 32-bits per pixel.
+      var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
+
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var elemsInThisChunk = imgData.width * thisChunkHeight * 4;
+        if (haveSetAndSubarray) {
+          dst.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
+          srcPos += elemsInThisChunk;
+        } else {
+          for (var j = 0; j < elemsInThisChunk; j++) {
+            chunkImgData.data[j] = imgData.data[srcPos++];
+          }
+        }
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
+      }
+
+    } else {
+        error('bad image kind: ' + imgData.kind);
     }
   }
 
@@ -531,29 +583,28 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     var maskCtx = smask.context;
     var width = mask.width, height = mask.height;
 
-    var removeBackdropFn;
+    var addBackdropFn;
     if (smask.backdrop) {
       var cs = smask.colorSpace || ColorSpace.singletons.rgb;
       var backdrop = cs.getRgb(smask.backdrop, 0);
-      removeBackdropFn = function (r0, g0, b0, layerDataBytes) {
-        var length = layerDataBytes.length;
+      addBackdropFn = function (r0, g0, b0, bytes) {
+        var length = bytes.length;
         for (var i = 3; i < length; i += 4) {
-          var alpha = layerDataBytes[i];
-          if (alpha !== 0 && alpha !== 255) {
-            var r = ((layerDataBytes[i - 3] * 255 -
-              r0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 3] = r < 0 ? 0 : r > 255 ? 255 : r;
-            var g = ((layerDataBytes[i - 2] * 255 -
-              g0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 2] = g < 0 ? 0 : g > 255 ? 255 : g;
-            var b = ((layerDataBytes[i - 1] * 255 -
-              b0 * (255 - alpha)) / alpha) | 0;
-            layerDataBytes[i - 1] = b < 0 ? 0 : b > 255 ? 255 : b;
+          var alpha = bytes[i] / 255;
+          if (alpha === 0) {
+            bytes[i - 3] = r0;
+            bytes[i - 2] = g0;
+            bytes[i - 1] = b0;
+          } else if (alpha < 1) {
+            var alpha_ = 1 - alpha;
+            bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) | 0;
+            bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) | 0;
+            bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) | 0;
           }
         }
       }.bind(null, backdrop[0], backdrop[1], backdrop[2]);
     } else {
-      removeBackdropFn = function () {};
+      addBackdropFn = function () {};
     }
 
     var composeFn;
@@ -584,7 +635,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var maskData = maskCtx.getImageData(0, row, width, chunkHeight);
       var layerData = layerCtx.getImageData(0, row, width, chunkHeight);
 
-      removeBackdropFn(layerData.data);
+      addBackdropFn(maskData.data);
       composeFn(maskData.data, layerData.data);
 
       maskCtx.putImageData(layerData, 0, row);
@@ -620,9 +671,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var transform = viewport.transform;
-      this.baseTransform = transform.slice();
+
       this.ctx.save();
       this.ctx.transform.apply(this.ctx, transform);
+
+      this.baseTransform = this.ctx.mozCurrentTransform.slice();
 
       if (this.textLayer) {
         this.textLayer.beginLayout();
@@ -1499,10 +1552,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         }
         var pattern = new TilingPattern(IR, color, this.ctx, this.objs,
                                         this.commonObjs, this.baseTransform);
-      } else if (IR[0] == 'RadialAxial' || IR[0] == 'Dummy') {
-        var pattern = Pattern.shadingFromIR(IR);
       } else {
-        error('Unkown IR type ' + IR[0]);
+        var pattern = getShadingPatternFromIR(IR);
       }
       return pattern;
     },
@@ -1582,8 +1633,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
 
       this.save();
-      var pattern = Pattern.shadingFromIR(patternIR);
-      ctx.fillStyle = pattern.getPattern(ctx, this);
+      var pattern = getShadingPatternFromIR(patternIR);
+      ctx.fillStyle = pattern.getPattern(ctx, this, true);
 
       var inv = ctx.mozCurrentTransformInverse;
       if (inv) {

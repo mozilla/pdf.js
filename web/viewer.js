@@ -17,7 +17,7 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
-           Preferences, ViewHistory, PageView, ThumbnailView,
+           Preferences, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
            PresentationMode, HandTool, Promise, DocumentProperties */
 
@@ -43,6 +43,7 @@ var CLEANUP_TIMEOUT = 30000;
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 //#if B2G
 //USE_ONLY_CSS_ZOOM = true;
+//PDFJS.disableTextLayer = true;
 //#endif
 var RenderingStates = {
   INITIAL: 0,
@@ -446,6 +447,7 @@ var PDFView = {
             (this.container.scrollWidth > this.container.clientWidth));
   },
 
+//#if (FIREFOX || MOZCENTRAL)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     var pdfDataRangeTransport = {
       rangeListeners: [],
@@ -482,6 +484,11 @@ var PDFView = {
     };
 
     window.addEventListener('message', function windowMessage(e) {
+      if (e.source !== null) {
+        // The message MUST originate from Chrome code.
+        console.warn('Rejected untrusted message from ' + e.origin);
+        return;
+      }
       var args = e.data;
 
       if (typeof args !== 'object' || !('pdfjsLoadAction' in args))
@@ -514,6 +521,7 @@ var PDFView = {
     });
     FirefoxCom.requestSync('initPassiveLoading', null);
   },
+//#endif
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
@@ -847,7 +855,7 @@ var PDFView = {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    pdfDocument.dataLoaded().then(function() {
+    pdfDocument.getDownloadInfo().then(function() {
       PDFView.loadingBar.hide();
       var outerContainer = document.getElementById('outerContainer');
       outerContainer.classList.remove('loadingInProgress');
@@ -1814,8 +1822,6 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //    var streamUrl = response.streamUrl;
 //    if (streamUrl) {
 //      console.log('Found data stream for ' + file);
-//      // The blob stream can be used only once, so disable range requests.
-//      PDFJS.disableRange = true;
 //      PDFView.open(streamUrl, 0);
 //      PDFView.setTitleUsingUrl(file);
 //      return;
@@ -1929,21 +1935,28 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
   }
 });
 
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
 window.addEventListener('change', function webViewerChange(evt) {
   var files = evt.target.files;
   if (!files || files.length === 0)
     return;
 
-  // Read the local file into a Uint8Array.
-  var fileReader = new FileReader();
-  fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
-    var buffer = evt.target.result;
-    var uint8Array = new Uint8Array(buffer);
-    PDFView.open(uint8Array, 0);
-  };
-
   var file = files[0];
-  fileReader.readAsArrayBuffer(file);
+
+  if (!PDFJS.disableCreateObjectURL &&
+      typeof URL !== 'undefined' && URL.createObjectURL) {
+    PDFView.open(URL.createObjectURL(file), 0);
+  } else {
+    // Read the local file into a Uint8Array.
+    var fileReader = new FileReader();
+    fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
+      var buffer = evt.target.result;
+      var uint8Array = new Uint8Array(buffer);
+      PDFView.open(uint8Array, 0);
+    };
+    fileReader.readAsArrayBuffer(file);
+  }
+
   PDFView.setTitleUsingUrl(file.name);
 
   // URL does not reflect proper document location - hiding some icons.
@@ -1953,6 +1966,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   document.getElementById('download').setAttribute('hidden', 'true');
   document.getElementById('secondaryDownload').setAttribute('hidden', 'true');
 }, true);
+//#endif
 
 function selectScaleOption(value) {
   var options = document.getElementById('scaleSelect').options;
@@ -2042,19 +2056,22 @@ window.addEventListener('pagechange', function pagechange(evt) {
   document.getElementById('next').disabled = (page >= PDFView.pages.length);
 }, true);
 
-// Firefox specific event, so that we can prevent browser from zooming
-window.addEventListener('DOMMouseScroll', function(evt) {
-  if (evt.ctrlKey) {
-    evt.preventDefault();
+function handleMouseWheel(evt) {
+  var MOUSE_WHEEL_DELTA_FACTOR = 40;
+  var ticks = (evt.type === 'DOMMouseScroll') ? -evt.detail :
+              evt.wheelDelta / MOUSE_WHEEL_DELTA_FACTOR;
+  var direction = (ticks < 0) ? 'zoomOut' : 'zoomIn';
 
-    var ticks = evt.detail;
-    var direction = (ticks > 0) ? 'zoomOut' : 'zoomIn';
+  if (evt.ctrlKey) { // Only zoom the pages, not the entire viewer
+    evt.preventDefault();
     PDFView[direction](Math.abs(ticks));
   } else if (PresentationMode.active) {
-    var FIREFOX_DELTA_FACTOR = -40;
-    PDFView.mouseScroll(evt.detail * FIREFOX_DELTA_FACTOR);
+    PDFView.mouseScroll(ticks * MOUSE_WHEEL_DELTA_FACTOR);
   }
-}, false);
+}
+
+window.addEventListener('DOMMouseScroll', handleMouseWheel);
+window.addEventListener('mousewheel', handleMouseWheel);
 
 window.addEventListener('click', function click(evt) {
   if (!PresentationMode.active) {

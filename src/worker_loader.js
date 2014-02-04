@@ -22,7 +22,6 @@
 var sharedFiles = [
   'shared/util.js',
   'shared/colorspace.js',
-  'shared/pattern.js',
   'shared/function.js',
   'shared/annotation.js'
 ];
@@ -37,6 +36,7 @@ var otherFiles = [
   'core/charsets.js',
   'core/cidmaps.js',
   'core/crypto.js',
+  'core/pattern.js',
   'core/evaluator.js',
   'core/cmap.js',
   'core/fonts.js',
@@ -45,6 +45,7 @@ var otherFiles = [
   'core/image.js',
   'core/metrics.js',
   'core/parser.js',
+  'core/ps_parser.js',
   'core/stream.js',
   'core/worker.js',
   'core/jpx.js',

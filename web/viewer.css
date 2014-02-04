@@ -35,6 +35,7 @@ input,
 button,
 select {
   font: message-box;
+  outline: none;
 }
 
 .hidden {
@@ -920,6 +921,7 @@ html[dir="rtl"] .secondaryToolbarButton.print::before {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
+  outline: none;
   padding-top: 4px;
   text-decoration: none;
 }
@@ -1575,30 +1577,31 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   color: black;
 }
 
-.grab-to-pan-grab * {
+.grab-to-pan-grab {
   cursor: url("images/grab.cur"), move !important;
   cursor: -webkit-grab !important;
   cursor: -moz-grab !important;
   cursor: grab !important;
 }
-.grab-to-pan-grabbing,
-.grab-to-pan-grabbing * {
+.grab-to-pan-grab *:not(input):not(textarea):not(button):not(select):not(:link) {
+  cursor: inherit !important;
+}
+.grab-to-pan-grab:active,
+.grab-to-pan-grabbing {
   cursor: url("images/grabbing.cur"), move !important;
   cursor: -webkit-grabbing !important;
   cursor: -moz-grabbing !important;
   cursor: grabbing !important;
-}
-.grab-to-pan-grab input,
-.grab-to-pan-grab textarea,
-.grab-to-pan-grab button,
-.grab-to-pan-grab button *,
-.grab-to-pan-grab select,
-.grab-to-pan-grab option {
-  cursor: auto !important;
-}
-.grab-to-pan-grab a[href],
-.grab-to-pan-grab a[href] * {
-  cursor: pointer !important;
+
+  position: fixed;
+  background: transparent;
+  display: block;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 50000; /* should be higher than anything else in PDF.js! */
 }
 
 @page {
