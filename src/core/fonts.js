@@ -599,6 +599,15 @@ function mapPrivateUseChars(code) {
     case 0xF8E9: // copyrightsans
     case 0xF6D9: // copyrightserif
       return 0x00A9; // copyright
+
+    case 0xF8E8: // registersans
+    case 0xF6DA: // registerserif
+      return 0x00AE; // registered
+
+    case 0xF8EA: // trademarksans
+    case 0xF6DB: // trademarkserif
+      return 0x2122; // trademark
+
     default:
       return code;
   }
