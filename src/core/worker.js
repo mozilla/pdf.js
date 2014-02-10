@@ -18,7 +18,7 @@
            MissingPDFException, PasswordException, PDFJS, Promise,
            UnknownErrorException, NetworkManager, LocalPdfManager,
            NetworkPdfManager, XRefParseException, LegacyPromise,
-           isInt, PasswordResponses, MessageHandler, Ref */
+           isInt, PasswordResponses, MessageHandler, Ref, RANGE_CHUNK_SIZE */
 
 'use strict';
 
@@ -119,6 +119,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           if (!isInt(length)) {
             return;
           }
+          source.length = length;
+          if (length <= 2 * RANGE_CHUNK_SIZE) {
+            // The file size is smaller than the size of two chunks, so it does
+            // not make any sense to abort the request and retry with a range
+            // request.
+            return;
+          }
 
           // NOTE: by cancelling the full request, and then issuing range
           // requests, there will be an issue for sites where you can only
@@ -126,7 +133,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           // server should not be returning that it can support range requests.
           networkManager.abortRequest(fullRequestXhrId);
 
-          source.length = length;
           try {
             pdfManager = new NetworkPdfManager(source, handler);
             pdfManagerPromise.resolve(pdfManager);
