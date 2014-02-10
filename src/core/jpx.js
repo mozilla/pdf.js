@@ -1725,19 +1725,19 @@ var JpxImage = (function JpxImageClosure() {
         }
       }
       for (i = 0; i < hlHeight; i++) {
-        k = i * hlWidth, l = i * 2 * width + 1;
+        k = i * hlWidth; l = i * 2 * width + 1;
         for (j = 0; j < hlWidth; j++, k++, l += 2) {
           items[l] = hlItems[k];
         }
       }
       for (i = 0; i < lhHeight; i++) {
-        k = i * lhWidth, l = (i * 2 + 1) * width;
+        k = i * lhWidth; l = (i * 2 + 1) * width;
         for (j = 0; j < lhWidth; j++, k++, l += 2) {
           items[l] = lhItems[k];
         }
       }
       for (i = 0; i < hhHeight; i++) {
-        k = i * hhWidth, l = (i * 2 + 1) * width + 1;
+        k = i * hhWidth; l = (i * 2 + 1) * width + 1;
         for (j = 0; j < hhWidth; j++, k++, l += 2) {
           items[l] = hhItems[k];
         }
