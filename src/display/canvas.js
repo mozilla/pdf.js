@@ -437,10 +437,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // of putImageData(). (E.g. in Firefox we make two short-lived copies of
     // the data passed to putImageData()). |n| shouldn't be too small, however,
     // because too many putImageData() calls will slow things down.
-    //
-    // Note: as written, if the last chunk is partial, the putImageData() call
-    // will (conceptually) put pixels past the bounds of the canvas.  But
-    // that's ok; any such pixels are ignored.
 
     var height = imgData.height, width = imgData.width;
     var fullChunkHeight = 16;
@@ -460,15 +456,20 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     if (imgData.kind === 'grayscale_1bpp') {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var srcData = imgData.data;
-      var destData = chunkImgData.data;
-      var destDataLength = destData.length;
+      var destDataLength = dst.length;
       var origLength = imgData.origLength;
       for (var i = 3; i < destDataLength; i += 4) {
-        destData[i] = 255;
+        dst[i] = 255;
       }
       for (var i = 0; i < totalChunks; i++) {
-        var thisChunkHeight =
-          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var thisChunkHeight;
+        if (i < fullChunks) {
+          thisChunkHeight = fullChunkHeight;
+        } else {
+          thisChunkHeight = partialChunkHeight;
+          chunkImgData = ctx.createImageData(width, partialChunkHeight);
+          dst = chunkImgData.data;
+        }
         var destPos = 0;
         for (var j = 0; j < thisChunkHeight; j++) {
           var mask = 0;
@@ -483,13 +484,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             }
 
             if ((srcByte & mask)) {
-              destData[destPos] = 255;
-              destData[destPos + 1] = 255;
-              destData[destPos + 2] = 255;
+              dst[destPos] = 255;
+              dst[destPos + 1] = 255;
+              dst[destPos + 2] = 255;
             } else {
-              destData[destPos] = 0;
-              destData[destPos + 1] = 0;
-              destData[destPos + 2] = 0;
+              dst[destPos] = 0;
+              dst[destPos + 1] = 0;
+              dst[destPos + 2] = 0;
             }
 
             mask >>= 1;
@@ -499,7 +500,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           // We ran out of input. Make all remaining pixels transparent.
           destPos += 3;
           do {
-            destData[destPos] = 0;
+            dst[destPos] = 0;
             destPos += 4;
           } while (destPos < destDataLength);
         }
@@ -512,17 +513,24 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var haveSetAndSubarray = 'set' in dst && 'subarray' in src;
 
       for (var i = 0; i < totalChunks; i++) {
-        var thisChunkHeight =
-          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var thisChunkHeight;
+        if (i < fullChunks) {
+          thisChunkHeight = fullChunkHeight;
+        } else {
+          thisChunkHeight = partialChunkHeight;
+          chunkImgData = ctx.createImageData(width, partialChunkHeight);
+          dst = chunkImgData.data;
+        }
         var elemsInThisChunk = imgData.width * thisChunkHeight * 4;
         if (haveSetAndSubarray) {
           dst.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
           srcPos += elemsInThisChunk;
         } else {
           for (var j = 0; j < elemsInThisChunk; j++) {
-            chunkImgData.data[j] = imgData.data[srcPos++];
+            dst[j] = imgData.data[srcPos++];
           }
         }
+
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
 
