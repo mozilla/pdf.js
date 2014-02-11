@@ -220,6 +220,11 @@ class TestHandlerBase(BaseHTTPRequestHandler):
             self.sendIndex(url.path, url.query)
             return
 
+        pieces = path.split(os.sep);
+        if pieces[len(pieces) - 2] == 'cmaps':
+            self.sendFile(path, '.properties');
+            return
+
         if not (prefix == DOC_ROOT
                 and os.path.isfile(path)
                 and ext in MIMEs):

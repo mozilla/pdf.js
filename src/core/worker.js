@@ -239,6 +239,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       PDFJS.disableFontFace = data.disableFontFace;
       PDFJS.disableCreateObjectURL = data.disableCreateObjectURL;
       PDFJS.verbosity = data.verbosity;
+      PDFJS.cMapUrl = data.cMapUrl === undefined ?
+                           null : data.cMapUrl;
 
       getPdfManager(data).then(function () {
         pdfManager.onLoadedStream().then(function(stream) {
