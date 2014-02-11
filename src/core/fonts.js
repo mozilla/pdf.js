@@ -2207,6 +2207,15 @@ var Font = (function FontClosure() {
         }
         this.toFontChar = map;
         this.toUnicode = map;
+      } else if (/Symbol/i.test(fontName)) {
+        var symbols = Encodings.SymbolSetEncoding;
+        for (var charCode in symbols) {
+          var fontChar = GlyphsUnicode[symbols[charCode]];
+          if (!fontChar) {
+            continue;
+          }
+          this.toFontChar[charCode] = fontChar;
+        }
       } else {
         for (var charCode in this.toUnicode) {
           this.toFontChar[charCode] = this.toUnicode[charCode].charCodeAt(0);
