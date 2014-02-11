@@ -62,6 +62,11 @@ PDFJS.imageResourcesPath = './images/';
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.worker.js';
 //#endif
+//#if !PRODUCTION
+PDFJS.cMapUrl = '../external/cmaps/';
+//#else
+//PDFJS.cMapUrl = '../web/cmaps/';
+//#endif
 
 var mozL10n = document.mozL10n || document.webL10n;
 

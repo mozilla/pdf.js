@@ -386,7 +386,7 @@ describe('font', function() {
       var parser = new Type1Parser(stream);
       var props = { overridableEncoding: true };
       var program = parser.extractFontHeader(props);
-      expect(props.baseEncoding[33]).toEqual('arrowright');
+      expect(props.builtInEncoding[33]).toEqual('arrowright');
     });
   });
 });
