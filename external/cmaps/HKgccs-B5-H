@@ -1,0 +1,649 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%IncludeResource: ProcSet (CIDInit)
+%%BeginResource: CMap (HKgccs-B5-H)
+%%Title: (HKgccs-B5-H Adobe CNS1 1)
+%%Version: 1.003
+%%Copyright: -----------------------------------------------------------
+%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: All rights reserved.
+%%Copyright:
+%%Copyright: Redistribution and use in source and binary forms, with or
+%%Copyright: without modification, are permitted provided that the
+%%Copyright: following conditions are met:
+%%Copyright:
+%%Copyright: Redistributions of source code must retain the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer.
+%%Copyright:
+%%Copyright: Redistributions in binary form must reproduce the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer in the documentation and/or other materials
+%%Copyright: provided with the distribution. 
+%%Copyright:
+%%Copyright: Neither the name of Adobe Systems Incorporated nor the names
+%%Copyright: of its contributors may be used to endorse or promote
+%%Copyright: products derived from this software without specific prior
+%%Copyright: written permission. 
+%%Copyright:
+%%Copyright: THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+%%Copyright: CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+%%Copyright: INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%%Copyright: MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%%Copyright: DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+%%Copyright: CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%Copyright: SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+%%Copyright: NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%%Copyright: LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%Copyright: HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+%%Copyright: CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+%%Copyright: OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%Copyright: SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%Copyright: -----------------------------------------------------------
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (CNS1) def
+  /Supplement 1 def
+end def
+
+/CMapName /HKgccs-B5-H def
+/CMapVersion 1.003 def
+/CMapType 1 def
+
+/XUID [1 10 25399] def
+
+/WMode 0 def
+
+2 begincodespacerange
+  <00>   <80>
+  <8A40> <FEFE>
+endcodespacerange
+
+1 beginnotdefrange
+<00> <1f> 1
+endnotdefrange
+
+100 begincidrange
+<20> <7e> 1
+<8a40> <8a7e> 17160
+<8aa1> <8ae5> 17223
+<8b41> <8b42> 17292
+<8b45> <8b45> 17294
+<8b47> <8b47> 17295
+<8b49> <8b49> 17296
+<8b4b> <8b4b> 17297
+<8b4d> <8b50> 17298
+<8b54> <8b54> 17302
+<8b58> <8b58> 17303
+<8b5a> <8b5a> 17304
+<8e40> <8e44> 14123
+<8e46> <8e6a> 14128
+<8e6c> <8e75> 14165
+<8e77> <8e7d> 14175
+<8e7e> <8e7e> 289
+<8ea1> <8ea5> 14182
+<8ea7> <8ec8> 14187
+<8eca> <8ee4> 14221
+<8ee6> <8eee> 14248
+<8ef0> <8efe> 14257
+<8f40> <8f58> 14272
+<8f5a> <8f5e> 14297
+<8f60> <8f66> 14302
+<8f68> <8f7e> 14309
+<8fa1> <8fc4> 14332
+<8fc6> <8fc6> 14368
+<8fc8> <8fd9> 14369
+<8fdb> <8ffb> 14387
+<8ffd> <8ffe> 14420
+<9040> <905b> 14422
+<905e> <906e> 14450
+<9070> <9079> 14467
+<907a> <907a> 14057
+<907b> <907e> 14477
+<90a1> <90a5> 14481
+<90a7> <90b7> 14486
+<90b9> <90fe> 14503
+<9140> <9164> 14573
+<9166> <916d> 14610
+<916f> <917d> 14618
+<91a1> <91a1> 14633
+<91a3> <91fe> 14634
+<9240> <927e> 14726
+<92a1> <92ae> 14789
+<92af> <92b0> 281
+<92b1> <92b1> 284
+<92b2> <92b2> 283
+<92b3> <92e4> 14803
+<92e6> <92f1> 14853
+<92f3> <92fe> 14865
+<9340> <9367> 14877
+<9369> <937e> 14917
+<93a1> <93a9> 14939
+<93ab> <93c1> 14948
+<93c3> <93e4> 14971
+<93e6> <93ea> 15005
+<93ec> <93fe> 15010
+<9440> <9445> 15029
+<9447> <947e> 15035
+<94a1> <94fe> 15091
+<9540> <954c> 15185
+<954e> <9559> 15198
+<955b> <957e> 15210
+<95a1> <95c5> 15246
+<95c7> <95fe> 15283
+<9640> <967e> 15339
+<96a1> <96d3> 15402
+<96d5> <96fe> 15453
+<9740> <977e> 15495
+<97a1> <97fe> 15558
+<9840> <9874> 15652
+<9877> <9877> 15705
+<987a> <987a> 15706
+<98a3> <98a3> 15707
+<98af> <98af> 15708
+<98b6> <98b6> 15709
+<98b9> <98b9> 15710
+<98bd> <98be> 15711
+<98c2> <98c2> 15713
+<98c4> <98c4> 15714
+<98c6> <98c7> 15715
+<98e3> <98e3> 15717
+<98e7> <98e7> 15718
+<98ed> <98ed> 15719
+<98f0> <98f0> 15720
+<98f2> <98f2> 15721
+<98fc> <98fc> 15722
+<9943> <9943> 15723
+<9945> <9945> 15724
+<994f> <994f> 15725
+<996a> <996a> 15726
+<996e> <996e> 15727
+<9975> <9975> 15728
+<9978> <9978> 15729
+<99a2> <99a2> 15730
+<99ae> <99ae> 15731
+<99b6> <99b6> 15732
+<99ba> <99ba> 15733
+endcidrange
+
+100 begincidrange
+<99e2> <99e2> 15734
+<99f4> <99f4> 15735
+<9a4a> <9a4a> 15736
+<9a4c> <9a4c> 15737
+<9a59> <9a59> 15738
+<9a61> <9a61> 15739
+<9a68> <9a68> 15740
+<9a73> <9a73> 15741
+<9a7e> <9a7e> 15742
+<9ab2> <9ab2> 15743
+<9ab7> <9ab7> 15744
+<9ab9> <9ab9> 15745
+<9abb> <9abb> 15746
+<9ac7> <9ac7> 15747
+<9ad0> <9ad0> 15748
+<9ad2> <9ad2> 15749
+<9ad9> <9adb> 15750
+<9ae2> <9ae2> 15753
+<9ae4> <9ae4> 15754
+<9ae8> <9ae8> 15755
+<9af2> <9af2> 15756
+<9af6> <9af6> 15757
+<9afb> <9afb> 15758
+<9b46> <9b46> 15759
+<9b4a> <9b4a> 15760
+<9b4c> <9b4c> 15761
+<9b54> <9b54> 15762
+<9b58> <9b58> 15763
+<9b5a> <9b5a> 15764
+<9b5c> <9b5c> 15765
+<9b5e> <9b5f> 15766
+<9b70> <9b73> 15768
+<9b76> <9b78> 15772
+<9b7b> <9b7c> 15775
+<9b7e> <9b7e> 15777
+<9ba1> <9ba1> 15778
+<9ba3> <9ba4> 15779
+<9ba7> <9baa> 15781
+<9bac> <9bac> 15785
+<9baf> <9baf> 15786
+<9bb2> <9bb9> 15787
+<9bbe> <9bbe> 15795
+<9bc0> <9bc6> 15796
+<9bca> <9bca> 15803
+<9bcc> <9bcc> 15804
+<9bd0> <9bd1> 15805
+<9bd3> <9bd3> 15807
+<9bd5> <9bd5> 15808
+<9bd8> <9bda> 15809
+<9bdd> <9bdd> 15812
+<9bde> <9bde> 7188
+<9bdf> <9bdf> 15813
+<9be1> <9be1> 15814
+<9be3> <9be3> 15815
+<9be7> <9be7> 15816
+<9be9> <9bec> 15817
+<9bee> <9bef> 15821
+<9bf3> <9bf3> 15823
+<9bf6> <9bf6> 15824
+<9bf8> <9bf9> 15825
+<9bfb> <9bfc> 15827
+<9c40> <9c42> 15829
+<9c44> <9c46> 15832
+<9c48> <9c48> 15835
+<9c4a> <9c4a> 15836
+<9c4d> <9c53> 15837
+<9c55> <9c55> 15844
+<9c57> <9c5b> 15845
+<9c5d> <9c5d> 15850
+<9c60> <9c60> 15851
+<9c62> <9c62> 15852
+<9c64> <9c66> 15853
+<9c68> <9c68> 15856
+<9c6a> <9c6a> 15857
+<9c6b> <9c6b> 13418
+<9c6d> <9c6d> 15858
+<9c6f> <9c72> 15859
+<9c75> <9c77> 15863
+<9c79> <9c79> 15866
+<9c7b> <9c7c> 15867
+<9c7e> <9c7e> 15869
+<9ca1> <9ca2> 15870
+<9ca5> <9ca5> 15872
+<9ca8> <9ca9> 15873
+<9cab> <9cab> 15875
+<9cad> <9cae> 15876
+<9cb1> <9cba> 15878
+<9cbc> <9cc2> 15888
+<9cc6> <9ccd> 15895
+<9ccf> <9cd3> 15903
+<9cd8> <9cda> 15908
+<9cdc> <9ce5> 15911
+<9ce7> <9ce9> 15921
+<9ceb> <9cec> 15924
+<9cee> <9cf9> 15926
+<9cfd> <9cfd> 15938
+<9d46> <9d46> 15939
+<9d49> <9d4a> 15940
+<9d4c> <9d4d> 15942
+<9d4f> <9d4f> 15944
+endcidrange
+
+100 begincidrange
+<9d51> <9d51> 15945
+<9d55> <9d55> 15946
+<9d57> <9d57> 9665
+<9d5a> <9d5a> 15947
+<9d62> <9d62> 15948
+<9d64> <9d64> 15949
+<9d79> <9d79> 15950
+<9d7e> <9d7e> 15951
+<9da5> <9da8> 15952
+<9daa> <9daa> 15956
+<9dac> <9dae> 15957
+<9db0> <9db0> 15960
+<9db3> <9db3> 15961
+<9db5> <9db5> 15962
+<9db7> <9db7> 15963
+<9dbc> <9dbd> 15964
+<9dbf> <9dc0> 15966
+<9dc3> <9dc4> 15968
+<9dc7> <9dc8> 15970
+<9dca> <9dca> 15972
+<9dcd> <9dd1> 15973
+<9dd3> <9dd5> 15978
+<9dda> <9dfb> 15981
+<9dfd> <9dfe> 16015
+<9e40> <9e62> 16017
+<9e64> <9e65> 16052
+<9e68> <9e68> 16054
+<9e6a> <9e6a> 16055
+<9e71> <9e71> 16056
+<9e73> <9e73> 16057
+<9e77> <9e78> 16058
+<9e7a> <9e7a> 16060
+<9e7c> <9e7c> 16061
+<9e7e> <9e7e> 16062
+<9ea1> <9ea2> 16063
+<9ea4> <9ea6> 16065
+<9ea9> <9eaa> 16068
+<9eac> <9ead> 16070
+<9eaf> <9eb1> 16072
+<9eb4> <9eb4> 16075
+<9eb6> <9eb7> 16076
+<9eb9> <9eb9> 16078
+<9ebc> <9ebc> 16079
+<9ebf> <9ec0> 16080
+<9ec4> <9ec5> 16082
+<9ec7> <9eca> 16084
+<9ecc> <9ecd> 16088
+<9ed0> <9ed1> 16090
+<9ed3> <9ed3> 16092
+<9ed6> <9ed7> 16093
+<9eda> <9ef1> 16095
+<9ef3> <9ef5> 16119
+<9ef9> <9efa> 16122
+<9efc> <9efe> 16124
+<9f40> <9f42> 16127
+<9f44> <9f47> 16130
+<9f49> <9f4a> 16134
+<9f4d> <9f67> 16136
+<9f69> <9f6f> 16163
+<9f71> <9f7e> 16170
+<9fa1> <9fb4> 16184
+<9fb6> <9fba> 16204
+<9fbc> <9fbe> 16209
+<9fc0> <9fc0> 16212
+<9fc2> <9fe3> 16213
+<9fe5> <9ff8> 16247
+<9ffa> <9ffe> 16267
+<a041> <a046> 16272
+<a048> <a054> 16278
+<a056> <a06c> 16291
+<a06e> <a07a> 16314
+<a07c> <a07e> 16327
+<a0a1> <a0a1> 16330
+<a0a3> <a0a6> 16331
+<a0a8> <a0c4> 16335
+<a0c6> <a0cf> 16364
+<a0d1> <a0e2> 16374
+<a0e4> <a0e6> 16392
+<a140> <a158> 99
+<a159> <a15c> 13743
+<a15d> <a17e> 128
+<a1a1> <a1f5> 162
+<a1f6> <a1f6> 248
+<a1f7> <a1f7> 247
+<a1f8> <a1fe> 249
+<a240> <a27e> 256
+<a2a1> <a2fe> 319
+<a340> <a37e> 413
+<a3a1> <a3bb> 476
+<a3bd> <a3bf> 503
+<a440> <a47e> 595
+<a4a1> <a4fe> 658
+<a540> <a57e> 752
+<a5a1> <a5fe> 815
+<a640> <a67e> 909
+<a6a1> <a6fe> 972
+<a740> <a77e> 1066
+<a7a1> <a7fe> 1129
+<a840> <a87e> 1223
+<a8a1> <a8fe> 1286
+endcidrange
+
+100 begincidrange
+<a940> <a97e> 1380
+<a9a1> <a9fe> 1443
+<aa40> <aa7e> 1537
+<aaa1> <aafe> 1600
+<ab40> <ab7e> 1694
+<aba1> <abfe> 1757
+<ac40> <ac7e> 1851
+<aca1> <acfd> 1914
+<acfe> <acfe> 2431
+<ad40> <ad7e> 2007
+<ada1> <adfe> 2070
+<ae40> <ae7e> 2164
+<aea1> <aefe> 2227
+<af40> <af7e> 2321
+<afa1> <afcf> 2384
+<afd0> <affe> 2432
+<b040> <b07e> 2479
+<b0a1> <b0fe> 2542
+<b140> <b17e> 2636
+<b1a1> <b1fe> 2699
+<b240> <b27e> 2793
+<b2a1> <b2fe> 2856
+<b340> <b37e> 2950
+<b3a1> <b3fe> 3013
+<b440> <b47e> 3107
+<b4a1> <b4fe> 3170
+<b540> <b57e> 3264
+<b5a1> <b5fe> 3327
+<b640> <b67e> 3421
+<b6a1> <b6fe> 3484
+<b740> <b77e> 3578
+<b7a1> <b7fe> 3641
+<b840> <b87e> 3735
+<b8a1> <b8fe> 3798
+<b940> <b97e> 3892
+<b9a1> <b9fe> 3955
+<ba40> <ba7e> 4049
+<baa1> <bafe> 4112
+<bb40> <bb7e> 4206
+<bba1> <bbc7> 4269
+<bbc8> <bbfe> 4309
+<bc40> <bc7e> 4364
+<bca1> <bcfe> 4427
+<bd40> <bd7e> 4521
+<bda1> <bdfe> 4584
+<be40> <be51> 4678
+<be52> <be52> 4308
+<be53> <be7e> 4696
+<bea1> <befe> 4740
+<bf40> <bf7e> 4834
+<bfa1> <bffe> 4897
+<c040> <c07e> 4991
+<c0a1> <c0fe> 5054
+<c140> <c17e> 5148
+<c1a1> <c1aa> 5211
+<c1ab> <c1fe> 5222
+<c240> <c27e> 5306
+<c2a1> <c2ca> 5369
+<c2cb> <c2cb> 5221
+<c2cc> <c2fe> 5411
+<c340> <c360> 5462
+<c361> <c37e> 5496
+<c3a1> <c3b8> 5526
+<c3b9> <c3b9> 5551
+<c3ba> <c3ba> 5550
+<c3bb> <c3fe> 5552
+<c440> <c455> 5620
+<c456> <c456> 5495
+<c457> <c47e> 5642
+<c4a1> <c4fe> 5682
+<c540> <c57e> 5776
+<c5a1> <c5fe> 5839
+<c640> <c67e> 5933
+<c940> <c949> 5996
+<c94a> <c94a> 628
+<c94b> <c96b> 6006
+<c96c> <c97e> 6040
+<c9a1> <c9bd> 6059
+<c9be> <c9be> 6039
+<c9bf> <c9ec> 6088
+<c9ed> <c9fe> 6135
+<ca40> <ca7e> 6153
+<caa1> <caf6> 6216
+<caf7> <caf7> 6134
+<caf8> <cafe> 6302
+<cb40> <cb7e> 6309
+<cba1> <cbfe> 6372
+<cc40> <cc7e> 6466
+<cca1> <ccfe> 6529
+<cd40> <cd7e> 6623
+<cda1> <cdfe> 6686
+<ce40> <ce7e> 6780
+<cea1> <cefe> 6843
+<cf40> <cf7e> 6937
+<cfa1> <cffe> 7000
+<d040> <d07e> 7094
+<d0a1> <d0fe> 7157
+<d140> <d17e> 7251
+<d1a1> <d1fe> 7314
+<d240> <d27e> 7408
+endcidrange
+
+100 begincidrange
+<d2a1> <d2fe> 7471
+<d340> <d37e> 7565
+<d3a1> <d3fe> 7628
+<d440> <d47e> 7722
+<d4a1> <d4fe> 7785
+<d540> <d57e> 7879
+<d5a1> <d5fe> 7942
+<d640> <d67e> 8036
+<d6a1> <d6cb> 8099
+<d6cc> <d6cc> 8788
+<d6cd> <d6fe> 8143
+<d740> <d779> 8193
+<d77a> <d77a> 8889
+<d77b> <d77e> 8251
+<d7a1> <d7fe> 8255
+<d840> <d87e> 8349
+<d8a1> <d8fe> 8412
+<d940> <d97e> 8506
+<d9a1> <d9fe> 8569
+<da40> <da7e> 8663
+<daa1> <dade> 8726
+<dadf> <dadf> 8142
+<dae0> <dafe> 8789
+<db40> <db7e> 8820
+<dba1> <dba6> 8883
+<dba7> <dbfe> 8890
+<dc40> <dc7e> 8978
+<dca1> <dcfe> 9041
+<dd40> <dd7e> 9135
+<dda1> <ddfb> 9198
+<ddfc> <ddfc> 9089
+<ddfd> <ddfe> 9289
+<de40> <de7e> 9291
+<dea1> <defe> 9354
+<df40> <df7e> 9448
+<dfa1> <dffe> 9511
+<e040> <e07e> 9605
+<e0a1> <e0fe> 9668
+<e140> <e17e> 9762
+<e1a1> <e1fe> 9825
+<e240> <e27e> 9919
+<e2a1> <e2fe> 9982
+<e340> <e37e> 10076
+<e3a1> <e3fe> 10139
+<e440> <e47e> 10233
+<e4a1> <e4fe> 10296
+<e540> <e57e> 10390
+<e5a1> <e5fe> 10453
+<e640> <e67e> 10547
+<e6a1> <e6fe> 10610
+<e740> <e77e> 10704
+<e7a1> <e7fe> 10767
+<e840> <e87e> 10861
+<e8a1> <e8a2> 10924
+<e8a3> <e8fe> 10927
+<e940> <e975> 11019
+<e976> <e97e> 11074
+<e9a1> <e9fe> 11083
+<ea40> <ea7e> 11177
+<eaa1> <eafe> 11240
+<eb40> <eb5a> 11334
+<eb5b> <eb7e> 11362
+<eba1> <ebf0> 11398
+<ebf1> <ebf1> 10926
+<ebf2> <ebfe> 11478
+<ec40> <ec7e> 11491
+<eca1> <ecdd> 11554
+<ecde> <ecde> 11073
+<ecdf> <ecfe> 11615
+<ed40> <ed7e> 11647
+<eda1> <eda9> 11710
+<edaa> <edfe> 11720
+<ee40> <ee7e> 11805
+<eea1> <eeea> 11868
+<eeeb> <eeeb> 12308
+<eeec> <eefe> 11942
+<ef40> <ef7e> 11961
+<efa1> <effe> 12024
+<f040> <f055> 12118
+<f056> <f056> 11719
+<f057> <f07e> 12140
+<f0a1> <f0ca> 12180
+<f0cb> <f0cb> 11361
+<f0cc> <f0fe> 12222
+<f140> <f162> 12273
+<f163> <f16a> 12309
+<f16b> <f16b> 12640
+<f16c> <f17e> 12317
+<f1a1> <f1fe> 12336
+<f240> <f267> 12430
+<f268> <f268> 12783
+<f269> <f27e> 12470
+<f2a1> <f2c2> 12492
+<f2c3> <f2fe> 12527
+<f340> <f374> 12587
+<f375> <f37e> 12641
+<f3a1> <f3fe> 12651
+<f440> <f465> 12745
+<f466> <f47e> 12784
+<f4a1> <f4b4> 12809
+endcidrange
+
+52 begincidrange
+<f4b5> <f4b5> 12526
+<f4b6> <f4fc> 12829
+<f4fd> <f4fe> 12901
+<f540> <f57e> 12903
+<f5a1> <f5fe> 12966
+<f640> <f662> 13060
+<f663> <f663> 12900
+<f664> <f67e> 13095
+<f6a1> <f6fe> 13122
+<f740> <f77e> 13216
+<f7a1> <f7fe> 13279
+<f840> <f87e> 13373
+<f8a1> <f8fe> 13436
+<f940> <f976> 13530
+<f977> <f97e> 13586
+<f9a1> <f9c3> 13594
+<f9c4> <f9c4> 13585
+<f9c5> <f9c5> 13629
+<f9c6> <f9c6> 13641
+<f9c7> <f9d1> 13630
+<f9d2> <f9d5> 13642
+<fa40> <fa7e> 16395
+<faa1> <fafe> 16458
+<fb40> <fb7e> 16552
+<fba1> <fbbe> 16615
+<fbc0> <fbcc> 16645
+<fbce> <fbfe> 16658
+<fc40> <fc49> 16707
+<fc4b> <fc4e> 16717
+<fc4f> <fc4f> 8495
+<fc50> <fc51> 16721
+<fc53> <fc62> 16723
+<fc64> <fc74> 16739
+<fc76> <fc7e> 16756
+<fca1> <fcb8> 16765
+<fcb9> <fcb9> 4447
+<fcba> <fcbb> 16789
+<fcbd> <fce2> 16791
+<fce4> <fced> 16829
+<fcef> <fcfe> 16839
+<fd40> <fd48> 16855
+<fd4a> <fd7e> 16864
+<fda1> <fdf1> 16917
+<fdf3> <fdfe> 16998
+<fe40> <fe6c> 17010
+<fe6e> <fe77> 17055
+<fe79> <fe7e> 17065
+<fea1> <fea9> 17071
+<feaa> <feaa> 288
+<feab> <fedd> 17080
+<fee0> <feec> 17131
+<feef> <fefe> 17144
+endcidrange
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF
