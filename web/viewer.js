@@ -1572,15 +1572,13 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //(function rewriteUrlClosure() {
 //  // Run this code outside DOMContentLoaded to make sure that the URL
 //  // is rewritten as soon as possible.
-//  if (location.origin + '/' !== chrome.extension.getURL('/')) {
-//    DEFAULT_URL = window.location.href.split('#')[0];
-//  } else {
-//    var params = PDFView.parseQueryString(document.location.search.slice(1));
-//    DEFAULT_URL = params.file || DEFAULT_URL;
+//  var params = PDFView.parseQueryString(document.location.search.slice(1));
+//  DEFAULT_URL = params.file || DEFAULT_URL;
 //
-//    // Example: chrome-extension://.../http://example.com/file.pdf
-//    var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
-//    history.replaceState(history.state, '', humanReadableUrl);
+//  // Example: chrome-extension://.../http://example.com/file.pdf
+//  var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
+//  history.replaceState(history.state, '', humanReadableUrl);
+//  if (top === window) {
 //    chrome.runtime.sendMessage('showPageAction');
 //  }
 //})();
@@ -1598,12 +1596,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#endif
 //#if CHROME
 //var file = DEFAULT_URL;
-//#endif
-
-//#if CHROME
-//if (location.protocol !== 'chrome-extension:') {
-//  file = location.href.split('#')[0];
-//}
+//// XHR cannot get data from drive:-URLs, so expand to filesystem: (Chrome OS)
+//file = file.replace(/^drive:/i,
+//  'filesystem:' + location.origin + '/external/');
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || CHROME || B2G)

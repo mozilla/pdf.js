@@ -9,6 +9,7 @@
     "16": "icon16.png"
   },
   "permissions": [
+    "fileBrowserHandler",
     "webRequest", "webRequestBlocking",
     "<all_urls>",
     "tabs",
@@ -25,6 +26,13 @@
     ],
     "run_at": "document_start",
     "js": ["contentscript.js"]
+  }],
+  "file_browser_handlers": [{
+    "id": "open-as-pdf",
+    "default_title": "Open with PDF Viewer",
+    "file_filters": [
+      "filesystem:*.pdf"
+    ]
   }],
   "mime_types": [
     "application/pdf"
@@ -48,6 +56,8 @@
     "https:/*",
     "ftp:/*",
     "file:/*",
-    "chrome-extension:/*"
+    "chrome-extension:/*",
+    "filesystem:/*",
+    "drive:*"
   ]
 }
