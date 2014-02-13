@@ -116,6 +116,13 @@ PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
                                 false : PDFJS.disableCreateObjectURL);
 
 /**
+ * Disables WebGL usage.
+ * @var {boolean}
+ */
+PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
+                      true : PDFJS.disableWebGL);
+
+/**
  * Controls the logging level.
  * The constants from PDFJS.VERBOSITY_LEVELS should be used:
  * - errors

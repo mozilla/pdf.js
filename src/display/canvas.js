@@ -17,7 +17,8 @@
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error, PDFJS,
            FONT_IDENTITY_MATRIX, Uint32ArrayView, IDENTITY_MATRIX, ImageData,
            ImageKind, isArray, isNum, TilingPattern, OPS, Promise, Util, warn,
-           assert, info, shadow, TextRenderingMode, getShadingPatternFromIR */
+           assert, info, shadow, TextRenderingMode, getShadingPatternFromIR,
+           WebGLUtils */
 
 'use strict';
 
@@ -601,15 +602,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
-  function composeSMask(ctx, smask, layerCtx) {
-    var mask = smask.canvas;
-    var maskCtx = smask.context;
-    var width = mask.width, height = mask.height;
-
+  function genericComposeSMask(maskCtx, layerCtx, width, height,
+                               subtype, backdrop) {
     var addBackdropFn;
-    if (smask.backdrop) {
-      var cs = smask.colorSpace || ColorSpace.singletons.rgb;
-      var backdrop = cs.getRgb(smask.backdrop, 0);
+    if (backdrop) {
       addBackdropFn = function (r0, g0, b0, bytes) {
         var length = bytes.length;
         for (var i = 3; i < length; i += 4) {
@@ -631,7 +627,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     var composeFn;
-    if (smask.subtype === 'Luminosity') {
+    if (subtype === 'Luminosity') {
       composeFn = function (maskDataBytes, layerDataBytes) {
         var length = maskDataBytes.length;
         for (var i = 3; i < length; i += 4) {
@@ -664,9 +660,29 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       maskCtx.putImageData(layerData, 0, row);
     }
+  }
+
+  function composeSMask(ctx, smask, layerCtx) {
+    var mask = smask.canvas;
+    var maskCtx = smask.context;
 
     ctx.setTransform(smask.scaleX, 0, 0, smask.scaleY,
                      smask.offsetX, smask.offsetY);
+
+    var backdrop;
+    if (smask.backdrop) {
+      var cs = smask.colorSpace || ColorSpace.singletons.rgb;
+      backdrop = cs.getRgb(smask.backdrop, 0);
+    }
+    if (WebGLUtils.isEnabled) {
+      var composed = WebGLUtils.composeSMask(layerCtx.canvas, mask,
+        {subtype: smask.subtype, backdrop: backdrop});
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(composed, smask.offsetX, smask.offsetY);
+      return;
+    }
+    genericComposeSMask(maskCtx, layerCtx, mask.width, mask.height,
+                        smask.subtype, backdrop);
     ctx.drawImage(mask, 0, 0);
   }
 
@@ -784,6 +800,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     endDrawing: function CanvasGraphics_endDrawing() {
       this.ctx.restore();
       CachedCanvases.clear();
+      WebGLUtils.clear();
 
       if (this.textLayer) {
         this.textLayer.endLayout();

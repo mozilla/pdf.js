@@ -1711,6 +1711,10 @@ function webViewerLoad(evt) {
     PDFJS.disableHistory = (hashParams['disableHistory'] === 'true');
   }
 
+  if ('webgl' in hashParams) {
+    PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
+  }
+
   if ('useOnlyCssZoom' in hashParams) {
     USE_ONLY_CSS_ZOOM = (hashParams['useOnlyCssZoom'] === 'true');
   }
