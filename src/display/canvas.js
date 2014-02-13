@@ -26,6 +26,7 @@
 
 // Minimal font size that would be used during canvas fillText operations.
 var MIN_FONT_SIZE = 16;
+var MAX_GROUP_SIZE = 4096;
 
 var COMPILE_TYPE3_GLYPHS = true;
 
@@ -663,8 +664,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       maskCtx.putImageData(layerData, 0, row);
     }
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(mask, smask.offsetX, smask.offsetY);
+    ctx.setTransform(smask.scaleX, 0, 0, smask.scaleY,
+                     smask.offsetX, smask.offsetY);
+    ctx.drawImage(mask, 0, 0);
   }
 
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
@@ -904,6 +906,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.save();
 
       var groupCtx = scratchCanvas.context;
+      groupCtx.scale(1 / activeSMask.scaleX, 1 / activeSMask.scaleY);
       groupCtx.translate(-activeSMask.offsetX, -activeSMask.offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
@@ -1792,8 +1795,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
       // Use ceil in case we're between sizes so we don't create canvas that is
       // too small and make the canvas at least 1x1 pixels.
-      var drawnWidth = Math.max(Math.ceil(bounds[2] - bounds[0]), 1);
-      var drawnHeight = Math.max(Math.ceil(bounds[3] - bounds[1]), 1);
+      var offsetX = Math.floor(bounds[0]);
+      var offsetY = Math.floor(bounds[1]);
+      var drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
+      var drawnHeight = Math.max(Math.ceil(bounds[3]) - offsetY, 1);
+      var scaleX = 1, scaleY = 1;
+      if (drawnWidth > MAX_GROUP_SIZE) {
+        scaleX = drawnWidth / MAX_GROUP_SIZE;
+        drawnWidth = MAX_GROUP_SIZE;
+      }
+      if (drawnHeight > MAX_GROUP_SIZE) {
+        scaleY = drawnHeight / MAX_GROUP_SIZE;
+        drawnHeight = MAX_GROUP_SIZE;
+      }
 
       var cacheId = 'groupAt' + this.groupLevel;
       if (group.smask) {
@@ -1806,8 +1820,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       // Since we created a new canvas that is just the size of the bounding box
       // we have to translate the group ctx.
-      var offsetX = bounds[0];
-      var offsetY = bounds[1];
+      groupCtx.scale(1 / scaleX, 1 / scaleY);
       groupCtx.translate(-offsetX, -offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
@@ -1818,6 +1831,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           context: groupCtx,
           offsetX: offsetX,
           offsetY: offsetY,
+          scaleX: scaleX,
+          scaleY: scaleY,
           subtype: group.smask.subtype,
           backdrop: group.smask.backdrop,
           colorSpace: group.colorSpace && ColorSpace.fromIR(group.colorSpace)
@@ -1827,6 +1842,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         // right location.
         currentCtx.setTransform(1, 0, 0, 1, 0, 0);
         currentCtx.translate(offsetX, offsetY);
+        currentCtx.scale(scaleX, scaleY);
       }
       // The transparency group inherits all off the current graphics state
       // except the blend mode, soft mask, and alpha constants.
