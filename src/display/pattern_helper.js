@@ -55,28 +55,27 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     var coords = context.coords, colors = context.colors;
     var bytes = data.data, rowSize = data.width * 4;
     var tmp;
-    if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
+    if (coords[p1 + 1] > coords[p2 + 1]) {
       tmp = p1; p1 = p2; p2 = tmp; tmp = c1; c1 = c2; c2 = tmp;
     }
-    if (coords[p2 * 2 + 1] > coords[p3 * 2 + 1]) {
+    if (coords[p2 + 1] > coords[p3 + 1]) {
       tmp = p2; p2 = p3; p3 = tmp; tmp = c2; c2 = c3; c3 = tmp;
     }
-    if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
+    if (coords[p1 + 1] > coords[p2 + 1]) {
       tmp = p1; p1 = p2; p2 = tmp; tmp = c1; c1 = c2; c2 = tmp;
     }
-    var x1 = (coords[p1 * 2] + context.offsetX) * context.scaleX;
-    var y1 = (coords[p1 * 2 + 1] + context.offsetY) * context.scaleY;
-    var x2 = (coords[p2 * 2] + context.offsetX) * context.scaleX;
-    var y2 = (coords[p2 * 2 + 1] + context.offsetY) * context.scaleY;
-    var x3 = (coords[p3 * 2] + context.offsetX) * context.scaleX;
-    var y3 = (coords[p3 * 2 + 1] + context.offsetY) * context.scaleY;
+    var x1 = (coords[p1] + context.offsetX) * context.scaleX;
+    var y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
+    var x2 = (coords[p2] + context.offsetX) * context.scaleX;
+    var y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
+    var x3 = (coords[p3] + context.offsetX) * context.scaleX;
+    var y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
     if (y1 >= y3) {
       return;
     }
-    var c1i = c1 * 3, c2i = c2 * 3, c3i = c3 * 3;
-    var c1r = colors[c1i], c1g = colors[c1i + 1], c1b = colors[c1i + 2];
-    var c2r = colors[c2i], c2g = colors[c2i + 1], c2b = colors[c2i + 2];
-    var c3r = colors[c3i], c3g = colors[c3i + 1], c3b = colors[c3i + 2];
+    var c1r = colors[c1], c1g = colors[c1 + 1], c1b = colors[c1 + 2];
+    var c2r = colors[c2], c2g = colors[c2 + 1], c2b = colors[c2 + 2];
+    var c3r = colors[c3], c3g = colors[c3 + 1], c3b = colors[c3 + 2];
 
     var minY = Math.round(y1), maxY = Math.round(y3);
     var xa, car, cag, cab;
