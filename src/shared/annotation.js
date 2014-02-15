@@ -644,7 +644,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         if (isName(url)) {
           // Some bad PDFs do not put parentheses around relative URLs.
           url = '/' + url.name;
-        } else {
+        } else if (url) {
           url = addDefaultProtocolToUrl(url);
         }
         // TODO: pdf spec mentions urls can be relative to a Base
@@ -684,7 +684,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 
   // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
   function addDefaultProtocolToUrl(url) {
-    if (url.indexOf('www.') === 0) {
+    if (url && url.indexOf('www.') === 0) {
       return ('http://' + url);
     }
     return url;
