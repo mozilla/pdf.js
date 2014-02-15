@@ -91,6 +91,7 @@ footer {
 }
 
 #pageNumber {
+  -moz-appearance: textfield; /* hides the spinner in moz */
   position: absolute;
   width: 28%;
   height: 100%;
