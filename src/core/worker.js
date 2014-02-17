@@ -330,8 +330,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         page.getOperatorList(handler).then(function(operatorList) {
 
-          info('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
-              Date.now() - start, operatorList.fnArray.length);
+          info('page=' + pageNum + ' - getOperatorList: time=' +
+               (Date.now() - start) + 'ms, len=' + operatorList.fnArray.length);
 
         }, function(e) {
 
@@ -372,8 +372,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var start = Date.now();
         page.extractTextContent().then(function(textContent) {
           deferred.resolve(textContent);
-          info('text indexing: page=%d - time=%dms', pageNum,
-              Date.now() - start);
+          info('text indexing: page=' + pageNum + ' - time=' +
+               (Date.now() - start) + 'ms');
         }, function (e) {
           // Skip errored pages
           deferred.reject(e);
