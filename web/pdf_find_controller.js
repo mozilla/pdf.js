@@ -86,6 +86,11 @@ var PDFFindController = {
     for (var i = 0; i < events.length; i++) {
       window.addEventListener(events[i], this.handleEvent);
     }
+
+    // Initialize capability for passing pdf text content to external scripts
+    this.firstPagePromise.then(function() {
+      this.initExtTxtRequests();
+    }.bind(this));
   },
 
   reset: function pdfFindControllerReset() {
@@ -350,6 +355,107 @@ var PDFFindController = {
       return;
     }
     PDFFindBar.updateUIState(state, previous);
+  },
+
+  initExtTxtRequests: function pdfInitExtTxtRequests() {
+    // Prepare to service external requests for the text of the pdf
+    this.handleGetTextEvent = this.handleGetTextEvent.bind(this);
+    window.addEventListener('getPdfText', this.handleGetTextEvent , false );
+
+    // Prepare to service external requests for a Ready Event
+    this.handleReqReadyEvent = this.handleReqReadyEvent.bind(this);
+    window.addEventListener('pdfRequestReadyEvent', this.handleReqReadyEvent,
+      false );
+
+    // Notify listeners that we can now service external text requests
+    this.handleReqReadyEvent();
+  },
+
+  handleReqReadyEvent: function pdfReqReadyEvent() {
+    var notifyEvent = document.createEvent('CustomEvent');
+    notifyEvent.initCustomEvent('pdfTextReady', true, true, {
+      numPages: this.pdfPageSource.pdfDocument.numPages,
+      numPagesResolved: this.pageContents.length,
+    });
+    window.dispatchEvent(notifyEvent);
+  },
+
+  handleGetTextEvent: function pdfGetTextEvent(event) {
+    var edet = event.detail;
+    var fullPageCount = this.pdfPageSource.pdfDocument.numPages;
+
+    // normalize output event name from passed parameter
+    var outEvntName = typeof(edet.evntName) === 'string' ? edet.evntName : '';
+    if (outEvntName.length === 0 || outEvntName === 'pdfTextContent') {
+      // Use a default output event name, and we also use default parameters
+      // so that all events having the default name have the same semantics.
+      // Default semantics is to return all of the pdf text in one event.
+      outEvntName = 'pdfTextContent';
+      edet = {};
+    }
+
+    // normalize and default passed and undefined integer parameters
+    var startPage = edet.startPage;
+    if (typeof (startPage) !== 'number' || startPage < 0) {
+      startPage = 0;
+    }
+    if (fullPageCount < startPage) {
+      startPage = fullPageCount;
+    }
+    var pageCount = edet.pageCount;
+    if (typeof (pageCount) !== 'number') {
+      pageCount = fullPageCount;
+    }
+    if( pageCount < 0 ) {
+      pageCount = 0;
+    }
+    if (fullPageCount - startPage < pageCount) {
+      pageCount = fullPageCount - startPage;
+    }
+    // force these 'number' values to in fact be integers
+    startPage = Math.floor(startPage);
+    pageCount = Math.floor(pageCount);
+
+    var txtReq = {
+      startPage: startPage,
+      pageCount: pageCount,
+      outEvntName: outEvntName
+    };
+
+    // start text extraction if not yet started and if this request would wait
+    // for the resolution of some text--i.e. startPage + pageCount > zero.
+    if (!this.startedTextExtraction && (0 < (startPage + pageCount))) {
+      this.extractText();
+    }
+
+    if (startPage + pageCount <= this.pageContents.length) {
+      // send status and any text requested
+      this.sendStatsAndText(txtReq);
+    } else {
+      // complete asynchronously when text sufficient to complete the request
+      // is available, i.e. we have text for index (startPage + pageCount - 1)
+      this.extractTextPromises[startPage + pageCount - 1].then(function() {
+        this.sendStatsAndText(txtReq);
+      }.bind(this));
+    }
+  },
+
+  sendStatsAndText: function pdfSendStatsAndText(txtReq) {
+    // build a text content array (empty if txtReq.pageCount is zero)
+    var text = [];
+    for (var i = txtReq.startPage, ii = i + txtReq.pageCount; i < ii; i++) {
+      text.push(this.pageContents[i]);
+    }
+
+    // send status and any text via the designated event
+    var evntOut = document.createEvent('CustomEvent');
+    evntOut.initCustomEvent(txtReq.outEvntName, true, true, {
+      numPages: this.pdfPageSource.pdfDocument.numPages,
+      numPagesResolved: this.pageContents.length,
+      startPage: txtReq.startPage,
+      pdfTextContent: text
+    });
+    window.dispatchEvent(evntOut);
   }
 };
 
