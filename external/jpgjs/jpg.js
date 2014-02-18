@@ -335,17 +335,16 @@ var JpegImage = (function jpegImage() {
     var blocksPerLine = component.blocksPerLine;
     var blocksPerColumn = component.blocksPerColumn;
     var samplesPerLine = blocksPerLine << 3;
-    var R = new Int32Array(64), r = new Uint8Array(64);
+    var R = new Int32Array(64);
 
     // A port of poppler's IDCT method which in turn is taken from:
     //   Christoph Loeffler, Adriaan Ligtenberg, George S. Moschytz,
     //   "Practical Fast 1-D DCT Algorithms with 11 Multiplications",
     //   IEEE Intl. Conf. on Acoustics, Speech & Signal Processing, 1989,
     //   988-991.
-    function quantizeAndInverse(zz, dataOut, dataIn) {
+    function quantizeAndInverse(zz, p) {
       var qt = component.quantizationTable;
       var v0, v1, v2, v3, v4, v5, v6, v7, t;
-      var p = dataIn;
       var i;
 
       // dequant
@@ -429,7 +428,7 @@ var JpegImage = (function jpegImage() {
         if (p[1*8 + col] == 0 && p[2*8 + col] == 0 && p[3*8 + col] == 0 &&
             p[4*8 + col] == 0 && p[5*8 + col] == 0 && p[6*8 + col] == 0 &&
             p[7*8 + col] == 0) {
-          t = (dctSqrt2 * dataIn[i+0] + 8192) >> 14;
+          t = (dctSqrt2 * p[i+0] + 8192) >> 14;
           p[0*8 + col] = t;
           p[1*8 + col] = t;
           p[2*8 + col] = t;
@@ -492,8 +491,7 @@ var JpegImage = (function jpegImage() {
 
       // convert to 8-bit integers
       for (i = 0; i < 64; ++i) {
-        var sample = 128 + ((p[i] + 8) >> 4);
-        dataOut[i] = sample < 0 ? 0 : sample > 0xFF ? 0xFF : sample;
+        p[i] = clampTo8bit((p[i] + 2056) >> 4);
       }
     }
 
@@ -503,13 +501,13 @@ var JpegImage = (function jpegImage() {
       for (i = 0; i < 8; i++)
         lines.push(new Uint8Array(samplesPerLine));
       for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-        quantizeAndInverse(component.blocks[blockRow][blockCol], r, R);
+        quantizeAndInverse(component.blocks[blockRow][blockCol], R);
 
         var offset = 0, sample = blockCol << 3;
         for (j = 0; j < 8; j++) {
           var line = lines[scanLine + j];
           for (i = 0; i < 8; i++)
-            line[sample + i] = r[offset++];
+            line[sample + i] = R[offset++];
         }
       }
     }
@@ -570,7 +568,7 @@ var JpegImage = (function jpegImage() {
             for (var i = 0; i < blocksPerColumnForMcu; i++) {
               var row = [];
               for (var j = 0; j < blocksPerLineForMcu; j++)
-                row.push(new Int32Array(64));
+                row.push(new Int16Array(64));
               blocks.push(row);
             }
             component.blocksPerLine = blocksPerLine;
@@ -774,41 +772,35 @@ var JpegImage = (function jpegImage() {
     getData: function getData(width, height) {
       var scaleX = this.width / width, scaleY = this.height / height;
 
-      var component1, component2, component3, component4;
-      var component1Line, component2Line, component3Line, component4Line;
-      var x, y;
+      var component, componentLine, componentScaleX, componentScaleY;
+      var x, y, i;
       var offset = 0;
       var Y, Cb, Cr, K, C, M, Ye, R, G, B;
       var colorTransform;
-      var dataLength = width * height * this.components.length;
+      var numComponents = this.components.length;
+      var dataLength = width * height * numComponents;
       var data = new Uint8Array(dataLength);
-      switch (this.components.length) {
-        case 1:
-          component1 = this.components[0];
-          for (y = 0; y < height; y++) {
-            component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
-            for (x = 0; x < width; x++) {
-              Y = component1Line[0 | (x * component1.scaleX * scaleX)];
 
-              data[offset++] = Y;
-            }
+      // First construct image data ...
+      for (i = 0; i < numComponents; i++) {
+        component = this.components[i];
+        componentScaleX = component.scaleX * scaleX;
+        componentScaleY = component.scaleY * scaleY;
+        offset = i;
+        for (y = 0; y < height; y++) {
+          componentLine = component.lines[0 | (y * componentScaleY)];
+          for (x = 0; x < width; x++) {
+            data[offset] = componentLine[0 | (x * componentScaleX)];
+            offset += numComponents;
           }
-          break;
-        case 2:
-          // PDF might compress two component data in custom colorspace
-          component1 = this.components[0];
-          component2 = this.components[1];
-          for (y = 0; y < height; y++) {
-            component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
-            component2Line = component2.lines[0 | (y * component2.scaleY * scaleY)];
-            for (x = 0; x < width; x++) {
-              Y = component1Line[0 | (x * component1.scaleX * scaleX)];
-              data[offset++] = Y;
-              Y = component2Line[0 | (x * component2.scaleX * scaleX)];
-              data[offset++] = Y;
-            }
-          }
-          break;
+        }
+      }
+
+      // ... then transform colors, if necessary
+      switch (numComponents) {
+        case 1: case 2: break;
+        // no color conversion for one or two compoenents
+
         case 3:
           // The default transform for three components is true
           colorTransform = true;
@@ -818,31 +810,19 @@ var JpegImage = (function jpegImage() {
           else if (typeof this.colorTransform !== 'undefined')
             colorTransform = !!this.colorTransform;
 
-          component1 = this.components[0];
-          component2 = this.components[1];
-          component3 = this.components[2];
-          for (y = 0; y < height; y++) {
-            component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
-            component2Line = component2.lines[0 | (y * component2.scaleY * scaleY)];
-            component3Line = component3.lines[0 | (y * component3.scaleY * scaleY)];
-            for (x = 0; x < width; x++) {
-              if (!colorTransform) {
-                R = component1Line[0 | (x * component1.scaleX * scaleX)];
-                G = component2Line[0 | (x * component2.scaleX * scaleX)];
-                B = component3Line[0 | (x * component3.scaleX * scaleX)];
-              } else {
-                Y = component1Line[0 | (x * component1.scaleX * scaleX)];
-                Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
-                Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
+          if (colorTransform) {
+            for (i = 0; i < dataLength; i += numComponents) {
+              Y  = data[i    ];
+              Cb = data[i + 1];
+              Cr = data[i + 2];
 
-                R = clampTo8bit(Y + 1.402 * (Cr - 128));
-                G = clampTo8bit(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-                B = clampTo8bit(Y + 1.772 * (Cb - 128));
-              }
+              R = clampTo8bit(Y + 1.402 * (Cr - 128));
+              G = clampTo8bit(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+              B = clampTo8bit(Y + 1.772 * (Cb - 128));
 
-              data[offset++] = R;
-              data[offset++] = G;
-              data[offset++] = B;
+              data[i    ] = R;
+              data[i + 1] = G;
+              data[i + 2] = B;
             }
           }
           break;
@@ -855,35 +835,20 @@ var JpegImage = (function jpegImage() {
           else if (typeof this.colorTransform !== 'undefined')
             colorTransform = !!this.colorTransform;
 
-          component1 = this.components[0];
-          component2 = this.components[1];
-          component3 = this.components[2];
-          component4 = this.components[3];
-          for (y = 0; y < height; y++) {
-            component1Line = component1.lines[0 | (y * component1.scaleY * scaleY)];
-            component2Line = component2.lines[0 | (y * component2.scaleY * scaleY)];
-            component3Line = component3.lines[0 | (y * component3.scaleY * scaleY)];
-            component4Line = component4.lines[0 | (y * component4.scaleY * scaleY)];
-            for (x = 0; x < width; x++) {
-              if (!colorTransform) {
-                C = component1Line[0 | (x * component1.scaleX * scaleX)];
-                M = component2Line[0 | (x * component2.scaleX * scaleX)];
-                Ye = component3Line[0 | (x * component3.scaleX * scaleX)];
-                K = component4Line[0 | (x * component4.scaleX * scaleX)];
-              } else {
-                Y = component1Line[0 | (x * component1.scaleX * scaleX)];
-                Cb = component2Line[0 | (x * component2.scaleX * scaleX)];
-                Cr = component3Line[0 | (x * component3.scaleX * scaleX)];
-                K = component4Line[0 | (x * component4.scaleX * scaleX)];
+          if (colorTransform) {
+            for (i = 0; i < dataLength; i += numComponents) {
+              Y  = data[i];
+              Cb = data[i + 1];
+              Cr = data[i + 2];
 
-                C = 255 - clampTo8bit(Y + 1.402 * (Cr - 128));
-                M = 255 - clampTo8bit(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-                Ye = 255 - clampTo8bit(Y + 1.772 * (Cb - 128));
-              }
-              data[offset++] = C;
-              data[offset++] = M;
-              data[offset++] = Ye;
-              data[offset++] = K;
+              C = 255 - clampTo8bit(Y + 1.402 * (Cr - 128));
+              M = 255 - clampTo8bit(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+              Ye = 255 - clampTo8bit(Y + 1.772 * (Cb - 128));
+
+              data[i    ] = C;
+              data[i + 1] = M;
+              data[i + 2] = Ye;
+              // K is unchanged
             }
           }
           break;
@@ -894,54 +859,49 @@ var JpegImage = (function jpegImage() {
     },
     copyToImageData: function copyToImageData(imageData) {
       var width = imageData.width, height = imageData.height;
+      var imageDataBytes = width * height * 4;
       var imageDataArray = imageData.data;
       var data = this.getData(width, height);
-      var i = 0, j = 0, x, y;
+      var i = 0, j = 0;
       var Y, K, C, M, R, G, B;
       switch (this.components.length) {
         case 1:
-          for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-              Y = data[i++];
+          while (j < imageDataBytes) {
+            Y = data[i++];
 
-              imageDataArray[j++] = Y;
-              imageDataArray[j++] = Y;
-              imageDataArray[j++] = Y;
-              imageDataArray[j++] = 255;
-            }
+            imageDataArray[j++] = Y;
+            imageDataArray[j++] = Y;
+            imageDataArray[j++] = Y;
+            imageDataArray[j++] = 255;
           }
           break;
         case 3:
-          for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-              R = data[i++];
-              G = data[i++];
-              B = data[i++];
+          while (j < imageDataBytes) {
+            R = data[i++];
+            G = data[i++];
+            B = data[i++];
 
-              imageDataArray[j++] = R;
-              imageDataArray[j++] = G;
-              imageDataArray[j++] = B;
-              imageDataArray[j++] = 255;
-            }
+            imageDataArray[j++] = R;
+            imageDataArray[j++] = G;
+            imageDataArray[j++] = B;
+            imageDataArray[j++] = 255;
           }
           break;
         case 4:
-          for (y = 0; y < height; y++) {
-            for (x = 0; x < width; x++) {
-              C = data[i++];
-              M = data[i++];
-              Y = data[i++];
-              K = data[i++];
+          while (j < imageDataBytes) {
+            C = data[i++];
+            M = data[i++];
+            Y = data[i++];
+            K = data[i++];
 
-              R = 255 - clampTo8bit(C * (1 - K / 255) + K);
-              G = 255 - clampTo8bit(M * (1 - K / 255) + K);
-              B = 255 - clampTo8bit(Y * (1 - K / 255) + K);
+            R = 255 - clampTo8bit(C * (1 - K / 255) + K);
+            G = 255 - clampTo8bit(M * (1 - K / 255) + K);
+            B = 255 - clampTo8bit(Y * (1 - K / 255) + K);
 
-              imageDataArray[j++] = R;
-              imageDataArray[j++] = G;
-              imageDataArray[j++] = B;
-              imageDataArray[j++] = 255;
-            }
+            imageDataArray[j++] = R;
+            imageDataArray[j++] = G;
+            imageDataArray[j++] = B;
+            imageDataArray[j++] = 255;
           }
           break;
         default:
