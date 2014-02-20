@@ -19,6 +19,9 @@
 
 'use strict';
 
+// The maximum number of bytes fetched per range request
+var RANGE_CHUNK_SIZE = 65536;
+
 // TODO(mack): Make use of PDFJS.Util.inherit() when it becomes available
 var BasePdfManager = (function BasePdfManagerClosure() {
   function BasePdfManager() {
@@ -132,9 +135,6 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 })();
 
 var NetworkPdfManager = (function NetworkPdfManagerClosure() {
-
-  var CHUNK_SIZE = 65536;
-
   function NetworkPdfManager(args, msgHandler) {
 
     this.msgHandler = msgHandler;
@@ -147,7 +147,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
       disableAutoFetch: args.disableAutoFetch,
       initialData: args.initialData
     };
-    this.streamManager = new ChunkedStreamManager(args.length, CHUNK_SIZE,
+    this.streamManager = new ChunkedStreamManager(args.length, RANGE_CHUNK_SIZE,
                                                   args.url, params);
 
     this.pdfModel = new PDFDocument(this, this.streamManager.getStream(),

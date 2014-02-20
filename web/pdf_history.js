@@ -145,7 +145,9 @@ var PDFHistory = {
 //    window.history.pushState(stateObj, '');
 //#endif
 //#if CHROME
-//    chrome.runtime.sendMessage('showPageAction');
+//    if (top === window) {
+//      chrome.runtime.sendMessage('showPageAction');
+//    }
 //#endif
     }
   },

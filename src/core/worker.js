@@ -18,7 +18,7 @@
            MissingPDFException, PasswordException, PDFJS, Promise,
            UnknownErrorException, NetworkManager, LocalPdfManager,
            NetworkPdfManager, XRefParseException, LegacyPromise,
-           isInt, PasswordResponses, MessageHandler, Ref */
+           isInt, PasswordResponses, MessageHandler, Ref, RANGE_CHUNK_SIZE */
 
 'use strict';
 
@@ -119,6 +119,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           if (!isInt(length)) {
             return;
           }
+          source.length = length;
+          if (length <= 2 * RANGE_CHUNK_SIZE) {
+            // The file size is smaller than the size of two chunks, so it does
+            // not make any sense to abort the request and retry with a range
+            // request.
+            return;
+          }
 
           // NOTE: by cancelling the full request, and then issuing range
           // requests, there will be an issue for sites where you can only
@@ -126,7 +133,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           // server should not be returning that it can support range requests.
           networkManager.abortRequest(fullRequestXhrId);
 
-          source.length = length;
           try {
             pdfManager = new NetworkPdfManager(source, handler);
             pdfManagerPromise.resolve(pdfManager);
@@ -330,8 +336,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         // Pre compile the pdf page and fetch the fonts/images.
         page.getOperatorList(handler).then(function(operatorList) {
 
-          info('page=%d - getOperatorList: time=%dms, len=%d', pageNum,
-              Date.now() - start, operatorList.fnArray.length);
+          info('page=' + pageNum + ' - getOperatorList: time=' +
+               (Date.now() - start) + 'ms, len=' + operatorList.fnArray.length);
 
         }, function(e) {
 
@@ -372,8 +378,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var start = Date.now();
         page.extractTextContent().then(function(textContent) {
           deferred.resolve(textContent);
-          info('text indexing: page=%d - time=%dms', pageNum,
-              Date.now() - start);
+          info('text indexing: page=' + pageNum + ' - time=' +
+               (Date.now() - start) + 'ms');
         }, function (e) {
           // Skip errored pages
           deferred.reject(e);

@@ -306,7 +306,7 @@ if (typeof PDFJS === 'undefined') {
   Function.prototype.bind = function functionPrototypeBind(obj) {
     var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
     var bound = function functionPrototypeBindBound() {
-      var args = Array.prototype.concat.apply(headArgs, arguments);
+      var args = headArgs.concat(Array.prototype.slice.call(arguments));
       return fn.apply(obj, args);
     };
     return bound;
