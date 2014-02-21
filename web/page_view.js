@@ -42,10 +42,10 @@ var PageView = function pageView(container, id, scale,
   this.getElement = function pageViewGetElement(container) {
 
     var anchor = document.createElement('a');
-    anchor.name = '' + this.id;
+    anchor.name = '' + id;
 
     var div = document.createElement('div');
-    div.id = 'pageContainer' + this.id; 
+    div.id = 'pageContainer' + id;
     div.className = 'page';
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
