@@ -389,6 +389,10 @@ var Lexer = (function LexerClosure() {
     return -1;
   }
 
+  function join(strBuf) {
+    return strBuf.length === 1 ? strBuf[0] : strBuf.join('');
+  }
+
   Lexer.prototype = {
     nextChar: function Lexer_nextChar() {
       return (this.currentChar = this.stream.getByte());
@@ -560,7 +564,7 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         }
       }
-      return strBuf.join('');
+      return join(strBuf);
     },
     getName: function Lexer_getName() {
       var ch;
@@ -586,7 +590,7 @@ var Lexer = (function LexerClosure() {
         error('Warning: name token is longer than allowed by the spec: ' +
               strBuf.length);
       }
-      return Name.get(strBuf.join(''));
+      return Name.get(join(strBuf));
     },
     getHexString: function Lexer_getHexString() {
       var strBuf = this.strBuf;
@@ -626,7 +630,7 @@ var Lexer = (function LexerClosure() {
           ch = this.nextChar();
         }
       }
-      return strBuf.join('');
+      return join(strBuf);
     },
     getObj: function Lexer_getObj() {
       // skip whitespace and comments
