@@ -823,7 +823,6 @@ html[dir='rtl'] #findNext {
 .toolbarButton::before,
 .secondaryToolbarButton::before {
   /* All matching images have a size of 16x16
-   * (except for the print button: 18x16)
    * All relevant containers have a size of 32x25 */
   position: absolute;
   display: inline-block;
@@ -896,14 +895,6 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
   content: url(images/toolbarButton-print.png);
-  left: 6px;
-}
-
-html[dir="ltr"] .secondaryToolbarButton.print::before {
-  left: 3px;
-}
-html[dir="rtl"] .secondaryToolbarButton.print::before {
-  right: 3px;
 }
 
 .toolbarButton.openFile::before,
