@@ -1692,18 +1692,18 @@ var JpxImage = (function JpxImageClosure() {
       }
       return ll;
     };
-    Transform.prototype.expand = function expand(buffer, bufferPadding, step) {
+    Transform.prototype.extend = function extend(buffer, offset, size) {
         // Section F.3.7 extending... using max extension of 4
-        var i1 = bufferPadding - 1, j1 = bufferPadding + 1;
-        var i2 = bufferPadding + step - 2, j2 = bufferPadding + step;
+        var i1 = offset - 1, j1 = offset + 1;
+        var i2 = offset + size - 2, j2 = offset + size;
         buffer[i1--] = buffer[j1++];
         buffer[j2++] = buffer[i2--];
         buffer[i1--] = buffer[j1++];
         buffer[j2++] = buffer[i2--];
         buffer[i1--] = buffer[j1++];
         buffer[j2++] = buffer[i2--];
-        buffer[i1--] = buffer[j1++];
-        buffer[j2++] = buffer[i2--];
+        buffer[i1] = buffer[j1];
+        buffer[j2] = buffer[i2];
     };
     Transform.prototype.iterate = function Transform_iterate(ll, hl, lh, hh,
                                                             u0, v0) {
@@ -1716,32 +1716,35 @@ var JpxImage = (function JpxImageClosure() {
       var width = llWidth + hlWidth;
       var height = llHeight + lhHeight;
       var items = new Float32Array(width * height);
-      for (var i = 0, ii = llHeight; i < ii; i++) {
+      var i, j, k, l;
+
+      for (i = 0; i < llHeight; i++) {
         var k = i * llWidth, l = i * 2 * width;
-        for (var j = 0, jj = llWidth; j < jj; j++, k++, l += 2)
+        for (var j = 0; j < llWidth; j++, k++, l += 2) {
           items[l] = llItems[k];
+        }
       }
-      for (var i = 0, ii = hlHeight; i < ii; i++) {
-        var k = i * hlWidth, l = i * 2 * width + 1;
-        for (var j = 0, jj = hlWidth; j < jj; j++, k++, l += 2)
+      for (i = 0; i < hlHeight; i++) {
+        k = i * hlWidth, l = i * 2 * width + 1;
+        for (j = 0; j < hlWidth; j++, k++, l += 2) {
           items[l] = hlItems[k];
+        }
       }
-      for (var i = 0, ii = lhHeight; i < ii; i++) {
-        var k = i * lhWidth, l = (i * 2 + 1) * width;
-        for (var j = 0, jj = lhWidth; j < jj; j++, k++, l += 2)
+      for (i = 0; i < lhHeight; i++) {
+        k = i * lhWidth, l = (i * 2 + 1) * width;
+        for (j = 0; j < lhWidth; j++, k++, l += 2) {
           items[l] = lhItems[k];
+        }
       }
-      for (var i = 0, ii = hhHeight; i < ii; i++) {
-        var k = i * hhWidth, l = (i * 2 + 1) * width + 1;
-        for (var j = 0, jj = hhWidth; j < jj; j++, k++, l += 2)
+      for (i = 0; i < hhHeight; i++) {
+        k = i * hhWidth, l = (i * 2 + 1) * width + 1;
+        for (j = 0; j < hhWidth; j++, k++, l += 2) {
           items[l] = hhItems[k];
+        }
       }
 
       var bufferPadding = 4;
-      var bufferLength = new Float32Array(Math.max(width, height) +
-        2 * bufferPadding);
-      var buffer = new Float32Array(bufferLength);
-      var bufferOut = new Float32Array(bufferLength);
+      var rowBuffer = new Float32Array(width + 2 * bufferPadding);
 
       // Section F.3.4 HOR_SR
       for (var v = 0; v < height; v++) {
@@ -1752,20 +1755,27 @@ var JpxImage = (function JpxImageClosure() {
           }
           continue;
         }
-
-        var k = v * width;
-        var l = bufferPadding;
-        for (var u = 0; u < width; u++, k++, l++)
-          buffer[l] = items[k];
-
-        this.expand(buffer, bufferPadding, width);
-        this.filter(buffer, bufferPadding, width, u0, bufferOut);
-
         k = v * width;
-        l = bufferPadding;
-        for (var u = 0; u < width; u++, k++, l++)
-          items[k] = bufferOut[l];
+        rowBuffer.set(items.subarray(k, k + width), bufferPadding);
+
+        this.extend(rowBuffer, bufferPadding, width);
+        this.filter(rowBuffer, bufferPadding, width, u0, rowBuffer);
+
+        items.set(rowBuffer.subarray(bufferPadding, bufferPadding + width), k);
       }
+
+      // Accesses to the items array can take long, because it may not fit into
+      // CPU cache and has to be fetched from main memory. Since subsequent
+      // accesses to the items array are not local when reading columns, we
+      // have a cache miss every time. To reduce cache misses, get up to
+      // 'numBuffers' items at a time and store them into the individual
+      // buffers. The colBuffers should be small enough to fit into CPU cache.
+      var numBuffers = 16;
+      var colBuffers = [];
+      for (i = 0; i < numBuffers; i++) {
+        colBuffers.push(new Float32Array(height + 2 * bufferPadding));
+      }
+      var b, currentBuffer = 0, ll = bufferPadding + height;
 
       // Section F.3.5 VER_SR
       for (var u = 0; u < width; u++) {
@@ -1777,19 +1787,33 @@ var JpxImage = (function JpxImageClosure() {
           continue;
         }
 
-        var k = u;
-        var l = bufferPadding;
-        for (var v = 0; v < height; v++, k += width, l++)
-          buffer[l] = items[k];
+        // if we ran out of buffers, copy several image columns at once
+        if (currentBuffer === 0) {
+          numBuffers = Math.min(width - u, numBuffers);
+          for (k = u, l = bufferPadding; l < ll; k += width, l++) {
+            for (b = 0; b < numBuffers; b++) {
+              colBuffers[b][l] = items[k + b];
+            }
+          }
+          currentBuffer = numBuffers;
+        }
 
-        this.expand(buffer, bufferPadding, height);
-        this.filter(buffer, bufferPadding, height, v0, bufferOut);
+        currentBuffer--;
+        var buffer = colBuffers[currentBuffer];
+        this.extend(buffer, bufferPadding, height);
+        this.filter(buffer, bufferPadding, height, v0, buffer);
 
-        k = u;
-        l = bufferPadding;
-        for (var v = 0; v < height; v++, k += width, l++)
-          items[k] = bufferOut[l];
+        // If this is last buffer in this group of buffers, flush all buffers.
+        if (currentBuffer === 0) {
+          k = u - numBuffers + 1;
+          for (l = bufferPadding; l < ll; k += width, l++) {
+            for (b = 0; b < numBuffers; b++) {
+              items[k + b] = colBuffers[b][l];
+            }
+          }
+        }
       }
+
       return {
         width: width,
         height: height,
