@@ -1278,6 +1278,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
+  var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
     function getTransfers(queue) {
       var transfers = [];
@@ -1325,6 +1326,10 @@ var OperatorList = (function OperatorListClosure() {
         this.fnArray[this.fnIndex++] = fn;
         this.argsArray.push(args);
         if (this.fnIndex >= CHUNK_SIZE) {
+          this.flush();
+        } else if (this.fnIndex >= CHUNK_SIZE_ABOUT &&
+          (fn === OPS.restore || fn === OPS.endText)) {
+          // heuristic to flush on boundary of restore or endText
           this.flush();
         }
       } else {
