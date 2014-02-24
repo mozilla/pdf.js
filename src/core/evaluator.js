@@ -152,10 +152,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var canTransfer = image instanceof DecodeStream;
         var inverseDecode = !!decode && decode[0] > 0;
 
-        operatorList.addOp(OPS.paintImageMaskXObject,
-          [PDFImage.createMask(imgArray, width, height, canTransfer,
-                               inverseDecode)]
-        );
+        var imgData = PDFImage.createMask(imgArray, width, height,
+                                          canTransfer, inverseDecode);
+        imgData.cached = true;
+        var args = [imgData];
+        operatorList.addOp(OPS.paintImageMaskXObject, args);
+        if (cacheKey) {
+          cache.key = cacheKey;
+          cache.fn = OPS.paintImageMaskXObject;
+          cache.args = args;
+        }
         return;
       }
 
@@ -553,8 +559,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               args[0] = loadedName;
               break;
             case OPS.endInlineImage:
+              var cacheKey = args[0].cacheKey;
+              if (cacheKey && imageCache.key === cacheKey) {
+                operatorList.addOp(imageCache.fn, imageCache.args);
+                args = [];
+                continue;
+              }
               self.buildPaintImageXObject(resources, args[0], true,
-                                          operatorList);
+                                          operatorList, cacheKey, imageCache);
               args = [];
               continue;
             case OPS.save:
@@ -1276,7 +1288,9 @@ var OperatorList = (function OperatorListClosure() {
           case OPS.paintInlineImageXObjectGroup:
           case OPS.paintImageMaskXObject:
             var arg = argsArray[i][0]; // first param in imgData
-            transfers.push(arg.data.buffer);
+            if (!arg.cached) {
+              transfers.push(arg.data.buffer);
+            }
             break;
         }
       }
@@ -1774,6 +1788,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       // searching for (save, transform, paintImageMaskXObject, restore)+
       var MIN_IMAGES_IN_MASKS_BLOCK = 10;
       var MAX_IMAGES_IN_MASKS_BLOCK = 100;
+      var MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
 
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var j = context.currentOperation - 3, i = j + 4;
@@ -1781,24 +1796,69 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
       }
-      var count = Math.min((i - j) >> 2, MAX_IMAGES_IN_MASKS_BLOCK);
+      var count = (i - j) >> 2;
       if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
         context.currentOperation = i - 1;
         return;
       }
-      var images = [];
-      for (var q = 0; q < count; q++) {
-        var transform = argsArray[j + (q << 2) + 1];
-        var maskParams = argsArray[j + (q << 2) + 2][0];
-        images.push({data: maskParams.data, width: maskParams.width,
-          height: maskParams.height, transform: transform});
-      }
-      // replacing queue items
-      squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectGroup);
-      argsArray.splice(j, count * 4, [images]);
 
-      context.currentOperation = j;
-      context.operationsLength -= count * 4 - 1;
+      var isSameImage = false;
+      if (argsArray[j + 1][1] === 0 && argsArray[j + 1][2] === 0) {
+        i = j + 4;
+        isSameImage = true;
+        for (var q = 1; q < count; q++, i += 4) {
+          var prevTransformArgs = argsArray[i - 3];
+          var transformArgs = argsArray[i + 1];
+          if (argsArray[i - 2][0] !== argsArray[i + 2][0] ||
+              prevTransformArgs[0] !== transformArgs[0] ||
+              prevTransformArgs[1] !== transformArgs[1] ||
+              prevTransformArgs[2] !== transformArgs[2] ||
+              prevTransformArgs[3] !== transformArgs[3]) {
+            if (q < MIN_IMAGES_IN_MASKS_BLOCK) {
+              isSameImage = false;
+            } else {
+              count = q;
+            }
+            break; // different image or transform
+          }
+        }
+      }
+
+      if (isSameImage) {
+        count = Math.min(count, MAX_SAME_IMAGES_IN_MASKS_BLOCK);
+        var positions = new Float32Array(count * 2);
+        i = j + 1;
+        for (var q = 0; q < count; q++) {
+          var transformArgs = argsArray[i];
+          positions[(q << 1)] = transformArgs[4];
+          positions[(q << 1) + 1] = transformArgs[5];
+          i += 4;
+        }
+
+        // replacing queue items
+        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectRepeat);
+        argsArray.splice(j, count * 4, [argsArray[j + 2][0],
+          argsArray[j + 1][0], argsArray[j + 1][3], positions]);
+
+        context.currentOperation = j;
+        context.operationsLength -= count * 4 - 1;
+      } else {
+        count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
+        var images = [];
+        for (var q = 0; q < count; q++) {
+          var transformArgs = argsArray[j + (q << 2) + 1];
+          var maskParams = argsArray[j + (q << 2) + 2][0];
+          images.push({data: maskParams.data, width: maskParams.width,
+            height: maskParams.height, transform: transformArgs});
+        }
+
+        // replacing queue items
+        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectGroup);
+        argsArray.splice(j, count * 4, [images]);
+
+        context.currentOperation = j;
+        context.operationsLength -= count * 4 - 1;
+      }
     });
 
   addState(InitialState,
@@ -1848,7 +1908,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var args = [argsArray[j + 2][0], argsArray[j + 1][0],
         argsArray[j + 1][3], positions];
       // replacing queue items
-      squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectRepeat);
+      squash(fnArray, j, count * 4, OPS.paintImageXObjectRepeat);
       argsArray.splice(j, count * 4, args);
 
       context.currentOperation = j;
