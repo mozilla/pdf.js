@@ -726,6 +726,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       messageHandler.on('GetDoc', function transportDoc(data) {
         var pdfInfo = data.pdfInfo;
+        this.numPages = data.pdfInfo.numPages;
         var pdfDocument = new PDFDocumentProxy(pdfInfo, this);
         this.pdfDocument = pdfDocument;
         this.workerReadyPromise.resolve(pdfDocument);
@@ -930,6 +931,13 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, promise) {
+      if (pageNumber <= 0 || pageNumber > this.numPages ||
+          (pageNumber|0) !== pageNumber) {
+        var pagePromise = new PDFJS.LegacyPromise();
+        pagePromise.reject(new Error('Invalid page request'));
+        return pagePromise;
+      }
+
       var pageIndex = pageNumber - 1;
       if (pageIndex in this.pagePromises)
         return this.pagePromises[pageIndex];
