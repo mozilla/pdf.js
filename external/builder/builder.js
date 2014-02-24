@@ -101,17 +101,28 @@ function preprocess(inFilename, outFilename, defines) {
 }
 exports.preprocess = preprocess;
 
+var deprecatedInMozcentral = new RegExp('(^|\\W)(' + [
+    '-moz-box-sizing',
+    '-moz-grab',
+    '-moz-grabbing'
+  ].join('|') + ')');
+
 function preprocessCSS(mode, source, destination) {
-  function hasPrefixed(line) {
+  function hasPrefixedFirefox(line) {
     return (/(^|\W)-(ms|o|webkit)-\w/.test(line));
   }
 
-  function removePrefixed(content) {
+  function hasPrefixedMozcentral(line) {
+    return (/(^|\W)-(ms|o|webkit)-\w/.test(line) ||
+            deprecatedInMozcentral.test(line));
+  }
+
+  function removePrefixed(content, hasPrefixedFilter) {
     var lines = content.split(/\r?\n/g);
     var i = 0;
     while (i < lines.length) {
       var line = lines[i];
-      if (!hasPrefixed(line)) {
+      if (!hasPrefixedFilter(line)) {
         i++;
         continue;
       }
@@ -151,12 +162,13 @@ function preprocessCSS(mode, source, destination) {
     return lines.join('\n');
   }
 
-  if (mode !== 'firefox') {
+  if (mode !== 'firefox' && mode !== 'mozcentral') {
     throw new Error('Invalid CSS preprocessor mode');
   }
 
   var content = fs.readFileSync(source, 'utf8');
-  var out = removePrefixed(content);
+  var out = removePrefixed(content,
+    mode === 'mozcentral' ? hasPrefixedMozcentral : hasPrefixedFirefox);
   fs.writeFileSync(destination, out);
 }
 exports.preprocessCSS = preprocessCSS;

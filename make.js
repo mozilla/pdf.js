@@ -613,7 +613,9 @@ target.mozcentral = function() {
       [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR]
     ],
     preprocessCSS: [
-      ['firefox', 'web/viewer.css', MOZCENTRAL_CONTENT_DIR + '/web/viewer.css']
+      ['mozcentral',
+       'web/viewer.css',
+       MOZCENTRAL_CONTENT_DIR + '/web/viewer.css']
     ]
   };
   builder.build(setup);
