@@ -1633,12 +1633,16 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   function squash(array, index, howMany, element) {
     if (isArray(array)) {
       array.splice(index, howMany, element);
-    } else {
+    } else if (typeof element !== 'undefined') {
       // Replace the element.
       array[index] = element;
       // Shift everything after the element up.
       var sub = array.subarray(index + howMany);
       array.set(sub, index + 1);
+    } else {
+      // Shift everything after the element up.
+      var sub = array.subarray(index + howMany);
+      array.set(sub, index);
     }
   }
 
@@ -1770,6 +1774,60 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       context.currentOperation = j;
       context.operationsLength -= count * 4 - 1;
+    });
+
+  addState(InitialState,
+    [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
+    function (context) {
+      // moving single chars with same font into beginText/endText groups
+      // searching for (beginText, setFont, setTextMatrix, showText, endText)+
+      var MIN_CHARS_IN_BLOCK = 3;
+      var MAX_CHARS_IN_BLOCK = 1000;
+
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var j = context.currentOperation - 4, i = j + 5;
+      var ii = context.operationsLength;
+
+      for (; i < ii && fnArray[i - 5] === fnArray[i]; i++) {
+        if (fnArray[i] === OPS.setFont) {
+          if (argsArray[i - 5][0] !== argsArray[i][0] ||
+            argsArray[i - 5][1] !== argsArray[i][1]) {
+            break;
+          }
+        }
+      }
+      var count = Math.min(((i - j) / 5) | 0, MAX_CHARS_IN_BLOCK);
+      if (count < MIN_CHARS_IN_BLOCK) {
+        context.currentOperation = i - 1;
+        return;
+      }
+      if (j >= 4 && fnArray[j - 4] === fnArray[j + 1] &&
+        fnArray[j - 3] === fnArray[j + 2] &&
+        fnArray[j - 2] === fnArray[j + 3] &&
+        fnArray[j - 1] === fnArray[j + 4] &&
+        argsArray[j - 4][0] === argsArray[j + 1][0] &&
+        argsArray[j - 4][1] === argsArray[j + 1][1]) {
+        // extending one block ahead (very first block might have 'dependency')
+        count++;
+        j -= 5;
+      }
+      var k = j + 7;
+      i = j + 4;
+      for (var q = 1; q < count; q++) {
+        fnArray[i] = fnArray[k];
+        argsArray[i] = argsArray[k];
+        fnArray[i + 1] = fnArray[k + 1];
+        argsArray[i + 1] = argsArray[k + 1];
+        i += 2;
+        k += 5;
+      }
+      var removed = (count - 1) * 3;
+      squash(fnArray, i, removed);
+      argsArray.splice(i, removed);
+
+      context.currentOperation = i;
+      context.operationsLength -= removed;
+
     });
 
   function QueueOptimizer() {
