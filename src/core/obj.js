@@ -30,6 +30,13 @@ var Name = (function NameClosure() {
 
   Name.prototype = {};
 
+  var nameCache = {};
+
+  Name.get = function Name_get(name) {
+    var nameValue = nameCache[name];
+    return nameValue ? nameValue : (nameCache[name] = new Name(name));
+  };
+
   return Name;
 })();
 
@@ -44,10 +51,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
-    if (cmdValue)
-      return cmdValue;
-
-    return cmdCache[cmd] = new Cmd(cmd);
+    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
   return Cmd;

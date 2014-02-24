@@ -72,7 +72,7 @@ describe('util', function() {
 
     it('handles dictionaries with type check', function() {
       var dict = new Dict();
-      dict.set('Type', new Name('Page'));
+      dict.set('Type', Name.get('Page'));
       expect(isDict(dict, 'Page')).toEqual(true);
     });
   });

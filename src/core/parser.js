@@ -586,7 +586,7 @@ var Lexer = (function LexerClosure() {
         error('Warning: name token is longer than allowed by the spec: ' +
               strBuf.length);
       }
-      return new Name(strBuf.join(''));
+      return Name.get(strBuf.join(''));
     },
     getHexString: function Lexer_getHexString() {
       var strBuf = this.strBuf;

@@ -10,7 +10,7 @@ describe('obj', function() {
   describe('Name', function() {
     it('should retain the given name', function() {
       var givenName = 'Font';
-      var name = new Name(givenName);
+      var name = Name.get(givenName);
       expect(name.name).toEqual(givenName);
     });
   });
