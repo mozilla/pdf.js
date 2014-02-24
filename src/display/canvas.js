@@ -1959,10 +1959,29 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
       var imgData = this.objs.get(objId);
-      if (!imgData)
+      if (!imgData) {
         error('Dependent image isn\'t ready yet');
+      }
 
       this.paintInlineImageXObject(imgData);
+    },
+
+    paintImageMaskXObjectRepeat:
+      function CanvasGraphics_paintImageMaskXObjectRepeat(objId, scaleX, scaleY,
+                                                          positions) {
+        var imgData = this.objs.get(objId);
+        if (!imgData) {
+          error('Dependent image isn\'t ready yet');
+        }
+
+        var width = imgData.width;
+        var height = imgData.height;
+        var map = [];
+        for (var i = 0, ii = positions.length; i < ii; i += 2) {
+          map.push({transform: [scaleX, 0, 0, scaleY, positions[i],
+                   positions[i + 1]], x: 0, y: 0, w: width, h: height});
+        }
+        this.paintInlineImageXObjectGroup(imgData, map);
     },
 
     paintInlineImageXObject:
