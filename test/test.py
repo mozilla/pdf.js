@@ -847,7 +847,7 @@ def maybeUpdateRefImages(options, browser):
 
 def startReftest(browser, options):
     url = "http://%s:%s" % (SERVER_HOST, options.port)
-    url += "/test/resources/reftest-analyzer.xhtml"
+    url += "/test/resources/reftest-analyzer.html"
     url += "#web=/test/eq.log"
     try:
         browser.setup()
