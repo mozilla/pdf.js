@@ -3970,14 +3970,6 @@ var Font = (function FontClosure() {
     },
 
     convert: function Font_convert(fontName, font, properties) {
-      function isFixedPitch(glyphs) {
-        for (var i = 0, ii = glyphs.length - 1; i < ii; i++) {
-          if (glyphs[i] != glyphs[i + 1])
-            return false;
-        }
-        return true;
-      }
-
       // The offsets object holds at the same time a representation of where
       // to write the table entry information about a table and another offset
       // representing the offset where to draw the actual data of a particular
@@ -3991,7 +3983,8 @@ var Font = (function FontClosure() {
 
       createOpenTypeHeader('\x4F\x54\x54\x4F', otf, 9);
 
-      properties.fixedPitch = false; //isFixedPitch(charstrings);
+      // TODO: Check the charstring widths to determine this.
+      properties.fixedPitch = false;
 
       var mapping = font.getGlyphMapping(properties);
       var newMapping = adjustMapping(mapping, properties);
