@@ -166,7 +166,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
-        var imgData = imageObj.createImageData();
+        // We force the use of 'rgba_32bpp' images here, because we can't
+        // handle any other kind.
+        var imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
@@ -189,7 +191,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 
       PDFImage.buildImage(function(imageObj) {
-          var imgData = imageObj.createImageData();
+          var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
                             null, [imgData.data.buffer]);
         }, self.handler, self.xref, resources, image, inline);

@@ -417,7 +417,7 @@ var PDFImage = (function PDFImageClosure() {
         buffer[i + 2] = clamp((buffer[i + 2] - matteRgb[2]) * k + matteRgb[2]);
       }
     },
-    createImageData: function PDFImage_createImageData() {
+    createImageData: function PDFImage_createImageData(forceRGBA) {
       var drawWidth = this.drawWidth;
       var drawHeight = this.drawHeight;
       var imgData = {       // other fields are filled in below
@@ -430,31 +430,41 @@ var PDFImage = (function PDFImageClosure() {
       var originalHeight = this.height;
       var bpc = this.bpc;
 
-      // rows start at byte boundary;
+      // Rows start at byte boundary.
       var rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
       var imgArray = this.getImageBytes(originalHeight * rowBytes);
 
-      // imgArray can be incomplete (e.g. after CCITT fax encoding)
+      if (!forceRGBA) {
+        // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
+        // without any complications, we pass a same-sized copy to the main
+        // thread rather than expanding by 32x to RGBA form. This saves *lots*
+        // of memory for many scanned documents. It's also much faster.
+        //
+        // Similarly, if it is a 24-bit-per pixel RGB image without any
+        // complications, we avoid expanding by 1.333x to RGBA form.
+        var kind;
+        if (this.colorSpace.name === 'DeviceGray' && bpc === 1) {
+          kind = 'grayscale_1bpp';
+        } else if (this.colorSpace.name === 'DeviceRGB' && bpc === 8) {
+          kind = 'rgb_24bpp';
+        }
+        if (kind && !this.smask && !this.mask && !this.needsDecode &&
+            drawWidth === originalWidth && drawHeight === originalHeight) {
+          imgData.kind = kind;
+
+          // We must make a copy of imgArray, otherwise it'll be neutered upon
+          // transfer which will break any code that subsequently reuses it.
+          var newArray = new Uint8Array(imgArray.length);
+          newArray.set(imgArray);
+          imgData.data = newArray;
+          imgData.origLength = imgArray.length;
+          return imgData;
+        }
+      }
+
+      // imgArray can be incomplete (e.g. after CCITT fax encoding).
       var actualHeight = 0 | (imgArray.length / rowBytes *
                          drawHeight / originalHeight);
-
-      // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
-      // without any complications, we pass a same-sized copy to the main
-      // thread rather than expanding by 32x to RGBA form. This saves *lots* of
-      // memory for many scanned documents. It's also much faster.
-      if (this.colorSpace.name === 'DeviceGray' && bpc === 1 &&
-          !this.smask && !this.mask && !this.needsDecode &&
-          drawWidth === originalWidth && drawHeight === originalHeight) {
-        imgData.kind = 'grayscale_1bpp';
-
-        // We must make a copy of imgArray, otherwise it'll be neutered upon
-        // transfer which will break any code that subsequently reuses it.
-        var newArray = new Uint8Array(imgArray.length);
-        newArray.set(imgArray);
-        imgData.data = newArray;
-        imgData.origLength = imgArray.length;
-        return imgData;
-      }
 
       var comps = this.getComponents(imgArray);
 

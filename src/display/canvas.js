@@ -526,6 +526,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
 
+    } else if (imgData.kind === 'rgb_24bpp') {
+      // RGB, 24-bits per pixel.
+      for (var i = 0; i < totalChunks; i++) {
+        var thisChunkHeight =
+          (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+        var elemsInThisChunk = imgData.width * thisChunkHeight * 3;
+        var destPos = 0;
+        for (var j = 0; j < elemsInThisChunk; j += 3) {
+          chunkImgData.data[destPos++] = imgData.data[srcPos++];
+          chunkImgData.data[destPos++] = imgData.data[srcPos++];
+          chunkImgData.data[destPos++] = imgData.data[srcPos++];
+          chunkImgData.data[destPos++] = 255;
+        }
+        ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
+      }
+
     } else {
         error('bad image kind: ' + imgData.kind);
     }
