@@ -457,7 +457,6 @@ var PDFImage = (function PDFImageClosure() {
           var newArray = new Uint8Array(imgArray.length);
           newArray.set(imgArray);
           imgData.data = newArray;
-          imgData.origLength = imgArray.length;
           return imgData;
         }
       }
