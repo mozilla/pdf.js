@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ColorSpace, error, isArray, isStream, JpegStream, Name, Promise,
-           Stream, warn, LegacyPromise */
+/* globals ColorSpace, error, isArray, ImageKind, isStream, JpegStream, Name,
+           Promise, Stream, warn, LegacyPromise */
 
 'use strict';
 
@@ -444,9 +444,9 @@ var PDFImage = (function PDFImageClosure() {
         // complications, we avoid expanding by 1.333x to RGBA form.
         var kind;
         if (this.colorSpace.name === 'DeviceGray' && bpc === 1) {
-          kind = 'grayscale_1bpp';
+          kind = ImageKind.GRAYSCALE_1BPP;
         } else if (this.colorSpace.name === 'DeviceRGB' && bpc === 8) {
-          kind = 'rgb_24bpp';
+          kind = ImageKind.RGB_24BPP;
         }
         if (kind && !this.smask && !this.mask && !this.needsDecode &&
             drawWidth === originalWidth && drawHeight === originalHeight) {
@@ -482,7 +482,7 @@ var PDFImage = (function PDFImageClosure() {
 
       this.undoPreblend(rgbaBuf, drawWidth, actualHeight);
 
-      imgData.kind = 'rgba_32bpp';
+      imgData.kind = ImageKind.RGBA_32BPP;
       imgData.data = rgbaBuf;
       return imgData;
     },

@@ -16,7 +16,7 @@
  */
 /* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error,
            ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
-           info, isArray, isCmd, isDict, isEOF, isName, isNum,
+           ImageKind, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
            getTilingPatternIR, warn, Util, Promise, LegacyPromise,
@@ -166,8 +166,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
-        // We force the use of 'rgba_32bpp' images here, because we can't
-        // handle any other kind.
+        // We force the use of RGBA_32BPP images here, because we can't handle
+        // any other kind.
         var imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
@@ -1321,7 +1321,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // replacing queue items
         squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
         argsArray.splice(j, count * 4,
-          [{width: imgWidth, height: imgHeight, kind: 'rgba_32bpp',
+          [{width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
             data: imgData}, map]);
         i = j;
         ii = argsArray.length;

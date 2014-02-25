@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 /* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
-           FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, isArray, isNum,
-           TilingPattern, OPS, Promise, Util, warn, assert, info, shadow,
-           TextRenderingMode, getShadingPatternFromIR */
+           FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, ImageKind,
+           isArray, isNum, TilingPattern, OPS, Promise, Util, warn, assert,
+           info, shadow, TextRenderingMode, getShadingPatternFromIR */
 
 'use strict';
 
@@ -457,7 +457,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // There are multiple forms in which the pixel data can be passed, and
     // imgData.kind tells us which one this is.
 
-    if (imgData.kind === 'grayscale_1bpp') {
+    if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var destDataLength = dest.length;
       var srcLength = src.byteLength;
@@ -505,7 +505,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
 
-    } else if (imgData.kind === 'rgba_32bpp') {
+    } else if (imgData.kind === ImageKind.RGBA_32BPP) {
       // RGBA, 32-bits per pixel.
       var haveSetAndSubarray = 'set' in dest && 'subarray' in src;
 
@@ -524,7 +524,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
 
-    } else if (imgData.kind === 'rgb_24bpp') {
+    } else if (imgData.kind === ImageKind.RGB_24BPP) {
       // RGB, 24-bits per pixel.
       for (var i = 0; i < totalChunks; i++) {
         var thisChunkHeight =
