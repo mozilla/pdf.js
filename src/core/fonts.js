@@ -2216,6 +2216,13 @@ var Font = (function FontClosure() {
           }
           this.toFontChar[charCode] = fontChar;
         }
+      } else if (isStandardFont) {
+        this.toFontChar = [];
+        for (var charCode in properties.defaultEncoding) {
+          var glyphName = properties.differences[charCode] ||
+                          properties.defaultEncoding[charCode];
+          this.toFontChar[charCode] = GlyphsUnicode[glyphName];
+        }
       } else {
         for (var charCode in this.toUnicode) {
           this.toFontChar[charCode] = this.toUnicode[charCode].charCodeAt(0);
