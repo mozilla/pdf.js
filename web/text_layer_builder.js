@@ -60,10 +60,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   };
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
-    var self = this;
     var textDivs = this.textDivs;
-    var bidiTexts = this.textContent;
-    var textLayerDiv = this.textLayerDiv;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
 
@@ -93,7 +90,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       }
     }
 
-    textLayerDiv.appendChild(textLayerFrag);
+    this.textLayerDiv.appendChild(textLayerFrag);
     this.renderingDone = true;
     this.updateMatches();
   };

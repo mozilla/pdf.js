@@ -87,8 +87,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                  xobj, smask,
                                                                  operatorList,
                                                                  state) {
-      var self = this;
-
       var matrix = xobj.dict.get('Matrix');
       var bbox = xobj.dict.get('BBox');
       var group = xobj.dict.get('Group');
