@@ -1688,7 +1688,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     this.inputBits = 0;
     this.inputBuf = 0;
     this.outputBits = 0;
-    this.buf = EOF;
 
     var code1;
     while ((code1 = this.lookBits(12)) === 0) {
@@ -1710,7 +1709,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   CCITTFaxStream.prototype.readBlock = function CCITTFaxStream_readBlock() {
     while (!this.eof) {
       var c = this.lookChar();
-      this.buf = EOF;
       this.ensureBuffer(this.bufferLength + 1);
       this.buffer[this.bufferLength++] = c;
     }
@@ -1766,9 +1764,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   };
 
   CCITTFaxStream.prototype.lookChar = function CCITTFaxStream_lookChar() {
-    if (this.buf != EOF)
-      return this.buf;
-
     var refLine = this.refLine;
     var codingLine = this.codingLine;
     var columns = this.columns;
@@ -2014,8 +2009,9 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       this.row++;
     }
 
+    var c;
     if (this.outputBits >= 8) {
-      this.buf = (this.codingPos & 1) ? 0 : 0xFF;
+      c = (this.codingPos & 1) ? 0 : 0xFF;
       this.outputBits -= 8;
       if (this.outputBits === 0 && codingLine[this.codingPos] < columns) {
         this.codingPos++;
@@ -2024,19 +2020,19 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       }
     } else {
       var bits = 8;
-      this.buf = 0;
+      c = 0;
       do {
         if (this.outputBits > bits) {
-          this.buf <<= bits;
+          c <<= bits;
           if (!(this.codingPos & 1)) {
-            this.buf |= 0xFF >> (8 - bits);
+            c |= 0xFF >> (8 - bits);
           }
           this.outputBits -= bits;
           bits = 0;
         } else {
-          this.buf <<= this.outputBits;
+          c <<= this.outputBits;
           if (!(this.codingPos & 1)) {
-            this.buf |= 0xFF >> (8 - this.outputBits);
+            c |= 0xFF >> (8 - this.outputBits);
           }
           bits -= this.outputBits;
           this.outputBits = 0;
@@ -2045,16 +2041,16 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
             this.outputBits = (codingLine[this.codingPos] -
                                codingLine[this.codingPos - 1]);
           } else if (bits > 0) {
-            this.buf <<= bits;
+            c <<= bits;
             bits = 0;
           }
         }
       } while (bits);
     }
     if (this.black) {
-      this.buf ^= 0xFF;
+      c ^= 0xFF;
     }
-    return this.buf;
+    return c;
   };
 
   // This functions returns the code found from the table.
