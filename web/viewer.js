@@ -1666,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   }
 
 //#if !(FIREFOX || MOZCENTRAL)
-  var locale = navigator.language;
+  var locale = PDFJS.locale || navigator.language;
   if ('locale' in hashParams)
     locale = hashParams['locale'];
   mozL10n.setLanguage(locale);
