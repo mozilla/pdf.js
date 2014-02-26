@@ -1603,6 +1603,150 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   display: none;
 }
 
+@media screen and (min-resolution: 2dppx) {
+  /* Rules for Retina screens */
+  .toolbarButton::before {
+    transform: scale(0.5);
+    top: -5px;
+  }
+
+  .secondaryToolbarButton::before {
+    transform: scale(0.5);
+    top: -4px;
+  }
+
+  html[dir='ltr'] .toolbarButton::before,
+  html[dir='rtl'] .toolbarButton::before {
+    left: -1px;
+  }
+
+  html[dir='ltr'] .secondaryToolbarButton::before {
+    left: -2px;
+  }
+  html[dir='rtl'] .secondaryToolbarButton::before {
+    left: 186px;
+  }
+
+  .dropdownToolbarButton {
+    background: url(images/toolbarButton-menuArrows@2x.png) no-repeat;
+    background-size: 7px 16px;
+  }
+  
+  html[dir='ltr'] .toolbarButton#sidebarToggle::before {
+    content: url(images/toolbarButton-sidebarToggle@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton#sidebarToggle::before {
+    content: url(images/toolbarButton-sidebarToggle-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
+    content: url(images/toolbarButton-secondaryToolbarToggle@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
+    content: url(images/toolbarButton-secondaryToolbarToggle-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.findPrevious::before {
+    content: url(images/findbarButton-previous@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.findPrevious::before {
+    content: url(images/findbarButton-previous-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.findNext::before {
+    content: url(images/findbarButton-next@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.findNext::before {
+    content: url(images/findbarButton-next-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.pageUp::before {
+    content: url(images/toolbarButton-pageUp@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.pageUp::before {
+    content: url(images/toolbarButton-pageUp-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.pageDown::before {
+    content: url(images/toolbarButton-pageDown@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.pageDown::before {
+    content: url(images/toolbarButton-pageDown-rtl@2x.png);
+  }
+
+  .toolbarButton.zoomIn::before {
+    content: url(images/toolbarButton-zoomIn@2x.png);
+  }
+
+  .toolbarButton.zoomOut::before {
+    content: url(images/toolbarButton-zoomOut@2x.png);
+  }
+
+  .toolbarButton.presentationMode::before,
+  .secondaryToolbarButton.presentationMode::before {
+    content: url(images/toolbarButton-presentationMode@2x.png);
+  }
+
+  .toolbarButton.print::before,
+  .secondaryToolbarButton.print::before {
+    content: url(images/toolbarButton-print@2x.png);
+  }
+
+  .toolbarButton.openFile::before,
+  .secondaryToolbarButton.openFile::before {
+    content: url(images/toolbarButton-openFile@2x.png);
+  }
+
+  .toolbarButton.download::before,
+  .secondaryToolbarButton.download::before {
+    content: url(images/toolbarButton-download@2x.png);
+  }
+
+  .toolbarButton.bookmark::before,
+  .secondaryToolbarButton.bookmark::before {
+    content: url(images/toolbarButton-bookmark@2x.png);
+  }
+
+  #viewThumbnail.toolbarButton::before {
+    content: url(images/toolbarButton-viewThumbnail@2x.png);
+  }
+
+  html[dir="ltr"] #viewOutline.toolbarButton::before {
+    content: url(images/toolbarButton-viewOutline@2x.png);
+  }
+  html[dir="rtl"] #viewOutline.toolbarButton::before {
+    content: url(images/toolbarButton-viewOutline-rtl@2x.png);
+  }
+
+  #viewFind.toolbarButton::before {
+    content: url(images/toolbarButton-search@2x.png);
+  }
+
+  .secondaryToolbarButton.firstPage::before {
+    content: url(images/secondaryToolbarButton-firstPage@2x.png);
+  }
+
+  .secondaryToolbarButton.lastPage::before {
+    content: url(images/secondaryToolbarButton-lastPage@2x.png);
+  }
+
+  .secondaryToolbarButton.rotateCcw::before {
+    content: url(images/secondaryToolbarButton-rotateCcw@2x.png);
+  }
+
+  .secondaryToolbarButton.rotateCw::before {
+    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+  }
+
+  .secondaryToolbarButton.handTool::before {
+    content: url(images/secondaryToolbarButton-handTool@2x.png);
+  }
+
+  .secondaryToolbarButton.documentProperties::before {
+    content: url(images/secondaryToolbarButton-documentProperties@2x.png);
+  }
+}
+
 @media print {
   /* General rules for printing. */
   body {
