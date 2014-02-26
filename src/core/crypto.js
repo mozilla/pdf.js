@@ -548,7 +548,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     return userPassword;
   }
 
-  var identityName = new Name('Identity');
+  var identityName = Name.get('Identity');
 
   function CipherTransformFactory(dict, fileId, password) {
     var filter = dict.get('Filter');

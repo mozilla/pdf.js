@@ -88,7 +88,7 @@ var PDFImage = (function PDFImageClosure() {
       var colorSpace = dict.get('ColorSpace', 'CS');
       if (!colorSpace) {
         warn('JPX images (which don"t require color spaces');
-        colorSpace = new Name('DeviceRGB');
+        colorSpace = Name.get('DeviceRGB');
       }
       this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
       this.numComps = this.colorSpace.numComps;

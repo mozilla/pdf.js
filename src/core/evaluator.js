@@ -1102,7 +1102,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // FontDescriptor is only required for Type3 fonts when the document
           // is a tagged pdf. Create a barbebones one to get by.
           descriptor = new Dict();
-          descriptor.set('FontName', new Name(type.name));
+          descriptor.set('FontName', Name.get(type.name));
         } else {
           // Before PDF 1.5 if the font was one of the base 14 fonts, having a
           // FontDescriptor was not required.
@@ -1150,10 +1150,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var baseFont = dict.get('BaseFont');
       // Some bad pdf's have a string as the font name.
       if (isString(fontName)) {
-        fontName = new Name(fontName);
+        fontName = Name.get(fontName);
       }
       if (isString(baseFont)) {
-        baseFont = new Name(baseFont);
+        baseFont = Name.get(baseFont);
       }
 
       if (type.name !== 'Type3') {
