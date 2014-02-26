@@ -2156,25 +2156,15 @@ window.addEventListener('keydown', function keydown(evt) {
   // Some shortcuts should not get handled if a control/input element
   // is selected.
   var curElement = document.activeElement || document.querySelector(':focus');
-  if (curElement && (curElement.tagName.toUpperCase() === 'INPUT' ||
-                     curElement.tagName.toUpperCase() === 'TEXTAREA' ||
-                     curElement.tagName.toUpperCase() === 'SELECT')) {
+  var curElementTagName = curElement && curElement.tagName.toUpperCase();
+  if (curElementTagName === 'INPUT' ||
+      curElementTagName === 'TEXTAREA' ||
+      curElementTagName === 'SELECT') {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
     if (evt.keyCode !== 27) { // 'Esc'
       return;
     }
   }
-  var controlsElement = document.getElementById('toolbar');
-  while (curElement) {
-    if (curElement === controlsElement && !PresentationMode.active)
-      return; // ignoring if the 'toolbar' element is focused
-    curElement = curElement.parentNode;
-  }
-//#if (FIREFOX || MOZCENTRAL)
-//// Workaround for issue in Firefox, that prevents scroll keys from working
-//// when elements with 'tabindex' are focused.
-//PDFView.container.blur();
-//#endif
 
   if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
@@ -2249,6 +2239,29 @@ window.addEventListener('keydown', function keydown(evt) {
       case 82: // 'r'
         PDFView.rotatePages(90);
         break;
+    }
+    if (!handled && !PresentationMode.active) {
+      // 33=Page Up  34=Page Down  35=End    36=Home
+      // 37=Left     38=Up         39=Right  40=Down
+      if (evt.keyCode >= 33 && evt.keyCode <= 40 &&
+          !PDFView.container.contains(curElement)) {
+        // The page container is not focused, but a page navigation key has been
+        // pressed. Change the focus to the viewer container to make sure that
+        // navigation by keyboard works as expected.
+        PDFView.container.focus();
+      }
+      // 32=Spacebar
+      if (evt.keyCode === 32 && curElementTagName !== 'BUTTON') {
+//#if !(FIREFOX || MOZCENTRAL)
+//// Workaround for issue in Firefox, that prevents scroll keys from working
+//// when elements with 'tabindex' are focused. (#3499)
+//      PDFView.container.blur();
+//#else
+        if (!PDFView.container.contains(curElement)) {
+          PDFView.container.focus();
+        }
+//#endif
+      }
     }
   }
 
