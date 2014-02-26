@@ -2254,7 +2254,7 @@ window.addEventListener('keydown', function keydown(evt) {
       }
       // 32=Spacebar
       if (evt.keyCode === 32 && curElementTagName !== 'BUTTON') {
-//#if !(FIREFOX || MOZCENTRAL)
+//#if (FIREFOX || MOZCENTRAL)
 //// Workaround for issue in Firefox, that prevents scroll keys from working
 //// when elements with 'tabindex' are focused. (#3499)
 //      PDFView.container.blur();
