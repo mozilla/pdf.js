@@ -166,7 +166,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         onProgress: function onProgress(evt) {
           handler.send('DocProgress', {
             loaded: evt.loaded,
-            total: evt.lengthComputable ? evt.total : void(0)
+            total: evt.lengthComputable ? evt.total : source.length
           });
         }
       });

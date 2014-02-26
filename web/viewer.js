@@ -1817,7 +1817,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //    var streamUrl = response.streamUrl;
 //    if (streamUrl) {
 //      console.log('Found data stream for ' + file);
-//      PDFView.open(streamUrl, 0);
+//      PDFView.open(streamUrl, 0, undefined, undefined, {
+//        length: response.contentLength
+//      });
 //      PDFView.setTitleUsingUrl(file);
 //      return;
 //    }

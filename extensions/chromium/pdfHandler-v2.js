@@ -55,27 +55,31 @@ function hasStream(tabId, pdfUrl) {
 /**
 * Get stream URL for a given tabId and PDF url. The retrieved stream URL
 * will be removed from the list.
-* @return {string|undefined} The blob:-URL
+* @return {object} An object with property url (= blob:-URL) and
+*                                 property contentLength (= expected size)
 */
 function getStream(tabId, pdfUrl) {
   if (!streamSupportsTabId) tabId = STREAM_NO_TABID;
   if (hasStream(tabId, pdfUrl)) {
-    var streamUrl = urlToStream[tabId][pdfUrl].shift();
+    var streamInfo = urlToStream[tabId][pdfUrl].shift();
     if (urlToStream[tabId][pdfUrl].length === 0) {
       delete urlToStream[tabId][pdfUrl];
       if (Object.keys(urlToStream[tabId]).length === 0) {
         delete urlToStream[tabId];
       }
     }
-    return streamUrl;
+    return streamInfo;
   }
 }
 
-function setStream(tabId, pdfUrl, streamUrl) {
+function setStream(tabId, pdfUrl, streamUrl, expectedSize) {
   tabId = tabId || STREAM_NO_TABID;
   if (!urlToStream[tabId]) urlToStream[tabId] = {};
   if (!urlToStream[tabId][pdfUrl]) urlToStream[tabId][pdfUrl] = [];
-  urlToStream[tabId][pdfUrl].push(streamUrl);
+  urlToStream[tabId][pdfUrl].push({
+    streamUrl: streamUrl,
+    contentLength: expectedSize
+  });
 }
 
 // http://crbug.com/276898 - the onExecuteMimeTypeHandler event is sometimes
@@ -86,14 +90,18 @@ function transferStreamToIncognitoProfile(tabId, pdfUrl) {
     console.log('Already within incognito profile. Aborted stream transfer.');
     return;
   }
-  var streamUrl = getStream(tabId, pdfUrl);
+  var streamInfo = getStream(tabId, pdfUrl);
+  if (!streamInfo) {
+    return;
+  }
   console.log('Attempting to transfer stream info to a different profile...');
   var itemId = 'streamInfo:' + window.performance.now();
   var items = {};
   items[itemId] = {
     tabId: tabId,
     pdfUrl: pdfUrl,
-    streamUrl: streamUrl
+    streamUrl: streamInfo.streamUrl,
+    contentLength: streamInfo.contentLength
   };
   // The key will be removed whenever an incognito session is started,
   // or when an incognito session is active.
@@ -111,7 +119,8 @@ if (chrome.extension.inIncognitoContext) {
   var importStream = function(itemId, streamInfo) {
     if (itemId.lastIndexOf('streamInfo:', 0) !== 0) return;
     console.log('Importing stream info from non-incognito profile', streamInfo);
-    handleStream('', streamInfo.pdfUrl, streamInfo.streamUrl, streamInfo.tabId);
+    handleStream('', streamInfo.pdfUrl, streamInfo.streamUrl, streamInfo.tabId,
+        streamInfo.contentLength);
     chrome.storage.local.remove(itemId);
   };
   var handleStorageItems = function(items) {
@@ -131,9 +140,10 @@ if (chrome.extension.inIncognitoContext) {
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message && message.action === 'getPDFStream') {
     var pdfUrl = message.data;
-    var streamUrl = getStream(sender.tab.id, pdfUrl);
+    var streamInfo = getStream(sender.tab.id, pdfUrl) || {};
     sendResponse({
-      streamUrl: streamUrl
+      streamUrl: streamInfo.streamUrl,
+      contentLength: streamInfo.contentLength
     });
   }
 });
@@ -150,13 +160,15 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
  * @param streamUrl {string} The url pointing to the open stream
  * @param tabId {number} The ID of the tab in which the stream has been opened
  *                       (undefined before Chrome 27, http://crbug.com/225605)
+ * @param expectedSize {number} The expected content length of the stream.
+ *                       (added in Chrome 29, http://crbug.com/230346)
  */
-function handleStream(mimeType, pdfUrl, streamUrl, tabId) {
+function handleStream(mimeType, pdfUrl, streamUrl, tabId, expectedSize) {
   console.log('Intercepted ' + mimeType + ' in tab ' + tabId + ' with URL ' +
               pdfUrl + '\nAvailable as: ' + streamUrl);
   streamSupportsTabId = typeof tabId === 'number';
 
-  setStream(tabId, pdfUrl, streamUrl);
+  setStream(tabId, pdfUrl, streamUrl, expectedSize);
 
   if (!tabId) { // Chrome doesn't set the tabId before v27
     // PDF.js targets Chrome 28+ because of fatal bugs in incognito mode
