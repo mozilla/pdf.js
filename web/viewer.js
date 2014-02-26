@@ -1321,8 +1321,16 @@ var PDFView = {
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
-    return this.getVisibleElements(this.container, this.pages,
-                                   !PresentationMode.active);
+    if (!PresentationMode.active) {
+      return this.getVisibleElements(this.container, this.pages, true);
+    } else {
+      // The algorithm in getVisibleElements doesn't work in all browsers and
+      // configurations when presentation mode is active.
+      var visible = [];
+      var currentPage = this.pages[this.page - 1];
+      visible.push({ id: currentPage.id, view: currentPage });
+      return { first: currentPage, last: currentPage, views: visible };
+    }
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
@@ -1871,9 +1879,11 @@ function updateViewarea() {
     currentId = visiblePages[0].id;
   }
 
-  updateViewarea.inProgress = true; // used in "set page"
-  PDFView.page = currentId;
-  updateViewarea.inProgress = false;
+  if (!PresentationMode.active) {
+    updateViewarea.inProgress = true; // used in "set page"
+    PDFView.page = currentId;
+    updateViewarea.inProgress = false;
+  }
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
