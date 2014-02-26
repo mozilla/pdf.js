@@ -1733,14 +1733,18 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessor() {
           break;
         case OPS.transform:
           var ctm = this.ctm;
-          var m = new Float32Array(6);
-          m[0] = ctm[0] * args[0] + ctm[2] * args[1];
-          m[1] = ctm[1] * args[0] + ctm[3] * args[1];
-          m[2] = ctm[0] * args[2] + ctm[2] * args[3];
-          m[3] = ctm[1] * args[2] + ctm[3] * args[3];
-          m[4] = ctm[0] * args[4] + ctm[2] * args[5] + ctm[4];
-          m[5] = ctm[1] * args[4] + ctm[3] * args[5] + ctm[5];
-          this.ctm = m;
+          var m0 = ctm[0] * args[0] + ctm[2] * args[1];
+          var m1 = ctm[1] * args[0] + ctm[3] * args[1];
+          var m2 = ctm[0] * args[2] + ctm[2] * args[3];
+          var m3 = ctm[1] * args[2] + ctm[3] * args[3];
+          var m4 = ctm[0] * args[4] + ctm[2] * args[5] + ctm[4];
+          var m5 = ctm[1] * args[4] + ctm[3] * args[5] + ctm[5];
+          ctm[0] = m0;
+          ctm[1] = m1;
+          ctm[2] = m2;
+          ctm[3] = m3;
+          ctm[4] = m4;
+          ctm[5] = m5;
           break;
       }
     }
