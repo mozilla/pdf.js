@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-* { -moz-box-sizing: border-box; }
-
 * {
+  box-sizing: border-box;
   padding: 0;
   margin: 0;
 }
@@ -91,6 +90,7 @@ footer {
 }
 
 #pageNumber {
+  -moz-appearance: textfield; /* hides the spinner in moz */
   position: absolute;
   width: 28%;
   height: 100%;
