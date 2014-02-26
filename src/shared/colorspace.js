@@ -32,13 +32,16 @@ var ColorSpace = (function ColorSpaceClosure() {
      * of the rgb components, each value ranging from [0,255].
      */
     getRgb: function ColorSpace_getRgb(src, srcOffset) {
-      error('Should not call ColorSpace.getRgb');
+      var rgb = new Uint8Array(3);
+      this.getRgbItem(src, srcOffset, rgb, 0);
+      return rgb;
     },
     /**
      * Converts the color value to the RGB color, similar to the getRgb method.
      * The result placed into the dest array starting from the destOffset.
      */
-    getRgbItem: function ColorSpace_getRgb(src, srcOffset, dest, destOffset) {
+    getRgbItem: function ColorSpace_getRgbItem(src, srcOffset,
+                                               dest, destOffset) {
       error('Should not call ColorSpace.getRgbItem');
     },
     /**
@@ -365,11 +368,7 @@ var AlternateCS = (function AlternateCSClosure() {
   }
 
   AlternateCS.prototype = {
-    getRgb: function AlternateCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function AlternateCS_getRgbItem(src, srcOffset,
                                                 dest, destOffset) {
       var baseNumComps = this.base.numComps;
@@ -468,11 +467,7 @@ var IndexedCS = (function IndexedCSClosure() {
   }
 
   IndexedCS.prototype = {
-    getRgb: function IndexedCS_getRgb(src, srcOffset) {
-      var numComps = this.base.numComps;
-      var start = src[srcOffset] * numComps;
-      return this.base.getRgb(this.lookup, start);
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function IndexedCS_getRgbItem(src, srcOffset,
                                               dest, destOffset) {
       var numComps = this.base.numComps;
@@ -516,11 +511,7 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
   }
 
   DeviceGrayCS.prototype = {
-    getRgb: function DeviceGrayCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function DeviceGrayCS_getRgbItem(src, srcOffset,
                                                  dest, destOffset) {
       var c = (src[srcOffset] * 255) | 0;
@@ -561,11 +552,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     this.defaultColor = new Float32Array([0, 0, 0]);
   }
   DeviceRgbCS.prototype = {
-    getRgb: function DeviceRgbCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function DeviceRgbCS_getRgbItem(src, srcOffset,
                                                 dest, destOffset) {
       var r = (src[srcOffset] * 255) | 0;
@@ -658,11 +645,7 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
     this.defaultColor = new Float32Array([0, 0, 0, 1]);
   }
   DeviceCmykCS.prototype = {
-    getRgb: function DeviceCmykCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      convertToRgb(src, srcOffset, 1, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function DeviceCmykCS_getRgbItem(src, srcOffset,
                                                  dest, destOffset) {
       convertToRgb(src, srcOffset, 1, dest, destOffset);
@@ -769,11 +752,7 @@ var CalGrayCS = (function CalGrayCSClosure() {
   }
 
   CalGrayCS.prototype = {
-    getRgb: function CalGrayCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function CalGrayCS_getRgbItem(src, srcOffset,
                                               dest, destOffset) {
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
@@ -912,11 +891,7 @@ var LabCS = (function LabCSClosure() {
   }
 
   LabCS.prototype = {
-    getRgb: function LabCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      convertToRgb(this, src, srcOffset, false, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function LabCS_getRgbItem(src, srcOffset, dest, destOffset) {
       convertToRgb(this, src, srcOffset, false, dest, destOffset);
     },
