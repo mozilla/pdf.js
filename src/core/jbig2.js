@@ -115,7 +115,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
       },
       readBit: function ArithmeticDecoder_readBit(contexts, pos) {
-        // contexts are packed into 1 byte: 
+        // contexts are packed into 1 byte:
         // highest 7 bits carry cx.index, lowest bit carries cx.mps
         var cx_index = contexts[pos] >> 1, cx_mps = contexts[pos] & 1;
         var qeTableIcx = QeTable[cx_index];
@@ -607,7 +607,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
         if (transposed) {
-          // Place Symbol Bitmap from T1,S1  
+          // Place Symbol Bitmap from T1,S1
           for (var s2 = 0; s2 < symbolHeight; s2++) {
             var row = bitmap[offsetS + s2];
             if (!row) {
@@ -994,9 +994,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       this.currentPageInfo = info;
       var rowSize = (info.width + 7) >> 3;
       var buffer = new Uint8Array(rowSize * info.height);
-      var fill = info.defaultPixelValue ? 0xFF : 0;
-      for (var i = 0, ii = buffer.length; i < ii; i++)
-        buffer[i] = fill;
+      // The contents of ArrayBuffers are initialized to 0.
+      // Fill the buffer with 0xFF only if info.defaultPixelValue is set
+      if (info.defaultPixelValue) {
+        for (var i = 0, ii = buffer.length; i < ii; i++) {
+          buffer[i] = 0xFF;
+        }
+      }
       this.buffer = buffer;
     },
     drawBitmap: function SimpleSegmentVisitor_drawBitmap(regionInfo, bitmap) {
