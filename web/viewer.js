@@ -2145,6 +2145,18 @@ window.addEventListener('keydown', function keydown(evt) {
     }
   }
 
+//#if !(FIREFOX || MOZCENTRAL)
+  // CTRL or META without shift
+  if (cmd === 1 || cmd === 8) {
+    switch (evt.keyCode) {
+      case 83: // s
+        PDFView.download();
+        handled = true;
+        break;
+    }
+  }
+//#endif
+
   // CTRL+ALT or Option+Command
   if (cmd === 3 || cmd === 10) {
     switch (evt.keyCode) {
