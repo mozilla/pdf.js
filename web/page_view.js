@@ -509,11 +509,6 @@ var PageView = function pageView(container, id, scale,
       textLayerDiv.dataset._scaleY = outputScale.sy;
     }
 
-//#if (FIREFOX || MOZCENTRAL)
-//  // Checking if document fonts are used only once
-//  var checkIfDocumentFontsUsed = !PDFView.pdfDocument.embeddedFontsUsed;
-//#endif
-
     // Rendering area
 
     var self = this;
@@ -542,12 +537,6 @@ var PageView = function pageView(container, id, scale,
       }
 
 //#if (FIREFOX || MOZCENTRAL)
-//    if (checkIfDocumentFontsUsed && PDFView.pdfDocument.embeddedFontsUsed &&
-//        PDFJS.disableFontFace) {
-//      console.error(mozL10n.get('web_fonts_disabled', null,
-//        'Web fonts are disabled: unable to use embedded PDF fonts.'));
-//      PDFView.fallback();
-//    }
 //    if (self.textLayer && self.textLayer.textDivs &&
 //        self.textLayer.textDivs.length > 0 &&
 //        !PDFView.supportsDocumentColors) {
