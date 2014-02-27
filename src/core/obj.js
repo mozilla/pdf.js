@@ -814,6 +814,7 @@ var XRef = (function XRefClosure() {
         entryRanges.splice(0, 2);
       }
     },
+
     indexObjects: function XRef_indexObjects() {
       // Simple scan through the PDF content to find objects,
       // trailers and XRef streams.
@@ -1013,74 +1014,80 @@ var XRef = (function XRefClosure() {
         return null;
       return e.free || !e.offset ? null : e; // returns null if entry is free
     },
+
     fetchIfRef: function XRef_fetchIfRef(obj) {
       if (!isRef(obj))
         return obj;
       return this.fetch(obj);
     },
+
     fetch: function XRef_fetch(ref, suppressEncryption) {
       assertWellFormed(isRef(ref), 'ref object is not a reference');
       var num = ref.num;
-      var e;
       if (num in this.cache) {
-        e = this.cache[num];
-        if (e instanceof Stream) {
-          return e.makeSubStream(e.start, e.length, e.dict);
-        }
-        return e;
+        var cacheEntry = this.cache[num];
+        return cacheEntry;
       }
 
-      e = this.getEntry(num);
+      var xrefEntry = this.getEntry(num);
 
       // the referenced entry can be free
-      if (e === null)
-        return (this.cache[num] = e);
-
-      var gen = ref.gen;
-      var stream, parser;
-      if (e.uncompressed) {
-        if (e.gen != gen)
-          error('inconsistent generation in XRef');
-        stream = this.stream.makeSubStream(e.offset);
-        parser = new Parser(new Lexer(stream), true, this);
-        var obj1 = parser.getObj();
-        var obj2 = parser.getObj();
-        var obj3 = parser.getObj();
-        if (!isInt(obj1) || obj1 != num ||
-            !isInt(obj2) || obj2 != gen ||
-            !isCmd(obj3)) {
-          error('bad XRef entry');
-        }
-        if (!isCmd(obj3, 'obj')) {
-          // some bad pdfs use "obj1234" and really mean 1234
-          if (obj3.cmd.indexOf('obj') === 0) {
-            num = parseInt(obj3.cmd.substring(3), 10);
-            if (!isNaN(num))
-              return num;
-          }
-          error('bad XRef entry');
-        }
-        if (this.encrypt && !suppressEncryption) {
-          try {
-            e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
-          } catch (ex) {
-            // almost all streams must be encrypted, but sometimes
-            // they are not probably due to some broken generators
-            // re-trying without encryption
-            return this.fetch(ref, true);
-          }
-        } else {
-          e = parser.getObj();
-        }
-        if (!isStream(e)) {
-          this.cache[num] = e;
-        }
-        return e;
+      if (xrefEntry === null) {
+        return (this.cache[num] = null);
       }
 
-      // compressed entry
-      var tableOffset = e.offset;
-      stream = this.fetch(new Ref(tableOffset, 0));
+      if (xrefEntry.uncompressed) {
+        return this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
+      } else {
+        return this.fetchCompressed(xrefEntry, suppressEncryption);
+      }
+    },
+
+    fetchUncompressed: function XRef_fetchUncompressed(ref, xrefEntry, suppressEncryption) {
+      var gen = ref.gen;
+      var num = ref.num;
+      if (xrefEntry.gen != gen)
+        error('inconsistent generation in XRef');
+      var stream = this.stream.makeSubStream(xrefEntry.offset);
+      var parser = new Parser(new Lexer(stream), true, this);
+      var obj1 = parser.getObj();
+      var obj2 = parser.getObj();
+      var obj3 = parser.getObj();
+      if (!isInt(obj1) || obj1 != num ||
+          !isInt(obj2) || obj2 != gen ||
+          !isCmd(obj3)) {
+        error('bad XRef entry');
+      }
+      if (!isCmd(obj3, 'obj')) {
+        // some bad pdfs use "obj1234" and really mean 1234
+        if (obj3.cmd.indexOf('obj') === 0) {
+          num = parseInt(obj3.cmd.substring(3), 10);
+          if (!isNaN(num))
+            return num;
+        }
+        error('bad XRef entry');
+      }
+      if (this.encrypt && !suppressEncryption) {
+        try {
+          xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num, gen));
+        } catch (ex) {
+          // almost all streams must be encrypted, but sometimes
+          // they are not probably due to some broken generators
+          // re-trying without encryption
+          return this.fetch(ref, true);
+        }
+      } else {
+        xrefEntry = parser.getObj();
+      }
+      if (!isStream(xrefEntry)) {
+        this.cache[num] = xrefEntry;
+      }
+      return xrefEntry;
+    },
+
+    fetchCompressed: function XRef_fetchCompressed(xrefEntry, suppressEncryption) {
+      var tableOffset = xrefEntry.offset;
+      var stream = this.fetch(new Ref(tableOffset, 0));
       if (!isStream(stream))
         error('bad ObjStm stream');
       var first = stream.dict.get('First');
@@ -1088,9 +1095,9 @@ var XRef = (function XRefClosure() {
       if (!isInt(first) || !isInt(n)) {
         error('invalid first and n parameters for ObjStm stream');
       }
-      parser = new Parser(new Lexer(stream), false, this);
+      var parser = new Parser(new Lexer(stream), false, this);
       parser.allowStreams = true;
-      var i, entries = [], nums = [];
+      var i, entries = [], num, nums = [];
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
         num = parser.getObj();
@@ -1112,12 +1119,13 @@ var XRef = (function XRefClosure() {
           this.cache[num] = entries[i];
         }
       }
-      e = entries[e.gen];
-      if (e === undefined) {
+      xrefEntry = entries[xrefEntry.gen];
+      if (xrefEntry === undefined) {
         error('bad XRef entry for compressed object');
       }
-      return e;
+      return xrefEntry;
     },
+
     fetchIfRefAsync: function XRef_fetchIfRefAsync(obj) {
       if (!isRef(obj)) {
         var promise = new LegacyPromise();
@@ -1126,6 +1134,7 @@ var XRef = (function XRefClosure() {
       }
       return this.fetchAsync(obj);
     },
+
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
       var promise = new LegacyPromise();
       var tryFetch = function (promise) {
@@ -1142,6 +1151,7 @@ var XRef = (function XRefClosure() {
       tryFetch();
       return promise;
     },
+
     getCatalogObj: function XRef_getCatalogObj() {
       return this.root;
     }
@@ -1344,5 +1354,3 @@ var ObjectLoader = (function() {
 
   return ObjectLoader;
 })();
-
-
