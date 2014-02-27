@@ -1037,20 +1037,10 @@ var XRef = (function XRefClosure() {
       }
 
       if (xrefEntry.uncompressed) {
-        var r = this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
+        return this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
       } else {
-        var r = this.fetchCompressed(xrefEntry, suppressEncryption);
+        return this.fetchCompressed(xrefEntry, suppressEncryption);
       }
-      if (isStream(r)) {
-        if (r.dict.map.Type) {
-          console.log(r.dict.map.Type.name);
-          console.log("type", r.dict.map);
-          if (r.dict.map.Subtype) {
-            console.log("subtype", r.dict.map.Subtype.name);
-          }
-        }
-      }
-      return r;
     },
 
     fetchUncompressed: function XRef_fetchUncompressed(ref, xrefEntry, suppressEncryption) {
