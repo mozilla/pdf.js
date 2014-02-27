@@ -1592,12 +1592,12 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //})();
 //#endif
 
-document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
+function webViewerLoad(evt) {
   PDFView.initialize();
 
 //#if (GENERIC || B2G)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
-  var file = params.file || DEFAULT_URL;
+  var file = 'file' in params ? params.file : DEFAULT_URL;
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
 //var file = window.location.href.split('#')[0];
@@ -1813,7 +1813,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#endif
 
 //#if !B2G && !CHROME
-  PDFView.open(file, 0);
+  if (file) {
+    PDFView.open(file, 0);
+  }
 //#endif
 
 //#if CHROME
@@ -1845,7 +1847,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //  PDFView.open(file, 0);
 //});
 //#endif
-}, true);
+}
+
+document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 
 function updateViewarea() {
 
