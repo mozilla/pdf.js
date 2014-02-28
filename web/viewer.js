@@ -1674,6 +1674,8 @@ function webViewerLoad(evt) {
 //#if (FIREFOX || MOZCENTRAL)
 //if (!PDFView.supportsDocumentFonts) {
 //  PDFJS.disableFontFace = true;
+//  console.warn(mozL10n.get('web_fonts_disabled', null,
+//    'Web fonts are disabled: unable to use embedded PDF fonts.'));
 //}
 //#endif
 
