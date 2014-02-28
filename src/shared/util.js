@@ -228,7 +228,11 @@ function combineUrl(baseUrl, url) {
   if (url.charAt(0) == '/') {
     // absolute path
     var i = baseUrl.indexOf('://');
-    i = baseUrl.indexOf('/', i + 3);
+    if (url.charAt(1) === '/') {
+      ++i;
+    } else {
+      i = baseUrl.indexOf('/', i + 3);
+    }
     return baseUrl.substring(0, i) + url;
   } else {
     // relative path
