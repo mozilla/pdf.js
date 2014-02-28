@@ -774,10 +774,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               dir: bidiResult.dir
             };
             var renderParams = textState.calcRenderParams(preprocessor.ctm);
-            bidiText.x = renderParams.renderMatrix[4] - (textState.fontSize *
-                           renderParams.vScale * Math.sin(renderParams.angle));
-            bidiText.y = renderParams.renderMatrix[5] + (textState.fontSize *
-                           renderParams.vScale * Math.cos(renderParams.angle));
             var fontHeight = textState.fontSize * renderParams.vScale;
             var fontAscent = font.ascent ? font.ascent * fontHeight :
               font.descent ? (1 + font.descent) * fontHeight : fontHeight;
