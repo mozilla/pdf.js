@@ -532,31 +532,39 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   }
 
   function putBinaryImageMask(ctx, imgData) {
-    var width = imgData.width, height = imgData.height;
-    var tmpImgData = ctx.createImageData(width, height);
-    var data = imgData.data;
-    var tmpImgDataPixels = tmpImgData.data;
-    var dataPos = 0;
+    var height = imgData.height, width = imgData.width;
+    var fullChunkHeight = 16;
+    var fracChunks = height / fullChunkHeight;
+    var fullChunks = Math.floor(fracChunks);
+    var totalChunks = Math.ceil(fracChunks);
+    var partialChunkHeight = height - fullChunks * fullChunkHeight;
 
-    // Expand the mask so it can be used by the canvas.  Any required inversion
-    // has already been handled.
-    var tmpPos = 3; // alpha component offset
-    for (var i = 0; i < height; i++) {
-      var mask = 0;
-      for (var j = 0; j < width; j++) {
-        if (!mask) {
-          var elem = data[dataPos++];
-          mask = 128;
+    var chunkImgData = ctx.createImageData(width, fullChunkHeight);
+    var srcPos = 0;
+    var src = imgData.data;
+    var dest = chunkImgData.data;
+
+    for (var i = 0; i < totalChunks; i++) {
+      var thisChunkHeight =
+        (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
+
+      // Expand the mask so it can be used by the canvas.  Any required
+      // inversion has already been handled.
+      var destPos = 3; // alpha component offset
+      for (var j = 0; j < thisChunkHeight; j++) {
+        var mask = 0;
+        for (var k = 0; k < width; k++) {
+          if (!mask) {
+            var elem = src[srcPos++];
+            mask = 128;
+          }
+          dest[destPos] = (elem & mask) ? 0 : 255;
+          destPos += 4;
+          mask >>= 1;
         }
-        if (!(elem & mask)) {
-          tmpImgDataPixels[tmpPos] = 255;
-        }
-        tmpPos += 4;
-        mask >>= 1;
       }
+      ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
     }
-
-    ctx.putImageData(tmpImgData, 0, 0);
   }
 
   function copyCtxState(sourceCtx, destCtx) {
