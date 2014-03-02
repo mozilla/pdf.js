@@ -3707,6 +3707,11 @@ var Font = (function FontClosure() {
         if (ttContext.tooComplexToFollowFunctions) {
           return;
         }
+        if (ttContext.functionsDefined.length > maxFunctionDefs) {
+          warn('TT: more functions defined than expected');
+          ttContext.hintsValid = false;
+          return;
+        }
         for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {
           if (j > maxFunctionDefs) {
             warn('TT: invalid function id: ' + j);
