@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+'use strict';
+
 var url = location.search.match(/[&?]file=([^&]+)/i);
 if (url) {
   url = decodeURIComponent(url[1]);
   document.body.textContent = url;
   // Set cursor to end of the content-editable section.
-  getSelection().selectAllChildren(document.body);
-  getSelection().collapseToEnd();
+  window.getSelection().selectAllChildren(document.body);
+  window.getSelection().collapseToEnd();
 }
