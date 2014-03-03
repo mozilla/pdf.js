@@ -2382,11 +2382,11 @@ var Font = (function FontClosure() {
   }
 
   function arrayToString(arr) {
-    var str = '';
-    for (var i = 0, ii = arr.length; i < ii; ++i)
-      str += String.fromCharCode(arr[i]);
-
-    return str;
+    var strBuf = [];
+    for (var i = 0, ii = arr.length; i < ii; ++i) {
+      strBuf.push(String.fromCharCode(arr[i]));
+    }
+    return strBuf.join('');
   }
 
   function int16(bytes) {
@@ -2801,10 +2801,11 @@ var Font = (function FontClosure() {
     for (var i = 0, ii = strings.length; i < ii; i++) {
       var str = proto[1][i] || strings[i];
 
-      var strUnicode = '';
-      for (var j = 0, jj = str.length; j < jj; j++)
-        strUnicode += string16(str.charCodeAt(j));
-      stringsUnicode.push(strUnicode);
+      var strBufUnicode = [];
+      for (var j = 0, jj = str.length; j < jj; j++) {
+        strBufUnicode.push(string16(str.charCodeAt(j)));
+      }
+      stringsUnicode.push(strBufUnicode.join(''));
     }
 
     var names = [strings, stringsUnicode];

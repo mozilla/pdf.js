@@ -291,11 +291,13 @@ var PDFDocument = (function PDFDocumentClosure() {
   function find(stream, needle, limit, backwards) {
     var pos = stream.pos;
     var end = stream.end;
-    var str = '';
+    var strBuf = [];
     if (pos + limit > end)
       limit = end - pos;
-    for (var n = 0; n < limit; ++n)
-      str += String.fromCharCode(stream.getByte());
+    for (var n = 0; n < limit; ++n) {
+      strBuf.push(String.fromCharCode(stream.getByte()));
+    }
+    var str = strBuf.join('');
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
     if (index == -1)
