@@ -389,6 +389,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!isDict(font)) {
         return errorFont();
       }
+
+      var preEvaluatedFont = this.preEvaluateFont(font, xref);
+      var fontDescriptor = preEvaluatedFont.descriptor;
+      if (fontDescriptor && fontDescriptor.font) {
+        return fontDescriptor.font;
+      }
+
       // Workaround for bad PDF generators that doesn't reference fonts
       // properly, i.e. by not using an object identifier.
       // Check if the fontRef is a Dict (as opposed to a standard object),
@@ -407,7 +414,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!font.translated) {
         var translated;
         try {
-          translated = this.translateFont(font, xref);
+          translated = this.translateFont(preEvaluatedFont, xref);
         } catch (e) {
           UnsupportedManager.notify(UNSUPPORTED_FEATURES.font);
           translated = new ErrorFont(e instanceof Error ? e.message : e);
@@ -437,6 +444,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       } else {
         font.loaded = true;
       }
+
+      if (fontDescriptor) {
+        fontDescriptor.font = font;
+      }
+
       return font;
     },
 
@@ -1070,8 +1082,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       };
     },
 
-    translateFont: function PartialEvaluator_translateFont(dict,
-                                                           xref) {
+    preEvaluateFont: function PartialEvaluator_preEvaluateFont(dict, xref) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -1092,9 +1103,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         assertWellFormed(isName(type), 'invalid font Subtype');
         composite = true;
       }
+
+      return {
+        descriptor: dict.get('FontDescriptor'),
+        dict: dict,
+        baseDict: baseDict,
+        composite: composite
+      };
+    },
+
+    translateFont: function PartialEvaluator_translateFont(preEvaluatedFont,
+                                                           xref) {
+      var baseDict = preEvaluatedFont.baseDict;
+      var dict = preEvaluatedFont.dict;
+      var composite = preEvaluatedFont.composite;
+      var descriptor = preEvaluatedFont.descriptor;
+      var type = dict.get('Subtype');
       var maxCharIndex = composite ? 0xFFFF : 0xFF;
 
-      var descriptor = dict.get('FontDescriptor');
       if (!descriptor) {
         if (type.name == 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
