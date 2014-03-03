@@ -154,7 +154,6 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
     var chars = [];
     var types = [];
-    var oldtypes = [];
     var numBidi = 0;
 
     for (var i = 0; i < strLength; ++i) {
@@ -174,7 +173,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
       if (charType == 'R' || charType == 'AL' || charType == 'AN')
         numBidi++;
 
-      oldtypes[i] = types[i] = charType;
+      types[i] = charType;
     }
 
     // detect the bidi method
