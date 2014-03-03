@@ -271,6 +271,10 @@ var RefSetCache = (function RefSetCacheClosure() {
       this.dict['R' + ref.num + '.' + ref.gen] = obj;
     },
 
+    putAlias: function RefSetCache_putAlias(ref, aliasRef) {
+      this.dict['R' + ref.num + '.' + ref.gen] = this.get(aliasRef);
+    },
+
     forEach: function RefSetCache_forEach(fn, thisArg) {
       for (var i in this.dict) {
         fn.call(thisArg, this.dict[i]);
