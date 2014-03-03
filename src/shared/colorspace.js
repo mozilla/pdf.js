@@ -166,9 +166,9 @@ var ColorSpace = (function ColorSpaceClosure() {
 
   ColorSpace.parse = function ColorSpace_parse(cs, xref, res) {
     var IR = ColorSpace.parseToIR(cs, xref, res);
-    if (IR instanceof AlternateCS)
+    if (IR instanceof AlternateCS) {
       return IR;
-
+    }
     return ColorSpace.fromIR(IR);
   };
 
@@ -189,8 +189,9 @@ var ColorSpace = (function ColorSpaceClosure() {
         return new CalGrayCS(whitePoint, blackPoint, gamma);
       case 'PatternCS':
         var basePatternCS = IR[1];
-        if (basePatternCS)
+        if (basePatternCS) {
           basePatternCS = ColorSpace.fromIR(basePatternCS);
+        }
         return new PatternCS(basePatternCS);
       case 'IndexedCS':
         var baseIndexedCS = IR[1];
@@ -220,8 +221,9 @@ var ColorSpace = (function ColorSpaceClosure() {
       var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
         var refcs = colorSpaces.get(cs.name);
-        if (refcs)
+        if (refcs) {
           cs = refcs;
+        }
       }
     }
 
@@ -270,17 +272,19 @@ var ColorSpace = (function ColorSpaceClosure() {
           var stream = xref.fetchIfRef(cs[1]);
           var dict = stream.dict;
           var numComps = dict.get('N');
-          if (numComps == 1)
+          if (numComps == 1) {
             return 'DeviceGrayCS';
-          if (numComps == 3)
+          } else if (numComps == 3) {
             return 'DeviceRgbCS';
-          if (numComps == 4)
+          } else if (numComps == 4) {
             return 'DeviceCmykCS';
+          }
           break;
         case 'Pattern':
           var basePatternCS = cs[1];
-          if (basePatternCS)
+          if (basePatternCS) {
             basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res);
+          }
           return ['PatternCS', basePatternCS];
         case 'Indexed':
         case 'I':
@@ -295,10 +299,11 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'DeviceN':
           var name = cs[1];
           var numComps = 1;
-          if (isName(name))
+          if (isName(name)) {
             numComps = 1;
-          else if (isArray(name))
+          } else if (isArray(name)) {
             numComps = name.length;
+          }
           var alt = ColorSpace.parseToIR(cs[2], xref, res);
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
@@ -323,16 +328,18 @@ var ColorSpace = (function ColorSpaceClosure() {
    * @param {Number} n Number of components the color space has.
    */
   ColorSpace.isDefaultDecode = function ColorSpace_isDefaultDecode(decode, n) {
-    if (!decode)
+    if (!decode) {
       return true;
+    }
 
     if (n * 2 !== decode.length) {
       warn('The decode map is not the correct length');
       return true;
     }
     for (var i = 0, ii = decode.length; i < ii; i += 2) {
-      if (decode[i] !== 0 || decode[i + 1] != 1)
+      if (decode[i] !== 0 || decode[i + 1] != 1) {
         return false;
+      }
     }
     return true;
   };
@@ -459,8 +466,9 @@ var IndexedCS = (function IndexedCSClosure() {
       lookupArray.set(bytes);
     } else if (isString(lookup)) {
       lookupArray = new Uint8Array(length);
-      for (var i = 0; i < length; ++i)
+      for (var i = 0; i < length; ++i) {
         lookupArray[i] = lookup.charCodeAt(i);
+      }
     } else if (lookup instanceof Uint8Array || lookup instanceof Array) {
       lookupArray = lookup;
     } else {
@@ -793,8 +801,9 @@ var LabCS = (function LabCSClosure() {
     this.numComps = 3;
     this.defaultColor = new Float32Array([0, 0, 0]);
 
-    if (!whitePoint)
+    if (!whitePoint) {
       error('WhitePoint missing - required for color space Lab');
+    }
     blackPoint = blackPoint || [0, 0, 0];
     range = range || [-100, 100, -100, 100];
 
@@ -814,8 +823,9 @@ var LabCS = (function LabCSClosure() {
     this.ZB = blackPoint[2];
 
     // Validate vars as per spec
-    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1)
+    if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
       error('Invalid WhitePoint components, no fallback available');
+    }
 
     if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
       info('Invalid BlackPoint, falling back to default');
@@ -833,10 +843,11 @@ var LabCS = (function LabCSClosure() {
 
   // Function g(x) from spec
   function fn_g(x) {
-    if (x >= 6 / 29)
+    if (x >= 6 / 29) {
       return x * x * x;
-    else
+    } else {
       return (108 / 841) * (x - 4 / 29);
+    }
   }
 
   function decode(value, high1, low2, high2) {
