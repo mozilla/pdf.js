@@ -389,6 +389,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!isDict(font)) {
         return errorFont();
       }
+
+      var fontDescriptor = this.getFontDescriptor(font, xref);
+      if (fontDescriptor.font)
+        return fontDescriptor.font;
+
+
       // Workaround for bad PDF generators that doesn't reference fonts
       // properly, i.e. by not using an object identifier.
       // Check if the fontRef is a Dict (as opposed to a standard object),
@@ -437,6 +443,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       } else {
         font.loaded = true;
       }
+
+      fontDescriptor.font = font;
       return font;
     },
 
@@ -1070,9 +1078,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       };
     },
 
-    translateFont: function PartialEvaluator_translateFont(dict,
+    getFontDescriptor: function PartialEvaluator_getFontDescriptor(dict,
                                                            xref) {
-      var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
 
@@ -1094,7 +1101,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
       var maxCharIndex = composite ? 0xFFFF : 0xFF;
 
-      var descriptor = dict.get('FontDescriptor');
+      return dict.get('FontDescriptor');
+    },
+
+    translateFont: function PartialEvaluator_translateFont(dict,
+                                                           xref) {
+      var descriptor = this.getFontDescriptor(dict, xref);
+      var type = dict.get('Subtype');
+      var maxCharIndex = composite ? 0xFFFF : 0xFF;
+      var composite = false;
+
       if (!descriptor) {
         if (type.name == 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
@@ -1180,6 +1196,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
+      var baseDict = dict;
       var properties = {
         type: type.name,
         name: fontName.name,
