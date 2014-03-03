@@ -234,6 +234,9 @@ var Annotation = (function AnnotationClosure() {
       return LinkAnnotation;
     } else if (subtype === 'Text') {
       return TextAnnotation;
+    } else if(subtype === 'FileAttachment' || subtype === 'Screen' ||
+                                                subtype === 'Movie') {
+      return VideoAnnotation;
     } else if (subtype === 'Widget') {
       if (!fieldType) {
         return;
@@ -322,6 +325,7 @@ var Annotation = (function AnnotationClosure() {
 
   return Annotation;
 })();
+
 PDFJS.Annotation = Annotation;
 
 
@@ -724,4 +728,117 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
   });
 
   return LinkAnnotation;
+})();
+
+var VideoAnnotation = (function VideoAnnotationClosure() {
+
+  function VideoAnnotation(params) {
+    Annotation.call(this, params);
+
+    if(params.data) {
+      return;
+    }
+
+    function setContentType(dict) {
+      if(dict.has('Contents')) {
+        var contentType = dict.get('Contents');
+        console.log(contentType);
+        contentType = contentType.substring(12, contentType.length - 1);
+        data.contentType = contentType;
+      }
+    }
+
+    var dict = params.dict;
+    var data = this.data;
+
+    //Check for various annotations related to videos.
+
+    if(dict.get('Subtype').name === 'Screen') {
+
+      setContentType(dict);
+
+      var dest = dict.get('A').get('R').get('C').get('D');
+
+      if(dest.has('EF')) {
+        var fileStream = dest.get('EF').get('F').getBytes();
+        var blob = new Blob([fileStream], {type: data.contentType});
+        data.src = PDFJS.createObjectURL(blob);
+      }
+      else {
+        var fileUrl = dest.get('F');
+        data.src = fileUrl;
+      }
+
+    }
+    else if(dict.get('Subtype').name === 'FileAttachment') {
+      setContentType(dict);
+      var fileStream = dict.get('FS').get('EF').get('F').getBytes();
+      var blob = new Blob([fileStream], {type: data.contentType});
+      data.src = PDFJS.createObjectURL(blob);
+    }
+    else {
+
+      setContentType(dict);
+
+      if(dict.has('A')){
+        data.controls = dict.get('A').get('ShowControls');
+      }
+      if(dict.get('Movie').has('Poster')) {
+        var poster = dict.get('Movie').get('Poster').getBytes();
+        var posterBlob = new Blob([poster]);
+        data.poster = PDFJS.createObjectURL(posterBlob);
+      }
+      data.src = dict.get('Movie').get('F').get('F');
+    }
+  }
+
+  Util.inherit(VideoAnnotation, Annotation, {
+
+    hasHtml: function VideoAnnotation_hasHtml() {
+      return true;
+    },
+
+    getHtmlElement: function VideoAnnotation_getHtmlElement(commonObjs) {
+      var contentType = this.data.contentType;
+      if(contentType === 'video/webm' || contentType === 'video/mp4' ||
+                                            contentType === 'video/ogg'){
+        var element = document.createElement('video');
+        element.controls = this.data.controls;
+        element.src = this.data.src || '';
+        element.type = contentType || '';
+        element.poster = this.data.poster || '';
+      }
+      else {
+        var element = document.createElement('object');
+        element.data = this.data.src || '';
+        element.type = this.data.contentType || '';
+      }
+
+      var rect = this.data.rect;
+      var borderWidth = this.data.borderWidth;
+
+      element.style.borderWidth = borderWidth + 'px';
+      var color = this.data.color;
+      var rgb = [];
+      for (var i = 0; i < 3; ++i) {
+        rgb[i] = Math.round(color[i] * 255);
+      }
+      element.style.borderColor = Util.makeCssRgb(rgb);
+      element.style.borderStyle = 'solid';
+
+      var width = rect[2] - rect[0] - 2 * borderWidth;
+      var height = rect[3] - rect[1] - 2 * borderWidth;
+      element.style.width = width + 'px';
+      element.style.height = height + 'px';
+
+      element.data = this.data.src || '';
+      element.type = this.data.contentType || '';
+      //element.type = 'video/avi'
+      element.controls = this.data.controls;
+      return element;
+    }
+
+  });
+  return VideoAnnotation;
+
 })();
