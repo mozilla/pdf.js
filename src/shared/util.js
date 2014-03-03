@@ -38,6 +38,12 @@ var TextRenderingMode = {
   ADD_TO_PATH_FLAG: 4
 };
 
+var ImageKind = {
+  GRAYSCALE_1BPP: 1,
+  RGB_24BPP: 2,
+  RGBA_32BPP: 3
+};
+
 // The global PDFJS object exposes the API
 // In production, it will be declared outside a global wrapper
 // In development, it will be declared here
