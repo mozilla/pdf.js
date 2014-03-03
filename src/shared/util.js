@@ -195,8 +195,9 @@ function backtrace() {
 }
 
 function assert(cond, msg) {
-  if (!cond)
+  if (!cond) {
     error(msg);
+  }
 }
 
 var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
@@ -227,10 +228,12 @@ var UnsupportedManager = PDFJS.UnsupportedManager =
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.
 function combineUrl(baseUrl, url) {
-  if (!url)
+  if (!url) {
     return baseUrl;
-  if (/^[a-z][a-z0-9+\-.]*:/i.test(url))
+  }
+  if (/^[a-z][a-z0-9+\-.]*:/i.test(url)) {
     return url;
+  }
   if (url.charAt(0) == '/') {
     // absolute path
     var i = baseUrl.indexOf('://');
@@ -279,8 +282,9 @@ PDFJS.isValidUrl = isValidUrl;
 // In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
 // behavior is undefined.
 function assertWellFormed(cond, msg) {
-  if (!cond)
+  if (!cond) {
     error(msg);
+  }
 }
 
 function shadow(obj, prop, value) {
@@ -397,8 +401,9 @@ function bytesToString(bytes) {
 function stringToBytes(str) {
   var length = str.length;
   var bytes = new Uint8Array(length);
-  for (var n = 0; n < length; ++n)
+  for (var n = 0; n < length; ++n) {
     bytes[n] = str.charCodeAt(n) & 0xFF;
+  }
   return bytes;
 }
 
@@ -802,14 +807,15 @@ function isRef(v) {
 
 function isPDFFunction(v) {
   var fnDict;
-  if (typeof v != 'object')
+  if (typeof v != 'object') {
     return false;
-  else if (isDict(v))
+  } else if (isDict(v)) {
     fnDict = v;
-  else if (isStream(v))
+  } else if (isStream(v)) {
     fnDict = v.dict;
-  else
+  } else {
     return false;
+  }
   return fnDict.has('FunctionType');
 }
 
@@ -1030,8 +1036,9 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
           }
           results[i] = value;
           unresolved--;
-          if (unresolved === 0)
+          if (unresolved === 0) {
             resolveAll(results);
+          }
         };
       })(i);
       if (Promise.isPromise(promise)) {
@@ -1121,8 +1128,9 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
 
 var StatTimer = (function StatTimerClosure() {
   function rpad(str, pad, length) {
-    while (str.length < length)
+    while (str.length < length) {
       str += pad;
+    }
     return str;
   }
   function StatTimer() {
@@ -1132,17 +1140,21 @@ var StatTimer = (function StatTimerClosure() {
   }
   StatTimer.prototype = {
     time: function StatTimer_time(name) {
-      if (!this.enabled)
+      if (!this.enabled) {
         return;
-      if (name in this.started)
+      }
+      if (name in this.started) {
         warn('Timer is already running for ' + name);
+      }
       this.started[name] = Date.now();
     },
     timeEnd: function StatTimer_timeEnd(name) {
-      if (!this.enabled)
+      if (!this.enabled) {
         return;
-      if (!(name in this.started))
+      }
+      if (!(name in this.started)) {
         warn('Timer has not been started for ' + name);
+      }
       this.times.push({
         'name': name,
         'start': this.started[name],
@@ -1158,8 +1170,9 @@ var StatTimer = (function StatTimerClosure() {
       var longest = 0;
       for (var i = 0, ii = times.length; i < ii; ++i) {
         var name = times[i]['name'];
-        if (name.length > longest)
+        if (name.length > longest) {
           longest = name.length;
+        }
       }
       for (var i = 0, ii = times.length; i < ii; ++i) {
         var span = times[i];
@@ -1173,8 +1186,9 @@ var StatTimer = (function StatTimerClosure() {
 })();
 
 PDFJS.createBlob = function createBlob(data, contentType) {
-  if (typeof Blob !== 'undefined')
+  if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
+  }
   // Blob builder is deprecated in FF14 and removed in FF18.
   var bb = new MozBlobBuilder();
   bb.append(data);
