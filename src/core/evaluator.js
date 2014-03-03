@@ -75,7 +75,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             continue;
           }
           var xResources = xObject.dict.get('Resources');
-          if (isDict(xResources)) {
+          // Only add the resource if it's different from the current one,
+          // otherwise we can get stuck in an infinite loop.
+          if (isDict(xResources) && xResources !== node) {
             nodes.push(xResources);
           }
         }
