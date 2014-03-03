@@ -404,6 +404,41 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!isDict(font)) {
         return errorFont();
       }
+
+      var encoding = font.getRaw('Encoding');
+      var encodingID;
+      if (isName(encoding)) {
+        encodingID = encoding.name;
+      } else if (isRef(encoding)) {
+        encodingID = encoding.num + '_' + encoding.gen;
+      }
+
+      var preEvaluatedFont = this.preEvaluateFont(font, xref);
+      var descriptor = preEvaluatedFont.descriptor;
+      var fontID = fontRef.num + '_' + fontRef.gen;
+      if (encodingID && isDict(descriptor)) {
+        if (!descriptor.has('fontAliases')) {
+          descriptor.set('fontAliases', Object.create(null));
+        }
+
+        var fontAliases = descriptor.getRaw('fontAliases');
+        if (fontAliases[encodingID]) {
+          var aliasFontRef = fontAliases[encodingID].aliasRef;
+          if (aliasFontRef && this.fontCache.has(aliasFontRef)) {
+            this.fontCache.putAlias(fontRef, aliasFontRef);
+            var cachedFont = this.fontCache.get(fontRef);
+            return cachedFont;
+          }
+        }
+
+        if (!fontAliases[encodingID]) {
+          fontAliases[encodingID] = {fontID: fontID + '_' + encodingID};
+        }
+
+        fontAliases[encodingID].aliasRef = fontRef;
+        fontID = fontAliases[encodingID].fontID;
+      }
+
       // Workaround for bad PDF generators that doesn't reference fonts
       // properly, i.e. by not using an object identifier.
       // Check if the fontRef is a Dict (as opposed to a standard object),
@@ -417,12 +452,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page
       font.loadedName = 'g_font_' + (fontRefIsDict ?
-        fontName.replace(/\W/g, '') : (fontRef.num + '_' + fontRef.gen));
+        fontName.replace(/\W/g, '') : fontID);
 
       if (!font.translated) {
         var translated;
         try {
-          translated = this.translateFont(font, xref);
+          translated = this.translateFont(preEvaluatedFont, xref);
         } catch (e) {
           UnsupportedManager.notify(UNSUPPORTED_FEATURES.font);
           translated = new ErrorFont(e instanceof Error ? e.message : e);
@@ -1118,8 +1153,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return widths;
     },
 
-    translateFont: function PartialEvaluator_translateFont(dict,
-                                                           xref) {
+    preEvaluateFont: function PartialEvaluator_preEvaluateFont(dict, xref) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -1140,9 +1174,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         assertWellFormed(isName(type), 'invalid font Subtype');
         composite = true;
       }
+
+      return {
+        descriptor: dict.get('FontDescriptor'),
+        dict: dict,
+        baseDict: baseDict,
+        composite: composite
+      };
+    },
+
+    translateFont: function PartialEvaluator_translateFont(preEvaluatedFont,
+                                                           xref) {
+      var baseDict = preEvaluatedFont.baseDict;
+      var dict = preEvaluatedFont.dict;
+      var composite = preEvaluatedFont.composite;
+      var descriptor = preEvaluatedFont.descriptor;
+      var type = dict.get('Subtype');
       var maxCharIndex = composite ? 0xFFFF : 0xFF;
 
-      var descriptor = dict.get('FontDescriptor');
       if (!descriptor) {
         if (type.name == 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
