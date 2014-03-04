@@ -105,7 +105,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           offset = 340;
           break;
         default:
-          v = v * 2 + bit;
+          v = ((v << 1) | bit) >>> 0;
           if (--toRead === 0) {
             state = 0;
           }
@@ -124,12 +124,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var prev = 1;
     for (var i = 0; i < codeLength; i++) {
       var bit = decoder.readBit(contexts, prev);
-      prev = (prev * 2) + bit;
+      prev = (prev << 1) | bit;
     }
     if (codeLength < 31) {
       return prev & ((1 << codeLength) - 1);
     }
-    return prev - Math.pow(2, codeLength);
+    return prev & 0x7FFFFFFF;
   }
 
   // 7.3 Segment types
