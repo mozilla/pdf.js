@@ -383,7 +383,7 @@ var PDFImage = (function PDFImageClosure() {
           rgbaBuf[j] = alphaBuf[i];
         }
       } else {
-        // Common case: no mask (and no need to allocate the extra buffer).
+        // No mask.
         for (var i = 0, j = 3, ii = width * actualHeight; i < ii; ++i, j += 4) {
           rgbaBuf[j] = 255;
         }
@@ -467,23 +467,35 @@ var PDFImage = (function PDFImageClosure() {
 
       var comps = this.getComponents(imgArray);
 
-      var rgbaBuf = new Uint8Array(drawWidth * drawHeight * 4);
+      // If opacity data is present, use RGBA_32BPP form. Otherwise, use the
+      // more compact RGB_24BPP form if allowable.
+      var alpha01, maybeUndoPreblend;
+      if (!forceRGBA && !this.smask && !this.mask) {
+        imgData.kind = ImageKind.RGB_24BPP;
+        imgData.data = new Uint8Array(drawWidth * drawHeight * 3);
+        alpha01 = 0;
+        maybeUndoPreblend = false;
+      } else {
+        imgData.kind = ImageKind.RGBA_32BPP;
+        imgData.data = new Uint8Array(drawWidth * drawHeight * 4);
+        alpha01 = 1;
+        maybeUndoPreblend = true;
 
-      // Handle opacity here since color key masking needs to be performed on
-      // undecoded values.
-      this.fillOpacity(rgbaBuf, drawWidth, drawHeight, actualHeight, comps);
+        // Color key masking (opacity) must be performed before decoding.
+        this.fillOpacity(imgData.data, drawWidth, drawHeight, actualHeight,
+                         comps);
+      }
 
       if (this.needsDecode) {
         this.decodeBuffer(comps);
       }
+      this.colorSpace.fillRgb(imgData.data, originalWidth, originalHeight,
+                              drawWidth, drawHeight, actualHeight, bpc, comps,
+                              alpha01);
+      if (maybeUndoPreblend) {
+        this.undoPreblend(imgData.data, drawWidth, actualHeight);
+      }
 
-      this.colorSpace.fillRgb(rgbaBuf, originalWidth, originalHeight, drawWidth,
-                              drawHeight, actualHeight, bpc, comps);
-
-      this.undoPreblend(rgbaBuf, drawWidth, actualHeight);
-
-      imgData.kind = ImageKind.RGBA_32BPP;
-      imgData.data = rgbaBuf;
       return imgData;
     },
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
