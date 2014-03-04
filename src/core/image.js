@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ColorSpace, error, isArray, ImageKind, isStream, JpegStream, Name,
-           Promise, Stream, warn, LegacyPromise */
+/* globals ColorSpace, DecodeStream, error, isArray, ImageKind, isStream,
+           JpegStream, Name, Promise, Stream, warn, LegacyPromise */
 
 'use strict';
 
@@ -452,11 +452,18 @@ var PDFImage = (function PDFImageClosure() {
             drawWidth === originalWidth && drawHeight === originalHeight) {
           imgData.kind = kind;
 
-          // We must make a copy of imgArray, otherwise it'll be neutered upon
-          // transfer which will break any code that subsequently reuses it.
-          var newArray = new Uint8Array(imgArray.length);
-          newArray.set(imgArray);
-          imgData.data = newArray;
+          // If imgArray came from a DecodeStream, we're safe to transfer it
+          // (and thus neuter it) because it will constitute the entire
+          // DecodeStream's data.  But if it came from a Stream, we need to
+          // copy it because it'll only be a portion of the Stream's data, and
+          // the rest will be read later on.
+          if (this.image instanceof DecodeStream) {
+            imgData.data = imgArray;
+          } else {
+            var newArray = new Uint8Array(imgArray.length);
+            newArray.set(imgArray);
+            imgData.data = newArray;
+          }
           return imgData;
         }
       }
