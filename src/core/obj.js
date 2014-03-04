@@ -959,7 +959,7 @@ var XRef = (function XRefClosure() {
         while (this.startXRefQueue.length) {
           var startXRef = this.startXRefQueue[0];
 
-          stream.pos = startXRef;
+          stream.pos = startXRef + stream.start;
 
           var parser = new Parser(new Lexer(stream), true, null);
           var obj = parser.getObj();
@@ -1077,7 +1077,8 @@ var XRef = (function XRefClosure() {
       if (xrefEntry.gen !== gen) {
         error('inconsistent generation in XRef');
       }
-      var stream = this.stream.makeSubStream(xrefEntry.offset);
+      var stream = this.stream.makeSubStream(xrefEntry.offset +
+                                             this.stream.start);
       var parser = new Parser(new Lexer(stream), true, this);
       var obj1 = parser.getObj();
       var obj2 = parser.getObj();
