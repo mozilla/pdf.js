@@ -300,6 +300,7 @@ target.bundle = function(args) {
     'core/cidmaps.js',
     'core/crypto.js',
     'core/pattern.js',
+    'core/font_translator.js',
     'core/evaluator.js',
     'core/fonts.js',
     'core/font_renderer.js',
