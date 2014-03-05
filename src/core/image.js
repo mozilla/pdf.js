@@ -64,9 +64,10 @@ var PDFImage = (function PDFImageClosure() {
     this.width = dict.get('Width', 'W');
     this.height = dict.get('Height', 'H');
 
-    if (this.width < 1 || this.height < 1)
+    if (this.width < 1 || this.height < 1) {
       error('Invalid image width: ' + this.width + ' or height: ' +
             this.height);
+    }
 
     this.interpolate = dict.get('Interpolate', 'I') || false;
     this.imageMask = dict.get('ImageMask', 'IM') || false;
@@ -76,10 +77,11 @@ var PDFImage = (function PDFImageClosure() {
     if (!bitsPerComponent) {
       bitsPerComponent = dict.get('BitsPerComponent', 'BPC');
       if (!bitsPerComponent) {
-        if (this.imageMask)
+        if (this.imageMask) {
           bitsPerComponent = 1;
-        else
+        } else {
           error('Bits per component missing in image: ' + this.imageMask);
+        }
       }
     }
     this.bpc = bitsPerComponent;
@@ -285,23 +287,34 @@ var PDFImage = (function PDFImageClosure() {
 
       if (bpc === 1) {
         // Optimization for reading 1 bpc images.
-        var mask = 0;
-        var buf = 0;
+        var i = 0, buf, mask, loop1End, loop2End;
+        for (var j = 0; j < height; j++) {
+          loop1End = i + (rowComps & ~7);
+          loop2End = i + rowComps;
 
-        for (var i = 0, ii = length; i < ii; ++i) {
-          if (i % rowComps === 0) {
-            mask = 0;
-            buf = 0;
-          } else {
-            mask >>= 1;
+          // unroll loop for all full bytes
+          while (i < loop1End) {
+            buf = buffer[bufferPos++];
+            output[i] = (buf >> 7) & 1;
+            output[i + 1] = (buf >> 6) & 1;
+            output[i + 2] = (buf >> 5) & 1;
+            output[i + 3] = (buf >> 4) & 1;
+            output[i + 4] = (buf >> 3) & 1;
+            output[i + 5] = (buf >> 2) & 1;
+            output[i + 6] = (buf >> 1) & 1;
+            output[i + 7] = buf & 1;
+            i += 8;
           }
 
-          if (mask <= 0) {
+          // handle remaing bits
+          if (i < loop2End) {
             buf = buffer[bufferPos++];
             mask = 128;
+            while (i < loop2End) {
+              output[i++] = +!!(buf & mask);
+              mask >>= 1;
+            }
           }
-
-          output[i] = +!!(buf & mask);
         }
       } else {
         // The general case that handles all other bpc values.
@@ -337,9 +350,10 @@ var PDFImage = (function PDFImageClosure() {
         var sh = smask.height;
         alphaBuf = new Uint8Array(sw * sh);
         smask.fillGrayBuffer(alphaBuf);
-        if (sw != width || sh != height)
+        if (sw != width || sh != height) {
           alphaBuf = PDFImage.resize(alphaBuf, smask.bpc, 1, sw, sh, width,
                                      height);
+        }
       } else if (mask) {
         if (mask instanceof PDFImage) {
           var sw = mask.width;
@@ -349,12 +363,14 @@ var PDFImage = (function PDFImageClosure() {
           mask.fillGrayBuffer(alphaBuf);
 
           // Need to invert values in rgbaBuf
-          for (var i = 0, ii = sw * sh; i < ii; ++i)
+          for (var i = 0, ii = sw * sh; i < ii; ++i) {
             alphaBuf[i] = 255 - alphaBuf[i];
+          }
 
-          if (sw != width || sh != height)
+          if (sw != width || sh != height) {
             alphaBuf = PDFImage.resize(alphaBuf, mask.bpc, 1, sw, sh, width,
                                        height);
+          }
         } else if (isArray(mask)) {
           // Color key mask: if any of the compontents are outside the range
           // then they should be painted.
@@ -422,7 +438,7 @@ var PDFImage = (function PDFImageClosure() {
       var drawHeight = this.drawHeight;
       var imgData = {       // other fields are filled in below
         width: drawWidth,
-        height: drawHeight,
+        height: drawHeight
       };
 
       var numComps = this.numComps;
@@ -507,14 +523,33 @@ var PDFImage = (function PDFImageClosure() {
       var imgArray = this.getImageBytes(height * rowBytes);
 
       var comps = this.getComponents(imgArray);
+
+      if (bpc === 1) {
+        // inline decoding (= inversion) for 1 bpc images
+        var length = width * height;
+        if (this.needsDecode) {
+          // invert and scale to {0, 255} 
+          for (var i = 0; i < length; ++i) {
+            buffer[i] = (comps[i] - 1) & 255;
+          }
+        } else {
+          // scale to {0, 255}
+          for (var i = 0; i < length; ++i) {
+            buffer[i] = (-comps[i]) & 255;
+          }
+        }
+        return;
+      }
+
       if (this.needsDecode) {
         this.decodeBuffer(comps);
       }
       var length = width * height;
       // we aren't using a colorspace so we need to scale the value
       var scale = 255 / ((1 << bpc) - 1);
-      for (var i = 0; i < length; ++i)
+      for (var i = 0; i < length; ++i) {
         buffer[i] = (scale * comps[i]) | 0;
+      }
     },
     getImageBytes: function PDFImage_getImageBytes(length) {
       this.image.reset();
