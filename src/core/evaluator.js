@@ -1486,22 +1486,23 @@ var TextState = (function TextStateClosure() {
     },
     calcRenderParams: function TextState_calcRenderingParams(cm) {
       var tm = this.textMatrix;
-      var a = this.fontSize;
-      var b = a * this.textHScale;
+      // XXX: only elements 4 and 5 of renderMatrix are actually used
+      //var a = this.fontSize;
+      //var b = a * this.textHScale;
       var c = this.textRise;
       var vScale = Math.sqrt((tm[2] * tm[2]) + (tm[3] * tm[3]));
       var angle = Math.atan2(tm[1], tm[0]);
-      var m0 = tm[0] * cm[0] + tm[1] * cm[2];
-      var m1 = tm[0] * cm[1] + tm[1] * cm[3];
+      //var m0 = tm[0] * cm[0] + tm[1] * cm[2];
+      //var m1 = tm[0] * cm[1] + tm[1] * cm[3];
       var m2 = tm[2] * cm[0] + tm[3] * cm[2];
       var m3 = tm[2] * cm[1] + tm[3] * cm[3];
       var m4 = tm[4] * cm[0] + tm[5] * cm[2] + cm[4];
       var m5 = tm[4] * cm[1] + tm[5] * cm[3] + cm[5];
       var renderMatrix = [
-        b * m0,
-        b * m1,
-        a * m2,
-        a * m3,
+        //b * m0,
+        //b * m1,
+        //a * m2,
+        //a * m3,
         c * m2 + m4,
         c * m3 + m5
       ];
