@@ -234,8 +234,7 @@ var Annotation = (function AnnotationClosure() {
       return LinkAnnotation;
     } else if (subtype === 'Text') {
       return TextAnnotation;
-    } else if(subtype === 'FileAttachment' || subtype === 'Screen' ||
-                                                subtype === 'Movie') {
+    } else if (subtype === 'Screen' || subtype === 'Movie') {
       return VideoAnnotation;
     } else if (subtype === 'Widget') {
       if (!fieldType) {
@@ -735,16 +734,32 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
   function VideoAnnotation(params) {
     Annotation.call(this, params);
 
-    if(params.data) {
+    if (params.data) {
       return;
     }
 
     function setContentType(dict) {
-      if(dict.has('Contents')) {
-        var contentType = dict.get('Contents');
-        console.log(contentType);
-        contentType = contentType.substring(12, contentType.length - 1);
-        data.contentType = contentType;
+      var extToMime = {
+        'avi' : 'video/avi',
+        'mov' : 'video/quicktime',
+        'mpg' : 'video/mpeg'
+      };
+
+      if (dict.has('A')) {
+        var action = dict.get('A');
+        if (action.has('R')) {
+          data.contentType = action.get('R').get('C').get('CT');
+          return (/^(video|audio)\//).test(data.contentType);
+        }
+      } else {
+        var fileName = dict.get('Movie').get('F').get('F');
+        var extName = fileName.substring(fileName.lastIndexOf('.'));
+        if (extToMime.hasOwnProperty(extName)) {
+          data.contentType = extToMime[extName];
+          return true;
+        } else {
+          return false;
+        }
       }
     }
 
@@ -752,38 +767,24 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
     var data = this.data;
 
     //Check for various annotations related to videos.
-
-    if(dict.get('Subtype').name === 'Screen') {
-
-      setContentType(dict);
-
+    if (dict.get('Subtype').name === 'Screen') {
+      if (setContentType(dict) === false) {
+        return;
+      }
       var dest = dict.get('A').get('R').get('C').get('D');
-
-      if(dest.has('EF')) {
+      if (dest.has('EF')) {
         var fileStream = dest.get('EF').get('F').getBytes();
         var blob = new Blob([fileStream], {type: data.contentType});
         data.src = PDFJS.createObjectURL(blob);
-      }
-      else {
+      } else {
         var fileUrl = dest.get('F');
         data.src = fileUrl;
       }
-
-    }
-    else if(dict.get('Subtype').name === 'FileAttachment') {
-      setContentType(dict);
-      var fileStream = dict.get('FS').get('EF').get('F').getBytes();
-      var blob = new Blob([fileStream], {type: data.contentType});
-      data.src = PDFJS.createObjectURL(blob);
-    }
-    else {
-
-      setContentType(dict);
-
-      if(dict.has('A')){
-        data.controls = dict.get('A').get('ShowControls');
+    } else {
+      if (setContentType(dict) === false) {
+        return;
       }
-      if(dict.get('Movie').has('Poster')) {
+      if (dict.get('Movie').has('Poster')) {
         var poster = dict.get('Movie').get('Poster').getBytes();
         var posterBlob = new Blob([poster]);
         data.poster = PDFJS.createObjectURL(posterBlob);
@@ -800,18 +801,18 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
 
     getHtmlElement: function VideoAnnotation_getHtmlElement(commonObjs) {
       var contentType = this.data.contentType;
-      if(contentType === 'video/webm' || contentType === 'video/mp4' ||
-                                            contentType === 'video/ogg'){
-        var element = document.createElement('video');
-        element.controls = this.data.controls;
+      var element = document.createElement('video');
+      var checkSupport = element.canPlayType(contentType);
+      if (checkSupport === 'probably') {
         element.src = this.data.src || '';
         element.type = contentType || '';
         element.poster = this.data.poster || '';
-      }
-      else {
-        var element = document.createElement('object');
+      } else if (contentType in navigator.mimeTypes) {
+        element = document.createElement('object');
         element.data = this.data.src || '';
         element.type = this.data.contentType || '';
+      } else {
+        console.error('Cant play video');
       }
 
       var rect = this.data.rect;
@@ -833,12 +834,9 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
 
       element.data = this.data.src || '';
       element.type = this.data.contentType || '';
-      //element.type = 'video/avi'
-      element.controls = this.data.controls;
+      element.controls = true;
       return element;
     }
-
   });
   return VideoAnnotation;
-
 })();
