@@ -1607,6 +1607,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   /* Rules for Retina screens */
   .toolbarButton::before {
     transform: scale(0.5);
+    -webkit-transform: scale(0.5);
     top: -5px;
   }
 
