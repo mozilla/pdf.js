@@ -520,6 +520,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       delete this.operatorList;
       delete this.displayReadyPromise;
+      delete this.annotationsPromise;
       this.objs.clear();
       this.pendingDestroy = false;
     },

@@ -216,6 +216,8 @@ var Annotation = (function AnnotationClosure() {
         evaluator.getOperatorList(this.appearance, resources, opList);
         opList.addOp(OPS.endAnnotation, []);
         promise.resolve(opList);
+
+        this.appearance.reset();
       }.bind(this));
 
       return promise;
