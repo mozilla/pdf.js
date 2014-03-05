@@ -746,7 +746,8 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
 
       var fileName = dict.get('Movie').get('F').get('F');
       var extName = fileName.substring(fileName.lastIndexOf('.') + 1);
-      if (extToMime.hasOwnProperty(extName.toLowerCase())) {
+      extName = extName.toLowerCase();
+      if (extToMime.hasOwnProperty(extName)) {
         var mimeType = extToMime[extName];
         return mimeType;
       } else {
