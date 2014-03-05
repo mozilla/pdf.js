@@ -66,6 +66,20 @@ var FontTranslator = (function FontTranslatorClosure() {
       if (!isDict(font)) {
         return errorFont();
       }
+
+      var encoding = font.map.Encoding;
+      var encodingID = '';
+      if (isName(encoding)) {
+        encodingID = encoding.name;
+      } else if (isRef(encoding)) {
+        encodingID = String(encoding.num) + String(encoding.gen);
+      }
+      var preEvaluatedFont = this.preEvaluateFont(font, xref);
+      var descriptor = preEvaluatedFont.descriptor;
+      if (descriptor && descriptor.fonts && descriptor.fonts[encodingID]) {
+        return descriptor.fonts[encodingID];
+      }
+
       // Workaround for bad PDF generators that doesn't reference fonts
       // properly, i.e. by not using an object identifier.
       // Check if the fontRef is a Dict (as opposed to a standard object),
@@ -84,7 +98,7 @@ var FontTranslator = (function FontTranslatorClosure() {
       if (!font.translated) {
         var translated;
         try {
-          translated = this.translateFont(font, xref);
+          translated = this.translateFont(preEvaluatedFont, xref);
         } catch (e) {
           UnsupportedManager.notify(UNSUPPORTED_FEATURES.font);
           translated = new ErrorFont(e instanceof Error ? e.message : e);
@@ -115,11 +129,18 @@ var FontTranslator = (function FontTranslatorClosure() {
       } else {
         font.loaded = true;
       }
+
+      if (descriptor && encodingID) {
+        if (!descriptor.fonts) {
+          descriptor.fonts = Object.create(null);
+        }
+        descriptor.fonts[encodingID] = font;
+      }
+
       return font;
     },
 
-    translateFont: function FontTranslator_translateFont(dict,
-                                                         xref) {
+    preEvaluateFont: function FontTranslator_preEvaluateFont(dict, xref) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -131,8 +152,9 @@ var FontTranslator = (function FontTranslatorClosure() {
         //  - set the type according to the descendant font
         //  - get the FontDescriptor from the descendant font
         var df = dict.get('DescendantFonts');
-        if (!df)
+        if (!df) {
           error('Descendant fonts are not specified');
+        }
 
         dict = isArray(df) ? xref.fetchIfRef(df[0]) : df;
 
@@ -140,6 +162,22 @@ var FontTranslator = (function FontTranslatorClosure() {
         assertWellFormed(isName(type), 'invalid font Subtype');
         composite = true;
       }
+
+      return {
+        descriptor: dict.get('FontDescriptor'),
+        dict: dict,
+        baseDict: baseDict,
+        composite: composite
+      };
+    },
+
+    translateFont: function FontTranslator_translateFont(preEvaluatedFont,
+                                                         xref) {
+      var baseDict = preEvaluatedFont.baseDict;
+      var dict = preEvaluatedFont.dict;
+      var composite = preEvaluatedFont.composite;
+      var descriptor = preEvaluatedFont.descriptor;
+      var type = dict.get('Subtype');
       var maxCharIndex = composite ? 0xFFFF : 0xFF;
 
       var descriptor = dict.get('FontDescriptor');
@@ -556,7 +594,7 @@ var FontTranslator = (function FontTranslatorClosure() {
         }
       }
       return widths;
-    },
+    }
   };
 
   return FontTranslator;

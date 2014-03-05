@@ -1005,7 +1005,7 @@ var TextState = (function TextStateClosure() {
         vScale: vScale,
         angle: angle
       };
-    },
+    }
   };
   return TextState;
 })();
@@ -1018,7 +1018,7 @@ var EvalState = (function EvalStateClosure() {
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {
       return Object.create(this);
-    },
+    }
   };
   return EvalState;
 })();
