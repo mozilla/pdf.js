@@ -959,5 +959,3 @@ PdfStreamConverter.prototype = {
     delete this.binaryStream;
   }
 };
-
-var NSGetFactory = XPCOMUtils.generateNSGetFactory([PdfStreamConverter]);
