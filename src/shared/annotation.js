@@ -324,7 +324,6 @@ var Annotation = (function AnnotationClosure() {
 
   return Annotation;
 })();
-
 PDFJS.Annotation = Annotation;
 
 
@@ -738,37 +737,30 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
       return;
     }
 
-    function setContentType(dict) {
+    function guessContentType(dict) {
       var extToMime = {
         'avi' : 'video/avi',
         'mov' : 'video/quicktime',
         'mpg' : 'video/mpeg'
       };
 
-      if (dict.has('A')) {
-        var action = dict.get('A');
-        if (action.has('R')) {
-          data.contentType = action.get('R').get('C').get('CT');
-          return (/^(video|audio)\//).test(data.contentType);
-        }
+      var fileName = dict.get('Movie').get('F').get('F');
+      var extName = fileName.substring(fileName.lastIndexOf('.') + 1);
+      if (extToMime.hasOwnProperty(extName.toLowerCase())) {
+        var mimeType = extToMime[extName];
+        return mimeType;
       } else {
-        var fileName = dict.get('Movie').get('F').get('F');
-        var extName = fileName.substring(fileName.lastIndexOf('.'));
-        if (extToMime.hasOwnProperty(extName)) {
-          data.contentType = extToMime[extName];
-          return true;
-        } else {
-          return false;
-        }
+        return null;
       }
     }
 
     var dict = params.dict;
     var data = this.data;
 
-    //Check for various annotations related to videos.
+    // Check for various annotations related to videos.
     if (dict.get('Subtype').name === 'Screen') {
-      if (setContentType(dict) === false) {
+      data.contentType = dict.get('A').get('R').get('C').get('CT') || '';
+      if ((/^(video|audio)\//).test(data.contentType) === false) {
         return;
       }
       var dest = dict.get('A').get('R').get('C').get('D');
@@ -781,7 +773,8 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
         data.src = fileUrl;
       }
     } else {
-      if (setContentType(dict) === false) {
+      data.contentType = guessContentType(dict);
+      if (data.contentType === null) {
         return;
       }
       if (dict.get('Movie').has('Poster')) {
@@ -794,7 +787,6 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
   }
 
   Util.inherit(VideoAnnotation, Annotation, {
-
     hasHtml: function VideoAnnotation_hasHtml() {
       return true;
     },
@@ -807,6 +799,7 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
         element.src = this.data.src || '';
         element.type = contentType || '';
         element.poster = this.data.poster || '';
+        element.controls = true;
       } else if (contentType in navigator.mimeTypes) {
         element = document.createElement('object');
         element.data = this.data.src || '';
@@ -826,15 +819,12 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
       }
       element.style.borderColor = Util.makeCssRgb(rgb);
       element.style.borderStyle = 'solid';
-
       var width = rect[2] - rect[0] - 2 * borderWidth;
       var height = rect[3] - rect[1] - 2 * borderWidth;
       element.style.width = width + 'px';
       element.style.height = height + 'px';
-
       element.data = this.data.src || '';
       element.type = this.data.contentType || '';
-      element.controls = true;
       return element;
     }
   });
