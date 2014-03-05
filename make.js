@@ -574,7 +574,6 @@ target.mozcentral = function() {
          '*.png',
          '*.manifest',
          'README.mozilla',
-         'components',
          '../../LICENSE'],
       DEFAULT_LOCALE_FILES =
         [LOCALE_SRC_DIR + 'en-US/viewer.properties',
