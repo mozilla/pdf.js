@@ -118,11 +118,13 @@ var DecodeStream = (function DecodeStreamClosure() {
         current = 0;
       }
       var size = 512;
-      while (size < requested)
-        size <<= 1;
+      while (size < requested) {
+        size *= 2;
+      }
       var buffer2 = new Uint8Array(size);
-      for (var i = 0; i < current; ++i)
+      for (var i = 0; i < current; ++i) {
         buffer2[i] = buffer[i];
+      }
       return (this.buffer = buffer2);
     },
     getByte: function DecodeStream_getByte() {
