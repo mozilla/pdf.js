@@ -26,6 +26,10 @@ var JpxImage = (function JpxImageClosure() {
     'HL': 1,
     'HH': 2
   };
+  var TransformType = {
+    IRREVERSIBLE: 0,
+    REVERSIBLE: 1
+  };
   function JpxImage() {
     this.failOnCorruptedImage = false;
   }
@@ -867,7 +871,6 @@ var JpxImage = (function JpxImageClosure() {
   function copyCoefficients(coefficients, x0, y0, width, height,
                             delta, mb, codeblocks, transformation,
                             segmentationSymbolUsed) {
-    var r = 0.5; // formula (E-6)
     for (var i = 0, ii = codeblocks.length; i < ii; ++i) {
       var codeblock = codeblocks[i];
       var blockWidth = codeblock.tbx1_ - codeblock.tbx0_;
@@ -921,20 +924,16 @@ var JpxImage = (function JpxImageClosure() {
       }
 
       var offset = (codeblock.tbx0_ - x0) + (codeblock.tby0_ - y0) * width;
-      var position = 0;
+      var n, nb, correction, position = 0;
+      var irreversible = (transformation === TransformType.IRREVERSIBLE);
+      var sign = bitModel.coefficentsSign;
+      var magnitude = bitModel.coefficentsMagnitude;
+      var bitsDecoded = bitModel.bitsDecoded;
       for (var j = 0; j < blockHeight; j++) {
         for (var k = 0; k < blockWidth; k++) {
-          var n = (bitModel.coefficentsSign[position] ? -1 : 1) *
-            bitModel.coefficentsMagnitude[position];
-          var nb = bitModel.bitsDecoded[position], correction;
-          if (transformation === 0 || mb > nb) {
-            // use r only if transformation is irreversible or
-            // not all bitplanes were decoded for reversible transformation
-            n += n < 0 ? n - r : n > 0 ? n + r : 0;
-            correction = 1 << (mb - nb);
-          } else {
-            correction = 1;
-          }
+          n = (sign[position] ? -1 : 1) * magnitude[position];
+          nb = bitsDecoded[position];
+          correction = (irreversible || mb > nb) ? 1 << (mb - nb) : 1;
           coefficients[offset++] = n * correction * delta;
           position++;
         }
@@ -954,6 +953,10 @@ var JpxImage = (function JpxImageClosure() {
     var transformation = codingStyleParameters.transformation;
     var segmentationSymbolUsed = codingStyleParameters.segmentationSymbolUsed;
     var precision = context.components[c].precision;
+
+    var transformation = codingStyleParameters.transformation;
+    var transform = transformation === TransformType.IRREVERSIBLE ?
+      new IrreversibleTransform() : new ReversibleTransform();
 
     var subbandCoefficients = [];
     var k = 0, b = 0;
@@ -977,8 +980,8 @@ var JpxImage = (function JpxImageClosure() {
         var gainLog2 = SubbandsGainLog2[subband.type];
 
         // calulate quantization coefficient (Section E.1.1.1)
-        var delta = Math.pow(2, (precision + gainLog2) - epsilon) *
-          (1 + mu / 2048);
+        var delta = transformation === TransformType.IRREVERSIBLE ?
+          Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048) : 1;
         var mb = (guardBits + epsilon - 1);
 
         var coefficients = new Float32Array(width * height);
@@ -996,9 +999,6 @@ var JpxImage = (function JpxImageClosure() {
       }
     }
 
-    var transformation = codingStyleParameters.transformation;
-    var transform = transformation === 0 ? new IrreversibleTransform() :
-      new ReversibleTransform();
     var result = transform.calculate(subbandCoefficients,
       component.tcx0, component.tcy0);
     return {
@@ -1024,15 +1024,31 @@ var JpxImage = (function JpxImageClosure() {
 
       // Section G.2.2 Inverse multi component transform
       if (tile.codingStyleDefaultParameters.multipleComponentTransform) {
-        var y0items = result[0].items;
-        var y1items = result[1].items;
-        var y2items = result[2].items;
-        for (var j = 0, jj = y0items.length; j < jj; j++) {
-          var y0 = y0items[j], y1 = y1items[j], y2 = y2items[j];
-          var i1 = y0 - ((y2 + y1) >> 2);
-          y1items[j] = i1;
-          y0items[j] = y2 + i1;
-          y2items[j] = y1 + i1;
+        var component0 = tile.components[0];
+        var transformation = component0.codingStyleParameters.transformation;
+        if (transformation === TransformType.IRREVERSIBLE) {
+          // inverse irreversible multiple component transform
+          var y0items = result[0].items;
+          var y1items = result[1].items;
+          var y2items = result[2].items;
+          for (var j = 0, jj = y0items.length; j < jj; ++j) {
+            var y0 = y0items[j], y1 = y1items[j], y2 = y2items[j];
+            y0items[j] = y0 + 1.402 * y2 + 0.5;
+            y1items[j] = y0 - 0.34413 * y1 - 0.71414 * y2 + 0.5;
+            y2items[j] = y0 + 1.772 * y1 + 0.5;
+          }
+        } else {
+          // inverse reversible multiple component transform
+          var y0items = result[0].items;
+          var y1items = result[1].items;
+          var y2items = result[2].items;
+          for (var j = 0, jj = y0items.length; j < jj; ++j) {
+            var y0 = y0items[j], y1 = y1items[j], y2 = y2items[j];
+            var i1 = y0 - ((y2 + y1) >> 2);
+            y1items[j] = i1;
+            y0items[j] = y2 + i1;
+            y2items[j] = y1 + i1;
+          }
         }
       }
 
