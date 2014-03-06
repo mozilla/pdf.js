@@ -805,6 +805,14 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
         element = document.createElement('object');
         element.data = this.data.src || '';
         element.type = this.data.contentType || '';
+        var param = document.createElement('param');
+        param.name = 'controller';
+        param.value = true;
+        element.appendChild(param);
+        var param2 = document.createElement('param');
+        param2.name = 'uiMode';
+        param2.value = 'mini';
+        element.appendChild(param2);
       } else {
         console.error('Cant play video');
       }
