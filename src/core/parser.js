@@ -215,7 +215,7 @@ var Parser = (function ParserClosure() {
         while (stream.pos < stream.end) {
           var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
           var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
-          var found = false, i, ii, j;
+          var found = false, i, j;
           for (i = 0, j = 0; i < scanLength; i++) {
             var b = scanBytes[i];
             if (b !== ENDSTREAM_SIGNATURE[j]) {
@@ -224,6 +224,7 @@ var Parser = (function ParserClosure() {
             } else {
               j++;
               if (j >= ENDSTREAM_SIGNATURE_LENGTH) {
+                i++;
                 found = true;
                 break;
               }
