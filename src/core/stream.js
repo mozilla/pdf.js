@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals bytesToString, ColorSpace, Dict, EOF, error, info, Jbig2Image,
-           JpegImage, JpxImage, Lexer, Util, PDFJS, isArray, warn */
+/* globals bytesToString, ColorSpace, Dict, EOF, error, info, isArray,
+           Jbig2Image, JpegImage, JpxImage, Lexer, PDFJS, shadow, Util, warn */
 
 'use strict';
 
@@ -777,16 +777,24 @@ var PredictorStream = (function PredictorStreamClosure() {
  * DecodeStreams.
  */
 var JpegStream = (function JpegStreamClosure() {
-  function JpegStream(bytes, dict, xref) {
+  function JpegStream(stream, length, dict, xref) {
     // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
+    this.stream = stream;
+    this.length = length;
     this.dict = dict;
-    this.bytes = bytes;
 
     DecodeStream.call(this);
   }
 
   JpegStream.prototype = Object.create(DecodeStream.prototype);
+
+  Object.defineProperty(JpegStream.prototype, 'bytes', {
+    get: function JpegStream_bytes() {
+      return shadow(this, 'bytes', this.stream.getBytes(this.length));
+    },
+    configurable: true
+  });
 
   JpegStream.prototype.ensureBuffer = function JpegStream_ensureBuffer(req) {
     if (this.bufferLength)
@@ -836,14 +844,22 @@ var JpegStream = (function JpegStreamClosure() {
  * the stream behaves like all the other DecodeStreams.
  */
 var JpxStream = (function JpxStreamClosure() {
-  function JpxStream(bytes, dict) {
+  function JpxStream(stream, length, dict) {
+    this.stream = stream;
+    this.length = length;
     this.dict = dict;
-    this.bytes = bytes;
 
     DecodeStream.call(this);
   }
 
   JpxStream.prototype = Object.create(DecodeStream.prototype);
+
+  Object.defineProperty(JpxStream.prototype, 'bytes', {
+    get: function JpxStream_bytes() {
+      return shadow(this, 'bytes', this.stream.getBytes(this.length));
+    },
+    configurable: true
+  });
 
   JpxStream.prototype.ensureBuffer = function JpxStream_ensureBuffer(req) {
     if (this.bufferLength)
@@ -935,14 +951,22 @@ var JpxStream = (function JpxStreamClosure() {
  * the stream behaves like all the other DecodeStreams.
  */
 var Jbig2Stream = (function Jbig2StreamClosure() {
-  function Jbig2Stream(bytes, dict) {
+  function Jbig2Stream(stream, length, dict) {
+    this.stream = stream;
+    this.length = length;
     this.dict = dict;
-    this.bytes = bytes;
 
     DecodeStream.call(this);
   }
 
   Jbig2Stream.prototype = Object.create(DecodeStream.prototype);
+
+  Object.defineProperty(Jbig2Stream.prototype, 'bytes', {
+    get: function Jbig2Stream_bytes() {
+      return shadow(this, 'bytes', this.stream.getBytes(this.length));
+    },
+    configurable: true
+  });
 
   Jbig2Stream.prototype.ensureBuffer = function Jbig2Stream_ensureBuffer(req) {
     if (this.bufferLength)

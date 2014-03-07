@@ -300,12 +300,10 @@ var Parser = (function ParserClosure() {
         return new LZWStream(stream, earlyChange);
       }
       if (name == 'DCTDecode' || name == 'DCT') {
-        var bytes = stream.getBytes(length);
-        return new JpegStream(bytes, stream.dict, this.xref);
+        return new JpegStream(stream, length, stream.dict, this.xref);
       }
       if (name == 'JPXDecode' || name == 'JPX') {
-        var bytes = stream.getBytes(length);
-        return new JpxStream(bytes, stream.dict);
+        return new JpxStream(stream, length, stream.dict);
       }
       if (name == 'ASCII85Decode' || name == 'A85') {
         return new Ascii85Stream(stream);
@@ -320,8 +318,7 @@ var Parser = (function ParserClosure() {
         return new RunLengthStream(stream);
       }
       if (name == 'JBIG2Decode') {
-        var bytes = stream.getBytes(length);
-        return new Jbig2Stream(bytes, stream.dict);
+        return new Jbig2Stream(stream, length, stream.dict);
       }
       warn('filter "' + name + '" not supported yet');
       return stream;
