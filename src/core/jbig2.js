@@ -258,13 +258,19 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     changingTemplateEntries = new Uint8Array(changingTemplateEntries);
     var changingEntriesLength = changingTemplateEntries.length;
 
+
+    // Get the safe bounding box edges from the width, height, minX, maxX, minY
+    var sbb_left = -minX;
+    var sbb_top = -minY;
+    var sbb_right = width - maxX;
+
     var pseudoPixelContext = ReusedContexts[templateIndex];
     var bitmap = [];
 
     var decoder = decodingContext.decoder;
     var contexts = decodingContext.contextCache.getContexts('GB');
 
-    var ltp = 0, c, j, i0, j0, k, contextLabel = 0;
+    var ltp = 0, c, j, i0, j0, k, contextLabel = 0, bit, shift;
     for (var i = 0; i < height; i++) {
       if (prediction) {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
@@ -283,7 +289,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
         // Are we in the middle of a scanline, so we can reuse contextLabel
         // bits?
-        if (i + minY > 0 && j + minX >= 0 && j + maxX < width) {
+        if (j >= sbb_left && j < sbb_right && i >= sbb_top) {
           // If yes, we can just shift the bits that are reusable and only
           // fetch the remaining ones.
           contextLabel = (contextLabel << 1) & reuseMask;
@@ -296,11 +302,17 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         } else {
           // compute the contextLabel from scratch
           contextLabel = 0;
-          for (k = 0; k < templateLength; k++) {
-            i0 = i + templateY[k];
+          var shift = templateLength - 1;
+          for (k = 0; k < templateLength; k++, shift--) {
             j0 = j + templateX[k];
-            if (i0 >= 0 && j0 >= 0 && j0 < width) {
-              contextLabel |= bitmap[i0][j0] << (templateLength - 1 - k);
+            if (j0 >= 0 && j0 < width) {
+              i0 = i + templateY[k];
+              if (i0 >= 0) {
+                bit = bitmap[i0][j0];
+                if (bit) {
+                  contextLabel |= bit << shift;
+                }
+              }
             }
           }
         }
