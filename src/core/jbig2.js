@@ -269,10 +269,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       if (prediction) {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
         ltp ^= sltp;
-      }
-      if (ltp) {
-        bitmap.push(bitmap[bitmap.length - 1]); // duplicate previous row
-        continue;
+        if (ltp) {
+          bitmap[i] = row;//bitmap[i - 1]); // duplicate previous row
+          continue;
+        }
       }
       var row = new Uint8Array(width);
       bitmap.push(row);
