@@ -961,11 +961,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var combinationOperator = pageInfo.combinationOperatorOverride ?
         regionInfo.combinationOperator : pageInfo.combinationOperator;
       var buffer = this.buffer;
+      var mask0 =  128 >> (regionInfo.x & 7);
+      var offset0 = regionInfo.y * rowSize + (regionInfo.x >> 3);
       switch (combinationOperator) {
         case 0: // OR
           for (var i = 0; i < height; i++) {
-            var mask = 128 >> (regionInfo.x & 7);
-            var offset = (i + regionInfo.y) * rowSize + (regionInfo.x >> 3);
+            var mask = mask0;
+            var offset = offset0;
             for (var j = 0; j < width; j++) {
               if (bitmap[i][j]) {
                 buffer[offset] |= mask;
@@ -976,12 +978,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                 offset++;
               }
             }
+            offset0 += rowSize;
           }
         break;
         case 2: // XOR
           for (var i = 0; i < height; i++) {
-            var mask = 128 >> (regionInfo.x & 7);
-            var offset = (i + regionInfo.y) * rowSize + (regionInfo.x >> 3);
+            var mask = mask0;
+            var offset = offset0;
             for (var j = 0; j < width; j++) {
               if (bitmap[i][j]) {
                 buffer[offset] ^= mask;
@@ -992,6 +995,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                 offset++;
               }
             }
+            offset0 += rowSize;
           }
           break;
         default:
