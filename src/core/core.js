@@ -134,7 +134,7 @@ var Page = (function PageClosure() {
       }.bind(this));
       return promise;
     },
-    getOperatorList: function Page_getOperatorList(handler) {
+    getOperatorList: function Page_getOperatorList(handler, intent) {
       var self = this;
       var promise = new LegacyPromise();
 
@@ -169,11 +169,12 @@ var Page = (function PageClosure() {
         var contentStream = data[0];
 
 
-        var opList = new OperatorList(handler, self.pageIndex);
+        var opList = new OperatorList(intent, handler, self.pageIndex);
 
         handler.send('StartRenderPage', {
           transparency: partialEvaluator.hasBlendModes(self.resources),
-          pageIndex: self.pageIndex
+          pageIndex: self.pageIndex,
+          intent: intent
         });
         partialEvaluator.getOperatorList(contentStream, self.resources, opList);
         pageListPromise.resolve(opList);
@@ -191,7 +192,7 @@ var Page = (function PageClosure() {
         }
 
         var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageOpList, pdfManager, partialEvaluator);
+          annotations, pageOpList, pdfManager, partialEvaluator, intent);
         annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
           promise.resolve(pageOpList);
