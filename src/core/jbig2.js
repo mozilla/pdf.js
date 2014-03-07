@@ -255,9 +255,17 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         changingTemplateEntries.push(k);
       }
     }
-    changingTemplateEntries = new Uint8Array(changingTemplateEntries);
     var changingEntriesLength = changingTemplateEntries.length;
 
+    var changingTemplateX = new Int8Array(changingEntriesLength);
+    var changingTemplateY = new Int8Array(changingEntriesLength);
+    var changingTemplateBit = new Uint16Array(changingEntriesLength);
+    for (var c = 0; c < changingEntriesLength; c++) {
+      k = changingTemplateEntries[c];
+      changingTemplateX[c] = template[k].x;
+      changingTemplateY[c] = template[k].y;
+      changingTemplateBit[c] = 1 << (templateLength - 1 - k);
+    }
 
     // Get the safe bounding box edges from the width, height, minX, maxX, minY
     var sbb_left = -minX;
@@ -293,16 +301,19 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           // If yes, we can just shift the bits that are reusable and only
           // fetch the remaining ones.
           contextLabel = (contextLabel << 1) & reuseMask;
-          for (c = 0; c < changingEntriesLength; c++) {
-            k = changingTemplateEntries[c];
-            i0 = i + templateY[k];
-            j0 = j + templateX[k];
-            contextLabel |= bitmap[i0][j0] << (templateLength - 1 - k);
+          for (k = 0; k < changingEntriesLength; k++) {
+            i0 = i + changingTemplateY[k];
+            j0 = j + changingTemplateX[k];
+            bit = bitmap[i0][j0];
+            if (bit) {
+              bit = changingTemplateBit[k];
+              contextLabel |= bit;
+            }
           }
         } else {
           // compute the contextLabel from scratch
           contextLabel = 0;
-          var shift = templateLength - 1;
+          shift = templateLength - 1;
           for (k = 0; k < templateLength; k++, shift--) {
             j0 = j + templateX[k];
             if (j0 >= 0 && j0 < width) {
