@@ -213,14 +213,14 @@ var PDFImage = (function PDFImageClosure() {
                                                      inverseDecode) {
     // Copy imgArray into a typed array (inverting if necessary) so it can be
     // transferred to the main thread.
-    var length = ((width + 7) >> 3) * height;
-    var data = new Uint8Array(length);
+    var actualLength = imgArray.byteLength;
+    var data = new Uint8Array(actualLength);
     if (inverseDecode) {
-      for (var i = 0; i < length; i++) {
+      for (var i = 0; i < actualLength; i++) {
         data[i] = ~imgArray[i];
       }
     } else {
-      for (var i = 0; i < length; i++) {
+      for (var i = 0; i < actualLength; i++) {
         data[i] = imgArray[i];
       }
     }
