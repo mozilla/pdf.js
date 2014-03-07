@@ -273,6 +273,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var sbb_right = width - maxX;
 
     var pseudoPixelContext = ReusedContexts[templateIndex];
+    var row = new Uint8Array(width);
     var bitmap = [];
 
     var decoder = decodingContext.decoder;
@@ -284,11 +285,11 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
         ltp ^= sltp;
         if (ltp) {
-          bitmap[i] = row;//bitmap[i - 1]); // duplicate previous row
+          bitmap.push(row); // duplicate previous row
           continue;
         }
       }
-      var row = new Uint8Array(width);
+      row = new Uint8Array(row);
       bitmap.push(row);
       for (j = 0; j < width; j++) {
         if (useskip && skip[i][j]) {
