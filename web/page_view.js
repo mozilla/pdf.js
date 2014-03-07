@@ -306,10 +306,13 @@ var PageView = function pageView(container, id, scale,
         CustomStyle.setProp('transformOrigin', element, transformOriginStr);
 
         if (data.subtype === 'Link' && !data.url) {
-          if (data.action) {
-            bindNamedAction(element, data.action);
-          } else {
-            bindLink(element, ('dest' in data) ? data.dest : null);
+          var link = element.getElementsByTagName('a')[0];
+          if (link) {
+            if (data.action) {
+              bindNamedAction(link, data.action);
+            } else {
+              bindLink(link, ('dest' in data) ? data.dest : null);
+            }
           }
         }
 
@@ -579,6 +582,7 @@ var PageView = function pageView(container, id, scale,
       canvasContext: ctx,
       viewport: this.viewport,
       textLayer: textLayer,
+      // intent: 'default', // === 'display'
       continueCallback: function pdfViewcContinueCallback(cont) {
         if (PDFView.highestPriorityPage !== 'page' + self.id) {
           self.renderingState = RenderingStates.PAUSED;
@@ -650,13 +654,13 @@ var PageView = function pageView(container, id, scale,
 
       var renderContext = {
         canvasContext: ctx,
-        viewport: viewport
+        viewport: viewport,
+        intent: 'print'
       };
 
       pdfPage.render(renderContext).promise.then(function() {
         // Tell the printEngine that rendering this canvas/page has finished.
         obj.done();
-        self.pdfPage.destroy();
       }, function(error) {
         console.error(error);
         // Tell the printEngine that rendering this canvas/page has failed.
@@ -666,7 +670,6 @@ var PageView = function pageView(container, id, scale,
         } else {
           obj.done();
         }
-        self.pdfPage.destroy();
       });
     };
   };

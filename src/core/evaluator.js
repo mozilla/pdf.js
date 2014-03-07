@@ -1376,7 +1376,7 @@ var OperatorList = (function OperatorListClosure() {
     }
 
 
-    function OperatorList(messageHandler, pageIndex) {
+    function OperatorList(intent, messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
     // When there isn't a message handler the fn array needs to be able to grow
     // since we can't flush the operators.
@@ -1389,6 +1389,7 @@ var OperatorList = (function OperatorListClosure() {
     this.dependencies = {};
     this.pageIndex = pageIndex;
     this.fnIndex = 0;
+    this.intent = intent;
   }
 
   OperatorList.prototype = {
@@ -1449,7 +1450,8 @@ var OperatorList = (function OperatorListClosure() {
           lastChunk: lastChunk,
           length: this.length
         },
-        pageIndex: this.pageIndex
+        pageIndex: this.pageIndex,
+        intent: this.intent
       }, null, transfers);
       this.dependencies = [];
       this.fnIndex = 0;
