@@ -38,8 +38,9 @@ var PostScriptParser = (function PostScriptParserClosure() {
       return false;
     },
     expect: function PostScriptParser_expect(type) {
-      if (this.accept(type))
+      if (this.accept(type)) {
         return true;
+      }
       error('Unexpected symbol: found ' + this.token.type + ' expected ' +
         type + '.');
     },
@@ -116,9 +117,9 @@ var PostScriptToken = (function PostScriptTokenClosure() {
 
   PostScriptToken.getOperator = function PostScriptToken_getOperator(op) {
     var opValue = opCache[op];
-    if (opValue)
+    if (opValue) {
       return opValue;
-
+    }
     return opCache[op] = new PostScriptToken(PostScriptTokenTypes.OPERATOR, op);
   };
 
@@ -167,8 +168,8 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
         case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: // '0'-'4'
         case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: // '5'-'9'
         case 0x2B: case 0x2D: case 0x2E: // '+', '-', '.'
-        return new PostScriptToken(PostScriptTokenTypes.NUMBER,
-          this.getNumber());
+          return new PostScriptToken(PostScriptTokenTypes.NUMBER,
+                                     this.getNumber());
         case 0x7B: // '{'
           this.nextChar();
           return PostScriptToken.LBRACE;
@@ -179,7 +180,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
       // operator
       var str = String.fromCharCode(ch);
       while ((ch = this.nextChar()) >= 0 && // and 'A'-'Z', 'a'-'z'
-        ((ch >= 0x41 && ch <= 0x5A) || (ch >= 0x61 && ch <= 0x7A))) {
+             ((ch >= 0x41 && ch <= 0x5A) || (ch >= 0x61 && ch <= 0x7A))) {
         str += String.fromCharCode(ch);
       }
       switch (str.toLowerCase()) {
@@ -196,15 +197,16 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
       var str = String.fromCharCode(ch);
       while ((ch = this.nextChar()) >= 0) {
         if ((ch >= 0x30 && ch <= 0x39) || // '0'-'9'
-          ch === 0x2D || ch === 0x2E) { // '-', '.'
+            ch === 0x2D || ch === 0x2E) { // '-', '.'
           str += String.fromCharCode(ch);
         } else {
           break;
         }
       }
       var value = parseFloat(str);
-      if (isNaN(value))
+      if (isNaN(value)) {
         error('Invalid floating point number: ' + value);
+      }
       return value;
     }
   };
