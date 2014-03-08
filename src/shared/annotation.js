@@ -401,8 +401,9 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
         var j, jj;
         for (j = 0, jj = kids.length; j < jj; j++) {
           var kidRef = kids[j];
-          if (kidRef.num == ref.num && kidRef.gen == ref.gen)
+          if (kidRef.num == ref.num && kidRef.gen == ref.gen) {
             break;
+          }
         }
         fieldName.unshift('`' + j);
       }
@@ -695,8 +696,9 @@ var TextAnnotation = (function TextAnnotationClosure() {
         for (var i = 0, ii = lines.length; i < ii; ++i) {
           var line = lines[i];
           e.appendChild(document.createTextNode(line));
-          if (i < (ii - 1))
+          if (i < (ii - 1)) {
             e.appendChild(document.createElement('br'));
+          }
         }
         text.appendChild(e);
 
