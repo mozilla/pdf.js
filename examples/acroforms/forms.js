@@ -13,16 +13,18 @@ function setupForm(div, content, viewport) {
   function bindInputItem(input, item) {
     if (input.name in formFields) {
       var value = formFields[input.name];
-      if (input.type == 'checkbox')
+      if (input.type == 'checkbox') {
         input.checked = value;
-      else if (!input.type || input.type == 'text')
+      } else if (!input.type || input.type == 'text') {
         input.value = value;
+      }
     }
     input.onchange = function pageViewSetupInputOnBlur() {
-      if (input.type == 'checkbox')
+      if (input.type == 'checkbox') {
         formFields[input.name] = input.checked;
-      else if (!input.type || input.type == 'text')
+      } else if (!input.type || input.type == 'text') {
         formFields[input.name] = input.value;
+      }
     };
   }
   function createElementWithStyle(tagName, item) {
@@ -39,7 +41,7 @@ function setupForm(div, content, viewport) {
     var fontStyles = '';
     if ('fontSize' in item) {
       fontStyles += 'font-size: ' + Math.round(item.fontSize *
-        viewport.fontScale) + 'px;';
+                                               viewport.fontScale) + 'px;';
     }
     switch (item.textAlignment) {
       case 0:
@@ -61,8 +63,9 @@ function setupForm(div, content, viewport) {
       switch (item.subtype) {
         case 'Widget':
           if (item.fieldType != 'Tx' && item.fieldType != 'Btn' &&
-              item.fieldType != 'Ch')
+              item.fieldType != 'Ch') {
             break;
+          }
           var inputDiv = createElementWithStyle('div', item);
           inputDiv.className = 'inputHint';
           div.appendChild(inputDiv);
@@ -119,7 +122,6 @@ function renderPage(div, pdf, pageNumber, callback) {
     canvas.height = pageDisplayHeight;
     pageDivHolder.appendChild(canvas);
 
-
     // Render PDF page into canvas context
     var renderContext = {
       canvasContext: context,
@@ -141,8 +143,9 @@ PDFJS.getDocument(pdfWithFormsPath).then(function getPdfForm(pdf) {
   var viewer = document.getElementById('viewer');
   var pageNumber = 1;
   renderPage(viewer, pdf, pageNumber++, function pageRenderingComplete() {
-    if (pageNumber > pdf.numPages)
+    if (pageNumber > pdf.numPages) {
       return; // All pages rendered
+    }
     // Continue rendering of the next page
     renderPage(viewer, pdf, pageNumber++, pageRenderingComplete);
   });
