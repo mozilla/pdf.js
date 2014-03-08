@@ -25,8 +25,9 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
     this.b = 0;
     var s = new Uint8Array(256);
     var i, j = 0, tmp, keyLength = key.length;
-    for (i = 0; i < 256; ++i)
+    for (i = 0; i < 256; ++i) {
       s[i] = i;
+    }
     for (i = 0; i < 256; ++i) {
       tmp = s[i];
       j = (j + tmp + key[i % keyLength]) & 0xFF;
@@ -86,12 +87,14 @@ var calculateMD5 = (function calculateMD5Closure() {
     var paddedLength = (length + 72) & ~63; // data + 9 extra bytes
     var padded = new Uint8Array(paddedLength);
     var i, j, n;
-    for (i = 0; i < length; ++i)
+    for (i = 0; i < length; ++i) {
       padded[i] = data[offset++];
+    }
     padded[i++] = 0x80;
     n = paddedLength - 8;
-    while (i < n)
+    while (i < n) {
       padded[i++] = 0;
+    }
     padded[i++] = (length << 3) & 0xFF;
     padded[i++] = (length >> 5) & 0xFF;
     padded[i++] = (length >> 13) & 0xFF;
@@ -135,18 +138,17 @@ var calculateMD5 = (function calculateMD5Closure() {
       h3 = (h3 + d) | 0;
     }
     return new Uint8Array([
-        h0 & 0xFF, (h0 >> 8) & 0xFF, (h0 >> 16) & 0xFF, (h0 >>> 24) & 0xFF,
-        h1 & 0xFF, (h1 >> 8) & 0xFF, (h1 >> 16) & 0xFF, (h1 >>> 24) & 0xFF,
-        h2 & 0xFF, (h2 >> 8) & 0xFF, (h2 >> 16) & 0xFF, (h2 >>> 24) & 0xFF,
-        h3 & 0xFF, (h3 >> 8) & 0xFF, (h3 >> 16) & 0xFF, (h3 >>> 24) & 0xFF
+      h0 & 0xFF, (h0 >> 8) & 0xFF, (h0 >> 16) & 0xFF, (h0 >>> 24) & 0xFF,
+      h1 & 0xFF, (h1 >> 8) & 0xFF, (h1 >> 16) & 0xFF, (h1 >>> 24) & 0xFF,
+      h2 & 0xFF, (h2 >> 8) & 0xFF, (h2 >> 16) & 0xFF, (h2 >>> 24) & 0xFF,
+      h3 & 0xFF, (h3 >> 8) & 0xFF, (h3 >> 16) & 0xFF, (h3 >>> 24) & 0xFF
     ]);
   }
   return hash;
 })();
 
 var NullCipher = (function NullCipherClosure() {
-  function NullCipher() {
-  }
+  function NullCipher() {}
 
   NullCipher.prototype = {
     decryptBlock: function NullCipher_decryptBlock(data) {
@@ -302,8 +304,9 @@ var AES128Cipher = (function AES128CipherClosure() {
     var i, j, k;
     var t, u, v;
     // AddRoundKey
-    for (j = 0, k = 160; j < 16; ++j, ++k)
+    for (j = 0, k = 160; j < 16; ++j, ++k) {
       state[j] ^= key[k];
+    }
     for (i = 9; i >= 1; --i) {
       // InvShiftRows
       t = state[13]; state[13] = state[9]; state[9] = state[5];
@@ -313,11 +316,13 @@ var AES128Cipher = (function AES128CipherClosure() {
       t = state[15]; u = state[11]; v = state[7]; state[15] = state[3];
       state[11] = t; state[7] = u; state[3] = v;
       // InvSubBytes
-      for (j = 0; j < 16; ++j)
+      for (j = 0; j < 16; ++j) {
         state[j] = inv_s[state[j]];
+      }
       // AddRoundKey
-      for (j = 0, k = i * 16; j < 16; ++j, ++k)
+      for (j = 0, k = i * 16; j < 16; ++j, ++k) {
         state[j] ^= key[k];
+      }
       // InvMixColumns
       for (j = 0; j < 16; j += 4) {
         var s0 = mix[state[j]], s1 = mix[state[j + 1]],
@@ -359,13 +364,15 @@ var AES128Cipher = (function AES128CipherClosure() {
     for (i = 0; i < sourceLength; ++i) {
       buffer[bufferLength] = data[i];
       ++bufferLength;
-      if (bufferLength < 16)
+      if (bufferLength < 16) {
         continue;
+      }
       // buffer is full, decrypting
       var plain = decrypt128(buffer, this.key);
       // xor-ing the IV vector to get plain text
-      for (j = 0; j < 16; ++j)
+      for (j = 0; j < 16; ++j) {
         plain[j] ^= iv[j];
+      }
       iv = buffer;
       result.push(plain);
       buffer = new Uint8Array(16);
@@ -387,8 +394,9 @@ var AES128Cipher = (function AES128CipherClosure() {
       result[result.length - 1] = lastBlock.subarray(0, 16 - lastBlock[15]);
     }
     var output = new Uint8Array(outputLength);
-    for (i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16)
+    for (i = 0, j = 0, ii = result.length; i < ii; ++i, j += 16) {
       output.set(result[i], j);
+    }
     return output;
   }
 
@@ -397,8 +405,9 @@ var AES128Cipher = (function AES128CipherClosure() {
       var i, sourceLength = data.length;
       var buffer = this.buffer, bufferLength = this.bufferPosition;
       // waiting for IV values -- they are at the start of the stream
-      for (i = 0; bufferLength < 16 && i < sourceLength; ++i, ++bufferLength)
+      for (i = 0; bufferLength < 16 && i < sourceLength; ++i, ++bufferLength) {
         buffer[bufferLength] = data[i];
+      }
       if (bufferLength < 16) {
         // need more data
         this.bufferLength = bufferLength;
@@ -453,22 +462,25 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var hashData = new Uint8Array(hashDataSize), i = 0, j, n;
     if (password) {
       n = Math.min(32, password.length);
-      for (; i < n; ++i)
+      for (; i < n; ++i) {
         hashData[i] = password[i];
+      }
     }
     j = 0;
     while (i < 32) {
       hashData[i++] = defaultPasswordBytes[j++];
     }
     // as now the padded password in the hashData[0..i]
-    for (j = 0, n = ownerPassword.length; j < n; ++j)
+    for (j = 0, n = ownerPassword.length; j < n; ++j) {
       hashData[i++] = ownerPassword[j];
+    }
     hashData[i++] = flags & 0xFF;
     hashData[i++] = (flags >> 8) & 0xFF;
     hashData[i++] = (flags >> 16) & 0xFF;
     hashData[i++] = (flags >>> 24) & 0xFF;
-    for (j = 0, n = fileId.length; j < n; ++j)
+    for (j = 0, n = fileId.length; j < n; ++j) {
       hashData[i++] = fileId[j];
+    }
     if (revision >= 4 && !encryptMetadata) {
       hashData[i++] = 0xFF;
       hashData[i++] = 0xFF;
@@ -479,46 +491,53 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var keyLengthInBytes = keyLength >> 3;
     if (revision >= 3) {
       for (j = 0; j < 50; ++j) {
-         hash = calculateMD5(hash, 0, keyLengthInBytes);
+        hash = calculateMD5(hash, 0, keyLengthInBytes);
       }
     }
     var encryptionKey = hash.subarray(0, keyLengthInBytes);
     var cipher, checkData;
 
     if (revision >= 3) {
-      for (i = 0; i < 32; ++i)
+      for (i = 0; i < 32; ++i) {
         hashData[i] = defaultPasswordBytes[i];
-      for (j = 0, n = fileId.length; j < n; ++j)
+      }
+      for (j = 0, n = fileId.length; j < n; ++j) {
         hashData[i++] = fileId[j];
+      }
       cipher = new ARCFourCipher(encryptionKey);
       var checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
       var derivedKey = new Uint8Array(n), k;
       for (j = 1; j <= 19; ++j) {
-        for (k = 0; k < n; ++k)
+        for (k = 0; k < n; ++k) {
           derivedKey[k] = encryptionKey[k] ^ j;
+        }
         cipher = new ARCFourCipher(derivedKey);
         checkData = cipher.encryptBlock(checkData);
       }
       for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] != checkData[j])
+        if (userPassword[j] != checkData[j]) {
           return null;
+        }
       }
     } else {
       cipher = new ARCFourCipher(encryptionKey);
       checkData = cipher.encryptBlock(defaultPasswordBytes);
       for (j = 0, n = checkData.length; j < n; ++j) {
-        if (userPassword[j] != checkData[j])
+        if (userPassword[j] != checkData[j]) {
           return null;
+        }
       }
     }
     return encryptionKey;
   }
+
   function decodeUserPassword(password, ownerPassword, revision, keyLength) {
     var hashData = new Uint8Array(32), i = 0, j, n;
     n = Math.min(32, password.length);
-    for (; i < n; ++i)
+    for (; i < n; ++i) {
       hashData[i] = password[i];
+    }
     j = 0;
     while (i < 32) {
       hashData[i++] = defaultPasswordBytes[j++];
@@ -527,7 +546,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var keyLengthInBytes = keyLength >> 3;
     if (revision >= 3) {
       for (j = 0; j < 50; ++j) {
-         hash = calculateMD5(hash, 0, hash.length);
+        hash = calculateMD5(hash, 0, hash.length);
       }
     }
 
@@ -536,8 +555,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       userPassword = ownerPassword;
       var derivedKey = new Uint8Array(keyLengthInBytes), k;
       for (j = 19; j >= 0; j--) {
-        for (k = 0; k < keyLengthInBytes; ++k)
+        for (k = 0; k < keyLengthInBytes; ++k) {
           derivedKey[k] = hash[k] ^ j;
+        }
         cipher = new ARCFourCipher(derivedKey);
         userPassword = cipher.encryptBlock(userPassword);
       }
@@ -552,31 +572,36 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   function CipherTransformFactory(dict, fileId, password) {
     var filter = dict.get('Filter');
-    if (!isName(filter) || filter.name != 'Standard')
+    if (!isName(filter) || filter.name != 'Standard') {
       error('unknown encryption method');
+    }
     this.dict = dict;
     var algorithm = dict.get('V');
     if (!isInt(algorithm) ||
-      (algorithm != 1 && algorithm != 2 && algorithm != 4))
+        (algorithm != 1 && algorithm != 2 && algorithm != 4)) {
       error('unsupported encryption algorithm');
+    }
     this.algorithm = algorithm;
     var keyLength = dict.get('Length') || 40;
     if (!isInt(keyLength) ||
-      keyLength < 40 || (keyLength % 8) !== 0)
+        keyLength < 40 || (keyLength % 8) !== 0) {
       error('invalid key length');
+    }
+
     // prepare keys
     var ownerPassword = stringToBytes(dict.get('O')).subarray(0, 32);
     var userPassword = stringToBytes(dict.get('U')).subarray(0, 32);
     var flags = dict.get('P');
     var revision = dict.get('R');
-    var encryptMetadata = algorithm == 4 &&  // meaningful when V is 4
-      dict.get('EncryptMetadata') !== false; // makes true as default value
+    var encryptMetadata = (algorithm == 4 &&  // meaningful when V is 4
+      dict.get('EncryptMetadata') !== false); // makes true as default value
     this.encryptMetadata = encryptMetadata;
 
     var fileIdBytes = stringToBytes(fileId);
     var passwordBytes;
-    if (password)
+    if (password) {
       passwordBytes = stringToBytes(password);
+    }
 
     var encryptionKey = prepareKeyData(fileIdBytes, passwordBytes,
                                        ownerPassword, userPassword, flags,
@@ -593,9 +618,10 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
                                      revision, keyLength, encryptMetadata);
     }
 
-    if (!encryptionKey)
+    if (!encryptionKey) {
       throw new PasswordException('Incorrect Password',
                                   PasswordResponses.INCORRECT_PASSWORD);
+    }
 
     this.encryptionKey = encryptionKey;
 
@@ -609,8 +635,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   function buildObjectKey(num, gen, encryptionKey, isAes) {
     var key = new Uint8Array(encryptionKey.length + 9), i, n;
-    for (i = 0, n = encryptionKey.length; i < n; ++i)
+    for (i = 0, n = encryptionKey.length; i < n; ++i) {
       key[i] = encryptionKey[i];
+    }
     key[i++] = num & 0xFF;
     key[i++] = (num >> 8) & 0xFF;
     key[i++] = (num >> 16) & 0xFF;
@@ -629,8 +656,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   function buildCipherConstructor(cf, name, num, gen, key) {
     var cryptFilter = cf.get(name.name);
     var cfm;
-    if (cryptFilter !== null && cryptFilter !== undefined)
+    if (cryptFilter !== null && cryptFilter !== undefined) {
       cfm = cryptFilter.get('CFM');
+    }
     if (!cfm || cfm.name == 'None') {
       return function cipherTransformFactoryBuildCipherConstructorNone() {
         return new NullCipher();
@@ -638,14 +666,12 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
     if ('V2' == cfm.name) {
       return function cipherTransformFactoryBuildCipherConstructorV2() {
-        return new ARCFourCipher(
-          buildObjectKey(num, gen, key, false));
+        return new ARCFourCipher(buildObjectKey(num, gen, key, false));
       };
     }
     if ('AESV2' == cfm.name) {
       return function cipherTransformFactoryBuildCipherConstructorAESV2() {
-        return new AES128Cipher(
-          buildObjectKey(num, gen, key, true));
+        return new AES128Cipher(buildObjectKey(num, gen, key, true));
       };
     }
     error('Unknown crypto method');
@@ -657,9 +683,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       if (this.algorithm == 4) {
         return new CipherTransform(
           buildCipherConstructor(this.cf, this.stmf,
-            num, gen, this.encryptionKey),
+                                 num, gen, this.encryptionKey),
           buildCipherConstructor(this.cf, this.strf,
-            num, gen, this.encryptionKey));
+                                 num, gen, this.encryptionKey));
       }
       // algorithms 1 and 2
       var key = buildObjectKey(num, gen, this.encryptionKey, false);
