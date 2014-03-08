@@ -52,8 +52,8 @@ var FirefoxCom = (function FirefoxComClosure() {
       var request = document.createTextNode('');
       if (callback) {
         document.addEventListener('pdf.js.response', function listener(event) {
-          var node = event.target,
-              response = event.detail.response;
+          var node = event.target;
+          var response = event.detail.response;
 
           document.documentElement.removeChild(node);
 
