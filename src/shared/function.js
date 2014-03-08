@@ -354,7 +354,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
         var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
 
-        // call the appropropriate function
+        // call the appropriate function
         return fns[i]([v2]);
       };
     },
