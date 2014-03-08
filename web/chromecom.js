@@ -35,7 +35,9 @@ var ChromeCom = (function ChromeComClosure() {
       };
       if (!chrome.runtime) {
         console.error('chrome.runtime is undefined.');
-        if (callback) callback();
+        if (callback) {
+          callback();
+        }
       } else if (callback) {
         chrome.runtime.sendMessage(message, callback);
       } else {
