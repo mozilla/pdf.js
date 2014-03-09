@@ -1,0 +1,279 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%DocumentNeededResources: CMap (UniJIS-UCS2-H)
+%%IncludeResource: ProcSet (CIDInit)
+%%IncludeResource: CMap (UniJIS-UCS2-H)
+%%BeginResource: CMap (UniJIS-UCS2-HW-V)
+%%Title: (UniJIS-UCS2-HW-V Adobe Japan1 4)
+%%Version: 12.003
+%%Copyright: -----------------------------------------------------------
+%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: All rights reserved.
+%%Copyright:
+%%Copyright: Redistribution and use in source and binary forms, with or
+%%Copyright: without modification, are permitted provided that the
+%%Copyright: following conditions are met:
+%%Copyright:
+%%Copyright: Redistributions of source code must retain the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer.
+%%Copyright:
+%%Copyright: Redistributions in binary form must reproduce the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer in the documentation and/or other materials
+%%Copyright: provided with the distribution. 
+%%Copyright:
+%%Copyright: Neither the name of Adobe Systems Incorporated nor the names
+%%Copyright: of its contributors may be used to endorse or promote
+%%Copyright: products derived from this software without specific prior
+%%Copyright: written permission. 
+%%Copyright:
+%%Copyright: THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+%%Copyright: CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+%%Copyright: INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%%Copyright: MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%%Copyright: DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+%%Copyright: CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%Copyright: SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+%%Copyright: NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%%Copyright: LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%Copyright: HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+%%Copyright: CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+%%Copyright: OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%Copyright: SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%Copyright: -----------------------------------------------------------
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/UniJIS-UCS2-H usecmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (Japan1) def
+  /Supplement 4 def
+end def
+
+/CMapName /UniJIS-UCS2-HW-V def
+/CMapVersion 12.003 def
+/CMapType 1 def
+
+/XUID [1 10 25449] def
+
+/WMode 1 def
+
+100 begincidrange
+<0020> <005b> 231
+<005c> <005c> 8719
+<005d> <007e> 292
+<00a5> <00a5> 291
+<00b0> <00b0> 8269
+<2010> <2010> 7893
+<2015> <2015> 7892
+<2016> <2016> 7895
+<2018> <2019> 8281
+<201c> <201d> 8279
+<2025> <2025> 7898
+<2026> <2026> 7897
+<2032> <2032> 8273
+<2033> <2033> 8283
+<2190> <2190> 738
+<2191> <2191> 736
+<2192> <2192> 739
+<2193> <2193> 737
+<2195> <2195> 12214
+<21c4> <21c4> 8311
+<21c5> <21c5> 8310
+<21c6> <21c6> 8312
+<21e6> <21e6> 8012
+<21e7> <21e7> 8014
+<21e8> <21e8> 8011
+<21e9> <21e9> 8013
+<2225> <2225> 7895
+<223c> <223c> 7894
+<22ef> <22ef> 7897
+<2500> <2501> 7481
+<2502> <2503> 7479
+<2504> <2505> 7485
+<2506> <2507> 7483
+<2508> <2509> 7489
+<250a> <250b> 7487
+<250c> <250c> 7495
+<250d> <250d> 7497
+<250e> <250e> 7496
+<250f> <250f> 7498
+<2510> <2510> 7503
+<2511> <2511> 7505
+<2512> <2512> 7504
+<2513> <2513> 7506
+<2514> <2514> 7491
+<2515> <2515> 7493
+<2516> <2516> 7492
+<2517> <2517> 7494
+<2518> <2518> 7499
+<2519> <2519> 7501
+<251a> <251a> 7500
+<251b> <251b> 7502
+<251c> <251c> 7523
+<251d> <251d> 7527
+<251e> <251e> 7525
+<251f> <251f> 7524
+<2520> <2520> 7526
+<2521> <2521> 7529
+<2522> <2522> 7528
+<2523> <2524> 7530
+<2525> <2525> 7535
+<2526> <2526> 7533
+<2527> <2527> 7532
+<2528> <2528> 7534
+<2529> <2529> 7537
+<252a> <252a> 7536
+<252b> <252b> 7538
+<252c> <252c> 7515
+<252d> <252f> 7517
+<2530> <2530> 7516
+<2531> <2533> 7520
+<2534> <2534> 7507
+<2535> <2537> 7509
+<2538> <2538> 7508
+<2539> <253b> 7512
+<253d> <253f> 7543
+<2540> <2540> 7541
+<2541> <2541> 7540
+<2542> <2542> 7542
+<2543> <2543> 7547
+<2544> <2544> 7549
+<2545> <2545> 7546
+<2546> <2546> 7548
+<2547> <2547> 7553
+<2548> <2548> 7552
+<2549> <254a> 7550
+<261c> <261c> 8221
+<261d> <261d> 8219
+<261e> <261e> 8222
+<261f> <261f> 8220
+<2702> <2702> 12178
+<27a1> <27a1> 8209
+<3001> <3002> 7887
+<3008> <3011> 7907
+<3013> <3013> 8270
+<3014> <3015> 7901
+<301c> <301c> 7894
+<301d> <301d> 7956
+<301f> <301f> 7957
+<3041> <3041> 7918
+<3043> <3043> 7919
+endcidrange
+
+99 begincidrange
+<3045> <3045> 7920
+<3047> <3047> 7921
+<3049> <3049> 7922
+<3063> <3063> 7923
+<3083> <3083> 7924
+<3085> <3085> 7925
+<3087> <3087> 7926
+<308e> <308e> 7927
+<309b> <309b> 8272
+<309c> <309c> 8271
+<30a1> <30a1> 7928
+<30a3> <30a3> 7929
+<30a5> <30a5> 7930
+<30a7> <30a7> 7931
+<30a9> <30a9> 7932
+<30c3> <30c3> 7933
+<30e3> <30e3> 7934
+<30e5> <30e5> 7935
+<30e7> <30e7> 7936
+<30ee> <30ee> 7937
+<30f5> <30f6> 7938
+<30fc> <30fc> 7891
+<3300> <3300> 8350
+<3301> <3302> 11958
+<3303> <3303> 8338
+<3304> <3304> 11960
+<3305> <3305> 8333
+<3306> <3306> 11961
+<3307> <3307> 11965
+<3308> <3308> 11963
+<3309> <3309> 11968
+<330a> <330a> 11966
+<330b> <330b> 11970
+<330c> <330c> 11972
+<330d> <330d> 7950
+<330e> <3313> 11973
+<3314> <3314> 7941
+<3315> <3315> 8340
+<3316> <3316> 8330
+<3317> <3317> 11980
+<3318> <3318> 8339
+<3319> <3319> 11982
+<331a> <331d> 11984
+<331e> <331e> 8353
+<331f> <3321> 11988
+<3322> <3322> 8329
+<3323> <3323> 8348
+<3324> <3324> 11991
+<3325> <3325> 11993
+<3326> <3326> 7951
+<3327> <3327> 7945
+<3328> <3329> 11996
+<332a> <332a> 8356
+<332b> <332b> 7953
+<332d> <332d> 11999
+<332e> <3330> 12002
+<3331> <3331> 8358
+<3332> <3332> 12005
+<3333> <3333> 8334
+<3334> <3335> 12008
+<3336> <3336> 7947
+<3337> <3337> 12014
+<3338> <3338> 12016
+<3339> <3339> 8343
+<333a> <333a> 12017
+<333b> <333b> 8349
+<333c> <333c> 12010
+<333d> <333d> 12018
+<333e> <3340> 12020
+<3341> <3341> 12019
+<3342> <3342> 8347
+<3343> <3346> 12023
+<3347> <3347> 8357
+<3348> <3348> 12027
+<3349> <3349> 7940
+<334a> <334a> 7954
+<334b> <334c> 12028
+<334d> <334d> 7943
+<334e> <334e> 8337
+<334f> <3350> 12030
+<3351> <3351> 7948
+<3352> <3352> 12034
+<3353> <3353> 12038
+<3354> <3354> 12035
+<3355> <3356> 12039
+<3357> <3357> 8344
+<337f> <337f> 8324
+<ff08> <ff09> 7899
+<ff0c> <ff0c> 8268
+<ff0e> <ff0e> 8274
+<ff1d> <ff1d> 7917
+<ff3b> <ff3b> 7903
+<ff3d> <ff3d> 7904
+<ff3f> <ff3f> 7890
+<ff5b> <ff5b> 7905
+<ff5c> <ff5c> 7896
+<ff5d> <ff5d> 7906
+<ff5e> <ff5e> 7894
+<ffe3> <ffe3> 7889
+endcidrange
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF
