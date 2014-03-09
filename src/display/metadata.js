@@ -59,20 +59,22 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
 
       if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
         rdf = rdf.firstChild;
-        while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf')
+        while (rdf && rdf.nodeName.toLowerCase() !== 'rdf:rdf') {
           rdf = rdf.nextSibling;
+        }
       }
 
       var nodeName = (rdf) ? rdf.nodeName.toLowerCase() : null;
-      if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes())
+      if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes()) {
         return;
+      }
 
       var children = rdf.childNodes, desc, entry, name, i, ii, length, iLength;
-
       for (i = 0, length = children.length; i < length; i++) {
         desc = children[i];
-        if (desc.nodeName.toLowerCase() !== 'rdf:description')
+        if (desc.nodeName.toLowerCase() !== 'rdf:description') {
           continue;
+        }
 
         for (ii = 0, iLength = desc.childNodes.length; ii < iLength; ii++) {
           if (desc.childNodes[ii].nodeName.toLowerCase() !== '#text') {
