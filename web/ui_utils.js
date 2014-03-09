@@ -24,10 +24,9 @@ var CustomStyle = (function CustomStyleClosure() {
   // in some versions of IE9 it is critical that ms appear in this list
   // before Moz
   var prefixes = ['ms', 'Moz', 'Webkit', 'O'];
-  var _cache = { };
+  var _cache = {};
 
-  function CustomStyle() {
-  }
+  function CustomStyle() {}
 
   CustomStyle.getProp = function get(propName, element) {
     // check cache only when no element is given
@@ -60,8 +59,9 @@ var CustomStyle = (function CustomStyleClosure() {
 
   CustomStyle.setProp = function set(propName, element, str) {
     var prop = this.getProp(propName);
-    if (prop != 'undefined')
+    if (prop != 'undefined') {
       element.style[prop] = str;
+    }
   };
 
   return CustomStyle;
@@ -247,11 +247,13 @@ var Cache = function cacheCache(size) {
   var data = [];
   this.push = function cachePush(view) {
     var i = data.indexOf(view);
-    if (i >= 0)
+    if (i >= 0) {
       data.splice(i);
+    }
     data.push(view);
-    if (data.length > size)
+    if (data.length > size) {
       data.shift().destroy();
+    }
   };
 };
 
