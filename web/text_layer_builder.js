@@ -41,12 +41,12 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
 
-  if(typeof PDFFindController === 'undefined') {
-      window.PDFFindController = null;
+  if (typeof PDFFindController === 'undefined') {
+    window.PDFFindController = null;
   }
 
-  if(typeof this.lastScrollSource === 'undefined') {
-      this.lastScrollSource = null;
+  if (typeof this.lastScrollSource === 'undefined') {
+    this.lastScrollSource = null;
   }
 
   this.beginLayout = function textLayerBuilderBeginLayout() {
@@ -67,8 +67,9 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     // No point in rendering so many divs as it'd make the browser unusable
     // even after the divs are rendered
     var MAX_TEXT_DIVS_TO_RENDER = 100000;
-    if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER)
+    if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER) {
       return;
+    }
 
     for (var i = 0, ii = textDivs.length; i < ii; i++) {
       var textDiv = textDivs[i];
@@ -100,16 +101,17 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     // run it right away
     var RENDER_DELAY = 200; // in ms
     var self = this;
-    var lastScroll = this.lastScrollSource === null ?
-        0 : this.lastScrollSource.lastScroll;
+    var lastScroll = (this.lastScrollSource === null ?
+                      0 : this.lastScrollSource.lastScroll);
 
     if (Date.now() - lastScroll > RENDER_DELAY) {
       // Render right away
       this.renderLayer();
     } else {
       // Schedule
-      if (this.renderTimer)
+      if (this.renderTimer) {
         clearTimeout(this.renderTimer);
+      }
       this.renderTimer = setTimeout(function() {
         self.setupRenderLayoutTimer();
       }, RENDER_DELAY);
@@ -127,8 +129,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = geom.fontFamily;
-    var fontAscent = geom.ascent ? geom.ascent * fontHeight :
-      geom.descent ? (1 + geom.descent) * fontHeight : fontHeight;
+    var fontAscent = (geom.ascent ? geom.ascent * fontHeight :
+      (geom.descent ? (1 + geom.descent) * fontHeight : fontHeight));
     textDiv.style.left = (geom.x + (fontAscent * Math.sin(geom.angle))) + 'px';
     textDiv.style.top = (geom.y - (fontAscent * Math.cos(geom.angle))) + 'px';
 
@@ -140,8 +142,9 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.insertDivContent = function textLayerUpdateTextContent() {
     // Only set the content of the divs once layout has finished, the content
     // for the divs is available and content is not yet set on the divs.
-    if (!this.layoutDone || this.divContentDone || !this.textContent)
+    if (!this.layoutDone || this.divContentDone || !this.textContent) {
       return;
+    }
 
     this.divContentDone = true;
 
@@ -180,8 +183,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     var iIndex = 0;
     var bidiTexts = this.textContent;
     var end = bidiTexts.length - 1;
-    var queryLen = PDFFindController === null ?
-        0 : PDFFindController.state.query.length;
+    var queryLen = (PDFFindController === null ?
+                    0 : PDFFindController.state.query.length);
 
     var lastDivIdx = -1;
     var pos;
@@ -240,14 +243,14 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     var bidiTexts = this.textContent;
     var textDivs = this.textDivs;
     var prevEnd = null;
-    var isSelectedPage = PDFFindController === null ?
-        false : (this.pageIdx === PDFFindController.selected.pageIdx);
+    var isSelectedPage = (PDFFindController === null ?
+      false : (this.pageIdx === PDFFindController.selected.pageIdx));
 
-    var selectedMatchIdx = PDFFindController === null ?
-        -1 : PDFFindController.selected.matchIdx;
+    var selectedMatchIdx = (PDFFindController === null ?
+                            -1 : PDFFindController.selected.matchIdx);
 
-    var highlightAll = PDFFindController === null ?
-        false : PDFFindController.state.highlightAll;
+    var highlightAll = (PDFFindController === null ?
+                        false : PDFFindController.state.highlightAll);
 
     var infty = {
       divIdx: -1,
@@ -346,8 +349,9 @@ var TextLayerBuilder = function textLayerBuilder(options) {
 
   this.updateMatches = function textLayerUpdateMatches() {
     // Only show matches, once all rendering is done.
-    if (!this.renderingDone)
+    if (!this.renderingDone) {
       return;
+    }
 
     // Clear out all matches.
     var matches = this.matches;
@@ -367,14 +371,14 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       clearedUntilDivIdx = match.end.divIdx + 1;
     }
 
-    if (PDFFindController === null || !PDFFindController.active)
+    if (PDFFindController === null || !PDFFindController.active) {
       return;
+    }
 
     // Convert the matches on the page controller into the match format used
     // for the textLayer.
-    this.matches = matches =
-      this.convertMatches(PDFFindController === null ?
-          [] : (PDFFindController.pageMatches[this.pageIdx] || []));
+    this.matches = matches = (this.convertMatches(PDFFindController === null ?
+      [] : (PDFFindController.pageMatches[this.pageIdx] || [])));
 
     this.renderMatches(this.matches);
   };
