@@ -31,15 +31,17 @@ function getViewerURL(pdf_url) {
  * @return {boolean} True if the PDF file should be downloaded.
  */
 function isPdfDownloadable(details) {
-  if (details.url.indexOf('pdfjs.action=download') >= 0)
+  if (details.url.indexOf('pdfjs.action=download') >= 0) {
     return true;
+  }
   // Display the PDF viewer regardless of the Content-Disposition header
   // if the file is displayed in the main frame.
-  if (details.type == 'main_frame')
+  if (details.type == 'main_frame') {
     return false;
-  var cdHeader = details.responseHeaders &&
-    getHeaderFromHeaders(details.responseHeaders, 'content-disposition');
-  return cdHeader && /^attachment/i.test(cdHeader.value);
+  }
+  var cdHeader = (details.responseHeaders &&
+    getHeaderFromHeaders(details.responseHeaders, 'content-disposition'));
+  return (cdHeader && /^attachment/i.test(cdHeader.value));
 }
 
 /**
@@ -67,9 +69,9 @@ function isPdfFile(details) {
   var header = getHeaderFromHeaders(details.responseHeaders, 'content-type');
   if (header) {
     var headerValue = header.value.toLowerCase().split(';',1)[0].trim();
-    return headerValue === 'application/pdf' ||
-      headerValue === 'application/octet-stream' &&
-      details.url.toLowerCase().indexOf('.pdf') > 0;
+    return (headerValue === 'application/pdf' ||
+            headerValue === 'application/octet-stream' &&
+            details.url.toLowerCase().indexOf('.pdf') > 0);
   }
 }
 
@@ -83,16 +85,16 @@ function isPdfFile(details) {
  *                            have been modified, undefined otherwise.
  */
 function getHeadersWithContentDispositionAttachment(details) {
-    var headers = details.responseHeaders;
-    var cdHeader = getHeaderFromHeaders(headers, 'content-disposition');
-    if (!cdHeader) {
-      cdHeader = {name: 'Content-Disposition'};
-      headers.push(cdHeader);
-    }
-    if (!/^attachment/i.test(cdHeader.value)) {
-      cdHeader.value = 'attachment' + cdHeader.value.replace(/^[^;]+/i, '');
-      return { responseHeaders: headers };
-    }
+  var headers = details.responseHeaders;
+  var cdHeader = getHeaderFromHeaders(headers, 'content-disposition');
+  if (!cdHeader) {
+    cdHeader = {name: 'Content-Disposition'};
+    headers.push(cdHeader);
+  }
+  if (!/^attachment/i.test(cdHeader.value)) {
+    cdHeader.value = 'attachment' + cdHeader.value.replace(/^[^;]+/i, '');
+    return { responseHeaders: headers };
+  }
 }
 
 chrome.webRequest.onHeadersReceived.addListener(
@@ -101,9 +103,9 @@ chrome.webRequest.onHeadersReceived.addListener(
       // Don't intercept POST requests until http://crbug.com/104058 is fixed.
       return;
     }
-    if (!isPdfFile(details))
+    if (!isPdfFile(details)) {
       return;
-
+    }
     if (isPdfDownloadable(details)) {
       // Force download by ensuring that Content-Disposition: attachment is set
       return getHeadersWithContentDispositionAttachment(details);
@@ -172,8 +174,9 @@ chrome.webRequest.onHeadersReceived.addListener(
 
 chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
-    if (isPdfDownloadable(details))
+    if (isPdfDownloadable(details)) {
       return;
+    }
 
     // NOTE: The manifest file has declared an empty content script
     // at file://*/* to make sure that the viewer can load the PDF file
