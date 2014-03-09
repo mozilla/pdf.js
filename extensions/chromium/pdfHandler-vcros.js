@@ -29,7 +29,8 @@ limitations under the License.
   /**
    * Invoked when "Open with PDF Viewer" is chosen in the File browser.
    *
-   * @param {String} id      File browser action ID as specified in manifest.json
+   * @param {String} id      File browser action ID as specified in
+   *                         manifest.json
    * @param {Object} details Object of type FileHandlerExecuteEventDetails
    */
   function onExecuteFileBrowserHandler(id, details) {
