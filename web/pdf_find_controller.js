@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals PDFFindBar, PDFJS, FindStates, FirefoxCom, Promise */
 
 'use strict';
-
-/* globals PDFFindBar, PDFJS, FindStates, FirefoxCom, Promise */
 
 /**
  * Provides a "search" or "find" functionality for the PDF.
@@ -157,8 +156,9 @@ var PDFFindController = {
           self.pageContents.push(str);
 
           extractTextPromisesResolves[pageIndex](pageIndex);
-          if ((pageIndex + 1) < self.pdfPageSource.pages.length)
+          if ((pageIndex + 1) < self.pdfPageSource.pages.length) {
             extractPageText(pageIndex + 1);
+          }
         }
       );
     }

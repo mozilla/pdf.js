@@ -26,7 +26,6 @@
  * searching is done by PDFFindController
  */
 var PDFFindBar = {
-
   opened: false,
   bar: null,
   toggleButton: null,
@@ -40,7 +39,7 @@ var PDFFindBar = {
 
   initialize: function(options) {
     if(typeof PDFFindController === 'undefined' || PDFFindController === null) {
-        throw 'PDFFindBar cannot be initialized ' +
+      throw 'PDFFindBar cannot be initialized ' +
             'without a PDFFindController instance.';
     }
 
@@ -155,8 +154,9 @@ var PDFFindBar = {
   },
 
   close: function() {
-    if (!this.opened) return;
-
+    if (!this.opened) {
+      return;
+    }
     this.opened = false;
     this.toggleButton.classList.remove('toggled');
     this.bar.classList.add('hidden');
