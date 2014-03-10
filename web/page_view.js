@@ -306,10 +306,13 @@ var PageView = function pageView(container, id, scale,
         CustomStyle.setProp('transformOrigin', element, transformOriginStr);
 
         if (data.subtype === 'Link' && !data.url) {
-          if (data.action) {
-            bindNamedAction(element, data.action);
-          } else {
-            bindLink(element, ('dest' in data) ? data.dest : null);
+          var link = element.getElementsByTagName('a')[0];
+          if (link) {
+            if (data.action) {
+              bindNamedAction(link, data.action);
+            } else {
+              bindLink(link, ('dest' in data) ? data.dest : null);
+            }
           }
         }
 
@@ -329,7 +332,12 @@ var PageView = function pageView(container, id, scale,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
-    if (PresentationMode.active) { // Avoid breaking presentation mode.
+    if (PresentationMode.active) {
+      if (PDFView.page !== this.id) {
+        // Avoid breaking PDFView.getVisiblePages in presentation mode.
+        PDFView.page = this.id;
+        return;
+      }
       dest = null;
       PDFView.setScale(PDFView.currentScaleValue, true, true);
     }
@@ -504,11 +512,6 @@ var PageView = function pageView(container, id, scale,
       textLayerDiv.dataset._scaleY = outputScale.sy;
     }
 
-//#if (FIREFOX || MOZCENTRAL)
-//  // Checking if document fonts are used only once
-//  var checkIfDocumentFontsUsed = !PDFView.pdfDocument.embeddedFontsUsed;
-//#endif
-
     // Rendering area
 
     var self = this;
@@ -537,12 +540,6 @@ var PageView = function pageView(container, id, scale,
       }
 
 //#if (FIREFOX || MOZCENTRAL)
-//    if (checkIfDocumentFontsUsed && PDFView.pdfDocument.embeddedFontsUsed &&
-//        PDFJS.disableFontFace) {
-//      console.error(mozL10n.get('web_fonts_disabled', null,
-//        'Web fonts are disabled: unable to use embedded PDF fonts.'));
-//      PDFView.fallback();
-//    }
 //    if (self.textLayer && self.textLayer.textDivs &&
 //        self.textLayer.textDivs.length > 0 &&
 //        !PDFView.supportsDocumentColors) {
@@ -585,6 +582,7 @@ var PageView = function pageView(container, id, scale,
       canvasContext: ctx,
       viewport: this.viewport,
       textLayer: textLayer,
+      // intent: 'default', // === 'display'
       continueCallback: function pdfViewcContinueCallback(cont) {
         if (PDFView.highestPriorityPage !== 'page' + self.id) {
           self.renderingState = RenderingStates.PAUSED;
@@ -656,13 +654,13 @@ var PageView = function pageView(container, id, scale,
 
       var renderContext = {
         canvasContext: ctx,
-        viewport: viewport
+        viewport: viewport,
+        intent: 'print'
       };
 
       pdfPage.render(renderContext).promise.then(function() {
         // Tell the printEngine that rendering this canvas/page has finished.
         obj.done();
-        self.pdfPage.destroy();
       }, function(error) {
         console.error(error);
         // Tell the printEngine that rendering this canvas/page has failed.
@@ -672,7 +670,6 @@ var PageView = function pageView(container, id, scale,
         } else {
           obj.done();
         }
-        self.pdfPage.destroy();
       });
     };
   };

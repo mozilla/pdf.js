@@ -115,7 +115,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
       },
       readBit: function ArithmeticDecoder_readBit(contexts, pos) {
-        // contexts are packed into 1 byte: 
+        // contexts are packed into 1 byte:
         // highest 7 bits carry cx.index, lowest bit carries cx.mps
         var cx_index = contexts[pos] >> 1, cx_mps = contexts[pos] & 1;
         var qeTableIcx = QeTable[cx_index];
@@ -368,13 +368,39 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     var useskip = !!skip;
     var template = CodingTemplates[templateIndex].concat(at);
+
+    // Sorting is non-standard, and it is not required. But sorting increases
+    // the number of template bits that can be reused from the previous
+    // contextLabel in the main loop.
+    template.sort(function (a, b) {
+      return (a.y - b.y) || (a.x - b.x);
+    });
+
     var templateLength = template.length;
-    var templateX = new Int32Array(templateLength);
-    var templateY = new Int32Array(templateLength);
+    var templateX = new Int8Array(templateLength);
+    var templateY = new Int8Array(templateLength);
+    var changingTemplateEntries = [];
+    var reuseMask = 0, minX = 0, maxX = 0, minY = 0;
+
     for (var k = 0; k < templateLength; k++) {
       templateX[k] = template[k].x;
       templateY[k] = template[k].y;
+      minX = Math.min(minX, template[k].x);
+      maxX = Math.max(maxX, template[k].x);
+      minY = Math.min(minY, template[k].y);
+      // Check if the template pixel appears in two consecutive context labels,
+      // so it can be reused. Otherwise, we add it to the list of changing
+      // template entries.
+      if (k < templateLength - 1 &&
+          template[k].y === template[k + 1].y &&
+          template[k].x === template[k + 1].x - 1) {
+        reuseMask |= 1 << (templateLength - 1 - k);
+      } else {
+        changingTemplateEntries.push(k);
+      }
     }
+    changingTemplateEntries = new Uint8Array(changingTemplateEntries);
+    var changingEntriesLength = changingTemplateEntries.length;
 
     var pseudoPixelContext = ReusedContexts[templateIndex];
     var bitmap = [];
@@ -382,7 +408,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var decoder = decodingContext.decoder;
     var contexts = decodingContext.contextCache.getContexts('GB');
 
-    var ltp = 0;
+    var ltp = 0, c, j, i0, j0, k, contextLabel = 0;
     for (var i = 0; i < height; i++) {
       if (prediction) {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
@@ -394,18 +420,33 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       }
       var row = new Uint8Array(width);
       bitmap.push(row);
-      for (var j = 0; j < width; j++) {
+      for (j = 0; j < width; j++) {
         if (useskip && skip[i][j]) {
           row[j] = 0;
           continue;
         }
-        var contextLabel = 0;
-        for (var k = 0; k < templateLength; k++) {
-          var i0 = i + templateY[k], j0 = j + templateX[k];
-          if (i0 < 0 || j0 < 0 || j0 >= width)
-            contextLabel <<= 1; // out of bound pixel
-          else
-            contextLabel = (contextLabel << 1) | bitmap[i0][j0];
+        // Are we in the middle of a scanline, so we can reuse contextLabel
+        // bits?
+        if (i + minY > 0 && j + minX >= 0 && j + maxX < width) {
+          // If yes, we can just shift the bits that are reusable and only
+          // fetch the remaining ones.
+          contextLabel = (contextLabel << 1) & reuseMask;
+          for (c = 0; c < changingEntriesLength; c++) {
+            k = changingTemplateEntries[c];
+            i0 = i + templateY[k];
+            j0 = j + templateX[k];
+            contextLabel |= bitmap[i0][j0] << (templateLength - 1 - k);
+          }
+        } else {
+          // compute the contextLabel from scratch
+          contextLabel = 0;
+          for (k = 0; k < templateLength; k++) {
+            i0 = i + templateY[k];
+            j0 = j + templateX[k];
+            if (i0 >= 0 && j0 >= 0 && j0 < width) {
+              contextLabel |= bitmap[i0][j0] << (templateLength - 1 - k);
+            }
+          }
         }
         var pixel = decoder.readBit(contexts, contextLabel);
         row[j] = pixel;
@@ -607,7 +648,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
         if (transposed) {
-          // Place Symbol Bitmap from T1,S1  
+          // Place Symbol Bitmap from T1,S1
           for (var s2 = 0; s2 < symbolHeight; s2++) {
             var row = bitmap[offsetS + s2];
             if (!row) {
@@ -994,9 +1035,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       this.currentPageInfo = info;
       var rowSize = (info.width + 7) >> 3;
       var buffer = new Uint8Array(rowSize * info.height);
-      var fill = info.defaultPixelValue ? 0xFF : 0;
-      for (var i = 0, ii = buffer.length; i < ii; i++)
-        buffer[i] = fill;
+      // The contents of ArrayBuffers are initialized to 0.
+      // Fill the buffer with 0xFF only if info.defaultPixelValue is set
+      if (info.defaultPixelValue) {
+        for (var i = 0, ii = buffer.length; i < ii; i++) {
+          buffer[i] = 0xFF;
+        }
+      }
       this.buffer = buffer;
     },
     drawBitmap: function SimpleSegmentVisitor_drawBitmap(regionInfo, bitmap) {

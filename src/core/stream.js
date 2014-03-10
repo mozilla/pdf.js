@@ -108,15 +108,23 @@ var DecodeStream = (function DecodeStreamClosure() {
   DecodeStream.prototype = {
     ensureBuffer: function DecodeStream_ensureBuffer(requested) {
       var buffer = this.buffer;
-      var current = buffer ? buffer.byteLength : 0;
-      if (requested < current)
-        return buffer;
+      var current;
+      if (buffer) {
+        current = buffer.byteLength;
+        if (requested <= current) {
+          return buffer;
+        }
+      } else {
+        current = 0;
+      }
       var size = 512;
-      while (size < requested)
-        size <<= 1;
+      while (size < requested) {
+        size *= 2;
+      }
       var buffer2 = new Uint8Array(size);
-      for (var i = 0; i < current; ++i)
+      for (var i = 0; i < current; ++i) {
         buffer2[i] = buffer[i];
+      }
       return (this.buffer = buffer2);
     },
     getByte: function DecodeStream_getByte() {
@@ -184,45 +192,6 @@ var DecodeStream = (function DecodeStreamClosure() {
   };
 
   return DecodeStream;
-})();
-
-var FakeStream = (function FakeStreamClosure() {
-  function FakeStream(stream) {
-    this.dict = stream.dict;
-    DecodeStream.call(this);
-  }
-
-  FakeStream.prototype = Object.create(DecodeStream.prototype);
-  FakeStream.prototype.readBlock = function FakeStream_readBlock() {
-    var bufferLength = this.bufferLength;
-    bufferLength += 1024;
-    var buffer = this.ensureBuffer(bufferLength);
-    this.bufferLength = bufferLength;
-  };
-
-  FakeStream.prototype.getBytes = function FakeStream_getBytes(length) {
-    var end, pos = this.pos;
-
-    if (length) {
-      this.ensureBuffer(pos + length);
-      end = pos + length;
-
-      while (!this.eof && this.bufferLength < end)
-        this.readBlock();
-
-      var bufEnd = this.bufferLength;
-      if (end > bufEnd)
-        end = bufEnd;
-    } else {
-      this.eof = true;
-      end = this.bufferLength;
-    }
-
-    this.pos = end;
-    return this.buffer.subarray(pos, end);
-  };
-
-  return FakeStream;
 })();
 
 var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
@@ -1688,7 +1657,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     this.inputBits = 0;
     this.inputBuf = 0;
     this.outputBits = 0;
-    this.buf = EOF;
 
     var code1;
     while ((code1 = this.lookBits(12)) === 0) {
@@ -1710,7 +1678,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   CCITTFaxStream.prototype.readBlock = function CCITTFaxStream_readBlock() {
     while (!this.eof) {
       var c = this.lookChar();
-      this.buf = EOF;
       this.ensureBuffer(this.bufferLength + 1);
       this.buffer[this.bufferLength++] = c;
     }
@@ -1766,9 +1733,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
   };
 
   CCITTFaxStream.prototype.lookChar = function CCITTFaxStream_lookChar() {
-    if (this.buf != EOF)
-      return this.buf;
-
     var refLine = this.refLine;
     var codingLine = this.codingLine;
     var columns = this.columns;
@@ -2014,8 +1978,9 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       this.row++;
     }
 
+    var c;
     if (this.outputBits >= 8) {
-      this.buf = (this.codingPos & 1) ? 0 : 0xFF;
+      c = (this.codingPos & 1) ? 0 : 0xFF;
       this.outputBits -= 8;
       if (this.outputBits === 0 && codingLine[this.codingPos] < columns) {
         this.codingPos++;
@@ -2024,19 +1989,19 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       }
     } else {
       var bits = 8;
-      this.buf = 0;
+      c = 0;
       do {
         if (this.outputBits > bits) {
-          this.buf <<= bits;
+          c <<= bits;
           if (!(this.codingPos & 1)) {
-            this.buf |= 0xFF >> (8 - bits);
+            c |= 0xFF >> (8 - bits);
           }
           this.outputBits -= bits;
           bits = 0;
         } else {
-          this.buf <<= this.outputBits;
+          c <<= this.outputBits;
           if (!(this.codingPos & 1)) {
-            this.buf |= 0xFF >> (8 - this.outputBits);
+            c |= 0xFF >> (8 - this.outputBits);
           }
           bits -= this.outputBits;
           this.outputBits = 0;
@@ -2045,16 +2010,16 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
             this.outputBits = (codingLine[this.codingPos] -
                                codingLine[this.codingPos - 1]);
           } else if (bits > 0) {
-            this.buf <<= bits;
+            c <<= bits;
             bits = 0;
           }
         }
       } while (bits);
     }
     if (this.black) {
-      this.buf ^= 0xFF;
+      c ^= 0xFF;
     }
-    return this.buf;
+    return c;
   };
 
   // This functions returns the code found from the table.

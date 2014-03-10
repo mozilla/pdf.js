@@ -1321,8 +1321,16 @@ var PDFView = {
   },
 
   getVisiblePages: function pdfViewGetVisiblePages() {
-    return this.getVisibleElements(this.container, this.pages,
-                                   !PresentationMode.active);
+    if (!PresentationMode.active) {
+      return this.getVisibleElements(this.container, this.pages, true);
+    } else {
+      // The algorithm in getVisibleElements doesn't work in all browsers and
+      // configurations when presentation mode is active.
+      var visible = [];
+      var currentPage = this.pages[this.page - 1];
+      visible.push({ id: currentPage.id, view: currentPage });
+      return { first: currentPage, last: currentPage, views: visible };
+    }
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
@@ -1584,12 +1592,12 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //})();
 //#endif
 
-document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
+function webViewerLoad(evt) {
   PDFView.initialize();
 
 //#if (GENERIC || B2G)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
-  var file = params.file || DEFAULT_URL;
+  var file = 'file' in params ? params.file : DEFAULT_URL;
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
 //var file = window.location.href.split('#')[0];
@@ -1658,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
   }
 
 //#if !(FIREFOX || MOZCENTRAL)
-  var locale = navigator.language;
+  var locale = PDFJS.locale || navigator.language;
   if ('locale' in hashParams)
     locale = hashParams['locale'];
   mozL10n.setLanguage(locale);
@@ -1666,6 +1674,8 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#if (FIREFOX || MOZCENTRAL)
 //if (!PDFView.supportsDocumentFonts) {
 //  PDFJS.disableFontFace = true;
+//  console.warn(mozL10n.get('web_fonts_disabled', null,
+//    'Web fonts are disabled: unable to use embedded PDF fonts.'));
 //}
 //#endif
 
@@ -1805,7 +1815,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //#endif
 
 //#if !B2G && !CHROME
-  PDFView.open(file, 0);
+  if (file) {
+    PDFView.open(file, 0);
+  }
 //#endif
 
 //#if CHROME
@@ -1817,7 +1829,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //    var streamUrl = response.streamUrl;
 //    if (streamUrl) {
 //      console.log('Found data stream for ' + file);
-//      PDFView.open(streamUrl, 0);
+//      PDFView.open(streamUrl, 0, undefined, undefined, {
+//        length: response.contentLength
+//      });
 //      PDFView.setTitleUsingUrl(file);
 //      return;
 //    }
@@ -1835,7 +1849,9 @@ document.addEventListener('DOMContentLoaded', function webViewerLoad(evt) {
 //  PDFView.open(file, 0);
 //});
 //#endif
-}, true);
+}
+
+document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 
 function updateViewarea() {
 
@@ -1869,9 +1885,11 @@ function updateViewarea() {
     currentId = visiblePages[0].id;
   }
 
-  updateViewarea.inProgress = true; // used in "set page"
-  PDFView.page = currentId;
-  updateViewarea.inProgress = false;
+  if (!PresentationMode.active) {
+    updateViewarea.inProgress = true; // used in "set page"
+    PDFView.page = currentId;
+    updateViewarea.inProgress = false;
+  }
 
   var currentScale = PDFView.currentScale;
   var currentScaleValue = PDFView.currentScaleValue;
@@ -2133,6 +2151,18 @@ window.addEventListener('keydown', function keydown(evt) {
     }
   }
 
+//#if !(FIREFOX || MOZCENTRAL)
+  // CTRL or META without shift
+  if (cmd === 1 || cmd === 8) {
+    switch (evt.keyCode) {
+      case 83: // s
+        PDFView.download();
+        handled = true;
+        break;
+    }
+  }
+//#endif
+
   // CTRL+ALT or Option+Command
   if (cmd === 3 || cmd === 10) {
     switch (evt.keyCode) {
@@ -2156,25 +2186,15 @@ window.addEventListener('keydown', function keydown(evt) {
   // Some shortcuts should not get handled if a control/input element
   // is selected.
   var curElement = document.activeElement || document.querySelector(':focus');
-  if (curElement && (curElement.tagName.toUpperCase() === 'INPUT' ||
-                     curElement.tagName.toUpperCase() === 'TEXTAREA' ||
-                     curElement.tagName.toUpperCase() === 'SELECT')) {
+  var curElementTagName = curElement && curElement.tagName.toUpperCase();
+  if (curElementTagName === 'INPUT' ||
+      curElementTagName === 'TEXTAREA' ||
+      curElementTagName === 'SELECT') {
     // Make sure that the secondary toolbar is closed when Escape is pressed.
     if (evt.keyCode !== 27) { // 'Esc'
       return;
     }
   }
-  var controlsElement = document.getElementById('toolbar');
-  while (curElement) {
-    if (curElement === controlsElement && !PresentationMode.active)
-      return; // ignoring if the 'toolbar' element is focused
-    curElement = curElement.parentNode;
-  }
-//#if (FIREFOX || MOZCENTRAL)
-//// Workaround for issue in Firefox, that prevents scroll keys from working
-//// when elements with 'tabindex' are focused.
-//PDFView.container.blur();
-//#endif
 
   if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
@@ -2266,6 +2286,30 @@ window.addEventListener('keydown', function keydown(evt) {
       case 82: // 'r'
         PDFView.rotatePages(-90);
         break;
+    }
+  }
+
+  if (!handled && !PresentationMode.active) {
+    // 33=Page Up  34=Page Down  35=End    36=Home
+    // 37=Left     38=Up         39=Right  40=Down
+    if (evt.keyCode >= 33 && evt.keyCode <= 40 &&
+        !PDFView.container.contains(curElement)) {
+      // The page container is not focused, but a page navigation key has been
+      // pressed. Change the focus to the viewer container to make sure that
+      // navigation by keyboard works as expected.
+      PDFView.container.focus();
+    }
+    // 32=Spacebar
+    if (evt.keyCode === 32 && curElementTagName !== 'BUTTON') {
+//#if (FIREFOX || MOZCENTRAL)
+//    // Workaround for issue in Firefox, that prevents scroll keys from
+//    // working when elements with 'tabindex' are focused. (#3498)
+//    PDFView.container.blur();
+//#else
+      if (!PDFView.container.contains(curElement)) {
+        PDFView.container.focus();
+      }
+//#endif
     }
   }
 

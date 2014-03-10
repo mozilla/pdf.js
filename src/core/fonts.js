@@ -599,6 +599,15 @@ function mapPrivateUseChars(code) {
     case 0xF8E9: // copyrightsans
     case 0xF6D9: // copyrightserif
       return 0x00A9; // copyright
+
+    case 0xF8E8: // registersans
+    case 0xF6DA: // registerserif
+      return 0x00AE; // registered
+
+    case 0xF8EA: // trademarksans
+    case 0xF6DB: // trademarkserif
+      return 0x2122; // trademark
+
     default:
       return code;
   }
@@ -2382,11 +2391,11 @@ var Font = (function FontClosure() {
   }
 
   function arrayToString(arr) {
-    var str = '';
-    for (var i = 0, ii = arr.length; i < ii; ++i)
-      str += String.fromCharCode(arr[i]);
-
-    return str;
+    var strBuf = [];
+    for (var i = 0, ii = arr.length; i < ii; ++i) {
+      strBuf.push(String.fromCharCode(arr[i]));
+    }
+    return strBuf.join('');
   }
 
   function int16(bytes) {
@@ -2801,10 +2810,11 @@ var Font = (function FontClosure() {
     for (var i = 0, ii = strings.length; i < ii; i++) {
       var str = proto[1][i] || strings[i];
 
-      var strUnicode = '';
-      for (var j = 0, jj = str.length; j < jj; j++)
-        strUnicode += string16(str.charCodeAt(j));
-      stringsUnicode.push(strUnicode);
+      var strBufUnicode = [];
+      for (var j = 0, jj = str.length; j < jj; j++) {
+        strBufUnicode.push(string16(str.charCodeAt(j)));
+      }
+      stringsUnicode.push(strBufUnicode.join(''));
     }
 
     var names = [strings, stringsUnicode];
@@ -3705,6 +3715,11 @@ var Font = (function FontClosure() {
 
       function checkInvalidFunctions(ttContext, maxFunctionDefs) {
         if (ttContext.tooComplexToFollowFunctions) {
+          return;
+        }
+        if (ttContext.functionsDefined.length > maxFunctionDefs) {
+          warn('TT: more functions defined than expected');
+          ttContext.hintsValid = false;
           return;
         }
         for (var j = 0, jj = ttContext.functionsUsed.length; j < jj; j++) {

@@ -2,7 +2,7 @@
   "name": "pdf.js",
   "version": "0.8.0",
   "dependencies": {
-    "jshint": "1.1.x"
+    "jshint": "2.4.x"
   },
   "scripts": {
     "test": "node make lint"

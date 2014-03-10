@@ -2,7 +2,6 @@
   // Environments
   "browser": true,
   "devel": true,
-  "es5": true,
   "worker": true,
 
   // Enforcing

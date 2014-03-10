@@ -166,7 +166,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         onProgress: function onProgress(evt) {
           handler.send('DocProgress', {
             loaded: evt.loaded,
-            total: evt.lengthComputable ? evt.total : void(0)
+            total: evt.lengthComputable ? evt.total : source.length
           });
         }
       });
@@ -334,7 +334,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
         // Pre compile the pdf page and fetch the fonts/images.
-        page.getOperatorList(handler).then(function(operatorList) {
+        page.getOperatorList(handler, data.intent).then(function(operatorList) {
 
           info('page=' + pageNum + ' - getOperatorList: time=' +
                (Date.now() - start) + 'ms, len=' + operatorList.fnArray.length);
@@ -366,7 +366,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
           handler.send('PageError', {
             pageNum: pageNum,
-            error: wrappedException
+            error: wrappedException,
+            intent: data.intent
           });
         });
       });

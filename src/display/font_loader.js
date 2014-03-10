@@ -24,15 +24,16 @@ var FontLoader = {
   insertRule: function fontLoaderInsertRule(rule) {
     var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
     if (!styleElement) {
-        styleElement = document.createElement('style');
-        styleElement.id = 'PDFJS_FONT_STYLE_TAG';
-        document.documentElement.getElementsByTagName('head')[0].appendChild(
-          styleElement);
+      styleElement = document.createElement('style');
+      styleElement.id = 'PDFJS_FONT_STYLE_TAG';
+      document.documentElement.getElementsByTagName('head')[0].appendChild(
+        styleElement);
     }
 
     var styleSheet = styleElement.sheet;
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
   },
+
   clear: function fontLoaderClear() {
     var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
     if (styleElement) {
@@ -77,15 +78,17 @@ var FontLoader = {
   },
 
   isSyncFontLoadingSupported: (function detectSyncFontLoadingSupport() {
-    if (isWorker)
+    if (isWorker) {
       return false;
+    }
 
     // User agent string sniffing is bad, but there is no reliable way to tell
     // if font is fully loaded and ready to be used with canvas.
     var userAgent = window.navigator.userAgent;
     var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
-    if (m && m[1] >= 14)
+    if (m && m[1] >= 14) {
       return true;
+    }
     // TODO other browsers
     return false;
   })(),
@@ -258,8 +261,9 @@ var FontLoader = {
 //
 //  for (var i = 0, ii = fonts.length; i < ii; i++) {
 //    var font = fonts[i];
-//    if (font.attached)
+//    if (font.attached) {
 //      continue;
+//    }
 //
 //    font.attached = true;
 //    font.bindDOM()
@@ -284,8 +288,9 @@ var FontFace = (function FontFaceClosure() {
   }
   FontFace.prototype = {
     bindDOM: function FontFace_bindDOM() {
-      if (!this.data)
+      if (!this.data) {
         return null;
+      }
 
       if (PDFJS.disableFontFace) {
         this.disableFontFace = true;
@@ -299,15 +304,16 @@ var FontFace = (function FontFaceClosure() {
       var url = ('url(data:' + this.mimetype + ';base64,' +
                  window.btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
-
       FontLoader.insertRule(rule);
 
       if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
-          globalScope['FontInspector'].enabled)
+          globalScope['FontInspector'].enabled) {
         globalScope['FontInspector'].fontAdded(this, url);
+      }
 
       return rule;
     },
+
     getPathGenerator: function (objs, character) {
       if (!(character in this.compiledGlyphs)) {
         var js = objs.get(this.loadedName + '_path_' + character);

@@ -16,7 +16,7 @@
  */
 /* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error,
            ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
-           info, isArray, isCmd, isDict, isEOF, isName, isNum,
+           ImageKind, info, isArray, isCmd, isDict, isEOF, isName, isNum,
            isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
            getTilingPatternIR, warn, Util, Promise, LegacyPromise,
@@ -87,8 +87,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                  xobj, smask,
                                                                  operatorList,
                                                                  state) {
-      var self = this;
-
       var matrix = xobj.dict.get('Matrix');
       var bbox = xobj.dict.get('BBox');
       var group = xobj.dict.get('Group');
@@ -166,7 +164,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         var imageObj = new PDFImage(this.xref, resources, image,
                                     inline, null, null);
-        var imgData = imageObj.createImageData();
+        // We force the use of RGBA_32BPP images here, because we can't handle
+        // any other kind.
+        var imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
@@ -189,7 +189,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
 
       PDFImage.buildImage(function(imageObj) {
-          var imgData = imageObj.createImageData();
+          var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
                             null, [imgData.data.buffer]);
         }, self.handler, self.xref, resources, image, inline);
@@ -776,10 +776,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               dir: bidiResult.dir
             };
             var renderParams = textState.calcRenderParams(preprocessor.ctm);
-            bidiText.x = renderParams.renderMatrix[4] - (textState.fontSize *
-                           renderParams.vScale * Math.sin(renderParams.angle));
-            bidiText.y = renderParams.renderMatrix[5] + (textState.fontSize *
-                           renderParams.vScale * Math.cos(renderParams.angle));
             var fontHeight = textState.fontSize * renderParams.vScale;
             var fontAscent = font.ascent ? font.ascent * fontHeight :
               font.descent ? (1 + font.descent) * fontHeight : fontHeight;
@@ -1104,7 +1100,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // FontDescriptor is only required for Type3 fonts when the document
           // is a tagged pdf. Create a barbebones one to get by.
           descriptor = new Dict();
-          descriptor.set('FontName', new Name(type.name));
+          descriptor.set('FontName', Name.get(type.name));
         } else {
           // Before PDF 1.5 if the font was one of the base 14 fonts, having a
           // FontDescriptor was not required.
@@ -1152,10 +1148,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var baseFont = dict.get('BaseFont');
       // Some bad pdf's have a string as the font name.
       if (isString(fontName)) {
-        fontName = new Name(fontName);
+        fontName = Name.get(fontName);
       }
       if (isString(baseFont)) {
-        baseFont = new Name(baseFont);
+        baseFont = Name.get(baseFont);
       }
 
       if (type.name !== 'Type3') {
@@ -1319,7 +1315,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // replacing queue items
         squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
         argsArray.splice(j, count * 4,
-          [{width: imgWidth, height: imgHeight, kind: 'rgba_32bpp',
+          [{width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
             data: imgData}, map]);
         i = j;
         ii = argsArray.length;
@@ -1380,7 +1376,7 @@ var OperatorList = (function OperatorListClosure() {
     }
 
 
-    function OperatorList(messageHandler, pageIndex) {
+    function OperatorList(intent, messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
     // When there isn't a message handler the fn array needs to be able to grow
     // since we can't flush the operators.
@@ -1390,9 +1386,10 @@ var OperatorList = (function OperatorListClosure() {
       this.fnArray = [];
     }
     this.argsArray = [];
-    this.dependencies = {},
+    this.dependencies = {};
     this.pageIndex = pageIndex;
     this.fnIndex = 0;
+    this.intent = intent;
   }
 
   OperatorList.prototype = {
@@ -1453,7 +1450,8 @@ var OperatorList = (function OperatorListClosure() {
           lastChunk: lastChunk,
           length: this.length
         },
-        pageIndex: this.pageIndex
+        pageIndex: this.pageIndex,
+        intent: this.intent
       }, null, transfers);
       this.dependencies = [];
       this.fnIndex = 0;
@@ -1477,11 +1475,11 @@ var TextState = (function TextStateClosure() {
   TextState.prototype = {
     initialiseTextObj: function TextState_initialiseTextObj() {
       var m = this.textMatrix;
-      m[0] = 1, m[1] = 0, m[2] = 0, m[3] = 1, m[4] = 0, m[5] = 0;
+      m[0] = 1; m[1] = 0; m[2] = 0; m[3] = 1; m[4] = 0; m[5] = 0;
     },
     setTextMatrix: function TextState_setTextMatrix(a, b, c, d, e, f) {
       var m = this.textMatrix;
-      m[0] = a, m[1] = b, m[2] = c, m[3] = d, m[4] = e, m[5] = f;
+      m[0] = a; m[1] = b; m[2] = c; m[3] = d; m[4] = e; m[5] = f;
     },
     translateTextMatrix: function TextState_translateTextMatrix(x, y) {
       var m = this.textMatrix;

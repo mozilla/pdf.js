@@ -111,13 +111,13 @@ function startup(aData, aReason) {
 
   // Load the component and register it.
   pdfStreamConverterUrl = aData.resourceURI.spec +
-                          'components/PdfStreamConverter.js';
+                          'content/PdfStreamConverter.jsm';
   Cu.import(pdfStreamConverterUrl);
   pdfStreamConverterFactory.register(PdfStreamConverter);
 
   if (registerOverlayPreview) {
     pdfRedirectorUrl = aData.resourceURI.spec +
-                       'components/PdfRedirector.js';
+                       'content/PdfRedirector.jsm';
     Cu.import(pdfRedirectorUrl);
     pdfRedirectorFactory.register(PdfRedirector);
 

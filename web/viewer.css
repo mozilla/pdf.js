@@ -1247,14 +1247,7 @@ canvas {
   background-color: white;
 }
 
-.page > a,
-.annotationLayer > a {
-  display: block;
-  position: absolute;
-}
-
-.page > a:hover,
-.annotationLayer > a:hover {
+.annotLink > a:hover {
   opacity: 0.2;
   background: #ff0;
   box-shadow: 0px 2px 10px #ff0;
@@ -1319,29 +1312,49 @@ canvas {
 ::selection { background:rgba(0,0,255,0.3); }
 ::-moz-selection { background:rgba(0,0,255,0.3); }
 
-.annotText > div {
-  z-index: 200;
+.annotationHighlight {
   position: absolute;
-  padding: 0.6em;
-  max-width: 20em;
-  background-color: #FFFF99;
-  box-shadow: 0px 2px 10px #333;
-  border-radius: 7px;
+  border: 2px #FFFF99 solid;
 }
 
 .annotText > img {
   position: absolute;
-  opacity: 0.6;
+  cursor: pointer;
 }
 
-.annotText > img:hover {
-  opacity: 1;
+.annotTextContentWrapper {
+  position: absolute;
+  width: 20em;
 }
 
-.annotText > div > h1 {
-  font-size: 1.2em;
+.annotTextContent {
+  z-index: 200;
+  float: left;
+  max-width: 20em;
+  background-color: #FFFF99;
+  box-shadow: 0px 2px 5px #333;
+  border-radius: 2px;
+  padding: 0.6em;
+  cursor: pointer;
+}
+
+.annotTextContent > h1 {
+  font-size: 1em;
   border-bottom: 1px solid #000000;
-  margin: 0px;
+  padding-bottom: 0.2em;
+}
+
+.annotTextContent > p {
+  padding-top: 0.2em;
+}
+
+.annotLink > a {
+  position: absolute;
+  font-size: 1em;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 #errorWrapper {
@@ -1601,6 +1614,151 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 
 #printContainer {
   display: none;
+}
+
+@media screen and (min-resolution: 2dppx) {
+  /* Rules for Retina screens */
+  .toolbarButton::before {
+    transform: scale(0.5);
+    -webkit-transform: scale(0.5);
+    top: -5px;
+  }
+
+  .secondaryToolbarButton::before {
+    transform: scale(0.5);
+    top: -4px;
+  }
+
+  html[dir='ltr'] .toolbarButton::before,
+  html[dir='rtl'] .toolbarButton::before {
+    left: -1px;
+  }
+
+  html[dir='ltr'] .secondaryToolbarButton::before {
+    left: -2px;
+  }
+  html[dir='rtl'] .secondaryToolbarButton::before {
+    left: 186px;
+  }
+
+  .dropdownToolbarButton {
+    background: url(images/toolbarButton-menuArrows@2x.png) no-repeat;
+    background-size: 7px 16px;
+  }
+  
+  html[dir='ltr'] .toolbarButton#sidebarToggle::before {
+    content: url(images/toolbarButton-sidebarToggle@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton#sidebarToggle::before {
+    content: url(images/toolbarButton-sidebarToggle-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
+    content: url(images/toolbarButton-secondaryToolbarToggle@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
+    content: url(images/toolbarButton-secondaryToolbarToggle-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.findPrevious::before {
+    content: url(images/findbarButton-previous@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.findPrevious::before {
+    content: url(images/findbarButton-previous-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.findNext::before {
+    content: url(images/findbarButton-next@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.findNext::before {
+    content: url(images/findbarButton-next-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.pageUp::before {
+    content: url(images/toolbarButton-pageUp@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.pageUp::before {
+    content: url(images/toolbarButton-pageUp-rtl@2x.png);
+  }
+
+  html[dir='ltr'] .toolbarButton.pageDown::before {
+    content: url(images/toolbarButton-pageDown@2x.png);
+  }
+  html[dir='rtl'] .toolbarButton.pageDown::before {
+    content: url(images/toolbarButton-pageDown-rtl@2x.png);
+  }
+
+  .toolbarButton.zoomIn::before {
+    content: url(images/toolbarButton-zoomIn@2x.png);
+  }
+
+  .toolbarButton.zoomOut::before {
+    content: url(images/toolbarButton-zoomOut@2x.png);
+  }
+
+  .toolbarButton.presentationMode::before,
+  .secondaryToolbarButton.presentationMode::before {
+    content: url(images/toolbarButton-presentationMode@2x.png);
+  }
+
+  .toolbarButton.print::before,
+  .secondaryToolbarButton.print::before {
+    content: url(images/toolbarButton-print@2x.png);
+  }
+
+  .toolbarButton.openFile::before,
+  .secondaryToolbarButton.openFile::before {
+    content: url(images/toolbarButton-openFile@2x.png);
+  }
+
+  .toolbarButton.download::before,
+  .secondaryToolbarButton.download::before {
+    content: url(images/toolbarButton-download@2x.png);
+  }
+
+  .toolbarButton.bookmark::before,
+  .secondaryToolbarButton.bookmark::before {
+    content: url(images/toolbarButton-bookmark@2x.png);
+  }
+
+  #viewThumbnail.toolbarButton::before {
+    content: url(images/toolbarButton-viewThumbnail@2x.png);
+  }
+
+  html[dir="ltr"] #viewOutline.toolbarButton::before {
+    content: url(images/toolbarButton-viewOutline@2x.png);
+  }
+  html[dir="rtl"] #viewOutline.toolbarButton::before {
+    content: url(images/toolbarButton-viewOutline-rtl@2x.png);
+  }
+
+  #viewFind.toolbarButton::before {
+    content: url(images/toolbarButton-search@2x.png);
+  }
+
+  .secondaryToolbarButton.firstPage::before {
+    content: url(images/secondaryToolbarButton-firstPage@2x.png);
+  }
+
+  .secondaryToolbarButton.lastPage::before {
+    content: url(images/secondaryToolbarButton-lastPage@2x.png);
+  }
+
+  .secondaryToolbarButton.rotateCcw::before {
+    content: url(images/secondaryToolbarButton-rotateCcw@2x.png);
+  }
+
+  .secondaryToolbarButton.rotateCw::before {
+    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+  }
+
+  .secondaryToolbarButton.handTool::before {
+    content: url(images/secondaryToolbarButton-handTool@2x.png);
+  }
+
+  .secondaryToolbarButton.documentProperties::before {
+    content: url(images/secondaryToolbarButton-documentProperties@2x.png);
+  }
 }
 
 @media print {

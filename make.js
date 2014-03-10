@@ -448,7 +448,6 @@ target.firefox = function() {
          '*.svg',
          '*.png',
          '*.manifest',
-         'components',
          'locale',
          '../../LICENSE'],
       FIREFOX_EXTENSION_FILES =
@@ -457,7 +456,6 @@ target.firefox = function() {
          'chrome.manifest',
          'icon.png',
          'icon64.png',
-         'components',
          'content',
          'locale',
          'LICENSE'],
@@ -479,6 +477,12 @@ target.firefox = function() {
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry-addon.jsm',
      FIREFOX_BUILD_CONTENT_DIR + 'PdfJsTelemetry.jsm');
+
+  cp(FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
+     FIREFOX_BUILD_CONTENT_DIR);
+
+  cp(FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm',
+     FIREFOX_BUILD_CONTENT_DIR);
 
   // Copy extension files
   cd(FIREFOX_EXTENSION_DIR);
@@ -520,11 +524,11 @@ target.firefox = function() {
       FIREFOX_BUILD_DIR + '/update.rdf');
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID,
-      FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX,
-      FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'false',
-      FIREFOX_BUILD_DIR + 'components/PdfStreamConverter.js');
+      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
 
   // Update localized metadata
   var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
@@ -570,7 +574,6 @@ target.mozcentral = function() {
          '*.png',
          '*.manifest',
          'README.mozilla',
-         'components',
          '../../LICENSE'],
       DEFAULT_LOCALE_FILES =
         [LOCALE_SRC_DIR + 'en-US/viewer.properties',
@@ -591,6 +594,8 @@ target.mozcentral = function() {
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR);
   cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm', MOZCENTRAL_CONTENT_DIR);
+  cp(FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm', MOZCENTRAL_CONTENT_DIR);
+  cp(FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm', MOZCENTRAL_CONTENT_DIR);
 
   // Copy extension files
   cd('extensions/firefox');
@@ -645,11 +650,11 @@ target.mozcentral = function() {
       MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID,
-      MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX,
-      MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'true',
-      MOZCENTRAL_EXTENSION_DIR + 'components/PdfStreamConverter.js');
+      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
 
   // Copy test files
   mkdir('-p', MOZCENTRAL_TEST_DIR);
@@ -1138,7 +1143,7 @@ target.lint = function() {
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
   if (!test('-f', jshintPath)) {
     echo('jshint is not installed -- installing...');
-    exec('npm install jshint@1.1'); // TODO read version from package.json
+    exec('npm install jshint@2.4.x'); // TODO read version from package.json
   }
 
   exit(exec('"' + jshintPath + '" --reporter test/reporter.js ' +

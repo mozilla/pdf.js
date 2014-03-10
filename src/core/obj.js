@@ -30,6 +30,13 @@ var Name = (function NameClosure() {
 
   Name.prototype = {};
 
+  var nameCache = {};
+
+  Name.get = function Name_get(name) {
+    var nameValue = nameCache[name];
+    return nameValue ? nameValue : (nameCache[name] = new Name(name));
+  };
+
   return Name;
 })();
 
@@ -44,10 +51,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
-    if (cmdValue)
-      return cmdValue;
-
-    return cmdCache[cmd] = new Cmd(cmd);
+    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
   };
 
   return Cmd;
@@ -234,8 +238,9 @@ var Catalog = (function CatalogClosure() {
   Catalog.prototype = {
     get metadata() {
       var streamRef = this.catDict.getRaw('Metadata');
-      if (!isRef(streamRef))
+      if (!isRef(streamRef)) {
         return shadow(this, 'metadata', null);
+      }
 
       var encryptMetadata = !this.xref.encrypt ? false :
         this.xref.encrypt.encryptMetadata;
@@ -296,17 +301,20 @@ var Catalog = (function CatalogClosure() {
           while (queue.length > 0) {
             var i = queue.shift();
             var outlineDict = xref.fetchIfRef(i.obj);
-            if (outlineDict === null)
+            if (outlineDict === null) {
               continue;
-            if (!outlineDict.has('Title'))
+            }
+            if (!outlineDict.has('Title')) {
               error('Invalid outline item');
+            }
             var dest = outlineDict.get('A');
-            if (dest)
+            if (dest) {
               dest = dest.get('D');
-            else if (outlineDict.has('Dest')) {
+            } else if (outlineDict.has('Dest')) {
               dest = outlineDict.getRaw('Dest');
-              if (isName(dest))
+              if (isName(dest)) {
                 dest = dest.name;
+              }
             }
             var title = outlineDict.get('Title');
             var outlineItem = {
@@ -351,16 +359,19 @@ var Catalog = (function CatalogClosure() {
       var xref = this.xref;
       var dests = {}, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
-      if (obj)
+      if (obj) {
         nameTreeRef = obj.getRaw('Dests');
-      else if (this.catDict.has('Dests'))
+      } else if (this.catDict.has('Dests')) {
         nameDictionaryRef = this.catDict.get('Dests');
+      }
 
       if (nameDictionaryRef) {
         // reading simple destination dictionary
         obj = nameDictionaryRef;
         obj.forEach(function catalogForEach(key, value) {
-          if (!value) return;
+          if (!value) {
+            return;
+          }
           dests[key] = fetchDestination(value);
         });
       }
@@ -624,9 +635,9 @@ var XRef = (function XRefClosure() {
       var obj = this.readXRefTable(parser);
 
       // Sanity check
-      if (!isCmd(obj, 'trailer'))
+      if (!isCmd(obj, 'trailer')) {
         error('Invalid XRef table: could not find trailer dictionary');
-
+      }
       // Read trailer dictionary, e.g.
       // trailer
       //    << /Size 22
@@ -637,9 +648,9 @@ var XRef = (function XRefClosure() {
       // The parser goes through the entire stream << ... >> and provides
       // a getter interface for the key-value table
       var dict = parser.getObj();
-      if (!isDict(dict))
+      if (!isDict(dict)) {
         error('Invalid XRef table: could not parse trailer dictionary');
-
+      }
       delete this.tableState;
 
       return dict;
@@ -676,9 +687,9 @@ var XRef = (function XRefClosure() {
 
         var first = tableState.firstEntryNum;
         var count = tableState.entryCount;
-        if (!isInt(first) || !isInt(count))
+        if (!isInt(first) || !isInt(count)) {
           error('Invalid XRef table: wrong types in subsection header');
-
+        }
         // Inner loop is over objects themselves
         for (var i = tableState.entryNum; i < count; i++) {
           tableState.streamPos = stream.pos;
@@ -704,8 +715,9 @@ var XRef = (function XRefClosure() {
             error('Invalid entry in XRef subsection: ' + first + ', ' + count);
           }
 
-          if (!this.entries[i + first])
+          if (!this.entries[i + first]) {
             this.entries[i + first] = entry;
+          }
         }
 
         tableState.entryNum = 0;
@@ -723,9 +735,9 @@ var XRef = (function XRefClosure() {
       }
 
       // Sanity check: as per spec, first object must be free
-      if (this.entries[0] && !this.entries[0].free)
+      if (this.entries[0] && !this.entries[0].free) {
         error('Invalid XRef table: unexpected first object');
-
+      }
       return obj;
     },
 
@@ -769,9 +781,9 @@ var XRef = (function XRefClosure() {
         var first = entryRanges[0];
         var n = entryRanges[1];
 
-        if (!isInt(first) || !isInt(n))
+        if (!isInt(first) || !isInt(n)) {
           error('Invalid XRef range fields: ' + first + ', ' + n);
-
+        }
         if (!isInt(typeFieldWidth) || !isInt(offsetFieldWidth) ||
             !isInt(generationFieldWidth)) {
           error('Invalid XRef entry fields length: ' + first + ', ' + n);
@@ -784,12 +796,15 @@ var XRef = (function XRefClosure() {
           for (j = 0; j < typeFieldWidth; ++j)
             type = (type << 8) | stream.getByte();
           // if type field is absent, its default value = 1
-          if (typeFieldWidth === 0)
+          if (typeFieldWidth === 0) {
             type = 1;
-          for (j = 0; j < offsetFieldWidth; ++j)
+          }
+          for (j = 0; j < offsetFieldWidth; ++j) {
             offset = (offset << 8) | stream.getByte();
-          for (j = 0; j < generationFieldWidth; ++j)
+          }
+          for (j = 0; j < generationFieldWidth; ++j) {
             generation = (generation << 8) | stream.getByte();
+          }
           var entry = {};
           entry.offset = offset;
           entry.gen = generation;
@@ -805,8 +820,9 @@ var XRef = (function XRefClosure() {
             default:
               error('Invalid XRef entry type: ' + type);
           }
-          if (!this.entries[first + i])
+          if (!this.entries[first + i]) {
             this.entries[first + i] = entry;
+          }
         }
 
         streamState.entryNum = 0;
@@ -814,6 +830,7 @@ var XRef = (function XRefClosure() {
         entryRanges.splice(0, 2);
       }
     },
+
     indexObjects: function XRef_indexObjects() {
       // Simple scan through the PDF content to find objects,
       // trailers and XRef streams.
@@ -833,8 +850,9 @@ var XRef = (function XRefClosure() {
         // finding byte sequence
         while (offset < dataLength) {
           var i = 0;
-          while (i < length && data[offset + i] == what[i])
+          while (i < length && data[offset + i] == what[i]) {
             ++i;
+          }
           if (i >= length)
             break; // sequence found
 
@@ -898,8 +916,9 @@ var XRef = (function XRefClosure() {
           }
 
           position += contentLength;
-        } else
+        } else {
           position += token.length + 1;
+        }
       }
       // reading XRef streams
       for (var i = 0, ii = xrefStms.length; i < ii; ++i) {
@@ -912,18 +931,22 @@ var XRef = (function XRefClosure() {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), true, null);
         var obj = parser.getObj();
-        if (!isCmd(obj, 'trailer'))
+        if (!isCmd(obj, 'trailer')) {
           continue;
+        }
         // read the trailer dictionary
-        if (!isDict(dict = parser.getObj()))
+        if (!isDict(dict = parser.getObj())) {
           continue;
+        }
         // taking the first one with 'ID'
-        if (dict.has('ID'))
+        if (dict.has('ID')) {
           return dict;
+        }
       }
       // no tailer with 'ID', taking last one (if exists)
-      if (dict)
+      if (dict) {
         return dict;
+      }
       // nothing helps
       // calling error() would reject worker with an UnknownErrorException.
       throw new InvalidPDFException('Invalid PDF structure');
@@ -936,7 +959,7 @@ var XRef = (function XRefClosure() {
         while (this.startXRefQueue.length) {
           var startXRef = this.startXRefQueue[0];
 
-          stream.pos = startXRef;
+          stream.pos = startXRef + stream.start;
 
           var parser = new Parser(new Lexer(stream), true, null);
           var obj = parser.getObj();
@@ -975,8 +998,9 @@ var XRef = (function XRefClosure() {
               this.topDict = dict;
             }
 
-            if (!dict)
+            if (!dict) {
               error('Failed to read XRef stream');
+            }
           } else {
             error('Invalid XRef stream header');
           }
@@ -1002,95 +1026,112 @@ var XRef = (function XRefClosure() {
         info('(while reading XRef): ' + e);
       }
 
-      if (recoveryMode)
+      if (recoveryMode) {
         return;
+      }
       throw new XRefParseException();
     },
 
     getEntry: function XRef_getEntry(i) {
-      var e = this.entries[i];
-      if (e === null)
-        return null;
-      return e.free || !e.offset ? null : e; // returns null if entry is free
+      var xrefEntry = this.entries[i];
+      if (xrefEntry !== null && !xrefEntry.free && xrefEntry.offset) {
+        return xrefEntry;
+      }
+      return null;
     },
+
     fetchIfRef: function XRef_fetchIfRef(obj) {
-      if (!isRef(obj))
+      if (!isRef(obj)) {
         return obj;
+      }
       return this.fetch(obj);
     },
+
     fetch: function XRef_fetch(ref, suppressEncryption) {
       assertWellFormed(isRef(ref), 'ref object is not a reference');
       var num = ref.num;
-      var e;
       if (num in this.cache) {
-        e = this.cache[num];
-        if (e instanceof Stream) {
-          return e.makeSubStream(e.start, e.length, e.dict);
-        }
-        return e;
+        var cacheEntry = this.cache[num];
+        return cacheEntry;
       }
 
-      e = this.getEntry(num);
+      var xrefEntry = this.getEntry(num);
 
       // the referenced entry can be free
-      if (e === null)
-        return (this.cache[num] = e);
-
-      var gen = ref.gen;
-      var stream, parser;
-      if (e.uncompressed) {
-        if (e.gen != gen)
-          error('inconsistent generation in XRef');
-        stream = this.stream.makeSubStream(e.offset);
-        parser = new Parser(new Lexer(stream), true, this);
-        var obj1 = parser.getObj();
-        var obj2 = parser.getObj();
-        var obj3 = parser.getObj();
-        if (!isInt(obj1) || obj1 != num ||
-            !isInt(obj2) || obj2 != gen ||
-            !isCmd(obj3)) {
-          error('bad XRef entry');
-        }
-        if (!isCmd(obj3, 'obj')) {
-          // some bad pdfs use "obj1234" and really mean 1234
-          if (obj3.cmd.indexOf('obj') === 0) {
-            num = parseInt(obj3.cmd.substring(3), 10);
-            if (!isNaN(num))
-              return num;
-          }
-          error('bad XRef entry');
-        }
-        if (this.encrypt && !suppressEncryption) {
-          try {
-            e = parser.getObj(this.encrypt.createCipherTransform(num, gen));
-          } catch (ex) {
-            // almost all streams must be encrypted, but sometimes
-            // they are not probably due to some broken generators
-            // re-trying without encryption
-            return this.fetch(ref, true);
-          }
-        } else {
-          e = parser.getObj();
-        }
-        if (!isStream(e)) {
-          this.cache[num] = e;
-        }
-        return e;
+      if (xrefEntry === null) {
+        return (this.cache[num] = null);
       }
 
-      // compressed entry
-      var tableOffset = e.offset;
-      stream = this.fetch(new Ref(tableOffset, 0));
-      if (!isStream(stream))
+      if (xrefEntry.uncompressed) {
+        return this.fetchUncompressed(ref, xrefEntry, suppressEncryption);
+      } else {
+        return this.fetchCompressed(xrefEntry, suppressEncryption);
+      }
+    },
+
+    fetchUncompressed: function XRef_fetchUncompressed(ref,
+                                                       xrefEntry,
+                                                       suppressEncryption) {
+      var gen = ref.gen;
+      var num = ref.num;
+      if (xrefEntry.gen !== gen) {
+        error('inconsistent generation in XRef');
+      }
+      var stream = this.stream.makeSubStream(xrefEntry.offset +
+                                             this.stream.start);
+      var parser = new Parser(new Lexer(stream), true, this);
+      var obj1 = parser.getObj();
+      var obj2 = parser.getObj();
+      var obj3 = parser.getObj();
+      if (!isInt(obj1) || parseInt(obj1, 10) !== num ||
+          !isInt(obj2) || parseInt(obj2, 10) !== gen ||
+          !isCmd(obj3)) {
+        error('bad XRef entry');
+      }
+      if (!isCmd(obj3, 'obj')) {
+        // some bad pdfs use "obj1234" and really mean 1234
+        if (obj3.cmd.indexOf('obj') === 0) {
+          num = parseInt(obj3.cmd.substring(3), 10);
+          if (!isNaN(num)) {
+            return num;
+          }
+        }
+        error('bad XRef entry');
+      }
+      if (this.encrypt && !suppressEncryption) {
+        try {
+          xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num,
+                                                                       gen));
+        } catch (ex) {
+          // almost all streams must be encrypted, but sometimes
+          // they are not probably due to some broken generators
+          // re-trying without encryption
+          return this.fetch(ref, true);
+        }
+      } else {
+        xrefEntry = parser.getObj();
+      }
+      if (!isStream(xrefEntry)) {
+        this.cache[num] = xrefEntry;
+      }
+      return xrefEntry;
+    },
+
+    fetchCompressed: function XRef_fetchCompressed(xrefEntry,
+                                                   suppressEncryption) {
+      var tableOffset = xrefEntry.offset;
+      var stream = this.fetch(new Ref(tableOffset, 0));
+      if (!isStream(stream)) {
         error('bad ObjStm stream');
+      }
       var first = stream.dict.get('First');
       var n = stream.dict.get('N');
       if (!isInt(first) || !isInt(n)) {
         error('invalid first and n parameters for ObjStm stream');
       }
-      parser = new Parser(new Lexer(stream), false, this);
+      var parser = new Parser(new Lexer(stream), false, this);
       parser.allowStreams = true;
-      var i, entries = [], nums = [];
+      var i, entries = [], num, nums = [];
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
         num = parser.getObj();
@@ -1112,12 +1153,13 @@ var XRef = (function XRefClosure() {
           this.cache[num] = entries[i];
         }
       }
-      e = entries[e.gen];
-      if (e === undefined) {
+      xrefEntry = entries[xrefEntry.gen];
+      if (xrefEntry === undefined) {
         error('bad XRef entry for compressed object');
       }
-      return e;
+      return xrefEntry;
     },
+
     fetchIfRefAsync: function XRef_fetchIfRefAsync(obj) {
       if (!isRef(obj)) {
         var promise = new LegacyPromise();
@@ -1126,6 +1168,7 @@ var XRef = (function XRefClosure() {
       }
       return this.fetchAsync(obj);
     },
+
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
       var promise = new LegacyPromise();
       var tryFetch = function (promise) {
@@ -1142,6 +1185,7 @@ var XRef = (function XRefClosure() {
       tryFetch();
       return promise;
     },
+
     getCatalogObj: function XRef_getCatalogObj() {
       return this.root;
     }
@@ -1182,8 +1226,9 @@ var NameTree = (function NameTreeClosure() {
           var kids = obj.get('Kids');
           for (i = 0, n = kids.length; i < n; i++) {
             var kid = kids[i];
-            if (processed.has(kid))
+            if (processed.has(kid)) {
               error('invalid destinations');
+            }
             queue.push(kid);
             processed.put(kid);
           }
@@ -1344,5 +1389,3 @@ var ObjectLoader = (function() {
 
   return ObjectLoader;
 })();
-
-
