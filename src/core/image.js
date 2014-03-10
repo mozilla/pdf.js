@@ -209,19 +209,25 @@ var PDFImage = (function PDFImageClosure() {
     return temp;
   };
 
-  PDFImage.createMask = function PDFImage_createMask(imgArray, width, height,
-                                                     inverseDecode) {
-    // Copy imgArray into a typed array (inverting if necessary) so it can be
-    // transferred to the main thread.
-    var length = ((width + 7) >> 3) * height;
-    var data = new Uint8Array(length);
-    if (inverseDecode) {
-      for (var i = 0; i < length; i++) {
-        data[i] = ~imgArray[i];
-      }
+  PDFImage.createMask =
+      function PDFImage_createMask(imgArray, width, height, canTransfer,
+                                   inverseDecode) {
+    // If imgArray came from a DecodeStream, we're safe to transfer it.
+    // Otherwise, copy it.
+    var actualLength = imgArray.byteLength;
+    var data;
+    if (canTransfer) {
+      data = imgArray;
     } else {
-      for (var i = 0; i < length; i++) {
-        data[i] = imgArray[i];
+      data = new Uint8Array(actualLength);
+      data.set(imgArray);
+    }
+    // Invert if necessary. It's safe to modify the array -- whether it's the
+    // original or a copy, we're about to transfer it anyway, so nothing else
+    // in this thread can be relying on its contents.
+    if (inverseDecode) {
+      for (var i = 0; i < actualLength; i++) {
+        data[i] = ~data[i];
       }
     }
 

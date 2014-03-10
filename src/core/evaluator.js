@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, assertWellFormed, ColorSpace, Dict, Encodings, error,
-           ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode, FontFlags,
-           ImageKind, info, isArray, isCmd, isDict, isEOF, isName, isNum,
-           isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
+/* globals assert, assertWellFormed, ColorSpace, DecodeStream, Dict, Encodings,
+           error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode,
+           FontFlags, ImageKind, info, isArray, isCmd, isDict, isEOF, isName,
+           isNum, isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
            Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
            getTilingPatternIR, warn, Util, Promise, LegacyPromise,
            RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
@@ -146,10 +146,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var bitStrideLength = (width + 7) >> 3;
         var imgArray = image.getBytes(bitStrideLength * height);
         var decode = dict.get('Decode', 'D');
+        var canTransfer = image instanceof DecodeStream;
         var inverseDecode = !!decode && decode[0] > 0;
 
         operatorList.addOp(OPS.paintImageMaskXObject,
-          [PDFImage.createMask(imgArray, width, height, inverseDecode)]
+          [PDFImage.createMask(imgArray, width, height, canTransfer,
+                               inverseDecode)]
         );
         return;
       }
