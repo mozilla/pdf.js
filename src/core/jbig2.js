@@ -376,13 +376,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       if (prediction) {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
         ltp ^= sltp;
+        if (ltp) {
+          error('JBIG2 error: prediction is not supported');
+        }
       }
       var row = new Uint8Array(width);
       bitmap.push(row);
       for (var j = 0; j < width; j++) {
-        if (ltp) {
-          error('JBIG2 error: prediction is not supported');
-        }
 
         var contextLabel = 0;
         for (var k = 0; k < codingTemplateLength; k++) {
