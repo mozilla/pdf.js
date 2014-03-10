@@ -230,14 +230,14 @@ var PDFImage = (function PDFImageClosure() {
 
   PDFImage.prototype = {
     get drawWidth() {
-      if (!this.smask)
-        return this.width;
-      return Math.max(this.width, this.smask.width);
+      return Math.max(this.width,
+                      this.smask && this.smask.width || 0,
+                      this.mask && this.mask.width || 0);
     },
     get drawHeight() {
-      if (!this.smask)
-        return this.height;
-      return Math.max(this.height, this.smask.height);
+      return Math.max(this.height,
+                      this.smask && this.smask.height || 0,
+                      this.mask && this.mask.height || 0);
     },
     decodeBuffer: function PDFImage_decodeBuffer(buffer) {
       var bpc = this.bpc;

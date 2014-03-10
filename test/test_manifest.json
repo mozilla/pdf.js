@@ -1561,5 +1561,12 @@
        "firstPage": 4,
        "lastPage": 4,
        "type": "eq"
+    },
+    {  "id": "issue4246",
+      "file": "pdfs/issue4246.pdf",
+      "md5": "ed81787b83cc317c9f049643b853bea3",
+      "rounds": 1,
+      "type": "eq",
+      "about": "Image mask in higher resolution than the image itself"
     }
 ]
