@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals PDFFindController, FindStates, mozL10n */
 
 'use strict';
-
-/* globals PDFFindController, FindStates, mozL10n */
 
 /**
  * Creates a "search bar" given set of DOM elements
