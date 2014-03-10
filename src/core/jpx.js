@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, globalScope, warn */
+/* globals ArithmeticDecoder, error, globalScope, warn */
 
 'use strict';
 
@@ -1253,172 +1253,10 @@ var JpxImage = (function JpxImageClosure() {
     return InclusionTree;
   })();
 
-  // Implements C.3. Arithmetic decoding procedures
-  var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
-    var QeTable = [
-      {qe: 0x5601, nmps: 1, nlps: 1, switchFlag: 1},
-      {qe: 0x3401, nmps: 2, nlps: 6, switchFlag: 0},
-      {qe: 0x1801, nmps: 3, nlps: 9, switchFlag: 0},
-      {qe: 0x0AC1, nmps: 4, nlps: 12, switchFlag: 0},
-      {qe: 0x0521, nmps: 5, nlps: 29, switchFlag: 0},
-      {qe: 0x0221, nmps: 38, nlps: 33, switchFlag: 0},
-      {qe: 0x5601, nmps: 7, nlps: 6, switchFlag: 1},
-      {qe: 0x5401, nmps: 8, nlps: 14, switchFlag: 0},
-      {qe: 0x4801, nmps: 9, nlps: 14, switchFlag: 0},
-      {qe: 0x3801, nmps: 10, nlps: 14, switchFlag: 0},
-      {qe: 0x3001, nmps: 11, nlps: 17, switchFlag: 0},
-      {qe: 0x2401, nmps: 12, nlps: 18, switchFlag: 0},
-      {qe: 0x1C01, nmps: 13, nlps: 20, switchFlag: 0},
-      {qe: 0x1601, nmps: 29, nlps: 21, switchFlag: 0},
-      {qe: 0x5601, nmps: 15, nlps: 14, switchFlag: 1},
-      {qe: 0x5401, nmps: 16, nlps: 14, switchFlag: 0},
-      {qe: 0x5101, nmps: 17, nlps: 15, switchFlag: 0},
-      {qe: 0x4801, nmps: 18, nlps: 16, switchFlag: 0},
-      {qe: 0x3801, nmps: 19, nlps: 17, switchFlag: 0},
-      {qe: 0x3401, nmps: 20, nlps: 18, switchFlag: 0},
-      {qe: 0x3001, nmps: 21, nlps: 19, switchFlag: 0},
-      {qe: 0x2801, nmps: 22, nlps: 19, switchFlag: 0},
-      {qe: 0x2401, nmps: 23, nlps: 20, switchFlag: 0},
-      {qe: 0x2201, nmps: 24, nlps: 21, switchFlag: 0},
-      {qe: 0x1C01, nmps: 25, nlps: 22, switchFlag: 0},
-      {qe: 0x1801, nmps: 26, nlps: 23, switchFlag: 0},
-      {qe: 0x1601, nmps: 27, nlps: 24, switchFlag: 0},
-      {qe: 0x1401, nmps: 28, nlps: 25, switchFlag: 0},
-      {qe: 0x1201, nmps: 29, nlps: 26, switchFlag: 0},
-      {qe: 0x1101, nmps: 30, nlps: 27, switchFlag: 0},
-      {qe: 0x0AC1, nmps: 31, nlps: 28, switchFlag: 0},
-      {qe: 0x09C1, nmps: 32, nlps: 29, switchFlag: 0},
-      {qe: 0x08A1, nmps: 33, nlps: 30, switchFlag: 0},
-      {qe: 0x0521, nmps: 34, nlps: 31, switchFlag: 0},
-      {qe: 0x0441, nmps: 35, nlps: 32, switchFlag: 0},
-      {qe: 0x02A1, nmps: 36, nlps: 33, switchFlag: 0},
-      {qe: 0x0221, nmps: 37, nlps: 34, switchFlag: 0},
-      {qe: 0x0141, nmps: 38, nlps: 35, switchFlag: 0},
-      {qe: 0x0111, nmps: 39, nlps: 36, switchFlag: 0},
-      {qe: 0x0085, nmps: 40, nlps: 37, switchFlag: 0},
-      {qe: 0x0049, nmps: 41, nlps: 38, switchFlag: 0},
-      {qe: 0x0025, nmps: 42, nlps: 39, switchFlag: 0},
-      {qe: 0x0015, nmps: 43, nlps: 40, switchFlag: 0},
-      {qe: 0x0009, nmps: 44, nlps: 41, switchFlag: 0},
-      {qe: 0x0005, nmps: 45, nlps: 42, switchFlag: 0},
-      {qe: 0x0001, nmps: 45, nlps: 43, switchFlag: 0},
-      {qe: 0x5601, nmps: 46, nlps: 46, switchFlag: 0}
-    ];
-
-    function ArithmeticDecoder(data, start, end) {
-      this.data = data;
-      this.bp = start;
-      this.dataEnd = end;
-
-      this.chigh = data[start];
-      this.clow = 0;
-
-      this.byteIn();
-
-      this.chigh = ((this.chigh << 7) & 0xFFFF) | ((this.clow >> 9) & 0x7F);
-      this.clow = (this.clow << 7) & 0xFFFF;
-      this.ct -= 7;
-      this.a = 0x8000;
-    }
-
-    ArithmeticDecoder.prototype = {
-      byteIn: function ArithmeticDecoder_byteIn() {
-        var data = this.data;
-        var bp = this.bp;
-        if (data[bp] == 0xFF) {
-          var b1 = data[bp + 1];
-          if (b1 > 0x8F) {
-            this.clow += 0xFF00;
-            this.ct = 8;
-          } else {
-            bp++;
-            this.clow += (data[bp] << 9);
-            this.ct = 7;
-            this.bp = bp;
-          }
-        } else {
-          bp++;
-          this.clow += bp < this.dataEnd ? (data[bp] << 8) : 0xFF00;
-          this.ct = 8;
-          this.bp = bp;
-        }
-        if (this.clow > 0xFFFF) {
-          this.chigh += (this.clow >> 16);
-          this.clow &= 0xFFFF;
-        }
-      },
-      readBit: function ArithmeticDecoder_readBit(cx) {
-        var qeIcx = QeTable[cx.index].qe;
-        this.a -= qeIcx;
-
-        if (this.chigh < qeIcx) {
-          var d = this.exchangeLps(cx);
-          this.renormD();
-          return d;
-        } else {
-          this.chigh -= qeIcx;
-          if ((this.a & 0x8000) === 0) {
-            var d = this.exchangeMps(cx);
-            this.renormD();
-            return d;
-          } else {
-            return cx.mps;
-          }
-        }
-      },
-      renormD: function ArithmeticDecoder_renormD() {
-        do {
-          if (this.ct === 0) {
-            this.byteIn();
-          }
-
-          this.a <<= 1;
-          this.chigh = ((this.chigh << 1) & 0xFFFF) | ((this.clow >> 15) & 1);
-          this.clow = (this.clow << 1) & 0xFFFF;
-          this.ct--;
-        } while ((this.a & 0x8000) === 0);
-      },
-      exchangeMps: function ArithmeticDecoder_exchangeMps(cx) {
-        var d;
-        var qeTableIcx = QeTable[cx.index];
-        if (this.a < qeTableIcx.qe) {
-          d = 1 - cx.mps;
-
-          if (qeTableIcx.switchFlag == 1) {
-            cx.mps = 1 - cx.mps;
-          }
-          cx.index = qeTableIcx.nlps;
-        } else {
-          d = cx.mps;
-          cx.index = qeTableIcx.nmps;
-        }
-        return d;
-      },
-      exchangeLps: function ArithmeticDecoder_exchangeLps(cx) {
-        var d;
-        var qeTableIcx = QeTable[cx.index];
-        if (this.a < qeTableIcx.qe) {
-          this.a = qeTableIcx.qe;
-          d = cx.mps;
-          cx.index = qeTableIcx.nmps;
-        } else {
-          this.a = qeTableIcx.qe;
-          d = 1 - cx.mps;
-
-          if (qeTableIcx.switchFlag == 1) {
-            cx.mps = 1 - cx.mps;
-          }
-          cx.index = qeTableIcx.nlps;
-        }
-        return d;
-      }
-    };
-
-    return ArithmeticDecoder;
-  })();
-
   // Section D. Coefficient bit modeling
   var BitModel = (function BitModelClosure() {
+    var UNIFORM_CONTEXT = 17;
+    var RUNLENGTH_CONTEXT = 18;
     // Table D-1
     // The index is binary presentation: 0dddvvhh, ddd - sum of Di (0..4),
     // vv - sum of Vi (0..2), and hh - sum of Hi (0..2)
@@ -1493,13 +1331,15 @@ var JpxImage = (function JpxImageClosure() {
         this.decoder = decoder;
       },
       reset: function BitModel_reset() {
-        this.uniformContext = {index: 46, mps: 0};
-        this.runLengthContext = {index: 3, mps: 0};
-        this.contexts = [];
-        this.contexts.push({index: 4, mps: 0});
-        for (var i = 1; i <= 16; i++) {
-          this.contexts.push({index: 0, mps: 0});
-        }
+        // We have 17 contexts that are accessed via context labels, 
+        // plus the uniform and runlength context.
+        this.contexts = new Int8Array(19);
+
+        // Contexts are packed into 1 byte:
+        // highest 7 bits carry the index, lowest bit carries mps
+        this.contexts[0] = (4 << 1) | 0;
+        this.contexts[UNIFORM_CONTEXT] = (46 << 1) | 0;
+        this.contexts[RUNLENGTH_CONTEXT] = (3 << 1) | 0;
       },
       setNeighborsSignificance:
         function BitModel_setNeighborsSignificance(row, column) {
@@ -1567,8 +1407,7 @@ var JpxImage = (function JpxImageClosure() {
               }
 
               var contextLabel = labels[neighborsSignificance[index]];
-              var cx = contexts[contextLabel];
-              var decision = decoder.readBit(cx);
+              var decision = decoder.readBit(contexts, contextLabel);
               if (decision) {
                 var sign = this.decodeSignBit(i, j);
                 coefficentsSign[index] = sign;
@@ -1601,8 +1440,7 @@ var JpxImage = (function JpxImageClosure() {
         var contextLabelAndXor = SignContextLabels[
           3 * (1 - horizontalContribution) + (1 - verticalContribution)];
         var contextLabel = contextLabelAndXor.contextLabel;
-        var cx = this.contexts[contextLabel];
-        var decoded = this.decoder.readBit(cx);
+        var decoded = this.decoder.readBit(this.contexts, contextLabel);
         return decoded ^ contextLabelAndXor.xorBit;
       },
       runMagnitudeRefinementPass:
@@ -1641,8 +1479,7 @@ var JpxImage = (function JpxImageClosure() {
                 contextLabel = sumOfSignificance >= 1 ? 15 : 14;
               }
 
-              var cx = contexts[contextLabel];
-              var bit = decoder.readBit(cx);
+              var bit = decoder.readBit(contexts, contextLabel);
               coefficentsMagnitude[index] =
                 (coefficentsMagnitude[index] << 1) | bit;
               bitsDecoded[index]++;
@@ -1682,10 +1519,10 @@ var JpxImage = (function JpxImageClosure() {
               neighborsSignificance[index0 + twoRowsDown] === 0 &&
               neighborsSignificance[index0 + threeRowsDown] === 0);
             var i1 = 0, index = index0;
-            var cx, i;
+            var i;
             if (allEmpty) {
-              cx = this.runLengthContext;
-              var hasSignificantCoefficent = decoder.readBit(cx);
+              var hasSignificantCoefficent =
+                decoder.readBit(contexts, RUNLENGTH_CONTEXT);
               if (!hasSignificantCoefficent) {
                 bitsDecoded[index0]++;
                 bitsDecoded[index0 + oneRowDown]++;
@@ -1693,8 +1530,8 @@ var JpxImage = (function JpxImageClosure() {
                 bitsDecoded[index0 + threeRowsDown]++;
                 continue; // next column
               }
-              cx = this.uniformContext;
-              i1 = (decoder.readBit(cx) << 1) | decoder.readBit(cx);
+              i1 = (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
+                    decoder.readBit(contexts, UNIFORM_CONTEXT);
               i = i0 + i1;
               index += i1 * width;
 
@@ -1723,8 +1560,7 @@ var JpxImage = (function JpxImageClosure() {
               }
 
               var contextLabel = labels[neighborsSignificance[index]];
-              cx = contexts[contextLabel];
-              var decision = decoder.readBit(cx);
+              var decision = decoder.readBit(contexts, contextLabel);
               if (decision == 1) {
                 var sign = this.decodeSignBit(i, j);
                 coefficentsSign[index] = sign;
@@ -1739,9 +1575,11 @@ var JpxImage = (function JpxImageClosure() {
       },
       checkSegmentationSymbol: function BitModel_checkSegmentationSymbol() {
         var decoder = this.decoder;
-        var cx = this.uniformContext;
-        var symbol = (decoder.readBit(cx) << 3) | (decoder.readBit(cx) << 2) |
-                     (decoder.readBit(cx) << 1) | decoder.readBit(cx);
+        var contexts = this.contexts;
+        var symbol = (decoder.readBit(contexts, UNIFORM_CONTEXT) << 3) |
+                     (decoder.readBit(contexts, UNIFORM_CONTEXT) << 2) |
+                     (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
+                      decoder.readBit(contexts, UNIFORM_CONTEXT);
         if (symbol != 0xA) {
           throw 'Invalid segmentation symbol';
         }

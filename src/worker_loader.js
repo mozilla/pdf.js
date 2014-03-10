@@ -48,6 +48,7 @@ var otherFiles = [
   'core/ps_parser.js',
   'core/stream.js',
   'core/worker.js',
+  'core/arithmetic_decoder.js',
   'core/jpx.js',
   'core/jbig2.js',
   'core/bidi.js',
