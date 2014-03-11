@@ -643,7 +643,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var preprocessor = new EvaluatorPreprocessor(stream, xref);
       var res = resources;
 
-      var chunk = '';
+      var chunkBuf = [];
       var font = null;
       var charSpace = 0, wordSpace = 0;
       var operation;
@@ -692,37 +692,37 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var items = args[0];
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  chunk += fontCharsToUnicode(items[j], font);
+                  chunkBuf.push(fontCharsToUnicode(items[j], font));
                 } else if (items[j] < 0 && font.spaceWidth > 0) {
                   var fakeSpaces = -items[j] / font.spaceWidth;
                   if (fakeSpaces > MULTI_SPACE_FACTOR) {
                     fakeSpaces = Math.round(fakeSpaces);
                     while (fakeSpaces--) {
-                      chunk += ' ';
+                      chunkBuf.push(' ');
                     }
                   } else if (fakeSpaces > SPACE_FACTOR) {
-                    chunk += ' ';
+                    chunkBuf.push(' ');
                   }
                 }
               }
               break;
             case OPS.showText:
-              chunk += fontCharsToUnicode(args[0], font);
+              chunkBuf.push(fontCharsToUnicode(args[0], font));
               break;
             case OPS.nextLineShowText:
               // For search, adding a extra white space for line breaks would be
               // better here, but that causes too much spaces in the
               // text-selection divs.
-              chunk += fontCharsToUnicode(args[0], font);
+              chunkBuf.push(fontCharsToUnicode(args[0], font));
               break;
             case OPS.nextLineSetSpacingShowText:
               // Note comment in "'"
-              chunk += fontCharsToUnicode(args[2], font);
+              chunkBuf.push(fontCharsToUnicode(args[2], font));
               break;
             case OPS.paintXObject:
               // Set the chunk such that the following if won't add something
               // to the state.
-              chunk = '';
+              chunkBuf.length = 0;
 
               if (args[0].code) {
                 break;
@@ -771,7 +771,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
           } // switch
 
-          if (chunk !== '') {
+          if (chunkBuf.length > 0) {
+            var chunk = chunkBuf.join('');
             var bidiResult = PDFJS.bidi(chunk, -1, font.vertical);
             var bidiText = {
               str: bidiResult.str,
@@ -793,7 +794,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             bidiText.size = fontHeight;
             bidiTexts.push(bidiText);
 
-            chunk = '';
+            chunkBuf.length = 0;
           }
       } // while
 

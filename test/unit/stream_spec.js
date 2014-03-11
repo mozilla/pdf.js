@@ -30,7 +30,7 @@ describe('stream', function() {
 
       var input = new Stream(new Uint8Array([2, 100, 3, 2, 1, 255, 2, 1, 255]),
         0, 9, dict);
-      var predictor = new PredictorStream(input, dict);
+      var predictor = new PredictorStream(input, /* length = */ 9, dict);
       var result = predictor.getBytes(6);
 
       expect(result).toMatchTypedArray(

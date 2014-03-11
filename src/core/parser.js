@@ -170,7 +170,7 @@ var Parser = (function ParserClosure() {
       var length = (stream.pos - 4) - startPos;
       var imageStream = stream.makeSubStream(startPos, length, dict);
       if (cipherTransform)
-        imageStream = cipherTransform.createStream(imageStream);
+        imageStream = cipherTransform.createStream(imageStream, length);
       imageStream = this.filter(imageStream, dict, length);
       imageStream.dict = dict;
 
@@ -251,7 +251,7 @@ var Parser = (function ParserClosure() {
 
       stream = stream.makeSubStream(pos, length, dict);
       if (cipherTransform)
-        stream = cipherTransform.createStream(stream);
+        stream = cipherTransform.createStream(stream, length);
       stream = this.filter(stream, dict, length);
       stream.dict = dict;
       return stream;
@@ -261,6 +261,8 @@ var Parser = (function ParserClosure() {
       var params = this.fetchIfRef(dict.get('DecodeParms', 'DP'));
       if (isName(filter))
         return this.makeFilter(stream, filter.name, length, params);
+
+      var maybeLength = length;
       if (isArray(filter)) {
         var filterArray = filter;
         var paramsArray = params;
@@ -272,22 +274,23 @@ var Parser = (function ParserClosure() {
           params = null;
           if (isArray(paramsArray) && (i in paramsArray))
             params = paramsArray[i];
-          stream = this.makeFilter(stream, filter.name, length, params);
+          stream = this.makeFilter(stream, filter.name, maybeLength, params);
           // after the first stream the length variable is invalid
-          length = null;
+          maybeLength = null;
         }
       }
       return stream;
     },
-    makeFilter: function Parser_makeFilter(stream, name, length, params) {
+    makeFilter: function Parser_makeFilter(stream, name, maybeLength, params) {
       if (stream.dict.get('Length') === 0) {
         return new NullStream(stream);
       }
       if (name == 'FlateDecode' || name == 'Fl') {
         if (params) {
-          return new PredictorStream(new FlateStream(stream), params);
+          return new PredictorStream(new FlateStream(stream, maybeLength),
+                                     maybeLength, params);
         }
-        return new FlateStream(stream);
+        return new FlateStream(stream, maybeLength);
       }
       if (name == 'LZWDecode' || name == 'LZW') {
         var earlyChange = 1;
@@ -295,30 +298,31 @@ var Parser = (function ParserClosure() {
           if (params.has('EarlyChange'))
             earlyChange = params.get('EarlyChange');
           return new PredictorStream(
-            new LZWStream(stream, earlyChange), params);
+            new LZWStream(stream, maybeLength, earlyChange),
+            maybeLength, params);
         }
-        return new LZWStream(stream, earlyChange);
+        return new LZWStream(stream, maybeLength, earlyChange);
       }
       if (name == 'DCTDecode' || name == 'DCT') {
-        return new JpegStream(stream, length, stream.dict, this.xref);
+        return new JpegStream(stream, maybeLength, stream.dict, this.xref);
       }
       if (name == 'JPXDecode' || name == 'JPX') {
-        return new JpxStream(stream, length, stream.dict);
+        return new JpxStream(stream, maybeLength, stream.dict);
       }
       if (name == 'ASCII85Decode' || name == 'A85') {
-        return new Ascii85Stream(stream);
+        return new Ascii85Stream(stream, maybeLength);
       }
       if (name == 'ASCIIHexDecode' || name == 'AHx') {
-        return new AsciiHexStream(stream);
+        return new AsciiHexStream(stream, maybeLength);
       }
       if (name == 'CCITTFaxDecode' || name == 'CCF') {
-        return new CCITTFaxStream(stream, params);
+        return new CCITTFaxStream(stream, maybeLength, params);
       }
       if (name == 'RunLengthDecode' || name == 'RL') {
-        return new RunLengthStream(stream);
+        return new RunLengthStream(stream, maybeLength);
       }
       if (name == 'JBIG2Decode') {
-        return new Jbig2Stream(stream, length, stream.dict);
+        return new Jbig2Stream(stream, maybeLength, stream.dict);
       }
       warn('filter "' + name + '" not supported yet');
       return stream;
