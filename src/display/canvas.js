@@ -507,20 +507,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     } else if (imgData.kind === ImageKind.RGBA_32BPP) {
       // RGBA, 32-bits per pixel.
-      var haveSetAndSubarray = 'set' in dest && 'subarray' in src;
 
       for (var i = 0; i < totalChunks; i++) {
         var thisChunkHeight =
           (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
         var elemsInThisChunk = imgData.width * thisChunkHeight * 4;
-        if (haveSetAndSubarray) {
-          dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
-          srcPos += elemsInThisChunk;
-        } else {
-          for (var j = 0; j < elemsInThisChunk; j++) {
-            dest[j] = src[srcPos++];
-          }
-        }
+
+        dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
+        srcPos += elemsInThisChunk;
+
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
       }
 

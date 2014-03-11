@@ -493,3 +493,15 @@ if (typeof PDFJS === 'undefined') {
     PDFJS.disableHistory = true;
   }
 })();
+
+(function checkSetPresenceInImageData() {
+  if (window.CanvasPixelArray) {
+    if (typeof window.CanvasPixelArray.prototype.set !== 'function') {
+      window.CanvasPixelArray.prototype.set = function(arr) {
+        for (var i = 0, ii = this.length; i < ii; i++) {
+          this[i] = arr[i];
+        }
+      };
+    }
+  }
+})();
