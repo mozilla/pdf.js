@@ -17,8 +17,16 @@
 
 'use strict';
 
-// Annex E. Arithmetic Coding
+/* This class implements the QM Coder decoding as defined in
+ *   JPEG 2000 Part I Final Committee Draft Version 1.0
+ *   Annex C.3 Arithmetic decoding procedure 
+ * available at http://www.jpeg.org/public/fcd15444-1.pdf
+ * 
+ * The arithmetic decoder is used in conjunction with context models to decode
+ * JPEG2000 and JBIG2 streams.
+ */
 var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
+  // Table C-2
   var QeTable = [
     {qe: 0x5601, nmps: 1, nlps: 1, switchFlag: 1},
     {qe: 0x3401, nmps: 2, nlps: 6, switchFlag: 0},
@@ -69,6 +77,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
     {qe: 0x5601, nmps: 46, nlps: 46, switchFlag: 0}
   ];
 
+  // C.3.5 Initialisation of the decoder (INITDEC)
   function ArithmeticDecoder(data, start, end) {
     this.data = data;
     this.bp = start;
@@ -86,6 +95,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
   }
 
   ArithmeticDecoder.prototype = {
+    // C.3.4 Compressed data input (BYTEIN)
     byteIn: function ArithmeticDecoder_byteIn() {
       var data = this.data;
       var bp = this.bp;
@@ -111,6 +121,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
         this.clow &= 0xFFFF;
       }
     },
+    // C.3.2 Decoding a decision (DECODE)
     readBit: function ArithmeticDecoder_readBit(contexts, pos) {
       // contexts are packed into 1 byte:
       // highest 7 bits carry cx.index, lowest bit carries cx.mps
@@ -154,7 +165,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
           cx_index = nmpsIcx;
         }
       }
-      // renormD;
+      // C.3.3 renormD;
       do {
         if (this.ct === 0) {
           this.byteIn();
