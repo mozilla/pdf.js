@@ -187,6 +187,8 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     },
 
     makeSubStream: function ChunkedStream_makeSubStream(start, length, dict) {
+      this.ensureRange(start, start + length);
+
       function ChunkedStreamSubstream() {}
       ChunkedStreamSubstream.prototype = Object.create(this);
       ChunkedStreamSubstream.prototype.getMissingChunks = function() {
