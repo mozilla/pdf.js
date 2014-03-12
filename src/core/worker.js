@@ -294,7 +294,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
     handler.on('GetPageIndex', function wphSetupGetPageIndex(data, deferred) {
       var ref = new Ref(data.ref.num, data.ref.gen);
-      pdfManager.pdfModel.catalog.getPageIndex(ref).then(function (pageIndex) {
+      var catalog = pdfManager.pdfDocument.catalog;
+      catalog.getPageIndex(ref).then(function (pageIndex) {
         deferred.resolve(pageIndex);
       }, deferred.reject);
     });
