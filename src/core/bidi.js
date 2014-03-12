@@ -145,6 +145,11 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     this.dir = (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'));
   }
 
+  // These are used in bidi(), which is called frequently. We re-use them on
+  // each call to avoid unnecessary allocations.
+  var chars = [];
+  var types = [];
+
   function bidi(str, startLevel, vertical) {
     var isLTR = true;
     var strLength = str.length;
@@ -153,8 +158,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
 
     // Get types and fill arrays
-    var chars = [];
-    var types = [];
+    chars.length = 0;
+    types.length = 0;
     var numBidi = 0;
 
     for (var i = 0; i < strLength; ++i) {
