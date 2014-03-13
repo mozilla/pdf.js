@@ -30,6 +30,13 @@
 PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
 
 /**
+ * The url of where the predefined Adobe CMaps are located. Include trailing
+ * slash.
+ * @var {string}
+ */
+PDFJS.cMapUrl = PDFJS.cMapUrl === undefined ? null : PDFJS.cMapUrl;
+
+/*
  * By default fonts are converted to OpenType fonts and loaded via font face
  * rules. If disabled, the font will be rendered using a built in font renderer
  * that constructs the glyphs with primitive path commands.
@@ -934,6 +941,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         source: source,
         disableRange: PDFJS.disableRange,
         maxImageSize: PDFJS.maxImageSize,
+        cMapUrl: PDFJS.cMapUrl,
         disableFontFace: PDFJS.disableFontFace,
         disableCreateObjectURL: PDFJS.disableCreateObjectURL,
         verbosity: PDFJS.verbosity

@@ -1,0 +1,104 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%DocumentNeededResources: CMap (UniGB-UTF16-H)
+%%IncludeResource: ProcSet (CIDInit)
+%%IncludeResource: CMap (UniGB-UTF16-H)
+%%BeginResource: CMap (UniGB-UTF16-V)
+%%Title: (UniGB-UTF16-V Adobe GB1 5)
+%%Version: 1.004
+%%Copyright: -----------------------------------------------------------
+%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: All rights reserved.
+%%Copyright:
+%%Copyright: Redistribution and use in source and binary forms, with or
+%%Copyright: without modification, are permitted provided that the
+%%Copyright: following conditions are met:
+%%Copyright:
+%%Copyright: Redistributions of source code must retain the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer.
+%%Copyright:
+%%Copyright: Redistributions in binary form must reproduce the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer in the documentation and/or other materials
+%%Copyright: provided with the distribution. 
+%%Copyright:
+%%Copyright: Neither the name of Adobe Systems Incorporated nor the names
+%%Copyright: of its contributors may be used to endorse or promote
+%%Copyright: products derived from this software without specific prior
+%%Copyright: written permission. 
+%%Copyright:
+%%Copyright: THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+%%Copyright: CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+%%Copyright: INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%%Copyright: MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%%Copyright: DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+%%Copyright: CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%Copyright: SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+%%Copyright: NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%%Copyright: LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%Copyright: HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+%%Copyright: CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+%%Copyright: OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%Copyright: SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%Copyright: -----------------------------------------------------------
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/UniGB-UTF16-H usecmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (GB1) def
+  /Supplement 5 def
+end def
+
+/CMapName /UniGB-UTF16-V def
+/CMapVersion 1.004 def
+/CMapType 1 def
+
+/XUID [1 10 25602] def
+
+/WMode 1 def
+
+17 begincidchar
+<2014> 598
+<2026> 599
+<3001> 575
+<3002> 574
+<3013> 7706
+<ff01> 578
+<ff0c> 573
+<ff0e> 7707
+<ff1d> 7708
+<ff1f> 579
+<ff3b> 7709
+<ff3d> 7710
+<ff3f> 600
+<ff5b> 596
+<ff5d> 597
+<ff5e> 7704
+<ffe3> 7711
+endcidchar
+
+6 begincidrange
+<3008> <300f> 584
+<3010> <3011> 594
+<3014> <3015> 582
+<3016> <3017> 592
+<ff08> <ff09> 580
+<ff1a> <ff1b> 576
+endcidrange
+
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF

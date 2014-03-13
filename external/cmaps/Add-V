@@ -1,0 +1,135 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%DocumentNeededResources: CMap (Add-H)
+%%IncludeResource: ProcSet (CIDInit)
+%%IncludeResource: CMap (Add-H)
+%%BeginResource: CMap (Add-V)
+%%Title: (Add-V Adobe Japan1 1)
+%%Version: 10.003
+%%Copyright: -----------------------------------------------------------
+%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: All rights reserved.
+%%Copyright:
+%%Copyright: Redistribution and use in source and binary forms, with or
+%%Copyright: without modification, are permitted provided that the
+%%Copyright: following conditions are met:
+%%Copyright:
+%%Copyright: Redistributions of source code must retain the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer.
+%%Copyright:
+%%Copyright: Redistributions in binary form must reproduce the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer in the documentation and/or other materials
+%%Copyright: provided with the distribution. 
+%%Copyright:
+%%Copyright: Neither the name of Adobe Systems Incorporated nor the names
+%%Copyright: of its contributors may be used to endorse or promote
+%%Copyright: products derived from this software without specific prior
+%%Copyright: written permission. 
+%%Copyright:
+%%Copyright: THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+%%Copyright: CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+%%Copyright: INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%%Copyright: MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%%Copyright: DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+%%Copyright: CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%Copyright: SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+%%Copyright: NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%%Copyright: LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%Copyright: HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+%%Copyright: CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+%%Copyright: OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%Copyright: SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%Copyright: -----------------------------------------------------------
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/Add-H usecmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (Japan1) def
+  /Supplement 1 def
+end def
+
+/CMapName /Add-V def
+/CMapVersion 10.003 def
+/CMapType 1 def
+
+/UIDOffset 790 def
+/XUID [1 10 25328] def
+
+/WMode 1 def
+
+57 begincidrange
+<2122> <2123> 7887
+<2124> <2124> 8268
+<2125> <2125> 8274
+<2131> <2132> 7889
+<213c> <213e> 7891
+<2141> <2145> 7894
+<2146> <2146> 8282
+<2147> <2147> 8275
+<2148> <2148> 8280
+<2149> <2149> 8277
+<214a> <215b> 7899
+<2421> <2421> 7918
+<2423> <2423> 7919
+<2425> <2425> 7920
+<2427> <2427> 7921
+<2429> <2429> 7922
+<2443> <2443> 7923
+<2463> <2463> 7924
+<2465> <2465> 7925
+<2467> <2467> 7926
+<246e> <246e> 7927
+<2475> <2476> 8264
+<2521> <2521> 7928
+<2523> <2523> 7929
+<2525> <2525> 7930
+<2527> <2527> 7931
+<2529> <2529> 7932
+<2543> <2543> 7933
+<2563> <2563> 7934
+<2565> <2565> 7935
+<2567> <2567> 7936
+<256e> <256e> 7937
+<2575> <2576> 7938
+<7759> <7759> 7943
+<775a> <775a> 7940
+<775b> <775b> 8329
+<775c> <775c> 7941
+<775d> <775d> 8330
+<775e> <775f> 8339
+<7760> <7760> 7945
+<7761> <7761> 8338
+<7762> <7762> 7947
+<7763> <7763> 7951
+<7764> <7764> 8348
+<7765> <7765> 7953
+<7766> <7766> 7950
+<7767> <7767> 8344
+<7768> <7768> 8347
+<7769> <7769> 7954
+<776a> <776a> 8343
+<776b> <776c> 8349
+<776d> <776d> 8358
+<776e> <776e> 8357
+<776f> <776f> 8353
+<7770> <7770> 8356
+<7775> <7775> 8324
+<7d72> <7d72> 8333
+endcidrange
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF

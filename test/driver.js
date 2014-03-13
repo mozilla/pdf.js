@@ -28,6 +28,7 @@
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
 // PDFJS.disableWorker = true;
 PDFJS.enableStats = true;
+PDFJS.cMapUrl = '../external/cmaps/';
 
 var appPath, masterMode, browser, canvas, dummyCanvas, currentTaskIdx,
     manifest, stdout;

@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, StringStream, Lexer, CMapFactory */
+/* globals expect, it, describe, StringStream, Lexer, CMapFactory, Name */
 
 'use strict';
 
@@ -81,6 +81,23 @@ describe('cmap', function() {
     var c = cmap.readCharCode(String.fromCharCode(0x8E, 0xA1, 0xA1, 0xA1), 0);
     expect(c[0]).toEqual(0x8EA1A1A1);
     expect(c[1]).toEqual(4);
+  });
+  it('read usecmap', function() {
+    var str = '/Adobe-Japan1-1 usecmap\n';
+    var stream = new StringStream(str);
+    var cmap = CMapFactory.create(stream, null, '../../external/cmaps/');
+    expect(cmap.useCMap).toBeDefined();
+  });
+  it('parses wmode', function() {
+    var str = '/WMode 1 def\n';
+    var stream = new StringStream(str);
+    var cmap = CMapFactory.create(stream);
+    expect(cmap.vertical).toEqual(true);
+  });
+  it('loads built in cmap', function() {
+    var cmap = CMapFactory.create(new Name('Adobe-Japan1-1'),
+                                  '../../external/cmaps/',
+                                  null);
   });
 });
 

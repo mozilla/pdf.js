@@ -1400,36 +1400,35 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var accent = glyph.accent;
 
           var scaledX, scaledY, scaledAccentX, scaledAccentY;
-          if (!glyph.disabled) {
-            if (vertical) {
-              scaledX = vx / fontSizeScale;
-              scaledY = (x + vy) / fontSizeScale;
-            } else {
-              scaledX = x / fontSizeScale;
-              scaledY = 0;
-            }
 
-            if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
-              // some standard fonts may not have the exact width, trying to
-              // rescale per character
-              var measuredWidth = ctx.measureText(character).width * 1000 /
-                current.fontSize * current.fontSizeScale;
-              var characterScaleX = width / measuredWidth;
-              restoreNeeded = true;
-              ctx.save();
-              ctx.scale(characterScaleX, 1);
-              scaledX /= characterScaleX;
-              if (accent) {
-                scaledAccentX /= characterScaleX;
-              }
-            }
+          if (vertical) {
+            scaledX = vx / fontSizeScale;
+            scaledY = (x + vy) / fontSizeScale;
+          } else {
+            scaledX = x / fontSizeScale;
+            scaledY = 0;
+          }
 
-            this.paintChar(character, scaledX, scaledY);
+          if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
+            // some standard fonts may not have the exact width, trying to
+            // rescale per character
+            var measuredWidth = ctx.measureText(character).width * 1000 /
+              current.fontSize * current.fontSizeScale;
+            var characterScaleX = width / measuredWidth;
+            restoreNeeded = true;
+            ctx.save();
+            ctx.scale(characterScaleX, 1);
+            scaledX /= characterScaleX;
             if (accent) {
-              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+              scaledAccentX /= characterScaleX;
             }
+          }
+
+          this.paintChar(character, scaledX, scaledY);
+          if (accent) {
+            scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
+            scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+            this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
           }
 
           x += charWidth;
