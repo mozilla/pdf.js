@@ -98,11 +98,18 @@ var StringStream = (function StringStreamClosure() {
 
 // super class for the decoding streams
 var DecodeStream = (function DecodeStreamClosure() {
-  function DecodeStream() {
+  function DecodeStream(maybeMinBufferLength) {
     this.pos = 0;
     this.bufferLength = 0;
     this.eof = false;
     this.buffer = null;
+    this.minBufferLength = 512;
+    if (maybeMinBufferLength) {
+      // Compute the first power of two that is as big as maybeMinBufferLength.
+      while (this.minBufferLength < maybeMinBufferLength) {
+        this.minBufferLength *= 2;
+      }
+    }
   }
 
   DecodeStream.prototype = {
@@ -117,7 +124,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       } else {
         current = 0;
       }
-      var size = 512;
+      var size = this.minBufferLength;
       while (size < requested) {
         size *= 2;
       }
@@ -197,7 +204,7 @@ var DecodeStream = (function DecodeStreamClosure() {
 var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
   function StreamsSequenceStream(streams) {
     this.streams = streams;
-    DecodeStream.call(this);
+    DecodeStream.call(this, /* maybeLength = */ null);
   }
 
   StreamsSequenceStream.prototype = Object.create(DecodeStream.prototype);
@@ -328,7 +335,7 @@ var FlateStream = (function FlateStreamClosure() {
     0x50003, 0x50013, 0x5000b, 0x5001b, 0x50007, 0x50017, 0x5000f, 0x00000
   ]), 5];
 
-  function FlateStream(str) {
+  function FlateStream(str, maybeLength) {
     this.str = str;
     this.dict = str.dict;
 
@@ -346,7 +353,7 @@ var FlateStream = (function FlateStreamClosure() {
     this.codeSize = 0;
     this.codeBuf = 0;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   FlateStream.prototype = Object.create(DecodeStream.prototype);
@@ -581,7 +588,7 @@ var FlateStream = (function FlateStreamClosure() {
 })();
 
 var PredictorStream = (function PredictorStreamClosure() {
-  function PredictorStream(str, params) {
+  function PredictorStream(str, maybeLength, params) {
     var predictor = this.predictor = params.get('Predictor') || 1;
 
     if (predictor <= 1)
@@ -604,7 +611,7 @@ var PredictorStream = (function PredictorStreamClosure() {
     this.pixBytes = (colors * bits + 7) >> 3;
     this.rowBytes = (columns * colors * bits + 7) >> 3;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
     return this;
   }
 
@@ -774,21 +781,22 @@ var PredictorStream = (function PredictorStreamClosure() {
  * DecodeStreams.
  */
 var JpegStream = (function JpegStreamClosure() {
-  function JpegStream(stream, length, dict, xref) {
+  function JpegStream(stream, maybeLength, dict, xref) {
     // TODO: per poppler, some images may have 'junk' before that
     // need to be removed
     this.stream = stream;
-    this.length = length;
+    this.maybeLength = maybeLength;
     this.dict = dict;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   JpegStream.prototype = Object.create(DecodeStream.prototype);
 
   Object.defineProperty(JpegStream.prototype, 'bytes', {
     get: function JpegStream_bytes() {
-      return shadow(this, 'bytes', this.stream.getBytes(this.length));
+      // If this.maybeLength is null, we'll get the entire stream.
+      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
     configurable: true
   });
@@ -841,19 +849,20 @@ var JpegStream = (function JpegStreamClosure() {
  * the stream behaves like all the other DecodeStreams.
  */
 var JpxStream = (function JpxStreamClosure() {
-  function JpxStream(stream, length, dict) {
+  function JpxStream(stream, maybeLength, dict) {
     this.stream = stream;
-    this.length = length;
+    this.maybeLength = maybeLength;
     this.dict = dict;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   JpxStream.prototype = Object.create(DecodeStream.prototype);
 
   Object.defineProperty(JpxStream.prototype, 'bytes', {
     get: function JpxStream_bytes() {
-      return shadow(this, 'bytes', this.stream.getBytes(this.length));
+      // If this.maybeLength is null, we'll get the entire stream.
+      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
     configurable: true
   });
@@ -948,19 +957,20 @@ var JpxStream = (function JpxStreamClosure() {
  * the stream behaves like all the other DecodeStreams.
  */
 var Jbig2Stream = (function Jbig2StreamClosure() {
-  function Jbig2Stream(stream, length, dict) {
+  function Jbig2Stream(stream, maybeLength, dict) {
     this.stream = stream;
-    this.length = length;
+    this.maybeLength = maybeLength;
     this.dict = dict;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   Jbig2Stream.prototype = Object.create(DecodeStream.prototype);
 
   Object.defineProperty(Jbig2Stream.prototype, 'bytes', {
     get: function Jbig2Stream_bytes() {
-      return shadow(this, 'bytes', this.stream.getBytes(this.length));
+      // If this.maybeLength is null, we'll get the entire stream.
+      return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
     configurable: true
   });
@@ -1004,14 +1014,14 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
 })();
 
 var DecryptStream = (function DecryptStreamClosure() {
-  function DecryptStream(str, decrypt) {
+  function DecryptStream(str, maybeLength, decrypt) {
     this.str = str;
     this.dict = str.dict;
     this.decrypt = decrypt;
     this.nextChunk = null;
     this.initialized = false;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   var chunkSize = 512;
@@ -1048,12 +1058,17 @@ var DecryptStream = (function DecryptStreamClosure() {
 })();
 
 var Ascii85Stream = (function Ascii85StreamClosure() {
-  function Ascii85Stream(str) {
+  function Ascii85Stream(str, maybeLength) {
     this.str = str;
     this.dict = str.dict;
     this.input = new Uint8Array(5);
 
-    DecodeStream.call(this);
+    // Most streams increase in size when decoded, but Ascii85 streams
+    // typically shrink by ~20%.
+    if (maybeLength) {
+      maybeLength = 0.8 * maybeLength;
+    }
+    DecodeStream.call(this, maybeLength);
   }
 
   Ascii85Stream.prototype = Object.create(DecodeStream.prototype);
@@ -1121,13 +1136,18 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
 })();
 
 var AsciiHexStream = (function AsciiHexStreamClosure() {
-  function AsciiHexStream(str) {
+  function AsciiHexStream(str, maybeLength) {
     this.str = str;
     this.dict = str.dict;
 
     this.firstDigit = -1;
 
-    DecodeStream.call(this);
+    // Most streams increase in size when decoded, but AsciiHex streams shrink
+    // by 50%.
+    if (maybeLength) {
+      maybeLength = 0.5 * maybeLength;
+    }
+    DecodeStream.call(this, maybeLength);
   }
 
   AsciiHexStream.prototype = Object.create(DecodeStream.prototype);
@@ -1178,11 +1198,11 @@ var AsciiHexStream = (function AsciiHexStreamClosure() {
 })();
 
 var RunLengthStream = (function RunLengthStreamClosure() {
-  function RunLengthStream(str) {
+  function RunLengthStream(str, maybeLength) {
     this.str = str;
     this.dict = str.dict;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   RunLengthStream.prototype = Object.create(DecodeStream.prototype);
@@ -1650,7 +1670,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     [2, 2], [2, 2], [2, 2], [2, 2]
   ];
 
-  function CCITTFaxStream(str, params) {
+  function CCITTFaxStream(str, maybeLength, params) {
     this.str = str;
     this.dict = str.dict;
 
@@ -1691,7 +1711,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
       this.eatBits(1);
     }
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   CCITTFaxStream.prototype = Object.create(DecodeStream.prototype);
@@ -2186,7 +2206,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 })();
 
 var LZWStream = (function LZWStreamClosure() {
-  function LZWStream(str, earlyChange) {
+  function LZWStream(str, maybeLength, earlyChange) {
     this.str = str;
     this.dict = str.dict;
     this.cachedData = 0;
@@ -2209,7 +2229,7 @@ var LZWStream = (function LZWStreamClosure() {
     }
     this.lzwState = lzwState;
 
-    DecodeStream.call(this);
+    DecodeStream.call(this, maybeLength);
   }
 
   LZWStream.prototype = Object.create(DecodeStream.prototype);

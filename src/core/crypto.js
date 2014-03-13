@@ -431,9 +431,9 @@ var CipherTransform = (function CipherTransformClosure() {
     this.streamCipherConstructor = streamCipherConstructor;
   }
   CipherTransform.prototype = {
-    createStream: function CipherTransform_createStream(stream) {
+    createStream: function CipherTransform_createStream(stream, length) {
       var cipher = new this.streamCipherConstructor();
-      return new DecryptStream(stream,
+      return new DecryptStream(stream, length,
         function cipherTransformDecryptStream(data, finalize) {
           return cipher.decryptBlock(data, finalize);
         }
