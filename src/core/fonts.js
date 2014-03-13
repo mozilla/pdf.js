@@ -2127,6 +2127,29 @@ function adjustWidths(properties) {
   properties.defaultWidth *= scale;
 }
 
+var Glyph = (function GlyphClosure() {
+  function Glyph(fontChar, unicode, accent, width, vmetric, operatorList) {
+    this.fontChar = fontChar;
+    this.unicode = unicode;
+    this.accent = accent;
+    this.width = width;
+    this.vmetric = vmetric;
+    this.operatorList = operatorList;
+  }
+
+  Glyph.prototype.matchesForCache =
+      function(fontChar, unicode, accent, width, vmetric, operatorList) {
+    return this.fontChar === fontChar &&
+           this.unicode === unicode &&
+           this.accent === accent &&
+           this.width === width &&
+           this.vmetric === vmetric &&
+           this.operatorList === operatorList;
+  };
+
+  return Glyph;
+})();
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -2143,6 +2166,8 @@ var Font = (function FontClosure() {
     this.coded = properties.coded;
     this.loadCharProcs = properties.coded;
     this.sizes = [];
+
+    this.glyphCache = {};
 
     var names = name.split('+');
     names = names.length > 1 ? names[1] : names[0];
@@ -4305,9 +4330,9 @@ var Font = (function FontClosure() {
       width = isNum(width) ? width : this.defaultWidth;
       var vmetric = this.vmetrics && this.vmetrics[widthCode];
 
-      var unicodeChars = this.toUnicode[charcode] || charcode;
-      if (typeof unicodeChars === 'number') {
-        unicodeChars = String.fromCharCode(unicodeChars);
+      var unicode = this.toUnicode[charcode] || charcode;
+      if (typeof unicode === 'number') {
+        unicode = String.fromCharCode(unicode);
       }
 
       // First try the toFontChar map, if it's not there then try falling
@@ -4332,14 +4357,17 @@ var Font = (function FontClosure() {
         };
       }
 
-      return {
-        fontChar: String.fromCharCode(fontCharCode),
-        unicode: unicodeChars,
-        accent: accent,
-        width: width,
-        vmetric: vmetric,
-        operatorList: operatorList
-      };
+      var fontChar = String.fromCharCode(fontCharCode);
+
+      var glyph = this.glyphCache[charcode];
+      if (!glyph ||
+          !glyph.matchesForCache(fontChar, unicode, accent, width, vmetric,
+                                 operatorList)) {
+        glyph = new Glyph(fontChar, unicode, accent, width, vmetric,
+                          operatorList);
+        this.glyphCache[charcode] = glyph;
+      }
+      return glyph;
     },
 
     charsToGlyphs: function Font_charsToGlyphs(chars) {
