@@ -4779,7 +4779,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       if (keepStack) {
         this.stack.splice(start, howManyArgs);
       } else {
-        this.stack = [];
+        this.stack.length = 0;
       }
       return false;
     }
