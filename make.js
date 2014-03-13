@@ -105,6 +105,7 @@ target.generic = function() {
     copy: [
       [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
+      ['external/cmaps/', GENERIC_DIR + '/web/cmaps'],
       ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
@@ -494,6 +495,7 @@ target.firefox = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
+      ['external/cmaps/', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
        FIREFOX_BUILD_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', FIREFOX_BUILD_CONTENT_DIR]
@@ -610,6 +612,7 @@ target.mozcentral = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
+      ['external/cmaps/', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
       ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', MOZCENTRAL_CONTENT_DIR]
     ],
@@ -681,6 +684,7 @@ target.b2g = function() {
   var setup = {
     defines: defines,
     copy: [
+      ['external/cmaps/', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
@@ -721,6 +725,7 @@ target.chromium = function() {
   var setup = {
     defines: defines,
     copy: [
+      ['external/cmaps/', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
       [['extensions/chromium/*.json',
         'extensions/chromium/*.html',

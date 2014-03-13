@@ -1,0 +1,608 @@
+%!PS-Adobe-3.0 Resource-CMap
+%%DocumentNeededResources: ProcSet (CIDInit)
+%%IncludeResource: ProcSet (CIDInit)
+%%BeginResource: CMap (KSCpc-EUC-H)
+%%Title: (KSCpc-EUC-H Adobe Korea1 0)
+%%Version: 9.003
+%%Copyright: -----------------------------------------------------------
+%%Copyright: Copyright 1990-2009 Adobe Systems Incorporated.
+%%Copyright: All rights reserved.
+%%Copyright:
+%%Copyright: Redistribution and use in source and binary forms, with or
+%%Copyright: without modification, are permitted provided that the
+%%Copyright: following conditions are met:
+%%Copyright:
+%%Copyright: Redistributions of source code must retain the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer.
+%%Copyright:
+%%Copyright: Redistributions in binary form must reproduce the above
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer in the documentation and/or other materials
+%%Copyright: provided with the distribution. 
+%%Copyright:
+%%Copyright: Neither the name of Adobe Systems Incorporated nor the names
+%%Copyright: of its contributors may be used to endorse or promote
+%%Copyright: products derived from this software without specific prior
+%%Copyright: written permission. 
+%%Copyright:
+%%Copyright: THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+%%Copyright: CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+%%Copyright: INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%%Copyright: MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%%Copyright: DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+%%Copyright: CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%Copyright: SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+%%Copyright: NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%%Copyright: LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%Copyright: HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+%%Copyright: CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+%%Copyright: OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%Copyright: SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%Copyright: -----------------------------------------------------------
+%%EndComments
+
+/CIDInit /ProcSet findresource begin
+
+12 dict begin
+
+begincmap
+
+/CIDSystemInfo 3 dict dup begin
+  /Registry (Adobe) def
+  /Ordering (Korea1) def
+  /Supplement 0 def
+end def
+
+/CMapName /KSCpc-EUC-H def
+/CMapVersion 9.003 def
+/CMapType 1 def
+
+/UIDOffset 0 def
+/XUID [1 10 25404] def
+
+/WMode 0 def
+
+3 begincodespacerange
+  <00>   <84>
+  <A141> <FDFE>
+  <FE>   <FF>
+endcodespacerange
+
+1 beginnotdefrange
+<00> <1f> 1
+endnotdefrange
+
+100 begincidrange
+<20> <7e> 1
+<81> <83> 96
+<a141> <a17d> 8191
+<a181> <a19a> 8252
+<a19c> <a1a0> 8278
+<a1a1> <a1a1> 101
+<a1a2> <a1a3> 8283
+<a1a4> <a1fe> 104
+<a241> <a24c> 8285
+<a2a1> <a2e5> 195
+<a2e6> <a2fe> 8297
+<a341> <a37d> 8322
+<a381> <a39f> 8383
+<a3a1> <a3fe> 264
+<a441> <a47d> 8414
+<a481> <a49f> 8475
+<a4a1> <a4d3> 358
+<a4d5> <a4fe> 409
+<a541> <a57d> 8506
+<a581> <a58b> 8567
+<a5a1> <a5aa> 451
+<a5b0> <a5b9> 461
+<a5c1> <a5d8> 471
+<a5da> <a5de> 8578
+<a5e1> <a5f8> 495
+<a5f9> <a5fc> 8583
+<a641> <a67d> 8587
+<a681> <a68a> 8648
+<a68d> <a693> 8658
+<a696> <a69b> 8665
+<a69e> <a69f> 8671
+<a6a1> <a6e4> 519
+<a6e5> <a6fe> 8673
+<a741> <a77d> 8699
+<a781> <a79f> 8760
+<a7a1> <a7ef> 587
+<a7f0> <a7fe> 8791
+<a841> <a87d> 8806
+<a881> <a89f> 8867
+<a8a1> <a8a4> 666
+<a8a6> <a8a6> 670
+<a8a8> <a8af> 671
+<a8b1> <a8fe> 679
+<a941> <a974> 8898
+<a9a1> <a9fe> 757
+<aa41> <aa7d> 8950
+<aa81> <aa9f> 9011
+<aaa1> <aaf3> 851
+<aaf4> <aafe> 9042
+<ab41> <ab7d> 9053
+<ab81> <ab9f> 9114
+<aba1> <abf6> 934
+<abf7> <abfa> 9145
+<abfb> <abfd> 9330
+<ac41> <ac7d> 9149
+<ac81> <ac97> 9210
+<aca1> <acc1> 1020
+<acc2> <acd0> 9233
+<acd1> <acf1> 1053
+<acf2> <acf6> 9248
+<ad41> <ad7d> 9253
+<ada1> <adb0> 9314
+<b0a1> <b0fe> 1086
+<b1a1> <b1fe> 1180
+<b2a1> <b2fe> 1274
+<b3a1> <b3fe> 1368
+<b4a1> <b4fe> 1462
+<b5a1> <b5fe> 1556
+<b6a1> <b6fe> 1650
+<b7a1> <b7fe> 1744
+<b8a1> <b8fe> 1838
+<b9a1> <b9fe> 1932
+<baa1> <bafe> 2026
+<bba1> <bbfe> 2120
+<bca1> <bcfe> 2214
+<bda1> <bdfe> 2308
+<bea1> <befe> 2402
+<bfa1> <bffe> 2496
+<c0a1> <c0fe> 2590
+<c1a1> <c1fe> 2684
+<c2a1> <c2fe> 2778
+<c3a1> <c3fe> 2872
+<c4a1> <c4fe> 2966
+<c5a1> <c5fe> 3060
+<c6a1> <c6fe> 3154
+<c7a1> <c7fe> 3248
+<c8a1> <c8fe> 3342
+<caa1> <cafe> 3436
+<cba1> <cbcf> 3530
+<cbd0> <cbd0> 4116
+<cbd1> <cbd5> 3577
+<cbd6> <cbd6> 3678
+<cbd7> <cbe6> 3582
+<cbe7> <cbe7> 7053
+<cbe8> <cbfe> 3598
+<cca1> <ccfe> 3621
+<cda1> <cdce> 3715
+<cdcf> <cdcf> 3460
+<cdd0> <cde7> 3761
+<cde8> <cde8> 7900
+endcidrange
+
+100 begincidrange
+<cde9> <cdfe> 3785
+<cea1> <ceac> 3807
+<cead> <cead> 3802
+<ceae> <cefe> 3819
+<cfa1> <cffa> 3900
+<cffb> <cffb> 3902
+<cffc> <cffe> 3990
+<d0a1> <d0a1> 3993
+<d0a2> <d0a2> 3946
+<d0a3> <d0b7> 3994
+<d0b8> <d0b8> 3946
+<d0b9> <d0cf> 4015
+<d0d0> <d0d0> 3708
+<d0d1> <d0dc> 4038
+<d0dd> <d0dd> 4131
+<d0de> <d0fe> 4050
+<d1a1> <d1d3> 4083
+<d1d4> <d1d4> 4374
+<d1d5> <d1d5> 4156
+<d1d6> <d1d7> 4134
+<d1d8> <d1d8> 4375
+<d1d9> <d1da> 4136
+<d1db> <d1e0> 4376
+<d1e1> <d1e1> 4138
+<d1e2> <d1e2> 5800
+<d1e3> <d1e5> 4382
+<d1e6> <d1e6> 4386
+<d1e7> <d1e7> 4139
+<d1e8> <d1eb> 4387
+<d1ec> <d1ec> 4140
+<d1ed> <d1ed> 4391
+<d1ee> <d1ee> 4141
+<d1ef> <d1f0> 4394
+<d1f1> <d1f1> 4142
+<d1f2> <d1f2> 4396
+<d1f3> <d1f5> 4143
+<d1f6> <d1f6> 4399
+<d1f7> <d1f9> 4146
+<d1fa> <d1fa> 4403
+<d1fb> <d1fb> 4149
+<d1fc> <d1fd> 4406
+<d1fe> <d1fe> 4409
+<d2a1> <d2a1> 4150
+<d2a2> <d2a3> 4410
+<d2a4> <d2a6> 4151
+<d2a7> <d2aa> 4412
+<d2ab> <d2ab> 4419
+<d2ac> <d2ac> 4154
+<d2ad> <d2ad> 4420
+<d2ae> <d2b1> 4155
+<d2b2> <d2b2> 4424
+<d2b3> <d2bd> 4159
+<d2be> <d2be> 4511
+<d2bf> <d2c1> 4170
+<d2c2> <d2c3> 4513
+<d2c4> <d2c4> 4517
+<d2c5> <d2c5> 4173
+<d2c6> <d2ca> 4518
+<d2cb> <d2cb> 4524
+<d2cc> <d2cc> 4174
+<d2cd> <d2ce> 4525
+<d2cf> <d2d4> 4528
+<d2d5> <d2d7> 4535
+<d2d8> <d2d8> 4175
+<d2d9> <d2da> 4541
+<d2db> <d2dd> 4176
+<d2de> <d2df> 4545
+<d2e0> <d2e0> 4179
+<d2e1> <d2e1> 4547
+<d2e2> <d2e2> 4550
+<d2e3> <d2e3> 4180
+<d2e4> <d2e4> 4564
+<d2e5> <d2e8> 4566
+<d2e9> <d2ea> 4571
+<d2eb> <d2eb> 4576
+<d2ec> <d2ef> 4181
+<d2f0> <d2f3> 4604
+<d2f4> <d2f5> 4609
+<d2f6> <d2f6> 4185
+<d2f7> <d2f8> 4611
+<d2f9> <d2fe> 4186
+<d3a1> <d3fe> 4192
+<d4a1> <d4e5> 4286
+<d4e6> <d4e6> 4318
+<d4e7> <d4fb> 4355
+<d4fc> <d4fc> 4136
+<d4fd> <d4fe> 4376
+<d5a1> <d5a4> 4378
+<d5a5> <d5a5> 5800
+<d5a6> <d5aa> 4382
+<d5ab> <d5ab> 4139
+<d5ac> <d5ad> 4387
+<d5ae> <d5ae> 4192
+<d5af> <d5fe> 4389
+<d6a1> <d6b7> 4469
+<d6b8> <d6b8> 4167
+<d6b9> <d6cc> 4492
+<d6cd> <d6cd> 4172
+<d6ce> <d6fe> 4512
+<d7a1> <d7ca> 4561
+endcidrange
+
+100 begincidrange
+<d7cb> <d7cb> 5552
+<d7cc> <d7e3> 4603
+<d7e4> <d7e4> 6424
+<d7e5> <d7fe> 4627
+<d8a1> <d8fe> 4653
+<d9a1> <d9fe> 4747
+<daa1> <dafe> 4841
+<dba1> <dbc4> 4935
+<dbc5> <dbc5> 5151
+<dbc6> <dbe3> 4971
+<dbe4> <dbe4> 4922
+<dbe5> <dbfe> 5001
+<dca1> <dca4> 5027
+<dca5> <dca5> 7518
+<dca6> <dcfe> 5031
+<dda1> <dda4> 5120
+<dda5> <dda5> 5079
+<dda6> <ddd4> 5124
+<ddd5> <ddd5> 5109
+<ddd6> <ddf3> 5171
+<ddf4> <ddf4> 7607
+<ddf5> <ddfe> 5201
+<dea1> <defb> 5211
+<defc> <defc> 5584
+<defd> <defd> 5302
+<defe> <defe> 5367
+<dfa1> <dfb2> 5303
+<dfb3> <dfb3> 7083
+<dfb4> <dfe0> 5321
+<dfe1> <dfe1> 5362
+<dfe2> <dfe7> 5366
+<dfe8> <dfe8> 5485
+<dfe9> <dffe> 5372
+<e0a1> <e0f0> 5394
+<e0f1> <e0f1> 6001
+<e0f2> <e0fe> 5474
+<e1a1> <e1ac> 5487
+<e1ad> <e1ad> 5460
+<e1ae> <e1ec> 5499
+<e1ed> <e1ed> 5317
+<e1ee> <e1fe> 5562
+<e2a1> <e2fe> 5579
+<e3a1> <e3f4> 5673
+<e3f5> <e3f5> 7009
+<e3f6> <e3fe> 5757
+<e4a1> <e4a1> 7370
+<e4a2> <e4a8> 5766
+<e4a9> <e4a9> 5678
+<e4aa> <e4fe> 5773
+<e5a1> <e5ad> 5858
+<e5ae> <e5ae> 5874
+<e5af> <e5b0> 5871
+<e5b1> <e5b2> 4425
+<e5b3> <e5b8> 5873
+<e5b9> <e5b9> 4427
+<e5ba> <e5ba> 5879
+<e5bb> <e5bc> 4429
+<e5bd> <e5c3> 5880
+<e5c4> <e5c4> 4431
+<e5c5> <e5cd> 5887
+<e5ce> <e5ce> 4435
+<e5cf> <e5cf> 5896
+<e5d0> <e5d0> 4436
+<e5d1> <e5d1> 5897
+<e5d2> <e5d2> 4437
+<e5d3> <e5d5> 5898
+<e5d6> <e5d6> 4439
+<e5d7> <e5f9> 5901
+<e5fa> <e5fb> 4442
+<e5fc> <e5fc> 4159
+<e5fd> <e5fd> 5936
+<e5fe> <e5fe> 4444
+<e6a1> <e6a1> 4447
+<e6a2> <e6a3> 5937
+<e6a4> <e6a4> 4449
+<e6a5> <e6a6> 5939
+<e6a7> <e6a7> 4450
+<e6a8> <e6ac> 5941
+<e6ad> <e6ad> 4453
+<e6ae> <e6ae> 5946
+<e6af> <e6b1> 4455
+<e6b2> <e6b2> 5947
+<e6b3> <e6b3> 4458
+<e6b4> <e6b6> 5948
+<e6b7> <e6b8> 4459
+<e6b9> <e6bb> 5951
+<e6bc> <e6bc> 4463
+<e6bd> <e6c3> 5954
+<e6c4> <e6c4> 4160
+<e6c5> <e6c5> 5961
+<e6c6> <e6c7> 4465
+<e6c8> <e6c9> 5962
+<e6ca> <e6ca> 4161
+<e6cb> <e6d1> 5964
+<e6d2> <e6d2> 4468
+<e6d3> <e6d5> 5971
+<e6d6> <e6d6> 4469
+<e6d7> <e6d8> 5974
+<e6d9> <e6d9> 4470
+<e6da> <e6db> 5976
+endcidrange
+
+100 begincidrange
+<e6dc> <e6dc> 4162
+<e6dd> <e6de> 5978
+<e6df> <e6df> 4471
+<e6e0> <e6e0> 5980
+<e6e1> <e6e1> 4472
+<e6e2> <e6e3> 5981
+<e6e4> <e6e4> 4474
+<e6e5> <e6e5> 4473
+<e6e6> <e6e6> 4475
+<e6e7> <e6e7> 5983
+<e6e8> <e6e8> 4476
+<e6e9> <e6e9> 5984
+<e6ea> <e6eb> 4478
+<e6ec> <e6ec> 6447
+<e6ed> <e6ee> 5985
+<e6ef> <e6ef> 4481
+<e6f0> <e6f0> 5987
+<e6f1> <e6f1> 4482
+<e6f2> <e6f2> 5460
+<e6f3> <e6f4> 5988
+<e6f5> <e6f5> 4483
+<e6f6> <e6f6> 4163
+<e6f7> <e6f7> 4166
+<e6f8> <e6f8> 5990
+<e6f9> <e6f9> 4485
+<e6fa> <e6fe> 5991
+<e7a1> <e7a1> 4487
+<e7a2> <e7a5> 5996
+<e7a6> <e7a6> 4488
+<e7a7> <e7a8> 6000
+<e7a9> <e7a9> 4489
+<e7aa> <e7aa> 4491
+<e7ab> <e7ab> 6002
+<e7ac> <e7ac> 4167
+<e7ad> <e7ad> 4493
+<e7ae> <e7af> 6003
+<e7b0> <e7b0> 4494
+<e7b1> <e7be> 6005
+<e7bf> <e7bf> 4495
+<e7c0> <e7c0> 6019
+<e7c1> <e7c1> 7783
+<e7c2> <e7c5> 6020
+<e7c6> <e7c6> 4497
+<e7c7> <e7c7> 4499
+<e7c8> <e7ca> 6024
+<e7cb> <e7cb> 4501
+<e7cc> <e7cc> 6027
+<e7cd> <e7cd> 4502
+<e7ce> <e7ce> 6028
+<e7cf> <e7d0> 4503
+<e7d1> <e7d2> 6029
+<e7d3> <e7d3> 4506
+<e7d4> <e7de> 6031
+<e7df> <e7df> 4508
+<e7e0> <e7e3> 6042
+<e7e4> <e7e4> 4509
+<e7e5> <e7e5> 6046
+<e7e6> <e7e6> 4510
+<e7e7> <e7f6> 6047
+<e7f7> <e7f7> 5797
+<e7f8> <e7fe> 6063
+<e8a1> <e8e6> 6070
+<e8e7> <e8e8> 4551
+<e8e9> <e8ef> 6140
+<e8f0> <e8f0> 4553
+<e8f1> <e8f1> 4180
+<e8f2> <e8f6> 6147
+<e8f7> <e8f7> 4555
+<e8f8> <e8f8> 6152
+<e8f9> <e8f9> 5800
+<e8fa> <e8fa> 6153
+<e8fb> <e8fb> 4556
+<e8fc> <e8fd> 6154
+<e8fe> <e8fe> 4557
+<e9a1> <e9a6> 6156
+<e9a7> <e9a7> 4560
+<e9a8> <e9ab> 6162
+<e9ac> <e9ac> 4561
+<e9ad> <e9cb> 6166
+<e9cc> <e9cc> 4563
+<e9cd> <e9f6> 6197
+<e9f7> <e9f7> 7988
+<e9f8> <e9fe> 6239
+<eaa1> <eac0> 6246
+<eac1> <eac1> 6123
+<eac2> <eae4> 6278
+<eae5> <eae5> 4577
+<eae6> <eaf3> 6313
+<eaf4> <eaf4> 4183
+<eaf5> <eaf6> 6327
+<eaf7> <eaf7> 4579
+<eaf8> <eafb> 6329
+<eafc> <eafc> 4581
+<eafd> <eafd> 6333
+<eafe> <eafe> 4582
+<eba1> <eba3> 6334
+<eba4> <eba4> 4584
+<eba5> <eba6> 6337
+<eba7> <eba7> 4586
+<eba8> <eba8> 6339
+endcidrange
+
+100 begincidrange
+<eba9> <eba9> 4588
+<ebaa> <ebaa> 4184
+<ebab> <ebb9> 6340
+<ebba> <ebbb> 4590
+<ebbc> <ebbc> 6355
+<ebbd> <ebbd> 4592
+<ebbe> <ebc0> 6356
+<ebc1> <ebc1> 4593
+<ebc2> <ebc2> 4595
+<ebc3> <ebc5> 6359
+<ebc6> <ebc7> 4596
+<ebc8> <ebcb> 6362
+<ebcc> <ebcc> 4599
+<ebcd> <ebce> 6366
+<ebcf> <ebd1> 4600
+<ebd2> <ebd2> 5552
+<ebd3> <ebd7> 6368
+<ebd8> <ebd8> 4603
+<ebd9> <ebfe> 6373
+<eca1> <eca5> 6411
+<eca6> <eca6> 4614
+<eca7> <eca7> 4616
+<eca8> <eca9> 6416
+<ecaa> <ecaa> 4618
+<ecab> <ecae> 6418
+<ecaf> <ecaf> 5950
+<ecb0> <ecb1> 4620
+<ecb2> <ecb2> 4187
+<ecb3> <ecb4> 6422
+<ecb5> <ecb5> 4625
+<ecb6> <ecb7> 6424
+<ecb8> <ecb8> 4627
+<ecb9> <ecb9> 6426
+<ecba> <ecba> 4629
+<ecbb> <ecbf> 6427
+<ecc0> <ecc1> 4632
+<ecc2> <ecc4> 6432
+<ecc5> <ecc5> 4634
+<ecc6> <ecc6> 4636
+<ecc7> <ecc8> 6435
+<ecc9> <ecca> 4188
+<eccb> <ecd4> 6437
+<ecd5> <ecd5> 4638
+<ecd6> <ecdc> 6447
+<ecdd> <ecde> 4640
+<ecdf> <ece0> 6454
+<ece1> <ece1> 4642
+<ece2> <ece3> 6456
+<ece4> <ece4> 4644
+<ece5> <ece6> 6458
+<ece7> <ece8> 4645
+<ece9> <ecf6> 6460
+<ecf7> <ecf8> 4647
+<ecf9> <ecf9> 6474
+<ecfa> <ecfa> 4650
+<ecfb> <ecfe> 6475
+<eda1> <eda3> 4653
+<eda4> <eded> 6479
+<edee> <edee> 5351
+<edef> <edfe> 6553
+<eea1> <eeda> 6569
+<eedb> <eedb> 6494
+<eedc> <eefe> 6627
+<efa1> <effe> 6662
+<f0a1> <f0fe> 6756
+<f1a1> <f1fe> 6850
+<f2a1> <f2bc> 6944
+<f2bd> <f2bd> 5731
+<f2be> <f2f9> 6972
+<f2fa> <f2fa> 5771
+<f2fb> <f2fe> 7032
+<f3a1> <f3b0> 7036
+<f3b1> <f3b1> 4191
+<f3b2> <f3fe> 7052
+<f4a1> <f4a6> 7129
+<f4a7> <f4a7> 6484
+<f4a8> <f4ed> 7135
+<f4ee> <f4ee> 6684
+<f4ef> <f4fe> 7205
+<f5a1> <f5fe> 7221
+<f6a1> <f6f3> 7315
+<f6f4> <f6f4> 4279
+<f6f5> <f6f5> 7398
+<f6f6> <f6f6> 7139
+<f6f7> <f6fe> 7399
+<f7a1> <f7b7> 7407
+<f7b8> <f7b8> 4247
+<f7b9> <f7c7> 7430
+<f7c8> <f7c8> 4266
+<f7c9> <f7d2> 7445
+<f7d3> <f7d3> 4340
+<f7d4> <f7fe> 7455
+<f8a1> <f8da> 7498
+<f8db> <f8db> 7572
+<f8dc> <f8ef> 7556
+<f8f0> <f8f0> 5088
+<f8f1> <f8fe> 7576
+<f9a1> <f9fe> 7590
+<faa1> <faa1> 7709
+<faa2> <faa2> 3558
+endcidrange
+
+9 begincidrange
+<faa3> <fae5> 7684
+<fae6> <fae6> 3644
+<fae7> <fafe> 7751
+<fba1> <fbfe> 7775
+<fca1> <fca8> 7869
+<fca9> <fca9> 3815
+<fcaa> <fcfe> 7877
+<fda1> <fdfe> 7962
+<fe> <ff> 99
+endcidrange
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+
+%%EndResource
+%%EOF

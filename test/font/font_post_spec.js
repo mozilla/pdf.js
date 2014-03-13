@@ -12,7 +12,8 @@ describe('font_post', function() {
         loadedName: 'font',
         type: 'CIDFontType2',
         differences: [],
-        baseEncoding: []
+        defaultEncoding: [],
+        cMap: CMapFactory.create(new Name('Identity-H'))
       });
       ttx(font.data, function(result) { output = result; });
       runs(function() {
@@ -28,7 +29,7 @@ describe('font_post', function() {
         loadedName: 'font',
         type: 'TrueType',
         differences: [],
-        baseEncoding: []
+        defaultEncoding: []
       });
       ttx(font.data, function(result) { output = result; });
       runs(function() {
@@ -44,7 +45,7 @@ describe('font_post', function() {
         loadedName: 'font',
         type: 'TrueType',
         differences: [],
-        baseEncoding: []
+        defaultEncoding: []
       });
       ttx(font.data, function(result) { output = result; });
       runs(function() {

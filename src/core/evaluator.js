@@ -826,41 +826,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       // Based on 9.6.6 of the spec the encoding can come from multiple places
-      // but should be prioritized in the following order:
-      // 1. Encoding dictionary
-      // 2. Encoding within font file (Type1 or Type1C)
-      // 3. Default (depends on font type)
-      // Differences applied to the above.
-      // Note: we don't fill in the encoding from the font file(2) here but use
-      // the flag overridableEncoding to signal that the font can override the
-      // encoding if it has one built in.
-      var overridableEncoding = true;
-      var hasEncoding = false;
-      var flags = properties.flags;
+      // and depends on the font type. The base encoding and differences are
+      // read here, but the encoding that is actually used is chosen during
+      // glyph mapping in the font.
+      // TODO: Loading the built in encoding in the font would allow the
+      // differences to be merged in here not require us to hold on to it.
       var differences = [];
-      var baseEncoding = properties.type === 'TrueType' ?
-                          Encodings.WinAnsiEncoding :
-                          Encodings.StandardEncoding;
-      // The Symbolic attribute can be misused for regular fonts
-      // Heuristic: we have to check if the font is a standard one and has
-      // Symbolic font name
-      if (!!(flags & FontFlags.Symbolic)) {
-        baseEncoding = !properties.file && /Symbol/i.test(properties.name) ?
-          Encodings.SymbolSetEncoding : Encodings.MacRomanEncoding;
-      }
+      var baseEncodingName = null;
       if (dict.has('Encoding')) {
         var encoding = dict.get('Encoding');
         if (isDict(encoding)) {
-          var baseName = encoding.get('BaseEncoding');
-          if (baseName) {
-            overridableEncoding = false;
-            hasEncoding = true;
-            baseEncoding = Encodings[baseName.name];
-          }
-
+          baseEncodingName = encoding.get('BaseEncoding');
+          baseEncodingName = isName(baseEncodingName) ? baseEncodingName.name :
+            null;
           // Load the differences between the base and original
           if (encoding.has('Differences')) {
-            hasEncoding = true;
             var diffEncoding = encoding.get('Differences');
             var index = 0;
             for (var j = 0, jj = diffEncoding.length; j < jj; j++) {
@@ -872,38 +852,44 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
           }
         } else if (isName(encoding)) {
-          overridableEncoding = false;
-          hasEncoding = true;
-          var currentEncoding = Encodings[encoding.name];
-
-          // Some bad PDF files contain fonts whose encoding name is not among
-          // the predefined encodings, causing baseEncoding to be undefined.
-          // In this case, fallback to using the baseEncoding as defined above
-          // and let the font override the encoding if one is available.
-          if (currentEncoding) {
-            baseEncoding = currentEncoding;
-          } else {
-            overridableEncoding = true;
-          }
+          baseEncodingName = encoding.name;
         } else {
           error('Encoding is not a Name nor a Dict');
         }
+        // According to table 114 if the encoding is a named encoding it must be
+        // one of these predefined encodings.
+        if ((baseEncodingName !== 'MacRomanEncoding' &&
+             baseEncodingName !== 'MacExpertEncoding' &&
+             baseEncodingName !== 'WinAnsiEncoding')) {
+          baseEncodingName = null;
+        }
+      }
+
+      if (baseEncodingName) {
+        properties.defaultEncoding = Encodings[baseEncodingName].slice();
+      } else {
+        var encoding = properties.type === 'TrueType' ?
+                Encodings.WinAnsiEncoding :
+                Encodings.StandardEncoding;
+        // The Symbolic attribute can be misused for regular fonts
+        // Heuristic: we have to check if the font is a standard one also
+        if (!!(properties.flags & FontFlags.Symbolic)) {
+          encoding = !properties.file && /Symbol/i.test(properties.name) ?
+            Encodings.SymbolSetEncoding : Encodings.MacRomanEncoding;
+        }
+        properties.defaultEncoding = encoding;
       }
 
       properties.differences = differences;
-      properties.baseEncoding = baseEncoding;
-      properties.hasEncoding = hasEncoding;
-      properties.overridableEncoding = overridableEncoding;
+      properties.baseEncodingName = baseEncodingName;
+      properties.dict = dict;
     },
 
-    readToUnicode: function PartialEvaluator_readToUnicode(toUnicode, xref,
-                                                           properties) {
+    readToUnicode: function PartialEvaluator_readToUnicode(toUnicode) {
       var cmapObj = toUnicode;
       var charToUnicode = [];
       if (isName(cmapObj)) {
-        var isIdentityMap = cmapObj.name.substr(0, 9) == 'Identity-';
-        if (!isIdentityMap)
-          error('ToUnicode file cmap translation not implemented');
+        return CMapFactory.create(cmapObj).map;
       } else if (isStream(cmapObj)) {
         var cmap = CMapFactory.create(cmapObj).map;
         // Convert UTF-16BE
@@ -925,7 +911,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         });
         return cmap;
       }
-      return charToUnicode;
+      return null;
     },
     readCidToGidMap: function PartialEvaluator_readCidToGidMap(cidToGidStream) {
       // Extract the encoding from the CIDToGIDMap
@@ -1004,7 +990,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           if (isName(baseFontName)) {
             var metrics = this.getBaseFontMetrics(baseFontName.name);
 
-            glyphsWidths = metrics.widths;
+            glyphsWidths = this.buildCharCodeToWidth(metrics.widths,
+                                                     properties);
             defaultWidth = metrics.defaultWidth;
           }
         }
@@ -1072,6 +1059,25 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       };
     },
 
+    buildCharCodeToWidth: function PartialEvaluator_bulildCharCodeToWidth(
+                            widthsByGlyphName, properties) {
+      var widths = Object.create(null);
+      var differences = properties.differences;
+      var encoding = properties.defaultEncoding;
+      for (var charCode = 0; charCode < 256; charCode++) {
+        if (charCode in differences &&
+            widthsByGlyphName[differences[charCode]]) {
+          widths[charCode] = widthsByGlyphName[differences[charCode]];
+          continue;
+        }
+        if (charCode in encoding && widthsByGlyphName[encoding[charCode]]) {
+          widths[charCode] = widthsByGlyphName[encoding[charCode]];
+          continue;
+        }
+      }
+      return widths;
+    },
+
     translateFont: function PartialEvaluator_translateFont(dict,
                                                            xref) {
       var baseDict = dict;
@@ -1133,6 +1139,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             lastChar: maxCharIndex
           };
           this.extractDataStructures(dict, dict, xref, properties);
+          properties.widths = this.buildCharCodeToWidth(metrics.widths,
+                                                        properties);
 
           return new Font(baseFontName, null, properties);
         }
@@ -1210,12 +1218,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var cidEncoding = baseDict.get('Encoding');
         if (isName(cidEncoding)) {
           properties.cidEncoding = cidEncoding.name;
-          properties.vertical = /-V$/.test(cidEncoding.name);
         }
-        properties.cmap = CMapFactory.create(cidEncoding);
+        properties.cMap = CMapFactory.create(cidEncoding, PDFJS.cMapUrl, null);
+        properties.vertical = properties.cMap.vertical;
       }
-      this.extractWidths(dict, xref, descriptor, properties);
       this.extractDataStructures(dict, baseDict, xref, properties);
+      this.extractWidths(dict, xref, descriptor, properties);
 
       if (type.name === 'Type3') {
         properties.coded = true;
