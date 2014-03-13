@@ -39,17 +39,24 @@ var PageView = function pageView(container, id, scale,
 
   this.annotationLayer = null;
 
-  var anchor = document.createElement('a');
-  anchor.name = '' + this.id;
+  this.getElement = function pageViewGetElement(container) {
 
-  var div = this.el = document.createElement('div');
-  div.id = 'pageContainer' + this.id;
-  div.className = 'page';
-  div.style.width = Math.floor(this.viewport.width) + 'px';
-  div.style.height = Math.floor(this.viewport.height) + 'px';
+    var anchor = document.createElement('a');
+    anchor.name = '' + id;
 
-  container.appendChild(anchor);
-  container.appendChild(div);
+    var div = document.createElement('div');
+    div.id = 'pageContainer' + id;
+    div.className = 'page';
+    div.style.width = Math.floor(this.viewport.width) + 'px';
+    div.style.height = Math.floor(this.viewport.height) + 'px';
+
+    container.appendChild(anchor);
+    container.appendChild(div);
+
+    return div;
+  };
+
+  var div = this.el = this.getElement(container);
 
   this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
