@@ -149,7 +149,9 @@ var OPS = PDFJS.OPS = {
   paintImageMaskXObjectGroup: 84,
   paintImageXObject: 85,
   paintInlineImageXObject: 86,
-  paintInlineImageXObjectGroup: 87
+  paintInlineImageXObjectGroup: 87,
+  paintImageXObjectRepeat: 88,
+  paintImageMaskXObjectRepeat: 89
 };
 
 // A notice for devs. These are good for things that are helpful to devs, such

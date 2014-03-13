@@ -124,7 +124,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     buildPaintImageXObject: function PartialEvaluator_buildPaintImageXObject(
-                                resources, image, inline, operatorList) {
+                                resources, image, inline, operatorList,
+                                cacheKey, cache) {
       var self = this;
       var dict = image.dict;
       var w = dict.get('Width', 'W');
@@ -151,10 +152,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var canTransfer = image instanceof DecodeStream;
         var inverseDecode = !!decode && decode[0] > 0;
 
-        operatorList.addOp(OPS.paintImageMaskXObject,
-          [PDFImage.createMask(imgArray, width, height, canTransfer,
-                               inverseDecode)]
-        );
+        var imgData = PDFImage.createMask(imgArray, width, height,
+                                          canTransfer, inverseDecode);
+        imgData.cached = true;
+        var args = [imgData];
+        operatorList.addOp(OPS.paintImageMaskXObject, args);
+        if (cacheKey) {
+          cache.key = cacheKey;
+          cache.fn = OPS.paintImageMaskXObject;
+          cache.args = args;
+        }
         return;
       }
 
@@ -197,8 +204,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
                             null, [imgData.data.buffer]);
         }, self.handler, self.xref, resources, image, inline);
-
       operatorList.addOp(OPS.paintImageXObject, args);
+      if (cacheKey) {
+        cache.key = cacheKey;
+        cache.fn = OPS.paintImageXObject;
+        cache.args = args;
+      }
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
@@ -452,6 +463,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var self = this;
       var xref = this.xref;
       var handler = this.handler;
+      var imageCache = {};
 
       operatorList = operatorList || new OperatorList();
 
@@ -507,6 +519,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
               // eagerly compile XForm objects
               var name = args[0].name;
+              if (imageCache.key === name) {
+                operatorList.addOp(imageCache.fn, imageCache.args);
+                args = [];
+                continue;
+              }
+
               var xobj = xobjs.get(name);
               if (xobj) {
                 assertWellFormed(
@@ -525,7 +543,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   continue;
                 } else if ('Image' == type.name) {
                   self.buildPaintImageXObject(resources, xobj, false,
-                                              operatorList);
+                                              operatorList, name, imageCache);
                   args = [];
                   continue;
                 } else {
@@ -541,8 +559,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               args[0] = loadedName;
               break;
             case OPS.endInlineImage:
+              var cacheKey = args[0].cacheKey;
+              if (cacheKey && imageCache.key === cacheKey) {
+                operatorList.addOp(imageCache.fn, imageCache.args);
+                args = [];
+                continue;
+              }
               self.buildPaintImageXObject(resources, args[0], true,
-                                          operatorList);
+                                          operatorList, cacheKey, imageCache);
               args = [];
               continue;
             case OPS.save:
@@ -641,6 +665,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       resources = xref.fetchIfRef(resources) || new Dict();
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
+      var xobjsCache = {};
 
       var preprocessor = new EvaluatorPreprocessor(stream, xref);
       var res = resources;
@@ -735,6 +760,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var name = args[0].name;
+              if (xobjsCache.key === name) {
+                if (xobjsCache.texts) {
+                  Util.concatenateToArray(bidiTexts, xobjsCache.texts);
+                }
+                break;
+              }
+
               var xobj = xobjs.get(name);
               if (!xobj)
                 break;
@@ -746,14 +778,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 'XObject should have a Name subtype'
               );
 
-              if ('Form' !== type.name)
+              if ('Form' !== type.name) {
+                xobjsCache.key = name;
+                xobjsCache.texts = null;
                 break;
+              }
 
               var formTexts = this.getTextContent(
                 xobj,
                 xobj.dict.get('Resources') || resources,
                 textState
               );
+              xobjsCache.key = name;
+              xobjsCache.texts = formTexts;
               Util.concatenateToArray(bidiTexts, formTexts);
               break;
             case OPS.setGState:
@@ -1236,141 +1273,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     }
   };
 
-  PartialEvaluator.optimizeQueue =
-      function PartialEvaluator_optimizeQueue(queue) {
-
-    function squash(array, index, howMany, element) {
-      if (isArray(array)) {
-        array.splice(index, howMany, element);
-      } else {
-        // Replace the element.
-        array[index] = element;
-        // Shift everything after the element up.
-        var sub = array.subarray(index + howMany);
-        array.set(sub, index + 1);
-      }
-    }
-
-    var fnArray = queue.fnArray, argsArray = queue.argsArray;
-    // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
-    // searching for (save, transform, paintInlineImageXObject, restore)+
-    var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
-    var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
-    var MAX_WIDTH = 1000;
-    var IMAGE_PADDING = 1;
-    for (var i = 0, ii = argsArray.length; i < ii; i++) {
-      if (fnArray[i] === OPS.paintInlineImageXObject &&
-          fnArray[i - 2] === OPS.save && fnArray[i - 1] === OPS.transform &&
-          fnArray[i + 1] === OPS.restore) {
-        var j = i - 2;
-        for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
-        }
-        var count = Math.min((i - j) >> 2,
-                             MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
-        if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
-          continue;
-        }
-        // assuming that heights of those image is too small (~1 pixel)
-        // packing as much as possible by lines
-        var maxX = 0;
-        var map = [], maxLineHeight = 0;
-        var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
-        for (var q = 0; q < count; q++) {
-          var transform = argsArray[j + (q << 2) + 1];
-          var img = argsArray[j + (q << 2) + 2][0];
-          if (currentX + img.width > MAX_WIDTH) {
-            // starting new line
-            maxX = Math.max(maxX, currentX);
-            currentY += maxLineHeight + 2 * IMAGE_PADDING;
-            currentX = 0;
-            maxLineHeight = 0;
-          }
-          map.push({
-            transform: transform,
-            x: currentX, y: currentY,
-            w: img.width, h: img.height
-          });
-          currentX += img.width + 2 * IMAGE_PADDING;
-          maxLineHeight = Math.max(maxLineHeight, img.height);
-        }
-        var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
-        var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
-        var imgData = new Uint8Array(imgWidth * imgHeight * 4);
-        var imgRowSize = imgWidth << 2;
-        for (var q = 0; q < count; q++) {
-          var data = argsArray[j + (q << 2) + 2][0].data;
-          // copy image by lines and extends pixels into padding
-          var rowSize = map[q].w << 2;
-          var dataOffset = 0;
-          var offset = (map[q].x + map[q].y * imgWidth) << 2;
-          imgData.set(
-            data.subarray(0, rowSize), offset - imgRowSize);
-          for (var k = 0, kk = map[q].h; k < kk; k++) {
-            imgData.set(
-              data.subarray(dataOffset, dataOffset + rowSize), offset);
-            dataOffset += rowSize;
-            offset += imgRowSize;
-          }
-          imgData.set(
-            data.subarray(dataOffset - rowSize, dataOffset), offset);
-          while (offset >= 0) {
-            data[offset - 4] = data[offset];
-            data[offset - 3] = data[offset + 1];
-            data[offset - 2] = data[offset + 2];
-            data[offset - 1] = data[offset + 3];
-            data[offset + rowSize] = data[offset + rowSize - 4];
-            data[offset + rowSize + 1] = data[offset + rowSize - 3];
-            data[offset + rowSize + 2] = data[offset + rowSize - 2];
-            data[offset + rowSize + 3] = data[offset + rowSize - 1];
-            offset -= imgRowSize;
-          }
-        }
-        // replacing queue items
-        squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
-        argsArray.splice(j, count * 4,
-          [{width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
-            data: imgData}, map]);
-        i = j;
-        ii = argsArray.length;
-      }
-    }
-    // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
-    // searching for (save, transform, paintImageMaskXObject, restore)+
-    var MIN_IMAGES_IN_MASKS_BLOCK = 10;
-    var MAX_IMAGES_IN_MASKS_BLOCK = 100;
-    for (var i = 0, ii = argsArray.length; i < ii; i++) {
-      if (fnArray[i] === OPS.paintImageMaskXObject &&
-          fnArray[i - 2] === OPS.save && fnArray[i - 1] === OPS.transform &&
-          fnArray[i + 1] === OPS.restore) {
-        var j = i - 2;
-        for (i += 2; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
-        }
-        var count = Math.min((i - j) >> 2,
-                             MAX_IMAGES_IN_MASKS_BLOCK);
-        if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
-          continue;
-        }
-        var images = [];
-        for (var q = 0; q < count; q++) {
-          var transform = argsArray[j + (q << 2) + 1];
-          var maskParams = argsArray[j + (q << 2) + 2][0];
-          images.push({data: maskParams.data, width: maskParams.width,
-            height: maskParams.height, transform: transform});
-        }
-        // replacing queue items
-        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectGroup);
-        argsArray.splice(j, count * 4, [images]);
-        i = j;
-        ii = argsArray.length;
-      }
-    }
-  };
-
   return PartialEvaluator;
 })();
 
 var OperatorList = (function OperatorListClosure() {
-  var CHUNK_SIZE = 100;
+  var CHUNK_SIZE = 1000;
+  var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
     function getTransfers(queue) {
       var transfers = [];
@@ -1381,7 +1289,9 @@ var OperatorList = (function OperatorListClosure() {
           case OPS.paintInlineImageXObjectGroup:
           case OPS.paintImageMaskXObject:
             var arg = argsArray[i][0]; // first param in imgData
-            transfers.push(arg.data.buffer);
+            if (!arg.cached) {
+              transfers.push(arg.data.buffer);
+            }
             break;
         }
       }
@@ -1416,6 +1326,10 @@ var OperatorList = (function OperatorListClosure() {
         this.fnArray[this.fnIndex++] = fn;
         this.argsArray.push(args);
         if (this.fnIndex >= CHUNK_SIZE) {
+          this.flush();
+        } else if (this.fnIndex >= CHUNK_SIZE_ABOUT &&
+          (fn === OPS.restore || fn === OPS.endText)) {
+          // heuristic to flush on boundary of restore or endText
           this.flush();
         }
       } else {
@@ -1454,7 +1368,7 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     flush: function(lastChunk) {
-      PartialEvaluator.optimizeQueue(this);
+      new QueueOptimizer().optimize(this);
       var transfers = getTransfers(this);
       this.messageHandler.send('RenderPageChunk', {
         operatorList: {
@@ -1757,4 +1671,332 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessor() {
     }
   };
   return EvaluatorPreprocessor;
+})();
+
+var QueueOptimizer = (function QueueOptimizerClosure() {
+  function squash(array, index, howMany, element) {
+    if (isArray(array)) {
+      array.splice(index, howMany, element);
+    } else if (typeof element !== 'undefined') {
+      // Replace the element.
+      array[index] = element;
+      // Shift everything after the element up.
+      var sub = array.subarray(index + howMany);
+      array.set(sub, index + 1);
+    } else {
+      // Shift everything after the element up.
+      var sub = array.subarray(index + howMany);
+      array.set(sub, index);
+    }
+  }
+
+  function addState(parentState, pattern, fn) {
+    var state = parentState;
+    for (var i = 0, ii = pattern.length - 1; i < ii; i++) {
+      var item = pattern[i];
+      state = state[item] || (state[item] = []);
+    }
+    state[pattern[pattern.length - 1]] = fn;
+  }
+
+  var InitialState = [];
+
+  addState(InitialState,
+    [OPS.save, OPS.transform, OPS.paintInlineImageXObject, OPS.restore],
+    function foundInlineImageGroup(context) {
+      // grouping paintInlineImageXObject's into paintInlineImageXObjectGroup
+      // searching for (save, transform, paintInlineImageXObject, restore)+
+      var MIN_IMAGES_IN_INLINE_IMAGES_BLOCK = 10;
+      var MAX_IMAGES_IN_INLINE_IMAGES_BLOCK = 200;
+      var MAX_WIDTH = 1000;
+      var IMAGE_PADDING = 1;
+
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var j = context.currentOperation - 3, i = j + 4;
+      var ii = context.operationsLength;
+
+      for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
+      }
+      var count = Math.min((i - j) >> 2, MAX_IMAGES_IN_INLINE_IMAGES_BLOCK);
+      if (count < MIN_IMAGES_IN_INLINE_IMAGES_BLOCK) {
+        context.currentOperation = i - 1;
+        return;
+      }
+      // assuming that heights of those image is too small (~1 pixel)
+      // packing as much as possible by lines
+      var maxX = 0;
+      var map = [], maxLineHeight = 0;
+      var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
+      for (var q = 0; q < count; q++) {
+        var transform = argsArray[j + (q << 2) + 1];
+        var img = argsArray[j + (q << 2) + 2][0];
+        if (currentX + img.width > MAX_WIDTH) {
+          // starting new line
+          maxX = Math.max(maxX, currentX);
+          currentY += maxLineHeight + 2 * IMAGE_PADDING;
+          currentX = 0;
+          maxLineHeight = 0;
+        }
+        map.push({
+          transform: transform,
+          x: currentX, y: currentY,
+          w: img.width, h: img.height
+        });
+        currentX += img.width + 2 * IMAGE_PADDING;
+        maxLineHeight = Math.max(maxLineHeight, img.height);
+      }
+      var imgWidth = Math.max(maxX, currentX) + IMAGE_PADDING;
+      var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
+      var imgData = new Uint8Array(imgWidth * imgHeight * 4);
+      var imgRowSize = imgWidth << 2;
+      for (var q = 0; q < count; q++) {
+        var data = argsArray[j + (q << 2) + 2][0].data;
+        // copy image by lines and extends pixels into padding
+        var rowSize = map[q].w << 2;
+        var dataOffset = 0;
+        var offset = (map[q].x + map[q].y * imgWidth) << 2;
+        imgData.set(
+          data.subarray(0, rowSize), offset - imgRowSize);
+        for (var k = 0, kk = map[q].h; k < kk; k++) {
+          imgData.set(
+            data.subarray(dataOffset, dataOffset + rowSize), offset);
+          dataOffset += rowSize;
+          offset += imgRowSize;
+        }
+        imgData.set(
+          data.subarray(dataOffset - rowSize, dataOffset), offset);
+        while (offset >= 0) {
+          data[offset - 4] = data[offset];
+          data[offset - 3] = data[offset + 1];
+          data[offset - 2] = data[offset + 2];
+          data[offset - 1] = data[offset + 3];
+          data[offset + rowSize] = data[offset + rowSize - 4];
+          data[offset + rowSize + 1] = data[offset + rowSize - 3];
+          data[offset + rowSize + 2] = data[offset + rowSize - 2];
+          data[offset + rowSize + 3] = data[offset + rowSize - 1];
+          offset -= imgRowSize;
+        }
+      }
+      // replacing queue items
+      squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
+      argsArray.splice(j, count * 4,
+        [{width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
+          data: imgData}, map]);
+      context.currentOperation = j;
+      context.operationsLength -= count * 4 - 1;
+    });
+
+  addState(InitialState,
+    [OPS.save, OPS.transform, OPS.paintImageMaskXObject, OPS.restore],
+    function foundImageMaskGroup(context) {
+      // grouping paintImageMaskXObject's into paintImageMaskXObjectGroup
+      // searching for (save, transform, paintImageMaskXObject, restore)+
+      var MIN_IMAGES_IN_MASKS_BLOCK = 10;
+      var MAX_IMAGES_IN_MASKS_BLOCK = 100;
+      var MAX_SAME_IMAGES_IN_MASKS_BLOCK = 1000;
+
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var j = context.currentOperation - 3, i = j + 4;
+      var ii = context.operationsLength;
+
+      for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
+      }
+      var count = (i - j) >> 2;
+      if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
+        context.currentOperation = i - 1;
+        return;
+      }
+
+      var isSameImage = false;
+      if (argsArray[j + 1][1] === 0 && argsArray[j + 1][2] === 0) {
+        i = j + 4;
+        isSameImage = true;
+        for (var q = 1; q < count; q++, i += 4) {
+          var prevTransformArgs = argsArray[i - 3];
+          var transformArgs = argsArray[i + 1];
+          if (argsArray[i - 2][0] !== argsArray[i + 2][0] ||
+              prevTransformArgs[0] !== transformArgs[0] ||
+              prevTransformArgs[1] !== transformArgs[1] ||
+              prevTransformArgs[2] !== transformArgs[2] ||
+              prevTransformArgs[3] !== transformArgs[3]) {
+            if (q < MIN_IMAGES_IN_MASKS_BLOCK) {
+              isSameImage = false;
+            } else {
+              count = q;
+            }
+            break; // different image or transform
+          }
+        }
+      }
+
+      if (isSameImage) {
+        count = Math.min(count, MAX_SAME_IMAGES_IN_MASKS_BLOCK);
+        var positions = new Float32Array(count * 2);
+        i = j + 1;
+        for (var q = 0; q < count; q++) {
+          var transformArgs = argsArray[i];
+          positions[(q << 1)] = transformArgs[4];
+          positions[(q << 1) + 1] = transformArgs[5];
+          i += 4;
+        }
+
+        // replacing queue items
+        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectRepeat);
+        argsArray.splice(j, count * 4, [argsArray[j + 2][0],
+          argsArray[j + 1][0], argsArray[j + 1][3], positions]);
+
+        context.currentOperation = j;
+        context.operationsLength -= count * 4 - 1;
+      } else {
+        count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
+        var images = [];
+        for (var q = 0; q < count; q++) {
+          var transformArgs = argsArray[j + (q << 2) + 1];
+          var maskParams = argsArray[j + (q << 2) + 2][0];
+          images.push({data: maskParams.data, width: maskParams.width,
+            height: maskParams.height, transform: transformArgs});
+        }
+
+        // replacing queue items
+        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectGroup);
+        argsArray.splice(j, count * 4, [images]);
+
+        context.currentOperation = j;
+        context.operationsLength -= count * 4 - 1;
+      }
+    });
+
+  addState(InitialState,
+    [OPS.save, OPS.transform, OPS.paintImageXObject, OPS.restore],
+    function (context) {
+      var MIN_IMAGES_IN_BLOCK = 3;
+      var MAX_IMAGES_IN_BLOCK = 1000;
+
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var j = context.currentOperation - 3, i = j + 4;
+      if (argsArray[j + 1][1] !== 0 || argsArray[j + 1][2] !== 0) {
+        return;
+      }
+      var ii = context.operationsLength;
+      for (; i + 3 < ii && fnArray[i - 4] === fnArray[i]; i += 4) {
+        if (fnArray[i - 3] !== fnArray[i + 1] ||
+            fnArray[i - 2] !== fnArray[i + 2] ||
+            fnArray[i - 1] !== fnArray[i + 3]) {
+          break;
+        }
+        if (argsArray[i - 2][0] !== argsArray[i + 2][0]) {
+          break; // different image
+        }
+        var prevTransformArgs = argsArray[i - 3];
+        var transformArgs = argsArray[i + 1];
+        if (prevTransformArgs[0] !== transformArgs[0] ||
+            prevTransformArgs[1] !== transformArgs[1] ||
+            prevTransformArgs[2] !== transformArgs[2] ||
+            prevTransformArgs[3] !== transformArgs[3]) {
+          break; // different transform
+        }
+      }
+      var count = Math.min((i - j) >> 2, MAX_IMAGES_IN_BLOCK);
+      if (count < MIN_IMAGES_IN_BLOCK) {
+        context.currentOperation = i - 1;
+        return;
+      }
+
+      var positions = new Float32Array(count * 2);
+      i = j + 1;
+      for (var q = 0; q < count; q++) {
+        var transformArgs = argsArray[i];
+        positions[(q << 1)] = transformArgs[4];
+        positions[(q << 1) + 1] = transformArgs[5];
+        i += 4;
+      }
+      var args = [argsArray[j + 2][0], argsArray[j + 1][0],
+        argsArray[j + 1][3], positions];
+      // replacing queue items
+      squash(fnArray, j, count * 4, OPS.paintImageXObjectRepeat);
+      argsArray.splice(j, count * 4, args);
+
+      context.currentOperation = j;
+      context.operationsLength -= count * 4 - 1;
+    });
+
+  addState(InitialState,
+    [OPS.beginText, OPS.setFont, OPS.setTextMatrix, OPS.showText, OPS.endText],
+    function (context) {
+      // moving single chars with same font into beginText/endText groups
+      // searching for (beginText, setFont, setTextMatrix, showText, endText)+
+      var MIN_CHARS_IN_BLOCK = 3;
+      var MAX_CHARS_IN_BLOCK = 1000;
+
+      var fnArray = context.fnArray, argsArray = context.argsArray;
+      var j = context.currentOperation - 4, i = j + 5;
+      var ii = context.operationsLength;
+
+      for (; i < ii && fnArray[i - 5] === fnArray[i]; i++) {
+        if (fnArray[i] === OPS.setFont) {
+          if (argsArray[i - 5][0] !== argsArray[i][0] ||
+            argsArray[i - 5][1] !== argsArray[i][1]) {
+            break;
+          }
+        }
+      }
+      var count = Math.min(((i - j) / 5) | 0, MAX_CHARS_IN_BLOCK);
+      if (count < MIN_CHARS_IN_BLOCK) {
+        context.currentOperation = i - 1;
+        return;
+      }
+      if (j >= 4 && fnArray[j - 4] === fnArray[j + 1] &&
+        fnArray[j - 3] === fnArray[j + 2] &&
+        fnArray[j - 2] === fnArray[j + 3] &&
+        fnArray[j - 1] === fnArray[j + 4] &&
+        argsArray[j - 4][0] === argsArray[j + 1][0] &&
+        argsArray[j - 4][1] === argsArray[j + 1][1]) {
+        // extending one block ahead (very first block might have 'dependency')
+        count++;
+        j -= 5;
+      }
+      var k = j + 7;
+      i = j + 4;
+      for (var q = 1; q < count; q++) {
+        fnArray[i] = fnArray[k];
+        argsArray[i] = argsArray[k];
+        fnArray[i + 1] = fnArray[k + 1];
+        argsArray[i + 1] = argsArray[k + 1];
+        i += 2;
+        k += 5;
+      }
+      var removed = (count - 1) * 3;
+      squash(fnArray, i, removed);
+      argsArray.splice(i, removed);
+
+      context.currentOperation = i;
+      context.operationsLength -= removed;
+
+    });
+
+  function QueueOptimizer() {
+  }
+  QueueOptimizer.prototype = {
+    optimize: function QueueOptimizer_optimize(queue) {
+      var fnArray = queue.fnArray, argsArray = queue.argsArray;
+      var context = {
+        currentOperation: 0,
+        operationsLength: argsArray.length,
+        fnArray: fnArray,
+        argsArray: argsArray
+      };
+      var i, ii = argsArray.length;
+      var state;
+      for (i = 0; i < ii; i++) {
+        state = (state || InitialState)[fnArray[i]];
+        if (typeof state === 'function') { // we found some handler
+          context.currentOperation = i;
+          state = state(context);
+          i = context.currentOperation;
+          ii = context.operationsLength;
+        }
+      }
+    }
+  };
+  return QueueOptimizer;
 })();
