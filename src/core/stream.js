@@ -106,6 +106,12 @@ var DecodeStream = (function DecodeStreamClosure() {
   }
 
   DecodeStream.prototype = {
+    get length () {
+      while (!this.eof) {
+        this.readBlock();
+      }
+      return this.bufferLength;
+    },
     ensureBuffer: function DecodeStream_ensureBuffer(requested) {
       var buffer = this.buffer;
       var current;
