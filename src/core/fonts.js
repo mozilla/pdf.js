@@ -3675,9 +3675,11 @@ var Font = (function FontClosure() {
             }
             --ifLevel;
           } else if (op === 0x1C) { // JMPR
-            var offset = stack[stack.length - 1];
-            // only jumping forward to prevent infinite loop
-            if (offset > 0) { i += offset - 1; }
+            if (!inFDEF && !inELSE) {
+              var offset = stack[stack.length - 1];
+              // only jumping forward to prevent infinite loop
+              if (offset > 0) { i += offset - 1; }
+            }
           }
           // Adjusting stack not extactly, but just enough to get function id
           if (!inFDEF && !inELSE) {
