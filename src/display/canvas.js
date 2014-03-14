@@ -297,7 +297,9 @@ function compileType3Glyph(imgData) {
     var type = points[p], p0 = p, pp;
     do {
       var step = steps[type];
-      do { p += step; } while (!points[p]);
+      do {
+        p += step;
+      } while (!points[p]);
 
       pp = points[p];
       if (pp !== 5 && pp !== 10) {
@@ -976,8 +978,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (this.current.lineWidth === 0)
+      if (this.current.lineWidth === 0) {
         ctx.lineWidth = this.getSinglePixelWidth();
+      }
       // For stroke we want to temporarily change the global alpha to the
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
@@ -992,8 +995,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       } else {
         ctx.stroke();
       }
-      if (consumePath)
+      if (consumePath) {
         this.consumePath();
+      }
       // Restore the global alpha to the fill alpha
       ctx.globalAlpha = this.current.fillAlpha;
     },
@@ -1117,11 +1121,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var fontObj = this.commonObjs.get(fontRefName);
       var current = this.current;
 
-      if (!fontObj)
+      if (!fontObj) {
         error('Can\'t find font for ' + fontRefName);
+      }
 
-      current.fontMatrix = fontObj.fontMatrix ? fontObj.fontMatrix :
-                                                FONT_IDENTITY_MATRIX;
+      current.fontMatrix = (fontObj.fontMatrix ?
+                            fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
 
       // A valid matrix needs all main diagonal elements to be non-zero
       // This also ensures we bypass FF bugzilla bug #719844.
@@ -1142,8 +1147,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.font = fontObj;
       this.current.fontSize = size;
 
-      if (fontObj.coded)
+      if (fontObj.coded) {
         return; // we don't need ctx.font for Type3 fonts
+      }
 
       var name = fontObj.loadedName || 'sans-serif';
       var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
@@ -1362,13 +1368,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var lineWidth = current.lineWidth;
         var a1 = current.textMatrix[0], b1 = current.textMatrix[1];
         var scale = Math.sqrt(a1 * a1 + b1 * b1);
-        if (scale === 0 || lineWidth === 0)
+        if (scale === 0 || lineWidth === 0) {
           lineWidth = this.getSinglePixelWidth();
-        else
+        } else {
           lineWidth /= scale;
+        }
 
-        if (textSelection)
+        if (textSelection) {
           geom = this.createTextGeometry();
+        }
 
         if (fontSizeScale != 1.0) {
           ctx.scale(fontSizeScale, fontSizeScale);
@@ -1490,8 +1498,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             current.x += spacingLength;
           }
 
-          if (textSelection)
+          if (textSelection) {
             spacingAccumulator += spacingLength;
+          }
         } else {
           var shownCanvasWidth = this.showText(e, true);
 
@@ -1695,8 +1704,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
       this.baseTransformStack.push(this.baseTransform);
 
-      if (matrix && isArray(matrix) && 6 == matrix.length)
+      if (matrix && isArray(matrix) && 6 == matrix.length) {
         this.transform.apply(this, matrix);
+      }
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
