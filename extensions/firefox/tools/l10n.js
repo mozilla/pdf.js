@@ -29,12 +29,21 @@
 
   // translate a string
   function translateString(key, args, fallback) {
-    var data = getL10nData(key);
-    if (!data && fallback)
-      data = {textContent: fallback};
-    if (!data)
+    var i = key.lastIndexOf('.');
+    var name, property;
+    if (i >= 0) {
+      name = key.substring(0, i);
+      property = key.substring(i + 1);
+    } else {
+      name = key;
+      property = 'textContent';
+    }
+    var data = getL10nData(name);
+    var value = (data && data[property]) || fallback;
+    if (!value) {
       return '{{' + key + '}}';
-    return substArguments(data.textContent, args);
+    }
+    return substArguments(value, args);
   }
 
   // translate an HTML element
