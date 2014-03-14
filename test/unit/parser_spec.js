@@ -17,7 +17,7 @@ describe('parser', function() {
     it('should parse PostScript numbers', function() {
       var numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.', '0.0',
                     '123', '-98', '43445', '0', '+17'];
-      for (var i=0, ii=numbers.length; i<ii; i++) {
+      for (var i = 0, ii = numbers.length; i < ii; i++) {
         var num = numbers[i];
         var input = new StringStream(num);
         var lexer = new Lexer(input);
@@ -43,7 +43,7 @@ describe('parser', function() {
       input.getByte = function(super_getByte) {
         // simulating end of file using null (see issue 2766)
         var ch = super_getByte.call(input);
-        return ch === 0x24 /* '$' */ ? -1 : ch;
+        return (ch === 0x24 /* '$' */ ? -1 : ch);
       }.bind(input, input.getByte);
       var lexer = new Lexer(input);
       var result = lexer.getString();
