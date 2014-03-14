@@ -57,7 +57,14 @@ var Page = (function PageClosure() {
       return this.getPageProp('Contents');
     },
     get resources() {
-      return shadow(this, 'resources', this.inheritPageProp('Resources'));
+      var value = this.getInheritedPageProp('Resources');
+      // For robustness: The spec states that a \Resources entry has to be
+      // present, but can be empty. Some document omit it still. In this case
+      // return an empty dictionary:
+      if (value === undefined) {
+        value = new Dict();
+      }
+      return shadow(this, 'resources', value);
     },
     get mediaBox() {
       var obj = this.inheritPageProp('MediaBox');
