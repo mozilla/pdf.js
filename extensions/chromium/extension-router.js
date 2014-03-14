@@ -18,6 +18,7 @@ limitations under the License.
 /* globals chrome */
 
 'use strict';
+
 (function ExtensionRouterClosure() {
   var VIEWER_URL = chrome.extension.getURL('content/web/viewer.html');
   var CRX_BASE_URL = chrome.extension.getURL('/');
@@ -102,11 +103,11 @@ limitations under the License.
       return { redirectUrl: url };
     }
   }, {
-      types: ['main_frame', 'sub_frame'],
-      urls: schemes.map(function(scheme) {
-        // Format: "chrome-extension://[EXTENSIONID]/<scheme>*"
-        return CRX_BASE_URL + scheme + '*';
-      })
+    types: ['main_frame', 'sub_frame'],
+    urls: schemes.map(function(scheme) {
+      // Format: "chrome-extension://[EXTENSIONID]/<scheme>*"
+      return CRX_BASE_URL + scheme + '*';
+    })
   }, ['blocking']);
 
   chrome.runtime.onMessage.addListener(function(message, sender) {
