@@ -87,15 +87,17 @@ function cleanup() {
   // Clear out all the stylesheets since a new one is created for each font.
   while (document.styleSheets.length > 0) {
     var styleSheet = document.styleSheets[0];
-    while (styleSheet.cssRules.length > 0)
+    while (styleSheet.cssRules.length > 0) {
       styleSheet.deleteRule(0);
+    }
     var ownerNode = styleSheet.ownerNode;
     ownerNode.parentNode.removeChild(ownerNode);
   }
   var guard = document.getElementById('content-end');
   var body = document.body;
-  while (body.lastChild !== guard)
+  while (body.lastChild !== guard) {
     body.removeChild(body.lastChild);
+  }
 
   // Wipe out the link to the pdfdoc so it can be GC'ed.
   for (var i = 0; i < manifest.length; i++) {
@@ -107,10 +109,12 @@ function cleanup() {
 }
 
 function exceptionToString(e) {
-  if (typeof e !== 'object')
+  if (typeof e !== 'object') {
     return String(e);
-  if (!('message' in e))
+  }
+  if (!('message' in e)) {
     return JSON.stringify(e);
+  }
   return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
 }
 
@@ -198,8 +202,8 @@ SimpleTextLayerBuilder.prototype = {
     var ctx = this.ctx, viewport = this.viewport;
     // vScale and hScale already contain the scaling to pixel units
     var fontHeight = geom.fontSize * Math.abs(geom.vScale);
-    var fontAscent = geom.ascent ? geom.ascent * fontHeight :
-      geom.descent ? (1 + geom.descent) * fontHeight : fontHeight;
+    var fontAscent = (geom.ascent ? geom.ascent * fontHeight :
+      (geom.descent ? (1 + geom.descent) * fontHeight : fontHeight));
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = 'red';
@@ -429,13 +433,15 @@ function checkScrolling() {
 }
 
 function log(str) {
-  if (stdout.insertAdjacentHTML)
+  if (stdout.insertAdjacentHTML) {
     stdout.insertAdjacentHTML('BeforeEnd', str);
-  else
+  } else {
     stdout.innerHTML += str;
+  }
 
-  if (str.lastIndexOf('\n') >= 0)
+  if (str.lastIndexOf('\n') >= 0) {
     checkScrolling();
+  }
 }
 
 })(); // DriverClosure

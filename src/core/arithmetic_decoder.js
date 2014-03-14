@@ -128,41 +128,39 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
       var cx_index = contexts[pos] >> 1, cx_mps = contexts[pos] & 1;
       var qeTableIcx = QeTable[cx_index];
       var qeIcx = qeTableIcx.qe;
-      var nmpsIcx = qeTableIcx.nmps;
-      var nlpsIcx = qeTableIcx.nlps;
-      var switchIcx = qeTableIcx.switchFlag;
       var d;
-      this.a -= qeIcx;
+      var a = this.a - qeIcx;
 
       if (this.chigh < qeIcx) {
         // exchangeLps
-        if (this.a < qeIcx) {
-          this.a = qeIcx;
+        if (a < qeIcx) {
+          a = qeIcx;
           d = cx_mps;
-          cx_index = nmpsIcx;
+          cx_index = qeTableIcx.nmps;
         } else {
-          this.a = qeIcx;
-          d = 1 - cx_mps;
-          if (switchIcx) {
+          a = qeIcx;
+          d = 1 ^ cx_mps;
+          if (qeTableIcx.switchFlag === 1) {
             cx_mps = d;
           }
-          cx_index = nlpsIcx;
+          cx_index = qeTableIcx.nlps;
         }
       } else {
         this.chigh -= qeIcx;
-        if ((this.a & 0x8000) !== 0) {
+        if ((a & 0x8000) !== 0) {
+          this.a = a;
           return cx_mps;
         }
         // exchangeMps
-        if (this.a < qeIcx) {
-          d = 1 - cx_mps;
-          if (switchIcx) {
+        if (a < qeIcx) {
+          d = 1 ^ cx_mps;
+          if (qeTableIcx.switchFlag === 1) {
             cx_mps = d;
           }
-          cx_index = nlpsIcx;
+          cx_index = qeTableIcx.nlps;
         } else {
           d = cx_mps;
-          cx_index = nmpsIcx;
+          cx_index = qeTableIcx.nmps;
         }
       }
       // C.3.3 renormD;
@@ -171,11 +169,12 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
           this.byteIn();
         }
 
-        this.a <<= 1;
+        a <<= 1;
         this.chigh = ((this.chigh << 1) & 0xFFFF) | ((this.clow >> 15) & 1);
         this.clow = (this.clow << 1) & 0xFFFF;
         this.ct--;
-      } while ((this.a & 0x8000) === 0);
+      } while ((a & 0x8000) === 0);
+      this.a = a;
 
       contexts[pos] = cx_index << 1 | cx_mps;
       return d;

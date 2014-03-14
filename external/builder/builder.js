@@ -1,3 +1,5 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* jshint node:true */
 /* globals cp, ls, test */
 
@@ -32,10 +34,10 @@ function preprocess(inFilename, outFilename, defines) {
     }
     return null;
   }
-  var writeLine = typeof outFilename === 'function' ? outFilename :
-                                                      function(line) {
-    out += line + '\n';
-  };
+  var writeLine = (typeof outFilename === 'function' ? outFilename :
+    function(line) {
+      out += line + '\n';
+    });
   function include(file) {
     var realPath = fs.realpathSync(inFilename);
     var dir = path.dirname(realPath);
@@ -78,12 +80,14 @@ function preprocess(inFilename, outFilename, defines) {
           state = stack.pop();
           break;
         case 'expand':
-          if (state === 0 || state === 3)
+          if (state === 0 || state === 3) {
             expand(m[2]);
+          }
           break;
         case 'include':
-          if (state === 0 || state === 3)
+          if (state === 0 || state === 3) {
             include(m[2]);
+          }
           break;
       }
     } else {
@@ -94,10 +98,12 @@ function preprocess(inFilename, outFilename, defines) {
       }
     }
   }
-  if (state !== 0 || stack.length !== 0)
+  if (state !== 0 || stack.length !== 0) {
     throw new Error('Missing endif in preprocessor.');
-  if (typeof outFilename !== 'function')
+  }
+  if (typeof outFilename !== 'function') {
     fs.writeFileSync(outFilename, out);
+  }
 }
 exports.preprocess = preprocess;
 
@@ -198,8 +204,9 @@ function build(setup) {
     sources.forEach(function(source) {
       // ??? Warn if the source is wildcard and dest is file?
       var destWithFolder = destination;
-      if (test('-d', destination))
+      if (test('-d', destination)) {
         destWithFolder += '/' + path.basename(source);
+      }
       preprocess(source, destWithFolder, defines);
     });
   });
@@ -219,10 +226,12 @@ exports.build = build;
  */
 function merge(defaults, defines) {
   var ret = {};
-  for (var key in defaults)
+  for (var key in defaults) {
     ret[key] = defaults[key];
-  for (key in defines)
+  }
+  for (key in defines) {
     ret[key] = defines[key];
+  }
   return ret;
 }
 exports.merge = merge;

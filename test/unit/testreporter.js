@@ -13,8 +13,9 @@ var TestReporter = function(browser, appPath) {
     r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
       if (r.readyState == 4) {
         // Retry until successful
-        if (r.status !== 200)
+        if (r.status !== 200) {
           send(action, json);
+        }
       }
     };
     json['browser'] = browser;
@@ -30,8 +31,9 @@ var TestReporter = function(browser, appPath) {
       status: status,
       description: description
     };
-    if (typeof error !== 'undefined')
+    if (typeof error !== 'undefined') {
       message['error'] = error;
+    }
     send('/submit_task_results', message);
   }
 
@@ -59,9 +61,11 @@ var TestReporter = function(browser, appPath) {
     } else {
       var failedMessages = '';
       var items = results.getItems();
-      for (var i = 0, ii = items.length; i < ii; i++)
-        if (!items[i].passed())
+      for (var i = 0, ii = items.length; i < ii; i++) {
+        if (!items[i].passed()) {
           failedMessages += items[i].message + ' ';
+        }
+      }
       sendResult('TEST-UNEXPECTED-FAIL', results.description, failedMessages);
     }
   };

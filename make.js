@@ -64,8 +64,11 @@ var DEFINES = {
 target.all = function() {
   // Don't do anything by default
   echo('Please specify a target. Available targets:');
-  for (var t in target)
-    if (t !== 'all') echo('  ' + t);
+  for (var t in target) {
+    if (t !== 'all') {
+      echo('  ' + t);
+    }
+  }
 };
 
 
@@ -137,8 +140,9 @@ target.web = function() {
   echo();
   echo('### Creating web site');
 
-  if (test('-d', GH_PAGES_DIR))
+  if (test('-d', GH_PAGES_DIR)) {
     rm('-rf', GH_PAGES_DIR);
+  }
 
   mkdir('-p', GH_PAGES_DIR + '/web');
   mkdir('-p', GH_PAGES_DIR + '/web/images');
@@ -194,9 +198,9 @@ target.locale = function() {
   for (var i = 0; i < subfolders.length; i++) {
     var locale = subfolders[i];
     var path = LOCALE_SRC_DIR + locale;
-    if (!test('-d', path))
+    if (!test('-d', path)) {
       continue;
-
+    }
     if (!/^[a-z][a-z](-[A-Z][A-Z])?$/.test(locale)) {
       echo('Skipping invalid locale: ' + locale);
       continue;
@@ -274,8 +278,9 @@ target.bundle = function(args) {
                             BUNDLE_BUILD: bundleBuild}));
   }
 
-  if (!test('-d', BUILD_DIR))
+  if (!test('-d', BUILD_DIR)) {
     mkdir(BUILD_DIR);
+  }
 
   var SHARED_SRC_FILES = [
     'shared/util.js',
@@ -595,8 +600,9 @@ target.firefox = function() {
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
-    if (file.match(/^\./))
+    if (file.match(/^\./)) {
       rm('-f', file);
+    }
   });
 
   // Update the build version number
@@ -712,8 +718,9 @@ target.mozcentral = function() {
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
-    if (file.match(/^\./))
+    if (file.match(/^\./)) {
       rm('-f', file);
+    }
   });
 
   // Remove excluded files
@@ -835,10 +842,11 @@ target.chromium = function() {
   var public_chrome_files = file_list.reduce(function(war, file) {
     // Exclude directories (naive: Exclude paths without dot)
     if (file.indexOf('.') !== -1) {
-        // Only add a comma after the first file
-        if (war)
-          war += ',\n';
-        war += JSON.stringify('content/' + file);
+      // Only add a comma after the first file
+      if (war) {
+        war += ',\n';
+      }
+      war += JSON.stringify('content/' + file);
     }
     return war;
   }, '');
@@ -1046,8 +1054,9 @@ target.baseline = function() {
     exit(1);
   }
 
-  if (!test('-d', BUILD_DIR))
+  if (!test('-d', BUILD_DIR)) {
     mkdir(BUILD_DIR);
+  }
 
   var BASELINE_DIR = BUILD_DIR + 'baseline';
   if (test('-d', BASELINE_DIR)) {
@@ -1071,12 +1080,14 @@ target.mozcentralbaseline = function() {
 
   var BASELINE_DIR = BUILD_DIR + 'baseline';
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
-  if (test('-d', MOZCENTRAL_BASELINE_DIR))
+  if (test('-d', MOZCENTRAL_BASELINE_DIR)) {
     rm('-rf', MOZCENTRAL_BASELINE_DIR);
+  }
 
   cd(BASELINE_DIR);
-  if (test('-d', 'build'))
+  if (test('-d', 'build')) {
     rm('-rf', 'build');
+  }
   exec('node make mozcentral');
 
   cd(ROOT_DIR);
@@ -1104,8 +1115,9 @@ target.mozcentraldiff = function() {
   echo('### Creating mozcentral diff');
 
   var MOZCENTRAL_DIFF = BUILD_DIR + 'mozcentral.diff';
-  if (test('-f', MOZCENTRAL_DIFF))
+  if (test('-f', MOZCENTRAL_DIFF)) {
     rm(MOZCENTRAL_DIFF);
+  }
 
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
   if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
