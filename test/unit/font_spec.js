@@ -10,8 +10,9 @@ describe('font', function() {
     var line = '';
     for (var i = 0, ii = bytes.length; i < ii; ++i) {
       var b = bytes[i].toString(16);
-      if (b.length < 2)
+      if (b.length < 2) {
         b = '0' + b;
+      }
       line += b.toString(16);
     }
     return line;
@@ -34,12 +35,17 @@ describe('font', function() {
     fontData.push(parseInt(hex, 16));
   }
   var bytes = new Uint8Array(fontData);
-  fontData = {getBytes: function() { return bytes; }};
+  fontData = {
+    getBytes: function() {
+      return bytes;
+    }
+  };
 
   function bytesToString(bytesArray) {
     var str = '';
-    for (var i = 0, ii = bytesArray.length; i < ii; i++)
+    for (var i = 0, ii = bytesArray.length; i < ii; i++) {
       str += String.fromCharCode(bytesArray[i]);
+    }
     return str;
   }
 
@@ -70,8 +76,9 @@ describe('font', function() {
 
       index = new CFFIndex();
       var longName = [];
-      for (var i = 0; i < 129; i++)
+      for (var i = 0; i < 129; i++) {
         longName.push(0);
+      }
       index.add(longName);
       names = parser.parseNameIndex(index);
       expect(names[0].length).toEqual(127);

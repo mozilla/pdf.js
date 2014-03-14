@@ -9,8 +9,9 @@ describe('crypto', function() {
   function string2binary(s) {
     var n = s.length, i;
     var result = new Uint8Array(n);
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < n; ++i) {
       result[i] = s.charCodeAt(i) % 0xFF;
+    }
     return result;
   }
 
@@ -226,19 +227,19 @@ describe('CipherTransformFactory', function() {
   describe('#ctor', function() {
     it('should accept user password', function() {
       var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
-        '123456');
+                                               '123456');
     });
 
     it('should accept owner password', function() {
       var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
-        '654321');
+                                               '654321');
     });
 
     it('should not accept wrong password', function() {
       var thrown = false;
       try {
         var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
-          'wrong');
+                                                 'wrong');
       } catch (e) {
         thrown = true;
       }
