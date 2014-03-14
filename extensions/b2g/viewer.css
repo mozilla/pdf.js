@@ -38,8 +38,6 @@ body {
 }
 
 section {
-  overflow: hidden;
-  font-size: 1rem;
   position: absolute;
   top: 0;
   left: 0;
@@ -198,7 +196,7 @@ canvas {
 #loadingBar .progress {
   position: absolute;
   left: 0;
-  width: 0%;
+  width: 0;
   height: 100%;
   background-color: #ddd;
   overflow: hidden;
@@ -206,7 +204,7 @@ canvas {
 }
 
 @keyframes progressIndeterminate {
-  0% { left: 0%; }
+  0% { left: 0; }
   50% { left: 100%; }
   100% { left: 100%; }
 }
@@ -224,7 +222,8 @@ canvas {
   width: 5rem;
 
   background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
-  background-size: 100% 100% no-repeat;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 
   animation: progressIndeterminate 2s linear infinite;
 }

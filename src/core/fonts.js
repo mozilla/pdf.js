@@ -5141,7 +5141,7 @@ var CFFStandardStrings = [
   'odieresis', 'ograve', 'otilde', 'scaron', 'uacute', 'ucircumflex',
   'udieresis', 'ugrave', 'yacute', 'ydieresis', 'zcaron', 'exclamsmall',
   'Hungarumlautsmall', 'dollaroldstyle', 'dollarsuperior', 'ampersandsmall',
-  'Acutesmall', 'parenleftsuperior', 'parenrightsuperior', '266 ff',
+  'Acutesmall', 'parenleftsuperior', 'parenrightsuperior', 'twodotenleader',
   'onedotenleader', 'zerooldstyle', 'oneoldstyle', 'twooldstyle',
   'threeoldstyle', 'fouroldstyle', 'fiveoldstyle', 'sixoldstyle',
   'sevenoldstyle', 'eightoldstyle', 'nineoldstyle', 'commasuperior',
