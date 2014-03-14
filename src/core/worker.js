@@ -241,6 +241,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       PDFJS.verbosity = data.verbosity;
       PDFJS.cMapUrl = data.cMapUrl === undefined ?
                            null : data.cMapUrl;
+      PDFJS.cMapPacked = data.cMapPacked === true;
 
       getPdfManager(data).then(function () {
         pdfManager.onLoadedStream().then(function(stream) {

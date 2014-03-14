@@ -36,6 +36,12 @@ PDFJS.maxImageSize = PDFJS.maxImageSize === undefined ? -1 : PDFJS.maxImageSize;
  */
 PDFJS.cMapUrl = PDFJS.cMapUrl === undefined ? null : PDFJS.cMapUrl;
 
+/**
+ * Specifies if CMaps are binary packed.
+ * @var {boolean}
+ */
+PDFJS.cMapPacked = PDFJS.cMapPacked === undefined ? false : PDFJS.cMapPacked;
+
 /*
  * By default fonts are converted to OpenType fonts and loaded via font face
  * rules. If disabled, the font will be rendered using a built in font renderer
@@ -942,6 +948,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         disableRange: PDFJS.disableRange,
         maxImageSize: PDFJS.maxImageSize,
         cMapUrl: PDFJS.cMapUrl,
+        cMapPacked: PDFJS.cMapPacked,
         disableFontFace: PDFJS.disableFontFace,
         disableCreateObjectURL: PDFJS.disableCreateObjectURL,
         verbosity: PDFJS.verbosity

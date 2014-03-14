@@ -105,6 +105,7 @@ MIMEs = {
     '.ico': 'image/x-icon',
     '.png': 'image/png',
     '.log': 'text/plain',
+    '.bcmap': 'application/octet-stream',
     '.properties': 'text/plain'
 }
 

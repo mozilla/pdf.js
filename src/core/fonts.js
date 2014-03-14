@@ -4223,7 +4223,8 @@ var Font = (function FontClosure() {
         var ucs2CMapName = new Name(registry + '-' + ordering + '-UCS2');
         // d) Obtain the CMap with the name constructed in step (c) (available
         // from the ASN Web site; see the Bibliography).
-        var ucs2CMap = CMapFactory.create(ucs2CMapName, PDFJS.cMapUrl, null);
+        var ucs2CMap = CMapFactory.create(ucs2CMapName,
+          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null);
         var cMap = properties.cMap;
         var toUnicode = [];
         for (var charcode in cMap.map) {

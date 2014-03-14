@@ -66,6 +66,7 @@ PDFJS.imageResourcesPath = './images/';
 PDFJS.cMapUrl = '../external/cmaps/';
 //#else
 //PDFJS.cMapUrl = '../web/cmaps/';
+//PDFJS.cMapPacked = true;
 //#endif
 
 var mozL10n = document.mozL10n || document.webL10n;
