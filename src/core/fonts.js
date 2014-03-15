@@ -5191,6 +5191,18 @@ var Type1Font = function Type1Font(name, file, properties) {
                         (pfbHeader[3] << 8) | pfbHeader[2];
   }
 
+  // Some bad generators do stupid thing such as providing bad Length1,
+  // and Length2 entries, trying to fix one of them.
+  var eexecBlockLengthMagnitude = Math.pow(10,
+    Math.ceil(Math.log(eexecBlockLength) / Math.LN10));
+  if (headerBlockLength % eexecBlockLengthMagnitude === eexecBlockLength &&
+      headerBlockLength + eexecBlockLength > file.dict.get('Length')) {
+     headerBlockLength = +headerBlockLength.toString().replace(
+       file.dict.get('Length2'), '');
+     eexecBlockLength = +eexecBlockLength.toString().replace(
+       file.dict.get('Length3'), '');
+  }
+
   // Get the data block containing glyphs and subrs informations
   var headerBlock = new Stream(file.getBytes(headerBlockLength));
   var headerBlockParser = new Type1Parser(headerBlock);
