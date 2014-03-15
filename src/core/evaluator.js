@@ -1277,26 +1277,25 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
-    function getTransfers(queue) {
-      var transfers = [];
-      var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      for (var i = 0, ii = queue.length; i < ii; i++) {
-        switch (fnArray[i]) {
-          case OPS.paintInlineImageXObject:
-          case OPS.paintInlineImageXObjectGroup:
-          case OPS.paintImageMaskXObject:
-            var arg = argsArray[i][0]; // first param in imgData
-            if (!arg.cached) {
-              transfers.push(arg.data.buffer);
-            }
-            break;
-        }
+  function getTransfers(queue) {
+    var transfers = [];
+    var fnArray = queue.fnArray, argsArray = queue.argsArray;
+    for (var i = 0, ii = queue.length; i < ii; i++) {
+      switch (fnArray[i]) {
+        case OPS.paintInlineImageXObject:
+        case OPS.paintInlineImageXObjectGroup:
+        case OPS.paintImageMaskXObject:
+          var arg = argsArray[i][0]; // first param in imgData
+          if (!arg.cached) {
+            transfers.push(arg.data.buffer);
+          }
+          break;
       }
-      return transfers;
     }
+    return transfers;
+  }
 
-
-    function OperatorList(intent, messageHandler, pageIndex) {
+  function OperatorList(intent, messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
     // When there isn't a message handler the fn array needs to be able to grow
     // since we can't flush the operators.
