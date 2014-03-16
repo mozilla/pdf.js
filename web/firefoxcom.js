@@ -104,15 +104,17 @@ var DownloadManager = (function DownloadManagerClosure() {
   return DownloadManager;
 })();
 
-Preferences.prototype.writeToStorage = function(prefObj) {
-  FirefoxCom.requestSync('setPreferences', prefObj);
+Preferences._writeToStorage = function (prefObj) {
+  return new Promise(function (resolve) {
+    FirefoxCom.requestSync('setPreferences', prefObj);
+    resolve();
+  });
 };
 
-Preferences.prototype.readFromStorage = function(prefObj) {
-  var readFromStoragePromise = new Promise(function (resolve) {
+Preferences._readFromStorage = function (prefObj) {
+  return new Promise(function (resolve) {
     var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences',
                                                       prefObj));
     resolve(readPrefs);
   });
-  return readFromStoragePromise;
 };
