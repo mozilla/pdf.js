@@ -1699,6 +1699,25 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     state[pattern[pattern.length - 1]] = fn;
   }
 
+  function handlePaintSolidColorImageMask(index, count, fnArray, argsArray) {
+    // Handles special case of mainly latex documents which
+    // use image masks to draw lines with the current fill style.
+    // 'count' groups of (save, transform, paintImageMaskXObject, restore)+
+    // have been found at index.
+    for (var i = 0; i < count; i++) {
+      var arg = argsArray[index + 4 * i + 2];
+      var imageMask = arg.length == 1 && arg[0];
+      if (imageMask && imageMask.width == 1 && imageMask.height == 1 &&
+          (!imageMask.data.length || (imageMask.data.length == 1 &&
+                                      imageMask.data[0] === 0))) {
+        fnArray[index + 4 * i + 2] = OPS.paintSolidColorImageMask;
+        continue;
+      }
+      break;
+    }
+    return count - i;
+  }
+
   var InitialState = [];
 
   addState(InitialState,
@@ -1802,6 +1821,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
       }
       var count = (i - j) >> 2;
+      count = handlePaintSolidColorImageMask(j, count, fnArray, argsArray);
       if (count < MIN_IMAGES_IN_MASKS_BLOCK) {
         context.currentOperation = i - 1;
         return;
