@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, GrabToPan, PDFView, SecondaryToolbar */
+/* globals mozL10n, GrabToPan, PDFView, Preferences, SecondaryToolbar */
 
 'use strict';
 
@@ -43,8 +43,15 @@ var HandTool = {
     });
     if (toggleHandTool) {
       toggleHandTool.addEventListener('click', this.toggle.bind(this), false);
+
+      window.addEventListener('localized', function (evt) {
+        Preferences.get('enableHandToolOnLoad').then(function (prefValue) {
+          if (prefValue) {
+            this.handTool.activate();
+          }
+        }.bind(this));
+      }.bind(this));
     }
-    // TODO: Read global prefs and call this.handTool.activate() if needed.
   },
 
   toggle: function handToolToggle() {
