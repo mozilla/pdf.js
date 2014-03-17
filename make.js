@@ -90,7 +90,6 @@ var COMMON_WEB_FILES =
 target.generic = function() {
   target.bundle({});
   target.locale();
-  target.cmaps();
 
   cd(ROOT_DIR);
   echo();
@@ -100,6 +99,7 @@ target.generic = function() {
   mkdir('-p', GENERIC_DIR);
   mkdir('-p', GENERIC_DIR + BUILD_DIR);
   mkdir('-p', GENERIC_DIR + '/web');
+  mkdir('-p', GENERIC_DIR + '/web/cmaps');
 
   var defines = builder.merge(DEFINES, {GENERIC: true});
 
@@ -111,7 +111,7 @@ target.generic = function() {
       ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
-      ['web/cmaps', GENERIC_DIR + '/web'],
+      ['external/bcmaps/*', GENERIC_DIR + '/web/cmaps/'],
       ['web/locale', GENERIC_DIR + '/web']
     ],
     preprocess: [
@@ -231,17 +231,25 @@ target.locale = function() {
 
 //
 // make cmaps
-// Compresses cmap files
+// Compresses cmap files. Ensure that Adobe cmap download and uncompressed at
+// ./external/cmaps location.
 //
 target.cmaps = function (args) {
   var CMAP_INPUT = 'external/cmaps';
-  var VIEWER_CMAP_OUTPUT = 'web/cmaps';
+  var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
+
   cd(ROOT_DIR);
   echo();
   echo('### Building cmaps');
 
-  rm('-rf', VIEWER_CMAP_OUTPUT);
-  mkdir('-p', VIEWER_CMAP_OUTPUT);
+  // testing a file that usually present
+  if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
+    echo('./external/cmaps has no cmap files, please download them from:');
+    echo('  http://sourceforge.net/adobe/cmap/wiki/Home/');
+    exit(1);
+  }
+
+  rm(VIEWER_CMAP_OUTPUT + '*.bcmap');
 
   var compressCmaps =
     require('./external/cmapscompress/compress.js').compressCmaps;
@@ -430,7 +438,6 @@ target.minified = function() {
 
   target.bundle({});
   target.locale();
-  target.cmaps();
 
   cd(ROOT_DIR);
   echo();
@@ -440,6 +447,7 @@ target.minified = function() {
   mkdir('-p', MINIFIED_DIR);
   mkdir('-p', MINIFIED_DIR + BUILD_DIR);
   mkdir('-p', MINIFIED_DIR + '/web');
+  mkdir('-p', MINIFIED_DIR + '/web/cmaps');
 
   var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
 
@@ -449,7 +457,7 @@ target.minified = function() {
       [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
       ['web/viewer.css', MINIFIED_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
-      ['web/cmaps', MINIFIED_DIR + '/web'],
+      ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
       ['web/locale', MINIFIED_DIR + '/web']
     ],
     preprocess: [
@@ -514,7 +522,6 @@ target.extension = function() {
   echo('### Building extensions');
 
   target.locale();
-  target.cmaps();
   target.firefox();
   target.chromium();
 };
@@ -567,7 +574,6 @@ target.firefox = function() {
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.locale();
-  target.cmaps();
   target.bundle({ excludes: ['core/network.js'], defines: defines });
   cd(ROOT_DIR);
 
@@ -576,6 +582,7 @@ target.firefox = function() {
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web');
+  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps');
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm',
      FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
@@ -598,7 +605,7 @@ target.firefox = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      ['web/cmaps/', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
+      ['external/bcmaps/*', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
        FIREFOX_BUILD_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', FIREFOX_BUILD_CONTENT_DIR]
@@ -697,6 +704,7 @@ target.mozcentral = function() {
   mkdir('-p', MOZCENTRAL_L10N_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
+  mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web/cmaps');
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR);
   cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm', MOZCENTRAL_CONTENT_DIR);
@@ -715,7 +723,7 @@ target.mozcentral = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
-      ['web/cmaps/', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
+      ['external/bcmaps/*', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
       ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', MOZCENTRAL_CONTENT_DIR]
     ],
@@ -770,7 +778,6 @@ target.mozcentral = function() {
 
 target.b2g = function() {
   target.locale();
-  target.cmaps();
 
   echo();
   echo('### Building B2G (Firefox OS App)');
@@ -784,6 +791,7 @@ target.b2g = function() {
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/cmaps');
 
   var setup = {
     defines: defines,
@@ -791,8 +799,8 @@ target.b2g = function() {
       ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['web/cmaps/', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
@@ -810,7 +818,6 @@ target.b2g = function() {
 //
 target.chromium = function() {
   target.locale();
-  target.cmaps();
 
   cd(ROOT_DIR);
   echo();
@@ -841,7 +848,7 @@ target.chromium = function() {
        CHROME_BUILD_DIR],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
-      ['web/cmaps/', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
+      ['external/bcmaps/*', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
@@ -959,8 +966,6 @@ target.test = function() {
 // (Special tests for the Github bot)
 //
 target.bottest = function() {
-  target.cmaps();
-
   target.unittest({}, function() {
     target.fonttest({}, function() {
       target.browsertest({noreftest: true});
@@ -1041,8 +1046,6 @@ target.fonttest = function(options, callback) {
 // make botmakeref
 //
 target.botmakeref = function() {
-  target.cmaps();
-
   cd(ROOT_DIR);
   echo();
   echo('### Creating reference images');

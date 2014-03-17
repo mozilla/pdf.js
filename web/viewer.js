@@ -63,7 +63,8 @@ PDFJS.imageResourcesPath = './images/';
 //PDFJS.workerSrc = '../build/pdf.worker.js';
 //#endif
 //#if !PRODUCTION
-PDFJS.cMapUrl = '../external/cmaps/';
+PDFJS.cMapUrl = '../external/bcmaps/';
+PDFJS.cMapPacked = true;
 //#else
 //PDFJS.cMapUrl = '../web/cmaps/';
 //PDFJS.cMapPacked = true;
@@ -1687,6 +1688,14 @@ function webViewerLoad(evt) {
     IGNORE_CURRENT_POSITION_ON_ZOOM =
       (hashParams['ignoreCurrentPositionOnZoom'] === 'true');
   }
+
+//#if !PRODUCTION
+  if ('disableBcmaps' in hashParams && hashParams['disableBcmaps']) {
+    PDFJS.cMapUrl = '../external/cmaps/';
+    PDFJS.cMapPacked = false;
+  }
+//#endif
+
 
 //#if !(FIREFOX || MOZCENTRAL)
   var locale = PDFJS.locale || navigator.language;

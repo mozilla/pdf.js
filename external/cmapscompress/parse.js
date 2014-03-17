@@ -23,7 +23,7 @@ exports.parseAdobeCMap = function (content) {
   var result = {
     type: 1,
     wmode: 0,
-    comment: 'Copyright 1990-2009 Adobe Systems Incorporated.\nAll rights reserved.\nhttp://sourceforge.net/adobe/cmap/wiki/License/',
+    comment: 'Copyright 1990-2009 Adobe Systems Incorporated.\nAll rights reserved.\nSee ./LICENSE',
     usecmap: null,
     body: []
   };
