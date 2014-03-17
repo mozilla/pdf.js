@@ -125,7 +125,12 @@ var Page = (function PageClosure() {
       }
       var promise = new LegacyPromise();
       this.resourcesPromise.then(function resourceSuccess() {
-        var objectLoader = new ObjectLoader(this.resources.map,
+        var resources = this.resources;
+        if (!this.resources) {
+          promise.resolve(); // no resources for this page
+          return;
+        }
+        var objectLoader = new ObjectLoader(resources.map,
                                             keys,
                                             this.xref);
         objectLoader.load().then(function objectLoaderSuccess() {
