@@ -140,21 +140,28 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
   }
 
-  function BidiResult(str, isLTR, vertical) {
-    this.str = str;
-    this.dir = (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'));
+  function createBidiText(str, isLTR, vertical) {
+    return {
+      str: str,
+      dir: (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'))
+    };
   }
+
+  // These are used in bidi(), which is called frequently. We re-use them on
+  // each call to avoid unnecessary allocations.
+  var chars = [];
+  var types = [];
 
   function bidi(str, startLevel, vertical) {
     var isLTR = true;
     var strLength = str.length;
     if (strLength === 0 || vertical) {
-      return new BidiResult(str, isLTR, vertical);
+      return createBidiText(str, isLTR, vertical);
     }
 
     // Get types and fill arrays
-    var chars = [];
-    var types = [];
+    chars.length = 0;
+    types.length = 0;
     var numBidi = 0;
 
     for (var i = 0; i < strLength; ++i) {
@@ -183,7 +190,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     // - If more than 30% chars are rtl then string is primarily rtl
     if (numBidi === 0) {
       isLTR = true;
-      return new BidiResult(str, isLTR);
+      return createBidiText(str, isLTR);
     }
 
     if (startLevel == -1) {
@@ -448,7 +455,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
         result += ch;
       }
     }
-    return new BidiResult(result, isLTR);
+    return createBidiText(result, isLTR);
   }
 
   return bidi;

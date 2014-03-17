@@ -812,11 +812,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           if (chunkBuf.length > 0) {
             var chunk = chunkBuf.join('');
-            var bidiResult = PDFJS.bidi(chunk, -1, font.vertical);
-            var bidiText = {
-              str: bidiResult.str,
-              dir: bidiResult.dir
-            };
+            var bidiText = PDFJS.bidi(chunk, -1, font.vertical);
             var renderParams = textState.calcRenderParams(preprocessor.ctm);
             var fontHeight = textState.fontSize * renderParams.vScale;
             var fontAscent = font.ascent ? font.ascent * fontHeight :
