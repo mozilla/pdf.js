@@ -105,7 +105,12 @@ MIMEs = {
     '.ico': 'image/x-icon',
     '.png': 'image/png',
     '.log': 'text/plain',
-    '.properties': 'text/plain'
+    '.properties': 'text/plain',
+    '.avi' : 'video/avi',
+    '.mov' : 'video/quicktime',
+    '.mpg' : 'video/mpeg',
+    '.mp4' : 'video/mp4',
+    '.flv' : 'video/x-flv'
 }
 
 class State:
