@@ -13,6 +13,9 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Adobe CMap resources are covered by their own copyright and license:
+http://sourceforge.net/adobe/cmap/wiki/License/
 -->
 <html dir="ltr" mozdisallowselectionprint moznomarginboxes>
   <head>
@@ -35,7 +38,7 @@ limitations under the License.
     <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
 <!--#endif-->
 
-<!--#if !(FIREFOX || MOZCENTRAL || CHROME)-->
+<!--#if !(FIREFOX || MOZCENTRAL || CHROME || MINIFIED)-->
     <script type="text/javascript" src="compatibility.js"></script>
 <!--#endif-->
 
@@ -56,7 +59,7 @@ limitations under the License.
     <script type="text/javascript">PDFJS.workerSrc = '../src/worker_loader.js';</script>
 <!--#endif-->
 
-<!--#if GENERIC -->
+<!--#if (GENERIC && !MINIFIED) -->
 <!--#include viewer-snippet.html-->
 <!--#endif-->
 
@@ -80,8 +83,12 @@ limitations under the License.
     <script type="text/javascript" src="document_properties.js"></script>
 <!--#endif-->
 
+<!--#if !MINIFIED -->
     <script type="text/javascript" src="debugger.js"></script>
     <script type="text/javascript" src="viewer.js"></script>
+<!--#else-->
+<!--#include viewer-snippet-minified.html-->
+<!--#endif-->
 
   </head>
 

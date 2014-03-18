@@ -38,9 +38,9 @@ if (typeof PDFJS === 'undefined') {
     }
 
     // some mobile version might not support Float64Array
-    if (typeof Float64Array === 'undefined')
+    if (typeof Float64Array === 'undefined') {
       window.Float64Array = Float32Array;
-
+    }
     return;
   }
 
@@ -49,18 +49,21 @@ if (typeof PDFJS === 'undefined') {
   }
 
   function setArrayOffset(array, offset) {
-    if (arguments.length < 2)
+    if (arguments.length < 2) {
       offset = 0;
-    for (var i = 0, n = array.length; i < n; ++i, ++offset)
+    }
+    for (var i = 0, n = array.length; i < n; ++i, ++offset) {
       this[offset] = array[i] & 0xFF;
+    }
   }
 
   function TypedArray(arg1) {
     var result;
     if (typeof arg1 === 'number') {
       result = [];
-      for (var i = 0; i < arg1; ++i)
+      for (var i = 0; i < arg1; ++i) {
         result[i] = 0;
+      }
     } else if ('slice' in arg1) {
       result = arg1.slice(0);
     } else {
@@ -75,9 +78,9 @@ if (typeof PDFJS === 'undefined') {
     result.byteLength = result.length;
     result.set = setArrayOffset;
 
-    if (typeof arg1 === 'object' && arg1.buffer)
+    if (typeof arg1 === 'object' && arg1.buffer) {
       result.buffer = arg1.buffer;
-
+    }
     return result;
   }
 
@@ -101,8 +104,9 @@ if (typeof PDFJS === 'undefined') {
 
 // Object.create() ?
 (function checkObjectCreateCompatibility() {
-  if (typeof Object.create !== 'undefined')
+  if (typeof Object.create !== 'undefined') {
     return;
+  }
 
   Object.create = function objectCreate(proto) {
     function Constructor() {}
@@ -127,15 +131,19 @@ if (typeof PDFJS === 'undefined') {
     } catch (e) {
       definePropertyPossible = false;
     }
-    if (definePropertyPossible) return;
+    if (definePropertyPossible) {
+      return;
+    }
   }
 
   Object.defineProperty = function objectDefineProperty(obj, name, def) {
     delete obj[name];
-    if ('get' in def)
+    if ('get' in def) {
       obj.__defineGetter__(name, def['get']);
-    if ('set' in def)
+    }
+    if ('set' in def) {
       obj.__defineSetter__(name, def['set']);
+    }
     if ('value' in def) {
       obj.__defineSetter__(name, function objectDefinePropertySetter(value) {
         this.__defineGetter__(name, function objectDefinePropertyGetter() {
@@ -150,14 +158,16 @@ if (typeof PDFJS === 'undefined') {
 
 // Object.keys() ?
 (function checkObjectKeysCompatibility() {
-  if (typeof Object.keys !== 'undefined')
+  if (typeof Object.keys !== 'undefined') {
     return;
+  }
 
   Object.keys = function objectKeys(obj) {
     var result = [];
     for (var i in obj) {
-      if (obj.hasOwnProperty(i))
+      if (obj.hasOwnProperty(i)) {
         result.push(i);
+      }
     }
     return result;
   };
@@ -165,12 +175,14 @@ if (typeof PDFJS === 'undefined') {
 
 // No readAsArrayBuffer ?
 (function checkFileReaderReadAsArrayBuffer() {
-  if (typeof FileReader === 'undefined')
+  if (typeof FileReader === 'undefined') {
     return; // FileReader is not implemented
+  }
   var frPrototype = FileReader.prototype;
   // Older versions of Firefox might not have readAsArrayBuffer
-  if ('readAsArrayBuffer' in frPrototype)
+  if ('readAsArrayBuffer' in frPrototype) {
     return; // readAsArrayBuffer is implemented
+  }
   Object.defineProperty(frPrototype, 'readAsArrayBuffer', {
     value: function fileReaderReadAsArrayBuffer(blob) {
       var fileReader = new FileReader();
@@ -180,8 +192,9 @@ if (typeof PDFJS === 'undefined') {
         var buffer = new ArrayBuffer(data.length);
         var uint8Array = new Uint8Array(buffer);
 
-        for (var i = 0, ii = data.length; i < ii; i++)
+        for (var i = 0, ii = data.length; i < ii; i++) {
           uint8Array[i] = data.charCodeAt(i);
+        }
 
         Object.defineProperty(originalReader, 'result', {
           value: buffer,
@@ -211,8 +224,9 @@ if (typeof PDFJS === 'undefined') {
   if ('response' in xhrPrototype ||
       'mozResponseArrayBuffer' in xhrPrototype ||
       'mozResponse' in xhrPrototype ||
-      'responseArrayBuffer' in xhrPrototype)
+      'responseArrayBuffer' in xhrPrototype) {
     return;
+  }
   // IE9 ?
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
@@ -236,8 +250,9 @@ if (typeof PDFJS === 'undefined') {
     var text = this.responseText;
     var i, n = text.length;
     var result = new Uint8Array(n);
-    for (i = 0; i < n; ++i)
+    for (i = 0; i < n; ++i) {
       result[i] = text.charCodeAt(i) & 0xFF;
+    }
     return result;
   }
   Object.defineProperty(xhrPrototype, 'response', { get: responseGetter });
@@ -245,8 +260,9 @@ if (typeof PDFJS === 'undefined') {
 
 // window.btoa (base64 encode function) ?
 (function checkWindowBtoaCompatibility() {
-  if ('btoa' in window)
+  if ('btoa' in window) {
     return;
+  }
 
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
@@ -270,15 +286,18 @@ if (typeof PDFJS === 'undefined') {
 
 // window.atob (base64 encode function) ?
 (function checkWindowAtobCompatibility() {
-  if ('atob' in window)
+  if ('atob' in window) {
     return;
+  }
 
   // https://github.com/davidchambers/Base64.js
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
   window.atob = function (input) {
     input = input.replace(/=+$/, '');
-    if (input.length % 4 == 1) throw new Error('bad atob input');
+    if (input.length % 4 == 1) {
+      throw new Error('bad atob input');
+    }
     for (
       // initialize result and counters
       var bc = 0, bs, buffer, idx = 0, output = '';
@@ -300,8 +319,9 @@ if (typeof PDFJS === 'undefined') {
 
 // Function.prototype.bind ?
 (function checkFunctionPrototypeBindCompatibility() {
-  if (typeof Function.prototype.bind !== 'undefined')
+  if (typeof Function.prototype.bind !== 'undefined') {
     return;
+  }
 
   Function.prototype.bind = function functionPrototypeBind(obj) {
     var fn = this, headArgs = Array.prototype.slice.call(arguments, 1);
@@ -316,21 +336,26 @@ if (typeof PDFJS === 'undefined') {
 // HTMLElement dataset property
 (function checkDatasetProperty() {
   var div = document.createElement('div');
-  if ('dataset' in div)
+  if ('dataset' in div) {
     return; // dataset property exists
+  }
 
   Object.defineProperty(HTMLElement.prototype, 'dataset', {
     get: function() {
-      if (this._dataset)
+      if (this._dataset) {
         return this._dataset;
+      }
 
       var dataset = {};
       for (var j = 0, jj = this.attributes.length; j < jj; j++) {
         var attribute = this.attributes[j];
-        if (attribute.name.substring(0, 5) != 'data-')
+        if (attribute.name.substring(0, 5) != 'data-') {
           continue;
+        }
         var key = attribute.name.substring(5).replace(/\-([a-z])/g,
-          function(all, ch) { return ch.toUpperCase(); });
+          function(all, ch) {
+            return ch.toUpperCase();
+          });
         dataset[key] = attribute.value;
       }
 
@@ -348,18 +373,23 @@ if (typeof PDFJS === 'undefined') {
 // HTMLElement classList property
 (function checkClassListProperty() {
   var div = document.createElement('div');
-  if ('classList' in div)
+  if ('classList' in div) {
     return; // classList property exists
+  }
 
   function changeList(element, itemName, add, remove) {
     var s = element.className || '';
     var list = s.split(/\s+/g);
-    if (list[0] === '') list.shift();
+    if (list[0] === '') {
+      list.shift();
+    }
     var index = list.indexOf(itemName);
-    if (index < 0 && add)
+    if (index < 0 && add) {
       list.push(itemName);
-    if (index >= 0 && remove)
+    }
+    if (index >= 0 && remove) {
       list.splice(index, 1);
+    }
     element.className = list.join(' ');
     return (index >= 0);
   }
@@ -381,8 +411,9 @@ if (typeof PDFJS === 'undefined') {
 
   Object.defineProperty(HTMLElement.prototype, 'classList', {
     get: function() {
-      if (this._classList)
+      if (this._classList) {
         return this._classList;
+      }
 
       var classList = Object.create(classListPrototype, {
         element: {
@@ -491,5 +522,17 @@ if (typeof PDFJS === 'undefined') {
 (function checkHistoryManipulation() {
   if (!window.history.pushState) {
     PDFJS.disableHistory = true;
+  }
+})();
+
+(function checkSetPresenceInImageData() {
+  if (window.CanvasPixelArray) {
+    if (typeof window.CanvasPixelArray.prototype.set !== 'function') {
+      window.CanvasPixelArray.prototype.set = function(arr) {
+        for (var i = 0, ii = this.length; i < ii; i++) {
+          this[i] = arr[i];
+        }
+      };
+    }
   }
 })();

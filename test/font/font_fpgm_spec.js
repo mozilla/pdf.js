@@ -9,7 +9,9 @@ describe('font_fpgm', function() {
       var font = new Font("font", new Stream(font2324), {
         loadedName: 'font',
         type: 'CIDFontType2',
-        differences: []
+        differences: [],
+        defaultEncoding: [],
+        cMap: CMapFactory.create(new Name('Identity-H'))
       });
       ttx(font.data, function(result) { output = result; });
       runs(function() {

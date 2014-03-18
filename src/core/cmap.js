@@ -15,184 +15,199 @@
  * limitations under the License.
  */
 /* globals Util, isString, isInt, warn, error, isCmd, isEOF, isName, Lexer,
-           isStream */
+           isStream, StringStream, PDFJS, assert */
 
 'use strict';
 
-var CMAP_CODESPACES = {
-  'Adobe-CNS1-0': [[], [0, 14335]],
-  'Adobe-CNS1-1': [[], [0, 17407]],
-  'Adobe-CNS1-2': [[], [0, 17663]],
-  'Adobe-CNS1-3': [[], [0, 18943]],
-  'Adobe-CNS1-4': [[], [0, 19199]],
-  'Adobe-CNS1-5': [[], [0, 19199]],
-  'Adobe-CNS1-6': [[], [0, 19199]],
-  'Adobe-CNS1-UCS2': [[], [0, 65535]],
-  'B5-H': [[0, 128], [41280, 65278]],
-  'B5-V': [[0, 128], [41280, 65278]],
-  'B5pc-H': [[0, 128, 253, 255], [41280, 64766]],
-  'B5pc-V': [[0, 128, 253, 255], [41280, 64766]],
-  'CNS-EUC-H': [[0, 128], [41377, 65278], [],
-    [2392957345, 2392981246, 2393022881, 2393046782, 2393088417, 2393112318]],
-  'CNS-EUC-V': [[0, 128], [41377, 65278], [],
-    [2392957345, 2392981246, 2393022881, 2393046782, 2393088417, 2393112318]],
-  'CNS1-H': [[], [8481, 32382]],
-  'CNS1-V': [[], [8481, 32382]],
-  'CNS2-H': [[], [8481, 32382]],
-  'CNS2-V': [[], [8481, 32382]],
-  'ETen-B5-H': [[0, 128], [41280, 65278]],
-  'ETen-B5-V': [[0, 128], [41280, 65278]],
-  'ETenms-B5-H': [[0, 128], [41280, 65278]],
-  'ETenms-B5-V': [[0, 128], [41280, 65278]],
-  'ETHK-B5-H': [[0, 128], [34624, 65278]],
-  'ETHK-B5-V': [[0, 128], [34624, 65278]],
-  'HKdla-B5-H': [[0, 128], [41280, 65278]],
-  'HKdla-B5-V': [[0, 128], [41280, 65278]],
-  'HKdlb-B5-H': [[0, 128], [36416, 65278]],
-  'HKdlb-B5-V': [[0, 128], [36416, 65278]],
-  'HKgccs-B5-H': [[0, 128], [35392, 65278]],
-  'HKgccs-B5-V': [[0, 128], [35392, 65278]],
-  'HKm314-B5-H': [[0, 128], [41280, 65278]],
-  'HKm314-B5-V': [[0, 128], [41280, 65278]],
-  'HKm471-B5-H': [[0, 128], [41280, 65278]],
-  'HKm471-B5-V': [[0, 128], [41280, 65278]],
-  'HKscs-B5-H': [[0, 128], [34624, 65278]],
-  'HKscs-B5-V': [[0, 128], [34624, 65278]],
-  'UniCNS-UCS2-H': [[], [0, 55295, 57344, 65535]],
-  'UniCNS-UCS2-V': [[], [0, 55295, 57344, 65535]],
-  'UniCNS-UTF16-H': [[], [0, 55295, 57344, 65535], [],
-    [3623934976, 3690979327]],
-  'UniCNS-UTF16-V': [[], [0, 55295, 57344, 65535], [],
-    [3623934976, 3690979327]],
-  'Adobe-GB1-0': [[], [0, 7935]],
-  'Adobe-GB1-1': [[], [0, 9983]],
-  'Adobe-GB1-2': [[], [0, 22271]],
-  'Adobe-GB1-3': [[], [0, 22527]],
-  'Adobe-GB1-4': [[], [0, 29183]],
-  'Adobe-GB1-5': [[], [0, 30463]],
-  'Adobe-GB1-UCS2': [[], [0, 65535]],
-  'GB-EUC-H': [[0, 128], [41377, 65278]],
-  'GB-EUC-V': [[0, 128], [41377, 65278]],
-  'GB-H': [[], [8481, 32382]],
-  'GB-V': [[], [8481, 32382]],
-  'GBK-EUC-H': [[0, 128], [33088, 65278]],
-  'GBK-EUC-V': [[0, 128], [33088, 65278]],
-  'GBK2K-H': [[0, 127], [33088, 65278], [], [2167439664, 4265213497]],
-  'GBK2K-V': [[0, 127], [33088, 65278], [], [2167439664, 4265213497]],
-  'GBKp-EUC-H': [[0, 128], [33088, 65278]],
-  'GBKp-EUC-V': [[0, 128], [33088, 65278]],
-  'GBpc-EUC-H': [[0, 128, 253, 255], [41377, 64766]],
-  'GBpc-EUC-V': [[0, 128, 253, 255], [41377, 64766]],
-  'GBT-EUC-H': [[0, 128], [41377, 65278]],
-  'GBT-EUC-V': [[0, 128], [41377, 65278]],
-  'GBT-H': [[], [8481, 32382]],
-  'GBT-V': [[], [8481, 32382]],
-  'GBTpc-EUC-H': [[0, 128, 253, 255], [41377, 64766]],
-  'GBTpc-EUC-V': [[0, 128, 253, 255], [41377, 64766]],
-  'UniGB-UCS2-H': [[], [0, 55295, 57344, 65535]],
-  'UniGB-UCS2-V': [[], [0, 55295, 57344, 65535]],
-  'UniGB-UTF16-H': [[], [0, 55295, 57344, 65535], [], [3623934976, 3690979327]],
-  'UniGB-UTF16-V': [[], [0, 55295, 57344, 65535], [], [3623934976, 3690979327]],
-  '78-EUC-H': [[0, 128], [36512, 36575, 41377, 65278]],
-  '78-EUC-V': [[0, 128], [36512, 36575, 41377, 65278]],
-  '78-H': [[], [8481, 32382]],
-  '78-RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '78-RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '78-V': [[], [8481, 32382]],
-  '78ms-RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '78ms-RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '83pv-RKSJ-H': [[0, 128, 160, 223, 253, 255], [33088, 40956, 57408, 64764]],
-  '90ms-RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '90ms-RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '90msp-RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '90msp-RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  '90pv-RKSJ-H': [[0, 128, 160, 223, 253, 255], [33088, 40956, 57408, 64764]],
-  '90pv-RKSJ-V': [[0, 128, 160, 223, 253, 255], [33088, 40956, 57408, 64764]],
-  'Add-H': [[], [8481, 32382]],
-  'Add-RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  'Add-RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  'Add-V': [[], [8481, 32382]],
-  'Adobe-Japan1-0': [[], [0, 8447]],
-  'Adobe-Japan1-1': [[], [0, 8447]],
-  'Adobe-Japan1-2': [[], [0, 8959]],
-  'Adobe-Japan1-3': [[], [0, 9471]],
-  'Adobe-Japan1-4': [[], [0, 15615]],
-  'Adobe-Japan1-5': [[], [0, 20479]],
-  'Adobe-Japan1-6': [[], [0, 23295]],
-  'Adobe-Japan1-UCS2': [[], [0, 65535]],
-  'Adobe-Japan2-0': [[], [0, 6143]],
-  'EUC-H': [[0, 128], [36512, 36575, 41377, 65278]],
-  'EUC-V': [[0, 128], [36512, 36575, 41377, 65278]],
-  'Ext-H': [[], [8481, 32382]],
-  'Ext-RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  'Ext-RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  'Ext-V': [[], [8481, 32382]],
-  'H': [[], [8481, 32382]],
-  'Hankaku': [[0, 255], []],
-  'Hiragana': [[0, 255], []],
-  'Hojo-EUC-H': [[], [], [9413025, 9436926], []],
-  'Hojo-EUC-V': [[], [], [9413025, 9436926], []],
-  'Hojo-H': [[], [8481, 32382]],
-  'Hojo-V': [[], [8481, 32382]],
-  'Katakana': [[0, 255], []],
-  'NWP-H': [[], [8481, 32382]],
-  'NWP-V': [[], [8481, 32382]],
-  'RKSJ-H': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  'RKSJ-V': [[0, 128, 160, 223], [33088, 40956, 57408, 64764]],
-  'Roman': [[0, 255], []],
-  'UniHojo-UCS2-H': [[], [0, 55295, 57344, 65535]],
-  'UniHojo-UCS2-V': [[], [0, 55295, 57344, 65535]],
-  'UniHojo-UTF16-H': [[], [0, 55295, 57344, 65535], [],
-    [3623934976, 3690979327]],
-  'UniHojo-UTF16-V': [[], [0, 55295, 57344, 65535], [],
-    [3623934976, 3690979327]],
-  'UniJIS-UCS2-H': [[], [0, 55295, 57344, 65535]],
-  'UniJIS-UCS2-HW-H': [[], [0, 55295, 57344, 65535]],
-  'UniJIS-UCS2-HW-V': [[], [0, 55295, 57344, 65535]],
-  'UniJIS-UCS2-V': [[], [0, 55295, 57344, 65535]],
-  'UniJIS-UTF16-H': [[], [0, 55295, 57344, 65535], [],
-    [3623934976, 3690979327]],
-  'UniJIS-UTF16-V': [[], [0, 55295, 57344, 65535], [],
-    [3623934976, 3690979327]],
-  'UniJISPro-UCS2-HW-V': [[], [0, 55295, 57344, 65535]],
-  'UniJISPro-UCS2-V': [[], [0, 55295, 57344, 65535]],
-  'V': [[], [8481, 32382]],
-  'WP-Symbol': [[0, 255], []],
-  'Adobe-Korea1-0': [[], [0, 9471]],
-  'Adobe-Korea1-1': [[], [0, 18175]],
-  'Adobe-Korea1-2': [[], [0, 18431]],
-  'Adobe-Korea1-UCS2': [[], [0, 65535]],
-  'KSC-EUC-H': [[0, 128], [41377, 65278]],
-  'KSC-EUC-V': [[0, 128], [41377, 65278]],
-  'KSC-H': [[], [8481, 32382]],
-  'KSC-Johab-H': [[0, 128], [33857, 54270, 55345, 57086, 57393, 63998]],
-  'KSC-Johab-V': [[0, 128], [33857, 54270, 55345, 57086, 57393, 63998]],
-  'KSC-V': [[], [8481, 32382]],
-  'KSCms-UHC-H': [[0, 128], [33089, 65278]],
-  'KSCms-UHC-HW-H': [[0, 128], [33089, 65278]],
-  'KSCms-UHC-HW-V': [[0, 128], [33089, 65278]],
-  'KSCms-UHC-V': [[0, 128], [33089, 65278]],
-  'KSCpc-EUC-H': [[0, 132, 254, 255], [41281, 65022]],
-  'KSCpc-EUC-V': [[0, 132, 254, 255], [41281, 65022]],
-  'UniKS-UCS2-H': [[], [0, 55295, 57344, 65535]],
-  'UniKS-UCS2-V': [[], [0, 55295, 57344, 65535]],
-  'UniKS-UTF16-H': [[], [0, 55295, 57344, 65535], [], [3623934976, 3690979327]],
-  'UniKS-UTF16-V': [[], [0, 55295, 57344, 65535], [], [3623934976, 3690979327]]
-};
+var BUILT_IN_CMAPS = [
+// << Start unicode maps.
+'Adobe-GB1-UCS2',
+'Adobe-CNS1-UCS2',
+'Adobe-Japan1-UCS2',
+'Adobe-Korea1-UCS2',
+// >> End unicode maps.
+'78-EUC-H',
+'78-EUC-V',
+'78-H',
+'78-RKSJ-H',
+'78-RKSJ-V',
+'78-V',
+'78ms-RKSJ-H',
+'78ms-RKSJ-V',
+'83pv-RKSJ-H',
+'90ms-RKSJ-H',
+'90ms-RKSJ-V',
+'90msp-RKSJ-H',
+'90msp-RKSJ-V',
+'90pv-RKSJ-H',
+'90pv-RKSJ-V',
+'Add-H',
+'Add-RKSJ-H',
+'Add-RKSJ-V',
+'Add-V',
+'Adobe-CNS1-0',
+'Adobe-CNS1-1',
+'Adobe-CNS1-2',
+'Adobe-CNS1-3',
+'Adobe-CNS1-4',
+'Adobe-CNS1-5',
+'Adobe-CNS1-6',
+'Adobe-GB1-0',
+'Adobe-GB1-1',
+'Adobe-GB1-2',
+'Adobe-GB1-3',
+'Adobe-GB1-4',
+'Adobe-GB1-5',
+'Adobe-Japan1-0',
+'Adobe-Japan1-1',
+'Adobe-Japan1-2',
+'Adobe-Japan1-3',
+'Adobe-Japan1-4',
+'Adobe-Japan1-5',
+'Adobe-Japan1-6',
+'Adobe-Korea1-0',
+'Adobe-Korea1-1',
+'Adobe-Korea1-2',
+'B5-H',
+'B5-V',
+'B5pc-H',
+'B5pc-V',
+'CNS-EUC-H',
+'CNS-EUC-V',
+'CNS1-H',
+'CNS1-V',
+'CNS2-H',
+'CNS2-V',
+'ETHK-B5-H',
+'ETHK-B5-V',
+'ETen-B5-H',
+'ETen-B5-V',
+'ETenms-B5-H',
+'ETenms-B5-V',
+'EUC-H',
+'EUC-V',
+'Ext-H',
+'Ext-RKSJ-H',
+'Ext-RKSJ-V',
+'Ext-V',
+'GB-EUC-H',
+'GB-EUC-V',
+'GB-H',
+'GB-V',
+'GBK-EUC-H',
+'GBK-EUC-V',
+'GBK2K-H',
+'GBK2K-V',
+'GBKp-EUC-H',
+'GBKp-EUC-V',
+'GBT-EUC-H',
+'GBT-EUC-V',
+'GBT-H',
+'GBT-V',
+'GBTpc-EUC-H',
+'GBTpc-EUC-V',
+'GBpc-EUC-H',
+'GBpc-EUC-V',
+'H',
+'HKdla-B5-H',
+'HKdla-B5-V',
+'HKdlb-B5-H',
+'HKdlb-B5-V',
+'HKgccs-B5-H',
+'HKgccs-B5-V',
+'HKm314-B5-H',
+'HKm314-B5-V',
+'HKm471-B5-H',
+'HKm471-B5-V',
+'HKscs-B5-H',
+'HKscs-B5-V',
+'Hankaku',
+'Hiragana',
+'KSC-EUC-H',
+'KSC-EUC-V',
+'KSC-H',
+'KSC-Johab-H',
+'KSC-Johab-V',
+'KSC-V',
+'KSCms-UHC-H',
+'KSCms-UHC-HW-H',
+'KSCms-UHC-HW-V',
+'KSCms-UHC-V',
+'KSCpc-EUC-H',
+'KSCpc-EUC-V',
+'Katakana',
+'NWP-H',
+'NWP-V',
+'RKSJ-H',
+'RKSJ-V',
+'Roman',
+'UniCNS-UCS2-H',
+'UniCNS-UCS2-V',
+'UniCNS-UTF16-H',
+'UniCNS-UTF16-V',
+'UniCNS-UTF32-H',
+'UniCNS-UTF32-V',
+'UniCNS-UTF8-H',
+'UniCNS-UTF8-V',
+'UniGB-UCS2-H',
+'UniGB-UCS2-V',
+'UniGB-UTF16-H',
+'UniGB-UTF16-V',
+'UniGB-UTF32-H',
+'UniGB-UTF32-V',
+'UniGB-UTF8-H',
+'UniGB-UTF8-V',
+'UniJIS-UCS2-H',
+'UniJIS-UCS2-HW-H',
+'UniJIS-UCS2-HW-V',
+'UniJIS-UCS2-V',
+'UniJIS-UTF16-H',
+'UniJIS-UTF16-V',
+'UniJIS-UTF32-H',
+'UniJIS-UTF32-V',
+'UniJIS-UTF8-H',
+'UniJIS-UTF8-V',
+'UniJIS2004-UTF16-H',
+'UniJIS2004-UTF16-V',
+'UniJIS2004-UTF32-H',
+'UniJIS2004-UTF32-V',
+'UniJIS2004-UTF8-H',
+'UniJIS2004-UTF8-V',
+'UniJISPro-UCS2-HW-V',
+'UniJISPro-UCS2-V',
+'UniJISPro-UTF8-V',
+'UniJISX0213-UTF32-H',
+'UniJISX0213-UTF32-V',
+'UniJISX02132004-UTF32-H',
+'UniJISX02132004-UTF32-V',
+'UniKS-UCS2-H',
+'UniKS-UCS2-V',
+'UniKS-UTF16-H',
+'UniKS-UTF16-V',
+'UniKS-UTF32-H',
+'UniKS-UTF32-V',
+'UniKS-UTF8-H',
+'UniKS-UTF8-V',
+'V',
+'WP-Symbol'];
 
 // CMap, not to be confused with TrueType's cmap.
 var CMap = (function CMapClosure() {
-  function CMap() {
+  function CMap(builtInCMap) {
     // Codespace ranges are stored as follows:
     // [[1BytePairs], [2BytePairs], [3BytePairs], [4BytePairs]]
     // where nBytePairs are ranges e.g. [low1, high1, low2, high2, ...]
     this.codespaceRanges = [[], [], [], []];
+    this.numCodespaceRanges = 0;
     this.map = [];
     this.vertical = false;
+    this.useCMap = null;
+    this.builtInCMap = builtInCMap;
   }
   CMap.prototype = {
     addCodespaceRange: function(n, low, high) {
       this.codespaceRanges[n - 1].push(low, high);
+      this.numCodespaceRanges++;
     },
 
     mapRange: function(low, high, dstLow) {
@@ -258,6 +273,314 @@ var IdentityCMap = (function IdentityCMapClosure() {
   Util.inherit(IdentityCMap, CMap, {});
 
   return IdentityCMap;
+})();
+
+var BinaryCMapReader = (function BinaryCMapReaderClosure() {
+  function fetchBinaryData(url) {
+    var nonBinaryRequest = PDFJS.disableWorker;
+    var request = new XMLHttpRequest();
+    request.open('GET', url, false);
+    if (!nonBinaryRequest) {
+      try {
+        request.responseType = 'arraybuffer';
+        nonBinaryRequest = request.responseType !== 'arraybuffer';
+      } catch (e) {
+        nonBinaryRequest = true;
+      }
+    }
+    if (nonBinaryRequest && request.overrideMimeType) {
+      request.overrideMimeType('text/plain; charset=x-user-defined');
+    }
+    request.send(null);
+    if (request.status === 0 && /^https?:/i.test(url)) {
+      error('Unable to get binary cMap at: ' + url);
+    }
+    if (nonBinaryRequest) {
+      var data = Array.prototype.map.call(request.responseText, function (ch) {
+        return ch.charCodeAt(0) & 255;
+      });
+      return new Uint8Array(data);
+    }
+    return new Uint8Array(request.response);
+  }
+
+  function hexToInt(a, size) {
+    var n = 0;
+    for (var i = 0; i <= size; i++) {
+      n = (n << 8) | a[i];
+    }
+    return n >>> 0;
+  }
+
+  function hexToStr(a, size) {
+    return String.fromCharCode.apply(null, a.subarray(0, size + 1));
+  }
+
+  function addHex(a, b, size) {
+    var c = 0;
+    for (var i = size; i >= 0; i--) {
+      c += a[i] + b[i];
+      a[i] = c & 255;
+      c >>= 8;
+    }
+  }
+
+  function incHex(a, size) {
+    var c = 1;
+    for (var i = size; i >= 0 && c > 0; i--) {
+      c += a[i];
+      a[i] = c & 255;
+      c >>= 8;
+    }
+  }
+
+  var MAX_NUM_SIZE = 16;
+  var MAX_ENCODED_NUM_SIZE = 19; // ceil(MAX_NUM_SIZE * 7 / 8)
+
+  function BinaryCMapStream(data) {
+    this.buffer = data;
+    this.pos = 0;
+    this.end = data.length;
+    this.tmpBuf = new Uint8Array(MAX_ENCODED_NUM_SIZE);
+  }
+
+  BinaryCMapStream.prototype = {
+    readByte: function () {
+      if (this.pos >= this.end) {
+        return -1;
+      }
+      return this.buffer[this.pos++];
+    },
+    readNumber: function () {
+      var n = 0;
+      var last;
+      do {
+        var b = this.readByte();
+        if (b < 0) {
+          error('unexpected EOF in bcmap');
+        }
+        last = !(b & 0x80);
+        n = (n << 7) | (b & 0x7F);
+      } while (!last);
+      return n;
+    },
+    readSigned: function () {
+      var n = this.readNumber();
+      return (n & 1) ? ~(n >>> 1) : n >>> 1;
+    },
+    readHex: function (num, size) {
+      num.set(this.buffer.subarray(this.pos,
+        this.pos + size + 1));
+      this.pos += size + 1;
+    },
+    readHexNumber: function (num, size) {
+      var last;
+      var stack = this.tmpBuf, sp = 0;
+      do {
+        var b = this.readByte();
+        if (b < 0) {
+          error('unexpected EOF in bcmap');
+        }
+        last = !(b & 0x80);
+        stack[sp++] = b & 0x7F;
+      } while (!last);
+      var i = size, buffer = 0, bufferSize = 0;
+      while (i >= 0) {
+        while (bufferSize < 8 && stack.length > 0) {
+          buffer = (stack[--sp] << bufferSize) | buffer;
+          bufferSize += 7;
+        }
+        num[i] = buffer & 255;
+        i--;
+        buffer >>= 8;
+        bufferSize -= 8;
+      }
+    },
+    readHexSigned: function (num, size) {
+      this.readHexNumber(num, size);
+      var sign = num[size] & 1 ? 255 : 0;
+      var c = 0;
+      for (var i = 0; i <= size; i++) {
+        c = ((c & 1) << 8) | num[i];
+        num[i] = (c >> 1) ^ sign;
+      }
+    },
+    readString: function () {
+      var len = this.readNumber();
+      var s = '';
+      for (var i = 0; i < len; i++) {
+        s += String.fromCharCode(this.readNumber());
+      }
+      return s;
+    }
+  };
+
+  function processBinaryCMap(url, cMap, extend) {
+    var data = fetchBinaryData(url);
+    var stream = new BinaryCMapStream(data);
+
+    var header = stream.readByte();
+    cMap.vertical = !!(header & 1);
+
+    var useCMap = null;
+    var start = new Uint8Array(MAX_NUM_SIZE);
+    var end = new Uint8Array(MAX_NUM_SIZE);
+    var char = new Uint8Array(MAX_NUM_SIZE);
+    var charCode = new Uint8Array(MAX_NUM_SIZE);
+    var tmp = new Uint8Array(MAX_NUM_SIZE);
+    var code;
+
+    var b;
+    while ((b = stream.readByte()) >= 0) {
+      var type = b >> 5;
+      if (type === 7) { // metadata, e.g. comment or usecmap
+        switch (b & 0x1F) {
+          case 0:
+            stream.readString(); // skipping comment
+            break;
+          case 1:
+            useCMap = stream.readString();
+            break;
+        }
+        continue;
+      }
+      var sequence = !!(b & 0x10);
+      var dataSize = b & 15;
+
+      assert(dataSize + 1 <= MAX_NUM_SIZE);
+
+      var ucs2DataSize = 1;
+      var subitemsCount = stream.readNumber();
+      switch (type) {
+        case 0: // codespacerange
+          stream.readHex(start, dataSize);
+          stream.readHexNumber(end, dataSize);
+          addHex(end, start, dataSize);
+          cMap.addCodespaceRange(dataSize + 1, hexToInt(start, dataSize),
+                                 hexToInt(end, dataSize));
+          for (var i = 1; i < subitemsCount; i++) {
+            incHex(end, dataSize);
+            stream.readHexNumber(start, dataSize);
+            addHex(start, end, dataSize);
+            stream.readHexNumber(end, dataSize);
+            addHex(end, start, dataSize);
+            cMap.addCodespaceRange(dataSize + 1, hexToInt(start, dataSize),
+                                   hexToInt(end, dataSize));
+          }
+          break;
+        case 1: // notdefrange
+          stream.readHex(start, dataSize);
+          stream.readHexNumber(end, dataSize);
+          addHex(end, start, dataSize);
+          code = stream.readNumber();
+          // undefined range, skipping
+          for (var i = 1; i < subitemsCount; i++) {
+            incHex(end, dataSize);
+            stream.readHexNumber(start, dataSize);
+            addHex(start, end, dataSize);
+            stream.readHexNumber(end, dataSize);
+            addHex(end, start, dataSize);
+            code = stream.readNumber();
+            // nop
+          }
+          break;
+        case 2: // cidchar
+          stream.readHex(char, dataSize);
+          code = stream.readNumber();
+          cMap.mapOne(hexToInt(char, dataSize), String.fromCharCode(code));
+          for (var i = 1; i < subitemsCount; i++) {
+            incHex(char, dataSize);
+            if (!sequence) {
+              stream.readHexNumber(tmp, dataSize);
+              addHex(char, tmp, dataSize);
+            }
+            code = stream.readSigned() + (code + 1);
+            cMap.mapOne(hexToInt(char, dataSize), String.fromCharCode(code));
+          }
+          break;
+        case 3: // cidrange
+          stream.readHex(start, dataSize);
+          stream.readHexNumber(end, dataSize);
+          addHex(end, start, dataSize);
+          code = stream.readNumber();
+          cMap.mapRange(hexToInt(start, dataSize), hexToInt(end, dataSize),
+                        String.fromCharCode(code));
+          for (var i = 1; i < subitemsCount; i++) {
+            incHex(end, dataSize);
+            if (!sequence) {
+              stream.readHexNumber(start, dataSize);
+              addHex(start, end, dataSize);
+            } else {
+              start.set(end);
+            }
+            stream.readHexNumber(end, dataSize);
+            addHex(end, start, dataSize);
+            code = stream.readNumber();
+            cMap.mapRange(hexToInt(start, dataSize), hexToInt(end, dataSize),
+                          String.fromCharCode(code));
+          }
+          break;
+        case 4: // bfchar
+          stream.readHex(char, ucs2DataSize);
+          stream.readHex(charCode, dataSize);
+          cMap.mapOne(hexToInt(char, ucs2DataSize),
+                      hexToStr(charCode, dataSize));
+          for (var i = 1; i < subitemsCount; i++) {
+            incHex(char, ucs2DataSize);
+            if (!sequence) {
+              stream.readHexNumber(tmp, ucs2DataSize);
+              addHex(char, tmp, ucs2DataSize);
+            }
+            incHex(charCode, dataSize);
+            stream.readHexSigned(tmp, dataSize);
+            addHex(charCode, tmp, dataSize);
+            cMap.mapOne(hexToInt(char, ucs2DataSize),
+                        hexToStr(charCode, dataSize));
+          }
+          break;
+        case 5: // bfrange
+          stream.readHex(start, ucs2DataSize);
+          stream.readHexNumber(end, ucs2DataSize);
+          addHex(end, start, ucs2DataSize);
+          stream.readHex(charCode, dataSize);
+          cMap.mapRange(hexToInt(start, ucs2DataSize),
+                        hexToInt(end, ucs2DataSize),
+                        hexToStr(charCode, dataSize));
+          for (var i = 1; i < subitemsCount; i++) {
+            incHex(end, ucs2DataSize);
+            if (!sequence) {
+              stream.readHexNumber(start, ucs2DataSize);
+              addHex(start, end, ucs2DataSize);
+            } else {
+              start.set(end);
+            }
+            stream.readHexNumber(end, ucs2DataSize);
+            addHex(end, start, ucs2DataSize);
+            stream.readHex(charCode, dataSize);
+            cMap.mapRange(hexToInt(start, ucs2DataSize),
+                          hexToInt(end, ucs2DataSize),
+                          hexToStr(charCode, dataSize));
+          }
+          break;
+        default:
+          error('Unknown type: ' + type);
+          break;
+      }
+    }
+
+    if (useCMap) {
+      extend(useCMap);
+    }
+    return cMap;
+  }
+
+  function BinaryCMapReader() {}
+
+  BinaryCMapReader.prototype = {
+    read: processBinaryCMap
+  };
+
+  return BinaryCMapReader;
 })();
 
 var CMapFactory = (function CMapFactoryClosure() {
@@ -395,17 +718,33 @@ var CMapFactory = (function CMapFactoryClosure() {
     error('Invalid codespace range.');
   }
 
-  function parseCmap(cMap, lexer) {
+  function parseWMode(cMap, lexer) {
+    var obj = lexer.getObj();
+    if (isInt(obj)) {
+      cMap.vertical = !!obj;
+    }
+  }
+
+  function parseCMap(cMap, lexer, builtInCMapParams, useCMap) {
+    var previous;
+    var embededUseCMap;
     objLoop: while (true) {
       var obj = lexer.getObj();
       if (isEOF(obj)) {
         break;
+      } else if (isName(obj)) {
+        if (obj.name === 'WMode') {
+          parseWMode(cMap, lexer);
+        }
+        previous = obj;
       } else if (isCmd(obj)) {
         switch (obj.cmd) {
-          case 'endcMap':
+          case 'endcmap':
             break objLoop;
-          case 'usecMap':
-            // TODO
+          case 'usecmap':
+            if (isName(previous)) {
+              embededUseCMap = previous.name;
+            }
             break;
           case 'begincodespacerange':
             parseCodespaceRange(cMap, lexer);
@@ -425,30 +764,84 @@ var CMapFactory = (function CMapFactoryClosure() {
         }
       }
     }
+
+    if (!useCMap && embededUseCMap) {
+      // Load the usecmap definition from the file only if there wasn't one
+      // specified.
+      useCMap = embededUseCMap;
+    }
+    if (useCMap) {
+      extendCMap(cMap, builtInCMapParams, useCMap);
+    }
   }
+
+  function extendCMap(cMap, builtInCMapParams, useCMap) {
+    cMap.useCMap = createBuiltInCMap(useCMap, builtInCMapParams);
+    // If there aren't any code space ranges defined clone all the parent ones
+    // into this cMap.
+    if (cMap.numCodespaceRanges === 0) {
+      var useCodespaceRanges = cMap.useCMap.codespaceRanges;
+      for (var i = 0; i < useCodespaceRanges.length; i++) {
+        cMap.codespaceRanges[i] = useCodespaceRanges[i].slice();
+      }
+      cMap.numCodespaceRanges = cMap.useCMap.numCodespaceRanges;
+    }
+    // Merge the map into the current one, making sure not to override
+    // any previously defined entries.
+    for (var key in cMap.useCMap.map) {
+      if (key in cMap.map) {
+        continue;
+      }
+      cMap.map[key] = cMap.useCMap.map[key];
+    }
+  }
+
+  function parseBinaryCMap(name, builtInCMapParams) {
+    var url = builtInCMapParams.url + name + '.bcmap';
+    var cMap = new CMap(true);
+    new BinaryCMapReader().read(url, cMap, function (useCMap) {
+      extendCMap(cMap, builtInCMapParams, useCMap);
+    });
+    return cMap;
+  }
+
+  function createBuiltInCMap(name, builtInCMapParams) {
+    if (name === 'Identity-H') {
+      return new IdentityCMap(false, 2);
+    } else if (name === 'Identity-V') {
+      return new IdentityCMap(true, 2);
+    }
+    if (BUILT_IN_CMAPS.indexOf(name) === -1) {
+      error('Unknown cMap name: ' + name);
+    }
+    assert (builtInCMapParams, 'buildin cmap parameters are not provided');
+
+    if (builtInCMapParams.packed) {
+      return parseBinaryCMap(name, builtInCMapParams);
+    }
+
+    var request = new XMLHttpRequest();
+    var url = builtInCMapParams.url + name;
+    request.open('GET', url, false);
+    request.send(null);
+    if (request.status === 0 && /^https?:/i.test(url)) {
+      error('Unable to get cMap at: ' + url);
+    }
+    var cMap = new CMap(true);
+    var lexer = new Lexer(new StringStream(request.responseText));
+    parseCMap(cMap, lexer, builtInCMapParams, null);
+    return cMap;
+  }
+
   return {
-    create: function (encoding) {
+    create: function (encoding, builtInCMapParams, useCMap) {
       if (isName(encoding)) {
-        switch (encoding.name) {
-          case 'Identity-H':
-            return new IdentityCMap(false, 2);
-          case 'Identity-V':
-            return new IdentityCMap(true, 2);
-          default:
-            if (encoding.name in CMAP_CODESPACES) {
-              // XXX: Temporary hack so the correct amount of bytes are read in
-              // CMap.readCharCode.
-              var cMap = new CMap();
-              cMap.codespaceRanges = CMAP_CODESPACES[encoding.name];
-              return cMap;
-            }
-            return null;
-        }
+        return createBuiltInCMap(encoding.name, builtInCMapParams);
       } else if (isStream(encoding)) {
         var cMap = new CMap();
         var lexer = new Lexer(encoding);
         try {
-          parseCmap(cMap, lexer);
+          parseCMap(cMap, lexer, builtInCMapParams, useCMap);
         } catch (e) {
           warn('Invalid CMap data. ' + e);
         }

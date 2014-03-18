@@ -52,8 +52,8 @@ var FirefoxCom = (function FirefoxComClosure() {
       var request = document.createTextNode('');
       if (callback) {
         document.addEventListener('pdf.js.response', function listener(event) {
-          var node = event.target,
-              response = event.detail.response;
+          var node = event.target;
+          var response = event.detail.response;
 
           document.documentElement.removeChild(node);
 
@@ -108,9 +108,10 @@ Preferences.prototype.writeToStorage = function(prefObj) {
   FirefoxCom.requestSync('setPreferences', prefObj);
 };
 
-Preferences.prototype.readFromStorage = function() {
+Preferences.prototype.readFromStorage = function(prefObj) {
   var readFromStoragePromise = new Promise(function (resolve) {
-    var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences'));
+    var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences',
+                                                      prefObj));
     resolve(readPrefs);
   });
   return readFromStoragePromise;

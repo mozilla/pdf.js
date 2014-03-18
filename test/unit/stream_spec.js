@@ -9,12 +9,14 @@ describe('stream', function() {
     this.addMatchers({
       toMatchTypedArray: function(expected) {
         var actual = this.actual;
-        if (actual.length != expected.length)
+        if (actual.length != expected.length) {
           return false;
+        }
         for (var i = 0, ii = expected.length; i < ii; i++) {
           var a = actual[i], b = expected[i];
-          if (a !== b)
+          if (a !== b) {
             return false;
+          }
         }
         return true;
       }
@@ -29,8 +31,8 @@ describe('stream', function() {
       dict.set('Columns', 2);
 
       var input = new Stream(new Uint8Array([2, 100, 3, 2, 1, 255, 2, 1, 255]),
-        0, 9, dict);
-      var predictor = new PredictorStream(input, dict);
+                             0, 9, dict);
+      var predictor = new PredictorStream(input, /* length = */ 9, dict);
       var result = predictor.getBytes(6);
 
       expect(result).toMatchTypedArray(

@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals PDFFindController, FindStates, mozL10n */
 
 'use strict';
-
-/* globals PDFFindController, FindStates, mozL10n */
 
 /**
  * Creates a "search bar" given set of DOM elements
@@ -26,7 +25,6 @@
  * searching is done by PDFFindController
  */
 var PDFFindBar = {
-
   opened: false,
   bar: null,
   toggleButton: null,
@@ -40,7 +38,7 @@ var PDFFindBar = {
 
   initialize: function(options) {
     if(typeof PDFFindController === 'undefined' || PDFFindController === null) {
-        throw 'PDFFindBar cannot be initialized ' +
+      throw 'PDFFindBar cannot be initialized ' +
             'without a PDFFindController instance.';
     }
 
@@ -155,8 +153,9 @@ var PDFFindBar = {
   },
 
   close: function() {
-    if (!this.opened) return;
-
+    if (!this.opened) {
+      return;
+    }
     this.opened = false;
     this.toggleButton.classList.remove('toggled');
     this.bar.classList.add('hidden');

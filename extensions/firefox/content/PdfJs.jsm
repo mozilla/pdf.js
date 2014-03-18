@@ -61,6 +61,27 @@ function getIntPref(aPref, aDefaultValue) {
   }
 }
 
+function initializeDefaultPreferences() {
+  Cu.import('resource://pdf.js/default_preferences.js');
+
+  var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
+  var defaultValue;
+  for (var key in DEFAULT_PREFERENCES) {
+    defaultValue = DEFAULT_PREFERENCES[key];
+    switch (typeof defaultValue) {
+      case 'boolean':
+        defaultBranch.setBoolPref(key, defaultValue);
+        break;
+      case 'number':
+        defaultBranch.setIntPref(key, defaultValue);
+        break;
+      case 'string':
+        defaultBranch.setCharPref(key, defaultValue);
+        break;
+    }
+  }
+}
+
 // Register/unregister a constructor as a factory.
 function Factory() {}
 Factory.prototype = {
@@ -104,6 +125,8 @@ let PdfJs = {
     Services.obs.addObserver(this, TOPIC_PDFJS_HANDLER_CHANGED, false);
     Services.obs.addObserver(this, TOPIC_PLUGINS_LIST_UPDATED, false);
     Services.obs.addObserver(this, TOPIC_PLUGIN_INFO_UPDATED, false);
+
+    initializeDefaultPreferences();
   },
 
   _migrate: function migrate() {

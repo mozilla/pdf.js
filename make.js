@@ -38,6 +38,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
+    MINIFIED_DIR = BUILD_DIR + 'minified/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
     PYTHON_BIN = 'python2.7',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
@@ -53,6 +54,7 @@ var DEFINES = {
   MOZCENTRAL: false,
   B2G: false,
   CHROME: false,
+  MINIFIED: false,
   SINGLE_FILE: false
 };
 
@@ -62,8 +64,11 @@ var DEFINES = {
 target.all = function() {
   // Don't do anything by default
   echo('Please specify a target. Available targets:');
-  for (var t in target)
-    if (t !== 'all') echo('  ' + t);
+  for (var t in target) {
+    if (t !== 'all') {
+      echo('  ' + t);
+    }
+  }
 };
 
 
@@ -97,6 +102,7 @@ target.generic = function() {
   mkdir('-p', GENERIC_DIR);
   mkdir('-p', GENERIC_DIR + BUILD_DIR);
   mkdir('-p', GENERIC_DIR + '/web');
+  mkdir('-p', GENERIC_DIR + '/web/cmaps');
 
   var defines = builder.merge(DEFINES, {GENERIC: true});
 
@@ -108,6 +114,7 @@ target.generic = function() {
       ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
+      ['external/bcmaps/*', GENERIC_DIR + '/web/cmaps/'],
       ['web/locale', GENERIC_DIR + '/web']
     ],
     preprocess: [
@@ -134,8 +141,9 @@ target.web = function() {
   echo();
   echo('### Creating web site');
 
-  if (test('-d', GH_PAGES_DIR))
+  if (test('-d', GH_PAGES_DIR)) {
     rm('-rf', GH_PAGES_DIR);
+  }
 
   mkdir('-p', GH_PAGES_DIR + '/web');
   mkdir('-p', GH_PAGES_DIR + '/web/images');
@@ -191,9 +199,9 @@ target.locale = function() {
   for (var i = 0; i < subfolders.length; i++) {
     var locale = subfolders[i];
     var path = LOCALE_SRC_DIR + locale;
-    if (!test('-d', path))
+    if (!test('-d', path)) {
       continue;
-
+    }
     if (!/^[a-z][a-z](-[A-Z][A-Z])?$/.test(locale)) {
       echo('Skipping invalid locale: ' + locale);
       continue;
@@ -223,6 +231,33 @@ target.locale = function() {
   viewerOutput.to(VIEWER_LOCALE_OUTPUT + 'locale.properties');
   metadataContent.to(METADATA_OUTPUT);
   chromeManifestContent.to(CHROME_MANIFEST_OUTPUT);
+};
+
+//
+// make cmaps
+// Compresses cmap files. Ensure that Adobe cmap download and uncompressed at
+// ./external/cmaps location.
+//
+target.cmaps = function (args) {
+  var CMAP_INPUT = 'external/cmaps';
+  var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Building cmaps');
+
+  // testing a file that usually present
+  if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
+    echo('./external/cmaps has no cmap files, please download them from:');
+    echo('  http://sourceforge.net/adobe/cmap/wiki/Home/');
+    exit(1);
+  }
+
+  rm(VIEWER_CMAP_OUTPUT + '*.bcmap');
+
+  var compressCmaps =
+    require('./external/cmapscompress/compress.js').compressCmaps;
+  compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
 };
 
 //
@@ -271,8 +306,9 @@ target.bundle = function(args) {
                             BUNDLE_BUILD: bundleBuild}));
   }
 
-  if (!test('-d', BUILD_DIR))
+  if (!test('-d', BUILD_DIR)) {
     mkdir(BUILD_DIR);
+  }
 
   var SHARED_SRC_FILES = [
     'shared/util.js',
@@ -309,6 +345,7 @@ target.bundle = function(args) {
     'core/ps_parser.js',
     'core/stream.js',
     'core/worker.js',
+    'core/arithmetic_decoder.js',
     'core/jpx.js',
     'core/jbig2.js',
     'core/bidi.js',
@@ -392,6 +429,85 @@ function cleanupJSSource(file) {
   content.to(file);
 }
 
+//
+// make minified
+// Builds the minified production viewer that should be compatible with most
+// modern HTML5 browsers. Requires Google Closure Compiler.
+//
+target.minified = function() {
+  var compilerPath = process.env['CLOSURE_COMPILER'];
+  if (!compilerPath) {
+    echo('### Closure Compiler is not set. Specify CLOSURE_COMPILER variable');
+    exit(1);
+  }
+
+  target.bundle({});
+  target.locale();
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating minified viewer');
+
+  rm('-rf', MINIFIED_DIR);
+  mkdir('-p', MINIFIED_DIR);
+  mkdir('-p', MINIFIED_DIR + BUILD_DIR);
+  mkdir('-p', MINIFIED_DIR + '/web');
+  mkdir('-p', MINIFIED_DIR + '/web/cmaps');
+
+  var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
+
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
+      ['web/viewer.css', MINIFIED_DIR + '/web'],
+      ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
+      ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
+      ['web/locale', MINIFIED_DIR + '/web']
+    ],
+    preprocess: [
+      [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
+      [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + '/web']
+    ]
+  };
+  builder.build(setup);
+
+  var viewerFiles = [
+    'web/compatibility.js',
+    'external/webL10n/l10n.js',
+    MINIFIED_DIR + BUILD_DIR + 'pdf.js',
+    MINIFIED_DIR + '/web/viewer.js'
+  ];
+  var cmdPrefix = 'java -jar \"' + compilerPath + '\" ' +
+    '--language_in ECMASCRIPT5 ' +
+    '--warning_level QUIET ' +
+    '--compilation_level SIMPLE_OPTIMIZATIONS ';
+
+  echo();
+  echo('### Minifying js files');
+
+  exec(cmdPrefix + viewerFiles.map(function(s) {
+    return '--js \"' + s + '\"';
+  }).join(' ') +
+    ' --js_output_file \"' + MINIFIED_DIR + '/web/pdf.viewer.js\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.min.js' + '\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.worker.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.worker.min.js' + '\"');
+
+  echo();
+  echo('### Cleaning js files');
+
+  rm(MINIFIED_DIR + '/web/viewer.js');
+  rm(MINIFIED_DIR + '/web/debugger.js');
+  rm(MINIFIED_DIR + '/build/pdf.js');
+  rm(MINIFIED_DIR + '/build/pdf.worker.js');
+  mv(MINIFIED_DIR + '/build/pdf.min.js',
+     MINIFIED_DIR + '/build/pdf.js');
+  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
+     MINIFIED_DIR + '/build/pdf.worker.js');
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Extension stuff
@@ -471,6 +587,7 @@ target.firefox = function() {
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web');
+  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps');
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm',
      FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
@@ -493,6 +610,7 @@ target.firefox = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
        FIREFOX_BUILD_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', FIREFOX_BUILD_CONTENT_DIR]
@@ -513,8 +631,9 @@ target.firefox = function() {
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
-    if (file.match(/^\./))
+    if (file.match(/^\./)) {
       rm('-f', file);
+    }
   });
 
   // Update the build version number
@@ -591,6 +710,7 @@ target.mozcentral = function() {
   mkdir('-p', MOZCENTRAL_L10N_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
+  mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web/cmaps');
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR);
   cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm', MOZCENTRAL_CONTENT_DIR);
@@ -609,6 +729,7 @@ target.mozcentral = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
       ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', MOZCENTRAL_CONTENT_DIR]
     ],
@@ -629,8 +750,9 @@ target.mozcentral = function() {
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
-    if (file.match(/^\./))
+    if (file.match(/^\./)) {
       rm('-f', file);
+    }
   });
 
   // Remove excluded files
@@ -676,6 +798,7 @@ target.b2g = function() {
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/cmaps');
 
   var setup = {
     defines: defines,
@@ -684,6 +807,7 @@ target.b2g = function() {
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
       ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
@@ -700,6 +824,8 @@ target.b2g = function() {
 // make chrome
 //
 target.chromium = function() {
+  target.locale();
+
   cd(ROOT_DIR);
   echo();
   echo('### Building Chromium extension');
@@ -729,6 +855,7 @@ target.chromium = function() {
        CHROME_BUILD_DIR],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
@@ -750,10 +877,11 @@ target.chromium = function() {
   var public_chrome_files = file_list.reduce(function(war, file) {
     // Exclude directories (naive: Exclude paths without dot)
     if (file.indexOf('.') !== -1) {
-        // Only add a comma after the first file
-        if (war)
-          war += ',\n';
-        war += JSON.stringify('content/' + file);
+      // Only add a comma after the first file
+      if (war) {
+        war += ',\n';
+      }
+      war += JSON.stringify('content/' + file);
     }
     return war;
   }, '');
@@ -961,8 +1089,9 @@ target.baseline = function() {
     exit(1);
   }
 
-  if (!test('-d', BUILD_DIR))
+  if (!test('-d', BUILD_DIR)) {
     mkdir(BUILD_DIR);
+  }
 
   var BASELINE_DIR = BUILD_DIR + 'baseline';
   if (test('-d', BASELINE_DIR)) {
@@ -986,12 +1115,14 @@ target.mozcentralbaseline = function() {
 
   var BASELINE_DIR = BUILD_DIR + 'baseline';
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
-  if (test('-d', MOZCENTRAL_BASELINE_DIR))
+  if (test('-d', MOZCENTRAL_BASELINE_DIR)) {
     rm('-rf', MOZCENTRAL_BASELINE_DIR);
+  }
 
   cd(BASELINE_DIR);
-  if (test('-d', 'build'))
+  if (test('-d', 'build')) {
     rm('-rf', 'build');
+  }
   exec('node make mozcentral');
 
   cd(ROOT_DIR);
@@ -1019,8 +1150,9 @@ target.mozcentraldiff = function() {
   echo('### Creating mozcentral diff');
 
   var MOZCENTRAL_DIFF = BUILD_DIR + 'mozcentral.diff';
-  if (test('-f', MOZCENTRAL_DIFF))
+  if (test('-f', MOZCENTRAL_DIFF)) {
     rm(MOZCENTRAL_DIFF);
+  }
 
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
   if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
