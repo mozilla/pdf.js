@@ -306,6 +306,14 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }
     );
 
+    handler.on('GetAttachments',
+      function wphSetupGetAttachments(data, deferred) {
+        pdfManager.ensureCatalog('attachments').then(function(attachments) {
+          deferred.resolve(attachments);
+        }, deferred.reject);
+      }
+    );
+
     handler.on('GetData', function wphSetupGetData(data, deferred) {
       pdfManager.requestLoadedStream();
       pdfManager.onLoadedStream().then(function(stream) {

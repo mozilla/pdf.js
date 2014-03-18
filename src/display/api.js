@@ -260,6 +260,13 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getDestinations();
     },
     /**
+     * @return {Promise} A promise that is resolved with a lookup table for
+     * mapping named attachments to their content.
+     */
+    getAttachments: function PDFDocumentProxy_getAttachments() {
+      return this.transport.getAttachments();
+    },
+    /**
      * @return {Promise} A promise that is resolved with an array of all the
      * JavaScript strings in the name tree.
      */
@@ -1041,6 +1048,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.messageHandler.send('GetDestinations', null,
         function transportDestinations(destinations) {
           promise.resolve(destinations);
+        }
+      );
+      return promise;
+    },
+
+    getAttachments: function WorkerTransport_getAttachments() {
+      var promise = new PDFJS.LegacyPromise();
+      this.messageHandler.send('GetAttachments', null,
+        function transportAttachments(attachments) {
+          promise.resolve(attachments);
         }
       );
       return promise;

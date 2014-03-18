@@ -83,6 +83,18 @@ var DownloadManager = (function DownloadManagerClosure() {
       });
     },
 
+    downloadData: function DownloadManager_downloadData(data, filename,
+                                                        contentType) {
+      var blobUrl = PDFJS.createObjectURL(data, contentType);
+      
+      FirefoxCom.request('download', {
+        blobUrl: blobUrl,
+        originalUrl: blobUrl,
+        filename: filename,
+        isAttachment: true
+      });
+    },
+
     download: function DownloadManager_download(blob, url, filename) {
       var blobUrl = window.URL.createObjectURL(blob);
 
