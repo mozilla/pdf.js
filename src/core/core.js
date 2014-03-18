@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
+/* globals assertWellFormed, calculateMD5, Catalog, Dict, error, info, isArray,
            isArrayBuffer, isName, isStream, isString, LegacyPromise,
            Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
@@ -24,6 +24,8 @@
 'use strict';
 
 var Page = (function PageClosure() {
+
+  var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
     this.pdfManager = pdfManager;
@@ -42,51 +44,69 @@ var Page = (function PageClosure() {
     getPageProp: function Page_getPageProp(key) {
       return this.pageDict.get(key);
     },
-    inheritPageProp: function Page_inheritPageProp(key) {
+
+    getInheritedPageProp: function Page_inheritPageProp(key) {
       var dict = this.pageDict;
-      var obj = dict.get(key);
-      while (obj === undefined) {
+      var value = dict.get(key);
+      while (value === undefined) {
         dict = dict.get('Parent');
-        if (!dict)
+        if (!dict) {
           break;
-        obj = dict.get(key);
+        }
+        value = dict.get(key);
       }
-      return obj;
+      return value;
     },
+
     get content() {
       return this.getPageProp('Contents');
     },
+
     get resources() {
-      return shadow(this, 'resources', this.inheritPageProp('Resources'));
+      var value = this.getInheritedPageProp('Resources');
+      // For robustness: The spec states that a \Resources entry has to be
+      // present, but can be empty. Some document omit it still. In this case
+      // return an empty dictionary:
+      if (value === undefined) {
+        value = new Dict();
+      }
+      return shadow(this, 'resources', value);
     },
+
     get mediaBox() {
-      var obj = this.inheritPageProp('MediaBox');
+      var obj = this.getInheritedPageProp('MediaBox');
       // Reset invalid media box to letter size.
-      if (!isArray(obj) || obj.length !== 4)
-        obj = [0, 0, 612, 792];
+      if (!isArray(obj) || obj.length !== 4) {
+        obj = LETTER_SIZE_MEDIABOX;
+      }
       return shadow(this, 'mediaBox', obj);
     },
+
     get view() {
       var mediaBox = this.mediaBox;
-      var cropBox = this.inheritPageProp('CropBox');
-      if (!isArray(cropBox) || cropBox.length !== 4)
+      var cropBox = this.getInheritedPageProp('CropBox');
+      if (!isArray(cropBox) || cropBox.length !== 4) {
         return shadow(this, 'view', mediaBox);
+      }
 
       // From the spec, 6th ed., p.963:
       // "The crop, bleed, trim, and art boxes should not ordinarily
       // extend beyond the boundaries of the media box. If they do, they are
       // effectively reduced to their intersection with the media box."
       cropBox = Util.intersect(cropBox, mediaBox);
-      if (!cropBox)
+      if (!cropBox) {
         return shadow(this, 'view', mediaBox);
-
+      }
       return shadow(this, 'view', cropBox);
     },
+
     get annotationRefs() {
-      return shadow(this, 'annotationRefs', this.inheritPageProp('Annots'));
+      return shadow(this, 'annotationRefs',
+                    this.getInheritedPageProp('Annots'));
     },
+
     get rotate() {
-      var rotate = this.inheritPageProp('Rotate') || 0;
+      var rotate = this.getInheritedPageProp('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
       if (rotate % 90 !== 0) {
         rotate = 0;
@@ -99,6 +119,7 @@ var Page = (function PageClosure() {
       }
       return shadow(this, 'rotate', rotate);
     },
+
     getContentStream: function Page_getContentStream() {
       var content = this.content;
       var stream;
@@ -118,9 +139,10 @@ var Page = (function PageClosure() {
       }
       return stream;
     },
+
     loadResources: function(keys) {
       if (!this.resourcesPromise) {
-        // TODO: add async inheritPageProp and remove this.
+        // TODO: add async getInheritedPageProp and remove this.
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
       var promise = new LegacyPromise();
@@ -134,6 +156,7 @@ var Page = (function PageClosure() {
       }.bind(this));
       return promise;
     },
+
     getOperatorList: function Page_getOperatorList(handler, intent) {
       var self = this;
       var promise = new LegacyPromise();
@@ -153,7 +176,7 @@ var Page = (function PageClosure() {
         'Pattern',
         'Shading',
         'XObject',
-        'Font',
+        'Font'
         // ProcSet
         // Properties
       ]);
@@ -201,6 +224,7 @@ var Page = (function PageClosure() {
 
       return promise;
     },
+
     extractTextContent: function Page_extractTextContent() {
       var handler = {
         on: function nullHandlerOn() {},

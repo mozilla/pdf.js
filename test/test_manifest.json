@@ -709,6 +709,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue4461-load",
+      "file": "pdfs/issue4461.pdf",
+      "md5": "9df4ecaae429adb5dc93d9342a53159d",
+      "rounds": 1,
+      "type": "load",
+      "about": "Document without /Resources entry in page dictionary"
+    },
     {  "id": "issue1249-load",
       "file": "pdfs/issue1249.pdf",
       "md5": "4f81339fa09422a7db980f34ea963609",
