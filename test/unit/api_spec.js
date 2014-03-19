@@ -54,6 +54,14 @@ describe('api', function() {
         expect(true).toEqual(true);
       });
     });
+    it('gets page index', function() {
+      // reference to second page
+      var ref = {num: 17, gen: 0};
+      var promise = doc.getPageIndex(ref);
+      waitsForPromise(promise, function(pageIndex) {
+        expect(pageIndex).toEqual(1);
+      });
+    });
     it('gets destinations', function() {
       var promise = doc.getDestinations();
       waitsForPromise(promise, function(data) {
