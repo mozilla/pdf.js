@@ -1568,5 +1568,14 @@
       "rounds": 1,
       "type": "eq",
       "about": "Image mask in higher resolution than the image itself"
+    },
+    {  "id": "issue4436",
+       "file": "pdfs/issue4436.pdf",
+       "md5": "34e6af7441961f5940e6440a62e37427",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 9,
+       "lastPage": 9,
+       "type": "eq"
     }
 ]
