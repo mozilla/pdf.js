@@ -2128,6 +2128,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
+    paintSolidColorImageMask:
+      function CanvasGraphics_paintSolidColorImageMask() {
+        this.ctx.fillRect(0, 0, 1, 1);
+    },
+
     // Marked content
 
     markPoint: function CanvasGraphics_markPoint(tag) {
