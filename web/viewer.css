@@ -1619,12 +1619,13 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
 @media screen and (min-resolution: 2dppx) {
   /* Rules for Retina screens */
   .toolbarButton::before {
-    transform: scale(0.5);
     -webkit-transform: scale(0.5);
+    transform: scale(0.5);
     top: -5px;
   }
 
   .secondaryToolbarButton::before {
+    -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -4px;
   }

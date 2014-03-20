@@ -102,6 +102,7 @@ target.generic = function() {
   mkdir('-p', GENERIC_DIR);
   mkdir('-p', GENERIC_DIR + BUILD_DIR);
   mkdir('-p', GENERIC_DIR + '/web');
+  mkdir('-p', GENERIC_DIR + '/web/cmaps');
 
   var defines = builder.merge(DEFINES, {GENERIC: true});
 
@@ -110,10 +111,10 @@ target.generic = function() {
     copy: [
       [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
-      ['external/cmaps/', GENERIC_DIR + '/web/cmaps'],
       ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
+      ['external/bcmaps/*', GENERIC_DIR + '/web/cmaps/'],
       ['web/locale', GENERIC_DIR + '/web']
     ],
     preprocess: [
@@ -230,6 +231,33 @@ target.locale = function() {
   viewerOutput.to(VIEWER_LOCALE_OUTPUT + 'locale.properties');
   metadataContent.to(METADATA_OUTPUT);
   chromeManifestContent.to(CHROME_MANIFEST_OUTPUT);
+};
+
+//
+// make cmaps
+// Compresses cmap files. Ensure that Adobe cmap download and uncompressed at
+// ./external/cmaps location.
+//
+target.cmaps = function (args) {
+  var CMAP_INPUT = 'external/cmaps';
+  var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Building cmaps');
+
+  // testing a file that usually present
+  if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
+    echo('./external/cmaps has no cmap files, please download them from:');
+    echo('  http://sourceforge.net/adobe/cmap/wiki/Home/');
+    exit(1);
+  }
+
+  rm(VIEWER_CMAP_OUTPUT + '*.bcmap');
+
+  var compressCmaps =
+    require('./external/cmapscompress/compress.js').compressCmaps;
+  compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
 };
 
 //
@@ -424,6 +452,7 @@ target.minified = function() {
   mkdir('-p', MINIFIED_DIR);
   mkdir('-p', MINIFIED_DIR + BUILD_DIR);
   mkdir('-p', MINIFIED_DIR + '/web');
+  mkdir('-p', MINIFIED_DIR + '/web/cmaps');
 
   var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
 
@@ -433,6 +462,7 @@ target.minified = function() {
       [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
       ['web/viewer.css', MINIFIED_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
+      ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
       ['web/locale', MINIFIED_DIR + '/web']
     ],
     preprocess: [
@@ -557,6 +587,7 @@ target.firefox = function() {
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web');
+  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps');
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm',
      FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
@@ -579,7 +610,7 @@ target.firefox = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      ['external/cmaps/', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
+      ['external/bcmaps/*', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
        FIREFOX_BUILD_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', FIREFOX_BUILD_CONTENT_DIR]
@@ -679,6 +710,7 @@ target.mozcentral = function() {
   mkdir('-p', MOZCENTRAL_L10N_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
+  mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web/cmaps');
 
   cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR);
   cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm', MOZCENTRAL_CONTENT_DIR);
@@ -697,7 +729,7 @@ target.mozcentral = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
-      ['external/cmaps/', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
+      ['external/bcmaps/*', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
       ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web'],
       ['web/default_preferences.js', MOZCENTRAL_CONTENT_DIR]
     ],
@@ -766,15 +798,16 @@ target.b2g = function() {
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/cmaps');
 
   var setup = {
     defines: defines,
     copy: [
-      ['external/cmaps/', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
       ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
@@ -791,6 +824,8 @@ target.b2g = function() {
 // make chrome
 //
 target.chromium = function() {
+  target.locale();
+
   cd(ROOT_DIR);
   echo();
   echo('### Building Chromium extension');
@@ -811,7 +846,6 @@ target.chromium = function() {
   var setup = {
     defines: defines,
     copy: [
-      ['external/cmaps/', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
       [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
       [['extensions/chromium/*.json',
         'extensions/chromium/*.html',
@@ -821,6 +855,7 @@ target.chromium = function() {
        CHROME_BUILD_DIR],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [

@@ -709,6 +709,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue4461-load",
+      "file": "pdfs/issue4461.pdf",
+      "md5": "9df4ecaae429adb5dc93d9342a53159d",
+      "rounds": 1,
+      "type": "load",
+      "about": "Document without /Resources entry in page dictionary"
+    },
     {  "id": "issue1249-load",
       "file": "pdfs/issue1249.pdf",
       "md5": "4f81339fa09422a7db980f34ea963609",
@@ -1568,5 +1575,14 @@
       "rounds": 1,
       "type": "eq",
       "about": "Image mask in higher resolution than the image itself"
+    },
+    {  "id": "issue4436",
+       "file": "pdfs/issue4436.pdf",
+       "md5": "34e6af7441961f5940e6440a62e37427",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 9,
+       "lastPage": 9,
+       "type": "eq"
     }
 ]
