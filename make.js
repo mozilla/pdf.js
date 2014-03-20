@@ -40,11 +40,17 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
-    PYTHON_BIN = 'python2.7',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
     FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
     MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
     FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1';
+
+if (process.platform == 'win32') {
+  // Default location
+  var PYTHON_BIN = 'C:/Python27/python.exe';
+} else {
+  var PYTHON_BIN = 'python2.7';
+}
 
 var DEFINES = {
   PRODUCTION: true,
