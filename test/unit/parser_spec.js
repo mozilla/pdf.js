@@ -61,6 +61,17 @@ describe('parser', function() {
 
       expect(result).toEqual('p!U"$2');
     });
+
+    it('should ignore escaped CR and LF', function() {
+      // '(\101\<CR><LF>\102)'
+      // should be parsed as
+      // "AB"
+      var input = new StringStream('(\\101\\\r\n\\102\\\r\\103\\\n\\104)');
+      var lexer = new Lexer(input);
+      var result = lexer.getString();
+
+      expect(result).toEqual('ABCD');
+    });
   });
 });
 
