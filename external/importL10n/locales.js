@@ -18,8 +18,6 @@
 
 'use strict';
 
-require('./external/shelljs/make');
-
 // Defines all languages that have a translation at mozilla-aurora.
 // This is used in make.js for the importl10n command.
 function getLangCodes() {
@@ -38,4 +36,31 @@ function getLangCodes() {
            'zh-TW', 'zu'
          ];
 }
+
+function downloadLanguageFiles(langCode) {
+  var http = require('http');
+  var fs = require('fs');
+
+  // Constants for constructing the URLs. Translations are taken from the
+  // Aurora channel as those are the most recent ones. The Nightly channel
+  // does not provide all translations.
+  var MOZCENTRAL_ROOT = 'http://mxr.mozilla.org/l10n-mozilla-aurora/source/';
+  var MOZCENTRAL_PDFJS_DIR = '/browser/pdfviewer/';
+  var MOZCENTRAL_RAW_FLAG = '?raw=1';
+
+  // Defines which files to download for each language.
+  var files = ['chrome.properties', 'viewer.properties'];
+
+  // Download the necessary files for this language.
+  files.forEach(function(fileName) {
+    var file = fs.createWriteStream(fileName);
+    var url = MOZCENTRAL_ROOT + langCode + MOZCENTRAL_PDFJS_DIR +
+              fileName + MOZCENTRAL_RAW_FLAG;
+    var request = http.get(url, function(response) {
+      response.pipe(file);
+    });
+  });
+}
+
 exports.getLangCodes = getLangCodes;
+exports.downloadLanguageFiles = downloadLanguageFiles;

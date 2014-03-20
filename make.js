@@ -1313,24 +1313,12 @@ target.makefile = function() {
 //make importl10n
 //
 target.importl10n = function() {
+  var locales = require('./external/importL10n/locales.js');
+  var LOCAL_L10N_DIR = 'l10n';
+
   cd(ROOT_DIR);
   echo();
   echo('### Importing l10n from mozilla-aurora');
-
-  // Constants mainly for constructing the URLs. Translations are taken 
-  // from the Aurora channel as those are the most recent ones. The Nightly 
-  // channel does not provide all translations, so we cannot use that.
-  var MOZCENTRAL_ROOT = 'http://mxr.mozilla.org/l10n-mozilla-aurora/source/';
-  var MOZCENTRAL_PDFJS_DIR = '/browser/pdfviewer/';
-  var MOZCENTRAL_RAW_FLAG = '?raw=1';
-  var LOCAL_L10N_DIR = 'l10n';
-
-  var http = require('http');
-  var fs = require('fs');
-  var locales = require('./import_locales.js');
-
-  // Defines which files to download for each language.
-  var files = ['chrome.properties', 'viewer.properties'];
 
   if (!test('-d', LOCAL_L10N_DIR)) {
     mkdir(LOCAL_L10N_DIR);
@@ -1343,15 +1331,7 @@ target.importl10n = function() {
     }
     cd(langCode);
 
-    // Download the necessary files for this language.
-    files.forEach(function(fileName) {
-      var file = fs.createWriteStream(fileName);
-      var url = MOZCENTRAL_ROOT + langCode + MOZCENTRAL_PDFJS_DIR +
-                fileName + MOZCENTRAL_RAW_FLAG;
-      var request = http.get(url, function(response) {
-        response.pipe(file);
-      });
-    });
+    locales.downloadLanguageFiles(langCode);
 
     cd(ROOT_DIR);
     cd(LOCAL_L10N_DIR);
