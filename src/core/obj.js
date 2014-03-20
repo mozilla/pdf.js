@@ -34,7 +34,7 @@ var Name = (function NameClosure() {
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
-    return nameValue ? nameValue : (nameCache[name] = new Name(name));
+    return (nameValue ? nameValue : (nameCache[name] = new Name(name)));
   };
 
   return Name;
@@ -51,7 +51,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
-    return cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd));
+    return (cmdValue ? cmdValue : (cmdCache[cmd] = new Cmd(cmd)));
   };
 
   return Cmd;
@@ -133,7 +133,7 @@ var Dict = (function DictClosure() {
       var all = {};
       for (var key in this.map) {
         var obj = this.get(key);
-        all[key] = obj instanceof Dict ? obj.getAll() : obj;
+        all[key] = (obj instanceof Dict ? obj.getAll() : obj);
       }
       return all;
     },
@@ -167,8 +167,8 @@ var Ref = (function RefClosure() {
   return Ref;
 })();
 
-// The reference is identified by number and generation,
-// this structure stores only one instance of the reference.
+// The reference is identified by number and generation.
+// This structure stores only one instance of the reference.
 var RefSet = (function RefSetClosure() {
   function RefSet() {
     this.dict = {};
@@ -242,8 +242,8 @@ var Catalog = (function CatalogClosure() {
         return shadow(this, 'metadata', null);
       }
 
-      var encryptMetadata = !this.xref.encrypt ? false :
-        this.xref.encrypt.encryptMetadata;
+      var encryptMetadata = (!this.xref.encrypt ? false :
+                             this.xref.encrypt.encryptMetadata);
 
       var stream = this.xref.fetch(streamRef, !encryptMetadata);
       var metadata;
@@ -340,7 +340,7 @@ var Catalog = (function CatalogClosure() {
           }
         }
       }
-      return root.items.length > 0 ? root.items : null;
+      return (root.items.length > 0 ? root.items : null);
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
@@ -399,7 +399,7 @@ var Catalog = (function CatalogClosure() {
           if (!names.hasOwnProperty(name)) {
             continue;
           }
-          // We don't really use the JavaScript right now so this code is
+          // We don't really use the JavaScript right now. This code is
           // defensive so we don't cause errors on document load.
           var jsDict = names[name];
           if (!isDict(jsDict)) {
@@ -535,7 +535,7 @@ var Catalog = (function CatalogClosure() {
           var found = false;
           for (var i = 0; i < kids.length; i++) {
             var kid = kids[i];
-            assert(isRef(kid), 'kids must be an ref');
+            assert(isRef(kid), 'kids must be a ref');
             if (kid.num == kidRef.num) {
               found = true;
               break;
@@ -580,7 +580,6 @@ var Catalog = (function CatalogClosure() {
 
 var XRef = (function XRefClosure() {
   function XRef(stream, password) {
-
     this.stream = stream;
     this.entries = [];
     this.xrefstms = {};
@@ -610,8 +609,8 @@ var XRef = (function XRefClosure() {
       if (encrypt) {
         var ids = trailerDict.get('ID');
         var fileId = (ids && ids.length) ? ids[0] : '';
-        this.encrypt = new CipherTransformFactory(
-            encrypt, fileId, this.password);
+        this.encrypt = new CipherTransformFactory(encrypt, fileId,
+                                                  this.password);
       }
 
       // get the root dictionary (catalog) object
@@ -702,16 +701,17 @@ var XRef = (function XRefClosure() {
           entry.gen = parser.getObj();
           var type = parser.getObj();
 
-          if (isCmd(type, 'f'))
+          if (isCmd(type, 'f')) {
             entry.free = true;
-          else if (isCmd(type, 'n'))
+          } else if (isCmd(type, 'n')) {
             entry.uncompressed = true;
+          }
 
           // Validate entry obj
           if (!isInt(entry.offset) || !isInt(entry.gen) ||
               !(entry.free || entry.uncompressed)) {
             console.log(entry.offset, entry.gen, entry.free,
-                entry.uncompressed);
+                        entry.uncompressed);
             error('Invalid entry in XRef subsection: ' + first + ', ' + count);
           }
 
@@ -777,7 +777,6 @@ var XRef = (function XRefClosure() {
 
       var entryRanges = streamState.entryRanges;
       while (entryRanges.length > 0) {
-
         var first = entryRanges[0];
         var n = entryRanges[1];
 
@@ -793,9 +792,10 @@ var XRef = (function XRefClosure() {
           streamState.streamPos = stream.pos;
 
           var type = 0, offset = 0, generation = 0;
-          for (j = 0; j < typeFieldWidth; ++j)
+          for (j = 0; j < typeFieldWidth; ++j) {
             type = (type << 8) | stream.getByte();
-          // if type field is absent, its default value = 1
+          }
+          // if type field is absent, its default value is 1
           if (typeFieldWidth === 0) {
             type = 1;
           }
@@ -837,8 +837,9 @@ var XRef = (function XRefClosure() {
       function readToken(data, offset) {
         var token = '', ch = data[offset];
         while (ch !== 13 && ch !== 10) {
-          if (++offset >= data.length)
+          if (++offset >= data.length) {
             break;
+          }
           token += String.fromCharCode(ch);
           ch = data[offset];
         }
@@ -853,9 +854,9 @@ var XRef = (function XRefClosure() {
           while (i < length && data[offset + i] == what[i]) {
             ++i;
           }
-          if (i >= length)
+          if (i >= length) {
             break; // sequence found
-
+          }
           offset++;
           skipped++;
         }
@@ -967,7 +968,6 @@ var XRef = (function XRefClosure() {
 
           // Get dictionary
           if (isCmd(obj, 'xref')) {
-
             // Parse end-of-file XRef
             dict = this.processXRefTable(parser);
             if (!this.topDict) {
@@ -986,7 +986,6 @@ var XRef = (function XRefClosure() {
               }
             }
           } else if (isInt(obj)) {
-
             // Parse in-stream XRef
             if (!isInt(parser.getObj()) ||
                 !isCmd(parser.getObj(), 'obj') ||
@@ -997,7 +996,6 @@ var XRef = (function XRefClosure() {
             if (!this.topDict) {
               this.topDict = dict;
             }
-
             if (!dict) {
               error('Failed to read XRef stream');
             }
@@ -1069,8 +1067,7 @@ var XRef = (function XRefClosure() {
       }
     },
 
-    fetchUncompressed: function XRef_fetchUncompressed(ref,
-                                                       xrefEntry,
+    fetchUncompressed: function XRef_fetchUncompressed(ref, xrefEntry,
                                                        suppressEncryption) {
       var gen = ref.gen;
       var num = ref.num;
@@ -1089,7 +1086,7 @@ var XRef = (function XRefClosure() {
         error('bad XRef entry');
       }
       if (!isCmd(obj3, 'obj')) {
-        // some bad pdfs use "obj1234" and really mean 1234
+        // some bad PDFs use "obj1234" and really mean 1234
         if (obj3.cmd.indexOf('obj') === 0) {
           num = parseInt(obj3.cmd.substring(3), 10);
           if (!isNaN(num)) {
@@ -1103,9 +1100,9 @@ var XRef = (function XRefClosure() {
           xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num,
                                                                        gen));
         } catch (ex) {
-          // almost all streams must be encrypted, but sometimes
-          // they are not probably due to some broken generators
-          // re-trying without encryption
+          // Almost all streams must be encrypted, but sometimes
+          // they are not, probably due to some broken generators.
+          // Retrying without encryption...
           return this.fetch(ref, true);
         }
       } else {
@@ -1195,8 +1192,8 @@ var XRef = (function XRefClosure() {
 })();
 
 /**
- * A NameTree is like a Dict but has some adventagous properties, see the spec
- * (7.9.6) for more details.
+ * A NameTree is like a Dict but has some advantageous properties, see the
+ * spec (7.9.6) for more details.
  * TODO: implement all the Dict functions and make this more efficent.
  */
 var NameTree = (function NameTreeClosure() {
@@ -1259,7 +1256,6 @@ var NameTree = (function NameTreeClosure() {
  * entire PDF document object graph to be traversed.
  */
 var ObjectLoader = (function() {
-
   function mayHaveChildren(value) {
     return isRef(value) || isDict(value) || isArray(value) || isStream(value);
   }
@@ -1296,7 +1292,6 @@ var ObjectLoader = (function() {
   }
 
   ObjectLoader.prototype = {
-
     load: function ObjectLoader_load() {
       var keys = this.keys;
       this.promise = new LegacyPromise();
@@ -1384,7 +1379,6 @@ var ObjectLoader = (function() {
       this.refSet = null;
       this.promise.resolve();
     }
-
   };
 
   return ObjectLoader;

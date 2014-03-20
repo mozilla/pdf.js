@@ -47,7 +47,7 @@ var PDFImage = (function PDFImageClosure() {
   function decodeAndClamp(value, addend, coefficient, max) {
     value = addend + value * coefficient;
     // Clamp the value to the range
-    return value < 0 ? 0 : value > max ? max : value;
+    return (value < 0 ? 0 : (value > max ? max : value));
   }
   function PDFImage(xref, res, image, inline, smask, mask, isMask) {
     this.image = image;
@@ -89,7 +89,7 @@ var PDFImage = (function PDFImageClosure() {
     if (!this.imageMask) {
       var colorSpace = dict.get('ColorSpace', 'CS');
       if (!colorSpace) {
-        warn('JPX images (which don"t require color spaces');
+        warn('JPX images (which do not require color spaces)');
         colorSpace = Name.get('DeviceRGB');
       }
       this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
@@ -134,7 +134,7 @@ var PDFImage = (function PDFImageClosure() {
     var imageDataPromise = new LegacyPromise();
     var smaskPromise = new LegacyPromise();
     var maskPromise = new LegacyPromise();
-    // The image data and smask data may not be ready yet, wait till both are
+    // The image data and smask data may not be ready yet, wait until both are
     // resolved.
     Promise.all([imageDataPromise, smaskPromise, maskPromise]).then(
         function(results) {
@@ -170,7 +170,7 @@ var PDFImage = (function PDFImageClosure() {
   };
 
   /**
-   * Resize an image using the nearest neighbor algorithm.  Currently only
+   * Resize an image using the nearest neighbor algorithm. Currently only
    * supports one and three component images.
    * @param {TypedArray} pixels The original image with one component.
    * @param {Number} bpc Number of bits per component.
@@ -184,8 +184,8 @@ var PDFImage = (function PDFImageClosure() {
   PDFImage.resize = function PDFImage_resize(pixels, bpc, components,
                                              w1, h1, w2, h2) {
     var length = w2 * h2 * components;
-    var temp = bpc <= 8 ? new Uint8Array(length) :
-        bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
+    var temp = (bpc <= 8 ? new Uint8Array(length) :
+        (bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length)));
     var xRatio = w1 / w2;
     var yRatio = h1 / h2;
     var px, py, newIndex, oldIndex;
@@ -266,7 +266,7 @@ var PDFImage = (function PDFImageClosure() {
       for (var i = 0, ii = this.width * this.height; i < ii; i++) {
         for (var j = 0; j < numComps; j++) {
           buffer[index] = decodeAndClamp(buffer[index], decodeAddends[j],
-                                            decodeCoefficients[j], max);
+                                         decodeCoefficients[j], max);
           index++;
         }
       }
@@ -285,8 +285,8 @@ var PDFImage = (function PDFImageClosure() {
 
       var length = width * height * numComps;
       var bufferPos = 0;
-      var output = bpc <= 8 ? new Uint8Array(length) :
-        bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length);
+      var output = (bpc <= 8 ? new Uint8Array(length) :
+        (bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length)));
       var rowComps = width * numComps;
 
       var max = (1 << bpc) - 1;
@@ -338,7 +338,7 @@ var PDFImage = (function PDFImageClosure() {
 
           var remainingBits = bits - bpc;
           var value = buf >> remainingBits;
-          output[i] = value < 0 ? 0 : value > max ? max : value;
+          output[i] = (value < 0 ? 0 : (value > max ? max : value));
           buf = buf & ((1 << remainingBits) - 1);
           bits = remainingBits;
         }
@@ -418,7 +418,7 @@ var PDFImage = (function PDFImageClosure() {
       }
 
       function clamp(value) {
-        return (value < 0 ? 0 : value > 255 ? 255 : value) | 0;
+        return (value < 0 ? 0 : (value > 255 ? 255 : value)) | 0;
       }
 
       var matteRgb = this.colorSpace.getRgb(matte, 0);
@@ -442,7 +442,7 @@ var PDFImage = (function PDFImageClosure() {
     createImageData: function PDFImage_createImageData(forceRGBA) {
       var drawWidth = this.drawWidth;
       var drawHeight = this.drawHeight;
-      var imgData = {       // other fields are filled in below
+      var imgData = { // other fields are filled in below
         width: drawWidth,
         height: drawHeight
       };
@@ -529,14 +529,15 @@ var PDFImage = (function PDFImageClosure() {
     },
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
-      if (numComps != 1)
+      if (numComps != 1) {
         error('Reading gray scale from a color image: ' + numComps);
+      }
 
       var width = this.width;
       var height = this.height;
       var bpc = this.bpc;
 
-      // rows start at byte boundary;
+      // rows start at byte boundary
       var rowBytes = (width * numComps * bpc + 7) >> 3;
       var imgArray = this.getImageBytes(height * rowBytes);
 

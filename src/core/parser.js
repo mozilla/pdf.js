@@ -24,7 +24,7 @@
 var EOF = {};
 
 function isEOF(v) {
-  return v == EOF;
+  return (v == EOF);
 }
 
 var Parser = (function ParserClosure() {
@@ -62,10 +62,12 @@ var Parser = (function ParserClosure() {
       if (isCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
-        while (!isCmd(this.buf1, ']') && !isEOF(this.buf1))
+        while (!isCmd(this.buf1, ']') && !isEOF(this.buf1)) {
           array.push(this.getObj(cipherTransform));
-        if (isEOF(this.buf1))
+        }
+        if (isEOF(this.buf1)) {
           error('End of file inside array');
+        }
         this.shift();
         return array;
       }
@@ -74,25 +76,27 @@ var Parser = (function ParserClosure() {
         var dict = new Dict(this.xref);
         while (!isCmd(this.buf1, '>>') && !isEOF(this.buf1)) {
           if (!isName(this.buf1)) {
-            info('Malformed dictionary, key must be a name object');
+            info('Malformed dictionary: key must be a name object');
             this.shift();
             continue;
           }
 
           var key = this.buf1.name;
           this.shift();
-          if (isEOF(this.buf1))
+          if (isEOF(this.buf1)) {
             break;
+          }
           dict.set(key, this.getObj(cipherTransform));
         }
-        if (isEOF(this.buf1))
+        if (isEOF(this.buf1)) {
           error('End of file inside dictionary');
+        }
 
-        // stream objects are not allowed inside content streams or
-        // object streams
+        // Stream objects are not allowed inside content streams or
+        // object streams.
         if (isCmd(this.buf2, 'stream')) {
-          return this.allowStreams ?
-            this.makeStream(dict, cipherTransform) : dict;
+          return (this.allowStreams ?
+                  this.makeStream(dict, cipherTransform) : dict);
         }
         this.shift();
         return dict;
@@ -111,8 +115,9 @@ var Parser = (function ParserClosure() {
       if (isString(this.buf1)) { // string
         var str = this.buf1;
         this.shift();
-        if (cipherTransform)
+        if (cipherTransform) {
           str = cipherTransform.decryptString(str);
+        }
         return str;
       }
 
@@ -128,13 +133,15 @@ var Parser = (function ParserClosure() {
       // parse dictionary
       var dict = new Dict();
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
-        if (!isName(this.buf1))
+        if (!isName(this.buf1)) {
           error('Dictionary key must be a name object');
+        }
 
         var key = this.buf1.name;
         this.shift();
-        if (isEOF(this.buf1))
+        if (isEOF(this.buf1)) {
           break;
+        }
         dict.set(key, this.getObj(cipherTransform));
       }
 
@@ -158,13 +165,13 @@ var Parser = (function ParserClosure() {
                 break; // some binary stuff found, resetting the state
               }
             }
-            state = state === 3 ? 4 : 0;
+            state = (state === 3 ? 4 : 0);
             break;
           case 0x45:
             state = 2;
             break;
           case 0x49:
-            state = state === 2 ? 3 : 0;
+            state = (state === 2 ? 3 : 0);
             break;
           default:
             state = 0;
@@ -224,7 +231,7 @@ var Parser = (function ParserClosure() {
     },
     fetchIfRef: function Parser_fetchIfRef(obj) {
       // not relying on the xref.fetchIfRef -- xref might not be set
-      return isRef(obj) ? this.xref.fetch(obj) : obj;
+      return (isRef(obj) ? this.xref.fetch(obj) : obj);
     },
     makeStream: function Parser_makeStream(dict, cipherTransform) {
       var lexer = this.lexer;
@@ -293,8 +300,9 @@ var Parser = (function ParserClosure() {
       this.shift(); // 'endstream'
 
       stream = stream.makeSubStream(pos, length, dict);
-      if (cipherTransform)
+      if (cipherTransform) {
         stream = cipherTransform.createStream(stream, length);
+      }
       stream = this.filter(stream, dict, length);
       stream.dict = dict;
       return stream;
@@ -302,8 +310,9 @@ var Parser = (function ParserClosure() {
     filter: function Parser_filter(stream, dict, length) {
       var filter = this.fetchIfRef(dict.get('Filter', 'F'));
       var params = this.fetchIfRef(dict.get('DecodeParms', 'DP'));
-      if (isName(filter))
+      if (isName(filter)) {
         return this.makeFilter(stream, filter.name, length, params);
+      }
 
       var maybeLength = length;
       if (isArray(filter)) {
@@ -311,12 +320,14 @@ var Parser = (function ParserClosure() {
         var paramsArray = params;
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
           filter = filterArray[i];
-          if (!isName(filter))
+          if (!isName(filter)) {
             error('Bad filter name: ' + filter);
+          }
 
           params = null;
-          if (isArray(paramsArray) && (i in paramsArray))
+          if (isArray(paramsArray) && (i in paramsArray)) {
             params = paramsArray[i];
+          }
           stream = this.makeFilter(stream, filter.name, maybeLength, params);
           // after the first stream the length variable is invalid
           maybeLength = null;
@@ -338,11 +349,12 @@ var Parser = (function ParserClosure() {
       if (name == 'LZWDecode' || name == 'LZW') {
         var earlyChange = 1;
         if (params) {
-          if (params.has('EarlyChange'))
+          if (params.has('EarlyChange')) {
             earlyChange = params.get('EarlyChange');
+          }
           return new PredictorStream(
             new LZWStream(stream, maybeLength, earlyChange),
-            maybeLength, params);
+                          maybeLength, params);
         }
         return new LZWStream(stream, maybeLength, earlyChange);
       }
@@ -398,29 +410,29 @@ var Lexer = (function LexerClosure() {
   }
 
   Lexer.isSpace = function Lexer_isSpace(ch) {
-    // space is one of the following characters: SPACE, TAB, CR, or LF
-    return ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A;
+    // Space is one of the following characters: SPACE, TAB, CR or LF.
+    return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
   };
 
-  // A '1' in this array means the character is white space.  A '1' or
+  // A '1' in this array means the character is white space. A '1' or
   // '2' means the character ends a name or command.
   var specialChars = [
-    1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0,   // 0x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // 1x
-    1, 0, 0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2,   // 2x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0,   // 3x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // 4x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0,   // 5x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // 6x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0,   // 7x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // 8x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // 9x
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // ax
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // bx
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // cx
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // dx
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // ex
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0    // fx
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, // 0x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 1x
+    1, 0, 0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2, // 2x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, // 3x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 4x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, // 5x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 6x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, // 7x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 8x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 9x
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ax
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // bx
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // cx
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // dx
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ex
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  // fx
   ];
 
   function toHexDigit(ch) {
@@ -445,9 +457,7 @@ var Lexer = (function LexerClosure() {
       var ch = this.currentChar;
       var eNotation = false;
       var divideBy = 0; // different from 0 if it's a floating point value
-
       var sign = 1;
-
 
       if (ch === 0x2D) { // '-'
         sign = -1;
@@ -459,7 +469,6 @@ var Lexer = (function LexerClosure() {
         divideBy = 10;
         ch = this.nextChar();
       }
-
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
         error('Invalid number: ' + String.fromCharCode(ch));
         return 0;
@@ -584,7 +593,6 @@ var Lexer = (function LexerClosure() {
                     x = (x << 3) + (ch & 0x0F);
                   }
                 }
-
                 strBuf.push(String.fromCharCode(x));
                 break;
               case 0x0A: case 0x0D: // LF, CR
@@ -617,8 +625,9 @@ var Lexer = (function LexerClosure() {
           var x = toHexDigit(ch);
           if (x != -1) {
             var x2 = toHexDigit(this.nextChar());
-            if (x2 == -1)
+            if (x2 == -1) {
               error('Illegal digit in hex char in name: ' + x2);
+            }
             strBuf.push(String.fromCharCode((x << 4) | x2));
           } else {
             strBuf.push('#', String.fromCharCode(ch));
@@ -682,8 +691,9 @@ var Lexer = (function LexerClosure() {
           return EOF;
         }
         if (comment) {
-          if (ch === 0x0A || ch == 0x0D) // LF, CR
+          if (ch === 0x0A || ch == 0x0D) { // LF, CR
             comment = false;
+          }
         } else if (ch === 0x25) { // '%'
           comment = true;
         } else if (specialChars[ch] !== 1) {
@@ -748,17 +758,21 @@ var Lexer = (function LexerClosure() {
         if (knownCommandFound && !(possibleCommand in knownCommands)) {
           break;
         }
-        if (str.length == 128)
+        if (str.length == 128) {
           error('Command token too long: ' + str.length);
+        }
         str = possibleCommand;
         knownCommandFound = knownCommands && (str in knownCommands);
       }
-      if (str == 'true')
+      if (str == 'true') {
         return true;
-      if (str == 'false')
+      }
+      if (str == 'false') {
         return false;
-      if (str == 'null')
+      }
+      if (str == 'null') {
         return null;
+      }
       return Cmd.get(str);
     },
     skipToNextLine: function Lexer_skipToNextLine() {
@@ -793,8 +807,9 @@ var Linearization = (function LinearizationClosure() {
     if (isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') &&
         isDict(this.linDict)) {
       var obj = this.linDict.get('Linearized');
-      if (!(isNum(obj) && obj > 0))
+      if (!(isNum(obj) && obj > 0)) {
         this.linDict = null;
+      }
     }
   }
 
@@ -802,9 +817,7 @@ var Linearization = (function LinearizationClosure() {
     getInt: function Linearization_getInt(name) {
       var linDict = this.linDict;
       var obj;
-      if (isDict(linDict) &&
-          isInt(obj = linDict.get(name)) &&
-          obj > 0) {
+      if (isDict(linDict) && isInt(obj = linDict.get(name)) && obj > 0) {
         return obj;
       }
       error('"' + name + '" field in linearization table is invalid');
@@ -812,18 +825,16 @@ var Linearization = (function LinearizationClosure() {
     getHint: function Linearization_getHint(index) {
       var linDict = this.linDict;
       var obj1, obj2;
-      if (isDict(linDict) &&
-          isArray(obj1 = linDict.get('H')) &&
-          obj1.length >= 2 &&
-          isInt(obj2 = obj1[index]) &&
-          obj2 > 0) {
+      if (isDict(linDict) && isArray(obj1 = linDict.get('H')) &&
+          obj1.length >= 2 && isInt(obj2 = obj1[index]) && obj2 > 0) {
         return obj2;
       }
       error('Hints table in linearization table is invalid: ' + index);
     },
     get length() {
-      if (!isDict(this.linDict))
+      if (!isDict(this.linDict)) {
         return 0;
+      }
       return this.getInt('L');
     },
     get hintsOffset() {
