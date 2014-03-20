@@ -1277,38 +1277,30 @@ var OperatorList = (function OperatorListClosure() {
   var CHUNK_SIZE = 1000;
   var CHUNK_SIZE_ABOUT = CHUNK_SIZE - 5; // close to chunk size
 
-    function getTransfers(queue) {
-      var transfers = [];
-      var fnArray = queue.fnArray, argsArray = queue.argsArray;
-      for (var i = 0, ii = queue.length; i < ii; i++) {
-        switch (fnArray[i]) {
-          case OPS.paintInlineImageXObject:
-          case OPS.paintInlineImageXObjectGroup:
-          case OPS.paintImageMaskXObject:
-            var arg = argsArray[i][0]; // first param in imgData
-            if (!arg.cached) {
-              transfers.push(arg.data.buffer);
-            }
-            break;
-        }
+  function getTransfers(queue) {
+    var transfers = [];
+    var fnArray = queue.fnArray, argsArray = queue.argsArray;
+    for (var i = 0, ii = queue.length; i < ii; i++) {
+      switch (fnArray[i]) {
+        case OPS.paintInlineImageXObject:
+        case OPS.paintInlineImageXObjectGroup:
+        case OPS.paintImageMaskXObject:
+          var arg = argsArray[i][0]; // first param in imgData
+          if (!arg.cached) {
+            transfers.push(arg.data.buffer);
+          }
+          break;
       }
-      return transfers;
     }
+    return transfers;
+  }
 
-
-    function OperatorList(intent, messageHandler, pageIndex) {
+  function OperatorList(intent, messageHandler, pageIndex) {
     this.messageHandler = messageHandler;
-    // When there isn't a message handler the fn array needs to be able to grow
-    // since we can't flush the operators.
-    if (messageHandler) {
-      this.fnArray = new Uint8Array(CHUNK_SIZE);
-    } else {
-      this.fnArray = [];
-    }
+    this.fnArray = [];
     this.argsArray = [];
     this.dependencies = {};
     this.pageIndex = pageIndex;
-    this.fnIndex = 0;
     this.intent = intent;
   }
 
@@ -1319,19 +1311,16 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     addOp: function(fn, args) {
+      this.fnArray.push(fn);
+      this.argsArray.push(args);
       if (this.messageHandler) {
-        this.fnArray[this.fnIndex++] = fn;
-        this.argsArray.push(args);
-        if (this.fnIndex >= CHUNK_SIZE) {
+        if (this.fnArray.length >= CHUNK_SIZE) {
           this.flush();
-        } else if (this.fnIndex >= CHUNK_SIZE_ABOUT &&
+        } else if (this.fnArray.length >= CHUNK_SIZE_ABOUT &&
           (fn === OPS.restore || fn === OPS.endText)) {
           // heuristic to flush on boundary of restore or endText
           this.flush();
         }
-      } else {
-        this.fnArray.push(fn);
-        this.argsArray.push(args);
       }
     },
 
@@ -1377,9 +1366,9 @@ var OperatorList = (function OperatorListClosure() {
         pageIndex: this.pageIndex,
         intent: this.intent
       }, null, transfers);
-      this.dependencies = [];
-      this.fnIndex = 0;
-      this.argsArray = [];
+      this.dependencies = {};
+      this.fnArray.length = 0;
+      this.argsArray.length = 0;
     }
   };
 
@@ -1671,22 +1660,6 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessor() {
 })();
 
 var QueueOptimizer = (function QueueOptimizerClosure() {
-  function squash(array, index, howMany, element) {
-    if (isArray(array)) {
-      array.splice(index, howMany, element);
-    } else if (typeof element !== 'undefined') {
-      // Replace the element.
-      array[index] = element;
-      // Shift everything after the element up.
-      var sub = array.subarray(index + howMany);
-      array.set(sub, index + 1);
-    } else {
-      // Shift everything after the element up.
-      var sub = array.subarray(index + howMany);
-      array.set(sub, index);
-    }
-  }
-
   function addState(parentState, pattern, fn) {
     var state = parentState;
     for (var i = 0, ii = pattern.length - 1; i < ii; i++) {
@@ -1729,7 +1702,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var j = context.currentOperation - 3, i = j + 4;
-      var ii = context.operationsLength;
+      var ii = fnArray.length;
 
       for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
       }
@@ -1794,12 +1767,11 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         }
       }
       // replacing queue items
-      squash(fnArray, j, count * 4, OPS.paintInlineImageXObjectGroup);
+      fnArray.splice(j, count * 4, OPS.paintInlineImageXObjectGroup);
       argsArray.splice(j, count * 4,
         [{width: imgWidth, height: imgHeight, kind: ImageKind.RGBA_32BPP,
           data: imgData}, map]);
       context.currentOperation = j;
-      context.operationsLength -= count * 4 - 1;
     });
 
   addState(InitialState,
@@ -1813,7 +1785,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var j = context.currentOperation - 3, i = j + 4;
-      var ii = context.operationsLength;
+      var ii = fnArray.length;
 
       for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {
       }
@@ -1858,12 +1830,11 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         }
 
         // replacing queue items
-        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectRepeat);
+        fnArray.splice(j, count * 4, OPS.paintImageMaskXObjectRepeat);
         argsArray.splice(j, count * 4, [argsArray[j + 2][0],
           argsArray[j + 1][0], argsArray[j + 1][3], positions]);
 
         context.currentOperation = j;
-        context.operationsLength -= count * 4 - 1;
       } else {
         count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
         var images = [];
@@ -1875,11 +1846,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         }
 
         // replacing queue items
-        squash(fnArray, j, count * 4, OPS.paintImageMaskXObjectGroup);
+        fnArray.splice(j, count * 4, OPS.paintImageMaskXObjectGroup);
         argsArray.splice(j, count * 4, [images]);
 
         context.currentOperation = j;
-        context.operationsLength -= count * 4 - 1;
       }
     });
 
@@ -1894,7 +1864,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       if (argsArray[j + 1][1] !== 0 || argsArray[j + 1][2] !== 0) {
         return;
       }
-      var ii = context.operationsLength;
+      var ii = fnArray.length;
       for (; i + 3 < ii && fnArray[i - 4] === fnArray[i]; i += 4) {
         if (fnArray[i - 3] !== fnArray[i + 1] ||
             fnArray[i - 2] !== fnArray[i + 2] ||
@@ -1930,11 +1900,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var args = [argsArray[j + 2][0], argsArray[j + 1][0],
         argsArray[j + 1][3], positions];
       // replacing queue items
-      squash(fnArray, j, count * 4, OPS.paintImageXObjectRepeat);
+      fnArray.splice(j, count * 4, OPS.paintImageXObjectRepeat);
       argsArray.splice(j, count * 4, args);
 
       context.currentOperation = j;
-      context.operationsLength -= count * 4 - 1;
     });
 
   addState(InitialState,
@@ -1947,7 +1916,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var j = context.currentOperation - 4, i = j + 5;
-      var ii = context.operationsLength;
+      var ii = fnArray.length;
 
       for (; i < ii && fnArray[i - 5] === fnArray[i]; i++) {
         if (fnArray[i] === OPS.setFont) {
@@ -1983,12 +1952,10 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         k += 5;
       }
       var removed = (count - 1) * 3;
-      squash(fnArray, i, removed);
+      fnArray.splice(i, removed);
       argsArray.splice(i, removed);
 
       context.currentOperation = i;
-      context.operationsLength -= removed;
-
     });
 
   function QueueOptimizer() {
@@ -1998,7 +1965,6 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
       var context = {
         currentOperation: 0,
-        operationsLength: argsArray.length,
         fnArray: fnArray,
         argsArray: argsArray
       };
@@ -2010,7 +1976,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
           context.currentOperation = i;
           state = state(context);
           i = context.currentOperation;
-          ii = context.operationsLength;
+          ii = context.fnArray.length;
         }
       }
     }
