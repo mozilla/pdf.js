@@ -410,6 +410,83 @@ function stringToBytes(str) {
   return bytes;
 }
 
+// Lazy test the endianness of the platform
+// NOTE: This will be 'true' for simulated TypedArrays
+function isLittleEndian() {
+  var buffer8 = new Uint8Array(2);
+  buffer8[0] = 1;
+  var buffer16 = new Uint16Array(buffer8.buffer);
+  return (buffer16[0] === 1);
+}
+
+Object.defineProperty(PDFJS, 'isLittleEndian', {
+  configurable: true,
+  get: function PDFJS_isLittleEndian() {
+    return shadow(PDFJS, 'isLittleEndian', isLittleEndian());
+  }
+});
+
+//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
+// Lazy test if the userAgant support CanvasTypedArrays
+function hasCanvasTypedArrays() {
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1;
+  var ctx = canvas.getContext('2d');
+  var imageData = ctx.createImageData(1, 1);
+  return (typeof imageData.data.buffer !== 'undefined');
+}
+
+Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
+  configurable: true,
+  get: function PDFJS_hasCanvasTypedArrays() {
+    return shadow(PDFJS, 'hasCanvasTypedArrays', hasCanvasTypedArrays());
+  }
+});
+
+// Uint32ArrayView
+var Uint32ArrayView = (function Uint32ArrayViewClosure() {
+
+  function Uint32ArrayView(buffer) {
+    this.buffer = buffer;
+    this.byteLength = buffer.length;
+    this.length = (this.byteLength >> 2);
+    ensureUint32ArrayViewProps(this.length);
+  }
+  Uint32ArrayView.prototype = Object.create(null);
+
+  var uint32ArrayViewSetters = 0;
+  function createUint32ArrayProp(index) {
+    return {
+      get: function () {
+        var buffer = this.buffer, offset = index << 2;
+        return (buffer[offset] | (buffer[offset + 1] << 8) |
+          (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
+      },
+      set: function (value) {
+        var buffer = this.buffer, offset = index << 2;
+        buffer[offset] = value & 255;
+        buffer[offset + 1] = (value >> 8) & 255;
+        buffer[offset + 2] = (value >> 16) & 255;
+        buffer[offset + 3] = (value >>> 24) & 255;
+      }
+    };
+  }
+
+  function ensureUint32ArrayViewProps(length) {
+    while (uint32ArrayViewSetters < length) {
+      Object.defineProperty(Uint32ArrayView.prototype,
+        uint32ArrayViewSetters,
+        createUint32ArrayProp(uint32ArrayViewSetters));
+      uint32ArrayViewSetters++;
+    }
+  }
+
+  return Uint32ArrayView;
+})();
+//#else
+//PDFJS.hasCanvasTypedArrays = true;
+//#endif
+
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
 var Util = PDFJS.Util = (function UtilClosure() {
