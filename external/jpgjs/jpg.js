@@ -89,7 +89,7 @@ var JpegImage = (function jpegImage() {
   }
 
   function getBlockBufferOffset(component, row, col) {
-    return 64 * (component.blocksPerLine * row + col);
+    return 64 * ((component.blocksPerLine + 1) * row + col);
   }
 
   function decodeScan(data, offset,
@@ -104,6 +104,7 @@ var JpegImage = (function jpegImage() {
     var maxH = frame.maxH, maxV = frame.maxV;
 
     var startOffset = offset, bitsData = 0, bitsCount = 0;
+
     function readBit() {
       if (bitsCount > 0) {
         bitsCount--;
@@ -120,8 +121,10 @@ var JpegImage = (function jpegImage() {
       bitsCount = 7;
       return bitsData >>> 7;
     }
+
     function decodeHuffman(tree) {
-      var node = tree, bit;
+      var node = tree;
+      var bit;
       while ((bit = readBit()) !== null) {
         node = node[bit];
         if (typeof node === 'number')
@@ -131,6 +134,7 @@ var JpegImage = (function jpegImage() {
       }
       return null;
     }
+
     function receive(length) {
       var n = 0;
       while (length > 0) {
@@ -141,12 +145,14 @@ var JpegImage = (function jpegImage() {
       }
       return n;
     }
+
     function receiveAndExtend(length) {
       var n = receive(length);
       if (n >= 1 << (length - 1))
         return n;
       return n + (-1 << length) + 1;
     }
+
     function decodeBaseline(component, offset) {
       var t = decodeHuffman(component.huffmanTableDC);
       var diff = t === 0 ? 0 : receiveAndExtend(t);
@@ -167,14 +173,17 @@ var JpegImage = (function jpegImage() {
         k++;
       }
     }
+
     function decodeDCFirst(component, offset) {
       var t = decodeHuffman(component.huffmanTableDC);
       var diff = t === 0 ? 0 : (receiveAndExtend(t) << successive);
       component.blocks[offset] = (component.pred += diff);
     }
+
     function decodeDCSuccessive(component, offset) {
       component.blocks[offset] |= readBit() << successive;
     }
+
     var eobrun = 0;
     function decodeACFirst(component, offset) {
       if (eobrun > 0) {
@@ -199,6 +208,7 @@ var JpegImage = (function jpegImage() {
         k++;
       }
     }
+
     var successiveACState = 0, successiveACNextValue;
     function decodeACSuccessive(component, offset) {
       var k = spectralStart, e = spectralEnd, r = 0;
@@ -261,14 +271,15 @@ var JpegImage = (function jpegImage() {
       var mcuCol = mcu % mcusPerLine;
       var blockRow = mcuRow * component.v + row;
       var blockCol = mcuCol * component.h + col;
-
-      decode(component, getBlockBufferOffset(component, blockRow, blockCol));
+      var offset = getBlockBufferOffset(component, blockRow, blockCol);
+      decode(component, offset);
     }
 
     function decodeBlock(component, decode, mcu) {
       var blockRow = (mcu / component.blocksPerLine) | 0;
       var blockCol = mcu % component.blocksPerLine;
-      decode(component, getBlockBufferOffset(component, blockRow, blockCol));
+      var offset = getBlockBufferOffset(component, blockRow, blockCol);
+      decode(component, offset);
     }
 
     var componentsLength = components.length;
@@ -290,13 +301,16 @@ var JpegImage = (function jpegImage() {
     } else {
       mcuExpected = mcusPerLine * frame.mcusPerColumn;
     }
-    if (!resetInterval) resetInterval = mcuExpected;
+    if (!resetInterval) {
+      resetInterval = mcuExpected;
+    }
 
     var h, v;
     while (mcu < mcuExpected) {
       // reset interval stuff
-      for (i = 0; i < componentsLength; i++)
+      for (i = 0; i < componentsLength; i++) {
         components[i].pred = 0;
+      }
       eobrun = 0;
 
       if (componentsLength == 1) {
@@ -330,9 +344,9 @@ var JpegImage = (function jpegImage() {
 
       if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
         offset += 2;
-      }
-      else
+      } else {
         break;
+      }
     }
 
     return offset - startOffset;
@@ -503,11 +517,11 @@ var JpegImage = (function jpegImage() {
     var samplesPerLine = blocksPerLine << 3;
     var R = new Int16Array(64);
 
-    var i, j;
+    var i, j, ll = 0;
     for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
       var scanLine = blockRow << 3;
       for (i = 0; i < 8; i++) {
-        lines.push(new Uint8Array(samplesPerLine));
+        lines[ll++] = new Uint8Array(samplesPerLine);
       }
       for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
 
@@ -527,7 +541,7 @@ var JpegImage = (function jpegImage() {
   }
 
   function clampTo8bit(a) {
-    return a < 0 ? 0 : a > 255 ? 255 : a;
+    return a <= 0 ? 0 : a >= 255 ? 255 : a | 0;
   }
 
   constructor.prototype = {
@@ -561,17 +575,17 @@ var JpegImage = (function jpegImage() {
       }
 
       function prepareComponents(frame) {
-        var mcusPerLine = Math.ceil(frame.samplesPerLine / (frame.maxH << 3));
-        var mcusPerColumn = Math.ceil(frame.scanLines / (frame.maxV << 3));
+        var mcusPerLine = Math.ceil(frame.samplesPerLine / 8 / frame.maxH);
+        var mcusPerColumn = Math.ceil(frame.scanLines / 8 / frame.maxV);
         for (var i = 0; i < frame.components.length; i++) {
           component = frame.components[i];
-          var blocksPerLine = Math.ceil(Math.ceil(frame.samplesPerLine / 8) * component.h / maxH);
-          var blocksPerColumn = Math.ceil(Math.ceil(frame.scanLines  / 8) * component.v / maxV);
+          var blocksPerLine = Math.ceil(Math.ceil(frame.samplesPerLine / 8) * component.h / frame.maxH);
+          var blocksPerColumn = Math.ceil(Math.ceil(frame.scanLines  / 8) * component.v / frame.maxV);
           var blocksPerLineForMcu = mcusPerLine * component.h;
           var blocksPerColumnForMcu = mcusPerColumn * component.v;
 
           var blocksBufferSize = 64 * blocksPerColumnForMcu
-                                    * blocksPerLineForMcu;
+                                    * (blocksPerLineForMcu + 1);
           var blocks = new Int16Array(blocksBufferSize);
 
           component.blocksPerLine = blocksPerLine;
