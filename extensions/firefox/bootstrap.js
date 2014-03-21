@@ -58,7 +58,7 @@ function log(str) {
 }
 
 function initializeDefaultPreferences() {
-  Cu.import('resource://' + RESOURCE_NAME + '/default_preferences.js');
+//#include ../../web/default_preferences.js
 
   var defaultBranch = Services.prefs.getDefaultBranch(EXT_PREFIX + '.');
   var defaultValue;

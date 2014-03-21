@@ -612,13 +612,13 @@ target.firefox = function() {
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       ['external/bcmaps/*', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
-       FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      ['web/default_preferences.js', FIREFOX_BUILD_CONTENT_DIR]
+       FIREFOX_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       [BUILD_TARGETS, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR],
-      [SRC_DIR + 'core/network.js', FIREFOX_BUILD_CONTENT_DIR]
+      [SRC_DIR + 'core/network.js', FIREFOX_BUILD_CONTENT_DIR],
+      [FIREFOX_EXTENSION_DIR + 'bootstrap.js', FIREFOX_BUILD_DIR]
     ],
     preprocessCSS: [
       ['firefox', 'web/viewer.css',
@@ -628,6 +628,7 @@ target.firefox = function() {
   builder.build(setup);
 
   cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js');
+  cleanupJSSource(FIREFOX_BUILD_DIR + 'bootstrap.js');
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -712,7 +713,8 @@ target.mozcentral = function() {
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
   mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web/cmaps');
 
-  cp(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR);
+  // Do not copy PdfJs.jsm, since it should be run through the preprocessor.
+
   cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm', MOZCENTRAL_CONTENT_DIR);
   cp(FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm', MOZCENTRAL_CONTENT_DIR);
   cp(FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm', MOZCENTRAL_CONTENT_DIR);
@@ -730,13 +732,13 @@ target.mozcentral = function() {
     copy: [
       [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
       ['external/bcmaps/*', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
-      ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web'],
-      ['web/default_preferences.js', MOZCENTRAL_CONTENT_DIR]
+      ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web']
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
       [BUILD_TARGETS, MOZCENTRAL_CONTENT_DIR + BUILD_DIR],
-      [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR]
+      [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR],
+      [FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR]
     ],
     preprocessCSS: [
       ['mozcentral',
@@ -747,6 +749,7 @@ target.mozcentral = function() {
   builder.build(setup);
 
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.js');
+  cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfJs.jsm');
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {

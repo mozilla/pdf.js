@@ -62,7 +62,7 @@ function getIntPref(aPref, aDefaultValue) {
 }
 
 function initializeDefaultPreferences() {
-  Cu.import('resource://pdf.js/default_preferences.js');
+//#include ../../../web/default_preferences.js
 
   var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
   var defaultValue;
