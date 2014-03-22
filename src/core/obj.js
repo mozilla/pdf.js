@@ -1361,7 +1361,7 @@ var ObjectLoader = (function() {
 
       if (pendingRequests.length) {
         this.xref.stream.manager.requestRanges(pendingRequests,
-            function pendingRequestCallback() {
+          function pendingRequestCallback() {
           nodesToVisit = nodesToRevisit;
           for (var i = 0; i < nodesToRevisit.length; i++) {
             var node = nodesToRevisit[i];

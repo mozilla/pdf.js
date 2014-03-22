@@ -202,7 +202,7 @@ target.locale = function() {
     if (!test('-d', path)) {
       continue;
     }
-    if (!/^[a-z][a-z](-[A-Z][A-Z])?$/.test(locale)) {
+    if (!/^[a-z][a-z]([a-z])?(-[A-Z][A-Z])?$/.test(locale)) {
       echo('Skipping invalid locale: ' + locale);
       continue;
     }
@@ -1307,4 +1307,33 @@ target.makefile = function() {
   }
   makefileContent += '.PHONY: ' + targetsNames.join(' ') + '\n';
   makefileContent.to('Makefile');
+};
+
+//
+//make importl10n
+//
+target.importl10n = function() {
+  var locales = require('./external/importL10n/locales.js');
+  var LOCAL_L10N_DIR = 'l10n';
+
+  cd(ROOT_DIR);
+  echo();
+  echo('### Importing l10n from mozilla-aurora');
+
+  if (!test('-d', LOCAL_L10N_DIR)) {
+    mkdir(LOCAL_L10N_DIR);
+  }
+  cd(LOCAL_L10N_DIR);
+
+  locales.getLangCodes().forEach(function(langCode) {
+    if (!test('-d', langCode)) {
+      mkdir(langCode);
+    }
+    cd(langCode);
+
+    locales.downloadLanguageFiles(langCode);
+
+    cd(ROOT_DIR);
+    cd(LOCAL_L10N_DIR);
+  });
 };

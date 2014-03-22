@@ -137,7 +137,7 @@ var PDFImage = (function PDFImageClosure() {
     // The image data and smask data may not be ready yet, wait until both are
     // resolved.
     Promise.all([imageDataPromise, smaskPromise, maskPromise]).then(
-        function(results) {
+      function(results) {
       var imageData = results[0], smaskData = results[1], maskData = results[2];
       var image = new PDFImage(xref, res, imageData, inline, smaskData,
                                maskData);
@@ -210,8 +210,8 @@ var PDFImage = (function PDFImageClosure() {
   };
 
   PDFImage.createMask =
-      function PDFImage_createMask(imgArray, width, height, canTransfer,
-                                   inverseDecode) {
+    function PDFImage_createMask(imgArray, width, height, canTransfer,
+                                 inverseDecode) {
     // If imgArray came from a DecodeStream, we're safe to transfer it.
     // Otherwise, copy it.
     var actualLength = imgArray.byteLength;
