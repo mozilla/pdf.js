@@ -85,6 +85,7 @@ if (typeof PDFJS === 'undefined') {
   }
 
   window.Uint8Array = TypedArray;
+  window.Int8Array = TypedArray;
 
   // we don't need support for set, byteLength for 32-bit array
   // so we can use the TypedArray as well

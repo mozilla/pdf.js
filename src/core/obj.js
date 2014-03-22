@@ -1192,7 +1192,7 @@ var XRef = (function XRefClosure() {
 })();
 
 /**
- * A NameTree is like a Dict but has some adventageous properties, see the
+ * A NameTree is like a Dict but has some advantageous properties, see the
  * spec (7.9.6) for more details.
  * TODO: implement all the Dict functions and make this more efficent.
  */

@@ -595,7 +595,12 @@ var Lexer = (function LexerClosure() {
                 }
                 strBuf.push(String.fromCharCode(x));
                 break;
-              case 0x0A: case 0x0D: // LF, CR
+              case 0x0D: // CR
+                if (this.peekChar() === 0x0A) { // LF
+                  this.nextChar();
+                }
+                break;
+              case 0x0A: // LF
                 break;
               default:
                 strBuf.push(String.fromCharCode(ch));
