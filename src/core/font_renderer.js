@@ -29,8 +29,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   function parseCmap(data, start, end) {
-    var offset = getUshort(data, start + 2) === 1 ? getLong(data, start + 8) :
-                                                    getLong(data, start + 16);
+    var offset = (getUshort(data, start + 2) === 1 ?
+                  getLong(data, start + 8) : getLong(data, start + 16));
     var format = getUshort(data, start + offset);
     if (format === 4) {
       var length = getUshort(data, start + offset + 2);
@@ -79,13 +79,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
   function parseCff(data, start, end) {
     var properties = {};
-    var parser = new CFFParser(
-      new Stream(data, start, end - start), properties);
+    var parser = new CFFParser(new Stream(data, start, end - start),
+                               properties);
     var cff = parser.parse();
     return {
       glyphs: cff.charStrings.objects,
-      subrs: cff.topDict.privateDict && cff.topDict.privateDict.subrsIndex &&
-             cff.topDict.privateDict.subrsIndex.objects,
+      subrs: (cff.topDict.privateDict && cff.topDict.privateDict.subrsIndex &&
+              cff.topDict.privateDict.subrsIndex.objects),
       gsubrs: cff.globalSubrIndex && cff.globalSubrIndex.objects
     };
   }
@@ -413,10 +413,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 var xa = x + stack.shift(), ya = y + stack.shift();
                 var xb = xa + stack.shift(), yb = ya + stack.shift();
                 x = xb; y = yb;
-                if (Math.abs(x - x0) > Math.abs(y - y0))
+                if (Math.abs(x - x0) > Math.abs(y - y0)) {
                   x += stack.shift();
-                else
+                } else  {
                   y += stack.shift();
+                }
                 bezierCurveTo(xa, ya, xb, yb, x, y);
                 break;
               default:
@@ -562,15 +563,16 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             }
             break;
           default:
-            if (v < 32)
+            if (v < 32) {
               error('unknown operator: ' + v);
-            if (v < 247)
+            }
+            if (v < 247) {
               stack.push(v - 139);
-            else if (v < 251)
+            } else if (v < 251) {
               stack.push((v - 247) * 256 + code[i++] + 108);
-            else if (v < 255)
+            } else if (v < 255) {
               stack.push(-(v - 251) * 256 - code[i++] - 108);
-            else {
+            } else {
               stack.push(((code[i] << 24) | (code[i + 1] << 16) |
                          (code[i + 2] << 8) | code[i + 3]) / 65536);
               i += 4;
@@ -654,10 +656,10 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     this.glyphNameMap = glyphNameMap || GlyphsUnicode;
 
     this.compiledGlyphs = [];
-    this.gsubrsBias = this.gsubrs.length < 1240 ? 107 :
-                      this.gsubrs.length < 33900 ? 1131 : 32768;
-    this.subrsBias = this.subrs.length < 1240 ? 107 :
-                     this.subrs.length < 33900 ? 1131 : 32768;
+    this.gsubrsBias = (this.gsubrs.length < 1240 ?
+                       107 : (this.gsubrs.length < 33900 ? 1131 : 32768));
+    this.subrsBias = (this.subrs.length < 1240 ?
+                      107 : (this.subrs.length < 33900 ? 1131 : 32768));
   }
 
   Util.inherit(Type2Compiled, CompiledFont, {
@@ -697,8 +699,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
 
       if (glyf) {
-        var fontMatrix = !unitsPerEm ? font.fontMatrix :
-          [1 / unitsPerEm, 0, 0, 1 / unitsPerEm, 0, 0];
+        var fontMatrix = (!unitsPerEm ? font.fontMatrix :
+                          [1 / unitsPerEm, 0, 0, 1 / unitsPerEm, 0, 0]);
         return new TrueTypeCompiled(
           parseGlyfTable(glyf, loca, indexToLocFormat), cmap, fontMatrix);
       } else {
