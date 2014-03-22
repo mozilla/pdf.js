@@ -55,7 +55,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return this.numChunksLoaded === this.numChunks;
     },
 
-    onReceiveData: function(begin, chunk) {
+    onReceiveData: function ChunkedStream_onReceiveData(begin, chunk) {
       var end = begin + chunk.byteLength;
 
       assert(begin % this.chunkSize === 0, 'Bad begin offset: ' + begin);
@@ -63,7 +63,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       // See ChunkedStream.moveStart()
       var length = this.bytes.length;
       assert(end % this.chunkSize === 0 || end === length,
-        'Bad end offset: ' + end);
+             'Bad end offset: ' + end);
 
       this.bytes.set(new Uint8Array(chunk), begin);
       var chunkSize = this.chunkSize;
@@ -78,11 +78,11 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       }
     },
 
-    onReceiveInitialData: function (data) {
+    onReceiveInitialData: function ChunkedStream_onReceiveInitialData(data) {
       this.bytes.set(data);
       this.initialDataLength = data.length;
-      var endChunk = this.end === data.length ?
-                     this.numChunks : Math.floor(data.length / this.chunkSize);
+      var endChunk = (this.end === data.length ?
+        this.numChunks : Math.floor(data.length / this.chunkSize));
       for (var i = 0; i < endChunk; i++) {
         this.loadedChunks[i] = true;
         ++this.numChunksLoaded;
@@ -167,8 +167,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       }
 
       var end = pos + length;
-      if (end > strEnd)
+      if (end > strEnd) {
         end = strEnd;
+      }
       this.ensureRange(pos, end);
 
       this.pos = end;
@@ -187,8 +188,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     },
 
     skip: function ChunkedStream_skip(n) {
-      if (!n)
+      if (!n) {
         n = 1;
+      }
       this.pos += n;
     },
 
@@ -406,13 +408,13 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         }
 
         if (prevChunk >= 0 && prevChunk + 1 !== chunk) {
-          groupedChunks.push({
-            beginChunk: beginChunk, endChunk: prevChunk + 1});
+          groupedChunks.push({ beginChunk: beginChunk,
+                               endChunk: prevChunk + 1 });
           beginChunk = chunk;
         }
         if (i + 1 === chunks.length) {
-          groupedChunks.push({
-            beginChunk: beginChunk, endChunk: chunk + 1});
+          groupedChunks.push({ beginChunk: beginChunk,
+                               endChunk: chunk + 1 });
         }
 
         prevChunk = chunk;
@@ -421,8 +423,8 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     },
 
     onProgress: function ChunkedStreamManager_onProgress(args) {
-      var bytesLoaded = this.stream.numChunksLoaded * this.chunkSize +
-                        args.loaded;
+      var bytesLoaded = (this.stream.numChunksLoaded * this.chunkSize +
+                         args.loaded);
       this.msgHandler.send('DocProgress', {
         loaded: bytesLoaded,
         total: this.length

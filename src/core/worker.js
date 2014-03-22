@@ -38,9 +38,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         var javaScriptPromise = pdfManager.ensureCatalog('javaScript');
         Promise.all([numPagesPromise, fingerprintPromise, outlinePromise,
-          infoPromise, metadataPromise, encryptedPromise,
-          javaScriptPromise]).then(
-            function onDocReady(results) {
+                     infoPromise, metadataPromise, encryptedPromise,
+                     javaScriptPromise]).then(function onDocReady(results) {
 
           var doc = {
             numPages: results[0],
@@ -63,7 +62,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       pdfManager.ensureDoc('checkHeader', []).then(function() {
         pdfManager.ensureDoc('parseStartXRef', []).then(function() {
           pdfManager.ensureDoc('parse', [recoveryMode]).then(
-              parseSuccess, parseFailure);
+            parseSuccess, parseFailure);
         }, parseFailure);
       }, parseFailure);
 
@@ -153,13 +152,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
         onError: function onError(status) {
           if (status == 404) {
-            var exception = new MissingPDFException( 'Missing PDF "' +
-                source.url + '".');
+            var exception = new MissingPDFException('Missing PDF "' +
+                                                    source.url + '".');
             handler.send('MissingPDF', { exception: exception });
           } else {
             handler.send('DocError', 'Unexpected server response (' +
-                status + ') while retrieving PDF "' +
-                source.url + '".');
+                         status + ') while retrieving PDF "' +
+                         source.url + '".');
           }
         },
 
@@ -254,8 +253,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             if (ex instanceof PasswordException) {
               // after password exception prepare to receive a new password
               // to repeat loading
-              pdfManager.passwordChangedPromise =
-                new LegacyPromise();
+              pdfManager.passwordChangedPromise = new LegacyPromise();
               pdfManager.passwordChangedPromise.then(pdfManagerReady);
             }
 
@@ -346,7 +344,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         }, function(e) {
 
           var minimumStackMessage =
-              'worker.js: while trying to getPage() and getOperatorList()';
+            'worker.js: while trying to getPage() and getOperatorList()';
 
           var wrappedException;
 
