@@ -128,8 +128,9 @@ var Page = (function PageClosure() {
         var xref = this.xref;
         var i, n = content.length;
         var streams = [];
-        for (i = 0; i < n; ++i)
+        for (i = 0; i < n; ++i) {
           streams.push(xref.fetchIfRef(content[i]));
+        }
         stream = new StreamsSequenceStream(streams);
       } else if (isStream(content)) {
         stream = content;
@@ -181,17 +182,16 @@ var Page = (function PageClosure() {
         // Properties
       ]);
 
-      var partialEvaluator = new PartialEvaluator(
-            pdfManager, this.xref, handler,
-            this.pageIndex, 'p' + this.pageIndex + '_',
-            this.idCounters, this.fontCache);
+      var partialEvaluator = new PartialEvaluator(pdfManager, this.xref,
+                                                  handler, this.pageIndex,
+                                                  'p' + this.pageIndex + '_',
+                                                  this.idCounters,
+                                                  this.fontCache);
 
-      var dataPromises = Promise.all(
-          [contentStreamPromise, resourcesPromise], reject);
+      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise],
+                                     reject);
       dataPromises.then(function(data) {
         var contentStream = data[0];
-
-
         var opList = new OperatorList(intent, handler, self.pageIndex);
 
         handler.send('StartRenderPage', {
@@ -249,10 +249,11 @@ var Page = (function PageClosure() {
                                       resourcesPromise]);
       dataPromises.then(function(data) {
         var contentStream = data[0];
-        var partialEvaluator = new PartialEvaluator(
-              pdfManager, self.xref, handler,
-              self.pageIndex, 'p' + self.pageIndex + '_',
-              self.idCounters, self.fontCache);
+        var partialEvaluator = new PartialEvaluator(pdfManager, self.xref,
+                                                    handler, self.pageIndex,
+                                                    'p' + self.pageIndex + '_',
+                                                    self.idCounters,
+                                                    self.fontCache);
 
         var bidiTexts = partialEvaluator.getTextContent(contentStream,
                                                         self.resources);
@@ -273,7 +274,7 @@ var Page = (function PageClosure() {
 
     get annotations() {
       var annotations = [];
-      var annotationRefs = this.annotationRefs || [];
+      var annotationRefs = (this.annotationRefs || []);
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = Annotation.fromRef(this.xref, annotationRef);
@@ -297,12 +298,13 @@ var Page = (function PageClosure() {
  */
 var PDFDocument = (function PDFDocumentClosure() {
   function PDFDocument(pdfManager, arg, password) {
-    if (isStream(arg))
+    if (isStream(arg)) {
       init.call(this, pdfManager, arg, password);
-    else if (isArrayBuffer(arg))
+    } else if (isArrayBuffer(arg)) {
       init.call(this, pdfManager, new Stream(arg), password);
-    else
+    } else {
       error('PDFDocument: Unknown argument type');
+    }
   }
 
   function init(pdfManager, stream, password) {
@@ -317,16 +319,18 @@ var PDFDocument = (function PDFDocumentClosure() {
     var pos = stream.pos;
     var end = stream.end;
     var strBuf = [];
-    if (pos + limit > end)
+    if (pos + limit > end) {
       limit = end - pos;
+    }
     for (var n = 0; n < limit; ++n) {
       strBuf.push(String.fromCharCode(stream.getByte()));
     }
     var str = strBuf.join('');
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-    if (index == -1)
+    if (index == -1) {
       return false; /* not found */
+    }
     stream.pos += index;
     return true; /* found */
   }
@@ -399,16 +403,18 @@ var PDFDocument = (function PDFDocumentClosure() {
       if (linearization) {
         // Find end of first obj.
         stream.reset();
-        if (find(stream, 'endobj', 1024))
+        if (find(stream, 'endobj', 1024)) {
           startXRef = stream.pos + 6;
+        }
       } else {
         // Find startxref by jumping backward from the end of the file.
         var step = 1024;
         var found = false, pos = stream.end;
         while (!found && pos > 0) {
           pos -= step - 'startxref'.length;
-          if (pos < 0)
+          if (pos < 0) {
             pos = 0;
+          }
           stream.pos = pos;
           found = find(stream, 'startxref', step, true);
         }
@@ -424,8 +430,9 @@ var PDFDocument = (function PDFDocumentClosure() {
             ch = stream.getByte();
           }
           startXRef = parseInt(str, 10);
-          if (isNaN(startXRef))
+          if (isNaN(startXRef)) {
             startXRef = 0;
+          }
         }
       }
       // shadow the prototype getter with a data property
@@ -434,8 +441,9 @@ var PDFDocument = (function PDFDocumentClosure() {
     get mainXRefEntriesOffset() {
       var mainXRefEntriesOffset = 0;
       var linearization = this.linearization;
-      if (linearization)
+      if (linearization) {
         mainXRefEntriesOffset = linearization.mainXRefEntriesOffset;
+      }
       // shadow the prototype getter with a data property
       return shadow(this, 'mainXRefEntriesOffset', mainXRefEntriesOffset);
     },
@@ -496,8 +504,8 @@ var PDFDocument = (function PDFDocumentClosure() {
             var value = infoDict.get(key);
             // Make sure the value conforms to the spec.
             if (validEntries[key](value)) {
-              docInfo[key] = typeof value !== 'string' ? value :
-                stringToPDFString(value);
+              docInfo[key] = (typeof value !== 'string' ?
+                              value : stringToPDFString(value));
             } else {
               info('Bad value in document info for "' + key + '"');
             }
