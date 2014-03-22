@@ -1248,8 +1248,10 @@ target.server = function() {
   echo();
   echo('### Starting local server');
 
-  cd('test');
-  exec(PYTHON_BIN + ' -u test.py --port=8888 --noDownload', {async: true});
+  var WebServer = require('./test/webserver.js').WebServer;
+  var server = new WebServer();
+  server.port = 8888;
+  server.start();
 };
 
 //
@@ -1267,6 +1269,7 @@ target.lint = function() {
                     'web/',
                     'test/driver.js',
                     'test/reporter.js',
+                    'test/webserver.js',
                     'test/unit/',
                     'extensions/firefox/',
                     'extensions/chromium/'
