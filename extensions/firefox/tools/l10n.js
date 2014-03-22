@@ -12,18 +12,19 @@
   function getL10nData(key) {
     var response = FirefoxCom.requestSync('getStrings', key);
     var data = JSON.parse(response);
-    if (!data)
+    if (!data) {
       console.warn('[l10n] #' + key + ' missing for [' + gLanguage + ']');
+    }
     return data;
   }
 
   // replace {{arguments}} with their values
   function substArguments(text, args) {
-    if (!args)
+    if (!args) {
       return text;
-
+    }
     return text.replace(/\{\{\s*(\w+)\s*\}\}/g, function(all, name) {
-      return name in args ? args[name] : '{{' + name + '}}';
+      return (name in args ? args[name] : '{{' + name + '}}');
     });
   }
 
@@ -48,28 +49,33 @@
 
   // translate an HTML element
   function translateElement(element) {
-    if (!element || !element.dataset)
+    if (!element || !element.dataset) {
       return;
+    }
 
     // get the related l10n object
     var key = element.dataset.l10nId;
     var data = getL10nData(key);
-    if (!data)
+    if (!data) {
       return;
+    }
 
     // get arguments (if any)
     // TODO: more flexible parser?
     var args;
-    if (element.dataset.l10nArgs) try {
-      args = JSON.parse(element.dataset.l10nArgs);
-    } catch (e) {
-      console.warn('[l10n] could not parse arguments for #' + key + '');
+    if (element.dataset.l10nArgs) {
+      try {
+        args = JSON.parse(element.dataset.l10nArgs);
+      } catch (e) {
+        console.warn('[l10n] could not parse arguments for #' + key + '');
+      }
     }
 
     // translate element
     // TODO: security check?
-    for (var k in data)
+    for (var k in data) {
       element[k] = substArguments(data[k], args);
+    }
   }
 
 
@@ -80,12 +86,14 @@
     // check all translatable children (= w/ a `data-l10n-id' attribute)
     var children = element.querySelectorAll('*[data-l10n-id]');
     var elementCount = children.length;
-    for (var i = 0; i < elementCount; i++)
+    for (var i = 0; i < elementCount; i++) {
       translateElement(children[i]);
+    }
 
     // translate element itself if necessary
-    if (element.dataset.l10nId)
+    if (element.dataset.l10nId) {
       translateElement(element);
+    }
   }
 
   window.addEventListener('DOMContentLoaded', function() {
@@ -106,14 +114,16 @@
     get: translateString,
 
     // get the document language
-    getLanguage: function() { return gLanguage; },
+    getLanguage: function() {
+      return gLanguage;
+    },
 
     // get the direction (ltr|rtl) of the current language
     getDirection: function() {
       // http://www.w3.org/International/questions/qa-scripts
       // Arabic, Hebrew, Farsi, Pashto, Urdu
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
-      return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
+      return (rtlList.indexOf(gLanguage) >= 0 ? 'rtl' : 'ltr');
     },
 
     // translate an element or document fragment
