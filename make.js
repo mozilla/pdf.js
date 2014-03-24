@@ -1267,9 +1267,7 @@ target.lint = function() {
                     'external/crlfchecker/',
                     'src/',
                     'web/',
-                    'test/driver.js',
-                    'test/reporter.js',
-                    'test/webserver.js',
+                    'test/*.js',
                     'test/unit/',
                     'extensions/firefox/',
                     'extensions/chromium/'
