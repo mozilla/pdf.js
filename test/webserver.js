@@ -64,6 +64,7 @@ WebServer.prototype = {
     this.server = null;
   },
   _handler: function (req, res) {
+    var agent = req.headers['user-agent'];
     var url = req.url;
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];
@@ -87,6 +88,9 @@ WebServer.prototype = {
                   checkFile);
       return;
     }
+
+    // disables range requests for chrome windows -- locks during testing
+    var disableRangeRequests = /Windows.*?Chrom/i.test(agent);
 
     var filePath;
     fs.realpath(path.join(this.root, pathPart), checkFile);
@@ -127,7 +131,7 @@ WebServer.prototype = {
       }
 
       var range = req.headers['range'];
-      if (range) {
+      if (range && !disableRangeRequests) {
         var rangesMatches = /^bytes=(\d+)\-(\d+)?/.exec(range);
         if (!rangesMatches) {
           res.writeHead(501);
@@ -214,7 +218,9 @@ WebServer.prototype = {
       var ext = path.extname(filePath).toLowerCase();
       var contentType = mimeTypes[ext] || defaultMimeType;
 
-      res.setHeader('Accept-Ranges', 'bytes');
+      if (!disableRangeRequests) {
+        res.setHeader('Accept-Ranges', 'bytes');
+      }
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileSize);
       res.writeHead(200);
