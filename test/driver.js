@@ -232,10 +232,11 @@ function nextPage(task, loadError) {
   var failure = loadError || '';
 
   if (!task.pdfDoc) {
-    sendTaskResult(canvasToDataURL(), task, failure);
-    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
-    ++currentTaskIdx;
-    nextTask();
+    sendTaskResult(canvasToDataURL(), task, failure, function () {
+      log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+      ++currentTaskIdx;
+      nextTask();
+    });
     return;
   }
 
@@ -332,18 +333,12 @@ function nextPage(task, loadError) {
 function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
-  sendTaskResult(canvasToDataURL(), task, failure);
-  log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+  sendTaskResult(canvasToDataURL(), task, failure, function () {
+    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
-  // Set up the next request
-  var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
-  setTimeout(
-    function snapshotCurrentPageSetTimeout() {
-      ++task.pageNum;
-      nextPage(task);
-    },
-    backoff
-  );
+    ++task.pageNum;
+    nextPage(task);
+  });
 }
 
 function sendQuitRequest() {
@@ -373,28 +368,25 @@ function done() {
   }
 }
 
-function sendTaskResult(snapshot, task, failure, result) {
-  // Optional result argument is for retrying XHR requests - see below
-  if (!result) {
-    result = JSON.stringify({
-      browser: browser,
-      id: task.id,
-      numPages: task.pdfDoc ?
-               (task.lastPage || task.pdfDoc.numPages) : 0,
-      lastPageNum: getLastPageNum(task),
-      failure: failure,
-      file: task.file,
-      round: task.round,
-      page: task.pageNum,
-      snapshot: snapshot,
-      stats: task.stats.times
-    });
-  }
+function sendTaskResult(snapshot, task, failure, callback) {
+  var result = JSON.stringify({
+    browser: browser,
+    id: task.id,
+    numPages: task.pdfDoc ?
+             (task.lastPage || task.pdfDoc.numPages) : 0,
+    lastPageNum: getLastPageNum(task),
+    failure: failure,
+    file: task.file,
+    round: task.round,
+    page: task.pageNum,
+    snapshot: snapshot,
+    stats: task.stats.times
+  });
 
-  send('/submit_task_results', result);
+  send('/submit_task_results', result, callback);
 }
 
-function send(url, message) {
+function send(url, message, callback) {
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
   r.open('POST', url, true);
@@ -407,6 +399,9 @@ function send(url, message) {
         setTimeout(function() {
           send(url, message);
         });
+      }
+      if (callback) {
+        callback();
       }
     }
   };
