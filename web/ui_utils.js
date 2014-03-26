@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals mozL10n */
 
 'use strict';
 
@@ -270,3 +271,47 @@ var isLocalStorageEnabled = (function isLocalStorageEnabledClosure() {
   }
 })();
 //#endif
+
+var SidebarResizer = {
+  CSS_SELECTOR: 'sidebarExpanded',
+  EXPANDED_WIDTH: 433,
+
+  outerContainer: null,
+  toggleButton: null,
+  expanded: false,
+
+  initialize: function sidebarResizerInitialize(options) {
+    this.outerContainer = options.outerContainer;
+    this.toggleButton = options.toggleButton;
+
+    if (!this.toggleButton) {
+      return;
+    }
+    this.toggleButton.addEventListener('click', this.toggle.bind(this));
+  },
+
+  toggle: function sidebarResizerResize() {
+    if (this.expanded) {
+      this.outerContainer.classList.remove(this.CSS_SELECTOR);
+      this.toggleButton.classList.remove(this.CSS_SELECTOR);
+      this.expanded = false;
+
+      this.toggleButton.title =
+        mozL10n.get('expand_sidebar.title', null, 'Expand Sidebar');
+      this.toggleButton.firstElementChild.textContent =
+        mozL10n.get('expand_sidebar_label', null, 'Expand Sidebar');
+    } else {
+      var maxWidth = (this.outerContainer.clientWidth / 2);
+      if (this.EXPANDED_WIDTH < maxWidth) {
+        this.outerContainer.classList.add(this.CSS_SELECTOR);
+        this.toggleButton.classList.add(this.CSS_SELECTOR);
+        this.expanded = true;
+
+        this.toggleButton.title =
+          mozL10n.get('shrink_sidebar.title', null, 'Shrink Sidebar');
+        this.toggleButton.firstElementChild.textContent =
+          mozL10n.get('shrink_sidebar_label', null, 'Shrink Sidebar');
+      }
+    }
+  }
+};

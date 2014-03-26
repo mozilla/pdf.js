@@ -19,7 +19,8 @@
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
-           PresentationMode, HandTool, Promise, DocumentProperties */
+           PresentationMode, HandTool, Promise, DocumentProperties,
+           SidebarResizer */
 
 'use strict';
 
@@ -212,6 +213,11 @@ var PDFView = {
       producerField: document.getElementById('producerField'),
       versionField: document.getElementById('versionField'),
       pageCountField: document.getElementById('pageCountField')
+    });
+
+    SidebarResizer.initialize({
+      outerContainer: document.getElementById('outerContainer'),
+      toggleButton: document.getElementById('resizeSidebar')
     });
 
     this.initialized = true;
