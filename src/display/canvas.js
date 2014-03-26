@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error,
-           FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageData, ImageKind,
-           isArray, isNum, TilingPattern, OPS, Promise, Util, warn, assert,
-           info, shadow, TextRenderingMode, getShadingPatternFromIR */
+/* globals ColorSpace, DeviceCmykCS, DeviceGrayCS, DeviceRgbCS, error, PDFJS,
+           FONT_IDENTITY_MATRIX, Uint32ArrayView, IDENTITY_MATRIX, ImageData,
+           ImageKind, isArray, isNum, TilingPattern, OPS, Promise, Util, warn,
+           assert, info, shadow, TextRenderingMode, getShadingPatternFromIR */
 
 'use strict';
 
@@ -463,45 +463,48 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var destDataLength = dest.length;
       var srcLength = src.byteLength;
-      for (var i = 3; i < destDataLength; i += 4) {
-        dest[i] = 255;
-      }
+      var dest32 = PDFJS.hasCanvasTypedArrays ? new Uint32Array(dest.buffer) :
+        new Uint32ArrayView(dest);
+      var dest32DataLength = dest32.length;
+      var fullSrcDiff = (width + 7) >> 3;
+      var white = 0xFFFFFFFF;
+      var black = (PDFJS.isLittleEndian || !PDFJS.hasCanvasTypedArrays) ?
+        0xFF000000 : 0x000000FF;
       for (var i = 0; i < totalChunks; i++) {
         var thisChunkHeight =
           (i < fullChunks) ? fullChunkHeight : partialChunkHeight;
         var destPos = 0;
         for (var j = 0; j < thisChunkHeight; j++) {
+          var srcDiff = srcLength - srcPos;
+          var k = 0;
+          var kEnd = (srcDiff > fullSrcDiff) ? width : srcDiff * 8 - 7;
+          var kEndUnrolled = kEnd & ~7;
           var mask = 0;
           var srcByte = 0;
-          for (var k = 0; k < width; k++, destPos += 4) {
-            if (mask === 0) {
-              if (srcPos >= srcLength) {
-                break;
-              }
-              srcByte = src[srcPos++];
-              mask = 128;
-            }
+          for (; k < kEndUnrolled; k += 8) {
+            srcByte = src[srcPos++];
+            dest32[destPos++] = (srcByte & 128) ? white : black;
+            dest32[destPos++] = (srcByte & 64) ? white : black;
+            dest32[destPos++] = (srcByte & 32) ? white : black;
+            dest32[destPos++] = (srcByte & 16) ? white : black;
+            dest32[destPos++] = (srcByte & 8) ? white : black;
+            dest32[destPos++] = (srcByte & 4) ? white : black;
+            dest32[destPos++] = (srcByte & 2) ? white : black;
+            dest32[destPos++] = (srcByte & 1) ? white : black;
+          }
+          for (; k < kEnd; k++) {
+             if (mask === 0) {
+               srcByte = src[srcPos++];
+               mask = 128;
+             }
 
-            if ((srcByte & mask)) {
-              dest[destPos] = 255;
-              dest[destPos + 1] = 255;
-              dest[destPos + 2] = 255;
-            } else {
-              dest[destPos] = 0;
-              dest[destPos + 1] = 0;
-              dest[destPos + 2] = 0;
-            }
-
+            dest32[destPos++] = (srcByte & mask) ? white : black;
             mask >>= 1;
           }
         }
-        if (destPos < destDataLength) {
-          // We ran out of input. Make all remaining pixels transparent.
-          destPos += 3;
-          do {
-            dest[destPos] = 0;
-            destPos += 4;
-          } while (destPos < destDataLength);
+        // We ran out of input. Make all remaining pixels transparent.
+        while (destPos < dest32DataLength) {
+          dest32[destPos++] = 0;
         }
 
         ctx.putImageData(chunkImgData, 0, i * fullChunkHeight);
