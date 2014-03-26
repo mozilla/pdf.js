@@ -452,7 +452,7 @@ ChromeActions.prototype = {
     getChromeWindow(this.domWindow).gFindBar
                                    .updateControlState(result, findPrevious);
   },
-  setPreferences: function(prefs) {
+  setPreferences: function(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
     var numberOfPrefs = 0;
     var prefValue, prefName;
@@ -483,8 +483,11 @@ ChromeActions.prototype = {
           break;
       }
     }
+    if (sendResponse) {
+      sendResponse(true);
+    }
   },
-  getPreferences: function(prefs) {
+  getPreferences: function(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
     var currentPrefs = {}, numberOfPrefs = 0;
     var prefValue, prefName;
@@ -510,7 +513,11 @@ ChromeActions.prototype = {
           break;
       }
     }
-    return JSON.stringify(currentPrefs);
+    if (sendResponse) {
+      sendResponse(JSON.stringify(currentPrefs));
+    } else {
+      return JSON.stringify(currentPrefs);
+    }
   }
 };
 

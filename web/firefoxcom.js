@@ -106,15 +106,15 @@ var DownloadManager = (function DownloadManagerClosure() {
 
 Preferences._writeToStorage = function (prefObj) {
   return new Promise(function (resolve) {
-    FirefoxCom.requestSync('setPreferences', prefObj);
-    resolve();
+    FirefoxCom.request('setPreferences', prefObj, resolve);
   });
 };
 
 Preferences._readFromStorage = function (prefObj) {
   return new Promise(function (resolve) {
-    var readPrefs = JSON.parse(FirefoxCom.requestSync('getPreferences',
-                                                      prefObj));
-    resolve(readPrefs);
+    FirefoxCom.request('getPreferences', prefObj, function (prefStr) {
+      var readPrefs = JSON.parse(prefStr);
+      resolve(readPrefs);
+    });
   });
 };
