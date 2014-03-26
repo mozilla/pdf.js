@@ -249,7 +249,7 @@ function readFontIndexData(aStream, aIsByte) {
 }
 
 var Type2Parser = function type2Parser(aFilePath) {
-  var font = new Dict();
+  var font = new Dict(null);
 
   var xhr = new XMLHttpRequest();
   xhr.open('GET', aFilePath, false);

@@ -48,6 +48,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return false;
       }
 
+      var processed = Object.create(null);
+      if (resources.objId) {
+        processed[resources.objId] = true;
+      }
+
       var nodes = [resources];
       while (nodes.length) {
         var node = nodes.shift();
@@ -75,10 +80,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             continue;
           }
           var xResources = xObject.dict.get('Resources');
-          // Only add the resource if it's different from the current one,
-          // otherwise we can get stuck in an infinite loop.
-          if (isDict(xResources) && xResources !== node) {
+          // Checking objId to detect an infinite loop.
+          if (isDict(xResources) &&
+              (!xResources.objId || !processed[xResources.objId])) {
             nodes.push(xResources);
+            if (xResources.objId) {
+              processed[xResources.objId] = true;
+            }
           }
         }
       }
@@ -466,9 +474,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       operatorList = (operatorList || new OperatorList());
 
-      resources = (resources || new Dict());
-      var xobjs = (resources.get('XObject') || new Dict());
-      var patterns = (resources.get('Pattern') || new Dict());
+      resources = (resources || Dict.empty);
+      var xobjs = (resources.get('XObject') || Dict.empty);
+      var patterns = (resources.get('Pattern') || Dict.empty);
       var preprocessor = new EvaluatorPreprocessor(stream, xref);
       if (evaluatorState) {
         preprocessor.setState(evaluatorState);
@@ -659,7 +667,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return self.loadFont(fontName, fontRef, xref, resources, null);
       }
 
-      resources = (xref.fetchIfRef(resources) || new Dict());
+      resources = (xref.fetchIfRef(resources) || Dict.empty);
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
       var xobjsCache = {};
@@ -753,7 +761,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
 
             if (!xobjs) {
-              xobjs = (resources.get('XObject') || new Dict());
+              xobjs = (resources.get('XObject') || Dict.empty);
             }
 
             var name = args[0].name;
@@ -1147,7 +1155,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (type.name == 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
           // is a tagged pdf. Create a barbebones one to get by.
-          descriptor = new Dict();
+          descriptor = new Dict(null);
           descriptor.set('FontName', Name.get(type.name));
         } else {
           // Before PDF 1.5 if the font was one of the base 14 fonts, having a

@@ -68,7 +68,7 @@ var Page = (function PageClosure() {
       // present, but can be empty. Some document omit it still. In this case
       // return an empty dictionary:
       if (value === undefined) {
-        value = new Dict();
+        value = Dict.empty;
       }
       return shadow(this, 'resources', value);
     },

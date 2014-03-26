@@ -131,7 +131,7 @@ var Parser = (function ParserClosure() {
       var stream = lexer.stream;
 
       // parse dictionary
-      var dict = new Dict();
+      var dict = new Dict(null);
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
           error('Dictionary key must be a name object');
