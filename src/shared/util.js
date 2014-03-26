@@ -427,7 +427,7 @@ Object.defineProperty(PDFJS, 'isLittleEndian', {
 });
 
 //#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
-// Lazy test if the userAgant support CanvasTypedArrays
+//// Lazy test if the userAgant support CanvasTypedArrays
 function hasCanvasTypedArrays() {
   var canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
@@ -443,7 +443,6 @@ Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
   }
 });
 
-// Uint32ArrayView
 var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   function Uint32ArrayView(buffer) {
