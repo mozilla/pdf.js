@@ -782,9 +782,10 @@ var JpegImage = (function jpegImage() {
           blocksPerColumn: component.blocksPerColumn
         });
       }
+      this.numComponents = this.components.length;
     },
 
-    getData: function getData(width, height) {
+    _getLinearizedBlockData: function getLinearizedBlockData(width, height) {
       var scaleX = this.width / width, scaleY = this.height / height;
 
       var component, componentScaleX, componentScaleY;
@@ -842,80 +843,124 @@ var JpegImage = (function jpegImage() {
           }
         }
       }
+      return data;
+    },
 
-      // ... then transform colors, if necessary
-      switch (numComponents) {
-        case 1: case 2: break;
-        // no color conversion for one or two compoenents
+    _isColorConversionNeeded: function isColorConversionNeeded() {
+      if (this.adobe && this.adobe.transformCode) {
+        // The adobe transform marker overrides any previous setting
+        return true;
+      } else if (this.numComponents == 3) {
+        return true;
+      } else {
+        return false;
+      }
+    },
 
-        case 3:
-          // The default transform for three components is true
-          colorTransform = true;
-          // The adobe transform marker overrides any previous setting
-          if (this.adobe && this.adobe.transformCode)
-            colorTransform = true;
-          else if (typeof this.colorTransform !== 'undefined')
-            colorTransform = !!this.colorTransform;
-
-          if (colorTransform) {
-            for (i = 0; i < dataLength; i += numComponents) {
-              Y  = data[i    ];
-              Cb = data[i + 1];
-              Cr = data[i + 2];
-
-              R = clamp0to255(Y + 1.402 * (Cr - 128));
-              G = clamp0to255(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-              B = clamp0to255(Y + 1.772 * (Cb - 128));
-
-              data[i    ] = R;
-              data[i + 1] = G;
-              data[i + 2] = B;
-            }
-          }
-          break;
-        case 4:
-          // The default transform for four components is false
-          colorTransform = false;
-          // The adobe transform marker overrides any previous setting
-          if (this.adobe && this.adobe.transformCode)
-            colorTransform = true;
-          else if (typeof this.colorTransform !== 'undefined')
-            colorTransform = !!this.colorTransform;
-
-          if (colorTransform) {
-            for (i = 0; i < dataLength; i += numComponents) {
-              Y  = data[i];
-              Cb = data[i + 1];
-              Cr = data[i + 2];
-
-              C = 255 - clamp0to255(Y + 1.402 * (Cr - 128));
-              M = 255 - clamp0to255(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
-              Ye = 255 - clamp0to255(Y + 1.772 * (Cb - 128));
-
-              data[i    ] = C;
-              data[i + 1] = M;
-              data[i + 2] = Ye;
-              // K is unchanged
-            }
-          }
-          break;
-        default:
-          throw 'Unsupported color mode';
+    _convertYccToRgb: function convertYccToRgb(data) {
+      var Y, Cb, Cr;
+      for (var i = 0; i < data.length; i += this.numComponents) {
+        Y  = data[i    ];
+        Cb = data[i + 1];
+        Cr = data[i + 2];
+        data[i    ] = clamp0to255(Y + 1.402 * (Cr - 128));
+        data[i + 1] = clamp0to255(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+        data[i + 2] = clamp0to255(Y + 1.772 * (Cb - 128));
       }
       return data;
     },
+
+    _convertYcckToRgb: function convertYcckToRgb(data) {
+      var Y, Cb, Cr, K, C, M, Ye, oneMinusK255th;
+      var outputData = new Uint8Array((data.length / 4) * 3);
+      var offset = 0;
+      for (var i = 0; i < data.length; i += this.numComponents) {
+        Y  = data[i];
+        Cb = data[i + 1];
+        Cr = data[i + 2];
+        K = data[i + 3];
+        C = 255 - clamp0to255(Y + 1.402 * (Cr - 128));
+        M = 255 - clamp0to255(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+        Ye = 255 - clamp0to255(Y + 1.772 * (Cb - 128));
+        oneMinusK255th = (1 - K / 255);
+        outputData[offset++] = 255 - clamp0to255(C * oneMinusK255th + K);
+        outputData[offset++] = 255 - clamp0to255(M * oneMinusK255th + K);
+        outputData[offset++] = 255 - clamp0to255(Ye * oneMinusK255th + K);
+      }
+      return outputData;
+    },
+
+    _convertYcckToCmyk: function convertYcckToCmyk(data) {
+      var Y, Cb, Cr;
+      for (var i = 0; i < data.length; i += this.numComponents) {
+        Y  = data[i];
+        Cb = data[i + 1];
+        Cr = data[i + 2];
+        data[i    ] = 255 - clamp0to255(Y + 1.402 * (Cr - 128));
+        data[i + 1] = 255 - clamp0to255(Y - 0.3441363 * (Cb - 128) - 0.71413636 * (Cr - 128));
+        data[i + 2] = 255 - clamp0to255(Y + 1.772 * (Cb - 128));
+        // K in data[i + 3] is unchanged
+      }
+      return data;
+    },
+
+    _convertCmykToRgb: function convertCmykToRgb(data) {
+      var C, M, Y, K, oneMinusK255th;
+      var outputData = new Uint8Array((data.length / 4) * 3);
+      var offset = 0;
+      for (var i = 0; i < data.length; i += this.numComponents) {
+        C = data[i   ];
+        M = data[i + 1];
+        Y = data[i + 2];
+        K = data[i + 3];
+        oneMinusK255th = (1 - K / 255);
+        outputData[offset++] = 255 - clamp0to255(C * oneMinusK255th + K);
+        outputData[offset++] = 255 - clamp0to255(M * oneMinusK255th + K);
+        outputData[offset++] = 255 - clamp0to255(Y * oneMinusK255th + K);
+        // K in data[i + 3] is unchanged
+      }
+      return outputData;
+    },
+
+    getData: function getData(width, height, forceRGBoutput) {
+      var i;
+      var Y, Cb, Cr, K, C, M, Ye, R, G, B;
+      var colorTransform;
+      if (this.numComponents > 4) {
+        throw 'Unsupported color mode';
+      }
+      // type of data: Uint8Array(width * height * numComponents)
+      var data = this._getLinearizedBlockData(width, height);
+
+      if (this.numComponents === 3) {
+        return this._convertYccToRgb(data);
+      } else if (this.numComponents === 4) {
+        if (this._isColorConversionNeeded()) {
+          if (forceRGBoutput) {
+            return this._convertYcckToRgb(data);
+          } else {
+            return this._convertYcckToCmyk(data);
+          }
+        } else {
+          return this._convertCmykToRgb(data);
+        }
+      }
+      return data;
+    },
+
     copyToImageData: function copyToImageData(imageData) {
-      var width = imageData.width, height = imageData.height;
+      var width = imageData.width;
+      var height = imageData.height;
       var imageDataBytes = width * height * 4;
       var imageDataArray = imageData.data;
-      var data = this.getData(width, height);
+      var data = this.getData(width, height, /* forceRGBoutput = */true);
+
       var i = 0, j = 0;
-      var Y, K, C, M, R, G, B;
       switch (this.components.length) {
         case 1:
+          var Y;
           while (j < imageDataBytes) {
             Y = data[i++];
-
             imageDataArray[j++] = Y;
             imageDataArray[j++] = Y;
             imageDataArray[j++] = Y;
@@ -923,31 +968,11 @@ var JpegImage = (function jpegImage() {
           }
           break;
         case 3:
-          while (j < imageDataBytes) {
-            R = data[i++];
-            G = data[i++];
-            B = data[i++];
-
-            imageDataArray[j++] = R;
-            imageDataArray[j++] = G;
-            imageDataArray[j++] = B;
-            imageDataArray[j++] = 255;
-          }
-          break;
         case 4:
           while (j < imageDataBytes) {
-            C = data[i++];
-            M = data[i++];
-            Y = data[i++];
-            K = data[i++];
-
-            R = 255 - clamp0to255(C * (1 - K / 255) + K);
-            G = 255 - clamp0to255(M * (1 - K / 255) + K);
-            B = 255 - clamp0to255(Y * (1 - K / 255) + K);
-
-            imageDataArray[j++] = R;
-            imageDataArray[j++] = G;
-            imageDataArray[j++] = B;
+            imageDataArray[j++] = data[i++];
+            imageDataArray[j++] = data[i++];
+            imageDataArray[j++] = data[i++];
             imageDataArray[j++] = 255;
           }
           break;
