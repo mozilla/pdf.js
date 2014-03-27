@@ -40,7 +40,6 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
-    PYTHON_BIN = 'python2.7',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
     FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
     MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
@@ -1005,7 +1004,7 @@ target.browsertest = function(options) {
   var reftest = (options && options.noreftest) ? '' : '--reftest';
 
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py ' + reftest + ' --browserManifestFile=' +
+  exec('node test.js ' + reftest + ' --browserManifestFile=' +
        PDF_BROWSERS + ' --manifestFile=' + PDF_TEST, {async: true});
 };
 
@@ -1027,7 +1026,7 @@ target.unittest = function(options, callback) {
   }
   callback = callback || function() {};
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --unitTest --browserManifestFile=' +
+  exec('node test.js --unitTest --browserManifestFile=' +
        PDF_BROWSERS, {async: true}, callback);
 };
 
@@ -1049,7 +1048,7 @@ target.fonttest = function(options, callback) {
   }
   callback = callback || function() {};
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --fontTest --browserManifestFile=' +
+  exec('node test.js --fontTest --browserManifestFile=' +
        PDF_BROWSERS, {async: true}, callback);
 };
 
@@ -1072,7 +1071,7 @@ target.botmakeref = function() {
   }
 
   cd('test');
-  exec(PYTHON_BIN + ' -u test.py --masterMode --noPrompts ' +
+  exec('node test.js --masterMode --noPrompts ' +
        '--browserManifestFile=' + PDF_BROWSERS, {async: true});
 };
 
@@ -1251,8 +1250,10 @@ target.server = function() {
   echo();
   echo('### Starting local server');
 
-  cd('test');
-  exec(PYTHON_BIN + ' -u test.py --port=8888 --noDownload', {async: true});
+  var WebServer = require('./test/webserver.js').WebServer;
+  var server = new WebServer();
+  server.port = 8888;
+  server.start();
 };
 
 //
@@ -1268,8 +1269,7 @@ target.lint = function() {
                     'external/crlfchecker/',
                     'src/',
                     'web/',
-                    'test/driver.js',
-                    'test/reporter.js',
+                    'test/*.js',
                     'test/unit/',
                     'extensions/firefox/',
                     'extensions/chromium/'

@@ -2,7 +2,8 @@
   "name": "pdf.js",
   "version": "0.8.0",
   "dependencies": {
-    "jshint": "2.4.x"
+    "jshint": "2.4.x",
+    "yargs": "~1.2.1"
   },
   "scripts": {
     "test": "node make lint"
