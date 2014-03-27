@@ -64,7 +64,7 @@ var PDFFindController = {
   initialize: function(options) {
     if(typeof PDFFindBar === 'undefined' || PDFFindBar === null) {
       throw 'PDFFindController cannot be initialized ' +
-            'without a PDFFindController instance';
+            'without a PDFFindBar instance';
     }
 
     this.pdfPageSource = options.pdfPageSource;
