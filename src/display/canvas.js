@@ -1348,10 +1348,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           this.processingType3 = glyph;
           this.save();
-          ctx.scale(fontSize, fontSize);
-          ctx.transform.apply(ctx, fontMatrix);
-          this.executeOperatorList(glyph.operatorList);
-          this.restore();
+          if (fontSize !== 0.0) {
+              ctx.scale(fontSize, fontSize);
+              ctx.transform.apply(ctx, fontMatrix);
+              this.executeOperatorList(glyph.operatorList);
+              this.restore();
+          }
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
           var width = (transformed[0] * fontSize + charSpacing) *
@@ -1381,7 +1383,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           geom = this.createTextGeometry();
         }
 
-        if (fontSizeScale != 1.0) {
+        if (fontSizeScale != 1.0 && fontSizeScale !== 0.0) {
           ctx.scale(fontSizeScale, fontSizeScale);
           lineWidth /= fontSizeScale;
         }
