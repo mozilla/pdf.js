@@ -1345,7 +1345,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
           this.processingType3 = glyph;
           this.save();
-          if (fontSize != 0.0) {
+          if (fontSize !== 0.0) {
               ctx.scale(fontSize, fontSize);
               ctx.transform.apply(ctx, fontMatrix);
               this.executeOperatorList(glyph.operatorList);
@@ -1380,7 +1380,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           geom = this.createTextGeometry();
         }
 
-        if (fontSizeScale != 1.0 && fontSizeScale != 0.0) {
+        if (fontSizeScale != 1.0 && fontSizeScale !== 0.0) {
           ctx.scale(fontSizeScale, fontSizeScale);
           lineWidth /= fontSizeScale;
         }
