@@ -34,8 +34,6 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
-Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
-Cu.import('resource://pdf.js/PdfRedirector.jsm');
 
 let Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
@@ -246,10 +244,13 @@ let PdfJs = {
       return;
 
     this._pdfStreamConverterFactory = new Factory();
+    Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
     this._pdfStreamConverterFactory.register(PdfStreamConverter);
 
     this._pdfRedirectorFactory = new Factory();
+    Cu.import('resource://pdf.js/PdfRedirector.jsm');
     this._pdfRedirectorFactory.register(PdfRedirector);
+
     Svc.pluginHost.registerPlayPreviewMimeType(PDF_CONTENT_TYPE, true,
       'data:application/x-moz-playpreview-pdfjs;,');
 
@@ -261,10 +262,13 @@ let PdfJs = {
       return;
 
     this._pdfStreamConverterFactory.unregister();
+    Cu.unload('resource://pdf.js/PdfStreamConverter.jsm');
     delete this._pdfStreamConverterFactory;
 
     this._pdfRedirectorFactory.unregister();
+    Cu.unload('resource://pdf.js/PdfRedirector.jsm');
     delete this._pdfRedirectorFactory;
+
     Svc.pluginHost.unregisterPlayPreviewMimeType(PDF_CONTENT_TYPE);
 
     this._registered = false;
