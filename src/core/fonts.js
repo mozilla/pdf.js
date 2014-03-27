@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 /* globals assert, bytesToString, CIDToUnicodeMaps, error, ExpertCharset,
-           ExpertSubsetCharset, FileReaderSync, GlyphsUnicode,
-           info, isArray, isNum, ISOAdobeCharset, Stream,
-           stringToBytes, TextDecoder, warn, Lexer, Util,
-           FONT_IDENTITY_MATRIX, FontRendererFactory, shadow, isString,
-           IdentityCMap, Name, CMapFactory, PDFJS */
+           ExpertSubsetCharset, FileReaderSync, GlyphsUnicode, info, isArray,
+           isNum, ISOAdobeCharset, Stream, stringToArray, stringToBytes,
+           string32, TextDecoder, warn, Lexer, Util, FONT_IDENTITY_MATRIX,
+           FontRendererFactory, shadow, isString, IdentityCMap, Name,
+           CMapFactory, PDFJS */
 
 'use strict';
 
@@ -372,7 +372,7 @@ var nonStdFontMap = {
   'MS-PMincho': 'MS PMincho',
   'MS-PMincho-Bold': 'MS PMincho-Bold',
   'MS-PMincho-BoldItalic': 'MS PMincho-BoldItalic',
-  'MS-PMincho-Italic': 'MS PMincho-Italic',
+  'MS-PMincho-Italic': 'MS PMincho-Italic'
 };
 
 var serifFonts = {
@@ -2328,22 +2328,6 @@ var Font = (function FontClosure() {
     this.loading = true;
   }
 
-  function stringToArray(str) {
-    var array = [];
-    for (var i = 0, ii = str.length; i < ii; ++i) {
-      array[i] = str.charCodeAt(i);
-    }
-    return array;
-  }
-
-  function arrayToString(arr) {
-    var strBuf = [];
-    for (var i = 0, ii = arr.length; i < ii; ++i) {
-      strBuf.push(String.fromCharCode(arr[i]));
-    }
-    return strBuf.join('');
-  }
-
   function int16(b0, b1) {
     return (b0 << 8) + b1;
   }
@@ -2368,22 +2352,13 @@ var Font = (function FontClosure() {
   }
 
   function string16(value) {
-    return (String.fromCharCode((value >> 8) & 0xff) +
-            String.fromCharCode(value & 0xff));
+    return String.fromCharCode((value >> 8) & 0xff, value & 0xff);
   }
 
   function safeString16(value) {
     // clamp value to the 16-bit int range
     value = (value > 0x7FFF ? 0x7FFF : (value < -0x8000 ? -0x8000 : value));
-    return (String.fromCharCode((value >> 8) & 0xff) +
-            String.fromCharCode(value & 0xff));
-  }
-
-  function string32(value) {
-    return (String.fromCharCode((value >> 24) & 0xff) +
-            String.fromCharCode((value >> 16) & 0xff) +
-            String.fromCharCode((value >> 8) & 0xff) +
-            String.fromCharCode(value & 0xff));
+    return String.fromCharCode((value >> 8) & 0xff, value & 0xff);
   }
 
   function createOpenTypeHeader(sfnt, file, numTables) {
@@ -2893,11 +2868,7 @@ var Font = (function FontClosure() {
 
     checkAndRepair: function Font_checkAndRepair(name, font, properties) {
       function readTableEntry(file) {
-        var tag = file.getBytes(4);
-        tag = String.fromCharCode(tag[0]) +
-              String.fromCharCode(tag[1]) +
-              String.fromCharCode(tag[2]) +
-              String.fromCharCode(tag[3]);
+        var tag = bytesToString(file.getBytes(4));
 
         var checksum = file.getUint32();
         var offset = file.getUint32();
@@ -2927,7 +2898,7 @@ var Font = (function FontClosure() {
 
       function readOpenTypeHeader(ttf) {
         return {
-          version: arrayToString(ttf.getBytes(4)),
+          version: bytesToString(ttf.getBytes(4)),
           numTables: ttf.getUint16(),
           searchRange: ttf.getUint16(),
           entrySelector: ttf.getUint16(),
@@ -4035,7 +4006,7 @@ var Font = (function FontClosure() {
       for (var i = 0; i < numTables; i++) {
         var table = tables[tablesNames[i]];
         var tableData = table.data;
-        ttf.file += arrayToString(tableData);
+        ttf.file += bytesToString(new Uint8Array(tableData));
 
         // 4-byte aligned data
         while (ttf.file.length & 3) {
@@ -4195,7 +4166,7 @@ var Font = (function FontClosure() {
       }
       for (var field in fields) {
         var table = fields[field];
-        otf.file += arrayToString(table);
+        otf.file += bytesToString(new Uint8Array(table));
       }
 
       return stringToArray(otf.file);
@@ -4293,7 +4264,7 @@ var Font = (function FontClosure() {
       // The viewer's choice, just use an identity map.
       var toUnicode = [];
       var firstChar = properties.firstChar, lastChar = properties.lastChar;
-      for (var i = firstChar, ii = lastChar; i <= ii; i++) {
+      for (var i = firstChar; i <= lastChar; i++) {
         toUnicode[i] = String.fromCharCode(i);
       }
       map.isIdentity = true;
@@ -5837,7 +5808,7 @@ var CFFParser = (function CFFParserClosure() {
           }
           data[j] = c;
         }
-        names.push(String.fromCharCode.apply(null, data));
+        names.push(bytesToString(data));
       }
       return names;
     },
@@ -5845,7 +5816,7 @@ var CFFParser = (function CFFParserClosure() {
       var strings = new CFFStrings();
       for (var i = 0, ii = index.count; i < ii; ++i) {
         var data = index.get(i);
-        strings.add(String.fromCharCode.apply(null, data));
+        strings.add(bytesToString(data));
       }
       return strings;
     },
@@ -6513,13 +6484,6 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
 
 // Takes a CFF and converts it to the binary representation.
 var CFFCompiler = (function CFFCompilerClosure() {
-  function stringToArray(str) {
-    var array = [];
-    for (var i = 0, ii = str.length; i < ii; ++i) {
-      array[i] = str.charCodeAt(i);
-    }
-    return array;
-  }
   function CFFCompiler(cff) {
     this.cff = cff;
   }
