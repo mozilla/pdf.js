@@ -41,6 +41,19 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
   this.textDivs = [];
+  this.currentDiv = null;
+  this.currentX = 0;
+  this.currentXStart = 0;
+  this.currentXEnd = 0;
+  this.currentY = 0;
+  this.currentYStart = 0;
+  this.currentFontHeight = 0;
+  this.currentFontName = '';
+  this.currentFontFamily = '';
+  this.currentLineHeight = 0;
+  this.currentRowCount = 0;
+  this.currentLastElement = null;
+  this.isBlockBuilding = false;
 
   if (typeof PDFFindController === 'undefined') {
     window.PDFFindController = null;
@@ -51,9 +64,12 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   }
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
+    this.setVerticalScale();
     var textDivs = this.textDivs;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
+    var textDiv = null;
+    var font = '';
 
     // No point in rendering so many divs as it'd make the browser unusable
     // even after the divs are rendered
@@ -63,22 +79,61 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     }
 
     for (var i = 0, ii = textDivs.length; i < ii; i++) {
-      var textDiv = textDivs[i];
-      if ('isWhitespace' in textDiv.dataset) {
+      var textEle = textDivs[i];
+      var isDiv = /div/i.test(textEle.nodeName);
+      var textContent = textEle.textContent;
+      var isWhitespace = /^\s*$/.test(textContent);
+      if ('isWhitespace' in textEle.dataset || (isDiv && isWhitespace) ||
+          (!isDiv && 'isWhitespace' in textEle.parentNode.dataset)) {
         continue;
       }
 
-      ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
-      var width = ctx.measureText(textDiv.textContent).width;
+      if (isDiv) {
+        ctx.font = textEle.style.fontSize + ' ' + textEle.style.fontFamily;
+      } else {
+        if (textDiv !== textEle.parentNode) {
+          textDiv = textEle.parentNode;
+          font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
+          ctx.font = font;
+        }
+
+        if (textEle.style.fontSize) {
+          ctx.font = textEle.style.fontSize + ' ' + textEle.style.fontFamily;
+        }
+      }
+
+      var width = ctx.measureText(textContent).width;
+      if (!isDiv && textEle.style.fontSize) {
+        ctx.font = font;
+      }
 
       if (width > 0) {
-        textLayerFrag.appendChild(textDiv);
-        var textScale = textDiv.dataset.canvasWidth / width;
-        var rotation = textDiv.dataset.angle;
-        var transform = 'scale(' + textScale + ', 1)';
-        transform = 'rotate(' + rotation + 'deg) ' + transform;
-        CustomStyle.setProp('transform' , textDiv, transform);
-        CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
+        if (isDiv) {
+          textLayerFrag.appendChild(textEle);
+        } else if (textEle.parentNode.parentNode !== textLayerFrag) {
+          isWhitespace = /^\s*$/.test(textEle.parentNode.textContent);
+          if (isWhitespace) {
+            textEle.parentNode.dataset.isWhitespace = true;
+          } else {
+            textLayerFrag.appendChild(textEle.parentNode);
+          }
+        }
+
+        var rotation = textEle.dataset.angle;
+        var length = textContent.length;
+        if (length === 1) {
+          textEle.style.width = textEle.dataset.canvasWidth + 'px';
+        } else if (rotation === '0' || !isDiv) {
+          var delta = textEle.dataset.canvasWidth - width;
+          var letterSpacing = (delta / length).toFixed(3) + 'px';
+          textEle.style.letterSpacing = letterSpacing;
+        } else {
+          var textScale = textEle.dataset.canvasWidth / width;
+          var transform = 'rotate(' + rotation + 'deg) ' +
+            'scale(' + textScale + ', 1)';
+          CustomStyle.setProp('transform' , textEle, transform);
+          CustomStyle.setProp('transformOrigin' , textEle, '0% 0%');
+        }
       }
     }
 
@@ -109,12 +164,145 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     }
   };
 
+  this.setBlockContainer = function textLayerBuilderSetBlockContainer() {
+    var textDiv = this.textDivs.pop();
+    var textSpan = document.createElement('span');
+    if (textDiv.firstChild) {
+      textSpan.appendChild(textDiv.firstChild);
+    }
+    textSpan.dataset.canvasWidth = textDiv.dataset.canvasWidth;
+    textSpan.dataset.fontName = textDiv.dataset.fontName;
+    this.currentDiv.appendChild(textSpan);
+    this.textDivs.push(textSpan);
+    this.currentXStart = this.currentX;
+    this.isBlockBuilding = true;
+    this.currentLastElement = textSpan;
+  };
+
+  this.setVerticalScale = function textLayerBuilderSetVerticalScale() {
+    if (this.currentRowCount && this.currentDiv) {
+      var deltaY = this.currentY - this.currentYStart;
+      var setLineHeight = deltaY / this.currentRowCount | 0;
+      this.currentDiv.style.lineHeight = setLineHeight + 'px';
+      var vLineScale = deltaY / (this.currentRowCount * setLineHeight);
+      var transform = 'scale(1, ' + vLineScale.toFixed(5) + ')';
+      CustomStyle.setProp('transform' , this.currentDiv, transform);
+      CustomStyle.setProp('transformOrigin' , this.currentDiv, '0% 0%');
+      this.currentRowCount = 0;
+      var delta = Math.round((this.currentFontHeight - setLineHeight) / 2);
+      if (delta) {
+        this.currentDiv.style.marginTop = delta + 'px';
+      }
+    }
+  };
+
+  this.createTextElement =
+    function textLayerBuilderCreateTextElement (name, geom, angle, fontHeight,
+                                                style, isBlockLevel) {
+    var ele = document.createElement(name);
+    ele.textContent = geom.str;
+    ele.dataset.fontName = geom.fontName;
+    if (style.vertical) {
+      ele.dataset.canvasWidth = (geom.height * this.viewport.scale).toFixed(3);
+    } else {
+      ele.dataset.canvasWidth = (geom.width * this.viewport.scale).toFixed(3);
+    }
+
+    if (isBlockLevel || name === 'div') {
+      ele.dataset.angle = angle * (180 / Math.PI);
+      ele.style.fontSize = fontHeight.toFixed(3) + 'px';
+      ele.style.fontFamily = style.fontFamily;
+    }
+    return ele;
+  };
+
+  this.appendTextOnSameLine =
+    function textLayerBuilderAppendTextOnSameLine(geom, angle, x, y, deltaY,
+                                                  style, fontHeight, fontName,
+                                                  hasDifferentFont) {
+    if (!this.isBlockBuilding) {
+      this.setBlockContainer();
+      this.currentXEnd = this.currentXStart -
+        (-this.currentLastElement.dataset.canvasWidth);
+    }
+    var isLastEleSpan = /span/i.test(this.currentLastElement.nodeName);
+    if (isLastEleSpan) {
+      this.currentLastElement.classList.add('inline-block');
+    }
+    var shiftX = x - this.currentXEnd;
+    var pixelWidth = geom.width * this.viewport.scale;
+    var width = pixelWidth + shiftX;
+    this.currentXEnd = x + pixelWidth;
+    if (isLastEleSpan && geom.str.length === 1 &&
+        shiftX && shiftX < fontHeight / 7 &&
+        fontHeight === this.currentFontHeight &&
+        fontName === this.currentLastElement.dataset.fontName) {
+          // this could perhaps be done on a deeper level
+          this.currentLastElement.textContent += geom.str;
+          this.currentLastElement.dataset.canvasWidth -= -width;
+          return;
+    }
+    var textSpan = this.createTextElement('span', geom, angle, fontHeight,
+                                          style, hasDifferentFont);
+    if (shiftX) {
+      if (shiftX > fontHeight / 7) {
+        // Add whitespace.
+        var span = document.createElement('span');
+        span.appendChild(document.createTextNode(' '));
+        span.classList.add('inline-block');
+        span.style.width = shiftX.toFixed(3) + 'px';
+        this.currentDiv.appendChild(span);
+      } else if (geom.str.length == 1) {
+        textSpan.dataset.canvasWidth = width.toFixed(3);
+      } else {
+        textSpan.style.marginLeft = shiftX + 'px';
+      }
+    }
+    textSpan.classList.add('inline-block');
+    this.currentDiv.appendChild(textSpan);
+    this.textDivs.push(textSpan);
+    if (fontHeight === this.currentFontHeight) {
+      this.currentY = y;
+    }
+    this.currentLastElement = textSpan;
+  };
+
+  this.appendTextOnNewLine =
+    function textLayerBuilderAppendTextOnNewLine(geom, angle, x, y, deltaY,
+                                                 style, fontHeight, fontName,
+                                                 hasDifferentFont) {
+    if (!this.isBlockBuilding) {
+      this.setBlockContainer();
+    }
+
+    if (!this.currentLineHeight) {
+      this.currentLineHeight = deltaY;
+    }
+    this.currentRowCount++;
+    this.currentDiv.appendChild(document.createTextNode('\n'));
+    var textSpan = this.createTextElement('span', geom, angle, fontHeight,
+                                          style, hasDifferentFont);
+    var shiftX = x - this.currentX;
+    if (shiftX) {
+      textSpan.style.marginLeft = shiftX.toFixed(3) + 'px';
+    }
+    this.currentDiv.appendChild(textSpan);
+    this.textDivs.push(textSpan);
+    this.currentY = y;
+    this.currentXEnd = x + geom.width * this.viewport.scale;
+    this.currentLastElement = textSpan;
+  };
+
   this.appendText = function textLayerBuilderAppendText(geom, styles) {
     var style = styles[geom.fontName];
-    var textDiv = document.createElement('div');
-    this.textDivs.push(textDiv);
-    if (!/\S/.test(geom.str)) {
-      textDiv.dataset.isWhitespace = true;
+    var textDiv = null;
+    if ((PDFJS.disableMultilineTextLayer || !this.isBlockBuilding) &&
+        !/\S/.test(geom.str)) {
+      if (PDFJS.disableMultilineTextLayer) {
+        textDiv = document.createElement('div');
+        textDiv.dataset.isWhitespace = true;
+        this.textDivs.push(textDiv);
+      }
       return;
     }
     var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
@@ -126,21 +314,60 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     var fontAscent = (style.ascent ? style.ascent * fontHeight :
       (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
 
-    textDiv.style.position = 'absolute';
-    textDiv.style.left = (tx[4] + (fontAscent * Math.sin(angle))) + 'px';
-    textDiv.style.top = (tx[5] - (fontAscent * Math.cos(angle))) + 'px';
-    textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = style.fontFamily;
+    var x = tx[4];
+    var y = tx[5];
+    var width = geom.width * this.viewport.scale;
+    var fontName = geom.fontName;
+    var abs = Math.abs;
+    var deltaX = abs(x - this.currentX);
+    var deltaY = y - this.currentY;
+    var isSameLine = !PDFJS.disableMultilineTextLayer && angle === 0 &&
+      fontHeight <= this.currentFontHeight &&
+      abs(x - this.currentXEnd) < this.currentFontHeight * 2 &&
+      abs(y - this.currentY) < this.currentFontHeight / 2;
 
-    textDiv.textContent = geom.str;
-    textDiv.dataset.fontName = geom.fontName;
-    textDiv.dataset.angle = angle * (180 / Math.PI);
-    if (style.vertical) {
-      textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
+    var isNewLine = !PDFJS.disableMultilineTextLayer && angle === 0 &&
+      fontHeight <= this.currentFontHeight &&
+      (deltaX < 10 * fontHeight) &&
+      ((this.currentLineHeight && (y > this.currentY) &&
+        abs(deltaY - this.currentLineHeight) < this.currentLineHeight / 100) ||
+       (!this.currentLineHeight && (deltaY > fontHeight / 2) &&
+        fontHeight === this.currentFontHeight &&
+        (fontName === this.currentFontName ||
+         abs(width - (this.currentXEnd - this.currentXStart)) < width / 8) &&
+        (abs(deltaY) < 2 * fontHeight))) ;
+
+    var hasDifferentFont = fontHeight !== this.currentFontHeight ||
+      style.fontFamily !== this.currentFontFamily;
+
+    if (isSameLine) {
+      this.appendTextOnSameLine(geom, angle, x, y, deltaY, style, fontHeight,
+                                fontName, hasDifferentFont);
+    } else if (isNewLine) {
+      this.appendTextOnNewLine(geom, angle, x, y, deltaY, style, fontHeight,
+                               fontName, hasDifferentFont);
     } else {
-      textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
+      if (!PDFJS.disableMultilineTextLayer) {
+        this.setVerticalScale();
+        this.currentX = x;
+        this.currentY = y;
+        this.currentYStart = y;
+        this.currentFontHeight = fontHeight;
+        this.currentFontName = fontName;
+        this.currentFontFamily = style.fontFamily;
+        this.isBlockBuilding = false;
+        this.currentXStart = 0;
+        this.currentLineHeight = 0;
+        this.currentXEnd = x + width;
+      }
+      var textDiv = this.createTextElement('div', geom, angle, fontHeight,
+                                           style, true);
+      textDiv.style.left = (x + (fontAscent * Math.sin(angle))).toFixed(3) + 'px';
+      textDiv.style.top = (y - (fontAscent * Math.cos(angle))).toFixed(3) + 'px';
+      this.textDivs.push(textDiv);
+      this.currentDiv = textDiv;
+      this.currentLastElement = textDiv;
     }
-
   };
 
   this.setTextContent = function textLayerBuilderSetTextContent(textContent) {

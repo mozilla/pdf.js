@@ -1748,6 +1748,11 @@ function webViewerInitialized() {
       (hashParams['ignoreCurrentPositionOnZoom'] === 'true');
   }
 
+  if ('disableMultilineTextLayer' in hashParams) {
+    PDFJS.disableMultilineTextLayer =
+      (hashParams['disableMultilineTextLayer'] === 'true');
+  }
+
 //#if !PRODUCTION
   if ('disableBcmaps' in hashParams && hashParams['disableBcmaps']) {
     PDFJS.cMapUrl = '../external/cmaps/';
@@ -1779,6 +1784,7 @@ function webViewerInitialized() {
       case 'visible':
       case 'shadow':
       case 'hover':
+      case 'debug':
         var viewer = document.getElementById('viewer');
         viewer.classList.add('textLayer-' + hashParams['textLayer']);
         break;
