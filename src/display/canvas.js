@@ -27,6 +27,9 @@
 // Minimal font size that would be used during canvas fillText operations.
 var MIN_FONT_SIZE = 16;
 
+// Heuristic value used when enforcing a minimum line width.
+var MIN_LINE_WIDTH_FACTOR = 0.75;
+
 var COMPILE_TYPE3_GLYPHS = true;
 
 function createScratchCanvas(width, height) {
@@ -981,9 +984,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (this.current.lineWidth === 0) {
-        ctx.lineWidth = this.getSinglePixelWidth();
-      }
+      ctx.lineWidth = this.getMinimumLineWidth(this.current.lineWidth);
       // For stroke we want to temporarily change the global alpha to the
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
@@ -2201,6 +2202,23 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           transform[0] * x + transform[2] * y + transform[4],
           transform[1] * x + transform[3] * y + transform[5]
         ];
+    },
+    getMinimumLineWidth:
+        function CanvasGraphics_getMinimumLineWidth(currentLineWidth) {
+      var minAbsoluteLineWidth = (this.getSinglePixelWidth() *
+                                  MIN_LINE_WIDTH_FACTOR);
+      if (currentLineWidth === undefined) {
+        return minAbsoluteLineWidth;
+      } else if (currentLineWidth >= 0) {
+        if (currentLineWidth < minAbsoluteLineWidth) {
+          return minAbsoluteLineWidth;
+        }
+      } else { // currentLineWidth < 0
+        if (currentLineWidth > minAbsoluteLineWidth) {
+          return -minAbsoluteLineWidth;
+        }
+      }
+      return currentLineWidth;
     }
   };
 
