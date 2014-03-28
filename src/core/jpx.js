@@ -1062,30 +1062,15 @@ var JpxImage = (function JpxImageClosure() {
       }
 
       // Section G.1 DC level shifting to unsigned component values
-      for (var c = 0; c < componentsCount; c++) {
-        var component = components[c];
-        if (component.isSigned) {
-          continue;
-        }
-
-        var offset = 1 << (component.precision - 1);
-        var tileImage = result[c];
-        var items = tileImage.items;
-        for (var j = 0, jj = items.length; j < jj; j++) {
-          items[j] += offset;
-        }
-      }
-
       // To simplify things: shift and clamp output to 8 bit unsigned
       for (var c = 0; c < componentsCount; c++) {
         var component = components[c];
-        var offset = component.isSigned ? 128 : 0;
         var shift = component.precision - 8;
         var tileImage = result[c];
         var items = tileImage.items;
         var data = new Uint8Array(items.length);
         for (var j = 0, jj = items.length; j < jj; j++) {
-          var value = (items[j] >> shift) + offset;
+          var value = (items[j] >> shift) + 128;
           data[j] = value < 0 ? 0 : value > 255 ? 255 : value;
         }
         result[c].items = data;
