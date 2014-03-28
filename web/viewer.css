@@ -90,18 +90,22 @@ select {
 
 :-webkit-full-screen .page {
   margin-bottom: 100%;
+  border: 0;
 }
 
 :-moz-full-screen .page {
   margin-bottom: 100%;
+  border: 0;
 }
 
 :-ms-fullscreen .page {
   margin-bottom: 100% !important;
+  border: 0;
 }
 
 :fullscreen .page {
   margin-bottom: 100%;
+  border: 0;
 }
 
 :-webkit-full-screen a:not(.internalLink) {
