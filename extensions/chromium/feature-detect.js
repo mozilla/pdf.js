@@ -23,6 +23,8 @@ var Features = {
   featureDetectLastUA: '',
   // Whether ftp: in XMLHttpRequest is allowed
   extensionSupportsFTP: false,
+  // Whether redirectUrl at onHeadersReceived is supported.
+  webRequestRedirectUrl: false,
 };
 
 chrome.storage.local.get(Features, function(features) {
@@ -31,13 +33,34 @@ chrome.storage.local.get(Features, function(features) {
     // Browser not upgraded, so the features did probably not change.
     return;
   }
+  var inconclusiveTestCount = 0;
 
   if (!features.extensionSupportsFTP) {
     features.extensionSupportsFTP = featureTestFTP();
   }
 
-  Features.featureDetectLastUA = navigator.userAgent;
-  chrome.storage.local.set(Features);
+  if (!features.webRequestRedirectUrl) {
+    ++inconclusiveTestCount;
+    // Relatively expensive (and asynchronous) test:
+    featureTestRedirectOnHeadersReceived(function(result) {
+      // result = 'yes', 'no' or 'maybe'.
+      if (result !== 'maybe') {
+        --inconclusiveTestCount;
+      }
+      features.webRequestRedirectUrl = result === 'yes';
+      checkTestCompletion();
+    });
+  }
+
+  checkTestCompletion();
+
+  function checkTestCompletion() {
+    // Only stamp the feature detection results when all tests have finished.
+    if (inconclusiveTestCount === 0) {
+      Features.featureDetectLastUA = navigator.userAgent;
+    }
+    chrome.storage.local.set(Features);
+  }
 });
 
 // Tests whether the extension can perform a FTP request.
@@ -55,4 +78,44 @@ function featureTestFTP() {
   } catch (e) {
     return false;
   }
+}
+
+// Tests whether redirectUrl at the onHeadersReceived stage is functional.
+// Feature is supported since Chromium 35.0.1911.0 (r259546).
+function featureTestRedirectOnHeadersReceived(callback) {
+  // The following URL is really going to be accessed via the network.
+  // It is the only way to feature-detect this feature, because the
+  // onHeadersReceived event is only triggered for http(s) requests.
+  var url = 'http://example.com/?feature-detect-' + chrome.runtime.id;
+  function onHeadersReceived(details) {
+    // If supported, the request is redirected.
+    // If not supported, the return value is ignored.
+    return {
+      redirectUrl: chrome.runtime.getURL('/manifest.json')
+    };
+  }
+  chrome.webRequest.onHeadersReceived.addListener(onHeadersReceived, {
+    types: ['xmlhttprequest'],
+    urls: [url]
+  }, ['blocking']);
+
+  var x = new XMLHttpRequest();
+  x.open('get', url);
+  x.onloadend = function() {
+    chrome.webRequest.onHeadersReceived.removeListener(onHeadersReceived);
+    if (!x.responseText) {
+      // Network error? Anyway, can't tell with certainty whether the feature
+      // is supported.
+      callback('maybe');
+    } else if (/^\s*\{/.test(x.responseText)) {
+      // If the response starts with "{", assume that the redirection to the
+      // manifest file succeeded, so the feature is supported.
+      callback('yes');
+    } else {
+      // Did not get the content of manifest.json, so the redirect seems not to
+      // be followed. The feature is not supported.
+      callback('no');
+    }
+  };
+  x.send();
 }

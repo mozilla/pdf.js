@@ -114,8 +114,11 @@ chrome.webRequest.onHeadersReceived.addListener(
     var viewerUrl = getViewerURL(details.url);
 
     // Replace frame with viewer
-    // TODO: When http://crbug.com/280464 is fixed, use
-    // return { redirectUrl: viewerUrl };
+    if (Features.webRequestRedirectUrl) {
+      return { redirectUrl: viewerUrl };
+    }
+    // Aww.. redirectUrl is not yet supported, so we have to use a different
+    // method as fallback (Chromium <35).
 
     if (details.frameId === 0) {
       // Main frame. Just replace the tab and be done!
