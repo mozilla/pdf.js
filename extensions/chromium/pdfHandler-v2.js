@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome, URL, getViewerURL */
+/* globals chrome, URL, getViewerURL, Features */
 
 (function() {
   'use strict';
@@ -158,7 +158,8 @@ limitations under the License.
       var streamInfo = getStream(sender.tab.id, pdfUrl) || {};
       sendResponse({
         streamUrl: streamInfo.streamUrl,
-        contentLength: streamInfo.contentLength
+        contentLength: streamInfo.contentLength,
+        extensionSupportsFTP: Features.extensionSupportsFTP
       });
     }
   });

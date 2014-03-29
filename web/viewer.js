@@ -1876,9 +1876,10 @@ function webViewerLoad(evt) {
 //      PDFView.setTitleUsingUrl(file);
 //      return;
 //    }
-//    if (isFTPFile) {
-//      // Stream not found, and it's loaded from FTP. Reload the page, because
-//      // it is not possible to get resources over ftp using XMLHttpRequest.
+//    if (isFTPFile && !response.extensionSupportsFTP) {
+//      // Stream not found, and it's loaded from FTP.
+//      // When the browser does not support loading ftp resources over
+//      // XMLHttpRequest, just reload the page.
 //      // NOTE: This will not lead to an infinite redirect loop, because
 //      // if the file exists, then the streamsPrivate API will capture the
 //      // stream and send back the response. If the stream does not exist, then

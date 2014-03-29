@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome */
+/* globals chrome, Features */
 
 'use strict';
 
@@ -171,6 +171,27 @@ chrome.webRequest.onHeadersReceived.addListener(
     types: ['main_frame', 'sub_frame']
   },
   ['blocking','responseHeaders']);
+
+chrome.webRequest.onBeforeRequest.addListener(
+  function onBeforeRequestForFTP(details) {
+    if (!Features.extensionSupportsFTP) {
+      chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequestForFTP);
+      return;
+    }
+    if (isPdfDownloadable(details)) {
+      return;
+    }
+    var viewerUrl = getViewerURL(details.url);
+    return { redirectUrl: viewerUrl };
+  },
+  {
+    urls: [
+      'ftp://*/*.pdf',
+      'ftp://*/*.PDF'
+    ],
+    types: ['main_frame', 'sub_frame']
+  },
+  ['blocking']);
 
 chrome.webRequest.onBeforeRequest.addListener(
   function(details) {
