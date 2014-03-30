@@ -1322,6 +1322,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var vertical = font.vertical;
       var defaultVMetrics = font.defaultVMetrics;
 
+      if (fontSize === 0) {
+        if (textSelection) {
+          geom = this.createTextGeometry();
+          geom.canvasWidth = canvasWidth;
+          if (vertical) {
+            var VERTICAL_TEXT_ROTATION = Math.PI / 2;
+            geom.angle += VERTICAL_TEXT_ROTATION;
+          }
+          this.textLayer.appendText(geom);
+        }
+        return canvasWidth;
+      }
+
       // Type3 fonts - each glyph is a "mini-PDF"
       if (font.coded) {
         ctx.save();
