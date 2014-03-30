@@ -520,9 +520,11 @@ var PDFDocument = (function PDFDocumentClosure() {
       if (xref.trailer.has('ID')) {
         hash = stringToBytes(xref.trailer.get('ID')[0]);
       } else {
-        hash = calculateMD5(this.stream.bytes.subarray(0, 100), 0, 100);
+        for (var i =0, n = 100; i <= n; i++) {
+          this.stream.bytes[i] += this.stream.bytes.length + this.startXRef;
+        }
+        hash = calculateMD5(this.stream.bytes.subarray(0,100), 0, 100);
       }
-
       for (var i = 0, n = hash.length; i < n; i++) {
         fileID += hash[i].toString(16);
       }
