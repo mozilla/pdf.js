@@ -975,6 +975,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx.closePath();
     },
     rectangle: function CanvasGraphics_rectangle(x, y, width, height) {
+      if (width === 0) {
+        width = this.getSinglePixelWidth();
+      }
+      if (height === 0) {
+        height = this.getSinglePixelWidth();
+      }
+
       this.ctx.rect(x, y, width, height);
     },
     stroke: function CanvasGraphics_stroke(consumePath) {
