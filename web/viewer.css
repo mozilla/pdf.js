@@ -230,6 +230,7 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
   top: 32px;
   bottom: 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   position: absolute;
   width: 200px;
   background-color: hsla(0,0%,0%,.1);
@@ -245,6 +246,7 @@ html[dir='rtl'] #sidebarContent {
 
 #viewerContainer {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   position: absolute;
   top: 32px;
   right: 0;
@@ -421,6 +423,7 @@ html[dir='rtl'] .secondaryToolbar {
   max-width: 200px;
   max-height: 400px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   margin-bottom: -4px;
 }
 
@@ -1096,6 +1099,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   bottom: 0;
   padding: 10px 40px 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .thumbnail {
@@ -1164,6 +1168,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   bottom: 0;
   padding: 4px 4px 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   -webkit-user-select: none;
   -moz-user-select: none;
 }
@@ -1395,6 +1400,10 @@ canvas {
   background-color: hsla(0,0%,0%,.2);
   z-index: 10000;
 }
+#overlayContainer > * {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
 #promptContainer {
   display: table-cell;
@@ -1542,6 +1551,7 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   bottom: 0;
   left: 0;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   position: absolute;
   right: 0;
   top: 27px;
