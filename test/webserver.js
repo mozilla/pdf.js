@@ -47,6 +47,7 @@ function WebServer() {
   this.port = 8000;
   this.server = null;
   this.verbose = false;
+  this.disableRangeRequests = false;
   this.hooks = {
     'GET': [],
     'POST': []
@@ -89,8 +90,7 @@ WebServer.prototype = {
       return;
     }
 
-    // disables range requests for chrome windows -- locks during testing
-    var disableRangeRequests = /Windows.*?Chrom/i.test(agent);
+    var disableRangeRequests = this.disableRangeRequests;
 
     var filePath;
     fs.realpath(path.join(this.root, pathPart), checkFile);
