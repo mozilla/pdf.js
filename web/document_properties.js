@@ -74,8 +74,6 @@ var DocumentProperties = {
   },
 
   getProperties: function documentPropertiesGetProperties() {
-    var self = this;
-
     // Get the file name.
     this.fileName = getPDFFileNameFromURL(PDFView.url);
 
@@ -88,20 +86,20 @@ var DocumentProperties = {
     // Get the other document properties.
     PDFView.pdfDocument.getMetadata().then(function(data) {
       var fields = [
-        { field: self.fileNameField, content: self.fileName },
+        { field: this.fileNameField, content: this.fileName },
         // The fileSize field is updated once getDownloadInfo is resolved.
-        { field: self.titleField, content: data.info.Title },
-        { field: self.authorField, content: data.info.Author },
-        { field: self.subjectField, content: data.info.Subject },
-        { field: self.keywordsField, content: data.info.Keywords },
-        { field: self.creationDateField,
-          content: self.parseDate(data.info.CreationDate) },
-        { field: self.modificationDateField,
-          content: self.parseDate(data.info.ModDate) },
-        { field: self.creatorField, content: data.info.Creator },
-        { field: self.producerField, content: data.info.Producer },
-        { field: self.versionField, content: data.info.PDFFormatVersion },
-        { field: self.pageCountField, content: PDFView.pdfDocument.numPages }
+        { field: this.titleField, content: data.info.Title },
+        { field: this.authorField, content: data.info.Author },
+        { field: this.subjectField, content: data.info.Subject },
+        { field: this.keywordsField, content: data.info.Keywords },
+        { field: this.creationDateField,
+          content: this.parseDate(data.info.CreationDate) },
+        { field: this.modificationDateField,
+          content: this.parseDate(data.info.ModDate) },
+        { field: this.creatorField, content: data.info.Creator },
+        { field: this.producerField, content: data.info.Producer },
+        { field: this.versionField, content: data.info.PDFFormatVersion },
+        { field: this.pageCountField, content: PDFView.pdfDocument.numPages }
       ];
 
       // Show the properties in the dialog.
