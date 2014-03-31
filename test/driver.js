@@ -35,6 +35,9 @@ var appPath, masterMode, browser, canvas, dummyCanvas, currentTaskIdx,
     manifest, stdout;
 var inFlightRequests = 0;
 
+// Chrome for Windows locks during testing on low end machines
+var letItCooldown = /Windows.*?Chrom/i.test(navigator.userAgent);
+
 function queryParams() {
   var qs = window.location.search.substring(1);
   var kvs = qs.split('&');
@@ -84,7 +87,7 @@ window.load = function load() {
   }, delay);
 };
 
-function cleanup() {
+function cleanup(callback) {
   // Clear out all the stylesheets since a new one is created for each font.
   while (document.styleSheets.length > 0) {
     var styleSheet = document.styleSheets[0];
@@ -107,6 +110,11 @@ function cleanup() {
       delete manifest[i].pdfDoc;
     }
   }
+  if (letItCooldown) {
+    setTimeout(callback, 500);
+  } else {
+    callback();
+  }
 }
 
 function exceptionToString(e) {
@@ -120,8 +128,10 @@ function exceptionToString(e) {
 }
 
 function nextTask() {
-  cleanup();
+  cleanup(continueNextTask);
+}
 
+function continueNextTask() {
   if (currentTaskIdx == manifest.length) {
     done();
     return;
@@ -401,7 +411,11 @@ function send(url, message, callback) {
         });
       }
       if (callback) {
-        callback();
+        if (letItCooldown) {
+          setTimeout(callback, 100);
+        } else {
+          callback();
+        }
       }
     }
   };
