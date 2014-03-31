@@ -887,6 +887,8 @@ var PDFView = {
 
     this.pdfDocument = pdfDocument;
 
+    DocumentProperties.resolveDataAvailable();
+
     pdfDocument.getDownloadInfo().then(function() {
       PDFView.loadingBar.hide();
       var outerContainer = document.getElementById('outerContainer');
