@@ -1,7 +1,25 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
+/*
+ * Copyright 2013 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-var base64alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+'use strict';
+
+var base64alphabet =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
 function decodeFontData(base64) {
   var result = [];
@@ -9,14 +27,20 @@ function decodeFontData(base64) {
   var bits = 0, bitsLength = 0;
   for (var i = 0, ii = base64.length; i < ii; i++) {
     var ch = base64[i];
-    if (ch <= " ") continue;
+    if (ch <= ' ') {
+      continue;
+    }
     var index = base64alphabet.indexOf(ch);
-    if (index < 0) throw "Invalid character";
-    if (index >= 64) break;
+    if (index < 0) {
+      throw new Error('Invalid character');
+    }
+    if (index >= 64) {
+      break;
+    }
     bits = (bits << 6) | index;
     bitsLength += 6;
     if (bitsLength >= 8) {
-      bitsLength -= 8
+      bitsLength -= 8;
       var code = (bits >> bitsLength) & 0xFF;
       result.push(code);
     }
@@ -45,8 +69,8 @@ function ttx(data, callback) {
   xhr.open('POST', '/ttx');
 
   var encodedData = encodeFontData(data);
-  xhr.setRequestHeader("Content-type", "text/plain");
-  xhr.setRequestHeader("Content-length", encodedData.length);
+  xhr.setRequestHeader('Content-type', 'text/plain');
+  xhr.setRequestHeader('Content-length', encodedData.length);
 
   xhr.onreadystatechange = function getPdfOnreadystatechange(e) {
     if (xhr.readyState === 4) {
@@ -62,6 +86,7 @@ function ttx(data, callback) {
 
 function verifyTtxOutput(output) {
   var m = /^<error>(.*?)<\/error>/.exec(output);
-  if (m)
+  if (m) {
     throw m[1];
+  }
 }
