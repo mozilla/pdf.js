@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, Stream, GlyphsUnicode, CFFParser, Encodings, Util */
+/* globals error, bytesToString, Stream, GlyphsUnicode, CFFParser, Encodings,
+           Util */
 
 'use strict';
 
@@ -675,7 +676,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       var cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
       var numTables = getUshort(data, 4);
       for (var i = 0, p = 12; i < numTables; i++, p += 16) {
-        var tag = String.fromCharCode.apply(null, data.subarray(p, p + 4));
+        var tag = bytesToString(data.subarray(p, p + 4));
         var offset = getLong(data, p + 8);
         var length = getLong(data, p + 12);
         switch (tag) {
