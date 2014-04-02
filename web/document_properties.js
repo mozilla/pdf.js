@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, mozL10n, getPDFFileNameFromURL */
+/* globals PDFView, Promise, mozL10n, getPDFFileNameFromURL */
 
 'use strict';
 
@@ -60,6 +60,10 @@ var DocumentProperties = {
       options.closeButton.addEventListener('click', this.hide.bind(this));
     }
 
+    this.dataAvailablePromise = new Promise(function (resolve) {
+      this.resolveDataAvailable = resolve;
+    }.bind(this));
+
     // Bind the event listener for the Esc key (to close the dialog).
     window.addEventListener('keydown',
       function (e) {
@@ -70,44 +74,51 @@ var DocumentProperties = {
   },
 
   getProperties: function documentPropertiesGetProperties() {
-    var self = this;
-
+    if (!this.visible) {
+      // If the dialog was closed before dataAvailablePromise was resolved,
+      // don't bother updating the properties.
+      return;
+    }
     // Get the file name.
     this.fileName = getPDFFileNameFromURL(PDFView.url);
 
     // Get the file size.
     PDFView.pdfDocument.getDownloadInfo().then(function(data) {
-      self.setFileSize(data.length);
-    });
+      this.setFileSize(data.length);
+      this.updateUI(this.fileSizeField, this.fileSize);
+    }.bind(this));
 
     // Get the other document properties.
     PDFView.pdfDocument.getMetadata().then(function(data) {
       var fields = [
-        { field: self.fileNameField, content: self.fileName },
-        { field: self.fileSizeField, content: self.fileSize },
-        { field: self.titleField, content: data.info.Title },
-        { field: self.authorField, content: data.info.Author },
-        { field: self.subjectField, content: data.info.Subject },
-        { field: self.keywordsField, content: data.info.Keywords },
-        { field: self.creationDateField,
-          content: self.parseDate(data.info.CreationDate) },
-        { field: self.modificationDateField,
-          content: self.parseDate(data.info.ModDate) },
-        { field: self.creatorField, content: data.info.Creator },
-        { field: self.producerField, content: data.info.Producer },
-        { field: self.versionField, content: data.info.PDFFormatVersion },
-        { field: self.pageCountField, content: PDFView.pdfDocument.numPages }
+        { field: this.fileNameField, content: this.fileName },
+        // The fileSize field is updated once getDownloadInfo is resolved.
+        { field: this.titleField, content: data.info.Title },
+        { field: this.authorField, content: data.info.Author },
+        { field: this.subjectField, content: data.info.Subject },
+        { field: this.keywordsField, content: data.info.Keywords },
+        { field: this.creationDateField,
+          content: this.parseDate(data.info.CreationDate) },
+        { field: this.modificationDateField,
+          content: this.parseDate(data.info.ModDate) },
+        { field: this.creatorField, content: data.info.Creator },
+        { field: this.producerField, content: data.info.Producer },
+        { field: this.versionField, content: data.info.PDFFormatVersion },
+        { field: this.pageCountField, content: PDFView.pdfDocument.numPages }
       ];
 
       // Show the properties in the dialog.
       for (var item in fields) {
         var element = fields[item];
-        if (element.field && element.content !== undefined &&
-            element.content !== '') {
-          element.field.textContent = element.content;
-        }
+        this.updateUI(element.field, element.content);
       }
-    });
+    }.bind(this));
+  },
+
+  updateUI: function documentPropertiesUpdateUI(field, content) {
+    if (field && content !== undefined && content !== '') {
+      field.textContent = content;
+    }
   },
 
   setFileSize: function documentPropertiesSetFileSize(fileSize) {
@@ -132,7 +143,10 @@ var DocumentProperties = {
     this.visible = true;
     this.overlayContainer.classList.remove('hidden');
     this.overlayContainer.lastElementChild.classList.remove('hidden');
-    this.getProperties();
+
+    this.dataAvailablePromise.then(function () {
+      this.getProperties();
+    }.bind(this));
   },
 
   hide: function documentPropertiesClose() {
