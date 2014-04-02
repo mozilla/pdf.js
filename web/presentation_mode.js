@@ -149,11 +149,9 @@ var PresentationMode = {
     // Presentation Mode, by waiting until fullscreen mode is disabled.
     // Note: This is only necessary in non-Mozilla browsers.
     setTimeout(function exitPresentationModeTimeout() {
+      this.active = false;
       PDFView.setScale(this.args.previousScale);
       PDFView.page = page;
-      // Keep Presentation Mode active until the page is scrolled into view,
-      // to prevent issues in non-Mozilla browsers.
-      this.active = false;
       this.args = null;
     }.bind(this), 0);
 
