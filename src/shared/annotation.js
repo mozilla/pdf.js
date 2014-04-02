@@ -80,7 +80,7 @@ var Annotation = (function AnnotationClosure() {
     var data = this.data = {};
 
     data.subtype = dict.get('Subtype').name;
-    var rect = dict.get('Rect');
+    var rect = dict.get('Rect') || [0, 0, 0, 0];
     data.rect = Util.normalizeRect(rect);
     data.annotationFlags = dict.get('F');
 
