@@ -64,17 +64,30 @@ WebBrowser.prototype = {
   startProcess: function (url) {
     var args = this.buildArguments(url);
     var proc = spawn(this.path, args);
-    proc.on('close', function (code) {
+    proc.on('exit', function (code) {
       this.finished = true;
-      if (this.callback) {
-        this.callback.call(null, code);
-      }
-      this.cleanup();
+      // trying to wait for process to shutdown (for Windows sake)
+      setTimeout(function () {
+        this.cleanup();
+        if (this.callback) {
+          this.callback.call(null, code);
+        }
+      }.bind(this), 500);
     }.bind(this));
     return proc;
   },
   cleanup: function () {
-    testUtils.removeDirSync(this.tmpDir);
+    try {
+      testUtils.removeDirSync(this.tmpDir);
+    } catch (e) {
+      console.error('Unable to cleanup after the process: ' + e);
+      try {
+        if (this.process) {
+          this.process.kill('SIGKILL');
+        }
+      } catch (e) {}
+    }
+    this.process = null;
   },
   stop: function (callback) {
     if (this.finished) {
@@ -85,8 +98,7 @@ WebBrowser.prototype = {
       this.callback = callback;
     }
 
-    this.process.kill();
-    this.process = null;
+    this.process.kill('SIGTERM');
   }
 };
 
