@@ -74,6 +74,11 @@ var DocumentProperties = {
   },
 
   getProperties: function documentPropertiesGetProperties() {
+    if (!this.visible) {
+      // If the dialog was closed before dataAvailablePromise was resolved,
+      // don't bother updating the properties.
+      return;
+    }
     // Get the file name.
     this.fileName = getPDFFileNameFromURL(PDFView.url);
 
