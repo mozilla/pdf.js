@@ -216,10 +216,20 @@ var PDFView = {
       pageCountField: document.getElementById('pageCountField')
     });
 
-    this.initialized = true;
     container.addEventListener('scroll', function() {
       self.lastScroll = Date.now();
     }, false);
+
+    var initializedPromise = Promise.all([
+      Preferences.get('enableWebGL').then(function (value) {
+        PDFJS.disableWebGL = !value;
+      })
+      // TODO move more preferences and other async stuff here
+    ]);
+
+    return initializedPromise.then(function () {
+      PDFView.initialized = true;
+    });
   },
 
   getPage: function pdfViewGetPage(n) {
@@ -1652,8 +1662,10 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //#endif
 
 function webViewerLoad(evt) {
-  PDFView.initialize();
+  PDFView.initialize().then(webViewerInitialized);
+}
 
+function webViewerInitialized() {
 //#if (GENERIC || B2G)
   var params = PDFView.parseQueryString(document.location.search.substring(1));
   var file = 'file' in params ? params.file : DEFAULT_URL;
