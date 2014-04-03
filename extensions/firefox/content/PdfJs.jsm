@@ -128,14 +128,18 @@ let PdfJs = {
   },
 
   _migrate: function migrate() {
-    const VERSION = 1;
+    const VERSION = 2;
     var currentVersion = getIntPref(PREF_MIGRATION_VERSION, 0);
     if (currentVersion >= VERSION) {
       return;
     }
     // Make pdf.js the default pdf viewer on the first migration.
-    if (currentVersion < 2) {
+    if (currentVersion < 1) {
       this._becomeHandler();
+    }
+    if (currentVersion < 2) {
+      // cleaning up of unused database preference (see #3994)
+      Services.prefs.clearUserPref(PREF_PREFIX + '.database');
     }
     Services.prefs.setIntPref(PREF_MIGRATION_VERSION, VERSION);
   },
