@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, VIEW_HISTORY_MEMORY, isLocalStorageEnabled, Promise */
+/* globals PDFJS, VIEW_HISTORY_MEMORY, Promise */
 
 'use strict';
 
@@ -24,7 +24,7 @@
  *
  * The way that the view parameters are stored depends on how PDF.js is built,
  * for 'node make <flag>' the following cases exist:
- *  - FIREFOX or MOZCENTRAL - uses about:config.
+ *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
  *  - B2G                   - uses asyncStorage.
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
@@ -48,13 +48,11 @@ var ViewHistory = (function ViewHistoryClosure() {
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//  resolvePromise(FirefoxCom.requestSync('getDatabase', null));
+//  resolvePromise(sessionStorage.getItem('pdfjsHistory'));
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
-    if (isLocalStorageEnabled) {
-      resolvePromise(localStorage.getItem('database'));
-    }
+    resolvePromise(localStorage.getItem('database'));
 //#endif
   }
 
@@ -95,13 +93,11 @@ var ViewHistory = (function ViewHistoryClosure() {
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//    FirefoxCom.requestSync('setDatabase', database);
+//    sessionStorage.setItem('pdfjsHistory',database);
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
-      if (isLocalStorageEnabled) {
-        localStorage.setItem('database', database);
-      }
+      localStorage.setItem('database', database);
 //#endif
     },
 

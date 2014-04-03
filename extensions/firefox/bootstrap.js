@@ -43,13 +43,6 @@ function getBoolPref(pref, def) {
   }
 }
 
-function setStringPref(pref, value) {
-  var str = Cc['@mozilla.org/supports-string;1']
-              .createInstance(Ci.nsISupportsString);
-  str.data = value;
-  Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
-}
-
 function log(str) {
   if (!getBoolPref(EXT_PREFIX + '.pdfBugEnabled', false)) {
     return;
@@ -176,9 +169,10 @@ function shutdown(aData, aReason) {
 }
 
 function install(aData, aReason) {
+  // TODO remove after some time -- cleanup of unused preferences
+  Services.prefs.clearUserPref(EXT_PREFIX + '.database');
 }
 
 function uninstall(aData, aReason) {
-  setStringPref(EXT_PREFIX + '.database', '{}');
 }
 

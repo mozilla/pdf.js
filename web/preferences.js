@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_PREFERENCES, isLocalStorageEnabled, Promise */
+/* globals DEFAULT_PREFERENCES, Promise */
 
 'use strict';
 
@@ -174,19 +174,14 @@ var Preferences = {
 //#if !(FIREFOX || MOZCENTRAL || B2G)
 Preferences._writeToStorage = function (prefObj) {
   return new Promise(function (resolve) {
-    if (isLocalStorageEnabled) {
-      localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
-    }
+    localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
     resolve();
   });
 };
 
 Preferences._readFromStorage = function (prefObj) {
   return new Promise(function (resolve) {
-    var readPrefs;
-    if (isLocalStorageEnabled) {
-      readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
-    }
+    var readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
     resolve(readPrefs);
   });
 };

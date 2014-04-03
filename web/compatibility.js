@@ -537,3 +537,23 @@ if (typeof PDFJS === 'undefined') {
     }
   }
 })();
+
+(function checkStorages() {
+  // Feature test as per http://diveintohtml5.info/storage.html
+  // The additional localStorage call is to get around a FF quirk, see
+  // bug #495747 in bugzilla
+  try {
+    if ('localStorage' in window && window['localStorage'] !== null) {
+      return;
+    }
+  } catch (e) { }
+  window.localStorage = {
+    data: Object.create(null),
+    getItem: function (key) {
+      return this.data[key];
+    },
+    setItem: function (key, value) {
+      this.data[key] = value;
+    }
+  };
+})();
