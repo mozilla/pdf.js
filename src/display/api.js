@@ -688,7 +688,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         info('The worker has been disabled.');
       }
     }
-//#endif    
+//#endif
     // Either workers are disabled, not supported or have thrown an exception.
     // Thus, we fallback to a faked worker.
     globalScope.PDFJS.disableWorker = true;
