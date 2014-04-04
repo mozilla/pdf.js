@@ -161,7 +161,6 @@ WebServer.prototype = {
       res.setHeader('Content-Type', 'text/html');
       res.writeHead(200);
 
-      var content = '';
       if (queryPart === 'frame') {
         res.end('<html><frameset cols=*,200><frame name=pdf>' +
           '<frame src=\"' + encodeURI(pathPart) +

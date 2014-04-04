@@ -149,7 +149,7 @@ WebBrowser.create = function (desc) {
   if (/firefox/i.test(name)) {
     return new FirefoxBrowser(desc.name, desc.path);
   }
-  if (/(chrome|chromium)/i.test(name)) {
+  if (/(chrome|chromium|opera)/i.test(name)) {
     return new ChromiumBrowser(desc.name, desc.path);
   }
   return new WebBrowser(desc.name, desc.path);
