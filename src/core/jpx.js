@@ -108,7 +108,7 @@ var JpxImage = (function JpxImageClosure() {
           // Image and tile size (SIZ)
           if (code == 0xFF51) {
             stream.skip(4);
-            var Xsiz = stream.getUint32(); // Byte 4 
+            var Xsiz = stream.getUint32(); // Byte 4
             var Ysiz = stream.getUint32(); // Byte 8
             var XOsiz = stream.getUint32(); // Byte 12
             var YOsiz = stream.getUint32(); // Byte 16
@@ -117,7 +117,7 @@ var JpxImage = (function JpxImageClosure() {
             this.width = Xsiz - XOsiz;
             this.height = Ysiz - YOsiz;
             this.componentsCount = Csiz;
-            // Results are always returned as UInt8Arrays 
+            // Results are always returned as UInt8Arrays
             this.bitsPerComponent = 8;
             return;
           }
@@ -491,10 +491,10 @@ var JpxImage = (function JpxImageClosure() {
     var ycb_ = dimensions.ycb_;
     var codeblockWidth = 1 << xcb_;
     var codeblockHeight = 1 << ycb_;
-    var cbx0 = Math.floor(subband.tbx0 / codeblockWidth);
-    var cby0 = Math.floor(subband.tby0 / codeblockHeight);
-    var cbx1 = Math.ceil(subband.tbx1 / codeblockWidth);
-    var cby1 = Math.ceil(subband.tby1 / codeblockHeight);
+    var cbx0 = subband.tbx0 >> xcb_;
+    var cby0 = subband.tby0 >> ycb_;
+    var cbx1 = (subband.tbx1 + codeblockWidth - 1) >> xcb_;
+    var cby1 = (subband.tby1 + codeblockHeight - 1) >> ycb_;
     var precinctParameters = subband.resolution.precinctParameters;
     var codeblocks = [];
     var precincts = [];
@@ -528,13 +528,18 @@ var JpxImage = (function JpxImageClosure() {
         codeblock.Lblock = 3;
         codeblocks.push(codeblock);
         // building precinct for the sub-band
-        var precinct;
-        if (precinctNumber in precincts) {
-          precinct = precincts[precinctNumber];
-          precinct.cbxMin = Math.min(precinct.cbxMin, i);
-          precinct.cbyMin = Math.min(precinct.cbyMin, j);
-          precinct.cbxMax = Math.max(precinct.cbxMax, i);
-          precinct.cbyMax = Math.max(precinct.cbyMax, j);
+        var precinct = precincts[precinctNumber];
+        if (precinct !== undefined) {
+          if (i < precinct.cbxMin) {
+            precinct.cbxMin = i;
+          } else if (i > precinct.cbxMax) {
+            precinct.cbxMax = i;
+          }
+          if (j < precinct.cbyMin) {
+            precinct.cbxMin = j;
+          } else if (j > precinct.cbyMax) {
+            precinct.cbyMax = j;
+          }
         } else {
           precincts[precinctNumber] = precinct = {
             cbxMin: i,
@@ -553,10 +558,6 @@ var JpxImage = (function JpxImageClosure() {
       numcodeblockhigh: cby1 - cby1 + 1
     };
     subband.codeblocks = codeblocks;
-    for (var i = 0, ii = codeblocks.length; i < ii; i++) {
-      var codeblock = codeblocks[i];
-      var precinctNumber = codeblock.precinctNumber;
-    }
     subband.precincts = precincts;
   }
   function createPacket(resolution, precinctNumber, layerNumber) {
@@ -972,13 +973,18 @@ var JpxImage = (function JpxImageClosure() {
       var magnitudeCorrection = reversible ? 0 : 0.5;
       for (var j = 0; j < blockHeight; j++) {
         for (var k = 0; k < blockWidth; k++) {
-          var mag = magnitude[position];
-          if (mag !== 0) {
-            n = sign[position] ? -(mag + magnitudeCorrection) :
-                                  (mag + magnitudeCorrection);
+          n = magnitude[position];
+          if (n !== 0) {
+            n = (n + magnitudeCorrection) * delta;
+            if (sign[position] !== 0) {
+              n = -n;
+            }
             nb = bitsDecoded[position];
-            correction = (irreversible || mb > nb) ? 1 << (mb - nb) : 1;
-            coefficients[offset] = n * correction * delta;
+            if (irreversible || mb > nb) {
+              coefficients[offset] = n * (1 << (mb - nb));
+            } else {
+              coefficients[offset] = n;
+            }
           }
           offset++;
           position++;
@@ -1076,10 +1082,10 @@ var JpxImage = (function JpxImageClosure() {
           var y1items = result[1].items;
           var y2items = result[2].items;
           for (var j = 0, jj = y0items.length; j < jj; ++j) {
-            var y0 = y0items[j], y1 = y1items[j], y2 = y2items[j];
-            y0items[j] = y0 + 1.402 * y2 + 0.5;
-            y1items[j] = y0 - 0.34413 * y1 - 0.71414 * y2 + 0.5;
-            y2items[j] = y0 + 1.772 * y1 + 0.5;
+            var y0 = y0items[j] + 0.5, y1 = y1items[j], y2 = y2items[j];
+            y0items[j] = y0 + 1.402 * y2;
+            y1items[j] = y0 - 0.34413 * y1 - 0.71414 * y2;
+            y2items[j] = y0 + 1.772 * y1;
           }
         } else {
           // inverse reversible multiple component transform
@@ -1096,32 +1102,18 @@ var JpxImage = (function JpxImageClosure() {
         }
       }
 
-      // Section G.1 DC level shifting to unsigned component values
-      for (var c = 0; c < componentsCount; c++) {
-        var component = components[c];
-        if (component.isSigned) {
-          continue;
-        }
-
-        var offset = 1 << (component.precision - 1);
-        var tileImage = result[c];
-        var items = tileImage.items;
-        for (var j = 0, jj = items.length; j < jj; j++) {
-          items[j] += offset;
-        }
-      }
-
       // To simplify things: shift and clamp output to 8 bit unsigned
       for (var c = 0; c < componentsCount; c++) {
         var component = components[c];
-        var offset = component.isSigned ? 128 : 0;
         var shift = component.precision - 8;
         var tileImage = result[c];
         var items = tileImage.items;
         var data = new Uint8Array(items.length);
+        var low = -(128 << shift);
+        var high = 127 << shift;
         for (var j = 0, jj = items.length; j < jj; j++) {
-          var value = (items[j] >> shift) + offset;
-          data[j] = value < 0 ? 0 : value > 255 ? 255 : value;
+          var val = items[j];
+          data[j] = val <= low ? 0 : val >= high ? 255 : (val >> shift) + 128;
         }
         result[c].items = data;
       }
@@ -1311,31 +1303,6 @@ var JpxImage = (function JpxImageClosure() {
       8, 0, 8, 8, 8, 0, 8, 8, 8, 0, 0, 0, 0, 0, 8, 8, 8, 0, 8, 8, 8, 0, 8, 8, 8
     ]);
 
-    // Table D-2
-    function calcSignContribution(significance0, sign0, significance1, sign1) {
-      if (significance1) {
-        if (!sign1) {
-          return significance0 ? (!sign0 ? 1 : 0) : 1;
-        } else {
-          return significance0 ? (!sign0 ? 0 : -1) : -1;
-        }
-      } else {
-        return significance0 ? (!sign0 ? 1 : -1) : 0;
-      }
-    }
-    // Table D-3
-    var SignContextLabels = [
-      {contextLabel: 13, xorBit: 0},
-      {contextLabel: 12, xorBit: 0},
-      {contextLabel: 11, xorBit: 0},
-      {contextLabel: 10, xorBit: 0},
-      {contextLabel: 9, xorBit: 0},
-      {contextLabel: 10, xorBit: 1},
-      {contextLabel: 11, xorBit: 1},
-      {contextLabel: 12, xorBit: 1},
-      {contextLabel: 13, xorBit: 1}
-    ];
-
     function BitModel(width, height, subband, zeroBitPlanes) {
       this.width = width;
       this.height = height;
@@ -1352,9 +1319,11 @@ var JpxImage = (function JpxImageClosure() {
       this.coefficentsMagnitude = new Uint32Array(coefficientCount);
       this.processingFlags = new Uint8Array(coefficientCount);
 
-      var bitsDecoded = new Uint8Array(this.width * this.height);
-      for (var i = 0, ii = bitsDecoded.length; i < ii; i++) {
-        bitsDecoded[i] = zeroBitPlanes;
+      var bitsDecoded = new Uint8Array(coefficientCount);
+      if (zeroBitPlanes !== 0) {
+        for (var i = 0; i < coefficientCount; i++) {
+          bitsDecoded[i] = zeroBitPlanes;
+        }
       }
       this.bitsDecoded = bitsDecoded;
 
@@ -1366,7 +1335,7 @@ var JpxImage = (function JpxImageClosure() {
         this.decoder = decoder;
       },
       reset: function BitModel_reset() {
-        // We have 17 contexts that are accessed via context labels, 
+        // We have 17 contexts that are accessed via context labels,
         // plus the uniform and runlength context.
         this.contexts = new Int8Array(19);
 
@@ -1377,32 +1346,38 @@ var JpxImage = (function JpxImageClosure() {
         this.contexts[RUNLENGTH_CONTEXT] = (3 << 1) | 0;
       },
       setNeighborsSignificance:
-        function BitModel_setNeighborsSignificance(row, column) {
+        function BitModel_setNeighborsSignificance(row, column, index) {
         var neighborsSignificance = this.neighborsSignificance;
         var width = this.width, height = this.height;
-        var index = row * width + column;
+        var left = (column > 0);
+        var right = (column + 1 < width);
+
         if (row > 0) {
-          if (column > 0) {
-            neighborsSignificance[index - width - 1] += 0x10;
+          var i = index - width;
+          if (left) {
+            neighborsSignificance[i - 1] += 0x10;
           }
-          if (column + 1 < width) {
-            neighborsSignificance[index - width + 1] += 0x10;
+          if (right) {
+            neighborsSignificance[i + 1] += 0x10;
           }
-          neighborsSignificance[index - width] += 0x04;
+          neighborsSignificance[i] += 0x04;
         }
+
         if (row + 1 < height) {
-          if (column > 0) {
-            neighborsSignificance[index + width - 1] += 0x10;
+          var i = index + width;
+          if (left) {
+            neighborsSignificance[i - 1] += 0x10;
           }
-          if (column + 1 < width) {
-            neighborsSignificance[index + width + 1] += 0x10;
+          if (right) {
+            neighborsSignificance[i + 1] += 0x10;
           }
-          neighborsSignificance[index + width] += 0x04;
+          neighborsSignificance[i] += 0x04;
         }
-        if (column > 0) {
+
+        if (left) {
           neighborsSignificance[index - 1] += 0x01;
         }
-        if (column + 1 < width) {
+        if (right) {
           neighborsSignificance[index + 1] += 0x01;
         }
         neighborsSignificance[index] |= 0x80;
@@ -1419,13 +1394,9 @@ var JpxImage = (function JpxImageClosure() {
         var contexts = this.contexts;
         var labels = this.contextLabelTable;
         var bitsDecoded = this.bitsDecoded;
-        // clear processed flag
         var processedInverseMask = ~1;
         var processedMask = 1;
         var firstMagnitudeBitMask = 2;
-        for (var q = 0, qq = width * height; q < qq; q++) {
-          processingFlags[q] &= processedInverseMask;
-        }
 
         for (var i0 = 0; i0 < height; i0 += 4) {
           for (var j = 0; j < width; j++) {
@@ -1435,6 +1406,8 @@ var JpxImage = (function JpxImageClosure() {
               if (i >= height) {
                 break;
               }
+              // clear processed flag first
+              processingFlags[index] &= processedInverseMask;
 
               if (coefficentsMagnitude[index] ||
                   !neighborsSignificance[index]) {
@@ -1444,10 +1417,10 @@ var JpxImage = (function JpxImageClosure() {
               var contextLabel = labels[neighborsSignificance[index]];
               var decision = decoder.readBit(contexts, contextLabel);
               if (decision) {
-                var sign = this.decodeSignBit(i, j);
+                var sign = this.decodeSignBit(i, j, index);
                 coefficentsSign[index] = sign;
                 coefficentsMagnitude[index] = 1;
-                this.setNeighborsSignificance(i, j);
+                this.setNeighborsSignificance(i, j, index);
                 processingFlags[index] |= firstMagnitudeBitMask;
               }
               bitsDecoded[index]++;
@@ -1456,27 +1429,55 @@ var JpxImage = (function JpxImageClosure() {
           }
         }
       },
-      decodeSignBit: function BitModel_decodeSignBit(row, column) {
+      decodeSignBit: function BitModel_decodeSignBit(row, column, index) {
         var width = this.width, height = this.height;
-        var index = row * width + column;
         var coefficentsMagnitude = this.coefficentsMagnitude;
         var coefficentsSign = this.coefficentsSign;
-        var horizontalContribution = calcSignContribution(
-          column > 0 && coefficentsMagnitude[index - 1],
-          coefficentsSign[index - 1],
-          column + 1 < width && coefficentsMagnitude[index + 1],
-          coefficentsSign[index + 1]);
-        var verticalContribution = calcSignContribution(
-          row > 0 && coefficentsMagnitude[index - width],
-          coefficentsSign[index - width],
-          row + 1 < height && coefficentsMagnitude[index + width],
-          coefficentsSign[index + width]);
+        var contribution, sign0, sign1, significance1;
 
-        var contextLabelAndXor = SignContextLabels[
-          3 * (1 - horizontalContribution) + (1 - verticalContribution)];
-        var contextLabel = contextLabelAndXor.contextLabel;
-        var decoded = this.decoder.readBit(this.contexts, contextLabel);
-        return decoded ^ contextLabelAndXor.xorBit;
+        // calculate horizontal contribution
+        significance1 = (column > 0 && coefficentsMagnitude[index - 1] !== 0);
+        if (column + 1 < width && coefficentsMagnitude[index + 1] !== 0) {
+          sign1 = coefficentsSign[index + 1];
+          if (significance1) {
+            sign0 = coefficentsSign[index - 1];
+            contribution = 1 - sign1 - sign0;
+          } else {
+            contribution = 1 - sign1 - sign1;
+          }
+        } else if (significance1) {
+          sign0 = coefficentsSign[index - 1];
+          contribution = 1 - sign0 - sign0;
+        } else {
+          contribution = 0;
+        }
+        var horizontalContribution = 3 * contribution;
+
+        // calculate vertical contribution and combine with the horizontal
+        significance1 = (row > 0 && coefficentsMagnitude[index - width] !== 0);
+        if (row + 1 < height && coefficentsMagnitude[index + width] !== 0) {
+          sign1 = coefficentsSign[index + width];
+          if (significance1) {
+            sign0 = coefficentsSign[index - width];
+            contribution = 1 - sign1 - sign0 + horizontalContribution;
+          } else {
+            contribution = 1 - sign1 - sign1 + horizontalContribution;
+          }
+        } else if (significance1) {
+          sign0 = coefficentsSign[index - width];
+          contribution = 1 - sign0 - sign0 + horizontalContribution;
+        } else {
+          contribution = horizontalContribution;
+        }
+
+        if (contribution >= 0) {
+          var contextLabel = 9 + contribution;
+          var decoded = this.decoder.readBit(this.contexts, contextLabel);
+        } else {
+          var contextLabel = 9 - contribution;
+          var decoded = this.decoder.readBit(this.contexts, contextLabel) ^ 1;
+        }
+        return decoded;
       },
       runMagnitudeRefinementPass:
         function BitModel_runMagnitudeRefinementPass() {
@@ -1489,14 +1490,13 @@ var JpxImage = (function JpxImageClosure() {
         var processingFlags = this.processingFlags;
         var processedMask = 1;
         var firstMagnitudeBitMask = 2;
-        for (var i0 = 0; i0 < height; i0 += 4) {
+        var length = width * height;
+        var width4 = width * 4;
+
+        for (var index0 = 0, indexNext; index0 < length; index0 = indexNext) {
+          indexNext = Math.min(length, index0 + width4);
           for (var j = 0; j < width; j++) {
-            for (var i1 = 0; i1 < 4; i1++) {
-              var i = i0 + i1;
-              if (i >= height) {
-                break;
-              }
-              var index = i * width + j;
+            for (var index = index0 + j; index < indexNext; index += width) {
 
               // significant but not those that have just become
               if (!coefficentsMagnitude[index] ||
@@ -1506,12 +1506,10 @@ var JpxImage = (function JpxImageClosure() {
 
               var contextLabel = 16;
               if ((processingFlags[index] & firstMagnitudeBitMask) !== 0) {
-                processingFlags[i * width + j] ^= firstMagnitudeBitMask;
+                processingFlags[index] ^= firstMagnitudeBitMask;
                 // first refinement
-                var significance = neighborsSignificance[index];
-                var sumOfSignificance = (significance & 3) +
-                  ((significance >> 2) & 3) + ((significance >> 4) & 7);
-                contextLabel = sumOfSignificance >= 1 ? 15 : 14;
+               var significance = neighborsSignificance[index] & 127;
+               contextLabel = significance === 0 ? 15 : 14;
               }
 
               var bit = decoder.readBit(contexts, contextLabel);
@@ -1570,10 +1568,10 @@ var JpxImage = (function JpxImageClosure() {
               i = i0 + i1;
               index += i1 * width;
 
-              var sign = this.decodeSignBit(i, j);
+              var sign = this.decodeSignBit(i, j, index);
               coefficentsSign[index] = sign;
               coefficentsMagnitude[index] = 1;
-              this.setNeighborsSignificance(i, j);
+              this.setNeighborsSignificance(i, j, index);
               processingFlags[index] |= firstMagnitudeBitMask;
 
               index = index0;
@@ -1597,10 +1595,10 @@ var JpxImage = (function JpxImageClosure() {
               var contextLabel = labels[neighborsSignificance[index]];
               var decision = decoder.readBit(contexts, contextLabel);
               if (decision == 1) {
-                var sign = this.decodeSignBit(i, j);
+                var sign = this.decodeSignBit(i, j, index);
                 coefficentsSign[index] = sign;
                 coefficentsMagnitude[index] = 1;
-                this.setNeighborsSignificance(i, j);
+                this.setNeighborsSignificance(i, j, index);
                 processingFlags[index] |= firstMagnitudeBitMask;
               }
               bitsDecoded[index]++;
@@ -1631,7 +1629,7 @@ var JpxImage = (function JpxImageClosure() {
     Transform.prototype.calculate =
       function transformCalculate(subbands, u0, v0) {
       var ll = subbands[0];
-      for (var i = 1, ii = subbands.length, j = 1; i < ii; i += 3, j++) {
+      for (var i = 1, ii = subbands.length; i < ii; i += 3) {
         ll = this.iterate(ll, subbands[i], subbands[i + 1],
                           subbands[i + 2], u0, v0);
       }
@@ -1692,21 +1690,24 @@ var JpxImage = (function JpxImageClosure() {
       var rowBuffer = new Float32Array(width + 2 * bufferPadding);
 
       // Section F.3.4 HOR_SR
-      for (var v = 0; v < height; v++) {
-        if (width == 1) {
-          // if width = 1, when u0 even keep items as is, when odd divide by 2
-          if ((u0 % 1) !== 0) {
-            items[v * width] /= 2;
+      if (width === 1) {
+        // if width = 1, when u0 even keep items as is, when odd divide by 2
+        if ((u0 & 1) !== 0) {
+          for (var v = 0, k = 0; v < height; v++, k += width) {
+            items[k] *= 0.5;
           }
-          continue;
         }
-        k = v * width;
-        rowBuffer.set(items.subarray(k, k + width), bufferPadding);
+      } else {
+        for (var v = 0, k = 0; v < height; v++, k += width) {
+          rowBuffer.set(items.subarray(k, k + width), bufferPadding);
 
-        this.extend(rowBuffer, bufferPadding, width);
-        this.filter(rowBuffer, bufferPadding, width, u0, rowBuffer);
+          this.extend(rowBuffer, bufferPadding, width);
+          this.filter(rowBuffer, bufferPadding, width, u0, rowBuffer);
 
-        items.set(rowBuffer.subarray(bufferPadding, bufferPadding + width), k);
+          items.set(
+            rowBuffer.subarray(bufferPadding, bufferPadding + width),
+            k);
+        }
       }
 
       // Accesses to the items array can take long, because it may not fit into
@@ -1723,37 +1724,38 @@ var JpxImage = (function JpxImageClosure() {
       var b, currentBuffer = 0, ll = bufferPadding + height;
 
       // Section F.3.5 VER_SR
-      for (var u = 0; u < width; u++) {
-        if (height == 1) {
+      if (height === 1) {
           // if height = 1, when v0 even keep items as is, when odd divide by 2
-          if ((v0 % 1) !== 0) {
-            items[u] /= 2;
+        if ((v0 & 1) !== 0) {
+          for (var u = 0; u < width; u++) {
+            items[u] *= 0.5;
           }
-          continue;
         }
-
-        // if we ran out of buffers, copy several image columns at once
-        if (currentBuffer === 0) {
-          numBuffers = Math.min(width - u, numBuffers);
-          for (k = u, l = bufferPadding; l < ll; k += width, l++) {
-            for (b = 0; b < numBuffers; b++) {
-              colBuffers[b][l] = items[k + b];
+      } else {
+        for (var u = 0; u < width; u++) {
+          // if we ran out of buffers, copy several image columns at once
+          if (currentBuffer === 0) {
+            numBuffers = Math.min(width - u, numBuffers);
+            for (k = u, l = bufferPadding; l < ll; k += width, l++) {
+              for (b = 0; b < numBuffers; b++) {
+                colBuffers[b][l] = items[k + b];
+              }
             }
+            currentBuffer = numBuffers;
           }
-          currentBuffer = numBuffers;
-        }
 
-        currentBuffer--;
-        var buffer = colBuffers[currentBuffer];
-        this.extend(buffer, bufferPadding, height);
-        this.filter(buffer, bufferPadding, height, v0, buffer);
+          currentBuffer--;
+          var buffer = colBuffers[currentBuffer];
+          this.extend(buffer, bufferPadding, height);
+          this.filter(buffer, bufferPadding, height, v0, buffer);
 
-        // If this is last buffer in this group of buffers, flush all buffers.
-        if (currentBuffer === 0) {
-          k = u - numBuffers + 1;
-          for (l = bufferPadding; l < ll; k += width, l++) {
-            for (b = 0; b < numBuffers; b++) {
-              items[k + b] = colBuffers[b][l];
+          // If this is last buffer in this group of buffers, flush all buffers.
+          if (currentBuffer === 0) {
+            k = u - numBuffers + 1;
+            for (l = bufferPadding; l < ll; k += width, l++) {
+              for (b = 0; b < numBuffers; b++) {
+                items[k + b] = colBuffers[b][l];
+              }
             }
           }
         }
@@ -1777,9 +1779,8 @@ var JpxImage = (function JpxImageClosure() {
     IrreversibleTransform.prototype = Object.create(Transform.prototype);
     IrreversibleTransform.prototype.filter =
       function irreversibleTransformFilter(y, offset, length, i0, x) {
-      var i0_ = Math.floor(i0 / 2);
-      var i1_ = Math.floor((i0 + length) / 2);
-      var offset_ = offset - (i0 % 1);
+      var len = length >> 1;
+      var offset = offset | 0;
 
       var alpha = -1.586134342059924;
       var beta = -0.052980118572961;
@@ -1788,39 +1789,31 @@ var JpxImage = (function JpxImageClosure() {
       var K = 1.230174104914001;
       var K_ = 1 / K;
 
-      // step 1
-      var j = offset_ - 2;
-      for (var n = i0_ - 1, nn = i1_ + 2; n < nn; n++, j += 2) {
-        x[j] = K * y[j];
-      }
+      // step 1 is combined with step 3
 
       // step 2
-      var j = offset_ - 3;
-      for (var n = i0_ - 2, nn = i1_ + 2; n < nn; n++, j += 2) {
+      for (var j = offset - 3, n = len + 4; n--; j += 2) {
         x[j] = K_ * y[j];
       }
 
-      // step 3
-      var j = offset_ - 2;
-      for (var n = i0_ - 1, nn = i1_ + 2; n < nn; n++, j += 2) {
-        x[j] -= delta * (x[j - 1] + x[j + 1]);
+      // step 1 & 3
+      for (var j = offset - 2, n = len + 3; n--; j += 2) {
+        x[j] = K * y[j] -
+          delta * (x[j - 1] + x[j + 1]);
       }
 
       // step 4
-      var j = offset_ - 1;
-      for (var n = i0_ - 1, nn = i1_ + 1; n < nn; n++, j += 2) {
+      for (var j = offset - 1, n = len + 2; n--; j += 2) {
         x[j] -= gamma * (x[j - 1] + x[j + 1]);
       }
 
       // step 5
-      var j = offset_;
-      for (var n = i0_, nn = i1_ + 1; n < nn; n++, j += 2) {
+      for (var j = offset, n = len + 1; n--; j += 2) {
         x[j] -= beta * (x[j - 1] + x[j + 1]);
       }
 
       // step 6
-      var j = offset_ + 1;
-      for (var n = i0_, nn = i1_; n < nn; n++, j += 2) {
+      for (var j = offset + 1, n = len; n--; j += 2) {
         x[j] -= alpha * (x[j - 1] + x[j + 1]);
       }
     };
@@ -1837,16 +1830,15 @@ var JpxImage = (function JpxImageClosure() {
     ReversibleTransform.prototype = Object.create(Transform.prototype);
     ReversibleTransform.prototype.filter =
       function reversibleTransformFilter(y, offset, length, i0, x) {
-      var i0_ = Math.floor(i0 / 2);
-      var i1_ = Math.floor((i0 + length) / 2);
-      var offset_ = offset - (i0 % 1);
+      var len = length >> 1;
+      var offset = offset | 0;
 
-      for (var n = i0_, nn = i1_ + 1, j = offset_; n < nn; n++, j += 2) {
-        x[j] = y[j] - Math.floor((y[j - 1] + y[j + 1] + 2) / 4);
+      for (var j = offset, n = len + 1; n--; j += 2) {
+        x[j] = y[j] - ((y[j - 1] + y[j + 1] + 2) >> 2);
       }
 
-      for (var n = i0_, nn = i1_, j = offset_ + 1; n < nn; n++, j += 2) {
-        x[j] = y[j] + Math.floor((x[j - 1] + x[j + 1]) / 2);
+      for (var j = offset + 1, n = len; n--; j += 2) {
+        x[j] = y[j] + ((x[j - 1] + x[j + 1]) >> 1);
       }
     };
 
