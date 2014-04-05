@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ColorSpace, DecodeStream, error, isArray, ImageKind, isStream,
-           JpegStream, Name, Promise, Stream, warn, LegacyPromise */
+/* globals ColorSpace, DecodeStream, error, info, isArray, ImageKind, isStream,
+           JpegStream, JpxImage, Name, Promise, Stream, warn, LegacyPromise */
 
 'use strict';
 
@@ -51,16 +51,21 @@ var PDFImage = (function PDFImageClosure() {
   }
   function PDFImage(xref, res, image, inline, smask, mask, isMask) {
     this.image = image;
-    if (image.getParams) {
-      // JPX/JPEG2000 streams directly contain bits per component
-      // and color space mode information.
-      warn('get params from actual stream');
-      // var bits = ...
-      // var colorspace = ...
+    var dict = image.dict;
+    if (dict.get('Filter').name === 'JPXDecode') {
+      info('get image params from JPX stream');
+      var jpxImage = new JpxImage();
+      var data = image.stream.bytes;
+      jpxImage.parseImageProperties(data, 0, data.length);
+      image.bitsPerComponent = jpxImage.bitsPerComponent;
+      image.numComps = jpxImage.componentsCount;
+    }
+    if (dict.get('Filter').name === 'JBIG2Decode') {
+      image.bitsPerComponent = 1;
+      image.numComps = 1;
     }
     // TODO cache rendered images?
 
-    var dict = image.dict;
     this.width = dict.get('Width', 'W');
     this.height = dict.get('Height', 'H');
 
@@ -89,8 +94,19 @@ var PDFImage = (function PDFImageClosure() {
     if (!this.imageMask) {
       var colorSpace = dict.get('ColorSpace', 'CS');
       if (!colorSpace) {
-        warn('JPX images (which do not require color spaces)');
-        colorSpace = Name.get('DeviceRGB');
+        info('JPX images (which do not require color spaces)');
+        switch (image.numComps) {
+          case 1:
+            colorSpace = Name.get('DeviceGray');
+            break;
+          case 3:
+            colorSpace = Name.get('DeviceRGB');
+            break;
+          default:
+            // TODO: Find out how four color channels are handled. CMYK? Alpha?
+            error('JPX images with ' + this.numComps +
+                  ' color components not supported.');
+        }
       }
       this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
       this.numComps = this.colorSpace.numComps;

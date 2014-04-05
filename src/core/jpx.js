@@ -26,10 +26,6 @@ var JpxImage = (function JpxImageClosure() {
     'HL': 1,
     'HH': 2
   };
-  var TransformType = {
-    IRREVERSIBLE: 0,
-    REVERSIBLE: 1
-  };
   function JpxImage() {
     this.failOnCorruptedImage = false;
   }
@@ -99,6 +95,37 @@ var JpxImage = (function JpxImageClosure() {
         }
         if (jumpDataLength) {
           position += dataLength;
+        }
+      }
+    },
+    parseImageProperties: function JpxImage_parseImageProperties(data, start,
+                                                                 end) {
+      try {
+        var position = start;
+        while (position + 40 < end) {
+          var code = readUint16(data, position);
+          // Image and tile size (SIZ)
+          if (code == 0xFF51) {
+            var Xsiz = readUint32(data, position + 6);
+            var Ysiz = readUint32(data, position + 10);
+            var XOsiz = readUint32(data, position + 14);
+            var YOsiz = readUint32(data, position + 18);
+            var Csiz = readUint16(data, position + 38);
+            this.width = Xsiz - XOsiz;
+            this.height = Ysiz - YOsiz;
+            this.componentsCount = Csiz;
+            // Results are always returned as UInt8Arrays 
+            this.bitsPerComponent = 8;
+            return;
+          }
+          position += 1;
+        }
+        throw 'No size marker found in JPX stream';
+      } catch (e) {
+        if (this.failOnCorruptedImage) {
+          error('JPX error: ' + e);
+        } else {
+          warn('JPX error: ' + e + '. Trying to recover');
         }
       }
     },
@@ -270,7 +297,7 @@ var JpxImage = (function JpxImageClosure() {
               cod.verticalyStripe = !!(blockStyle & 8);
               cod.predictableTermination = !!(blockStyle & 16);
               cod.segmentationSymbolUsed = !!(blockStyle & 32);
-              cod.transformation = data[j++];
+              cod.reversibleTransformation = data[j++];
               if (cod.entropyCoderWithCustomPrecincts) {
                 var precinctsSizes = [];
                 while (j < length + position) {
@@ -333,6 +360,8 @@ var JpxImage = (function JpxImageClosure() {
               length = readUint16(data, position);
               // skipping content
               break;
+            case 0xFF53: // Coding style component (COC)
+              throw 'Codestream code 0xFF53 (COC) is not implemented';
             default:
               throw 'Unknown codestream code: ' + code.toString(16);
           }
@@ -878,7 +907,7 @@ var JpxImage = (function JpxImageClosure() {
     return position;
   }
   function copyCoefficients(coefficients, x0, y0, width, height,
-                            delta, mb, codeblocks, transformation,
+                            delta, mb, codeblocks, reversible,
                             segmentationSymbolUsed) {
     for (var i = 0, ii = codeblocks.length; i < ii; ++i) {
       var codeblock = codeblocks[i];
@@ -934,16 +963,22 @@ var JpxImage = (function JpxImageClosure() {
 
       var offset = (codeblock.tbx0_ - x0) + (codeblock.tby0_ - y0) * width;
       var n, nb, correction, position = 0;
-      var irreversible = (transformation === TransformType.IRREVERSIBLE);
+      var irreversible = !reversible;
       var sign = bitModel.coefficentsSign;
       var magnitude = bitModel.coefficentsMagnitude;
       var bitsDecoded = bitModel.bitsDecoded;
+      var magnitudeCorrection = reversible ? 0 : 0.5;
       for (var j = 0; j < blockHeight; j++) {
         for (var k = 0; k < blockWidth; k++) {
-          n = (sign[position] ? -1 : 1) * magnitude[position];
-          nb = bitsDecoded[position];
-          correction = (irreversible || mb > nb) ? 1 << (mb - nb) : 1;
-          coefficients[offset++] = n * correction * delta;
+          var mag = magnitude[position];
+          if (mag !== 0) {
+            n = sign[position] ? -(mag + magnitudeCorrection) :
+                                  (mag + magnitudeCorrection);
+            nb = bitsDecoded[position];
+            correction = (irreversible || mb > nb) ? 1 << (mb - nb) : 1;
+            coefficients[offset] = n * correction * delta;
+          }
+          offset++;
           position++;
         }
         offset += width - blockWidth;
@@ -959,16 +994,15 @@ var JpxImage = (function JpxImageClosure() {
     var spqcds = quantizationParameters.SPqcds;
     var scalarExpounded = quantizationParameters.scalarExpounded;
     var guardBits = quantizationParameters.guardBits;
-    var transformation = codingStyleParameters.transformation;
     var segmentationSymbolUsed = codingStyleParameters.segmentationSymbolUsed;
     var precision = context.components[c].precision;
 
-    var transformation = codingStyleParameters.transformation;
-    var transform = (transformation === TransformType.IRREVERSIBLE ?
-                     new IrreversibleTransform() : new ReversibleTransform());
+    var reversible = codingStyleParameters.reversibleTransformation;
+    var transform = (reversible ? new ReversibleTransform() :
+                                  new IrreversibleTransform());
 
     var subbandCoefficients = [];
-    var k = 0, b = 0;
+    var b = 0;
     for (var i = 0; i <= decompositionLevelsCount; i++) {
       var resolution = component.resolutions[i];
 
@@ -989,13 +1023,13 @@ var JpxImage = (function JpxImageClosure() {
         var gainLog2 = SubbandsGainLog2[subband.type];
 
         // calulate quantization coefficient (Section E.1.1.1)
-        var delta = (transformation === TransformType.IRREVERSIBLE ?
-          Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048) : 1);
+        var delta = (reversible ? 1 :
+          Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048));
         var mb = (guardBits + epsilon - 1);
 
         var coefficients = new Float32Array(width * height);
         copyCoefficients(coefficients, subband.tbx0, subband.tby0,
-          width, height, delta, mb, subband.codeblocks, transformation,
+          width, height, delta, mb, subband.codeblocks, reversible,
           segmentationSymbolUsed);
 
         subbandCoefficients.push({
@@ -1034,8 +1068,7 @@ var JpxImage = (function JpxImageClosure() {
       // Section G.2.2 Inverse multi component transform
       if (tile.codingStyleDefaultParameters.multipleComponentTransform) {
         var component0 = tile.components[0];
-        var transformation = component0.codingStyleParameters.transformation;
-        if (transformation === TransformType.IRREVERSIBLE) {
+        if (!component0.codingStyleParameters.reversibleTransformation) {
           // inverse irreversible multiple component transform
           var y0items = result[0].items;
           var y1items = result[1].items;
@@ -1628,26 +1661,26 @@ var JpxImage = (function JpxImageClosure() {
       var items = new Float32Array(width * height);
       var i, j, k, l;
 
-      for (i = 0; i < llHeight; i++) {
-        var k = i * llWidth, l = i * 2 * width;
+      for (i = 0, k = 0; i < llHeight; i++) {
+        l = i * 2 * width;
         for (var j = 0; j < llWidth; j++, k++, l += 2) {
           items[l] = llItems[k];
         }
       }
-      for (i = 0; i < hlHeight; i++) {
-        k = i * hlWidth; l = i * 2 * width + 1;
+      for (i = 0, k = 0; i < hlHeight; i++) {
+        l = i * 2 * width + 1;
         for (j = 0; j < hlWidth; j++, k++, l += 2) {
           items[l] = hlItems[k];
         }
       }
-      for (i = 0; i < lhHeight; i++) {
-        k = i * lhWidth; l = (i * 2 + 1) * width;
+      for (i = 0, k = 0; i < lhHeight; i++) {
+        l = (i * 2 + 1) * width;
         for (j = 0; j < lhWidth; j++, k++, l += 2) {
           items[l] = lhItems[k];
         }
       }
-      for (i = 0; i < hhHeight; i++) {
-        k = i * hhWidth; l = (i * 2 + 1) * width + 1;
+      for (i = 0, k = 0; i < hhHeight; i++) {
+        l = (i * 2 + 1) * width + 1;
         for (j = 0; j < hhWidth; j++, k++, l += 2) {
           items[l] = hhItems[k];
         }
