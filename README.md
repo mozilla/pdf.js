@@ -19,13 +19,13 @@ In order to bundle all `src/` files into two productions scripts and build the K
 
     $ node make kb_viewer
 
-This will generate `pdf.js` and `pdf.worker.js` in the `build/kaybus/pdfjs` directory.
+This will generate `pdf.js` and `pdf.worker.js` in the `build/kb/pdfjs` directory.
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. 
 
 ## Deploying Kaybus specific PDF.js viewer to the Kaybus repository
 
-Manually copy pdfjs/build/kaybus/pdfjs folder content into the kaybus/vendor/assets/javascripts/pdfjs folder
+Manually copy pdfjs/build/kb/pdfjs folder content into the kaybus/vendor/assets/javascripts/pdfjs folder
 
 
 ## Building generic PDF.js
