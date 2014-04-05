@@ -339,6 +339,12 @@ var PDFView = {
   get supportsPrinting() {
     var canvas = document.createElement('canvas');
     var value = 'mozPrintCallback' in canvas;
+
+    // This hides the print icon if printing is not natively supported.
+    // However, the shim does provide the ability to print.
+    // So we DO want to show the icon.
+    value = true;
+
     // shadow
     Object.defineProperty(this, 'supportsPrinting', { value: value,
                                                       enumerable: true,
