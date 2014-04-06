@@ -52,17 +52,19 @@ var PDFImage = (function PDFImageClosure() {
   function PDFImage(xref, res, image, inline, smask, mask, isMask) {
     this.image = image;
     var dict = image.dict;
-    if (dict.get('Filter').name === 'JPXDecode') {
-      info('get image params from JPX stream');
-      var jpxImage = new JpxImage();
-      var data = image.stream.bytes;
-      jpxImage.parseImageProperties(data, 0, data.length);
-      image.bitsPerComponent = jpxImage.bitsPerComponent;
-      image.numComps = jpxImage.componentsCount;
-    }
-    if (dict.get('Filter').name === 'JBIG2Decode') {
-      image.bitsPerComponent = 1;
-      image.numComps = 1;
+    if (dict.has('Filter')) {
+      var filter = dict.get('Filter').name;
+      if (filter === 'JPXDecode') {
+        info('get image params from JPX stream');
+        var jpxImage = new JpxImage();
+        jpxImage.parseImageProperties(image.stream);
+        image.stream.reset();
+        image.bitsPerComponent = jpxImage.bitsPerComponent;
+        image.numComps = jpxImage.componentsCount;
+      } else if (filter === 'JBIG2Decode') {
+        image.bitsPerComponent = 1;
+        image.numComps = 1;
+      }
     }
     // TODO cache rendered images?
 

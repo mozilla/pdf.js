@@ -98,19 +98,22 @@ var JpxImage = (function JpxImageClosure() {
         }
       }
     },
-    parseImageProperties: function JpxImage_parseImageProperties(data, start,
-                                                                 end) {
+    parseImageProperties: function JpxImage_parseImageProperties(stream) {
       try {
-        var position = start;
-        while (position + 40 < end) {
-          var code = readUint16(data, position);
+        var newByte = stream.getByte();
+        while (newByte >= 0) {
+          var oldByte = newByte;
+          newByte = stream.getByte();
+          var code = (oldByte << 8) | newByte;
           // Image and tile size (SIZ)
           if (code == 0xFF51) {
-            var Xsiz = readUint32(data, position + 6);
-            var Ysiz = readUint32(data, position + 10);
-            var XOsiz = readUint32(data, position + 14);
-            var YOsiz = readUint32(data, position + 18);
-            var Csiz = readUint16(data, position + 38);
+            stream.skip(4);
+            var Xsiz = stream.getUint32(); // Byte 4 
+            var Ysiz = stream.getUint32(); // Byte 8
+            var XOsiz = stream.getUint32(); // Byte 12
+            var YOsiz = stream.getUint32(); // Byte 16
+            stream.skip(16);
+            var Csiz = stream.getUint16(); // Byte 36
             this.width = Xsiz - XOsiz;
             this.height = Ysiz - YOsiz;
             this.componentsCount = Csiz;
@@ -118,7 +121,6 @@ var JpxImage = (function JpxImageClosure() {
             this.bitsPerComponent = 8;
             return;
           }
-          position += 1;
         }
         throw 'No size marker found in JPX stream';
       } catch (e) {
