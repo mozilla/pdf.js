@@ -28,8 +28,6 @@ module.exports = {
       var err = r.error;
 
       switch (err.code) {
-        case 'W004': // variable is already defined
-          break;
         default:
           len++;
           str += file + ': line ' + err.line + ', col ' +

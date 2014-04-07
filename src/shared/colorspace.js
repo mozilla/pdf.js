@@ -85,10 +85,10 @@ var ColorSpace = (function ColorSpaceClosure() {
       var rgbBuf = null;
       var numComponentColors = 1 << bpc;
       var needsResizing = originalHeight != height || originalWidth != width;
+      var i, ii;
 
       if (this.isPassthrough(bpc)) {
         rgbBuf = comps;
-
       } else if (this.numComps === 1 && count > numComponentColors &&
           this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
         // Optimization: create a color map when there is just one component and
@@ -102,18 +102,20 @@ var ColorSpace = (function ColorSpaceClosure() {
         // we are reparsing colorspaces too much?).
         var allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
                                    new Uint16Array(numComponentColors);
-        for (var i = 0; i < numComponentColors; i++) {
+        var key;
+        for (i = 0; i < numComponentColors; i++) {
           allColors[i] = i;
         }
         var colorMap = new Uint8Array(numComponentColors * 3);
         this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc,
                           /* alpha01 = */ 0);
 
+        var destPos, rgbPos;
         if (!needsResizing) {
           // Fill in the RGB values directly into |dest|.
-          var destPos = 0;
-          for (var i = 0; i < count; ++i) {
-            var key = comps[i] * 3;
+          destPos = 0;
+          for (i = 0; i < count; ++i) {
+            key = comps[i] * 3;
             dest[destPos++] = colorMap[key];
             dest[destPos++] = colorMap[key + 1];
             dest[destPos++] = colorMap[key + 2];
@@ -121,9 +123,9 @@ var ColorSpace = (function ColorSpaceClosure() {
           }
         } else {
           rgbBuf = new Uint8Array(count * 3);
-          var rgbPos = 0;
-          for (var i = 0; i < count; ++i) {
-            var key = comps[i] * 3;
+          rgbPos = 0;
+          for (i = 0; i < count; ++i) {
+            key = comps[i] * 3;
             rgbBuf[rgbPos++] = colorMap[key];
             rgbBuf[rgbPos++] = colorMap[key + 1];
             rgbBuf[rgbPos++] = colorMap[key + 2];
@@ -146,9 +148,9 @@ var ColorSpace = (function ColorSpaceClosure() {
           rgbBuf = PDFImage.resize(rgbBuf, bpc, 3, originalWidth,
                                    originalHeight, width, height);
         }
-        var rgbPos = 0;
-        var destPos = 0;
-        for (var i = 0, ii = width * actualHeight; i < ii; i++) {
+        rgbPos = 0;
+        destPos = 0;
+        for (i = 0, ii = width * actualHeight; i < ii; i++) {
           dest[destPos++] = rgbBuf[rgbPos++];
           dest[destPos++] = rgbBuf[rgbPos++];
           dest[destPos++] = rgbBuf[rgbPos++];
@@ -174,6 +176,7 @@ var ColorSpace = (function ColorSpaceClosure() {
 
   ColorSpace.fromIR = function ColorSpace_fromIR(IR) {
     var name = isArray(IR) ? IR[0] : IR;
+    var whitePoint, blackPoint;
 
     switch (name) {
       case 'DeviceGrayCS':
@@ -183,8 +186,8 @@ var ColorSpace = (function ColorSpaceClosure() {
       case 'DeviceCmykCS':
         return this.singletons.cmyk;
       case 'CalGrayCS':
-        var whitePoint = IR[1].WhitePoint;
-        var blackPoint = IR[1].BlackPoint;
+        whitePoint = IR[1].WhitePoint;
+        blackPoint = IR[1].BlackPoint;
         var gamma = IR[1].Gamma;
         return new CalGrayCS(whitePoint, blackPoint, gamma);
       case 'PatternCS':
@@ -206,8 +209,8 @@ var ColorSpace = (function ColorSpaceClosure() {
         return new AlternateCS(numComps, ColorSpace.fromIR(alt),
                                 PDFFunction.fromIR(tintFnIR));
       case 'LabCS':
-        var whitePoint = IR[1].WhitePoint;
-        var blackPoint = IR[1].BlackPoint;
+        whitePoint = IR[1].WhitePoint;
+        blackPoint = IR[1].BlackPoint;
         var range = IR[1].Range;
         return new LabCS(whitePoint, blackPoint, range);
       default:
@@ -252,6 +255,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     } else if (isArray(cs)) {
       mode = cs[0].name;
       this.mode = mode;
+      var numComps, params;
 
       switch (mode) {
         case 'DeviceGray':
@@ -264,14 +268,14 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'CMYK':
           return 'DeviceCmykCS';
         case 'CalGray':
-          var params = cs[1].getAll();
+          params = cs[1].getAll();
           return ['CalGrayCS', params];
         case 'CalRGB':
           return 'DeviceRgbCS';
         case 'ICCBased':
           var stream = xref.fetchIfRef(cs[1]);
           var dict = stream.dict;
-          var numComps = dict.get('N');
+          numComps = dict.get('N');
           if (numComps == 1) {
             return 'DeviceGrayCS';
           } else if (numComps == 3) {
@@ -298,7 +302,7 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Separation':
         case 'DeviceN':
           var name = cs[1];
-          var numComps = 1;
+          numComps = 1;
           if (isName(name)) {
             numComps = 1;
           } else if (isArray(name)) {
@@ -308,7 +312,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
-          var params = cs[1].getAll();
+          params = cs[1].getAll();
           return ['LabCS', params];
         default:
           error('unimplemented color space object "' + mode + '"');
@@ -403,13 +407,14 @@ var AlternateCS = (function AlternateCSClosure() {
       var numComps = this.numComps;
 
       var scaled = new Float32Array(numComps);
-      for (var i = 0; i < count; i++) {
-        for (var j = 0; j < numComps; j++) {
+      var i, j;
+      for (i = 0; i < count; i++) {
+        for (j = 0; j < numComps; j++) {
           scaled[j] = src[srcOffset++] * scale;
         }
         var tinted = tintFn(scaled);
         if (usesZeroToOneRange) {
-          for (var j = 0; j < baseNumComps; j++) {
+          for (j = 0; j < baseNumComps; j++) {
             baseBuf[pos++] = tinted[j] * 255;
           }
         } else {
