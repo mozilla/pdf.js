@@ -22,5 +22,6 @@ var DEFAULT_PREFERENCES = {
   showPreviousViewOnLoad: true,
   defaultZoomValue: '',
   ifAvailableShowOutlineOnLoad: false,
-  enableHandToolOnLoad: false
+  enableHandToolOnLoad: false,
+  enableWebGL: false
 };

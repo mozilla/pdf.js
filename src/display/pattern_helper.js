@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals CanvasGraphics, CachedCanvases, ColorSpace, Util, error, info,
-           isArray, makeCssRgb */
+           isArray, makeCssRgb, WebGLUtils */
 
 'use strict';
 
@@ -55,28 +55,27 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     var coords = context.coords, colors = context.colors;
     var bytes = data.data, rowSize = data.width * 4;
     var tmp;
-    if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
+    if (coords[p1 + 1] > coords[p2 + 1]) {
       tmp = p1; p1 = p2; p2 = tmp; tmp = c1; c1 = c2; c2 = tmp;
     }
-    if (coords[p2 * 2 + 1] > coords[p3 * 2 + 1]) {
+    if (coords[p2 + 1] > coords[p3 + 1]) {
       tmp = p2; p2 = p3; p3 = tmp; tmp = c2; c2 = c3; c3 = tmp;
     }
-    if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
+    if (coords[p1 + 1] > coords[p2 + 1]) {
       tmp = p1; p1 = p2; p2 = tmp; tmp = c1; c1 = c2; c2 = tmp;
     }
-    var x1 = (coords[p1 * 2] + context.offsetX) * context.scaleX;
-    var y1 = (coords[p1 * 2 + 1] + context.offsetY) * context.scaleY;
-    var x2 = (coords[p2 * 2] + context.offsetX) * context.scaleX;
-    var y2 = (coords[p2 * 2 + 1] + context.offsetY) * context.scaleY;
-    var x3 = (coords[p3 * 2] + context.offsetX) * context.scaleX;
-    var y3 = (coords[p3 * 2 + 1] + context.offsetY) * context.scaleY;
+    var x1 = (coords[p1] + context.offsetX) * context.scaleX;
+    var y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
+    var x2 = (coords[p2] + context.offsetX) * context.scaleX;
+    var y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
+    var x3 = (coords[p3] + context.offsetX) * context.scaleX;
+    var y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
     if (y1 >= y3) {
       return;
     }
-    var c1i = c1 * 3, c2i = c2 * 3, c3i = c3 * 3;
-    var c1r = colors[c1i], c1g = colors[c1i + 1], c1b = colors[c1i + 2];
-    var c2r = colors[c2i], c2g = colors[c2i + 1], c2b = colors[c2i + 2];
-    var c3r = colors[c3i], c3g = colors[c3i + 1], c3b = colors[c3i + 2];
+    var c1r = colors[c1], c1g = colors[c1 + 1], c1b = colors[c1 + 2];
+    var c2r = colors[c2], c2g = colors[c2 + 1], c2b = colors[c2 + 2];
+    var c3r = colors[c3], c3g = colors[c3 + 1], c3b = colors[c3 + 2];
 
     var minY = Math.round(y1), maxY = Math.round(y3);
     var xa, car, cag, cab;
@@ -156,39 +155,59 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     // MAX_PATTERN_SIZE is used to avoid OOM situation.
     var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
-    var boundsWidth = bounds[2] - bounds[0];
-    var boundsHeight = bounds[3] - bounds[1];
+    var offsetX = Math.floor(bounds[0]);
+    var offsetY = Math.floor(bounds[1]);
+    var boundsWidth = Math.ceil(bounds[2]) - offsetX;
+    var boundsHeight = Math.ceil(bounds[3]) - offsetY;
 
     var width = Math.min(Math.ceil(Math.abs(boundsWidth * combinesScale[0] *
       EXPECTED_SCALE)), MAX_PATTERN_SIZE);
     var height = Math.min(Math.ceil(Math.abs(boundsHeight * combinesScale[1] *
       EXPECTED_SCALE)), MAX_PATTERN_SIZE);
-    var scaleX = width / boundsWidth;
-    var scaleY = height / boundsHeight;
-
-    var tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
-    var tmpCtx = tmpCanvas.context;
-    if (backgroundColor) {
-      tmpCtx.fillStyle = makeCssRgb(backgroundColor);
-      tmpCtx.fillRect(0, 0, width, height);
-    }
+    var scaleX = boundsWidth / width;
+    var scaleY = boundsHeight / height;
 
     var context = {
       coords: coords,
       colors: colors,
-      offsetX: -bounds[0],
-      offsetY: -bounds[1],
-      scaleX: scaleX,
-      scaleY: scaleY
+      offsetX: -offsetX,
+      offsetY: -offsetY,
+      scaleX: 1 / scaleX,
+      scaleY: 1 / scaleY
     };
 
-    var data = tmpCtx.getImageData(0, 0, width, height);
-    for (var i = 0; i < figures.length; i++) {
-      drawFigure(data, figures[i], context);
-    }
-    tmpCtx.putImageData(data, 0, 0);
+    var canvas;
+    if (WebGLUtils.isEnabled) {
+      canvas = WebGLUtils.drawFigures(width, height, backgroundColor,
+                                      figures, context);
 
-    return {canvas: tmpCanvas.canvas, scaleX: 1 / scaleX, scaleY: 1 / scaleY};
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
+      var tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
+      tmpCanvas.context.drawImage(canvas, 0, 0);
+      canvas = tmpCanvas.canvas;
+    } else {
+      var tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
+      var tmpCtx = tmpCanvas.context;
+
+      var data = tmpCtx.createImageData(width, height);
+      if (backgroundColor) {
+        var bytes = data.data;
+        for (var i = 0, ii = bytes.length; i < ii; i += 4) {
+          bytes[i] = backgroundColor[0];
+          bytes[i + 1] = backgroundColor[1];
+          bytes[i + 2] = backgroundColor[2];
+          bytes[i + 3] = 255;
+        }
+      }
+      for (var i = 0; i < figures.length; i++) {
+        drawFigure(data, figures[i], context);
+      }
+      tmpCtx.putImageData(data, 0, 0);
+      canvas = tmpCanvas.canvas;
+    }
+
+    return {canvas: canvas, offsetX: offsetX, offsetY: offsetY,
+            scaleX: scaleX, scaleY: scaleY};
   }
   return createMeshCanvas;
 })();
@@ -222,7 +241,6 @@ ShadingIRs.Mesh = {
 
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
-        // TODO consider using WebGL or asm.js to perform rasterization
         var temporaryPatternCanvas = createMeshCanvas(bounds, combinedScale,
           coords, colors, figures, shadingFill ? null : background);
 
@@ -233,7 +251,8 @@ ShadingIRs.Mesh = {
           }
         }
 
-        ctx.translate(bounds[0], bounds[1]);
+        ctx.translate(temporaryPatternCanvas.offsetX,
+                      temporaryPatternCanvas.offsetY);
         ctx.scale(temporaryPatternCanvas.scaleX,
                   temporaryPatternCanvas.scaleY);
 

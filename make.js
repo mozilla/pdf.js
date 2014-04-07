@@ -320,6 +320,7 @@ target.bundle = function(args) {
     'display/api.js',
     'display/metadata.js',
     'display/canvas.js',
+    'display/webgl.js',
     'display/pattern_helper.js',
     'display/font_loader.js'
   ]);
