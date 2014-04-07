@@ -99,7 +99,9 @@ WebBrowser.prototype = {
       this.callback = callback;
     }
 
-    this.process.kill('SIGTERM');
+    if (this.process) {
+      this.process.kill('SIGTERM');
+    }
   }
 };
 
