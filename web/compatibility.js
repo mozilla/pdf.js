@@ -58,17 +58,17 @@ if (typeof PDFJS === 'undefined') {
   }
 
   function TypedArray(arg1) {
-    var result;
+    var result, i, n;
     if (typeof arg1 === 'number') {
       result = [];
-      for (var i = 0; i < arg1; ++i) {
+      for (i = 0; i < arg1; ++i) {
         result[i] = 0;
       }
     } else if ('slice' in arg1) {
       result = arg1.slice(0);
     } else {
       result = [];
-      for (var i = 0, n = arg1.length; i < n; ++i) {
+      for (i = 0, n = arg1.length; i < n; ++i) {
         result[i] = arg1[i];
       }
     }
