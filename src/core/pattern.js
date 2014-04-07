@@ -162,15 +162,16 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       return;
     }
 
+    var rgbColor;
     for (var i = t0; i <= t1; i += step) {
-      var rgbColor = cs.getRgb(fn([i]), 0);
+      rgbColor = cs.getRgb(fn([i]), 0);
       var cssColor = Util.makeCssRgb(rgbColor);
       colorStops.push([(i - t0) / diff, cssColor]);
     }
 
     var background = 'transparent';
     if (dict.has('Background')) {
-      var rgbColor = cs.getRgb(dict.get('Background'), 0);
+      rgbColor = cs.getRgb(dict.get('Background'), 0);
       background = Util.makeCssRgb(rgbColor);
     }
 

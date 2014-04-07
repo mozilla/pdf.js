@@ -505,7 +505,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         hashData[i++] = fileId[j];
       }
       cipher = new ARCFourCipher(encryptionKey);
-      var checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
+      checkData = cipher.encryptBlock(calculateMD5(hashData, 0, i));
       n = encryptionKey.length;
       var derivedKey = new Uint8Array(n), k;
       for (j = 1; j <= 19; ++j) {

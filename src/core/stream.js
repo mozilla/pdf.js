@@ -446,7 +446,8 @@ var FlateStream = (function FlateStreamClosure() {
 
     // find max code length
     var maxLen = 0;
-    for (var i = 0; i < n; ++i) {
+    var i;
+    for (i = 0; i < n; ++i) {
       if (lengths[i] > maxLen) {
         maxLen = lengths[i];
       }
@@ -463,13 +464,13 @@ var FlateStream = (function FlateStreamClosure() {
           // bit-reverse the code
           var code2 = 0;
           var t = code;
-          for (var i = 0; i < len; ++i) {
+          for (i = 0; i < len; ++i) {
             code2 = (code2 << 1) | (t & 1);
             t >>= 1;
           }
 
           // fill the table entries
-          for (var i = code2; i < size; i += skip) {
+          for (i = code2; i < size; i += skip) {
             codes[i] = (len << 16) | val;
           }
           ++code;
@@ -481,6 +482,7 @@ var FlateStream = (function FlateStreamClosure() {
   };
 
   FlateStream.prototype.readBlock = function FlateStream_readBlock() {
+    var buffer, len;
     var str = this.str;
     // read block header
     var hdr = this.getBits(3);
@@ -518,7 +520,7 @@ var FlateStream = (function FlateStreamClosure() {
       this.codeSize = 0;
 
       var bufferLength = this.bufferLength;
-      var buffer = this.ensureBuffer(bufferLength + blockLen);
+      buffer = this.ensureBuffer(bufferLength + blockLen);
       var end = bufferLength + blockLen;
       this.bufferLength = end;
       if (blockLen === 0) {
@@ -550,24 +552,26 @@ var FlateStream = (function FlateStreamClosure() {
       // build the code lengths code table
       var codeLenCodeLengths = new Uint8Array(codeLenCodeMap.length);
 
-      for (var i = 0; i < numCodeLenCodes; ++i) {
+      var i;
+      for (i = 0; i < numCodeLenCodes; ++i) {
         codeLenCodeLengths[codeLenCodeMap[i]] = this.getBits(3);
       }
       var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
 
       // build the literal and distance code tables
-      var len = 0;
-      var i = 0;
+      len = 0;
+      i = 0;
       var codes = numLitCodes + numDistCodes;
       var codeLengths = new Uint8Array(codes);
+      var bitsLength, bitsOffset, what;
       while (i < codes) {
         var code = this.getCode(codeLenCodeTab);
         if (code == 16) {
-          var bitsLength = 2, bitsOffset = 3, what = len;
+          bitsLength = 2; bitsOffset = 3; what = len;
         } else if (code == 17) {
-          var bitsLength = 3, bitsOffset = 3, what = (len = 0);
+          bitsLength = 3; bitsOffset = 3; what = (len = 0);
         } else if (code == 18) {
-          var bitsLength = 7, bitsOffset = 11, what = (len = 0);
+          bitsLength = 7; bitsOffset = 11; what = (len = 0);
         } else {
           codeLengths[i++] = len = code;
           continue;
@@ -587,7 +591,7 @@ var FlateStream = (function FlateStreamClosure() {
       error('Unknown block type in flate stream');
     }
 
-    var buffer = this.buffer;
+    buffer = this.buffer;
     var limit = buffer ? buffer.length : 0;
     var pos = this.bufferLength;
     while (true) {
@@ -610,7 +614,7 @@ var FlateStream = (function FlateStreamClosure() {
       if (code2 > 0) {
         code2 = this.getBits(code2);
       }
-      var len = (code1 & 0xffff) + code2;
+      len = (code1 & 0xffff) + code2;
       code1 = this.getCode(distCodeTable);
       code1 = distDecode[code1];
       code2 = code1 >> 16;
@@ -683,9 +687,10 @@ var PredictorStream = (function PredictorStreamClosure() {
     var inbuf = 0, outbuf = 0;
     var inbits = 0, outbits = 0;
     var pos = bufferLength;
+    var i;
 
     if (bits === 1) {
-      for (var i = 0; i < rowBytes; ++i) {
+      for (i = 0; i < rowBytes; ++i) {
         var c = rawBytes[i];
         inbuf = (inbuf << 8) | c;
         // bitwise addition is exclusive or
@@ -695,7 +700,7 @@ var PredictorStream = (function PredictorStreamClosure() {
         inbuf &= 0xFFFF;
       }
     } else if (bits === 8) {
-      for (var i = 0; i < colors; ++i) {
+      for (i = 0; i < colors; ++i) {
         buffer[pos++] = rawBytes[i];
       }
       for (; i < rowBytes; ++i) {
@@ -707,7 +712,7 @@ var PredictorStream = (function PredictorStreamClosure() {
       var bitMask = (1 << bits) - 1;
       var j = 0, k = bufferLength;
       var columns = this.columns;
-      for (var i = 0; i < columns; ++i) {
+      for (i = 0; i < columns; ++i) {
         for (var kk = 0; kk < colors; ++kk) {
           if (inbits < bits) {
             inbuf = (inbuf << 8) | (rawBytes[j++] & 0xFF);
@@ -753,15 +758,15 @@ var PredictorStream = (function PredictorStreamClosure() {
       prevRow = new Uint8Array(rowBytes);
     }
 
-    var j = bufferLength;
+    var i, j = bufferLength, up, c;
     switch (predictor) {
       case 0:
-        for (var i = 0; i < rowBytes; ++i) {
+        for (i = 0; i < rowBytes; ++i) {
           buffer[j++] = rawBytes[i];
         }
         break;
       case 1:
-        for (var i = 0; i < pixBytes; ++i) {
+        for (i = 0; i < pixBytes; ++i) {
           buffer[j++] = rawBytes[i];
         }
         for (; i < rowBytes; ++i) {
@@ -770,12 +775,12 @@ var PredictorStream = (function PredictorStreamClosure() {
         }
         break;
       case 2:
-        for (var i = 0; i < rowBytes; ++i) {
+        for (i = 0; i < rowBytes; ++i) {
           buffer[j++] = (prevRow[i] + rawBytes[i]) & 0xFF;
         }
         break;
       case 3:
-        for (var i = 0; i < pixBytes; ++i) {
+        for (i = 0; i < pixBytes; ++i) {
           buffer[j++] = (prevRow[i] >> 1) + rawBytes[i];
         }
         for (; i < rowBytes; ++i) {
@@ -787,13 +792,13 @@ var PredictorStream = (function PredictorStreamClosure() {
       case 4:
         // we need to save the up left pixels values. the simplest way
         // is to create a new buffer
-        for (var i = 0; i < pixBytes; ++i) {
-          var up = prevRow[i];
-          var c = rawBytes[i];
+        for (i = 0; i < pixBytes; ++i) {
+          up = prevRow[i];
+          c = rawBytes[i];
           buffer[j++] = up + c;
         }
         for (; i < rowBytes; ++i) {
-          var up = prevRow[i];
+          up = prevRow[i];
           var upLeft = prevRow[i - pixBytes];
           var left = buffer[j - pixBytes];
           var p = left + up - upLeft;
@@ -811,7 +816,7 @@ var PredictorStream = (function PredictorStreamClosure() {
             pc = -pc;
           }
 
-          var c = rawBytes[i];
+          c = rawBytes[i];
           if (pa <= pb && pa <= pc) {
             buffer[j++] = left + c;
           } else if (pb <= pc) {
@@ -951,6 +956,7 @@ var JpxStream = (function JpxStreamClosure() {
       var tileTop = tileCompoments[0].top;
 
       var dataPosition, sourcePosition, data0, data1, data2, data3, rowFeed;
+      var i, j;
       switch (componentsCount) {
         case 1:
           data0 = tileCompoments[0].items;
@@ -958,8 +964,8 @@ var JpxStream = (function JpxStreamClosure() {
           dataPosition = width * tileTop + tileLeft;
           rowFeed = width - tileWidth;
           sourcePosition = 0;
-          for (var j = 0; j < tileHeight; j++) {
-            for (var i = 0; i < tileWidth; i++) {
+          for (j = 0; j < tileHeight; j++) {
+            for (i = 0; i < tileWidth; i++) {
               data[dataPosition++] = data0[sourcePosition++];
             }
             dataPosition += rowFeed;
@@ -973,8 +979,8 @@ var JpxStream = (function JpxStreamClosure() {
           dataPosition = (width * tileTop + tileLeft) * 3;
           rowFeed = (width - tileWidth) * 3;
           sourcePosition = 0;
-          for (var j = 0; j < tileHeight; j++) {
-            for (var i = 0; i < tileWidth; i++) {
+          for (j = 0; j < tileHeight; j++) {
+            for (i = 0; i < tileWidth; i++) {
               data[dataPosition++] = data0[sourcePosition];
               data[dataPosition++] = data1[sourcePosition];
               data[dataPosition++] = data2[sourcePosition];
@@ -992,8 +998,8 @@ var JpxStream = (function JpxStreamClosure() {
           dataPosition = (width * tileTop + tileLeft) * 4;
           rowFeed = (width - tileWidth) * 4;
           sourcePosition = 0;
-          for (var j = 0; j < tileHeight; j++) {
-            for (var i = 0; i < tileWidth; i++) {
+          for (j = 0; j < tileHeight; j++) {
+            for (i = 0; i < tileWidth; i++) {
               data[dataPosition++] = data0[sourcePosition];
               data[dataPosition++] = data1[sourcePosition];
               data[dataPosition++] = data2[sourcePosition];
@@ -1156,18 +1162,19 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
     }
 
     var bufferLength = this.bufferLength, buffer;
+    var i;
 
     // special code for z
     if (c == Z_LOWER_CHAR) {
       buffer = this.ensureBuffer(bufferLength + 4);
-      for (var i = 0; i < 4; ++i) {
+      for (i = 0; i < 4; ++i) {
         buffer[bufferLength + i] = 0;
       }
       this.bufferLength += 4;
     } else {
       var input = this.input;
       input[0] = c;
-      for (var i = 1; i < 5; ++i) {
+      for (i = 1; i < 5; ++i) {
         c = str.getByte();
         while (Lexer.isSpace(c)) {
           c = str.getByte();
@@ -1190,11 +1197,11 @@ var Ascii85Stream = (function Ascii85StreamClosure() {
         this.eof = true;
       }
       var t = 0;
-      for (var i = 0; i < 5; ++i) {
+      for (i = 0; i < 5; ++i) {
         t = t * 85 + (input[i] - 0x21);
       }
 
-      for (var i = 3; i >= 0; --i) {
+      for (i = 3; i >= 0; --i) {
         buffer[bufferLength + i] = t & 0xFF;
         t >>= 8;
       }
@@ -1287,11 +1294,12 @@ var RunLengthStream = (function RunLengthStreamClosure() {
       return;
     }
 
+    var buffer;
     var bufferLength = this.bufferLength;
     var n = repeatHeader[0];
     if (n < 128) {
       // copy n bytes
-      var buffer = this.ensureBuffer(bufferLength + n + 1);
+      buffer = this.ensureBuffer(bufferLength + n + 1);
       buffer[bufferLength++] = repeatHeader[1];
       if (n > 0) {
         var source = this.str.getBytes(n);
@@ -1301,7 +1309,7 @@ var RunLengthStream = (function RunLengthStreamClosure() {
     } else {
       n = 257 - n;
       var b = repeatHeader[1];
-      var buffer = this.ensureBuffer(bufferLength + n + 1);
+      buffer = this.ensureBuffer(bufferLength + n + 1);
       for (var i = 0; i < n; i++) {
         buffer[bufferLength++] = b;
       }
@@ -1851,7 +1859,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     var codingLine = this.codingLine;
     var columns = this.columns;
 
-    var refPos, blackPixels, bits;
+    var refPos, blackPixels, bits, i;
 
     if (this.outputBits === 0) {
       if (this.eof) {
@@ -1861,7 +1869,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
       var code1, code2, code3;
       if (this.nextLine2D) {
-        for (var i = 0; codingLine[i] < columns; ++i) {
+        for (i = 0; codingLine[i] < columns; ++i) {
           refLine[i] = codingLine[i];
         }
         refLine[i++] = columns;
@@ -2063,7 +2071,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
             this.eatBits(1);
           }
           if (this.encoding >= 0) {
-            for (var i = 0; i < 4; ++i) {
+            for (i = 0; i < 4; ++i) {
               code1 = this.lookBits(12);
               if (code1 != 1) {
                 info('bad rtc code: ' + code1);
@@ -2114,7 +2122,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
                            codingLine[this.codingPos - 1]);
       }
     } else {
-      var bits = 8;
+      bits = 8;
       c = 0;
       do {
         if (this.outputBits > bits) {

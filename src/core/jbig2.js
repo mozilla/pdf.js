@@ -237,8 +237,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var templateY = new Int8Array(templateLength);
     var changingTemplateEntries = [];
     var reuseMask = 0, minX = 0, maxX = 0, minY = 0;
+    var c, k;
 
-    for (var k = 0; k < templateLength; k++) {
+    for (k = 0; k < templateLength; k++) {
       templateX[k] = template[k].x;
       templateY[k] = template[k].y;
       minX = Math.min(minX, template[k].x);
@@ -260,7 +261,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var changingTemplateX = new Int8Array(changingEntriesLength);
     var changingTemplateY = new Int8Array(changingEntriesLength);
     var changingTemplateBit = new Uint16Array(changingEntriesLength);
-    for (var c = 0; c < changingEntriesLength; c++) {
+    for (c = 0; c < changingEntriesLength; c++) {
       k = changingTemplateEntries[c];
       changingTemplateX[c] = template[k].x;
       changingTemplateY[c] = template[k].y;
@@ -279,7 +280,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var decoder = decodingContext.decoder;
     var contexts = decodingContext.contextCache.getContexts('GB');
 
-    var ltp = 0, c, j, i0, j0, k, contextLabel = 0, bit, shift;
+    var ltp = 0, j, i0, j0, contextLabel = 0, bit, shift;
     for (var i = 0; i < height; i++) {
       if (prediction) {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
@@ -346,7 +347,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var codingTemplateLength = codingTemplate.length;
     var codingTemplateX = new Int32Array(codingTemplateLength);
     var codingTemplateY = new Int32Array(codingTemplateLength);
-    for (var k = 0; k < codingTemplateLength; k++) {
+    var k;
+    for (k = 0; k < codingTemplateLength; k++) {
       codingTemplateX[k] = codingTemplate[k].x;
       codingTemplateY[k] = codingTemplate[k].y;
     }
@@ -358,7 +360,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referenceTemplateLength = referenceTemplate.length;
     var referenceTemplateX = new Int32Array(referenceTemplateLength);
     var referenceTemplateY = new Int32Array(referenceTemplateLength);
-    for (var k = 0; k < referenceTemplateLength; k++) {
+    for (k = 0; k < referenceTemplateLength; k++) {
       referenceTemplateX[k] = referenceTemplate[k].x;
       referenceTemplateY[k] = referenceTemplate[k].y;
     }
@@ -383,19 +385,20 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var row = new Uint8Array(width);
       bitmap.push(row);
       for (var j = 0; j < width; j++) {
-
+        var i0, j0;
         var contextLabel = 0;
-        for (var k = 0; k < codingTemplateLength; k++) {
-          var i0 = i + codingTemplateY[k], j0 = j + codingTemplateX[k];
+        for (k = 0; k < codingTemplateLength; k++) {
+          i0 = i + codingTemplateY[k];
+          j0 = j + codingTemplateX[k];
           if (i0 < 0 || j0 < 0 || j0 >= width) {
             contextLabel <<= 1; // out of bound pixel
           } else {
             contextLabel = (contextLabel << 1) | bitmap[i0][j0];
           }
         }
-        for (var k = 0; k < referenceTemplateLength; k++) {
-          var i0 = i + referenceTemplateY[k] + offsetY;
-          var j0 = j + referenceTemplateX[k] + offsetX;
+        for (k = 0; k < referenceTemplateLength; k++) {
+          i0 = i + referenceTemplateY[k] + offsetY;
+          j0 = j + referenceTemplateX[k] + offsetX;
           if (i0 < 0 || i0 >= referenceHeight || j0 < 0 ||
               j0 >= referenceWidth) {
             contextLabel <<= 1; // out of bound pixel
@@ -512,8 +515,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     // Prepare bitmap
     var bitmap = [];
-    for (var i = 0; i < height; i++) {
-      var row = new Uint8Array(width);
+    var i, row;
+    for (i = 0; i < height; i++) {
+      row = new Uint8Array(width);
       if (defaultPixelValue) {
         for (var j = 0; j < width; j++) {
           row[j] = defaultPixelValue;
@@ -526,7 +530,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var contextCache = decodingContext.contextCache;
     var stripT = -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
     var firstS = 0;
-    var i = 0;
+    i = 0;
     while (i < numberOfSymbolInstances) {
       var deltaT = decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
       stripT += deltaT;
@@ -535,12 +539,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       firstS += deltaFirstS;
       var currentS = firstS;
       do {
-        var currentT = stripSize == 1 ? 0 :
-          decodeInteger(contextCache, 'IAIT', decoder); // 6.4.9
+        var currentT = (stripSize == 1 ? 0 :
+                        decodeInteger(contextCache, 'IAIT', decoder)); // 6.4.9
         var t = stripSize * stripT + currentT;
         var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
-        var applyRefinement = refinement &&
-          decodeInteger(contextCache, 'IARI', decoder);
+        var applyRefinement = (refinement &&
+                               decodeInteger(contextCache, 'IARI', decoder));
         var symbolBitmap = inputSymbols[symbolId];
         var symbolWidth = symbolBitmap[0].length;
         var symbolHeight = symbolBitmap.length;
@@ -558,25 +562,26 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
+        var s2, t2, symbolRow;
         if (transposed) {
           // Place Symbol Bitmap from T1,S1
-          for (var s2 = 0; s2 < symbolHeight; s2++) {
-            var row = bitmap[offsetS + s2];
+          for (s2 = 0; s2 < symbolHeight; s2++) {
+            row = bitmap[offsetS + s2];
             if (!row) {
               continue;
             }
-            var symbolRow = symbolBitmap[s2];
+            symbolRow = symbolBitmap[s2];
             // To ignore Parts of Symbol bitmap which goes
             // outside bitmap region
             var maxWidth = Math.min(width - offsetT, symbolWidth);
             switch (combinationOperator) {
               case 0: // OR
-                for (var t2 = 0; t2 < maxWidth; t2++) {
+                for (t2 = 0; t2 < maxWidth; t2++) {
                   row[offsetT + t2] |= symbolRow[t2];
                 }
                 break;
               case 2: // XOR
-                for (var t2 = 0; t2 < maxWidth; t2++) {
+                for (t2 = 0; t2 < maxWidth; t2++) {
                   row[offsetT + t2] ^= symbolRow[t2];
                 }
                 break;
@@ -587,20 +592,20 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
           currentS += symbolHeight - 1;
         } else {
-          for (var t2 = 0; t2 < symbolHeight; t2++) {
-            var row = bitmap[offsetT + t2];
+          for (t2 = 0; t2 < symbolHeight; t2++) {
+            row = bitmap[offsetT + t2];
             if (!row) {
               continue;
             }
-            var symbolRow = symbolBitmap[t2];
+            symbolRow = symbolBitmap[t2];
             switch (combinationOperator) {
               case 0: // OR
-                for (var s2 = 0; s2 < symbolWidth; s2++) {
+                for (s2 = 0; s2 < symbolWidth; s2++) {
                   row[offsetS + s2] |= symbolRow[s2];
                 }
                 break;
               case 2: // XOR
-                for (var s2 = 0; s2 < symbolWidth; s2++) {
+                for (s2 = 0; s2 < symbolWidth; s2++) {
                   row[offsetS + s2] ^= symbolRow[s2];
                 }
                 break;
@@ -655,7 +660,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referredToSegmentNumberSize = (segmentHeader.number <= 256 ? 1 :
       (segmentHeader.number <= 65536 ? 2 : 4));
     var referredTo = [];
-    for (var i = 0; i < referredToCount; i++) {
+    var i, ii;
+    for (i = 0; i < referredToCount; i++) {
       var number = (referredToSegmentNumberSize == 1 ? data[position] :
         (referredToSegmentNumberSize == 2 ? readUint16(data, position) :
         readUint32(data, position)));
@@ -690,7 +696,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         searchPattern[3] = (genericRegionInfo.height >> 16) & 0xFF;
         searchPattern[4] = (genericRegionInfo.height >> 8) & 0xFF;
         searchPattern[5] = genericRegionInfo.height & 0xFF;
-        for (var i = position, ii = data.length; i < ii; i++) {
+        for (i = position, ii = data.length; i < ii; i++) {
           var j = 0;
           while (j < searchPatternLength && searchPattern[j] === data[i + j]) {
             j++;
@@ -757,7 +763,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var header = segment.header;
 
     var data = segment.data, position = segment.start, end = segment.end;
-    var args;
+    var args, at, i, atLength;
     switch (header.type) {
       case 0: // SymbolDictionary
         // 7.4.2 Symbol dictionary segment syntax
@@ -775,9 +781,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         dictionary.refinementTemplate = (dictionaryFlags >> 12) & 1;
         position += 2;
         if (!dictionary.huffman) {
-          var atLength = dictionary.template === 0 ? 4 : 1;
-          var at = [];
-          for (var i = 0; i < atLength; i++) {
+          atLength = dictionary.template === 0 ? 4 : 1;
+          at = [];
+          for (i = 0; i < atLength; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -787,8 +793,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           dictionary.at = at;
         }
         if (dictionary.refinement && !dictionary.refinementTemplate) {
-          var at = [];
-          for (var i = 0; i < 2; i++) {
+          at = [];
+          for (i = 0; i < 2; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -834,8 +840,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             !!(textRegionHuffmanFlags & 14);
         }
         if (textRegion.refinement && !textRegion.refinementTemplate) {
-          var at = [];
-          for (var i = 0; i < 2; i++) {
+          at = [];
+          for (i = 0; i < 2; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -862,9 +868,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         genericRegion.template = (genericRegionSegmentFlags >> 1) & 3;
         genericRegion.prediction = !!(genericRegionSegmentFlags & 8);
         if (!genericRegion.mmr) {
-          var atLength = genericRegion.template === 0 ? 4 : 1;
-          var at = [];
-          for (var i = 0; i < atLength; i++) {
+          atLength = genericRegion.template === 0 ? 4 : 1;
+          at = [];
+          for (i = 0; i < atLength; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -976,12 +982,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var buffer = this.buffer;
       var mask0 =  128 >> (regionInfo.x & 7);
       var offset0 = regionInfo.y * rowSize + (regionInfo.x >> 3);
+      var i, j, mask, offset;
       switch (combinationOperator) {
         case 0: // OR
-          for (var i = 0; i < height; i++) {
-            var mask = mask0;
-            var offset = offset0;
-            for (var j = 0; j < width; j++) {
+          for (i = 0; i < height; i++) {
+            mask = mask0;
+            offset = offset0;
+            for (j = 0; j < width; j++) {
               if (bitmap[i][j]) {
                 buffer[offset] |= mask;
               }
@@ -995,10 +1002,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
         break;
         case 2: // XOR
-          for (var i = 0; i < height; i++) {
-            var mask = mask0;
-            var offset = offset0;
-            for (var j = 0; j < width; j++) {
+          for (i = 0; i < height; i++) {
+            mask = mask0;
+            offset = offset0;
+            for (j = 0; j < width; j++) {
               if (bitmap[i][j]) {
                 buffer[offset] ^= mask;
               }
