@@ -158,7 +158,7 @@ var Encodings = {
     'summation', 'product', 'pi', 'integral', 'ordfeminine', 'ordmasculine',
     'Omega', 'ae', 'oslash', 'questiondown', 'exclamdown', 'logicalnot',
     'radical', 'florin', 'approxequal', 'Delta', 'guillemotleft',
-    'guillemotright', 'ellipsis', '', 'Agrave', 'Atilde', 'Otilde', 'OE',
+    'guillemotright', 'ellipsis', 'space', 'Agrave', 'Atilde', 'Otilde', 'OE',
     'oe', 'endash', 'emdash', 'quotedblleft', 'quotedblright', 'quoteleft',
     'quoteright', 'divide', 'lozenge', 'ydieresis', 'Ydieresis', 'fraction',
     'currency', 'guilsinglleft', 'guilsinglright', 'fi', 'fl', 'daggerdbl',
