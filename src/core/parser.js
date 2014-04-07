@@ -22,6 +22,10 @@
 'use strict';
 
 var EOF = {};
+/** @function
+ *  @name isEOF */
+
+
 
 function isEOF(v) {
   return (v == EOF);
