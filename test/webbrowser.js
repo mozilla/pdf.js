@@ -66,28 +66,29 @@ WebBrowser.prototype = {
     var proc = spawn(this.path, args);
     proc.on('exit', function (code) {
       this.finished = true;
-      // trying to wait for process to shutdown (for Windows sake)
-      setTimeout(function () {
-        this.cleanup();
-        if (this.callback) {
-          this.callback.call(null, code);
-        }
-      }.bind(this), 500);
+      this.cleanup(this.callback && this.callback.bind(null, code));
     }.bind(this));
     return proc;
   },
-  cleanup: function () {
+  cleanup: function (callback) {
     try {
       testUtils.removeDirSync(this.tmpDir);
+      this.process = null;
+      callback();
     } catch (e) {
       console.error('Unable to cleanup after the process: ' + e);
       try {
         if (this.process) {
-          this.process.kill('SIGKILL');
+          var pid = this.process.pid;
+          if (process.platform === 'win32') {
+            // kill does not really work on windows
+            spawn('taskkill', ['-F', '-PID', pid]).on('exit', callback);
+          } else {
+            spawn('kill', ['-s', 'SIGKILL', pid]).on('exit', callback);
+          }
         }
       } catch (e) {}
     }
-    this.process = null;
   },
   stop: function (callback) {
     if (this.finished) {
