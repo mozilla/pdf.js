@@ -1,4 +1,31 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: parser.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: parser.js</h1>
+
+    
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
@@ -23,9 +50,7 @@
 
 var EOF = {};
 /** @function
- *  @name isEOF
- *  @param v
- *  @return {boolean} true or false */
+ *  @name isEOF */
 
 
 
@@ -68,7 +93,7 @@ var Parser = (function ParserClosure() {
       if (isCmd(this.buf1, '[')) { // array
         this.shift();
         var array = [];
-        while (!isCmd(this.buf1, ']') && !isEOF(this.buf1)) {
+        while (!isCmd(this.buf1, ']') &amp;&amp; !isEOF(this.buf1)) {
           array.push(this.getObj(cipherTransform));
         }
         if (isEOF(this.buf1)) {
@@ -77,10 +102,10 @@ var Parser = (function ParserClosure() {
         this.shift();
         return array;
       }
-      if (isCmd(this.buf1, '<<')) { // dictionary or stream
+      if (isCmd(this.buf1, '&lt;&lt;')) { // dictionary or stream
         this.shift();
         var dict = new Dict(this.xref);
-        while (!isCmd(this.buf1, '>>') && !isEOF(this.buf1)) {
+        while (!isCmd(this.buf1, '>>') &amp;&amp; !isEOF(this.buf1)) {
           if (!isName(this.buf1)) {
             info('Malformed dictionary: key must be a name object');
             this.shift();
@@ -110,7 +135,7 @@ var Parser = (function ParserClosure() {
       if (isInt(this.buf1)) { // indirect reference or integer
         var num = this.buf1;
         this.shift();
-        if (isInt(this.buf1) && isCmd(this.buf2, 'R')) {
+        if (isInt(this.buf1) &amp;&amp; isCmd(this.buf2, 'R')) {
           var ref = new Ref(num, this.buf1);
           this.shift();
           this.shift();
@@ -138,7 +163,7 @@ var Parser = (function ParserClosure() {
 
       // parse dictionary
       var dict = new Dict();
-      while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
+      while (!isCmd(this.buf1, 'ID') &amp;&amp; !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
           error('Dictionary key must be a name object');
         }
@@ -156,16 +181,16 @@ var Parser = (function ParserClosure() {
 
       // searching for the /EI\s/
       var state = 0, ch, i, ii;
-      while (state != 4 && (ch = stream.getByte()) !== -1) {
+      while (state != 4 &amp;&amp; (ch = stream.getByte()) !== -1) {
         switch (ch | 0) {
           case 0x20:
           case 0x0D:
           case 0x0A:
             // let's check next five bytes to be ASCII... just be sure
             var followingBytes = stream.peekBytes(5);
-            for (i = 0, ii = followingBytes.length; i < ii; i++) {
+            for (i = 0, ii = followingBytes.length; i &lt; ii; i++) {
               ch = followingBytes[i];
-              if (ch !== 0x0A && ch !== 0x0D && (ch < 0x20 || ch > 0x7F)) {
+              if (ch !== 0x0A &amp;&amp; ch !== 0x0D &amp;&amp; (ch &lt; 0x20 || ch > 0x7F)) {
                 // not a LF, CR, SPACE or any visible ASCII character
                 state = 0;
                 break; // some binary stuff found, resetting the state
@@ -192,19 +217,19 @@ var Parser = (function ParserClosure() {
       // using length, then comparing adler32
       var MAX_LENGTH_TO_CACHE = 1000;
       var cacheImage = false, adler32;
-      if (length < MAX_LENGTH_TO_CACHE && this.imageCache.length === length) {
+      if (length &lt; MAX_LENGTH_TO_CACHE &amp;&amp; this.imageCache.length === length) {
         var imageBytes = imageStream.getBytes();
         imageStream.reset();
 
         var a = 1;
         var b = 0;
-        for (var i = 0, ii = imageBytes.length; i < ii; ++i) {
-          a = (a + (imageBytes[i] & 0xff)) % 65521;
+        for (var i = 0, ii = imageBytes.length; i &lt; ii; ++i) {
+          a = (a + (imageBytes[i] &amp; 0xff)) % 65521;
           b = (b + a) % 65521;
         }
-        adler32 = (b << 16) | a;
+        adler32 = (b &lt;&lt; 16) | a;
 
-        if (this.imageCache.stream && this.imageCache.adler32 === adler32) {
+        if (this.imageCache.stream &amp;&amp; this.imageCache.adler32 === adler32) {
           this.buf2 = Cmd.get('EI');
           this.shift();
 
@@ -213,7 +238,7 @@ var Parser = (function ParserClosure() {
         }
         cacheImage = true;
       }
-      if (!cacheImage && !this.imageCache.stream) {
+      if (!cacheImage &amp;&amp; !this.imageCache.stream) {
         this.imageCache.length = length;
         this.imageCache.stream = null;
       }
@@ -268,11 +293,11 @@ var Parser = (function ParserClosure() {
         var ENDSTREAM_SIGNATURE = [0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65,
                                    0x61, 0x6D];
         var skipped = 0, found = false;
-        while (stream.pos < stream.end) {
+        while (stream.pos &lt; stream.end) {
           var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
           var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
           var found = false, i, j;
-          for (i = 0, j = 0; i < scanLength; i++) {
+          for (i = 0, j = 0; i &lt; scanLength; i++) {
             var b = scanBytes[i];
             if (b !== ENDSTREAM_SIGNATURE[j]) {
               i -= j;
@@ -324,14 +349,14 @@ var Parser = (function ParserClosure() {
       if (isArray(filter)) {
         var filterArray = filter;
         var paramsArray = params;
-        for (var i = 0, ii = filterArray.length; i < ii; ++i) {
+        for (var i = 0, ii = filterArray.length; i &lt; ii; ++i) {
           filter = filterArray[i];
           if (!isName(filter)) {
             error('Bad filter name: ' + filter);
           }
 
           params = null;
-          if (isArray(paramsArray) && (i in paramsArray)) {
+          if (isArray(paramsArray) &amp;&amp; (i in paramsArray)) {
             params = paramsArray[i];
           }
           stream = this.makeFilter(stream, filter.name, maybeLength, params);
@@ -442,12 +467,12 @@ var Lexer = (function LexerClosure() {
   ];
 
   function toHexDigit(ch) {
-    if (ch >= 0x30 && ch <= 0x39) { // '0'-'9'
-      return ch & 0x0F;
+    if (ch >= 0x30 &amp;&amp; ch &lt;= 0x39) { // '0'-'9'
+      return ch &amp; 0x0F;
     }
-    if ((ch >= 0x41 && ch <= 0x46) || (ch >= 0x61 && ch <= 0x66)) {
+    if ((ch >= 0x41 &amp;&amp; ch &lt;= 0x46) || (ch >= 0x61 &amp;&amp; ch &lt;= 0x66)) {
       // 'A'-'F', 'a'-'f'
-      return (ch & 0x0F) + 9;
+      return (ch &amp; 0x0F) + 9;
     }
     return -1;
   }
@@ -475,7 +500,7 @@ var Lexer = (function LexerClosure() {
         divideBy = 10;
         ch = this.nextChar();
       }
-      if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+      if (ch &lt; 0x30 || ch > 0x39) { // '0' - '9'
         error('Invalid number: ' + String.fromCharCode(ch));
         return 0;
       }
@@ -485,7 +510,7 @@ var Lexer = (function LexerClosure() {
       var powerValueSign = 1;
 
       while ((ch = this.nextChar()) >= 0) {
-        if (0x30 <= ch && ch <= 0x39) { // '0' - '9'
+        if (0x30 &lt;= ch &amp;&amp; ch &lt;= 0x39) { // '0' - '9'
           var currentDigit = ch - 0x30; // '0'
           if (eNotation) { // We are after an 'e' or 'E'
             powerValue = powerValue * 10 + currentDigit;
@@ -514,7 +539,7 @@ var Lexer = (function LexerClosure() {
           if (ch === 0x2B || ch === 0x2D) { // '+', '-'
             powerValueSign = (ch === 0x2D) ? -1 : 1;
             this.nextChar(); // Consume the sign character
-          } else if (ch < 0x30 || ch > 0x39) { // '0' - '9'
+          } else if (ch &lt; 0x30 || ch > 0x39) { // '0' - '9'
             // The 'E' must be the beginning of a new operator
             break;
           }
@@ -588,15 +613,15 @@ var Lexer = (function LexerClosure() {
                 break;
               case 0x30: case 0x31: case 0x32: case 0x33: // '0'-'3'
               case 0x34: case 0x35: case 0x36: case 0x37: // '4'-'7'
-                var x = ch & 0x0F;
+                var x = ch &amp; 0x0F;
                 ch = this.nextChar();
                 charBuffered = true;
-                if (ch >= 0x30 && ch <= 0x37) { // '0'-'7'
-                  x = (x << 3) + (ch & 0x0F);
+                if (ch >= 0x30 &amp;&amp; ch &lt;= 0x37) { // '0'-'7'
+                  x = (x &lt;&lt; 3) + (ch &amp; 0x0F);
                   ch = this.nextChar();
-                  if (ch >= 0x30 && ch <= 0x37) {  // '0'-'7'
+                  if (ch >= 0x30 &amp;&amp; ch &lt;= 0x37) {  // '0'-'7'
                     charBuffered = false;
-                    x = (x << 3) + (ch & 0x0F);
+                    x = (x &lt;&lt; 3) + (ch &amp; 0x0F);
                   }
                 }
                 strBuf.push(String.fromCharCode(x));
@@ -630,7 +655,7 @@ var Lexer = (function LexerClosure() {
       var ch;
       var strBuf = this.strBuf;
       strBuf.length = 0;
-      while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
+      while ((ch = this.nextChar()) >= 0 &amp;&amp; !specialChars[ch]) {
         if (ch === 0x23) { // '#'
           ch = this.nextChar();
           var x = toHexDigit(ch);
@@ -639,7 +664,7 @@ var Lexer = (function LexerClosure() {
             if (x2 == -1) {
               error('Illegal digit in hex char in name: ' + x2);
             }
-            strBuf.push(String.fromCharCode((x << 4) | x2));
+            strBuf.push(String.fromCharCode((x &lt;&lt; 4) | x2));
           } else {
             strBuf.push('#', String.fromCharCode(ch));
           }
@@ -661,7 +686,7 @@ var Lexer = (function LexerClosure() {
       var firstDigit;
       var secondDigit;
       while (true) {
-        if (ch < 0) {
+        if (ch &lt; 0) {
           warn('Unterminated hex string');
           break;
         } else if (ch === 0x3E) { // '>'
@@ -685,7 +710,7 @@ var Lexer = (function LexerClosure() {
               ch = this.nextChar();
               continue;
             }
-            strBuf.push(String.fromCharCode((firstDigit << 4) | secondDigit));
+            strBuf.push(String.fromCharCode((firstDigit &lt;&lt; 4) | secondDigit));
           }
           isFirstHex = !isFirstHex;
           ch = this.nextChar();
@@ -698,7 +723,7 @@ var Lexer = (function LexerClosure() {
       var comment = false;
       var ch = this.currentChar;
       while (true) {
-        if (ch < 0) {
+        if (ch &lt; 0) {
           return EOF;
         }
         if (comment) {
@@ -731,12 +756,12 @@ var Lexer = (function LexerClosure() {
           this.nextChar();
           return Cmd.get(']');
         // hex string or dict punctuation
-        case 0x3C: // '<'
+        case 0x3C: // '&lt;'
           ch = this.nextChar();
           if (ch === 0x3C) {
             // dict punctuation
             this.nextChar();
-            return Cmd.get('<<');
+            return Cmd.get('&lt;&lt;');
           }
           return this.getHexString();
         // dict punctuation
@@ -761,19 +786,19 @@ var Lexer = (function LexerClosure() {
       // command
       var str = String.fromCharCode(ch);
       var knownCommands = this.knownCommands;
-      var knownCommandFound = knownCommands && (str in knownCommands);
-      while ((ch = this.nextChar()) >= 0 && !specialChars[ch]) {
+      var knownCommandFound = knownCommands &amp;&amp; (str in knownCommands);
+      while ((ch = this.nextChar()) >= 0 &amp;&amp; !specialChars[ch]) {
         // stop if known command is found and next character does not make
         // the str a command
         var possibleCommand = str + String.fromCharCode(ch);
-        if (knownCommandFound && !(possibleCommand in knownCommands)) {
+        if (knownCommandFound &amp;&amp; !(possibleCommand in knownCommands)) {
           break;
         }
         if (str.length == 128) {
           error('Command token too long: ' + str.length);
         }
         str = possibleCommand;
-        knownCommandFound = knownCommands && (str in knownCommands);
+        knownCommandFound = knownCommands &amp;&amp; (str in knownCommands);
       }
       if (str == 'true') {
         return true;
@@ -815,10 +840,10 @@ var Linearization = (function LinearizationClosure() {
     var obj2 = this.parser.getObj();
     var obj3 = this.parser.getObj();
     this.linDict = this.parser.getObj();
-    if (isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') &&
+    if (isInt(obj1) &amp;&amp; isInt(obj2) &amp;&amp; isCmd(obj3, 'obj') &amp;&amp;
         isDict(this.linDict)) {
       var obj = this.linDict.get('Linearized');
-      if (!(isNum(obj) && obj > 0)) {
+      if (!(isNum(obj) &amp;&amp; obj > 0)) {
         this.linDict = null;
       }
     }
@@ -828,7 +853,7 @@ var Linearization = (function LinearizationClosure() {
     getInt: function Linearization_getInt(name) {
       var linDict = this.linDict;
       var obj;
-      if (isDict(linDict) && isInt(obj = linDict.get(name)) && obj > 0) {
+      if (isDict(linDict) &amp;&amp; isInt(obj = linDict.get(name)) &amp;&amp; obj > 0) {
         return obj;
       }
       error('"' + name + '" field in linearization table is invalid');
@@ -836,8 +861,8 @@ var Linearization = (function LinearizationClosure() {
     getHint: function Linearization_getHint(index) {
       var linDict = this.linDict;
       var obj1, obj2;
-      if (isDict(linDict) && isArray(obj1 = linDict.get('H')) &&
-          obj1.length >= 2 && isInt(obj2 = obj1[index]) && obj2 > 0) {
+      if (isDict(linDict) &amp;&amp; isArray(obj1 = linDict.get('H')) &amp;&amp;
+          obj1.length >= 2 &amp;&amp; isInt(obj2 = obj1[index]) &amp;&amp; obj2 > 0) {
         return obj2;
       }
       error('Hints table in linearization table is invalid: ' + index);
@@ -880,3 +905,26 @@ var Linearization = (function LinearizationClosure() {
   return Linearization;
 })();
 
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Index</a></h2><h3>Global</h3><ul><li><a href="global.html#isEOF">isEOF</a></li></ul>
+</nav>
+
+<br clear="both">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a> on Mon Apr 07 2014 18:28:59 GMT-0300 (ART)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
