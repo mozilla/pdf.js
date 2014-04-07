@@ -29,7 +29,6 @@ module.exports = {
 
       switch (err.code) {
         case 'W004': // variable is already defined
-        case 'W018': // confusing use of !
           break;
         default:
           len++;
