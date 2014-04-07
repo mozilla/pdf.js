@@ -75,14 +75,15 @@ var stdinBuffer = '', endOfStdin = false, stdinInitialized = false;
 var stdinOnLineCallbacks = [];
 
 function handleStdinBuffer() {
+  var callback;
   if (endOfStdin) {
     if (stdinBuffer && stdinOnLineCallbacks.length > 0) {
-      var callback = stdinOnLineCallbacks.shift();
+      callback = stdinOnLineCallbacks.shift();
       callback(stdinBuffer);
       stdinBuffer = null;
     }
     while (stdinOnLineCallbacks.length > 0) {
-      var callback = stdinOnLineCallbacks.shift();
+      callback = stdinOnLineCallbacks.shift();
       callback();
     }
     return;
@@ -92,7 +93,7 @@ function handleStdinBuffer() {
     if (i < 0) {
       return;
     }
-    var callback = stdinOnLineCallbacks.shift();
+    callback = stdinOnLineCallbacks.shift();
     var result = stdinBuffer.substring(0, i + 1);
     stdinBuffer = stdinBuffer.substring(i + 1);
     callback(result);

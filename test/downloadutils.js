@@ -28,19 +28,20 @@ function downloadFile(file, url, callback, redirects) {
   var completed = false;
   var protocol = /^https:\/\//.test(url) ? https : http;
   protocol.get(url, function (response) {
+    var redirectTo;
     if (response.statusCode === 301 || response.statusCode === 302 ||
         response.statusCode === 307 || response.statusCode === 308) {
       if (redirects > 10) {
         callback('Too many redirects');
       }
-      var redirectTo = response.headers.location;
+      redirectTo = response.headers.location;
       redirectTo = require('url').resolve(url, redirectTo);
       downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
       return;
     }
     if (response.statusCode === 404 && url.indexOf('web.archive.org') < 0) {
       // trying waybackmachine
-      var redirectTo = 'http://web.archive.org/web/' + url;
+      redirectTo = 'http://web.archive.org/web/' + url;
       downloadFile(file, redirectTo, callback, (redirects || 0) + 1);
       return;
     }

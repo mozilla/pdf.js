@@ -196,7 +196,7 @@ describe('font', function() {
       expect(charset.charset[1]).toEqual('exclam');
 
       // CID font
-      var charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
+      charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
       expect(charset.charset[1]).toEqual(2);
     });
 
@@ -212,7 +212,7 @@ describe('font', function() {
       expect(charset.charset).toEqual(['.notdef', 'quoteright', 'parenleft']);
 
       // CID font
-      var charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
+      charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
       expect(charset.charset).toEqual(['.notdef', 8, 9]);
     });
 
@@ -229,7 +229,7 @@ describe('font', function() {
       expect(charset.charset).toEqual(['.notdef', 'quoteright', 'parenleft']);
 
       // CID font
-      var charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
+      charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
       expect(charset.charset).toEqual(['.notdef', 8, 9]);
     });
 
@@ -349,7 +349,7 @@ describe('font', function() {
       var parser = new Type1Parser(stream);
       expect(parser.readNumberArray()).toEqual([1, 2]);
       // Variation on spacing.
-      var stream = new StringStream('[ 1 2 ]');
+      stream = new StringStream('[ 1 2 ]');
       parser = new Type1Parser(stream);
       expect(parser.readNumberArray()).toEqual([1, 2]);
     });
