@@ -317,7 +317,7 @@ target.bundle = function(args) {
       }
     }
 
-    var bundle = cat(SRC_FILES),
+    var bundleContent = cat(SRC_FILES),
         bundleVersion = VERSION,
         bundleBuild = exec('git log --format="%h" -n 1',
           {silent: true}).output.replace('\n', '');
@@ -325,15 +325,15 @@ target.bundle = function(args) {
     crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
 
     // Strip out all the vim/license headers.
-    bundle = bundle.replace(reg, '');
+    bundleContent = bundleContent.replace(reg, '');
 
     // Append external files last since we don't want to modify them.
-    bundle += cat(EXT_SRC_FILES);
+    bundleContent += cat(EXT_SRC_FILES);
 
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
     builder.preprocess(filename, dir, builder.merge(defines,
-                           {BUNDLE: bundle,
+                           {BUNDLE: bundleContent,
                             BUNDLE_VERSION: bundleVersion,
                             BUNDLE_BUILD: bundleBuild}));
   }
