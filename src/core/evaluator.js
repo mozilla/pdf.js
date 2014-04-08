@@ -1219,6 +1219,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           info('The FontDescriptor\'s FontName is "' + fontNameStr +
                '" but should be the same as the Font\'s BaseFont "' +
                baseFontStr + '"');
+          // Workaround for cases where e.g. fontNameStr = 'Arial' and
+          // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
+          if (fontNameStr && baseFontStr &&
+              baseFontStr.search(fontNameStr) === 0) {
+            fontName = baseFont;
+          }
         }
       }
       fontName = (fontName || baseFont);
