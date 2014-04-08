@@ -1104,7 +1104,8 @@ var PDFView = {
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
-                  (PDFJS.version ? ' (PDF.js: ' + PDFJS.version + ')' : ''));
+                  ' (PDF.js: ' + (PDFJS.version || '-') +
+                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
 
       var pdfTitle;
       if (metadata && metadata.has('dc:title')) {
