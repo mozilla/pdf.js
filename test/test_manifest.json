@@ -378,6 +378,15 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "bug850854",
+       "file": "pdfs/bug850854.pdf",
+       "md5": "346a034a80120d123b9fefc42bcb11da",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "wdsg_fitc",
        "file": "pdfs/wdsg_fitc.pdf",
        "md5": "5bb1c2b83705d4cdfc43197ee74f07f9",
