@@ -378,7 +378,7 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     var fieldType = Util.getInheritableProperty(dict, 'FT');
     data.fieldType = isName(fieldType) ? fieldType.name : '';
     data.fieldFlags = Util.getInheritableProperty(dict, 'Ff') || 0;
-    this.fieldResources = Util.getInheritableProperty(dict, 'DR') || new Dict();
+    this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
 
     // Building the full field name by collecting the field and
     // its ancestors 'T' data and joining them using '.'.
