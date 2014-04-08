@@ -117,12 +117,13 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
   function drawFigure(data, figure, context) {
     var ps = figure.coords;
     var cs = figure.colors;
+    var i, ii;
     switch (figure.type) {
       case 'lattice':
         var verticesPerRow = figure.verticesPerRow;
         var rows = Math.floor(ps.length / verticesPerRow) - 1;
         var cols = verticesPerRow - 1;
-        for (var i = 0; i < rows; i++) {
+        for (i = 0; i < rows; i++) {
           var q = i * verticesPerRow;
           for (var j = 0; j < cols; j++, q++) {
             drawTriangle(data, context,
@@ -135,7 +136,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
         }
         break;
       case 'triangles':
-        for (var i = 0, ii = ps.length; i < ii; i += 3) {
+        for (i = 0, ii = ps.length; i < ii; i += 3) {
           drawTriangle(data, context,
             ps[i], ps[i + 1], ps[i + 2],
             cs[i], cs[i + 1], cs[i + 2]);
@@ -414,7 +415,7 @@ var TilingPattern = (function TilingPatternClosure() {
     getPattern: function TilingPattern_getPattern(ctx, owner) {
       var temporaryPatternCanvas = this.createPatternCanvas(owner);
 
-      var ctx = this.ctx;
+      ctx = this.ctx;
       ctx.setTransform.apply(ctx, this.baseTransform);
       ctx.transform.apply(ctx, this.matrix);
       this.scaleToContext();
