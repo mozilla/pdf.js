@@ -343,6 +343,15 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "bug878026",
+       "file": "pdfs/bug878026.pdf",
+       "md5": "13072db0586f2b4e96de189e23fc7395",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "jai-pdf",
        "file": "pdfs/jai.pdf",
        "md5": "1f5dd128c3757420a881a155f2f8ace3",
