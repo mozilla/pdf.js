@@ -210,7 +210,7 @@ var Encodings = {
     'guilsinglleft', 'OE', 'bullet', 'Zcaron', 'bullet', 'bullet', 'quoteleft',
     'quoteright', 'quotedblleft', 'quotedblright', 'bullet', 'endash',
     'emdash', 'tilde', 'trademark', 'scaron', 'guilsinglright', 'oe', 'bullet',
-    'zcaron', 'Ydieresis', '', 'exclamdown', 'cent', 'sterling',
+    'zcaron', 'Ydieresis', 'space', 'exclamdown', 'cent', 'sterling',
     'currency', 'yen', 'brokenbar', 'section', 'dieresis', 'copyright',
     'ordfeminine', 'guillemotleft', 'logicalnot', 'hyphen', 'registered',
     'macron', 'degree', 'plusminus', 'twosuperior', 'threesuperior', 'acute',
