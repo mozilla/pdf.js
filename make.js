@@ -349,7 +349,8 @@ target.bundle = function(args) {
     'core/jpx.js',
     'core/jbig2.js',
     'core/bidi.js',
-    'core/cmap.js'
+    'core/cmap.js',
+    'core/murmurhash3.js'
   ];
 
   if (!defines.SINGLE_FILE) {

@@ -52,6 +52,7 @@ var otherFiles = [
   'core/jpx.js',
   'core/jbig2.js',
   'core/bidi.js',
+  'core/murmurhash3.js',
   '../external/jpgjs/jpg.js'
 ];
 

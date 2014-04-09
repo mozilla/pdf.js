@@ -17,11 +17,11 @@
 /* globals assert, assertWellFormed, ColorSpace, DecodeStream, Dict, Encodings,
            error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode,
            FontFlags, ImageKind, info, isArray, isCmd, isDict, isEOF, isName,
-           isNum, isStream, isString, JpegStream, Lexer, Metrics, Name, Parser,
-           Pattern, PDFImage, PDFJS, serifFonts, stdFontMap, symbolsFonts,
-           getTilingPatternIR, warn, Util, Promise, LegacyPromise,
-           RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
-           UNSUPPORTED_FEATURES, UnsupportedManager */
+           isNum, isStream, isString, JpegStream, Lexer, Metrics,
+           MurmurHash3_64, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts,
+           stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
+           LegacyPromise, RefSetCache, isRef, TextRenderingMode, CMapFactory,
+           OPS, UNSUPPORTED_FEATURES, UnsupportedManager */
 
 'use strict';
 
@@ -413,6 +413,36 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (!isDict(font)) {
         return errorFont();
       }
+
+      var preEvaluatedFont = this.preEvaluateFont(font, xref);
+      var descriptor = preEvaluatedFont.descriptor;
+      var fontID = fontRef.num + '_' + fontRef.gen;
+      if (isDict(descriptor)) {
+        if (!descriptor.fontAliases) {
+          descriptor.fontAliases = Object.create(null);
+        }
+
+        var fontAliases = descriptor.fontAliases;
+        var hash = preEvaluatedFont.hash;
+        if (fontAliases[hash]) {
+          var aliasFontRef = fontAliases[hash].aliasRef;
+          if (aliasFontRef && this.fontCache.has(aliasFontRef)) {
+            this.fontCache.putAlias(fontRef, aliasFontRef);
+            var cachedFont = this.fontCache.get(fontRef);
+            return cachedFont;
+          }
+        }
+
+        if (!fontAliases[hash]) {
+          fontAliases[hash] = {
+            fontID: Font.getFontID()
+          };
+        }
+
+        fontAliases[hash].aliasRef = fontRef;
+        fontID = fontAliases[hash].fontID;
+      }
+
       // Workaround for bad PDF generators that don't reference fonts
       // properly, i.e. by not using an object identifier.
       // Check if the fontRef is a Dict (as opposed to a standard object),
@@ -426,12 +456,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page.
       font.loadedName = 'g_font_' + (fontRefIsDict ?
-        fontName.replace(/\W/g, '') : (fontRef.num + '_' + fontRef.gen));
+        fontName.replace(/\W/g, '') : fontID);
 
       if (!font.translated) {
         var translated;
         try {
-          translated = this.translateFont(font, xref);
+          translated = this.translateFont(preEvaluatedFont, xref);
         } catch (e) {
           UnsupportedManager.notify(UNSUPPORTED_FEATURES.font);
           translated = new ErrorFont(e instanceof Error ? e.message : e);
@@ -1127,7 +1157,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return widths;
     },
 
-    translateFont: function PartialEvaluator_translateFont(dict, xref) {
+    preEvaluateFont: function PartialEvaluator_preEvaluateFont(dict, xref) {
       var baseDict = dict;
       var type = dict.get('Subtype');
       assertWellFormed(isName(type), 'invalid font Subtype');
@@ -1148,9 +1178,55 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         assertWellFormed(isName(type), 'invalid font Subtype');
         composite = true;
       }
-      var maxCharIndex = (composite ? 0xFFFF : 0xFF);
 
       var descriptor = dict.get('FontDescriptor');
+      if (descriptor) {
+        var hash = new MurmurHash3_64();
+        var encoding = baseDict.getRaw('Encoding');
+        if (isName(encoding)) {
+          hash.update(encoding.name);
+        } else if (isRef(encoding)) {
+          hash.update(encoding.num + '_' + encoding.gen);
+        }
+
+        var toUnicode = dict.get('ToUnicode') || baseDict.get('ToUnicode');
+        if (isStream(toUnicode)) {
+          var stream = toUnicode.str || toUnicode;
+          var uint8array = stream.buffer ?
+            new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength) :
+            new Uint8Array(stream.bytes.buffer,
+                           stream.start, stream.end - stream.start);
+          hash.update(uint8array);
+
+        } else if (isName(toUnicode)) {
+          hash.update(toUnicode.name);
+        }
+
+        var widths = dict.get('Widths') || baseDict.get('Widths');
+        if (widths) {
+          var uint8array = new Uint8Array(new Uint32Array(widths).buffer);
+          hash.update(uint8array);
+        }
+      }
+
+      return {
+        descriptor: descriptor,
+        dict: dict,
+        baseDict: baseDict,
+        composite: composite,
+        hash: hash ? hash.hexdigest() : ''
+      };
+    },
+
+    translateFont: function PartialEvaluator_translateFont(preEvaluatedFont,
+                                                           xref) {
+      var baseDict = preEvaluatedFont.baseDict;
+      var dict = preEvaluatedFont.dict;
+      var composite = preEvaluatedFont.composite;
+      var descriptor = preEvaluatedFont.descriptor;
+      var type = dict.get('Subtype');
+      var maxCharIndex = (composite ? 0xFFFF : 0xFF);
+
       if (!descriptor) {
         if (type.name == 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
