@@ -177,30 +177,30 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       scaleY: 1 / scaleY
     };
 
-    var canvas;
+    var canvas, tmpCanvas, i, ii;
     if (WebGLUtils.isEnabled) {
       canvas = WebGLUtils.drawFigures(width, height, backgroundColor,
                                       figures, context);
 
       // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
-      var tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
+      tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
       tmpCanvas.context.drawImage(canvas, 0, 0);
       canvas = tmpCanvas.canvas;
     } else {
-      var tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
+      tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
       var tmpCtx = tmpCanvas.context;
 
       var data = tmpCtx.createImageData(width, height);
       if (backgroundColor) {
         var bytes = data.data;
-        for (var i = 0, ii = bytes.length; i < ii; i += 4) {
+        for (i = 0, ii = bytes.length; i < ii; i += 4) {
           bytes[i] = backgroundColor[0];
           bytes[i + 1] = backgroundColor[1];
           bytes[i + 2] = backgroundColor[2];
           bytes[i + 3] = 255;
         }
       }
-      for (var i = 0; i < figures.length; i++) {
+      for (i = 0; i < figures.length; i++) {
         drawFigure(data, figures[i], context);
       }
       tmpCtx.putImageData(data, 0, 0);

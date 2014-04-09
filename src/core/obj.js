@@ -151,8 +151,9 @@ var Dict = (function DictClosure() {
     getAll: function Dict_getAll() {
       var all = Object.create(null);
       var queue = null;
-      for (var key in this.map) {
-        var obj = this.get(key);
+      var key, obj;
+      for (key in this.map) {
+        obj = this.get(key);
         if (obj instanceof Dict) {
           if (isRecursionAllowedFor(obj)) {
             (queue || (queue = [])).push({target: all, key: key, obj: obj});
@@ -178,8 +179,8 @@ var Dict = (function DictClosure() {
           continue;
         }
         var dereferenced = Object.create(null);
-        for (var key in itemObj.map) {
-          var obj = itemObj.get(key);
+        for (key in itemObj.map) {
+          obj = itemObj.get(key);
           if (obj instanceof Dict) {
             if (isRecursionAllowedFor(obj)) {
               queue.push({target: dereferenced, key: key, obj: obj});
