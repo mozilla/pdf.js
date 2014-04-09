@@ -1286,7 +1286,6 @@ canvas {
 .textLayer > div {
   color: transparent;
   position: absolute;
-  line-height: 1;
   white-space: pre;
   cursor: text;
 }
