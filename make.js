@@ -325,33 +325,8 @@ target.bundle = function(args) {
     'display/font_loader.js'
   ]);
 
-  var WORKER_SRC_FILES = [
-    'core/network.js',
-    'core/chunked_stream.js',
-    'core/pdf_manager.js',
-    'core/core.js',
-    'core/obj.js',
-    'core/charsets.js',
-    'core/cidmaps.js',
-    'core/crypto.js',
-    'core/pattern.js',
-    'core/evaluator.js',
-    'core/fonts.js',
-    'core/font_renderer.js',
-    'core/glyphlist.js',
-    'core/image.js',
-    'core/metrics.js',
-    'core/parser.js',
-    'core/ps_parser.js',
-    'core/stream.js',
-    'core/worker.js',
-    'core/arithmetic_decoder.js',
-    'core/jpx.js',
-    'core/jbig2.js',
-    'core/bidi.js',
-    'core/cmap.js',
-    'core/murmurhash3.js'
-  ];
+  var srcFiles = builder.getWorkerSrcFiles('src/worker_loader.js');
+  var WORKER_SRC_FILES = srcFiles.srcFiles;
 
   if (!defines.SINGLE_FILE) {
     // We want shared_src_files in both pdf.js and pdf.worker.js
@@ -363,9 +338,7 @@ target.bundle = function(args) {
     MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
   }
 
-  var EXT_SRC_FILES = [
-    '../external/jpgjs/jpg.js'
-  ];
+  var EXT_SRC_FILES = srcFiles.externalSrcFiles;
 
   cd(SRC_DIR);
 

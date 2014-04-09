@@ -220,6 +220,28 @@ function build(setup) {
 }
 exports.build = build;
 
+function getWorkerSrcFiles(filePath) {
+  var src = fs.readFileSync(filePath).toString();
+  var reSrcFiles = /var\s+otherFiles\s*=\s*(\[[^\]]*\])/;
+  var match = reSrcFiles.exec(src);
+  try {
+    var files = JSON.parse(match[1].replace(/'/g, '"'));
+    var srcFiles = files.filter(function(name) {
+      return name.indexOf('external') == -1;
+    });
+    var externalSrcFiles = files.filter(function(name) {
+      return name.indexOf('external') > -1;
+    });
+    return {
+      srcFiles: srcFiles,
+      externalSrcFiles: externalSrcFiles
+    };
+  } catch(e) {
+    return {};
+  }
+}
+exports.getWorkerSrcFiles = getWorkerSrcFiles;
+
 /**
  * Merge two defines arrays. Values in the second param will override values in
  * the first.
