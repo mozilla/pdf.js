@@ -23,7 +23,11 @@
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
 var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
+var wintersmith = require('wintersmith');
 var path = require('path');
+
+var BETA_VERSION   = '0.8.1114'; // Current version in Firefox Nightly.
+var STABLE_VERSION = '0.8.1181'; // Current version in Firefox Aurora.
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -156,19 +160,39 @@ target.web = function() {
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
   cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
-  cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
   cp('-R', 'test/features', GH_PAGES_DIR);
   cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
 
-  cd(GH_PAGES_DIR);
-  exec('git init');
-  exec('git remote add origin ' + REPO);
-  exec('git add -A');
-  exec('git commit -am "gh-pages site created via make.js script"');
-  exec('git branch -m gh-pages');
+  var env = wintersmith('docs/config.json');
+  env.build(GH_PAGES_DIR, function (error) {
+    if (error) {
+      throw error;
+    }
+    sed('-i', /STABLE_VERSION/g, STABLE_VERSION,
+        GH_PAGES_DIR + '/getting_started/index.html');
+    sed('-i', /BETA_VERSION/g, BETA_VERSION,
+        GH_PAGES_DIR + '/getting_started/index.html');
+    echo('Done building with wintersmith.');
 
-  echo();
-  echo('Website built in ' + GH_PAGES_DIR);
+    cd(GH_PAGES_DIR);
+    exec('git init');
+    exec('git remote add origin ' + REPO);
+    exec('git add -A');
+    exec('git commit -am "gh-pages site created via make.js script"');
+    exec('git branch -m gh-pages');
+
+    echo();
+    echo('Website built in ' + GH_PAGES_DIR);
+  });
+};
+
+target.dist = function() {
+  target.generic();
+  cd(GENERIC_DIR);
+  var distFilename = 'pdfjs-' + EXTENSION_VERSION + '-dist.zip';
+  exec('zip -r ' + ROOT_DIR + BUILD_DIR + distFilename + ' *');
+  echo('Built distrobution file: ' + distFilename);
+  cd(ROOT_DIR);
 };
 
 //
