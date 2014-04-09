@@ -118,6 +118,7 @@ target.generic = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
+      ['LICENSE', GENERIC_DIR],
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
       ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
@@ -199,7 +200,7 @@ target.dist = function() {
   cd(GENERIC_DIR);
   var distFilename = 'pdfjs-' + VERSION + '-dist.zip';
   exec('zip -r ' + ROOT_DIR + BUILD_DIR + distFilename + ' *');
-  echo('Built distrobution file: ' + distFilename);
+  echo('Built distribution file: ' + distFilename);
   cd(ROOT_DIR);
 };
 

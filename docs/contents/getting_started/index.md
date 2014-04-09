@@ -62,6 +62,7 @@ $ cd pdfjs
 ### Prebuilt
 
 ```
+├── LICENSE
 ├── build/
 │   ├── pdf.js                             - display layer
 │   └── pdf.worker.js                      - core layer
@@ -108,6 +109,6 @@ $ cd pdfjs
 
 With the prebuilt or source version open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `node make server`.
 
-## Examples
+## More Information
 
-For a further walkthrough of a minimal viewer see the [hello world example](/examples/).
+For a further walkthrough of a minimal viewer see the [hello world example](/examples/). More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.
