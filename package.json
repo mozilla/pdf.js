@@ -5,6 +5,9 @@
     "jshint": "2.4.x",
     "yargs": "~1.2.1"
   },
+  "devDependencies": {
+    "wintersmith": "2.0.x"
+  },
   "scripts": {
     "test": "node make lint"
   },
