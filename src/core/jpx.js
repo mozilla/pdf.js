@@ -954,7 +954,7 @@ var JpxImage = (function JpxImageClosure() {
       var magnitudeCorrection = reversible ? 0 : 0.5;
       var k, n, nb;
       position = 0;
-      // Do the interleaving of Section F.3.3 here, so we do not need 
+      // Do the interleaving of Section F.3.3 here, so we do not need
       // to copy later. LL level is not interleaved, just copied.
       var interleave = (subband.type !== 'LL');
       for (j = 0; j < blockHeight; j++) {
@@ -1566,12 +1566,16 @@ var JpxImage = (function JpxImageClosure() {
         var oneRowDown = width;
         var twoRowsDown = width * 2;
         var threeRowsDown = width * 3;
-        for (var i0 = 0; i0 < height; i0 += 4) {
+        var iNext;
+        for (var i0 = 0; i0 < height; i0 = iNext) {
+          iNext = Math.min(i0 + 4, height);
+          var indexBase = i0 * width;
+          var checkAllEmpty = i0 + 3 < height;
           for (var j = 0; j < width; j++) {
-            var index0 = i0 * width + j;
+            var index0 = indexBase + j;
             // using the property: labels[neighborsSignificance[index]] == 0
             // when neighborsSignificance[index] == 0
-            var allEmpty = (i0 + 3 < height &&
+            var allEmpty = (checkAllEmpty &&
               processingFlags[index0] === 0 &&
               processingFlags[index0 + oneRowDown] === 0 &&
               processingFlags[index0 + twoRowsDown] === 0 &&
@@ -1581,7 +1585,7 @@ var JpxImage = (function JpxImageClosure() {
               neighborsSignificance[index0 + twoRowsDown] === 0 &&
               neighborsSignificance[index0 + threeRowsDown] === 0);
             var i1 = 0, index = index0;
-            var i, sign;
+            var i = i0, sign;
             if (allEmpty) {
               var hasSignificantCoefficent =
                 decoder.readBit(contexts, RUNLENGTH_CONTEXT);
@@ -1594,8 +1598,10 @@ var JpxImage = (function JpxImageClosure() {
               }
               i1 = (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
                     decoder.readBit(contexts, UNIFORM_CONTEXT);
-              i = i0 + i1;
-              index += i1 * width;
+              if (i1 !== 0) {
+                i = i0 + i1;
+                index += i1 * width;
+              }
 
               sign = this.decodeSignBit(i, j, index);
               coefficentsSign[index] = sign;
@@ -1610,12 +1616,7 @@ var JpxImage = (function JpxImageClosure() {
 
               i1++;
             }
-            for (; i1 < 4; i1++, index += width) {
-              i = i0 + i1;
-              if (i >= height) {
-                break;
-              }
-
+            for (i = i0 + i1; i < iNext; i++, index += width) {
               if (coefficentsMagnitude[index] ||
                 (processingFlags[index] & processedMask) !== 0) {
                 continue;
@@ -1623,7 +1624,7 @@ var JpxImage = (function JpxImageClosure() {
 
               var contextLabel = labels[neighborsSignificance[index]];
               var decision = decoder.readBit(contexts, contextLabel);
-              if (decision == 1) {
+              if (decision === 1) {
                 sign = this.decodeSignBit(i, j, index);
                 coefficentsSign[index] = sign;
                 coefficentsMagnitude[index] = 1;
@@ -1678,7 +1679,6 @@ var JpxImage = (function JpxImageClosure() {
     };
     Transform.prototype.iterate = function Transform_iterate(ll, hl_lh_hh,
                                                              u0, v0) {
-
       var llWidth = ll.width, llHeight = ll.height, llItems = ll.items;
       var width = hl_lh_hh.width;
       var height = hl_lh_hh.height;
@@ -1711,7 +1711,7 @@ var JpxImage = (function JpxImageClosure() {
           rowBuffer.set(items.subarray(k, k + width), bufferPadding);
 
           this.extend(rowBuffer, bufferPadding, width);
-          this.filter(rowBuffer, bufferPadding, width, u0, rowBuffer);
+          this.filter(rowBuffer, bufferPadding, width);
 
           items.set(
             rowBuffer.subarray(bufferPadding, bufferPadding + width),
@@ -1757,7 +1757,7 @@ var JpxImage = (function JpxImageClosure() {
           currentBuffer--;
           var buffer = colBuffers[currentBuffer];
           this.extend(buffer, bufferPadding, height);
-          this.filter(buffer, bufferPadding, height, v0, buffer);
+          this.filter(buffer, bufferPadding, height);
 
           // If this is last buffer in this group of buffers, flush all buffers.
           if (currentBuffer === 0) {
@@ -1788,9 +1788,10 @@ var JpxImage = (function JpxImageClosure() {
 
     IrreversibleTransform.prototype = Object.create(Transform.prototype);
     IrreversibleTransform.prototype.filter =
-      function irreversibleTransformFilter(y, offset, length, i0, x) {
+      function irreversibleTransformFilter(x, offset, length) {
       var len = length >> 1;
       offset = offset | 0;
+      var j, n, current, next;
 
       var alpha = -1.586134342059924;
       var beta = -0.052980118572961;
@@ -1798,34 +1799,75 @@ var JpxImage = (function JpxImageClosure() {
       var delta = 0.443506852043971;
       var K = 1.230174104914001;
       var K_ = 1 / K;
-      var j, n;
 
       // step 1 is combined with step 3
 
       // step 2
-      for (j = offset - 3, n = len + 4; n--; j += 2) {
-        x[j] = K_ * y[j];
+      j = offset - 3;
+      for (n = len + 4; n--; j += 2) {
+        x[j] *= K_;
       }
 
       // step 1 & 3
-      for (j = offset - 2, n = len + 3; n--; j += 2) {
-        x[j] = K * y[j] -
-          delta * (x[j - 1] + x[j + 1]);
+      j = offset - 2;
+      current = delta * x[j -1];
+      for (n = len + 3; n--; j += 2) {
+        next = delta * x[j + 1];
+        x[j] = K * x[j] - current - next;
+        if (n--) {
+          j += 2;
+          current = delta * x[j + 1];
+          x[j] = K * x[j] - current - next;
+        } else {
+          break;
+        }
       }
 
       // step 4
-      for (j = offset - 1, n = len + 2; n--; j += 2) {
-        x[j] -= gamma * (x[j - 1] + x[j + 1]);
+      j = offset - 1;
+      current = gamma * x[j - 1];
+      for (n = len + 2; n--; j += 2) {
+        next = gamma * x[j + 1];
+        x[j] -= current + next;
+        if (n--) {
+          j += 2;
+          current = gamma * x[j + 1];
+          x[j] -= current + next;
+        } else {
+          break;
+        }
       }
 
       // step 5
-      for (j = offset, n = len + 1; n--; j += 2) {
-        x[j] -= beta * (x[j - 1] + x[j + 1]);
+      j = offset;
+      current = beta * x[j - 1];
+      for (n = len + 1; n--; j += 2) {
+        next = beta * x[j + 1];
+        x[j] -= current + next;
+        if (n--) {
+          j += 2;
+          current = beta * x[j + 1];
+          x[j] -= current + next;
+        } else {
+          break;
+        }
       }
 
       // step 6
-      for (j = offset + 1, n = len; n--; j += 2) {
-        x[j] -= alpha * (x[j - 1] + x[j + 1]);
+      if (len !== 0) {
+        j = offset + 1;
+        current = alpha * x[j - 1];
+        for (n = len; n--; j += 2) {
+          next = alpha * x[j + 1];
+          x[j] -= current + next;
+          if (n--) {
+            j += 2;
+            current = alpha * x[j + 1];
+            x[j] -= current + next;
+          } else {
+            break;
+          }
+        }
       }
     };
 
@@ -1840,17 +1882,17 @@ var JpxImage = (function JpxImageClosure() {
 
     ReversibleTransform.prototype = Object.create(Transform.prototype);
     ReversibleTransform.prototype.filter =
-      function reversibleTransformFilter(y, offset, length, i0, x) {
+      function reversibleTransformFilter(x, offset, length) {
       var len = length >> 1;
       offset = offset | 0;
       var j, n;
 
       for (j = offset, n = len + 1; n--; j += 2) {
-        x[j] = y[j] - ((y[j - 1] + y[j + 1] + 2) >> 2);
+        x[j] -= (x[j - 1] + x[j + 1] + 2) >> 2;
       }
 
       for (j = offset + 1, n = len; n--; j += 2) {
-        x[j] = y[j] + ((x[j - 1] + x[j + 1]) >> 1);
+        x[j] += (x[j - 1] + x[j + 1]) >> 1;
       }
     };
 
