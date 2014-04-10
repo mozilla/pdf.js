@@ -444,8 +444,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @param {Object} params A parameter object that supports:
      * {
      *   canvasContext(required): A 2D context of a DOM Canvas object.,
-     *   textLayer(optional): An object that has beginLayout, endLayout, and
-     *                        appendText functions.,
      *   imageLayer(optional): An object that has beginLayout, endLayout and
      *                         appendImage functions.,
      *   continueCallback(optional): A function that will be called each time
