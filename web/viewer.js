@@ -1102,8 +1102,8 @@ var PDFView = {
 
       // Provides some basic debug information
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
-                  info.PDFFormatVersion + ' ' + (info.Producer || '-') +
-                  ' / ' + (info.Creator || '-') + ']' +
+                  info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
+                  ' / ' + (info.Creator || '-').trim() + ']' +
                   (PDFJS.version ? ' (PDF.js: ' + PDFJS.version + ')' : ''));
 
       var pdfTitle;
