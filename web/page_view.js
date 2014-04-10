@@ -462,7 +462,7 @@ var PageView = function pageView(container, id, scale,
     this.canvas = canvas;
 
     var scale = this.scale;
-    var ctx = canvas.getContext('2d');
+    var ctx = canvas.getContext('2d', {alpha: false});
     var outputScale = getOutputScale(ctx);
 
     if (USE_ONLY_CSS_ZOOM) {
