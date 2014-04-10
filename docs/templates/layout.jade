@@ -1,0 +1,52 @@
+- makeRelative = env.helpers.makeRelative
+doctype html
+html(lang='en')
+  head
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='description', content='')
+    meta(name='author', content='')
+    link(rel='shortcut icon', href=makeRelative(page.url, '/images/favicon.ico'))
+    title=page.title
+    // Bootstrap core CSS
+    link(href=makeRelative(page.url, '/css/bootstrap.min.css'), rel='stylesheet')
+    // Custom styles for this template
+    link(href=makeRelative(page.url, '/css/main.css'), rel='stylesheet')
+
+  body
+    header.navbar.navbar-default.navbar-static-top
+      .container
+          .navbar-header
+              button.navbar-toggle(type='button', data-toggle='collapse', data-target='.navbar-collapse')
+                  span.icon-bar
+                  span.icon-bar
+                  span.icon-bar
+              a.navbar-brand(href='#')
+                img(src=makeRelative(page.url, '/images/logo.svg'))
+          .collapse.navbar-collapse
+              ul.nav.navbar-nav
+                  li(class=(page.url === '/' ? 'active' : ''))
+                      a(href=makeRelative(page.url, '/')) Home
+                  li(class=(page.url === '/getting_started/' ? 'active' : ''))
+                      a(href=makeRelative(page.url, '/getting_started/')) Getting Started
+                  li(class=(page.url === '/examples/' ? 'active' : ''))
+                      a(href=makeRelative(page.url, '/examples/')) Examples
+                  li
+                      a(href='https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions') FAQ
+                  li(class=(page.url === '/api/' ? 'active' : ''))
+                      a(href=makeRelative(page.url, '/api/')) API
+
+    .container
+      .starter-template
+        section.content!= typogr(page.html).typogrify()
+
+    .container
+      footer
+        p &copy;Mozilla and individual contributors
+        :markdown
+          PDF.js is licensed under [Apache](https://github.com/mozilla/pdf.js/blob/master/LICENSE),
+          documentation is licensed under [CC BY-SA 2.5](http://creativecommons.org/licenses/by-sa/2.5/)
+
+    // Bootstrap core JavaScript
+    script(src=makeRelative(page.url, '/js/jquery-2.1.0.min.js'))
+    script(src=makeRelative(page.url, '/js/bootstrap.min.js'))

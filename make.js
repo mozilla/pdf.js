@@ -23,7 +23,16 @@
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
 var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
+var wintersmith = require('wintersmith');
 var path = require('path');
+var fs = require('fs');
+
+var CONFIG_FILE = 'pdfjs.config';
+var config = JSON.parse(fs.readFileSync(CONFIG_FILE));
+
+// Defined by buildnumber target.
+var BUILD_NUMBER,
+    VERSION;
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
@@ -109,6 +118,7 @@ target.generic = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
+      ['LICENSE', GENERIC_DIR],
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
       ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
@@ -156,19 +166,42 @@ target.web = function() {
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
   cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
-  cp('web/index.html.template', GH_PAGES_DIR + '/index.html');
   cp('-R', 'test/features', GH_PAGES_DIR);
   cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
 
-  cd(GH_PAGES_DIR);
-  exec('git init');
-  exec('git remote add origin ' + REPO);
-  exec('git add -A');
-  exec('git commit -am "gh-pages site created via make.js script"');
-  exec('git branch -m gh-pages');
+  var env = wintersmith('docs/config.json');
+  env.build(GH_PAGES_DIR, function (error) {
+    if (error) {
+      throw error;
+    }
+    sed('-i', /STABLE_VERSION/g, config.stableVersion,
+        GH_PAGES_DIR + '/getting_started/index.html');
+    sed('-i', /BETA_VERSION/g, config.betaVersion,
+        GH_PAGES_DIR + '/getting_started/index.html');
+    echo('Done building with wintersmith.');
 
-  echo();
-  echo('Website built in ' + GH_PAGES_DIR);
+    cd(GH_PAGES_DIR);
+    exec('git init');
+    exec('git remote add origin ' + REPO);
+    exec('git add -A');
+    exec('git commit -am "gh-pages site created via make.js script"');
+    exec('git branch -m gh-pages');
+
+    echo();
+    echo('Website built in ' + GH_PAGES_DIR);
+  });
+};
+
+target.dist = function() {
+  target.generic();
+  config.stableVersion = config.betaVersion;
+  config.betaVersion = VERSION;
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+  cd(GENERIC_DIR);
+  var distFilename = 'pdfjs-' + VERSION + '-dist.zip';
+  exec('zip -r ' + ROOT_DIR + BUILD_DIR + distFilename + ' *');
+  echo('Built distribution file: ' + distFilename);
+  cd(ROOT_DIR);
 };
 
 //
@@ -285,7 +318,7 @@ target.bundle = function(args) {
     }
 
     var bundle = cat(SRC_FILES),
-        bundleVersion = EXTENSION_VERSION,
+        bundleVersion = VERSION,
         bundleBuild = exec('git log --format="%h" -n 1',
           {silent: true}).output.replace('\n', '');
 
@@ -487,11 +520,6 @@ target.minified = function() {
 // Extension stuff
 //
 
-var EXTENSION_BASE_VERSION = '0ac55ac879d1c0eea9c0d155d5bbd9b11560f631',
-    EXTENSION_VERSION_PREFIX = '0.8.',
-    EXTENSION_BUILD_NUMBER,
-    EXTENSION_VERSION;
-
 //
 // make extension
 //
@@ -511,13 +539,13 @@ target.buildnumber = function() {
   echo('### Getting extension build number');
 
   var lines = exec('git log --format=oneline ' +
-                   EXTENSION_BASE_VERSION + '..', {silent: true}).output;
+                   config.baseVersion + '..', {silent: true}).output;
   // Build number is the number of commits since base version
-  EXTENSION_BUILD_NUMBER = lines ? lines.match(/\n/g).length : 0;
+  BUILD_NUMBER = lines ? lines.match(/\n/g).length : 0;
 
-  echo('Extension build number: ' + EXTENSION_BUILD_NUMBER);
+  echo('Extension build number: ' + BUILD_NUMBER);
 
-  EXTENSION_VERSION = EXTENSION_VERSION_PREFIX + EXTENSION_BUILD_NUMBER;
+  VERSION = config.versionPrefix + BUILD_NUMBER;
 };
 
 //
@@ -612,9 +640,9 @@ target.firefox = function() {
   });
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
       FIREFOX_BUILD_DIR + '/install.rdf');
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
       FIREFOX_BUILD_DIR + '/update.rdf');
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID,
@@ -745,7 +773,7 @@ target.mozcentral = function() {
   cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
       MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID,
@@ -845,7 +873,7 @@ target.chromium = function() {
   cleanupJSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.js');
 
   // Update the build version number
-  sed('-i', /PDFJSSCRIPT_VERSION/, EXTENSION_VERSION,
+  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
       CHROME_BUILD_DIR + '/manifest.json');
 
   // Allow PDF.js resources to be loaded by adding the files to

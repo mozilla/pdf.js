@@ -5,6 +5,12 @@
     "jshint": "2.4.x",
     "yargs": "~1.2.1"
   },
+  "devDependencies": {
+    "wintersmith": "2.0.x",
+    "moment": "2.3.x",
+    "underscore": "1.4.x",
+    "typogr": "0.5.x"
+  },
   "scripts": {
     "test": "node make lint"
   },
