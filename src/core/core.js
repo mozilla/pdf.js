@@ -233,8 +233,6 @@ var Page = (function PageClosure() {
 
       var self = this;
 
-      var textContentPromise = new LegacyPromise();
-
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
@@ -247,7 +245,7 @@ var Page = (function PageClosure() {
 
       var dataPromises = Promise.all([contentStreamPromise,
                                       resourcesPromise]);
-      dataPromises.then(function(data) {
+      return dataPromises.then(function(data) {
         var contentStream = data[0];
         var partialEvaluator = new PartialEvaluator(pdfManager, self.xref,
                                                     handler, self.pageIndex,
@@ -255,12 +253,9 @@ var Page = (function PageClosure() {
                                                     self.idCounters,
                                                     self.fontCache);
 
-        var bidiTexts = partialEvaluator.getTextContent(contentStream,
-                                                        self.resources);
-        textContentPromise.resolve(bidiTexts);
+        return partialEvaluator.getTextContent(contentStream,
+                                               self.resources);
       });
-
-      return textContentPromise;
     },
 
     getAnnotationsData: function Page_getAnnotationsData() {

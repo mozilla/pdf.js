@@ -203,38 +203,39 @@ function SimpleTextLayerBuilder(ctx, viewport) {
   this.textCounter = 0;
 }
 SimpleTextLayerBuilder.prototype = {
-  beginLayout: function SimpleTextLayerBuilder_BeginLayout() {
-    this.ctx.save();
-  },
-  endLayout: function SimpleTextLayerBuilder_EndLayout() {
-    this.ctx.restore();
-  },
-  appendText: function SimpleTextLayerBuilder_AppendText(geom) {
+  appendText: function SimpleTextLayerBuilder_AppendText(geom, styles) {
+    var style = styles[geom.fontName];
     var ctx = this.ctx, viewport = this.viewport;
-    // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = geom.fontSize * Math.abs(geom.vScale);
-    var fontAscent = (geom.ascent ? geom.ascent * fontHeight :
-      (geom.descent ? (1 + geom.descent) * fontHeight : fontHeight));
+    var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
+    var angle = Math.atan2(tx[1], tx[0]);
+    var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+    var fontAscent = (style.ascent ? style.ascent * fontHeight :
+      (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'yellow';
-    ctx.translate(geom.x + (fontAscent * Math.sin(geom.angle)),
-                  geom.y - (fontAscent * Math.cos(geom.angle)));
-    ctx.rotate(geom.angle);
-    ctx.rect(0, 0, geom.canvasWidth * Math.abs(geom.hScale), fontHeight);
+    ctx.translate(tx[4] + (fontAscent * Math.sin(angle)),
+                  tx[5] - (fontAscent * Math.cos(angle)));
+    ctx.rotate(angle);
+    ctx.rect(0, 0, geom.width * viewport.scale, geom.height * viewport.scale);
     ctx.stroke();
     ctx.fill();
     ctx.restore();
-    var textContent = this.textContent[this.textCounter].str;
-    ctx.font = fontHeight + 'px ' + geom.fontFamily;
+    ctx.font = fontHeight + 'px ' + style.fontFamily;
     ctx.fillStyle = 'black';
-    ctx.fillText(textContent, geom.x, geom.y);
+    ctx.fillText(geom.str, tx[4], tx[5]);
 
     this.textCounter++;
   },
   setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
-    this.textContent = textContent;
+    this.ctx.save();
+    var textItems = textContent.items;
+    for (var i = 0; i < textItems.length; i++) {
+      this.appendText(textItems[i], textContent.styles);
+    }
+
+    this.ctx.restore();
   }
 };
 

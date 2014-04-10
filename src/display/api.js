@@ -340,15 +340,33 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
 })();
 
 /**
+ * Page text content.
+ *
+ * @typedef {Object} TextContent
+ * @property {array} items - array of {@link TextItem}
+ * @property {Object} styles - {@link TextStyles} objects, indexed by font
+ *                    name.
+ */
+
+/**
  * Page text content part.
  *
- * @typedef {Object} BidiText
+ * @typedef {Object} TextItem
  * @property {string} str - text content.
  * @property {string} dir - text direction: 'ttb', 'ltr' or 'rtl'.
- * @property {number} x - x position of the text on the page.
- * @property {number} y - y position of the text on the page.
- * @property {number} angle - text rotation.
- * @property {number} size - font size.
+ * @property {array} transform - transformation matrix.
+ * @property {number} width - width in device space.
+ * @property {number} height - height in device space.
+ * @property {string} fontName - font name used by pdf.js for converted font.
+ */
+
+/**
+ * Text style
+ * @typedef {Object} TextStyle
+ * @property {number} ascent - font ascent.
+ * @property {number} descent - font descent.
+ * @property {boolean} vertical - text is in vertical mode.
+ * @property {string} fontFamily - possible font family
  */
 
 /**
@@ -522,8 +540,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return renderTask;
     },
     /**
-     * @return {Promise} That is resolved with the array of {@link BidiText}
-     * objects that represent the page text content.
+     * @return {Promise} That is resolved a {@link TextContent}
+     * object that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent() {
       var promise = new PDFJS.LegacyPromise();
@@ -1210,8 +1228,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 
       var params = this.params;
       this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
-                                    this.objs, params.textLayer,
-                                    params.imageLayer);
+                                    this.objs, params.imageLayer);
 
       this.gfx.beginDrawing(params.viewport, transparency);
       this.operatorListIdx = 0;

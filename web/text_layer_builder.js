@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CustomStyle, PDFFindController, scrollIntoView */
+/* globals CustomStyle, PDFFindController, scrollIntoView, PDFJS */
 
 'use strict';
 
@@ -40,6 +40,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.lastScrollSource = options.lastScrollSource;
   this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
+  this.textDivs = [];
 
   if (typeof PDFFindController === 'undefined') {
     window.PDFFindController = null;
@@ -48,16 +49,6 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   if (typeof this.lastScrollSource === 'undefined') {
     this.lastScrollSource = null;
   }
-
-  this.beginLayout = function textLayerBuilderBeginLayout() {
-    this.textDivs = [];
-    this.renderingDone = false;
-  };
-
-  this.endLayout = function textLayerBuilderEndLayout() {
-    this.layoutDone = true;
-    this.insertDivContent();
-  };
 
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var textDivs = this.textDivs;
@@ -118,70 +109,56 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     }
   };
 
-  this.appendText = function textLayerBuilderAppendText(geom) {
+  this.appendText = function textLayerBuilderAppendText(geom, styles) {
+    var style = styles[geom.fontName];
     var textDiv = document.createElement('div');
+    if (!/\S/.test(geom.str)) {
+      textDiv.dataset.isWhitespace = true;
+      return;
+    }
+    var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
+    var angle = Math.atan2(tx[1], tx[0]);
+    if (style.vertical) {
+      angle += Math.PI / 2;
+    }
+    var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+    var fontAscent = (style.ascent ? style.ascent * fontHeight :
+      (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
 
-    // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = geom.fontSize * Math.abs(geom.vScale);
-    textDiv.dataset.canvasWidth = geom.canvasWidth * Math.abs(geom.hScale);
-    textDiv.dataset.fontName = geom.fontName;
-    textDiv.dataset.angle = geom.angle * (180 / Math.PI);
-
+    textDiv.style.position = 'absolute';
+    textDiv.style.left = (tx[4] + (fontAscent * Math.sin(angle))) + 'px';
+    textDiv.style.top = (tx[5] - (fontAscent * Math.cos(angle))) + 'px';
     textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = geom.fontFamily;
-    var fontAscent = (geom.ascent ? geom.ascent * fontHeight :
-      (geom.descent ? (1 + geom.descent) * fontHeight : fontHeight));
-    textDiv.style.left = (geom.x + (fontAscent * Math.sin(geom.angle))) + 'px';
-    textDiv.style.top = (geom.y - (fontAscent * Math.cos(geom.angle))) + 'px';
+    textDiv.style.fontFamily = style.fontFamily;
 
-    // The content of the div is set in the `setTextContent` function.
+    textDiv.textContent = geom.str;
+    textDiv.dataset.fontName = geom.fontName;
+    textDiv.dataset.angle = angle * (180 / Math.PI);
+    if (style.vertical) {
+      textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
+    } else {
+      textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
+    }
 
     this.textDivs.push(textDiv);
   };
 
-  this.insertDivContent = function textLayerUpdateTextContent() {
-    // Only set the content of the divs once layout has finished, the content
-    // for the divs is available and content is not yet set on the divs.
-    if (!this.layoutDone || this.divContentDone || !this.textContent) {
-      return;
-    }
-
-    this.divContentDone = true;
-
-    var textDivs = this.textDivs;
-    var bidiTexts = this.textContent;
-
-    for (var i = 0; i < bidiTexts.length; i++) {
-      var bidiText = bidiTexts[i];
-      var textDiv = textDivs[i];
-      if (!/\S/.test(bidiText.str)) {
-        textDiv.dataset.isWhitespace = true;
-        continue;
-      }
-
-      textDiv.textContent = bidiText.str;
-      // TODO refactor text layer to use text content position
-      /**
-       * var arr = this.viewport.convertToViewportPoint(bidiText.x, bidiText.y);
-       * textDiv.style.left = arr[0] + 'px';
-       * textDiv.style.top = arr[1] + 'px';
-       */
-      // bidiText.dir may be 'ttb' for vertical texts.
-      textDiv.dir = bidiText.dir;
-    }
-
-    this.setupRenderLayoutTimer();
-  };
-
   this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
     this.textContent = textContent;
-    this.insertDivContent();
+
+    var textItems = textContent.items;
+    for (var i = 0; i < textItems.length; i++) {
+      this.appendText(textItems[i], textContent.styles);
+    }
+    this.divContentDone = true;
+
+    this.setupRenderLayoutTimer();
   };
 
   this.convertMatches = function textLayerBuilderConvertMatches(matches) {
     var i = 0;
     var iIndex = 0;
-    var bidiTexts = this.textContent;
+    var bidiTexts = this.textContent.items;
     var end = bidiTexts.length - 1;
     var queryLen = (PDFFindController === null ?
                     0 : PDFFindController.state.query.length);
@@ -240,7 +217,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       return;
     }
 
-    var bidiTexts = this.textContent;
+    var bidiTexts = this.textContent.items;
     var textDivs = this.textDivs;
     var prevEnd = null;
     var isSelectedPage = (PDFFindController === null ?
@@ -356,7 +333,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     // Clear out all matches.
     var matches = this.matches;
     var textDivs = this.textDivs;
-    var bidiTexts = this.textContent;
+    var bidiTexts = this.textContent.items;
     var clearedUntilDivIdx = -1;
 
     // Clear out all current matches.

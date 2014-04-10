@@ -2102,23 +2102,6 @@ function reverseIfRtl(chars) {
   return s;
 }
 
-function fontCharsToUnicode(charCodes, font) {
-  var glyphs = font.charsToGlyphs(charCodes);
-  var result = '';
-  for (var i = 0, ii = glyphs.length; i < ii; i++) {
-    var glyph = glyphs[i];
-    if (!glyph) {
-      continue;
-    }
-    var glyphUnicode = glyph.unicode;
-    if (glyphUnicode in NormalizedUnicodes) {
-      glyphUnicode = NormalizedUnicodes[glyphUnicode];
-    }
-    result += reverseIfRtl(glyphUnicode);
-  }
-  return result;
-}
-
 function adjustWidths(properties) {
   if (properties.fontMatrix[0] === FONT_IDENTITY_MATRIX[0]) {
     return;
