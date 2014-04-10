@@ -465,10 +465,10 @@ Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
 
 var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
-  function Uint32ArrayView(buffer) {
+  function Uint32ArrayView(buffer, length) {
     this.buffer = buffer;
     this.byteLength = buffer.length;
-    this.length = (this.byteLength >> 2);
+    this.length = length === undefined ? (this.byteLength >> 2) : length;
     ensureUint32ArrayViewProps(this.length);
   }
   Uint32ArrayView.prototype = Object.create(null);
