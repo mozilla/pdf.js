@@ -596,8 +596,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk,
                                                             intent) {
       var intentState = this.intentStates[intent];
+      var i, ii;
       // Add the new chunk to the current operator list.
-      for (var i = 0, ii = operatorListChunk.length; i < ii; i++) {
+      for (i = 0, ii = operatorListChunk.length; i < ii; i++) {
         intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
         intentState.operatorList.argsArray.push(
           operatorListChunk.argsArray[i]);
@@ -605,7 +606,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
 
       // Notify all the rendering tasks there are more operators to be consumed.
-      for (var i = 0; i < intentState.renderTasks.length; i++) {
+      for (i = 0; i < intentState.renderTasks.length; i++) {
         intentState.renderTasks[i].operatorListChanged();
       }
 
@@ -886,17 +887,18 @@ var WorkerTransport = (function WorkerTransportClosure() {
         var pageIndex = data[1];
         var type = data[2];
         var pageProxy = this.pageCache[pageIndex];
+        var imageData;
         if (pageProxy.objs.hasData(id)) {
           return;
         }
 
         switch (type) {
           case 'JpegStream':
-            var imageData = data[3];
+            imageData = data[3];
             loadJpegStream(id, imageData, pageProxy.objs);
             break;
           case 'Image':
-            var imageData = data[3];
+            imageData = data[3];
             pageProxy.objs.resolve(id, imageData);
 
             // heuristics that will allow not to store large data
@@ -952,15 +954,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
           var tmpCtx = tmpCanvas.getContext('2d');
           tmpCtx.drawImage(img, 0, 0);
           var data = tmpCtx.getImageData(0, 0, width, height).data;
+          var i, j;
 
           if (components == 3) {
-            for (var i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
+            for (i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
               buf[j] = data[i];
               buf[j + 1] = data[i + 1];
               buf[j + 2] = data[i + 2];
             }
           } else if (components == 1) {
-            for (var i = 0, j = 0; i < rgbaLength; i += 4, j++) {
+            for (i = 0, j = 0; i < rgbaLength; i += 4, j++) {
               buf[j] = data[i];
             }
           }
@@ -1003,7 +1006,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       if (pageIndex in this.pagePromises) {
         return this.pagePromises[pageIndex];
       }
-      var promise = new PDFJS.LegacyPromise();
+      promise = new PDFJS.LegacyPromise();
       this.pagePromises[pageIndex] = promise;
       this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
       return promise;

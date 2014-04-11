@@ -237,9 +237,10 @@ function combineUrl(baseUrl, url) {
   if (/^[a-z][a-z0-9+\-.]*:/i.test(url)) {
     return url;
   }
+  var i;
   if (url.charAt(0) == '/') {
     // absolute path
-    var i = baseUrl.indexOf('://');
+    i = baseUrl.indexOf('://');
     if (url.charAt(1) === '/') {
       ++i;
     } else {
@@ -248,7 +249,7 @@ function combineUrl(baseUrl, url) {
     return baseUrl.substring(0, i) + url;
   } else {
     // relative path
-    var pathLength = baseUrl.length, i;
+    var pathLength = baseUrl.length;
     i = baseUrl.lastIndexOf('#');
     pathLength = i >= 0 ? i : pathLength;
     i = baseUrl.lastIndexOf('?', pathLength);
@@ -1263,17 +1264,18 @@ var StatTimer = (function StatTimerClosure() {
       delete this.started[name];
     },
     toString: function StatTimer_toString() {
+      var i, ii;
       var times = this.times;
       var out = '';
       // Find the longest name for padding purposes.
       var longest = 0;
-      for (var i = 0, ii = times.length; i < ii; ++i) {
+      for (i = 0, ii = times.length; i < ii; ++i) {
         var name = times[i]['name'];
         if (name.length > longest) {
           longest = name.length;
         }
       }
-      for (var i = 0, ii = times.length; i < ii; ++i) {
+      for (i = 0, ii = times.length; i < ii; ++i) {
         var span = times[i];
         var duration = span.end - span.start;
         out += rpad(span['name'], ' ', longest) + ' ' + duration + 'ms\n';

@@ -192,7 +192,7 @@ var Parser = (function ParserClosure() {
 
         var a = 1;
         var b = 0;
-        for (var i = 0, ii = imageBytes.length; i < ii; ++i) {
+        for (i = 0, ii = imageBytes.length; i < ii; ++i) {
           a = (a + (imageBytes[i] & 0xff)) % 65521;
           b = (b + a) % 65521;
         }
@@ -261,11 +261,11 @@ var Parser = (function ParserClosure() {
         var ENDSTREAM_SIGNATURE_LENGTH = 9;
         var ENDSTREAM_SIGNATURE = [0x65, 0x6E, 0x64, 0x73, 0x74, 0x72, 0x65,
                                    0x61, 0x6D];
-        var skipped = 0, found = false;
+        var skipped = 0, found = false, i, j;
         while (stream.pos < stream.end) {
           var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
           var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
-          var found = false, i, j;
+          found = false;
           for (i = 0, j = 0; i < scanLength; i++) {
             var b = scanBytes[i];
             if (b !== ENDSTREAM_SIGNATURE[j]) {

@@ -112,7 +112,8 @@ var Annotation = (function AnnotationClosure() {
           var isInvalid = false;
           var numPositive = 0;
           for (var i = 0; i < dashArrayLength; i++) {
-            if (!(+dashArray[i] >= 0)) {
+            var validNumber = (+dashArray[i] >= 0);
+            if (!validNumber) {
               isInvalid = true;
               break;
             } else if (dashArray[i] > 0) {
@@ -673,10 +674,12 @@ var TextAnnotation = (function TextAnnotationClosure() {
       var content = document.createElement('div');
       content.className = 'annotTextContent';
       content.setAttribute('hidden', true);
+
+      var i, ii;
       if (item.hasBgColor) {
         var color = item.color;
         var rgb = [];
-        for (var i = 0; i < 3; ++i) {
+        for (i = 0; i < 3; ++i) {
           // Enlighten the color (70%)
           var c = Math.round(color[i] * 255);
           rgb[i] = Math.round((255 - c) * 0.7) + c;
@@ -693,7 +696,7 @@ var TextAnnotation = (function TextAnnotationClosure() {
       } else {
         var e = document.createElement('span');
         var lines = item.content.split(/(?:\r\n?|\n)/);
-        for (var i = 0, ii = lines.length; i < ii; ++i) {
+        for (i = 0, ii = lines.length; i < ii; ++i) {
           var line = lines[i];
           e.appendChild(document.createTextNode(line));
           if (i < (ii - 1)) {

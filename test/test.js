@@ -438,10 +438,11 @@ function refTestPostHandler(req, res) {
     res.writeHead(200, {'Content-Type': 'text/plain'});
     res.end();
 
+    var session;
     if (pathname === '/tellMeToQuit') {
       // finding by path
       var browserPath = parsedUrl.query.path;
-      var session = sessions.filter(function (session) {
+      session = sessions.filter(function (session) {
         return session.config.path === browserPath;
       })[0];
       monitorBrowserTimeout(session, null);
@@ -463,7 +464,7 @@ function refTestPostHandler(req, res) {
     var snapshot = data.snapshot;
     var lastPageNum = data.lastPageNum;
 
-    var session = getSession(browser);
+    session = getSession(browser);
     monitorBrowserTimeout(session, handleSessionTimeout);
 
     var taskResults = session.taskResults[id];

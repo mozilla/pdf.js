@@ -37,20 +37,21 @@ function readCharset(aStream, aCharstrings) {
 
   var format = aStream.getByte();
   var count = aCharstrings.length - 1;
+  var i, sid;
   if (format === 0) {
     charset['.notdef'] = readCharstringEncoding(aCharstrings[0]);
 
-    for (var i = 1; i < count + 1; i++) {
-      var sid = aStream.getByte() << 8 | aStream.getByte();
+    for (i = 1; i < count + 1; i++) {
+      sid = aStream.getByte() << 8 | aStream.getByte();
       charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
     }
   } else if (format == 1) {
-    for (var i = 1; i < count + 1; i++) {
+    for (i = 1; i < count + 1; i++) {
       var first = aStream.getByte();
       first = (first << 8) | aStream.getByte();
       var numLeft = aStream.getByte();
       for (var j = 0; j <= numLeft; j++) {
-        var sid = first++;
+        sid = first++;
         charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[j]);
       }
     }
@@ -223,7 +224,8 @@ function readFontIndexData(aStream, aIsByte) {
   }
 
   var offsets = [];
-  for (var i = 0; i < count + 1; i++) {
+  var i;
+  for (i = 0; i < count + 1; i++) {
     offsets.push(getNextOffset());
   }
 
@@ -233,7 +235,7 @@ function readFontIndexData(aStream, aIsByte) {
   // Now extract the objects
   var relativeOffset = aStream.pos;
   var objects = [];
-  for (var i = 0; i < count; i++) {
+  for (i = 0; i < count; i++) {
     var offset = offsets[i];
     aStream.pos = relativeOffset + offset - 1;
 
@@ -332,14 +334,15 @@ var Type2Parser = function type2Parser(aFilePath) {
     dump('strings: ' + strings);
 
     // Fill up the Strings dictionary with the new unique strings
-    for (var i = 0; i < strings.length; i++) {
+    var i;
+    for (i = 0; i < strings.length; i++) {
       CFFStrings.push(strings[i].join(''));
     }
 
     // Parse the TopDict operator
     var objects = [];
     var count = topDict.length;
-    for (var i = 0; i < count; i++) {
+    for (i = 0; i < count; i++) {
       parseAsToken(topDict[i], CFFDictDataMap);
     }
 
@@ -356,7 +359,7 @@ var Type2Parser = function type2Parser(aFilePath) {
     aStream.pos = priv.offset;
 
     var privateDict = [];
-    for (var i = 0; i < priv.size; i++) {
+    for (i = 0; i < priv.size; i++) {
       privateDict.push(aStream.getByte());
     }
     dump('privateData:' + privateDict);

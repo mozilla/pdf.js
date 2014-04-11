@@ -27,8 +27,9 @@ var PDFFunction = (function PDFFunctionClosure() {
   return {
     getSampleArray: function PDFFunction_getSampleArray(size, outputSize, bps,
                                                        str) {
+      var i, ii;
       var length = 1;
-      for (var i = 0, ii = size.length; i < ii; i++) {
+      for (i = 0, ii = size.length; i < ii; i++) {
         length *= size[i];
       }
       length *= outputSize;
@@ -41,7 +42,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
       var strBytes = str.getBytes((length * bps + 7) / 8);
       var strIdx = 0;
-      for (var i = 0; i < length; i++) {
+      for (i = 0; i < length; i++) {
         while (codeSize < bps) {
           codeBuf <<= 8;
           codeBuf |= strBytes[strIdx++];
@@ -184,13 +185,14 @@ var PDFFunction = (function PDFFunctionClosure() {
         var cubeVertices = 1 << m;
         var cubeN = new Float64Array(cubeVertices);
         var cubeVertex = new Uint32Array(cubeVertices);
-        for (var j = 0; j < cubeVertices; j++) {
+        var i, j;
+        for (j = 0; j < cubeVertices; j++) {
           cubeN[j] = 1;
         }
 
         var k = n, pos = 1;
         // Map x_i to y_j for 0 <= i < m using the sampled function.
-        for (var i = 0; i < m; ++i) {
+        for (i = 0; i < m; ++i) {
           // x_i' = min(max(x_i, Domain_2i), Domain_2i+1)
           var domain_2i = domain[i][0];
           var domain_2i_1 = domain[i][1];
@@ -211,7 +213,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           var n1 = e - e0; // (e - e0) / (e1 - e0);
           var offset0 = e0 * k;
           var offset1 = offset0 + k; // e1 * k
-          for (var j = 0; j < cubeVertices; j++) {
+          for (j = 0; j < cubeVertices; j++) {
             if (j & pos) {
               cubeN[j] *= n1;
               cubeVertex[j] += offset1;
@@ -226,10 +228,10 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
 
         var y = new Float64Array(n);
-        for (var j = 0; j < n; ++j) {
+        for (j = 0; j < n; ++j) {
           // Sum all cube vertices' samples portions
           var rj = 0;
-          for (var i = 0; i < cubeVertices; i++) {
+          for (i = 0; i < cubeVertices; i++) {
             rj += samples[cubeVertex[i] + j] * cubeN[i];
           }
 

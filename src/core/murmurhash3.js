@@ -37,10 +37,11 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
   MurmurHash3_64.prototype = {
     update: function MurmurHash3_64_update(input) {
       var useUint32ArrayView = false;
+      var i;
       if (typeof input == 'string') {
         var data = new Uint8Array(input.length * 2);
         var length = 0;
-        for (var i = 0; i < input.length; i++) {
+        for (i = 0; i < input.length; i++) {
           var code = input.charCodeAt(i);
           if (code <= 0xff) {
             data[length++] = code;
@@ -78,7 +79,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
       var C1_LOW = C1 & MASK_LOW;
       var C2_LOW = C2 & MASK_LOW;
 
-      for (var i = 0; i < blockCounts; i++) {
+      for (i = 0; i < blockCounts; i++) {
         if (i & 1) {
           k1 = dataUint32[i];
           k1 = (k1 * C1 & MASK_HIGH) | (k1 * C1_LOW & MASK_LOW);

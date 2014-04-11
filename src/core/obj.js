@@ -151,8 +151,9 @@ var Dict = (function DictClosure() {
     getAll: function Dict_getAll() {
       var all = Object.create(null);
       var queue = null;
-      for (var key in this.map) {
-        var obj = this.get(key);
+      var key, obj;
+      for (key in this.map) {
+        obj = this.get(key);
         if (obj instanceof Dict) {
           if (isRecursionAllowedFor(obj)) {
             (queue || (queue = [])).push({target: all, key: key, obj: obj});
@@ -178,8 +179,8 @@ var Dict = (function DictClosure() {
           continue;
         }
         var dereferenced = Object.create(null);
-        for (var key in itemObj.map) {
-          var obj = itemObj.get(key);
+        for (key in itemObj.map) {
+          obj = itemObj.get(key);
           if (obj instanceof Dict) {
             if (isRecursionAllowedFor(obj)) {
               queue.push({target: dereferenced, key: key, obj: obj});
@@ -988,13 +989,14 @@ var XRef = (function XRefClosure() {
         }
       }
       // reading XRef streams
-      for (var i = 0, ii = xrefStms.length; i < ii; ++i) {
+      var i, ii;
+      for (i = 0, ii = xrefStms.length; i < ii; ++i) {
         this.startXRefQueue.push(xrefStms[i]);
         this.readXRef(/* recoveryMode */ true);
       }
       // finding main trailer
       var dict;
-      for (var i = 0, ii = trailers.length; i < ii; ++i) {
+      for (i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
         var parser = new Parser(new Lexer(stream), true, null);
         var obj = parser.getObj();
@@ -1332,6 +1334,7 @@ var ObjectLoader = (function() {
   }
 
   function addChildren(node, nodesToVisit) {
+    var value;
     if (isDict(node) || isStream(node)) {
       var map;
       if (isDict(node)) {
@@ -1340,14 +1343,14 @@ var ObjectLoader = (function() {
         map = node.dict.map;
       }
       for (var key in map) {
-        var value = map[key];
+        value = map[key];
         if (mayHaveChildren(value)) {
           nodesToVisit.push(value);
         }
       }
     } else if (isArray(node)) {
       for (var i = 0, ii = node.length; i < ii; i++) {
-        var value = node[i];
+        value = node[i];
         if (mayHaveChildren(value)) {
           nodesToVisit.push(value);
         }

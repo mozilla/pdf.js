@@ -294,10 +294,11 @@ var WebGLUtils = (function WebGLUtilsClosure() {
 
     // count triangle points
     var count = 0;
-    for (var i = 0, ii = figures.length; i < ii; i++) {
+    var i, ii, rows;
+    for (i = 0, ii = figures.length; i < ii; i++) {
       switch (figures[i].type) {
         case 'lattice':
-          var rows = (figures[i].coords.length / figures[i].verticesPerRow) | 0;
+          rows = (figures[i].coords.length / figures[i].verticesPerRow) | 0;
           count += (rows - 1) * (figures[i].verticesPerRow - 1) * 6;
           break;
         case 'triangles':
@@ -310,12 +311,12 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     var colors = new Uint8Array(count * 3);
     var coordsMap = context.coords, colorsMap = context.colors;
     var pIndex = 0, cIndex = 0;
-    for (var i = 0, ii = figures.length; i < ii; i++) {
+    for (i = 0, ii = figures.length; i < ii; i++) {
       var figure = figures[i], ps = figure.coords, cs = figure.colors;
       switch (figure.type) {
         case 'lattice':
           var cols = figure.verticesPerRow;
-          var rows = (ps.length / cols) | 0;
+          rows = (ps.length / cols) | 0;
           for (var row = 1; row < rows; row++) {
             var offset = row * cols + 1;
             for (var col = 1; col < cols; col++, offset++) {

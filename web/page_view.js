@@ -348,7 +348,7 @@ var PageView = function pageView(container, id, scale,
 
     var x = 0, y = 0;
     var width = 0, height = 0, widthScale, heightScale;
-    var changeOrientation = !!(this.rotation % 180);
+    var changeOrientation = (this.rotation % 180 === 0 ? false : true);
     var pageWidth = (changeOrientation ? this.height : this.width) /
       this.scale / CSS_UNITS;
     var pageHeight = (changeOrientation ? this.width : this.height) /

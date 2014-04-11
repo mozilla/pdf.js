@@ -77,7 +77,6 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
   }
 
   function findUnequal(arr, start, value) {
-    var j;
     for (var j = start, jj = arr.length; j < jj; ++j) {
       if (arr[j] != value) {
         return j;
@@ -164,7 +163,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     types.length = 0;
     var numBidi = 0;
 
-    for (var i = 0; i < strLength; ++i) {
+    var i, ii;
+    for (i = 0; i < strLength; ++i) {
       chars[i] = str.charAt(i);
 
       var charCode = str.charCodeAt(i);
@@ -204,7 +204,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
 
     var levels = [];
-    for (var i = 0; i < strLength; ++i) {
+    for (i = 0; i < strLength; ++i) {
       levels[i] = startLevel;
     }
 
@@ -221,7 +221,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      start of the level run, it will get the type of sor.
      */
     var lastType = sor;
-    for (var i = 0; i < strLength; ++i) {
+    for (i = 0; i < strLength; ++i) {
       if (types[i] == 'NSM') {
         types[i] = lastType;
       } else {
@@ -234,9 +234,10 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      first strong type (R, L, AL, or sor) is found.  If an AL is found, change
      the type of the European number to Arabic number.
      */
-    var lastType = sor;
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
+    lastType = sor;
+    var t;
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
       if (t == 'EN') {
         types[i] = (lastType == 'AL') ? 'AN' : 'EN';
       } else if (t == 'R' || t == 'L' || t == 'AL') {
@@ -247,8 +248,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     /*
      W3. Change all ALs to R.
      */
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
       if (t == 'AL') {
         types[i] = 'R';
       }
@@ -259,7 +260,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      European number. A single common separator between two numbers of the same
      type changes to that type:
      */
-    for (var i = 1; i < strLength - 1; ++i) {
+    for (i = 1; i < strLength - 1; ++i) {
       if (types[i] == 'ES' && types[i - 1] == 'EN' && types[i + 1] == 'EN') {
         types[i] = 'EN';
       }
@@ -273,17 +274,18 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      W5. A sequence of European terminators adjacent to European numbers changes
      to all European numbers:
      */
-    for (var i = 0; i < strLength; ++i) {
+    for (i = 0; i < strLength; ++i) {
       if (types[i] == 'EN') {
         // do before
-        for (var j = i - 1; j >= 0; --j) {
+        var j;
+        for (j = i - 1; j >= 0; --j) {
           if (types[j] != 'ET') {
             break;
           }
           types[j] = 'EN';
         }
         // do after
-        for (var j = i + 1; j < strLength; --j) {
+        for (j = i + 1; j < strLength; --j) {
           if (types[j] != 'ET') {
             break;
           }
@@ -295,8 +297,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     /*
      W6. Otherwise, separators and terminators change to Other Neutral:
      */
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
       if (t == 'WS' || t == 'ES' || t == 'ET' || t == 'CS') {
         types[i] = 'ON';
       }
@@ -307,9 +309,9 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      first strong type (R, L, or sor) is found. If an L is found,  then change
      the type of the European number to L.
      */
-    var lastType = sor;
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
+    lastType = sor;
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
       if (t == 'EN') {
         types[i] = ((lastType == 'L') ? 'L' : 'EN');
       } else if (t == 'R' || t == 'L') {
@@ -323,7 +325,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      numbers are treated as though they were R. Start-of-level-run (sor) and
      end-of-level-run (eor) are used at level run boundaries.
      */
-    for (var i = 0; i < strLength; ++i) {
+    for (i = 0; i < strLength; ++i) {
       if (types[i] == 'ON') {
         var end = findUnequal(types, i + 1, 'ON');
         var before = sor;
@@ -351,7 +353,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     /*
      N2. Any remaining neutrals take the embedding direction.
      */
-    for (var i = 0; i < strLength; ++i) {
+    for (i = 0; i < strLength; ++i) {
       if (types[i] == 'ON') {
         types[i] = e;
       }
@@ -364,8 +366,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      I2. For all characters with an odd (right-to-left) embedding direction,
      those of type L, EN or AN go up one level.
      */
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
       if (isEven(levels[i])) {
         if (t == 'R') {
           levels[i] += 1;
@@ -401,8 +403,9 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     // find highest level & lowest odd level
     var highestLevel = -1;
     var lowestOddLevel = 99;
-    for (var i = 0, ii = levels.length; i < ii; ++i) {
-      var level = levels[i];
+    var level;
+    for (i = 0, ii = levels.length; i < ii; ++i) {
+      level = levels[i];
       if (highestLevel < level) {
         highestLevel = level;
       }
@@ -412,10 +415,10 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
 
     // now reverse between those limits
-    for (var level = highestLevel; level >= lowestOddLevel; --level) {
+    for (level = highestLevel; level >= lowestOddLevel; --level) {
       // find segments to reverse
       var start = -1;
-      for (var i = 0, ii = levels.length; i < ii; ++i) {
+      for (i = 0, ii = levels.length; i < ii; ++i) {
         if (levels[i] < level) {
           if (start >= 0) {
             reverseValues(chars, start, i);
@@ -449,7 +452,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
     // Finally, return string
     var result = '';
-    for (var i = 0, ii = chars.length; i < ii; ++i) {
+    for (i = 0, ii = chars.length; i < ii; ++i) {
       var ch = chars[i];
       if (ch != '<' && ch != '>') {
         result += ch;

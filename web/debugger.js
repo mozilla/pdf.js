@@ -211,10 +211,11 @@ var StepperManager = (function StepperManagerClosure() {
       return stepper;
     },
     selectStepper: function selectStepper(pageIndex, selectPanel) {
+      var i;
       if (selectPanel) {
         this.manager.selectPanel(this);
       }
-      for (var i = 0; i < steppers.length; ++i) {
+      for (i = 0; i < steppers.length; ++i) {
         var stepper = steppers[i];
         if (stepper.pageIndex == pageIndex) {
           stepper.panel.removeAttribute('hidden');
@@ -223,7 +224,7 @@ var StepperManager = (function StepperManagerClosure() {
         }
       }
       var options = stepperChooser.options;
-      for (var i = 0; i < options.length; ++i) {
+      for (i = 0; i < options.length; ++i) {
         var option = options[i];
         option.selected = option.value == pageIndex;
       }
@@ -344,7 +345,7 @@ var Stepper = (function StepperClosure() {
       var self = this;
       var chunk = document.createDocumentFragment();
       var operatorsToDisplay = Math.min(MAX_OPERATORS_COUNT,
-        operatorList.fnArray.length);
+                                        operatorList.fnArray.length);
       for (var i = this.operatorListIdx; i < operatorsToDisplay; i++) {
         var line = c('tr');
         line.className = 'line';
@@ -369,7 +370,7 @@ var Stepper = (function StepperClosure() {
         if (fn in glyphCommands) {
           var glyphIndex = glyphCommands[fn];
           var glyphs = args[glyphIndex];
-          var decArgs = args.slice();
+          decArgs = args.slice();
           var newArg;
           if (fn === 'showSpacedText') {
             newArg = [];

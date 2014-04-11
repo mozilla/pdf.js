@@ -53,12 +53,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var nodes = [resources];
       while (nodes.length) {
+        var key;
         var node = nodes.shift();
         // First check the current resources for blend modes.
         var graphicStates = node.get('ExtGState');
         if (isDict(graphicStates)) {
           graphicStates = graphicStates.getAll();
-          for (var key in graphicStates) {
+          for (key in graphicStates) {
             var graphicState = graphicStates[key];
             var bm = graphicState['BM'];
             if (isName(bm) && bm.name !== 'Normal') {
@@ -72,7 +73,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           continue;
         }
         xObjects = xObjects.getAll();
-        for (var key in xObjects) {
+        for (key in xObjects) {
           var xObject = xObjects[key];
           if (!isStream(xObject)) {
             continue;
@@ -144,6 +145,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       var imageMask = (dict.get('ImageMask', 'IM') || false);
+      var imgData, args;
       if (imageMask) {
         // This depends on a tmpCanvas being filled with the
         // current fillStyle, such that processing the pixel
@@ -159,10 +161,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var canTransfer = image instanceof DecodeStream;
         var inverseDecode = (!!decode && decode[0] > 0);
 
-        var imgData = PDFImage.createMask(imgArray, width, height,
-                                          canTransfer, inverseDecode);
+        imgData = PDFImage.createMask(imgArray, width, height,
+                                      canTransfer, inverseDecode);
         imgData.cached = true;
-        var args = [imgData];
+        args = [imgData];
         operatorList.addOp(OPS.paintImageMaskXObject, args);
         if (cacheKey) {
           cache.key = cacheKey;
@@ -183,7 +185,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                     inline, null, null);
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
-        var imgData = imageObj.createImageData(/* forceRGBA = */ true);
+        imgData = imageObj.createImageData(/* forceRGBA = */ true);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
@@ -193,7 +195,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var uniquePrefix = (this.uniquePrefix || '');
       var objId = 'img_' + uniquePrefix + (++this.idCounters.obj);
       operatorList.addDependency(objId);
-      var args = [objId, w, h];
+      args = [objId, w, h];
 
       if (!softMask && !mask && image instanceof JpegStream &&
           image.isNativelySupported(this.xref, resources)) {
@@ -511,10 +513,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
       var promise = new LegacyPromise();
-      var operation;
+      var operation, i, ii;
       while ((operation = preprocessor.read())) {
         var args = operation.args;
         var fn = operation.fn;
+        var shading;
 
         switch (fn) {
           case OPS.setStrokeColorN:
@@ -537,10 +540,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 args = [];
                 continue;
               } else if (typeNum == SHADING_PATTERN) {
-                var shading = dict.get('Shading');
+                shading = dict.get('Shading');
                 var matrix = dict.get('Matrix');
-                var pattern = Pattern.parseShading(shading, matrix, xref,
-                                                   resources);
+                pattern = Pattern.parseShading(shading, matrix, xref,
+                                               resources);
                 args = pattern.getIR();
               } else {
                 error('Unkown PatternType ' + typeNum);
@@ -609,7 +612,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           case OPS.showSpacedText:
             var arr = args[0];
             var arrLength = arr.length;
-            for (var i = 0; i < arrLength; ++i) {
+            for (i = 0; i < arrLength; ++i) {
               if (isString(arr[i])) {
                 arr[i] = this.handleText(arr[i], stateManager.state);
               }
@@ -635,7 +638,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               error('No shading resource found');
             }
 
-            var shading = shadingRes.get(args[0].name);
+            shading = shadingRes.get(args[0].name);
             if (!shading) {
               error('No shading object found');
             }
@@ -665,7 +668,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // Some PDFs don't close all restores inside object/form.
       // Closing those for them.
-      for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
+      for (i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
         operatorList.addOp(OPS.restore, []);
       }
 
@@ -874,17 +877,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           case OPS.showSpacedText:
             var items = args[0];
             var textChunk = newTextChunk();
+            var offset;
             for (var j = 0, jj = items.length; j < jj; j++) {
               if (typeof items[j] === 'string') {
                 buildTextGeometry(items[j], textChunk);
               } else {
                 var val = items[j] / 1000;
                 if (!textState.font.vertical) {
-                  var offset = -val * textState.fontSize * textState.textHScale;
+                  offset = -val * textState.fontSize * textState.textHScale;
                   textState.translateTextMatrix(offset, 0);
                   textChunk.width += offset;
                 } else {
-                  var offset = -val * textState.fontSize;
+                  offset = -val * textState.fontSize;
                   textState.translateTextMatrix(0, offset);
                   textChunk.height += offset;
                 }
@@ -1023,8 +1027,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // differences to be merged in here not require us to hold on to it.
       var differences = [];
       var baseEncodingName = null;
+      var encoding;
       if (dict.has('Encoding')) {
-        var encoding = dict.get('Encoding');
+        encoding = dict.get('Encoding');
         if (isDict(encoding)) {
           baseEncodingName = encoding.get('BaseEncoding');
           baseEncodingName = (isName(baseEncodingName) ?
@@ -1059,9 +1064,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (baseEncodingName) {
         properties.defaultEncoding = Encodings[baseEncodingName].slice();
       } else {
-        var encoding = (properties.type === 'TrueType' ?
-                        Encodings.WinAnsiEncoding :
-                        Encodings.StandardEncoding);
+        encoding = (properties.type === 'TrueType' ?
+                    Encodings.WinAnsiEncoding : Encodings.StandardEncoding);
         // The Symbolic attribute can be misused for regular fonts
         // Heuristic: we have to check if the font is a standard one also
         if (!!(properties.flags & FontFlags.Symbolic)) {
@@ -1130,21 +1134,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var defaultWidth = 0;
       var glyphsVMetrics = [];
       var defaultVMetrics;
+      var i, ii, j, jj, start, code, widths;
       if (properties.composite) {
         defaultWidth = dict.get('DW') || 1000;
 
-        var widths = dict.get('W');
+        widths = dict.get('W');
         if (widths) {
-          for (var i = 0, ii = widths.length; i < ii; i++) {
-            var start = widths[i++];
-            var code = xref.fetchIfRef(widths[i]);
+          for (i = 0, ii = widths.length; i < ii; i++) {
+            start = widths[i++];
+            code = xref.fetchIfRef(widths[i]);
             if (isArray(code)) {
-              for (var j = 0, jj = code.length; j < jj; j++) {
+              for (j = 0, jj = code.length; j < jj; j++) {
                 glyphsWidths[start++] = code[j];
               }
             } else {
               var width = widths[++i];
-              for (var j = start; j <= code; j++) {
+              for (j = start; j <= code; j++) {
                 glyphsWidths[j] = width;
               }
             }
@@ -1156,16 +1161,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           defaultVMetrics = [vmetrics[1], defaultWidth * 0.5, vmetrics[0]];
           vmetrics = dict.get('W2');
           if (vmetrics) {
-            for (var i = 0, ii = vmetrics.length; i < ii; i++) {
-              var start = vmetrics[i++];
-              var code = xref.fetchIfRef(vmetrics[i]);
+            for (i = 0, ii = vmetrics.length; i < ii; i++) {
+              start = vmetrics[i++];
+              code = xref.fetchIfRef(vmetrics[i]);
               if (isArray(code)) {
-                for (var j = 0, jj = code.length; j < jj; j++) {
+                for (j = 0, jj = code.length; j < jj; j++) {
                   glyphsVMetrics[start++] = [code[j++], code[j++], code[j]];
                 }
               } else {
                 var vmetric = [vmetrics[++i], vmetrics[++i], vmetrics[++i]];
-                for (var j = start; j <= code; j++) {
+                for (j = start; j <= code; j++) {
                   glyphsVMetrics[j] = vmetric;
                 }
               }
@@ -1174,10 +1179,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       } else {
         var firstChar = properties.firstChar;
-        var widths = dict.get('Widths');
+        widths = dict.get('Widths');
         if (widths) {
-          var j = firstChar;
-          for (var i = 0, ii = widths.length; i < ii; i++) {
+          j = firstChar;
+          for (i = 0, ii = widths.length; i < ii; i++) {
             glyphsWidths[j++] = widths[i];
           }
           defaultWidth = (parseFloat(descriptor.get('MissingWidth')) || 0);
@@ -1285,6 +1290,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       assertWellFormed(isName(type), 'invalid font Subtype');
 
       var composite = false;
+      var uint8array;
       if (type.name == 'Type0') {
         // If font is a composite
         //  - get the descendant font
@@ -1314,7 +1320,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var toUnicode = dict.get('ToUnicode') || baseDict.get('ToUnicode');
         if (isStream(toUnicode)) {
           var stream = toUnicode.str || toUnicode;
-          var uint8array = stream.buffer ?
+          uint8array = stream.buffer ?
             new Uint8Array(stream.buffer.buffer, 0, stream.bufferLength) :
             new Uint8Array(stream.bytes.buffer,
                            stream.start, stream.end - stream.start);
@@ -1326,7 +1332,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         var widths = dict.get('Widths') || baseDict.get('Widths');
         if (widths) {
-          var uint8array = new Uint8Array(new Uint32Array(widths).buffer);
+          uint8array = new Uint8Array(new Uint32Array(widths).buffer);
           hash.update(uint8array);
         }
       }
@@ -1348,6 +1354,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var descriptor = preEvaluatedFont.descriptor;
       var type = dict.get('Subtype');
       var maxCharIndex = (composite ? 0xFFFF : 0xFF);
+      var properties;
 
       if (!descriptor) {
         if (type.name == 'Type3') {
@@ -1376,7 +1383,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             (symbolsFonts[fontNameWoStyle] ? FontFlags.Symbolic :
                                              FontFlags.Nonsymbolic);
 
-          var properties = {
+          properties = {
             type: type.name,
             name: baseFontName,
             widths: metrics.widths,
@@ -1441,7 +1448,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
 
-      var properties = {
+      properties = {
         type: type.name,
         name: fontName.name,
         subtype: subtype,
@@ -1683,7 +1690,7 @@ var EvalState = (function EvalStateClosure() {
   return EvalState;
 })();
 
-var EvaluatorPreprocessor = (function EvaluatorPreprocessor() {
+var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
   // Specifies properties for each command
   //
   // If variableArgs === true: [0, `numArgs`] expected
@@ -1937,7 +1944,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var maxX = 0;
       var map = [], maxLineHeight = 0;
       var currentX = IMAGE_PADDING, currentY = IMAGE_PADDING;
-      for (var q = 0; q < count; q++) {
+      var q;
+      for (q = 0; q < count; q++) {
         var transform = argsArray[j + (q << 2) + 1];
         var img = argsArray[j + (q << 2) + 2][0];
         if (currentX + img.width > MAX_WIDTH) {
@@ -1959,7 +1967,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var imgHeight = currentY + maxLineHeight + IMAGE_PADDING;
       var imgData = new Uint8Array(imgWidth * imgHeight * 4);
       var imgRowSize = imgWidth << 2;
-      for (var q = 0; q < count; q++) {
+      for (q = 0; q < count; q++) {
         var data = argsArray[j + (q << 2) + 2][0].data;
         // copy image by lines and extends pixels into padding
         var rowSize = map[q].w << 2;
@@ -2003,7 +2011,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
 
       var fnArray = context.fnArray, argsArray = context.argsArray;
       var j = context.currentOperation - 3, i = j + 4;
-      var ii = fnArray.length;
+      var ii = fnArray.length, q;
 
       for (; i < ii && fnArray[i - 4] === fnArray[i]; i++) {}
       var count = (i - j) >> 2;
@@ -2014,12 +2022,13 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       }
 
       var isSameImage = false;
+      var transformArgs;
       if (argsArray[j + 1][1] === 0 && argsArray[j + 1][2] === 0) {
         i = j + 4;
         isSameImage = true;
-        for (var q = 1; q < count; q++, i += 4) {
+        for (q = 1; q < count; q++, i += 4) {
           var prevTransformArgs = argsArray[i - 3];
-          var transformArgs = argsArray[i + 1];
+          transformArgs = argsArray[i + 1];
           if (argsArray[i - 2][0] !== argsArray[i + 2][0] ||
               prevTransformArgs[0] !== transformArgs[0] ||
               prevTransformArgs[1] !== transformArgs[1] ||
@@ -2039,8 +2048,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         count = Math.min(count, MAX_SAME_IMAGES_IN_MASKS_BLOCK);
         var positions = new Float32Array(count * 2);
         i = j + 1;
-        for (var q = 0; q < count; q++) {
-          var transformArgs = argsArray[i];
+        for (q = 0; q < count; q++) {
+          transformArgs = argsArray[i];
           positions[(q << 1)] = transformArgs[4];
           positions[(q << 1) + 1] = transformArgs[5];
           i += 4;
@@ -2055,8 +2064,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       } else {
         count = Math.min(count, MAX_IMAGES_IN_MASKS_BLOCK);
         var images = [];
-        for (var q = 0; q < count; q++) {
-          var transformArgs = argsArray[j + (q << 2) + 1];
+        for (q = 0; q < count; q++) {
+          transformArgs = argsArray[j + (q << 2) + 1];
           var maskParams = argsArray[j + (q << 2) + 2][0];
           images.push({ data: maskParams.data, width: maskParams.width,
                         height: maskParams.height,
@@ -2083,6 +2092,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
         return;
       }
       var ii = fnArray.length;
+      var transformArgs;
       for (; i + 3 < ii && fnArray[i - 4] === fnArray[i]; i += 4) {
         if (fnArray[i - 3] !== fnArray[i + 1] ||
             fnArray[i - 2] !== fnArray[i + 2] ||
@@ -2093,7 +2103,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
           break; // different image
         }
         var prevTransformArgs = argsArray[i - 3];
-        var transformArgs = argsArray[i + 1];
+        transformArgs = argsArray[i + 1];
         if (prevTransformArgs[0] !== transformArgs[0] ||
             prevTransformArgs[1] !== transformArgs[1] ||
             prevTransformArgs[2] !== transformArgs[2] ||
@@ -2110,7 +2120,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var positions = new Float32Array(count * 2);
       i = j + 1;
       for (var q = 0; q < count; q++) {
-        var transformArgs = argsArray[i];
+        transformArgs = argsArray[i];
         positions[(q << 1)] = transformArgs[4];
         positions[(q << 1) + 1] = transformArgs[5];
         i += 4;

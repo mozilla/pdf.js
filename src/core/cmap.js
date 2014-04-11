@@ -451,6 +451,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
 
       var ucs2DataSize = 1;
       var subitemsCount = stream.readNumber();
+      var i;
       switch (type) {
         case 0: // codespacerange
           stream.readHex(start, dataSize);
@@ -458,7 +459,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           addHex(end, start, dataSize);
           cMap.addCodespaceRange(dataSize + 1, hexToInt(start, dataSize),
                                  hexToInt(end, dataSize));
-          for (var i = 1; i < subitemsCount; i++) {
+          for (i = 1; i < subitemsCount; i++) {
             incHex(end, dataSize);
             stream.readHexNumber(start, dataSize);
             addHex(start, end, dataSize);
@@ -474,7 +475,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           addHex(end, start, dataSize);
           code = stream.readNumber();
           // undefined range, skipping
-          for (var i = 1; i < subitemsCount; i++) {
+          for (i = 1; i < subitemsCount; i++) {
             incHex(end, dataSize);
             stream.readHexNumber(start, dataSize);
             addHex(start, end, dataSize);
@@ -488,7 +489,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           stream.readHex(char, dataSize);
           code = stream.readNumber();
           cMap.mapOne(hexToInt(char, dataSize), String.fromCharCode(code));
-          for (var i = 1; i < subitemsCount; i++) {
+          for (i = 1; i < subitemsCount; i++) {
             incHex(char, dataSize);
             if (!sequence) {
               stream.readHexNumber(tmp, dataSize);
@@ -505,7 +506,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           code = stream.readNumber();
           cMap.mapRange(hexToInt(start, dataSize), hexToInt(end, dataSize),
                         String.fromCharCode(code));
-          for (var i = 1; i < subitemsCount; i++) {
+          for (i = 1; i < subitemsCount; i++) {
             incHex(end, dataSize);
             if (!sequence) {
               stream.readHexNumber(start, dataSize);
@@ -525,7 +526,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           stream.readHex(charCode, dataSize);
           cMap.mapOne(hexToInt(char, ucs2DataSize),
                       hexToStr(charCode, dataSize));
-          for (var i = 1; i < subitemsCount; i++) {
+          for (i = 1; i < subitemsCount; i++) {
             incHex(char, ucs2DataSize);
             if (!sequence) {
               stream.readHexNumber(tmp, ucs2DataSize);
@@ -546,7 +547,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
           cMap.mapRange(hexToInt(start, ucs2DataSize),
                         hexToInt(end, ucs2DataSize),
                         hexToStr(charCode, dataSize));
-          for (var i = 1; i < subitemsCount; i++) {
+          for (i = 1; i < subitemsCount; i++) {
             incHex(end, ucs2DataSize);
             if (!sequence) {
               stream.readHexNumber(start, ucs2DataSize);
