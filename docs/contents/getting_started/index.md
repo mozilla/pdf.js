@@ -111,4 +111,4 @@ With the prebuilt or source version open `web/viewer.html` in a browser and the 
 
 ## More Information
 
-For a further walkthrough of a minimal viewer see the [hello world example](/examples/). More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.
+For a further walkthrough of a minimal viewer see the [hello world example](../examples/). More documentation can be found in our [wiki](https://github.com/mozilla/pdf.js/wiki) too.
