@@ -352,9 +352,16 @@ function snapshotCurrentPage(task, failure) {
   });
 }
 
-function sendQuitRequest() {
+function sendQuitRequest(cb) {
   var r = new XMLHttpRequest();
   r.open('POST', '/tellMeToQuit?path=' + escape(appPath), false);
+  r.onreadystatechange = function sendQuitRequestOnreadystatechange(e) {
+    if (r.readyState == 4) {
+      if (cb) {
+        cb();
+      }
+    }
+  };
   r.send(null);
 }
 
@@ -362,12 +369,13 @@ function quitApp() {
   log('Done !');
   document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>' +
                              document.body.innerHTML;
-  if (window.SpecialPowers) {
-    SpecialPowers.quitApplication();
-  } else {
-    sendQuitRequest();
-    window.close();
-  }
+  sendQuitRequest(function () {
+    if (window.SpecialPowers) {
+      SpecialPowers.quit();
+    } else {
+      window.close();
+    }
+  });
 }
 
 function done() {
