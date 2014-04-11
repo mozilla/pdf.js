@@ -112,6 +112,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.appendText = function textLayerBuilderAppendText(geom, styles) {
     var style = styles[geom.fontName];
     var textDiv = document.createElement('div');
+    this.textDivs.push(textDiv);
     if (!/\S/.test(geom.str)) {
       textDiv.dataset.isWhitespace = true;
       return;
@@ -140,7 +141,6 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
     }
 
-    this.textDivs.push(textDiv);
   };
 
   this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
