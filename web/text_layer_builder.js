@@ -53,7 +53,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.renderLayer = function textLayerBuilderRenderLayer() {
     var textDivs = this.textDivs;
     var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext('2d', {alpha: false});
+    var ctx = canvas.getContext('2d');
 
     // No point in rendering so many divs as it'd make the browser unusable
     // even after the divs are rendered
