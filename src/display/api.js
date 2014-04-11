@@ -1185,6 +1185,18 @@ var RenderTask = (function RenderTaskClosure() {
     cancel: function RenderTask_cancel() {
       this.internalRenderTask.cancel();
       this.promise.reject(new Error('Rendering is cancelled'));
+    },
+
+    /**
+     * Registers callback to indicate the rendering task completion.
+     *
+     * @param {function} onFulfilled The callback for the rendering completion.
+     * @param {function} onRejected The callback for the rendering failure.
+     * @return {Promise} A promise that is resolved after the onFulfilled or
+     *                   onRejected callback.
+     */
+    then: function RenderTask_then(onFulfilled, onRejected) {
+      return this.promise.then(onFulfilled, onRejected);
     }
   };
 
