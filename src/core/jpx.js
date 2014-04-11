@@ -428,7 +428,6 @@ var JpxImage = (function JpxImageClosure() {
     var componentsCount = siz.Csiz;
     for (var i = 0, ii = componentsCount; i < ii; i++) {
       var component = components[i];
-      var tileComponents = [];
       for (var j = 0, jj = tiles.length; j < jj; j++) {
         var tileComponent = {};
         tile = tiles[j];
@@ -497,7 +496,7 @@ var JpxImage = (function JpxImageClosure() {
     var precinctParameters = subband.resolution.precinctParameters;
     var codeblocks = [];
     var precincts = [];
-    var i, ii, j, codeblock, precinctNumber;
+    var i, j, codeblock, precinctNumber;
     for (j = cby0; j < cby1; j++) {
       for (i = cbx0; i < cbx1; i++) {
         codeblock = {
@@ -522,8 +521,6 @@ var JpxImage = (function JpxImageClosure() {
         codeblock.tby1_ = Math.min(subband.tby1, codeblock.tby1);
         codeblock.precinctNumber = precinctNumber;
         codeblock.subbandType = subband.type;
-        var coefficientsLength = (codeblock.tbx1_ - codeblock.tbx0_) *
-                                 (codeblock.tby1_ - codeblock.tby0_);
         codeblock.Lblock = 3;
         codeblocks.push(codeblock);
         // building precinct for the sub-band
@@ -742,7 +739,6 @@ var JpxImage = (function JpxImageClosure() {
     }
     // Generate the packets sequence
     var progressionOrder = tile.codingStyleDefaultParameters.progressionOrder;
-    var packetsIterator;
     switch (progressionOrder) {
       case 0:
         tile.packetsIterator =
@@ -966,7 +962,7 @@ var JpxImage = (function JpxImageClosure() {
       }
 
       var offset = (codeblock.tbx0_ - x0) + (codeblock.tby0_ - y0) * width;
-      var n, nb, correction, position = 0;
+      var n, nb, position = 0;
       var irreversible = !reversible;
       var sign = bitModel.coefficentsSign;
       var magnitude = bitModel.coefficentsMagnitude;
@@ -1077,7 +1073,7 @@ var JpxImage = (function JpxImageClosure() {
 
       // Section G.2.2 Inverse multi component transform
       var y0items, y1items, y2items, j, jj, y0, y1, y2;
-      var component, offset, tileImage, items;
+      var component, tileImage, items;
       if (tile.codingStyleDefaultParameters.multipleComponentTransform) {
         var component0 = tile.components[0];
         if (!component0.codingStyleParameters.reversibleTransformation) {
@@ -1130,7 +1126,6 @@ var JpxImage = (function JpxImageClosure() {
     var siz = context.SIZ;
     var componentsCount = siz.Csiz;
     var tile = context.tiles[tileIndex];
-    var resultTiles = [];
     for (var c = 0; c < componentsCount; c++) {
       var component = tile.components[c];
       var qcdOrQcc = (c in context.currentTile.QCC ?
@@ -1393,7 +1388,6 @@ var JpxImage = (function JpxImageClosure() {
         var width = this.width, height = this.height;
         var coefficentsMagnitude = this.coefficentsMagnitude;
         var coefficentsSign = this.coefficentsSign;
-        var contextLabels = this.contextLabels;
         var neighborsSignificance = this.neighborsSignificance;
         var processingFlags = this.processingFlags;
         var contexts = this.contexts;
@@ -1531,7 +1525,6 @@ var JpxImage = (function JpxImageClosure() {
         var decoder = this.decoder;
         var width = this.width, height = this.height;
         var neighborsSignificance = this.neighborsSignificance;
-        var significanceState = this.significanceState;
         var coefficentsMagnitude = this.coefficentsMagnitude;
         var coefficentsSign = this.coefficentsSign;
         var contexts = this.contexts;
@@ -1795,7 +1788,7 @@ var JpxImage = (function JpxImageClosure() {
       var delta = 0.443506852043971;
       var K = 1.230174104914001;
       var K_ = 1 / K;
-      var j, n, nn;
+      var j, n;
 
       // step 1 is combined with step 3
 

@@ -503,7 +503,6 @@ var Lexer = (function LexerClosure() {
         } else if (ch === 0x45 || ch === 0x65) { // 'E', 'e'
           // 'E' can be either a scientific notation or the beginning of a new
           // operator
-          var hasE = true;
           ch = this.peekChar();
           if (ch === 0x2B || ch === 0x2D) { // '+', '-'
             powerValueSign = (ch === 0x2D) ? -1 : 1;
@@ -781,7 +780,6 @@ var Lexer = (function LexerClosure() {
       return Cmd.get(str);
     },
     skipToNextLine: function Lexer_skipToNextLine() {
-      var stream = this.stream;
       var ch = this.currentChar;
       while (ch >= 0) {
         if (ch === 0x0D) { // CR

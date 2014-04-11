@@ -88,7 +88,7 @@ function readCharstringEncoding(aString) {
     } else if (value <= 18) {
       token = CFFEncodingMap[value];
     } else if (value <= 20) {
-      var mask = aString[i++];
+      ++i; // var mask = aString[i++];
       token = CFFEncodingMap[value];
     } else if (value <= 27) {
       token = CFFEncodingMap[value];
@@ -340,7 +340,6 @@ var Type2Parser = function type2Parser(aFilePath) {
     }
 
     // Parse the TopDict operator
-    var objects = [];
     var count = topDict.length;
     for (i = 0; i < count; i++) {
       parseAsToken(topDict[i], CFFDictDataMap);

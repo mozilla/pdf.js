@@ -215,13 +215,13 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
 
 ShadingIRs.Mesh = {
   fromIR: function Mesh_fromIR(raw) {
-    var type = raw[1];
+    //var type = raw[1];
     var coords = raw[2];
     var colors = raw[3];
     var figures = raw[4];
     var bounds = raw[5];
     var matrix = raw[6];
-    var bbox = raw[7];
+    //var bbox = raw[7];
     var background = raw[8];
     return {
       type: 'Pattern',
@@ -318,7 +318,6 @@ var TilingPattern = (function TilingPatternClosure() {
       var color = this.color;
       var objs = this.objs;
       var commonObjs = this.commonObjs;
-      var ctx = this.ctx;
 
       info('TilingType: ' + tilingType);
 

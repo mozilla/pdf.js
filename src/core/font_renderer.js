@@ -148,10 +148,6 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
     var i = 0;
     var numberOfContours = ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
-    var xMin = ((code[i + 2] << 24) | (code[i + 3] << 16)) >> 16;
-    var yMin = ((code[i + 4] << 24) | (code[i + 5] << 16)) >> 16;
-    var xMax = ((code[i + 6] << 24) | (code[i + 7] << 16)) >> 16;
-    var yMax = ((code[i + 8] << 24) | (code[i + 9] << 16)) >> 16;
     var flags;
     var x = 0, y = 0;
     i += 10;

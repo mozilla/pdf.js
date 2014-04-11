@@ -940,8 +940,6 @@ var XRef = (function XRefClosure() {
       var buffer = stream.getBytes();
       var position = stream.start, length = buffer.length;
       var trailers = [], xrefStms = [];
-      var state = 0;
-      var currentToken;
       while (position < length) {
         var ch = buffer[position];
         if (ch === 32 || ch === 9 || ch === 13 || ch === 10) {

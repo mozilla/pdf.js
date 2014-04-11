@@ -237,7 +237,6 @@ var ChunkedStream = (function ChunkedStreamClosure() {
 var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
   function ChunkedStreamManager(length, chunkSize, url, args) {
-    var self = this;
     this.stream = new ChunkedStream(length, chunkSize, this);
     this.length = length;
     this.chunkSize = chunkSize;

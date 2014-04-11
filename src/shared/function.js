@@ -99,7 +99,6 @@ var PDFFunction = (function PDFFunctionClosure() {
     constructSampled: function PDFFunction_constructSampled(str, dict) {
       function toMultiArray(arr) {
         var inputLength = arr.length;
-        var outputLength = arr.length / 2;
         var out = [];
         var index = 0;
         for (var i = 0; i < inputLength; i += 2) {
@@ -170,7 +169,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         var samples = IR[5];
         var size = IR[6];
         var n = IR[7];
-        var mask = IR[8];
+        //var mask = IR[8];
         var range = IR[9];
 
         if (m != args.length) {
