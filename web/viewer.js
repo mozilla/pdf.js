@@ -1941,6 +1941,28 @@ function webViewerInitialized() {
 //      return;
 //    }
 //  }
+//  if (/^filesystem:/.test(file) && !PDFJS.disableWorker) {
+//    // The security origin of filesystem:-URLs are not preserved when the URL
+//    // is passed to a Web worker, (http://crbug.com/362061), so we have to
+//    // create an intermediate blob:-URL as a work-around.
+//    var resolveLocalFileSystemURL = window.resolveLocalFileSystemURL ||
+//                                    window.webkitResolveLocalFileSystemURL;
+//    resolveLocalFileSystemURL(file, function onFileSystemSuccess(fileEntry) {
+//      fileEntry.file(function(fileObject) {
+//        var blobUrl = URL.createObjectURL(fileObject);
+//        PDFView.open(blobUrl, 0, undefined, undefined, {
+//          length: fileObject.size
+//        });
+//      });
+//    }, function onFileSystemError(error) {
+//      // This should not happen. When it happens, just fall back to the normal
+//      // way of getting the File's data (via the Web worker).
+//      console.warn('Cannot resolve file ' + file + ', ' + error.name + ' ' +
+//                   error.message);
+//      PDFView.open(file, 0);
+//    });
+//    return;
+//  }
 //  PDFView.open(file, 0);
 //});
 //#endif
