@@ -2471,7 +2471,8 @@ var Font = (function FontClosure() {
     }
     return {
       toFontChar: toFontChar,
-      charCodeToGlyphId: newMap
+      charCodeToGlyphId: newMap,
+      nextAvailableFontCharCode: nextAvailableFontCharCode
     };
   }
 
@@ -4046,18 +4047,25 @@ var Font = (function FontClosure() {
       this.toFontChar = newMapping.toFontChar;
       var numGlyphs = font.numGlyphs;
 
+      function getCharCode(charCodeToGlyphId, glyphId, addMap) {
+        for (var charCode in charCodeToGlyphId) {
+          if (glyphId === charCodeToGlyphId[charCode]) {
+            return charCode | 0;
+          }
+        }
+        if (addMap) {
+          newMapping.charCodeToGlyphId[newMapping.nextAvailableFontCharCode] =
+              glyphId;
+          return newMapping.nextAvailableFontCharCode++;
+        }
+        return null;
+      }
+
       var seacs = font.seacs;
-      var charCode;
       if (SEAC_ANALYSIS_ENABLED && seacs && seacs.length) {
         var matrix = properties.fontMatrix || FONT_IDENTITY_MATRIX;
         var charset = font.getCharset();
-        var charCodeToGlyphId = mapping;
-        var toFontChar = newMapping.toFontChar;
         var seacMap = Object.create(null);
-        var glyphIdToCharCode = Object.create(null);
-        for (charCode in charCodeToGlyphId) {
-          glyphIdToCharCode[charCodeToGlyphId[charCode]] = charCode | 0;
-        }
         for (var glyphId in seacs) {
           glyphId |= 0;
           var seac = seacs[glyphId];
@@ -4072,10 +4080,23 @@ var Font = (function FontClosure() {
             x: seac[0] * matrix[0] + seac[1] * matrix[2] + matrix[4],
             y: seac[0] * matrix[1] + seac[1] * matrix[3] + matrix[5]
           };
-          charCode = glyphIdToCharCode[glyphId];
+
+          var charCode = getCharCode(mapping, glyphId);
+          if (charCode === null) {
+            // There's no point in mapping it if the char code was never mapped
+            // to begin with.
+            continue;
+          }
+          // Find a fontCharCode that maps to the base and accent glyphs. If one
+          // doesn't exists, create it.
+          var charCodeToGlyphId = newMapping.charCodeToGlyphId;
+          var baseFontCharCode = getCharCode(charCodeToGlyphId, baseGlyphId,
+                                             true);
+          var accentFontCharCode = getCharCode(charCodeToGlyphId, accentGlyphId,
+                                               true);
           seacMap[charCode] = {
-            baseFontCharCode: toFontChar[glyphIdToCharCode[baseGlyphId]],
-            accentFontCharCode: toFontChar[glyphIdToCharCode[accentGlyphId]],
+            baseFontCharCode: baseFontCharCode,
+            accentFontCharCode: accentFontCharCode,
             accentOffset: accentOffset
           };
         }

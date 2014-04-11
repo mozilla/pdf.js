@@ -665,6 +665,16 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue4573",
+       "file": "pdfs/issue4573.pdf",
+       "md5": "34b0c4fdee19e57033275b766c5f57a3",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq",
+       "about": "Seac with differences array that messes up mapping."
+    },
     {  "id": "ocs",
       "file": "pdfs/ocs.pdf",
       "md5": "2ade57e954ae7632749cf328daeaa7a8",
