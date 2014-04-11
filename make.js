@@ -1267,31 +1267,13 @@ target.lint = function() {
   echo();
   echo('### Linting JS files');
 
-  var LINT_FILES = ['make.js',
-                    'external/builder/',
-                    'external/crlfchecker/',
-                    'src/',
-                    'web/',
-                    'test/downloadutils.js',
-                    'test/driver.js',
-                    'test/test.js',
-                    'test/testutils.js',
-                    'test/webbrowser.js',
-                    'test/webserver.js',
-                    'test/font/fontutils.js',
-                    'test/font/ttxdriver.js',
-                    'test/unit/',
-                    'extensions/firefox/',
-                    'extensions/chromium/'
-                    ];
-
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
   if (!test('-f', jshintPath)) {
     echo('jshint is not installed -- installing...');
     exec('npm install jshint@2.4.x'); // TODO read version from package.json
   }
 
-  var exitCode = exec('"' + jshintPath + '" ' + LINT_FILES.join(' ')).code;
+  var exitCode = exec('"' + jshintPath + '" .').code;
   if (exitCode === 0) {
     echo('files checked, no errors found');
   }

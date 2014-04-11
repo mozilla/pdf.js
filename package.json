@@ -12,7 +12,7 @@
     "typogr": "0.5.x"
   },
   "scripts": {
-    "test": "node make lint"
+    "test": "node ./node_modules/.bin/jshint ."
   },
   "repository": {
     "type": "git",
