@@ -361,12 +361,30 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  */
 
 /**
- * Text style
+ * Text style.
+ *
  * @typedef {Object} TextStyle
  * @property {number} ascent - font ascent.
  * @property {number} descent - font descent.
  * @property {boolean} vertical - text is in vertical mode.
  * @property {string} fontFamily - possible font family
+ */
+
+/**
+ * Page render parameters.
+ *
+ * @typedef {Object} RenderParameters
+ * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
+ * @property {PageViewport} viewport - Rendering viewport obtained by
+ *                          calling of PDFPage.getViewport method.
+ * @property {string} intent - Rendering intent, can be 'display' or 'print'
+ *                    (default value is 'display').
+ * @property {Object} imageLayer - (optional) An object that has beginLayout,
+ *                    endLayout and appendImage functions.
+ * @property {function} continueCallback - (optional) A function that will be
+ *                      called each time the rendering is paused.  To continue
+ *                      rendering call the function that is the first argument
+ *                      to the callback.
  */
 
 /**
@@ -441,18 +459,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
     /**
      * Begins the process of rendering a page to the desired context.
-     * @param {Object} params A parameter object that supports:
-     * {
-     *   canvasContext(required): A 2D context of a DOM Canvas object.,
-     *   imageLayer(optional): An object that has beginLayout, endLayout and
-     *                         appendImage functions.,
-     *   continueCallback(optional): A function that will be called each time
-     *                               the rendering is paused.  To continue
-     *                               rendering call the function that is the
-     *                               first argument to the callback.
-     * }.
-     * @return {RenderTask} An extended promise that is resolved when the page
-     * finishes rendering (see RenderTask).
+     * @param {RenderParameters} params Page render parameters.
+     * @return {RenderTask} An object that contains the promise, which
+     *                      is resolved when the page finishes rendering.
      */
     render: function PDFPageProxy_render(params) {
       var stats = this.stats;
