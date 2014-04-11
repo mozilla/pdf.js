@@ -1661,7 +1661,7 @@ var DocumentOutlineView = function documentOutlineView(outline) {
 //  // Run this code outside DOMContentLoaded to make sure that the URL
 //  // is rewritten as soon as possible.
 //  var params = PDFView.parseQueryString(document.location.search.slice(1));
-//  DEFAULT_URL = params.file || DEFAULT_URL;
+//  DEFAULT_URL = params.file || '';
 //
 //  // Example: chrome-extension://.../http://example.com/file.pdf
 //  var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
@@ -1686,9 +1686,6 @@ function webViewerInitialized() {
 //#endif
 //#if CHROME
 //var file = DEFAULT_URL;
-//// XHR cannot get data from drive:-URLs, so expand to filesystem: (Chrome OS)
-//file = file.replace(/^drive:/i,
-//  'filesystem:' + location.origin + '/external/');
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || CHROME || B2G)
@@ -1914,36 +1911,10 @@ function webViewerInitialized() {
     PDFView.open(file, 0);
   }
 //#endif
-
 //#if CHROME
-//ChromeCom.request('getPDFStream', file, function(response) {
-//  if (response) {
-//    // We will only get a response when the streamsPrivate API is available.
-//
-//    var isFTPFile = /^ftp:/i.test(file);
-//    var streamUrl = response.streamUrl;
-//    if (streamUrl) {
-//      console.log('Found data stream for ' + file);
-//      PDFView.open(streamUrl, 0, undefined, undefined, {
-//        length: response.contentLength
-//      });
-//      PDFView.setTitleUsingUrl(file);
-//      return;
-//    }
-//    if (isFTPFile && !response.extensionSupportsFTP) {
-//      // Stream not found, and it's loaded from FTP.
-//      // When the browser does not support loading ftp resources over
-//      // XMLHttpRequest, just reload the page.
-//      // NOTE: This will not lead to an infinite redirect loop, because
-//      // if the file exists, then the streamsPrivate API will capture the
-//      // stream and send back the response. If the stream does not exist, then
-//      // a "Webpage not available" error will be shown (not the PDF Viewer).
-//      location.replace(file);
-//      return;
-//    }
-//  }
-//  PDFView.open(file, 0);
-//});
+//if (file) {
+//  ChromeCom.openPDFFile(file);
+//}
 //#endif
 }
 
