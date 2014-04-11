@@ -20,7 +20,7 @@ PDFJS.getDocument('helloworld.pdf')
 Remember though that PDF.js uses promises, so the above will return a promise that is resolved with the document object.
 
 ```js
-PDFJS.getDocument('helloworld.pdf').then(function(pdf)) {
+PDFJS.getDocument('helloworld.pdf').then(function(pdf) {
   // you can now use *pdf* here
 });
 ```
