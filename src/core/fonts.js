@@ -4193,7 +4193,7 @@ var Font = (function FontClosure() {
         toUnicode: null
       };
       // Section 9.10.2 Mapping Character Codes to Unicode Values
-      if (properties.toUnicode) {
+      if (properties.toUnicode && properties.toUnicode.length !== 0) {
         map.toUnicode = properties.toUnicode;
         return map;
       }
@@ -4217,6 +4217,21 @@ var Font = (function FontClosure() {
           // b) Look up the character name in the Adobe Glyph List (see the
           //    Bibliography) to obtain the corresponding Unicode value.
           if (glyphName === '' || !(glyphName in GlyphsUnicode)) {
+            // (undocumented) c) Few heuristics to recognize unknown glyphs
+            // NOTE: Adobe Reader does not do this step, but OSX Preview does
+            var code;
+            // Gxx glyph
+            if (glyphName.length === 3 &&
+                glyphName[0] === 'G' &&
+                (code = parseInt(glyphName.substr(1), 16))) {
+              toUnicode[charcode] = String.fromCharCode(code);
+            }
+            // Cddd glyph
+            if (glyphName.length >= 3 &&
+                glyphName[0] === 'C' &&
+                (code = +glyphName.substr(1))) {
+              toUnicode[charcode] = String.fromCharCode(code);
+            }
             continue;
           }
           toUnicode[charcode] = String.fromCharCode(GlyphsUnicode[glyphName]);
@@ -5467,17 +5482,19 @@ var CFFFont = (function CFFFontClosure() {
     },
     getGlyphMapping: function CFFFont_getGlyphMapping() {
       var cff = this.cff;
+      var properties = this.properties;
       var charsets = cff.charset.charset;
-      var charCodeToGlyphId = Object.create(null);
+      var charCodeToGlyphId;
       var glyphId;
 
-      if (this.properties.composite) {
-        if (this.cff.isCIDFont) {
+      if (properties.composite) {
+        charCodeToGlyphId = Object.create(null);
+        if (cff.isCIDFont) {
           // If the font is actually a CID font then we should use the charset
           // to map CIDs to GIDs.
           for (glyphId = 0; glyphId < charsets.length; glyphId++) {
             var cidString = String.fromCharCode(charsets[glyphId]);
-            var charCode = this.properties.cMap.map.indexOf(cidString);
+            var charCode = properties.cMap.map.indexOf(cidString);
             charCodeToGlyphId[charCode] = glyphId;
           }
         } else {
@@ -5491,7 +5508,8 @@ var CFFFont = (function CFFFontClosure() {
       }
 
       var encoding = cff.encoding ? cff.encoding.encoding : null;
-      return type1FontGlyphMapping(this.properties, encoding, charsets);
+      charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
+      return charCodeToGlyphId;
     }
   };
 

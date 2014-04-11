@@ -352,6 +352,12 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue4550-text",
+       "file": "pdfs/issue4550.pdf",
+       "md5": "d64cfc4b50e225f596130d9938e8d5cc",
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "jai-pdf",
        "file": "pdfs/jai.pdf",
        "md5": "1f5dd128c3757420a881a155f2f8ace3",
