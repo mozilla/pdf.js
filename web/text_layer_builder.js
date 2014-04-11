@@ -163,9 +163,6 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     var queryLen = (PDFFindController === null ?
                     0 : PDFFindController.state.query.length);
 
-    var lastDivIdx = -1;
-    var pos;
-
     var ret = [];
 
     // Loop over all the matches.
