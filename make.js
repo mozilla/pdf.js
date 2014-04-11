@@ -23,7 +23,6 @@
 require('./external/shelljs/make');
 var builder = require('./external/builder/builder.js');
 var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
-var wintersmith = require('wintersmith');
 var path = require('path');
 var fs = require('fs');
 
@@ -169,6 +168,7 @@ target.web = function() {
   cp('-R', 'test/features', GH_PAGES_DIR);
   cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
 
+  var wintersmith = require('wintersmith');
   var env = wintersmith('docs/config.json');
   env.build(GH_PAGES_DIR, function (error) {
     if (error) {
