@@ -9,6 +9,7 @@ external/jpgjs/
 external/jasmine/
 external/cmapscompress/
 external/importL10n/
+shared/
 test/tmp/
 test/features/
 test/resources/
