@@ -4158,17 +4158,17 @@ var Font = (function FontClosure() {
             '\x00\x00' + // -reserved-
             '\x00\x00' + // -reserved-
             '\x00\x00' + // metricDataFormat
-            string16(numGlyphs + 1)); // Number of HMetrics
+            string16(numGlyphs)); // Number of HMetrics
         })(),
 
         // Horizontal metrics
         'hmtx': (function fontFieldsHmtx() {
           var charstrings = font.charstrings;
           var hmtx = '\x00\x00\x00\x00'; // Fake .notdef
-          for (var i = 0, ii = numGlyphs; i < ii; i++) {
+          for (var i = 1, ii = numGlyphs; i < ii; i++) {
             // TODO: For CFF fonts the width should technically match th x in
             // the glyph, but it doesn't seem to matter.
-            var charstring = charstrings ? charstrings[i] : {};
+            var charstring = charstrings ? charstrings[i - 1] : {};
             var width = 'width' in charstring ? charstring.width : 0;
             hmtx += string16(width) + string16(0);
           }
@@ -4179,7 +4179,7 @@ var Font = (function FontClosure() {
         'maxp': (function fontFieldsMaxp() {
           return stringToArray(
             '\x00\x00\x50\x00' + // Version number
-            string16(numGlyphs + 1)); // Num of glyphs
+            string16(numGlyphs)); // Num of glyphs
         })(),
 
         // Naming tables
@@ -5296,7 +5296,7 @@ var Type1Font = function Type1Font(name, file, properties) {
 
 Type1Font.prototype = {
   get numGlyphs() {
-    return this.charstrings.length;
+    return this.charstrings.length + 1;
   },
 
   getCharset: function Type1Font_getCharset() {
