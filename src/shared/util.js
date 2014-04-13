@@ -283,14 +283,6 @@ function isValidUrl(url, allowRelative) {
 }
 PDFJS.isValidUrl = isValidUrl;
 
-// In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
-// behavior is undefined.
-function assertWellFormed(cond, msg) {
-  if (!cond) {
-    error(msg);
-  }
-}
-
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
                                      enumerable: true,

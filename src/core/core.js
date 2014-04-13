@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assertWellFormed, calculateMD5, Catalog, Dict, error, info, isArray,
+/* globals assert, calculateMD5, Catalog, Dict, error, info, isArray,
            isArrayBuffer, isName, isStream, isString, LegacyPromise,
            Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
@@ -303,7 +303,7 @@ var PDFDocument = (function PDFDocumentClosure() {
   }
 
   function init(pdfManager, stream, password) {
-    assertWellFormed(stream.length > 0, 'stream must have data');
+    assert(stream.length > 0, 'stream must have data');
     this.pdfManager = pdfManager;
     this.stream = stream;
     var xref = new XRef(this.stream, password, pdfManager);
