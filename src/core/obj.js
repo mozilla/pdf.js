@@ -1100,7 +1100,7 @@ var XRef = (function XRefClosure() {
 
     getEntry: function XRef_getEntry(i) {
       var xrefEntry = this.entries[i];
-      if (xrefEntry !== null && !xrefEntry.free && xrefEntry.offset) {
+      if (xrefEntry && !xrefEntry.free && xrefEntry.offset) {
         return xrefEntry;
       }
       return null;
