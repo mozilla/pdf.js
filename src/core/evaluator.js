@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, assertWellFormed, ColorSpace, DecodeStream, Dict, Encodings,
+/* globals assert, ColorSpace, DecodeStream, Dict, Encodings,
            error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode,
            FontFlags, ImageKind, info, isArray, isCmd, isDict, isEOF, isName,
            isNum, isStream, isString, JpegStream, Lexer, Metrics,
@@ -564,10 +564,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
             var xobj = xobjs.get(name);
             if (xobj) {
-              assertWellFormed(isStream(xobj), 'XObject should be a stream');
+              assert(isStream(xobj), 'XObject should be a stream');
 
               var type = xobj.dict.get('Subtype');
-              assertWellFormed(isName(type),
+              assert(isName(type),
                 'XObject should have a Name subtype');
 
               if ('Form' == type.name) {
@@ -942,10 +942,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (!xobj) {
               break;
             }
-            assertWellFormed(isStream(xobj), 'XObject should be a stream');
+            assert(isStream(xobj), 'XObject should be a stream');
 
             var type = xobj.dict.get('Subtype');
-            assertWellFormed(isName(type),
+            assert(isName(type),
               'XObject should have a Name subtype');
 
             if ('Form' !== type.name) {
@@ -1287,7 +1287,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     preEvaluateFont: function PartialEvaluator_preEvaluateFont(dict, xref) {
       var baseDict = dict;
       var type = dict.get('Subtype');
-      assertWellFormed(isName(type), 'invalid font Subtype');
+      assert(isName(type), 'invalid font Subtype');
 
       var composite = false;
       var uint8array;
@@ -1303,7 +1303,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         dict = (isArray(df) ? xref.fetchIfRef(df[0]) : df);
 
         type = dict.get('Subtype');
-        assertWellFormed(isName(type), 'invalid font Subtype');
+        assert(isName(type), 'invalid font Subtype');
         composite = true;
       }
 
@@ -1434,7 +1434,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
       fontName = (fontName || baseFont);
 
-      assertWellFormed(isName(fontName), 'invalid font name');
+      assert(isName(fontName), 'invalid font name');
 
       var fontFile = descriptor.get('FontFile', 'FontFile2', 'FontFile3');
       if (fontFile) {
@@ -1827,7 +1827,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
           // argument
           if (obj !== null && obj !== undefined) {
             args.push((obj instanceof Dict ? obj.getAll() : obj));
-            assertWellFormed(args.length <= 33, 'Too many arguments');
+            assert(args.length <= 33, 'Too many arguments');
           }
           continue;
         }

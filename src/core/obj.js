@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assertWellFormed, bytesToString, CipherTransformFactory, error, info,
+/* globals assert, bytesToString, CipherTransformFactory, error, info,
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
            isStream, Lexer, Page, Parser, Promise, shadow,
-           stringToPDFString, stringToUTF8String, warn, isString, assert,
+           stringToPDFString, stringToUTF8String, warn, isString,
            Promise, MissingDataException, XRefParseException, Stream,
            ChunkedStream, LegacyPromise */
 
@@ -296,7 +296,7 @@ var Catalog = (function CatalogClosure() {
     this.xref = xref;
     this.catDict = xref.getCatalogObj();
     this.fontCache = new RefSetCache();
-    assertWellFormed(isDict(this.catDict),
+    assert(isDict(this.catDict),
       'catalog object is not a dictionary');
 
     this.pagePromises = [];
@@ -337,7 +337,7 @@ var Catalog = (function CatalogClosure() {
     },
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
-      assertWellFormed(isDict(pagesObj), 'invalid top-level pages dictionary');
+      assert(isDict(pagesObj), 'invalid top-level pages dictionary');
       // shadow the prototype getter
       return shadow(this, 'toplevelPagesDict', pagesObj);
     },
@@ -411,7 +411,7 @@ var Catalog = (function CatalogClosure() {
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
-      assertWellFormed(
+      assert(
         isInt(obj),
         'page count in top level pages object is not an integer'
       );
@@ -1114,7 +1114,7 @@ var XRef = (function XRefClosure() {
     },
 
     fetch: function XRef_fetch(ref, suppressEncryption) {
-      assertWellFormed(isRef(ref), 'ref object is not a reference');
+      assert(isRef(ref), 'ref object is not a reference');
       var num = ref.num;
       if (num in this.cache) {
         var cacheEntry = this.cache[num];
