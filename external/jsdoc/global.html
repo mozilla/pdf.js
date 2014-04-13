@@ -86,28 +86,45 @@
     
 
     
-        <h3 class="subsection-title">Methods</h3>
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
 
         <dl>
-            
+                
 <dt>
-    <h4 class="name" id="isEOF"><span class="type-signature"></span>isEOF<span class="signature">(v)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+    <h4 class="name" id="BidiText">BidiText</h4>
 
     
 </dt>
 <dd>
-
+    
+    <div class="description">
+        Page text content part.
+    </div>
     
 
     
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
 
+
+            </li>
+        </ul>
     
 
     
-        <h5>Parameters:</h5>
-        
+<dl class="details">
+    
 
-<table class="params">
+        <h5 class="subsection-title">Properties:</h5>
+
+        <dl>
+
+<table class="props">
     <thead>
     <tr>
         
@@ -129,10 +146,15 @@
 
         <tr>
             
-                <td class="name"><code>v</code></td>
+                <td class="name"><code>str</code></td>
             
 
             <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
             
             </td>
 
@@ -140,16 +162,128 @@
 
             
 
-            <td class="description last"></td>
+            <td class="description last">text content.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>dir</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">text direction: 'ttb', 'ltr' or 'rtl'.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">x position of the text on the page.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>y</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">y position of the text on the page.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>angle</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">text rotation.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>size</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">font size.</td>
         </tr>
 
     
     </tbody>
-</table>
-    
+</table></dl>
 
-    
-<dl class="details">
     
 
     
@@ -171,7 +305,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="parser.js.html">parser.js</a>, <a href="parser.js.html#line25">line 25</a>
+        <a href="api.js.html">api.js</a>, <a href="api.js.html#line335">line 335</a>
     </li></ul></dd>
     
 
@@ -186,43 +320,245 @@
     
 
     
+</dd>
 
-    
-
-    
-
-    
-
-    
-    <h5>Returns:</h5>
-    
             
-<div class="param-desc">
-    true or false
-</div>
+                
+<dt>
+    <h4 class="name" id="DocumentInitParameters">DocumentInitParameters</h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        Document initialization / loading parameters object.
+    </div>
+    
+
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
 
 
+            </li>
+        </ul>
+    
 
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
+    
+<dl class="details">
+    
+
+        <h5 class="subsection-title">Properties:</h5>
+
+        <dl>
+
+<table class="props">
+    <thead>
+    <tr>
         
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>url</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The URL of the PDF.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>data</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">TypedArray</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">A typed array with PDF data.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>httpHeaders</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Basic authentication headers.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>withCredentials</code></td>
+            
+
+            <td class="type">
+            
+                
 <span class="param-type">boolean</span>
 
 
-    </dd>
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Indicates whether or not cross-site
+  Access-Control requests should be made using credentials such as cookies
+  or authorization headers. The default is false.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>password</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">For decrypting password-protected PDFs.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>initialData</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">TypedArray</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">A typed array with the first portion or
+  all of the pdf data. Used by the extension since some data is already
+  loaded before the switch to range requests.</td>
+        </tr>
+
+    
+    </tbody>
+</table></dl>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="api.js.html">api.js</a>, <a href="api.js.html#line129">line 129</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
 </dl>
 
-        
+
+    
 
     
 </dd>
 
-        </dl>
-    
-
+            </dl>
     
 
     
@@ -236,13 +572,13 @@
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Global</h3><ul><li><a href="global.html#isEOF">isEOF</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="PDFDocumentProxy.html">PDFDocumentProxy</a></li><li><a href="PDFPageProxy.html">PDFPageProxy</a></li><li><a href="RenderTask.html">RenderTask</a></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <br clear="both">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a> on Mon Apr 07 2014 18:31:28 GMT-0300 (ART)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a> on Sun Apr 13 2014 00:33:02 GMT-0300 (ART)
 </footer>
 
 <script> prettyPrint(); </script>
