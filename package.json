@@ -6,6 +6,7 @@
     "yargs": "~1.2.1"
   },
   "devDependencies": {
+    "jsdoc": "~3.3.0",
     "wintersmith": "2.0.x",
     "moment": "2.3.x",
     "underscore": "1.4.x",
