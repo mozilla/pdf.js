@@ -206,11 +206,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return;
       }
 
-      PDFImage.buildImage(function(imageObj) {
+      PDFImage.buildImage(self.handler, self.xref, resources, image, inline).
+        then(function(imageObj) {
           var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
-                            null, [imgData.data.buffer]);
-        }, self.handler, self.xref, resources, image, inline);
+            null, [imgData.data.buffer]);
+        }).then(null, function (reason) {
+          warn('Unable to decode image: ' + reason);
+          self.handler.send('obj', [objId, self.pageIndex, 'Image', null]);
+        });
 
       operatorList.addOp(OPS.paintImageXObject, args);
       if (cacheKey) {
