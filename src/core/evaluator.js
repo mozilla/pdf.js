@@ -139,6 +139,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
 
+      if (!(w && isNum(w)) || !(h && isNum(h))) {
+        warn('Image dimensions are missing, or not numbers.');
+        return;
+      }
       if (PDFJS.maxImageSize !== -1 && w * h > PDFJS.maxImageSize) {
         warn('Image exceeded maximum allowed size and was removed.');
         return;
