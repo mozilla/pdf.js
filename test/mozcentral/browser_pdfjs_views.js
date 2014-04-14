@@ -37,45 +37,40 @@ function test() {
   }, true);
 }
 
-
 function runTests(document, window, callback) {
-
-  //
-  // Overall sanity tests
-  //
+  // check that PDF is opened with internal viewer
   ok(document.querySelector('div#viewer'), "document content has viewer UI");
   ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
 
-  //
-  // Sidebar: open
-  //
-  var sidebar = document.querySelector('button#sidebarToggle'),
-      outerContainer = document.querySelector('div#outerContainer');
+  //open sidebar
+  var sidebar = document.querySelector('button#sidebarToggle');
+  var outerContainer = document.querySelector('div#outerContainer');
 
   sidebar.click();
   ok(outerContainer.classList.contains('sidebarOpen'), 'sidebar opens on click');
 
-  //
-  // Sidebar: close
-  //
+  // check that thumbnail view is open
+  var thumbnailView = document.querySelector('div#thumbnailView');
+  var outlineView = document.querySelector('div#outlineView');
+
+  is(thumbnailView.getAttribute('class'), null, 'Initial view is thumbnail view');
+  is(outlineView.getAttribute('class'), 'hidden', 'Outline view is hidden initially');
+
+  //switch to outline view
+  var viewOutlineButton = document.querySelector('button#viewOutline');
+  viewOutlineButton.click();
+
+  is(outlineView.getAttribute('class'), '', 'Outline view is visible when selected');
+  is(thumbnailView.getAttribute('class'), 'hidden', 'Thumbnail view is hidden when outline is selected');
+
+  //switch back to thumbnail view
+  var viewThumbnailButton = document.querySelector('button#viewThumbnail');
+  viewThumbnailButton.click();
+
+  is(thumbnailView.getAttribute('class'), '', 'Thumbnail view is visible when selected');
+  is(outlineView.getAttribute('class'), 'hidden', 'Outline view is hidden when thumbnail is selected');
+
   sidebar.click();
-  ok(!outerContainer.classList.contains('sidebarOpen'), 'sidebar closes on click');
-
-  //
-  // Page change from prev/next buttons
-  //
-  var prevPage = document.querySelector('button#previous'),
-      nextPage = document.querySelector('button#next');
-
-  var pageNumber = document.querySelector('input#pageNumber');
-  is(parseInt(pageNumber.value), 1, 'initial page is 1');
-
-  //
-  // Bookmark button
-  //
-  var viewBookmark = document.querySelector('a#viewBookmark');
-  viewBookmark.click();
-  ok(viewBookmark.href.length > 0, 'viewBookmark button has href');
 
   callback();
 }
