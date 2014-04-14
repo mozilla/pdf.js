@@ -5,3 +5,5 @@ tags
 .DS_Store
 Makefile
 node_modules/
+nbproject/
+.project

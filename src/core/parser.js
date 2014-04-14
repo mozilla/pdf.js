@@ -21,8 +21,17 @@
 
 'use strict';
 
+/**
+ * 
+ * @global creation of EOF blank object
+ */
 var EOF = {};
 
+
+/** @function
+ *  @name isEOF
+ *  @param v
+ *  @return {boolean} true or false */
 function isEOF(v) {
   return (v == EOF);
 }
