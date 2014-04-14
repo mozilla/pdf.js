@@ -914,6 +914,7 @@ function isPDFFunction(v) {
 /**
  * Legacy support for PDFJS Promise implementation.
  * TODO remove eventually
+ * @ignore
  */
 var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
   return function LegacyPromise() {

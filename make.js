@@ -42,6 +42,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
     B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
+    JSDOC_DIR = BUILD_DIR + 'jsdoc',
     EXTENSION_SRC_DIR = 'extensions/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
@@ -135,6 +136,28 @@ target.generic = function() {
   cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
 };
 
+target.jsdoc = function() {
+  echo();
+  echo('### Generating jsdoc');
+
+  var JSDOC_FILES = [
+    'src/doc_helper.js',
+    'src/display/api.js',
+    'src/shared/util.js'
+  ];
+
+  if (test('-d', JSDOC_DIR)) {
+    rm('-rf', JSDOC_DIR);
+  }
+
+  mkdir('-p',JSDOC_DIR);
+
+  exec('"node_modules/.bin/jsdoc" -d "' + JSDOC_DIR + '" ' +
+       JSDOC_FILES.join(' '));
+
+  echo();
+};
+
 //
 // make web
 // Generates the website for the project, by checking out the gh-pages branch
@@ -145,6 +168,7 @@ target.web = function() {
   target.generic();
   target.extension();
   target.b2g();
+  target.jsdoc();
 
   echo();
   echo('### Creating web site');
@@ -159,6 +183,7 @@ target.web = function() {
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chromium');
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/b2g');
+  mkdir('-p', GH_PAGES_DIR + '/api/draft/');
 
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
@@ -167,6 +192,7 @@ target.web = function() {
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
   cp('-R', 'test/features', GH_PAGES_DIR);
   cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
+  cp('-R', JSDOC_DIR + '/*', GH_PAGES_DIR + '/api/draft/');
 
   var wintersmith = require('wintersmith');
   var env = wintersmith('docs/config.json');
