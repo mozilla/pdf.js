@@ -1824,7 +1824,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintJpegXObject: function CanvasGraphics_paintJpegXObject(objId, w, h) {
       var domImage = this.objs.get(objId);
       if (!domImage) {
-        error('Dependent image isn\'t ready yet');
+        warn('Dependent image isn\'t ready yet');
+        return;
       }
 
       this.save();
@@ -1958,7 +1959,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintImageXObject: function CanvasGraphics_paintImageXObject(objId) {
       var imgData = this.objs.get(objId);
       if (!imgData) {
-        error('Dependent image isn\'t ready yet');
+        warn('Dependent image isn\'t ready yet');
+        return;
       }
 
       this.paintInlineImageXObject(imgData);
@@ -1969,7 +1971,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                           positions) {
       var imgData = this.objs.get(objId);
       if (!imgData) {
-        error('Dependent image isn\'t ready yet');
+        warn('Dependent image isn\'t ready yet');
+        return;
       }
 
       var width = imgData.width;

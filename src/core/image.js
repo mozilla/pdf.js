@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals ColorSpace, DecodeStream, error, info, isArray, ImageKind, isStream,
-           JpegStream, JpxImage, Name, Promise, Stream, warn, LegacyPromise */
+           JpegStream, JpxImage, Name, Promise, Stream, warn */
 
 'use strict';
 
@@ -24,20 +24,24 @@ var PDFImage = (function PDFImageClosure() {
    * Decode the image in the main thread if it supported. Resovles the promise
    * when the image data is ready.
    */
-  function handleImageData(handler, xref, res, image, promise) {
+  function handleImageData(handler, xref, res, image) {
     if (image instanceof JpegStream && image.isNativelyDecodable(xref, res)) {
       // For natively supported jpegs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
       colorSpace = ColorSpace.parse(colorSpace, xref, res);
       var numComps = colorSpace.numComps;
+      var resolvePromise;
       handler.send('JpegDecode', [image.getIR(), numComps], function(message) {
         var data = message.data;
         var stream = new Stream(data, 0, data.length, image.dict);
-        promise.resolve(stream);
+        resolvePromise(stream);
+      });
+      return new Promise(function (resolve) {
+        resolvePromise = resolve;
       });
     } else {
-      promise.resolve(image);
+      return Promise.resolve(image);
     }
   }
   /**
@@ -144,47 +148,43 @@ var PDFImage = (function PDFImageClosure() {
     }
   }
   /**
-   * Handles processing of image data and calls the callback with an argument
-   * of a PDFImage when the image is ready to be used.
+   * Handles processing of image data and returns the Promise that is resolved
+   * with a PDFImage when the image is ready to be used.
    */
-  PDFImage.buildImage = function PDFImage_buildImage(callback, handler, xref,
+  PDFImage.buildImage = function PDFImage_buildImage(handler, xref,
                                                      res, image, inline) {
-    var imageDataPromise = new LegacyPromise();
-    var smaskPromise = new LegacyPromise();
-    var maskPromise = new LegacyPromise();
-    // The image data and smask data may not be ready yet, wait until both are
-    // resolved.
-    Promise.all([imageDataPromise, smaskPromise, maskPromise]).then(
-        function(results) {
-      var imageData = results[0], smaskData = results[1], maskData = results[2];
-      var image = new PDFImage(xref, res, imageData, inline, smaskData,
-                               maskData);
-      callback(image);
-    });
-
-    handleImageData(handler, xref, res, image, imageDataPromise);
+    var imagePromise = handleImageData(handler, xref, res, image);
+    var smaskPromise;
+    var maskPromise;
 
     var smask = image.dict.get('SMask');
     var mask = image.dict.get('Mask');
 
     if (smask) {
-      handleImageData(handler, xref, res, smask, smaskPromise);
-      maskPromise.resolve(null);
+      smaskPromise = handleImageData(handler, xref, res, smask);
+      maskPromise = Promise.resolve(null);
     } else {
-      smaskPromise.resolve(null);
+      smaskPromise = Promise.resolve(null);
       if (mask) {
         if (isStream(mask)) {
-          handleImageData(handler, xref, res, mask, maskPromise);
+          maskPromise = handleImageData(handler, xref, res, mask);
         } else if (isArray(mask)) {
-          maskPromise.resolve(mask);
+          maskPromise = Promise.resolve(mask);
         } else {
           warn('Unsupported mask format.');
-          maskPromise.resolve(null);
+          maskPromise = Promise.resolve(null);
         }
       } else {
-        maskPromise.resolve(null);
+        maskPromise = Promise.resolve(null);
       }
     }
+    return Promise.all([imagePromise, smaskPromise, maskPromise]).then(
+      function(results) {
+        var imageData = results[0];
+        var smaskData = results[1];
+        var maskData = results[2];
+        return new PDFImage(xref, res, imageData, inline, smaskData, maskData);
+      });
   };
 
   /**
