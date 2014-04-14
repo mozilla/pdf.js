@@ -238,26 +238,17 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       var divIdx = begin.divIdx;
       var div = textDivs[divIdx];
       div.textContent = '';
-
-      var content = bidiTexts[divIdx].str.substring(0, begin.offset);
-      var node = document.createTextNode(content);
-      if (className) {
-        var isSelected = isSelectedPage &&
-                          divIdx === selectedMatchIdx;
-        var span = document.createElement('span');
-        span.className = className + (isSelected ? ' selected' : '');
-        span.appendChild(node);
-        div.appendChild(span);
-        return;
-      }
-      div.appendChild(node);
+      appendTextToDiv(divIdx, 0, begin.offset, className);
     }
 
     function appendText(from, to, className) {
-      var divIdx = from.divIdx;
+      appendTextToDiv(from.divIdx, from.offset, to.offset, className);
+    }
+
+    function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
       var div = textDivs[divIdx];
 
-      var content = bidiTexts[divIdx].str.substring(from.offset, to.offset);
+      var content = bidiTexts[divIdx].str.substring(fromOffset, toOffset);
       var node = document.createTextNode(content);
       if (className) {
         var span = document.createElement('span');
