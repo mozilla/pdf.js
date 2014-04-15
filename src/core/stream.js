@@ -2212,7 +2212,6 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
     var code = 0;
     var p;
-    var n;
     if (this.eoblock) {
       code = this.lookBits(12);
       if (code == EOF) {

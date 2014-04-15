@@ -361,7 +361,6 @@ Shadings.Mesh = (function MeshClosure() {
   function decodeType5Shading(mesh, reader, verticesPerRow) {
     var coords = mesh.coords;
     var colors = mesh.colors;
-    var operators = [];
     var ps = []; // not maintaining cs since that will match ps
     while (reader.hasData) {
       var coord = reader.readCoordinate();

@@ -2423,7 +2423,6 @@ var Font = (function FontClosure() {
     var isIdentityUnicode = properties.isIdentityUnicode;
     var newMap = Object.create(null);
     var toFontChar = [];
-    var usedCharCodes = [];
     var usedFontCharCodes = [];
     var nextAvailableFontCharCode = PRIVATE_USE_OFFSET_START;
     for (var originalCharCode in charCodeToGlyphId) {
@@ -3049,8 +3048,6 @@ var Font = (function FontClosure() {
           var firstCode = font.getUint16();
           var entryCount = font.getUint16();
 
-          var glyphs = [];
-          var ids = [];
           for (j = 0; j < entryCount; j++) {
             glyphId = font.getUint16();
             var charCode = firstCode + j;
@@ -3438,7 +3435,6 @@ var Font = (function FontClosure() {
           }
           font.pos = pos;
           var nameIndex = record.name;
-          var encoding = record.encoding ? 1 : 0;
           if (record.encoding) {
             // unicode
             var str = '';
@@ -4030,8 +4026,6 @@ var Font = (function FontClosure() {
       // to write the table entry information about a table and another offset
       // representing the offset where to draw the actual data of a particular
       // table
-      var REQ_TABLES_CNT = 9;
-
       var otf = {
         file: '',
         virtualOffset: 9 * (4 * 4)
@@ -5812,7 +5806,6 @@ var CFFParser = (function CFFParserClosure() {
       var bytes = this.bytes;
       var count = (bytes[pos++] << 8) | bytes[pos++];
       var offsets = [];
-      var start = pos;
       var end = pos;
       var i, ii;
 
@@ -5875,8 +5868,6 @@ var CFFParser = (function CFFParserClosure() {
     },
     createDict: function CFFParser_createDict(Type, dict, strings) {
       var cffDict = new Type(strings);
-      var types = cffDict.types;
-
       for (var i = 0, ii = dict.length; i < ii; ++i) {
         var pair = dict[i];
         var key = pair[0];
@@ -6444,11 +6435,6 @@ var CFFCharsetPredefinedTypes = {
   EXPERT: 1,
   EXPERT_SUBSET: 2
 };
-var CFFCharsetEmbeddedTypes = {
-  FORMAT0: 0,
-  FORMAT1: 1,
-  FORMAT2: 2
-};
 var CFFCharset = (function CFFCharsetClosure() {
   function CFFCharset(predefined, format, charset, raw) {
     this.predefined = predefined;
@@ -6459,14 +6445,6 @@ var CFFCharset = (function CFFCharsetClosure() {
   return CFFCharset;
 })();
 
-var CFFEncodingPredefinedTypes = {
-  STANDARD: 0,
-  EXPERT: 1
-};
-var CFFCharsetEmbeddedTypes = {
-  FORMAT0: 0,
-  FORMAT1: 1
-};
 var CFFEncoding = (function CFFEncodingClosure() {
   function CFFEncoding(predefined, format, encoding, raw) {
     this.predefined = predefined;
@@ -6930,7 +6908,6 @@ var CFFCompiler = (function CFFCompilerClosure() {
           relativeOffset += objects[i].length;
         }
       }
-      var offset = data.length;
 
       for (i = 0; i < count; i++) {
         // Notify the tracker where the object will be offset in the data.

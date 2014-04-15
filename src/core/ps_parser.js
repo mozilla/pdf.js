@@ -143,7 +143,6 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
       return (this.currentChar = this.stream.getByte());
     },
     getToken: function PostScriptLexer_getToken() {
-      var s = '';
       var comment = false;
       var ch = this.currentChar;
 

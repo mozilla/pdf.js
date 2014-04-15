@@ -265,7 +265,6 @@ var PDFImage = (function PDFImageClosure() {
     },
     decodeBuffer: function PDFImage_decodeBuffer(buffer) {
       var bpc = this.bpc;
-      var decodeMap = this.decode;
       var numComps = this.numComps;
 
       var decodeAddends = this.decodeAddends;

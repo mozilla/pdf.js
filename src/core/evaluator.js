@@ -509,7 +509,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
-      var handler = this.handler;
       var imageCache = {};
 
       operatorList = (operatorList || new OperatorList());
@@ -520,7 +519,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var stateManager = new StateManager(initialState || new EvalState());
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
-      var promise = new LegacyPromise();
       var operation, i, ii;
       while ((operation = preprocessor.read())) {
         var args = operation.args;
@@ -706,7 +704,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var xobjsCache = {};
 
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
-      var res = resources;
 
       var operation;
       var textState;
@@ -1091,7 +1088,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode) {
       var cmapObj = toUnicode;
-      var charToUnicode = [];
       if (isName(cmapObj)) {
         return CMapFactory.create(cmapObj).map;
       } else if (isStream(cmapObj)) {

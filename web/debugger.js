@@ -20,7 +20,6 @@
 
 var FontInspector = (function FontInspectorClosure() {
   var fonts;
-  var panelWidth = 300;
   var active = false;
   var fontAttribute = 'data-font-name';
   function removeSelection() {
@@ -342,7 +341,6 @@ var Stepper = (function StepperClosure() {
         return;
       }
 
-      var self = this;
       var chunk = document.createDocumentFragment();
       var operatorsToDisplay = Math.min(MAX_OPERATORS_COUNT,
                                         operatorList.fnArray.length);
