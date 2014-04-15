@@ -54,6 +54,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.currentRowCount = 0;
   this.currentLastElement = null;
   this.isBlockBuilding = false;
+  this.fontMetrics = options.fontMetrics;
 
   if (typeof PDFFindController === 'undefined') {
     window.PDFFindController = null;
@@ -189,9 +190,9 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       CustomStyle.setProp('transform' , this.currentDiv, transform);
       CustomStyle.setProp('transformOrigin' , this.currentDiv, '0% 0%');
       this.currentRowCount = 0;
-      var delta = Math.round((this.currentFontHeight - setLineHeight) / 2);
+      var delta = (this.currentFontHeight - setLineHeight) / 2;
       if (delta) {
-        this.currentDiv.style.marginTop = delta + 'px';
+        this.currentDiv.style.marginTop = delta.toFixed(3) + 'px';
       }
     }
   };
@@ -311,9 +312,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       angle += Math.PI / 2;
     }
     var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-    var fontAscent = (style.ascent ? style.ascent * fontHeight :
-      (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
-
+    var font = fontHeight.toFixed(3) + 'px ' + style.fontFamily;
+    var fontAscent = this.fontMetrics.getFontAscent(font);
     var x = tx[4];
     var y = tx[5];
     var width = geom.width * this.viewport.scale;
@@ -360,10 +360,11 @@ var TextLayerBuilder = function textLayerBuilder(options) {
         this.currentLineHeight = 0;
         this.currentXEnd = x + width;
       }
-      var textDiv = this.createTextElement('div', geom, angle, fontHeight,
-                                           style, true);
-      textDiv.style.left = (x + (fontAscent * Math.sin(angle))).toFixed(3) + 'px';
-      textDiv.style.top = (y - (fontAscent * Math.cos(angle))).toFixed(3) + 'px';
+      textDiv = this.createTextElement('div', geom, angle, fontHeight, style);
+      var left = x + (fontAscent * Math.sin(angle));
+      textDiv.style.left = left.toFixed(3) + 'px';
+      var top = y - (fontAscent * Math.cos(angle));
+      textDiv.style.top = top.toFixed(3) + 'px';
       this.textDivs.push(textDiv);
       this.currentDiv = textDiv;
       this.currentLastElement = textDiv;

@@ -19,7 +19,8 @@
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
            Preferences, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
-           PresentationMode, HandTool, Promise, DocumentProperties */
+           PresentationMode, HandTool, Promise, DocumentProperties,
+           FontMetrics */
 
 'use strict';
 
@@ -103,6 +104,7 @@ var currentPageNumber = 1;
 //#include presentation_mode.js
 //#include hand_tool.js
 //#include document_properties.js
+//#include font_metrics.js
 
 var PDFView = {
   pages: [],
@@ -126,6 +128,7 @@ var PDFView = {
   isViewerEmbedded: (window.parent !== window),
   idleTimeout: null,
   currentPosition: null,
+  fontMetrics: new FontMetrics(),
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {

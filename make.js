@@ -456,7 +456,8 @@ function cleanupJSSource(file) {
   var content = cat(file);
 
   // Strip out all the vim/license headers.
-  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
+  var reg = new RegExp('\\n\\/\\* -\\*- Mode(.|\\n)*?' +
+    '(Mozilla Foundation|Opera Software ASA)(.|\\n)*?\'use strict\';', 'g');
   content = content.replace(reg, '');
 
   content.to(file);

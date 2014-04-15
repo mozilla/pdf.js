@@ -21,6 +21,7 @@ window.onload = function () {
 
   var scale = 1.5; //Set this to whatever you want. This is basically the "zoom" factor for the PDF.
   PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
+  var fontMetrics = new FontMetrics();
 
   function loadPdf(pdfPath) {
     var pdf = PDFJS.getDocument(pdfPath);
@@ -74,7 +75,8 @@ window.onload = function () {
       var textLayer = new TextLayerBuilder({
         textLayerDiv: $textLayerDiv.get(0),
         viewport: viewport,
-        pageIndex: 0
+        pageIndex: 0,
+        fontMetrics: fontMetrics
       });
       textLayer.setTextContent(textContent);
 
