@@ -1348,3 +1348,12 @@ target.importl10n = function() {
 
   locales.downloadL10n();
 };
+
+target.jsdoc = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Generating API Docs using JSDoc');
+
+  exec('node make jsdoc'); 
+  }
+};
