@@ -561,15 +561,15 @@ var PDFView = {
   },
 
   close: function pdfViewClose() {
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.setAttribute('hidden', 'true');
+
     if (!this.pdfDocument) {
       return;
     }
 
     this.pdfDocument.destroy();
     this.pdfDocument = null;
-
-    var errorWrapper = document.getElementById('errorWrapper');
-    errorWrapper.setAttribute('hidden', 'true');
 
     var thumbsView = document.getElementById('thumbnailView');
     while (thumbsView.hasChildNodes()) {
@@ -594,11 +594,10 @@ var PDFView = {
   open: function pdfViewOpen(url, scale, password,
                              pdfDataRangeTransport, args) {
     if (this.pdfDocument) {
-      this.close();
-
       // Reload the preferences if a document was previously opened.
       Preferences.reload();
     }
+    this.close();
 
     var parameters = {password: password};
     if (typeof url === 'string') { // URL
