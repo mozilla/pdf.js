@@ -2540,7 +2540,7 @@ var Font = (function FontClosure() {
     var idRangeOffsets = '';
     var glyphsIds = '';
     var bias = 0;
-    
+
     var range, start, end, codes;
     for (i = 0, ii = bmpLength; i < ii; i++) {
       range = ranges[i];
@@ -2864,9 +2864,9 @@ var Font = (function FontClosure() {
       function readTableEntry(file) {
         var tag = bytesToString(file.getBytes(4));
 
-        var checksum = file.getUint32();
-        var offset = file.getUint32();
-        var length = file.getUint32();
+        var checksum = file.getInt32();
+        var offset = file.getInt32() >>> 0;
+        var length = file.getInt32() >>> 0;
 
         // Read the table associated data
         var previousPosition = file.pos;
@@ -2923,7 +2923,7 @@ var Font = (function FontClosure() {
         for (var i = 0; i < numTables; i++) {
           var platformId = font.getUint16();
           var encodingId = font.getUint16();
-          var offset = font.getUint32();
+          var offset = font.getInt32() >>> 0;
           var useTable = false;
 
           if (platformId == 1 && encodingId === 0) {
@@ -3333,7 +3333,7 @@ var Font = (function FontClosure() {
         font.pos = start;
 
         var length = post.length, end = start + length;
-        var version = font.getUint32();
+        var version = font.getInt32();
         // skip rest to the tables
         font.getBytes(28);
 
@@ -3739,7 +3739,7 @@ var Font = (function FontClosure() {
       }
 
       font.pos = (font.start || 0) + tables.maxp.offset;
-      var version = font.getUint32();
+      var version = font.getInt32();
       var numGlyphs = font.getUint16();
       var maxFunctionDefs = 0;
       if (version >= 0x00010000 && tables.maxp.length >= 22) {

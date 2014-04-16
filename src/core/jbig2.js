@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ArithmeticDecoder, error, shadow */
+/* globals ArithmeticDecoder, error, log2, readInt8, readUint16, readUint32,
+           shadow */
 
 'use strict';
 
@@ -187,33 +188,6 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     0x0020, // '000' + '0' (coding) + '00010000' + '0' (reference)
     0x0008  // '0000' + '001000'
   ];
-
-  function log2(x) {
-    var n = 1, i = 0;
-    while (x > n) {
-      n <<= 1;
-      i++;
-    }
-    return i;
-  }
-
-  function readInt32(data, start) {
-    return (data[start] << 24) | (data[start + 1] << 16) |
-           (data[start + 2] << 8) | data[start + 3];
-  }
-
-  function readUint32(data, start) {
-    var value = readInt32(data, start);
-    return value & 0x80000000 ? (value + 4294967296) : value;
-  }
-
-  function readUint16(data, start) {
-    return (data[start] << 8) | data[start + 1];
-  }
-
-  function readInt8(data, start) {
-    return (data[start] << 24) >> 24;
-  }
 
   // 6.2 Generic Region Decoding Procedure
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
@@ -645,7 +619,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var retainBits = [referredFlags & 31];
     var position = start + 6;
     if (referredFlags == 7) {
-      referredToCount = readInt32(data, position - 1) & 0x1FFFFFFF;
+      referredToCount = readUint32(data, position - 1) & 0x1FFFFFFF;
       position += 3;
       var bytes = (referredToCount + 7) >> 3;
       retainBits[0] = data[position++];
