@@ -129,6 +129,7 @@ var Annotation = (function AnnotationClosure() {
 
     this.appearance = getDefaultAppearance(dict);
     data.hasAppearance = !!this.appearance;
+    data.id = params.ref.num;
   }
 
   Annotation.prototype = {
