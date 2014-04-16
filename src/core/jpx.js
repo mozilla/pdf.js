@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ArithmeticDecoder, error, globalScope, warn */
+/* globals ArithmeticDecoder, error, globalScope, log2, readUint16, readUint32,
+           warn */
 
 'use strict';
 
@@ -45,15 +46,8 @@ var JpxImage = (function JpxImageClosure() {
       xhr.send(null);
     },
     parse: function JpxImage_parse(data) {
-      function readUint(data, offset, bytes) {
-        var n = 0;
-        for (var i = 0; i < bytes; i++) {
-          n = n * 256 + (data[offset + i] & 0xFF);
-        }
-        return n;
-      }
 
-      var head = readUint(data, 0, 2);
+      var head = readUint16(data, 0);
       // No box header, immediate start of codestream (SOC)
       if (head === 0xFF4F) {
         this.parseCodestream(data, 0, data.length);
@@ -63,11 +57,14 @@ var JpxImage = (function JpxImageClosure() {
       var position = 0, length = data.length;
       while (position < length) {
         var headerSize = 8;
-        var lbox = readUint(data, position, 4);
-        var tbox = readUint(data, position + 4, 4);
+        var lbox = readUint32(data, position);
+        var tbox = readUint32(data, position + 4);
         position += headerSize;
-        if (lbox == 1) {
-          lbox = readUint(data, position, 8);
+        if (lbox === 1) {
+          // XLBox: read UInt64 according to spec.
+          // JavaScript's int precision of 53 bit should be sufficient here.
+          lbox = readUint32(data, position) * 4294967296 +
+                 readUint32(data, position + 4);
           position += 8;
           headerSize += 8;
         }
@@ -108,16 +105,16 @@ var JpxImage = (function JpxImageClosure() {
           // Image and tile size (SIZ)
           if (code == 0xFF51) {
             stream.skip(4);
-            var Xsiz = stream.getUint32(); // Byte 4
-            var Ysiz = stream.getUint32(); // Byte 8
-            var XOsiz = stream.getUint32(); // Byte 12
-            var YOsiz = stream.getUint32(); // Byte 16
+            var Xsiz = stream.getInt32() >>> 0; // Byte 4
+            var Ysiz = stream.getInt32() >>> 0; // Byte 8
+            var XOsiz = stream.getInt32() >>> 0; // Byte 12
+            var YOsiz = stream.getInt32() >>> 0; // Byte 16
             stream.skip(16);
             var Csiz = stream.getUint16(); // Byte 36
             this.width = Xsiz - XOsiz;
             this.height = Ysiz - YOsiz;
             this.componentsCount = Csiz;
-            // Results are always returned as UInt8Arrays
+            // Results are always returned as Uint8Arrays
             this.bitsPerComponent = 8;
             return;
           }
@@ -379,21 +376,6 @@ var JpxImage = (function JpxImageClosure() {
       this.componentsCount = context.SIZ.Csiz;
     }
   };
-  function readUint32(data, offset) {
-    return (data[offset] << 24) | (data[offset + 1] << 16) |
-            (data[offset + 2] << 8) | data[offset + 3];
-  }
-  function readUint16(data, offset) {
-    return (data[offset] << 8) | data[offset + 1];
-  }
-  function log2(x) {
-    var n = 1, i = 0;
-    while (x > n) {
-      n <<= 1;
-      i++;
-    }
-    return i;
-  }
   function calculateComponentDimensions(component, siz) {
     // Section B.2 Component mapping
     component.x0 = Math.ceil(siz.XOsiz / component.XRsiz);

@@ -46,7 +46,7 @@ var Stream = (function StreamClosure() {
       var b1 = this.getByte();
       return (b0 << 8) + b1;
     },
-    getUint32: function Stream_getUint32() {
+    getInt32: function Stream_getInt32() {
       var b0 = this.getByte();
       var b1 = this.getByte();
       var b2 = this.getByte();
@@ -164,7 +164,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       var b1 = this.getByte();
       return (b0 << 8) + b1;
     },
-    getUint32: function DecodeStream_getUint32() {
+    getInt32: function DecodeStream_getInt32() {
       var b0 = this.getByte();
       var b1 = this.getByte();
       var b2 = this.getByte();
