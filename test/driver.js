@@ -363,7 +363,7 @@ function quitApp() {
   document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>' +
                              document.body.innerHTML;
   if (window.SpecialPowers) {
-    SpecialPowers.quitApplication();
+    SpecialPowers.quit();
   } else {
     sendQuitRequest();
     window.close();

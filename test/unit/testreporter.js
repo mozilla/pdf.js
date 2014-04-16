@@ -5,7 +5,7 @@
 var TestReporter = function(browser, appPath) {
   'use strict';
 
-  function send(action, json) {
+  function send(action, json, cb) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)
     r.open('POST', action, true);
@@ -14,7 +14,11 @@ var TestReporter = function(browser, appPath) {
       if (r.readyState == 4) {
         // Retry until successful
         if (r.status !== 200) {
-          send(action, json);
+          send(action, json, cb);
+        } else {
+          if (cb) {
+            cb();
+          }
         }
       }
     };
@@ -38,7 +42,11 @@ var TestReporter = function(browser, appPath) {
   }
 
   function sendQuitRequest() {
-    send('/tellMeToQuit?path=' + escape(appPath), {});
+    send('/tellMeToQuit?path=' + escape(appPath), {}, function () {
+      if (window.SpecialPowers) {
+        SpecialPowers.quit();
+      }
+    });
   }
 
   this.now = function() {
