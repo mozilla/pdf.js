@@ -59,7 +59,6 @@ var PDFImage = (function PDFImageClosure() {
     if (dict.has('Filter')) {
       var filter = dict.get('Filter').name;
       if (filter === 'JPXDecode') {
-        info('get image params from JPX stream');
         var jpxImage = new JpxImage();
         jpxImage.parseImageProperties(image.stream);
         image.stream.reset();

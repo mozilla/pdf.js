@@ -942,78 +942,35 @@ var JpxStream = (function JpxStreamClosure() {
     var width = jpxImage.width;
     var height = jpxImage.height;
     var componentsCount = jpxImage.componentsCount;
-    if (componentsCount != 1 && componentsCount != 3 && componentsCount != 4) {
-      error('JPX with ' + componentsCount + ' components is not supported');
-    }
+    var tileCount = jpxImage.tiles.length;
+    if (tileCount === 1) {
+      this.buffer = jpxImage.tiles[0].items;
+    } else {
+      var data = new Uint8Array(width * height * componentsCount);
 
-    var data = new Uint8Array(width * height * componentsCount);
+      for (var k = 0; k < tileCount; k++) {
+        var tileComponents = jpxImage.tiles[k];
+        var tileWidth = tileComponents.width;
+        var tileHeight = tileComponents.height;
+        var tileLeft = tileComponents.left;
+        var tileTop = tileComponents.top;
 
-    for (var k = 0, kk = jpxImage.tiles.length; k < kk; k++) {
-      var tileCompoments = jpxImage.tiles[k];
-      var tileWidth = tileCompoments[0].width;
-      var tileHeight = tileCompoments[0].height;
-      var tileLeft = tileCompoments[0].left;
-      var tileTop = tileCompoments[0].top;
+        var src = tileComponents.items;
+        var srcPosition = 0;
+        var dataPosition = (width * tileTop + tileLeft) * componentsCount;
+        var imgRowSize = width * componentsCount;
+        var tileRowSize = tileWidth * componentsCount;
 
-      var dataPosition, sourcePosition, data0, data1, data2, data3, rowFeed;
-      var i, j;
-      switch (componentsCount) {
-        case 1:
-          data0 = tileCompoments[0].items;
-
-          dataPosition = width * tileTop + tileLeft;
-          rowFeed = width - tileWidth;
-          sourcePosition = 0;
-          for (j = 0; j < tileHeight; j++) {
-            for (i = 0; i < tileWidth; i++) {
-              data[dataPosition++] = data0[sourcePosition++];
-            }
-            dataPosition += rowFeed;
-          }
-          break;
-        case 3:
-          data0 = tileCompoments[0].items;
-          data1 = tileCompoments[1].items;
-          data2 = tileCompoments[2].items;
-
-          dataPosition = (width * tileTop + tileLeft) * 3;
-          rowFeed = (width - tileWidth) * 3;
-          sourcePosition = 0;
-          for (j = 0; j < tileHeight; j++) {
-            for (i = 0; i < tileWidth; i++) {
-              data[dataPosition++] = data0[sourcePosition];
-              data[dataPosition++] = data1[sourcePosition];
-              data[dataPosition++] = data2[sourcePosition];
-              sourcePosition++;
-            }
-            dataPosition += rowFeed;
-          }
-          break;
-        case 4:
-          data0 = tileCompoments[0].items;
-          data1 = tileCompoments[1].items;
-          data2 = tileCompoments[2].items;
-          data3 = tileCompoments[3].items;
-
-          dataPosition = (width * tileTop + tileLeft) * 4;
-          rowFeed = (width - tileWidth) * 4;
-          sourcePosition = 0;
-          for (j = 0; j < tileHeight; j++) {
-            for (i = 0; i < tileWidth; i++) {
-              data[dataPosition++] = data0[sourcePosition];
-              data[dataPosition++] = data1[sourcePosition];
-              data[dataPosition++] = data2[sourcePosition];
-              data[dataPosition++] = data3[sourcePosition];
-              sourcePosition++;
-            }
-            dataPosition += rowFeed;
-          }
-          break;
+        for (var j = 0; j < tileHeight; j++) {
+          var rowBytes = src.subarray(srcPosition, srcPosition + tileRowSize);
+          data.set(rowBytes, dataPosition);
+          srcPosition += tileRowSize;
+          dataPosition += imgRowSize;
+        }
       }
+      this.buffer = data;
     }
-
-    this.buffer = data;
-    this.bufferLength = data.length;
+    this.bufferLength = this.buffer.length;
     this.eof = true;
   };
 

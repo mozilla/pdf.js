@@ -281,7 +281,6 @@ var JpxImage = (function JpxImageClosure() {
               cod.entropyCoderWithCustomPrecincts = !!(scod & 1);
               cod.sopMarkerUsed = !!(scod & 2);
               cod.ephMarkerUsed = !!(scod & 4);
-              var codingStyle = {};
               cod.progressionOrder = data[j++];
               cod.layersCount = readUint16(data, j);
               j += 2;
@@ -905,9 +904,15 @@ var JpxImage = (function JpxImageClosure() {
     }
     return position;
   }
-  function copyCoefficients(coefficients, x0, y0, width, height,
-                            delta, mb, codeblocks, reversible,
-                            segmentationSymbolUsed) {
+  function copyCoefficients(coefficients, levelWidth, levelHeight, subband,
+                            delta, mb, reversible, segmentationSymbolUsed) {
+    var x0 = subband.tbx0;
+    var y0 = subband.tby0;
+    var width = subband.tbx1 - subband.tbx0;
+    var codeblocks = subband.codeblocks;
+    var right = subband.type.charAt(0) === 'H' ? 1 : 0;
+    var bottom = subband.type.charAt(1) === 'H' ? levelWidth : 0;
+
     for (var i = 0, ii = codeblocks.length; i < ii; ++i) {
       var codeblock = codeblocks[i];
       var blockWidth = codeblock.tbx1_ - codeblock.tbx0_;
@@ -921,29 +926,30 @@ var JpxImage = (function JpxImageClosure() {
 
       var bitModel, currentCodingpassType;
       bitModel = new BitModel(blockWidth, blockHeight, codeblock.subbandType,
-                              codeblock.zeroBitPlanes);
+                              codeblock.zeroBitPlanes, mb);
       currentCodingpassType = 2; // first bit plane starts from cleanup
 
       // collect data
       var data = codeblock.data, totalLength = 0, codingpasses = 0;
-      var q, qq, dataItem;
-      for (q = 0, qq = data.length; q < qq; q++) {
-        dataItem = data[q];
+      var j, jj, dataItem;
+      for (j = 0, jj = data.length; j < jj; j++) {
+        dataItem = data[j];
         totalLength += dataItem.end - dataItem.start;
         codingpasses += dataItem.codingpasses;
       }
-      var encodedData = new Uint8Array(totalLength), k = 0;
-      for (q = 0, qq = data.length; q < qq; q++) {
-        dataItem = data[q];
+      var encodedData = new Uint8Array(totalLength);
+      var position = 0;
+      for (j = 0, jj = data.length; j < jj; j++) {
+        dataItem = data[j];
         var chunk = dataItem.data.subarray(dataItem.start, dataItem.end);
-        encodedData.set(chunk, k);
-        k += chunk.length;
+        encodedData.set(chunk, position);
+        position += chunk.length;
       }
       // decoding the item
       var decoder = new ArithmeticDecoder(encodedData, 0, totalLength);
       bitModel.setDecoder(decoder);
 
-      for (q = 0; q < codingpasses; q++) {
+      for (j = 0; j < codingpasses; j++) {
         switch (currentCodingpassType) {
           case 0:
             bitModel.runSignificancePropogationPass();
@@ -962,13 +968,18 @@ var JpxImage = (function JpxImageClosure() {
       }
 
       var offset = (codeblock.tbx0_ - x0) + (codeblock.tby0_ - y0) * width;
-      var n, nb, position = 0;
-      var irreversible = !reversible;
       var sign = bitModel.coefficentsSign;
       var magnitude = bitModel.coefficentsMagnitude;
       var bitsDecoded = bitModel.bitsDecoded;
       var magnitudeCorrection = reversible ? 0 : 0.5;
-      for (var j = 0; j < blockHeight; j++) {
+      var k, n, nb;
+      position = 0;
+      // Do the interleaving of Section F.3.3 here, so we do not need 
+      // to copy later. LL level is not interleaved, just copied.
+      var interleave = (subband.type !== 'LL');
+      for (j = 0; j < blockHeight; j++) {
+        var row = (offset / width) | 0; // row in the non-interleaved subband
+        var levelOffset = 2 * row * (levelWidth - width) + right + bottom;
         for (k = 0; k < blockWidth; k++) {
           n = magnitude[position];
           if (n !== 0) {
@@ -977,10 +988,11 @@ var JpxImage = (function JpxImageClosure() {
               n = -n;
             }
             nb = bitsDecoded[position];
-            if (irreversible || mb > nb) {
-              coefficients[offset] = n * (1 << (mb - nb));
+            var pos = interleave ? (levelOffset + (offset << 1)) : offset;
+            if (reversible && (nb >= mb)) {
+              coefficients[pos] = n;
             } else {
-              coefficients[offset] = n;
+              coefficients[pos] = n * (1 << (mb - nb));
             }
           }
           offset++;
@@ -1011,6 +1023,11 @@ var JpxImage = (function JpxImageClosure() {
     for (var i = 0; i <= decompositionLevelsCount; i++) {
       var resolution = component.resolutions[i];
 
+      var width = resolution.trx1 - resolution.trx0;
+      var height = resolution.try1 - resolution.try0;
+      // Allocate space for the whole sublevel.
+      var coefficients = new Float32Array(width * height);
+
       for (var j = 0, jj = resolution.subbands.length; j < jj; j++) {
         var mu, epsilon;
         if (!scalarExpounded) {
@@ -1020,11 +1037,10 @@ var JpxImage = (function JpxImageClosure() {
         } else {
           mu = spqcds[b].mu;
           epsilon = spqcds[b].epsilon;
+          b++;
         }
 
         var subband = resolution.subbands[j];
-        var width = subband.tbx1 - subband.tbx0;
-        var height = subband.tby1 - subband.tby0;
         var gainLog2 = SubbandsGainLog2[subband.type];
 
         // calulate quantization coefficient (Section E.1.1.1)
@@ -1032,19 +1048,19 @@ var JpxImage = (function JpxImageClosure() {
           Math.pow(2, precision + gainLog2 - epsilon) * (1 + mu / 2048));
         var mb = (guardBits + epsilon - 1);
 
-        var coefficients = new Float32Array(width * height);
-        copyCoefficients(coefficients, subband.tbx0, subband.tby0,
-          width, height, delta, mb, subband.codeblocks, reversible,
-          segmentationSymbolUsed);
-
-        subbandCoefficients.push({
-          width: width,
-          height: height,
-          items: coefficients
-        });
-
-        b++;
+        // In the first resolution level, copyCoefficients will fill the
+        // whole array with coefficients. In the succeding passes,
+        // copyCoefficients will consecutively fill in the values that belong
+        // to the interleaved positions of the HL, LH, and HH coefficients.
+        // The LL coefficients will then be interleaved in Transform.iterate().
+        copyCoefficients(coefficients, width, height, subband, delta, mb,
+                         reversible, segmentationSymbolUsed);
       }
+      subbandCoefficients.push({
+        width: width,
+        height: height,
+        items: coefficients
+      });
     }
 
     var result = transform.calculate(subbandCoefficients,
@@ -1064,60 +1080,80 @@ var JpxImage = (function JpxImageClosure() {
     var resultImages = [];
     for (var i = 0, ii = context.tiles.length; i < ii; i++) {
       var tile = context.tiles[i];
-      var result = [];
+      var transformedTiles = [];
       var c;
       for (c = 0; c < componentsCount; c++) {
-        var image = transformTile(context, tile, c);
-        result.push(image);
+        transformedTiles[c] = transformTile(context, tile, c);
       }
+      var tile0 = transformedTiles[0];
+      var out = new Uint8Array(tile0.items.length * componentsCount);
+      var result = {
+        left: tile0.left,
+        top: tile0.top,
+        width: tile0.width,
+        height: tile0.height,
+        items: out
+      };
 
       // Section G.2.2 Inverse multi component transform
-      var y0items, y1items, y2items, j, jj, y0, y1, y2;
-      var component, tileImage, items;
+      var shift, offset, max, min;
+      var pos = 0, j, jj, y0, y1, y2, r, g, b, val;
       if (tile.codingStyleDefaultParameters.multipleComponentTransform) {
+        var y2items = transformedTiles[2].items;
+        var y1items = transformedTiles[1].items;
+        var y0items = transformedTiles[0].items;
+
+        // HACK: The multiple component transform formulas below assume that
+        // all components have the same precision. With this in mind, we
+        // compute shift and offset only once.
+        shift = components[0].precision - 8;
+        offset = (128 << shift) + 0.5;
+        max = (127.5 * (1 << shift));
+        min = -max;
+
         var component0 = tile.components[0];
         if (!component0.codingStyleParameters.reversibleTransformation) {
           // inverse irreversible multiple component transform
-          y0items = result[0].items;
-          y1items = result[1].items;
-          y2items = result[2].items;
           for (j = 0, jj = y0items.length; j < jj; ++j) {
-            y0 = y0items[j] + 0.5; y1 = y1items[j]; y2 = y2items[j];
-            y0items[j] = y0 + 1.402 * y2;
-            y1items[j] = y0 - 0.34413 * y1 - 0.71414 * y2;
-            y2items[j] = y0 + 1.772 * y1;
+            y0 = y0items[j];
+            y1 = y1items[j];
+            y2 = y2items[j];
+            r = y0 + 1.402 * y2;
+            g = y0 - 0.34413 * y1 - 0.71414 * y2;
+            b = y0 + 1.772 * y1;
+            out[pos++] = r <= min ? 0 : r >= max ? 255 : (r + offset) >> shift;
+            out[pos++] = g <= min ? 0 : g >= max ? 255 : (g + offset) >> shift;
+            out[pos++] = b <= min ? 0 : b >= max ? 255 : (b + offset) >> shift;
           }
         } else {
           // inverse reversible multiple component transform
-          y0items = result[0].items;
-          y1items = result[1].items;
-          y2items = result[2].items;
           for (j = 0, jj = y0items.length; j < jj; ++j) {
-            y0 = y0items[j]; y1 = y1items[j]; y2 = y2items[j];
-            var i1 = y0 - ((y2 + y1) >> 2);
-            y1items[j] = i1;
-            y0items[j] = y2 + i1;
-            y2items[j] = y1 + i1;
+            y0 = y0items[j];
+            y1 = y1items[j];
+            y2 = y2items[j];
+            g = y0 - ((y2 + y1) >> 2);
+            r = g + y2;
+            b = g + y1;
+            out[pos++] = r <= min ? 0 : r >= max ? 255 : (r + offset) >> shift;
+            out[pos++] = g <= min ? 0 : g >= max ? 255 : (g + offset) >> shift;
+            out[pos++] = b <= min ? 0 : b >= max ? 255 : (b + offset) >> shift;
+          }
+        }
+      } else { // no multi-component transform
+        for (c = 0; c < componentsCount; c++) {
+          var items = transformedTiles[c].items;
+          shift = components[c].precision - 8;
+          offset = (128 << shift) + 0.5;
+          max = (127.5 * (1 << shift));
+          min = -max;
+          for (pos = c, j = 0, jj = items.length; j < jj; j++) {
+            val = items[j];
+            out[pos] = val <= min ? 0 :
+                       val >= max ? 255 : (val + offset) >> shift;
+            pos += componentsCount;
           }
         }
       }
-
-      // To simplify things: shift and clamp output to 8 bit unsigned
-      for (c = 0; c < componentsCount; c++) {
-        component = components[c];
-        var shift = component.precision - 8;
-        tileImage = result[c];
-        items = tileImage.items;
-        var data = new Uint8Array(items.length);
-        var low = -(128 << shift);
-        var high = 127 << shift;
-        for (j = 0, jj = items.length; j < jj; j++) {
-          var val = items[j];
-          data[j] = val <= low ? 0 : val >= high ? 255 : (val >> shift) + 128;
-        }
-        result[c].items = data;
-      }
-
       resultImages.push(result);
     }
     return resultImages;
@@ -1302,7 +1338,7 @@ var JpxImage = (function JpxImageClosure() {
       8, 0, 8, 8, 8, 0, 8, 8, 8, 0, 0, 0, 0, 0, 8, 8, 8, 0, 8, 8, 8, 0, 8, 8, 8
     ]);
 
-    function BitModel(width, height, subband, zeroBitPlanes) {
+    function BitModel(width, height, subband, zeroBitPlanes, mb) {
       this.width = width;
       this.height = height;
 
@@ -1315,7 +1351,9 @@ var JpxImage = (function JpxImageClosure() {
       // add border state cells for significanceState
       this.neighborsSignificance = new Uint8Array(coefficientCount);
       this.coefficentsSign = new Uint8Array(coefficientCount);
-      this.coefficentsMagnitude = new Uint32Array(coefficientCount);
+      this.coefficentsMagnitude = mb > 14 ? new Uint32Array(coefficientCount) :
+                                  mb > 6 ? new Uint16Array(coefficientCount) :
+                                  new Uint8Array(coefficientCount);
       this.processingFlags = new Uint8Array(coefficientCount);
 
       var bitsDecoded = new Uint8Array(coefficientCount);
@@ -1628,9 +1666,8 @@ var JpxImage = (function JpxImageClosure() {
     Transform.prototype.calculate =
       function transformCalculate(subbands, u0, v0) {
       var ll = subbands[0];
-      for (var i = 1, ii = subbands.length; i < ii; i += 3) {
-        ll = this.iterate(ll, subbands[i], subbands[i + 1],
-                          subbands[i + 2], u0, v0);
+      for (var i = 1, ii = subbands.length; i < ii; i++) {
+        ll = this.iterate(ll, subbands[i], u0, v0);
       }
       return ll;
     };
@@ -1647,43 +1684,24 @@ var JpxImage = (function JpxImageClosure() {
       buffer[i1] = buffer[j1];
       buffer[j2] = buffer[i2];
     };
-    Transform.prototype.iterate = function Transform_iterate(ll, hl, lh, hh,
-                                                            u0, v0) {
+    Transform.prototype.iterate = function Transform_iterate(ll, hl_lh_hh,
+                                                             u0, v0) {
+
       var llWidth = ll.width, llHeight = ll.height, llItems = ll.items;
-      var hlWidth = hl.width, hlHeight = hl.height, hlItems = hl.items;
-      var lhWidth = lh.width, lhHeight = lh.height, lhItems = lh.items;
-      var hhWidth = hh.width, hhHeight = hh.height, hhItems = hh.items;
+      var width = hl_lh_hh.width;
+      var height = hl_lh_hh.height;
+      var items = hl_lh_hh.items;
+      var i, j, k, l, u, v;
 
-      // Section F.3.3 interleave
-      var width = llWidth + hlWidth;
-      var height = llHeight + lhHeight;
-      var items = new Float32Array(width * height);
-      var i, j, k, l, v, u;
-
-      for (i = 0, k = 0; i < llHeight; i++) {
+      // Interleave LL according to Section F.3.3
+      for (k = 0, i = 0; i < llHeight; i++) {
         l = i * 2 * width;
         for (j = 0; j < llWidth; j++, k++, l += 2) {
           items[l] = llItems[k];
         }
       }
-      for (i = 0, k = 0; i < hlHeight; i++) {
-        l = i * 2 * width + 1;
-        for (j = 0; j < hlWidth; j++, k++, l += 2) {
-          items[l] = hlItems[k];
-        }
-      }
-      for (i = 0, k = 0; i < lhHeight; i++) {
-        l = (i * 2 + 1) * width;
-        for (j = 0; j < lhWidth; j++, k++, l += 2) {
-          items[l] = lhItems[k];
-        }
-      }
-      for (i = 0, k = 0; i < hhHeight; i++) {
-        l = (i * 2 + 1) * width + 1;
-        for (j = 0; j < hhWidth; j++, k++, l += 2) {
-          items[l] = hhItems[k];
-        }
-      }
+      // The LL band is not needed anymore.
+      llItems = ll.items = null;
 
       var bufferPadding = 4;
       var rowBuffer = new Float32Array(width + 2 * bufferPadding);
