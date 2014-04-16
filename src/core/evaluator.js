@@ -765,6 +765,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         for (var i = 0; i < glyphs.length; i++) {
           var glyph = glyphs[i];
           if (!glyph) { // Previous glyph was a space.
+            width += textState.wordSpacing * textState.textHScale;
             continue;
           }
           var vMetricX = null;
@@ -870,10 +871,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                         args[4], args[5]);
             break;
           case OPS.setCharSpacing:
-            textState.charSpace = args[0];
+            textState.charSpacing = args[0];
             break;
           case OPS.setWordSpacing:
-            textState.wordSpace = args[0];
+            textState.wordSpacing = args[0];
             break;
           case OPS.beginText:
             textState.textMatrix = IDENTITY_MATRIX.slice();
@@ -889,11 +890,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               } else {
                 var val = items[j] / 1000;
                 if (!textState.font.vertical) {
-                  offset = -val * textState.fontSize * textState.textHScale;
+                  offset = -val * textState.fontSize * textState.textHScale *
+                           textState.textMatrix[0];
                   textState.translateTextMatrix(offset, 0);
                   textChunk.width += offset;
                 } else {
-                  offset = -val * textState.fontSize;
+                  offset = -val * textState.fontSize * textState.textMatrix[3];
                   textState.translateTextMatrix(0, offset);
                   textChunk.height += offset;
                 }
