@@ -4876,18 +4876,46 @@ var Type1Parser = (function Type1ParserClosure() {
   var EEXEC_ENCRYPT_KEY = 55665;
   var CHAR_STRS_ENCRYPT_KEY = 4330;
 
-  function decrypt(stream, key, discardNumber) {
-    var r = key, c1 = 52845, c2 = 22719;
-    var decryptedString = [];
+  function isHexDigit(code) {
+    return code >= 48 && code <= 57 || // '0'-'9'
+           code >= 65 && code <= 70 || // 'A'-'F'
+           code >= 97 && code <= 102;  // 'a'-'f'
+  }
 
-    var value = '';
-    var count = stream.length;
+  function decrypt(data, key, discardNumber) {
+    var r = key | 0, c1 = 52845, c2 = 22719;
+    var count = data.length;
+    var decrypted = new Uint8Array(count);
     for (var i = 0; i < count; i++) {
-      value = stream[i];
-      decryptedString[i] = value ^ (r >> 8);
+      var value = data[i];
+      decrypted[i] = value ^ (r >> 8);
       r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
     }
-    return decryptedString.slice(discardNumber);
+    return Array.prototype.slice.call(decrypted, discardNumber);
+  }
+
+  function decryptAscii(data, key, discardNumber) {
+    var r = key | 0, c1 = 52845, c2 = 22719;
+    var count = data.length, maybeLength = count >>> 1;
+    var decrypted = new Uint8Array(maybeLength);
+    var i, j;
+    for (i = 0, j = 0; i < count; i++) {
+      var digit1 = data[i];
+      if (!isHexDigit(digit1)) {
+        continue;
+      }
+      i++;
+      var digit2;
+      while (i < count && !isHexDigit(digit2 = data[i])) {
+        i++;
+      }
+      if (i < count) {
+        var value = parseInt(String.fromCharCode(digit1, digit2), 16);
+        decrypted[j++] = value ^ (r >> 8);
+        r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
+      }
+    }
+    return Array.prototype.slice.call(decrypted, discardNumber, j);
   }
 
   function isSpecial(c) {
@@ -4899,7 +4927,11 @@ var Type1Parser = (function Type1ParserClosure() {
 
   function Type1Parser(stream, encrypted) {
     if (encrypted) {
-      stream = new Stream(decrypt(stream.getBytes(), EEXEC_ENCRYPT_KEY, 4));
+      var data = stream.getBytes();
+      var isBinary = !(isHexDigit(data[0]) && isHexDigit(data[1]) &&
+                       isHexDigit(data[2]) && isHexDigit(data[3]));
+      stream = new Stream(isBinary ? decrypt(data, EEXEC_ENCRYPT_KEY, 4) :
+                          decryptAscii(data, EEXEC_ENCRYPT_KEY, 4));
     }
     this.stream = stream;
     this.nextChar();
