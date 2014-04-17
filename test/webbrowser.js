@@ -74,18 +74,14 @@ WebBrowser.prototype = {
     try {
       testUtils.removeDirSync(this.tmpDir);
       this.process = null;
-      callback();
+      if (callback) {
+        callback();
+      }
     } catch (e) {
       console.error('Unable to cleanup after the process: ' + e);
       try {
         if (this.process) {
-          var pid = this.process.pid;
-          if (process.platform === 'win32') {
-            // kill does not really work on windows
-            spawn('taskkill', ['-F', '-PID', pid]).on('exit', callback);
-          } else {
-            spawn('kill', ['-s', 'SIGKILL', pid]).on('exit', callback);
-          }
+          this.process.kill('SIGKILL');
         }
       } catch (e) {}
     }
