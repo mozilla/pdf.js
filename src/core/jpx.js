@@ -132,7 +132,7 @@ var JpxImage = (function JpxImageClosure() {
       var context = {};
       try {
         var position = start;
-        while (position < end) {
+        while (position + 1 < end) {
           var code = readUint16(data, position);
           position += 2;
 
@@ -763,24 +763,22 @@ var JpxImage = (function JpxImageClosure() {
       }
     }
     function readCodingpasses() {
-      var value = readBits(1);
-      if (value === 0) {
+      if (readBits(1) === 0) {
         return 1;
       }
-      value = (value << 1) | readBits(1);
-      if (value == 0x02) {
+      if (readBits(1) === 0) {
         return 2;
       }
-      value = (value << 2) | readBits(2);
-      if (value <= 0x0E) {
-        return (value & 0x03) + 3;
+      var value = readBits(2);
+      if (value < 3) {
+        return value + 3;
       }
-      value = (value << 5) | readBits(5);
-      if (value <= 0x1FE) {
-        return (value & 0x1F) + 6;
+      value = readBits(5);
+      if (value < 31) {
+        return value + 6;
       }
-      value = (value << 7) | readBits(7);
-      return (value & 0x7F) + 37;
+      value = readBits(7);
+      return value + 37;
     }
     var tileIndex = context.currentTile.index;
     var tile = context.tiles[tileIndex];
