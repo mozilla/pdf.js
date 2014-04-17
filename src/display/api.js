@@ -134,6 +134,16 @@ PDFJS.verbosity = (PDFJS.verbosity === undefined ?
                    PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity);
 
 /**
+ * Disables creation of multi-line text blocks in the text layer.
+ * Currently disabled by default.
+ * @var {boolean}
+ */
+
+PDFJS.disableMultilineTextLayer =
+  (PDFJS.disableMultilineTextLayer === undefined ?
+   true : PDFJS.disableMultilineTextLayer);
+
+/**
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
