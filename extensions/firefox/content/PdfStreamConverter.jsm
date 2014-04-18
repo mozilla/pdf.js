@@ -227,7 +227,8 @@ ChromeActions.prototype = {
     // the original url.
     var originalUri = NetUtil.newURI(data.originalUrl);
     var filename = data.filename;
-    if (typeof filename !== 'string' || !/\.pdf$/i.test(filename)) {
+    if (typeof filename !== 'string' || 
+        (!/\.pdf$/i.test(filename) && !data.isAttachment)) {
       filename = 'document.pdf';
     }
     var blobUri = data.blobUrl ? NetUtil.newURI(data.blobUrl) : originalUri;
@@ -273,7 +274,8 @@ ChromeActions.prototype = {
       var listener = {
         extListener: null,
         onStartRequest: function(aRequest, aContext) {
-          this.extListener = extHelperAppSvc.doContent('application/pdf',
+          this.extListener = extHelperAppSvc.doContent((data.isAttachment ? '' :
+                                                        'application/pdf'),
                                 aRequest, frontWindow, false);
           this.extListener.onStartRequest(aRequest, aContext);
         },

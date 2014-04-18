@@ -602,6 +602,9 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
               0 0 1px hsla(0,0%,0%,.05);
   z-index: 199;
 }
+.splitToolbarButton > .toolbarButton {
+  position: relative;
+}
 html[dir='ltr'] .splitToolbarButton > .toolbarButton:first-child,
 html[dir='rtl'] .splitToolbarButton > .toolbarButton:last-child {
   position: relative;
@@ -948,6 +951,10 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   content: url(images/toolbarButton-viewOutline-rtl.png);
 }
 
+#viewAttachments.toolbarButton::before {
+  content: url(images/toolbarButton-viewAttachments.png);
+}
+
 #viewFind.toolbarButton::before {
   content: url(images/toolbarButton-search.png);
 }
@@ -1165,7 +1172,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   color: hsla(0,0%,100%,1);
 }
 
-#outlineView {
+#outlineView,
+#attachmentsView {
   position: absolute;
   width: 192px;
   top: 0;
@@ -1185,7 +1193,8 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   margin-right: 20px;
 }
 
-.outlineItem > a {
+.outlineItem > a,
+.attachmentsItem > a {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
@@ -1199,15 +1208,18 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   white-space: normal;
 }
 
-html[dir='ltr'] .outlineItem > a {
+html[dir='ltr'] .outlineItem > a,
+html[dir='ltr'] .attachmentsItem > a {
   padding: 2px 0 5px 10px;
 }
 
-html[dir='rtl'] .outlineItem > a {
+html[dir='rtl'] .outlineItem > a,
+html[dir='rtl'] .attachmentsItem > a {
   padding: 2px 10px 5px 0;
 }
 
-.outlineItem > a:hover {
+.outlineItem > a:hover,
+.attachmentsItem > a:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
@@ -1744,6 +1756,10 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   }
   html[dir="rtl"] #viewOutline.toolbarButton::before {
     content: url(images/toolbarButton-viewOutline-rtl@2x.png);
+  }
+
+  #viewAttachments.toolbarButton::before {
+    content: url(images/toolbarButton-viewAttachments@2x.png);
   }
 
   #viewFind.toolbarButton::before {

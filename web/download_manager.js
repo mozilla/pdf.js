@@ -66,6 +66,13 @@ var DownloadManager = (function DownloadManagerClosure() {
       download(url + '#pdfjs.action=download', filename);
     },
 
+    downloadData: function DownloadManager_downloadData(data, filename,
+                                                        contentType) {
+
+      var blobUrl = PDFJS.createObjectURL(data, contentType);
+      download(blobUrl, filename);
+    },
+
     download: function DownloadManager_download(blob, url, filename) {
       if (!URL) {
         // URL.createObjectURL is not supported

@@ -1094,6 +1094,10 @@ var PDFView = {
             });
         }
       });
+      pdfDocument.getAttachments().then(function(attachments) {
+        self.attachments = new DocumentAttachmentsView(attachments);
+        document.getElementById('viewAttachments').disabled = !attachments;
+      });
     });
 
     pdfDocument.getMetadata().then(function(data) {
@@ -1337,12 +1341,14 @@ var PDFView = {
       }
       if ('pagemode' in params) {
         var toggle = document.getElementById('sidebarToggle');
-        if (params.pagemode === 'thumbs' || params.pagemode === 'bookmarks') {
+        if (params.pagemode === 'thumbs' || params.pagemode === 'bookmarks' ||
+            params.pagemode === 'attachments') {
           if (!this.sidebarOpen) {
             toggle.click();
           }
-          this.switchSidebarView(params.pagemode === 'thumbs' ?
-                                 'thumbs' : 'outline');
+          this.switchSidebarView(params.pagemode === 'bookmarks' ?
+                                   'outline' :
+                                   params.pagemode);
         } else if (params.pagemode === 'none' && this.sidebarOpen) {
           toggle.click();
         }
@@ -1358,24 +1364,28 @@ var PDFView = {
   switchSidebarView: function pdfViewSwitchSidebarView(view) {
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
+    var attachmentsView = document.getElementById('attachmentsView');
 
     var thumbsButton = document.getElementById('viewThumbnail');
     var outlineButton = document.getElementById('viewOutline');
+    var attachmentsButton = document.getElementById('viewAttachments');
 
     switch (view) {
       case 'thumbs':
-        var wasOutlineViewVisible = thumbsView.classList.contains('hidden');
+        var wasAnotherViewVisible = thumbsView.classList.contains('hidden');
 
         thumbsButton.classList.add('toggled');
         outlineButton.classList.remove('toggled');
+        attachmentsButton.classList.remove('toggled');
         thumbsView.classList.remove('hidden');
         outlineView.classList.add('hidden');
+        attachmentsView.classList.add('hidden');
 
         PDFView.renderHighestPriority();
 
-        if (wasOutlineViewVisible) {
+        if (wasAnotherViewVisible) {
           // Ensure that the thumbnail of the current page is visible
-          // when switching from the outline view.
+          // when switching from another view.
           scrollIntoView(document.getElementById('thumbnailContainer' +
                                                  this.page));
         }
@@ -1384,10 +1394,25 @@ var PDFView = {
       case 'outline':
         thumbsButton.classList.remove('toggled');
         outlineButton.classList.add('toggled');
+        attachmentsButton.classList.remove('toggled');
         thumbsView.classList.add('hidden');
         outlineView.classList.remove('hidden');
+        attachmentsView.classList.add('hidden');
 
         if (outlineButton.getAttribute('disabled')) {
+          return;
+        }
+        break;
+
+      case 'attachments':
+        thumbsButton.classList.remove('toggled');
+        outlineButton.classList.remove('toggled');
+        attachmentsButton.classList.add('toggled');
+        thumbsView.classList.add('hidden');
+        outlineView.classList.add('hidden');
+        attachmentsView.classList.remove('hidden');
+
+        if (attachmentsButton.getAttribute('disabled')) {
           return;
         }
         break;
@@ -1656,6 +1681,44 @@ var DocumentOutlineView = function documentOutlineView(outline) {
   }
 };
 
+var DocumentAttachmentsView = function documentAttachmentsView(attachments) {
+  var attachmentsView = document.getElementById('attachmentsView');
+  while (attachmentsView.firstChild) {
+    attachmentsView.removeChild(attachmentsView.firstChild);
+  }
+
+  if (!attachments) {
+    if (!attachmentsView.classList.contains('hidden')) {
+      PDFView.switchSidebarView('thumbs');
+    }
+    return;
+  }
+
+  function bindItemLink(domObj, item) {
+    domObj.href = '#';
+    domObj.onclick = function documentAttachmentsViewOnclick(e) {
+      var downloadManager = new DownloadManager();
+      downloadManager.downloadData(item.content, getFileName(item.filename),
+                                   '');
+      return false;
+    };
+  }
+
+  var names = Object.keys(attachments).sort(function(a,b) {
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  });
+  for (var i = 0, ii = names.length; i < ii; i++) {
+    var item = attachments[names[i]];
+    var div = document.createElement('div');
+    div.className = 'attachmentsItem';
+    var a = document.createElement('a');
+    bindItemLink(a, item);
+    a.textContent = getFileName(item.filename);
+    div.appendChild(a);
+    attachmentsView.appendChild(div);
+  }
+};
+
 //#if CHROME
 //(function rewriteUrlClosure() {
 //  // Run this code outside DOMContentLoaded to make sure that the URL
@@ -1846,6 +1909,11 @@ function webViewerInitialized() {
   document.getElementById('viewOutline').addEventListener('click',
     function() {
       PDFView.switchSidebarView('outline');
+    });
+
+  document.getElementById('viewAttachments').addEventListener('click',
+    function() {
+      PDFView.switchSidebarView('attachments');
     });
 
   document.getElementById('previous').addEventListener('click',
