@@ -19,7 +19,6 @@
 'use strict';
 
 var DEFAULT_PREFERENCES = {
-  showPreviousViewOnLoad: true,
   defaultZoomValue: '',
   ifAvailableShowOutlineOnLoad: false,
   enableHandToolOnLoad: false,

@@ -1002,11 +1002,6 @@ var PDFView = {
     });
 
     // Fetch the necessary preference values.
-    var showPreviousViewOnLoad;
-    var showPreviousViewOnLoadPromise =
-      Preferences.get('showPreviousViewOnLoad').then(function (prefValue) {
-        showPreviousViewOnLoad = prefValue;
-      });
     var defaultZoomValue;
     var defaultZoomValuePromise =
       Preferences.get('defaultZoomValue').then(function (prefValue) {
@@ -1014,10 +1009,10 @@ var PDFView = {
       });
 
     var storePromise = store.initializedPromise;
-    Promise.all([firstPagePromise, storePromise, showPreviousViewOnLoadPromise,
+    Promise.all([firstPagePromise, storePromise,
                  defaultZoomValuePromise]).then(function resolved() {
       var storedHash = null;
-      if (showPreviousViewOnLoad && store.get('exists', false)) {
+      if (store.get('exists', false)) {
         var pageNum = store.get('page', '1');
         var zoom = defaultZoomValue || store.get('zoom', PDFView.currentScale);
         var left = store.get('scrollLeft', '0');
