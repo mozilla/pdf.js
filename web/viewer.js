@@ -242,6 +242,9 @@ var PDFView = {
     state.down = true;
     state.lastY = viewAreaElement.scrollTop;
     viewAreaElement.addEventListener('scroll', function webViewerScroll(evt) {
+      if (!PDFView.pdfDocument) {
+        return;
+      }
       var currentY = viewAreaElement.scrollTop;
       var lastY = state.lastY;
       if (currentY > lastY) {
