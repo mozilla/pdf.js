@@ -326,6 +326,8 @@ var Stepper = (function StepperClosure() {
       }
     },
     updateOperatorList: function updateOperatorList(operatorList) {
+      var self = this;
+
       function cboxOnClick() {
         var x = +this.dataset.idx;
         if (this.checked) {
