@@ -107,8 +107,10 @@ var PDFImage = (function PDFImageClosure() {
           case 3:
             colorSpace = Name.get('DeviceRGB');
             break;
+          case 4:
+            colorSpace = Name.get('DeviceCMYK');
+            break;
           default:
-            // TODO: Find out how four color channels are handled. CMYK? Alpha?
             error('JPX images with ' + this.numComps +
                   ' color components not supported.');
         }
