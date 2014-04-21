@@ -1077,11 +1077,13 @@ var JpxImage = (function JpxImageClosure() {
 
       // Section G.2.2 Inverse multi component transform
       var shift, offset, max, min;
-      var pos = 0, j, jj, y0, y1, y2, r, g, b, val;
+      var pos = 0, j, jj, y0, y1, y2, r, g, b, k, val;
       if (tile.codingStyleDefaultParameters.multipleComponentTransform) {
-        var y2items = transformedTiles[2].items;
-        var y1items = transformedTiles[1].items;
+        var fourComponents = componentsCount === 4;
         var y0items = transformedTiles[0].items;
+        var y1items = transformedTiles[1].items;
+        var y2items = transformedTiles[2].items;
+        var y3items = fourComponents ? transformedTiles[3].items : null;
 
         // HACK: The multiple component transform formulas below assume that
         // all components have the same precision. With this in mind, we
@@ -1104,6 +1106,11 @@ var JpxImage = (function JpxImageClosure() {
             out[pos++] = r <= min ? 0 : r >= max ? 255 : (r + offset) >> shift;
             out[pos++] = g <= min ? 0 : g >= max ? 255 : (g + offset) >> shift;
             out[pos++] = b <= min ? 0 : b >= max ? 255 : (b + offset) >> shift;
+            if (fourComponents) {
+              k = y3items[j];
+              out[pos++] =
+                k <= min ? 0 : k >= max ? 255 : (k + offset) >> shift;
+            }
           }
         } else {
           // inverse reversible multiple component transform
@@ -1117,6 +1124,11 @@ var JpxImage = (function JpxImageClosure() {
             out[pos++] = r <= min ? 0 : r >= max ? 255 : (r + offset) >> shift;
             out[pos++] = g <= min ? 0 : g >= max ? 255 : (g + offset) >> shift;
             out[pos++] = b <= min ? 0 : b >= max ? 255 : (b + offset) >> shift;
+            if (fourComponents) {
+              k = y3items[j];
+              out[pos++] =
+                k <= min ? 0 : k >= max ? 255 : (k + offset) >> shift;
+            }
           }
         }
       } else { // no multi-component transform
