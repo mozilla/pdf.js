@@ -21,6 +21,7 @@
 
 'use strict';
 
+var DEFAULT_ICON_SIZE = 22; // px
 var HIGHLIGHT_OFFSET = 4; // px
 var SUPPORTED_TYPES = ['Link', 'Text', 'Widget'];
 
@@ -624,6 +625,8 @@ var TextAnnotation = (function TextAnnotationClosure() {
     if (data.hasAppearance) {
       data.name = 'NoIcon';
     } else {
+      data.rect[1] = data.rect[3] - DEFAULT_ICON_SIZE;
+      data.rect[2] = data.rect[0] + DEFAULT_ICON_SIZE;
       data.name = dict.has('Name') ? dict.get('Name').name : 'Note';
     }
 
