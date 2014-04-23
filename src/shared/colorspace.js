@@ -145,16 +145,17 @@ var ColorSpace = (function ColorSpaceClosure() {
 
       if (rgbBuf) {
         if (needsResizing) {
-          rgbBuf = PDFImage.resize(rgbBuf, bpc, 3, originalWidth,
-                                   originalHeight, width, height);
-        }
-        rgbPos = 0;
-        destPos = 0;
-        for (i = 0, ii = width * actualHeight; i < ii; i++) {
-          dest[destPos++] = rgbBuf[rgbPos++];
-          dest[destPos++] = rgbBuf[rgbPos++];
-          dest[destPos++] = rgbBuf[rgbPos++];
-          destPos += alpha01;
+          PDFImage.resize(rgbBuf, bpc, 3, originalWidth, originalHeight, width,
+                          height, dest, alpha01);
+        } else {
+          rgbPos = 0;
+          destPos = 0;
+          for (i = 0, ii = width * actualHeight; i < ii; i++) {
+            dest[destPos++] = rgbBuf[rgbPos++];
+            dest[destPos++] = rgbBuf[rgbPos++];
+            dest[destPos++] = rgbBuf[rgbPos++];
+            destPos += alpha01;
+          }
         }
       }
     },
