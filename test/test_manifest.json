@@ -1583,6 +1583,12 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue4668",
+      "file": "pdfs/issue4668.pdf",
+      "md5": "a749d5ca995ad745411406d29156b04e",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "issue3666",
        "file": "pdfs/issue3666.pdf",
        "md5": "c2156a34b9634b174556910732ab9df0",
