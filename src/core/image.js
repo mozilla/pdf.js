@@ -198,30 +198,50 @@ var PDFImage = (function PDFImageClosure() {
    * @param {Number} h1 Original height.
    * @param {Number} w2 New width.
    * @param {Number} h2 New height.
+   * @param {TypedArray} dest (Optional) The destination buffer.
+   * @param {Number} alpha01 (Optional) Size reserved for the alpha channel.
    * @return {TypedArray} Resized image data.
    */
   PDFImage.resize = function PDFImage_resize(pixels, bpc, components,
-                                             w1, h1, w2, h2) {
+                                             w1, h1, w2, h2, dest, alpha01) {
+
+    if (components !== 1 && components !== 3) {
+      error('Unsupported component count for resizing.');
+    }
+
     var length = w2 * h2 * components;
-    var temp = (bpc <= 8 ? new Uint8Array(length) :
+    var temp = dest ? dest : (bpc <= 8 ? new Uint8Array(length) :
         (bpc <= 16 ? new Uint16Array(length) : new Uint32Array(length)));
     var xRatio = w1 / w2;
     var yRatio = h1 / h2;
-    var px, py, newIndex, oldIndex;
-    for (var i = 0; i < h2; i++) {
-      for (var j = 0; j < w2; j++) {
-        px = Math.floor(j * xRatio);
-        py = Math.floor(i * yRatio);
-        newIndex = (i * w2) + j;
-        oldIndex = ((py * w1) + px);
-        if (components === 1) {
-          temp[newIndex] = pixels[oldIndex];
-        } else if (components === 3) {
-          newIndex *= 3;
-          oldIndex *= 3;
-          temp[newIndex] = pixels[oldIndex];
-          temp[newIndex + 1] = pixels[oldIndex + 1];
-          temp[newIndex + 2] = pixels[oldIndex + 2];
+    var i, j, py, newIndex = 0, oldIndex;
+    var xScaled = new Uint16Array(w2);
+    var w1Scanline = w1 * components;
+    if (alpha01 !== 1) {
+      alpha01 = 0;
+    }
+
+    for (j = 0; j < w2; j++) {
+      xScaled[j] = Math.floor(j * xRatio) * components;
+    }
+
+    if (components === 1) {
+      for (i = 0; i < h2; i++) {
+        py = Math.floor(i * yRatio) * w1Scanline;
+        for (j = 0; j < w2; j++) {
+          oldIndex = py + xScaled[j];
+          temp[newIndex++] = pixels[oldIndex];
+        }
+      }
+    } else if (components === 3) {
+      for (i = 0; i < h2; i++) {
+        py = Math.floor(i * yRatio) * w1Scanline;
+        for (j = 0; j < w2; j++) {
+          oldIndex = py + xScaled[j];
+          temp[newIndex++] = pixels[oldIndex++];
+          temp[newIndex++] = pixels[oldIndex++];
+          temp[newIndex++] = pixels[oldIndex++];
+          newIndex += alpha01;
         }
       }
     }
@@ -568,7 +588,7 @@ var PDFImage = (function PDFImageClosure() {
         // inline decoding (= inversion) for 1 bpc images
         length = width * height;
         if (this.needsDecode) {
-          // invert and scale to {0, 255} 
+          // invert and scale to {0, 255}
           for (i = 0; i < length; ++i) {
             buffer[i] = (comps[i] - 1) & 255;
           }
