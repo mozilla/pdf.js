@@ -19,7 +19,7 @@
            isNum, ISOAdobeCharset, Stream, stringToArray, stringToBytes,
            string32, TextDecoder, warn, Lexer, Util, FONT_IDENTITY_MATRIX,
            FontRendererFactory, shadow, isString, IdentityCMap, Name,
-           CMapFactory, PDFJS */
+           CMapFactory, PDFJS, readUint32 */
 
 'use strict';
 
@@ -2259,7 +2259,12 @@ var Font = (function FontClosure() {
     // Some fonts might use wrong font types for Type1C or CIDFontType0C
     var subtype = properties.subtype;
     if (subtype == 'Type1C' && (type != 'Type1' && type != 'MMType1')) {
-      type = 'Type1';
+      // Some TrueType fonts by mistake claim Type1C
+      if (isTrueTypeFile(file)) {
+        subtype = 'TrueType';
+      } else {
+        type = 'Type1';
+      }
     }
     if (subtype == 'CIDFontType0C' && type != 'CIDFontType0') {
       type = 'CIDFontType0';
@@ -2405,6 +2410,11 @@ var Font = (function FontClosure() {
                       string32(offset) + string32(length));
     file.file += tableEntry;
     file.virtualOffset += data.length;
+  }
+
+  function isTrueTypeFile(file) {
+    var header = file.peekBytes(4);
+    return readUint32(header, 0) === 0x00010000;
   }
 
   /**
