@@ -20,7 +20,7 @@
            Preferences, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
            PresentationMode, HandTool, Promise, DocumentProperties,
-           DocumentOutlineView */
+           DocumentOutlineView, DocumentAttachmentsView */
 
 'use strict';
 
@@ -1638,44 +1638,7 @@ var PDFView = {
 //#include thumbnail_view.js
 //#include text_layer_builder.js
 //#include document_outline_view.js
-
-var DocumentAttachmentsView = function documentAttachmentsView(attachments) {
-  var attachmentsView = document.getElementById('attachmentsView');
-  while (attachmentsView.firstChild) {
-    attachmentsView.removeChild(attachmentsView.firstChild);
-  }
-
-  if (!attachments) {
-    if (!attachmentsView.classList.contains('hidden')) {
-      PDFView.switchSidebarView('thumbs');
-    }
-    return;
-  }
-
-  function bindItemLink(domObj, item) {
-    domObj.href = '#';
-    domObj.onclick = function documentAttachmentsViewOnclick(e) {
-      var downloadManager = new DownloadManager();
-      downloadManager.downloadData(item.content, getFileName(item.filename),
-                                   '');
-      return false;
-    };
-  }
-
-  var names = Object.keys(attachments).sort(function(a,b) {
-    return a.toLowerCase().localeCompare(b.toLowerCase());
-  });
-  for (var i = 0, ii = names.length; i < ii; i++) {
-    var item = attachments[names[i]];
-    var div = document.createElement('div');
-    div.className = 'attachmentsItem';
-    var a = document.createElement('a');
-    bindItemLink(a, item);
-    a.textContent = getFileName(item.filename);
-    div.appendChild(a);
-    attachmentsView.appendChild(div);
-  }
-};
+//#include document_attachments_view.js
 
 //#if CHROME
 //(function rewriteUrlClosure() {
