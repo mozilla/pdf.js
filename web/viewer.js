@@ -1970,13 +1970,14 @@ function updateViewarea() {
     PDFView.currentPosition = { page: pageNumber, left: intLeft, top: intTop };
   }
 
-  var store = PDFView.store;
-  store.initializedPromise.then(function() {
-    store.set('exists', true);
-    store.set('page', pageNumber);
-    store.set('zoom', normalizedScaleValue);
-    store.set('scrollLeft', intLeft);
-    store.set('scrollTop', intTop);
+  PDFView.store.initializedPromise.then(function() {
+    PDFView.store.setMultiple({
+      'exists': true,
+      'page': pageNumber,
+      'zoom': normalizedScaleValue,
+      'scrollLeft': intLeft,
+      'scrollTop': intTop
+    });
   });
   var href = PDFView.getAnchorUrl(pdfOpenParams);
   document.getElementById('viewBookmark').href = href;

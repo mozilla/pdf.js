@@ -113,6 +113,16 @@ var ViewHistory = (function ViewHistoryClosure() {
       this._writeToStorage();
     },
 
+    setMultiple: function ViewHistory_setMultiple(properties) {
+      if (!this.isInitializedPromiseResolved) {
+        return;
+      }
+      for (var name in properties) {
+        this.file[name] = properties[name];
+      }
+      this._writeToStorage();
+    },
+
     get: function ViewHistory_get(name, defaultValue) {
       if (!this.isInitializedPromiseResolved) {
         return defaultValue;
