@@ -48,7 +48,13 @@ var ViewHistory = (function ViewHistoryClosure() {
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//  resolvePromise(sessionStorage.getItem('pdfjsHistory'));
+//  var sessionHistory;
+//  try {
+//    // Workaround for security error when the preference
+//    // network.cookie.lifetimePolicy is set to 1, see Mozilla Bug 365772.
+//    sessionHistory = sessionStorage.getItem('pdfjsHistory');
+//  } catch (ex) {}
+//  resolvePromise(sessionHistory);
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
@@ -93,7 +99,10 @@ var ViewHistory = (function ViewHistoryClosure() {
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//    sessionStorage.setItem('pdfjsHistory',database);
+//    try {
+//      // See comment in try-catch block above.
+//      sessionStorage.setItem('pdfjsHistory', database);
+//    } catch (ex) {}
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
