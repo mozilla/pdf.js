@@ -32,7 +32,6 @@ var DocumentAttachmentsView = function documentAttachmentsView(attachments) {
   }
 
   function bindItemLink(domObj, item) {
-    domObj.href = '#';
     domObj.onclick = function documentAttachmentsViewOnclick(e) {
       var downloadManager = new DownloadManager();
       downloadManager.downloadData(item.content, getFileName(item.filename),
@@ -48,10 +47,10 @@ var DocumentAttachmentsView = function documentAttachmentsView(attachments) {
     var item = attachments[names[i]];
     var div = document.createElement('div');
     div.className = 'attachmentsItem';
-    var a = document.createElement('a');
-    bindItemLink(a, item);
-    a.textContent = getFileName(item.filename);
-    div.appendChild(a);
+    var button = document.createElement('button');
+    bindItemLink(button, item);
+    button.textContent = getFileName(item.filename);
+    div.appendChild(button);
     attachmentsView.appendChild(div);
   }
 };

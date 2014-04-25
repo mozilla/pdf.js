@@ -1178,11 +1178,17 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   width: 192px;
   top: 0;
   bottom: 0;
-  padding: 4px 4px 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   -webkit-user-select: none;
   -moz-user-select: none;
+}
+
+#outlineView {
+  padding: 4px 4px 0;
+}
+#attachmentsView {
+  padding: 3px 4px 0;
 }
 
 html[dir='ltr'] .outlineItem > .outlineItems {
@@ -1194,7 +1200,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
 }
 
 .outlineItem > a,
-.attachmentsItem > a {
+.attachmentsItem > button {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
@@ -1208,18 +1214,31 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   white-space: normal;
 }
 
-html[dir='ltr'] .outlineItem > a,
-html[dir='ltr'] .attachmentsItem > a {
-  padding: 2px 0 5px 10px;
+.attachmentsItem > button {
+  border: 0 none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
 }
 
-html[dir='rtl'] .outlineItem > a,
-html[dir='rtl'] .attachmentsItem > a {
+html[dir='ltr'] .outlineItem > a {
+  padding: 2px 0 5px 10px;
+}
+html[dir='ltr'] .attachmentsItem > button {
+  padding: 2px 0 3px 7px;
+  text-align: left;
+}
+
+html[dir='rtl'] .outlineItem > a {
   padding: 2px 10px 5px 0;
+}
+html[dir='rtl'] .attachmentsItem > button {
+  padding: 2px 7px 3px 0;
+  text-align: right;
 }
 
 .outlineItem > a:hover,
-.attachmentsItem > a:hover {
+.attachmentsItem > button:hover {
   background-color: hsla(0,0%,100%,.02);
   background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
   background-clip: padding-box;
