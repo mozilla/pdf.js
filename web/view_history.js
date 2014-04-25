@@ -86,28 +86,31 @@ var ViewHistory = (function ViewHistoryClosure() {
       this.database = database;
     },
 
-    set: function ViewHistory_set(name, val) {
-      if (!this.isInitializedPromiseResolved) {
-        return;
-      }
-      var file = this.file;
-      file[name] = val;
-      var database = JSON.stringify(this.database);
+    _writeToStorage: function ViewHistory_writeToStorage() {
+      var databaseStr = JSON.stringify(this.database);
 
 //#if B2G
-//    asyncStorage.setItem('database', database);
+//    asyncStorage.setItem('database', databaseStr);
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
 //    try {
 //      // See comment in try-catch block above.
-//      sessionStorage.setItem('pdfjsHistory', database);
+//      sessionStorage.setItem('pdfjsHistory', databaseStr);
 //    } catch (ex) {}
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
-      localStorage.setItem('database', database);
+      localStorage.setItem('database', databaseStr);
 //#endif
+    },
+
+    set: function ViewHistory_set(name, val) {
+      if (!this.isInitializedPromiseResolved) {
+        return;
+      }
+      this.file[name] = val;
+      this._writeToStorage();
     },
 
     get: function ViewHistory_get(name, defaultValue) {
