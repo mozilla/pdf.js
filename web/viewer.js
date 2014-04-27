@@ -222,9 +222,9 @@ var PDFView = {
     }, false);
 
     var initializedPromise = Promise.all([
-      Preferences.get('enableWebGL').then(function (value) {
+      Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
-      })
+      }, function rejected(reason) {})
       // TODO move more preferences and other async stuff here
     ]);
 
@@ -1042,8 +1042,8 @@ var PDFView = {
 //      self.container.blur();
 //#endif
       }
-    }, function rejected(errorMsg) {
-      console.error(errorMsg);
+    }, function rejected(reason) {
+      console.error(reason);
 
       firstPagePromise.then(function () {
         self.setInitialView(null, scale);

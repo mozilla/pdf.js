@@ -45,11 +45,11 @@ var HandTool = {
       toggleHandTool.addEventListener('click', this.toggle.bind(this), false);
 
       window.addEventListener('localized', function (evt) {
-        Preferences.get('enableHandToolOnLoad').then(function (prefValue) {
-          if (prefValue) {
+        Preferences.get('enableHandToolOnLoad').then(function resolved(value) {
+          if (value) {
             this.handTool.activate();
           }
-        }.bind(this));
+        }.bind(this), function rejected(reason) {});
       }.bind(this));
     }
   },
