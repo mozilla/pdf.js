@@ -887,7 +887,7 @@ var PDFView = {
     // that we discard some of the loaded data. This can cause the loading
     // bar to move backwards. So prevent this by only updating the bar if it
     // increases.
-    if (percent > PDFView.loadingBar.percent) {
+    if (percent > PDFView.loadingBar.percent || isNaN(percent)) {
       PDFView.loadingBar.percent = percent;
     }
   },
