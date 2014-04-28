@@ -274,9 +274,10 @@ ChromeActions.prototype = {
       var listener = {
         extListener: null,
         onStartRequest: function(aRequest, aContext) {
-          this.extListener = extHelperAppSvc.doContent((data.isAttachment ? '' :
-                                                        'application/pdf'),
-                                aRequest, frontWindow, false);
+          this.extListener = extHelperAppSvc.doContent(
+            (data.isAttachment ? 'application/octet-stream' :
+                                 'application/pdf'),
+            aRequest, frontWindow, false);
           this.extListener.onStartRequest(aRequest, aContext);
         },
         onStopRequest: function(aRequest, aContext, aStatusCode) {
