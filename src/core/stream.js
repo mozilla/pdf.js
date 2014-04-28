@@ -873,9 +873,8 @@ var JpegStream = (function JpegStreamClosure() {
         jpegImage.colorTransform = this.colorTransform;
       }
       jpegImage.parse(this.bytes);
-      var width = jpegImage.width;
-      var height = jpegImage.height;
-      var data = jpegImage.getData(width, height);
+      var data = jpegImage.getData(this.drawWidth, this.drawHeight,
+                                   /* forceRGBoutput = */true);
       this.buffer = data;
       this.bufferLength = data.length;
       this.eof = true;
@@ -883,6 +882,12 @@ var JpegStream = (function JpegStreamClosure() {
       error('JPEG error: ' + e);
     }
   };
+
+  JpegStream.prototype.getBytes = function JpegStream_getBytes(length) {
+    this.ensureBuffer();
+    return this.buffer;
+  };
+
   JpegStream.prototype.getIR = function JpegStream_getIR() {
     return PDFJS.createObjectURL(this.bytes, 'image/jpeg');
   };
