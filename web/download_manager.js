@@ -68,6 +68,10 @@ var DownloadManager = (function DownloadManagerClosure() {
 
     downloadData: function DownloadManager_downloadData(data, filename,
                                                         contentType) {
+      if (navigator.msSaveBlob) { // IE10 and above
+        return navigator.msSaveBlob(new Blob([data], { type: contentType }),
+                                    filename);
+      }
 
       var blobUrl = PDFJS.createObjectURL(data, contentType);
       download(blobUrl, filename);
