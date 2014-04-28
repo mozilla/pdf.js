@@ -21,7 +21,7 @@
 var DEFAULT_PREFERENCES = {
   showPreviousViewOnLoad: true,
   defaultZoomValue: '',
-  ifAvailableShowOutlineOnLoad: false,
+  sidebarViewOnLoad: 0,
   enableHandToolOnLoad: false,
   enableWebGL: false
 };
