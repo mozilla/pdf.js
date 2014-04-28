@@ -419,6 +419,12 @@ function checkRefTestResults(browser, id, results) {
     default:
       throw new Error('Unknown test type');
   }
+  // clear memory
+  results.forEach(function (roundResults, round) {
+    roundResults.forEach(function (pageResult, page) {
+      pageResult.snapshot = null;
+    });
+  });
 }
 
 function refTestPostHandler(req, res) {
