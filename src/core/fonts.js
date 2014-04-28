@@ -2459,6 +2459,8 @@ var Font = (function FontClosure() {
            fontCharCode === 0x7F || // Control char
            fontCharCode === 0xAD || // Soft hyphen
            (fontCharCode >= 0x80 && fontCharCode <= 0x9F) || // Control chars
+           // Prevent drawing characters in the specials unicode block.
+           (fontCharCode >= 0xFFF0 && fontCharCode <= 0xFFFF) ||
            (isSymbolic && isIdentityUnicode)) &&
           nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END) { // Room left.
         // Loop to try and find a free spot in the private use area.
