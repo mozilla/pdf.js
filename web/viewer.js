@@ -17,7 +17,7 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, PDFFindBar, CustomStyle,
            PDFFindController, ProgressBar, TextLayerBuilder, DownloadManager,
            getFileName, scrollIntoView, getPDFFileNameFromURL, PDFHistory,
-           Preferences, ViewHistory, PageView, ThumbnailView, URL,
+           Preferences, SidebarView, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
            PresentationMode, HandTool, Promise, DocumentProperties,
            DocumentOutlineView, DocumentAttachmentsView */
@@ -224,6 +224,9 @@ var PDFView = {
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
+      }, function rejected(reason) {}),
+      Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
+        self.preferenceSidebarViewOnLoad = value;
       }, function rejected(reason) {})
       // TODO move more preferences and other async stuff here
     ]);
@@ -1086,23 +1089,27 @@ var PDFView = {
         self.outline = new DocumentOutlineView(outline);
         document.getElementById('viewOutline').disabled = !outline;
 
-        if (outline) {
-          Preferences.get('ifAvailableShowOutlineOnLoad').then(
-            function (prefValue) {
-              if (prefValue) {
-                if (!self.sidebarOpen) {
-                  document.getElementById('sidebarToggle').click();
-                }
-                self.switchSidebarView('outline');
-              }
-            });
+        if (outline &&
+            self.preferenceSidebarViewOnLoad === SidebarView.OUTLINE) {
+          self.switchSidebarView('outline', true);
         }
       });
       pdfDocument.getAttachments().then(function(attachments) {
         self.attachments = new DocumentAttachmentsView(attachments);
         document.getElementById('viewAttachments').disabled = !attachments;
+
+        if (attachments &&
+            self.preferenceSidebarViewOnLoad === SidebarView.ATTACHMENTS) {
+          self.switchSidebarView('attachments', true);
+        }
       });
     });
+
+    if (self.preferenceSidebarViewOnLoad === SidebarView.THUMBS) {
+      Promise.all([firstPagePromise, onePageRendered]).then(function () {
+        self.switchSidebarView('thumbs', true);
+      });
+    }
 
     pdfDocument.getMetadata().then(function(data) {
       var info = data.info, metadata = data.metadata;
@@ -1344,17 +1351,12 @@ var PDFView = {
         this.page = pageNumber; // simple page
       }
       if ('pagemode' in params) {
-        var toggle = document.getElementById('sidebarToggle');
         if (params.pagemode === 'thumbs' || params.pagemode === 'bookmarks' ||
             params.pagemode === 'attachments') {
-          if (!this.sidebarOpen) {
-            toggle.click();
-          }
-          this.switchSidebarView(params.pagemode === 'bookmarks' ?
-                                   'outline' :
-                                   params.pagemode);
+          this.switchSidebarView((params.pagemode === 'bookmarks' ?
+                                  'outline' : params.pagemode), true);
         } else if (params.pagemode === 'none' && this.sidebarOpen) {
-          toggle.click();
+          document.getElementById('sidebarToggle').click();
         }
       }
     } else if (/^\d+$/.test(hash)) { // page number
@@ -1365,7 +1367,10 @@ var PDFView = {
     }
   },
 
-  switchSidebarView: function pdfViewSwitchSidebarView(view) {
+  switchSidebarView: function pdfViewSwitchSidebarView(view, openSidebar) {
+    if (openSidebar && !this.sidebarOpen) {
+      document.getElementById('sidebarToggle').click();
+    }
     var thumbsView = document.getElementById('thumbnailView');
     var outlineView = document.getElementById('outlineView');
     var attachmentsView = document.getElementById('attachmentsView');
