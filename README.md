@@ -111,6 +111,10 @@ Even more learning resources can be found at:
 
 ## Questions
 
+Check out our FAQs and get answers to common questions:
+
++ https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
+
 Talk to us on IRC:
 
 + #pdfjs on irc.mozilla.org
