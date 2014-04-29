@@ -810,60 +810,35 @@ var JpegImage = (function jpegImage() {
     _getLinearizedBlockData: function getLinearizedBlockData(width, height) {
       var scaleX = this.width / width, scaleY = this.height / height;
 
-      var component, componentScaleX, componentScaleY;
-      var x, y, i;
+      var component, componentScaleX, componentScaleY, blocksPerScanline;
+      var x, y, i, j;
+      var index;
       var offset = 0;
-      var Y, Cb, Cr, K, C, M, Ye, R, G, B;
-      var colorTransform;
+      var output;
       var numComponents = this.components.length;
       var dataLength = width * height * numComponents;
       var data = new Uint8Array(dataLength);
-      var componentLine;
+      var xScaleBlockOffset = new Uint32Array(width);
+      var mask3LSB = 0xfffffff8; // used to clear the 3 LSBs
 
-      // lineData is reused for all components. Assume first component is
-      // the biggest
-      var lineData = new Uint8Array((this.components[0].blocksPerLine << 3) *
-                                    this.components[0].blocksPerColumn * 8);
-
-      // First construct image data ...
       for (i = 0; i < numComponents; i++) {
         component = this.components[i];
-        var blocksPerLine = component.blocksPerLine;
-        var blocksPerColumn = component.blocksPerColumn;
-        var samplesPerLine = blocksPerLine << 3;
-
-        var j, k, ll = 0;
-        var sample;
-        var lineOffset = 0;
-        for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
-          var scanLine = blockRow << 3;
-          for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-            var bufferOffset = getBlockBufferOffset(component,
-                                                    blockRow, blockCol);
-            offset = 0;
-            sample = blockCol << 3;
-            for (j = 0; j < 8; j++) {
-              lineOffset = (scanLine + j) * samplesPerLine;
-              for (k = 0; k < 8; k++) {
-                lineData[lineOffset + sample + k] =
-                  component.output[bufferOffset + offset++];
-              }
-            }
-          }
-        }
-
         componentScaleX = component.scaleX * scaleX;
         componentScaleY = component.scaleY * scaleY;
         offset = i;
-
-        var cx, cy;
-        var index;
+        output = component.output;
+        blocksPerScanline = (component.blocksPerLine + 1) << 3;
+        // precalculate the xScaleBlockOffset
+        for (x = 0; x < width; x++) {
+          j = 0 | (x * componentScaleX);
+          xScaleBlockOffset[x] = ((j & mask3LSB) << 3) | (j & 7);
+        }
+        // linearize the blocks of the component
         for (y = 0; y < height; y++) {
+          j = 0 | (y * componentScaleY);
+          index = blocksPerScanline * (j & mask3LSB) | ((j & 7) << 3);
           for (x = 0; x < width; x++) {
-            cy = 0 | (y * componentScaleY);
-            cx = 0 | (x * componentScaleX);
-            index = cy * samplesPerLine + cx;
-            data[offset] = lineData[index];
+            data[offset] = output[index + xScaleBlockOffset[x]];
             offset += numComponents;
           }
         }
