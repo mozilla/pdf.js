@@ -952,6 +952,31 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
 })();
 
 /**
+ * Promise Capability object.
+ *
+ * @typedef {Object} PromiseCapability
+ * @property {Promise} promise - A promise object.
+ * @property {function} resolve - Fullfills the promise.
+ * @property {function} reject - Rejects the promise.
+ */
+
+/**
+ * Creates a promise capability object.
+ * @return {PromiseCapability} A capability object contains:
+ * - a Promise, resolve and reject methods.
+ */
+function createPromiseCapability() {
+  var capability = {};
+  capability.promise = new Promise(function (resolve, reject) {
+    capability.resolve = resolve;
+    capability.reject = reject;
+  });
+  return capability;
+}
+
+PDFJS.createPromiseCapability = createPromiseCapability;
+
+/**
  * Polyfill for Promises:
  * The following promise implementation tries to generally implment the
  * Promise/A+ spec. Some notable differences from other promise libaries are:
@@ -988,8 +1013,15 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
       };
     }
     if (typeof globalScope.Promise.resolve !== 'function') {
-      globalScope.Promise.resolve = function (x) {
-        return new globalScope.Promise(function (resolve) { resolve(x); });
+      globalScope.Promise.resolve = function (value) {
+        return new globalScope.Promise(function (resolve) { resolve(value); });
+      };
+    }
+    if (typeof globalScope.Promise.reject !== 'function') {
+      globalScope.Promise.reject = function (reason) {
+        return new globalScope.Promise(function (resolve, reject) {
+          reject(reason);
+        });
       };
     }
     return;
@@ -1167,18 +1199,28 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
 
   /**
    * Checks if the value is likely a promise (has a 'then' function).
-   * @return {boolean} true if x is thenable
+   * @return {boolean} true if value is thenable
    */
   Promise.isPromise = function Promise_isPromise(value) {
     return value && typeof value.then === 'function';
   };
+
   /**
    * Creates resolved promise
-   * @param x resolve value
+   * @param value resolve value
    * @returns {Promise}
    */
-  Promise.resolve = function Promise_resolve(x) {
-    return new Promise(function (resolve) { resolve(x); });
+  Promise.resolve = function Promise_resolve(value) {
+    return new Promise(function (resolve) { resolve(value); });
+  };
+
+  /**
+   * Creates rejected promise
+   * @param reason rejection value
+   * @returns {Promise}
+   */
+  Promise.reject = function Promise_reject(reason) {
+    return new Promise(function (resolve, reject) { reject(reason); });
   };
 
   Promise.prototype = {
