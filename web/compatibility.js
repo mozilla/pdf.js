@@ -547,13 +547,20 @@ if (typeof PDFJS === 'undefined') {
       return;
     }
   } catch (e) { }
-  window.localStorage = {
-    data: Object.create(null),
-    getItem: function (key) {
-      return this.data[key];
-    },
-    setItem: function (key, value) {
-      this.data[key] = value;
-    }
-  };
+  // When the generic viewer is used in Firefox the following code will fail
+  // when the preference 'network.cookie.lifetimePolicy' is set to 1,
+  // see Mozilla bug 365772.
+  try {
+    window.localStorage = {
+      data: Object.create(null),
+      getItem: function (key) {
+        return this.data[key];
+      },
+      setItem: function (key, value) {
+        this.data[key] = value;
+      }
+    };
+  } catch (e) {
+    console.log('Unable to create polyfill for localStorage');
+  }
 })();

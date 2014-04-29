@@ -31,40 +31,12 @@
 var ViewHistory = (function ViewHistoryClosure() {
   function ViewHistory(fingerprint) {
     this.fingerprint = fingerprint;
-    var initializedPromiseResolve;
     this.isInitializedPromiseResolved = false;
-    this.initializedPromise = new Promise(function (resolve) {
-      initializedPromiseResolve = resolve;
-    });
-
-    var resolvePromise = (function ViewHistoryResolvePromise(db) {
+    this.initializedPromise =
+        this._readFromStorage().then(function (databaseStr) {
       this.isInitializedPromiseResolved = true;
-      this.initialize(db || '{}');
-      initializedPromiseResolve();
-    }).bind(this);
 
-//#if B2G
-//  asyncStorage.getItem('database', resolvePromise);
-//#endif
-
-//#if FIREFOX || MOZCENTRAL
-//  var sessionHistory;
-//  try {
-//    // Workaround for security error when the preference
-//    // network.cookie.lifetimePolicy is set to 1, see Mozilla Bug 365772.
-//    sessionHistory = sessionStorage.getItem('pdfjsHistory');
-//  } catch (ex) {}
-//  resolvePromise(sessionHistory);
-//#endif
-
-//#if !(FIREFOX || MOZCENTRAL || B2G)
-    resolvePromise(localStorage.getItem('database'));
-//#endif
-  }
-
-  ViewHistory.prototype = {
-    initialize: function ViewHistory_initialize(database) {
-      database = JSON.parse(database);
+      var database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
         database.files = [];
       }
@@ -84,25 +56,44 @@ var ViewHistory = (function ViewHistoryClosure() {
       }
       this.file = database.files[index];
       this.database = database;
-    },
+    }.bind(this));
+  }
 
+  ViewHistory.prototype = {
     _writeToStorage: function ViewHistory_writeToStorage() {
-      var databaseStr = JSON.stringify(this.database);
+      return new Promise(function (resolve) {
+        var databaseStr = JSON.stringify(this.database);
 
 //#if B2G
-//    asyncStorage.setItem('database', databaseStr);
+//      asyncStorage.setItem('database', databaseStr, resolve);
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
-//    try {
-//      // See comment in try-catch block above.
 //      sessionStorage.setItem('pdfjsHistory', databaseStr);
-//    } catch (ex) {}
+//      resolve();
 //#endif
 
 //#if !(FIREFOX || MOZCENTRAL || B2G)
-      localStorage.setItem('database', databaseStr);
+        localStorage.setItem('database', databaseStr);
+        resolve();
 //#endif
+      }.bind(this));
+    },
+
+    _readFromStorage: function ViewHistory_readFromStorage() {
+      return new Promise(function (resolve) {
+//#if B2G
+//      asyncStorage.getItem('database', resolve);
+//#endif
+
+//#if FIREFOX || MOZCENTRAL
+//      resolve(sessionStorage.getItem('pdfjsHistory'));
+//#endif
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+        resolve(localStorage.getItem('database'));
+//#endif
+      });
     },
 
     set: function ViewHistory_set(name, val) {
