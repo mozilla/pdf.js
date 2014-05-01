@@ -145,95 +145,22 @@ var calculateMD5 = (function calculateMD5Closure() {
 
   return hash;
 })();
-//var Word64 = (function Word64Closure() {
-//  function Word64(highInteger, lowInteger) {
-//    this.low = lowInteger >>> 0;
-//    this.high = highInteger >>> 0;
-//  }
-//  Word64.prototype = {
-//    and: function Word64_and(word) {
-//      this.high = (this.high & word.high) >>> 0;
-//      this.low = (this.low & word.low) >>> 0;
-//      return this;
-//    },
-//    xor: function Word64_xor(word) {
-//      this.high = (this.high ^ word.high) >>> 0;
-//      this.low = (this.low ^ word.low) >>> 0;
-//      return this;
-//    },
-//    or: function Word64_or(word) {
-//      this.high = (this.high | word.high) >>> 0;
-//      this.low = (this.low | word.low) >>> 0;
-//      return this;
-//    },
-//    shiftRight: function Word64_shiftRight(places) {
-//      if (places >= 32) {
-//        this.low = (this.high >>> (places - 32)) >>> 0;
-//        this.high = 0x00000000 >>> 0;
-//        return this;
-//      }
-//      this.low = ((this.low >>> places) | (this.high << 32 - places)) >>> 0;
-//      this.high = (this.high >>> places) >>> 0;
-//      return this;
-//    },
-//    shiftLeft: function Word64_shiftLeft(places) {
-//      if (places >= 32) {
-//        this.high = (this.low << (places - 32)) >>> 0;
-//        this.low = 0x00000000 >>> 0;
-//        return this;
-//      }
-//      this.high = ((this.high << places) | (this.low >>> 32 - places)) >>> 0;
-//      this.low = ((this.low << places)) >>> 0;
-//      return this;
-//    },
-//    not: function Word64_not() {
-//      this.high = (~this.high) >>> 0;
-//      this.low = (~this.low) >>> 0;
-//      return this;
-//    },
-//    plus: function Word64_plus(word) {
-//      var lowAdd = this.low + word.low;
-//      var highAdd = this.high + word.high;
-//      if (lowAdd > 0xFFFFFFFF) {
-//        highAdd += 1;
-//      }
-//      this.high = (highAdd | 0) >>> 0;
-//      this.low = (lowAdd | 0) >>> 0;
-//      return this;
-//    },
-//    copyTo: function Word64_copyTo(bytes, offset) {
-//      if (offset + bytes >= bytes.length) {
-//        error('insufficient byte array length');
-//      }
-//      bytes[offset] = (this.high >>> 24) & 0xFF;
-//      bytes[offset + 1] = (this.high >>> 16) & 0xFF;
-//      bytes[offset + 2] = (this.high >>> 8) & 0xFF;
-//      bytes[offset + 3] = (this.high) & 0xFF;
-//      bytes[offset + 4] = (this.low >>> 24) & 0xFF;
-//      bytes[offset + 5] = (this.low >>> 16) & 0xFF;
-//      bytes[offset + 6] = (this.low >>> 8) & 0xFF;
-//      bytes[offset + 7] = (this.low) & 0xFF;
-//    }
-//  };
-//
-//  return Word64;
-//})();
 var Word64 = (function Word64Closure() {
   function Word64(highInteger, lowInteger) {
     this.low = lowInteger >>> 0;
     this.high = highInteger >>> 0;
   }
   Word64.prototype = {
-    and: function Word64_andOp(word) {
+    and: function Word64_and(word) {
       return new Word64(this.high & word.high,
                         this.low & word.low);
     },
-    xor: function Word64_xorOp(word) {
+    xor: function Word64_xor(word) {
       return new Word64(this.high ^ word.high,
                         this.low ^ word.low);
     },
 
-    or: function Word64_orOp(word) {
+    or: function Word64_or(word) {
       return new Word64(this.high | word.high,
                         this.low | word.low);
     },
