@@ -19,7 +19,7 @@
            isStream, Lexer, Page, Parser, Promise, shadow,
            stringToPDFString, stringToUTF8String, warn, isString,
            Promise, MissingDataException, XRefParseException, Stream,
-           ChunkedStream, LegacyPromise */
+           ChunkedStream, createPromiseCapability */
 
 'use strict';
 
@@ -113,33 +113,26 @@ var Dict = (function DictClosure() {
     // Same as get(), but returns a promise and uses fetchIfRefAsync().
     getAsync: function Dict_getAsync(key1, key2, key3) {
       var value;
-      var promise;
       var xref = this.xref;
       if (typeof (value = this.map[key1]) !== undefined || key1 in this.map ||
           typeof key2 === undefined) {
         if (xref) {
           return xref.fetchIfRefAsync(value);
         }
-        promise = new LegacyPromise();
-        promise.resolve(value);
-        return promise;
+        return Promise.resolve(value);
       }
       if (typeof (value = this.map[key2]) !== undefined || key2 in this.map ||
           typeof key3 === undefined) {
         if (xref) {
           return xref.fetchIfRefAsync(value);
         }
-        promise = new LegacyPromise();
-        promise.resolve(value);
-        return promise;
+        return Promise.resolve(value);
       }
       value = this.map[key3] || null;
       if (xref) {
         return xref.fetchIfRefAsync(value);
       }
-      promise = new LegacyPromise();
-      promise.resolve(value);
-      return promise;
+      return Promise.resolve(value);
     },
 
     // no dereferencing
@@ -536,7 +529,7 @@ var Catalog = (function CatalogClosure() {
     },
 
     getPageDict: function Catalog_getPageDict(pageIndex) {
-      var promise = new LegacyPromise();
+      var capability = createPromiseCapability();
       var nodesToVisit = [this.catDict.getRaw('Pages')];
       var currentPageIndex = 0;
       var xref = this.xref;
@@ -549,7 +542,7 @@ var Catalog = (function CatalogClosure() {
             xref.fetchAsync(currentNode).then(function (obj) {
               if ((isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids')))) {
                 if (pageIndex === currentPageIndex) {
-                  promise.resolve([obj, currentNode]);
+                  capability.resolve([obj, currentNode]);
                 } else {
                   currentPageIndex++;
                   next();
@@ -558,7 +551,7 @@ var Catalog = (function CatalogClosure() {
               }
               nodesToVisit.push(obj);
               next();
-            }.bind(this), promise.reject.bind(promise));
+            }.bind(this), capability.reject.bind(capability));
             return;
           }
 
@@ -593,10 +586,10 @@ var Catalog = (function CatalogClosure() {
             }
           }
         }
-        promise.reject('Page index ' + pageIndex + ' not found.');
+        capability.reject('Page index ' + pageIndex + ' not found.');
       }
       next();
-      return promise;
+      return capability.promise;
     },
 
     getPageIndex: function Catalog_getPageIndex(ref) {
@@ -1254,29 +1247,27 @@ var XRef = (function XRefClosure() {
 
     fetchIfRefAsync: function XRef_fetchIfRefAsync(obj) {
       if (!isRef(obj)) {
-        var promise = new LegacyPromise();
-        promise.resolve(obj);
-        return promise;
+        return Promise.resolve(obj);
       }
       return this.fetchAsync(obj);
     },
 
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
-      var promise = new LegacyPromise();
-      var tryFetch = function (promise) {
-        try {
-          promise.resolve(this.fetch(ref, suppressEncryption));
-        } catch (e) {
-          if (e instanceof MissingDataException) {
-            this.stream.manager.requestRange(e.begin, e.end, tryFetch);
-            return;
-          }
-          promise.reject(e);
-        }
-      }.bind(this, promise);
-      tryFetch();
-      return promise;
-    },
+      return new Promise(function (resolve, reject) {
+          var tryFetch = function () {
+            try {
+              resolve(this.fetch(ref, suppressEncryption));
+            } catch (e) {
+              if (e instanceof MissingDataException) {
+                this.stream.manager.requestRange(e.begin, e.end, tryFetch);
+                return;
+              }
+              reject(e);
+            }
+          }.bind(this);
+          tryFetch();
+        }.bind(this));
+      },
 
     getCatalogObj: function XRef_getCatalogObj() {
       return this.root;
@@ -1481,12 +1472,12 @@ var ObjectLoader = (function() {
   ObjectLoader.prototype = {
     load: function ObjectLoader_load() {
       var keys = this.keys;
-      this.promise = new LegacyPromise();
+      this.capability = createPromiseCapability();
       // Don't walk the graph if all the data is already loaded.
       if (!(this.xref.stream instanceof ChunkedStream) ||
           this.xref.stream.getMissingChunks().length === 0) {
-        this.promise.resolve();
-        return this.promise;
+        this.capability.resolve();
+        return this.capability.promise;
       }
 
       this.refSet = new RefSet();
@@ -1497,7 +1488,7 @@ var ObjectLoader = (function() {
       }
 
       this.walk(nodesToVisit);
-      return this.promise;
+      return this.capability.promise;
     },
 
     walk: function ObjectLoader_walk(nodesToVisit) {
@@ -1564,7 +1555,7 @@ var ObjectLoader = (function() {
       }
       // Everything is loaded.
       this.refSet = null;
-      this.promise.resolve();
+      this.capability.resolve();
     }
   };
 

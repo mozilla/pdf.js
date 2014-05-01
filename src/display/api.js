@@ -17,7 +17,7 @@
 /* globals CanvasGraphics, combineUrl, createScratchCanvas, error,
            FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
            MessageHandler, PDFJS, Promise, StatTimer, warn,
-           PasswordResponses, Util, loadScript, LegacyPromise,
+           PasswordResponses, Util, loadScript, createPromiseCapability,
            FontFace */
 
 'use strict';
@@ -175,7 +175,7 @@ PDFJS.getDocument = function getDocument(source,
                                          pdfDataRangeTransport,
                                          passwordCallback,
                                          progressCallback) {
-  var workerInitializedPromise, workerReadyPromise, transport;
+  var workerInitializedCapability, workerReadyCapability, transport;
 
   if (typeof source === 'string') {
     source = { url: source };
@@ -200,15 +200,16 @@ PDFJS.getDocument = function getDocument(source,
     params[key] = source[key];
   }
 
-  workerInitializedPromise = new PDFJS.LegacyPromise();
-  workerReadyPromise = new PDFJS.LegacyPromise();
-  transport = new WorkerTransport(workerInitializedPromise, workerReadyPromise,
-                                  pdfDataRangeTransport, progressCallback);
-  workerInitializedPromise.then(function transportInitialized() {
+  workerInitializedCapability = createPromiseCapability();
+  workerReadyCapability = createPromiseCapability();
+  transport = new WorkerTransport(workerInitializedCapability,
+                                  workerReadyCapability, pdfDataRangeTransport,
+                                  progressCallback);
+  workerInitializedCapability.promise.then(function transportInitialized() {
     transport.passwordCallback = passwordCallback;
     transport.fetchDocument(params);
   });
-  return workerReadyPromise;
+  return workerReadyCapability.promise;
 };
 
 /**
@@ -271,10 +272,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * JavaScript strings in the name tree.
      */
     getJavaScript: function PDFDocumentProxy_getJavaScript() {
-      var promise = new PDFJS.LegacyPromise();
-      var js = this.pdfInfo.javaScript;
-      promise.resolve(js);
-      return promise;
+      return new Promise(function (resolve) {
+        var js = this.pdfInfo.javaScript;
+        resolve(js);
+      }.bind(this));
     },
     /**
      * @return {Promise} A promise that is resolved with an {Array} that is a
@@ -292,10 +293,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * ].
      */
     getOutline: function PDFDocumentProxy_getOutline() {
-      var promise = new PDFJS.LegacyPromise();
-      var outline = this.pdfInfo.outline;
-      promise.resolve(outline);
-      return promise;
+      return new Promise(function (resolve) {
+        var outline = this.pdfInfo.outline;
+        resolve(outline);
+      }.bind(this));
     },
     /**
      * @return {Promise} A promise that is resolved with an {Object} that has
@@ -304,23 +305,23 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * {Metadata} object with information from the metadata section of the PDF.
      */
     getMetadata: function PDFDocumentProxy_getMetadata() {
-      var promise = new PDFJS.LegacyPromise();
-      var info = this.pdfInfo.info;
-      var metadata = this.pdfInfo.metadata;
-      promise.resolve({
-        info: info,
-        metadata: (metadata ? new PDFJS.Metadata(metadata) : null)
-      });
-      return promise;
+      return new Promise(function (resolve) {
+        var info = this.pdfInfo.info;
+        var metadata = this.pdfInfo.metadata;
+        resolve({
+          info: info,
+          metadata: (metadata ? new PDFJS.Metadata(metadata) : null)
+        });
+      }.bind(this));
     },
     /**
      * @return {Promise} A promise that is resolved with a TypedArray that has
      * the raw data from the PDF.
      */
     getData: function PDFDocumentProxy_getData() {
-      var promise = new PDFJS.LegacyPromise();
-      this.transport.getData(promise);
-      return promise;
+      var capability = createPromiseCapability();
+      this.transport.getData(capability);
+      return capability.promise;
     },
     /**
      * @return {Promise} A promise that is resolved when the document's data
@@ -328,7 +329,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * property that indicates size of the PDF data in bytes.
      */
     getDownloadInfo: function PDFDocumentProxy_getDownloadInfo() {
-      return this.transport.downloadInfoPromise;
+      return this.transport.downloadInfoCapability.promise;
     },
     /**
      * Cleans up resources allocated by the document, e.g. created @font-face.
@@ -455,14 +456,14 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * annotation objects.
      */
     getAnnotations: function PDFPageProxy_getAnnotations() {
-      if (this.annotationsPromise) {
-        return this.annotationsPromise;
+      if (this.annotationsCapability) {
+        return this.annotationsCapability.promise;
       }
 
-      var promise = new PDFJS.LegacyPromise();
-      this.annotationsPromise = promise;
+      var capability = createPromiseCapability();
+      this.annotationsCapability = capability;
       this.transport.getAnnotations(this.pageInfo.pageIndex);
-      return promise;
+      return capability.promise;
     },
     /**
      * Begins the process of rendering a page to the desired context.
@@ -486,11 +487,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       }
       var intentState = this.intentStates[renderingIntent];
 
-      // If there is no displayReadyPromise yet, then the operatorList was never
-      // requested before. Make the request and create the promise.
-      if (!intentState.displayReadyPromise) {
+      // If there's no displayReadyCapability yet, then the operatorList
+      // was never requested before. Make the request and create the promise.
+      if (!intentState.displayReadyCapability) {
         intentState.receivingOperatorList = true;
-        intentState.displayReadyPromise = new LegacyPromise();
+        intentState.displayReadyCapability = createPromiseCapability();
         intentState.operatorList = {
           fnArray: [],
           argsArray: [],
@@ -516,7 +517,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var renderTask = new RenderTask(internalRenderTask);
 
       var self = this;
-      intentState.displayReadyPromise.then(
+      intentState.displayReadyCapability.promise.then(
         function pageDisplayReadyPromise(transparency) {
           if (self.pendingDestroy) {
             complete();
@@ -543,9 +544,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         self._tryDestroy();
 
         if (error) {
-          renderTask.promise.reject(error);
+          internalRenderTask.capability.reject(error);
         } else {
-          renderTask.promise.resolve();
+          internalRenderTask.capability.resolve();
         }
         stats.timeEnd('Rendering');
         stats.timeEnd('Overall');
@@ -558,15 +559,15 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * object that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent() {
-      var promise = new PDFJS.LegacyPromise();
-      this.transport.messageHandler.send('GetTextContent', {
-          pageIndex: this.pageNumber - 1
-        },
-        function textContentCallback(textContent) {
-          promise.resolve(textContent);
-        }
-      );
-      return promise;
+      return new Promise(function (resolve) {
+        this.transport.messageHandler.send('GetTextContent', {
+            pageIndex: this.pageNumber - 1
+          },
+          function textContentCallback(textContent) {
+            resolve(textContent);
+          }
+        );
+      }.bind(this));
     },
     /**
      * Destroys resources allocated by the page.
@@ -603,7 +604,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     _startRenderPage: function PDFPageProxy_startRenderPage(transparency,
                                                             intent) {
       var intentState = this.intentStates[intent];
-      intentState.displayReadyPromise.resolve(transparency);
+      intentState.displayReadyCapability.resolve(transparency);
     },
     /**
      * For internal use only.
@@ -640,17 +641,17 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
  * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(workerInitializedPromise, workerReadyPromise,
+  function WorkerTransport(workerInitializedCapability, workerReadyCapability,
                            pdfDataRangeTransport, progressCallback) {
     this.pdfDataRangeTransport = pdfDataRangeTransport;
 
-    this.workerReadyPromise = workerReadyPromise;
+    this.workerReadyCapability = workerReadyCapability;
     this.progressCallback = progressCallback;
     this.commonObjs = new PDFObjects();
 
     this.pageCache = [];
-    this.pagePromises = [];
-    this.downloadInfoPromise = new PDFJS.LegacyPromise();
+    this.pageCapabilities = [];
+    this.downloadInfoCapability = createPromiseCapability();
     this.passwordCallback = null;
 
     // If worker support isn't disabled explicit and the browser has worker
@@ -680,12 +681,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
               PDFJS.postMessageTransfers = false;
             }
             this.setupMessageHandler(messageHandler);
-            workerInitializedPromise.resolve();
+            workerInitializedCapability.resolve();
           } else {
             globalScope.PDFJS.disableWorker = true;
             this.loadFakeWorkerFiles().then(function() {
               this.setupFakeWorker();
-              workerInitializedPromise.resolve();
+              workerInitializedCapability.resolve();
             }.bind(this));
           }
         }.bind(this));
@@ -711,13 +712,13 @@ var WorkerTransport = (function WorkerTransportClosure() {
     globalScope.PDFJS.disableWorker = true;
     this.loadFakeWorkerFiles().then(function() {
       this.setupFakeWorker();
-      workerInitializedPromise.resolve();
+      workerInitializedCapability.resolve();
     }.bind(this));
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
       this.pageCache = [];
-      this.pagePromises = [];
+      this.pageCapabilities = [];
       var self = this;
       this.messageHandler.send('Terminate', null, function () {
         FontLoader.clear();
@@ -728,8 +729,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     loadFakeWorkerFiles: function WorkerTransport_loadFakeWorkerFiles() {
-      if (!PDFJS.fakeWorkerFilesLoadedPromise) {
-        PDFJS.fakeWorkerFilesLoadedPromise = new LegacyPromise();
+      if (!PDFJS.fakeWorkerFilesLoadedCapability) {
+        PDFJS.fakeWorkerFilesLoadedCapability = createPromiseCapability();
         // In the developer build load worker_loader which in turn loads all the
         // other files and resolves the promise. In production only the
         // pdf.worker.js file is needed.
@@ -737,15 +738,15 @@ var WorkerTransport = (function WorkerTransportClosure() {
         Util.loadScript(PDFJS.workerSrc);
 //#endif
 //#if PRODUCTION && SINGLE_FILE
-//      PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+//      PDFJS.fakeWorkerFilesLoadedCapability.resolve();
 //#endif
 //#if PRODUCTION && !SINGLE_FILE
 //      Util.loadScript(PDFJS.workerSrc, function() {
-//        PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+//        PDFJS.fakeWorkerFilesLoadedCapability.resolve();
 //      });
 //#endif
       }
-      return PDFJS.fakeWorkerFilesLoadedPromise;
+      return PDFJS.fakeWorkerFilesLoadedCapability.promise;
     },
 
     setupFakeWorker: function WorkerTransport_setupFakeWorker() {
@@ -800,7 +801,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.numPages = data.pdfInfo.numPages;
         var pdfDocument = new PDFDocumentProxy(pdfInfo, this);
         this.pdfDocument = pdfDocument;
-        this.workerReadyPromise.resolve(pdfDocument);
+        this.workerReadyCapability.resolve(pdfDocument);
       }, this);
 
       messageHandler.on('NeedPassword', function transportPassword(data) {
@@ -808,7 +809,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
           return this.passwordCallback(updatePassword,
                                        PasswordResponses.NEED_PASSWORD);
         }
-        this.workerReadyPromise.reject(data.exception.message, data.exception);
+        this.workerReadyCapability.reject(data.exception.message,
+                                          data.exception);
       }, this);
 
       messageHandler.on('IncorrectPassword', function transportBadPass(data) {
@@ -816,36 +818,39 @@ var WorkerTransport = (function WorkerTransportClosure() {
           return this.passwordCallback(updatePassword,
                                        PasswordResponses.INCORRECT_PASSWORD);
         }
-        this.workerReadyPromise.reject(data.exception.message, data.exception);
+        this.workerReadyCapability.reject(data.exception.message,
+                                          data.exception);
       }, this);
 
       messageHandler.on('InvalidPDF', function transportInvalidPDF(data) {
-        this.workerReadyPromise.reject(data.exception.name, data.exception);
+        this.workerReadyCapability.reject(data.exception.name, data.exception);
       }, this);
 
       messageHandler.on('MissingPDF', function transportMissingPDF(data) {
-        this.workerReadyPromise.reject(data.exception.message, data.exception);
+        this.workerReadyCapability.reject(data.exception.message,
+                                          data.exception);
       }, this);
 
       messageHandler.on('UnknownError', function transportUnknownError(data) {
-        this.workerReadyPromise.reject(data.exception.message, data.exception);
+        this.workerReadyCapability.reject(data.exception.message,
+                                          data.exception);
       }, this);
 
       messageHandler.on('DataLoaded', function transportPage(data) {
-        this.downloadInfoPromise.resolve(data);
+        this.downloadInfoCapability.resolve(data);
       }, this);
 
       messageHandler.on('GetPage', function transportPage(data) {
         var pageInfo = data.pageInfo;
         var page = new PDFPageProxy(pageInfo, this);
         this.pageCache[pageInfo.pageIndex] = page;
-        var promise = this.pagePromises[pageInfo.pageIndex];
+        var promise = this.pageCapabilities[pageInfo.pageIndex];
         promise.resolve(page);
       }, this);
 
       messageHandler.on('GetAnnotations', function transportAnnotations(data) {
         var annotations = data.annotations;
-        var promise = this.pageCache[data.pageIndex].annotationsPromise;
+        var promise = this.pageCache[data.pageIndex].annotationsCapability;
         promise.resolve(annotations);
       }, this);
 
@@ -939,14 +944,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('DocError', function transportDocError(data) {
-        this.workerReadyPromise.reject(data);
+        this.workerReadyCapability.reject(data);
       }, this);
 
       messageHandler.on('PageError', function transportError(data, intent) {
         var page = this.pageCache[data.pageNum - 1];
         var intentState = page.intentStates[intent];
-        if (intentState.displayReadyPromise) {
-          intentState.displayReadyPromise.reject(data.error);
+        if (intentState.displayReadyCapability.promise) {
+          intentState.displayReadyCapability.reject(data.error);
         } else {
           error(data.error);
         }
@@ -1004,38 +1009,36 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    getData: function WorkerTransport_getData(promise) {
+    getData: function WorkerTransport_getData(capability) {
       this.messageHandler.send('GetData', null, function(data) {
-        promise.resolve(data);
+        capability.resolve(data);
       });
     },
 
-    getPage: function WorkerTransport_getPage(pageNumber, promise) {
+    getPage: function WorkerTransport_getPage(pageNumber, capability) {
       if (pageNumber <= 0 || pageNumber > this.numPages ||
           (pageNumber|0) !== pageNumber) {
-        var pagePromise = new PDFJS.LegacyPromise();
-        pagePromise.reject(new Error('Invalid page request'));
-        return pagePromise;
+        return new Promise.reject(new Error('Invalid page request'));
       }
 
       var pageIndex = pageNumber - 1;
-      if (pageIndex in this.pagePromises) {
-        return this.pagePromises[pageIndex];
+      if (pageIndex in this.pageCapabilities) {
+        return this.pageCapabilities[pageIndex].promise;
       }
-      promise = new PDFJS.LegacyPromise();
-      this.pagePromises[pageIndex] = promise;
+      capability = createPromiseCapability();
+      this.pageCapabilities[pageIndex] = capability;
       this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
-      return promise;
+      return capability.promise;
     },
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
-      var promise = new PDFJS.LegacyPromise();
-      this.messageHandler.send('GetPageIndex', { ref: ref },
-        function (pageIndex) {
-          promise.resolve(pageIndex);
-        }
-      );
-      return promise;
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetPageIndex', { ref: ref },
+          function (pageIndex) {
+            resolve(pageIndex);
+          }
+        );
+      }.bind(this));
     },
 
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
@@ -1044,23 +1047,23 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getDestinations: function WorkerTransport_getDestinations() {
-      var promise = new PDFJS.LegacyPromise();
-      this.messageHandler.send('GetDestinations', null,
-        function transportDestinations(destinations) {
-          promise.resolve(destinations);
-        }
-      );
-      return promise;
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetDestinations', null,
+          function transportDestinations(destinations) {
+            resolve(destinations);
+          }
+        );
+      }.bind(this));
     },
 
     getAttachments: function WorkerTransport_getAttachments() {
-      var promise = new PDFJS.LegacyPromise();
-      this.messageHandler.send('GetAttachments', null,
-        function transportAttachments(attachments) {
-          promise.resolve(attachments);
-        }
-      );
-      return promise;
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetAttachments', null,
+          function transportAttachments(attachments) {
+            resolve(attachments);
+          }
+        );
+      }.bind(this));
     },
 
     startCleanup: function WorkerTransport_startCleanup() {
@@ -1105,7 +1108,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       }
 
       var obj = {
-        promise: new LegacyPromise(),
+        capability: createPromiseCapability(),
         data: null,
         resolved: false
       };
@@ -1127,7 +1130,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       // If there is a callback, then the get can be async and the object is
       // not required to be resolved right now
       if (callback) {
-        this.ensureObj(objId).promise.then(callback);
+        this.ensureObj(objId).capability.promise.then(callback);
         return null;
       }
 
@@ -1152,7 +1155,7 @@ var PDFObjects = (function PDFObjectsClosure() {
 
       obj.resolved = true;
       obj.data = data;
-      obj.promise.resolve(data);
+      obj.capability.resolve(data);
     },
 
     isResolved: function PDFObjects_isResolved(objId) {
@@ -1199,7 +1202,7 @@ var RenderTask = (function RenderTaskClosure() {
      * Promise for rendering task completion.
      * @type {Promise}
      */
-    this.promise = new PDFJS.LegacyPromise();
+    this.promise = this.internalRenderTask.capability.promise;
   }
 
   RenderTask.prototype = /** @lends RenderTask.prototype */ {
@@ -1210,7 +1213,6 @@ var RenderTask = (function RenderTaskClosure() {
      */
     cancel: function RenderTask_cancel() {
       this.internalRenderTask.cancel();
-      this.promise.reject(new Error('Rendering is cancelled'));
     },
 
     /**
@@ -1248,6 +1250,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     this.graphicsReadyCallback = null;
     this.graphicsReady = false;
     this.cancelled = false;
+    this.capability = createPromiseCapability();
   }
 
   InternalRenderTask.prototype = {
@@ -1280,6 +1283,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     cancel: function InternalRenderTask_cancel() {
       this.running = false;
       this.cancelled = true;
+      this.capability.reject(new Error('Rendering is cancelled'));
       this.callback('cancelled');
     },
 
