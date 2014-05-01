@@ -20,8 +20,8 @@
            isNum, isStream, isString, JpegStream, Lexer, Metrics,
            MurmurHash3_64, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts,
            stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
-           LegacyPromise, RefSetCache, isRef, TextRenderingMode, CMapFactory,
-           OPS, UNSUPPORTED_FEATURES, UnsupportedManager, NormalizedUnicodes,
+           RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
+           UNSUPPORTED_FEATURES, UnsupportedManager, NormalizedUnicodes,
            IDENTITY_MATRIX, reverseIfRtl */
 
 'use strict';
