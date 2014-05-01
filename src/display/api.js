@@ -1283,7 +1283,6 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     cancel: function InternalRenderTask_cancel() {
       this.running = false;
       this.cancelled = true;
-      this.capability.reject(new Error('Rendering is cancelled'));
       this.callback('cancelled');
     },
 
