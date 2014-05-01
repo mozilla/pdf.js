@@ -504,6 +504,10 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       });
     },
 
+    onError: function ChunkedStreamManager_onError(err) {
+      this._loadedStreamCapability.reject(err);
+    },
+
     getBeginChunk: function ChunkedStreamManager_getBeginChunk(begin) {
       var chunk = Math.floor(begin / this.chunkSize);
       return chunk;
