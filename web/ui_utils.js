@@ -218,7 +218,7 @@ var ProgressBar = (function ProgressBarClosure() {
     },
 
     set percent(val) {
-      this._indeterminate = isNaN(val);
+      this._indeterminate = true; // isNaN(val);
       this._percent = clamp(val, 0, 100);
       this.updateBar();
     },
@@ -235,8 +235,8 @@ var ProgressBar = (function ProgressBarClosure() {
     },
 
     hide: function ProgressBar_hide() {
-      this.bar.classList.add('hidden');
-      this.bar.removeAttribute('style');
+      // this.bar.classList.add('hidden');
+      // this.bar.removeAttribute('style');
     }
   };
 
