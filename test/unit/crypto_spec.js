@@ -282,7 +282,7 @@ describe('crypto', function() {
     });
   });
 
-  describe('AES128', function() {
+  describe('AES256', function() {
     describe('Encryption', function() {
       it('should be able to encrypt a block', function() {
         var input, key, result, expected, iv, cipher;
@@ -406,10 +406,6 @@ describe('crypto', function() {
   });
 
   describe('PDF20Algorithm', function() {
-    it('should correctly perform a PDF2.0 hash', function() {
-
-    });
-
     it('should correctly check a user key', function () {
       var password, userValidation, userPassword, alg, result;
       alg = new PDF20();
