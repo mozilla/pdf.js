@@ -58,7 +58,7 @@ var otherFiles = [
 
 function loadInOrder(index, path, files) {
   if (index >= files.length) {
-    PDFJS.fakeWorkerFilesLoadedPromise.resolve();
+    PDFJS.fakeWorkerFilesLoadedCapability.resolve();
     return;
   }
   PDFJS.Util.loadScript(path + files[index],
@@ -66,7 +66,7 @@ function loadInOrder(index, path, files) {
 }
 
 // Load all the files.
-if (typeof PDFJS === 'undefined' || !PDFJS.fakeWorkerFilesLoadedPromise) {
+if (typeof PDFJS === 'undefined' || !PDFJS.fakeWorkerFilesLoadedCapability) {
   var files = sharedFiles.concat(otherFiles);
   for (var i = 0; i < files.length; i++) {
     importScripts(files[i]);
