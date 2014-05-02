@@ -731,6 +731,11 @@ var XRef = (function XRefClosure() {
       // The parser goes through the entire stream << ... >> and provides
       // a getter interface for the key-value table
       var dict = parser.getObj();
+
+      // The pdflib PDF generator can generate a nested trailer dictionary
+      if (!isDict(dict) && dict.dict) {
+        dict = dict.dict;
+      }
       if (!isDict(dict)) {
         error('Invalid XRef table: could not parse trailer dictionary');
       }
