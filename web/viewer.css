@@ -345,13 +345,13 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 
 @-webkit-keyframes progressIndeterminate {
   0% { left: 0%; }
-  50% { left: 100%; }
+  84% { left: 100%; }
   100% { left: 100%; }
 }
 
 @keyframes progressIndeterminate {
   0% { left: 0%; }
-  50% { left: 100%; }
+  84% { left: 100%; }
   100% { left: 100%; }
 }
 
@@ -372,8 +372,8 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   background-size: 100% 100%;
   background-repeat: no-repeat;
 
-  -webkit-animation: progressIndeterminate 2s linear infinite;
-  animation: progressIndeterminate 2s linear infinite;
+  -webkit-animation: progressIndeterminate 6s linear infinite;
+  animation: progressIndeterminate 6s linear infinite;
 }
 
 .findbar, .secondaryToolbar {
@@ -1865,6 +1865,108 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   display: none;
 }
 
+@media all and (max-width: 2000px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    80% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    80% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 4.8s;
+    animation-duration: 4.8s;
+  }
+}
+
+@media all and (max-width: 1800px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    78% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    78% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 4.4s;
+    animation-duration: 4.4s;
+  }
+}
+
+@media all and (max-width: 1600px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    75% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    75% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 4s;
+    animation-duration: 4s;
+  }
+}
+
+@media all and (max-width: 1400px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    73% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    73% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 3.6s;
+    animation-duration: 3.6s;
+  }
+}
+
+@media all and (max-width: 1200px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    69% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    69% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 3.2s;
+    animation-duration: 3.2s;
+  }
+}
+
+@media all and (max-width: 1000px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    65% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    65% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 2.8s;
+    animation-duration: 2.8s;
+  }
+}
+
 @media all and (max-width: 960px) {
   html[dir='ltr'] #outerContainer.sidebarMoving .outerCenter,
   html[dir='ltr'] #outerContainer.sidebarOpen .outerCenter {
@@ -1893,6 +1995,23 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   }
   .sidebarOpen .visibleMediumView {
     display: inherit;
+  }
+}
+
+@media all and (max-width: 800px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    59% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    59% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 2.4s;
+    animation-duration: 2.4s;
   }
 }
 
@@ -1973,6 +2092,21 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   .toolbarButtonSpacer {
     width: 0;
   }
+
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    50% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 2s;
+    animation-duration: 2s;
+  }
 }
 
 @media all and (max-width: 510px) {
@@ -1981,3 +2115,19 @@ html[dir='rtl'] #documentPropertiesContainer .row > * {
   }
 }
 
+@media all and (max-width: 400px) {
+  @-webkit-keyframes progressIndeterminate {
+    0% { left: 0%; }
+    38% { left: 100%; }
+    100% { left: 100%; }
+  }
+  @keyframes progressIndeterminate {
+    0% { left: 0%; }
+    38% { left: 100%; }
+    100% { left: 100%; }
+  }
+  #loadingBar .indeterminate .glimmer {
+    -webkit-animation-duration: 1.6s;
+    animation-duration: 1.6s;
+  }
+}
