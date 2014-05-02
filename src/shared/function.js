@@ -659,14 +659,14 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
             break;
           case 'neg':
             a = stack.pop();
-            stack.push(-b);
+            stack.push(-a);
             break;
           case 'not':
             a = stack.pop();
-            if (isBool(a) && isBool(b)) {
-              stack.push(a && b);
+            if (isBool(a)) {
+              stack.push(!a);
             } else {
-              stack.push(a & b);
+              stack.push(~a);
             }
             break;
           case 'or':
