@@ -934,24 +934,6 @@ function isPDFFunction(v) {
 }
 
 /**
- * Legacy support for PDFJS Promise implementation.
- * TODO remove eventually
- * @ignore
- */
-var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
-  return function LegacyPromise() {
-    var resolve, reject;
-    var promise = new Promise(function (resolve_, reject_) {
-      resolve = resolve_;
-      reject = reject_;
-    });
-    promise.resolve = resolve;
-    promise.reject = reject;
-    return promise;
-  };
-})();
-
-/**
  * Promise Capability object.
  *
  * @typedef {Object} PromiseCapability
