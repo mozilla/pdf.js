@@ -134,12 +134,9 @@
        "type": "eq"
     },
     {  "id": "issue2537",
-      "file": "pdfs/issue2537.pdf",
-      "md5": "f56805a70ed3aa52aae5c16dd335f827",
-      "link": true,
+      "file": "pdfs/issue2537r.pdf",
+      "md5": "0f47a8bda08eebd986c254e65dcc2a76",
       "rounds": 1,
-      "firstPage": 1,
-      "lastPage": 1,
       "type": "eq"
     },
     {  "id": "html5-canvas-cheat-sheet-load",
@@ -648,13 +645,6 @@
       "md5": "793d0870f0b0c613799b0677d64daca4",
       "rounds": 1,
       "type": "load"
-    },
-    {  "id": "aboutstacks",
-      "file": "pdfs/aboutstacks.pdf",
-      "md5": "6e7c8416a293ba2d83bc8dd20c6ccf51",
-      "rounds": 1,
-      "link": true,
-      "type": "eq"
     },
     {  "id": "smaskdim",
       "file": "pdfs/smaskdim.pdf",
