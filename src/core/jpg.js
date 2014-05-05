@@ -810,60 +810,35 @@ var JpegImage = (function jpegImage() {
     _getLinearizedBlockData: function getLinearizedBlockData(width, height) {
       var scaleX = this.width / width, scaleY = this.height / height;
 
-      var component, componentScaleX, componentScaleY;
-      var x, y, i;
+      var component, componentScaleX, componentScaleY, blocksPerScanline;
+      var x, y, i, j;
+      var index;
       var offset = 0;
-      var Y, Cb, Cr, K, C, M, Ye, R, G, B;
-      var colorTransform;
+      var output;
       var numComponents = this.components.length;
       var dataLength = width * height * numComponents;
       var data = new Uint8Array(dataLength);
-      var componentLine;
+      var xScaleBlockOffset = new Uint32Array(width);
+      var mask3LSB = 0xfffffff8; // used to clear the 3 LSBs
 
-      // lineData is reused for all components. Assume first component is
-      // the biggest
-      var lineData = new Uint8Array((this.components[0].blocksPerLine << 3) *
-                                    this.components[0].blocksPerColumn * 8);
-
-      // First construct image data ...
       for (i = 0; i < numComponents; i++) {
         component = this.components[i];
-        var blocksPerLine = component.blocksPerLine;
-        var blocksPerColumn = component.blocksPerColumn;
-        var samplesPerLine = blocksPerLine << 3;
-
-        var j, k, ll = 0;
-        var sample;
-        var lineOffset = 0;
-        for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
-          var scanLine = blockRow << 3;
-          for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
-            var bufferOffset = getBlockBufferOffset(component,
-                                                    blockRow, blockCol);
-            offset = 0;
-            sample = blockCol << 3;
-            for (j = 0; j < 8; j++) {
-              lineOffset = (scanLine + j) * samplesPerLine;
-              for (k = 0; k < 8; k++) {
-                lineData[lineOffset + sample + k] =
-                  component.output[bufferOffset + offset++];
-              }
-            }
-          }
-        }
-
         componentScaleX = component.scaleX * scaleX;
         componentScaleY = component.scaleY * scaleY;
         offset = i;
-
-        var cx, cy;
-        var index;
+        output = component.output;
+        blocksPerScanline = (component.blocksPerLine + 1) << 3;
+        // precalculate the xScaleBlockOffset
+        for (x = 0; x < width; x++) {
+          j = 0 | (x * componentScaleX);
+          xScaleBlockOffset[x] = ((j & mask3LSB) << 3) | (j & 7);
+        }
+        // linearize the blocks of the component
         for (y = 0; y < height; y++) {
+          j = 0 | (y * componentScaleY);
+          index = blocksPerScanline * (j & mask3LSB) | ((j & 7) << 3);
           for (x = 0; x < width; x++) {
-            cy = 0 | (y * componentScaleY);
-            cx = 0 | (x * componentScaleX);
-            index = cy * samplesPerLine + cx;
-            data[offset] = lineData[index];
+            data[offset] = output[index + xScaleBlockOffset[x]];
             offset += numComponents;
           }
         }
@@ -968,50 +943,51 @@ var JpegImage = (function jpegImage() {
     _convertCmykToRgb: function convertCmykToRgb(data) {
       var c, m, y, k;
       var offset = 0;
-      for (var i = 0; i < data.length; i += this.numComponents) {
-        c = data[i   ] * 0.00392156862745098;
-        m = data[i + 1] * 0.00392156862745098;
-        y = data[i + 2] * 0.00392156862745098;
-        k = data[i + 3] * 0.00392156862745098;
+      var length = data.length;
+      var min = -255 * 255 * 255;
+      var scale = 1 / 255 / 255;
+      for (var i = 0; i < length;) {
+        c = data[i++];
+        m = data[i++];
+        y = data[i++];
+        k = data[i++];
 
         var r =
           c * (-4.387332384609988 * c + 54.48615194189176 * m +
-               18.82290502165302 * y + 212.25662451639585 * k +
-               -285.2331026137004) +
-          m * (1.7149763477362134 * m - 5.6096736904047315 * y +
-               -17.873870861415444 * k - 5.497006427196366) +
+               18.82290502165302 * y + 212.25662451639585 * k -
+               72734.4411664936) +
+          m * (1.7149763477362134 * m - 5.6096736904047315 * y -
+               17.873870861415444 * k - 1401.7366389350734) +
           y * (-2.5217340131683033 * y - 21.248923337353073 * k +
-               17.5119270841813) +
-          k * (-21.86122147463605 * k - 189.48180835922747) + 255;
+               4465.541406466231) -
+          k * (21.86122147463605 * k + 48317.86113160301);
         var g =
           c * (8.841041422036149 * c + 60.118027045597366 * m +
-               6.871425592049007 * y + 31.159100130055922 * k +
-               -79.2970844816548) +
+               6.871425592049007 * y + 31.159100130055922 * k -
+               20220.756542821975) +
           m * (-15.310361306967817 * m + 17.575251261109482 * y +
-               131.35250912493976 * k - 190.9453302588951) +
-          y * (4.444339102852739 * y + 9.8632861493405 * k - 24.8674158255588) +
-          k * (-20.737325471181034 * k - 187.80453709719578) + 255;
+               131.35250912493976 * k - 48691.05921601825) +
+          y * (4.444339102852739 * y + 9.8632861493405 * k -
+               6341.191035517494) -
+          k * (20.737325471181034 * k + 47890.15695978492);
         var b =
           c * (0.8842522430003296 * c + 8.078677503112928 * m +
-               30.89978309703729 * y - 0.23883238689178934 * k +
-               -14.183576799673286) +
+               30.89978309703729 * y - 0.23883238689178934 * k -
+               3616.812083916688) +
           m * (10.49593273432072 * m + 63.02378494754052 * y +
-               50.606957656360734 * k - 112.23884253719248) +
-          y * (0.03296041114873217 * y + 115.60384449646641 * k +
-               -193.58209356861505) +
-          k * (-22.33816807309886 * k - 180.12613974708367) + 255;
+               50.606957656360734 * k - 28620.90484698408) +
+          y * (0.03296041114873217 * y + 115.60384449646641 * k -
+               49363.43385999684) -
+          k * (22.33816807309886 * k + 45932.16563550634);
 
-        data[offset++] = clamp0to255(r);
-        data[offset++] = clamp0to255(g);
-        data[offset++] = clamp0to255(b);
+        data[offset++] = r >= 0 ? 255 : r <= min ? 0 : 255 + r * scale | 0;
+        data[offset++] = g >= 0 ? 255 : g <= min ? 0 : 255 + g * scale | 0;
+        data[offset++] = b >= 0 ? 255 : b <= min ? 0 : 255 + b * scale | 0;
       }
       return data;
     },
 
     getData: function getData(width, height, forceRGBoutput) {
-      var i;
-      var Y, Cb, Cr, K, C, M, Ye, R, G, B;
-      var colorTransform;
       if (this.numComponents > 4) {
         throw 'Unsupported color mode';
       }

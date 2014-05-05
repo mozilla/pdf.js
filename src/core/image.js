@@ -463,27 +463,29 @@ var PDFImage = (function PDFImageClosure() {
       if (!matte) {
         return;
       }
-
-      function clamp(value) {
-        return (value < 0 ? 0 : (value > 255 ? 255 : value)) | 0;
-      }
-
       var matteRgb = this.colorSpace.getRgb(matte, 0);
+      var matteR = matteRgb[0];
+      var matteG = matteRgb[1];
+      var matteB = matteRgb[2];
       var length = width * height * 4;
+      var r, g, b;
       for (var i = 0; i < length; i += 4) {
         var alpha = buffer[i + 3];
         if (alpha === 0) {
           // according formula we have to get Infinity in all components
-          // making it white (tipical paper color) should be okay
+          // making it white (typical paper color) should be okay
           buffer[i] = 255;
           buffer[i + 1] = 255;
           buffer[i + 2] = 255;
           continue;
         }
         var k = 255 / alpha;
-        buffer[i] = clamp((buffer[i] - matteRgb[0]) * k + matteRgb[0]);
-        buffer[i + 1] = clamp((buffer[i + 1] - matteRgb[1]) * k + matteRgb[1]);
-        buffer[i + 2] = clamp((buffer[i + 2] - matteRgb[2]) * k + matteRgb[2]);
+        r = (buffer[i] - matteR) * k + matteR;
+        g = (buffer[i + 1] - matteG) * k + matteG;
+        b = (buffer[i + 2] - matteB) * k + matteB;
+        buffer[i] = r <= 0 ? 0 : r >= 255 ? 255 : r | 0;
+        buffer[i + 1] = g <= 0 ? 0 : g >= 255 ? 255 : g | 0;
+        buffer[i + 2] = b <= 0 ? 0 : b >= 255 ? 255 : b | 0;
       }
     },
 

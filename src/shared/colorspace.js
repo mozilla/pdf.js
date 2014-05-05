@@ -747,25 +747,15 @@ var CalGrayCS = (function CalGrayCSClosure() {
     var A = src[srcOffset] * scale;
     var AG = Math.pow(A, cs.G);
 
-    // Computes intermediate variables M, L, N as per spec.
+    // Computes L as per spec. ( = cs.YW * AG )
     // Except if other than default BlackPoint values are used.
-    var M = cs.XW * AG;
     var L = cs.YW * AG;
-    var N = cs.ZW * AG;
-
-    // Decode XYZ, as per spec.
-    var X = M;
-    var Y = L;
-    var Z = N;
-
     // http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html, Ch 4.
-    // This yields values in range [0, 100].
-    var Lstar = Math.max(116 * Math.pow(Y, 1 / 3) - 16, 0);
-
     // Convert values to rgb range [0, 255].
-    dest[destOffset] = Lstar * 255 / 100;
-    dest[destOffset + 1] = Lstar * 255 / 100;
-    dest[destOffset + 2] = Lstar * 255 / 100;
+    var val = Math.max(295.8 * Math.pow(L, 0.333333333333333333) - 40.8, 0) | 0;
+    dest[destOffset] = val;
+    dest[destOffset + 1] = val;
+    dest[destOffset + 2] = val;
   }
 
   CalGrayCS.prototype = {
