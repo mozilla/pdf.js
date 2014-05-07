@@ -279,60 +279,47 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     });
 
-    handler.on('GetPageIndex', function wphSetupGetPageIndex(data, deferred) {
+    handler.on('GetPageIndex', function wphSetupGetPageIndex(data) {
       var ref = new Ref(data.ref.num, data.ref.gen);
       var catalog = pdfManager.pdfDocument.catalog;
-      catalog.getPageIndex(ref).then(function (pageIndex) {
-        deferred.resolve(pageIndex);
-      }, deferred.reject);
+      return catalog.getPageIndex(ref);
     });
 
     handler.on('GetDestinations',
-      function wphSetupGetDestinations(data, deferred) {
-        pdfManager.ensureCatalog('destinations').then(function(destinations) {
-          deferred.resolve(destinations);
-        });
+      function wphSetupGetDestinations(data) {
+        return pdfManager.ensureCatalog('destinations');
       }
     );
 
     handler.on('GetAttachments',
-      function wphSetupGetAttachments(data, deferred) {
-        pdfManager.ensureCatalog('attachments').then(function(attachments) {
-          deferred.resolve(attachments);
-        }, deferred.reject);
+      function wphSetupGetAttachments(data) {
+        return pdfManager.ensureCatalog('attachments');
       }
     );
 
     handler.on('GetJavaScript',
-      function wphSetupGetJavaScript(data, deferred) {
-        pdfManager.ensureCatalog('javaScript').then(function (js) {
-          deferred.resolve(js);
-        }, deferred.reject);
+      function wphSetupGetJavaScript(data) {
+        return pdfManager.ensureCatalog('javaScript');
       }
     );
 
     handler.on('GetOutline',
-      function wphSetupGetOutline(data, deferred) {
-        pdfManager.ensureCatalog('documentOutline').then(function (outline) {
-          deferred.resolve(outline);
-        }, deferred.reject);
+      function wphSetupGetOutline(data) {
+        return pdfManager.ensureCatalog('documentOutline');
       }
     );
 
     handler.on('GetMetadata',
-      function wphSetupGetMetadata(data, deferred) {
-        Promise.all([pdfManager.ensureDoc('documentInfo'),
-                     pdfManager.ensureCatalog('metadata')]).then(
-            function (results) {
-          deferred.resolve(results);
-        }, deferred.reject);
+      function wphSetupGetMetadata(data) {
+        return Promise.all([pdfManager.ensureDoc('documentInfo'),
+                            pdfManager.ensureCatalog('metadata')]);
       }
     );
 
-    handler.on('GetData', function wphSetupGetData(data, deferred) {
+    handler.on('GetData', function wphSetupGetData(data) {
       pdfManager.requestLoadedStream();
-      pdfManager.onLoadedStream().then(function(stream) {
-        deferred.resolve(stream.bytes);
+      return pdfManager.onLoadedStream().then(function(stream) {
+        return stream.bytes;
       });
     });
 
@@ -398,29 +385,25 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('GetTextContent', function wphExtractText(data, deferred) {
-      pdfManager.getPage(data.pageIndex).then(function(page) {
+    handler.on('GetTextContent', function wphExtractText(data) {
+      return pdfManager.getPage(data.pageIndex).then(function(page) {
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
-        page.extractTextContent().then(function(textContent) {
-          deferred.resolve(textContent);
+        return page.extractTextContent().then(function(textContent) {
           info('text indexing: page=' + pageNum + ' - time=' +
                (Date.now() - start) + 'ms');
-        }, function (e) {
-          // Skip errored pages
-          deferred.reject(e);
+          return textContent;
         });
       });
     });
 
-    handler.on('Cleanup', function wphCleanup(data, deferred) {
+    handler.on('Cleanup', function wphCleanup(data) {
       pdfManager.cleanup();
-      deferred.resolve(true);
+      return true;
     });
 
-    handler.on('Terminate', function wphTerminate(data, deferred) {
+    handler.on('Terminate', function wphTerminate(data) {
       pdfManager.terminate();
-      deferred.resolve();
     });
   }
 };

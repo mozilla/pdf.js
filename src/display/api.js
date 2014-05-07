@@ -546,15 +546,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * object that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent() {
-      return new Promise(function (resolve) {
-        this.transport.messageHandler.send('GetTextContent', {
-            pageIndex: this.pageNumber - 1
-          },
-          function textContentCallback(textContent) {
-            resolve(textContent);
-          }
-        );
-      }.bind(this));
+      return this.transport.messageHandler.sendWithPromise('GetTextContent', {
+        pageIndex: this.pageNumber - 1
+      });
     },
     /**
      * Destroys resources allocated by the page.
@@ -682,7 +676,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
         // typed array. Also, checking if we can use transfers.
         try {
-          messageHandler.send('test', testObj, null, [testObj.buffer]);
+          messageHandler.send('test', testObj, [testObj.buffer]);
         } catch (ex) {
           info('Cannot use postMessage transfers');
           testObj[0] = 0;
@@ -707,7 +701,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.pageCache = [];
       this.pageCapabilities = [];
       var self = this;
-      this.messageHandler.send('Terminate', null, function () {
+      this.messageHandler.sendWithPromise('Terminate', null).then(function () {
         FontLoader.clear();
         if (self.worker) {
           self.worker.terminate();
@@ -934,9 +928,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyCapability.reject(data);
       }, this);
 
-      messageHandler.on('PageError', function transportError(data, intent) {
+      messageHandler.on('PageError', function transportError(data) {
         var page = this.pageCache[data.pageNum - 1];
-        var intentState = page.intentStates[intent];
+        var intentState = page.intentStates[data.intent];
         if (intentState.displayReadyCapability.promise) {
           intentState.displayReadyCapability.reject(data.error);
         } else {
@@ -944,40 +938,47 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('JpegDecode', function(data, deferred) {
+      messageHandler.on('JpegDecode', function(data) {
         var imageUrl = data[0];
         var components = data[1];
         if (components != 3 && components != 1) {
-          error('Only 3 component or 1 component can be returned');
+          return Promise.reject(
+            new Error('Only 3 component or 1 component can be returned'));
         }
 
-        var img = new Image();
-        img.onload = (function messageHandler_onloadClosure() {
-          var width = img.width;
-          var height = img.height;
-          var size = width * height;
-          var rgbaLength = size * 4;
-          var buf = new Uint8Array(size * components);
-          var tmpCanvas = createScratchCanvas(width, height);
-          var tmpCtx = tmpCanvas.getContext('2d');
-          tmpCtx.drawImage(img, 0, 0);
-          var data = tmpCtx.getImageData(0, 0, width, height).data;
-          var i, j;
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.onload = function () {
+            var width = img.width;
+            var height = img.height;
+            var size = width * height;
+            var rgbaLength = size * 4;
+            var buf = new Uint8Array(size * components);
+            var tmpCanvas = createScratchCanvas(width, height);
+            var tmpCtx = tmpCanvas.getContext('2d');
+            tmpCtx.drawImage(img, 0, 0);
+            var data = tmpCtx.getImageData(0, 0, width, height).data;
+            var i, j;
 
-          if (components == 3) {
-            for (i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
-              buf[j] = data[i];
-              buf[j + 1] = data[i + 1];
-              buf[j + 2] = data[i + 2];
+            if (components == 3) {
+              for (i = 0, j = 0; i < rgbaLength; i += 4, j += 3) {
+                buf[j] = data[i];
+                buf[j + 1] = data[i + 1];
+                buf[j + 2] = data[i + 2];
+              }
+            } else if (components == 1) {
+              for (i = 0, j = 0; i < rgbaLength; i += 4, j++) {
+                buf[j] = data[i];
+              }
             }
-          } else if (components == 1) {
-            for (i = 0, j = 0; i < rgbaLength; i += 4, j++) {
-              buf[j] = data[i];
-            }
-          }
-          deferred.resolve({ data: buf, width: width, height: height});
-        }).bind(this);
-        img.src = imageUrl;
+            resolve({ data: buf, width: width, height: height});
+          };
+          img.onerror = function () {
+            reject(new Error('JpegDecode failed to load image'));
+          };
+          img.src = imageUrl;
+        });
+
       });
     },
 
@@ -1019,13 +1020,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetPageIndex', { ref: ref },
-          function (pageIndex) {
-            resolve(pageIndex);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetPageIndex', { ref: ref });
     },
 
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
@@ -1034,71 +1029,43 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getDestinations: function WorkerTransport_getDestinations() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetDestinations', null,
-          function transportDestinations(destinations) {
-            resolve(destinations);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetDestinations', null);
     },
 
     getAttachments: function WorkerTransport_getAttachments() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetAttachments', null,
-          function transportAttachments(attachments) {
-            resolve(attachments);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetAttachments', null);
     },
 
     getJavaScript: function WorkerTransport_getJavaScript() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetJavaScript', null,
-          function transportJavaScript(js) {
-            resolve(js);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetJavaScript', null);
     },
 
     getOutline: function WorkerTransport_getOutline() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetOutline', null,
-          function transportOutline(outline) {
-            resolve(outline);
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetOutline', null);
     },
 
     getMetadata: function WorkerTransport_getMetadata() {
-      return new Promise(function (resolve) {
-        this.messageHandler.send('GetMetadata', null,
-          function transportMetadata(results) {
-            resolve({
-              info: results[0],
-              metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
-            });
-          }
-        );
-      }.bind(this));
+      return this.messageHandler.sendWithPromise('GetMetadata', null).
+        then(function transportMetadata(results) {
+        return {
+          info: results[0],
+          metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
+        };
+      });
     },
 
     startCleanup: function WorkerTransport_startCleanup() {
-      this.messageHandler.send('Cleanup', null,
-        function endCleanup() {
-          for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
-            var page = this.pageCache[i];
-            if (page) {
-              page.destroy();
-            }
+      this.messageHandler.sendWithPromise('Cleanup', null).
+        then(function endCleanup() {
+        for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
+          var page = this.pageCache[i];
+          if (page) {
+            page.destroy();
           }
-          this.commonObjs.clear();
-          FontLoader.clear();
-        }.bind(this)
-      );
+        }
+        this.commonObjs.clear();
+        FontLoader.clear();
+      }.bind(this));
     }
   };
   return WorkerTransport;
