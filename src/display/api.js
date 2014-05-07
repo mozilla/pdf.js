@@ -299,14 +299,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * {Metadata} object with information from the metadata section of the PDF.
      */
     getMetadata: function PDFDocumentProxy_getMetadata() {
-      return new Promise(function (resolve) {
-        var info = this.pdfInfo.info;
-        var metadata = this.pdfInfo.metadata;
-        resolve({
-          info: info,
-          metadata: (metadata ? new PDFJS.Metadata(metadata) : null)
-        });
-      }.bind(this));
+      return this.transport.getMetadata();
     },
     /**
      * @return {Promise} A promise that is resolved with a TypedArray that has
@@ -1075,6 +1068,19 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.messageHandler.send('GetOutline', null,
           function transportOutline(outline) {
             resolve(outline);
+          }
+        );
+      }.bind(this));
+    },
+
+    getMetadata: function WorkerTransport_getMetadata() {
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetMetadata', null,
+          function transportMetadata(results) {
+            resolve({
+              info: results[0],
+              metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
+            });
           }
         );
       }.bind(this));

@@ -32,19 +32,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       var parseSuccess = function parseSuccess() {
         var numPagesPromise = pdfManager.ensureDoc('numPages');
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
-        var infoPromise = pdfManager.ensureDoc('documentInfo');
-        var metadataPromise = pdfManager.ensureCatalog('metadata');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     infoPromise, metadataPromise, encryptedPromise
-                     ]).then(function onDocReady(results) {
-
+                     encryptedPromise]).then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
-            info: results[2],
-            metadata: results[3],
-            encrypted: !!results[4],
+            encrypted: !!results[2],
           };
           loadDocumentCapability.resolve(doc);
         },
@@ -321,6 +315,16 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       function wphSetupGetOutline(data, deferred) {
         pdfManager.ensureCatalog('documentOutline').then(function (outline) {
           deferred.resolve(outline);
+        }, deferred.reject);
+      }
+    );
+
+    handler.on('GetMetadata',
+      function wphSetupGetMetadata(data, deferred) {
+        Promise.all([pdfManager.ensureDoc('documentInfo'),
+                     pdfManager.ensureCatalog('metadata')]).then(
+            function (results) {
+          deferred.resolve(results);
         }, deferred.reject);
       }
     );
