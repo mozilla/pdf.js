@@ -35,10 +35,9 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var infoPromise = pdfManager.ensureDoc('documentInfo');
         var metadataPromise = pdfManager.ensureCatalog('metadata');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        var javaScriptPromise = pdfManager.ensureCatalog('javaScript');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     infoPromise, metadataPromise, encryptedPromise,
-                     javaScriptPromise]).then(function onDocReady(results) {
+                     infoPromise, metadataPromise, encryptedPromise
+                     ]).then(function onDocReady(results) {
 
           var doc = {
             numPages: results[0],
@@ -46,7 +45,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             info: results[2],
             metadata: results[3],
             encrypted: !!results[4],
-            javaScript: results[5]
           };
           loadDocumentCapability.resolve(doc);
         },
@@ -307,6 +305,14 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       function wphSetupGetAttachments(data, deferred) {
         pdfManager.ensureCatalog('attachments').then(function(attachments) {
           deferred.resolve(attachments);
+        }, deferred.reject);
+      }
+    );
+
+    handler.on('GetJavaScript',
+      function wphSetupGetJavaScript(data, deferred) {
+        pdfManager.ensureCatalog('javaScript').then(function (js) {
+          deferred.resolve(js);
         }, deferred.reject);
       }
     );

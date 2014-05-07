@@ -272,10 +272,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * JavaScript strings in the name tree.
      */
     getJavaScript: function PDFDocumentProxy_getJavaScript() {
-      return new Promise(function (resolve) {
-        var js = this.pdfInfo.javaScript;
-        resolve(js);
-      }.bind(this));
+      return this.transport.getJavaScript();
     },
     /**
      * @return {Promise} A promise that is resolved with an {Array} that is a
@@ -1058,6 +1055,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.messageHandler.send('GetAttachments', null,
           function transportAttachments(attachments) {
             resolve(attachments);
+          }
+        );
+      }.bind(this));
+    },
+
+    getJavaScript: function WorkerTransport_getJavaScript() {
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetJavaScript', null,
+          function transportJavaScript(js) {
+            resolve(js);
           }
         );
       }.bind(this));
