@@ -47,6 +47,11 @@ function runTests(document, window, callback) {
   ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
 
   //
+  // Browser Find
+  //
+  ok(gBrowser.isFindBarInitialized(tab), "Browser FindBar initialized!");
+
+  //
   // Sidebar: open
   //
   var sidebar = document.querySelector('button#sidebarToggle'),
