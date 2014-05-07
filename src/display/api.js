@@ -1005,7 +1005,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     getPage: function WorkerTransport_getPage(pageNumber, capability) {
       if (pageNumber <= 0 || pageNumber > this.numPages ||
           (pageNumber|0) !== pageNumber) {
-        return new Promise.reject(new Error('Invalid page request'));
+        return Promise.reject(new Error('Invalid page request'));
       }
 
       var pageIndex = pageNumber - 1;
