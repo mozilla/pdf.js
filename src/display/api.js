@@ -293,10 +293,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * ].
      */
     getOutline: function PDFDocumentProxy_getOutline() {
-      return new Promise(function (resolve) {
-        var outline = this.pdfInfo.outline;
-        resolve(outline);
-      }.bind(this));
+      return this.transport.getOutline();
     },
     /**
      * @return {Promise} A promise that is resolved with an {Object} that has
@@ -1061,6 +1058,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.messageHandler.send('GetAttachments', null,
           function transportAttachments(attachments) {
             resolve(attachments);
+          }
+        );
+      }.bind(this));
+    },
+
+    getOutline: function WorkerTransport_getOutline() {
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetOutline', null,
+          function transportOutline(outline) {
+            resolve(outline);
           }
         );
       }.bind(this));
