@@ -32,23 +32,13 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       var parseSuccess = function parseSuccess() {
         var numPagesPromise = pdfManager.ensureDoc('numPages');
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
-        var outlinePromise = pdfManager.ensureCatalog('documentOutline');
-        var infoPromise = pdfManager.ensureDoc('documentInfo');
-        var metadataPromise = pdfManager.ensureCatalog('metadata');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        var javaScriptPromise = pdfManager.ensureCatalog('javaScript');
-        Promise.all([numPagesPromise, fingerprintPromise, outlinePromise,
-                     infoPromise, metadataPromise, encryptedPromise,
-                     javaScriptPromise]).then(function onDocReady(results) {
-
+        Promise.all([numPagesPromise, fingerprintPromise,
+                     encryptedPromise]).then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
-            outline: results[2],
-            info: results[3],
-            metadata: results[4],
-            encrypted: !!results[5],
-            javaScript: results[6]
+            encrypted: !!results[2],
           };
           loadDocumentCapability.resolve(doc);
         },
@@ -309,6 +299,32 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       function wphSetupGetAttachments(data, deferred) {
         pdfManager.ensureCatalog('attachments').then(function(attachments) {
           deferred.resolve(attachments);
+        }, deferred.reject);
+      }
+    );
+
+    handler.on('GetJavaScript',
+      function wphSetupGetJavaScript(data, deferred) {
+        pdfManager.ensureCatalog('javaScript').then(function (js) {
+          deferred.resolve(js);
+        }, deferred.reject);
+      }
+    );
+
+    handler.on('GetOutline',
+      function wphSetupGetOutline(data, deferred) {
+        pdfManager.ensureCatalog('documentOutline').then(function (outline) {
+          deferred.resolve(outline);
+        }, deferred.reject);
+      }
+    );
+
+    handler.on('GetMetadata',
+      function wphSetupGetMetadata(data, deferred) {
+        Promise.all([pdfManager.ensureDoc('documentInfo'),
+                     pdfManager.ensureCatalog('metadata')]).then(
+            function (results) {
+          deferred.resolve(results);
         }, deferred.reject);
       }
     );

@@ -272,10 +272,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * JavaScript strings in the name tree.
      */
     getJavaScript: function PDFDocumentProxy_getJavaScript() {
-      return new Promise(function (resolve) {
-        var js = this.pdfInfo.javaScript;
-        resolve(js);
-      }.bind(this));
+      return this.transport.getJavaScript();
     },
     /**
      * @return {Promise} A promise that is resolved with an {Array} that is a
@@ -293,10 +290,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * ].
      */
     getOutline: function PDFDocumentProxy_getOutline() {
-      return new Promise(function (resolve) {
-        var outline = this.pdfInfo.outline;
-        resolve(outline);
-      }.bind(this));
+      return this.transport.getOutline();
     },
     /**
      * @return {Promise} A promise that is resolved with an {Object} that has
@@ -305,14 +299,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * {Metadata} object with information from the metadata section of the PDF.
      */
     getMetadata: function PDFDocumentProxy_getMetadata() {
-      return new Promise(function (resolve) {
-        var info = this.pdfInfo.info;
-        var metadata = this.pdfInfo.metadata;
-        resolve({
-          info: info,
-          metadata: (metadata ? new PDFJS.Metadata(metadata) : null)
-        });
-      }.bind(this));
+      return this.transport.getMetadata();
     },
     /**
      * @return {Promise} A promise that is resolved with a TypedArray that has
@@ -1061,6 +1048,39 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.messageHandler.send('GetAttachments', null,
           function transportAttachments(attachments) {
             resolve(attachments);
+          }
+        );
+      }.bind(this));
+    },
+
+    getJavaScript: function WorkerTransport_getJavaScript() {
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetJavaScript', null,
+          function transportJavaScript(js) {
+            resolve(js);
+          }
+        );
+      }.bind(this));
+    },
+
+    getOutline: function WorkerTransport_getOutline() {
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetOutline', null,
+          function transportOutline(outline) {
+            resolve(outline);
+          }
+        );
+      }.bind(this));
+    },
+
+    getMetadata: function WorkerTransport_getMetadata() {
+      return new Promise(function (resolve) {
+        this.messageHandler.send('GetMetadata', null,
+          function transportMetadata(results) {
+            resolve({
+              info: results[0],
+              metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
+            });
           }
         );
       }.bind(this));
