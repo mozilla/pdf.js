@@ -387,7 +387,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * @class
  */
 var PDFPageProxy = (function PDFPageProxyClosure() {
-  function PDFPageProxy(pageInfo, transport) {
+  function PDFPageProxy(pageIndex, pageInfo, transport) {
+    this.pageIndex = pageIndex;
     this.pageInfo = pageInfo;
     this.transport = transport;
     this.stats = new StatTimer();
@@ -403,7 +404,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * @return {number} Page number of the page. First page is 1.
      */
     get pageNumber() {
-      return this.pageInfo.pageIndex + 1;
+      return this.pageIndex + 1;
     },
     /**
      * @return {number} The number of degrees the page is rotated clockwise.
@@ -443,14 +444,13 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * annotation objects.
      */
     getAnnotations: function PDFPageProxy_getAnnotations() {
-      if (this.annotationsCapability) {
-        return this.annotationsCapability.promise;
+      if (this.annotationsPromise) {
+        return this.annotationsPromise;
       }
 
-      var capability = createPromiseCapability();
-      this.annotationsCapability = capability;
-      this.transport.getAnnotations(this.pageInfo.pageIndex);
-      return capability.promise;
+      var promise = this.transport.getAnnotations(this.pageIndex);
+      this.annotationsPromise = promise;
+      return promise;
     },
     /**
      * Begins the process of rendering a page to the desired context.
@@ -576,6 +576,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         delete this.intentStates[intent];
       }, this);
       this.objs.clear();
+      this.annotationsPromise = null;
       this.pendingDestroy = false;
     },
     /**
@@ -631,7 +632,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.commonObjs = new PDFObjects();
 
     this.pageCache = [];
-    this.pageCapabilities = [];
+    this.pagePromises = [];
     this.downloadInfoCapability = createPromiseCapability();
     this.passwordCallback = null;
 
@@ -699,7 +700,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
       this.pageCache = [];
-      this.pageCapabilities = [];
+      this.pagePromises = [];
       var self = this;
       this.messageHandler.sendWithPromise('Terminate', null).then(function () {
         FontLoader.clear();
@@ -821,20 +822,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.downloadInfoCapability.resolve(data);
       }, this);
 
-      messageHandler.on('GetPage', function transportPage(data) {
-        var pageInfo = data.pageInfo;
-        var page = new PDFPageProxy(pageInfo, this);
-        this.pageCache[pageInfo.pageIndex] = page;
-        var promise = this.pageCapabilities[pageInfo.pageIndex];
-        promise.resolve(page);
-      }, this);
-
-      messageHandler.on('GetAnnotations', function transportAnnotations(data) {
-        var annotations = data.annotations;
-        var promise = this.pageCache[data.pageIndex].annotationsCapability;
-        promise.resolve(annotations);
-      }, this);
-
       messageHandler.on('StartRenderPage', function transportRender(data) {
         var page = this.pageCache[data.pageIndex];
 
@@ -943,7 +930,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         var components = data[1];
         if (components != 3 && components != 1) {
           return Promise.reject(
-            new Error('Only 3 component or 1 component can be returned'));
+            new Error('Only 3 components or 1 component can be returned'));
         }
 
         return new Promise(function (resolve, reject) {
@@ -978,7 +965,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
           };
           img.src = imageUrl;
         });
-
       });
     },
 
@@ -1010,13 +996,18 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }
 
       var pageIndex = pageNumber - 1;
-      if (pageIndex in this.pageCapabilities) {
-        return this.pageCapabilities[pageIndex].promise;
+      if (pageIndex in this.pagePromises) {
+        return this.pagePromises[pageIndex];
       }
-      capability = createPromiseCapability();
-      this.pageCapabilities[pageIndex] = capability;
-      this.messageHandler.send('GetPageRequest', { pageIndex: pageIndex });
-      return capability.promise;
+      var promise = this.messageHandler.sendWithPromise('GetPage', {
+        pageIndex: pageIndex
+      }).then(function (pageInfo) {
+        var page = new PDFPageProxy(pageIndex, pageInfo, this);
+        this.pageCache[pageIndex] = page;
+        return page;
+      }.bind(this));
+      this.pagePromises[pageIndex] = promise;
+      return promise;
     },
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
@@ -1024,7 +1015,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex) {
-      this.messageHandler.send('GetAnnotationsRequest',
+      return this.messageHandler.sendWithPromise('GetAnnotations',
         { pageIndex: pageIndex });
     },
 

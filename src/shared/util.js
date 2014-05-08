@@ -1448,7 +1448,6 @@ MessageHandler.prototype = {
    * @param {String} actionName Action to call.
    * @param {JSON} data JSON data to send.
    * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
-   * @param {boolean} withPromise true if response if expected.
    * @returns {Promise} Promise to be resolved with response data.
    */
   sendWithPromise:
