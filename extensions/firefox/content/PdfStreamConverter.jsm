@@ -66,9 +66,15 @@ function getChromeWindow(domWindow) {
 
 function getFindBar(domWindow) {
   var browser = getContainingBrowser(domWindow);
-  var tabbrowser = browser.getTabBrowser();
-  var tab = tabbrowser._getTabForBrowser(browser);
-  return tabbrowser.getFindBar(tab);
+  try {
+    var tabbrowser = browser.getTabBrowser();
+    var tab = tabbrowser._getTabForBrowser(browser);
+    return tabbrowser.getFindBar(tab);
+  } catch (e) {
+    // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
+    var chromeWindow = browser.ownerDocument.defaultView;
+    return chromeWindow.gFindBar;
+  }
 }
 
 function setBoolPref(pref, value) {
@@ -327,11 +333,13 @@ ChromeActions.prototype = {
     return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
   },
   supportsIntegratedFind: function() {
-    // Integrated find is only supported when we're not in a frame and when the
-    // new find events code exists.
-    return this.domWindow.frameElement === null &&
-           getFindBar(this.domWindow) &&
-           'updateControlState' in getFindBar(this.domWindow);
+    // Integrated find is only supported when we're not in a frame
+    if (this.domWindow.frameElement !== null) {
+      return false;
+    }
+    // ... and when the new find events code exists.
+    var findBar = getFindBar(this.domWindow);
+    return findBar && ('updateControlState' in findBar);
   },
   supportsDocumentFonts: function() {
     var prefBrowser = getIntPref('browser.display.use_document_fonts', 1);
