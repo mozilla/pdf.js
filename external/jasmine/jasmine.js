@@ -458,8 +458,6 @@ if (isCommonJS) exports.spyOn = spyOn;
 /**
  * Creates a Jasmine spec that will be added to the current suite.
  *
- * // TODO: pending tests
- *
  * @example
  * it('should be true', function() {
  *   expect(true).toEqual(true);
@@ -562,11 +560,6 @@ if (isCommonJS) exports.afterEach = afterEach;
  * Stores the description and all defined specs in the Jasmine environment as one suite of specs. Variables declared
  * are accessible by calls to beforeEach, it, and afterEach. Describe blocks can be nested, allowing for specialization
  * of setup in some tests.
- *
- * @example
- * // TODO: a simple suite
- *
- * // TODO: a simple suite with a nested describe block
  *
  * @param {String} description A string, usually the class under test.
  * @param {Function} specDefinitions function that defines several specs.
