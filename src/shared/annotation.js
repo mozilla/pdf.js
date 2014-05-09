@@ -105,24 +105,30 @@ var Annotation = (function AnnotationClosure() {
 
       // TODO: implement proper support for annotations with line dash patterns.
       var dashArray = borderArray[3];
-      if (data.borderWidth > 0 && dashArray && isArray(dashArray)) {
-        var dashArrayLength = dashArray.length;
-        if (dashArrayLength > 0) {
-          // According to the PDF specification: the elements in a dashArray
-          // shall be numbers that are nonnegative and not all equal to zero.
-          var isInvalid = false;
-          var numPositive = 0;
-          for (var i = 0; i < dashArrayLength; i++) {
-            var validNumber = (+dashArray[i] >= 0);
-            if (!validNumber) {
-              isInvalid = true;
-              break;
-            } else if (dashArray[i] > 0) {
-              numPositive++;
+      if (data.borderWidth > 0 && dashArray) {
+        if (!isArray(dashArray)) {
+          // Ignore the border if dashArray is not actually an array,
+          // this is consistent with the behaviour in Adobe Reader. 
+          data.borderWidth = 0;
+        } else {
+          var dashArrayLength = dashArray.length;
+          if (dashArrayLength > 0) {
+            // According to the PDF specification: the elements in a dashArray
+            // shall be numbers that are nonnegative and not all equal to zero.
+            var isInvalid = false;
+            var numPositive = 0;
+            for (var i = 0; i < dashArrayLength; i++) {
+              var validNumber = (+dashArray[i] >= 0);
+              if (!validNumber) {
+                isInvalid = true;
+                break;
+              } else if (dashArray[i] > 0) {
+                numPositive++;
+              }
             }
-          }
-          if (isInvalid || numPositive === 0) {
-            data.borderWidth = 0;
+            if (isInvalid || numPositive === 0) {
+              data.borderWidth = 0;
+            }
           }
         }
       }
