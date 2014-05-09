@@ -746,7 +746,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var commonObjs = this.commonObjs;
       var objs = this.objs;
       var fnId;
-      var deferred = Promise.resolve();
 
       while (true) {
         if (stepper && i === stepper.nextBreakPoint) {
@@ -784,11 +783,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           return i;
         }
 
-        // If the execution took longer then a certain amount of time, schedule
-        // to continue exeution after a short delay.
-        // However, this is only possible if a 'continueCallback' is passed in.
+        // If the execution took longer then a certain amount of time and
+        // `continueCallback` is specified, interrupt the execution.
         if (continueCallback && Date.now() > endTime) {
-          deferred.then(continueCallback);
+          continueCallback();
           return i;
         }
 
