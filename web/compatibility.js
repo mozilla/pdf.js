@@ -564,3 +564,15 @@ if (typeof PDFJS === 'undefined') {
     console.log('Unable to create polyfill for localStorage');
   }
 })();
+
+(function checkRequestAnimationFrame() {
+  if ('requestAnimationFrame' in window) {
+    return;
+  }
+  window.requestAnimationFrame =
+    window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame ||
+    window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+    (function fakeRequestAnimationFrame(callback) {
+      window.setTimeout(callback, 20);
+    });
+})();
