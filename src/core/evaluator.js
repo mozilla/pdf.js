@@ -38,6 +38,28 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.fontCache = fontCache;
   }
 
+  // Trying to minimize Date.now() usage and check every 100 time
+  var TIME_SLOT_DURATION_MS = 20;
+  var CHECK_TIME_EVERY = 100;
+  function TimeSlotManager() {
+    this.reset();
+  }
+  TimeSlotManager.prototype = {
+    check: function TimeSlotManager_check() {
+      if (++this.checked < CHECK_TIME_EVERY) {
+        return false;
+      }
+      this.checked = 0;
+      return this.endTime <= Date.now();
+    },
+    reset: function TimeSlotManager_reset() {
+      this.endTime = Date.now() + TIME_SLOT_DURATION_MS;
+      this.checked = 0;
+    }
+  };
+
+  var deferred = Promise.resolve();
+
   var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
   PartialEvaluator.prototype = {
@@ -569,10 +591,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var stateManager = new StateManager(initialState || new EvalState());
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
       var shading;
+      var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function next(resolve, reject) {
-        var operation, i, ii;
-        while ((operation = preprocessor.read())) {
+        timeSlotManager.reset();
+        var stop, operation, i, ii;
+        while (!(stop = timeSlotManager.check()) &&
+               (operation = preprocessor.read())) {
           var args = operation.args;
           var fn = operation.fn;
 
@@ -734,6 +759,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               continue;
           }
           operatorList.addOp(fn, args);
+        }
+        if (stop) {
+          deferred.then(function () {
+            next(resolve, reject);
+          });
+          return;
         }
         // Some PDFs don't close all restores inside object/form.
         // Closing those for them.
@@ -900,8 +931,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return textChunk;
       }
 
+      var timeSlotManager = new TimeSlotManager();
+
       return new Promise(function next(resolve, reject) {
-        while ((operation = preprocessor.read())) {
+        timeSlotManager.reset();
+        var stop;
+        while (!(stop = timeSlotManager.check()) &&
+               (operation = preprocessor.read())) {
           textState = stateManager.state;
           var fn = operation.fn;
           var args = operation.args;
@@ -1073,7 +1109,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
           } // switch
         } // while
-
+        if (stop) {
+          deferred.then(function () {
+            next(resolve, reject);
+          });
+          return;
+        }
         resolve(textContent);
       });
     },
