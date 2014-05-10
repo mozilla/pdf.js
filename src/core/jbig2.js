@@ -28,7 +28,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       if (id in this) {
         return this[id];
       }
-      return (this[id] = new Int8Array(1<<16));
+      return (this[id] = new Int8Array(1 << 16));
     }
   };
 
@@ -53,69 +53,32 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   // A.2 Procedure for decoding values
   function decodeInteger(contextCache, procedure, decoder) {
     var contexts = contextCache.getContexts(procedure);
-
     var prev = 1;
-    var state = 1, v = 0, s;
-    var toRead = 32, offset = 4436; // defaults for state 7
-    while (state) {
-      var bit = decoder.readBit(contexts, prev);
-      prev = (prev < 256 ? (prev << 1) | bit :
-              (((prev << 1) | bit) & 511) | 256);
-      switch (state) {
-        case 1:
-          s = !!bit;
-          break;
-        case 2:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 2;
-          offset = 0;
-          break;
-        case 3:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 4;
-          offset = 4;
-          break;
-        case 4:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 6;
-          offset = 20;
-          break;
-        case 5:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 8;
-          offset = 84;
-          break;
-        case 6:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 12;
-          offset = 340;
-          break;
-        default:
-          v = ((v << 1) | bit) >>> 0;
-          if (--toRead === 0) {
-            state = 0;
-          }
-          continue;
+
+    function readBits(length) {
+      var v = 0;
+      for (var i = 0; i < length; i++) {
+        var bit = decoder.readBit(contexts, prev);
+        prev = (prev < 256 ? (prev << 1) | bit :
+                (((prev << 1) | bit) & 511) | 256);
+        v = (v << 1) | bit;
       }
-      state++;
+      return v >>> 0;
     }
-    v += offset;
-    return (!s ? v : (v > 0 ? -v : null));
+
+    var sign = readBits(1);
+    var value = readBits(1) ?
+                  (readBits(1) ?
+                    (readBits(1) ?
+                      (readBits(1) ?
+                        (readBits(1) ?
+                          (readBits(32) + 4436) :
+                        readBits(12) + 340) :
+                      readBits(8) + 84) :
+                    readBits(6) + 20) :
+                  readBits(4) + 4) :
+                readBits(2);
+    return (sign === 0 ? value : (value > 0 ? -value : null));
   }
 
   // A.3 The IAID decoding procedure
