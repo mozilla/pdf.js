@@ -543,7 +543,8 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 }
 
 .toolbarButton,
-.secondaryToolbarButton {
+.secondaryToolbarButton,
+.overlayButton {
   border: 0 none;
   background-color: rgba(0, 0, 0, 0);
   width: 32px;
@@ -558,7 +559,8 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 }
 
 .toolbarButton[disabled],
-.secondaryToolbarButton[disabled] {
+.secondaryToolbarButton[disabled],
+.overlayButton[disabled] {
   opacity: .5;
 }
 
@@ -653,8 +655,8 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 
 .toolbarButton,
 .dropdownToolbarButton,
-.overlayButton,
-.secondaryToolbarButton {
+.secondaryToolbarButton,
+.overlayButton {
   min-width: 16px;
   padding: 2px 6px 0;
   border: 1px solid transparent;
@@ -775,12 +777,6 @@ html[dir='rtl'] .dropdownToolbarButton {
 
 .dropdownToolbarButton > select > option {
   background: hsl(0,0%,24%);
-}
-
-.overlayButton {
-  margin: 3px 2px 4px 5px !important;
-  line-height: 16px;
-  padding: 2px 6px 3px 6px;
 }
 
 #customScaleOption {
@@ -1426,81 +1422,38 @@ canvas {
   width: 98%;
 }
 
+.overlayButton {
+  width: auto;
+  margin: 3px 4px 2px 4px !important;
+  padding: 2px 6px 3px 6px;
+}
+
 #overlayContainer {
   display: table;
   position: absolute;
   width: 100%;
   height: 100%;
   background-color: hsla(0,0%,0%,.2);
-  z-index: 10000;
+  z-index: 40000;
 }
 #overlayContainer > * {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-#promptContainer {
+#overlayContainer > .container {
   display: table-cell;
   vertical-align: middle;
   text-align: center;
 }
 
-#promptContainer > * {
-  display: inline-block;
-}
-
-.prompt {
-  display: table;
-  padding: 15px;
-  border-spacing: 4px;
-  color: hsl(0,0%,85%);
-  line-height: 14px;
-  text-align: center;
-  background-color: #474747; /* fallback */
-  background-image: url(images/texture.png),
-                    linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
-  box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
-              inset 0 1px 1px hsla(0,0%,0%,.15),
-              inset 0 -1px 0 hsla(0,0%,100%,.05),
-              0 1px 0 hsla(0,0%,0%,.15),
-              0 1px 1px hsla(0,0%,0%,.1);
-}
-
-.prompt > .row {
-  display: table-row;
-}
-
-.prompt > .row > * {
-  display: table-cell;
-}
-
-.prompt .toolbarField {
-  margin: 5px 0;
-  width: 200px;
-}
-
-.prompt .toolbarField:hover,
-.prompt .toolbarField:focus {
-  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
-}
-
-#documentPropertiesContainer {
-  display: table-cell;
-  vertical-align: middle;
-  text-align: center;
-}
-
-#documentPropertiesContainer > * {
+#overlayContainer > .container > .dialog {
   display: inline-block;
   padding: 15px;
   border-spacing: 4px;
-  max-width: 350px;
-  max-height: 350px;
   color: hsl(0,0%,85%);
   font-size: 12px;
   line-height: 14px;
-  text-align: left;
-  cursor: default;
   background-color: #474747; /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
@@ -1509,9 +1462,28 @@ canvas {
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
+  border: 1px solid hsla(0,0%,0%,.5);
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-#documentPropertiesContainer .separator {
+.dialog > .row {
+  display: table-row;
+}
+
+.dialog > .row > * {
+  display: table-cell;
+}
+
+.dialog .toolbarField {
+  margin: 5px 0;
+}
+.dialog .toolbarField:hover,
+.dialog .toolbarField:focus {
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+}
+
+.dialog .separator {
   display: block; 
   margin: 4px 0 4px 0;
   height: 1px;
@@ -1520,35 +1492,40 @@ canvas {
   box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
 }
 
-#documentPropertiesContainer .row {
-  display: table-row;
+.dialog .buttonRow {
+  text-align: center;
+  vertical-align: middle;
 }
 
-html[dir='ltr'] #documentPropertiesContainer .row > * {
-  display: table-cell;
-  min-width: 100px;
+#passwordOverlay > .dialog {
+  text-align: center;
+}
+#passwordOverlay .toolbarField {
+  width: 200px;
 }
 
-html[dir='rtl'] #documentPropertiesContainer .row > * {
-  display: table-cell;
+#documentPropertiesOverlay > .dialog {
+  text-align: left;
+}
+#documentPropertiesOverlay .row > * {
   min-width: 100px;
+}
+html[dir='ltr'] #documentPropertiesOverlay .row > * {
+  text-align: left;
+}
+html[dir='rtl'] #documentPropertiesOverlay .row > * {
   text-align: right;
 }
-
-#documentPropertiesContainer .row span {
+#documentPropertiesOverlay .row > span {
   width: 125px;
   word-wrap: break-word;
 }
-
-#documentPropertiesContainer .row p {
+#documentPropertiesOverlay .row > p {
   max-width: 225px;
   word-wrap: break-word;
 }
-
-#documentPropertiesContainer .buttonRow {
+#documentPropertiesOverlay .buttonRow {
   margin-top: 10px;
-  text-align: center;
-  vertical-align: middle;
 }
 
 .clearBoth {
