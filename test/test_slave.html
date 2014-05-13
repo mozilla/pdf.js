@@ -19,19 +19,19 @@ limitations under the License.
   <head>
     <title>pdf.js test slave</title>
     <style type="text/css"></style>
-    <script type="text/javascript" src="/src/shared/util.js"></script>
-    <script type="text/javascript" src="/src/shared/colorspace.js"></script>
-    <script type="text/javascript" src="/src/shared/function.js"></script>
-    <script type="text/javascript" src="/src/shared/annotation.js"></script>
-    <script type="text/javascript" src="/src/display/api.js"></script>
-    <script type="text/javascript" src="/src/display/metadata.js"></script>
-    <script type="text/javascript" src="/src/display/canvas.js"></script>
-    <script type="text/javascript" src="/src/display/webgl.js"></script>
-    <script type="text/javascript" src="/src/display/pattern_helper.js"></script>
-    <script type="text/javascript" src="/src/display/font_loader.js"></script>
-    <script type="text/javascript" src="driver.js"></script>
+    <script src="/src/shared/util.js"></script>
+    <script src="/src/shared/colorspace.js"></script>
+    <script src="/src/shared/function.js"></script>
+    <script src="/src/shared/annotation.js"></script>
+    <script src="/src/display/api.js"></script>
+    <script src="/src/display/metadata.js"></script>
+    <script src="/src/display/canvas.js"></script>
+    <script src="/src/display/webgl.js"></script>
+    <script src="/src/display/pattern_helper.js"></script>
+    <script src="/src/display/font_loader.js"></script>
+    <script src="driver.js"></script>
 
-    <script type="text/javascript">
+    <script>
       PDFJS.workerSrc = '/src/worker_loader.js';
     </script>
   </head>
@@ -41,7 +41,7 @@ limitations under the License.
     <p>Inflight requests: <span id="inFlightCount"></span></p>
     <div id="content-end"></div>
 
-    <script type="text/javascript">
+    <script>
       'use strict';
       load();
     </script>
