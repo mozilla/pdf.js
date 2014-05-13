@@ -31,14 +31,11 @@ var PDFImage = (function PDFImageClosure() {
       var colorSpace = dict.get('ColorSpace', 'CS');
       colorSpace = ColorSpace.parse(colorSpace, xref, res);
       var numComps = colorSpace.numComps;
-      var resolvePromise;
-      handler.send('JpegDecode', [image.getIR(), numComps], function(message) {
+      var decodePromise = handler.sendWithPromise('JpegDecode',
+                                                  [image.getIR(), numComps]);
+      return decodePromise.then(function (message) {
         var data = message.data;
-        var stream = new Stream(data, 0, data.length, image.dict);
-        resolvePromise(stream);
-      });
-      return new Promise(function (resolve) {
-        resolvePromise = resolve;
+        return new Stream(data, 0, data.length, image.dict);
       });
     } else {
       return Promise.resolve(image);

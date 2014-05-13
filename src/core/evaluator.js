@@ -214,7 +214,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         then(function(imageObj) {
           var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
-            null, [imgData.data.buffer]);
+            [imgData.data.buffer]);
         }).then(null, function (reason) {
           warn('Unable to decode image: ' + reason);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', null]);
@@ -1612,7 +1612,7 @@ var OperatorList = (function OperatorListClosure() {
         },
         pageIndex: this.pageIndex,
         intent: this.intent
-      }, null, transfers);
+      }, transfers);
       this.dependencies = {};
       this.fnArray.length = 0;
       this.argsArray.length = 0;
