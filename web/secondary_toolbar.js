@@ -114,7 +114,7 @@ var SecondaryToolbar = {
   },
 
   documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {
-    this.documentProperties.show();
+    this.documentProperties.open();
     this.close();
   },
 

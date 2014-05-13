@@ -20,7 +20,7 @@
            Preferences, SidebarView, ViewHistory, PageView, ThumbnailView, URL,
            noContextMenuHandler, SecondaryToolbar, PasswordPrompt,
            PresentationMode, HandTool, Promise, DocumentProperties,
-           DocumentOutlineView, DocumentAttachmentsView */
+           DocumentOutlineView, DocumentAttachmentsView, OverlayManager */
 
 'use strict';
 
@@ -100,9 +100,10 @@ var currentPageNumber = 1;
 //#include pdf_find_controller.js
 //#include pdf_history.js
 //#include secondary_toolbar.js
-//#include password_prompt.js
 //#include presentation_mode.js
 //#include hand_tool.js
+//#include overlay_manager.js
+//#include password_prompt.js
 //#include document_properties.js
 
 var PDFView = {
@@ -183,14 +184,6 @@ var PDFView = {
       documentPropertiesButton: document.getElementById('documentProperties')
     });
 
-    PasswordPrompt.initialize({
-      overlayContainer: document.getElementById('overlayContainer'),
-      passwordField: document.getElementById('password'),
-      passwordText: document.getElementById('passwordText'),
-      passwordSubmit: document.getElementById('passwordSubmit'),
-      passwordCancel: document.getElementById('passwordCancel')
-    });
-
     PresentationMode.initialize({
       container: container,
       secondaryToolbar: SecondaryToolbar,
@@ -200,8 +193,16 @@ var PDFView = {
       pageRotateCcw: document.getElementById('contextPageRotateCcw')
     });
 
+    PasswordPrompt.initialize({
+      overlayName: 'passwordOverlay',
+      passwordField: document.getElementById('password'),
+      passwordText: document.getElementById('passwordText'),
+      passwordSubmit: document.getElementById('passwordSubmit'),
+      passwordCancel: document.getElementById('passwordCancel')
+    });
+
     DocumentProperties.initialize({
-      overlayContainer: document.getElementById('overlayContainer'),
+      overlayName: 'documentPropertiesOverlay',
       closeButton: document.getElementById('documentPropertiesClose'),
       fileNameField: document.getElementById('fileNameField'),
       fileSizeField: document.getElementById('fileSizeField'),
@@ -626,7 +627,7 @@ var PDFView = {
     var passwordNeeded = function passwordNeeded(updatePassword, reason) {
       PasswordPrompt.updatePassword = updatePassword;
       PasswordPrompt.reason = reason;
-      PasswordPrompt.show();
+      PasswordPrompt.open();
     };
 
     function getDocumentProgress(progressData) {
@@ -2165,7 +2166,7 @@ window.addEventListener('click', function click(evt) {
 }, false);
 
 window.addEventListener('keydown', function keydown(evt) {
-  if (PasswordPrompt.visible) {
+  if (OverlayManager.active) {
     return;
   }
 

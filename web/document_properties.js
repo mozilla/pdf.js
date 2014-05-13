@@ -14,15 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, Promise, mozL10n, getPDFFileNameFromURL */
+/* globals PDFView, Promise, mozL10n, getPDFFileNameFromURL, OverlayManager */
 
 'use strict';
 
 var DocumentProperties = {
-  overlayContainer: null,
+  overlayName: null,
   fileName: '',
   fileSize: '',
-  visible: false,
 
   // Document property fields (in the viewer).
   fileNameField: null,
@@ -39,7 +38,7 @@ var DocumentProperties = {
   pageCountField: null,
 
   initialize: function documentPropertiesInitialize(options) {
-    this.overlayContainer = options.overlayContainer;
+    this.overlayName = options.overlayName;
 
     // Set the document property fields.
     this.fileNameField = options.fileNameField;
@@ -57,24 +56,18 @@ var DocumentProperties = {
 
     // Bind the event listener for the Close button.
     if (options.closeButton) {
-      options.closeButton.addEventListener('click', this.hide.bind(this));
+      options.closeButton.addEventListener('click', this.close.bind(this));
     }
 
     this.dataAvailablePromise = new Promise(function (resolve) {
       this.resolveDataAvailable = resolve;
     }.bind(this));
 
-    // Bind the event listener for the Esc key (to close the dialog).
-    window.addEventListener('keydown',
-      function (e) {
-        if (e.keyCode === 27) { // Esc key
-          this.hide();
-        }
-      }.bind(this));
+    OverlayManager.register(this.overlayName, this.close.bind(this));
   },
 
   getProperties: function documentPropertiesGetProperties() {
-    if (!this.visible) {
+    if (!OverlayManager.active) {
       // If the dialog was closed before dataAvailablePromise was resolved,
       // don't bother updating the properties.
       return;
@@ -136,26 +129,15 @@ var DocumentProperties = {
     }
   },
 
-  show: function documentPropertiesShow() {
-    if (this.visible) {
-      return;
-    }
-    this.visible = true;
-    this.overlayContainer.classList.remove('hidden');
-    this.overlayContainer.lastElementChild.classList.remove('hidden');
-
-    this.dataAvailablePromise.then(function () {
+  open: function documentPropertiesOpen() {
+    Promise.all([OverlayManager.open(this.overlayName),
+                 this.dataAvailablePromise]).then(function () {
       this.getProperties();
     }.bind(this));
   },
 
-  hide: function documentPropertiesClose() {
-    if (!this.visible) {
-      return;
-    }
-    this.visible = false;
-    this.overlayContainer.classList.add('hidden');
-    this.overlayContainer.lastElementChild.classList.add('hidden');
+  close: function documentPropertiesClose() {
+    OverlayManager.close(this.overlayName);
   },
 
   parseDate: function documentPropertiesParseDate(inputDate) {
