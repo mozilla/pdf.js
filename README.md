@@ -89,8 +89,8 @@ should be minified for production.
 You can play with the PDF.js API directly from your browser through the live
 demos below:
 
-+ Hello world: http://jsbin.com/pdfjs-helloworld-v2/edit#html,live
-+ Simple reader with prev/next page controls: http://jsbin.com/pdfjs-prevnext-v2/edit#html,live
++ Hello world: http://jsbin.com/pdfjs-helloworld-v2/9612/edit#html,live
++ Simple reader with prev/next page controls: http://jsbin.com/pdfjs-prevnext-v2/6865/edit#html,live
 
 The repo contains a hello world example that you can run locally:
 
