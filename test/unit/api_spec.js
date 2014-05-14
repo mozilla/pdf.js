@@ -65,7 +65,8 @@ describe('api', function() {
     it('gets destinations', function() {
       var promise = doc.getDestinations();
       waitsForPromise(promise, function(data) {
-        // TODO this seems to be broken for the test pdf
+        expect(data).toEqual({ chapter1: [{ gen: 0, num: 17 }, { name: 'XYZ' },
+                                          0, 841.89, null] });
       });
     });
     it('gets outline', function() {
