@@ -520,6 +520,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "glyph_accent",
+       "file": "pdfs/glyph_accent.pdf",
+       "md5": "1526e4edaa3ec439ebf156d0a0b385aa",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "Glyph accent drawn as curves."
+    },
     {  "id": "simpletype3font",
        "file": "pdfs/simpletype3font.pdf",
        "md5": "b374c7543920840c61999e9e86939f99",
