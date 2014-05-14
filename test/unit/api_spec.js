@@ -86,6 +86,12 @@ describe('api', function() {
         expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
       });
     });
+    it('gets data', function() {
+      var promise = doc.getData();
+      waitsForPromise(promise, function (data) {
+        expect(true).toEqual(true);
+      });
+    });
   });
   describe('Page', function() {
     var resolvePromise;
