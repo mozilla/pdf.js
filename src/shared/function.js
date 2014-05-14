@@ -385,64 +385,55 @@ var PDFFunction = (function PDFFunctionClosure() {
       var domain = IR[1];
       var range = IR[2];
       var code = IR[3];
-      var numOutputs = range.length / 2;
+      var numOutputs = range.length >> 1;
+      var numInputs = domain.length >> 1;
       var evaluator = new PostScriptEvaluator(code);
       // Cache the values for a big speed up, the cache size is limited though
       // since the number of possible values can be huge from a PS function.
-      var cache = new FunctionCache();
+      var cache = {};
+      // The MAX_CACHE_SIZE is set to ~4x the maximum number of distinct values
+      // seen in our tests.
+      var MAX_CACHE_SIZE = 2048 * 4;
+      var cache_available = MAX_CACHE_SIZE;
       return function constructPostScriptFromIRResult(args) {
-        var initialStack = [];
-        for (var i = 0, ii = (domain.length / 2); i < ii; ++i) {
-          initialStack.push(args[i]);
+        var i, value;
+        var key = '';
+        var input = new Array(numInputs);
+        for (i = 0; i < numInputs; i++) {
+          value = args[i];
+          input[i] = value;
+          key += value + '_';
         }
 
-        var key = initialStack.join('_');
-        if (cache.has(key)) {
-          return cache.get(key);
+        var cachedValue = cache[key];
+        if (cachedValue !== undefined) {
+          return cachedValue;
         }
 
-        var stack = evaluator.execute(initialStack);
-        var transformed = [];
-        for (i = numOutputs - 1; i >= 0; --i) {
-          var out = stack.pop();
-          var rangeIndex = 2 * i;
-          if (out < range[rangeIndex]) {
-            out = range[rangeIndex];
-          } else if (out > range[rangeIndex + 1]) {
-            out = range[rangeIndex + 1];
+        var output = new Array(numOutputs);
+        var stack = evaluator.execute(input);
+        var stackIndex = stack.length - numOutputs;
+        for (i = 0; i < numOutputs; i++) {
+          value = stack[stackIndex + i];
+          var bound = range[i * 2];
+          if (value < bound) {
+            value = bound;
+          } else {
+            bound = range[i * 2 +1];
+            if (value > bound) {
+              value = bound;
+            }
           }
-          transformed[i] = out;
+          output[i] = value;
         }
-        cache.set(key, transformed);
-        return transformed;
+        if (cache_available > 0) {
+          cache_available--;
+          cache[key] = output;
+        }
+        return output;
       };
     }
   };
-})();
-
-var FunctionCache = (function FunctionCacheClosure() {
-  // Of 10 PDF's with type4 functions the maxium number of distinct values seen
-  // was 256. This still may need some tweaking in the future though.
-  var MAX_CACHE_SIZE = 1024;
-  function FunctionCache() {
-    this.cache = {};
-    this.total = 0;
-  }
-  FunctionCache.prototype = {
-    has: function FunctionCache_has(key) {
-      return key in this.cache;
-    },
-    get: function FunctionCache_get(key) {
-      return this.cache[key];
-    },
-    set: function FunctionCache_set(key, value) {
-      if (this.total < MAX_CACHE_SIZE) {
-        this.cache[key] = value;
-        this.total++;
-      }
-    }
-  };
-  return FunctionCache;
 })();
 
 var PostScriptStack = (function PostScriptStackClosure() {
