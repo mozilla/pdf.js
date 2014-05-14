@@ -306,9 +306,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * the raw data from the PDF.
      */
     getData: function PDFDocumentProxy_getData() {
-      var capability = createPromiseCapability();
-      this.transport.getData(capability);
-      return capability.promise;
+      return this.transport.getData();
     },
     /**
      * @return {Promise} A promise that is resolved when the document's data
@@ -983,10 +981,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
     },
 
-    getData: function WorkerTransport_getData(capability) {
-      this.messageHandler.send('GetData', null, function(data) {
-        capability.resolve(data);
-      });
+    getData: function WorkerTransport_getData() {
+      return this.messageHandler.sendWithPromise('GetData', null);
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, capability) {
