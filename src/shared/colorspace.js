@@ -396,6 +396,7 @@ var AlternateCS = (function AlternateCSClosure() {
     getRgbBuffer: function AlternateCS_getRgbBuffer(src, srcOffset, count,
                                                     dest, destOffset, bits,
                                                     alpha01) {
+      var tinted;
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
@@ -409,16 +410,22 @@ var AlternateCS = (function AlternateCSClosure() {
 
       var scaled = new Float32Array(numComps);
       var i, j;
-      for (i = 0; i < count; i++) {
-        for (j = 0; j < numComps; j++) {
-          scaled[j] = src[srcOffset++] * scale;
-        }
-        var tinted = tintFn(scaled);
-        if (usesZeroToOneRange) {
+      if (usesZeroToOneRange) {
+        for (i = 0; i < count; i++) {
+          for (j = 0; j < numComps; j++) {
+            scaled[j] = src[srcOffset++] * scale;
+          }
+          tinted = tintFn(scaled);
           for (j = 0; j < baseNumComps; j++) {
             baseBuf[pos++] = tinted[j] * 255;
           }
-        } else {
+        }
+      } else {
+        for (i = 0; i < count; i++) {
+          for (j = 0; j < numComps; j++) {
+            scaled[j] = src[srcOffset++] * scale;
+          }
+          tinted = tintFn(scaled);
           base.getRgbItem(tinted, 0, baseBuf, pos);
           pos += baseNumComps;
         }

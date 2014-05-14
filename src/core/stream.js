@@ -144,8 +144,8 @@ var DecodeStream = (function DecodeStreamClosure() {
         size *= 2;
       }
       var buffer2 = new Uint8Array(size);
-      for (var i = 0; i < current; ++i) {
-        buffer2[i] = buffer[i];
+      if (buffer) {
+        buffer2.set(buffer);
       }
       return (this.buffer = buffer2);
     },
