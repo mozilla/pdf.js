@@ -24,7 +24,7 @@
 var EOF = {};
 
 function isEOF(v) {
-  return (v == EOF);
+  return (v === EOF);
 }
 
 var Parser = (function ParserClosure() {
