@@ -983,10 +983,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.lineTo(x, y);
             break;
           case OPS.curveTo:
-            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
-                              args[j + 4], args[j + 5]);
             x = args[j + 4];
             y = args[j + 5];
+            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
+                              x, y);
             j += 6;
             break;
           case OPS.curveTo2:
@@ -997,10 +997,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             j += 4;
             break;
           case OPS.curveTo3:
-            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
-                              args[j + 2], args[j + 3]);
             x = args[j + 2];
             y = args[j + 3];
+            ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
             j += 4;
             break;
           case OPS.closePath:
