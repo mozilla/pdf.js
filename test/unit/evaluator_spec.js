@@ -18,7 +18,7 @@ describe('evaluator', function() {
   }
   HandlerMock.prototype = {
     send: function(name, data) {
-      this.inputs({name: name, data: data});
+      this.inputs.push({name: name, data: data});
     }
   };
   function ResourcesMock() { }
@@ -149,10 +149,24 @@ describe('evaluator', function() {
                                            'prefix');
       var stream = new StringStream('5 1 4 d0');
       var result = evaluator.getOperatorList(stream, new ResourcesMock());
-      expect(result.argsArray[0][0]).toEqual(5);
-      expect(result.argsArray[0][1]).toEqual(1);
-      expect(result.argsArray[0][2]).toEqual(4);
+      expect(result.argsArray[0][0]).toEqual(1);
+      expect(result.argsArray[0][1]).toEqual(4);
       expect(result.fnArray[0]).toEqual(OPS.setCharWidth);
+    });
+    it('should execute if nested commands', function() {
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
+                                           'prefix');
+      var stream = new StringStream('/F2 /GS2 gs 5.711 Tf');
+      var result = evaluator.getOperatorList(stream, new ResourcesMock());
+      expect(result.fnArray.length).toEqual(3);
+      expect(result.fnArray[0]).toEqual(OPS.setGState);
+      expect(result.fnArray[1]).toEqual(OPS.dependency);
+      expect(result.fnArray[2]).toEqual(OPS.setFont);
+      expect(result.argsArray.length).toEqual(3);
+      expect(result.argsArray[0].length).toEqual(1);
+      expect(result.argsArray[1].length).toEqual(1);
+      expect(result.argsArray[2].length).toEqual(2);
     });
     it('should skip if too few arguments', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
