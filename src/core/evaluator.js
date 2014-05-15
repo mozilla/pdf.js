@@ -1846,6 +1846,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
     // dictionary
     this.parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
     this.stateManager = stateManager;
+    this.nonProcessedArgs = [];
   }
 
   EvaluatorPreprocessor.prototype = {
@@ -1878,6 +1879,17 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
         }
 
         var fn = opSpec.id;
+
+        // Some post script commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
+        if (!opSpec.variableArgs && args.length !== opSpec.numArgs) {
+          while (args.length > opSpec.numArgs) {
+            this.nonProcessedArgs.push(args.shift());
+          }
+
+          while (args.length < opSpec.numArgs && this.nonProcessedArgs.length) {
+            args.unshift(this.nonProcessedArgs.pop());
+          }
+        }
 
         // Validate the number of arguments for the command
         if (opSpec.variableArgs) {
