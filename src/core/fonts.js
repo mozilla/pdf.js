@@ -3840,23 +3840,33 @@ var Font = (function FontClosure() {
         }
       }
 
-      var charCodeToGlyphId = [], charCode;
+      var charCodeToGlyphId = [], charCode, k, kk, l, ll;
       if (properties.type == 'CIDFontType2') {
         var cidToGidMap = properties.cidToGidMap || [];
-        var cMap = properties.cMap.map;
-        for (charCode in cMap) {
-          charCode |= 0;
-          var cid = cMap[charCode];
-          assert(cid.length === 1, 'Max size of CID is 65,535');
-          cid = cid.charCodeAt(0);
-          var glyphId = -1;
-          if (cidToGidMap.length === 0) {
-            glyphId = charCode;
-          } else if (cid in cidToGidMap) {
-            glyphId = cidToGidMap[cid];
+        var cMap = properties.cMap;
+        var csRanges = cMap.codespaceRanges;
+        
+        // Only check CIDs that are in the codespace ranges
+        for (k = 0, kk = csRanges.length; k < kk; k++) {
+          if (csRanges[k].length === 0) {
+            continue;
           }
-          if (glyphId >= 0 && glyphId < numGlyphs) {
-            charCodeToGlyphId[charCode] = glyphId;
+          for (l = csRanges[k][0], ll = csRanges[k][1]; l <= ll; l++) {
+            var cid = cMap.map[l];
+            if (!cid) {
+              continue;
+            }
+            assert(cid.length === 1, 'Max size of CID is 65,535');
+            cid = cid.charCodeAt(0);
+            var glyphId = -1;
+            if (cidToGidMap.length === 0) {
+              glyphId = l;
+            } else if (cid in cidToGidMap) {
+              glyphId = cidToGidMap[cid];
+            }
+            if (glyphId >= 0 && glyphId < numGlyphs) {
+              charCodeToGlyphId[l] = glyphId;
+            }
           }
         }
         if (dupFirstEntry) {
