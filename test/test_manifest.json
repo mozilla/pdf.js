@@ -682,6 +682,14 @@
        "type": "eq",
        "about": "Seac with differences array that messes up mapping."
     },
+    {  "id": "bug866395",
+       "file": "pdfs/bug866395.pdf",
+       "md5": "f03bc77e84637241980b09a0a220f575",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "Font with an empty font file."
+    },
     {  "id": "ocs",
       "file": "pdfs/ocs.pdf",
       "md5": "2ade57e954ae7632749cf328daeaa7a8",
