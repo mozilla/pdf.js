@@ -35,6 +35,9 @@ var Stream = (function StreamClosure() {
     get length() {
       return this.end - this.start;
     },
+    get isEmpty() {
+      return this.length === 0;
+    },
     getByte: function Stream_getByte() {
       if (this.pos >= this.end) {
         return -1;
@@ -128,6 +131,12 @@ var DecodeStream = (function DecodeStreamClosure() {
   }
 
   DecodeStream.prototype = {
+    get isEmpty() {
+      while (!this.eof && this.bufferLength === 0) {
+        this.readBlock();
+      }
+      return this.bufferLength === 0;
+    },
     ensureBuffer: function DecodeStream_ensureBuffer(requested) {
       var buffer = this.buffer;
       var current;
@@ -213,7 +222,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       }
       return new Stream(this.buffer, start, length, dict);
     },
-    skip: function Stream_skip(n) {
+    skip: function DecodeStream_skip(n) {
       if (!n) {
         n = 1;
       }
