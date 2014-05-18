@@ -69,6 +69,18 @@ describe('api', function() {
                                           0, 841.89, null] });
       });
     });
+    it('gets attachments', function() {
+      var promise = doc.getAttachments();
+      waitsForPromise(promise, function (data) {
+        expect(data).toEqual(null);
+      });
+    });
+    it('gets javascript', function() {
+      var promise = doc.getJavaScript();
+      waitsForPromise(promise, function (data) {
+        expect(data).toEqual([]);
+      });
+    });
     it('gets outline', function() {
       var promise = doc.getOutline();
       waitsForPromise(promise, function(outline) {
@@ -91,6 +103,12 @@ describe('api', function() {
       var promise = doc.getData();
       waitsForPromise(promise, function (data) {
         expect(true).toEqual(true);
+      });
+    });
+    it('gets filesize in bytes', function() {
+      var promise = doc.getDownloadInfo();
+      waitsForPromise(promise, function (data) {
+        expect(data.length).toEqual(105779);
       });
     });
   });
