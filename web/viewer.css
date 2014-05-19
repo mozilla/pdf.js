@@ -546,7 +546,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .secondaryToolbarButton,
 .overlayButton {
   border: 0 none;
-  background-color: rgba(0, 0, 0, 0);
+  background: none;
   width: 32px;
   height: 25px;
 }
