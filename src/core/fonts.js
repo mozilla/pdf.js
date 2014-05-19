@@ -2204,7 +2204,13 @@ var Font = (function FontClosure() {
       this.defaultVMetrics = properties.defaultVMetrics;
     }
 
-    if (!file) {
+    if (!file || file.isEmpty) {
+      if (file) {
+        // Some bad PDF generators will include empty font files,
+        // attempting to recover by assuming that no file exists.
+        warn('Font file is empty in "' + name + '" (' + this.loadedName + ')');
+      }
+
       this.missingFile = true;
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.

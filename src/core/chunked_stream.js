@@ -133,6 +133,10 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return this.end - this.start;
     },
 
+    get isEmpty() {
+      return this.length === 0;
+    },
+
     getByte: function ChunkedStream_getByte() {
       var pos = this.pos;
       if (pos >= this.end) {
