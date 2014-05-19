@@ -44,8 +44,6 @@ var SecondaryToolbar = {
 
     // Attach the event listeners.
     var elements = [
-      // Button to toggle the visibility of the secondary toolbar:
-      { element: this.toggleButton, handler: this.toggle },
       // All items within the secondary toolbar
       // (except for toggleHandTool, hand_tool.js is responsible for it):
       { element: this.presentationModeButton,
@@ -68,6 +66,15 @@ var SecondaryToolbar = {
         element.addEventListener('click', elements[item].handler.bind(this));
       }
     }
+
+    this.toggleButton.addEventListener('mousedown', function (evt) {
+      if (evt.button !== 0) {
+        return;
+      }
+      this.toggle();
+
+      window.addEventListener('mouseup', this.mouseUp);
+    }.bind(this));
   },
 
   // Event handling functions.
@@ -157,6 +164,24 @@ var SecondaryToolbar = {
       this.close();
     } else {
       this.open();
+    }
+  },
+
+  mouseUp: function secondaryToolbarMouseUp(evt) {
+    var self = SecondaryToolbar;
+    window.removeEventListener('mouseup', self.mouseUp);
+
+    if (evt.button !== 0) {
+      return;
+    }
+    var target = evt.target;
+
+    if (target === self.toggleButton) {
+      return;
+    } else if (self.toolbar.contains(target)) {
+      target.click();
+    } else {
+      self.close();
     }
   }
 };
