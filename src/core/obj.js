@@ -449,7 +449,7 @@ var Catalog = (function CatalogClosure() {
     },
     get attachments() {
       var xref = this.xref;
-      var attachments, nameTreeRef;
+      var attachments = null, nameTreeRef;
       var obj = this.catDict.get('Names');
       if (obj) {
         nameTreeRef = obj.getRaw('EmbeddedFiles');
