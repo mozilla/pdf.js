@@ -513,7 +513,6 @@ var Catalog = (function CatalogClosure() {
       });
       return Promise.all(promises).then(function (fonts) {
         for (var i = 0, ii = fonts.length; i < ii; i++) {
-          delete fonts[i].sent;
           delete fonts[i].translated;
         }
         this.fontCache.clear();
