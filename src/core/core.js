@@ -156,13 +156,6 @@ var Page = (function PageClosure() {
 
     getOperatorList: function Page_getOperatorList(handler, intent) {
       var self = this;
-      var capability = createPromiseCapability();
-
-      function reject(e) {
-        capability.reject(e);
-      }
-
-      var pageListCapability = createPromiseCapability();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
@@ -184,9 +177,8 @@ var Page = (function PageClosure() {
                                                   this.idCounters,
                                                   this.fontCache);
 
-      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise],
-                                     reject);
-      dataPromises.then(function(data) {
+      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+      var pageListPromise = dataPromises.then(function(data) {
         var contentStream = data[0];
         var opList = new OperatorList(intent, handler, self.pageIndex);
 
@@ -195,31 +187,30 @@ var Page = (function PageClosure() {
           pageIndex: self.pageIndex,
           intent: intent
         });
-        partialEvaluator.getOperatorList(contentStream, self.resources, opList);
-        pageListCapability.resolve(opList);
+        return partialEvaluator.getOperatorList(contentStream, self.resources,
+          opList).then(function () {
+            return opList;
+          });
       });
 
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
-      Promise.all([pageListCapability.promise, annotationsPromise]).then(
+      return Promise.all([pageListPromise, annotationsPromise]).then(
           function(datas) {
         var pageOpList = datas[0];
         var annotations = datas[1];
 
         if (annotations.length === 0) {
           pageOpList.flush(true);
-          capability.resolve(pageOpList);
-          return;
+          return pageOpList;
         }
 
         var annotationsReadyPromise = Annotation.appendToOperatorList(
           annotations, pageOpList, pdfManager, partialEvaluator, intent);
-        annotationsReadyPromise.then(function () {
+        return annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
-          capability.resolve(pageOpList);
-        }, reject);
-      }, reject);
-
-      return capability.promise;
+          return pageOpList;
+        });
+      });
     },
 
     extractTextContent: function Page_extractTextContent() {

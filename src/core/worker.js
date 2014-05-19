@@ -387,8 +387,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     });
 
     handler.on('Cleanup', function wphCleanup(data) {
-      pdfManager.cleanup();
-      return true;
+      return pdfManager.cleanup();
     });
 
     handler.on('Terminate', function wphTerminate(data) {
