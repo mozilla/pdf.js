@@ -983,10 +983,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.lineTo(x, y);
             break;
           case OPS.curveTo:
-            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
-                              args[j + 4], args[j + 5]);
             x = args[j + 4];
             y = args[j + 5];
+            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
+                              x, y);
             j += 6;
             break;
           case OPS.curveTo2:
@@ -997,10 +997,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             j += 4;
             break;
           case OPS.curveTo3:
-            ctx.bezierCurveTo(args[j], args[j + 1], args[j + 2], args[j + 3],
-                              args[j + 2], args[j + 3]);
             x = args[j + 2];
             y = args[j + 3];
+            ctx.bezierCurveTo(args[j], args[j + 1], x, y, x, y);
             j += 4;
             break;
           case OPS.closePath:
@@ -1068,21 +1067,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (this.pendingEOFill) {
-        if ('mozFillRule' in this.ctx) {
-          this.ctx.mozFillRule = 'evenodd';
-          this.ctx.fill();
-          this.ctx.mozFillRule = 'nonzero';
+        if (ctx.mozFillRule !== undefined) {
+          ctx.mozFillRule = 'evenodd';
+          ctx.fill();
+          ctx.mozFillRule = 'nonzero';
         } else {
           try {
-            this.ctx.fill('evenodd');
+            ctx.fill('evenodd');
           } catch (ex) {
             // shouldn't really happen, but browsers might think differently
-            this.ctx.fill();
+            ctx.fill();
           }
         }
         this.pendingEOFill = false;
       } else {
-        this.ctx.fill();
+        ctx.fill();
       }
 
       if (needRestore) {
@@ -1134,12 +1133,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.y = this.current.lineY = 0;
     },
     endText: function CanvasGraphics_endText() {
-      if (!('pendingTextPaths' in this)) {
-        this.ctx.beginPath();
-        return;
-      }
       var paths = this.pendingTextPaths;
       var ctx = this.ctx;
+      if (paths === undefined) {
+        ctx.beginPath();
+        return;
+      }
 
       ctx.save();
       ctx.beginPath();
@@ -1803,7 +1802,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.ctx = this.groupStack.pop();
       // Turn off image smoothing to avoid sub pixel interpolation which can
       // look kind of blurry for some pdfs.
-      if ('imageSmoothingEnabled' in this.ctx) {
+      if (this.ctx.imageSmoothingEnabled !== undefined) {
         this.ctx.imageSmoothingEnabled = false;
       } else {
         this.ctx.mozImageSmoothingEnabled = false;
@@ -2145,26 +2144,27 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // Helper functions
 
     consumePath: function CanvasGraphics_consumePath() {
+      var ctx = this.ctx;
       if (this.pendingClip) {
         if (this.pendingClip == EO_CLIP) {
-          if ('mozFillRule' in this.ctx) {
-            this.ctx.mozFillRule = 'evenodd';
-            this.ctx.clip();
-            this.ctx.mozFillRule = 'nonzero';
+          if (ctx.mozFillRule !== undefined) {
+            ctx.mozFillRule = 'evenodd';
+            ctx.clip();
+            ctx.mozFillRule = 'nonzero';
           } else {
             try {
-              this.ctx.clip('evenodd');
+              ctx.clip('evenodd');
             } catch (ex) {
               // shouldn't really happen, but browsers might think differently
-              this.ctx.clip();
+              ctx.clip();
             }
           }
         } else {
-          this.ctx.clip();
+          ctx.clip();
         }
         this.pendingClip = null;
       }
-      this.ctx.beginPath();
+      ctx.beginPath();
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
       var inverse = this.ctx.mozCurrentTransformInverse;
