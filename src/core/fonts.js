@@ -2118,23 +2118,23 @@ function adjustWidths(properties) {
 }
 
 var Glyph = (function GlyphClosure() {
-  function Glyph(fontChar, unicode, accent, width, vmetric, operatorList) {
+  function Glyph(fontChar, unicode, accent, width, vmetric, operatorListId) {
     this.fontChar = fontChar;
     this.unicode = unicode;
     this.accent = accent;
     this.width = width;
     this.vmetric = vmetric;
-    this.operatorList = operatorList;
+    this.operatorListId = operatorListId;
   }
 
   Glyph.prototype.matchesForCache =
-      function(fontChar, unicode, accent, width, vmetric, operatorList) {
+      function(fontChar, unicode, accent, width, vmetric, operatorListId) {
     return this.fontChar === fontChar &&
            this.unicode === unicode &&
            this.accent === accent &&
            this.width === width &&
            this.vmetric === vmetric &&
-           this.operatorList === operatorList;
+           this.operatorListId === operatorListId;
   };
 
   return Glyph;
@@ -2154,8 +2154,7 @@ var Font = (function FontClosure() {
 
     this.name = name;
     this.loadedName = properties.loadedName;
-    this.coded = properties.coded;
-    this.loadCharProcs = properties.coded;
+    this.isType3Font = properties.isType3Font;
     this.sizes = [];
 
     this.glyphCache = {};
@@ -4376,7 +4375,7 @@ var Font = (function FontClosure() {
     },
 
     charToGlyph: function Font_charToGlyph(charcode) {
-      var fontCharCode, width, operatorList;
+      var fontCharCode, width, operatorListId;
 
       var widthCode = charcode;
       if (this.cMap && charcode in this.cMap.map) {
@@ -4398,9 +4397,9 @@ var Font = (function FontClosure() {
         fontCharCode = mapSpecialUnicodeValues(fontCharCode);
       }
 
-      if (this.type === 'Type3') {
+      if (this.isType3Font) {
         // Font char code in this case is actually a glyph name.
-        operatorList = this.charProcOperatorList[fontCharCode];
+        operatorListId = fontCharCode;
       }
 
       var accent = null;
@@ -4418,9 +4417,9 @@ var Font = (function FontClosure() {
       var glyph = this.glyphCache[charcode];
       if (!glyph ||
           !glyph.matchesForCache(fontChar, unicode, accent, width, vmetric,
-                                 operatorList)) {
+                                 operatorListId)) {
         glyph = new Glyph(fontChar, unicode, accent, width, vmetric,
-                          operatorList);
+                          operatorListId);
         this.glyphCache[charcode] = glyph;
       }
       return glyph;
@@ -4485,6 +4484,8 @@ var Font = (function FontClosure() {
 var ErrorFont = (function ErrorFontClosure() {
   function ErrorFont(error) {
     this.error = error;
+    this.loadedName = 'g_font_error';
+    this.loading = false;
   }
 
   ErrorFont.prototype = {

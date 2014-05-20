@@ -1195,7 +1195,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.font = fontObj;
       this.current.fontSize = size;
 
-      if (fontObj.coded) {
+      if (fontObj.isType3Font) {
         return; // we don't need ctx.font for Type3 fonts
       }
 
@@ -1342,7 +1342,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       // Type3 fonts - each glyph is a "mini-PDF"
-      if (font.coded) {
+      if (font.isType3Font) {
         ctx.save();
         ctx.transform.apply(ctx, current.textMatrix);
         ctx.translate(current.x, current.y);
@@ -1362,7 +1362,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform.apply(ctx, fontMatrix);
-          this.executeOperatorList(glyph.operatorList);
+          var operatorList = font.charProcOperatorList[glyph.operatorListId];
+          this.executeOperatorList(operatorList);
           this.restore();
 
           var transformed = Util.applyTransform([glyph.width, 0], fontMatrix);
