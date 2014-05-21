@@ -131,13 +131,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         };
 
         var groupSubtype = group.get('S');
+        var colorSpace;
         if (isName(groupSubtype) && groupSubtype.name === 'Transparency') {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
-          var colorSpace = group.get('CS');
-          groupOptions.colorSpace = (colorSpace ?
-            ColorSpace.parseToIR(colorSpace, this.xref, resources) : null);
+          colorSpace = (group.has('CS') ?
+            ColorSpace.parse(group.get('CS'), this.xref, resources) : null);
         }
+
+        if (smask && smask.backdrop) {
+          colorSpace = colorSpace || ColorSpace.singletons.rgb;
+          smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
+        }
+
         operatorList.addOp(OPS.beginGroup, [groupOptions]);
       }
 
@@ -552,6 +558,36 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
     },
 
+    handleColorN: function PartialEvaluator_handleColorN(operatorList, fn, args,
+          cs, patterns, resources, xref) {
+      // compile tiling patterns
+      var patternName = args[args.length - 1];
+      // SCN/scn applies patterns along with normal colors
+      var pattern;
+      if (isName(patternName) &&
+          (pattern = patterns.get(patternName.name))) {
+        var dict = (isStream(pattern) ? pattern.dict : pattern);
+        var typeNum = dict.get('PatternType');
+
+        if (typeNum == TILING_PATTERN) {
+          var color = cs.base ? cs.base.getRgb(args, 0) : null;
+          return this.handleTilingType(fn, color, resources, pattern,
+                                       dict, operatorList);
+        } else if (typeNum == SHADING_PATTERN) {
+          var shading = dict.get('Shading');
+          var matrix = dict.get('Matrix');
+          pattern = Pattern.parseShading(shading, matrix, xref, resources);
+          operatorList.addOp(fn, pattern.getIR());
+          return Promise.resolve();
+        } else {
+          return Promise.reject('Unknown PatternType: ' + typeNum);
+        }
+      }
+      // TODO shall we fail here?
+      operatorList.addOp(fn, args);
+      return Promise.resolve();
+    },
+
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
                                                                resources,
                                                                operatorList,
@@ -568,49 +604,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var patterns = (resources.get('Pattern') || Dict.empty);
       var stateManager = new StateManager(initialState || new EvalState());
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
-      var shading;
       var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function next(resolve, reject) {
         timeSlotManager.reset();
-        var stop, operation, i, ii;
+        var stop, operation, i, ii, cs;
         while (!(stop = timeSlotManager.check()) &&
                (operation = preprocessor.read())) {
           var args = operation.args;
           var fn = operation.fn;
 
           switch (fn | 0) {
-            case OPS.setStrokeColorN:
-            case OPS.setFillColorN:
-              if (args[args.length - 1].code) {
-                break;
-              }
-              // compile tiling patterns
-              var patternName = args[args.length - 1];
-              // SCN/scn applies patterns along with normal colors
-              var pattern;
-              if (isName(patternName) &&
-                  (pattern = patterns.get(patternName.name))) {
-                var dict = (isStream(pattern) ? pattern.dict : pattern);
-                var typeNum = dict.get('PatternType');
-
-                if (typeNum == TILING_PATTERN) {
-                  return self.handleTilingType(fn, args, resources, pattern,
-                                               dict, operatorList).then(
-                    function() {
-                      next(resolve, reject);
-                    }, reject);
-                } else if (typeNum == SHADING_PATTERN) {
-                  shading = dict.get('Shading');
-                  var matrix = dict.get('Matrix');
-                  pattern = Pattern.parseShading(shading, matrix, xref,
-                    resources);
-                  args = pattern.getIR();
-                } else {
-                  error('Unknown PatternType ' + typeNum);
-                }
-              }
-              break;
             case OPS.paintXObject:
               if (args[0].code) {
                 break;
@@ -692,18 +696,83 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.setTextRenderingMode:
               stateManager.state.textRenderingMode = args[0];
               break;
-            // Parse the ColorSpace data to a raw format.
+
             case OPS.setFillColorSpace:
+              stateManager.state.fillColorSpace =
+                ColorSpace.parse(args[0], xref, resources);
+              continue;
             case OPS.setStrokeColorSpace:
-              args = [ColorSpace.parseToIR(args[0], xref, resources)];
+              stateManager.state.strokeColorSpace =
+                ColorSpace.parse(args[0], xref, resources);
+              continue;
+            case OPS.setFillColor:
+              cs = stateManager.state.fillColorSpace;
+              args = cs.getRgb(args, 0);
+              fn = OPS.setFillRGBColor;
               break;
+            case OPS.setStrokeColor:
+              cs = stateManager.state.strokeColorSpace;
+              args = cs.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+            case OPS.setFillGray:
+              stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
+              args = ColorSpace.singletons.gray.getRgb(args, 0);
+              fn = OPS.setFillRGBColor;
+              break;
+            case OPS.setStrokeGray:
+              stateManager.state.strokeColorSpace = ColorSpace.singletons.gray;
+              args = ColorSpace.singletons.gray.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+            case OPS.setFillCMYKColor:
+              stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
+              args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+              fn = OPS.setFillRGBColor;
+              break;
+            case OPS.setStrokeCMYKColor:
+              stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
+              args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+            case OPS.setFillRGBColor:
+              stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
+              args = ColorSpace.singletons.rgb.getRgb(args, 0);
+              break;
+            case OPS.setStrokeRGBColor:
+              stateManager.state.strokeColorSpace = ColorSpace.singletons.rgb;
+              args = ColorSpace.singletons.rgb.getRgb(args, 0);
+              break;
+            case OPS.setFillColorN:
+              cs = stateManager.state.fillColorSpace;
+              if (cs.name === 'Pattern') {
+                return self.handleColorN(operatorList, OPS.setFillColorN,
+                  args, cs, patterns, resources, xref).then(function() {
+                    next(resolve, reject);
+                  }, reject);
+              }
+              args = cs.getRgb(args, 0);
+              fn = OPS.setFillRGBColor;
+              break;
+            case OPS.setStrokeColorN:
+              cs = stateManager.state.strokeColorSpace;
+              if (cs.name === 'Pattern') {
+                return self.handleColorN(operatorList, OPS.setStrokeColorN,
+                  args, cs, patterns, resources, xref).then(function() {
+                    next(resolve, reject);
+                  }, reject);
+              }
+              args = cs.getRgb(args, 0);
+              fn = OPS.setStrokeRGBColor;
+              break;
+
             case OPS.shadingFill:
               var shadingRes = resources.get('Shading');
               if (!shadingRes) {
                 error('No shading resource found');
               }
 
-              shading = shadingRes.get(args[0].name);
+              var shading = shadingRes.get(args[0].name);
               if (!shading) {
                 error('No shading object found');
               }
@@ -1840,6 +1909,8 @@ var EvalState = (function EvalStateClosure() {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
     this.textRenderingMode = TextRenderingMode.FILL;
+    this.fillColorSpace = ColorSpace.singletons.gray;
+    this.strokeColorSpace = ColorSpace.singletons.gray;
   }
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {

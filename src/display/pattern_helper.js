@@ -291,7 +291,6 @@ var TilingPattern = (function TilingPatternClosure() {
   var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
   function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
-    this.name = IR[1][0].name;
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
     this.bbox = IR[4];
@@ -401,8 +400,7 @@ var TilingPattern = (function TilingPatternClosure() {
             context.strokeStyle = ctx.strokeStyle;
             break;
           case PaintType.UNCOLORED:
-            var rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
-            var cssColor = Util.makeCssRgb(rgbColor);
+            var cssColor = Util.makeCssRgb(color);
             context.fillStyle = cssColor;
             context.strokeStyle = cssColor;
             break;
