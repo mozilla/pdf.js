@@ -511,9 +511,10 @@ var Catalog = (function CatalogClosure() {
       this.fontCache.forEach(function (promise) {
         promises.push(promise);
       });
-      return Promise.all(promises).then(function (fonts) {
-        for (var i = 0, ii = fonts.length; i < ii; i++) {
-          delete fonts[i].translated;
+      return Promise.all(promises).then(function (translatedFonts) {
+        for (var i = 0, ii = translatedFonts.length; i < ii; i++) {
+          var font = translatedFonts[i].dict;
+          delete font.translated;
         }
         this.fontCache.clear();
       }.bind(this));
