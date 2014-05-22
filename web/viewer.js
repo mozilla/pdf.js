@@ -1983,6 +1983,8 @@ function updateViewarea() {
       'zoom': normalizedScaleValue,
       'scrollLeft': intLeft,
       'scrollTop': intTop
+    }).catch(function() {
+      // unable to write to storage
     });
   });
   var href = PDFView.getAnchorUrl(pdfOpenParams);
