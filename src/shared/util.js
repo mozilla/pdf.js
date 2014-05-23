@@ -531,11 +531,6 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
   };
 
-  Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
-    var rgb = ColorSpace.singletons.cmyk.getRgb(cmyk, 0);
-    return Util.makeCssRgb(rgb);
-  };
-
   // Concatenates two transformation matrices together and returns the result.
   Util.transform = function Util_transform(m1, m2) {
     return [
@@ -966,20 +961,6 @@ function isArrayBuffer(v) {
 
 function isRef(v) {
   return v instanceof Ref;
-}
-
-function isPDFFunction(v) {
-  var fnDict;
-  if (typeof v != 'object') {
-    return false;
-  } else if (isDict(v)) {
-    fnDict = v;
-  } else if (isStream(v)) {
-    fnDict = v.dict;
-  } else {
-    return false;
-  }
-  return fnDict.has('FunctionType');
 }
 
 /**

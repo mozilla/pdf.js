@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PostScriptLexer, PostScriptParser, error, info, isArray, isBool */
+/* globals PostScriptLexer, PostScriptParser, error, info, isArray, isBool,
+           isDict, isStream */
 
 'use strict';
 
@@ -435,6 +436,20 @@ var PDFFunction = (function PDFFunctionClosure() {
     }
   };
 })();
+
+function isPDFFunction(v) {
+  var fnDict;
+  if (typeof v != 'object') {
+    return false;
+  } else if (isDict(v)) {
+    fnDict = v;
+  } else if (isStream(v)) {
+    fnDict = v.dict;
+  } else {
+    return false;
+  }
+  return fnDict.has('FunctionType');
+}
 
 var PostScriptStack = (function PostScriptStackClosure() {
   var MAX_STACK_SIZE = 100;

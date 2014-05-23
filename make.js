@@ -370,8 +370,6 @@ target.bundle = function(args) {
 
   var SHARED_SRC_FILES = [
     'shared/util.js',
-    'shared/colorspace.js',
-    'shared/function.js',
     'shared/annotation.js',
   ];
 
