@@ -55,55 +55,58 @@ var Parser = (function ParserClosure() {
       }
     },
     getObj: function Parser_getObj(cipherTransform) {
-      if (isCmd(this.buf1, 'BI')) { // inline image
-        this.shift();
-        return this.makeInlineImage(cipherTransform);
-      }
-      if (isCmd(this.buf1, '[')) { // array
-        this.shift();
-        var array = [];
-        while (!isCmd(this.buf1, ']') && !isEOF(this.buf1)) {
-          array.push(this.getObj(cipherTransform));
-        }
-        if (isEOF(this.buf1)) {
-          error('End of file inside array');
-        }
-        this.shift();
-        return array;
-      }
-      if (isCmd(this.buf1, '<<')) { // dictionary or stream
-        this.shift();
-        var dict = new Dict(this.xref);
-        while (!isCmd(this.buf1, '>>') && !isEOF(this.buf1)) {
-          if (!isName(this.buf1)) {
-            info('Malformed dictionary: key must be a name object');
+      var buf1 = this.buf1;
+      this.shift();
+
+      if (buf1 instanceof Cmd) {
+        switch (buf1.cmd) {
+          case 'BI': // inline image
+            return this.makeInlineImage(cipherTransform);
+          case '[': // array
+            var array = [];
+            while (!isCmd(this.buf1, ']') && !isEOF(this.buf1)) {
+              array.push(this.getObj(cipherTransform));
+            }
+            if (isEOF(this.buf1)) {
+              error('End of file inside array');
+            }
             this.shift();
-            continue;
-          }
+            return array;
+          case '<<': // dictionary or stream
+            var dict = new Dict(this.xref);
+            while (!isCmd(this.buf1, '>>') && !isEOF(this.buf1)) {
+              if (!isName(this.buf1)) {
+                info('Malformed dictionary: key must be a name object');
+                this.shift();
+                continue;
+              }
 
-          var key = this.buf1.name;
-          this.shift();
-          if (isEOF(this.buf1)) {
-            break;
-          }
-          dict.set(key, this.getObj(cipherTransform));
-        }
-        if (isEOF(this.buf1)) {
-          error('End of file inside dictionary');
-        }
+              var key = this.buf1.name;
+              this.shift();
+              if (isEOF(this.buf1)) {
+                break;
+              }
+              dict.set(key, this.getObj(cipherTransform));
+            }
+            if (isEOF(this.buf1)) {
+              error('End of file inside dictionary');
+            }
 
-        // Stream objects are not allowed inside content streams or
-        // object streams.
-        if (isCmd(this.buf2, 'stream')) {
-          return (this.allowStreams ?
-                  this.makeStream(dict, cipherTransform) : dict);
+            // Stream objects are not allowed inside content streams or
+            // object streams.
+            if (isCmd(this.buf2, 'stream')) {
+              return (this.allowStreams ?
+                      this.makeStream(dict, cipherTransform) : dict);
+            }
+            this.shift();
+            return dict;
+          default: // simple object
+            return buf1;
         }
-        this.shift();
-        return dict;
       }
-      if (isInt(this.buf1)) { // indirect reference or integer
-        var num = this.buf1;
-        this.shift();
+
+      if (isInt(buf1)) { // indirect reference or integer
+        var num = buf1;
         if (isInt(this.buf1) && isCmd(this.buf2, 'R')) {
           var ref = new Ref(num, this.buf1);
           this.shift();
@@ -112,9 +115,9 @@ var Parser = (function ParserClosure() {
         }
         return num;
       }
-      if (isString(this.buf1)) { // string
-        var str = this.buf1;
-        this.shift();
+
+      if (isString(buf1)) { // string
+        var str = buf1;
         if (cipherTransform) {
           str = cipherTransform.decryptString(str);
         }
@@ -122,9 +125,7 @@ var Parser = (function ParserClosure() {
       }
 
       // simple object
-      var obj = this.buf1;
-      this.shift();
-      return obj;
+      return buf1;
     },
     makeInlineImage: function Parser_makeInlineImage(cipherTransform) {
       var lexer = this.lexer;
@@ -629,7 +630,7 @@ var Lexer = (function LexerClosure() {
           var x = toHexDigit(ch);
           if (x != -1) {
             var x2 = toHexDigit(this.nextChar());
-            if (x2 == -1) {
+            if (x2 === -1) {
               error('Illegal digit in hex char in name: ' + x2);
             }
             strBuf.push(String.fromCharCode((x << 4) | x2));
@@ -695,7 +696,7 @@ var Lexer = (function LexerClosure() {
           return EOF;
         }
         if (comment) {
-          if (ch === 0x0A || ch == 0x0D) { // LF, CR
+          if (ch === 0x0A || ch === 0x0D) { // LF, CR
             comment = false;
           }
         } else if (ch === 0x25) { // '%'
@@ -762,19 +763,19 @@ var Lexer = (function LexerClosure() {
         if (knownCommandFound && !(possibleCommand in knownCommands)) {
           break;
         }
-        if (str.length == 128) {
+        if (str.length === 128) {
           error('Command token too long: ' + str.length);
         }
         str = possibleCommand;
         knownCommandFound = knownCommands && (str in knownCommands);
       }
-      if (str == 'true') {
+      if (str === 'true') {
         return true;
       }
-      if (str == 'false') {
+      if (str === 'false') {
         return false;
       }
-      if (str == 'null') {
+      if (str === 'null') {
         return null;
       }
       return Cmd.get(str);
