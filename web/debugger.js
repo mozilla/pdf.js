@@ -246,26 +246,7 @@ var Stepper = (function StepperClosure() {
     return d;
   }
 
-  function glyphsToString(glyphs) {
-    var out = '';
-    for (var i = 0; i < glyphs.length; i++) {
-      if (glyphs[i] === null) {
-        out += ' ';
-      } else {
-        out += glyphs[i].fontChar;
-      }
-    }
-    return out;
-  }
-
   var opMap = null;
-
-  var glyphCommands = {
-    'showText': 0,
-    'showSpacedText': 0,
-    'nextLineShowText': 0,
-    'nextLineSetSpacingShowText': 2
-  };
 
   function simplifyArgs(args) {
     if (typeof args === 'string') {
@@ -367,24 +348,26 @@ var Stepper = (function StepperClosure() {
         line.appendChild(c('td', i.toString()));
         var fn = opMap[operatorList.fnArray[i]];
         var decArgs = args;
-        if (fn in glyphCommands) {
-          var glyphIndex = glyphCommands[fn];
-          var glyphs = args[glyphIndex];
-          decArgs = args.slice();
-          var newArg;
-          if (fn === 'showSpacedText') {
-            newArg = [];
-            for (var j = 0; j < glyphs.length; j++) {
-              if (typeof glyphs[j] === 'number') {
-                newArg.push(glyphs[j]);
-              } else {
-                newArg.push(glyphsToString(glyphs[j]));
+        if (fn === 'showText') {
+          var glyphs = args[0];
+          var newArgs = [];
+          var str = [];
+          for (var j = 0; j < glyphs.length; j++) {
+            var glyph = glyphs[j];
+            if (typeof glyph === 'object' && glyph !== null) {
+              str.push(glyph.fontChar);
+            } else {
+              if (str.length > 0) {
+                newArgs.push(str.join(''));
+                str = [];
               }
+              newArgs.push(glyph); // null or number
             }
-          } else {
-            newArg = glyphsToString(glyphs);
           }
-          decArgs[glyphIndex] = newArg;
+          if (str.length > 0) {
+            newArgs.push(str.join(''));
+          }
+          decArgs = [newArgs];
         }
         line.appendChild(c('td', fn));
         line.appendChild(c('td', JSON.stringify(simplifyArgs(decArgs))));
