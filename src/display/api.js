@@ -141,6 +141,14 @@ PDFJS.verbosity = (PDFJS.verbosity === undefined ?
                    PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity);
 
 /**
+ * The maximum supported canvas size in total pixels e.g. width * height. 
+ * The default value is 4096 * 4096. Use -1 for no limit.
+ * @var {number}
+ */
+PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
+                         16777216 : PDFJS.maxCanvasPixels);
+
+/**
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
