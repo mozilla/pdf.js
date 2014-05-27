@@ -23,12 +23,17 @@ body {
     overflow: hidden;
 }
 
-.textLayer > div {
+.textLayer > div,
+.textLayer > div > a {
     color: transparent;
     position: absolute;
     line-height: 1;
     white-space: pre;
     cursor: text;
+}
+
+.textLayer > div > a {
+    cursor: pointer;
 }
 
 .textLayer .highlight {

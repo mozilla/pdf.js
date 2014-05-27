@@ -74,7 +74,8 @@ window.onload = function () {
       var textLayer = new TextLayerBuilder({
         textLayerDiv: $textLayerDiv.get(0),
         viewport: viewport,
-        pageIndex: 0
+        pageIndex: 0,
+        autoLink: true
       });
       textLayer.setTextContent(textContent);
 

@@ -41,6 +41,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
   this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
   this.textDivs = [];
+  this.autoLink = options.autoLink || false;
 
   if (typeof PDFFindController === 'undefined') {
     window.PDFFindController = null;
@@ -132,7 +133,12 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     textDiv.style.fontSize = fontHeight + 'px';
     textDiv.style.fontFamily = style.fontFamily;
 
-    textDiv.textContent = geom.str;
+    if (this.autoLink) {
+      Linker.link(geom.str, textDiv)
+    } else {
+      textDiv.textContent = geom.str;
+    }
+
     textDiv.dataset.fontName = geom.fontName;
     textDiv.dataset.angle = angle * (180 / Math.PI);
     if (style.vertical) {
