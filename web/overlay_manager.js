@@ -24,7 +24,7 @@ var OverlayManager = {
 
   /**
    * @param {string} name The name of the overlay that is registered. This must
-   *                 be the equal to the ID of the overlay's DOM element.
+   *                 be equal to the ID of the overlay's DOM element.
    * @param {function} callerCloseMethod (optional) The method that, if present,
    *                   will call OverlayManager.close from the Object
    *                   registering the overlay. Access to this method is
