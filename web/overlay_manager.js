@@ -128,6 +128,7 @@ var OverlayManager = {
     var self = OverlayManager;
     if (self.active && evt.keyCode === 27) { // Esc key.
       self._closeThroughCaller();
+      evt.preventDefault();
     }
   },
 
