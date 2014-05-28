@@ -503,6 +503,22 @@ var Catalog = (function CatalogClosure() {
           javaScript.push(stringToPDFString(js));
         }
       }
+
+      // Append OpenAction actions to javaScript array
+      var openactionDict = this.catDict.get('OpenAction');
+      if (isDict(openactionDict)) {
+        var objType = openactionDict.get('Type');
+        var actionType = openactionDict.get('S');
+        var action = openactionDict.get('N');
+        var isPrintAction = (isName(objType) && objType.name === 'Action' &&
+                            isName(actionType) && actionType.name === 'Named' &&
+                            isName(action) && action.name === 'Print');
+        
+        if (isPrintAction) {
+          javaScript.push('print(true);');
+        }
+      }
+
       return shadow(this, 'javaScript', javaScript);
     },
 
