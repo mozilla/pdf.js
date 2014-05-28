@@ -64,9 +64,12 @@ var FirefoxCom = (function FirefoxComClosure() {
       document.documentElement.appendChild(request);
 
       var sender = document.createEvent('CustomEvent');
-      sender.initCustomEvent('pdf.js.message', true, false,
-                             {action: action, data: data, sync: false,
-                              callback: callback});
+      sender.initCustomEvent('pdf.js.message', true, false, {
+        action: action,
+        data: data,
+        sync: false,
+        responseExpected: !!callback
+      });
       return request.dispatchEvent(sender);
     }
   };
