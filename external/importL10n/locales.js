@@ -39,6 +39,10 @@ var langCodes = [
   'zh-TW', 'zu'
 ];
 
+function normalizeText(s) {
+  return s.replace(/\r\n?/g, '\n').replace(/\uFEFF/g, '');
+}
+
 function downloadLanguageFiles(langCode, callback) {
   console.log('Downloading ' + langCode + '...');
 
@@ -60,12 +64,16 @@ function downloadLanguageFiles(langCode, callback) {
   // Download the necessary files for this language.
   files.forEach(function(fileName) {
     var outputPath = path.join(langCode, fileName);
-    var file = fs.createWriteStream(outputPath);
     var url = MOZCENTRAL_ROOT + langCode + MOZCENTRAL_PDFJS_DIR +
               fileName + MOZCENTRAL_RAW_FLAG;
     var request = http.get(url, function(response) {
-      response.pipe(file);
+      var content = '';
+      response.setEncoding('utf8');
+      response.on("data", function(chunk) {
+        content += chunk;
+      });
       response.on('end', function() {
+        fs.writeFileSync(outputPath, normalizeText(content), 'utf8');
         downloadsLeft--;
         if (downloadsLeft === 0) {
           callback();
