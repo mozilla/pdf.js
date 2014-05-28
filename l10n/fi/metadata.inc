@@ -1,4 +1,4 @@
-﻿    <em:localized>
+    <em:localized>
       <Description>
         <em:locale>fi</em:locale>
         <em:name>PDF Lukuohjelma</em:name>

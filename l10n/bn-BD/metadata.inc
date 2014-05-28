@@ -1,4 +1,4 @@
-﻿    <em:localized>
+    <em:localized>
       <Description>
         <em:locale>bn-BD</em:locale>
         <em:name>পিডিএফ ভিউয়ার</em:name>
