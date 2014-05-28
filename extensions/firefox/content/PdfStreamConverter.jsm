@@ -161,8 +161,14 @@ function getLocalizedString(strings, id, property) {
 }
 
 function makeContentReadable(obj, window) {
+//#if MOZCENTRAL
+  return Cu.cloneInto(obj, window);
+//#else
   if (Cu.cloneInto) {
     return Cu.cloneInto(obj, window);
+  }
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
   }
   var expose = {};
   for (let k in obj) {
@@ -170,6 +176,7 @@ function makeContentReadable(obj, window) {
   }
   obj.__exposedProps__ = expose;
   return obj;
+//#endif
 }
 
 // PDF data storage
@@ -698,7 +705,7 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
   return StandardChromeActions;
 })();
 
-// Event listener to trigger chrome privedged code.
+// Event listener to trigger chrome privileged code.
 function RequestListener(actions) {
   this.actions = actions;
 }
@@ -719,7 +726,7 @@ RequestListener.prototype.receive = function(event) {
     event.detail.response = response;
   } else {
     var response;
-    if (!event.detail.callback) {
+    if (!event.detail.responseExpected) {
       doc.documentElement.removeChild(message);
       response = null;
     } else {
