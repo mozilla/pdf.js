@@ -496,7 +496,9 @@ if (typeof PDFJS === 'undefined') {
   if ('requestAnimationFrame' in window) {
     return;
   }
-  window.requestAnimationFrame = window.webkitRequestAnimationFrame ||
+  window.requestAnimationFrame =
+    window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
     (function fakeRequestAnimationFrame(callback) {
       window.setTimeout(callback, 20);
     });
