@@ -160,7 +160,7 @@ if (typeof PDFJS === 'undefined') {
       value: function xmlHttpRequestOverrideMimeType(mimeType) {}
     });
   }
-  if ('response' in xhr || 'responseArrayBuffer' in xhr) {
+  if ('responseType' in xhr) {
     return;
   }
   // Support: IE9
@@ -189,7 +189,7 @@ if (typeof PDFJS === 'undefined') {
     for (i = 0; i < n; ++i) {
       result[i] = text.charCodeAt(i) & 0xFF;
     }
-    return result;
+    return result.buffer;
   }
   Object.defineProperty(xhrPrototype, 'response', { get: responseGetter });
 })();
