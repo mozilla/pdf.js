@@ -630,6 +630,7 @@ target.firefox = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
+      ['web/compatibility.js', FIREFOX_BUILD_CONTENT_DIR + '/web'],
       ['external/bcmaps/*', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
       [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
        FIREFOX_BUILD_CONTENT_DIR + '/web']
