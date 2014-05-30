@@ -655,6 +655,7 @@ function startServer() {
   server.host = host;
   server.port = options.port;
   server.root = '..';
+  server.cacheExpirationTime = 3600;
   server.start();
 }
 
