@@ -163,6 +163,10 @@ if (typeof PDFJS === 'undefined') {
   if ('responseType' in xhr) {
     return;
   }
+
+  // The worker will be using XHR, so we can save time and disable worker.
+  PDFJS.disableWorker = true;
+
   // Support: IE9
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
