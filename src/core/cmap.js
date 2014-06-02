@@ -222,8 +222,8 @@ var CMap = (function CMapClosure() {
     },
 
     mapRangeToArray: function(low, high, array) {
-      var i = 0;
-      while (low <= high) {
+      var i = 0, ii = array.length;
+      while (low <= high && i < ii) {
         this.map[low] = array[i++];
         ++low;
       }
