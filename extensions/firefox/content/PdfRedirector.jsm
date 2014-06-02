@@ -60,6 +60,10 @@ function getObjectUrl(window) {
   }
 
   // Checking if overlay is a proper PlayPreview overlay.
+  if (element.displayedType !== element.TYPE_NULL ||
+      element.pluginFallbackType !== element.PLUGIN_PLAY_PREVIEW) {
+    return null; // invalid plugin element overlay state
+  }
   for (var i = 0; i < element.children.length; i++) {
     if (element.children[i] === containerElement) {
       return null; // invalid plugin element overlay
