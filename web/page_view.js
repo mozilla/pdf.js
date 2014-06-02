@@ -17,7 +17,7 @@
 /* globals RenderingStates, PDFView, PDFHistory, PDFFindBar, PDFJS, mozL10n,
            CustomStyle, PresentationMode, scrollIntoView, SCROLLBAR_PADDING,
            CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale,
-           TextLayerBuilder, cache, Stats, USE_ONLY_CSS_ZOOM */
+           TextLayerBuilder, cache, Stats */
 
 'use strict';
 
@@ -119,7 +119,7 @@ var PageView = function pageView(container, id, scale,
       rotation: totalRotation
     });
 
-    if (USE_ONLY_CSS_ZOOM && this.canvas) {
+    if (PDFJS.useOnlyCssZoom && this.canvas) {
       this.cssTransform(this.canvas);
       return;
     } else if (this.canvas && !this.zoomLayer) {
@@ -195,7 +195,7 @@ var PageView = function pageView(container, id, scale,
       CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
     }
 
-    if (USE_ONLY_CSS_ZOOM && this.annotationLayer) {
+    if (PDFJS.useOnlyCssZoom && this.annotationLayer) {
       setupAnnotations(div, this.pdfPage, this.viewport);
     }
   };
@@ -492,7 +492,7 @@ var PageView = function pageView(container, id, scale,
     var ctx = canvas.getContext('2d');
     var outputScale = getOutputScale(ctx);
 
-    if (USE_ONLY_CSS_ZOOM) {
+    if (PDFJS.useOnlyCssZoom) {
       var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
       // Use a scale that will make the canvas be the original intended size
       // of the page.

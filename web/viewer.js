@@ -39,11 +39,10 @@ var VIEW_HISTORY_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
-var USE_ONLY_CSS_ZOOM = false;
 var CLEANUP_TIMEOUT = 30000;
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 //#if B2G
-//USE_ONLY_CSS_ZOOM = true;
+//PDFJS.useOnlyCssZoom = true;
 //PDFJS.disableTextLayer = true;
 //#endif
 var RenderingStates = {
@@ -225,12 +224,27 @@ var PDFView = {
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
-      }, function rejected(reason) {}),
+      }),
       Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         self.preferenceSidebarViewOnLoad = value;
-      }, function rejected(reason) {})
+      }),
+      Preferences.get('disableTextLayer').then(function resolved(value) {
+        PDFJS.disableTextLayer = value;
+      }),
+      Preferences.get('disableRange').then(function resolved(value) {
+        PDFJS.disableRange = value;
+      }),
+      Preferences.get('disableAutoFetch').then(function resolved(value) {
+        PDFJS.disableAutoFetch = value;
+      }),
+      Preferences.get('disableFontFace').then(function resolved(value) {
+        PDFJS.disableFontFace = value;
+      }),
+      Preferences.get('useOnlyCssZoom').then(function resolved(value) {
+        PDFJS.useOnlyCssZoom = value;
+      })
       // TODO move more preferences and other async stuff here
-    ]);
+    ]).catch(function (reason) { });
 
     return initializedPromise.then(function () {
       PDFView.initialized = true;
@@ -1727,7 +1741,7 @@ function webViewerInitialized() {
   }
 
   if ('useOnlyCssZoom' in hashParams) {
-    USE_ONLY_CSS_ZOOM = (hashParams['useOnlyCssZoom'] === 'true');
+    PDFJS.useOnlyCssZoom = (hashParams['useOnlyCssZoom'] === 'true');
   }
 
   if ('verbosity' in hashParams) {
