@@ -2074,7 +2074,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
         }
         if (!isCmd(obj)) {
           // argument
-          if (obj != null) {
+          if (obj !== null) {
             args.push((obj instanceof Dict ? obj.getAll() : obj));
             assert(args.length <= 33, 'Too many arguments');
           }
@@ -2090,37 +2090,32 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
         }
 
         var fn = opSpec.id;
+        var numArgs = opSpec.numArgs;
 
-        // Some post script commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
-        if (!opSpec.variableArgs && args.length !== opSpec.numArgs) {
-          while (args.length > opSpec.numArgs) {
-            this.nonProcessedArgs.push(args.shift());
+        if (!opSpec.variableArgs) {
+          // Some post script commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
+          if (args.length !== numArgs) {
+            var nonProcessedArgs = this.nonProcessedArgs;
+            while (args.length > numArgs) {
+              nonProcessedArgs.push(args.shift());
+            }
+            while (args.length < numArgs && nonProcessedArgs.length !== 0) {
+              args.unshift(nonProcessedArgs.pop());
+            }
           }
 
-          while (args.length < opSpec.numArgs && this.nonProcessedArgs.length) {
-            args.unshift(this.nonProcessedArgs.pop());
-          }
-        }
-
-        // Validate the number of arguments for the command
-        if (opSpec.variableArgs) {
-          if (args.length > opSpec.numArgs) {
-            info('Command ' + fn + ': expected [0,' + opSpec.numArgs +
-                 '] args, but received ' + args.length + ' args');
-          }
-        } else {
-          if (args.length < opSpec.numArgs) {
+          if (args.length < numArgs) {
             // If we receive too few args, it's not possible to possible
             // to execute the command, so skip the command
             info('Command ' + fn + ': because expected ' +
-                 opSpec.numArgs + ' args, but received ' + args.length +
+                 numArgs + ' args, but received ' + args.length +
                  ' args; skipping');
             args = [];
             continue;
-          } else if (args.length > opSpec.numArgs) {
-            info('Command ' + fn + ': expected ' + opSpec.numArgs +
-                 ' args, but received ' + args.length + ' args');
           }
+        } else if (args.length > numArgs) {
+          info('Command ' + fn + ': expected [0,' + numArgs +
+               '] args, but received ' + args.length + ' args');
         }
 
         // TODO figure out how to type-check vararg functions
