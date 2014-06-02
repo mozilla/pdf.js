@@ -160,9 +160,13 @@ if (typeof PDFJS === 'undefined') {
       value: function xmlHttpRequestOverrideMimeType(mimeType) {}
     });
   }
-  if ('response' in xhr || 'responseArrayBuffer' in xhr) {
+  if ('responseType' in xhr) {
     return;
   }
+
+  // The worker will be using XHR, so we can save time and disable worker.
+  PDFJS.disableWorker = true;
+
   // Support: IE9
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
@@ -189,7 +193,7 @@ if (typeof PDFJS === 'undefined') {
     for (i = 0; i < n; ++i) {
       result[i] = text.charCodeAt(i) & 0xFF;
     }
-    return result;
+    return result.buffer;
   }
   Object.defineProperty(xhrPrototype, 'response', { get: responseGetter });
 })();

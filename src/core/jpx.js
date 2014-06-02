@@ -31,20 +31,6 @@ var JpxImage = (function JpxImageClosure() {
     this.failOnCorruptedImage = false;
   }
   JpxImage.prototype = {
-    load: function JpxImage_load(url) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', url, true);
-      xhr.responseType = 'arraybuffer';
-      xhr.onload = (function() {
-        // TODO catch parse error
-        var data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
-        this.parse(data);
-        if (this.onload) {
-          this.onload();
-        }
-      }).bind(this);
-      xhr.send(null);
-    },
     parse: function JpxImage_parse(data) {
 
       var head = readUint16(data, 0);
