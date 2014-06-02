@@ -2971,7 +2971,12 @@ var Font = (function FontClosure() {
 
         if (!potentialTable) {
           warn('Could not find a preferred cmap table.');
-          return [];
+          return {
+            platformId: -1,
+            encodingId: -1,
+            mappings: [],
+            hasShortCmap: false
+          };
         }
 
         font.pos = start + potentialTable.offset;
