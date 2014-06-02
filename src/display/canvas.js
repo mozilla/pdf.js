@@ -940,18 +940,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
-      if (this.current.activeSMask) {
-        this.current.activeSMask = null;
-      }
+      this.current.activeSMask = null;
     },
     restore: function CanvasGraphics_restore() {
-      var prev = this.stateStack.pop();
-      if (prev) {
-        if (this.current.activeSMask) {
+      if (this.stateStack.length !== 0) {
+        if (this.current.activeSMask !== null) {
           this.endSMaskGroup();
         }
 
-        this.current = prev;
+        this.current = this.stateStack.pop();
         this.ctx.restore();
       }
     },
@@ -1507,7 +1504,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // Color
     getColorN_Pattern: function CanvasGraphics_getColorN_Pattern(IR) {
       var pattern;
-      if (IR[0] == 'TilingPattern') {
+      if (IR[0] === 'TilingPattern') {
         var color = IR[1];
         pattern = new TilingPattern(IR, color, this.ctx, this.objs,
                                     this.commonObjs, this.baseTransform);
@@ -1583,13 +1580,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
       this.baseTransformStack.push(this.baseTransform);
 
-      if (matrix && isArray(matrix) && 6 == matrix.length) {
+      if (isArray(matrix) && 6 === matrix.length) {
         this.transform.apply(this, matrix);
       }
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
-      if (bbox && isArray(bbox) && 4 == bbox.length) {
+      if (isArray(bbox) && 4 === bbox.length) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
         this.rectangle(bbox[0], bbox[1], width, height);
@@ -1741,7 +1738,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                              matrix) {
       this.save();
 
-      if (rect && isArray(rect) && 4 == rect.length) {
+      if (isArray(rect) && 4 === rect.length) {
         var width = rect[2] - rect[0];
         var height = rect[3] - rect[1];
         this.rectangle(rect[0], rect[1], width, height);
@@ -2059,7 +2056,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     consumePath: function CanvasGraphics_consumePath() {
       var ctx = this.ctx;
       if (this.pendingClip) {
-        if (this.pendingClip == EO_CLIP) {
+        if (this.pendingClip === EO_CLIP) {
           if (ctx.mozFillRule !== undefined) {
             ctx.mozFillRule = 'evenodd';
             ctx.clip();
