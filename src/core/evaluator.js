@@ -569,11 +569,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var dict = (isStream(pattern) ? pattern.dict : pattern);
         var typeNum = dict.get('PatternType');
 
-        if (typeNum == TILING_PATTERN) {
+        if (typeNum === TILING_PATTERN) {
           var color = cs.base ? cs.base.getRgb(args, 0) : null;
           return this.handleTilingType(fn, color, resources, pattern,
                                        dict, operatorList);
-        } else if (typeNum == SHADING_PATTERN) {
+        } else if (typeNum === SHADING_PATTERN) {
           var shading = dict.get('Shading');
           var matrix = dict.get('Matrix');
           pattern = Pattern.parseShading(shading, matrix, xref, resources);
@@ -947,7 +947,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
 
           var glyphUnicode = glyph.unicode;
-          if (glyphUnicode in NormalizedUnicodes) {
+          if (NormalizedUnicodes[glyphUnicode] !== undefined) {
             glyphUnicode = NormalizedUnicodes[glyphUnicode];
           }
           glyphUnicode = reverseIfRtl(glyphUnicode);
@@ -1479,7 +1479,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var composite = false;
       var uint8array;
-      if (type.name == 'Type0') {
+      if (type.name === 'Type0') {
         // If font is a composite
         //  - get the descendant font
         //  - set the type according to the descendant font
@@ -1545,7 +1545,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var properties;
 
       if (!descriptor) {
-        if (type.name == 'Type3') {
+        if (type.name === 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
           // is a tagged pdf. Create a barbebones one to get by.
           descriptor = new Dict(null);
@@ -2074,7 +2074,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
         }
         if (!isCmd(obj)) {
           // argument
-          if (obj !== null && obj !== undefined) {
+          if (obj != null) {
             args.push((obj instanceof Dict ? obj.getAll() : obj));
             assert(args.length <= 33, 'Too many arguments');
           }
@@ -2165,9 +2165,9 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
     // have been found at index.
     for (var i = 0; i < count; i++) {
       var arg = argsArray[index + 4 * i + 2];
-      var imageMask = arg.length == 1 && arg[0];
-      if (imageMask && imageMask.width == 1 && imageMask.height == 1 &&
-          (!imageMask.data.length || (imageMask.data.length == 1 &&
+      var imageMask = arg.length === 1 && arg[0];
+      if (imageMask && imageMask.width === 1 && imageMask.height === 1 &&
+          (!imageMask.data.length || (imageMask.data.length === 1 &&
                                       imageMask.data[0] === 0))) {
         fnArray[index + 4 * i + 2] = OPS.paintSolidColorImageMask;
         continue;
