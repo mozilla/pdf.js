@@ -1613,6 +1613,16 @@
        "lastPage": 2,
        "type": "eq"
     },
+    {  "id": "issue4883",
+      "file": "pdfs/issue4883.pdf",
+      "md5": "2fac0d9a189ca5fcef8626153d050be8",
+      "rounds": 1,
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "type": "eq",
+      "about": "CMYK JPEG with Decode"
+    },
     {  "id": "bug903856",
        "file": "pdfs/bug903856.pdf",
        "md5": "286eaa9d06a5809f4f08f2093cef8f3f",
