@@ -246,6 +246,16 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     },
     /**
      * @return {Promise} A promise that is resolved with an array of all the
+     * OpenAction strings in the name tree.
+     */
+    getOpenAction: function PDFDocumentProxy_getOpenAction() {
+      var promise = new PDFJS.LegacyPromise();
+      var action = this.pdfInfo.openAction;
+      promise.resolve(action);
+      return promise;
+    },
+    /**
+     * @return {Promise} A promise that is resolved with an array of all the
      * JavaScript strings in the name tree.
      */
     getJavaScript: function PDFDocumentProxy_getJavaScript() {

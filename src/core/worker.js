@@ -35,10 +35,11 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var outlinePromise = pdfManager.ensureCatalog('documentOutline');
         var infoPromise = pdfManager.ensureModel('documentInfo');
         var metadataPromise = pdfManager.ensureCatalog('metadata');
+        var openActionPromise = pdfManager.ensureCatalog('openAction');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         var javaScriptPromise = pdfManager.ensureCatalog('javaScript');
         Promise.all([numPagesPromise, fingerprintPromise, outlinePromise,
-          infoPromise, metadataPromise, encryptedPromise,
+          infoPromise, metadataPromise, openActionPromise, encryptedPromise,
           javaScriptPromise]).then(
             function onDocReady(results) {
 
@@ -48,8 +49,9 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             outline: results[2],
             info: results[3],
             metadata: results[4],
-            encrypted: !!results[5],
-            javaScript: results[6]
+            openAction: results[5],
+            encrypted: !!results[6],
+            javaScript: results[7]
           };
           loadDocumentPromise.resolve(doc);
         },

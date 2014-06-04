@@ -263,6 +263,34 @@ var Catalog = (function CatalogClosure() {
 
       return shadow(this, 'metadata', metadata);
     },
+    get openAction() {
+      assertWellFormed(isDict(this.catDict),
+        'openaction object is not a dictionary');
+      var streamRef = this.catDict.getRaw('OpenAction');
+      if (!isRef(streamRef))
+        return shadow(this, 'openaction', null);
+      var encryptMetadata = !this.xref.encrypt ? false :
+        this.xref.encrypt.encryptMetadata;
+
+      var stream = this.xref.fetch(streamRef, !encryptMetadata);
+      var openaction;
+      var openString;
+      if (stream && isDict(stream)) {
+        var type = stream.get('Type');
+        var action = stream.get('S');
+
+        if (isName(type) && type.name === 'Action') {
+          if (isName(action) && action.name === 'Named') {  
+            try {
+              openaction = stream.get('N').name;
+            } catch (e) {
+              info('Skipping invalid openaction.');
+            }
+          }
+        }
+      }
+      return shadow(this, 'openaction', openaction);
+    },
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
       assertWellFormed(isDict(pagesObj), 'invalid top-level pages dictionary');

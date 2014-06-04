@@ -982,6 +982,16 @@ var PDFView = {
 //#endif
       }
     });
+      
+    pagesPromise.then(function() {
+      if (PDFView.supportsPrinting) {
+        pdfDocument.getOpenAction().then(function(openAction) {
+          if (openAction === 'Print') {
+            window.print();
+          }
+        });
+      }
+    });
 
     pagesPromise.then(function() {
       if (PDFView.supportsPrinting) {
