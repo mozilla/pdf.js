@@ -870,7 +870,7 @@ var JpegImage = (function jpegImage() {
 
     _convertYccToRgb: function convertYccToRgb(data) {
       var Y, Cb, Cr;
-      for (var i = 0; i < data.length; i += this.numComponents) {
+      for (var i = 0, length = data.length; i < length; i += 3) {
         Y  = data[i    ];
         Cb = data[i + 1];
         Cr = data[i + 2];
@@ -884,7 +884,7 @@ var JpegImage = (function jpegImage() {
     _convertYcckToRgb: function convertYcckToRgb(data) {
       var Y, Cb, Cr, k, CbCb, CbCr, CbY, Cbk, CrCr, Crk, CrY, YY, Yk, kk;
       var offset = 0;
-      for (var i = 0; i < data.length; i += this.numComponents) {
+      for (var i = 0, length = data.length; i < length; i += 4) {
         Y  = data[i];
         Cb = data[i + 1];
         Cr = data[i + 2];
@@ -937,7 +937,7 @@ var JpegImage = (function jpegImage() {
 
     _convertYcckToCmyk: function convertYcckToCmyk(data) {
       var Y, Cb, Cr;
-      for (var i = 0; i < data.length; i += this.numComponents) {
+      for (var i = 0, length = data.length; i < length; i += 4) {
         Y  = data[i];
         Cb = data[i + 1];
         Cr = data[i + 2];
@@ -952,14 +952,13 @@ var JpegImage = (function jpegImage() {
     _convertCmykToRgb: function convertCmykToRgb(data) {
       var c, m, y, k;
       var offset = 0;
-      var length = data.length;
       var min = -255 * 255 * 255;
       var scale = 1 / 255 / 255;
-      for (var i = 0; i < length;) {
-        c = data[i++];
-        m = data[i++];
-        y = data[i++];
-        k = data[i++];
+      for (var i = 0, length = data.length; i < length; i += 4) {
+        c = data[i];
+        m = data[i + 1];
+        y = data[i + 2];
+        k = data[i + 3];
 
         var r =
           c * (-4.387332384609988 * c + 54.48615194189176 * m +
