@@ -266,6 +266,9 @@ var Parser = (function ParserClosure() {
         while (stream.pos < stream.end) {
           var scanBytes = stream.peekBytes(SCAN_BLOCK_SIZE);
           var scanLength = scanBytes.length - ENDSTREAM_SIGNATURE_LENGTH;
+          if (scanLength <= 0) {
+            break;
+          }
           found = false;
           for (i = 0, j = 0; i < scanLength; i++) {
             var b = scanBytes[i];
