@@ -543,13 +543,10 @@ var JpegImage = (function jpegImage() {
   }
 
   function buildComponentData(frame, component) {
-    var lines = [];
     var blocksPerLine = component.blocksPerLine;
     var blocksPerColumn = component.blocksPerColumn;
-    var samplesPerLine = blocksPerLine << 3;
     var computationBuffer = new Int32Array(64);
 
-    var i, j, ll = 0;
     for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
       for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
         var offset = getBlockBufferOffset(component, blockRow, blockCol);
