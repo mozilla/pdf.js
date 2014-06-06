@@ -1391,11 +1391,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           // rescale per character
           var measuredWidth = ctx.measureText(character).width * 1000 /
             fontSize * fontSizeScale;
-          var characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
-          ctx.scale(characterScaleX, 1);
-          scaledX /= characterScaleX;
+          if (width < measuredWidth) {
+            var characterScaleX = width / measuredWidth;
+            restoreNeeded = true;
+            ctx.save();
+            ctx.scale(characterScaleX, 1);
+            scaledX /= characterScaleX;
+          } else if (width > measuredWidth) {
+            var d = (width - measuredWidth) / 2000;
+            scaledX += d;
+            if (accent) {
+              scaledAccentX += d;
+            }
+          }
         }
 
         if (simpleFillText && !accent) {
