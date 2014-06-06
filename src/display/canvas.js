@@ -1398,7 +1398,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             ctx.scale(characterScaleX, 1);
             scaledX /= characterScaleX;
           } else if (width > measuredWidth) {
-            var d = (width - measuredWidth)*500;
+            var d = (width - measuredWidth)/2000;
             scaledX += d;
             if (accent) {
               scaledAccentX += d;
