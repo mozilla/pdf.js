@@ -1,5 +1,5 @@
 {
-  "name": "pdf.js",
+  "name": "t-pdf.js",
   "version": "0.8.0",
   "devDependencies": {
     "jsdoc": "~3.3.0",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/mozilla/pdf.js.git"
+    "url": "git://github.com/tavwizard/pdf.js.git"
   },
   "licenses": [
     {
