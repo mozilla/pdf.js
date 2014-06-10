@@ -394,6 +394,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the time the executeOperatorList is going to be executing
   // before it stops and shedules a continue of execution.
   var EXECUTION_TIME = 15;
+  // Defines the number of steps before checking the execution time
+  var EXECUTION_STEPS = 10;
 
   function CanvasGraphics(canvasCtx, commonObjs, objs, imageLayer) {
     this.ctx = canvasCtx;
@@ -599,49 +601,54 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
+  function composeSMaskBackdrop(bytes, r0, g0, b0) {
+    var length = bytes.length;
+    for (var i = 3; i < length; i += 4) {
+      var alpha = bytes[i];
+      if (alpha === 0) {
+        bytes[i - 3] = r0;
+        bytes[i - 2] = g0;
+        bytes[i - 1] = b0;
+      } else if (alpha < 255) {
+        var alpha_ = 255 - alpha;
+        bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) >> 8;
+        bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) >> 8;
+        bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) >> 8;
+      }
+    }
+  }
+
+  function composeSMaskAlpha(maskData, layerData) {
+    var length = maskData.length;
+    var scale = 1 / 255;
+    for (var i = 3; i < length; i += 4) {
+      var alpha = maskData[i];
+      layerData[i] = (layerData[i] * alpha * scale) | 0;
+    }
+  }
+
+  function composeSMaskLuminosity(maskData, layerData) {
+    var length = maskData.length;
+    for (var i = 3; i < length; i += 4) {
+      var y = ((maskData[i - 3] * 77) +     // * 0.3 / 255 * 0x10000
+               (maskData[i - 2] * 152) +    // * 0.59 ....
+               (maskData[i - 1] * 28)) | 0; // * 0.11 ....
+      layerData[i] = (layerData[i] * y) >> 16;
+    }
+  }
+
   function genericComposeSMask(maskCtx, layerCtx, width, height,
                                subtype, backdrop) {
-    var addBackdropFn;
-    if (backdrop) {
-      addBackdropFn = function (r0, g0, b0, bytes) {
-        var length = bytes.length;
-        for (var i = 3; i < length; i += 4) {
-          var alpha = bytes[i] / 255;
-          if (alpha === 0) {
-            bytes[i - 3] = r0;
-            bytes[i - 2] = g0;
-            bytes[i - 1] = b0;
-          } else if (alpha < 1) {
-            var alpha_ = 1 - alpha;
-            bytes[i - 3] = (bytes[i - 3] * alpha + r0 * alpha_) | 0;
-            bytes[i - 2] = (bytes[i - 2] * alpha + g0 * alpha_) | 0;
-            bytes[i - 1] = (bytes[i - 1] * alpha + b0 * alpha_) | 0;
-          }
-        }
-      }.bind(null, backdrop[0], backdrop[1], backdrop[2]);
-    } else {
-      addBackdropFn = function () {};
-    }
+    var hasBackdrop = backdrop !== undefined;
+    var r0 = hasBackdrop ? backdrop[0] : 0;
+    var g0 = hasBackdrop ? backdrop[1] : 0;
+    var b0 = hasBackdrop ? backdrop[2] : 0;
 
     var composeFn;
     if (subtype === 'Luminosity') {
-      composeFn = function (maskDataBytes, layerDataBytes) {
-        var length = maskDataBytes.length;
-        for (var i = 3; i < length; i += 4) {
-          var y = ((maskDataBytes[i - 3] * 77) +     // * 0.3 / 255 * 0x10000
-                   (maskDataBytes[i - 2] * 152) +    // * 0.59 ....
-                   (maskDataBytes[i - 1] * 28)) | 0; // * 0.11 ....
-          layerDataBytes[i] = (layerDataBytes[i] * y) >> 16;
-        }
-      };
+      composeFn = composeSMaskLuminosity;
     } else {
-      composeFn = function (maskDataBytes, layerDataBytes) {
-        var length = maskDataBytes.length;
-        for (var i = 3; i < length; i += 4) {
-          var alpha = maskDataBytes[i];
-          layerDataBytes[i] = (layerDataBytes[i] * alpha / 255) | 0;
-        }
-      };
+      composeFn = composeSMaskAlpha;
     }
 
     // processing image in chunks to save memory
@@ -652,7 +659,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var maskData = maskCtx.getImageData(0, row, width, chunkHeight);
       var layerData = layerCtx.getImageData(0, row, width, chunkHeight);
 
-      addBackdropFn(maskData.data);
+      if (hasBackdrop) {
+        composeSMaskBackdrop(maskData.data, r0, g0, b0);
+      }
       composeFn(maskData.data, layerData.data);
 
       maskCtx.putImageData(layerData, 0, row);
@@ -726,18 +735,21 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var argsArrayLen = argsArray.length;
 
       // Sometimes the OperatorList to execute is empty.
-      if (argsArrayLen == i) {
+      if (argsArrayLen === i) {
         return i;
       }
 
-      var endTime = Date.now() + EXECUTION_TIME;
+      var chunkOperations = (argsArrayLen - i > EXECUTION_STEPS &&
+                             typeof continueCallback === 'function');
+      var endTime = chunkOperations ? Date.now() + EXECUTION_TIME : 0;
+      var steps = 0;
 
       var commonObjs = this.commonObjs;
       var objs = this.objs;
       var fnId;
 
       while (true) {
-        if (stepper && i === stepper.nextBreakPoint) {
+        if (stepper !== undefined && i === stepper.nextBreakPoint) {
           stepper.breakIt(i, continueCallback);
           return i;
         }
@@ -750,16 +762,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
             var depObjId = deps[n];
-            var common = depObjId.substring(0, 2) == 'g_';
+            var common = depObjId[0] === 'g' && depObjId[1] === '_';
+            var objsPool = common ? commonObjs : objs;
 
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
-            if (!common && !objs.isResolved(depObjId)) {
-              objs.get(depObjId, continueCallback);
-              return i;
-            }
-            if (common && !commonObjs.isResolved(depObjId)) {
-              commonObjs.get(depObjId, continueCallback);
+            if (!objsPool.isResolved(depObjId)) {
+              objsPool.get(depObjId, continueCallback);
               return i;
             }
           }
@@ -768,15 +777,18 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         i++;
 
         // If the entire operatorList was executed, stop as were done.
-        if (i == argsArrayLen) {
+        if (i === argsArrayLen) {
           return i;
         }
 
         // If the execution took longer then a certain amount of time and
         // `continueCallback` is specified, interrupt the execution.
-        if (continueCallback && Date.now() > endTime) {
-          continueCallback();
-          return i;
+        if (chunkOperations && ++steps > EXECUTION_STEPS) {
+          if (Date.now() > endTime) {
+            continueCallback();
+            return i;
+          }
+          steps = 0;
         }
 
         // If the operatorList isn't executed completely yet OR the execution
@@ -935,18 +947,15 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
-      if (this.current.activeSMask) {
-        this.current.activeSMask = null;
-      }
+      this.current.activeSMask = null;
     },
     restore: function CanvasGraphics_restore() {
-      var prev = this.stateStack.pop();
-      if (prev) {
-        if (this.current.activeSMask) {
+      if (this.stateStack.length !== 0) {
+        if (this.current.activeSMask !== null) {
           this.endSMaskGroup();
         }
 
-        this.current = prev;
+        this.current = this.stateStack.pop();
         this.ctx.restore();
       }
     },
@@ -1502,7 +1511,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     // Color
     getColorN_Pattern: function CanvasGraphics_getColorN_Pattern(IR) {
       var pattern;
-      if (IR[0] == 'TilingPattern') {
+      if (IR[0] === 'TilingPattern') {
         var color = IR[1];
         pattern = new TilingPattern(IR, color, this.ctx, this.objs,
                                     this.commonObjs, this.baseTransform);
@@ -1578,13 +1587,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
       this.baseTransformStack.push(this.baseTransform);
 
-      if (matrix && isArray(matrix) && 6 == matrix.length) {
+      if (isArray(matrix) && 6 === matrix.length) {
         this.transform.apply(this, matrix);
       }
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
-      if (bbox && isArray(bbox) && 4 == bbox.length) {
+      if (isArray(bbox) && 4 === bbox.length) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
         this.rectangle(bbox[0], bbox[1], width, height);
@@ -1736,7 +1745,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                              matrix) {
       this.save();
 
-      if (rect && isArray(rect) && 4 == rect.length) {
+      if (isArray(rect) && 4 === rect.length) {
         var width = rect[2] - rect[0];
         var height = rect[3] - rect[1];
         this.rectangle(rect[0], rect[1], width, height);
@@ -2054,7 +2063,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     consumePath: function CanvasGraphics_consumePath() {
       var ctx = this.ctx;
       if (this.pendingClip) {
-        if (this.pendingClip == EO_CLIP) {
+        if (this.pendingClip === EO_CLIP) {
           if (ctx.mozFillRule !== undefined) {
             ctx.mozFillRule = 'evenodd';
             ctx.clip();

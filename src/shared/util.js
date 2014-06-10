@@ -911,15 +911,15 @@ function isBool(v) {
 }
 
 function isInt(v) {
-  return typeof v == 'number' && ((v | 0) == v);
+  return typeof v === 'number' && ((v | 0) === v);
 }
 
 function isNum(v) {
-  return typeof v == 'number';
+  return typeof v === 'number';
 }
 
 function isString(v) {
-  return typeof v == 'string';
+  return typeof v === 'string';
 }
 
 function isNull(v) {
@@ -931,7 +931,7 @@ function isName(v) {
 }
 
 function isCmd(v, cmd) {
-  return v instanceof Cmd && (!cmd || v.cmd == cmd);
+  return v instanceof Cmd && (cmd === undefined || v.cmd === cmd);
 }
 
 function isDict(v, type) {
@@ -942,7 +942,7 @@ function isDict(v, type) {
     return true;
   }
   var dictType = v.get('Type');
-  return isName(dictType) && dictType.name == type;
+  return isName(dictType) && dictType.name === type;
 }
 
 function isArray(v) {
@@ -950,13 +950,11 @@ function isArray(v) {
 }
 
 function isStream(v) {
-  return typeof v == 'object' && v !== null && v !== undefined &&
-         ('getBytes' in v);
+  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
 
 function isArrayBuffer(v) {
-  return typeof v == 'object' && v !== null && v !== undefined &&
-         ('byteLength' in v);
+  return typeof v === 'object' && v !== null && v.byteLength !== undefined;
 }
 
 function isRef(v) {
@@ -1298,7 +1296,7 @@ PDFJS.createPromiseCapability = createPromiseCapability;
       HandlerManager.scheduleHandlers(this);
       return nextPromise;
     },
-    
+
     catch: function Promise_catch(onReject) {
       return this.then(undefined, onReject);
     }
