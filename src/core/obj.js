@@ -1175,9 +1175,10 @@ var XRef = (function XRefClosure() {
       } else {
         xrefEntry = this.fetchCompressed(xrefEntry, suppressEncryption);
       }
-
-      if (isDict(xrefEntry)) {
+      if (isDict(xrefEntry)){
         xrefEntry.objId = 'R' + ref.num + '.' + ref.gen;
+      } else if (isStream(xrefEntry)) {
+        xrefEntry.dict.objId = 'R' + ref.num + '.' + ref.gen;
       }
       return xrefEntry;
     },
