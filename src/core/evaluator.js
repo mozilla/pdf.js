@@ -1622,7 +1622,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // Workaround for cases where e.g. fontNameStr = 'Arial' and
           // baseFontStr = 'Arial,Bold' (needed when no font file is embedded).
           if (fontNameStr && baseFontStr &&
-              baseFontStr.search(fontNameStr) === 0) {
+              baseFontStr.indexOf(fontNameStr) === 0) {
             fontName = baseFont;
           }
         }
