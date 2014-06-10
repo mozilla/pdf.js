@@ -1011,7 +1011,7 @@ var JpegImage = (function jpegImage() {
           } else {
             return this._convertYcckToCmyk(data);
           }
-        } else {
+        } else if (forceRGBoutput) {
           return this._convertCmykToRgb(data);
         }
       }

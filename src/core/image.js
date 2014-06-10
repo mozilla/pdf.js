@@ -536,12 +536,12 @@ var PDFImage = (function PDFImageClosure() {
           }
           return imgData;
         }
-      }
-      if (this.image instanceof JpegStream) {
-        imgData.kind = ImageKind.RGB_24BPP;
-        imgData.data = this.getImageBytes(originalHeight * rowBytes,
-                                          drawWidth, drawHeight);
-        return imgData;
+        if (this.image instanceof JpegStream && !this.smask && !this.mask) {
+          imgData.kind = ImageKind.RGB_24BPP;
+          imgData.data = this.getImageBytes(originalHeight * rowBytes,
+                                            drawWidth, drawHeight, true);
+          return imgData;
+        }
       }
 
       imgArray = this.getImageBytes(originalHeight * rowBytes);
@@ -629,10 +629,12 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     getImageBytes: function PDFImage_getImageBytes(length,
-                                                   drawWidth, drawHeight) {
+                                                   drawWidth, drawHeight,
+                                                   forceRGB) {
       this.image.reset();
-      this.image.drawWidth = drawWidth;
-      this.image.drawHeight = drawHeight;
+      this.image.drawWidth = drawWidth || this.width;
+      this.image.drawHeight = drawHeight || this.height;
+      this.image.forceRGB = !!forceRGB;
       return this.image.getBytes(length);
     }
   };
