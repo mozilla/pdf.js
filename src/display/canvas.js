@@ -639,7 +639,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   function genericComposeSMask(maskCtx, layerCtx, width, height,
                                subtype, backdrop) {
-    var hasBackdrop = backdrop !== undefined;
+    var hasBackdrop = !!backdrop;
     var r0 = hasBackdrop ? backdrop[0] : 0;
     var g0 = hasBackdrop ? backdrop[1] : 0;
     var b0 = hasBackdrop ? backdrop[2] : 0;
