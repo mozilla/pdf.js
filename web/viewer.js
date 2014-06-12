@@ -223,21 +223,33 @@ var PDFView = {
 
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
+        if (PDFJS.disableWebGL === true) {
+          return;
+        }
         PDFJS.disableWebGL = !value;
       }),
       Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         self.preferenceSidebarViewOnLoad = value;
       }),
       Preferences.get('disableTextLayer').then(function resolved(value) {
+        if (PDFJS.disableTextLayer === true) {
+          return;
+        }
         PDFJS.disableTextLayer = value;
       }),
       Preferences.get('disableRange').then(function resolved(value) {
+        if (PDFJS.disableRange === true) {
+          return;
+        }
         PDFJS.disableRange = value;
       }),
       Preferences.get('disableAutoFetch').then(function resolved(value) {
         PDFJS.disableAutoFetch = value;
       }),
       Preferences.get('disableFontFace').then(function resolved(value) {
+        if (PDFJS.disableFontFace === true) {
+          return;
+        }
         PDFJS.disableFontFace = value;
       }),
       Preferences.get('useOnlyCssZoom').then(function resolved(value) {
