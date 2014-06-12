@@ -223,9 +223,6 @@ var PDFView = {
 
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
-        if (PDFJS.disableWebGL === true) {
-          return;
-        }
         PDFJS.disableWebGL = !value;
       }),
       Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
