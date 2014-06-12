@@ -469,6 +469,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return errorFont();
         }
       }
+      if (!fontRef) {
+        warn('fontRef not available');
+        return errorFont();
+      }
+
       if (this.fontCache.has(fontRef)) {
         return this.fontCache.get(fontRef);
       }
