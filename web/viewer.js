@@ -1260,6 +1260,8 @@ var PDFView = {
       }
     }
     this.pdfDocument.cleanup();
+
+    ThumbnailView.tempImageCache = null;
   },
 
   getHighestPriority: function pdfViewGetHighestPriority(visible, views,

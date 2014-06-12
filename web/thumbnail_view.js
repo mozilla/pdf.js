@@ -174,6 +174,17 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
     this.hasImage = true;
   };
 
+  function getTempCanvas(width, height) {
+    var tempCanvas = ThumbnailView.tempImageCache;
+    if (!tempCanvas) {
+      tempCanvas = document.createElement('canvas');
+      ThumbnailView.tempImageCache = tempCanvas;
+    }
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    return tempCanvas;
+  }
+
   this.setImage = function thumbnailViewSetImage(img) {
     if (!this.pdfPage) {
       var promise = PDFView.getPage(this.id);
@@ -188,9 +199,36 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
     }
     this.renderingState = RenderingStates.FINISHED;
     var ctx = this.getPageDrawContext();
-    ctx.drawImage(img, 0, 0, img.width, img.height,
+
+    var reducedImage = img;
+    var reducedWidth = img.width;
+    var reducedHeight = img.height;
+
+    // drawImage does an awful job of rescaling the image, doing it gradually
+    var MAX_SCALE_FACTOR = 2.0;
+    if (Math.max(img.width / ctx.canvas.width,
+                 img.height / ctx.canvas.height) > MAX_SCALE_FACTOR) {
+      reducedWidth >>= 1;
+      reducedHeight >>= 1;
+      reducedImage = getTempCanvas(reducedWidth, reducedHeight);
+      var reducedImageCtx = reducedImage.getContext('2d');
+      reducedImageCtx.drawImage(img, 0, 0, img.width, img.height,
+                                0, 0, reducedWidth, reducedHeight);
+      while (Math.max(reducedWidth / ctx.canvas.width,
+                      reducedHeight / ctx.canvas.height) > MAX_SCALE_FACTOR) {
+        reducedImageCtx.drawImage(reducedImage,
+                                  0, 0, reducedWidth, reducedHeight,
+                                  0, 0, reducedWidth >> 1, reducedHeight >> 1);
+        reducedWidth >>= 1;
+        reducedHeight >>= 1;
+      }
+    }
+
+    ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
                   0, 0, ctx.canvas.width, ctx.canvas.height);
 
     this.hasImage = true;
   };
 };
+
+ThumbnailView.tempImageCache = null;
