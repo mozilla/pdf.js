@@ -99,7 +99,13 @@ var PageView = function pageView(container, id, scale,
       this.annotationLayer = null;
     }
 
-    delete this.canvas;
+    if (this.canvas) {
+      // Zeroing the width and height causes Firefox to release graphics
+      // resources immediately, which can greatly reduce memory consumption.
+      this.canvas.width = 0;
+      this.canvas.height = 0;
+      delete this.canvas;
+    }
 
     this.loadingIconDiv = document.createElement('div');
     this.loadingIconDiv.className = 'loadingIcon';
