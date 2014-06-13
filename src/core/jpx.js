@@ -58,7 +58,7 @@ var JpxImage = (function JpxImageClosure() {
           lbox = length - position + headerSize;
         }
         if (lbox < headerSize) {
-          throw 'JPX error: Invalid box field size';
+          throw new Error('JPX Error: Invalid box field size');
         }
         var dataLength = lbox - headerSize;
         var jumpDataLength = true;
@@ -104,7 +104,7 @@ var JpxImage = (function JpxImageClosure() {
           return;
         }
       }
-      throw 'JPX error: No size marker found in JPX stream';
+      throw new Error('JPX Error: No size marker found in JPX stream');
     },
     parseCodestream: function JpxImage_parseCodestream(data, start, end) {
       var context = {};
@@ -177,7 +177,7 @@ var JpxImage = (function JpxImageClosure() {
                   scalarExpounded = true;
                   break;
                 default:
-                  throw 'Invalid SQcd value ' + sqcd;
+                  throw new Error('JPX Error: Invalid SQcd value ' + sqcd);
               }
               qcd.noQuantization = (spqcdSize == 8);
               qcd.scalarExpounded = scalarExpounded;
@@ -229,7 +229,7 @@ var JpxImage = (function JpxImageClosure() {
                   scalarExpounded = true;
                   break;
                 default:
-                  throw 'Invalid SQcd value ' + sqcd;
+                  throw new Error('JPX Error: Invalid SQcd value ' + sqcd);
               }
               qcc.noQuantization = (spqcdSize == 8);
               qcc.scalarExpounded = scalarExpounded;
@@ -313,8 +313,8 @@ var JpxImage = (function JpxImageClosure() {
               }
               if (unsupported.length > 0) {
                 doNotRecover = true;
-                throw 'Unsupported COD options (' + unsupported.join(', ') +
-                      ')';
+                throw new Error('JPX Error: Unsupported COD options (' +
+                                unsupported.join(', ') + ')');
               }
               if (context.mainHeader) {
                 context.COD = cod;
@@ -358,17 +358,19 @@ var JpxImage = (function JpxImageClosure() {
               // skipping content
               break;
             case 0xFF53: // Coding style component (COC)
-              throw 'Codestream code 0xFF53 (COC) is not implemented';
+              throw new Error('JPX Error: Codestream code 0xFF53 (COC) is ' +
+                              'not implemented');
             default:
-              throw 'Unknown codestream code: ' + code.toString(16);
+              throw new Error('JPX Error: Unknown codestream code: ' +
+                              code.toString(16));
           }
           position += length;
         }
       } catch (e) {
         if (doNotRecover || this.failOnCorruptedImage) {
-          throw 'JPX error: ' + e;
+          throw e;
         } else {
-          warn('JPX error: ' + e + '. Trying to recover');
+          warn('Trying to recover from ' + e.message);
         }
       }
       this.tiles = transformComponents(context);
@@ -596,7 +598,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         r = 0;
       }
-      throw 'Out of packets';
+      throw new Error('JPX Error: Out of packets');
     };
   }
   function ResolutionLayerComponentPositionIterator(context) {
@@ -636,7 +638,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         l = 0;
       }
-      throw 'Out of packets';
+      throw new Error('JPX Error: Out of packets');
     };
   }
   function buildPackets(context) {
@@ -731,7 +733,8 @@ var JpxImage = (function JpxImageClosure() {
           new ResolutionLayerComponentPositionIterator(context);
         break;
       default:
-        throw 'Unsupported progression order ' + progressionOrder;
+        throw new Error('JPX Error: Unsupported progression order ' +
+                        progressionOrder);
     }
   }
   function parseTilePackets(context, data, offset, dataLength) {
@@ -1644,7 +1647,7 @@ var JpxImage = (function JpxImageClosure() {
                      (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
                       decoder.readBit(contexts, UNIFORM_CONTEXT);
         if (symbol != 0xA) {
-          throw 'Invalid segmentation symbol';
+          throw new Error('JPX Error: Invalid segmentation symbol');
         }
       }
     };
