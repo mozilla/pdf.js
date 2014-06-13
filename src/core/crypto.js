@@ -147,64 +147,87 @@ var calculateMD5 = (function calculateMD5Closure() {
 })();
 var Word64 = (function Word64Closure() {
   function Word64(highInteger, lowInteger) {
-    this.low = lowInteger >>> 0;
-    this.high = highInteger >>> 0;
+    this.high = highInteger | 0;
+    this.low = lowInteger | 0;
   }
   Word64.prototype = {
     and: function Word64_and(word) {
-      return new Word64(this.high & word.high,
-                        this.low & word.low);
+      this.high &= word.high;
+      this.low &= word.low;
     },
     xor: function Word64_xor(word) {
-      return new Word64(this.high ^ word.high,
-                        this.low ^ word.low);
+     this.high ^= word.high;
+     this.low ^= word.low;
     },
 
     or: function Word64_or(word) {
-      return new Word64(this.high | word.high,
-                        this.low | word.low);
+      this.high |= word.high;
+      this.low |= word.low;
     },
 
     shiftRight: function Word64_shiftRight(places) {
       if (places >= 32) {
-        return new Word64(0x00000000, this.high >>> (places - 32));
+        this.low = (this.high >>> (places - 32)) | 0;
+        this.high = 0;
+      } else {
+        this.low = (this.low >>> places) | (this.high << (32 - places));
+        this.high = (this.high >>> places) | 0;
       }
-      return new Word64(this.high >>> places,
-                        (this.low >>> places) | (this.high << 32 - places));
     },
 
     shiftLeft: function Word64_shiftLeft(places) {
       if (places >= 32) {
-        return new Word64(this.low << (places - 32), 0x00000000);
+        this.high = this.low << (places - 32);
+        this.low = 0;
+      } else {
+        this.high = (this.high << places) | (this.low >>> (32 - places));
+        this.low = this.low << places;
       }
-      return new Word64((this.high << places) |
-                        (this.low >>> 32 - places),
-                        (this.low << places));
     },
+
+    rotateRight: function Word64_rotateRight(places) {
+      var low, high;
+      if (places & 32) {
+        high = this.low;
+        low = this.high;
+      } else {
+        low = this.low;
+        high = this.high;
+      }
+      places &= 31;
+      this.low = (low >>> places) | (high << (32 - places));
+      this.high = (high >>> places) | (low << (32 - places));
+    },
+
     not: function Word64_not() {
-      return new Word64(~this.high, ~this.low);
+      this.high = ~this.high;
+      this.low = ~this.low;
     },
-    plus: function Word64_plus(word) {
-      var lowAdd = this.low + word.low;
-      var highAdd = this.high + word.high;
+
+    add: function Word64_add(word) {
+      var lowAdd = (this.low >>> 0) + (word.low >>> 0);
+      var highAdd = (this.high >>> 0) + (word.high >>> 0);
       if (lowAdd > 0xFFFFFFFF) {
         highAdd += 1;
       }
-      return new Word64((highAdd | 0) >>> 0,
-                        (lowAdd | 0) >>> 0);
+      this.low = lowAdd | 0;
+      this.high = highAdd | 0;
     },
+
     copyTo: function Word64_copyTo(bytes, offset) {
-      if (offset + bytes >= bytes.length) {
-        error('insufficient byte array length');
-      }
       bytes[offset] = (this.high >>> 24) & 0xFF;
-      bytes[offset + 1] = (this.high >>> 16) & 0xFF;
-      bytes[offset + 2] = (this.high >>> 8) & 0xFF;
-      bytes[offset + 3] = (this.high) & 0xFF;
+      bytes[offset + 1] = (this.high >> 16) & 0xFF;
+      bytes[offset + 2] = (this.high >> 8) & 0xFF;
+      bytes[offset + 3] = this.high & 0xFF;
       bytes[offset + 4] = (this.low >>> 24) & 0xFF;
-      bytes[offset + 5] = (this.low >>> 16) & 0xFF;
-      bytes[offset + 6] = (this.low >>> 8) & 0xFF;
-      bytes[offset + 7] = (this.low) & 0xFF;
+      bytes[offset + 5] = (this.low >> 16) & 0xFF;
+      bytes[offset + 6] = (this.low >> 8) & 0xFF;
+      bytes[offset + 7] = this.low & 0xFF;
+    },
+
+    assign: function Word64_assign(word) {
+      this.high = word.high;
+      this.low = word.low;
     }
   };
   return Word64;
@@ -282,17 +305,17 @@ var calculateSHA256 = (function calculateSHA256Closure() {
     padded[i++] = (length >> 5) & 0xFF;
     padded[i++] = (length << 3) & 0xFF;
     var w = new Uint32Array(64);
-    //for each 512 bit block
+    // for each 512 bit block
     for (i = 0; i < paddedLength;) {
-      for (j = 0; j < 64; ++j) {
-        if (j < 16) {
-          w[j] = (padded[i] << 24 | (padded[i + 1] << 16) |
-                 (padded[i + 2] << 8) | (padded[i + 3]));
-          i += 4;
-        } else {
-          w[j] = littleSigmaPrime(w[j - 2]) + w[j - 7] +
-            littleSigma(w[j - 15]) + w[j - 16] | 0;
-        }
+      for (j = 0; j < 16; ++j) {
+        w[j] = (padded[i] << 24 | (padded[i + 1] << 16) |
+               (padded[i + 2] << 8) | (padded[i + 3]));
+        i += 4;
+      }
+
+      for (j = 16; j < 64; ++j) {
+        w[j] = littleSigmaPrime(w[j - 2]) + w[j - 7] +
+               littleSigma(w[j - 15]) + w[j - 16] | 0;
       }
       var a = h0, b = h1, c = h2, d = h3, e = h4,
           f = h5, g = h6, h = h7, t1, t2;
@@ -333,32 +356,68 @@ var calculateSHA256 = (function calculateSHA256Closure() {
 })();
 
 var calculateSHA512 = (function calculateSHA512Closure() {
-  function rotr(x, n) {
-    return (x.shiftRight(n)).or(x.shiftLeft(64 - n));
+  function ch(result, x, y, z, tmp) {
+    result.assign(x);
+    result.and(y);
+    tmp.assign(x);
+    tmp.not();
+    tmp.and(z);
+    result.xor(tmp);
   }
 
-  function ch(x, y, z) {
-    return (x.and(y)).xor(x.not().and(z));
+  function maj(result, x, y, z, tmp) {
+    result.assign(x);
+    result.and(y);
+    tmp.assign(x);
+    tmp.and(z);
+    result.xor(tmp);
+    tmp.assign(y);
+    tmp.and(z);
+    result.xor(tmp);
   }
 
-  function maj(x, y, z) {
-    return (x.and(y)).xor(x.and(z)).xor(y.and(z));
+  function sigma(result, x, tmp) {
+    result.assign(x);
+    result.rotateRight(28);
+    tmp.assign(x);
+    tmp.rotateRight(34);
+    result.xor(tmp);
+    tmp.assign(x);
+    tmp.rotateRight(39);
+    result.xor(tmp);
   }
 
-  function sigma(x) {
-    return rotr(x, 28).xor(rotr(x, 34)).xor(rotr(x, 39));
+  function sigmaPrime(result, x, tmp) {
+    result.assign(x);
+    result.rotateRight(14);
+    tmp.assign(x);
+    tmp.rotateRight(18);
+    result.xor(tmp);
+    tmp.assign(x);
+    tmp.rotateRight(41);
+    result.xor(tmp);
   }
 
-  function sigmaPrime(x) {
-    return rotr(x, 14).xor(rotr(x, 18)).xor(rotr(x, 41));
+  function littleSigma(result, x, tmp) {
+    result.assign(x);
+    result.rotateRight(1);
+    tmp.assign(x);
+    tmp.rotateRight(8);
+    result.xor(tmp);
+    tmp.assign(x);
+    tmp.shiftRight(7);
+    result.xor(tmp);
   }
 
-  function littleSigma(x) {
-    return rotr(x, 1).xor(rotr(x, 8)).xor(x.shiftRight(7));
-  }
-
-  function littleSigmaPrime(x) {
-    return rotr(x, 19).xor(rotr(x, 61)).xor(x.shiftRight(6));
+  function littleSigmaPrime(result, x, tmp) {
+    result.assign(x);
+    result.rotateRight(19);
+    tmp.assign(x);
+    tmp.rotateRight(61);
+    result.xor(tmp);
+    tmp.assign(x);
+    tmp.shiftRight(6);
+    result.xor(tmp);
   }
 
   var k = [
@@ -418,8 +477,8 @@ var calculateSHA512 = (function calculateSHA512Closure() {
       h7 = new Word64(0x5be0cd19, 0x137e2179);
     }
     else {
-      //SHA384 is exactly the same
-      //except with different starting values and a trimmed result
+      // SHA384 is exactly the same
+      // except with different starting values and a trimmed result
       h0 = new Word64(0xcbbb9d5d, 0xc1059ed8);
       h1 = new Word64(0x629a292a, 0x367cd507);
       h2 = new Word64(0x9159015a, 0x3070dd17);
@@ -459,51 +518,70 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     padded[i++] = (length >> 5) & 0xFF;
     padded[i++] = (length << 3) & 0xFF;
 
-    var w = new Array(128);
-    //for each 1024 bit block
-    for (i = 0; i < paddedLength;) {
-      for (j = 0; j < 80; ++j) {
-        if (j < 16) {
-          var value = new Word64(padded[i] << 24 |(padded[i + 1] << 16) |
-                                 (padded[i + 2] << 8) | (padded[i + 3]),
-                                 (padded[i + 4]) << 24 | (padded[i + 5]) << 16 |
-                                 (padded[i + 6]) << 8 | (padded[i + 7]));
-          w[j] = value;
-          i += 8;
-        } else {
-          w[j] = littleSigmaPrime(w[j - 2])
-            .plus(w[j - 7])
-            .plus(littleSigma(w[j - 15]))
-            .plus(w[j - 16]);
-        }
+    var w = new Array(80);
+    for (i = 0; i < 80; i++) {
+      w[i] = new Word64(0, 0);
+    }
+    var a = new Word64(0, 0), b = new Word64(0, 0), c = new Word64(0, 0);
+    var d = new Word64(0, 0), e = new Word64(0, 0), f = new Word64(0, 0);
+    var g = new Word64(0, 0), h = new Word64(0, 0);
+    var t1 = new Word64(0, 0), t2 = new Word64(0, 0);
+    var tmp1 = new Word64(0, 0), tmp2 = new Word64(0, 0), tmp3;
 
+    // for each 1024 bit block
+    for (i = 0; i < paddedLength;) {
+      for (j = 0; j < 16; ++j) {
+        w[j].high = (padded[i] << 24) | (padded[i + 1] << 16) |
+                    (padded[i + 2] << 8) | (padded[i + 3]);
+        w[j].low = (padded[i + 4]) << 24 | (padded[i + 5]) << 16 |
+                   (padded[i + 6]) << 8 | (padded[i + 7]);
+        i += 8;
       }
-      var a = h0, b = h1, c = h2, d = h3,
-          e = h4, f = h5, g = h6, h = h7,
-          t1, t2;
+      for (j = 16; j < 80; ++j) {
+        tmp3 = w[j];
+        littleSigmaPrime(tmp3, w[j - 2], tmp2);
+        tmp3.add(w[j - 7]);
+        littleSigma(tmp1, w[j - 15], tmp2);
+        tmp3.add(tmp1);
+        tmp3.add(w[j - 16]);
+      }
+
+      a.assign(h0); b.assign(h1); c.assign(h2); d.assign(h3);
+      e.assign(h4); f.assign(h5); g.assign(h6); h.assign(h7);
       for (j = 0; j < 80; ++j) {
-        t1 = h.plus(sigmaPrime(e))
-          .plus(ch(e, f, g))
-          .plus(k[j])
-          .plus(w[j]);
-        t2 = sigma(a).plus(maj(a, b, c));
+        t1.assign(h);
+        sigmaPrime(tmp1, e, tmp2);
+        t1.add(tmp1);
+        ch(tmp1, e, f, g, tmp2);
+        t1.add(tmp1);
+        t1.add(k[j]);
+        t1.add(w[j]);
+
+        sigma(t2, a, tmp2);
+        maj(tmp1, a, b, c, tmp2);
+        t2.add(tmp1);
+
+        tmp3 = h;
         h = g;
         g = f;
         f = e;
-        e = (d.plus(t1));
+        d.add(t1);
+        e = d;
         d = c;
         c = b;
         b = a;
-        a = (t1.plus(t2));
+        tmp3.assign(t1);
+        tmp3.add(t2);
+        a = tmp3;
       }
-      h0 = (h0.plus(a));
-      h1 = (h1.plus(b));
-      h2 = (h2.plus(c));
-      h3 = (h3.plus(d));
-      h4 = (h4.plus(e));
-      h5 = (h5.plus(f));
-      h6 = (h6.plus(g));
-      h7 = (h7.plus(h));
+      h0.add(a);
+      h1.add(b);
+      h2.add(c);
+      h3.add(d);
+      h4.add(e);
+      h5.add(f);
+      h6.add(g);
+      h7.add(h);
     }
 
     var result;
@@ -1421,7 +1499,7 @@ var AES256Cipher = (function AES256CipherClosure() {
   return AES256Cipher;
 })();
 
-var PDF17= (function PDF17Closure() {
+var PDF17 = (function PDF17Closure() {
 
   function compareByteArrays(array1, array2) {
     if (array1.length !== array2.length) {
