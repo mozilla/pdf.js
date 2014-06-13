@@ -1507,6 +1507,16 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue3591",
+      "file": "pdfs/issue3591.pdf",
+      "md5": "f76b3e9d1a44621b73063cf10556c6ff",
+      "link": true,
+      "firstPage": 1,
+      "lastPage": 1,
+      "rounds": 1,
+      "type": "eq",
+      "about": "JPX with 0xFF55 marker"
+    },
     {  "id": "bug766138",
       "file": "pdfs/bug766138.pdf",
       "md5": "b171f5cf8d9834348112fba60ee54f8c",
