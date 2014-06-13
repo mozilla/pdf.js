@@ -248,7 +248,7 @@ var Cache = function cacheCache(size) {
   this.push = function cachePush(view) {
     var i = data.indexOf(view);
     if (i >= 0) {
-      data.splice(i);
+      data.splice(i, 1);
     }
     data.push(view);
     if (data.length > size) {
