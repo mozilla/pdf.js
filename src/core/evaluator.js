@@ -199,11 +199,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var bitStrideLength = (width + 7) >> 3;
         var imgArray = image.getBytes(bitStrideLength * height);
         var decode = dict.get('Decode', 'D');
-        var canTransfer = image instanceof DecodeStream;
         var inverseDecode = (!!decode && decode[0] > 0);
 
         imgData = PDFImage.createMask(imgArray, width, height,
-                                      canTransfer, inverseDecode);
+                                      image instanceof DecodeStream,
+                                      inverseDecode);
         imgData.cached = true;
         args = [imgData];
         operatorList.addOp(OPS.paintImageMaskXObject, args);

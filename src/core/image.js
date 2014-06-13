@@ -248,23 +248,40 @@ var PDFImage = (function PDFImageClosure() {
   };
 
   PDFImage.createMask =
-      function PDFImage_createMask(imgArray, width, height, canTransfer,
-                                   inverseDecode) {
-    // If imgArray came from a DecodeStream, we're safe to transfer it.
-    // Otherwise, copy it.
+      function PDFImage_createMask(imgArray, width, height,
+                                   imageIsFromDecodeStream, inverseDecode) {
+
+    // |imgArray| might not contain full data for every pixel of the mask, so
+    // we need to distinguish between |computedLength| and |actualLength|.
+    // In particular, if inverseDecode is true, then the array we return must
+    // have a length of |computedLength|.
+
+    var computedLength = ((width + 7) >> 3) * height;
     var actualLength = imgArray.byteLength;
-    var data;
-    if (canTransfer) {
+    var haveFullData = computedLength == actualLength;
+    var data, i;
+
+    if (imageIsFromDecodeStream && (!inverseDecode || haveFullData)) {
+      // imgArray came from a DecodeStream and its data is in an appropriate
+      // form, so we can just transfer it.
       data = imgArray;
-    } else {
+    } else if (!inverseDecode) {
       data = new Uint8Array(actualLength);
       data.set(imgArray);
+    } else {
+      data = new Uint8Array(computedLength);
+      data.set(imgArray);
+      for (i = actualLength; i < computedLength; i++) {
+        data[i] = 0xff;
+      }
     }
-    // Invert if necessary. It's safe to modify the array -- whether it's the
+
+    // If necessary, invert the original mask data (but not any extra we might
+    // have added above). It's safe to modify the array -- whether it's the
     // original or a copy, we're about to transfer it anyway, so nothing else
     // in this thread can be relying on its contents.
     if (inverseDecode) {
-      for (var i = 0; i < actualLength; i++) {
+      for (i = 0; i < actualLength; i++) {
         data[i] = ~data[i];
       }
     }
