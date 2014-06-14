@@ -127,6 +127,7 @@ var PDFView = {
   isViewerEmbedded: (window.parent !== window),
   idleTimeout: null,
   currentPosition: null,
+  currentNumberOfVisiblePages: null,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -1238,6 +1239,7 @@ var PDFView = {
 
     // Pages have a higher priority than thumbnails, so check them first.
     var visiblePages = currentlyVisiblePages || this.getVisiblePages();
+    this.currentNumberOfVisiblePages = visiblePages.views.length;
     var pageView = this.getHighestPriority(visiblePages, this.pages,
                                            this.pageViewScroll.down);
     if (pageView) {

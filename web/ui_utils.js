@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals PDFView */
 
 'use strict';
 
@@ -251,7 +252,15 @@ var Cache = function cacheCache(size) {
       data.splice(i, 1);
     }
     data.push(view);
-    if (data.length > size) {
+
+    // If the number of visible pages is greater than the cache size,
+    // we will get stuck in an infinite loop of drawing and destroying pages.
+    // Prevent this by temporarily increasing the size of the cache to the
+    // number of visible pages plus one. (Allowing cache space for one extra
+    // page is needed to account for pre-rendering of the previous/next page.)
+    var currentMaxSize = (PDFView.currentNumberOfVisiblePages >= size ?
+                          PDFView.currentNumberOfVisiblePages + 1 : size);
+    if (data.length > currentMaxSize) {
       data.shift().destroy();
     }
   };
