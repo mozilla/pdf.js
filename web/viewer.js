@@ -1570,6 +1570,12 @@ var PDFView = {
     for (i = 0, ii = this.pages.length; i < ii; ++i) {
       this.pages[i].beforePrint();
     }
+
+//#if (FIREFOX || MOZCENTRAL)
+//    FirefoxCom.request('reportTelemetry', JSON.stringify({
+//      type: 'print'
+//    }));
+//#endif
   },
 
   afterPrint: function pdfViewSetupAfterPrint() {

@@ -48,6 +48,10 @@ this.PdfJsTelemetry = {
     let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_FORM");
     histogram.add(isAcroform);
   },
+  onPrint: function () {
+    let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_PRINT");
+    histogram.add(true);
+  },
   onStreamType: function (streamTypeId) {
     let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_STREAM_TYPES");
     histogram.add(streamTypeId);

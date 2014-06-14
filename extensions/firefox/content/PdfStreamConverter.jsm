@@ -401,6 +401,9 @@ ChromeActions.prototype = {
           }
         }
         break;
+      case 'print':
+        PdfJsTelemetry.onPrint();
+        break;
     }
   },
   fallback: function(args, sendResponse) {
