@@ -2347,13 +2347,14 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
 
       case 36: // home
-        if (PresentationMode.active) {
+        if (PresentationMode.active || PDFView.page > 1) {
           PDFView.page = 1;
           handled = true;
         }
         break;
       case 35: // end
-        if (PresentationMode.active) {
+        if (PresentationMode.active ||
+            PDFView.page < PDFView.pdfDocument.numPages) {
           PDFView.page = PDFView.pdfDocument.numPages;
           handled = true;
         }
