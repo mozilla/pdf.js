@@ -274,7 +274,7 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
     for (var i = 0, ii = this.streams.length; i < ii; i++) {
       var stream = this.streams[i];
       if (stream.getBaseStreams) {
-        Util.concatenateToArray(baseStreams, stream.getBaseStreams());
+        Util.appendToArray(baseStreams, stream.getBaseStreams());
       }
     }
     return baseStreams;
