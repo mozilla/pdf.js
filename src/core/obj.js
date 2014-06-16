@@ -692,6 +692,10 @@ var XRef = (function XRefClosure() {
     // prepare the XRef cache
     this.cache = [];
     this.password = password;
+    this.stats = {
+      streamTypes: [],
+      fontTypes: []
+    };
   }
 
   XRef.prototype = {
@@ -1040,7 +1044,7 @@ var XRef = (function XRefClosure() {
       var dict;
       for (i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
-        var parser = new Parser(new Lexer(stream), true, null);
+        var parser = new Parser(new Lexer(stream), true, this);
         var obj = parser.getObj();
         if (!isCmd(obj, 'trailer')) {
           continue;
@@ -1072,7 +1076,7 @@ var XRef = (function XRefClosure() {
 
           stream.pos = startXRef + stream.start;
 
-          var parser = new Parser(new Lexer(stream), true, null);
+          var parser = new Parser(new Lexer(stream), true, this);
           var obj = parser.getObj();
           var dict;
 

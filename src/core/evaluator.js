@@ -22,7 +22,8 @@
            stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
            RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
            UNSUPPORTED_FEATURES, UnsupportedManager, NormalizedUnicodes,
-           IDENTITY_MATRIX, reverseIfRtl, createPromiseCapability */
+           IDENTITY_MATRIX, reverseIfRtl, createPromiseCapability,
+           getFontType */
 
 'use strict';
 
@@ -546,11 +547,28 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       translatedPromise.then(function (translatedFont) {
+        if (translatedFont.fontType !== undefined) {
+          var xrefFontStats = xref.stats.fontTypes;
+          xrefFontStats[translatedFont.fontType] = true;
+        }
+
         fontCapability.resolve(new TranslatedFont(font.loadedName,
           translatedFont, font));
       }, function (reason) {
         // TODO fontCapability.reject?
         UnsupportedManager.notify(UNSUPPORTED_FEATURES.font);
+
+        try {
+          // error, but it's still nice to have font type reported
+          var descriptor = preEvaluatedFont.descriptor;
+          var fontFile3 = descriptor && descriptor.get('FontFile3');
+          var subtype = fontFile3 && fontFile3.get('Subtype');
+          var fontType = getFontType(preEvaluatedFont.type,
+                                     subtype && subtype.name);
+          var xrefFontStats = xref.stats.fontTypes;
+          xrefFontStats[fontType] = true;
+        } catch (ex) { }
+
         fontCapability.resolve(new TranslatedFont(font.loadedName,
           new ErrorFont(reason instanceof Error ? reason.message : reason),
           font));
@@ -1542,6 +1560,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         dict: dict,
         baseDict: baseDict,
         composite: composite,
+        type: type.name,
         hash: hash ? hash.hexdigest() : ''
       };
     },
@@ -1552,16 +1571,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var dict = preEvaluatedFont.dict;
       var composite = preEvaluatedFont.composite;
       var descriptor = preEvaluatedFont.descriptor;
-      var type = dict.get('Subtype');
+      var type = preEvaluatedFont.type;
       var maxCharIndex = (composite ? 0xFFFF : 0xFF);
       var properties;
 
       if (!descriptor) {
-        if (type.name === 'Type3') {
+        if (type === 'Type3') {
           // FontDescriptor is only required for Type3 fonts when the document
           // is a tagged pdf. Create a barbebones one to get by.
           descriptor = new Dict(null);
-          descriptor.set('FontName', Name.get(type.name));
+          descriptor.set('FontName', Name.get(type));
         } else {
           // Before PDF 1.5 if the font was one of the base 14 fonts, having a
           // FontDescriptor was not required.
@@ -1584,7 +1603,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                              FontFlags.Nonsymbolic);
 
           properties = {
-            type: type.name,
+            type: type,
             name: baseFontName,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
@@ -1617,7 +1636,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         baseFont = Name.get(baseFont);
       }
 
-      if (type.name !== 'Type3') {
+      if (type !== 'Type3') {
         var fontNameStr = fontName && fontName.name;
         var baseFontStr = baseFont && baseFont.name;
         if (fontNameStr !== baseFontStr) {
@@ -1649,7 +1668,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       properties = {
-        type: type.name,
+        type: type,
         name: fontName.name,
         subtype: subtype,
         file: fontFile,
@@ -1684,7 +1703,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       this.extractDataStructures(dict, baseDict, xref, properties);
       this.extractWidths(dict, xref, descriptor, properties);
 
-      if (type.name === 'Type3') {
+      if (type === 'Type3') {
         properties.isType3Font = true;
       }
 

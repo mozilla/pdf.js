@@ -17,7 +17,8 @@
 /* globals Ascii85Stream, AsciiHexStream, CCITTFaxStream, Cmd, Dict, error,
            FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef,
            isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name,
-           NullStream, PredictorStream, Ref, RunLengthStream, warn, info */
+           NullStream, PredictorStream, Ref, RunLengthStream, warn, info,
+           StreamType */
 
 'use strict';
 
@@ -343,7 +344,9 @@ var Parser = (function ParserClosure() {
       if (stream.dict.get('Length') === 0) {
         return new NullStream(stream);
       }
+      var xrefStreamStats = this.xref.stats.streamTypes;
       if (name == 'FlateDecode' || name == 'Fl') {
+        xrefStreamStats[StreamType.FLATE] = true;
         if (params) {
           return new PredictorStream(new FlateStream(stream, maybeLength),
                                      maybeLength, params);
@@ -351,6 +354,7 @@ var Parser = (function ParserClosure() {
         return new FlateStream(stream, maybeLength);
       }
       if (name == 'LZWDecode' || name == 'LZW') {
+        xrefStreamStats[StreamType.LZW] = true;
         var earlyChange = 1;
         if (params) {
           if (params.has('EarlyChange')) {
@@ -363,24 +367,31 @@ var Parser = (function ParserClosure() {
         return new LZWStream(stream, maybeLength, earlyChange);
       }
       if (name == 'DCTDecode' || name == 'DCT') {
+        xrefStreamStats[StreamType.DCT] = true;
         return new JpegStream(stream, maybeLength, stream.dict, this.xref);
       }
       if (name == 'JPXDecode' || name == 'JPX') {
+        xrefStreamStats[StreamType.JPX] = true;
         return new JpxStream(stream, maybeLength, stream.dict);
       }
       if (name == 'ASCII85Decode' || name == 'A85') {
+        xrefStreamStats[StreamType.A85] = true;
         return new Ascii85Stream(stream, maybeLength);
       }
       if (name == 'ASCIIHexDecode' || name == 'AHx') {
+        xrefStreamStats[StreamType.AHX] = true;
         return new AsciiHexStream(stream, maybeLength);
       }
       if (name == 'CCITTFaxDecode' || name == 'CCF') {
+        xrefStreamStats[StreamType.CCF] = true;
         return new CCITTFaxStream(stream, maybeLength, params);
       }
       if (name == 'RunLengthDecode' || name == 'RL') {
+        xrefStreamStats[StreamType.RL] = true;
         return new RunLengthStream(stream, maybeLength);
       }
       if (name == 'JBIG2Decode') {
+        xrefStreamStats[StreamType.JBIG] = true;
         return new Jbig2Stream(stream, maybeLength, stream.dict);
       }
       warn('filter "' + name + '" not supported yet');

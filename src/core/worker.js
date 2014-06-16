@@ -319,6 +319,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     });
 
+    handler.on('GetStats',
+      function wphSetupGetStats(data) {
+        return pdfManager.pdfDocument.xref.stats;
+      }
+    );
+
     handler.on('UpdatePassword', function wphSetupUpdatePassword(data) {
       pdfManager.updatePassword(data);
     });

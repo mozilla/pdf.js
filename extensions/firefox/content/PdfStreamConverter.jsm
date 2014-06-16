@@ -247,6 +247,7 @@ function ChromeActions(domWindow, contentDispositionFilename) {
     documentInfo: false,
     firstPageInfo: false,
     streamTypesUsed: [],
+    fontTypesUsed: [],
     startAt: Date.now()
   };
 }
@@ -388,18 +389,39 @@ ChromeActions.prototype = {
           this.telemetryState.firstPageInfo = true;
         }
         break;
-      case 'streamInfo':
-        if (!Array.isArray(probeInfo.streamTypes)) {
+      case 'documentStats':
+        // documentStats can be called several times for one documents.
+        // if stream/font types are reported, trying not to submit the same
+        // enumeration value multiple times.
+        var documentStats = probeInfo.stats;
+        if (!documentStats || typeof documentStats !== 'object') {
           break;
         }
-        for (var i = 0; i < probeInfo.streamTypes.length; i++) {
-          var streamTypeId = probeInfo.streamTypes[i] | 0;
-          if (streamTypeId >= 0 && streamTypeId < 10 &&
-              !this.telemetryState.streamTypesUsed[streamTypeId]) {
-            PdfJsTelemetry.onStreamType(streamTypeId);
-            this.telemetryState.streamTypesUsed[streamTypeId] = true;
+        var streamTypes = documentStats.streamTypes;
+        if (Array.isArray(streamTypes)) {
+          var STREAM_TYPE_ID_LIMIT = 20;
+          for (var i = 0; i < STREAM_TYPE_ID_LIMIT; i++) {
+            if (streamTypes[i] &&
+                !this.telemetryState.streamTypesUsed[i]) {
+              PdfJsTelemetry.onStreamType(i);
+              this.telemetryState.streamTypesUsed[i] = true;
+            }
           }
         }
+        var fontTypes = documentStats.fontTypes;
+        if (Array.isArray(fontTypes)) {
+          var FONT_TYPE_ID_LIMIT = 20;
+          for (var i = 0; i < FONT_TYPE_ID_LIMIT; i++) {
+            if (fontTypes[i] &&
+                !this.telemetryState.fontTypesUsed[i]) {
+              PdfJsTelemetry.onFontType(i);
+              this.telemetryState.fontTypesUsed[i] = true;
+            }
+          }
+        }
+        break;
+      case 'print':
+        PdfJsTelemetry.onPrint();
         break;
     }
   },
@@ -957,6 +979,12 @@ PdfStreamConverter.prototype = {
           findEventManager.bind();
         }
         listener.onStopRequest(aRequest, context, statusCode);
+
+        if (domWindow.frameElement) {
+          var isObjectEmbed = domWindow.frameElement.tagName !== 'IFRAME' ||
+            domWindow.frameElement.className === 'previewPluginContentFrame';
+          PdfJsTelemetry.onEmbed(isObjectEmbed);
+        }
       }
     };
 
