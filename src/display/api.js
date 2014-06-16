@@ -394,6 +394,15 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *                      rendering call the function that is the first argument
  *                      to the callback.
  */
+ 
+/**
+ * PDF page operator list.
+ *
+ * @typedef {Object} PDFOperatorList
+ * @property {Array} fnArray - Array containing the operator functions.
+ * @property {Array} argsArray - Array containing the arguments of the
+ *                               functions.
+ */
 
 /**
  * Proxy to a PDFPage in the worker thread.
@@ -554,6 +563,45 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       return renderTask;
     },
+
+    /**
+     * @return {Promise} A promise resolved with an {@link PDFOperatorList}
+     * object that represents page's operator list.
+     */
+    getOperatorList: function PDFPageProxy_getOperatorList() {
+      function operatorListChanged() {
+        if (intentState.operatorList.lastChunk) {
+          intentState.opListReadCapability.resolve(intentState.operatorList);
+        }
+      }
+
+      var renderingIntent = 'oplist';
+      if (!this.intentStates[renderingIntent]) {
+        this.intentStates[renderingIntent] = {};
+      }
+      var intentState = this.intentStates[renderingIntent];
+
+      if (!intentState.opListReadCapability) {
+        var opListTask = {};
+        opListTask.operatorListChanged = operatorListChanged;
+        intentState.receivingOperatorList = true;
+        intentState.opListReadCapability = createPromiseCapability();
+        intentState.renderTasks = [];
+        intentState.renderTasks.push(opListTask);
+        intentState.operatorList = {
+          fnArray: [],
+          argsArray: [],
+          lastChunk: false
+        };
+
+        this.transport.messageHandler.send('RenderPageRequest', {
+          pageIndex: this.pageIndex,
+          intent: renderingIntent
+        });
+      }
+      return intentState.opListReadCapability.promise;
+    },
+
     /**
      * @return {Promise} That is resolved a {@link TextContent}
      * object that represent the page text content.
@@ -599,7 +647,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     _startRenderPage: function PDFPageProxy_startRenderPage(transparency,
                                                             intent) {
       var intentState = this.intentStates[intent];
-      intentState.displayReadyCapability.resolve(transparency);
+      // TODO Refactor RenderPageRequest to separate rendering
+      // and operator list logic
+      if (intentState.displayReadyCapability) {
+        intentState.displayReadyCapability.resolve(transparency);
+      }
     },
     /**
      * For internal use only.
