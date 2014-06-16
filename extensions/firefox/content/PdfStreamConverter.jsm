@@ -348,9 +348,6 @@ ChromeActions.prototype = {
       return 'null';
     }
   },
-  pdfBugEnabled: function() {
-    return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
-  },
   supportsIntegratedFind: function() {
     // Integrated find is only supported when we're not in a frame
     if (this.domWindow.frameElement !== null) {

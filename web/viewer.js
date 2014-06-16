@@ -228,6 +228,9 @@ var PDFView = {
       Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
         self.preferenceSidebarViewOnLoad = value;
       }),
+      Preferences.get('pdfBugEnabled').then(function resolved(value) {
+        self.preferencesPdfBugEnabled = value;
+      }),
       Preferences.get('disableTextLayer').then(function resolved(value) {
         if (PDFJS.disableTextLayer === true) {
           return;
@@ -1810,7 +1813,7 @@ function webViewerInitialized() {
 //#if !(FIREFOX || MOZCENTRAL)
   if ('pdfBug' in hashParams) {
 //#else
-//if ('pdfBug' in hashParams && FirefoxCom.requestSync('pdfBugEnabled')) {
+//if ('pdfBug' in hashParams && PDFView.preferencesPdfBugEnabled) {
 //#endif
     PDFJS.pdfBug = true;
     var pdfBug = hashParams['pdfBug'];
