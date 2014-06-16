@@ -19,7 +19,7 @@
            isNum, ISOAdobeCharset, Stream, stringToArray, stringToBytes,
            string32, TextDecoder, warn, Lexer, Util, FONT_IDENTITY_MATRIX,
            FontRendererFactory, shadow, isString, IdentityCMap, Name,
-           CMapFactory, PDFJS, readUint32 */
+           CMapFactory, PDFJS, readUint32, FontType */
 
 'use strict';
 
@@ -2117,6 +2117,28 @@ function adjustWidths(properties) {
   properties.defaultWidth *= scale;
 }
 
+function getFontType(type, subtype) {
+  switch (type) {
+    case 'Type1':
+      return subtype === 'Type1C' ? FontType.TYPE1C : FontType.TYPE1;
+    case 'CIDFontType0':
+      return subtype === 'CIDFontType0C' ? FontType.CIDFONTTYPE0C :
+        FontType.CIDFONTTYPE0;
+    case 'OpenType':
+      return FontType.OPENTYPE;
+    case 'TrueType':
+      return FontType.TRUETYPE;
+    case 'CIDFontType2':
+      return FontType.CIDFONTTYPE2;
+    case 'MMType1':
+      return FontType.MMTYPE1;
+    case 'Type0':
+      return FontType.TYPE0;
+    default:
+      return FontType.UNKNOWN;
+  }
+}
+
 var Glyph = (function GlyphClosure() {
   function Glyph(fontChar, unicode, accent, width, vmetric, operatorListId) {
     this.fontChar = fontChar;
@@ -2167,6 +2189,7 @@ var Font = (function FontClosure() {
     this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
 
     var type = properties.type;
+    var subtype = properties.subtype;
     this.type = type;
 
     this.fallbackName = (this.isMonospace ? 'monospace' :
@@ -2193,6 +2216,7 @@ var Font = (function FontClosure() {
         this.toFontChar[charCode] = (this.differences[charCode] ||
                                      properties.defaultEncoding[charCode]);
       }
+      this.fontType = FontType.TYPE3;
       return;
     }
 
@@ -2260,11 +2284,11 @@ var Font = (function FontClosure() {
       }
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
+      this.fontType = getFontType(type, subtype);
       return;
     }
 
     // Some fonts might use wrong font types for Type1C or CIDFontType0C
-    var subtype = properties.subtype;
     if (subtype == 'Type1C' && (type != 'Type1' && type != 'MMType1')) {
       // Some TrueType fonts by mistake claim Type1C
       if (isTrueTypeFile(file)) {
@@ -2288,7 +2312,7 @@ var Font = (function FontClosure() {
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
 
-        var cff = (subtype == 'Type1C' || subtype == 'CIDFontType0C') ?
+        var cff = (subtype === 'Type1C' || subtype === 'CIDFontType0C') ?
           new CFFFont(file, properties) : new Type1Font(name, file, properties);
 
         adjustWidths(properties);
@@ -2305,6 +2329,9 @@ var Font = (function FontClosure() {
         // Repair the TrueType file. It is can be damaged in the point of
         // view of the sanitizer
         data = this.checkAndRepair(name, file, properties);
+        if (this.isOpenType) {
+          type = 'OpenType';
+        }
         break;
 
       default:
@@ -2313,6 +2340,7 @@ var Font = (function FontClosure() {
     }
 
     this.data = data;
+    this.fontType = getFontType(type, subtype);
 
     // Transfer some properties again that could change during font conversion
     this.fontMatrix = properties.fontMatrix;
@@ -3752,10 +3780,12 @@ var Font = (function FontClosure() {
         delete tables.fpgm;
         delete tables.prep;
         delete tables['cvt '];
+        this.isOpenType = true;
       } else {
         if (!tables.glyf || !tables.loca) {
           error('Required "glyf" or "loca" tables are not found');
         }
+        this.isOpenType = false;
       }
 
       if (!tables.maxp) {

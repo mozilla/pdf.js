@@ -630,7 +630,13 @@ var PageView = function pageView(container, id, scale,
 //    FirefoxCom.request('reportTelemetry', JSON.stringify({
 //      type: 'pageInfo'
 //    }));
-//    // TODO add stream types report here
+//    // It is a good time to report stream and font types
+//    PDFView.pdfDocument.getStats().then(function (stats) {
+//      FirefoxCom.request('reportTelemetry', JSON.stringify({
+//        type: 'documentStats',
+//        stats: stats
+//      }));
+//    });
 //#endif
       callback();
     }

@@ -31,9 +31,10 @@ Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_FALLBACK_SHOWN", 1, 2, 3,
 Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_VERSION", 1, 10, 11, Telemetry.HISTOGRAM_LINEAR);
 Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_GENERATOR", 1, 25, 26, Telemetry.HISTOGRAM_LINEAR);
 Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_SIZE_KB", 2, 64 * 1024, 20, Telemetry.HISTOGRAM_EXPONENTIAL);
+Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_FONT_TYPES", 1, 19, 20, Telemetry.HISTOGRAM_LINEAR);
 Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_FORM", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
 Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_PRINT", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_STREAM_TYPES", 1, 9, 10, Telemetry.HISTOGRAM_LINEAR);
+Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_STREAM_TYPES", 1, 19, 20, Telemetry.HISTOGRAM_LINEAR);
 Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_TIME_TO_VIEW_MS", 1, 10000, 50, Telemetry.HISTOGRAM_EXPONENTIAL);
 
 
@@ -57,6 +58,10 @@ this.PdfJsTelemetry = {
   onDocumentGenerator: function (generatorId) {
     let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_GENERATOR");
     histogram.add(generatorId);
+  },
+  onFontType: function (fontTypeId) {
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_FONT_TYPES");
+    histogram.add(fontTypeId);
   },
   onForm: function (isAcroform) {
     let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_FORM");
