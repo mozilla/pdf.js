@@ -78,6 +78,10 @@ var DownloadManager = (function DownloadManagerClosure() {
     },
 
     download: function DownloadManager_download(blob, url, filename) {
+      if (PDFJS.disableDownload) {
+        return;
+      }
+
       if (!URL) {
         // URL.createObjectURL is not supported
         this.downloadUrl(url, filename);

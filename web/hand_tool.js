@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, GrabToPan, PDFView, Preferences, SecondaryToolbar */
+/* globals mozL10n, GrabToPan, PDFJS, PDFView, Preferences, SecondaryToolbar */
 
 'use strict';
 
@@ -55,7 +55,9 @@ var HandTool = {
   },
 
   toggle: function handToolToggle() {
-    this.handTool.toggle();
+    if (!PDFJS.forceHandTool) {
+      this.handTool.toggle();
+    }
     SecondaryToolbar.close();
   },
 
