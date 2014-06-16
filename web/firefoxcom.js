@@ -99,6 +99,10 @@ var DownloadManager = (function DownloadManagerClosure() {
     },
 
     download: function DownloadManager_download(blob, url, filename) {
+      if (PDFJS.disableDownload) {
+        return;
+      }
+
       var blobUrl = window.URL.createObjectURL(blob);
 
       FirefoxCom.request('download', {

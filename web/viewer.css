@@ -1839,6 +1839,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     top: 0;
     left: 0;
   }
+  
+  /*Rule for printing an empty page if printing is disabled*/
+  .noprint {
+    display:none;
+  }
 }
 
 .visibleLargeView,

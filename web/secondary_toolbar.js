@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, SCROLLBAR_PADDING */
+/* globals PDFJS, PDFView, SCROLLBAR_PADDING */
 
 'use strict';
 
@@ -72,22 +72,30 @@ var SecondaryToolbar = {
 
   // Event handling functions.
   presentationModeClick: function secondaryToolbarPresentationModeClick(evt) {
-    this.presentationMode.request();
+    if (!PDFJS.disablePresentationMode) {
+      this.presentationMode.request();
+    }
     this.close();
   },
 
   openFileClick: function secondaryToolbarOpenFileClick(evt) {
-    document.getElementById('fileInput').click();
+    if (!PDFJS.disableOpenFile) {
+      document.getElementById('fileInput').click();
+    }
     this.close();
   },
 
   printClick: function secondaryToolbarPrintClick(evt) {
-    window.print();
+    if (!PDFJS.disablePrinting) {
+      window.print();
+    }
     this.close();
   },
 
   downloadClick: function secondaryToolbarDownloadClick(evt) {
-    PDFView.download();
+    if (!PDFJS.disableDownload) {
+      PDFView.download();
+    }
     this.close();
   },
 
@@ -114,7 +122,9 @@ var SecondaryToolbar = {
   },
 
   documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {
-    this.documentProperties.open();
+    if (!PDFJS.disableShowProperties) {
+      this.documentProperties.open();
+    }
     this.close();
   },
 

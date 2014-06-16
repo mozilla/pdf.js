@@ -698,6 +698,9 @@ var PDFView = {
   },
 
   download: function pdfViewDownload() {
+    if (PDFJS.disableDownload) {
+      return;
+    }
     function downloadByUrl() {
       downloadManager.downloadUrl(url, filename);
     }
@@ -1757,6 +1760,40 @@ function webViewerInitialized() {
     PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
   }
 
+  if ('disableDownload' in hashParams) {
+    PDFJS.disableDownload = (hashParams['disableDownload'] === 'true');
+  }
+  
+  if ('disablePrinting' in hashParams) {
+    PDFJS.disablePrinting = (hashParams['disablePrinting'] === 'true');
+  }
+  
+  if ('disableOpenFile'in hashParams) {
+    PDFJS.disableOpenFile = (hashParams['disableOpenFile'] === 'true');
+  }
+  
+  if ('disableSearch' in hashParams) {
+    PDFJS.disableSearch = (hashParams['disableSearch'] === 'true');
+  }
+  
+  if ('disableShowProperties' in hashParams) {
+    PDFJS.disableShowProperties =
+                  (hashParams['disableShowProperties'] === 'true');
+  }
+  
+  if ('disablePresentationMode' in hashParams) {
+    PDFJS.disablePresentationMode =
+                (hashParams['disablePresentationMode'] === 'true');
+  }
+  
+  if ('forceHandTool' in hashParams) {
+    PDFJS.forceHandTool = (hashParams['forceHandTool'] === 'true');
+  }
+  
+  if ('disableViewBookmark' in hashParams) {
+    PDFJS.disableViewBookmark = (hashParams['disableViewBookmark'] === 'true');
+  }
+  
   if ('useOnlyCssZoom' in hashParams) {
     PDFJS.useOnlyCssZoom = (hashParams['useOnlyCssZoom'] === 'true');
   }
@@ -1819,18 +1856,49 @@ function webViewerInitialized() {
     PDFBug.init();
   }
 
-  if (!PDFView.supportsPrinting) {
+  if (!PDFView.supportsPrinting || PDFJS.disablePrinting) {
     document.getElementById('print').classList.add('hidden');
     document.getElementById('secondaryPrint').classList.add('hidden');
+  
+    if (PDFJS.disablePrinting) {
+      document.getElementsByTagName('body')[0].classList.add('noprint');
+    }
+  }
+  
+  if (PDFJS.disableOpenFile) {
+    document.getElementById('openFile').classList.add('hidden');
+    document.getElementById('secondaryOpenFile').classList.add('hidden');
+  }
+  
+  if (PDFJS.disableDownload) {
+    document.getElementById('download').classList.add('hidden');
+    document.getElementById('secondaryDownload').classList.add('hidden');
+  }
+  
+  if (PDFJS.disableShowProperties) {
+    document.getElementById('documentProperties').classList.add('hidden');
   }
 
-  if (!PDFView.supportsFullscreen) {
+  if (PDFJS.forceHandTool) {
+    // hide the handTool button and the following separator
+    var handToolElement = document.getElementById('toggleHandTool');
+    handToolElement.classList.add('hidden');
+    handToolElement.nextElementSibling.classList.add('hidden');
+    HandTool.handTool.activate();
+  }
+
+  if (PDFJS.disableViewBookmark) {
+    document.getElementById('viewBookmark').classList.add('hidden');
+    document.getElementById('secondaryViewBookmark').classList.add('hidden');
+  }
+
+  if (!PDFView.supportsFullscreen || PDFJS.disablePresentationMode) {
     document.getElementById('presentationMode').classList.add('hidden');
     document.getElementById('secondaryPresentationMode').
       classList.add('hidden');
   }
 
-  if (PDFView.supportsIntegratedFind) {
+  if (PDFView.supportsIntegratedFind || PDFJS.disableSearch) {
     document.getElementById('viewFind').classList.add('hidden');
   }
 
@@ -2213,13 +2281,13 @@ window.addEventListener('keydown', function keydown(evt) {
     // either CTRL or META key with optional SHIFT.
     switch (evt.keyCode) {
       case 70: // f
-        if (!PDFView.supportsIntegratedFind) {
+        if (!PDFView.supportsIntegratedFind && !PDFJS.disableSearch) {
           PDFFindBar.open();
           handled = true;
         }
         break;
       case 71: // g
-        if (!PDFView.supportsIntegratedFind) {
+        if (!PDFView.supportsIntegratedFind && !PDFJS.disableSearch) {
           PDFFindBar.dispatchEvent('again', cmd === 5 || cmd === 12);
           handled = true;
         }

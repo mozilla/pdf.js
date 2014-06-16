@@ -122,6 +122,65 @@ PDFJS.disableCreateObjectURL = (PDFJS.disableCreateObjectURL === undefined ?
 PDFJS.disableWebGL = (PDFJS.disableWebGL === undefined ?
                       true : PDFJS.disableWebGL);
 
+
+/**                  
+ * Disable the download function.
+ * @var {boolean}
+ */
+PDFJS.disableDownload = (PDFJS.disableDownload === undefined ?
+                        false : PDFJS.disableDownload);
+
+/**
+ * Disable the print function.
+ * @var {boolean}
+ */
+PDFJS.disablePrinting = (PDFJS.disablePrinting === undefined ?
+                        false : PDFJS.disablePrinting);
+
+
+/**
+ * Disable the open function.
+ * @var {boolean}
+ */
+PDFJS.disableOpenFile = (PDFJS.disableOpenFile === undefined ?
+                        false : PDFJS.disableOpenFile);
+
+/**
+ * Disable the showProperties function.
+ * @var {boolean}
+ */
+PDFJS.disableShowProperties = (PDFJS.disableShowProperties === undefined ?
+                              false : PDFJS.disableShowProperties);
+
+/**
+ * Disables the textSelection function.
+ * @var {boolean}
+ */
+PDFJS.disableSearch = (PDFJS.disableSearch === undefined ?
+                      false : PDFJS.disableSearch);
+
+/**
+ * Disables the presentationMode function.
+ * @var {boolean}
+ */
+PDFJS.disablePresentationMode = (PDFJS.disablePresentationMode === undefined ?
+                                false : PDFJS.disabelPresentationMode);
+
+/**
+ * Forces the HandTool to be active.
+ * @var {boolean}
+ */
+PDFJS.forceHandTool = (PDFJS.forceHandTool === undefined ?
+                      false : PDFJS.forceHandTool);
+
+/**
+ * Disables the viewBookmark function.
+ * @var {boolean}
+ */
+PDFJS.disableViewBookmark = (PDFJS.disableViewBookmark === undefined ?
+                            false : PDFJS.disableViewBookmark);
+
+
 /**
  * Enables CSS only zooming.
  * @var {boolean}
