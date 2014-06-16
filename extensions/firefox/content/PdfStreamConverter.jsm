@@ -979,6 +979,12 @@ PdfStreamConverter.prototype = {
           findEventManager.bind();
         }
         listener.onStopRequest(aRequest, context, statusCode);
+
+        if (domWindow.frameElement) {
+          var isObjectEmbed = domWindow.frameElement.tagName !== 'IFRAME' ||
+            domWindow.frameElement.className === 'previewPluginContentFrame';
+          PdfJsTelemetry.onEmbed(isObjectEmbed);
+        }
       }
     };
 

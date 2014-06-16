@@ -44,6 +44,10 @@ this.PdfJsTelemetry = {
     let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_DOCUMENT_GENERATOR");
     histogram.add(generatorId);
   },
+  onEmbed: function (isObject) {
+    let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_EMBED");
+    histogram.add(isObject);
+  },
   onFontType: function (fontTypeId) {
     let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_FONT_TYPES");
     histogram.add(fontTypeId);
