@@ -17,7 +17,7 @@
 /* globals RenderingStates, PDFView, PDFHistory, PDFFindBar, PDFJS, mozL10n,
            CustomStyle, PresentationMode, scrollIntoView, SCROLLBAR_PADDING,
            CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale,
-           TextLayerBuilder, cache, Stats */
+           TextLayerBuilder, cache, Stats, AnnotationUtils */
 
 'use strict';
 
@@ -322,16 +322,14 @@ var PageView = function pageView(container, id, scale,
       } else {
         for (i = 0, ii = annotationsData.length; i < ii; i++) {
           data = annotationsData[i];
-          var annotation = PDFJS.Annotation.fromData(data);
-          if (!annotation || !annotation.hasHtml()) {
+          if (!data || !data.hasHtml) {
             continue;
           }
 
-          element = annotation.getHtmlElement(pdfPage.commonObjs);
+          element = AnnotationUtils.getHtmlElement(data, pdfPage.commonObjs);
           element.setAttribute('data-annotation-id', data.id);
           mozL10n.translate(element);
 
-          data = annotation.getData();
           var rect = data.rect;
           var view = pdfPage.view;
           rect = PDFJS.Util.normalizeRect([
