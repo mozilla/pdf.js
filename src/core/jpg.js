@@ -32,7 +32,7 @@ version was created by github user notmasteryet
 'use strict';
 
 var JpegImage = (function jpegImage() {
-  var dctZigZag = new Int32Array([
+  var dctZigZag = new Uint8Array([
      0,
      1,  8,
     16,  9,  2,
@@ -99,10 +99,8 @@ var JpegImage = (function jpegImage() {
     return 64 * ((component.blocksPerLine + 1) * row + col);
   }
 
-  function decodeScan(data, offset,
-                      frame, components, resetInterval,
-                      spectralStart, spectralEnd,
-                      successivePrev, successive) {
+  function decodeScan(data, offset, frame, components, resetInterval,
+                      spectralStart, spectralEnd, successivePrev, successive) {
     var precision = frame.precision;
     var samplesPerLine = frame.samplesPerLine;
     var scanLines = frame.scanLines;
@@ -386,166 +384,190 @@ var JpegImage = (function jpegImage() {
   //   IEEE Intl. Conf. on Acoustics, Speech & Signal Processing, 1989,
   //   988-991.
   function quantizeAndInverse(component, blockBufferOffset, p) {
-    var qt = component.quantizationTable;
-    var v0, v1, v2, v3, v4, v5, v6, v7, t;
-    var i;
-
-    // dequant
-    for (i = 0; i < 64; i++) {
-      p[i] = component.blockData[blockBufferOffset + i] * qt[i];
-    }
+    var qt = component.quantizationTable, blockData = component.blockData;
+    var v0, v1, v2, v3, v4, v5, v6, v7;
+    var p0, p1, p2, p3, p4, p5, p6, p7;
+    var t;
 
     // inverse DCT on rows
-    for (i = 0; i < 8; ++i) {
-      var row = 8 * i;
+    for (var row = 0; row < 64; row += 8) {
+      // gather block data
+      p0 = blockData[blockBufferOffset + row];
+      p1 = blockData[blockBufferOffset + row + 1];
+      p2 = blockData[blockBufferOffset + row + 2];
+      p3 = blockData[blockBufferOffset + row + 3];
+      p4 = blockData[blockBufferOffset + row + 4];
+      p5 = blockData[blockBufferOffset + row + 5];
+      p6 = blockData[blockBufferOffset + row + 6];
+      p7 = blockData[blockBufferOffset + row + 7];
+
+      // dequant p0
+      p0 *= qt[row];
 
       // check for all-zero AC coefficients
-      if (p[1 + row] === 0 && p[2 + row] === 0 && p[3 + row] === 0 &&
-          p[4 + row] === 0 && p[5 + row] === 0 && p[6 + row] === 0 &&
-          p[7 + row] === 0) {
-        t = (dctSqrt2 * p[0 + row] + 512) >> 10;
-        p[0 + row] = t;
-        p[1 + row] = t;
-        p[2 + row] = t;
-        p[3 + row] = t;
-        p[4 + row] = t;
-        p[5 + row] = t;
-        p[6 + row] = t;
-        p[7 + row] = t;
+      if ((p1 | p2 | p3 | p4 | p5 | p6 | p7) === 0) {
+        t = (dctSqrt2 * p0 + 512) >> 10;
+        p[row] = t;
+        p[row + 1] = t;
+        p[row + 2] = t;
+        p[row + 3] = t;
+        p[row + 4] = t;
+        p[row + 5] = t;
+        p[row + 6] = t;
+        p[row + 7] = t;
         continue;
       }
+      // dequant p1 ... p7
+      p1 *= qt[row + 1];
+      p2 *= qt[row + 2];
+      p3 *= qt[row + 3];
+      p4 *= qt[row + 4];
+      p5 *= qt[row + 5];
+      p6 *= qt[row + 6];
+      p7 *= qt[row + 7];
 
       // stage 4
-      v0 = (dctSqrt2 * p[0 + row] + 128) >> 8;
-      v1 = (dctSqrt2 * p[4 + row] + 128) >> 8;
-      v2 = p[2 + row];
-      v3 = p[6 + row];
-      v4 = (dctSqrt1d2 * (p[1 + row] - p[7 + row]) + 128) >> 8;
-      v7 = (dctSqrt1d2 * (p[1 + row] + p[7 + row]) + 128) >> 8;
-      v5 = p[3 + row] << 4;
-      v6 = p[5 + row] << 4;
+      v0 = (dctSqrt2 * p0 + 128) >> 8;
+      v1 = (dctSqrt2 * p4 + 128) >> 8;
+      v2 = p2;
+      v3 = p6;
+      v4 = (dctSqrt1d2 * (p1 - p7) + 128) >> 8;
+      v7 = (dctSqrt1d2 * (p1 + p7) + 128) >> 8;
+      v5 = p3 << 4;
+      v6 = p5 << 4;
 
       // stage 3
-      t = (v0 - v1+ 1) >> 1;
       v0 = (v0 + v1 + 1) >> 1;
-      v1 = t;
-      t = (v2 * dctSin6 + v3 * dctCos6 + 128) >> 8;
+      v1 = v0 - v1;
+      t  = (v2 * dctSin6 + v3 * dctCos6 + 128) >> 8;
       v2 = (v2 * dctCos6 - v3 * dctSin6 + 128) >> 8;
       v3 = t;
-      t = (v4 - v6 + 1) >> 1;
       v4 = (v4 + v6 + 1) >> 1;
-      v6 = t;
-      t = (v7 + v5 + 1) >> 1;
-      v5 = (v7 - v5 + 1) >> 1;
-      v7 = t;
+      v6 = v4 - v6;
+      v7 = (v7 + v5 + 1) >> 1;
+      v5 = v7 - v5;
 
       // stage 2
-      t = (v0 - v3 + 1) >> 1;
       v0 = (v0 + v3 + 1) >> 1;
-      v3 = t;
-      t = (v1 - v2 + 1) >> 1;
+      v3 = v0 - v3;
       v1 = (v1 + v2 + 1) >> 1;
-      v2 = t;
-      t = (v4 * dctSin3 + v7 * dctCos3 + 2048) >> 12;
+      v2 = v1 - v2;
+      t  = (v4 * dctSin3 + v7 * dctCos3 + 2048) >> 12;
       v4 = (v4 * dctCos3 - v7 * dctSin3 + 2048) >> 12;
       v7 = t;
-      t = (v5 * dctSin1 + v6 * dctCos1 + 2048) >> 12;
+      t  = (v5 * dctSin1 + v6 * dctCos1 + 2048) >> 12;
       v5 = (v5 * dctCos1 - v6 * dctSin1 + 2048) >> 12;
       v6 = t;
 
       // stage 1
-      p[0 + row] = v0 + v7;
-      p[7 + row] = v0 - v7;
-      p[1 + row] = v1 + v6;
-      p[6 + row] = v1 - v6;
-      p[2 + row] = v2 + v5;
-      p[5 + row] = v2 - v5;
-      p[3 + row] = v3 + v4;
-      p[4 + row] = v3 - v4;
+      p[row] = v0 + v7;
+      p[row + 7] = v0 - v7;
+      p[row + 1] = v1 + v6;
+      p[row + 6] = v1 - v6;
+      p[row + 2] = v2 + v5;
+      p[row + 5] = v2 - v5;
+      p[row + 3] = v3 + v4;
+      p[row + 4] = v3 - v4;
     }
 
     // inverse DCT on columns
-    for (i = 0; i < 8; ++i) {
-      var col = i;
+    for (var col = 0; col < 8; ++col) {
+      p0 = p[col];
+      p1 = p[col +  8];
+      p2 = p[col + 16];
+      p3 = p[col + 24];
+      p4 = p[col + 32];
+      p5 = p[col + 40];
+      p6 = p[col + 48];
+      p7 = p[col + 56];
 
       // check for all-zero AC coefficients
-      if (p[1*8 + col] === 0 && p[2*8 + col] === 0 && p[3*8 + col] === 0 &&
-          p[4*8 + col] === 0 && p[5*8 + col] === 0 && p[6*8 + col] === 0 &&
-          p[7*8 + col] === 0) {
-        t = (dctSqrt2 * p[i+0] + 8192) >> 14;
-        p[0*8 + col] = t;
-        p[1*8 + col] = t;
-        p[2*8 + col] = t;
-        p[3*8 + col] = t;
-        p[4*8 + col] = t;
-        p[5*8 + col] = t;
-        p[6*8 + col] = t;
-        p[7*8 + col] = t;
+      if ((p1 | p2 | p3 | p4 | p5 | p6 | p7) === 0) {
+        t = (dctSqrt2 * p0 + 8192) >> 14;
+        // convert to 8 bit
+        t = (t < -2040) ? 0 : (t >= 2024) ? 255 : (t + 2056) >> 4;
+        blockData[blockBufferOffset + col] = t;
+        blockData[blockBufferOffset + col +  8] = t;
+        blockData[blockBufferOffset + col + 16] = t;
+        blockData[blockBufferOffset + col + 24] = t;
+        blockData[blockBufferOffset + col + 32] = t;
+        blockData[blockBufferOffset + col + 40] = t;
+        blockData[blockBufferOffset + col + 48] = t;
+        blockData[blockBufferOffset + col + 56] = t;
         continue;
       }
 
       // stage 4
-      v0 = (dctSqrt2 * p[0*8 + col] + 2048) >> 12;
-      v1 = (dctSqrt2 * p[4*8 + col] + 2048) >> 12;
-      v2 = p[2*8 + col];
-      v3 = p[6*8 + col];
-      v4 = (dctSqrt1d2 * (p[1*8 + col] - p[7*8 + col]) + 2048) >> 12;
-      v7 = (dctSqrt1d2 * (p[1*8 + col] + p[7*8 + col]) + 2048) >> 12;
-      v5 = p[3*8 + col];
-      v6 = p[5*8 + col];
+      v0 = (dctSqrt2 * p0 + 2048) >> 12;
+      v1 = (dctSqrt2 * p4 + 2048) >> 12;
+      v2 = p2;
+      v3 = p6;
+      v4 = (dctSqrt1d2 * (p1 - p7) + 2048) >> 12;
+      v7 = (dctSqrt1d2 * (p1 + p7) + 2048) >> 12;
+      v5 = p3;
+      v6 = p5;
 
       // stage 3
-      t = (v0 - v1 + 1) >> 1;
-      v0 = (v0 + v1 + 1) >> 1;
-      v1 = t;
-      t = (v2 * dctSin6 + v3 * dctCos6 + 2048) >> 12;
+      // Shift v0 by 128.5 << 5 here, so we don't need to shift p0...p7 when
+      // converting to UInt8 range later.  
+      v0 = ((v0 + v1 + 1) >> 1) + 4112;
+      v1 = v0 - v1;
+      t  = (v2 * dctSin6 + v3 * dctCos6 + 2048) >> 12;
       v2 = (v2 * dctCos6 - v3 * dctSin6 + 2048) >> 12;
       v3 = t;
-      t = (v4 - v6 + 1) >> 1;
       v4 = (v4 + v6 + 1) >> 1;
-      v6 = t;
-      t = (v7 + v5 + 1) >> 1;
-      v5 = (v7 - v5 + 1) >> 1;
-      v7 = t;
+      v6 = v4 - v6;
+      v7 = (v7 + v5 + 1) >> 1;
+      v5 = v7 - v5;
 
       // stage 2
-      t = (v0 - v3 + 1) >> 1;
       v0 = (v0 + v3 + 1) >> 1;
-      v3 = t;
-      t = (v1 - v2 + 1) >> 1;
+      v3 = v0 - v3;
       v1 = (v1 + v2 + 1) >> 1;
-      v2 = t;
-      t = (v4 * dctSin3 + v7 * dctCos3 + 2048) >> 12;
+      v2 = v1 - v2;
+      t  = (v4 * dctSin3 + v7 * dctCos3 + 2048) >> 12;
       v4 = (v4 * dctCos3 - v7 * dctSin3 + 2048) >> 12;
       v7 = t;
-      t = (v5 * dctSin1 + v6 * dctCos1 + 2048) >> 12;
+      t  = (v5 * dctSin1 + v6 * dctCos1 + 2048) >> 12;
       v5 = (v5 * dctCos1 - v6 * dctSin1 + 2048) >> 12;
       v6 = t;
 
       // stage 1
-      p[0*8 + col] = v0 + v7;
-      p[7*8 + col] = v0 - v7;
-      p[1*8 + col] = v1 + v6;
-      p[6*8 + col] = v1 - v6;
-      p[2*8 + col] = v2 + v5;
-      p[5*8 + col] = v2 - v5;
-      p[3*8 + col] = v3 + v4;
-      p[4*8 + col] = v3 - v4;
-    }
+      p0 = v0 + v7;
+      p7 = v0 - v7;
+      p1 = v1 + v6;
+      p6 = v1 - v6;
+      p2 = v2 + v5;
+      p5 = v2 - v5;
+      p3 = v3 + v4;
+      p4 = v3 - v4;
 
-    // convert to 8-bit integers
-    for (i = 0; i < 64; ++i) {
-      var index = blockBufferOffset + i;
-      var q = p[i];
-      q = (q <= -2056) ? 0 : (q >= 2024) ? 255 : (q + 2056) >> 4;
-      component.blockData[index] = q;
+      // convert to 8-bit integers
+      p0 = (p0 < 16) ? 0 : (p0 >= 4080) ? 255 : p0 >> 4;
+      p1 = (p1 < 16) ? 0 : (p1 >= 4080) ? 255 : p1 >> 4;
+      p2 = (p2 < 16) ? 0 : (p2 >= 4080) ? 255 : p2 >> 4;
+      p3 = (p3 < 16) ? 0 : (p3 >= 4080) ? 255 : p3 >> 4;
+      p4 = (p4 < 16) ? 0 : (p4 >= 4080) ? 255 : p4 >> 4;
+      p5 = (p5 < 16) ? 0 : (p5 >= 4080) ? 255 : p5 >> 4;
+      p6 = (p6 < 16) ? 0 : (p6 >= 4080) ? 255 : p6 >> 4;
+      p7 = (p7 < 16) ? 0 : (p7 >= 4080) ? 255 : p7 >> 4;
+
+      // store block data
+      blockData[blockBufferOffset + col] = p0;
+      blockData[blockBufferOffset + col +  8] = p1;
+      blockData[blockBufferOffset + col + 16] = p2;
+      blockData[blockBufferOffset + col + 24] = p3;
+      blockData[blockBufferOffset + col + 32] = p4;
+      blockData[blockBufferOffset + col + 40] = p5;
+      blockData[blockBufferOffset + col + 48] = p6;
+      blockData[blockBufferOffset + col + 56] = p7;
     }
   }
 
   function buildComponentData(frame, component) {
     var blocksPerLine = component.blocksPerLine;
     var blocksPerColumn = component.blocksPerColumn;
-    var computationBuffer = new Int32Array(64);
+    var computationBuffer = new Int16Array(64);
 
     for (var blockRow = 0; blockRow < blocksPerColumn; blockRow++) {
       for (var blockCol = 0; blockCol < blocksPerLine; blockCol++) {
@@ -670,7 +692,7 @@ var JpegImage = (function jpegImage() {
             var z;
             while (offset < quantizationTablesEnd) {
               var quantizationTableSpec = data[offset++];
-              var tableData = new Int32Array(64);
+              var tableData = new Uint16Array(64);
               if ((quantizationTableSpec >> 4) === 0) { // 8 bit values
                 for (j = 0; j < 64; j++) {
                   z = dctZigZag[j];
