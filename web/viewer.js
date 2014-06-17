@@ -28,7 +28,7 @@ var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 var DEFAULT_SCALE = 'auto';
 var DEFAULT_SCALE_DELTA = 1.1;
 var UNKNOWN_SCALE = 0;
-var CACHE_SIZE = 10;
+var DEFAULT_CACHE_SIZE = 10;
 var CSS_UNITS = 96.0 / 72.0;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
@@ -91,7 +91,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include chromecom.js
 //#endif
 
-var cache = new Cache(CACHE_SIZE);
+var cache = new Cache(DEFAULT_CACHE_SIZE);
 var currentPageNumber = 1;
 
 //#include view_history.js
@@ -1963,6 +1963,10 @@ function updateViewarea() {
   if (visiblePages.length === 0) {
     return;
   }
+
+  var suggestedCacheSize = Math.max(DEFAULT_CACHE_SIZE,
+      2 * visiblePages.length + 1);
+  cache.resize(suggestedCacheSize);
 
   PDFView.renderHighestPriority(visible);
 
