@@ -2459,9 +2459,12 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
-//  var url = activity.source.data.url;
+//  var blob = activity.source.data.blob;
 //  PDFJS.maxImageSize = 1024 * 1024;
+//
+//  var url = URL.createObjectURL(blob);
 //  PDFView.open(url);
+//
 //  var cancelButton = document.getElementById('activityClose');
 //  cancelButton.addEventListener('click', function() {
 //    activity.postResult('close');
