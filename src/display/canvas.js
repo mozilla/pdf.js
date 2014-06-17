@@ -1370,6 +1370,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       ctx.lineWidth = lineWidth;
 
+      var lastScaleX = 1;
       var x = 0, i;
       for (i = 0; i < glyphsLength; ++i) {
         var glyph = glyphs[i];
@@ -1382,7 +1383,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           continue;
         }
 
-        var restoreNeeded = false;
         var character = glyph.fontChar;
         var accent = glyph.accent;
         var scaledX, scaledY, scaledAccentX, scaledAccentY;
@@ -1402,16 +1402,34 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           scaledY = 0;
         }
 
+
+        var characterScaleX = 1;
         if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
           // some standard fonts may not have the exact width, trying to
           // rescale per character
           var measuredWidth = ctx.measureText(character).width * 1000 /
             fontSize * fontSizeScale;
-          var characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
-          ctx.scale(characterScaleX, 1);
-          scaledX /= characterScaleX;
+          characterScaleX = width / measuredWidth;
+          // it is possible that after calculation it turns out no scaling is
+          // needed (characterScaleX === 1)
+          if (characterScaleX !== 1) {
+            if (characterScaleX !== lastScaleX) {
+              // if the context is currently scaled, restore the unscaled
+              // version before applying a different scale
+              if (lastScaleX !== 1) {
+                ctx.restore();
+              }
+              ctx.save();
+              ctx.scale(characterScaleX, 1);
+            }
+            scaledX /= characterScaleX;
+            lastScaleX = characterScaleX;
+          }
+        }
+        if (lastScaleX !== characterScaleX) {
+          // clean up when next glyph is unscaled
+          ctx.restore();
+          lastScaleX = 1;
         }
 
         if (simpleFillText && !accent) {
@@ -1426,12 +1444,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        var charWidth = width * widthAdvanceScale + charSpacing * fontDirection;
-        x += charWidth;
-
-        if (restoreNeeded) {
-          ctx.restore();
-        }
+        // add total char width
+        x += width * widthAdvanceScale + charSpacing * fontDirection;
+      }
+      if (lastScaleX !== 1) {
+        // if the last glyph was scaled, we need to clean up afterwards
+        ctx.restore();
       }
       if (vertical) {
         current.y -= x * textHScale;
@@ -2112,4 +2130,3 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   return CanvasGraphics;
 })();
-
