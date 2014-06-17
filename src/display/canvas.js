@@ -1301,23 +1301,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
     },
 
-    get isFontSubpixelAAEnabled() {
-      // Checks if anti-aliasing is enabled when scaled text is painted.
-      // On Windows GDI scaled fonts looks bad.
-      var ctx = document.createElement('canvas').getContext('2d');
-      ctx.scale(1.5, 1);
-      ctx.fillText('I', 0, 10);
-      var data = ctx.getImageData(0, 0, 10, 10).data;
-      var enabled = false;
-      for (var i = 3; i < data.length; i += 4) {
-        if (data[i] > 0 && data[i] < 255) {
-          enabled = true;
-          break;
-        }
-      }
-      return shadow(this, 'isFontSubpixelAAEnabled', enabled);
-    },
-
     showText: function CanvasGraphics_showText(glyphs) {
       var current = this.current;
       var font = current.font;
@@ -1382,7 +1365,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           continue;
         }
 
-        var restoreNeeded = false;
         var character = glyph.fontChar;
         var accent = glyph.accent;
         var scaledX, scaledY, scaledAccentX, scaledAccentY;
@@ -1402,16 +1384,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           scaledY = 0;
         }
 
-        if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
+        if (font.remeasure && width > 0) {
           // some standard fonts may not have the exact width, trying to
-          // rescale per character
+          // move glyphs in the middle.
           var measuredWidth = ctx.measureText(character).width * 1000 /
             fontSize * fontSizeScale;
-          var characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
-          ctx.scale(characterScaleX, 1);
-          scaledX /= characterScaleX;
+          scaledX += (width - measuredWidth) / 2 * widthAdvanceScale;
         }
 
         if (simpleFillText && !accent) {
@@ -1428,10 +1406,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         var charWidth = width * widthAdvanceScale + charSpacing * fontDirection;
         x += charWidth;
-
-        if (restoreNeeded) {
-          ctx.restore();
-        }
       }
       if (vertical) {
         current.y -= x * textHScale;
