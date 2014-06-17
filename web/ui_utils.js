@@ -255,5 +255,11 @@ var Cache = function cacheCache(size) {
       data.shift().destroy();
     }
   };
+  this.resize = function (newSize) {
+    size = newSize;
+    while (data.length > size) {
+      data.shift().destroy();
+    }
+  };
 };
 
