@@ -318,8 +318,6 @@ var Annotation = (function AnnotationClosure() {
 
   return Annotation;
 })();
-PDFJS.Annotation = Annotation;
-
 
 var WidgetAnnotation = (function WidgetAnnotationClosure() {
 
