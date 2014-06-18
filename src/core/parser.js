@@ -18,7 +18,7 @@
            FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef,
            isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name,
            NullStream, PredictorStream, Ref, RunLengthStream, warn, info,
-           StreamType */
+           StreamType, MissingDataException */
 
 'use strict';
 
@@ -398,6 +398,9 @@ var Parser = (function ParserClosure() {
         warn('filter "' + name + '" not supported yet');
         return stream;
       } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
         warn('Invalid stream: \"' + ex + '\"');
         return new NullStream(stream);
       }
