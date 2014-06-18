@@ -250,3 +250,4 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     getHtmlElement: getHtmlElement
   };
 })();
+PDFJS.AnnotationUtils = AnnotationUtils;
