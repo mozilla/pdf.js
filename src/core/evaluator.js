@@ -908,7 +908,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           };
         }
         return {
-          str: '',
+          // |str| is initially an array which we push individual chars to, and
+          // then runBidi() overwrites it with the final string.
+          str: [],
           dir: null,
           width: 0,
           height: 0,
@@ -918,7 +920,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       function runBidi(textChunk) {
-        var bidiResult = PDFJS.bidi(textChunk.str, -1, textState.font.vertical);
+        var str = textChunk.str.join('');
+        var bidiResult = PDFJS.bidi(str, -1, textState.font.vertical);
         textChunk.str = bidiResult.str;
         textChunk.dir = bidiResult.dir;
         return textChunk;
@@ -1008,7 +1011,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
           textState.translateTextMatrix(tx, ty);
 
-          textChunk.str += glyphUnicode;
+          textChunk.str.push(glyphUnicode);
         }
 
         var a = textState.textLineMatrix[0];
@@ -1103,10 +1106,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     if (fakeSpaces > MULTI_SPACE_FACTOR) {
                       fakeSpaces = Math.round(fakeSpaces);
                       while (fakeSpaces--) {
-                        textChunk.str += ' ';
+                        textChunk.str.push(' ');
                       }
                     } else if (fakeSpaces > SPACE_FACTOR) {
-                      textChunk.str += ' ';
+                      textChunk.str.push(' ');
                     }
                   }
                 }
