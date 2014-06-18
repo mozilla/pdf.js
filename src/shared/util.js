@@ -44,6 +44,12 @@ var ImageKind = {
   RGBA_32BPP: 3
 };
 
+var AnnotationType = {
+  WIDGET: 1,
+  TEXT: 2,
+  LINK: 3
+};
+
 var StreamType = {
   UNKNOWN: 0,
   FLATE: 1,

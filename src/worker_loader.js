@@ -20,8 +20,7 @@
 
 // List of shared files to include;
 var sharedFiles = [
-  'shared/util.js',
-  'shared/annotation.js'
+  'shared/util.js'
 ];
 
 // List of other files to include;
@@ -33,6 +32,7 @@ var otherFiles = [
   'core/obj.js',
   'core/charsets.js',
   'core/cidmaps.js',
+  'core/annotation.js',
   'core/function.js',
   'core/colorspace.js',
   'core/crypto.js',

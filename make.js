@@ -370,7 +370,6 @@ target.bundle = function(args) {
 
   var SHARED_SRC_FILES = [
     'shared/util.js',
-    'shared/annotation.js',
   ];
 
   var MAIN_SRC_FILES = SHARED_SRC_FILES.concat([
@@ -379,7 +378,8 @@ target.bundle = function(args) {
     'display/canvas.js',
     'display/webgl.js',
     'display/pattern_helper.js',
-    'display/font_loader.js'
+    'display/font_loader.js',
+    'display/annotation_helper.js',
   ]);
 
   var srcFiles = builder.getWorkerSrcFiles('src/worker_loader.js');
