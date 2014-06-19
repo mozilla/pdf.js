@@ -4295,6 +4295,12 @@ var Font = (function FontClosure() {
                 (code = parseInt(glyphName.substr(1), 16))) {
               toUnicode[charcode] = String.fromCharCode(code);
             }
+            // g00xx glyph
+            if (glyphName.length === 5 &&
+                glyphName[0] === 'g' &&
+                (code = parseInt(glyphName.substr(1), 16))) {
+              toUnicode[charcode] = String.fromCharCode(code);
+            }
             // Cddd glyph
             if (glyphName.length >= 3 &&
                 glyphName[0] === 'C' &&
