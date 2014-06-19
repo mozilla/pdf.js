@@ -2104,10 +2104,60 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
       var args = null;
       while (true) {
         var obj = this.parser.getObj();
-        if (isEOF(obj)) {
-          return false; // no more commands
-        }
-        if (!isCmd(obj)) {
+        if (isCmd(obj)) {
+          var cmd = obj.cmd;
+          // Check that the command is valid
+          var opSpec = OP_MAP[cmd];
+          if (!opSpec) {
+            warn('Unknown command "' + cmd + '"');
+            continue;
+          }
+
+          var fn = opSpec.id;
+          var numArgs = opSpec.numArgs;
+
+          if (!opSpec.variableArgs) {
+            // Postscript commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
+            var argsLength = args !== null ? args.length : 0;
+            if (argsLength !== numArgs) {
+              var nonProcessedArgs = this.nonProcessedArgs;
+              while (argsLength > numArgs) {
+                nonProcessedArgs.push(args.shift());
+                argsLength--;
+              }
+              while (argsLength < numArgs && nonProcessedArgs.length !== 0) {
+                if (!args) {
+                  args = [];
+                }
+                args.unshift(nonProcessedArgs.pop());
+                argsLength++;
+              }
+            }
+
+            if (argsLength < numArgs) {
+              // If we receive too few args, it's not possible to possible
+              // to execute the command, so skip the command
+              info('Command ' + fn + ': because expected ' +
+                   numArgs + ' args, but received ' + argsLength +
+                   ' args; skipping');
+              args = null;
+              continue;
+            }
+          } else if (argsLength > numArgs) {
+            info('Command ' + fn + ': expected [0,' + numArgs +
+                 '] args, but received ' + argsLength + ' args');
+          }
+
+          // TODO figure out how to type-check vararg functions
+          this.preprocessCommand(fn, args);
+
+          operation.fn = fn;
+          operation.args = args;
+          return true;
+        } else {
+          if (isEOF(obj)) {
+            return false; // no more commands
+          }
           // argument
           if (obj !== null) {
             if (!args) {
@@ -2116,58 +2166,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
             args.push((obj instanceof Dict ? obj.getAll() : obj));
             assert(args.length <= 33, 'Too many arguments');
           }
-          continue;
         }
-
-        var cmd = obj.cmd;
-        // Check that the command is valid
-        var opSpec = OP_MAP[cmd];
-        if (!opSpec) {
-          warn('Unknown command "' + cmd + '"');
-          continue;
-        }
-
-        var fn = opSpec.id;
-        var numArgs = opSpec.numArgs;
-
-        if (!opSpec.variableArgs) {
-          // Some post script commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
-          var argsLength = args !== null ? args.length : 0;
-          if (argsLength !== numArgs) {
-            var nonProcessedArgs = this.nonProcessedArgs;
-            while (argsLength > numArgs) {
-              nonProcessedArgs.push(args.shift());
-              argsLength--;
-            }
-            while (argsLength < numArgs && nonProcessedArgs.length !== 0) {
-              if (!args) {
-                args = [];
-              }
-              args.unshift(nonProcessedArgs.pop());
-              argsLength++;
-            }
-          }
-
-          if (argsLength < numArgs) {
-            // If we receive too few args, it's not possible to possible
-            // to execute the command, so skip the command
-            info('Command ' + fn + ': because expected ' +
-                 numArgs + ' args, but received ' + argsLength +
-                 ' args; skipping');
-            args = null;
-            continue;
-          }
-        } else if (argsLength > numArgs) {
-          info('Command ' + fn + ': expected [0,' + numArgs +
-               '] args, but received ' + argsLength + ' args');
-        }
-
-        // TODO figure out how to type-check vararg functions
-        this.preprocessCommand(fn, args);
-
-        operation.fn = fn;
-        operation.args = args;
-        return true;
       }
     },
 
