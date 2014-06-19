@@ -218,7 +218,11 @@ var Ref = (function RefClosure() {
     this.gen = gen;
   }
 
-  Ref.prototype = {};
+  Ref.prototype = {
+    toString: function Ref_toString() {
+      return 'R' + this.num + '.' + this.gen;
+    }
+  };
 
   return Ref;
 })();
@@ -232,15 +236,15 @@ var RefSet = (function RefSetClosure() {
 
   RefSet.prototype = {
     has: function RefSet_has(ref) {
-      return ('R' + ref.num + '.' + ref.gen) in this.dict;
+      return ref.toString() in this.dict;
     },
 
     put: function RefSet_put(ref) {
-      this.dict['R' + ref.num + '.' + ref.gen] = true;
+      this.dict[ref.toString()] = true;
     },
 
     remove: function RefSet_remove(ref) {
-      delete this.dict['R' + ref.num + '.' + ref.gen];
+      delete this.dict[ref.toString()];
     }
   };
 
@@ -254,19 +258,19 @@ var RefSetCache = (function RefSetCacheClosure() {
 
   RefSetCache.prototype = {
     get: function RefSetCache_get(ref) {
-      return this.dict['R' + ref.num + '.' + ref.gen];
+      return this.dict[ref.toString()];
     },
 
     has: function RefSetCache_has(ref) {
-      return ('R' + ref.num + '.' + ref.gen) in this.dict;
+      return ref.toString() in this.dict;
     },
 
     put: function RefSetCache_put(ref, obj) {
-      this.dict['R' + ref.num + '.' + ref.gen] = obj;
+      this.dict[ref.toString()] = obj;
     },
 
     putAlias: function RefSetCache_putAlias(ref, aliasRef) {
-      this.dict['R' + ref.num + '.' + ref.gen] = this.get(aliasRef);
+      this.dict[ref.toString()] = this.get(aliasRef);
     },
 
     forEach: function RefSetCache_forEach(fn, thisArg) {
@@ -1180,9 +1184,9 @@ var XRef = (function XRefClosure() {
         xrefEntry = this.fetchCompressed(xrefEntry, suppressEncryption);
       }
       if (isDict(xrefEntry)){
-        xrefEntry.objId = 'R' + ref.num + '.' + ref.gen;
+        xrefEntry.objId = ref.toString();
       } else if (isStream(xrefEntry)) {
-        xrefEntry.dict.objId = 'R' + ref.num + '.' + ref.gen;
+        xrefEntry.dict.objId = ref.toString();
       }
       return xrefEntry;
     },
