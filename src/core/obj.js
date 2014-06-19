@@ -1216,15 +1216,7 @@ var XRef = (function XRefClosure() {
         error('bad XRef entry');
       }
       if (this.encrypt && !suppressEncryption) {
-        try {
-          xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num,
-                                                                       gen));
-        } catch (ex) {
-          // Almost all streams must be encrypted, but sometimes
-          // they are not, probably due to some broken generators.
-          // Retrying without encryption...
-          return this.fetch(ref, true);
-        }
+        xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num, gen));
       } else {
         xrefEntry = parser.getObj();
       }
