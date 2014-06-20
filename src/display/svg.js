@@ -132,6 +132,12 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     restore: function SVGGraphics_restore() {
       this.transformMatrix = this.transformStack.pop();
       this.current = this.extraStack.pop();
+
+      this.tgrp = document.createElementNS(NS, 'svg:g');
+      this.tgrp.setAttributeNS(null, 'id', 'transform');
+      this.tgrp.setAttributeNS(null, 'transform',
+          'matrix(' + this.transformMatrix + ')');
+      this.pgrp.appendChild(this.tgrp);
     },
 
     group: function SVGGraphics_group(items) {
@@ -669,7 +675,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     rectangle: function SVGGraphics_rectangle(x, y, width, height) {
-      this.save();
       var current = this.current;
       if (width < 0) {
         x = x + width;
