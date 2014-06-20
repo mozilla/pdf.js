@@ -43,6 +43,19 @@ var PDFFindController = {
   findTimeout: null,
   pdfPageSource: null,
   integratedFind: false,
+  charactersToNormalize: {
+    '\u2018': '\'', // Left single quotation mark
+    '\u2019': '\'', // Right single quotation mark
+    '\u201A': '\'', // Single low-9 quotation mark
+    '\u201B': '\'', // Single high-reversed-9 quotation mark
+    '\u201C': '"', // Left double quotation mark
+    '\u201D': '"', // Right double quotation mark
+    '\u201E': '"', // Double low-9 quotation mark
+    '\u201F': '"', // Double high-reversed-9 quotation mark
+    '\u00BC': '1/4', // Vulgar fraction one quarter
+    '\u00BD': '1/2', // Vulgar fraction one half
+    '\u00BE': '3/4' // Vulgar fraction three quarters
+  },
 
   initialize: function(options) {
     if (typeof PDFFindBar === 'undefined' || PDFFindBar === null) {
@@ -52,6 +65,10 @@ var PDFFindController = {
 
     this.pdfPageSource = options.pdfPageSource;
     this.integratedFind = options.integratedFind;
+
+    // Compile the regular expression for text normalization once
+    var replace = Object.keys(this.charactersToNormalize).join('');
+    this.normalizationRegex = new RegExp('[' + replace + ']', 'g');
 
     var events = [
       'find',
@@ -76,9 +93,15 @@ var PDFFindController = {
     this.active = false;
   },
 
+  normalize: function pdfFindControllerNormalize(text) {
+    return text.replace(this.normalizationRegex, function (ch) {
+      return PDFFindController.charactersToNormalize[ch];
+    });
+  },
+
   calcFindMatch: function(pageIndex) {
-    var pageContent = this.pageContents[pageIndex];
-    var query = this.state.query;
+    var pageContent = this.normalize(this.pageContents[pageIndex]);
+    var query = this.normalize(this.state.query);
     var caseSensitive = this.state.caseSensitive;
     var queryLen = query.length;
 
