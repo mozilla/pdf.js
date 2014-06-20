@@ -24,45 +24,28 @@
 
 var PDFFindController = {
   startedTextExtraction: false,
-
   extractTextPromises: [],
-
   pendingFindMatches: {},
-
-  // If active, find results will be highlighted.
-  active: false,
-
-  // Stores the text for each page.
-  pageContents: [],
-
+  active: false, // If active, find results will be highlighted.
+  pageContents: [], // Stores the text for each page.
   pageMatches: [],
-
-  // Currently selected match.
-  selected: {
+  selected: { // Currently selected match.
     pageIdx: -1,
     matchIdx: -1
   },
-
-  // Where find algorithm currently is in the document.
-  offset: {
+  offset: { // Where the find algorithm currently is in the document.
     pageIdx: null,
     matchIdx: null
   },
-
   resumePageIdx: null,
-
   state: null,
-
   dirtyMatch: false,
-
   findTimeout: null,
-
   pdfPageSource: null,
-
   integratedFind: false,
 
   initialize: function(options) {
-    if(typeof PDFFindBar === 'undefined' || PDFFindBar === null) {
+    if (typeof PDFFindBar === 'undefined' || PDFFindBar === null) {
       throw 'PDFFindController cannot be initialized ' +
             'without a PDFFindBar instance';
     }
@@ -82,7 +65,7 @@ var PDFFindController = {
     }.bind(this));
     this.handleEvent = this.handleEvent.bind(this);
 
-    for (var i = 0; i < events.length; i++) {
+    for (var i = 0, len = events.length; i < len; i++) {
       window.addEventListener(events[i], this.handleEvent);
     }
   },
@@ -100,7 +83,7 @@ var PDFFindController = {
     var queryLen = query.length;
 
     if (queryLen === 0) {
-      // Do nothing the matches should be wiped out already.
+      // Do nothing: the matches should be wiped out already.
       return;
     }
 
@@ -110,14 +93,12 @@ var PDFFindController = {
     }
 
     var matches = [];
-
     var matchIdx = -queryLen;
     while (true) {
       matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
       if (matchIdx === -1) {
         break;
       }
-
       matches.push(matchIdx);
     }
     this.pageMatches[pageIndex] = matches;
@@ -136,7 +117,8 @@ var PDFFindController = {
 
     this.pageContents = [];
     var extractTextPromisesResolves = [];
-    for (var i = 0, ii = this.pdfPageSource.pdfDocument.numPages; i < ii; i++) {
+    var numPages = this.pdfPageSource.pdfDocument.numPages;
+    for (var i = 0; i < numPages; i++) {
       this.extractTextPromises.push(new Promise(function (resolve) {
         extractTextPromisesResolves.push(resolve);
       }));
@@ -147,14 +129,14 @@ var PDFFindController = {
       self.pdfPageSource.pages[pageIndex].getTextContent().then(
         function textContentResolved(textContent) {
           var textItems = textContent.items;
-          var str = '';
+          var str = [];
 
-          for (var i = 0; i < textItems.length; i++) {
-            str += textItems[i].str;
+          for (var i = 0, len = textItems.length; i < len; i++) {
+            str.push(textItems[i].str);
           }
 
           // Store the pageContent as a string.
-          self.pageContents.push(str);
+          self.pageContents.push(str.join(''));
 
           extractTextPromisesResolves[pageIndex](pageIndex);
           if ((pageIndex + 1) < self.pdfPageSource.pages.length) {
@@ -252,15 +234,16 @@ var PDFFindController = {
       var numPageMatches = this.pageMatches[offset.pageIdx].length;
       if ((!previous && offset.matchIdx + 1 < numPageMatches) ||
           (previous && offset.matchIdx > 0)) {
-        // The simple case, we just have advance the matchIdx to select the next
-        // match on the page.
+        // The simple case; we just have advance the matchIdx to select
+        // the next match on the page.
         this.hadMatch = true;
-        offset.matchIdx = previous ? offset.matchIdx - 1 : offset.matchIdx + 1;
+        offset.matchIdx = (previous ? offset.matchIdx - 1 :
+                                      offset.matchIdx + 1);
         this.updateMatch(true);
         return;
       }
-      // We went beyond the current page's matches, so we advance to the next
-      // page.
+      // We went beyond the current page's matches, so we advance to
+      // the next page.
       this.advanceOffsetPage(previous);
     }
     // Start searching through the page.
@@ -274,24 +257,23 @@ var PDFFindController = {
     if (numMatches) {
       // There were matches for the page, so initialize the matchIdx.
       this.hadMatch = true;
-      offset.matchIdx = previous ? numMatches - 1 : 0;
+      offset.matchIdx = (previous ? numMatches - 1 : 0);
       this.updateMatch(true);
-      // matches were found
       return true;
     } else {
-      // No matches attempt to search the next page.
+      // No matches, so attempt to search the next page.
       this.advanceOffsetPage(previous);
       if (offset.wrapped) {
         offset.matchIdx = null;
         if (!this.hadMatch) {
-          // No point in wrapping there were no matches.
+          // No point in wrapping, there were no matches.
           this.updateMatch(false);
           // while matches were not found, searching for a page 
           // with matches should nevertheless halt.
           return true;
         }
       }
-      // matches were not found (and searching is not done)
+      // Matches were not found (and searching is not done).
       return false;
     }
   },
@@ -315,10 +297,10 @@ var PDFFindController = {
   advanceOffsetPage: function(previous) {
     var offset = this.offset;
     var numPages = this.extractTextPromises.length;
-    offset.pageIdx = previous ? offset.pageIdx - 1 : offset.pageIdx + 1;
+    offset.pageIdx = (previous ? offset.pageIdx - 1 : offset.pageIdx + 1);
     offset.matchIdx = null;
     if (offset.pageIdx >= numPages || offset.pageIdx < 0) {
-      offset.pageIdx = previous ? numPages - 1 : 0;
+      offset.pageIdx = (previous ? numPages - 1 : 0);
       offset.wrapped = true;
       return;
     }
@@ -332,7 +314,7 @@ var PDFFindController = {
       var previousPage = this.selected.pageIdx;
       this.selected.pageIdx = this.offset.pageIdx;
       this.selected.matchIdx = this.offset.matchIdx;
-      state = wrapped ? FindStates.FIND_WRAPPED : FindStates.FIND_FOUND;
+      state = (wrapped ? FindStates.FIND_WRAPPED : FindStates.FIND_FOUND);
       // Update the currently selected page to wipe out any selected matches.
       if (previousPage !== -1 && previousPage !== this.selected.pageIdx) {
         this.updatePage(previousPage);
@@ -347,7 +329,7 @@ var PDFFindController = {
   updateUIState: function(state, previous) {
     if (this.integratedFind) {
       FirefoxCom.request('updateFindControlState',
-                         {result: state, findPrevious: previous});
+                         { result: state, findPrevious: previous });
       return;
     }
     PDFFindBar.updateUIState(state, previous);
