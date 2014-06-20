@@ -109,6 +109,12 @@ var PDFFindController = {
       query = query.toLowerCase();
     }
 
+    // Replace curly quotes by regular quotes
+    pageContent = pageContent.replace(/[\u2018\u2019]/g, '\'')
+                             .replace(/[\u201C\u201D]/g, '"');
+    query = query.replace(/[\u2018\u2019]/g, '\'')
+                 .replace(/[\u201C\u201D]/g, '"');
+
     var matches = [];
 
     var matchIdx = -queryLen;
