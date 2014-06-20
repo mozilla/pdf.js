@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- In production, only one script (pdf.js) is necessary -->
+  <!-- In production, change the content of PDFJS.workerSrc below -->
+  <script src="../../src/shared/util.js"></script>
+  <script src="../../src/display/api.js"></script>
+  <script src="../../src/display/metadata.js"></script>
+  <script src="../../src/display/pattern_helper.js"></script>
+  <script src="../../src/display/font_loader.js"></script>
+  <script src="../../src/display/svg.js"></script>
+
+  <script>
+    // Specify the main script used to create a new PDF.JS web worker.
+    // In production, leave this undefined or change it to point to the
+    // combined `pdf.worker.js` file.
+    PDFJS.workerSrc = '../../src/worker_loader.js';
+  </script>
+  <script src="viewer.js"></script>
+  <style>
+    body {
+      background-color: gray;
+    }
+
+    .pageContainer {
+      border : 1px solid black;
+      margin : 5px auto;
+      background-color : white;
+    }
+    </style>
+
+  <title>SVG Viewer Example</title>
+</head>
+
+<body>
+</body>
+
+</html>
