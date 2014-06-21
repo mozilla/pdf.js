@@ -19,25 +19,22 @@
 
 var FIND_SCROLL_OFFSET_TOP = -50;
 var FIND_SCROLL_OFFSET_LEFT = -400;
+var MAX_TEXT_DIVS_TO_RENDER = 100000;
+var RENDER_DELAY = 200; // ms
 
 /**
- * TextLayerBuilder provides text-selection
- * functionality for the PDF. It does this
- * by creating overlay divs over the PDF
- * text. This divs contain text that matches
- * the PDF text they are overlaying. This
- * object also provides for a way to highlight
- * text that is being searched for.
+ * TextLayerBuilder provides text-selection functionality for the PDF.
+ * It does this by creating overlay divs over the PDF text. These divs
+ * contain text that matches the PDF text they are overlaying. This object
+ * also provides a way to highlight text that is being searched for.
  */
 var TextLayerBuilder = function textLayerBuilder(options) {
-  var textLayerFrag = document.createDocumentFragment();
-
   this.textLayerDiv = options.textLayerDiv;
   this.layoutDone = false;
   this.divContentDone = false;
   this.pageIdx = options.pageIndex;
   this.matches = [];
-  this.lastScrollSource = options.lastScrollSource;
+  this.lastScrollSource = options.lastScrollSource || null;
   this.viewport = options.viewport;
   this.isViewerInPresentationMode = options.isViewerInPresentationMode;
   this.textDivs = [];
@@ -46,31 +43,27 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     window.PDFFindController = null;
   }
 
-  if (typeof this.lastScrollSource === 'undefined') {
-    this.lastScrollSource = null;
-  }
-
-  this.renderLayer = function textLayerBuilderRenderLayer() {
+  this.renderLayer = function textLayerBuilder_renderLayer() {
+    var textLayerFrag = document.createDocumentFragment();
     var textDivs = this.textDivs;
+    var textDivsLength = textDivs.length;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
 
-    // No point in rendering so many divs as it'd make the browser unusable
-    // even after the divs are rendered
-    var MAX_TEXT_DIVS_TO_RENDER = 100000;
-    if (textDivs.length > MAX_TEXT_DIVS_TO_RENDER) {
+    // No point in rendering many divs as it would make the browser
+    // unusable even after the divs are rendered.
+    if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
       return;
     }
 
-    for (var i = 0, ii = textDivs.length; i < ii; i++) {
+    for (var i = 0; i < textDivsLength; i++) {
       var textDiv = textDivs[i];
-      if ('isWhitespace' in textDiv.dataset) {
+      if (textDiv.dataset.isWhitespace !== undefined) {
         continue;
       }
 
       ctx.font = textDiv.style.fontSize + ' ' + textDiv.style.fontFamily;
       var width = ctx.measureText(textDiv.textContent).width;
-
       if (width > 0) {
         textLayerFrag.appendChild(textDiv);
         var textScale = textDiv.dataset.canvasWidth / width;
@@ -87,19 +80,17 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     this.updateMatches();
   };
 
-  this.setupRenderLayoutTimer = function textLayerSetupRenderLayoutTimer() {
-    // Schedule renderLayout() if user has been scrolling, otherwise
-    // run it right away
-    var RENDER_DELAY = 200; // in ms
+  this.setupRenderLayoutTimer =
+    function textLayerBuilder_setupRenderLayoutTimer() {
+    // Schedule renderLayout() if the user has been scrolling,
+    // otherwise run it right away.
     var self = this;
     var lastScroll = (this.lastScrollSource === null ?
                       0 : this.lastScrollSource.lastScroll);
 
-    if (Date.now() - lastScroll > RENDER_DELAY) {
-      // Render right away
+    if (Date.now() - lastScroll > RENDER_DELAY) { // Render right away
       this.renderLayer();
-    } else {
-      // Schedule
+    } else { // Schedule
       if (this.renderTimer) {
         clearTimeout(this.renderTimer);
       }
@@ -109,7 +100,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     }
   };
 
-  this.appendText = function textLayerBuilderAppendText(geom, styles) {
+  this.appendText = function textLayerBuilder_appendText(geom, styles) {
     var style = styles[geom.fontName];
     var textDiv = document.createElement('div');
     this.textDivs.push(textDiv);
@@ -140,35 +131,31 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     } else {
       textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
     }
-
   };
 
-  this.setTextContent = function textLayerBuilderSetTextContent(textContent) {
+  this.setTextContent = function textLayerBuilder_setTextContent(textContent) {
     this.textContent = textContent;
 
     var textItems = textContent.items;
-    for (var i = 0; i < textItems.length; i++) {
+    for (var i = 0, len = textItems.length; i < len; i++) {
       this.appendText(textItems[i], textContent.styles);
     }
     this.divContentDone = true;
-
     this.setupRenderLayoutTimer();
   };
 
-  this.convertMatches = function textLayerBuilderConvertMatches(matches) {
+  this.convertMatches = function textLayerBuilder_convertMatches(matches) {
     var i = 0;
     var iIndex = 0;
     var bidiTexts = this.textContent.items;
     var end = bidiTexts.length - 1;
     var queryLen = (PDFFindController === null ?
                     0 : PDFFindController.state.query.length);
-
     var ret = [];
 
-    // Loop over all the matches.
-    for (var m = 0; m < matches.length; m++) {
+    for (var m = 0, len = matches.length; m < len; m++) {
+      // Calculate the start position.
       var matchIdx = matches[m];
-      // # Calculate the begin position.
 
       // Loop over the divIdxs.
       while (i !== end && matchIdx >= (iIndex + bidiTexts[i].str.length)) {
@@ -176,9 +163,8 @@ var TextLayerBuilder = function textLayerBuilder(options) {
         i++;
       }
 
-      // TODO: Do proper handling here if something goes wrong.
-      if (i == bidiTexts.length) {
-        console.error('Could not find matching mapping');
+      if (i === bidiTexts.length) {
+        console.error('Could not find a matching mapping');
       }
 
       var match = {
@@ -188,11 +174,11 @@ var TextLayerBuilder = function textLayerBuilder(options) {
         }
       };
 
-      // # Calculate the end position.
+      // Calculate the end position.
       matchIdx += queryLen;
 
-      // Somewhat same array as above, but use a > instead of >= to get the end
-      // position right.
+      // Somewhat the same array as above, but use > instead of >= to get
+      // the end position right.
       while (i !== end && matchIdx > (iIndex + bidiTexts[i].str.length)) {
         iIndex += bidiTexts[i].str.length;
         i++;
@@ -219,32 +205,23 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     var prevEnd = null;
     var isSelectedPage = (PDFFindController === null ?
       false : (this.pageIdx === PDFFindController.selected.pageIdx));
-
     var selectedMatchIdx = (PDFFindController === null ?
                             -1 : PDFFindController.selected.matchIdx);
-
     var highlightAll = (PDFFindController === null ?
                         false : PDFFindController.state.highlightAll);
-
-    var infty = {
+    var infinity = {
       divIdx: -1,
       offset: undefined
     };
 
     function beginText(begin, className) {
       var divIdx = begin.divIdx;
-      var div = textDivs[divIdx];
-      div.textContent = '';
+      textDivs[divIdx].textContent = '';
       appendTextToDiv(divIdx, 0, begin.offset, className);
-    }
-
-    function appendText(from, to, className) {
-      appendTextToDiv(from.divIdx, from.offset, to.offset, className);
     }
 
     function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
       var div = textDivs[divIdx];
-
       var content = bidiTexts[divIdx].str.substring(fromOffset, toOffset);
       var node = document.createTextNode(content);
       if (className) {
@@ -257,12 +234,7 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       div.appendChild(node);
     }
 
-    function highlightDiv(divIdx, className) {
-      textDivs[divIdx].className = className;
-    }
-
-    var i0 = selectedMatchIdx, i1 = i0 + 1, i;
-
+    var i0 = selectedMatchIdx, i1 = i0 + 1;
     if (highlightAll) {
       i0 = 0;
       i1 = matches.length;
@@ -271,36 +243,39 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       return;
     }
 
-    for (i = i0; i < i1; i++) {
+    for (var i = i0; i < i1; i++) {
       var match = matches[i];
       var begin = match.begin;
       var end = match.end;
-
-      var isSelected = isSelectedPage && i === selectedMatchIdx;
+      var isSelected = (isSelectedPage && i === selectedMatchIdx);
       var highlightSuffix = (isSelected ? ' selected' : '');
+     
       if (isSelected && !this.isViewerInPresentationMode) {
-        scrollIntoView(textDivs[begin.divIdx], { top: FIND_SCROLL_OFFSET_TOP,
-                                               left: FIND_SCROLL_OFFSET_LEFT });
+        scrollIntoView(textDivs[begin.divIdx],
+                       { top: FIND_SCROLL_OFFSET_TOP,
+                         left: FIND_SCROLL_OFFSET_LEFT });
       }
 
       // Match inside new div.
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
-        // If there was a previous div, then add the text at the end
+        // If there was a previous div, then add the text at the end.
         if (prevEnd !== null) {
-          appendText(prevEnd, infty);
+          appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
         }
-        // clears the divs and set the content until the begin point.
+        // Clear the divs and set the content until the starting point.
         beginText(begin);
       } else {
-        appendText(prevEnd, begin);
+        appendTextToDiv(prevEnd.divIdx, prevEnd.offset, begin.offset);
       }
 
       if (begin.divIdx === end.divIdx) {
-        appendText(begin, end, 'highlight' + highlightSuffix);
+        appendTextToDiv(begin.divIdx, begin.offset, end.offset,
+                        'highlight' + highlightSuffix);
       } else {
-        appendText(begin, infty, 'highlight begin' + highlightSuffix);
-        for (var n = begin.divIdx + 1; n < end.divIdx; n++) {
-          highlightDiv(n, 'highlight middle' + highlightSuffix);
+        appendTextToDiv(begin.divIdx, begin.offset, infinity.offset,
+                        'highlight begin' + highlightSuffix);
+        for (var n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
+          textDivs[n0].className = 'highlight middle' + highlightSuffix;
         }
         beginText(end, 'highlight end' + highlightSuffix);
       }
@@ -308,27 +283,27 @@ var TextLayerBuilder = function textLayerBuilder(options) {
     }
 
     if (prevEnd) {
-      appendText(prevEnd, infty);
+      appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
     }
   };
 
-  this.updateMatches = function textLayerUpdateMatches() {
-    // Only show matches, once all rendering is done.
+  this.updateMatches = function textLayerBuilder_updateMatches() {
+    // Only show matches when all rendering is done.
     if (!this.renderingDone) {
       return;
     }
 
-    // Clear out all matches.
+    // Clear all matches.
     var matches = this.matches;
     var textDivs = this.textDivs;
     var bidiTexts = this.textContent.items;
     var clearedUntilDivIdx = -1;
 
-    // Clear out all current matches.
-    for (var i = 0; i < matches.length; i++) {
+    // Clear all current matches.
+    for (var i = 0, len = matches.length; i < len; i++) {
       var match = matches[i];
       var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
-      for (var n = begin; n <= match.end.divIdx; n++) {
+      for (var n = begin, end = match.end.divIdx; n <= end; n++) {
         var div = textDivs[n];
         div.textContent = bidiTexts[n].str;
         div.className = '';
@@ -340,11 +315,10 @@ var TextLayerBuilder = function textLayerBuilder(options) {
       return;
     }
 
-    // Convert the matches on the page controller into the match format used
-    // for the textLayer.
-    this.matches = matches = (this.convertMatches(PDFFindController === null ?
-      [] : (PDFFindController.pageMatches[this.pageIdx] || [])));
-
+    // Convert the matches on the page controller into the match format
+    // used for the textLayer.
+    this.matches = this.convertMatches(PDFFindController === null ?
+      [] : (PDFFindController.pageMatches[this.pageIdx] || []));
     this.renderMatches(this.matches);
   };
 };
