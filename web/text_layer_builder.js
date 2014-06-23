@@ -39,10 +39,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.viewport = options.viewport;
     this.isViewerInPresentationMode = options.isViewerInPresentationMode;
     this.textDivs = [];
-
-    if (typeof PDFFindController === 'undefined') {
-      window.PDFFindController = null;
-    }
+    this.findController = window.PDFFindController || null;
   }
 
   TextLayerBuilder.prototype = {
@@ -152,8 +149,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var iIndex = 0;
       var bidiTexts = this.textContent.items;
       var end = bidiTexts.length - 1;
-      var queryLen = (PDFFindController === null ?
-                      0 : PDFFindController.state.query.length);
+      var queryLen = (this.findController === null ?
+                      0 : this.findController.state.query.length);
       var ret = [];
 
       for (var m = 0, len = matches.length; m < len; m++) {
@@ -206,12 +203,12 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var bidiTexts = this.textContent.items;
       var textDivs = this.textDivs;
       var prevEnd = null;
-      var isSelectedPage = (PDFFindController === null ?
-        false : (this.pageIdx === PDFFindController.selected.pageIdx));
-      var selectedMatchIdx = (PDFFindController === null ?
-                              -1 : PDFFindController.selected.matchIdx);
-      var highlightAll = (PDFFindController === null ?
-                          false : PDFFindController.state.highlightAll);
+      var isSelectedPage = (this.findController === null ?
+        false : (this.pageIdx === this.findController.selected.pageIdx));
+      var selectedMatchIdx = (this.findController === null ?
+                              -1 : this.findController.selected.matchIdx);
+      var highlightAll = (this.findController === null ?
+                          false : this.findController.state.highlightAll);
       var infinity = {
         divIdx: -1,
         offset: undefined
@@ -314,14 +311,14 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         clearedUntilDivIdx = match.end.divIdx + 1;
       }
 
-      if (PDFFindController === null || !PDFFindController.active) {
+      if (this.findController === null || !this.findController.active) {
         return;
       }
 
       // Convert the matches on the page controller into the match format
       // used for the textLayer.
-      this.matches = this.convertMatches(PDFFindController === null ?
-        [] : (PDFFindController.pageMatches[this.pageIdx] || []));
+      this.matches = this.convertMatches(this.findController === null ?
+        [] : (this.findController.pageMatches[this.pageIdx] || []));
       this.renderMatches(this.matches);
     }
   };
