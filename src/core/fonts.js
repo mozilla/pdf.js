@@ -4110,18 +4110,28 @@ var Font = (function FontClosure() {
       this.toFontChar = newMapping.toFontChar;
       var numGlyphs = font.numGlyphs;
 
-      function getCharCode(charCodeToGlyphId, glyphId, addMap) {
+      function getCharCodes(charCodeToGlyphId, glyphId) {
+        var charCodes = null;
+        for (var charCode in charCodeToGlyphId) {
+          if (glyphId === charCodeToGlyphId[charCode]) {
+            if (!charCodes) {
+              charCodes = [];
+            }
+            charCodes.push(charCode | 0);
+          }
+        }
+        return charCodes;
+      }
+
+      function createCharCode(charCodeToGlyphId, glyphId) {
         for (var charCode in charCodeToGlyphId) {
           if (glyphId === charCodeToGlyphId[charCode]) {
             return charCode | 0;
           }
         }
-        if (addMap) {
-          newMapping.charCodeToGlyphId[newMapping.nextAvailableFontCharCode] =
-              glyphId;
-          return newMapping.nextAvailableFontCharCode++;
-        }
-        return null;
+        newMapping.charCodeToGlyphId[newMapping.nextAvailableFontCharCode] =
+            glyphId;
+        return newMapping.nextAvailableFontCharCode++;
       }
 
       var seacs = font.seacs;
@@ -4144,24 +4154,27 @@ var Font = (function FontClosure() {
             y: seac[0] * matrix[1] + seac[1] * matrix[3] + matrix[5]
           };
 
-          var charCode = getCharCode(mapping, glyphId);
-          if (charCode === null) {
+          var charCodes = getCharCodes(mapping, glyphId);
+          if (!charCodes) {
             // There's no point in mapping it if the char code was never mapped
             // to begin with.
             continue;
           }
-          // Find a fontCharCode that maps to the base and accent glyphs. If one
-          // doesn't exists, create it.
-          var charCodeToGlyphId = newMapping.charCodeToGlyphId;
-          var baseFontCharCode = getCharCode(charCodeToGlyphId, baseGlyphId,
-                                             true);
-          var accentFontCharCode = getCharCode(charCodeToGlyphId, accentGlyphId,
-                                               true);
-          seacMap[charCode] = {
-            baseFontCharCode: baseFontCharCode,
-            accentFontCharCode: accentFontCharCode,
-            accentOffset: accentOffset
-          };
+          for (var i = 0, ii = charCodes.length; i < ii; i++) {
+            var charCode = charCodes[i];
+            // Find a fontCharCode that maps to the base and accent glyphs.
+            // If one doesn't exists, create it.
+            var charCodeToGlyphId = newMapping.charCodeToGlyphId;
+            var baseFontCharCode = createCharCode(charCodeToGlyphId,
+                                                  baseGlyphId);
+            var accentFontCharCode = createCharCode(charCodeToGlyphId,
+                                                    accentGlyphId);
+            seacMap[charCode] = {
+              baseFontCharCode: baseFontCharCode,
+              accentFontCharCode: accentFontCharCode,
+              accentOffset: accentOffset
+            };
+          }
         }
         properties.seacMap = seacMap;
       }
