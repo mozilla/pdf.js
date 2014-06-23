@@ -321,9 +321,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
           case OPS.constructPath:
             this.constructPath(args[0], args[1]);
             break;
-          case OPS.rectangle:
-            this.rectangle(args[0], args[1], args[2], args[3]);
-            break;
           case 92:
             this.group(opTree[x].items);
             break;
@@ -524,6 +521,17 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
 
       for (var i = 0, j = 0; i < opLength; i++) {
         switch (ops[i] | 0) {
+          case OPS.rectangle:
+            x = args[j++];
+            y = args[j++];
+            var width = args[j++];
+            var height = args[j++];
+            var xw = x + width;
+            var yh = y + height;
+            d += 'M' + x + ' ' + y + 'L' + xw + ' ' + y +
+                 'L' + xw + ' ' + yh + 'L' + xw + ' ' + yh +
+                 'L' + x + ' ' + yh + ' ' + 'Z';
+            break;
           case OPS.moveTo:
             x = args[j++];
             y = args[j++];
@@ -567,6 +575,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.path.setAttributeNS(null, 'stroke-width', current.lineWidth);
       current.path.setAttributeNS(null, 'stroke-dasharray', current.dashArray);
       current.path.setAttributeNS(null, 'stroke-dashoffset', current.dashPhase);
+      current.path.setAttributeNS(null, 'fill', 'none');
       this.tgrp.appendChild(current.path);
       // Saving a reference in current.element so that it can be addressed
       // in 'fill' and 'stroke'
@@ -672,28 +681,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     closeFillStroke: function SVGGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
-    },
-
-    rectangle: function SVGGraphics_rectangle(x, y, width, height) {
-      var current = this.current;
-      if (width < 0) {
-        x = x + width;
-        width = -width;
-      }
-      if (height < 0) {
-        y = y + height;
-        height = -height;
-      }
-      current.rect = document.createElementNS(NS, 'svg:rect');
-      current.rect.setAttributeNS(null, 'x', x);
-      current.rect.setAttributeNS(null, 'y', y);
-      current.rect.setAttributeNS(null, 'fill', 'none');
-      current.rect.setAttributeNS(null, 'width', width);
-      current.rect.setAttributeNS(null, 'height', height);
-      current.rect.setAttributeNS(null, 'stroke-width', current.lineWidth);
-      // Saving a reference in current.element so that it can be addressed
-      // in 'fill' or 'stroke'
-      current.element = current.rect;
     },
   };
   return SVGGraphics;

@@ -385,7 +385,7 @@ var TilingPattern = (function TilingPatternClosure() {
       if (bbox && isArray(bbox) && 4 == bbox.length) {
         var bboxWidth = x1 - x0;
         var bboxHeight = y1 - y0;
-        graphics.rectangle(x0, y0, bboxWidth, bboxHeight);
+        graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
         graphics.clip();
         graphics.endPath();
       }
