@@ -134,7 +134,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.current = this.extraStack.pop();
 
       this.tgrp = document.createElementNS(NS, 'svg:g');
-      this.tgrp.setAttributeNS(null, 'id', 'transform');
       this.tgrp.setAttributeNS(null, 'transform',
           'matrix(' + this.transformMatrix + ')');
       this.pgrp.appendChild(this.tgrp);
@@ -176,7 +175,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         transformMatrix);
 
       this.tgrp = document.createElementNS(NS, 'svg:g');
-      this.tgrp.setAttributeNS(null, 'id', 'transform');
       this.tgrp.setAttributeNS(null, 'transform',
         'matrix(' + this.transformMatrix + ')');
       this.pgrp.appendChild(this.tgrp);
@@ -385,7 +383,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     showText: function SVGGraphics_showText(glyphs) {
-      this.save();
       var current = this.current;
       var font = current.font;
       var fontSize = current.fontSize;
@@ -438,13 +435,10 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         'matrix(' + current.textMatrix + ') scale(1, -1)' );
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
-
-      current.txtgrp.setAttributeNS(null, 'id', 'text');
       current.txtgrp.appendChild(current.txtElement);
 
       this.tgrp.appendChild(current.txtElement);
 
-      this.restore();
     },
     
     setLeadingMoveText: function SVGGraphics_setLeadingMoveText(x, y) {
@@ -644,28 +638,22 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     fill: function SVGGraphics_fill() {
-      this.save();
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
       this.tgrp.appendChild(current.element);
-      this.restore();
     },
 
     stroke: function SVGGraphics_stroke() {
-      this.save();
       var current = this.current;
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
       current.element.setAttributeNS(null, 'fill', 'none');
       this.tgrp.appendChild(current.element);
-      this.restore();
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      this.save();
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
       current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
-      this.restore();
     },
 
     fillStroke: function SVGGraphics_fillStroke() {
