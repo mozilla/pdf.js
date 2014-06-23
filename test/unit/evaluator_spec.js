@@ -57,7 +57,7 @@ describe('evaluator', function() {
         expect(!!result.fnArray && !!result.argsArray).toEqual(true);
         expect(result.fnArray.length).toEqual(1);
         expect(result.fnArray[0]).toEqual(OPS.fill);
-        expect(result.argsArray[0].length).toEqual(0);
+        expect(result.argsArray[0]).toEqual(null);
       });
     });
 
@@ -154,7 +154,7 @@ describe('evaluator', function() {
         expect(result.argsArray[0][0]).toEqual(true);
         expect(result.argsArray[1].length).toEqual(1);
         expect(result.argsArray[1][0]).toEqual(false);
-        expect(result.argsArray[2].length).toEqual(0);
+        expect(result.argsArray[2]).toEqual(null);
       });
     });
   });
