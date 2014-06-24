@@ -522,7 +522,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       var current = this.current;
       var x = current.x, y = current.y;
       current.path = document.createElementNS(NS, 'svg:path');
-      var d = '';
+      var d = [];
       var arr = [];
       var opLength = ops.length;
 
@@ -535,47 +535,42 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             var height = args[j++];
             var xw = x + width;
             var yh = y + height;
-            d += 'M' + x + ' ' + y + 'L' + xw + ' ' + y +
-                 'L' + xw + ' ' + yh + 'L' + xw + ' ' + yh +
-                 'L' + x + ' ' + yh + ' ' + 'Z';
+            d.push('M', x , y, 'L', xw , y, 'L', xw, yh, 'L', x, yh, 'Z');
             break;
           case OPS.moveTo:
             x = args[j++];
             y = args[j++];
-            d += 'M' + x + ' ' + y;
+            d.push('M', x, y);
             break;
           case OPS.lineTo:
             x = args[j++];
             y = args[j++];
-            d += 'L' + x + ' ' + y;
+            d.push('L', x , y);
             break;
           case OPS.curveTo:
             x = args[j + 4];
             y = args[j + 5];
-            arr = [args[j], args[j + 1], args[j + 2], args[j + 3], x, y];
-            d += 'C ' + arr.join(' ');
+            d.push('C', args[j], args[j + 1], args[j + 2], args[j + 3], x, y);
             j += 6;
             break;
           case OPS.curveTo2:
             x = args[j + 2];
             y = args[j + 3];
-            arr = [x, y, args[j], args[j + 1], args[j + 2], args[j + 3]];
-            d += 'C ' + arr.join(' ');
+            d.push('C', x, y, args[j], args[j + 1], args[j + 2], args[j + 3]);
             j += 4;
             break;
           case OPS.curveTo3:
             x = args[j + 2];
             y = args[j + 3];
-            arr = [args[j], args[j + 1], x, y, x, y];
-            d += 'C ' + arr.join(' ');
+            d.push('C', args[j], args[j + 1], x, y, x, y);
             j += 4;
             break;
           case OPS.closePath:
-            d += 'Z';
+            d.push('Z');
             break;
         }
       }
-      current.path.setAttributeNS(null, 'd', d);
+      current.path.setAttributeNS(null, 'd', d.join(' '));
       current.path.setAttributeNS(null, 'stroke-miterlimit',
        current.miterLimit);
       current.path.setAttributeNS(null, 'stroke-linecap', current.lineCap);
@@ -683,6 +678,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.closePath();
       this.fillStroke();
     },
+
     paintSolidColorImageMask:
       function SVGGraphics_paintSolidColorImageMask() {
         var current = this.current;
