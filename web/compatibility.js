@@ -481,9 +481,9 @@ if (typeof PDFJS === 'undefined') {
   }
 })();
 
-// TODO CanvasPixelArray is deprecated; use Uint8ClampedArray
-// once it's supported.
+// Support: IE<11, Chrome<21
 (function checkSetPresenceInImageData() {
+  // IE < 11 will use window.CanvasPixelArray which lacks set function.
   if (window.CanvasPixelArray) {
     if (typeof window.CanvasPixelArray.prototype.set !== 'function') {
       window.CanvasPixelArray.prototype.set = function(arr) {
@@ -491,6 +491,25 @@ if (typeof PDFJS === 'undefined') {
           this[i] = arr[i];
         }
       };
+    }
+  } else {
+    // Chrome < 21 uses an inaccessible CanvasPixelArray prototype.
+    // Because we cannot feature detect it, we rely on user agent.
+    if (navigator.userAgent.indexOf('Chrom') >= 0) {
+      var versionMatch = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+      if (versionMatch && parseInt(versionMatch[2]) < 21) {
+        var contextPrototype = window.CanvasRenderingContext2D.prototype;
+        contextPrototype._createImageData = contextPrototype.createImageData;
+        contextPrototype.createImageData = function(w, h) {
+          var imageData = this._createImageData(w, h);
+          imageData.data.set = function(arr) {
+            for (var i = 0, ii = this.length; i < ii; i++) {
+              this[i] = arr[i];
+            }
+          };
+          return imageData;
+        };
+      }
     }
   }
 })();
