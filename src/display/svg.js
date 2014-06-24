@@ -300,6 +300,9 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
           case OPS.fillStroke:
             this.fillStroke();
             break;
+          case OPS.paintSolidColorImageMask:
+            this.paintSolidColorImageMask();
+            break;
           case OPS.closePath:
             this.closePath();
             break;
@@ -669,6 +672,17 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     closeFillStroke: function SVGGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
+    },
+    paintSolidColorImageMask:
+      function SVGGraphics_paintSolidColorImageMask() {
+        var current = this.current;
+        var rect = document.createElementNS(NS, 'svg:rect');
+        rect.setAttributeNS(null, 'x', 0);
+        rect.setAttributeNS(null, 'y', 0);
+        rect.setAttributeNS(null, 'width', 1);
+        rect.setAttributeNS(null, 'height', 1);
+        rect.setAttributeNS(null, 'fill', current.fillColor);
+        this.tgrp.appendChild(rect);
     },
   };
   return SVGGraphics;
