@@ -104,18 +104,20 @@ function opListToTree(opList) {
 
 
 var SVGGraphics = (function SVGGraphicsClosure(ctx) {
-  function SVGGraphics(commonObjs) {
+  function SVGGraphics(commonObjs, objs) {
 
     this.current = new SVGExtraState();
     this.transformMatrix = IDENTITY_MATRIX; // Graphics state matrix
     this.transformStack = [];
     this.extraStack = [];
     this.commonObjs = commonObjs;
+    this.objs = objs;
     this.pendingEOFill = false;
   }
 
   var NS = 'http://www.w3.org/2000/svg';
   var XML_NS = 'http://www.w3.org/XML/1998/namespace';
+  var XLINK_NS = 'http://www.w3.org/1999/xlink';
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
   var NORMAL_CLIP = {};
@@ -134,7 +136,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.current = this.extraStack.pop();
 
       this.tgrp = document.createElementNS(NS, 'svg:g');
-      this.tgrp.setAttributeNS(null, 'id', 'transform');
       this.tgrp.setAttributeNS(null, 'transform',
           'matrix(' + this.transformMatrix + ')');
       this.pgrp.appendChild(this.tgrp);
@@ -158,9 +159,14 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
           for (var n = 0, nn = deps.length; n < nn; n++) {
             var obj = deps[n];
             var common = obj.substring(0, 2) === 'g_';
+            var promise;
             if (common) {
-              var promise = new Promise(function(resolve) {
+              promise = new Promise(function(resolve) {
                 self.commonObjs.get(obj, resolve);
+              });
+            } else {
+              promise = new Promise(function(resolve) {
+                self.objs.get(obj, resolve);
               });
             }
             this.current.dependencies.push(promise);
@@ -176,7 +182,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         transformMatrix);
 
       this.tgrp = document.createElementNS(NS, 'svg:g');
-      this.tgrp.setAttributeNS(null, 'id', 'transform');
       this.tgrp.setAttributeNS(null, 'transform',
         'matrix(' + this.transformMatrix + ')');
       this.pgrp.appendChild(this.tgrp);
@@ -302,6 +307,12 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
           case OPS.fillStroke:
             this.fillStroke();
             break;
+          case OPS.paintSolidColorImageMask:
+            this.paintSolidColorImageMask();
+            break;
+          case OPS.paintJpegXObject:
+            this.paintJpegXObject(args[0], args[1], args[2]);
+            break;
           case OPS.closePath:
             this.closePath();
             break;
@@ -385,7 +396,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     showText: function SVGGraphics_showText(glyphs) {
-      this.save();
       var current = this.current;
       var font = current.font;
       var fontSize = current.fontSize;
@@ -438,13 +448,10 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         'matrix(' + current.textMatrix + ') scale(1, -1)' );
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
-
-      current.txtgrp.setAttributeNS(null, 'id', 'text');
       current.txtgrp.appendChild(current.txtElement);
 
       this.tgrp.appendChild(current.txtElement);
 
-      this.restore();
     },
     
     setLeadingMoveText: function SVGGraphics_setLeadingMoveText(x, y) {
@@ -644,28 +651,22 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     fill: function SVGGraphics_fill() {
-      this.save();
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
       this.tgrp.appendChild(current.element);
-      this.restore();
     },
 
     stroke: function SVGGraphics_stroke() {
-      this.save();
       var current = this.current;
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
       current.element.setAttributeNS(null, 'fill', 'none');
       this.tgrp.appendChild(current.element);
-      this.restore();
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      this.save();
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
       current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
-      this.restore();
     },
 
     fillStroke: function SVGGraphics_fillStroke() {
@@ -681,6 +682,32 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     closeFillStroke: function SVGGraphics_closeFillStroke() {
       this.closePath();
       this.fillStroke();
+    },
+    paintSolidColorImageMask:
+      function SVGGraphics_paintSolidColorImageMask() {
+        var current = this.current;
+        var rect = document.createElementNS(NS, 'svg:rect');
+        rect.setAttributeNS(null, 'x', 0);
+        rect.setAttributeNS(null, 'y', 0);
+        rect.setAttributeNS(null, 'width', 1);
+        rect.setAttributeNS(null, 'height', 1);
+        rect.setAttributeNS(null, 'fill', current.fillColor);
+        this.tgrp.appendChild(rect);
+    },
+
+    paintJpegXObject:
+     function SVGGraphics_paintJpegXObject(objId, w, h) {
+       var current = this.current;
+       var imgObj = this.objs.get(objId);
+       var imgEl = document.createElementNS(NS, 'svg:image');
+       imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
+       imgEl.setAttributeNS(null, 'width', imgObj.width);
+       imgEl.setAttributeNS(null, 'height', imgObj.height);
+       imgEl.setAttributeNS(null, 'x', 0);
+       imgEl.setAttributeNS(null, 'y', -h);
+       imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
+        ' ' + -1 / h + ')');
+       this.tgrp.appendChild(imgEl);
     },
   };
   return SVGGraphics;

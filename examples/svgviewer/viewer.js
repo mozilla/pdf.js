@@ -53,7 +53,7 @@ PDFJS.getDocument(url).then(function(pdf) {
         };
         // the next page fetch will start only after this page rendering is done
         return page.getOperatorList().then(function (opList) {
-          var svgGfx = new SVGGraphics(page.commonObjs);
+          var svgGfx = new SVGGraphics(page.commonObjs, page.objs);
           return svgGfx.loadDependencies(opList).then(function (values) {
             return svgGfx.beginDrawing(renderContext.viewport,
               renderContext.pageNum, renderContext.container, opList);
