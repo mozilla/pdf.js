@@ -852,6 +852,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.closePath:
               self.buildPath(operatorList, fn, args);
               continue;
+            case OPS.rectangle:
+              self.buildPath(operatorList, fn, args);
+              continue;
           }
           operatorList.addOp(fn, args);
         }
