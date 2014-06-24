@@ -104,18 +104,20 @@ function opListToTree(opList) {
 
 
 var SVGGraphics = (function SVGGraphicsClosure(ctx) {
-  function SVGGraphics(commonObjs) {
+  function SVGGraphics(commonObjs, objs) {
 
     this.current = new SVGExtraState();
     this.transformMatrix = IDENTITY_MATRIX; // Graphics state matrix
     this.transformStack = [];
     this.extraStack = [];
     this.commonObjs = commonObjs;
+    this.objs = objs;
     this.pendingEOFill = false;
   }
 
   var NS = 'http://www.w3.org/2000/svg';
   var XML_NS = 'http://www.w3.org/XML/1998/namespace';
+  var XLINK_NS = 'http://www.w3.org/1999/xlink';
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
   var NORMAL_CLIP = {};
@@ -157,9 +159,14 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
           for (var n = 0, nn = deps.length; n < nn; n++) {
             var obj = deps[n];
             var common = obj.substring(0, 2) === 'g_';
+            var promise;
             if (common) {
-              var promise = new Promise(function(resolve) {
+              promise = new Promise(function(resolve) {
                 self.commonObjs.get(obj, resolve);
+              });
+            } else {
+              promise = new Promise(function(resolve) {
+                self.objs.get(obj, resolve);
               });
             }
             this.current.dependencies.push(promise);
@@ -302,6 +309,9 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             break;
           case OPS.paintSolidColorImageMask:
             this.paintSolidColorImageMask();
+            break;
+          case OPS.paintJpegXObject:
+            this.paintJpegXObject(args[0], args[1], args[2]);
             break;
           case OPS.closePath:
             this.closePath();
@@ -683,6 +693,21 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         rect.setAttributeNS(null, 'height', 1);
         rect.setAttributeNS(null, 'fill', current.fillColor);
         this.tgrp.appendChild(rect);
+    },
+
+    paintJpegXObject:
+     function SVGGraphics_paintJpegXObject(objId, w, h) {
+       var current = this.current;
+       var imgObj = this.objs.get(objId);
+       var imgEl = document.createElementNS(NS, 'svg:image');
+       imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
+       imgEl.setAttributeNS(null, 'width', imgObj.width);
+       imgEl.setAttributeNS(null, 'height', imgObj.height);
+       imgEl.setAttributeNS(null, 'x', 0);
+       imgEl.setAttributeNS(null, 'y', -h);
+       imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
+        ' ' + -1 / h + ')');
+       this.tgrp.appendChild(imgEl);
     },
   };
   return SVGGraphics;
