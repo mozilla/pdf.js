@@ -365,7 +365,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.xcoords = [];
       current.tspan = document.createElementNS(NS, 'svg:tspan');
       current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
-      current.tspan.setAttributeNS(null, 'font-size', current.fontSize);
+      current.tspan.setAttributeNS(null, 'font-size', current.fontSize + 'px');
       current.tspan.setAttributeNS(null, 'y', -current.y);
 
       current.txtElement = document.createElementNS(NS, 'svg:text');
@@ -391,7 +391,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.xcoords = [];
       current.tspan = document.createElementNS(NS, 'svg:tspan');
       current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
-      current.tspan.setAttributeNS(null, 'font-size', current.fontSize);
+      current.tspan.setAttributeNS(null, 'font-size', current.fontSize + 'px');
       current.tspan.setAttributeNS(null, 'y', -current.y);
     },
 
@@ -442,7 +442,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
 
       current.tspan.setAttributeNS(null, 'x', current.xcoords.join(' '));
       current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
-      current.tspan.setAttributeNS(null, 'font-size', current.fontSize);
+      current.tspan.setAttributeNS(null, 'font-size', current.fontSize + 'px');
 
       current.txtElement.setAttributeNS(null, 'transform',
         'matrix(' + current.textMatrix + ') scale(1, -1)' );
@@ -574,9 +574,11 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.path.setAttributeNS(null, 'stroke-miterlimit',
        current.miterLimit);
       current.path.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-      current.path.setAttributeNS(null, 'stroke-width', current.lineWidth);
+      current.path.setAttributeNS(null, 'stroke-width',
+        current.lineWidth + 'px');
       current.path.setAttributeNS(null, 'stroke-dasharray', current.dashArray);
-      current.path.setAttributeNS(null, 'stroke-dashoffset', current.dashPhase);
+      current.path.setAttributeNS(null, 'stroke-dashoffset',
+        current.dashPhase + 'px');
       current.path.setAttributeNS(null, 'fill', 'none');
       this.tgrp.appendChild(current.path);
       // Saving a reference in current.element so that it can be addressed
@@ -685,8 +687,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         var rect = document.createElementNS(NS, 'svg:rect');
         rect.setAttributeNS(null, 'x', 0);
         rect.setAttributeNS(null, 'y', 0);
-        rect.setAttributeNS(null, 'width', 1);
-        rect.setAttributeNS(null, 'height', 1);
+        rect.setAttributeNS(null, 'width', 1 + 'px');
+        rect.setAttributeNS(null, 'height', 1 + 'px');
         rect.setAttributeNS(null, 'fill', current.fillColor);
         this.tgrp.appendChild(rect);
     },
@@ -697,8 +699,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
        var imgObj = this.objs.get(objId);
        var imgEl = document.createElementNS(NS, 'svg:image');
        imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
-       imgEl.setAttributeNS(null, 'width', imgObj.width);
-       imgEl.setAttributeNS(null, 'height', imgObj.height);
+       imgEl.setAttributeNS(null, 'width', imgObj.width + 'px');
+       imgEl.setAttributeNS(null, 'height', imgObj.height + 'px');
        imgEl.setAttributeNS(null, 'x', 0);
        imgEl.setAttributeNS(null, 'y', -h);
        imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
