@@ -481,7 +481,7 @@ if (typeof PDFJS === 'undefined') {
   }
 })();
 
-// Support: IE<11, Chrome<21
+// Support: IE<11, Chrome<21, Android<4.4
 (function checkSetPresenceInImageData() {
   // IE < 11 will use window.CanvasPixelArray which lacks set function.
   if (window.CanvasPixelArray) {
@@ -493,23 +493,37 @@ if (typeof PDFJS === 'undefined') {
       };
     }
   } else {
-    // Chrome < 21 uses an inaccessible CanvasPixelArray prototype.
-    // Because we cannot feature detect it, we rely on user agent.
+    // Old Chrome and Android use an inaccessible CanvasPixelArray prototype.
+    // Because we cannot feature detect it, we rely on user agent parsing.
+    var polyfill = false;
     if (navigator.userAgent.indexOf('Chrom') >= 0) {
       var versionMatch = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
       if (versionMatch && parseInt(versionMatch[2]) < 21) {
-        var contextPrototype = window.CanvasRenderingContext2D.prototype;
-        contextPrototype._createImageData = contextPrototype.createImageData;
-        contextPrototype.createImageData = function(w, h) {
-          var imageData = this._createImageData(w, h);
-          imageData.data.set = function(arr) {
-            for (var i = 0, ii = this.length; i < ii; i++) {
-              this[i] = arr[i];
-            }
-          };
-          return imageData;
-        };
+        // Chrome < 21 lacks the set function.
+        polyfill = true;
       }
+    } else if (navigator.userAgent.indexOf('Android') >= 0) {
+      // Android < 4.4 lacks the set function.
+      // Android >= 4.4 will contain Chrome in the user agent,
+      // thus pass the Chrome check above and not reach this block.
+      var isOldAndroid = /Android\s[0-4][^\d]/g.test(navigator.userAgent);
+      if (isOldAndroid) {
+        polyfill = true;
+      }
+    }
+
+    if (polyfill) {
+      var contextPrototype = window.CanvasRenderingContext2D.prototype;
+      contextPrototype._createImageData = contextPrototype.createImageData;
+      contextPrototype.createImageData = function(w, h) {
+        var imageData = this._createImageData(w, h);
+        imageData.data.set = function(arr) {
+          for (var i = 0, ii = this.length; i < ii; i++) {
+            this[i] = arr[i];
+          }
+        };
+        return imageData;
+      };
     }
   }
 })();
