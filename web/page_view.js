@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFView, PDFHistory, PDFFindBar, PDFJS, mozL10n,
-           CustomStyle, PresentationMode, scrollIntoView, SCROLLBAR_PADDING,
-           CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale,
-           TextLayerBuilder, cache, Stats */
+/* globals RenderingStates, PDFView, PDFHistory, PDFJS, mozL10n, CustomStyle,
+           PresentationMode, scrollIntoView, SCROLLBAR_PADDING, CSS_UNITS,
+           UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale, TextLayerBuilder,
+           cache, Stats */
 
 'use strict';
 
@@ -272,7 +272,7 @@ var PageView = function pageView(container, id, scale,
 
           case 'Find':
             if (!PDFView.supportsIntegratedFind) {
-              PDFFindBar.toggle();
+              PDFView.findBar.toggle();
             }
             break;
 
