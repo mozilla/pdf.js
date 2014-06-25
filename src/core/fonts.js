@@ -3888,8 +3888,9 @@ var Font = (function FontClosure() {
       }
 
       var charCodeToGlyphId = [], charCode;
-      if (properties.type == 'CIDFontType2') {
+      if (properties.type === 'CIDFontType2') {
         var cidToGidMap = properties.cidToGidMap || [];
+        var cidToGidMapLength = cidToGidMap.length;
         var cMap = properties.cMap.map;
         for (charCode in cMap) {
           charCode |= 0;
@@ -3897,9 +3898,9 @@ var Font = (function FontClosure() {
           assert(cid.length === 1, 'Max size of CID is 65,535');
           cid = cid.charCodeAt(0);
           var glyphId = -1;
-          if (cidToGidMap.length === 0) {
+          if (cidToGidMapLength === 0) {
             glyphId = charCode;
-          } else if (cid in cidToGidMap) {
+          } else if (cidToGidMap[cid] !== undefined) {
             glyphId = cidToGidMap[cid];
           }
           if (glyphId >= 0 && glyphId < numGlyphs) {
