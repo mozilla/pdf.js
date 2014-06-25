@@ -117,6 +117,7 @@ var PDFView = {
   fellback: false,
   pdfDocument: null,
   sidebarOpen: false,
+  printing: false,
   pageViewScroll: null,
   thumbnailViewScroll: null,
   pageRotation: 0,
@@ -1256,6 +1257,11 @@ var PDFView = {
       }
     }
 
+    if (this.printing) {
+      // If printing is currently ongoing do not reschedule cleanup.
+      return;
+    }
+
     PDFView.idleTimeout = setTimeout(function () {
       PDFView.cleanup();
     }, CLEANUP_TIMEOUT);
@@ -1565,6 +1571,9 @@ var PDFView = {
       return;
     }
 
+    this.printing = true;
+    this.renderHighestPriority();
+
     var body = document.querySelector('body');
     body.setAttribute('data-mozPrintCallback', true);
     for (i = 0, ii = this.pages.length; i < ii; ++i) {
@@ -1583,6 +1592,9 @@ var PDFView = {
     while (div.hasChildNodes()) {
       div.removeChild(div.lastChild);
     }
+
+    this.printing = false;
+    this.renderHighestPriority();
   },
 
   rotatePages: function pdfViewRotatePages(delta) {
