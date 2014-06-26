@@ -815,7 +815,7 @@ var CMapFactory = (function CMapFactoryClosure() {
     if (BUILT_IN_CMAPS.indexOf(name) === -1) {
       error('Unknown cMap name: ' + name);
     }
-    assert (builtInCMapParams, 'buildin cmap parameters are not provided');
+    assert(builtInCMapParams, 'built-in cMap parameters are not provided');
 
     if (builtInCMapParams.packed) {
       return parseBinaryCMap(name, builtInCMapParams);
