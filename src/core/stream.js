@@ -539,12 +539,10 @@ var FlateStream = (function FlateStreamClosure() {
           this.eof = true;
         }
       } else {
-        for (var n = bufferLength; n < end; ++n) {
-          if ((b = str.getByte()) === -1) {
-            this.eof = true;
-            break;
-          }
-          buffer[n] = b;
+        var block = str.getBytes(blockLen);
+        buffer.set(block, bufferLength);
+        if (block.length < blockLen) {
+          this.eof = true;
         }
       }
       return;
