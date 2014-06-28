@@ -2473,6 +2473,7 @@ var Font = (function FontClosure() {
     var toUnicode = properties.toUnicode;
     var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
     var isIdentityUnicode = properties.isIdentityUnicode;
+    var isCidFontType2 = (properties.type === 'CIDFontType2');
     var newMap = Object.create(null);
     var toFontChar = [];
     var usedFontCharCodes = [];
@@ -2483,11 +2484,17 @@ var Font = (function FontClosure() {
       var fontCharCode = originalCharCode;
       // First try to map the value to a unicode position if a non identity map
       // was created.
-      if (!isIdentityUnicode && toUnicode[originalCharCode] !== undefined) {
-        var unicode = toUnicode[fontCharCode];
-        // TODO: Try to map ligatures to the correct spot.
-        if (unicode.length === 1) {
-          fontCharCode = unicode.charCodeAt(0);
+      if (!isIdentityUnicode) {
+        if (toUnicode[originalCharCode] !== undefined) {
+          var unicode = toUnicode[fontCharCode];
+          // TODO: Try to map ligatures to the correct spot.
+          if (unicode.length === 1) {
+            fontCharCode = unicode.charCodeAt(0);
+          }
+        } else if (isCidFontType2) {
+          // For CIDFontType2, move characters not present in toUnicode
+          // to the private use area (fixes bug 1028735 and issue 4881).
+          fontCharCode = nextAvailableFontCharCode;
         }
       }
       // Try to move control characters, special characters and already mapped

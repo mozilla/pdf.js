@@ -176,6 +176,15 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug1028735",
+       "file": "pdfs/bug1028735.pdf",
+       "md5": "5d1a2a87d176ff3b24e66af3cb2365be",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue1512",
        "file": "pdfs/issue1512.pdf",
        "md5": "41a19fe03d522346ee3baa732403fca4",
