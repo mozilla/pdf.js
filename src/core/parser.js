@@ -823,75 +823,51 @@ var Lexer = (function LexerClosure() {
   return Lexer;
 })();
 
-var Linearization = (function LinearizationClosure() {
-  function Linearization(stream) {
-    this.parser = new Parser(new Lexer(stream), false, null);
-    var obj1 = this.parser.getObj();
-    var obj2 = this.parser.getObj();
-    var obj3 = this.parser.getObj();
-    this.linDict = this.parser.getObj();
-    if (isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') &&
-        isDict(this.linDict)) {
-      var obj = this.linDict.get('Linearized');
-      if (!(isNum(obj) && obj > 0)) {
-        this.linDict = null;
-      }
-    }
-  }
-
-  Linearization.prototype = {
-    getInt: function Linearization_getInt(name) {
-      var linDict = this.linDict;
-      var obj;
-      if (isDict(linDict) && isInt(obj = linDict.get(name)) && obj > 0) {
+var Linearization = {
+  create: function LinearizationCreate(stream) {
+    function getInt(name, allowZeroValue) {
+      var obj = linDict.get(name);
+      if (isInt(obj) && (allowZeroValue ? obj >= 0 : obj > 0)) {
         return obj;
       }
-      error('"' + name + '" field in linearization table is invalid');
-    },
-    getHint: function Linearization_getHint(index) {
-      var linDict = this.linDict;
-      var obj1, obj2;
-      if (isDict(linDict) && isArray(obj1 = linDict.get('H')) &&
-          obj1.length >= 2 && isInt(obj2 = obj1[index]) && obj2 > 0) {
-        return obj2;
-      }
-      error('Hints table in linearization table is invalid: ' + index);
-    },
-    get length() {
-      if (!isDict(this.linDict)) {
-        return 0;
-      }
-      return this.getInt('L');
-    },
-    get hintsOffset() {
-      return this.getHint(0);
-    },
-    get hintsLength() {
-      return this.getHint(1);
-    },
-    get hintsOffset2() {
-      return this.getHint(2);
-    },
-    get hintsLenth2() {
-      return this.getHint(3);
-    },
-    get objectNumberFirst() {
-      return this.getInt('O');
-    },
-    get endFirst() {
-      return this.getInt('E');
-    },
-    get numPages() {
-      return this.getInt('N');
-    },
-    get mainXRefEntriesOffset() {
-      return this.getInt('T');
-    },
-    get pageFirst() {
-      return this.getInt('P');
+      throw new Error('The "' + name + '" parameter in the linearization ' +
+                      'dictionary is invalid.');
     }
-  };
-
-  return Linearization;
-})();
-
+    function getHints() {
+      var hints = linDict.get('H'), hintsLength, item;
+      if (isArray(hints) &&
+          ((hintsLength = hints.length) === 2 || hintsLength === 4)) {
+        for (var index = 0; index < hintsLength; index++) {
+          if (!(isInt(item = hints[index]) && item > 0)) {
+            throw new Error('Hint (' + index +
+                            ') in the linearization dictionary is invalid.');
+          }
+        }
+        return hints;
+      }
+      throw new Error('Hint array in the linearization dictionary is invalid.');
+    }
+    var parser = new Parser(new Lexer(stream), false, null);
+    var obj1 = parser.getObj();
+    var obj2 = parser.getObj();
+    var obj3 = parser.getObj();
+    var linDict = parser.getObj();
+    var obj, length;
+    if (!(isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') && isDict(linDict) &&
+          isNum(obj = linDict.get('Linearized')) && obj > 0)) {
+      return null; // No valid linearization dictionary found.
+    } else if ((length = getInt('L')) !== stream.length) {
+      throw new Error('The "L" parameter in the linearization dictionary ' +
+                      'does not equal the stream length.');
+    }
+    return {
+      length: length,
+      hints: getHints(),
+      objectNumberFirst: getInt('O'),
+      endFirst: getInt('E'),
+      numPages: getInt('N'),
+      mainXRefEntriesOffset: getInt('T'),
+      pageFirst: (linDict.has('P') ? getInt('P', true) : 0)
+    };
+  }
+};

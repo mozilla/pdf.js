@@ -358,22 +358,15 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
 
     get linearization() {
-      var length = this.stream.length;
-      var linearization = false;
-      if (length) {
+      var linearization = null;
+      if (this.stream.length) {
         try {
-          linearization = new Linearization(this.stream);
-          if (linearization.length != length) {
-            linearization = false;
-          }
+          linearization = Linearization.create(this.stream);
         } catch (err) {
           if (err instanceof MissingDataException) {
             throw err;
           }
-
-          info('The linearization data is not available ' +
-               'or unreadable PDF data is found');
-          linearization = false;
+          info(err);
         }
       }
       // shadow the prototype getter with a data property
