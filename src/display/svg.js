@@ -61,6 +61,9 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.lineJoin = '';
     this.lineCap = '';
     this.miterLimit = 0;
+    
+    this.dashArray = [];
+    this.dashPhase = 0;
 
     // Dependency
     this.dependencies = [];
