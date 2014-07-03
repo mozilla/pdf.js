@@ -62,7 +62,10 @@ var SVGExtraState = (function SVGExtraStateClosure() {
 
     // Dependency
     this.dependencies = [];
-    this.count = 0;
+
+    // Clipping
+    this.clipId = '';
+    this.pendingClip = false;
   }
 
   SVGExtraState.prototype = {
@@ -122,6 +125,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
+  var clipCount = 0;
 
   SVGGraphics.prototype = {
     save: function SVGGraphics_save() {
@@ -199,6 +203,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.tgrp = document.createElementNS(NS, 'svg:g'); // Transform group
       this.tgrp.setAttributeNS(null, 'transform',
         'matrix(' + this.transformMatrix +')');
+      this.defs = document.createElementNS(NS, 'svg:defs');
+      this.pgrp.appendChild(this.defs);
       this.pgrp.appendChild(this.tgrp);
       this.svg.appendChild(this.pgrp);
       this.container.appendChild(this.svg);
@@ -306,6 +312,12 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             break;
           case OPS.fillStroke:
             this.fillStroke();
+            break;
+          case OPS.clip:
+            this.clip('nonzero');
+            break;
+          case OPS.eoClip:
+            this.clip('evenodd');
             break;
           case OPS.paintSolidColorImageMask:
             this.paintSolidColorImageMask();
@@ -579,12 +591,39 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.path.setAttributeNS(null, 'stroke-dasharray', current.dashArray);
       current.path.setAttributeNS(null, 'stroke-dashoffset',
         current.dashPhase + 'px');
+      if (current.pendingClip) {
+        this.cgrp.appendChild(this.tgrp);
+      }
       current.path.setAttributeNS(null, 'fill', 'none');
       this.tgrp.appendChild(current.path);
       // Saving a reference in current.element so that it can be addressed
       // in 'fill' and 'stroke'
       current.element = current.path;
       current.setCurrentPoint(x, y);
+    },
+
+    clip: function SVGGraphics_clip(type) {
+      var current = this.current;
+      // Add current path to clipping path
+      current.clipId = 'clippath' + clipCount;
+      clipCount++;
+      this.clippath = document.createElementNS(NS, 'svg:clipPath');
+      this.clippath.setAttributeNS(null, 'id', current.clipId);
+      var clipElement = current.element.cloneNode();
+      if (type == 'evenodd') {
+        clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
+      } else {
+        clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
+      }
+      this.clippath.appendChild(clipElement);
+      this.defs.appendChild(this.clippath);
+
+      // Create a new group with that attribute
+      current.pendingClip = true;
+      this.cgrp = document.createElementNS(NS, 'svg:g');
+      this.cgrp.setAttributeNS(null, 'clip-path',
+       'url(#' + current.clipId + ')');
+      this.pgrp.appendChild(this.cgrp);
     },
 
     closePath: function SVGGraphics_closePath() {
@@ -650,14 +689,12 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     fill: function SVGGraphics_fill() {
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
-      this.tgrp.appendChild(current.element);
     },
 
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
       current.element.setAttributeNS(null, 'fill', 'none');
-      this.tgrp.appendChild(current.element);
     },
 
     eoFill: function SVGGraphics_eoFill() {
@@ -705,6 +742,9 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
        imgEl.setAttributeNS(null, 'y', -h);
        imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
         ' ' + -1 / h + ')');
+       if (current.pendingClip) {
+        this.cgrp.appendChild(this.tgrp);
+       }
        this.tgrp.appendChild(imgEl);
     },
   };
