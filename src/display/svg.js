@@ -33,8 +33,10 @@ function createScratchSVG(width, height) {
 var SVGExtraState = (function SVGExtraStateClosure() {
   function SVGExtraState(old) {
     // Are soft masks and alpha values shapes or opacities?
-    this.fontSize = 0;
     this.fontSizeScale = 1;
+    this.fontWeight = 'normal';
+    this.fontSize = 'normal';
+
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
@@ -313,6 +315,9 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
           case OPS.fillStroke:
             this.fillStroke();
             break;
+          case OPS.eoFillStroke:
+            this.eoFillStroke();
+            break;
           case OPS.clip:
             this.clip('nonzero');
             break;
@@ -453,8 +458,13 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       }
 
       current.tspan.setAttributeNS(null, 'x', current.xcoords.join(' '));
+      current.tspan.setAttributeNS(null, 'y', -current.y);
       current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
       current.tspan.setAttributeNS(null, 'font-size', current.fontSize + 'px');
+      current.tspan.setAttributeNS(null, 'font-style', current.fontStyle);
+      current.tspan.setAttributeNS(null, 'font-weight', current.fontWeight);
+      current.tspan.setAttributeNS(null, 'stroke', 'none');
+      current.tspan.setAttributeNS(null, 'fill', current.fillColor);
 
       current.txtElement.setAttributeNS(null, 'transform',
         'matrix(' + current.textMatrix + ') scale(1, -1)' );
@@ -485,10 +495,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
 
       var italic = fontObj.italic ? 'italic' : 'normal';
 
-      current.font.style = (bold == 'normal' ?
-                             (italic == 'normal' ?
-                              '' : 'font-weight:' + italic) :
-                                'font-weight:' + bold);
 
       if (size < 0) {
         size = -size;
@@ -498,6 +504,12 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       }
       current.fontSize = size;
       current.fontFamily = fontObj.loadedName;
+      current.fontWeight = bold;
+      current.fontStyle = italic;
+
+      current.tspan = document.createElementNS(NS, 'svg:tspan');
+      current.tspan.setAttributeNS(null, 'y', -current.y);
+      current.xcoords = [];
     },
 
     endText: function SVGGraphics_endText(args) {
@@ -524,6 +536,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     setFillRGBColor: function SVGGraphics_setFillRGBColor(r, g, b) {
       var color = Util.makeCssRgb(arguments);
       this.current.fillColor = color;
+      this.current.tspan = document.createElementNS(NS, 'svg:tspan');
+      this.current.xcoords = [];
     },
     setDash: function SVGGraphics_setDash(dashArray, dashPhase) {
       this.current.dashArray = dashArray;
@@ -586,6 +600,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.path.setAttributeNS(null, 'stroke-miterlimit',
        current.miterLimit);
       current.path.setAttributeNS(null, 'stroke-linecap', current.lineCap);
+      current.path.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
       current.path.setAttributeNS(null, 'stroke-width',
         current.lineWidth + 'px');
       current.path.setAttributeNS(null, 'stroke-dasharray', current.dashArray);
@@ -704,8 +719,15 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     fillStroke: function SVGGraphics_fillStroke() {
-      this.fill();
+      // Order is important since stroke wants fill to be none.
+      // First stroke, then if fill needed, it will be overwritten.
       this.stroke();
+      this.fill();
+    },
+
+    eoFillStroke: function SVGGraphics_eoFillStroke() {
+      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.fillStroke();
     },
 
     closeStroke: function SVGGraphics_closeStroke() {
