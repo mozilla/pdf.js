@@ -560,8 +560,15 @@ var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 var Util = PDFJS.Util = (function UtilClosure() {
   function Util() {}
 
+  var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
+
+  // makeCssRgb() can be called thousands of times. Using |rgbBuf| avoids
+  // creating many intermediate strings.
   Util.makeCssRgb = function Util_makeCssRgb(rgb) {
-    return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+    rgbBuf[1] = rgb[0];
+    rgbBuf[3] = rgb[1];
+    rgbBuf[5] = rgb[2];
+    return rgbBuf.join('');
   };
 
   // Concatenates two transformation matrices together and returns the result.
