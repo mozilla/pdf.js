@@ -2473,6 +2473,7 @@ var Font = (function FontClosure() {
     var toUnicode = properties.toUnicode;
     var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
     var isIdentityUnicode = properties.isIdentityUnicode;
+    var isCidFontType2 = (properties.type === 'CIDFontType2');
     var newMap = Object.create(null);
     var toFontChar = [];
     var usedFontCharCodes = [];
@@ -2483,11 +2484,17 @@ var Font = (function FontClosure() {
       var fontCharCode = originalCharCode;
       // First try to map the value to a unicode position if a non identity map
       // was created.
-      if (!isIdentityUnicode && originalCharCode in toUnicode) {
-        var unicode = toUnicode[fontCharCode];
-        // TODO: Try to map ligatures to the correct spot.
-        if (unicode.length === 1) {
-          fontCharCode = unicode.charCodeAt(0);
+      if (!isIdentityUnicode) {
+        if (toUnicode[originalCharCode] !== undefined) {
+          var unicode = toUnicode[fontCharCode];
+          // TODO: Try to map ligatures to the correct spot.
+          if (unicode.length === 1) {
+            fontCharCode = unicode.charCodeAt(0);
+          }
+        } else if (isCidFontType2) {
+          // For CIDFontType2, move characters not present in toUnicode
+          // to the private use area (fixes bug 1028735 and issue 4881).
+          fontCharCode = nextAvailableFontCharCode;
         }
       }
       // Try to move control characters, special characters and already mapped
@@ -2496,7 +2503,7 @@ var Font = (function FontClosure() {
       // font was symbolic and there is only an identity unicode map since the
       // characters probably aren't in the correct position (fixes an issue
       // with firefox and thuluthfont).
-      if ((fontCharCode in usedFontCharCodes ||
+      if ((usedFontCharCodes[fontCharCode] !== undefined ||
            fontCharCode <= 0x1f || // Control chars
            fontCharCode === 0x7F || // Control char
            fontCharCode === 0xAD || // Soft hyphen
@@ -2514,7 +2521,7 @@ var Font = (function FontClosure() {
             nextAvailableFontCharCode = fontCharCode + 1;
           }
 
-        } while (fontCharCode in usedFontCharCodes &&
+        } while (usedFontCharCodes[fontCharCode] !== undefined &&
                  nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END);
       }
 
@@ -3888,8 +3895,9 @@ var Font = (function FontClosure() {
       }
 
       var charCodeToGlyphId = [], charCode;
-      if (properties.type == 'CIDFontType2') {
+      if (properties.type === 'CIDFontType2') {
         var cidToGidMap = properties.cidToGidMap || [];
+        var cidToGidMapLength = cidToGidMap.length;
         var cMap = properties.cMap.map;
         for (charCode in cMap) {
           charCode |= 0;
@@ -3897,9 +3905,9 @@ var Font = (function FontClosure() {
           assert(cid.length === 1, 'Max size of CID is 65,535');
           cid = cid.charCodeAt(0);
           var glyphId = -1;
-          if (cidToGidMap.length === 0) {
+          if (cidToGidMapLength === 0) {
             glyphId = charCode;
-          } else if (cid in cidToGidMap) {
+          } else if (cidToGidMap[cid] !== undefined) {
             glyphId = cidToGidMap[cid];
           }
           if (glyphId >= 0 && glyphId < numGlyphs) {
