@@ -16,17 +16,28 @@ describe('parser', function() {
 
     it('should parse PostScript numbers', function() {
       var numbers = ['-.002', '34.5', '-3.62', '123.6e10', '1E-5', '-1.', '0.0',
-                    '123', '-98', '43445', '0', '+17'];
+                     '123', '-98', '43445', '0', '+17'];
+      var num, input, lexer, result;
       for (var i = 0, ii = numbers.length; i < ii; i++) {
-        var num = numbers[i];
-        var input = new StringStream(num);
-        var lexer = new Lexer(input);
-        var result = lexer.getNumber();
+        num = numbers[i];
+        input = new StringStream(num);
+        lexer = new Lexer(input);
+        result = lexer.getNumber();
 
         expect(result).toEqual(parseFloat(num));
       }
-    });
 
+      // Check if infinity is handled correctly.
+      input = new StringStream('inf');
+      lexer = new Lexer(input);
+      result = lexer.getNumber();
+      expect(result).toEqual(Infinity);
+
+      input = new StringStream('-inf');
+      lexer = new Lexer(input);
+      result = lexer.getNumber();
+      expect(result).toEqual(-Infinity);
+    });
 
     it('should handle glued numbers and operators', function() {
       var input = new StringStream('123ET');

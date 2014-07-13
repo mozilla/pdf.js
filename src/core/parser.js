@@ -488,6 +488,11 @@ var Lexer = (function LexerClosure() {
       } else if (ch === 0x2B) { // '+'
         ch = this.nextChar();
       }
+      if (ch === 0x69 && // 'i'
+          ((ch = this.nextChar()) && ch === 0x6E) && // 'n'
+          ((ch = this.nextChar()) && ch === 0x66)) { // 'f'
+        return sign * Infinity;
+      }
       if (ch === 0x2E) { // '.'
         divideBy = 10;
         ch = this.nextChar();
