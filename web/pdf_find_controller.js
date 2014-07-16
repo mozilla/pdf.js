@@ -107,6 +107,8 @@ var PDFFindController = {
 
     if (queryLen === 0) {
       // Do nothing: the matches should be wiped out already.
+      // Also, reset the result counter back to zero
+      PDFFindBar.updateResultsCount();
       return;
     }
 
@@ -130,6 +132,9 @@ var PDFFindController = {
       this.resumePageIdx = null;
       this.nextPageMatch();
     }
+
+    // Update the matches count
+    PDFFindBar.updateResultsCount(this.pageMatches);
   },
 
   extractText: function() {

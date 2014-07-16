@@ -151,6 +151,7 @@ var PDFView = {
       highlightAllCheckbox: document.getElementById('findHighlightAll'),
       caseSensitiveCheckbox: document.getElementById('findMatchCase'),
       findMsg: document.getElementById('findMsg'),
+      findResultsCount: document.getElementById('findResultsCount'),
       findStatusIcon: document.getElementById('findStatusIcon'),
       findPreviousButton: document.getElementById('findPrevious'),
       findNextButton: document.getElementById('findNext')
