@@ -464,6 +464,9 @@ window.onload = function() {
         val = 1;
       }
       document.querySelector('input[name="which"][value="' + val + '"]').click();
+    } else if (event.which === 68) {
+      // 'd' toggle differences
+      document.getElementById("differences").click();
     } else if (event.which === 78 || event.which === 80) {
       // 'n' next image, 'p' previous image
       var select = gSelected;
