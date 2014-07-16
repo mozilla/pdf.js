@@ -132,12 +132,16 @@ function preprocessCSS(mode, source, destination) {
     });
   }
 
+  function isExcluded(line) {
+    return (/\s*-no-moz\s*/.test(line));
+  }
+
   function removePrefixed(content, hasPrefixedFilter) {
     var lines = content.split(/\r?\n/g);
     var i = 0;
     while (i < lines.length) {
       var line = lines[i];
-      if (!hasPrefixedFilter(line)) {
+      if (!hasPrefixedFilter(line) && !isExcluded(line)) {
         i++;
         continue;
       }

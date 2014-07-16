@@ -31,6 +31,10 @@ var DEFAULT_PREFERENCES = {
   disableStream: false,
   disableAutoFetch: false,
   disableFontFace: false,
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+  skipTour: true,
+  tourDisplayed: false,
+//#endif
 //#if B2G
 //disableTextLayer: true,
 //useOnlyCssZoom: true

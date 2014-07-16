@@ -87,6 +87,7 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     <script src="overlay_manager.js"></script>
     <script src="password_prompt.js"></script>
     <script src="document_properties.js"></script>
+    <script src="help.js"></script>
 <!--#endif-->
 
 <!--#if !MINIFIED -->
@@ -196,6 +197,15 @@ http://sourceforge.net/adobe/cmap/wiki/License/
             <button id="documentProperties" class="secondaryToolbarButton documentProperties" title="Document Properties…" tabindex="61" data-l10n-id="document_properties">
               <span data-l10n-id="document_properties_label">Document Properties…</span>
             </button>
+<!--#if (FIREFOX || MOZCENTRAL || B2G)-->
+            <a href="https://support.mozilla.org/kb/view-pdf-files-firefox-without-downloading-them" target="_blank" id="help" class="secondaryToolbarButton help moz-help" title="Show Help" tabindex="62" data-l10n-id="help">
+              <span data-l10n-id="help_label">Help</span>
+            </a>
+<!--#else-->
+            <button id="help" class="secondaryToolbarButton help" title="Show Help" tabindex="62" data-l10n-id="help">
+              <span data-l10n-id="help_label">Help</span>
+            </button>
+<!--#endif-->
           </div>
         </div>  <!-- secondaryToolbar -->
 
@@ -385,6 +395,90 @@ http://sourceforge.net/adobe/cmap/wiki/License/
             </div>
           </div>
         </div>
+<!--#if !(FIREFOX || MOZCENTRAL || B2G)-->
+        <div id="helpOverlay" class="container hidden">
+          <div class="dialog">
+            <div class="helpContent" id="help_0">
+              <h1>Welcome to Mozilla's PDF.js guided tour</h1>
+              <div class="separator"></div>
+              <p>PDF.js allows you to view PDF files in your browser without downloading them.</p>
+              <p class="helpAction">Click "start" to start the tour</p>
+            </div>
+            <div class="helpContent" id="help_1">
+              <h1>View document thumbnails, outline or attachments</h1>
+              <div class="separator"></div>
+              <p>The sidebar button on the far left will open a sidebar with thumbnails of the document's pages. Some documents will also have an outline view and/or an attachments view available. These make it easy to navigate through a long document and through its attachments.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_2">
+              <h1>Find text in document</h1>
+              <div class="separator"></div>
+              <p>Use this tool to search text in the current document and highlight its occurence(s). You can also use the left and right arrows to navigate through them.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_3">
+              <h1>Page up and down or skip directly to a page</h1>
+              <div class="separator"></div>
+              <p>You can use the up and down arrows to page through a document or enter the number of the page you want to go to.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_4">
+              <h1>Change the size of the document</h1>
+              <div class="separator"></div>
+              <p>Use the + and - buttons to zoom in and out or choose a zoom setting from the dropdown menu (when available).</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_5">
+              <h1>Fullscreen or Presentation mode</h1>
+              <div class="separator"></div>
+              <p>Click the fullscreen button to allow the PDF file to take over your entire screen. Press ESC to exit fullscreen mode.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_6">
+              <h1>Open file</h1>
+              <div class="separator"></div>
+              <p>Click the open file button to open your local file selector.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_7">
+              <h1>Print</h1>
+              <div class="separator"></div>
+              <p>Click the Printer button to open the print setup dialog.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_8">
+              <h1>Download</h1>
+              <div class="separator"></div>
+              <p>Click the Download button to save the PDF file to your computer or to open it with a PDF reader program.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_9">
+              <h1>Copy current view</h1>
+              <div class="separator"></div>
+              <p>Hold down the Ctrl key while you click the current view button to open the current view in another tab or window.</p>
+              <p class="helpAction">Click "next" to continue</p>
+            </div>
+            <div class="helpContent" id="help_10">
+              <h1>And more!</h1>
+              <div class="separator"></div>
+              <p>The button on the far right will open a menu with many other tools, such as:</p>
+              <ul>
+                <li>Go to first or last page</li>
+                <li>Rotate the pages of the current document clockwise or counterclockwise</li>
+                <li>Hand tool</li>
+                <li>Display the current document's metadata</li>
+                <li>This guided tour</li>
+              </ul>
+              <p class="helpAction">Click "close" to start using PDF.js</p>
+            </div>
+            <div class="buttonRow">
+              <button id="helpStart" class="overlayButton"><span>Start</span></button>
+              <button id="helpNext" class="overlayButton"><span>Next</span></button>
+              <button id="helpClose" class="overlayButton"><span>Close</span></button>
+            </div>
+          </div>
+        </div>
+<!--#endif-->
       </div>  <!-- overlayContainer -->
 
     </div> <!-- outerContainer -->

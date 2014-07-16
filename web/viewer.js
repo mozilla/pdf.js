@@ -23,7 +23,7 @@
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
-           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
+           IGNORE_CURRENT_POSITION_ON_ZOOM: true, Help */
 
 'use strict';
 
@@ -88,6 +88,10 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include pdf_thumbnail_viewer.js
 //#include pdf_outline_view.js
 //#include pdf_attachment_view.js
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+//#include help.js
+//#endif
 
 var PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
@@ -181,7 +185,11 @@ var PDFViewerApplication = {
       pageRotateCw: document.getElementById('pageRotateCw'),
       pageRotateCcw: document.getElementById('pageRotateCcw'),
       documentProperties: DocumentProperties,
-      documentPropertiesButton: document.getElementById('documentProperties')
+      documentPropertiesButton: document.getElementById('documentProperties'),
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+      help: Help,
+//#endif
+      helpButton: document.getElementById('help')
     });
 
     PresentationMode.initialize({
@@ -219,6 +227,15 @@ var PDFViewerApplication = {
     });
 
     var self = this;
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+    Help.initialize({
+      overlayName: 'helpOverlay',
+      closeButton: document.getElementById('helpClose'),
+      startButton: document.getElementById('helpStart'),
+      nextButton: document.getElementById('helpNext')
+    });
+//#endif
+
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
@@ -258,8 +275,15 @@ var PDFViewerApplication = {
       }),
       Preferences.get('useOnlyCssZoom').then(function resolved(value) {
         PDFJS.useOnlyCssZoom = value;
+      }),
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+      Preferences.get('skipTour').then(function resolved(value) {
+        if (PDFJS.skipTour === false) {
+          return;
+        }
+        PDFJS.skipTour = value;
       })
-
+//#endif
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
@@ -1699,6 +1723,17 @@ function webViewerInitialized() {
 //if (file) {
 //  ChromeCom.openPDFFile(file);
 //}
+//#endif
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+  if (!PDFJS.skipTour) {
+    Preferences.get('tourDisplayed').then(function resolved(value) {
+      if (!value) {
+        Help.open();
+        Preferences.set('tourDisplayed', true);
+      }
+    });
+  }
 //#endif
 }
 

@@ -903,7 +903,8 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 }
 
 .toolbarButton.bookmark,
-.secondaryToolbarButton.bookmark {
+.secondaryToolbarButton.bookmark,
+.secondaryToolbarButton.moz-help {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -911,8 +912,13 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   padding-top: 4px;
   text-decoration: none;
 }
-.secondaryToolbarButton.bookmark {
+.secondaryToolbarButton.bookmark,
+.secondaryToolbarButton.moz-help {
   padding-top: 5px;
+}
+
+.moz-help {
+  display: inline-block;
 }
 
 .bookmark[href='#'] {
@@ -962,10 +968,12 @@ html[dir="rtl"] .secondaryToolbarButton {
   padding-right: 24px;
   text-align: right;
 }
-html[dir="ltr"] .secondaryToolbarButton.bookmark {
+html[dir="ltr"] .secondaryToolbarButton.bookmark,
+html[dir="ltr"] .secondaryToolbarButton.moz-help {
   padding-left: 27px;
 }
-html[dir="rtl"] .secondaryToolbarButton.bookmark {
+html[dir="rtl"] .secondaryToolbarButton.bookmark,
+html[dir="rtl"] .secondaryToolbarButton.moz-help {
   padding-right: 27px;
 }
 
@@ -998,6 +1006,10 @@ html[dir="rtl"] .secondaryToolbarButton > span {
 
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
+}
+
+.secondaryToolbarButton.help::before {
+  content: url(images/secondaryToolbarButton-help.png);
 }
 
 .verticalToolbarSeparator {
@@ -1404,6 +1416,78 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   margin-top: 10px;
 }
 
+/* -no-moz */ #helpOverlay > .dialog {
+  max-width: 250px;
+}
+
+/* -no-moz */ #helpOverlay > .dialog > .helpContent {
+  padding-bottom: 5px;
+  display: inline;
+}
+
+/* -no-moz */ #helpOverlay > .dialog > .helpContent h1 {
+  width: auto;
+  font-size: 18px;
+  line-height: 18px;
+  padding-bottom: 5px;
+}
+
+/* -no-moz */ #helpOverlay > .dialog > .helpContent ul {
+  list-style-position: inside;
+  margin-left: 0;
+  padding-left: 0;
+  display: table;
+}
+/* -no-moz */ #helpOverlay > .dialog > .helpContent li {
+  list-style-type: none;
+  display: table-row;
+}
+/* -no-moz */ #helpOverlay > .dialog > .helpContent li:before {
+  content: "•";
+  font-size: 80%;
+  padding-right: 0.4em;
+  display: table-cell;
+}
+
+/* -no-moz */ html[dir='ltr'] #helpOverlay > .dialog > .helpContent {
+  text-align: left;
+}
+/* -no-moz */ html[dir='rtl'] #helpOverlay > .dialog > .helpContent {
+  text-align: right;
+}
+
+/* -no-moz */ #helpOverlay > .dialog > .helpContent .helpAction {
+  background-color: rgba(255,255,255,0.6);
+  border-radius: 2px;
+  margin: 6px 0;
+  padding: 4px;
+  text-align: center;
+  color: #474747;
+}
+
+/* -no-moz */ #helpOverlay > .helpUIHighlight {
+  position: absolute;
+  box-sizing: border-box;
+  background-color: rgba(255,38,0,0.2);
+  border: 2px #fff solid;
+  -webkit-animation: hover 1s linear infinite;
+  animation: hover 1s linear infinite;
+}
+/* -no-moz */ @-webkit-keyframes hover {
+  0%   { -webkit-transform: translate(-1px, -1px); }
+  25%  { -webkit-transform: translate(1px, -1px); }
+  50%  { -webkit-transform: translate(1px, 1px); }
+  75%  { -webkit-transform: translate(-1px, 1px); }
+  100% { -webkit-transform: translate(-1px, -1px); }
+}
+/* -no-moz */ @keyframes hover {
+  0%   { transform: translate(-1px, -1px); }
+  25%  { transform: translate(1px, -1px); }
+  50%  { transform: translate(1px, 1px); }
+  75%  { transform: translate(-1px, 1px); }
+  100% { transform: translate(-1px, -1px); }
+}
+
 .clearBoth {
   clear: both;
 }
@@ -1664,6 +1748,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .secondaryToolbarButton.documentProperties::before {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
+  }
+
+  .secondaryToolbarButton.help::before {
+    content: url(images/secondaryToolbarButton-help@2x.png);
   }
 }
 

@@ -27,6 +27,7 @@ var SecondaryToolbar = {
     this.toolbar = options.toolbar;
     this.presentationMode = options.presentationMode;
     this.documentProperties = options.documentProperties;
+    this.help = options.help;
     this.buttonContainer = this.toolbar.firstElementChild;
 
     // Define the toolbar buttons.
@@ -41,6 +42,7 @@ var SecondaryToolbar = {
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
     this.documentPropertiesButton = options.documentPropertiesButton;
+    this.helpButton = options.helpButton;
 
     // Attach the event listeners.
     var elements = [
@@ -59,7 +61,8 @@ var SecondaryToolbar = {
       { element: this.pageRotateCw, handler: this.pageRotateCwClick },
       { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
       { element: this.documentPropertiesButton,
-        handler: this.documentPropertiesClick }
+        handler: this.documentPropertiesClick },
+      { element: this.helpButton, handler: this.helpClick }
     ];
 
     for (var item in elements) {
@@ -118,6 +121,15 @@ var SecondaryToolbar = {
   documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {
     this.documentProperties.open();
     this.close();
+  },
+
+  helpClick: function secondaryToolbarHelpClick(evt) {
+    this.close();
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+    if (this.help) {
+      this.help.open();
+    }
+//#endif
   },
 
   // Misc. functions for interacting with the toolbar.
