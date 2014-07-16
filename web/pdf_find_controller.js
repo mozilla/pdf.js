@@ -116,7 +116,10 @@ var PDFFindController = (function PDFFindControllerClosure() {
       var queryLen = query.length;
 
       if (queryLen === 0) {
-        return; // Do nothing: the matches should be wiped out already.
+        // Do nothing: the matches should be wiped out already.
+        // Also, reset the result counter back to zero
+        this.findBar.updateResultsCount();
+        return;
       }
 
       if (!caseSensitive) {
@@ -139,6 +142,9 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.resumePageIdx = null;
         this.nextPageMatch();
       }
+
+      // Update the matches count
+      this.findBar.updateResultsCount(this.pageMatches);
     },
 
     extractText: function PDFFindController_extractText() {
