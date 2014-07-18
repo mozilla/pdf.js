@@ -601,74 +601,61 @@ describe('CipherTransformFactory', function() {
   describe('#ctor', function() {
     describe('AES256 Revision 5', function () {
       it('should accept user password', function () {
-        var factory = new CipherTransformFactory(new DictMock(aes256Map),
-                                                 fileID1,
-                                                 'user');
+        new CipherTransformFactory(new DictMock(aes256Map), fileID1, 'user');
       });
       it('should accept owner password', function () {
-        var factory = new CipherTransformFactory(new DictMock(aes256Map),
-                                                 fileID1,
-                                                 'owner');
+        new CipherTransformFactory(new DictMock(aes256Map), fileID1, 'owner');
       });
       it('should not accept wrong password', function () {
         var thrown = false;
         try {
-          var factory = new CipherTransformFactory(new DictMock(aes256Map),
-                                                   fileID1,
-                                                   'wrong');
+          new CipherTransformFactory(new DictMock(aes256Map), fileID1,
+                                     'wrong');
         } catch (e) {
           thrown = true;
         }
         expect(thrown).toEqual(true);
       });
       it('should accept blank password', function () {
-        var factory = new CipherTransformFactory(new DictMock(aes256BlankMap),
-                                                 fileID1);
+        new CipherTransformFactory(new DictMock(aes256BlankMap), fileID1);
       });
     });
 
     describe('AES256 Revision 6', function () {
       it('should accept user password', function () {
-        var factory = new CipherTransformFactory(new DictMock(aes256IsoMap),
-                                                 fileID1,
-                                                 'user');
+        new CipherTransformFactory(new DictMock(aes256IsoMap), fileID1,
+                                   'user');
       });
       it('should accept owner password', function () {
-        var factory = new CipherTransformFactory(new DictMock(aes256IsoMap),
-                                                 fileID1,
-                                                 'owner');
+        new CipherTransformFactory(new DictMock(aes256IsoMap), fileID1,
+                                   'owner');
       });
       it('should not accept wrong password', function () {
         var thrown = false;
         try {
-          var factory = new CipherTransformFactory(new DictMock(aes256IsoMap),
-                                                   fileID1,
-                                                   'wrong');
+          new CipherTransformFactory(new DictMock(aes256IsoMap), fileID1,
+                                     'wrong');
         } catch (e) {
           thrown = true;
         }
         expect(thrown).toEqual(true);
       });
       it('should accept blank password', function () {
-        var factory = new CipherTransformFactory(new DictMock(aes256IBlankMap),
-                                                 fileID1);
+        new CipherTransformFactory(new DictMock(aes256IBlankMap), fileID1);
       });
     });
     it('should accept user password', function() {
-      var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
-                                               '123456');
+      new CipherTransformFactory(new DictMock(map1), fileID1, '123456');
     });
 
     it('should accept owner password', function() {
-      var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
-                                               '654321');
+      new CipherTransformFactory(new DictMock(map1), fileID1, '654321');
     });
 
     it('should not accept wrong password', function() {
       var thrown = false;
       try {
-        var factory = new CipherTransformFactory(new DictMock(map1), fileID1,
-                                                 'wrong');
+        new CipherTransformFactory(new DictMock(map1), fileID1, 'wrong');
       } catch (e) {
         thrown = true;
       }
@@ -676,7 +663,7 @@ describe('CipherTransformFactory', function() {
     });
 
     it('should accept no password', function() {
-      var factory = new CipherTransformFactory(new DictMock(map2), fileID2);
+      new CipherTransformFactory(new DictMock(map2), fileID2);
     });
   });
 });

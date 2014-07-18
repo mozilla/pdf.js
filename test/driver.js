@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, getPdf, combineUrl, StatTimer, SpecialPowers, Promise */
+/* globals PDFJS, combineUrl, StatTimer, SpecialPowers, Promise */
 
 'use strict';
 
@@ -273,8 +273,6 @@ function nextPage(task, loadError) {
     snapshotCurrentPage(task, '');
     return;
   }
-
-  var page = null;
 
   if (!failure) {
     try {
