@@ -177,11 +177,12 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
           return PostScriptToken.RBRACE;
       }
       // operator
-      var str = String.fromCharCode(ch);
+      var strBuf = [String.fromCharCode(ch)];
       while ((ch = this.nextChar()) >= 0 && // and 'A'-'Z', 'a'-'z'
              ((ch >= 0x41 && ch <= 0x5A) || (ch >= 0x61 && ch <= 0x7A))) {
-        str += String.fromCharCode(ch);
+        strBuf.push(String.fromCharCode(ch));
       }
+      var str = strBuf.join('');
       switch (str.toLowerCase()) {
         case 'if':
           return PostScriptToken.IF;
@@ -193,16 +194,16 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
     },
     getNumber: function PostScriptLexer_getNumber() {
       var ch = this.currentChar;
-      var str = String.fromCharCode(ch);
+      var strBuf = [String.fromCharCode(ch)];
       while ((ch = this.nextChar()) >= 0) {
         if ((ch >= 0x30 && ch <= 0x39) || // '0'-'9'
             ch === 0x2D || ch === 0x2E) { // '-', '.'
-          str += String.fromCharCode(ch);
+          strBuf.push(String.fromCharCode(ch));
         } else {
           break;
         }
       }
-      var value = parseFloat(str);
+      var value = parseFloat(strBuf.join(''));
       if (isNaN(value)) {
         error('Invalid floating point number: ' + value);
       }
