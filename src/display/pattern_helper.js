@@ -226,24 +226,24 @@ ShadingIRs.Mesh = {
     return {
       type: 'Pattern',
       getPattern: function Mesh_getPattern(ctx, owner, shadingFill) {
-        var combinedScale;
-        // Obtain scale from matrix and current transformation matrix.
+        var scale;
         if (shadingFill) {
-          combinedScale = Util.singularValueDecompose2dScale(
-            ctx.mozCurrentTransform);
+          scale = Util.singularValueDecompose2dScale(ctx.mozCurrentTransform);
         } else {
-          var matrixScale = Util.singularValueDecompose2dScale(matrix);
-          var curMatrixScale = Util.singularValueDecompose2dScale(
-            owner.baseTransform);
-          combinedScale = [matrixScale[0] * curMatrixScale[0],
-            matrixScale[1] * curMatrixScale[1]];
+          // Obtain scale from matrix and current transformation matrix.
+          scale = Util.singularValueDecompose2dScale(owner.baseTransform);
+          if (matrix) {
+            var matrixScale = Util.singularValueDecompose2dScale(matrix);
+            scale = [scale[0] * matrixScale[0],
+                     scale[1] * matrixScale[1]];
+          }
         }
 
 
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
-        var temporaryPatternCanvas = createMeshCanvas(bounds, combinedScale,
-          coords, colors, figures, shadingFill ? null : background);
+        var temporaryPatternCanvas = createMeshCanvas(bounds, scale, coords,
+          colors, figures, shadingFill ? null : background);
 
         if (!shadingFill) {
           ctx.setTransform.apply(ctx, owner.baseTransform);
