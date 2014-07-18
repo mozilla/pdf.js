@@ -1053,6 +1053,12 @@ html[dir='rtl'] .verticalToolbarSeparator {
   width: 40px;
 }
 
+.toolbarField.pageNumber.visiblePageIsLoading {
+  background-image: url(images/loading-small.png);
+  background-repeat: no-repeat;
+  background-position: 1px;
+}
+
 .toolbarField.pageNumber::-webkit-inner-spin-button,
 .toolbarField.pageNumber::-webkit-outer-spin-button {
     -webkit-appearance: none;
