@@ -32,6 +32,7 @@ var PDFFindBar = {
   highlightAll: null,
   caseSensitive: null,
   findMsg: null,
+  findResultsCount: null,
   findStatusIcon: null,
   findPreviousButton: null,
   findNextButton: null,
@@ -48,6 +49,7 @@ var PDFFindBar = {
     this.highlightAll = options.highlightAllCheckbox;
     this.caseSensitive = options.caseSensitiveCheckbox;
     this.findMsg = options.findMsg;
+    this.findResultsCount = options.findResultsCount;
     this.findStatusIcon = options.findStatusIcon;
     this.findPreviousButton = options.findPreviousButton;
     this.findNextButton = options.findNextButton;
@@ -169,6 +171,34 @@ var PDFFindBar = {
     } else {
       this.open();
     }
+  },
+
+  updateResultsCount: function(matches) {
+    if (!matches) {
+      return this.hideResultsCount();
+    }
+
+    // Loop through and add up all the matches between pages
+    var matchCounter = 0;
+
+    for (var i = 0, len = matches.length; i < len; i++) {
+      matchCounter += matches[i].length;
+    }
+
+    // If there are no matches, hide the counter
+    if (!matchCounter) {
+      return this.hideResultsCount();
+    }
+
+    // Create the match counter
+    this.findResultsCount.textContent = matchCounter;
+
+    // Show the counter
+    this.findResultsCount.classList.remove('hidden');
+  },
+
+  hideResultsCount: function() {
+    this.findResultsCount.classList.add('hidden');
   }
 };
 
