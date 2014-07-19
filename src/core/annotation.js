@@ -21,7 +21,7 @@
 'use strict';
 
 var DEFAULT_ICON_SIZE = 22; // px
-var SUPPORTED_TYPES = ['Link', 'Text', 'Widget'];
+var SUPPORTED_TYPES = ['Link', 'Text', 'Widget', 'Highlight'];
 
 var Annotation = (function AnnotationClosure() {
   // 12.5.5: Algorithm: Appearance streams
@@ -232,7 +232,7 @@ var Annotation = (function AnnotationClosure() {
     // TODO(mack): Implement FreeText annotations
     if (subtype === 'Link') {
       return LinkAnnotation;
-    } else if (subtype === 'Text') {
+    } else if (subtype === 'Text' || subtype === 'Highlight') {
       return TextAnnotation;
     } else if (subtype === 'Widget') {
       if (!fieldType) {
