@@ -9,6 +9,7 @@
   "quotmark": "single",
   "trailing": true,
   "curly": true,
+  "undef": true,
 
   // Relaxing
   "boss": true,
