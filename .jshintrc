@@ -10,6 +10,8 @@
   "trailing": true,
   "curly": true,
   "undef": true,
+  "noarg": true,
+  "nonbsp": true,
 
   // Relaxing
   "boss": true,
