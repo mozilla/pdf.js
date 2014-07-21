@@ -926,6 +926,7 @@ var LabCS = (function LabCSClosure() {
       return (inputLength * (3 + alpha01) / 3) | 0;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function LabCS_isDefaultDecode(decodeMap) {
       // XXX: Decoding is handled with the lab conversion because of the strange
       // ranges that are used.
