@@ -547,6 +547,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue4801",
+       "file": "pdfs/issue4801.pdf",
+       "md5": "7f32764717447a8b5c8eac08c9ab8380",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "glyph_accent",
        "file": "pdfs/glyph_accent.pdf",
        "md5": "1526e4edaa3ec439ebf156d0a0b385aa",
