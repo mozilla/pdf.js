@@ -445,6 +445,15 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue5010",
+       "file": "pdfs/issue5010.pdf",
+       "md5": "419f4b13403a0871c463ec69d96e342c",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
