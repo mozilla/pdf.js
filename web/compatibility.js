@@ -481,7 +481,7 @@ if (typeof PDFJS === 'undefined') {
   }
 })();
 
-// Support: IE<11, Chrome<21, Android<4.4
+// Support: IE<11, Chrome<21, Android<4.4, Safari<6
 (function checkSetPresenceInImageData() {
   // IE < 11 will use window.CanvasPixelArray which lacks set function.
   if (window.CanvasPixelArray) {
@@ -495,21 +495,21 @@ if (typeof PDFJS === 'undefined') {
   } else {
     // Old Chrome and Android use an inaccessible CanvasPixelArray prototype.
     // Because we cannot feature detect it, we rely on user agent parsing.
-    var polyfill = false;
+    var polyfill = false, versionMatch;
     if (navigator.userAgent.indexOf('Chrom') >= 0) {
-      var versionMatch = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
-      if (versionMatch && parseInt(versionMatch[2]) < 21) {
-        // Chrome < 21 lacks the set function.
-        polyfill = true;
-      }
+      versionMatch = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+      // Chrome < 21 lacks the set function.
+      polyfill = versionMatch && parseInt(versionMatch[2]) < 21;
     } else if (navigator.userAgent.indexOf('Android') >= 0) {
       // Android < 4.4 lacks the set function.
       // Android >= 4.4 will contain Chrome in the user agent,
       // thus pass the Chrome check above and not reach this block.
-      var isOldAndroid = /Android\s[0-4][^\d]/g.test(navigator.userAgent);
-      if (isOldAndroid) {
-        polyfill = true;
-      }
+      polyfill = /Android\s[0-4][^\d]/g.test(navigator.userAgent);
+    } else if (navigator.userAgent.indexOf('Safari') >= 0) {
+      versionMatch = navigator.userAgent.
+        match(/Version\/([0-9]+)\.([0-9]+)\.([0-9]+) Safari\//);
+      // Safari < 6 lacks the set function.
+      polyfill = versionMatch && parseInt(versionMatch[1]) < 6;
     }
 
     if (polyfill) {
