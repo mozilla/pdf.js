@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, bytesToString, calculateMD5, Catalog, Dict, error, info,
-           isArray, isArrayBuffer, isName, isStream, isString,
+/* globals assert, calculateMD5, Catalog, Dict, error, info, isArray,
+           isArrayBuffer, isName, isStream, isString, createPromiseCapability,
            Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
@@ -301,10 +301,14 @@ var PDFDocument = (function PDFDocumentClosure() {
   function find(stream, needle, limit, backwards) {
     var pos = stream.pos;
     var end = stream.end;
+    var strBuf = [];
     if (pos + limit > end) {
       limit = end - pos;
     }
-    var str = bytesToString(stream.getBytes(limit));
+    for (var n = 0; n < limit; ++n) {
+      strBuf.push(String.fromCharCode(stream.getByte()));
+    }
+    var str = strBuf.join('');
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
     if (index == -1) {
