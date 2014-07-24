@@ -1323,7 +1323,7 @@ PDFJS.createPromiseCapability = createPromiseCapability;
 
     then: function Promise_then(onResolve, onReject) {
       var nextPromise = new Promise(function (resolve, reject) {
-        this.resolve = reject;
+        this.resolve = resolve;
         this.reject = reject;
       });
       this._handlers.push({
