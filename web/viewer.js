@@ -41,6 +41,7 @@ var SCALE_SELECT_PADDING = 22;
 var THUMBNAIL_SCROLL_MARGIN = -19;
 var CLEANUP_TIMEOUT = 30000;
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
+var SKIP_HORIZONTAL_SCROLLING = false;
 //#if B2G
 //PDFJS.useOnlyCssZoom = true;
 //PDFJS.disableTextLayer = true;
@@ -128,6 +129,7 @@ var PDFView = {
   isViewerEmbedded: (window.parent !== window),
   idleTimeout: null,
   currentPosition: null,
+  isViewerRtl: false,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -2117,7 +2119,17 @@ function selectScaleOption(value) {
 }
 
 window.addEventListener('localized', function localized(evt) {
-  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
+  var textDirection = mozL10n.getDirection();
+  document.getElementsByTagName('html')[0].dir = textDirection;
+  PDFView.isViewerRtl = (textDirection === 'rtl');
+
+//#if !(FIREFOX || MOZCENTRAL || B2G)
+  // Horizontal scrolling doesn't work in RTL mode in non-Mozilla browsers.
+  if (PDFView.isViewerRtl && (window.chrome || window.opera ||
+                              navigator.userAgent.indexOf('Trident') >= 0)) {
+    SKIP_HORIZONTAL_SCROLLING = true;
+  }
+//#endif
 
   PDFView.animationStartedPromise.then(function() {
     // Adjust the width of the zoom box to fit the content.

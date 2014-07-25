@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals SKIP_HORIZONTAL_SCROLLING */
 
 'use strict';
 
@@ -130,7 +131,7 @@ function scrollIntoView(element, spot) {
     if (spot.top !== undefined) {
       offsetY += spot.top;
     }
-    if (spot.left !== undefined) {
+    if (spot.left !== undefined && !SKIP_HORIZONTAL_SCROLLING) {
       offsetX += spot.left;
       parent.scrollLeft = offsetX;
     }
