@@ -1024,6 +1024,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue5039",
+       "file": "pdfs/issue5039.pdf",
+       "md5": "5c131f458ee6b65cc096ccaf0474ee3a",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue1257",
       "file": "pdfs/issue1257.pdf",
       "md5": "9111533826bc21ed774e8e01603a2f54",

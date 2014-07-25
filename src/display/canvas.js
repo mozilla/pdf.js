@@ -1489,11 +1489,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           continue;
         }
 
+        var operatorList = font.charProcOperatorList[glyph.operatorListId];
+        if (!operatorList) {
+          warn('Type3 character \"' + glyph.operatorListId +
+               '\" is not available');
+          continue;
+        }
         this.processingType3 = glyph;
         this.save();
         ctx.scale(fontSize, fontSize);
         ctx.transform.apply(ctx, fontMatrix);
-        var operatorList = font.charProcOperatorList[glyph.operatorListId];
         this.executeOperatorList(operatorList);
         this.restore();
 

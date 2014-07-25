@@ -1760,14 +1760,17 @@ var TranslatedFont = (function TranslatedFontClosure() {
           var glyphStream = charProcs[key];
           var operatorList = new OperatorList();
           return evaluator.getOperatorList(glyphStream, fontResources,
-            operatorList).
-            then(function () {
-              charProcOperatorList[key] = operatorList.getIR();
+                                           operatorList).then(function () {
+            charProcOperatorList[key] = operatorList.getIR();
 
-              // Add the dependencies to the parent operator list so they are
-              // resolved before sub operator list is executed synchronously.
-              parentOperatorList.addDependencies(operatorList.dependencies);
-            });
+            // Add the dependencies to the parent operator list so they are
+            // resolved before sub operator list is executed synchronously.
+            parentOperatorList.addDependencies(operatorList.dependencies);
+          }, function (reason) {
+            warn('Type3 font resource \"' + key + '\" is not available');
+            var operatorList = new OperatorList();
+            charProcOperatorList[key] = operatorList.getIR();
+          });
         }.bind(this, charProcKeys[i]));
       }
       this.type3Loaded = loadCharProcsPromise.then(function () {
