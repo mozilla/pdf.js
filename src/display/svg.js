@@ -192,7 +192,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.tgrp = document.createElementNS(NS, 'svg:g');
       this.tgrp.setAttributeNS(null, 'transform',
         'matrix(' + this.transformMatrix + ')');
-      this.pgrp.appendChild(this.tgrp);
     },
 
     beginDrawing: function SVGGraphics_beginDrawing(viewport, pageNum,
@@ -266,7 +265,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             this.showText(args[0]);
             break;
           case OPS.endText:
-            this.endText(args);
+            this.endText();
             break;
           case OPS.moveText:
             this.moveText(args[0], args[1]);
@@ -350,6 +349,9 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             break;
           case OPS.constructPath:
             this.constructPath(args[0], args[1]);
+            break;
+          case OPS.endPath:
+            this.endPath();
             break;
           case 92:
             this.group(opTree[x].items);
@@ -477,7 +479,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.tgrp.appendChild(current.txtElement);
 
     },
-    
+
     setLeadingMoveText: function SVGGraphics_setLeadingMoveText(x, y) {
       this.setLeading(-y);
       this.moveText(x, y);
@@ -515,7 +517,14 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     endText: function SVGGraphics_endText(args) {
-      // Empty for now. Not sure how to break showText into this.
+      if (this.current.pendingClip) {
+        this.pgrp.appendChild(this.cgrp);
+      } else {
+        this.pgrp.appendChild(this.tgrp);
+      }
+      this.tgrp = document.createElementNS(NS, 'svg:g');
+      this.tgrp.setAttributeNS(null, 'transform',
+         'matrix(' + this.transformMatrix + ')');
     },
 
     // Path properties
@@ -608,15 +617,31 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.path.setAttributeNS(null, 'stroke-dasharray', current.dashArray);
       current.path.setAttributeNS(null, 'stroke-dashoffset',
         current.dashPhase + 'px');
+      current.path.setAttributeNS(null, 'fill', 'none');
+
+      this.tgrp.appendChild(current.path);
       if (current.pendingClip) {
         this.cgrp.appendChild(this.tgrp);
+        this.pgrp.appendChild(this.cgrp);
+      } else {
+        this.pgrp.appendChild(this.tgrp);
       }
-      current.path.setAttributeNS(null, 'fill', 'none');
-      this.tgrp.appendChild(current.path);
       // Saving a reference in current.element so that it can be addressed
       // in 'fill' and 'stroke'
       current.element = current.path;
       current.setCurrentPoint(x, y);
+    },
+
+    endPath: function SVGGraphics_endPath() {
+      var current = this.current;
+      if (current.pendingClip) {
+        this.pgrp.appendChild(this.cgrp);
+      } else {
+        this.pgrp.appendChild(this.tgrp);
+      }
+      this.tgrp = document.createElementNS(NS, 'svg:g');
+      this.tgrp.setAttributeNS(null, 'transform',
+          'matrix(' + this.transformMatrix + ')');
     },
 
     clip: function SVGGraphics_clip(type) {
@@ -766,10 +791,14 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
        imgEl.setAttributeNS(null, 'y', -h);
        imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
         ' ' + -1 / h + ')');
+
+       this.tgrp.appendChild(imgEl);
        if (current.pendingClip) {
         this.cgrp.appendChild(this.tgrp);
+        this.pgrp.appendChild(this.cgrp);
+       } else {
+        this.pgrp.appendChild(this.tgrp);
        }
-       this.tgrp.appendChild(imgEl);
     },
   };
   return SVGGraphics;
