@@ -3430,13 +3430,14 @@ var Font = (function FontClosure() {
               break;
             }
             var customNames = [];
+            var strBuf = [];
             while (font.pos < end) {
               var stringLength = font.getByte();
-              var string = '';
+              strBuf.length = stringLength;
               for (i = 0; i < stringLength; ++i) {
-                string += String.fromCharCode(font.getByte());
+                strBuf[i] = String.fromCharCode(font.getByte());
               }
-              customNames.push(string);
+              customNames.push(strBuf.join(''));
             }
             glyphNames = [];
             for (i = 0; i < numGlyphs; ++i) {
