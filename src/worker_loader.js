@@ -31,7 +31,6 @@ var otherFiles = [
   'core/core.js',
   'core/obj.js',
   'core/charsets.js',
-  'core/cidmaps.js',
   'core/annotation.js',
   'core/function.js',
   'core/colorspace.js',
