@@ -4300,6 +4300,7 @@ var Font = (function FontClosure() {
       if (!properties.composite /* is simple font */) {
         toUnicode = [];
         var encoding = properties.defaultEncoding.slice();
+        var baseEncodingName = properties.baseEncodingName;
         // Merge in the differences array.
         var differences = properties.differences;
         for (charcode in differences) {
@@ -4328,12 +4329,25 @@ var Font = (function FontClosure() {
                 }
                 break;
               case 'C': // Cddd glyph
+              case 'c': // cddd glyph
                 if (glyphName.length >= 3) {
                   code = +glyphName.substr(1);
                 }
                 break;
             }
             if (code) {
+              // If |baseEncodingName| is one the predefined encodings,
+              // and |code| equals |charcode|, using the glyph defined in the
+              // baseEncoding seems to yield a better |toUnicode| mapping
+              // (fixes issue 5070).
+              if (baseEncodingName && code === +charcode) {
+                var baseEncoding = Encodings[baseEncodingName];
+                if (baseEncoding && (glyphName = baseEncoding[charcode])) {
+                  toUnicode[charcode] =
+                    String.fromCharCode(GlyphsUnicode[glyphName]);
+                  continue;
+                }
+              }
               toUnicode[charcode] = String.fromCharCode(code);
             }
             continue;
