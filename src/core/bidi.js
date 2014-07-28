@@ -119,8 +119,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
 
     // Get types and fill arrays
-    chars.length = 0;
-    types.length = 0;
+    chars.length = strLength;
+    types.length = strLength;
     var numBidi = 0;
 
     var i, ii;
