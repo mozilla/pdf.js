@@ -1952,6 +1952,28 @@ function webViewerInitialized() {
 //return;
 //#endif
 
+//#if GENERIC
+  if (file && file.lastIndexOf('file:', 0) === 0) {
+    // file:-scheme. Load the contents in the main thread because QtWebKit
+    // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
+    // very quickly, so there is no need to set up progress event listeners.
+    PDFView.setTitleUsingUrl(file);
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+      PDFView.open(new Uint8Array(xhr.response), 0);
+    };
+    try {
+      xhr.open('GET', file);
+      xhr.responseType = 'arraybuffer';
+      xhr.send();
+    } catch (e) {
+      PDFView.error(mozL10n.get('loading_error', null,
+            'An error occurred while loading the PDF.'), e);
+    }
+    return;
+  }
+//#endif
+
 //#if !B2G && !CHROME
   if (file) {
     PDFView.open(file, 0);
