@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, StringStream, Lexer, CMapFactory, Name */
+/* globals expect, it, describe, StringStream, CMapFactory, Name */
 
 'use strict';
 
@@ -95,9 +95,8 @@ describe('cmap', function() {
     expect(cmap.vertical).toEqual(true);
   });
   it('loads built in cmap', function() {
-    var cmap = CMapFactory.create(new Name('Adobe-Japan1-1'),
-                                  '../../external/cmaps/',
-                                  null);
+    CMapFactory.create(new Name('Adobe-Japan1-1'), '../../external/cmaps/',
+                       null);
   });
 });
 

@@ -66,7 +66,6 @@ WebServer.prototype = {
     this.server = null;
   },
   _handler: function (req, res) {
-    var agent = req.headers['user-agent'];
     var url = req.url;
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];

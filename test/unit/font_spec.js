@@ -6,17 +6,6 @@
 'use strict';
 
 describe('font', function() {
-  function hexDump(bytes) {
-    var line = '';
-    for (var i = 0, ii = bytes.length; i < ii; ++i) {
-      var b = bytes[i].toString(16);
-      if (b.length < 2) {
-        b = '0' + b;
-      }
-      line += b.toString(16);
-    }
-    return line;
-  }
   // This example font comes from the CFF spec:
   // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
   var exampleFont = '0100040100010101134142434445462b' +
@@ -40,14 +29,6 @@ describe('font', function() {
       return bytes;
     }
   };
-
-  function bytesToString(bytesArray) {
-    var str = '';
-    for (var i = 0, ii = bytesArray.length; i < ii; i++) {
-      str += String.fromCharCode(bytesArray[i]);
-    }
-    return str;
-  }
 
   describe('CFFParser', function() {
     var parser = new CFFParser(fontData, {});
@@ -381,7 +362,7 @@ describe('font', function() {
         '/FontMatrix [0.001 0 0 0.001 0 0 ]readonly def\n');
       var parser = new Type1Parser(stream);
       var props = {};
-      var program = parser.extractFontHeader(props);
+      parser.extractFontHeader(props);
       expect(props.fontMatrix).toEqual([0.001, 0, 0, 0.001, 0, 0]);
     });
     it('parses font header encoding', function() {
@@ -392,7 +373,7 @@ describe('font', function() {
         'readonly def\n');
       var parser = new Type1Parser(stream);
       var props = { overridableEncoding: true };
-      var program = parser.extractFontHeader(props);
+      parser.extractFontHeader(props);
       expect(props.builtInEncoding[33]).toEqual('arrowright');
     });
   });

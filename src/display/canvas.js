@@ -16,7 +16,7 @@
  */
 /* globals error, PDFJS, assert, info, shadow, TextRenderingMode,
            FONT_IDENTITY_MATRIX, Uint32ArrayView, IDENTITY_MATRIX, ImageData,
-           ImageKind, isArray, isNum, TilingPattern, OPS, Promise, Util, warn,
+           ImageKind, isArray, isNum, TilingPattern, OPS, Util, warn,
            getShadingPatternFromIR, WebGLUtils */
 
 'use strict';

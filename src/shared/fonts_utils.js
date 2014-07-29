@@ -384,7 +384,7 @@ var Type2Parser = function type2Parser(aFilePath) {
       error('Need to support CFFExpertSubsetCharset');
     } else {
       aStream.pos = charsetEntry;
-      var charset = readCharset(aStream, charStrings);
+      readCharset(aStream, charStrings);
     }
   };
 };

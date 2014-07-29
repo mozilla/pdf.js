@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, GrabToPan, PDFView, Preferences, SecondaryToolbar */
+/* globals mozL10n, GrabToPan, Preferences, SecondaryToolbar */
 
 'use strict';
 

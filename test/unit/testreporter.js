@@ -1,10 +1,10 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/*jshint globalstrict: false */
+/* globals SpecialPowers */
+
+'use strict';
 
 var TestReporter = function(browser, appPath) {
-  'use strict';
-
   function send(action, json, cb) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)

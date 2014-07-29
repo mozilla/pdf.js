@@ -100,7 +100,7 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     return element;
   }
 
-  function getHtmlElementForTextAnnotation(item, commonObjs) {
+  function getHtmlElementForTextAnnotation(item) {
     var rect = item.rect;
 
     // sanity check because of OOo-generated PDFs
@@ -217,8 +217,7 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     return container;
   }
 
-  function getHtmlElementForLinkAnnotation(item, commonObjs) {
-
+  function getHtmlElementForLinkAnnotation(item) {
     var container = initContainer(item);
     container.className = 'annotLink';
 
@@ -238,9 +237,9 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
       case AnnotationType.WIDGET:
         return getHtmlElementForTextWidgetAnnotation(data, objs);
       case AnnotationType.TEXT:
-        return getHtmlElementForTextAnnotation(data, objs);
+        return getHtmlElementForTextAnnotation(data);
       case AnnotationType.LINK:
-        return getHtmlElementForLinkAnnotation(data, objs);
+        return getHtmlElementForLinkAnnotation(data);
       default:
         throw new Error('Unsupported annotationType: ' + data.annotationType);
     }
