@@ -242,9 +242,24 @@ var CMap = (function CMapClosure() {
     },
 
     forEach: function(callback) {
+      // Most maps have fewer than 65536 entries, and for those we use normal
+      // array iteration. But really sparse tables are possible -- e.g. with
+      // indices in the *billions*. For such tables we use for..in, which isn't
+      // ideal because it stringifies the indices for all present elements, but
+      // it does avoid iterating over every undefined entry.
       var map = this._map;
-      for (var key in this._map) {
-        callback(key, map[key]);
+      var length = map.length;
+      var i;
+      if (length <= 0x10000) {
+        for (i = 0; i < length; i++) {
+          if (map[i] !== undefined) {
+            callback(i, map[i]);
+          }
+        }
+      } else {
+        for (i in this._map) {
+          callback(i, map[i]);
+        }
       }
     },
 
