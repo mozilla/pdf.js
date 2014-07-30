@@ -554,6 +554,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue4800",
+       "file": "pdfs/issue4800.pdf",
+       "md5": "80d285dfdb8e8e0dd66a2353f0c78b05",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "TrueType font with (0, 1) cmap."
+    },
     {  "id": "issue4801",
        "file": "pdfs/issue4801.pdf",
        "md5": "7f32764717447a8b5c8eac08c9ab8380",
