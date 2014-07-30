@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome */
+/* globals chrome, CSS */
 
 'use strict';
 
@@ -45,7 +45,7 @@ if (typeof Element.prototype.createShadowRoot !== 'undefined') {
 
 // Only observe the document if we can make use of Shadow DOM.
 if (createShadowRoot) {
-  if ('animation' in document.documentElement.style) {
+  if (CSS.supports('animation', '0s')) {
     document.addEventListener('animationstart', onAnimationStart, true);
   } else {
     document.addEventListener('webkitAnimationStart', onAnimationStart, true);
