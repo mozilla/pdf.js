@@ -17,6 +17,9 @@
 
 'use strict';
 
+//#if CHROME
+////Note: Keep in sync with extensions/chromium/preferences_schema.json !
+//#endif
 var DEFAULT_PREFERENCES = {
   showPreviousViewOnLoad: true,
   defaultZoomValue: '',

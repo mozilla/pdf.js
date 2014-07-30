@@ -40,6 +40,9 @@
   "mime_types": [
     "application/pdf"
   ],
+  "storage": {
+    "managed_schema": "preferences_schema.json"
+  },
   "background": {
     "page": "pdfHandler.html"
   },
