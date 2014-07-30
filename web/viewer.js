@@ -577,6 +577,12 @@ var PDFView = {
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
+
+     var rel_canonical = document.createElement('link');
+     rel_canonical.href = url;
+     rel_canonical.rel = "canonical";
+     document.head.appendChild(rel_canonical);
+
     try {
       this.setTitle(decodeURIComponent(getFileName(url)) || url);
     } catch (e) {
