@@ -863,6 +863,27 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue2931",
+       "file": "pdfs/issue2931.pdf",
+       "md5": "ea40940eaf3541b312bda9329167da11",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue3323",
+       "file": "pdfs/issue3323.pdf",
+       "md5": "1a14ff574013caeafa9d598269988764",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue4304",
+       "file": "pdfs/issue4304.pdf",
+       "md5": "1b1205bf0d7c1ad22a154b60da8e694d",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "zerowidthline",
       "file": "pdfs/zerowidthline.pdf",
       "md5": "295d26e61a85635433f8e4b768953f60",
