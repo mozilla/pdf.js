@@ -11,7 +11,7 @@ var TestReporter = function(browser, appPath) {
     r.open('POST', action, true);
     r.setRequestHeader('Content-Type', 'application/json');
     r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
-      if (r.readyState == 4) {
+      if (r.readyState === 4) {
         // Retry until successful
         if (r.status !== 200) {
           send(action, json, cb);
