@@ -53,7 +53,7 @@ var FontInspector = (function FontInspectorClosure() {
     var selects = document.getElementsByTagName('input');
     for (var i = 0; i < selects.length; ++i) {
       var select = selects[i];
-      if (select.dataset.fontName != fontName) {
+      if (select.dataset.fontName !== fontName) {
         continue;
       }
       select.checked = !select.checked;
@@ -216,7 +216,7 @@ var StepperManager = (function StepperManagerClosure() {
       }
       for (i = 0; i < steppers.length; ++i) {
         var stepper = steppers[i];
-        if (stepper.pageIndex == pageIndex) {
+        if (stepper.pageIndex === pageIndex) {
           stepper.panel.removeAttribute('hidden');
         } else {
           stepper.panel.setAttribute('hidden', true);
@@ -225,7 +225,7 @@ var StepperManager = (function StepperManagerClosure() {
       var options = stepperChooser.options;
       for (i = 0; i < options.length; ++i) {
         var option = options[i];
-        option.selected = option.value == pageIndex;
+        option.selected = (option.value | 0) === pageIndex;
       }
     },
     saveBreakPoints: function saveBreakPoints(pageIndex, bps) {
@@ -332,7 +332,7 @@ var Stepper = (function StepperClosure() {
         line.className = 'line';
         line.dataset.idx = i;
         chunk.appendChild(line);
-        var checked = this.breakPoints.indexOf(i) != -1;
+        var checked = this.breakPoints.indexOf(i) !== -1;
         var args = operatorList.argsArray[i] || [];
 
         var breakCell = c('td');
@@ -419,7 +419,7 @@ var Stepper = (function StepperClosure() {
       var allRows = this.panel.getElementsByClassName('line');
       for (var x = 0, xx = allRows.length; x < xx; ++x) {
         var row = allRows[x];
-        if (row.dataset.idx == idx) {
+        if (parseInt(row.dataset.idx, 10) === idx) {
           row.style.backgroundColor = 'rgb(251,250,207)';
           row.scrollIntoView();
         } else {
@@ -597,7 +597,7 @@ var PDFBug = (function PDFBugClosure() {
       activePanel = index;
       var tools = this.tools;
       for (var j = 0; j < tools.length; ++j) {
-        if (j == index) {
+        if (j === index) {
           buttons[j].setAttribute('class', 'active');
           tools[j].active = true;
           tools[j].panel.removeAttribute('hidden');
