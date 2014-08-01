@@ -195,13 +195,13 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       var coordsArr = this.coordsArr;
       var shadingType = this.shadingType;
       var type, p0, p1, r0, r1;
-      if (shadingType == PatternType.AXIAL) {
+      if (shadingType === PatternType.AXIAL) {
         p0 = [coordsArr[0], coordsArr[1]];
         p1 = [coordsArr[2], coordsArr[3]];
         r0 = null;
         r1 = null;
         type = 'axial';
-      } else if (shadingType == PatternType.RADIAL) {
+      } else if (shadingType === PatternType.RADIAL) {
         p0 = [coordsArr[0], coordsArr[1]];
         p1 = [coordsArr[3], coordsArr[4]];
         r0 = coordsArr[2];
