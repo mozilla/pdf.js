@@ -84,7 +84,7 @@ var ColorSpace = (function ColorSpaceClosure() {
       var count = originalWidth * originalHeight;
       var rgbBuf = null;
       var numComponentColors = 1 << bpc;
-      var needsResizing = originalHeight != height || originalWidth != width;
+      var needsResizing = originalHeight !== height || originalWidth !== width;
       var i, ii;
 
       if (this.isPassthrough(bpc)) {
@@ -277,11 +277,11 @@ var ColorSpace = (function ColorSpaceClosure() {
           var stream = xref.fetchIfRef(cs[1]);
           var dict = stream.dict;
           numComps = dict.get('N');
-          if (numComps == 1) {
+          if (numComps === 1) {
             return 'DeviceGrayCS';
-          } else if (numComps == 3) {
+          } else if (numComps === 3) {
             return 'DeviceRgbCS';
-          } else if (numComps == 4) {
+          } else if (numComps === 4) {
             return 'DeviceCmykCS';
           }
           break;
@@ -342,7 +342,7 @@ var ColorSpace = (function ColorSpaceClosure() {
       return true;
     }
     for (var i = 0, ii = decode.length; i < ii; i += 2) {
-      if (decode[i] !== 0 || decode[i + 1] != 1) {
+      if (decode[i] !== 0 || decode[i + 1] !== 1) {
         return false;
       }
     }
@@ -607,7 +607,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       return (inputLength * (3 + alpha01) / 3) | 0;
     },
     isPassthrough: function DeviceRgbCS_isPassthrough(bits) {
-      return bits == 8;
+      return bits === 8;
     },
     fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function DeviceRgbCS_isDefaultDecode(decodeMap) {
