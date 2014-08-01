@@ -311,7 +311,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     var str = strBuf.join('');
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-    if (index == -1) {
+    if (index === -1) {
       return false; /* not found */
     }
     stream.pos += index;

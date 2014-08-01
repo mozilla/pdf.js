@@ -1436,7 +1436,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           firstWidth = glyphWidth;
           continue;
         }
-        if (firstWidth != glyphWidth) {
+        if (firstWidth !== glyphWidth) {
           isMonospace = false;
           break;
         }

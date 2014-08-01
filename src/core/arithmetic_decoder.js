@@ -99,7 +99,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
     byteIn: function ArithmeticDecoder_byteIn() {
       var data = this.data;
       var bp = this.bp;
-      if (data[bp] == 0xFF) {
+      if (data[bp] === 0xFF) {
         var b1 = data[bp + 1];
         if (b1 > 0x8F) {
           this.clow += 0xFF00;
