@@ -31,7 +31,7 @@ var PostScriptParser = (function PostScriptParserClosure() {
       this.token = this.lexer.getToken();
     },
     accept: function PostScriptParser_accept(type) {
-      if (this.token.type == type) {
+      if (this.token.type === type) {
         this.nextToken();
         return true;
       }
@@ -158,7 +158,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
           if (ch === 0x0A || ch === 0x0D) {
             comment = false;
           }
-        } else if (ch == 0x25) { // '%'
+        } else if (ch === 0x25) { // '%'
           comment = true;
         } else if (!Lexer.isSpace(ch)) {
           break;
