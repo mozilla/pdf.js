@@ -30,7 +30,7 @@ var CustomStyle = (function CustomStyleClosure() {
 
   CustomStyle.getProp = function get(propName, element) {
     // check cache only when no element is given
-    if (arguments.length == 1 && typeof _cache[propName] == 'string') {
+    if (arguments.length === 1 && typeof _cache[propName] === 'string') {
       return _cache[propName];
     }
 
@@ -38,7 +38,7 @@ var CustomStyle = (function CustomStyleClosure() {
     var style = element.style, prefixed, uPropName;
 
     // test standard property first
-    if (typeof style[propName] == 'string') {
+    if (typeof style[propName] === 'string') {
       return (_cache[propName] = propName);
     }
 
@@ -48,7 +48,7 @@ var CustomStyle = (function CustomStyleClosure() {
     // test vendor specific properties
     for (var i = 0, l = prefixes.length; i < l; i++) {
       prefixed = prefixes[i] + uPropName;
-      if (typeof style[prefixed] == 'string') {
+      if (typeof style[prefixed] === 'string') {
         return (_cache[propName] = prefixed);
       }
     }
@@ -59,7 +59,7 @@ var CustomStyle = (function CustomStyleClosure() {
 
   CustomStyle.setProp = function set(propName, element, str) {
     var prop = this.getProp(propName);
-    if (prop != 'undefined') {
+    if (prop !== 'undefined') {
       element.style[prop] = str;
     }
   };
@@ -93,7 +93,7 @@ function getOutputScale(ctx) {
   return {
     sx: pixelRatio,
     sy: pixelRatio,
-    scaled: pixelRatio != 1
+    scaled: pixelRatio !== 1
   };
 }
 
@@ -161,7 +161,7 @@ function getPDFFileNameFromURL(url) {
                            reFilename.exec(splitURI[3]);
   if (suggestedFilename) {
     suggestedFilename = suggestedFilename[0];
-    if (suggestedFilename.indexOf('%') != -1) {
+    if (suggestedFilename.indexOf('%') !== -1) {
       // URL-encoded %2Fpath%2Fto%2Ffile.pdf should be file.pdf
       try {
         suggestedFilename =

@@ -171,10 +171,10 @@ var DocumentProperties = {
 
     // As per spec, utRel = 'Z' means equal to universal time.
     // The other cases ('-' and '+') have to be handled here.
-    if (utRel == '-') {
+    if (utRel === '-') {
       hours += offsetHours;
       minutes += offsetMinutes;
-    } else if (utRel == '+') {
+    } else if (utRel === '+') {
       hours -= offsetHours;
       minutes += offsetMinutes;
     }
