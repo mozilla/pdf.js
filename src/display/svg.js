@@ -162,7 +162,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
 
       var self = this;
       for (var i = 0; i < fnArrayLen; i++) {
-        if (OPS.dependency == fnArray[i]) {
+        if (OPS.dependency === fnArray[i]) {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
             var obj = deps[n];
@@ -652,7 +652,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.clippath = document.createElementNS(NS, 'svg:clipPath');
       this.clippath.setAttributeNS(null, 'id', current.clipId);
       var clipElement = current.element.cloneNode();
-      if (type == 'evenodd') {
+      if (type === 'evenodd') {
         clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
         clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
