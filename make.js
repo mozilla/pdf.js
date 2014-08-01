@@ -1209,7 +1209,7 @@ target.mozcentralcheck = function() {
     echo('Please specify MC_PATH variable');
     exit(1);
   }
-  if ((mcPath[0] != '/' && mcPath[0] != '~' && mcPath[1] != ':') ||
+  if ((mcPath[0] !== '/' && mcPath[0] !== '~' && mcPath[1] !== ':') ||
       !test('-d', mcPath)) {
     echo('mozilla-central path is not in absolute form or does not exist.');
     exit(1);

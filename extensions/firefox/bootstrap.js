@@ -145,7 +145,7 @@ function startup(aData, aReason) {
 }
 
 function shutdown(aData, aReason) {
-  if (aReason == APP_SHUTDOWN) {
+  if (aReason === APP_SHUTDOWN) {
     return;
   }
   var ioService = Services.io;
