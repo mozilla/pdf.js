@@ -45,7 +45,7 @@ function readCharset(aStream, aCharstrings) {
       sid = aStream.getByte() << 8 | aStream.getByte();
       charset[CFFStrings[sid]] = readCharstringEncoding(aCharstrings[i]);
     }
-  } else if (format == 1) {
+  } else if (format === 1) {
     for (i = 1; i < count + 1; i++) {
       var first = aStream.getByte();
       first = (first << 8) | aStream.getByte();
@@ -76,14 +76,14 @@ function readCharstringEncoding(aString) {
 
   var count = aString.length;
   for (var i = 0; i < count; ) {
-    var value = aString[i++];
+    var value = aString[i++] | 0;
     var token = null;
 
     if (value < 0) {
       continue;
     } else if (value <= 11) {
       token = CFFEncodingMap[value];
-    } else if (value == 12) {
+    } else if (value === 12) {
       token = CFFEncodingMap[value][aString[i++]];
     } else if (value <= 18) {
       token = CFFEncodingMap[value];
@@ -92,7 +92,7 @@ function readCharstringEncoding(aString) {
       token = CFFEncodingMap[value];
     } else if (value <= 27) {
       token = CFFEncodingMap[value];
-    } else if (value == 28) {
+    } else if (value === 28) {
       token = aString[i++] << 8 | aString[i++];
     } else if (value <= 31) {
       token = CFFEncodingMap[value];
@@ -102,7 +102,7 @@ function readCharstringEncoding(aString) {
       token = (value - 247) * 256 + aString[i++] + 108;
     } else if (value < 255) {
       token = -(value - 251) * 256 - aString[i++] - 108;
-    } else {// value == 255
+    } else { // value === 255
       token = aString[i++] << 24 | aString[i++] << 16 |
               aString[i++] << 8 | aString[i];
     }
@@ -123,19 +123,19 @@ function readFontDictData(aString, aMap) {
 
   var count = aString.length;
   for (var i = 0; i < count; i) {
-    var value = aString[i++];
+    var value = aString[i++] | 0;
     var token = null;
 
-    if (value == 12) {
+    if (value === 12) {
       token = aMap[value][aString[i++]];
-    } else if (value == 28) {
+    } else if (value === 28) {
       token = aString[i++] << 8 | aString[i++];
-    } else if (value == 29) {
+    } else if (value === 29) {
       token = aString[i++] << 24 |
               aString[i++] << 16 |
               aString[i++] << 8 |
               aString[i++];
-    } else if (value == 30) {
+    } else if (value === 30) {
       token = '';
       var parsed = false;
       while (!parsed) {
@@ -177,7 +177,7 @@ function readFontDictData(aString, aMap) {
       token = (value - 247) * 256 + aString[i++] + 108;
     } else if (value <= 254) {
       token = -(value - 251) * 256 - aString[i++] - 108;
-    } else if (value == 255) {
+    } else if (value === 255) {
       error('255 is not a valid DICT command');
     }
 
@@ -230,7 +230,7 @@ function readFontIndexData(aStream, aIsByte) {
   }
 
   dump('Found ' + count + ' objects at offsets :' +
-      offsets + ' (offsize: ' + offsize + ')');
+       offsets + ' (offsize: ' + offsize + ')');
 
   // Now extract the objects
   var relativeOffset = aStream.pos;
@@ -378,9 +378,9 @@ var Type2Parser = function type2Parser(aFilePath) {
     var charsetEntry = font.get('charset');
     if (charsetEntry === 0) {
       error('Need to support CFFISOAdobeCharset');
-    } else if (charsetEntry == 1) {
+    } else if (charsetEntry === 1) {
       error('Need to support CFFExpert');
-    } else if (charsetEntry == 2) {
+    } else if (charsetEntry === 2) {
       error('Need to support CFFExpertSubsetCharset');
     } else {
       aStream.pos = charsetEntry;
