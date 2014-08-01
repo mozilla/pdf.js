@@ -3898,10 +3898,7 @@ var Font = (function FontClosure() {
       if (properties.type === 'CIDFontType2') {
         var cidToGidMap = properties.cidToGidMap || [];
         var cidToGidMapLength = cidToGidMap.length;
-        var cMap = properties.cMap.map;
-        for (charCode in cMap) {
-          charCode |= 0;
-          var cid = cMap[charCode];
+        properties.cMap.forEach(function(charCode, cid) {
           assert(cid.length === 1, 'Max size of CID is 65,535');
           cid = cid.charCodeAt(0);
           var glyphId = -1;
@@ -3913,7 +3910,7 @@ var Font = (function FontClosure() {
           if (glyphId >= 0 && glyphId < numGlyphs) {
             charCodeToGlyphId[charCode] = glyphId;
           }
-        }
+        });
         if (dupFirstEntry) {
           charCodeToGlyphId[0] = numGlyphs - 1;
         }
@@ -3971,7 +3968,7 @@ var Font = (function FontClosure() {
             if (!found && properties.glyphNames) {
               // Try to map using the post table. There are currently no known
               // pdfs that this fixes.
-              glyphId = properties.glyphNames.indexOf(glyphName);
+              var glyphId = properties.glyphNames.indexOf(glyphName);
               if (glyphId > 0) {
                 charCodeToGlyphId[charCode] = glyphId;
               }
@@ -4372,18 +4369,17 @@ var Font = (function FontClosure() {
           { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null);
         var cMap = properties.cMap;
         toUnicode = [];
-        for (charcode in cMap.map) {
-          var cid = cMap.map[charcode];
+        cMap.forEach(function(charcode, cid) {
           assert(cid.length === 1, 'Max size of CID is 65,535');
           // e) Map the CID obtained in step (a) according to the CMap obtained
           // in step (d), producing a Unicode value.
-          var ucs2 = ucs2CMap.map[cid.charCodeAt(0)];
-          if (!ucs2) {
-            continue;
+          var ucs2 = ucs2CMap.lookup(cid.charCodeAt(0));
+          if (ucs2) {
+            toUnicode[charcode] =
+              String.fromCharCode((ucs2.charCodeAt(0) << 8) +
+                                  ucs2.charCodeAt(1));
           }
-          toUnicode[charcode] = String.fromCharCode((ucs2.charCodeAt(0) << 8) +
-                                                    ucs2.charCodeAt(1));
-        }
+        });
         map.toUnicode = toUnicode;
         return map;
       }
@@ -4418,7 +4414,7 @@ var Font = (function FontClosure() {
         // finding the charcode via unicodeToCID map
         var charcode = 0;
         if (this.composite) {
-          if (glyphUnicode in this.cMap.map) {
+          if (this.cMap.contains(glyphUnicode)) {
             charcode = this.cMap.lookup(glyphUnicode).charCodeAt(0);
           }
         }
@@ -4447,8 +4443,8 @@ var Font = (function FontClosure() {
       var fontCharCode, width, operatorListId;
 
       var widthCode = charcode;
-      if (this.cMap && charcode in this.cMap.map) {
-        widthCode = this.cMap.map[charcode].charCodeAt(0);
+      if (this.cMap && this.cMap.contains(charcode)) {
+        widthCode = this.cMap.lookup(charcode).charCodeAt(0);
       }
       width = this.widths[widthCode];
       width = isNum(width) ? width : this.defaultWidth;
@@ -5631,7 +5627,7 @@ var CFFFont = (function CFFFontClosure() {
           // to map CIDs to GIDs.
           for (glyphId = 0; glyphId < charsets.length; glyphId++) {
             var cidString = String.fromCharCode(charsets[glyphId]);
-            var charCode = properties.cMap.map.indexOf(cidString);
+            var charCode = properties.cMap.charCodeOf(cidString);
             charCodeToGlyphId[charCode] = glyphId;
           }
         } else {

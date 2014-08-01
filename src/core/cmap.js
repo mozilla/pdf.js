@@ -199,7 +199,7 @@ var CMap = (function CMapClosure() {
     // where nBytePairs are ranges e.g. [low1, high1, low2, high2, ...]
     this.codespaceRanges = [[], [], [], []];
     this.numCodespaceRanges = 0;
-    this.map = [];
+    this._map = [];
     this.vertical = false;
     this.useCMap = null;
     this.builtInCMap = builtInCMap;
@@ -213,7 +213,7 @@ var CMap = (function CMapClosure() {
     mapRange: function(low, high, dstLow) {
       var lastByte = dstLow.length - 1;
       while (low <= high) {
-        this.map[low] = dstLow;
+        this._map[low] = dstLow;
         // Only the last byte has to be incremented.
         dstLow = dstLow.substr(0, lastByte) +
                  String.fromCharCode(dstLow.charCodeAt(lastByte) + 1);
@@ -224,17 +224,51 @@ var CMap = (function CMapClosure() {
     mapRangeToArray: function(low, high, array) {
       var i = 0, ii = array.length;
       while (low <= high && i < ii) {
-        this.map[low] = array[i++];
+        this._map[low] = array[i++];
         ++low;
       }
     },
 
     mapOne: function(src, dst) {
-      this.map[src] = dst;
+      this._map[src] = dst;
     },
 
     lookup: function(code) {
-      return this.map[code];
+      return this._map[code];
+    },
+
+    contains: function(code) {
+      return this._map[code] !== undefined;
+    },
+
+    forEach: function(callback) {
+      // Most maps have fewer than 65536 entries, and for those we use normal
+      // array iteration. But really sparse tables are possible -- e.g. with
+      // indices in the *billions*. For such tables we use for..in, which isn't
+      // ideal because it stringifies the indices for all present elements, but
+      // it does avoid iterating over every undefined entry.
+      var map = this._map;
+      var length = map.length;
+      var i;
+      if (length <= 0x10000) {
+        for (i = 0; i < length; i++) {
+          if (map[i] !== undefined) {
+            callback(i, map[i]);
+          }
+        }
+      } else {
+        for (i in this._map) {
+          callback(i, map[i]);
+        }
+      }
+    },
+
+    charCodeOf: function(value) {
+      return this._map.indexOf(value);
+    },
+
+    getMap: function() {
+      return this._map;
     },
 
     readCharCode: function(str, offset) {
@@ -789,12 +823,11 @@ var CMapFactory = (function CMapFactoryClosure() {
     }
     // Merge the map into the current one, making sure not to override
     // any previously defined entries.
-    for (var key in cMap.useCMap.map) {
-      if (key in cMap.map) {
-        continue;
+    cMap.useCMap.forEach(function(key, value) {
+      if (!cMap.contains(key)) {
+        cMap.mapOne(key, cMap.useCMap.lookup(key));
       }
-      cMap.map[key] = cMap.useCMap.map[key];
-    }
+    });
   }
 
   function parseBinaryCMap(name, builtInCMapParams) {

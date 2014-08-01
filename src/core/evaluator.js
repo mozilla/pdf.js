@@ -1309,10 +1309,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var cmapObj = toUnicode;
       if (isName(cmapObj)) {
         return CMapFactory.create(cmapObj,
-          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).map;
+          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
       } else if (isStream(cmapObj)) {
         var cmap = CMapFactory.create(cmapObj,
-          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).map;
+          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
         // Convert UTF-16BE
         // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
         // to iterate over all keys.
