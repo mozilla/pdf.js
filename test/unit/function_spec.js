@@ -10,13 +10,13 @@ describe('function', function() {
     this.addMatchers({
       toMatchArray: function(expected) {
         var actual = this.actual;
-        if (actual.length != expected.length) {
+        if (actual.length !== expected.length) {
           return false;
         }
         for (var i = 0; i < expected.length; i++) {
           var a = actual[i], b = expected[i];
           if (isArray(b)) {
-            if (a.length != b.length) {
+            if (a.length !== b.length) {
               return false;
             }
             for (var j = 0; j < a.length; j++) {

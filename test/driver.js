@@ -70,7 +70,7 @@ window.load = function load() {
   var r = new XMLHttpRequest();
   r.open('GET', manifestFile, false);
   r.onreadystatechange = function loadOnreadystatechange(e) {
-    if (r.readyState == 4) {
+    if (r.readyState === 4) {
       log('done\n');
       manifest = JSON.parse(r.responseText);
       currentTaskIdx = 0;
@@ -132,7 +132,7 @@ function nextTask() {
 }
 
 function continueNextTask() {
-  if (currentTaskIdx == manifest.length) {
+  if (currentTaskIdx === manifest.length) {
     done();
     return;
   }
@@ -291,7 +291,7 @@ function nextPage(task, loadError) {
         var initPromise = new Promise(function (resolve) {
           resolveInitPromise = resolve;
         });
-        if (task.type == 'text') {
+        if (task.type === 'text') {
           // using dummy canvas for pdf context drawing operations
           if (!dummyCanvas) {
             dummyCanvas = document.createElement('canvas');
@@ -354,7 +354,7 @@ function sendQuitRequest(cb) {
   var r = new XMLHttpRequest();
   r.open('POST', '/tellMeToQuit?path=' + escape(appPath), false);
   r.onreadystatechange = function sendQuitRequestOnreadystatechange(e) {
-    if (r.readyState == 4) {
+    if (r.readyState === 4) {
       if (cb) {
         cb();
       }
@@ -409,7 +409,7 @@ function send(url, message, callback) {
   r.open('POST', url, true);
   r.setRequestHeader('Content-Type', 'application/json');
   r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
-    if (r.readyState == 4) {
+    if (r.readyState === 4) {
       inFlightRequests--;
       // Retry until successful
       if (r.status !== 200) {
