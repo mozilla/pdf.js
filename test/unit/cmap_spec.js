@@ -44,7 +44,7 @@ describe('cmap', function() {
               'endcidchar\n';
     var stream = new StringStream(str);
     var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x14)).toEqual(String.fromCharCode(0x00));
+    expect(cmap.lookup(0x14)).toEqual(0x00);
     expect(cmap.lookup(0x15)).toBeUndefined();
   });
   it('parses begincidrange', function() {
@@ -54,8 +54,8 @@ describe('cmap', function() {
     var stream = new StringStream(str);
     var cmap = CMapFactory.create(stream);
     expect(cmap.lookup(0x15)).toBeUndefined();
-    expect(cmap.lookup(0x16)).toEqual(String.fromCharCode(0x00));
-    expect(cmap.lookup(0x1B)).toEqual(String.fromCharCode(0x05));
+    expect(cmap.lookup(0x16)).toEqual(0x00);
+    expect(cmap.lookup(0x1B)).toEqual(0x05);
     expect(cmap.lookup(0x1C)).toBeUndefined();
   });
   it('decodes codespace ranges', function() {
