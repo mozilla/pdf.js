@@ -140,11 +140,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
   ];
 
+  // See 6.2.5.7 Decoding the bitmap.
   var ReusedContexts = [
-    0x1CD3, // '00111001101' (template) + '0011' (at),
-    0x079A, // '001111001101' + '0',
-    0x00E3, // '001110001' + '1',
-    0x018B  // '011000101' + '1'
+    0x9B25, // 10011 0110010 0101
+    0x0795, // 0011 110010 101
+    0x00E5, // 001 11001 01
+    0x0195  // 011001 0101
   ];
 
   var RefinementReusedContexts = [
