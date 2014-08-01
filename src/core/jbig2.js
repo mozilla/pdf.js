@@ -477,7 +477,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       firstS += deltaFirstS;
       var currentS = firstS;
       do {
-        var currentT = (stripSize == 1 ? 0 :
+        var currentT = (stripSize === 1 ? 0 :
                         decodeInteger(contextCache, 'IAIT', decoder)); // 6.4.9
         var t = stripSize * stripT + currentT;
         var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
@@ -582,7 +582,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referredToCount = (referredFlags >> 5) & 7;
     var retainBits = [referredFlags & 31];
     var position = start + 6;
-    if (referredFlags == 7) {
+    if (referredFlags === 7) {
       referredToCount = readUint32(data, position - 1) & 0x1FFFFFFF;
       position += 3;
       var bytes = (referredToCount + 7) >> 3;
@@ -590,7 +590,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       while (--bytes > 0) {
         retainBits.push(data[position++]);
       }
-    } else if (referredFlags == 5 || referredFlags == 6) {
+    } else if (referredFlags === 5 || referredFlags === 6) {
       error('JBIG2 error: invalid referred-to flags');
     }
 
@@ -600,8 +600,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referredTo = [];
     var i, ii;
     for (i = 0; i < referredToCount; i++) {
-      var number = (referredToSegmentNumberSize == 1 ? data[position] :
-        (referredToSegmentNumberSize == 2 ? readUint16(data, position) :
+      var number = (referredToSegmentNumberSize === 1 ? data[position] :
+        (referredToSegmentNumberSize === 2 ? readUint16(data, position) :
         readUint32(data, position)));
       referredTo.push(number);
       position += referredToSegmentNumberSize;
@@ -616,7 +616,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     segmentHeader.length = readUint32(data, position);
     position += 4;
 
-    if (segmentHeader.length == 0xFFFFFFFF) {
+    if (segmentHeader.length === 0xFFFFFFFF) {
       // 7.2.7 Segment data length, unknown segment length
       if (segmentType === 38) { // ImmediateGenericRegion
         var genericRegionInfo = readRegionSegmentInformation(data, position);
@@ -639,12 +639,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           while (j < searchPatternLength && searchPattern[j] === data[i + j]) {
             j++;
           }
-          if (j == searchPatternLength) {
+          if (j === searchPatternLength) {
             segmentHeader.length = i + searchPatternLength;
             break;
           }
         }
-        if (segmentHeader.length == 0xFFFFFFFF) {
+        if (segmentHeader.length === 0xFFFFFFFF) {
           error('JBIG2 error: segment end was not found');
         }
       } else {
@@ -671,7 +671,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         segment.end = position;
       }
       segments.push(segment);
-      if (segmentHeader.type == 51) {
+      if (segmentHeader.type === 51) {
         break; // end of file is found
       }
     }
@@ -826,7 +826,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           resolutionX: readUint32(data, position + 8),
           resolutionY: readUint32(data, position + 12)
         };
-        if (pageInfo.height == 0xFFFFFFFF) {
+        if (pageInfo.height === 0xFFFFFFFF) {
           delete pageInfo.height;
         }
         var pageSegmentFlags = data[position + 16];
@@ -866,10 +866,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
   function parseJbig2(data, start, end) {
     var position = start;
-    if (data[position] != 0x97 || data[position + 1] != 0x4A ||
-        data[position + 2] != 0x42 || data[position + 3] != 0x32 ||
-        data[position + 4] != 0x0D || data[position + 5] != 0x0A ||
-        data[position + 6] != 0x1A || data[position + 7] != 0x0A) {
+    if (data[position] !== 0x97 || data[position + 1] !== 0x4A ||
+        data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
+        data[position + 4] !== 0x0D || data[position + 5] !== 0x0A ||
+        data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
       error('JBIG2 error: invalid header');
     }
     var header = {};
