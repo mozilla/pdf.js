@@ -48,7 +48,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
     update: function MurmurHash3_64_update(input) {
       var useUint32ArrayView = alwaysUseUint32ArrayView;
       var i;
-      if (typeof input == 'string') {
+      if (typeof input === 'string') {
         var data = new Uint8Array(input.length * 2);
         var length = 0;
         for (i = 0; i < input.length; i++) {
