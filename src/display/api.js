@@ -325,6 +325,25 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getMetadata();
     },
     /**
+    * @param {{num: number, gen: number}} ref The PDF-object reference. Must
+     *   have the 'num' and 'gen' properties.
+     * @return {Promise} A promise that is resolved with the PDF object with
+     *   the object identifier ref.
+     */
+    getRawObject: function PDFDocumentProxy_getRawObject(ref) {
+      return this.transport.getRawObject(ref);
+    },
+    /**
+    * @param {{num: number, gen: number}} ref The stream reference. Must have
+     *   the 'num' and 'gen' properties.
+     * @return {Promise} A promise that is resolved with a TypedArray
+     *   containing the bytes of the decoded stream object with the object
+     *   identifier ref.
+     */
+    getStreamBytes: function PDFDocumentProxy_getStreamBytes(ref) {
+      return this.transport.getStreamBytes(ref);
+    },
+    /**
      * @return {Promise} A promise that is resolved with a TypedArray that has
      * the raw data from the PDF.
      */
@@ -1120,6 +1139,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getStats: function WorkerTransport_getStats() {
       return this.messageHandler.sendWithPromise('GetStats', null);
+    },
+
+    getRawObject: function WorkerTransport_getRawObject(ref) {
+      return this.messageHandler.
+        sendWithPromise('GetRawObject', { ref: ref });
+    },
+
+    getStreamBytes: function WorkerTransport_getStreamBytes(ref) {
+      return this.messageHandler.
+        sendWithPromise('GetStreamBytes', { ref: ref });
     },
 
     startCleanup: function WorkerTransport_startCleanup() {
