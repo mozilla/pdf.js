@@ -357,7 +357,7 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
         var j, jj;
         for (j = 0, jj = kids.length; j < jj; j++) {
           var kidRef = kids[j];
-          if (kidRef.num == ref.num && kidRef.gen == ref.gen) {
+          if (kidRef.num === ref.num && kidRef.gen === ref.gen) {
             break;
           }
         }
