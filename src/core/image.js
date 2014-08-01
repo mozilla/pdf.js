@@ -258,7 +258,7 @@ var PDFImage = (function PDFImageClosure() {
 
     var computedLength = ((width + 7) >> 3) * height;
     var actualLength = imgArray.byteLength;
-    var haveFullData = computedLength == actualLength;
+    var haveFullData = computedLength === actualLength;
     var data, i;
 
     if (imageIsFromDecodeStream && (!inverseDecode || haveFullData)) {
@@ -416,7 +416,7 @@ var PDFImage = (function PDFImageClosure() {
         sh = smask.height;
         alphaBuf = new Uint8Array(sw * sh);
         smask.fillGrayBuffer(alphaBuf);
-        if (sw != width || sh != height) {
+        if (sw !== width || sh !== height) {
           alphaBuf = PDFImage.resize(alphaBuf, smask.bpc, 1, sw, sh, width,
                                      height);
         }
@@ -433,7 +433,7 @@ var PDFImage = (function PDFImageClosure() {
             alphaBuf[i] = 255 - alphaBuf[i];
           }
 
-          if (sw != width || sh != height) {
+          if (sw !== width || sh !== height) {
             alphaBuf = PDFImage.resize(alphaBuf, mask.bpc, 1, sw, sh, width,
                                        height);
           }
@@ -602,7 +602,7 @@ var PDFImage = (function PDFImageClosure() {
 
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
-      if (numComps != 1) {
+      if (numComps !== 1) {
         error('Reading gray scale from a color image: ' + numComps);
       }
 
