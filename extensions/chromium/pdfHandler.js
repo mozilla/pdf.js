@@ -36,7 +36,7 @@ function isPdfDownloadable(details) {
   }
   // Display the PDF viewer regardless of the Content-Disposition header
   // if the file is displayed in the main frame.
-  if (details.type == 'main_frame') {
+  if (details.type === 'main_frame') {
     return false;
   }
   var cdHeader = (details.responseHeaders &&

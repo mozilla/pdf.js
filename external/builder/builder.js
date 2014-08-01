@@ -227,7 +227,7 @@ function getWorkerSrcFiles(filePath) {
   try {
     var files = JSON.parse(match[1].replace(/'/g, '"'));
     var srcFiles = files.filter(function(name) {
-      return name.indexOf('external') == -1;
+      return name.indexOf('external') === -1;
     });
     var externalSrcFiles = files.filter(function(name) {
       return name.indexOf('external') > -1;
