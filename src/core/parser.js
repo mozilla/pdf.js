@@ -152,7 +152,7 @@ var Parser = (function ParserClosure() {
 
       // searching for the /EI\s/
       var state = 0, ch, i, ii;
-      while (state != 4 && (ch = stream.getByte()) !== -1) {
+      while (state !== 4 && (ch = stream.getByte()) !== -1) {
         switch (ch | 0) {
           case 0x20:
           case 0x0D:
@@ -346,7 +346,7 @@ var Parser = (function ParserClosure() {
       }
       try {
         var xrefStreamStats = this.xref.stats.streamTypes;
-        if (name == 'FlateDecode' || name == 'Fl') {
+        if (name === 'FlateDecode' || name === 'Fl') {
           xrefStreamStats[StreamType.FLATE] = true;
           if (params) {
             return new PredictorStream(new FlateStream(stream, maybeLength),
@@ -354,7 +354,7 @@ var Parser = (function ParserClosure() {
           }
           return new FlateStream(stream, maybeLength);
         }
-        if (name == 'LZWDecode' || name == 'LZW') {
+        if (name === 'LZWDecode' || name === 'LZW') {
           xrefStreamStats[StreamType.LZW] = true;
           var earlyChange = 1;
           if (params) {
@@ -367,31 +367,31 @@ var Parser = (function ParserClosure() {
           }
           return new LZWStream(stream, maybeLength, earlyChange);
         }
-        if (name == 'DCTDecode' || name == 'DCT') {
+        if (name === 'DCTDecode' || name === 'DCT') {
           xrefStreamStats[StreamType.DCT] = true;
           return new JpegStream(stream, maybeLength, stream.dict, this.xref);
         }
-        if (name == 'JPXDecode' || name == 'JPX') {
+        if (name === 'JPXDecode' || name === 'JPX') {
           xrefStreamStats[StreamType.JPX] = true;
           return new JpxStream(stream, maybeLength, stream.dict);
         }
-        if (name == 'ASCII85Decode' || name == 'A85') {
+        if (name === 'ASCII85Decode' || name === 'A85') {
           xrefStreamStats[StreamType.A85] = true;
           return new Ascii85Stream(stream, maybeLength);
         }
-        if (name == 'ASCIIHexDecode' || name == 'AHx') {
+        if (name === 'ASCIIHexDecode' || name === 'AHx') {
           xrefStreamStats[StreamType.AHX] = true;
           return new AsciiHexStream(stream, maybeLength);
         }
-        if (name == 'CCITTFaxDecode' || name == 'CCF') {
+        if (name === 'CCITTFaxDecode' || name === 'CCF') {
           xrefStreamStats[StreamType.CCF] = true;
           return new CCITTFaxStream(stream, maybeLength, params);
         }
-        if (name == 'RunLengthDecode' || name == 'RL') {
+        if (name === 'RunLengthDecode' || name === 'RL') {
           xrefStreamStats[StreamType.RL] = true;
           return new RunLengthStream(stream, maybeLength);
         }
-        if (name == 'JBIG2Decode') {
+        if (name === 'JBIG2Decode') {
           xrefStreamStats[StreamType.JBIG] = true;
           return new Jbig2Stream(stream, maybeLength, stream.dict);
         }
@@ -650,7 +650,7 @@ var Lexer = (function LexerClosure() {
         if (ch === 0x23) { // '#'
           ch = this.nextChar();
           var x = toHexDigit(ch);
-          if (x != -1) {
+          if (x !== -1) {
             var x2 = toHexDigit(this.nextChar());
             if (x2 === -1) {
               error('Illegal digit in hex char in name: ' + x2);
