@@ -116,7 +116,7 @@ var JpegImage = (function jpegImage() {
         return (bitsData >> bitsCount) & 1;
       }
       bitsData = data[offset++];
-      if (bitsData == 0xFF) {
+      if (bitsData === 0xFF) {
         var nextByte = data[offset++];
         if (nextByte) {
           throw 'unexpected marker: ' +
@@ -262,7 +262,7 @@ var JpegImage = (function jpegImage() {
           } else {
             r--;
             if (r === 0) {
-              successiveACState = successiveACState == 2 ? 3 : 0;
+              successiveACState = successiveACState === 2 ? 3 : 0;
             }
           }
           break;
@@ -322,7 +322,7 @@ var JpegImage = (function jpegImage() {
 
     var mcu = 0, marker;
     var mcuExpected;
-    if (componentsLength == 1) {
+    if (componentsLength === 1) {
       mcuExpected = components[0].blocksPerLine * components[0].blocksPerColumn;
     } else {
       mcuExpected = mcusPerLine * frame.mcusPerColumn;
@@ -339,7 +339,7 @@ var JpegImage = (function jpegImage() {
       }
       eobrun = 0;
 
-      if (componentsLength == 1) {
+      if (componentsLength === 1) {
         component = components[0];
         for (n = 0; n < resetInterval; n++) {
           decodeBlock(component, decodeFn, mcu);
@@ -628,12 +628,12 @@ var JpegImage = (function jpegImage() {
       var quantizationTables = [];
       var huffmanTablesAC = [], huffmanTablesDC = [];
       var fileMarker = readUint16();
-      if (fileMarker != 0xFFD8) { // SOI (Start of Image)
+      if (fileMarker !== 0xFFD8) { // SOI (Start of Image)
         throw 'SOI not found';
       }
 
       fileMarker = readUint16();
-      while (fileMarker != 0xFFD9) { // EOI (End of image)
+      while (fileMarker !== 0xFFD9) { // EOI (End of image)
         var i, j, l;
         switch(fileMarker) {
           case 0xFFE0: // APP0 (Application Specific)
@@ -799,7 +799,7 @@ var JpegImage = (function jpegImage() {
             offset += processed;
             break;
           default:
-            if (data[offset - 3] == 0xFF &&
+            if (data[offset - 3] === 0xFF &&
                 data[offset - 2] >= 0xC0 && data[offset - 2] <= 0xFE) {
               // could be incorrect encoding -- last 0xFF byte of the previous
               // block was eaten by the encoder
@@ -883,7 +883,7 @@ var JpegImage = (function jpegImage() {
       if (this.adobe && this.adobe.transformCode) {
         // The adobe transform marker overrides any previous setting
         return true;
-      } else if (this.numComponents == 3) {
+      } else if (this.numComponents === 3) {
         return true;
       } else {
         return false;

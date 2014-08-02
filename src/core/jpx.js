@@ -88,7 +88,7 @@ var JpxImage = (function JpxImageClosure() {
         newByte = stream.getByte();
         var code = (oldByte << 8) | newByte;
         // Image and tile size (SIZ)
-        if (code == 0xFF51) {
+        if (code === 0xFF51) {
           stream.skip(4);
           var Xsiz = stream.getInt32() >>> 0; // Byte 4
           var Ysiz = stream.getInt32() >>> 0; // Byte 8
@@ -179,13 +179,13 @@ var JpxImage = (function JpxImageClosure() {
                 default:
                   throw new Error('JPX Error: Invalid SQcd value ' + sqcd);
               }
-              qcd.noQuantization = (spqcdSize == 8);
+              qcd.noQuantization = (spqcdSize === 8);
               qcd.scalarExpounded = scalarExpounded;
               qcd.guardBits = sqcd >> 5;
               spqcds = [];
               while (j < length + position) {
                 var spqcd = {};
-                if (spqcdSize == 8) {
+                if (spqcdSize === 8) {
                   spqcd.epsilon = data[j++] >> 3;
                   spqcd.mu = 0;
                 } else {
@@ -231,13 +231,13 @@ var JpxImage = (function JpxImageClosure() {
                 default:
                   throw new Error('JPX Error: Invalid SQcd value ' + sqcd);
               }
-              qcc.noQuantization = (spqcdSize == 8);
+              qcc.noQuantization = (spqcdSize === 8);
               qcc.scalarExpounded = scalarExpounded;
               qcc.guardBits = sqcd >> 5;
               spqcds = [];
               while (j < (length + position)) {
                 spqcd = {};
-                if (spqcdSize == 8) {
+                if (spqcdSize === 8) {
                   spqcd.epsilon = data[j++] >> 3;
                   spqcd.mu = 0;
                 } else {
@@ -550,7 +550,7 @@ var JpxImage = (function JpxImageClosure() {
       var codeblocks = subband.codeblocks;
       for (var j = 0, jj = codeblocks.length; j < jj; j++) {
         var codeblock = codeblocks[j];
-        if (codeblock.precinctNumber != precinctNumber) {
+        if (codeblock.precinctNumber !== precinctNumber) {
           continue;
         }
         precinctCodeblocks.push(codeblock);
@@ -752,7 +752,7 @@ var JpxImage = (function JpxImageClosure() {
           buffer = (buffer << 8) | b;
           bufferSize += 8;
         }
-        if (b == 0xFF) {
+        if (b === 0xFF) {
           skipNextBit = true;
         }
       }
@@ -1259,7 +1259,7 @@ var JpxImage = (function JpxImageClosure() {
           level.index = index;
           var value = level.items[index];
 
-          if (value == 0xFF) {
+          if (value === 0xFF) {
             break;
           }
 
@@ -1337,8 +1337,8 @@ var JpxImage = (function JpxImageClosure() {
       this.width = width;
       this.height = height;
 
-      this.contextLabelTable = (subband == 'HH' ? HHContextLabel :
-        (subband == 'HL' ? HLContextLabel : LLAndLHContextsLabel));
+      this.contextLabelTable = (subband === 'HH' ? HHContextLabel :
+        (subband === 'HL' ? HLContextLabel : LLAndLHContextsLabel));
 
       var coefficientCount = width * height;
 
@@ -1576,8 +1576,8 @@ var JpxImage = (function JpxImageClosure() {
           var checkAllEmpty = i0 + 3 < height;
           for (var j = 0; j < width; j++) {
             var index0 = indexBase + j;
-            // using the property: labels[neighborsSignificance[index]] == 0
-            // when neighborsSignificance[index] == 0
+            // using the property: labels[neighborsSignificance[index]] === 0
+            // when neighborsSignificance[index] === 0
             var allEmpty = (checkAllEmpty &&
               processingFlags[index0] === 0 &&
               processingFlags[index0 + oneRowDown] === 0 &&
@@ -1646,7 +1646,7 @@ var JpxImage = (function JpxImageClosure() {
                      (decoder.readBit(contexts, UNIFORM_CONTEXT) << 2) |
                      (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
                       decoder.readBit(contexts, UNIFORM_CONTEXT);
-        if (symbol != 0xA) {
+        if (symbol !== 0xA) {
           throw new Error('JPX Error: Invalid segmentation symbol');
         }
       }
