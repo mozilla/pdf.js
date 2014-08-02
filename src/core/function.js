@@ -173,7 +173,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         //var mask = IR[8];
         var range = IR[9];
 
-        if (m != args.length) {
+        if (m !== args.length) {
           error('Incorrect number of arguments: ' + m + ' != ' +
                 args.length);
         }
@@ -275,7 +275,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var length = diff.length;
 
       return function constructInterpolatedFromIRResult(args) {
-        var x = n == 1 ? args[0] : Math.pow(args[0], n);
+        var x = (n === 1 ? args[0] : Math.pow(args[0], n));
 
         var out = [];
         for (var j = 0; j < length; ++j) {
@@ -295,7 +295,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       }
 
       var inputSize = domain.length / 2;
-      if (inputSize != 1) {
+      if (inputSize !== 1) {
         error('Bad domain for stiched function');
       }
 
@@ -439,7 +439,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
 function isPDFFunction(v) {
   var fnDict;
-  if (typeof v != 'object') {
+  if (typeof v !== 'object') {
     return false;
   } else if (isDict(v)) {
     fnDict = v;
@@ -513,7 +513,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
       var operator, a, b;
       while (counter < length) {
         operator = operators[counter++];
-        if (typeof operator == 'number') {
+        if (typeof operator === 'number') {
           // Operator is really an operand and should be pushed to the stack.
           stack.push(operator);
           continue;
@@ -594,7 +594,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
           case 'eq':
             b = stack.pop();
             a = stack.pop();
-            stack.push(a == b);
+            stack.push(a === b);
             break;
           case 'exch':
             stack.roll(2, 1);
@@ -661,7 +661,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
           case 'ne':
             b = stack.pop();
             a = stack.pop();
-            stack.push(a != b);
+            stack.push(a !== b);
             break;
           case 'neg':
             a = stack.pop();
@@ -721,7 +721,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
             b = stack.pop();
             a = stack.pop();
             if (isBool(a) && isBool(b)) {
-              stack.push(a != b);
+              stack.push(a !== b);
             } else {
               stack.push(a ^ b);
             }
