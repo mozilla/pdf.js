@@ -12,6 +12,7 @@
   "undef": true,
   "noarg": true,
   "nonbsp": true,
+  "eqeqeq": true,
 
   // Relaxing
   "boss": true,
