@@ -8,7 +8,8 @@
     "moment": "2.3.x",
     "underscore": "1.4.x",
     "typogr": "0.5.x",
-    "yargs": "~1.2.1"
+    "yargs": "~1.2.1",
+    "grunt-bump": "~0.0.15"
   },
   "scripts": {
     "test": "node ./node_modules/.bin/jshint ."
