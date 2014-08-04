@@ -386,6 +386,18 @@ var PDFFunction = (function PDFFunctionClosure() {
       var domain = IR[1];
       var range = IR[2];
       var code = IR[3];
+
+      var compiled = (new PostScriptCompiler()).compile(code, domain, range);
+      if (compiled) {
+        // Compiled function consists of simple expressions such as addition,
+        // subtraction, Math.max, and also contains 'var' and 'return'
+        // statements. See the generation in the PostScriptCompiler below.
+        /*jshint -W054 */
+        return new Function('args', compiled);
+      }
+
+      info('Unable to compile PS function');
+
       var numOutputs = range.length >> 1;
       var numInputs = domain.length >> 1;
       var evaluator = new PostScriptEvaluator(code);
@@ -735,4 +747,369 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
     }
   };
   return PostScriptEvaluator;
+})();
+
+// Most of the PDFs functions consist of simple operations such as:
+//   roll, exch, sub, cvr, pop, index, dup, mul, if, gt, add.
+//
+// We can compile most of such programs, and at the same moment, we can
+// optimize some expressions using basic math properties. Keeping track of
+// min/max values will allow us to avoid extra Math.min/Math.max calls.
+var PostScriptCompiler = (function PostScriptCompilerClosure() {
+  function AstNode(type) {
+    this.type = type;
+  }
+  AstNode.prototype.visit = function (visitor) {
+    throw new Error('abstract method');
+  };
+
+  function AstArgument(index, min, max) {
+    AstNode.call(this, 'args');
+    this.index = index;
+    this.min = min;
+    this.max = max;
+  }
+  AstArgument.prototype = Object.create(AstNode.prototype);
+  AstArgument.prototype.visit = function (visitor) {
+    visitor.visitArgument(this);
+  };
+
+  function AstLiteral(number) {
+    AstNode.call(this, 'literal');
+    this.number = number;
+    this.min = number;
+    this.max = number;
+  }
+  AstLiteral.prototype = Object.create(AstNode.prototype);
+  AstLiteral.prototype.visit = function (visitor) {
+    visitor.visitLiteral(this);
+  };
+
+  function AstBinaryOperation(op, arg1, arg2, min, max) {
+    AstNode.call(this, 'binary');
+    this.op = op;
+    this.arg1 = arg1;
+    this.arg2 = arg2;
+    this.min = min;
+    this.max = max;
+  }
+  AstBinaryOperation.prototype = Object.create(AstNode.prototype);
+  AstBinaryOperation.prototype.visit = function (visitor) {
+    visitor.visitBinaryOperation(this);
+  };
+
+  function AstMin(arg, max) {
+    AstNode.call(this, 'max');
+    this.arg = arg;
+    this.min = arg.min;
+    this.max = max;
+  }
+  AstMin.prototype = Object.create(AstNode.prototype);
+  AstMin.prototype.visit = function (visitor) {
+    visitor.visitMin(this);
+  };
+
+  function AstVariable(index, min, max) {
+    AstNode.call(this, 'var');
+    this.index = index;
+    this.min = min;
+    this.max = max;
+  }
+  AstVariable.prototype = Object.create(AstNode.prototype);
+  AstVariable.prototype.visit = function (visitor) {
+    visitor.visitVariable(this);
+  };
+
+  function AstVariableDefinition(variable, arg) {
+    AstNode.call(this, 'definition');
+    this.variable = variable;
+    this.arg = arg;
+  }
+  AstVariableDefinition.prototype = Object.create(AstNode.prototype);
+  AstVariableDefinition.prototype.visit = function (visitor) {
+    visitor.visitVariableDefinition(this);
+  };
+
+  function ExpressionBuilderVisitor() {
+    this.parts = [];
+  }
+  ExpressionBuilderVisitor.prototype = {
+    visitArgument: function (arg) {
+      this.parts.push('Math.max(', arg.min, ', Math.min(',
+                      arg.max, ', args[', arg.index, ']))');
+    },
+    visitVariable: function (variable) {
+      this.parts.push('v', variable.index);
+    },
+    visitLiteral: function (literal) {
+      this.parts.push(literal.number);
+    },
+    visitBinaryOperation: function (operation) {
+      this.parts.push('(');
+      operation.arg1.visit(this);
+      this.parts.push(' ', operation.op, ' ');
+      operation.arg2.visit(this);
+      this.parts.push(')');
+    },
+    visitVariableDefinition: function (definition) {
+      this.parts.push('var ');
+      definition.variable.visit(this);
+      this.parts.push(' = ');
+      definition.arg.visit(this);
+      this.parts.push(';');
+    },
+    visitMin: function (max) {
+      this.parts.push('Math.min(');
+      max.arg.visit(this);
+      this.parts.push(', ', max.max, ')');
+    },
+    toString: function () {
+      return this.parts.join('');
+    }
+  };
+
+  function buildAddOperation(num1, num2) {
+    if (num2.type === 'literal' && num2.number === 0) {
+      // optimization: second operand is 0
+      return num1;
+    }
+    if (num1.type === 'literal' && num1.number === 0) {
+      // optimization: first operand is 0
+      return num2;
+    }
+    if (num2.type === 'literal' && num1.type === 'literal') {
+      // optimization: operands operand are literals
+      return new AstLiteral(num1.number + num2.number);
+    }
+    return new AstBinaryOperation('+', num1, num2,
+                                  num1.min + num2.min, num1.max + num2.max);
+  }
+
+  function buildMulOperation(num1, num2) {
+    if (num2.type === 'literal') {
+      // optimization: second operands is a literal...
+      if (num2.number === 0) {
+        return new AstLiteral(0); // and it's 0
+      } else if (num2.number === 1) {
+        return num1; // and it's 1
+      } else if (num1.type === 'literal') {
+        // ... and first operands is a literal too
+        return new AstLiteral(num1.number * num2.number);
+      }
+    }
+    if (num1.type === 'literal') {
+      // optimization: first operands is a literal...
+      if (num1.number === 0) {
+        return new AstLiteral(0); // and it's 0
+      } else if (num1.number === 1) {
+        return num2; // and it's 1
+      }
+    }
+    var min = Math.min(num1.min * num2.min, num1.min * num2.max,
+                       num1.max * num2.min, num1.max * num2.max);
+    var max = Math.max(num1.min * num2.min, num1.min * num2.max,
+                       num1.max * num2.min, num1.max * num2.max);
+    return new AstBinaryOperation('*', num1, num2, min, max);
+  }
+
+  function buildSubOperation(num1, num2) {
+    if (num2.type === 'literal') {
+      // optimization: second operands is a literal...
+      if (num2.number === 0) {
+        return num1; // ... and it's 0
+      } else if (num1.type === 'literal') {
+        // ... and first operands is a literal too
+        return new AstLiteral(num1.number - num2.number);
+      }
+    }
+    if (num2.type === 'binary' && num2.op === '-' &&
+      num1.type === 'literal' && num1.number === 1 &&
+      num2.arg1.type === 'literal' && num2.arg1.number === 1) {
+      // optimization for case: 1 - (1 - x)
+      return num2.arg2;
+    }
+    return new AstBinaryOperation('-', num1, num2,
+                                  num1.min - num2.max, num1.max - num2.min);
+  }
+
+  function buildMinOperation(num1, max) {
+    if (num1.min >= max) {
+      // optimization: num1 min value is not less than required max
+      return new AstLiteral(max); // just returning max
+    } else if (num1.max <= max) {
+      // optimization: num1 max value is not greater than required max
+      return num1; // just returning an argument
+    }
+    return new AstMin(num1, max);
+  }
+
+  function PostScriptCompiler() {}
+  PostScriptCompiler.prototype = {
+    compile: function PostScriptCompiler_compile(code, domain, range) {
+      var stack = [];
+      var i, ii;
+      var instructions = [];
+      var inputSize = domain.length >> 1, outputSize = range.length >> 1;
+      var lastRegister = 0;
+      var n, j, min, max;
+      var num1, num2, ast1, ast2, tmpVar, item;
+      for (i = 0; i < inputSize; i++) {
+        stack.push(new AstArgument(i, domain[i * 2], domain[i * 2 + 1]));
+      }
+
+      for (i = 0, ii = code.length; i < ii; i++) {
+        item = code[i];
+        if (typeof item === 'number') {
+          stack.push(new AstLiteral(item));
+          continue;
+        }
+
+        switch (item) {
+          case 'add':
+            if (stack.length < 2) {
+              return null;
+            }
+            num2 = stack.pop();
+            num1 = stack.pop();
+            stack.push(buildAddOperation(num1, num2));
+            break;
+          case 'cvr':
+            if (stack.length < 1) {
+              return null;
+            }
+            break;
+          case 'mul':
+            if (stack.length < 2) {
+              return null;
+            }
+            num2 = stack.pop();
+            num1 = stack.pop();
+            stack.push(buildMulOperation(num1, num2));
+            break;
+          case 'sub':
+            if (stack.length < 2) {
+              return null;
+            }
+            num2 = stack.pop();
+            num1 = stack.pop();
+            stack.push(buildSubOperation(num1, num2));
+            break;
+          case 'exch':
+            if (stack.length < 2) {
+              return null;
+            }
+            ast1 = stack.pop(); ast2 = stack.pop();
+            stack.push(ast1, ast2);
+            break;
+          case 'pop':
+            if (stack.length < 1) {
+              return null;
+            }
+            stack.pop();
+            break;
+          case 'index':
+            if (stack.length < 1) {
+              return null;
+            }
+            num1 = stack.pop();
+            if (num1.type !== 'literal') {
+              return null;
+            }
+            n = num1.number;
+            if (n < 0 || (n|0) !== n || stack.length < n) {
+              return null;
+            }
+            ast1 = stack[stack.length - n - 1];
+            if (ast1.type === 'literal' || ast1.type === 'var') {
+              stack.push(ast1);
+              break;
+            }
+            tmpVar = new AstVariable(lastRegister++, ast1.min, ast1.max);
+            stack[stack.length - n - 1] = tmpVar;
+            stack.push(tmpVar);
+            instructions.push(new AstVariableDefinition(tmpVar, ast1));
+            break;
+          case 'dup':
+            if (stack.length < 1) {
+              return null;
+            }
+            if (typeof code[i + 1] === 'number' && code[i + 2] === 'gt' &&
+                code[i + 3] === i + 7 && code[i + 4] === 'jz' &&
+                code[i + 5] === 'pop' && code[i + 6] === code[i + 1]) {
+              // special case of the commands sequence for the min operation
+              num1 = stack.pop();
+              stack.push(buildMinOperation(num1, code[i + 1]));
+              i += 6;
+              break;
+            }
+            ast1 = stack[stack.length - 1];
+            if (ast1.type === 'literal' || ast1.type === 'var') {
+              // we don't have to save into intermediate variable a literal or
+              // variable.
+              stack.push(ast1);
+              break;
+            }
+            tmpVar = new AstVariable(lastRegister++, ast1.min, ast1.max);
+            stack[stack.length - 1] = tmpVar;
+            stack.push(tmpVar);
+            instructions.push(new AstVariableDefinition(tmpVar, ast1));
+            break;
+          case 'roll':
+            if (stack.length < 2) {
+              return null;
+            }
+            num2 = stack.pop();
+            num1 = stack.pop();
+            if (num2.type !== 'literal' || num1.type !== 'literal') {
+              // both roll operands must be numbers
+              return null;
+            }
+            j = num2.number;
+            n = num1.number;
+            if (n <= 0 || (n|0) !== n || (j|0) !== j || stack.length < n) {
+              // ... and integers
+              return null;
+            }
+            j = ((j % n) + n) % n;
+            if (j === 0) {
+              break; // just skipping -- there are nothing to rotate
+            }
+            Array.prototype.push.apply(stack,
+                                       stack.splice(stack.length - n, n - j));
+            break;
+          default:
+            return null; // unsupported operator
+        }
+      }
+
+      if (stack.length !== outputSize) {
+        return null;
+      }
+
+      var result = [];
+      instructions.forEach(function (instruction) {
+        var statementBuilder = new ExpressionBuilderVisitor();
+        instruction.visit(statementBuilder);
+        result.push(statementBuilder.toString());
+      });
+      result.push('return [\n  ' + stack.map(function (expr, i) {
+        var statementBuilder = new ExpressionBuilderVisitor();
+        expr.visit(statementBuilder);
+        var min = range[i * 2], max = range[i * 2 + 1];
+        var out = [statementBuilder.toString()];
+        if (min > expr.min) {
+          out.unshift('Math.max(', min, ', ');
+          out.push(')');
+        }
+        if (max < expr.max) {
+          out.unshift('Math.min(', max, ', ');
+          out.push(')');
+        }
+        return out.join('');
+      }).join(',\n  ') + '\n];');
+      return result.join('\n');
+    }
+  };
+
+  return PostScriptCompiler;
 })();
