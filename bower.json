@@ -1,0 +1,26 @@
+{
+  "name": "pdf.js",
+  "version": "0.8.0",
+  "main": "src/pdf.js",
+  "ignore": [
+    ".gitattributes",
+    ".gitignore",
+    ".gitmodules",
+    ".jshintignore",
+    ".jshintrc",
+    ".travis.yml"
+  ],
+  "scripts": {
+    "test": "node ./node_modules/.bin/jshint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/pdf.js.git"
+  },
+  "licenses": [
+    {
+      "type": "Apache v2",
+      "url": "https://github.com/mozilla/pdf.js/blob/master/LICENSE"
+    }
+  ]
+}
