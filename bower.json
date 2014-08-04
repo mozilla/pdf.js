@@ -1,16 +1,15 @@
 {
   "name": "pdf.js",
   "version": "0.8.0",
-  "devDependencies": {
-    "jsdoc": "~3.3.0",
-    "jshint": "2.4.x",
-    "wintersmith": "2.0.x",
-    "moment": "2.3.x",
-    "underscore": "1.4.x",
-    "typogr": "0.5.x",
-    "yargs": "~1.2.1",
-    "grunt-bump": "~0.0.15"
-  },
+  "main": "src/pdf.js",
+  "ignore": [
+    ".gitattributes",
+    ".gitignore",
+    ".gitmodules",
+    ".jshintignore",
+    ".jshintrc",
+    ".travis.yml"
+  ],
   "scripts": {
     "test": "node ./node_modules/.bin/jshint ."
   },
