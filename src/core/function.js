@@ -97,6 +97,24 @@ var PDFFunction = (function PDFFunctionClosure() {
       return this.fromIR(IR);
     },
 
+    parseArray: function PDFFunction_parseArray(xref, fnObj) {
+      if (!isArray(fnObj)) {
+        // not an array -- parsing as regular function
+        return this.parse(xref, fnObj);
+      }
+
+      var fnArray = [];
+      for (var j = 0, jj = fnObj.length; j < jj; j++) {
+        var obj = xref.fetchIfRef(fnObj[j]);
+        fnArray.push(PDFFunction.parse(xref, obj));
+      }
+      return function (src, srcOffset, dest, destOffset) {
+        for (var i = 0, ii = fnArray.length; i < ii; i++) {
+          fnArray[i](src, srcOffset, dest, destOffset + i);
+        }
+      };
+    },
+
     constructSampled: function PDFFunction_constructSampled(str, dict) {
       function toMultiArray(arr) {
         var inputLength = arr.length;
@@ -161,7 +179,8 @@ var PDFFunction = (function PDFFunctionClosure() {
         return ymin + ((x - xmin) * ((ymax - ymin) / (xmax - xmin)));
       }
 
-      return function constructSampledFromIRResult(args) {
+      return function constructSampledFromIRResult(src, srcOffset,
+                                                   dest, destOffset) {
         // See chapter 3, page 110 of the PDF reference.
         var m = IR[1];
         var domain = IR[2];
@@ -172,13 +191,6 @@ var PDFFunction = (function PDFFunctionClosure() {
         var n = IR[7];
         //var mask = IR[8];
         var range = IR[9];
-
-        if (m !== args.length) {
-          error('Incorrect number of arguments: ' + m + ' != ' +
-                args.length);
-        }
-
-        var x = args;
 
         // Building the cube vertices: its part and sample index
         // http://rjwagner49.com/Mathematics/Interpolation.pdf
@@ -196,7 +208,8 @@ var PDFFunction = (function PDFFunctionClosure() {
           // x_i' = min(max(x_i, Domain_2i), Domain_2i+1)
           var domain_2i = domain[i][0];
           var domain_2i_1 = domain[i][1];
-          var xi = Math.min(Math.max(x[i], domain_2i), domain_2i_1);
+          var xi = Math.min(Math.max(src[srcOffset +i], domain_2i),
+                            domain_2i_1);
 
           // e_i = Interpolate(x_i', Domain_2i, Domain_2i+1,
           //                   Encode_2i, Encode_2i+1)
@@ -227,7 +240,6 @@ var PDFFunction = (function PDFFunctionClosure() {
           pos <<= 1;
         }
 
-        var y = new Float64Array(n);
         for (j = 0; j < n; ++j) {
           // Sum all cube vertices' samples portions
           var rj = 0;
@@ -240,10 +252,9 @@ var PDFFunction = (function PDFFunctionClosure() {
           rj = interpolate(rj, 0, 1, decode[j][0], decode[j][1]);
 
           // y_j = min(max(r_j, range_2j), range_2j+1)
-          y[j] = Math.min(Math.max(rj, range[j][0]), range[j][1]);
+          dest[destOffset + j] = Math.min(Math.max(rj, range[j][0]),
+                                          range[j][1]);
         }
-
-        return y;
       };
     },
 
@@ -274,16 +285,13 @@ var PDFFunction = (function PDFFunctionClosure() {
 
       var length = diff.length;
 
-      return function constructInterpolatedFromIRResult(args) {
-        var x = (n === 1 ? args[0] : Math.pow(args[0], n));
+      return function constructInterpolatedFromIRResult(src, srcOffset,
+                                                        dest, destOffset) {
+        var x = n === 1 ? src[srcOffset] : Math.pow(src[srcOffset], n);
 
-        var out = [];
         for (var j = 0; j < length; ++j) {
-          out.push(c0[j] + (x * diff[j]));
+          dest[destOffset + j] = c0[j] + (x * diff[j]);
         }
-
-        return out;
-
       };
     },
 
@@ -317,12 +325,14 @@ var PDFFunction = (function PDFFunctionClosure() {
       var encode = IR[3];
       var fnsIR = IR[4];
       var fns = [];
+      var tmpBuf = new Float32Array(1);
 
       for (var i = 0, ii = fnsIR.length; i < ii; i++) {
         fns.push(PDFFunction.fromIR(fnsIR[i]));
       }
 
-      return function constructStichedFromIRResult(args) {
+      return function constructStichedFromIRResult(src, srcOffset,
+                                                   dest, destOffset) {
         var clip = function constructStichedFromIRClip(v, min, max) {
           if (v > max) {
             v = max;
@@ -333,7 +343,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         };
 
         // clip to domain
-        var v = clip(args[0], domain[0], domain[1]);
+        var v = clip(src[srcOffset], domain[0], domain[1]);
         // calulate which bound the value is in
         for (var i = 0, ii = bounds.length; i < ii; ++i) {
           if (v < bounds[i]) {
@@ -354,10 +364,10 @@ var PDFFunction = (function PDFFunctionClosure() {
         var rmin = encode[2 * i];
         var rmax = encode[2 * i + 1];
 
-        var v2 = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
+        tmpBuf[0] = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
 
         // call the appropriate function
-        return fns[i]([v2]);
+        fns[i](tmpBuf, 0, dest, destOffset);
       };
     },
 
@@ -393,7 +403,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         // subtraction, Math.max, and also contains 'var' and 'return'
         // statements. See the generation in the PostScriptCompiler below.
         /*jshint -W054 */
-        return new Function('args', compiled);
+        return new Function('src', 'srcOffset', 'dest', 'destOffset', compiled);
       }
 
       info('Unable to compile PS function');
@@ -408,22 +418,26 @@ var PDFFunction = (function PDFFunctionClosure() {
       // seen in our tests.
       var MAX_CACHE_SIZE = 2048 * 4;
       var cache_available = MAX_CACHE_SIZE;
-      return function constructPostScriptFromIRResult(args) {
+      var tmpBuf = new Float32Array(numInputs);
+
+      return function constructPostScriptFromIRResult(src, srcOffset,
+                                                      dest, destOffset) {
         var i, value;
         var key = '';
-        var input = new Array(numInputs);
+        var input = tmpBuf;
         for (i = 0; i < numInputs; i++) {
-          value = args[i];
+          value = src[srcOffset + i];
           input[i] = value;
           key += value + '_';
         }
 
         var cachedValue = cache[key];
         if (cachedValue !== undefined) {
-          return cachedValue;
+          cachedValue.set(dest, destOffset);
+          return;
         }
 
-        var output = new Array(numOutputs);
+        var output = new Float32Array(numOutputs);
         var stack = evaluator.execute(input);
         var stackIndex = stack.length - numOutputs;
         for (i = 0; i < numOutputs; i++) {
@@ -443,7 +457,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           cache_available--;
           cache[key] = output;
         }
-        return output;
+        output.set(dest, destOffset);
       };
     }
   };
@@ -466,7 +480,8 @@ function isPDFFunction(v) {
 var PostScriptStack = (function PostScriptStackClosure() {
   var MAX_STACK_SIZE = 100;
   function PostScriptStack(initialStack) {
-    this.stack = initialStack || [];
+    this.stack = !initialStack ? [] :
+                 Array.prototype.slice.call(initialStack, 0);
   }
 
   PostScriptStack.prototype = {
@@ -836,7 +851,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
   ExpressionBuilderVisitor.prototype = {
     visitArgument: function (arg) {
       this.parts.push('Math.max(', arg.min, ', Math.min(',
-                      arg.max, ', args[', arg.index, ']))');
+                      arg.max, ', src[srcOffset + ', arg.index, ']))');
     },
     visitVariable: function (variable) {
       this.parts.push('v', variable.index);
@@ -1092,7 +1107,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
         instruction.visit(statementBuilder);
         result.push(statementBuilder.toString());
       });
-      result.push('return [\n  ' + stack.map(function (expr, i) {
+      stack.forEach(function (expr, i) {
         var statementBuilder = new ExpressionBuilderVisitor();
         expr.visit(statementBuilder);
         var min = range[i * 2], max = range[i * 2 + 1];
@@ -1105,8 +1120,10 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
           out.unshift('Math.min(', max, ', ');
           out.push(')');
         }
-        return out.join('');
-      }).join(',\n  ') + '\n];');
+        out.unshift('dest[destOffset + ', i, '] = ');
+        out.push(';');
+        result.push(out.join(''));
+      });
       return result.join('\n');
     }
   };

@@ -380,23 +380,20 @@ var AlternateCS = (function AlternateCSClosure() {
     }
     this.base = base;
     this.tintFn = tintFn;
+    this.tmpBuf = new Float32Array(base.numComps);
   }
 
   AlternateCS.prototype = {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function AlternateCS_getRgbItem(src, srcOffset,
                                                 dest, destOffset) {
-      var baseNumComps = this.base.numComps;
-      var input = 'subarray' in src ?
-        src.subarray(srcOffset, srcOffset + this.numComps) :
-        Array.prototype.slice.call(src, srcOffset, srcOffset + this.numComps);
-      var tinted = this.tintFn(input);
-      this.base.getRgbItem(tinted, 0, dest, destOffset);
+      var tmpBuf = this.tmpBuf;
+      this.tintFn(src, srcOffset, tmpBuf, 0);
+      this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
     },
     getRgbBuffer: function AlternateCS_getRgbBuffer(src, srcOffset, count,
                                                     dest, destOffset, bits,
                                                     alpha01) {
-      var tinted;
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
@@ -409,13 +406,14 @@ var AlternateCS = (function AlternateCSClosure() {
       var numComps = this.numComps;
 
       var scaled = new Float32Array(numComps);
+      var tinted = new Float32Array(baseNumComps);
       var i, j;
       if (usesZeroToOneRange) {
         for (i = 0; i < count; i++) {
           for (j = 0; j < numComps; j++) {
             scaled[j] = src[srcOffset++] * scale;
           }
-          tinted = tintFn(scaled);
+          tintFn(scaled, 0, tinted, 0);
           for (j = 0; j < baseNumComps; j++) {
             baseBuf[pos++] = tinted[j] * 255;
           }
@@ -425,7 +423,7 @@ var AlternateCS = (function AlternateCSClosure() {
           for (j = 0; j < numComps; j++) {
             scaled[j] = src[srcOffset++] * scale;
           }
-          tinted = tintFn(scaled);
+          tintFn(scaled, 0, tinted, 0);
           base.getRgbItem(tinted, 0, baseBuf, pos);
           pos += baseNumComps;
         }

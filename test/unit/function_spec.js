@@ -425,10 +425,13 @@ describe('function', function() {
       } else {
         expect(compiledCode).not.toBeNull();
         /*jshint -W054 */
-        var fn = new Function('args', compiledCode);
+        var fn = new Function('src', 'srcOffset', 'dest', 'destOffset',
+                              compiledCode);
         for (var i = 0; i < samples.length; i++) {
-          var out = fn(samples[i].input);
-          expect(out).toMatchArray(samples[i].output);
+          var out = new Float32Array(samples[i].output.length);
+          fn(samples[i].input, 0, out, 0);
+          expect(Array.prototype.slice.call(out, 0)).
+            toMatchArray(samples[i].output);
         }
       }
     }
@@ -475,11 +478,11 @@ describe('function', function() {
       check(['mul'], [0, 1], [0, 1], null);
     });
     it('check compiled max', function() {
-      check(['dup', 0.6, 'gt', 7, 'jz', 'pop', 0.6], [0, 1], [0, 1],
+      check(['dup', 0.75, 'gt', 7, 'jz', 'pop', 0.75], [0, 1], [0, 1],
             [{input: [0.5], output: [0.5]}]);
-      check(['dup', 0.6, 'gt', 7, 'jz', 'pop', 0.6], [0, 1], [0, 1],
-            [{input: [1], output: [0.6]}]);
-      check(['dup', 0.6, 'gt', 5, 'jz', 'pop', 0.6], [0, 1], [0, 1], null);
+      check(['dup', 0.75, 'gt', 7, 'jz', 'pop', 0.75], [0, 1], [0, 1],
+            [{input: [1], output: [0.75]}]);
+      check(['dup', 0.75, 'gt', 5, 'jz', 'pop', 0.75], [0, 1], [0, 1], null);
     });
     it('check pop/roll/index', function() {
       check([1, 'pop'], [0, 1], [0, 1], [{input: [0.5], output: [0.5]}]);
@@ -496,24 +499,23 @@ describe('function', function() {
     it('check input boundaries', function () {
       check([], [0, 0.5], [0, 1], [{input: [1], output: [0.5]}]);
       check([], [0.5, 1], [0, 1], [{input: [0], output: [0.5]}]);
-      check(['dup'], [0.5, 0.6], [0, 1, 0, 1],
+      check(['dup'], [0.5, 0.75], [0, 1, 0, 1],
             [{input: [0], output: [0.5, 0.5]}]);
       check([], [100, 1001], [0, 10000], [{input: [1000], output: [1000]}]);
     });
     it('check output boundaries', function () {
       check([], [0, 1], [0, 0.5], [{input: [1], output: [0.5]}]);
       check([], [0, 1], [0.5, 1], [{input: [0], output: [0.5]}]);
-      check(['dup'], [0, 1], [0.5, 1, 0.6, 1],
-            [{input: [0], output: [0.5, 0.6]}]);
+      check(['dup'], [0, 1], [0.5, 1, 0.75, 1],
+            [{input: [0], output: [0.5, 0.75]}]);
       check([], [0, 10000], [100, 1001], [{input: [1000], output: [1000]}]);
     });
     it('compile optimized', function () {
       var compiler = new PostScriptCompiler();
       var code = [0, 'add', 1, 1, 3, -1, 'roll', 'sub', 'sub', 1, 'mul'];
       var compiledCode = compiler.compile(code, [0, 1], [0, 1]);
-      expect(compiledCode).toEqual('return [\n' +
-                                   '  Math.max(0, Math.min(1, args[0]))\n' +
-                                   '];');
+      expect(compiledCode).toEqual(
+        'dest[destOffset + 0] = Math.max(0, Math.min(1, src[srcOffset + 0]));');
 
     });
   });
