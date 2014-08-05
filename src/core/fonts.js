@@ -4299,6 +4299,7 @@ var Font = (function FontClosure() {
       if (!properties.composite /* is simple font */) {
         toUnicode = [];
         var encoding = properties.defaultEncoding.slice();
+        var baseEncodingName = properties.baseEncodingName;
         // Merge in the differences array.
         var differences = properties.differences;
         for (charcode in differences) {
@@ -4309,26 +4310,43 @@ var Font = (function FontClosure() {
           var glyphName = encoding[charcode];
           // b) Look up the character name in the Adobe Glyph List (see the
           //    Bibliography) to obtain the corresponding Unicode value.
-          if (glyphName === '' || !(glyphName in GlyphsUnicode)) {
+          if (glyphName === '') {
+            continue;
+          } else if (GlyphsUnicode[glyphName] === undefined) {
             // (undocumented) c) Few heuristics to recognize unknown glyphs
             // NOTE: Adobe Reader does not do this step, but OSX Preview does
-            var code;
-            // Gxx glyph
-            if (glyphName.length === 3 &&
-                glyphName[0] === 'G' &&
-                (code = parseInt(glyphName.substr(1), 16))) {
-              toUnicode[charcode] = String.fromCharCode(code);
+            var code = 0;
+            switch (glyphName[0]) {
+              case 'G': // Gxx glyph
+                if (glyphName.length === 3) {
+                  code = parseInt(glyphName.substr(1), 16);
+                }
+                break;
+              case 'g': // g00xx glyph
+                if (glyphName.length === 5) {
+                  code = parseInt(glyphName.substr(1), 16);
+                }
+                break;
+              case 'C': // Cddd glyph
+              case 'c': // cddd glyph
+                if (glyphName.length >= 3) {
+                  code = +glyphName.substr(1);
+                }
+                break;
             }
-            // g00xx glyph
-            if (glyphName.length === 5 &&
-                glyphName[0] === 'g' &&
-                (code = parseInt(glyphName.substr(1), 16))) {
-              toUnicode[charcode] = String.fromCharCode(code);
-            }
-            // Cddd glyph
-            if (glyphName.length >= 3 &&
-                glyphName[0] === 'C' &&
-                (code = +glyphName.substr(1))) {
+            if (code) {
+              // If |baseEncodingName| is one the predefined encodings,
+              // and |code| equals |charcode|, using the glyph defined in the
+              // baseEncoding seems to yield a better |toUnicode| mapping
+              // (fixes issue 5070).
+              if (baseEncodingName && code === +charcode) {
+                var baseEncoding = Encodings[baseEncodingName];
+                if (baseEncoding && (glyphName = baseEncoding[charcode])) {
+                  toUnicode[charcode] =
+                    String.fromCharCode(GlyphsUnicode[glyphName]);
+                  continue;
+                }
+              }
               toUnicode[charcode] = String.fromCharCode(code);
             }
             continue;
