@@ -122,29 +122,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
     this.extendEnd = extendEnd;
 
     var fnObj = dict.get('Function');
-    var fn;
-    if (isArray(fnObj)) {
-      var fnArray = [];
-      for (var j = 0, jj = fnObj.length; j < jj; j++) {
-        var obj = xref.fetchIfRef(fnObj[j]);
-        if (!isPDFFunction(obj)) {
-          error('Invalid function');
-        }
-        fnArray.push(PDFFunction.parse(xref, obj));
-      }
-      fn = function radialAxialColorFunction(arg) {
-        var out = [];
-        for (var i = 0, ii = fnArray.length; i < ii; i++) {
-          out.push(fnArray[i](arg)[0]);
-        }
-        return out;
-      };
-    } else {
-      if (!isPDFFunction(fnObj)) {
-        error('Invalid function');
-      }
-      fn = PDFFunction.parse(xref, fnObj);
-    }
+    var fn = PDFFunction.parseArray(xref, fnObj);
 
     // 10 samples seems good enough for now, but probably won't work
     // if there are sharp color changes. Ideally, we would implement
@@ -162,9 +140,12 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       return;
     }
 
+    var color = new Float32Array(cs.numComps), ratio = new Float32Array(1);
     var rgbColor;
     for (var i = t0; i <= t1; i += step) {
-      rgbColor = cs.getRgb(fn([i]), 0);
+      ratio[0] = i;
+      fn(ratio, 0, color, 0);
+      rgbColor = cs.getRgb(color, 0);
       var cssColor = Util.makeCssRgb(rgbColor);
       colorStops.push([(i - t0) / diff, cssColor]);
     }
@@ -232,6 +213,12 @@ Shadings.Mesh = (function MeshClosure() {
     this.context = context;
     this.buffer = 0;
     this.bufferLength = 0;
+
+    var numComps = context.numComps;
+    this.tmpCompsBuf = new Float32Array(numComps);
+    var csNumComps = context.colorSpace;
+    this.tmpCsCompsBuf = context.colorFn ? new Float32Array(csNumComps) :
+                                           this.tmpCompsBuf;
   }
   MeshStreamReader.prototype = {
     get hasData() {
@@ -302,15 +289,16 @@ Shadings.Mesh = (function MeshClosure() {
       var scale = bitsPerComponent < 32 ? 1 / ((1 << bitsPerComponent) - 1) :
         2.3283064365386963e-10; // 2 ^ -32
       var decode = this.context.decode;
-      var components = [];
+      var components = this.tmpCompsBuf;
       for (var i = 0, j = 4; i < numComps; i++, j += 2) {
         var ci = this.readBits(bitsPerComponent);
-        components.push(ci * scale * (decode[j + 1] - decode[j]) + decode[j]);
+        components[i] = ci * scale * (decode[j + 1] - decode[j]) + decode[j];
       }
+      var color = this.tmpCsCompsBuf;
       if (this.context.colorFn) {
-        components = this.context.colorFn(components);
+        this.context.colorFn(components, 0, color, 0);
       }
-      return this.context.colorSpace.getRgb(components, 0);
+      return this.context.colorSpace.getRgb(color, 0);
     }
   };
 
@@ -716,31 +704,7 @@ Shadings.Mesh = (function MeshClosure() {
       cs.getRgb(dict.get('Background'), 0) : null;
 
     var fnObj = dict.get('Function');
-    var fn;
-    if (!fnObj) {
-      fn = null;
-    } else if (isArray(fnObj)) {
-      var fnArray = [];
-      for (var j = 0, jj = fnObj.length; j < jj; j++) {
-        var obj = xref.fetchIfRef(fnObj[j]);
-        if (!isPDFFunction(obj)) {
-          error('Invalid function');
-        }
-        fnArray.push(PDFFunction.parse(xref, obj));
-      }
-      fn = function radialAxialColorFunction(arg) {
-        var out = [];
-        for (var i = 0, ii = fnArray.length; i < ii; i++) {
-          out.push(fnArray[i](arg)[0]);
-        }
-        return out;
-      };
-    } else {
-      if (!isPDFFunction(fnObj)) {
-        error('Invalid function');
-      }
-      fn = PDFFunction.parse(xref, fnObj);
-    }
+    var fn = fnObj ? PDFFunction.parseArray(xref, fnObj) : null;
 
     this.coords = [];
     this.colors = [];
