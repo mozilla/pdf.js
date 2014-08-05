@@ -3899,8 +3899,7 @@ var Font = (function FontClosure() {
         var cidToGidMap = properties.cidToGidMap || [];
         var cidToGidMapLength = cidToGidMap.length;
         properties.cMap.forEach(function(charCode, cid) {
-          assert(cid.length === 1, 'Max size of CID is 65,535');
-          cid = cid.charCodeAt(0);
+          assert(cid <= 0xffff, 'Max size of CID is 65,535');
           var glyphId = -1;
           if (cidToGidMapLength === 0) {
             glyphId = charCode;
@@ -4370,10 +4369,10 @@ var Font = (function FontClosure() {
         var cMap = properties.cMap;
         toUnicode = [];
         cMap.forEach(function(charcode, cid) {
-          assert(cid.length === 1, 'Max size of CID is 65,535');
+          assert(cid <= 0xffff, 'Max size of CID is 65,535');
           // e) Map the CID obtained in step (a) according to the CMap obtained
           // in step (d), producing a Unicode value.
-          var ucs2 = ucs2CMap.lookup(cid.charCodeAt(0));
+          var ucs2 = ucs2CMap.lookup(cid);
           if (ucs2) {
             toUnicode[charcode] =
               String.fromCharCode((ucs2.charCodeAt(0) << 8) +
@@ -4415,7 +4414,7 @@ var Font = (function FontClosure() {
         var charcode = 0;
         if (this.composite) {
           if (this.cMap.contains(glyphUnicode)) {
-            charcode = this.cMap.lookup(glyphUnicode).charCodeAt(0);
+            charcode = this.cMap.lookup(glyphUnicode);
           }
         }
         // ... via toUnicode map
@@ -4444,7 +4443,7 @@ var Font = (function FontClosure() {
 
       var widthCode = charcode;
       if (this.cMap && this.cMap.contains(charcode)) {
-        widthCode = this.cMap.lookup(charcode).charCodeAt(0);
+        widthCode = this.cMap.lookup(charcode);
       }
       width = this.widths[widthCode];
       width = isNum(width) ? width : this.defaultWidth;
@@ -5626,8 +5625,8 @@ var CFFFont = (function CFFFontClosure() {
           // If the font is actually a CID font then we should use the charset
           // to map CIDs to GIDs.
           for (glyphId = 0; glyphId < charsets.length; glyphId++) {
-            var cidString = String.fromCharCode(charsets[glyphId]);
-            var charCode = properties.cMap.charCodeOf(cidString);
+            var cid = charsets[glyphId];
+            var charCode = properties.cMap.charCodeOf(cid);
             charCodeToGlyphId[charCode] = glyphId;
           }
         } else {
