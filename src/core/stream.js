@@ -2018,26 +2018,31 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         }
       }
 
-      if (this.byteAlign) {
-        this.inputBits &= ~7;
-      }
-
       var gotEOL = false;
 
       if (!this.eoblock && this.row === this.rows - 1) {
         this.eof = true;
-      } else {
+      } else if (this.eoline || !this.byteAlign) {
         code1 = this.lookBits(12);
-        while (code1 === 0) {
-          this.eatBits(1);
-          code1 = this.lookBits(12);
+        if (this.eoline) {
+          while (code1 !== EOF && code1 !== 1) {
+            this.eatBits(1);
+            code1 = this.lookBits(12);
+          }
+        } else {
+          while (code1 === 0) {
+            this.eatBits(1);
+            code1 = this.lookBits(12);
+          }
         }
         if (code1 === 1) {
           this.eatBits(12);
           gotEOL = true;
-        } else if (code1 === EOF) {
-          this.eof = true;
         }
+      }
+
+      if (this.byteAlign && !gotEOL) {
+        this.inputBits &= ~7;
       }
 
       if (!this.eof && this.encoding > 0) {
@@ -2045,7 +2050,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         this.eatBits(1);
       }
 
-      if (this.eoblock && gotEOL) {
+      if (this.eoblock && !this.eoline && this.byteAlign) {
         code1 = this.lookBits(12);
         if (code1 === 1) {
           this.eatBits(12);
