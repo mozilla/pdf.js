@@ -436,7 +436,7 @@ function bytesToString(bytes) {
 
 function stringToArray(str) {
   var length = str.length;
-  var array = [];
+  var array = new Uint16Array(length);
   for (var i = 0; i < length; ++i) {
     array[i] = str.charCodeAt(i);
   }
