@@ -12,6 +12,8 @@
 //
 // The CSS used here is also very important since it sets up the CSS for the text layer divs overlays that
 // you actually end up selecting.
+//
+// NOTE: The original example was changed to remove jQuery usage, re-structure and add more comments.
 
 window.onload = function () {
   if (typeof PDFJS === 'undefined') {
@@ -24,67 +26,70 @@ window.onload = function () {
 
   function loadPdf(pdfPath) {
     var pdf = PDFJS.getDocument(pdfPath);
-    pdf.then(renderPdf);
+    return pdf.then(renderPdf);
   }
 
   function renderPdf(pdf) {
-    pdf.getPage(1).then(renderPage);
+    return pdf.getPage(1).then(renderPage);
   }
 
   function renderPage(page) {
     var viewport = page.getViewport(scale);
-    var $canvas = jQuery("<canvas></canvas>");
 
-    // Set the canvas height and width to the height and width of the viewport
-    var canvas = $canvas.get(0);
-    var context = canvas.getContext("2d");
+    // Create and append the 'pdf-page' div to the pdf container.
+    var pdfPage = document.createElement('div');
+    pdfPage.className = 'pdfPage';
+    var pdfContainer = document.getElementById('pdfContainer');
+    pdfContainer.appendChild(pdfPage);
 
-    // The following few lines of code set up scaling on the context if we are on a HiDPI display
+    // Set the canvas height and width to the height and width of the viewport.
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+
+    // The following few lines of code set up scaling on the context, if we are
+    // on a HiDPI display.
     var outputScale = getOutputScale(context);
     canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
     canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
-    canvas.style.width = Math.floor(viewport.width) + 'px';
-    canvas.style.height = Math.floor(viewport.height) + 'px';
-
-    // Append the canvas to the pdf container div
-    var $pdfContainer = jQuery("#pdfContainer");
-    $pdfContainer.css("height", canvas.style.height)
-                 .css("width", canvas.style.width);
-    $pdfContainer.append($canvas);
-
-    var canvasOffset = $canvas.offset();
-    var $textLayerDiv = jQuery("<div />")
-      .addClass("textLayer")
-      .css("height", canvas.style.height)
-      .css("width", canvas.style.width)
-      .offset({
-        top: canvasOffset.top,
-        left: canvasOffset.left
-      });
-
     context._scaleX = outputScale.sx;
     context._scaleY = outputScale.sy;
     if (outputScale.scaled) {
       context.scale(outputScale.sx, outputScale.sy);
     }
 
-    $pdfContainer.append($textLayerDiv);
+    // The page, canvas and text layer elements will have the same size.
+    canvas.style.width = Math.floor(viewport.width) + 'px';
+    canvas.style.height = Math.floor(viewport.height) + 'px';
 
-    page.getTextContent().then(function (textContent) {
-      var textLayer = new TextLayerBuilder({
-        textLayerDiv: $textLayerDiv.get(0),
+    pdfPage.style.width = canvas.style.width;
+    pdfPage.style.height = canvas.style.height;
+    pdfPage.appendChild(canvas);
+
+    var textLayerDiv = document.createElement('div');
+    textLayerDiv.className = 'textLayer';
+    textLayerDiv.style.width = canvas.style.width;
+    textLayerDiv.style.height = canvas.style.height;
+    pdfPage.appendChild(textLayerDiv);
+
+    // Painting the canvas...
+    var renderContext = {
+      canvasContext: context,
+      viewport: viewport
+    };
+    var renderTask = page.render(renderContext);
+
+    // ... and at the same time, getting the text and creating the text layer.
+    var textLayerPromise = page.getTextContent().then(function (textContent) {
+      var textLayerBuilder = new TextLayerBuilder({
+        textLayerDiv: textLayerDiv,
         viewport: viewport,
         pageIndex: 0
       });
-      textLayer.setTextContent(textContent);
-
-      var renderContext = {
-        canvasContext: context,
-        viewport: viewport
-      };
-
-      page.render(renderContext);
+      textLayerBuilder.setTextContent(textContent);
     });
+
+    // We might be interested when rendering complete and text layer is built.
+    return Promise.all([renderTask.promise, textLayerPromise]);
   }
 
   loadPdf('pdf/TestDocument.pdf');
