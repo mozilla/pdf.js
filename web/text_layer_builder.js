@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, CustomStyle, scrollIntoView, PDFJS */
+/* globals CustomStyle, scrollIntoView, PDFJS */
 
 'use strict';
 
@@ -39,7 +39,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.viewport = options.viewport;
     this.isViewerInPresentationMode = options.isViewerInPresentationMode;
     this.textDivs = [];
-    this.findController = PDFView.findController || null;
+    this.findController = options.findController || null;
   }
 
   TextLayerBuilder.prototype = {

@@ -561,7 +561,8 @@ var PageView = function pageView(container, id, scale,
         pageIndex: this.id - 1,
         lastScrollSource: PDFView,
         viewport: this.viewport,
-        isViewerInPresentationMode: PresentationMode.active
+        isViewerInPresentationMode: PresentationMode.active,
+        findController: PDFView.findController
       }) : null;
     // TODO(mack): use data attributes to store these
     ctx._scaleX = outputScale.sx;

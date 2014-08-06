@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, CustomStyle, ProgressBar,
+/* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, ProgressBar,
            DownloadManager, getFileName, scrollIntoView, getPDFFileNameFromURL,
            PDFHistory, Preferences, SidebarView, ViewHistory, PageView,
            ThumbnailView, URL, noContextMenuHandler, SecondaryToolbar,
