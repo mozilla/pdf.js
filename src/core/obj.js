@@ -583,7 +583,7 @@ var Catalog = (function CatalogClosure() {
               }
               nodesToVisit.push(obj);
               next();
-            }.bind(this), capability.reject.bind(capability));
+            }, capability.reject);
             return;
           }
 
@@ -1287,21 +1287,22 @@ var XRef = (function XRefClosure() {
     },
 
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
-      return new Promise(function (resolve, reject) {
-          var tryFetch = function () {
-            try {
-              resolve(this.fetch(ref, suppressEncryption));
-            } catch (e) {
-              if (e instanceof MissingDataException) {
-                this.stream.manager.requestRange(e.begin, e.end, tryFetch);
-                return;
-              }
-              reject(e);
-            }
-          }.bind(this);
-          tryFetch();
-        }.bind(this));
-      },
+      var streamManager = this.stream.manager;
+      var xref = this;
+      return new Promise(function tryFetch(resolve, reject) {
+        try {
+          resolve(xref.fetch(ref, suppressEncryption));
+        } catch (e) {
+          if (e instanceof MissingDataException) {
+            streamManager.requestRange(e.begin, e.end, function () {
+              tryFetch(resolve, reject);
+            });
+            return;
+          }
+          reject(e);
+        }
+      });
+    },
 
     getCatalogObj: function XRef_getCatalogObj() {
       return this.root;
