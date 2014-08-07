@@ -153,11 +153,54 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     0x0008  // '0000' + '001000'
   ];
 
+  function decodeBitmapTemplate0(width, height, decodingContext) {
+    var decoder = decodingContext.decoder;
+    var contexts = decodingContext.contextCache.getContexts('GB');
+    var contextLabel, i, j, pixel, row, row1, row2, bitmap = [];
+
+    // ...ooooo....
+    // ..ooooooo... Context template for current pixel (X)
+    // .ooooX...... (concatenate values of 'o'-pixels to get contextLabel)
+    var OLD_PIXEL_MASK = 0x7BF7; // 01111 0111111 0111
+
+    for (i = 0; i < height; i++) {
+      row = bitmap[i] = new Uint8Array(width);
+      row1 = (i < 1) ? row : bitmap[i - 1];
+      row2 = (i < 2) ? row : bitmap[i - 2];
+
+      // At the beginning of each row:
+      // Fill contextLabel with pixels that are above/right of (X)
+      contextLabel = (row2[0] << 13) | (row2[1] << 12) | (row2[2] << 11) |
+                     (row1[0] << 7) | (row1[1] << 6) | (row1[2] << 5) |
+                     (row1[3] << 4);
+
+      for (j = 0; j < width; j++) {
+        row[j] = pixel = decoder.readBit(contexts, contextLabel);
+
+        // At each pixel: Clear contextLabel pixels that are shifted
+        // out of the context, then add new ones.
+        // If j + n is out of range at the right image border, then
+        // the undefined value of bitmap[i - 2][j + n] is shifted to 0
+        contextLabel = ((contextLabel & OLD_PIXEL_MASK) << 1) |
+                       (row2[j + 3] << 11) | (row1[j + 4] << 4) | pixel;
+      }
+    }
+
+    return bitmap;
+  }
+
   // 6.2 Generic Region Decoding Procedure
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
                         decodingContext) {
     if (mmr) {
       error('JBIG2 error: MMR encoding is not supported');
+    }
+
+    // Use optimized version for the most common case
+    if (templateIndex === 0 && !skip && !prediction && at.length === 4 &&
+        at[0].x === 3 && at[0].y === -1 && at[1].x === -3 && at[1].y === -1 &&
+        at[2].x === 2 && at[2].y === -2 && at[3].x === -2 && at[3].y === -2) {
+      return decodeBitmapTemplate0(width, height, decodingContext);
     }
 
     var useskip = !!skip;
