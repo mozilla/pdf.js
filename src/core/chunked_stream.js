@@ -155,15 +155,8 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       if (pos >= this.end) {
         return -1;
       }
-      var byte = this.bytes[pos];
-      if (byte === 0) {
-        // |byte| might be zero, because the corresponding chunk has not been
-        // loaded yet. In this case, this.ensureByte(pos) will throw an
-        // exception and nothing is returned.
-        this.ensureByte(pos);
-      }
-      this.pos++;
-      return byte;
+      this.ensureByte(pos);
+      return this.bytes[this.pos++];
     },
 
     getUint16: function ChunkedStream_getUint16() {
