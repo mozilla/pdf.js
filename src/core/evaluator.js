@@ -1857,7 +1857,9 @@ var OperatorList = (function OperatorListClosure() {
     },
 
     flush: function(lastChunk) {
-      new QueueOptimizer().optimize(this);
+      if (this.intent !== 'oplist') {
+        new QueueOptimizer().optimize(this);
+      }
       var transfers = getTransfers(this);
       this.messageHandler.send('RenderPageChunk', {
         operatorList: {

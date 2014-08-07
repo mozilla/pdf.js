@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals PDFJS, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX,
-           isNum, OPS, Promise, Util, warn */
+           isNum, OPS, Promise, Util, warn, ImageKind, PDFJS */
 
 'use strict';
 
@@ -28,6 +28,189 @@ function createScratchSVG(width, height) {
   svg.setAttributeNS(null, 'viewBox', '0 0 ' + width + ' ' + height);
   return svg;
 }
+
+var convertImgDataToPng = (function convertImgDataToPngClosure() {
+  var crcTable = [];
+  for (var i = 0; i < 256; i++) {
+    var c = i;
+    for (var h = 0; h < 8; h++) {
+      if (c & 1) {
+        c = 0xedB88320 ^ ((c >> 1) & 0x7fffffff);
+      } else {
+        c = (c >> 1) & 0x7fffffff;
+      }
+    }
+    crcTable[i] = c;
+  }
+
+  function crc32(data, start, end) {
+    var crc = -1;
+    for (var i = start; i < end; i++) {
+      var a = (crc ^ data[i]) & 0xff;
+      var b = crcTable[a];
+      crc = (crc >>> 8) ^ b;
+    }
+    return crc ^ -1;
+  }
+
+  function createPngChunk(type, data) {
+    var chunk = new Uint8Array(12 + data.length);
+    var p = 0;
+
+    var len = data.length;
+    chunk[p] = len >> 24 & 0xff;
+    chunk[p + 1] = len >> 16 & 0xff;
+    chunk[p + 2] = len >> 8 & 0xff;
+    chunk[p + 3] = len & 0xff;
+
+    chunk[p + 4] = type.charCodeAt(0) & 0xff;
+    chunk[p + 5] = type.charCodeAt(1) & 0xff;
+    chunk[p + 6] = type.charCodeAt(2) & 0xff;
+    chunk[p + 7] = type.charCodeAt(3) & 0xff;
+
+    chunk.set(data, 8);
+
+    p = 8 + len;
+
+    var crc = crc32(chunk, 4, p);
+    chunk[p] = crc >> 24 & 0xff;
+    chunk[p + 1] = crc >> 16 & 0xff;
+    chunk[p + 2] = crc >> 8 & 0xff;
+    chunk[p + 3] = crc & 0xff;
+
+    return chunk;
+  }
+
+  function adler32(data, start, end) {
+    var a = 1;
+    var b = 0;
+    for (var i = start; i < end; ++i) {
+      a = (a + (data[i] & 0xff)) % 65521;
+      b = (b + a) % 65521;
+    }
+    return (b << 16) | a;
+  }
+
+  function encode(imgData, kind) {
+    var width = imgData.width;
+    var height = imgData.height;
+    var bitDepth;
+    var colorType;
+
+    var bytes = imgData.data;
+    var lineSize;
+    switch (kind) {
+      case ImageKind.GRAYSCALE_1BPP:
+        colorType = 0;
+        bitDepth = 1;
+        lineSize = (width + 7) >> 3;
+        break;
+      case ImageKind.RGB_24BPP:
+        colorType = 2;
+        bitDepth = 8;
+        lineSize = width * 3;
+        break;
+      case ImageKind.RGBA_32BPP:
+        colorType = 6;
+        bitDepth = 8;
+        lineSize = width * 4;
+        break;
+      default:
+        throw new Error('invalid format');
+    }
+
+    var literals = new Uint8Array((1 + lineSize) * height);
+    var offsetLiterals = 0, offsetBytes = 0;
+    for (var y = 0; y < height; ++y) {
+      literals[offsetLiterals++] = 0;
+      literals.set(bytes.subarray(offsetBytes, offsetBytes + lineSize),
+                   offsetLiterals);
+      offsetBytes += lineSize;
+      offsetLiterals += lineSize;
+    }
+    if (kind === ImageKind.GRAYSCALE_1BPP) {
+      for (var i = 0, ii = bytes.length; i < ii; i++) {
+        bytes[i] ^= 0xFF;
+      }
+    }
+
+    var ihdr = new Uint8Array([
+      width >> 24 & 0xff,
+      width >> 16 & 0xff,
+      width >> 8 & 0xff,
+      width & 0xff,
+      height >> 24 & 0xff,
+      height >> 16 & 0xff,
+      height >> 8 & 0xff,
+      height & 0xff,
+      bitDepth, // bit depth
+      colorType, // color type
+      0x00, // compression method
+      0x00, // filter method
+      0x00 // interlace method
+    ]);
+
+    var len = literals.length;
+    var maxBlockLength = 0xFFFF;
+
+    var idat = new Uint8Array(2 + len +
+                              Math.ceil(len / maxBlockLength) * 5 + 4);
+    var pi = 0;
+    idat[pi++] = 0x78; // compression method and flags
+    idat[pi++] = 0x9c;  // flags
+
+    var pos = 0;
+    while (len > maxBlockLength) {
+      idat[pi++] = 0x00;
+      idat[pi++] = 0xff;
+      idat[pi++] = 0xff;
+      idat[pi++] = 0x00;
+      idat[pi++] = 0x00;
+      idat.set(literals.subarray(pos, pos + maxBlockLength), pi);
+      pi += maxBlockLength;
+      pos += maxBlockLength;
+      len -= maxBlockLength;
+    }
+
+    idat[pi++] = 0x01;
+    idat[pi++] = len & 0xff;
+    idat[pi++] = len >> 8 & 0xff;
+    idat[pi++] = (~len & 0xffff) & 0xff;
+    idat[pi++] = (~len & 0xffff) >> 8 & 0xff;
+
+    idat.set(literals.subarray(pos), pi);
+    pi += literals.length - pos;
+
+    var adler = adler32(literals, 0, literals.length); // checksum
+    idat[pi++] = adler >> 24 & 0xff;
+    idat[pi++] = adler >> 16 & 0xff;
+    idat[pi++] = adler >> 8 & 0xff;
+    idat[pi++] = adler & 0xff;
+
+    var chunks = [
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      createPngChunk('IHDR', ihdr),
+      createPngChunk('IDAT', idat),
+      createPngChunk('IEND', new Uint8Array(0))
+    ];
+
+    var data = [];
+    for (var j = 0; j < 3; j++) {
+      data.push.apply(data, chunks[j]);
+    }
+    data = new Uint8Array(data);
+    return PDFJS.createObjectURL(data, 'image/png');
+  }
+
+  return function convertImgDataToPng(imgData) {
+    var kind = (imgData.kind === undefined ?
+      ImageKind.GRAYSCALE_1BPP : imgData.kind);
+    var url = encode(imgData, kind);
+    if (url) {
+      return url;
+    }
+  };
+})();
 
 var SVGExtraState = (function SVGExtraStateClosure() {
   function SVGExtraState(old) {
@@ -70,6 +253,8 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     // Clipping
     this.clipId = '';
     this.pendingClip = false;
+
+    this.maskId = '';
   }
 
   SVGExtraState.prototype = {
@@ -109,7 +294,6 @@ function opListToTree(opList) {
   return opTree;
 }
 
-
 var SVGGraphics = (function SVGGraphicsClosure(ctx) {
   function SVGGraphics(commonObjs, objs) {
 
@@ -130,6 +314,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
   var NORMAL_CLIP = {};
   var EO_CLIP = {};
   var clipCount = 0;
+  var maskCount = 0;
 
   SVGGraphics.prototype = {
     save: function SVGGraphics_save() {
@@ -211,7 +396,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.pgrp.appendChild(this.tgrp);
       this.svg.appendChild(this.pgrp);
       this.container.appendChild(this.svg);
-      this.convertOpList(operatorList);
+      var opTree = this.convertOpList(operatorList);
+      this.executeOpTree(opTree);
     },
 
     convertOpList: function SVGGraphics_convertOpList(operatorList) {
@@ -233,8 +419,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         opList.push({'fnId' : fnId, 'fn': REVOPS[fnId], 'args': argsArray[x]});
       }
       opTree = opListToTree(opList);
-
-      this.executeOpTree(opTree);
       return opTree;
     },
     
@@ -330,6 +514,15 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             break;
           case OPS.paintJpegXObject:
             this.paintJpegXObject(args[0], args[1], args[2]);
+            break;
+          case OPS.paintImageXObject:
+            this.paintImageXObject(args[0]);
+            break;
+          case OPS.paintInlineImageXObject:
+            this.paintInlineImageXObject(args[0]);
+            break;
+          case OPS.paintImageMaskXObject:
+            this.paintImageMaskXObject(args[0]);
             break;
           case OPS.closePath:
             this.closePath();
@@ -635,6 +828,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     endPath: function SVGGraphics_endPath() {
       var current = this.current;
       if (current.pendingClip) {
+        this.cgrp.appendChild(this.tgrp);
         this.pgrp.appendChild(this.cgrp);
       } else {
         this.pgrp.appendChild(this.tgrp);
@@ -657,6 +851,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       } else {
         clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
       }
+      this.clippath.setAttributeNS(null, 'transform',
+        'matrix(' + this.transformMatrix + ')');
       this.clippath.appendChild(clipElement);
       this.defs.appendChild(this.clippath);
 
@@ -779,26 +975,97 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         this.tgrp.appendChild(rect);
     },
 
-    paintJpegXObject:
-     function SVGGraphics_paintJpegXObject(objId, w, h) {
-       var current = this.current;
-       var imgObj = this.objs.get(objId);
-       var imgEl = document.createElementNS(NS, 'svg:image');
-       imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
-       imgEl.setAttributeNS(null, 'width', imgObj.width + 'px');
-       imgEl.setAttributeNS(null, 'height', imgObj.height + 'px');
-       imgEl.setAttributeNS(null, 'x', 0);
-       imgEl.setAttributeNS(null, 'y', -h);
-       imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
-        ' ' + -1 / h + ')');
+    paintJpegXObject: function SVGGraphics_paintJpegXObject(objId, w, h) {
+      var current = this.current;
+      var imgObj = this.objs.get(objId);
+      var imgEl = document.createElementNS(NS, 'svg:image');
+      imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
+      imgEl.setAttributeNS(null, 'width', imgObj.width + 'px');
+      imgEl.setAttributeNS(null, 'height', imgObj.height + 'px');
+      imgEl.setAttributeNS(null, 'x', 0);
+      imgEl.setAttributeNS(null, 'y', -h);
+      imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
+       ' ' + -1 / h + ')');
 
-       this.tgrp.appendChild(imgEl);
-       if (current.pendingClip) {
+      this.tgrp.appendChild(imgEl);
+      if (current.pendingClip) {
+       this.cgrp.appendChild(this.tgrp);
+       this.pgrp.appendChild(this.cgrp);
+      } else {
+       this.pgrp.appendChild(this.tgrp);
+      }
+    },
+
+    paintImageXObject: function SVGGraphics_paintImageXObject(objId) {
+      var imgData = this.objs.get(objId);
+      if (!imgData) {
+        warn('Dependent image isn\'t ready yet');
+        return;
+      }
+
+      this.paintInlineImageXObject(imgData);
+    },
+
+    paintInlineImageXObject:
+      function SVGGraphics_paintInlineImageXObject(imgData, mask) {
+      var current = this.current;
+      var width = imgData.width;
+      var height = imgData.height;
+
+      var imgSrc = convertImgDataToPng(imgData);
+      var cliprect = document.createElementNS(NS, 'svg:rect');
+      cliprect.setAttributeNS(null, 'x', 0);
+      cliprect.setAttributeNS(null, 'y', 0);
+      cliprect.setAttributeNS(null, 'width', width);
+      cliprect.setAttributeNS(null, 'height', height);
+      current.element = cliprect;
+      this.clip('nonzero');
+      var imgEl = document.createElementNS(NS, 'svg:image');
+      imgEl.setAttributeNS(XLINK_NS, 'href', imgSrc);
+      imgEl.setAttributeNS(null, 'x', 0);
+      imgEl.setAttributeNS(null, 'y', -height);
+      imgEl.setAttributeNS(null, 'width', width + 'px');
+      imgEl.setAttributeNS(null, 'height', height + 'px');
+      imgEl.setAttributeNS(null, 'transform', 'scale(' + (1 / width) +
+        ', ' + (-1 / height) + ')');
+      if (mask) {
+        mask.appendChild(imgEl);
+      } else {
+        this.tgrp.appendChild(imgEl);
+      }
+      if (current.pendingClip) {
         this.cgrp.appendChild(this.tgrp);
         this.pgrp.appendChild(this.cgrp);
-       } else {
+      } else {
         this.pgrp.appendChild(this.tgrp);
-       }
+      }
+    },
+
+    paintImageMaskXObject:
+      function SVGGraphics_paintImageMaskXObject(imgData) {
+      var current = this.current;
+
+      var width = imgData.width;
+      var height = imgData.height;
+
+      var img = convertImgDataToPng(imgData);
+      var fillColor = current.fillColor;
+
+      current.maskId = 'mask' + maskCount++;
+      var mask = document.createElementNS(NS, 'svg:mask');
+      mask.setAttributeNS(null, 'id', current.maskId);
+
+      var rect = document.createElementNS(NS, 'svg:rect');
+      rect.setAttributeNS(null, 'x', 0);
+      rect.setAttributeNS(null, 'y', 0);
+      rect.setAttributeNS(null, 'width', width);
+      rect.setAttributeNS(null, 'height', height);
+      rect.setAttributeNS(null, 'fill', fillColor);
+      rect.setAttributeNS(null, 'mask', 'url(#' + current.maskId +')');
+      this.defs.appendChild(mask);
+      this.tgrp.appendChild(rect);
+
+      this.paintInlineImageXObject(imgData, mask);
     },
   };
   return SVGGraphics;
