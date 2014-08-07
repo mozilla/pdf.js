@@ -2038,6 +2038,8 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         if (code1 === 1) {
           this.eatBits(12);
           gotEOL = true;
+        } else if (code1 === EOF) {
+          this.eof = true;
         }
       }
 
@@ -2050,7 +2052,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
         this.eatBits(1);
       }
 
-      if (this.eoblock && !this.eoline && this.byteAlign) {
+      if (this.eoblock && gotEOL && this.byteAlign) {
         code1 = this.lookBits(12);
         if (code1 === 1) {
           this.eatBits(12);
