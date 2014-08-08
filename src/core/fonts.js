@@ -2191,6 +2191,38 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
   return ToUnicodeMap;
 })();
 
+var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
+  function IdentityToUnicodeMap(firstChar, lastChar) {
+    this.firstChar = firstChar;
+    this.lastChar = lastChar;
+  }
+
+  IdentityToUnicodeMap.prototype = {
+    get length() {
+      error('should not access .length');
+    },
+
+    forEach: function(callback) {
+      for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
+        callback(i, i);
+      }
+    },
+
+    get: function(i) {
+      if (this.firstChar <= i && i <= this.lastChar) {
+        return String.fromCharCode(i);
+      }
+      return undefined;
+    },
+
+    charCodeOf: function(v) {
+      error('should not call .charCodeOf');
+    }
+  };
+
+  return IdentityToUnicodeMap;
+})();
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -4453,13 +4485,9 @@ var Font = (function FontClosure() {
       }
 
       // The viewer's choice, just use an identity map.
-      toUnicode = [];
-      var firstChar = properties.firstChar, lastChar = properties.lastChar;
-      for (var i = firstChar; i <= lastChar; i++) {
-        toUnicode[i] = String.fromCharCode(i);
-      }
       map.isIdentity = true;
-      map.toUnicode = new ToUnicodeMap(toUnicode);
+      map.toUnicode =
+        new IdentityToUnicodeMap(properties.firstChar, properties.lastChar);
       return map;
     },
 
