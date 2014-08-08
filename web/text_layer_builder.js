@@ -22,6 +22,12 @@ var FIND_SCROLL_OFFSET_LEFT = -400;
 var MAX_TEXT_DIVS_TO_RENDER = 100000;
 var RENDER_DELAY = 200; // ms
 
+var NonWhitespaceRegexp = /\S/;
+
+function isAllWhitespace(str) {
+  return !NonWhitespaceRegexp.test(str);
+}
+
 /**
  * TextLayerBuilder provides text-selection functionality for the PDF.
  * It does this by creating overlay divs over the PDF text. These divs
@@ -118,7 +124,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var style = styles[geom.fontName];
       var textDiv = document.createElement('div');
       this.textDivs.push(textDiv);
-      if (!/\S/.test(geom.str)) {
+      if (isAllWhitespace(geom.str)) {
         textDiv.dataset.isWhitespace = true;
         return;
       }
