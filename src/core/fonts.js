@@ -2266,9 +2266,7 @@ var Font = (function FontClosure() {
     this.descent = properties.descent / PDF_GLYPH_SPACE_UNITS;
     this.fontMatrix = properties.fontMatrix;
 
-    var unicode = this.buildToUnicode(properties);
-    this.toUnicode = properties.toUnicode = unicode.toUnicode;
-    this.isIdentityUnicode = properties.isIdentityUnicode = unicode.isIdentity;
+    this.toUnicode = properties.toUnicode = this.buildToUnicode(properties);
 
     this.toFontChar = [];
 
@@ -2560,7 +2558,8 @@ var Font = (function FontClosure() {
   function adjustMapping(charCodeToGlyphId, properties) {
     var toUnicode = properties.toUnicode;
     var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
-    var isIdentityUnicode = properties.isIdentityUnicode;
+    var isIdentityUnicode =
+      properties.toUnicode instanceof IdentityToUnicodeMap;
     var isCidFontType2 = (properties.type === 'CIDFontType2');
     var newMap = Object.create(null);
     var toFontChar = [];
@@ -4359,19 +4358,12 @@ var Font = (function FontClosure() {
     /**
      * Builds a char code to unicode map based on section 9.10 of the spec.
      * @param {Object} properties Font properties object.
-     * @return {Object} Has two properties: 'toUnicode' which maps char codes to
-     * unicode (string) values and 'isIdentity' which is true if an identity map
-     * is used.
+     * @return {Object} A ToUnicodeMap object.
      */
     buildToUnicode: function Font_buildToUnicode(properties) {
-      var map = {
-        isIdentity: false,
-        toUnicode: null
-      };
       // Section 9.10.2 Mapping Character Codes to Unicode Values
       if (properties.toUnicode && properties.toUnicode.length !== 0) {
-        map.toUnicode = properties.toUnicode;
-        return map;
+        return properties.toUnicode;
       }
       // According to the spec if the font is a simple font we should only map
       // to unicode if the base encoding is MacRoman, MacExpert, or WinAnsi or
@@ -4436,8 +4428,7 @@ var Font = (function FontClosure() {
           }
           toUnicode[charcode] = String.fromCharCode(GlyphsUnicode[glyphName]);
         }
-        map.toUnicode = new ToUnicodeMap(toUnicode);
-        return map;
+        return new ToUnicodeMap(toUnicode);
       }
       // If the font is a composite font that uses one of the predefined CMaps
       // listed in Table 118 (except Identity–H and Identity–V) or whose
@@ -4480,15 +4471,12 @@ var Font = (function FontClosure() {
                                   ucs2.charCodeAt(1));
           }
         });
-        map.toUnicode = new ToUnicodeMap(toUnicode);
-        return map;
+        return new ToUnicodeMap(toUnicode);
       }
 
       // The viewer's choice, just use an identity map.
-      map.isIdentity = true;
-      map.toUnicode =
-        new IdentityToUnicodeMap(properties.firstChar, properties.lastChar);
-      return map;
+      return new IdentityToUnicodeMap(properties.firstChar,
+                                      properties.lastChar);
     },
 
     get spaceWidth() {
