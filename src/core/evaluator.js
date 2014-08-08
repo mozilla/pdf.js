@@ -578,6 +578,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     buildPath: function PartialEvaluator_buildPath(operatorList, fn, args) {
       var lastIndex = operatorList.length - 1;
+      if (!args) {
+        args = [];
+      }
       if (lastIndex < 0 ||
           operatorList.fnArray[lastIndex] !== OPS.constructPath) {
         operatorList.addOp(OPS.constructPath, [[fn], args]);
@@ -2123,10 +2126,10 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
 
           var fn = opSpec.id;
           var numArgs = opSpec.numArgs;
+          var argsLength = args !== null ? args.length : 0;
 
           if (!opSpec.variableArgs) {
             // Postscript commands can be nested, e.g. /F2 /GS2 gs 5.711 Tf
-            var argsLength = args !== null ? args.length : 0;
             if (argsLength !== numArgs) {
               var nonProcessedArgs = this.nonProcessedArgs;
               while (argsLength > numArgs) {
