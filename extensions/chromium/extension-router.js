@@ -99,6 +99,10 @@ limitations under the License.
     var url = parseExtensionURL(details.url);
     if (url) {
       url = VIEWER_URL + '?file=' + url;
+      var i = details.url.indexOf('#');
+      if (i > 0) {
+        url += details.url.slice(i);
+      }
       console.log('Redirecting ' + details.url + ' to ' + url);
       return { redirectUrl: url };
     }
