@@ -434,15 +434,6 @@ function bytesToString(bytes) {
   return strBuf.join('');
 }
 
-function stringToArray(str) {
-  var length = str.length;
-  var array = new Uint16Array(length);
-  for (var i = 0; i < length; ++i) {
-    array[i] = str.charCodeAt(i);
-  }
-  return array;
-}
-
 function stringToBytes(str) {
   var length = str.length;
   var bytes = new Uint8Array(length);
