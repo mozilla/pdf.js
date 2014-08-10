@@ -612,10 +612,6 @@ var PDFView = {
       thumbsView.removeChild(thumbsView.lastChild);
     }
 
-    if ('_loadingInterval' in thumbsView) {
-      clearInterval(thumbsView._loadingInterval);
-    }
-
     var container = document.getElementById('viewer');
     while (container.hasChildNodes()) {
       container.removeChild(container.lastChild);
