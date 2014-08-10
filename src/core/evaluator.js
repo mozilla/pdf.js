@@ -20,8 +20,8 @@
            isNum, isStream, isString, JpegStream, Lexer, Metrics,
            MurmurHash3_64, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts,
            stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
-           RefSetCache, isRef, TextRenderingMode, CMapFactory, OPS,
-           UNSUPPORTED_FEATURES, UnsupportedManager, NormalizedUnicodes,
+           RefSetCache, isRef, TextRenderingMode, ToUnicodeMap, CMapFactory,
+           OPS, UNSUPPORTED_FEATURES, UnsupportedManager, NormalizedUnicodes,
            IDENTITY_MATRIX, reverseIfRtl, createPromiseCapability,
            getFontType */
 
@@ -1309,12 +1309,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode) {
-      var cmapObj = toUnicode;
+      var cmap, cmapObj = toUnicode;
       if (isName(cmapObj)) {
-        return CMapFactory.create(cmapObj,
+        cmap = CMapFactory.create(cmapObj,
           { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
+        return new ToUnicodeMap(cmap);
       } else if (isStream(cmapObj)) {
-        var cmap = CMapFactory.create(cmapObj,
+        cmap = CMapFactory.create(cmapObj,
           { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
         // Convert UTF-16BE
         // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
@@ -1333,7 +1334,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
           cmap[i] = String.fromCharCode.apply(String, str);
         });
-        return cmap;
+        return new ToUnicodeMap(cmap);
       }
       return null;
     },

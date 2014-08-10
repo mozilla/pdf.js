@@ -2161,6 +2161,68 @@ var Glyph = (function GlyphClosure() {
   return Glyph;
 })();
 
+var ToUnicodeMap = (function ToUnicodeMapClosure() {
+  function ToUnicodeMap(cmap) {
+    // The elements of this._map can be integers or strings, depending on how
+    // |cmap| was created.
+    this._map = cmap;
+  }
+
+  ToUnicodeMap.prototype = {
+    get length() {
+      return this._map.length;
+    },
+
+    forEach: function(callback) {
+      for (var charCode in this._map) {
+        callback(charCode, this._map[charCode].charCodeAt(0));
+      }
+    },
+
+    get: function(i) {
+      return this._map[i];
+    },
+
+    charCodeOf: function(v) {
+      return this._map.indexOf(v);
+    }
+  };
+
+  return ToUnicodeMap;
+})();
+
+var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
+  function IdentityToUnicodeMap(firstChar, lastChar) {
+    this.firstChar = firstChar;
+    this.lastChar = lastChar;
+  }
+
+  IdentityToUnicodeMap.prototype = {
+    get length() {
+      error('should not access .length');
+    },
+
+    forEach: function(callback) {
+      for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
+        callback(i, i);
+      }
+    },
+
+    get: function(i) {
+      if (this.firstChar <= i && i <= this.lastChar) {
+        return String.fromCharCode(i);
+      }
+      return undefined;
+    },
+
+    charCodeOf: function(v) {
+      error('should not call .charCodeOf');
+    }
+  };
+
+  return IdentityToUnicodeMap;
+})();
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -2204,9 +2266,7 @@ var Font = (function FontClosure() {
     this.descent = properties.descent / PDF_GLYPH_SPACE_UNITS;
     this.fontMatrix = properties.fontMatrix;
 
-    var unicode = this.buildToUnicode(properties);
-    this.toUnicode = properties.toUnicode = unicode.toUnicode;
-    this.isIdentityUnicode = properties.isIdentityUnicode = unicode.isIdentity;
+    this.toUnicode = properties.toUnicode = this.buildToUnicode(properties);
 
     this.toFontChar = [];
 
@@ -2259,7 +2319,7 @@ var Font = (function FontClosure() {
           map[+code] = GlyphMapForStandardFonts[code];
         }
         this.toFontChar = map;
-        this.toUnicode = map;
+        this.toUnicode = new ToUnicodeMap(map);
       } else if (/Symbol/i.test(fontName)) {
         var symbols = Encodings.SymbolSetEncoding;
         for (charCode in symbols) {
@@ -2278,15 +2338,14 @@ var Font = (function FontClosure() {
         }
       } else {
         var unicodeCharCode, notCidFont = (type.indexOf('CIDFontType') === -1);
-        for (charCode in this.toUnicode) {
-          unicodeCharCode = this.toUnicode[charCode].charCodeAt(0);
+        this.toUnicode.forEach(function(charCode, unicodeCharCode) {
           if (notCidFont) {
             glyphName = (properties.differences[charCode] ||
                          properties.defaultEncoding[charCode]);
             unicodeCharCode = (GlyphsUnicode[glyphName] || unicodeCharCode);
           }
           this.toFontChar[charCode] = unicodeCharCode;
-        }
+        }.bind(this));
       }
       this.loadedName = fontName.split('-')[0];
       this.loading = false;
@@ -2499,7 +2558,8 @@ var Font = (function FontClosure() {
   function adjustMapping(charCodeToGlyphId, properties) {
     var toUnicode = properties.toUnicode;
     var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
-    var isIdentityUnicode = properties.isIdentityUnicode;
+    var isIdentityUnicode =
+      properties.toUnicode instanceof IdentityToUnicodeMap;
     var isCidFontType2 = (properties.type === 'CIDFontType2');
     var newMap = Object.create(null);
     var toFontChar = [];
@@ -2512,8 +2572,8 @@ var Font = (function FontClosure() {
       // First try to map the value to a unicode position if a non identity map
       // was created.
       if (!isIdentityUnicode) {
-        if (toUnicode[originalCharCode] !== undefined) {
-          var unicode = toUnicode[fontCharCode];
+        if (toUnicode.get(originalCharCode) !== undefined) {
+          var unicode = toUnicode.get(fontCharCode);
           // TODO: Try to map ligatures to the correct spot.
           if (unicode.length === 1) {
             fontCharCode = unicode.charCodeAt(0);
@@ -3852,7 +3912,7 @@ var Font = (function FontClosure() {
 
       var dupFirstEntry = false;
       if (properties.type === 'CIDFontType2' && properties.toUnicode &&
-          properties.toUnicode[0] > '\u0000') {
+          properties.toUnicode.get(0) > '\u0000') {
         // oracle's defect (see 3427), duplicating first entry
         dupFirstEntry = true;
         numGlyphs++;
@@ -4298,19 +4358,12 @@ var Font = (function FontClosure() {
     /**
      * Builds a char code to unicode map based on section 9.10 of the spec.
      * @param {Object} properties Font properties object.
-     * @return {Object} Has two properties: 'toUnicode' which maps char codes to
-     * unicode (string) values and 'isIdentity' which is true if an identity map
-     * is used.
+     * @return {Object} A ToUnicodeMap object.
      */
     buildToUnicode: function Font_buildToUnicode(properties) {
-      var map = {
-        isIdentity: false,
-        toUnicode: null
-      };
       // Section 9.10.2 Mapping Character Codes to Unicode Values
       if (properties.toUnicode && properties.toUnicode.length !== 0) {
-        map.toUnicode = properties.toUnicode;
-        return map;
+        return properties.toUnicode;
       }
       // According to the spec if the font is a simple font we should only map
       // to unicode if the base encoding is MacRoman, MacExpert, or WinAnsi or
@@ -4375,8 +4428,7 @@ var Font = (function FontClosure() {
           }
           toUnicode[charcode] = String.fromCharCode(GlyphsUnicode[glyphName]);
         }
-        map.toUnicode = toUnicode;
-        return map;
+        return new ToUnicodeMap(toUnicode);
       }
       // If the font is a composite font that uses one of the predefined CMaps
       // listed in Table 118 (except Identity–H and Identity–V) or whose
@@ -4419,19 +4471,12 @@ var Font = (function FontClosure() {
                                   ucs2.charCodeAt(1));
           }
         });
-        map.toUnicode = toUnicode;
-        return map;
+        return new ToUnicodeMap(toUnicode);
       }
 
       // The viewer's choice, just use an identity map.
-      toUnicode = [];
-      var firstChar = properties.firstChar, lastChar = properties.lastChar;
-      for (var i = firstChar; i <= lastChar; i++) {
-        toUnicode[i] = String.fromCharCode(i);
-      }
-      map.isIdentity = true;
-      map.toUnicode = toUnicode;
-      return map;
+      return new IdentityToUnicodeMap(properties.firstChar,
+                                      properties.lastChar);
     },
 
     get spaceWidth() {
@@ -4459,7 +4504,7 @@ var Font = (function FontClosure() {
         }
         // ... via toUnicode map
         if (!charcode && 'toUnicode' in this) {
-          charcode = this.toUnicode.indexOf(glyphUnicode);
+          charcode = this.toUnicode.charCodeOf(glyphUnicode);
         }
         // setting it to unicode if negative or undefined
         if (charcode <= 0) {
@@ -4489,7 +4534,7 @@ var Font = (function FontClosure() {
       width = isNum(width) ? width : this.defaultWidth;
       var vmetric = this.vmetrics && this.vmetrics[widthCode];
 
-      var unicode = this.toUnicode[charcode] || charcode;
+      var unicode = this.toUnicode.get(charcode) || charcode;
       if (typeof unicode === 'number') {
         unicode = String.fromCharCode(unicode);
       }
