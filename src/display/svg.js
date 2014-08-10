@@ -170,7 +170,7 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     var idat = new Uint8Array(2 + len + deflateBlocks * 5 + 4);
     var pi = 0;
     idat[pi++] = 0x78; // compression method and flags
-    idat[pi++] = 0x9c;  // flags
+    idat[pi++] = 0x9c; // flags
 
     var pos = 0;
     while (len > maxBlockLength) {
@@ -976,15 +976,15 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     paintSolidColorImageMask:
-      function SVGGraphics_paintSolidColorImageMask() {
-        var current = this.current;
-        var rect = document.createElementNS(NS, 'svg:rect');
-        rect.setAttributeNS(null, 'x', 0);
-        rect.setAttributeNS(null, 'y', 0);
-        rect.setAttributeNS(null, 'width', 1 + 'px');
-        rect.setAttributeNS(null, 'height', 1 + 'px');
-        rect.setAttributeNS(null, 'fill', current.fillColor);
-        this.tgrp.appendChild(rect);
+        function SVGGraphics_paintSolidColorImageMask() {
+      var current = this.current;
+      var rect = document.createElementNS(NS, 'svg:rect');
+      rect.setAttributeNS(null, 'x', 0);
+      rect.setAttributeNS(null, 'y', 0);
+      rect.setAttributeNS(null, 'width', 1 + 'px');
+      rect.setAttributeNS(null, 'height', 1 + 'px');
+      rect.setAttributeNS(null, 'fill', current.fillColor);
+      this.tgrp.appendChild(rect);
     },
 
     paintJpegXObject: function SVGGraphics_paintJpegXObject(objId, w, h) {
@@ -997,14 +997,14 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       imgEl.setAttributeNS(null, 'x', 0);
       imgEl.setAttributeNS(null, 'y', -h);
       imgEl.setAttributeNS(null, 'transform', 'scale(' + 1 / w +
-       ' ' + -1 / h + ')');
+        ' ' + -1 / h + ')');
 
       this.tgrp.appendChild(imgEl);
       if (current.pendingClip) {
-       this.cgrp.appendChild(this.tgrp);
-       this.pgrp.appendChild(this.cgrp);
+        this.cgrp.appendChild(this.tgrp);
+        this.pgrp.appendChild(this.cgrp);
       } else {
-       this.pgrp.appendChild(this.tgrp);
+        this.pgrp.appendChild(this.tgrp);
       }
     },
 
@@ -1019,7 +1019,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     paintInlineImageXObject:
-      function SVGGraphics_paintInlineImageXObject(imgData, mask) {
+        function SVGGraphics_paintInlineImageXObject(imgData, mask) {
       var current = this.current;
       var width = imgData.width;
       var height = imgData.height;
@@ -1054,7 +1054,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     },
 
     paintImageMaskXObject:
-      function SVGGraphics_paintImageMaskXObject(imgData) {
+        function SVGGraphics_paintImageMaskXObject(imgData) {
       var current = this.current;
 
       var width = imgData.width;
