@@ -2224,21 +2224,6 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
 })();
 
 var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
-  function getMaxPower2(number) {
-    var maxPower = 0;
-    var value = number;
-    while (value >= 2) {
-      value /= 2;
-      maxPower++;
-    }
-
-    value = 2;
-    for (var i = 1; i < maxPower; i++) {
-      value *= 2;
-    }
-    return value;
-  }
-
   function writeInt16(dest, offset, num) {
     dest[offset] = (num >> 8) & 0xFF;
     dest[offset + 1] = num & 0xFF;
@@ -2274,10 +2259,15 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
 
   OpenTypeFileBuilder.getSearchParams =
       function OpenTypeFileBuilder_getSearchParams(entriesCount, entrySize) {
-    var searchRange = getMaxPower2(entriesCount) * entrySize;
+    var maxPower2 = 1, log2 = 0;
+    while ((maxPower2 ^ entriesCount) > maxPower2) {
+      maxPower2 <<= 1;
+      log2++;
+    }
+    var searchRange = maxPower2 * entrySize;
     return {
       range: searchRange,
-      entry: (Math.log(entriesCount) / Math.log(2)) | 0,
+      entry: log2,
       rangeShift: entrySize * entriesCount - searchRange
     };
   };
