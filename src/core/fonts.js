@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals FONT_IDENTITY_MATRIX, FontType, warn, GlyphsUnicode, error, string32,
-           readUint32, stringToArray, Stream, FontRendererFactory, shadow,
+           readUint32, Stream, FontRendererFactory, shadow, stringToBytes,
            bytesToString, info, assert, IdentityCMap, Name, CMapFactory, PDFJS,
            isNum, Lexer, isArray, ISOAdobeCharset, ExpertCharset,
            ExpertSubsetCharset, Util */
@@ -2821,10 +2821,9 @@ var Font = (function FontClosure() {
                     string32(format31012.length / 12); // nGroups
     }
 
-    return stringToArray(cmap +
-                         '\x00\x04' + // format
-                         string16(format314.length + 4) + // length
-                         format314 + header31012 + format31012);
+    return cmap + '\x00\x04' + // format
+                  string16(format314.length + 4) + // length
+                  format314 + header31012 + format31012;
   }
 
   function validateOS2Table(os2) {
@@ -3318,7 +3317,7 @@ var Font = (function FontClosure() {
           for (i = 0; i < numMissing; i++) {
             entries += '\x00\x00';
           }
-          metrics.data = stringToArray(entries);
+          metrics.data = entries;
         }
       }
 
@@ -4140,9 +4139,8 @@ var Font = (function FontClosure() {
 
         tables['OS/2'] = {
           tag: 'OS/2',
-          data: stringToArray(createOS2Table(properties,
-                                             newMapping.charCodeToGlyphId,
-                                             override))
+          data: createOS2Table(properties, newMapping.charCodeToGlyphId,
+                               override)
         };
       }
 
@@ -4150,7 +4148,7 @@ var Font = (function FontClosure() {
       if (!tables.post) {
         tables.post = {
           tag: 'post',
-          data: stringToArray(createPostTable(properties))
+          data: createPostTable(properties)
         };
       }
 
@@ -4171,12 +4169,12 @@ var Font = (function FontClosure() {
       if (!tables.name) {
         tables.name = {
           tag: 'name',
-          data: stringToArray(createNameTable(this.name))
+          data: createNameTable(this.name)
         };
       } else {
         // ... using existing 'name' table as prototype
         var namePrototype = readNameTable(tables.name);
-        tables.name.data = stringToArray(createNameTable(name, namePrototype));
+        tables.name.data = createNameTable(name, namePrototype);
       }
 
       var builder = new OpenTypeFileBuilder(header.version);
@@ -4270,13 +4268,12 @@ var Font = (function FontClosure() {
       // PostScript Font Program
       builder.addTable('CFF ', font.data);
       // OS/2 and Windows Specific metrics
-      builder.addTable('OS/2', stringToArray(createOS2Table(properties,
-                                             newMapping.charCodeToGlyphId)));
+      builder.addTable('OS/2', createOS2Table(properties,
+                                              newMapping.charCodeToGlyphId));
       // Character to glyphs mapping
       builder.addTable('cmap', createCmapTable(newMapping.charCodeToGlyphId));
       // Font header
-      builder.addTable('head', (function fontFieldsHead() {
-          return stringToArray(
+      builder.addTable('head',
             '\x00\x01\x00\x00' + // Version number
             '\x00\x00\x10\x00' + // fontRevision
             '\x00\x00\x00\x00' + // checksumAdjustement
@@ -4294,11 +4291,9 @@ var Font = (function FontClosure() {
             '\x00\x00' + // fontDirectionHint
             '\x00\x00' + // indexToLocFormat
             '\x00\x00');  // glyphDataFormat
-        })());
 
       // Horizontal header
-      builder.addTable('hhea', (function fontFieldsHhea() {
-          return stringToArray(
+      builder.addTable('hhea',
             '\x00\x01\x00\x00' + // Version number
             safeString16(properties.ascent) + // Typographic Ascent
             safeString16(properties.descent) + // Typographic Descent
@@ -4317,7 +4312,6 @@ var Font = (function FontClosure() {
             '\x00\x00' + // -reserved-
             '\x00\x00' + // metricDataFormat
             string16(numGlyphs)); // Number of HMetrics
-        })());
 
       // Horizontal metrics
       builder.addTable('hmtx', (function fontFieldsHmtx() {
@@ -4330,21 +4324,19 @@ var Font = (function FontClosure() {
             var width = 'width' in charstring ? charstring.width : 0;
             hmtx += string16(width) + string16(0);
           }
-          return stringToArray(hmtx);
+          return hmtx;
         })());
 
       // Maximum profile
-      builder.addTable('maxp', (function fontFieldsMaxp() {
-          return stringToArray(
+      builder.addTable('maxp',
             '\x00\x00\x50\x00' + // Version number
             string16(numGlyphs)); // Num of glyphs
-        })());
 
       // Naming tables
-      builder.addTable('name', stringToArray(createNameTable(fontName)));
+      builder.addTable('name', createNameTable(fontName));
 
       // PostScript informations
-      builder.addTable('post', stringToArray(createPostTable(properties)));
+      builder.addTable('post', createPostTable(properties));
 
       return builder.toArray();
     },
@@ -6896,7 +6888,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
     compileNameIndex: function CFFCompiler_compileNameIndex(names) {
       var nameIndex = new CFFIndex();
       for (var i = 0, ii = names.length; i < ii; ++i) {
-        nameIndex.add(stringToArray(names[i]));
+        nameIndex.add(stringToBytes(names[i]));
       }
       return this.compileIndex(nameIndex);
     },
@@ -7021,7 +7013,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
     compileStringIndex: function CFFCompiler_compileStringIndex(strings) {
       var stringIndex = new CFFIndex();
       for (var i = 0, ii = strings.length; i < ii; ++i) {
-        stringIndex.add(stringToArray(strings[i]));
+        stringIndex.add(stringToBytes(strings[i]));
       }
       return this.compileIndex(stringIndex);
     },
