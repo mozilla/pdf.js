@@ -215,7 +215,7 @@ var ColorSpace = (function ColorSpaceClosure() {
         var range = IR[1].Range;
         return new LabCS(whitePoint, blackPoint, range);
       default:
-        error('Unkown name ' + name);
+        error('Unknown name ' + name);
     }
     return null;
   };
@@ -934,4 +934,3 @@ var LabCS = (function LabCSClosure() {
   };
   return LabCS;
 })();
-
