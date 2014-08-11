@@ -22,6 +22,7 @@ var DocumentProperties = {
   overlayName: null,
   fileName: '',
   fileSize: '',
+  rawFileSize: 0,
 
   // Document property fields (in the viewer).
   fileNameField: null,
@@ -77,6 +78,9 @@ var DocumentProperties = {
 
     // Get the file size.
     PDFView.pdfDocument.getDownloadInfo().then(function(data) {
+      if (data.length === this.rawFileSize) {
+        return;
+      }
       this.setFileSize(data.length);
       this.updateUI(this.fileSizeField, this.fileSize);
     }.bind(this));
@@ -85,7 +89,7 @@ var DocumentProperties = {
     PDFView.pdfDocument.getMetadata().then(function(data) {
       var fields = [
         { field: this.fileNameField, content: this.fileName },
-        // The fileSize field is updated once getDownloadInfo is resolved.
+        { field: this.fileSizeField, content: this.fileSize },
         { field: this.titleField, content: data.info.Title },
         { field: this.authorField, content: data.info.Author },
         { field: this.subjectField, content: data.info.Subject },
@@ -115,7 +119,7 @@ var DocumentProperties = {
   },
 
   setFileSize: function documentPropertiesSetFileSize(fileSize) {
-    var kb = fileSize / 1024;
+    var kb = (this.rawFileSize = fileSize) / 1024;
     if (kb < 1024) {
       this.fileSize = mozL10n.get('document_properties_kb', {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
