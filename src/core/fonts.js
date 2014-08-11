@@ -4574,10 +4574,11 @@ var Font = (function FontClosure() {
       if (this.cMap) {
         // composite fonts have multi-byte strings convert the string from
         // single-byte to multi-byte
+        var c = {};
         while (i < chars.length) {
-          var c = this.cMap.readCharCode(chars, i);
-          charcode = c[0];
-          var length = c[1];
+          this.cMap.readCharCode(chars, i, c);
+          charcode = c.charcode;
+          var length = c.length;
           i += length;
           glyph = this.charToGlyph(charcode);
           glyphs.push(glyph);
