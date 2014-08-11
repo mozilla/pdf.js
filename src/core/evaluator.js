@@ -642,8 +642,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return new Promise(function next(resolve, reject) {
         timeSlotManager.reset();
         var stop, operation = {}, i, ii, cs;
-        while (!(stop = timeSlotManager.check()) &&
-               preprocessor.read(operation)) {
+        while (!(stop = timeSlotManager.check())) {
+          // The arguments parsed by read() are used beyond this loop, so we
+          // cannot reuse the same array on each iteration. Therefore we pass
+          // in |null| as the initial value (see the comment on
+          // EvaluatorPreprocessor_read() for why).
+          operation.args = null;
+          if (!(preprocessor.read(operation))) {
+            break;
+          }
           var args = operation.args;
           var fn = operation.fn;
 
@@ -1037,12 +1044,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       return new Promise(function next(resolve, reject) {
         timeSlotManager.reset();
-        var stop, operation = {};
-        while (!(stop = timeSlotManager.check()) &&
-               (preprocessor.read(operation))) {
+        var stop, operation = {}, args = [];
+        while (!(stop = timeSlotManager.check())) {
+          // The arguments parsed by read() are not used beyond this loop, so
+          // we can reuse the same array on every iteration, thus avoiding
+          // unnecessary allocations.
+          args.length = 0;
+          operation.args = args;
+          if (!(preprocessor.read(operation))) {
+            break;
+          }
           textState = stateManager.state;
           var fn = operation.fn;
-          var args = operation.args;
+          args = operation.args;
+
           switch (fn | 0) {
             case OPS.setFont:
               textState.fontSize = args[1];
@@ -2112,10 +2127,29 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
       return this.stateManager.stateStack.length;
     },
 
+    // |operation| is an object with two fields:
+    //
+    // - |fn| is an out param.
+    //
+    // - |args| is an inout param. On entry, it should have one of two values.
+    //
+    //   - An empty array. This indicates that the caller is providing the
+    //     array in which the args will be stored in. The caller should use
+    //     this value if it can reuse a single array for each call to read().
+    //
+    //   - |null|. This indicates that the caller needs this function to create
+    //     the array in which any args are stored in. If there are zero args,
+    //     this function will leave |operation.args| as |null| (thus avoiding
+    //     allocations that would occur if we used an empty array to represent
+    //     zero arguments). Otherwise, it will replace |null| with a new array
+    //     containing the arguments. The caller should use this value if it
+    //     cannot reuse an array for each call to read().
+    //
+    // These two modes are present because this function is very hot and so
+    // avoiding allocations where possible is worthwhile.
+    //
     read: function EvaluatorPreprocessor_read(operation) {
-      // We use an array to represent args, except we use |null| to represent
-      // no args because it's more compact than an empty array.
-      var args = null;
+      var args = operation.args;
       while (true) {
         var obj = this.parser.getObj();
         if (isCmd(obj)) {
