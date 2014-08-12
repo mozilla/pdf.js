@@ -326,7 +326,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 #loadingBar {
   position: relative;
   width: 100%;
-  height: 6px;
+  height: 4px;
   background-color: #333;
   border-bottom: 1px solid #333;
 }
@@ -1408,7 +1408,7 @@ canvas {
   font-size: 0.8em;
 }
 .loadingInProgress #errorWrapper {
-  top: 39px;
+  top: 37px;
 }
 
 #errorMessageLeft {
@@ -1884,7 +1884,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     z-index: 100;
   }
   .loadingInProgress #sidebarContainer {
-    top: 39px;
+    top: 37px;
   }
   #sidebarContent {
     top: 32px;
