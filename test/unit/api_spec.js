@@ -126,11 +126,41 @@ describe('api', function() {
     waitsForPromise(promise, function(data) {
       page = data;
     });
-
-    it('gets ref', function() {
-      expect(page.ref).toEqual({num: 15, gen: 0});
+    it('gets page number', function () {
+      expect(page.pageNumber).toEqual(1);
     });
-
+    it('gets rotate', function () {
+      expect(page.rotate).toEqual(0);
+    });
+    it('gets ref', function () {
+      expect(page.ref).toEqual({ num: 15, gen: 0 });
+    });
+    it('gets view', function () {
+      expect(page.view).toEqual([0, 0, 595.28, 841.89]);
+    });
+    it('gets viewport', function () {
+      var viewport = page.getViewport(1.5, 90);
+      expect(viewport.viewBox).toEqual(page.view);
+      expect(viewport.scale).toEqual(1.5);
+      expect(viewport.rotation).toEqual(90);
+      expect(viewport.transform).toEqual([0, 1.5, 1.5, 0, 0, 0]);
+      expect(viewport.width).toEqual(1262.835);
+      expect(viewport.height).toEqual(892.92);
+    });
+    it('gets annotations', function () {
+      var promise = page.getAnnotations();
+      waitsForPromise(promise, function (data) {
+        expect(data.length).toEqual(4);
+      });
+    });
+    it('gets text content', function () {
+      var promise = page.getTextContent();
+      waitsForPromise(promise, function (data) {
+        expect(!!data.items).toEqual(true);
+        expect(data.items.length).toEqual(7);
+        expect(!!data.styles).toEqual(true);
+      });
+    });
     it('gets operator list', function() {
       var promise = page.getOperatorList();
       waitsForPromise(promise, function (oplist) {
@@ -139,9 +169,5 @@ describe('api', function() {
         expect(oplist.lastChunk).toEqual(true);
       });
     });
-    // TODO rotate
-    // TODO viewport
-    // TODO annotaions
-    // TOOD text content
   });
 });
