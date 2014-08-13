@@ -165,7 +165,6 @@ describe('evaluator', function() {
                                            new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('5 1 d0');
-      console.log('here!');
       runOperatorListCheck(evaluator, stream, new ResourcesMock(),
           function (result) {
         expect(result.argsArray[0][0]).toEqual(5);
