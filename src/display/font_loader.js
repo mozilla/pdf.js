@@ -91,6 +91,9 @@ var FontLoader = {
       return true;
     }
     // TODO other browsers
+    if (userAgent === 'node') {
+      return true;
+    }
     return false;
   })(),
 

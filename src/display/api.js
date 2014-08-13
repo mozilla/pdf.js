@@ -992,7 +992,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       messageHandler.on('PageError', function transportError(data) {
         var page = this.pageCache[data.pageNum - 1];
         var intentState = page.intentStates[data.intent];
-        if (intentState.displayReadyCapability.promise) {
+        if (intentState.displayReadyCapability) {
           intentState.displayReadyCapability.reject(data.error);
         } else {
           error(data.error);
