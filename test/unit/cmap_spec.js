@@ -65,12 +65,13 @@ describe('cmap', function() {
               'endcodespacerange\n';
     var stream = new StringStream(str);
     var cmap = CMapFactory.create(stream);
-    var c = cmap.readCharCode(String.fromCharCode(1), 0);
-    expect(c[0]).toEqual(1);
-    expect(c[1]).toEqual(1);
-    c = cmap.readCharCode(String.fromCharCode(0, 0, 0, 3), 0);
-    expect(c[0]).toEqual(3);
-    expect(c[1]).toEqual(4);
+    var c = {};
+    cmap.readCharCode(String.fromCharCode(1), 0, c);
+    expect(c.charcode).toEqual(1);
+    expect(c.length).toEqual(1);
+    cmap.readCharCode(String.fromCharCode(0, 0, 0, 3), 0, c);
+    expect(c.charcode).toEqual(3);
+    expect(c.length).toEqual(4);
   });
   it('decodes 4 byte codespace ranges', function() {
     var str = '1 begincodespacerange\n' +
@@ -78,9 +79,10 @@ describe('cmap', function() {
               'endcodespacerange\n';
     var stream = new StringStream(str);
     var cmap = CMapFactory.create(stream);
-    var c = cmap.readCharCode(String.fromCharCode(0x8E, 0xA1, 0xA1, 0xA1), 0);
-    expect(c[0]).toEqual(0x8EA1A1A1);
-    expect(c[1]).toEqual(4);
+    var c = {};
+    cmap.readCharCode(String.fromCharCode(0x8E, 0xA1, 0xA1, 0xA1), 0, c);
+    expect(c.charcode).toEqual(0x8EA1A1A1);
+    expect(c.length).toEqual(4);
   });
   it('read usecmap', function() {
     var str = '/Adobe-Japan1-1 usecmap\n';
