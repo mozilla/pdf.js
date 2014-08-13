@@ -60,7 +60,6 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
 
   function writePngChunk(type, body, data, offset) {
     var p = offset;
-
     var len = body.length;
 
     data[p] = len >> 24 & 0xff;
@@ -99,11 +98,9 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
   function encode(imgData, kind) {
     var width = imgData.width;
     var height = imgData.height;
-    var bitDepth;
-    var colorType;
-
+    var bitDepth, colorType, lineSize;
     var bytes = imgData.data;
-    var lineSize;
+
     switch (kind) {
       case ImageKind.GRAYSCALE_1BPP:
         colorType = 0;
@@ -202,8 +199,8 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     idat[pi++] = adler & 0xff;
 
     // PNG will consists: header, IHDR+data, IDAT+data, and IEND.
-    var pngLength = PNG_HEADER.length + CHUNK_WRAPPER_SIZE * 3 +
-      ihdr.length + idat.length;
+    var pngLength = PNG_HEADER.length + (CHUNK_WRAPPER_SIZE * 3) +
+                    ihdr.length + idat.length;
     var data = new Uint8Array(pngLength);
     var offset = 0;
     data.set(PNG_HEADER, offset);
@@ -219,14 +216,13 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
 
   return function convertImgDataToPng(imgData) {
     var kind = (imgData.kind === undefined ?
-      ImageKind.GRAYSCALE_1BPP : imgData.kind);
+                ImageKind.GRAYSCALE_1BPP : imgData.kind);
     return encode(imgData, kind);
   };
 })();
 
 var SVGExtraState = (function SVGExtraStateClosure() {
-  function SVGExtraState(old) {
-    // Are soft masks and alpha values shapes or opacities?
+  function SVGExtraState() {
     this.fontSizeScale = 1;
     this.fontWeight = 'normal';
     this.fontSize = 0;
@@ -234,18 +230,22 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.textMatrix = IDENTITY_MATRIX;
     this.fontMatrix = FONT_IDENTITY_MATRIX;
     this.leading = 0;
+
     // Current point (in user coordinates)
     this.x = 0;
     this.y = 0;
+
     // Start of text line (in text coordinates)
     this.lineX = 0;
     this.lineY = 0;
+
     // Character and word spacing
     this.charSpacing = 0;
     this.wordSpacing = 0;
     this.textHScale = 1;
     this.textRise = 0;
-    // Default fore and background colors
+
+    // Default foreground and background colors
     this.fillColor = '#000000';
     this.strokeColor = '#000000';
 
@@ -259,7 +259,6 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.dashArray = [];
     this.dashPhase = 0;
 
-    // Dependency
     this.dependencies = [];
 
     // Clipping
@@ -281,13 +280,10 @@ var SVGExtraState = (function SVGExtraStateClosure() {
   return SVGExtraState;
 })();
 
-var SVGGraphics = (function SVGGraphicsClosure(ctx) {
+var SVGGraphics = (function SVGGraphicsClosure() {
   function opListToTree(opList) {
     var opTree = [];
-    var saveIdx = [];
-    var restIdx = [];
     var tmp = [];
-    var items = [];
     var opListLen = opList.length;
 
     for (var x = 0; x < opListLen; x++) {
@@ -357,7 +353,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
   }
 
   function SVGGraphics(commonObjs, objs) {
-
     this.current = new SVGExtraState();
     this.transformMatrix = IDENTITY_MATRIX; // Graphics state matrix
     this.transformStack = [];
@@ -372,8 +367,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
   var XLINK_NS = 'http://www.w3.org/1999/xlink';
   var LINE_CAP_STYLES = ['butt', 'round', 'square'];
   var LINE_JOIN_STYLES = ['miter', 'round', 'bevel'];
-  var NORMAL_CLIP = {};
-  var EO_CLIP = {};
   var clipCount = 0;
   var maskCount = 0;
 
@@ -432,14 +425,14 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     transform: function SVGGraphics_transform(a, b, c, d, e, f) {
       var transformMatrix = [a, b, c, d, e, f];
       this.transformMatrix = PDFJS.Util.transform(this.transformMatrix,
-        transformMatrix);
+                                                  transformMatrix);
 
       this.tgrp = document.createElementNS(NS, 'svg:g');
       this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
     },
 
     beginDrawing: function SVGGraphics_beginDrawing(viewport, pageNum,
-                                               container, operatorList) {
+                                                    container, operatorList) {
       this.svg = createScratchSVG(viewport.width, viewport.height);
       this.container = container;
       this.viewport = viewport;
@@ -461,22 +454,18 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       var argsArray = operatorList.argsArray;
       var fnArray = operatorList.fnArray;
       var fnArrayLen  = fnArray.length;
-      var argsArrayLen = argsArray.length;
-      var opTree = [];
-
       var REVOPS = [];
+      var opList = [];
 
       for (var op in OPS) {
         REVOPS[OPS[op]] = op;
       }
 
-      var opList = [];
       for (var x = 0; x < fnArrayLen; x++) {
         var fnId = fnArray[x];
         opList.push({'fnId' : fnId, 'fn': REVOPS[fnId], 'args': argsArray[x]});
       }
-      opTree = opListToTree(opList);
-      return opTree;
+      return opListToTree(opList);
     },
     
     executeOpTree: function SVGGraphics_executeOpTree(opTree) {
@@ -488,7 +477,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
 
         switch (fnId | 0) {
           case OPS.beginText:
-            this.beginText(args);
+            this.beginText();
             break;
           case OPS.setLeading:
             this.setLeading(args);
@@ -519,7 +508,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             break;
           case OPS.setTextMatrix:
             this.setTextMatrix(args[0], args[1], args[2],
-                              args[3], args[4], args[5]);
+                               args[3], args[4], args[5]);
             break;
           case OPS.setLineWidth:
             this.setLineWidth(args[0]);
@@ -595,7 +584,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             break;
           case OPS.transform:
             this.transform(args[0], args[1], args[2], args[3],
-                          args[4], args[5]);
+                           args[4], args[5]);
             break;
           case OPS.constructPath:
             this.constructPath(args[0], args[1]);
@@ -607,7 +596,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
             this.group(opTree[x].items);
             break;
           default:
-            warn('Unimplemented Method '+ fn);
+            warn('Unimplemented method '+ fn);
             break;
         }
       }
@@ -627,8 +616,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
 
     setTextMatrix: function SVGGraphics_setTextMatrix(a, b, c, d, e, f) {
       var current = this.current;
-      this.current.textMatrix = [a, b, c, d, e, f];
-      this.current.lineMatrix = [a, b, c, d, e, f];
+      this.current.textMatrix = this.current.lineMatrix = [a, b, c, d, e, f];
 
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
@@ -644,7 +632,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.txtElement.appendChild(current.tspan);
     },
 
-    beginText: function SVGGraphics_beginText(args) {
+    beginText: function SVGGraphics_beginText() {
       this.current.x = this.current.lineX = 0;
       this.current.y = this.current.lineY = 0;
       this.current.textMatrix = IDENTITY_MATRIX;
@@ -677,14 +665,12 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         return;
       }
 
-      var fontSizeScale = current.fontSizeScale;
       var charSpacing = current.charSpacing;
       var wordSpacing = current.wordSpacing;
       var fontDirection = current.fontDirection;
       var textHScale = current.textHScale * fontDirection;
       var glyphsLength = glyphs.length;
       var vertical = font.vertical;
-      var defaultVMetrics = font.defaultVMetrics;
       var widthAdvanceScale = fontSize * current.fontMatrix[0];
 
       var x = 0, i;
@@ -747,13 +733,11 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       this.current.font = fontObj;
 
       current.fontMatrix = (fontObj.fontMatrix ?
-                           fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
+                            fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
 
       var bold = fontObj.black ? (fontObj.bold ? 'bolder' : 'bold') :
                                  (fontObj.bold ? 'bold' : 'normal');
-
       var italic = fontObj.italic ? 'italic' : 'normal';
-
 
       if (size < 0) {
         size = -size;
@@ -771,7 +755,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.xcoords = [];
     },
 
-    endText: function SVGGraphics_endText(args) {
+    endText: function SVGGraphics_endText() {
       if (this.current.pendingClip) {
         this.pgrp.appendChild(this.cgrp);
       } else {
@@ -814,7 +798,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       var x = current.x, y = current.y;
       current.path = document.createElementNS(NS, 'svg:path');
       var d = [];
-      var arr = [];
       var opLength = ops.length;
 
       for (var i = 0, j = 0; i < opLength; i++) {
@@ -924,7 +907,7 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
       current.pendingClip = true;
       this.cgrp = document.createElementNS(NS, 'svg:g');
       this.cgrp.setAttributeNS(null, 'clip-path',
-       'url(#' + current.clipId + ')');
+                               'url(#' + current.clipId + ')');
       this.pgrp.appendChild(this.cgrp);
     },
 
@@ -1066,7 +1049,6 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
         warn('Dependent image isn\'t ready yet');
         return;
       }
-
       this.paintInlineImageXObject(imgData);
     },
 
@@ -1109,11 +1091,8 @@ var SVGGraphics = (function SVGGraphicsClosure(ctx) {
     paintImageMaskXObject:
         function SVGGraphics_paintImageMaskXObject(imgData) {
       var current = this.current;
-
       var width = imgData.width;
       var height = imgData.height;
-
-      var img = convertImgDataToPng(imgData);
       var fillColor = current.fillColor;
 
       current.maskId = 'mask' + maskCount++;
