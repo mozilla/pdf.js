@@ -431,10 +431,8 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
     },
 
-    beginDrawing: function SVGGraphics_beginDrawing(viewport, pageNum,
-                                                    container, operatorList) {
+    getSVG: function SVGGraphics_getSVG(viewport, pageNum, operatorList) {
       this.svg = createScratchSVG(viewport.width, viewport.height);
-      this.container = container;
       this.viewport = viewport;
       this.transformMatrix = IDENTITY_MATRIX;
       this.pgrp = document.createElementNS(NS, 'svg:g'); // Parent group
@@ -445,9 +443,9 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       this.pgrp.appendChild(this.defs);
       this.pgrp.appendChild(this.tgrp);
       this.svg.appendChild(this.pgrp);
-      this.container.appendChild(this.svg);
       var opTree = this.convertOpList(operatorList);
       this.executeOpTree(opTree);
+      return this.svg;
     },
 
     convertOpList: function SVGGraphics_convertOpList(operatorList) {
@@ -1114,3 +1112,6 @@ var SVGGraphics = (function SVGGraphicsClosure() {
   };
   return SVGGraphics;
 })();
+
+PDFJS.SVGGraphics = SVGGraphics;
+
