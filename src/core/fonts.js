@@ -4824,8 +4824,8 @@ var Type1CharString = (function Type1CharStringClosure() {
               sbx = this.stack.pop();
               this.lsb = sbx;
               this.width = wx;
-              this.stack.push(sbx);
-              error = this.executeCommand(1, COMMAND_MAP.hmoveto);
+              this.stack.push(wx, sbx);
+              error = this.executeCommand(2, COMMAND_MAP.hmoveto);
               break;
             case 14: // endchar
               this.output.push(COMMAND_MAP.endchar[0]);
@@ -4899,8 +4899,8 @@ var Type1CharString = (function Type1CharStringClosure() {
               sbx = this.stack.pop();
               this.lsb = sbx;
               this.width = wx;
-              this.stack.push(sbx, sby);
-              error = this.executeCommand(2, COMMAND_MAP.rmoveto);
+              this.stack.push(wx, sbx, sby);
+              error = this.executeCommand(3, COMMAND_MAP.rmoveto);
               break;
             case (12 << 8) + 12: // div
               if (this.stack.length < 2) {
