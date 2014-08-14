@@ -20,6 +20,12 @@
 'use strict';
 
 //#if (GENERIC || SINGLE_FILE)
+var SVG_DEFAULTS = {
+  fontStyle: 'normal',
+  fontWeight: 'normal',
+  fillColor: '#000000'
+};
+
 var convertImgDataToPng = (function convertImgDataToPngClosure() {
   var PNG_HEADER =
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -215,7 +221,7 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
 var SVGExtraState = (function SVGExtraStateClosure() {
   function SVGExtraState() {
     this.fontSizeScale = 1;
-    this.fontWeight = 'normal';
+    this.fontWeight = SVG_DEFAULTS.fontWeight;
     this.fontSize = 0;
 
     this.textMatrix = IDENTITY_MATRIX;
@@ -237,7 +243,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.textRise = 0;
 
     // Default foreground and background colors
-    this.fillColor = '#000000';
+    this.fillColor = SVG_DEFAULTS.fillColor;
     this.strokeColor = '#000000';
 
     this.fillAlpha = 1;
@@ -711,10 +717,15 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       current.tspan.setAttributeNS(null, 'font-family', current.fontFamily);
       current.tspan.setAttributeNS(null, 'font-size',
                                    pf(current.fontSize) + 'px');
-      current.tspan.setAttributeNS(null, 'font-style', current.fontStyle);
-      current.tspan.setAttributeNS(null, 'font-weight', current.fontWeight);
-      current.tspan.setAttributeNS(null, 'stroke', 'none');
-      current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+      if (current.fontStyle !== SVG_DEFAULTS.fontStyle) {
+        current.tspan.setAttributeNS(null, 'font-style', current.fontStyle);
+      }
+      if (current.fontWeight !== SVG_DEFAULTS.fontWeight) {
+        current.tspan.setAttributeNS(null, 'font-weight', current.fontWeight);
+      }
+      if (current.fillColor !== SVG_DEFAULTS.fillColor) {
+        current.tspan.setAttributeNS(null, 'fill', current.fillColor);
+      }
 
       current.txtElement.setAttributeNS(null, 'transform',
                                         pm(current.textMatrix) +
