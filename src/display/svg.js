@@ -361,6 +361,10 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     this.commonObjs = commonObjs;
     this.objs = objs;
     this.pendingEOFill = false;
+
+    this.embedFonts = false;
+    this.embeddedFonts = {};
+    this.cssStyle = null;
   }
 
   var NS = 'http://www.w3.org/2000/svg';
@@ -728,11 +732,30 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       this.moveText(x, y);
     },
 
+    addFontStyle: function SVGGraphics_addFontStyle(fontObj) {
+      if (!this.cssStyle) {
+        this.cssStyle = document.createElementNS(NS, 'svg:style');
+        this.cssStyle.setAttributeNS(null, 'type', 'text/css');
+        this.defs.appendChild(this.cssStyle);
+      }
+
+      var url = PDFJS.createObjectURL(fontObj.data, fontObj.mimetype);
+      this.cssStyle.textContent +=
+        '@font-face { font-family: "' + fontObj.loadedName + '";' +
+        ' src: url(' + url + '); }\n';
+    },
+
     setFont: function SVGGraphics_setFont(details) {
       var current = this.current;
       var fontObj = this.commonObjs.get(details[0]);
       var size = details[1];
       this.current.font = fontObj;
+
+      if (this.embedFonts && fontObj.data &&
+          !this.embeddedFonts[fontObj.loadedName]) {
+        this.addFontStyle(fontObj);
+        this.embeddedFonts[fontObj.loadedName] = fontObj;
+      }
 
       current.fontMatrix = (fontObj.fontMatrix ?
                             fontObj.fontMatrix : FONT_IDENTITY_MATRIX);
@@ -1028,7 +1051,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       var current = this.current;
       var imgObj = this.objs.get(objId);
       var imgEl = document.createElementNS(NS, 'svg:image');
-      imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
+      imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgObj.src);
       imgEl.setAttributeNS(null, 'width', imgObj.width + 'px');
       imgEl.setAttributeNS(null, 'height', imgObj.height + 'px');
       imgEl.setAttributeNS(null, 'x', '0');
@@ -1069,7 +1092,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       current.element = cliprect;
       this.clip('nonzero');
       var imgEl = document.createElementNS(NS, 'svg:image');
-      imgEl.setAttributeNS(XLINK_NS, 'href', imgSrc);
+      imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgSrc);
       imgEl.setAttributeNS(null, 'x', '0');
       imgEl.setAttributeNS(null, 'y', pf(-height));
       imgEl.setAttributeNS(null, 'width', pf(width) + 'px');

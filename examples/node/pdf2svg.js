@@ -65,6 +65,7 @@ PDFJS.getDocument(data).then(function (doc) {
       
       return page.getOperatorList().then(function (opList) {
         var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+        svgGfx.embedFonts = true;
         return svgGfx.getSVG(opList, viewport).then(function (svg) {
           var svgDump = svg.toString();
           writeToFile(svgDump, pageNum);
