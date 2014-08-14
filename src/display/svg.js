@@ -19,16 +19,6 @@
 
 'use strict';
 
-function createScratchSVG(width, height) {
-  var NS = 'http://www.w3.org/2000/svg';
-  var svg = document.createElementNS(NS, 'svg:svg');
-  svg.setAttributeNS(null, 'version', '1.1');
-  svg.setAttributeNS(null, 'width', width + 'px');
-  svg.setAttributeNS(null, 'height', height + 'px');
-  svg.setAttributeNS(null, 'viewBox', '0 0 ' + width + ' ' + height);
-  return svg;
-}
-
 var convertImgDataToPng = (function convertImgDataToPngClosure() {
   var PNG_HEADER =
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -281,6 +271,16 @@ var SVGExtraState = (function SVGExtraStateClosure() {
 })();
 
 var SVGGraphics = (function SVGGraphicsClosure() {
+  function createScratchSVG(width, height) {
+    var NS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(NS, 'svg:svg');
+    svg.setAttributeNS(null, 'version', '1.1');
+    svg.setAttributeNS(null, 'width', width + 'px');
+    svg.setAttributeNS(null, 'height', height + 'px');
+    svg.setAttributeNS(null, 'viewBox', '0 0 ' + width + ' ' + height);
+    return svg;
+  }
+
   function opListToTree(opList) {
     var opTree = [];
     var tmp = [];
@@ -431,21 +431,24 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
     },
 
-    getSVG: function SVGGraphics_getSVG(viewport, pageNum, operatorList) {
+    getSVG: function SVGGraphics_getSVG(operatorList, viewport) {
       this.svg = createScratchSVG(viewport.width, viewport.height);
       this.viewport = viewport;
-      this.transformMatrix = IDENTITY_MATRIX;
-      this.pgrp = document.createElementNS(NS, 'svg:g'); // Parent group
-      this.pgrp.setAttributeNS(null, 'transform', pm(viewport.transform));
-      this.tgrp = document.createElementNS(NS, 'svg:g'); // Transform group
-      this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      this.defs = document.createElementNS(NS, 'svg:defs');
-      this.pgrp.appendChild(this.defs);
-      this.pgrp.appendChild(this.tgrp);
-      this.svg.appendChild(this.pgrp);
-      var opTree = this.convertOpList(operatorList);
-      this.executeOpTree(opTree);
-      return this.svg;
+
+      return this.loadDependencies(operatorList).then(function () {
+        this.transformMatrix = IDENTITY_MATRIX;
+        this.pgrp = document.createElementNS(NS, 'svg:g'); // Parent group
+        this.pgrp.setAttributeNS(null, 'transform', pm(viewport.transform));
+        this.tgrp = document.createElementNS(NS, 'svg:g'); // Transform group
+        this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
+        this.defs = document.createElementNS(NS, 'svg:defs');
+        this.pgrp.appendChild(this.defs);
+        this.pgrp.appendChild(this.tgrp);
+        this.svg.appendChild(this.pgrp);
+        var opTree = this.convertOpList(operatorList);
+        this.executeOpTree(opTree);
+        return this.svg;
+      }.bind(this));
     },
 
     convertOpList: function SVGGraphics_convertOpList(operatorList) {
