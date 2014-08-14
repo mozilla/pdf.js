@@ -47,7 +47,7 @@ PDFJS.getDocument(url).then(function(pdf) {
         anchor.appendChild(container);
 
         return page.getOperatorList().then(function (opList) {
-          var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+          var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs, false);
           return svgGfx.loadDependencies(opList).then(function (values) {
             container.appendChild(svgGfx.getSVG(viewport, pageNum, opList));
           });
