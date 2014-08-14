@@ -352,7 +352,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       pf(m[3]) + ' ' + pf(m[4]) + ' ' + pf(m[5]) + ')';
   }
 
-  function SVGGraphics(commonObjs, objs) {
+  function SVGGraphics(commonObjs, objs, embedFonts) {
     this.current = new SVGExtraState();
     this.transformMatrix = IDENTITY_MATRIX; // Graphics state matrix
     this.transformStack = [];
@@ -360,6 +360,8 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     this.commonObjs = commonObjs;
     this.objs = objs;
     this.pendingEOFill = false;
+    this.embedFonts = embedFonts;
+    this.fontsLoaded = {};
   }
 
   var NS = 'http://www.w3.org/2000/svg';
@@ -737,6 +739,24 @@ var SVGGraphics = (function SVGGraphicsClosure() {
                                  (fontObj.bold ? 'bold' : 'normal');
       var italic = fontObj.italic ? 'italic' : 'normal';
 
+      if (this.embedFonts && fontObj.data &&
+          !this.fontsLoaded[fontObj.loadedName]) {
+        var fontFace = document.createElementNS(NS, 'svg:font-face');
+        var fontFaceSrc = document.createElementNS(NS, 'svg:font-face-src');
+        var fontFaceUri = document.createElementNS(NS, 'svg:font-face-uri');
+
+        var url = PDFJS.createObjectURL(fontObj.data, fontObj.mimetype);
+
+        fontFace.setAttributeNS(null, 'font-family', fontObj.loadedName);
+        fontFaceUri.setAttributeNS(XLINK_NS, 'xlink:href', url);
+
+        fontFaceSrc.appendChild(fontFaceUri);
+        fontFace.appendChild(fontFaceSrc);
+        this.defs.appendChild(fontFace);
+
+        this.fontsLoaded[fontObj.loadedName] = true;
+      }
+
       if (size < 0) {
         size = -size;
         current.fontDirection = -1;
@@ -1024,7 +1044,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       var current = this.current;
       var imgObj = this.objs.get(objId);
       var imgEl = document.createElementNS(NS, 'svg:image');
-      imgEl.setAttributeNS(XLINK_NS, 'href', imgObj.src);
+      imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgObj.src);
       imgEl.setAttributeNS(null, 'width', imgObj.width + 'px');
       imgEl.setAttributeNS(null, 'height', imgObj.height + 'px');
       imgEl.setAttributeNS(null, 'x', '0');
@@ -1065,7 +1085,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       current.element = cliprect;
       this.clip('nonzero');
       var imgEl = document.createElementNS(NS, 'svg:image');
-      imgEl.setAttributeNS(XLINK_NS, 'href', imgSrc);
+      imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgSrc);
       imgEl.setAttributeNS(null, 'x', '0');
       imgEl.setAttributeNS(null, 'y', pf(-height));
       imgEl.setAttributeNS(null, 'width', pf(width) + 'px');

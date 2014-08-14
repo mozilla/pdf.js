@@ -40,7 +40,6 @@ function writeToFile(svgdump, pageNum) {
 }
 
 // Get filename from the path
-
 function getFileNameFromPath(path) {
   var index = path.lastIndexOf('/');
   var extIndex = path.lastIndexOf('.');
@@ -64,7 +63,7 @@ PDFJS.getDocument(data).then(function (doc) {
       console.log();
       
       return page.getOperatorList().then(function (opList) {
-        var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+        var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs, true);
         return svgGfx.loadDependencies(opList).then(function (values) {
           var svgDump = svgGfx.getSVG(viewport, pageNum, opList).toString();
           writeToFile(svgDump, pageNum);
