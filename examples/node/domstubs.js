@@ -99,7 +99,7 @@ DOMElement.prototype = {
       attrList.push(i + '="' + xmlEncode(this.attributes[i]) + '"');
     }
 
-    if (this.nodeName === 'svg:tspan') {
+    if (this.nodeName === 'svg:tspan' || this.nodeName === 'svg:style') {
       var encText = xmlEncode(this.textContent);
       return '<' + this.nodeName + ' ' + attrList.join(' ') + '>' +
              encText + '</' + this.nodeName + '>';
