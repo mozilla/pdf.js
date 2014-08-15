@@ -150,7 +150,6 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         left = tx[4] + (fontAscent * Math.sin(angle));
         top = tx[5] - (fontAscent * Math.cos(angle));
       }
-      textDiv.style.position = 'absolute';
       textDiv.style.left = left + 'px';
       textDiv.style.top = top + 'px';
       textDiv.style.fontSize = fontHeight + 'px';
