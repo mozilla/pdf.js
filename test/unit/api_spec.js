@@ -29,11 +29,41 @@ describe('api', function() {
           expect(true).toEqual(true);
         });
       });
-      /*
       it('creates pdf doc from typed array', function() {
-        // TODO
+        var nonBinaryRequest = PDFJS.disableWorker;
+        var request = new XMLHttpRequest();
+        request.open('GET', basicApiUrl, false);
+        if (!nonBinaryRequest) {
+          try {
+            request.responseType = 'arraybuffer';
+            nonBinaryRequest = request.responseType !== 'arraybuffer';
+          } catch (e) {
+            nonBinaryRequest = true;
+          }
+        }
+        if (nonBinaryRequest && request.overrideMimeType) {
+          request.overrideMimeType('text/plain; charset=x-user-defined');
+        }
+        request.send(null);
+
+        var typedArrayPdf;
+        if (nonBinaryRequest) {
+          var data = Array.prototype.map.call(request.responseText,
+              function (ch) {
+            return ch.charCodeAt(0) & 0xFF;
+          });
+          typedArrayPdf = new Uint8Array(data);
+        } else {
+          typedArrayPdf = new Uint8Array(request.response);
+        }
+        // Sanity check to make sure that we fetched the entire PDF file.
+        expect(typedArrayPdf.length).toEqual(105779);
+
+        var promise = PDFJS.getDocument(typedArrayPdf);
+        waitsForPromise(promise, function(data) {
+          expect(true).toEqual(true);
+        });
       });
-      */
     });
   });
   describe('PDFDocument', function() {
