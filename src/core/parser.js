@@ -18,7 +18,7 @@
            FlateStream, isArray, isCmd, isDict, isInt, isName, isNum, isRef,
            isString, Jbig2Stream, JpegStream, JpxStream, LZWStream, Name,
            NullStream, PredictorStream, Ref, RunLengthStream, warn, info,
-           StreamType, MissingDataException */
+           StreamType, MissingDataException, assert */
 
 'use strict';
 
@@ -152,32 +152,33 @@ var Parser = (function ParserClosure() {
 
       // searching for the /EI\s/
       var state = 0, ch, i, ii;
-      while (state !== 4 && (ch = stream.getByte()) !== -1) {
-        switch (ch | 0) {
-          case 0x20:
-          case 0x0D:
-          case 0x0A:
-            // let's check next five bytes to be ASCII... just be sure
-            var followingBytes = stream.peekBytes(5);
-            for (i = 0, ii = followingBytes.length; i < ii; i++) {
+      var E = 0x45, I = 0x49, SPACE = 0x20, NL = 0xA, CR = 0xD;
+      while ((ch = stream.getByte()) !== -1) {
+        if (state === 0) {
+          state = (ch === E) ? 1 : 0;
+        } else if (state === 1) {
+          state = (ch === I) ? 2 : 0;
+        } else {
+          assert(state === 2);
+          if (ch === SPACE || ch === NL || ch === CR) {
+            // Let's check the next five bytes are ASCII... just be sure.
+            var n = 5;
+            var followingBytes = stream.peekBytes(n);
+            for (i = 0; i < n; i++) {
               ch = followingBytes[i];
-              if (ch !== 0x0A && ch !== 0x0D && (ch < 0x20 || ch > 0x7F)) {
-                // not a LF, CR, SPACE or any visible ASCII character
+              if (ch !== NL && ch !== CR && (ch < SPACE || ch > 0x7F)) {
+                // Not a LF, CR, SPACE or any visible ASCII character, i.e.
+                // it's binary stuff. Resetting the state.
                 state = 0;
-                break; // some binary stuff found, resetting the state
+                break;
               }
             }
-            state = (state === 3 ? 4 : 0);
-            break;
-          case 0x45:
-            state = 2;
-            break;
-          case 0x49:
-            state = (state === 2 ? 3 : 0);
-            break;
-          default:
+            if (state === 2) {
+              break;  // finished!
+            }
+          } else {
             state = 0;
-            break;
+          }
         }
       }
 
