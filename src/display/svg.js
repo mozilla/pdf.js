@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX,
+/* globals PDFJS, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, isArray,
            isNum, OPS, Promise, Util, warn, ImageKind, PDFJS */
 
 'use strict';
@@ -582,6 +582,12 @@ var SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.paintImageMaskXObject:
             this.paintImageMaskXObject(args[0]);
             break;
+          case OPS.paintFormXObjectBegin:
+            this.paintFormXObjectBegin(args[0], args[1]);
+            break;
+          case OPS.paintFormXObjectEnd:
+            this.paintFormXObjectEnd();
+            break;
           case OPS.closePath:
             this.closePath();
             break;
@@ -793,6 +799,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 
     endText: function SVGGraphics_endText() {
       if (this.current.pendingClip) {
+        this.cgrp.appendChild(this.tgrp);
         this.pgrp.appendChild(this.cgrp);
       } else {
         this.pgrp.appendChild(this.tgrp);
@@ -1147,6 +1154,35 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 
       this.paintInlineImageXObject(imgData, mask);
     },
+
+    paintFormXObjectBegin:
+        function SVGGraphics_paintFormXObjectBegin(matrix, bbox) {
+      this.save();
+
+      if (isArray(matrix) && matrix.length === 6) {
+        this.transform(matrix[0], matrix[1], matrix[2],
+                       matrix[3], matrix[4], matrix[5]);
+      }
+
+      if (isArray(bbox) && bbox.length === 4) {
+        var width = bbox[2] - bbox[0];
+        var height = bbox[3] - bbox[1];
+
+        var cliprect = document.createElementNS(NS, 'svg:rect');
+        cliprect.setAttributeNS(null, 'x', bbox[0]);
+        cliprect.setAttributeNS(null, 'y', bbox[1]);
+        cliprect.setAttributeNS(null, 'width', pf(width));
+        cliprect.setAttributeNS(null, 'height', pf(height));
+        this.current.element = cliprect;
+        this.clip('nonzero');
+        this.endPath();
+      }
+    },
+
+    paintFormXObjectEnd:
+        function SVGGraphics_paintFormXObjectEnd() {
+      this.restore();
+    }
   };
   return SVGGraphics;
 })();
