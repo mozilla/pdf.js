@@ -829,6 +829,8 @@ var CalRGBCS = (function CalRGBCSClosure() {
   var tempConvertMatrix1 = new Float32Array(3);
   var tempConvertMatrix2 = new Float32Array(3);
 
+  var DECODE_L_CONSTANT = Math.pow(((8 + 16) / 116), 3) / 8.0;
+
   function CalRGBCS(whitePoint, blackPoint, gamma, matrix) {
     this.name = 'CalRGB';
     this.numComps = 3;
@@ -937,18 +939,30 @@ var CalRGBCS = (function CalRGBCSClosure() {
       return -decodeL(-L);
     }
 
-    if (L > 80) {
+    if (L > 8.0) {
       return Math.pow(((L + 16) / 116), 3);
     }
 
-    return L * Math.pow(((8 + 16) / 116), 3) / 8.0;
+    return L * DECODE_L_CONSTANT;
   }
 
   function compensateBlackPoint(sourceBlackPoint, XYZ_Flat, result) {
-    // For the BlackPoint calculation details, please see
+
+    // In case the blackPoint is already the default blackPoint then there is
+    // no need to do compensation.
+    if (sourceBlackPoint[0] === 0 &&
+        sourceBlackPoint[1] === 0 &&
+        sourceBlackPoint[2] === 0) {
+      result[0] = XYZ_Flat[0];
+      result[1] = XYZ_Flat[1];
+      result[2] = XYZ_Flat[2];
+      return;
+    }
+
+    // For the blackPoint calculation details, please see
     // http://www.adobe.com/content/dam/Adobe/en/devnet/photoshop/sdk/
     // AdobeBPC.pdf.
-    // The destination BlackPoint is the default BlackPoint [0, 0, 0].
+    // The destination blackPoint is the default blackPoint [0, 0, 0].
     var zeroDecodeL = decodeL(0);
 
     var X_DST = zeroDecodeL;
@@ -975,6 +989,15 @@ var CalRGBCS = (function CalRGBCSClosure() {
   }
 
   function normalizeWhitePointToFlat(sourceWhitePoint, XYZ_In, result) {
+
+    // In case the whitePoint is already flat then there is no need to do
+    // normalization.
+    if (sourceWhitePoint[0] === 1 && sourceWhitePoint[2] === 1) {
+      result[0] = XYZ_In[0];
+      result[1] = XYZ_In[1];
+      result[2] = XYZ_In[2];
+      return;
+    }
 
     var LMS = result;
     matrixProduct(BRADFORD_SCALE_MATRIX, XYZ_In, LMS);
@@ -1010,15 +1033,11 @@ var CalRGBCS = (function CalRGBCSClosure() {
     var BGG = Math.pow(B, cs.GG);
     var CGB = Math.pow(C, cs.GB);
 
-    // Computes intermediate variables M, L, N as per spec.
-    var M = cs.MXA * AGR + cs.MXB * BGG + cs.MXC * CGB;
-    var L = cs.MYA * AGR + cs.MYB * BGG + cs.MYC * CGB;
-    var N = cs.MZA * AGR + cs.MZB * BGG + cs.MZC * CGB;
-
-    // Decode XYZ, as per spec.
-    var X = M;
-    var Y = L;
-    var Z = N;
+    // Computes intermediate variables L, M, N as per spec.
+    // To decode X, Y, Z values map L, M, N directly to them.
+    var X = cs.MXA * AGR + cs.MXB * BGG + cs.MXC * CGB;
+    var Y = cs.MYA * AGR + cs.MYB * BGG + cs.MYC * CGB;
+    var Z = cs.MZA * AGR + cs.MZB * BGG + cs.MZC * CGB;
 
     // The following calculations are based on this document:
     // http://www.adobe.com/content/dam/Adobe/en/devnet/photoshop/sdk/
@@ -1028,6 +1047,7 @@ var CalRGBCS = (function CalRGBCSClosure() {
     XYZ[1] = Y;
     XYZ[2] = Z;
     var XYZ_Flat = tempConvertMatrix2;
+
     normalizeWhitePointToFlat(cs.whitePoint, XYZ, XYZ_Flat);
 
     var XYZ_Black = tempConvertMatrix1;
