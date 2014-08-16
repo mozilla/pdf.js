@@ -35,6 +35,7 @@ var VIEW_HISTORY_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
+var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 //#if B2G
 //PDFJS.useOnlyCssZoom = true;
 //PDFJS.disableTextLayer = true;
@@ -855,6 +856,24 @@ var PDFViewerApplication = {
     // increases.
     if (percent > this.loadingBar.percent || isNaN(percent)) {
       this.loadingBar.percent = percent;
+
+      // When disableAutoFetch is enabled, it's not uncommon for the entire file
+      // to never be fetched (depends on e.g. the file structure). In this case
+      // the loading bar will not be completely filled, nor will it be hidden.
+      // To prevent displaying a partially filled loading bar permanently, we
+      // hide it when no data has been loaded during a certain amount of time.
+      if (PDFJS.disableAutoFetch && percent) {
+        if (this.disableAutoFetchLoadingBarTimeout) {
+          clearTimeout(this.disableAutoFetchLoadingBarTimeout);
+          this.disableAutoFetchLoadingBarTimeout = null;
+        }
+        this.loadingBar.show();
+
+        this.disableAutoFetchLoadingBarTimeout = setTimeout(function () {
+          this.loadingBar.hide();
+          this.disableAutoFetchLoadingBarTimeout = null;
+        }.bind(this), DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
+      }
     }
   },
 
