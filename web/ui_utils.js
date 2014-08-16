@@ -329,7 +329,7 @@ var ProgressBar = (function ProgressBarClosure() {
 
     hide: function ProgressBar_hide() {
       this.bar.classList.add('hidden');
-      this.bar.removeAttribute('style');
+      document.body.classList.remove('loadingInProgress');
     }
   };
 
