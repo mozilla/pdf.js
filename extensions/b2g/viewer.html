@@ -23,21 +23,25 @@ limitations under the License.
 
     <link rel="stylesheet" href="viewer.css"/>
     <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
-    <link rel="stylesheet" href="/shared/style/headers.css" type="text/css" />
     <script src="l10n.js"></script>
     <script src="../build/pdf.js"></script>
     <script src="/shared/js/async_storage.js"></script>
 
     <script src="viewer.js"></script>
+
+    <!-- Web Components -->
+    <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-theme/style.css" />
+    <!-- <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-icons/style.css" /> -->
+    <script type="text/javascript" src="/shared/elements/config.js"></script>
+    <script type="text/javascript" src="/shared/elements/gaia-header/dist/script.js"></script>
   </head>
 
 
   <body>
-    <section role="region" id="activityHeader" class="skin-organic">
-      <header>
-        <button id="activityClose"><span class="icon icon-close"></span></button>
+    <section role="region" id="activityHeader" class="skin-organic theme-settings">
+      <gaia-header id="header" action="close">
         <h1 id="activityTitle"></h1>
-      </header>
+      </gaia-header>
 
       <footer id="open-toolbar">
         <button class="toolbarButton pageUp" title="Previous Page" id="previous" data-l10n-id="previous"></button>
