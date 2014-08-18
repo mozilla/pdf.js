@@ -1027,7 +1027,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .horizontalToolbarSeparator {
-  display: block; 
+  display: block;
   margin: 0 0 4px 0;
   height: 1px;
   width: 100%;
@@ -1315,6 +1315,11 @@ canvas {
   position: absolute;
   white-space: pre;
   cursor: text;
+  -webkit-transform-origin: 0% 0%;
+  -moz-transform-origin: 0% 0%;
+  -o-transform-origin: 0% 0%;
+  -ms-transform-origin: 0% 0%;
+  transform-origin: 0% 0%;
 }
 
 .textLayer .highlight {
@@ -1489,7 +1494,7 @@ canvas {
 }
 
 .dialog .separator {
-  display: block; 
+  display: block;
   margin: 4px 0 4px 0;
   height: 1px;
   width: 100%;
