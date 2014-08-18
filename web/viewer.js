@@ -274,20 +274,28 @@ var PDFView = {
   watchScroll: function pdfViewWatchScroll(viewAreaElement, state, callback) {
     state.down = true;
     state.lastY = viewAreaElement.scrollTop;
-    viewAreaElement.addEventListener('scroll', function webViewerScroll(evt) {
-      if (!PDFView.pdfDocument) {
+    state.rAF = null;
+    viewAreaElement.addEventListener('scroll', function debounceScroll(evt) {
+      if (state.rAF) {
         return;
       }
-      var currentY = viewAreaElement.scrollTop;
-      var lastY = state.lastY;
-      if (currentY > lastY) {
-        state.down = true;
-      } else if (currentY < lastY) {
-        state.down = false;
-      }
-      // else do nothing and use previous value
-      state.lastY = currentY;
-      callback();
+      // schedule an invocation of webViewerScrolled for next animation frame.
+      state.rAF = window.requestAnimationFrame(function webViewerScrolled() {
+        state.rAF = null;
+        if (!PDFView.pdfDocument) {
+          return;
+        }
+        var currentY = viewAreaElement.scrollTop;
+        var lastY = state.lastY;
+        if (currentY > lastY) {
+          state.down = true;
+        } else if (currentY < lastY) {
+          state.down = false;
+        }
+        // else do nothing and use previous value
+        state.lastY = currentY;
+        callback();
+      });
     }, true);
   },
 
