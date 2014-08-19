@@ -1027,7 +1027,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .horizontalToolbarSeparator {
-  display: block; 
+  display: block;
   margin: 0 0 4px 0;
   height: 1px;
   width: 100%;
@@ -1305,8 +1305,6 @@ canvas {
   top: 0;
   right: 0;
   bottom: 0;
-  color: #000;
-  font-family: sans-serif;
   overflow: hidden;
 }
 
@@ -1315,6 +1313,11 @@ canvas {
   position: absolute;
   white-space: pre;
   cursor: text;
+  -webkit-transform-origin: 0% 0%;
+  -moz-transform-origin: 0% 0%;
+  -o-transform-origin: 0% 0%;
+  -ms-transform-origin: 0% 0%;
+  transform-origin: 0% 0%;
 }
 
 .textLayer .highlight {
@@ -1489,7 +1492,7 @@ canvas {
 }
 
 .dialog .separator {
-  display: block; 
+  display: block;
   margin: 4px 0 4px 0;
   height: 1px;
   width: 100%;
@@ -1672,7 +1675,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     background: url(images/toolbarButton-menuArrows@2x.png) no-repeat;
     background-size: 7px 16px;
   }
-  
+
   html[dir='ltr'] .toolbarButton#sidebarToggle::before {
     content: url(images/toolbarButton-sidebarToggle@2x.png);
   }
@@ -1962,4 +1965,3 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     display: none;
   }
 }
-
