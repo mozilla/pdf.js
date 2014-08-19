@@ -91,7 +91,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       }
     },
 
-    ensureByte: function ChunkedStream_ensureRange(pos) {
+    ensureByte: function ChunkedStream_ensureByte(pos) {
       var chunk = Math.floor(pos / this.chunkSize);
       if (chunk === this.lastSuccessfulEnsureByteChunk) {
         return;
