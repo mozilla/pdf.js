@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ColorSpace, DecodeStream, error, info, isArray, ImageKind, isStream,
-           JpegStream, JpxImage, Name, Promise, Stream, warn */
+/* globals assert, ColorSpace, DecodeStream, error, info, isArray, ImageKind,
+           isStream, JpegStream, JpxImage, Name, Promise, Stream, warn */
 
 'use strict';
 
@@ -531,10 +531,11 @@ var PDFImage = (function PDFImageClosure() {
         var kind;
         if (this.colorSpace.name === 'DeviceGray' && bpc === 1) {
           kind = ImageKind.GRAYSCALE_1BPP;
-        } else if (this.colorSpace.name === 'DeviceRGB' && bpc === 8) {
+        } else if (this.colorSpace.name === 'DeviceRGB' && bpc === 8 &&
+                   !this.needsDecode) {
           kind = ImageKind.RGB_24BPP;
         }
-        if (kind && !this.smask && !this.mask && !this.needsDecode &&
+        if (kind && !this.smask && !this.mask &&
             drawWidth === originalWidth && drawHeight === originalHeight) {
           imgData.kind = kind;
 
@@ -550,6 +551,14 @@ var PDFImage = (function PDFImageClosure() {
             var newArray = new Uint8Array(imgArray.length);
             newArray.set(imgArray);
             imgData.data = newArray;
+          }
+          if (this.needsDecode) {
+            // Invert the buffer (which must be grayscale if we reached here).
+            assert(kind === ImageKind.GRAYSCALE_1BPP);
+            var buffer = imgData.data;
+            for (var i = 0, ii = buffer.length; i < ii; i++) {
+              buffer[i] ^= 0xff;
+            }
           }
           return imgData;
         }
