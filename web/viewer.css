@@ -1283,12 +1283,6 @@ canvas {
   background-color: white;
 }
 
-.annotLink > a:hover {
-  opacity: 0.2;
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
-}
-
 .loadingIcon {
   position: absolute;
   display: block;
@@ -1350,52 +1344,21 @@ canvas {
 ::selection { background:rgba(0,0,255,0.3); }
 ::-moz-selection { background:rgba(0,0,255,0.3); }
 
-.annotationHighlight {
+.annotationLayer > section {
   position: absolute;
-  border: 2px #FFFF99 solid;
 }
 
-.annotText > img {
-  position: absolute;
-  cursor: pointer;
-}
-
-.annotTextContentWrapper {
-  position: absolute;
-  width: 20em;
-}
-
-.annotTextContent {
-  z-index: 200;
-  float: left;
-  max-width: 20em;
-  background-color: #FFFF99;
-  box-shadow: 0px 2px 5px #333;
-  border-radius: 2px;
-  padding: 0.6em;
-  cursor: pointer;
-}
-
-.annotTextContent > h1 {
-  font-size: 1em;
-  border-bottom: 1px solid #000000;
-  padding-bottom: 0.2em;
-}
-
-.annotTextContent > p {
-  padding-top: 0.2em;
-}
-
-.annotLink > a {
+.linkAnnotation > a {
   position: absolute;
   font-size: 1em;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  outline: none;
 }
 
-.annotLink > a /* -ms-a */ {
+.linkAnnotation > a /* -ms-a */ {
   background: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAA\
                    LAAAAAABAAEAAAIBRAA7") 0 0 repeat;
 }
