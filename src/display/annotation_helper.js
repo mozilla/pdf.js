@@ -14,239 +14,137 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, Util, AnnotationType */
+/* globals PDFJS, Util, AnnotationType, AnnotationBorderStyleType,
+           CustomStyle, warn */
 
 'use strict';
 
-var HIGHLIGHT_OFFSET = 4; // px
-var ANNOT_MIN_SIZE = 10; // px
+var BORDER_SPACING = 2; // px
+var UNDERLINE_PADDING = 1; // px
 
 var AnnotationUtils = (function AnnotationUtilsClosure() {
-  // TODO(mack): This dupes some of the logic in CanvasGraphics.setFont()
-  function setTextStyles(element, item, fontObj) {
+  function getContainer(data, view, viewport) {
+    var container = document.createElement('section');
 
-    var style = element.style;
-    style.fontSize = item.fontSize + 'px';
-    style.direction = item.fontDirection < 0 ? 'rtl': 'ltr';
+    // Normalize rectangle
+    data.rectangle = Util.normalizeRect([
+      data.rectangle[0],
+      view[3] - data.rectangle[1] + view[1],
+      data.rectangle[2],
+      view[3] - data.rectangle[3] + view[1]
+    ]);
 
-    if (!fontObj) {
-      return;
+    // Initial top, left, width and height
+    var left = data.rectangle[0];
+    var top = data.rectangle[1];
+    var width = data.rectangle[2] - data.rectangle[0];
+    var height = data.rectangle[3] - data.rectangle[1];
+
+    // Transform
+    CustomStyle.setProp('transform', container,
+                        'matrix(' + viewport.transform.join(',') + ')');
+    CustomStyle.setProp('transformOrigin', container,
+      -data.rectangle[0] + 'px ' + -data.rectangle[1] + 'px');
+
+    // ID
+    container.setAttribute('data-annotation-id', data.id);
+
+    // Border
+    var spacing = 0;
+    if (data.borderStyle.width > 0) {
+      // Border width
+      container.style.borderWidth = data.borderStyle.width + 'px';
+
+      // Horizontal and vertical border radius
+      var radius = data.borderStyle.horizontalCornerRadius + 'px / ' +
+                   data.borderStyle.verticalCornerRadius + 'px';
+      CustomStyle.setProp('borderRadius', container, radius);
+
+      // Border style
+      switch (data.borderStyle.style) {
+        case AnnotationBorderStyleType.SOLID:
+          container.style.borderStyle = 'solid';
+
+          // Make sure the borders are not too close to the text.
+          spacing = BORDER_SPACING * data.borderStyle.width;
+          left -= spacing;
+          top -= spacing;
+          width += data.borderStyle.width;
+          height += data.borderStyle.width;
+          break;
+
+        case AnnotationBorderStyleType.DASHED:
+          container.style.borderStyle = 'dashed';
+
+          // Make sure the borders are not too close to the text.
+          spacing = BORDER_SPACING * data.borderStyle.width;
+          left -= spacing;
+          top -= spacing;
+          width += data.borderStyle.width;
+          height += data.borderStyle.width;
+          break;
+
+        case AnnotationBorderStyleType.BEVELED:
+          warn('Unimplemented border style: beveled');
+          break;
+
+        case AnnotationBorderStyleType.INSET:
+          warn('Unimplemented border style: inset');
+          break;
+
+        case AnnotationBorderStyleType.UNDERLINE:
+          container.style.borderBottomStyle = 'solid';
+          container.style.paddingBottom = UNDERLINE_PADDING + 'px';
+          break;
+
+        default:
+          break;
+      }
     }
 
-    style.fontWeight = fontObj.black ?
-      (fontObj.bold ? 'bolder' : 'bold') :
-      (fontObj.bold ? 'bold' : 'normal');
-    style.fontStyle = fontObj.italic ? 'italic' : 'normal';
-
-    var fontName = fontObj.loadedName;
-    var fontFamily = fontName ? '"' + fontName + '", ' : '';
-    // Use a reasonable default font if the font doesn't specify a fallback
-    var fallbackName = fontObj.fallbackName || 'Helvetica, sans-serif';
-    style.fontFamily = fontFamily + fallbackName;
-  }
-
-  // TODO(mack): Remove this, it's not really that helpful.
-  function getEmptyContainer(tagName, rect, borderWidth) {
-    var bWidth = borderWidth || 0;
-    var element = document.createElement(tagName);
-    element.style.borderWidth = bWidth + 'px';
-    var width = rect[2] - rect[0] - 2 * bWidth;
-    var height = rect[3] - rect[1] - 2 * bWidth;
-    element.style.width = width + 'px';
-    element.style.height = height + 'px';
-    return element;
-  }
-
-  function initContainer(item) {
-    var container = getEmptyContainer('section', item.rect, item.borderWidth);
-    container.style.backgroundColor = item.color;
-
-    var color = item.color;
-    var rgb = [];
-    for (var i = 0; i < 3; ++i) {
-      rgb[i] = Math.round(color[i] * 255);
-    }
-    item.colorCssRgb = Util.makeCssRgb(rgb);
-
-    var highlight = document.createElement('div');
-    highlight.className = 'annotationHighlight';
-    highlight.style.left = highlight.style.top = -HIGHLIGHT_OFFSET + 'px';
-    highlight.style.right = highlight.style.bottom = -HIGHLIGHT_OFFSET + 'px';
-    highlight.setAttribute('hidden', true);
-
-    item.highlightElement = highlight;
-    container.appendChild(item.highlightElement);
+    // Set top, left, width and height as pixels
+    container.style.top = top + 'px';
+    container.style.left = left + 'px';
+    container.style.width = width + 'px';
+    container.style.height = height + 'px';
 
     return container;
   }
 
-  function getHtmlElementForTextWidgetAnnotation(item, commonObjs) {
-    var element = getEmptyContainer('div', item.rect, 0);
-    element.style.display = 'table';
+  function getHtmlElementForLinkAnnotation(data, view, viewport) {
+    // Container
+    var container = getContainer(data, view, viewport);
+    container.className = 'linkAnnotation';
 
-    var content = document.createElement('div');
-    content.textContent = item.fieldValue;
-    var textAlignment = item.textAlignment;
-    content.style.textAlign = ['left', 'center', 'right'][textAlignment];
-    content.style.verticalAlign = 'middle';
-    content.style.display = 'table-cell';
-
-    var fontObj = item.fontRefName ?
-      commonObjs.getData(item.fontRefName) : null;
-    setTextStyles(content, item, fontObj);
-
-    element.appendChild(content);
-
-    return element;
-  }
-
-  function getHtmlElementForTextAnnotation(item) {
-    var rect = item.rect;
-
-    // sanity check because of OOo-generated PDFs
-    if ((rect[3] - rect[1]) < ANNOT_MIN_SIZE) {
-      rect[3] = rect[1] + ANNOT_MIN_SIZE;
-    }
-    if ((rect[2] - rect[0]) < ANNOT_MIN_SIZE) {
-      rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
-    }
-
-    var container = initContainer(item);
-    container.className = 'annotText';
-
-    var image  = document.createElement('img');
-    image.style.height = container.style.height;
-    image.style.width = container.style.width;
-    var iconName = item.name;
-    image.src = PDFJS.imageResourcesPath + 'annotation-' +
-      iconName.toLowerCase() + '.svg';
-    image.alt = '[{{type}} Annotation]';
-    image.dataset.l10nId = 'text_annotation_type';
-    image.dataset.l10nArgs = JSON.stringify({type: iconName});
-
-    var contentWrapper = document.createElement('div');
-    contentWrapper.className = 'annotTextContentWrapper';
-    contentWrapper.style.left = Math.floor(rect[2] - rect[0] + 5) + 'px';
-    contentWrapper.style.top = '-10px';
-
-    var content = document.createElement('div');
-    content.className = 'annotTextContent';
-    content.setAttribute('hidden', true);
-
-    var i, ii;
-    if (item.hasBgColor) {
-      var color = item.color;
-      var rgb = [];
-      for (i = 0; i < 3; ++i) {
-        // Enlighten the color (70%)
-        var c = Math.round(color[i] * 255);
-        rgb[i] = Math.round((255 - c) * 0.7) + c;
-      }
-      content.style.backgroundColor = Util.makeCssRgb(rgb);
-    }
-
-    var title = document.createElement('h1');
-    var text = document.createElement('p');
-    title.textContent = item.title;
-
-    if (!item.content && !item.title) {
-      content.setAttribute('hidden', true);
-    } else {
-      var e = document.createElement('span');
-      var lines = item.content.split(/(?:\r\n?|\n)/);
-      for (i = 0, ii = lines.length; i < ii; ++i) {
-        var line = lines[i];
-        e.appendChild(document.createTextNode(line));
-        if (i < (ii - 1)) {
-          e.appendChild(document.createElement('br'));
-        }
-      }
-      text.appendChild(e);
-
-      var pinned = false;
-
-      var showAnnotation = function showAnnotation(pin) {
-        if (pin) {
-          pinned = true;
-        }
-        if (content.hasAttribute('hidden')) {
-          container.style.zIndex += 1;
-          content.removeAttribute('hidden');
-        }
-      };
-
-      var hideAnnotation = function hideAnnotation(unpin) {
-        if (unpin) {
-          pinned = false;
-        }
-        if (!content.hasAttribute('hidden') && !pinned) {
-          container.style.zIndex -= 1;
-          content.setAttribute('hidden', true);
-        }
-      };
-
-      var toggleAnnotation = function toggleAnnotation() {
-        if (pinned) {
-          hideAnnotation(true);
-        } else {
-          showAnnotation(true);
-        }
-      };
-
-      image.addEventListener('click', function image_clickHandler() {
-        toggleAnnotation();
-      }, false);
-      image.addEventListener('mouseover', function image_mouseOverHandler() {
-        showAnnotation();
-      }, false);
-      image.addEventListener('mouseout', function image_mouseOutHandler() {
-        hideAnnotation();
-      }, false);
-
-      content.addEventListener('click', function content_clickHandler() {
-        hideAnnotation(true);
-      }, false);
-    }
-
-    content.appendChild(title);
-    content.appendChild(text);
-    contentWrapper.appendChild(content);
-    container.appendChild(image);
-    container.appendChild(contentWrapper);
-
-    return container;
-  }
-
-  function getHtmlElementForLinkAnnotation(item) {
-    var container = initContainer(item);
-    container.className = 'annotLink';
-
-    container.style.borderColor = item.colorCssRgb;
-    container.style.borderStyle = 'solid';
-
+    // Link
     var link = document.createElement('a');
-    link.href = link.title = item.url || '';
-
+    if (data.action && data.action.type === 'URI') {
+      link.href = link.title = data.action.url;
+    }
     container.appendChild(link);
 
+    // Border color
+    if (data.color) {
+      container.style.borderColor = Util.makeCssRgb(data.color);
+    } else {
+      // Default color is black, but that's not obvious from the spec.
+      container.style.borderColor = 'rgb(0,0,0)';
+    }
+
     return container;
   }
 
-  function getHtmlElement(data, objs) {
-    switch (data.annotationType) {
-      case AnnotationType.WIDGET:
-        return getHtmlElementForTextWidgetAnnotation(data, objs);
-      case AnnotationType.TEXT:
-        return getHtmlElementForTextAnnotation(data);
+  function getHtmlElement(data, view, viewport) {
+    switch (data.type) {
       case AnnotationType.LINK:
-        return getHtmlElementForLinkAnnotation(data);
+        return getHtmlElementForLinkAnnotation(data, view, viewport);
+
       default:
-        throw new Error('Unsupported annotationType: ' + data.annotationType);
+        return;
     }
   }
 
-  return {
-    getHtmlElement: getHtmlElement
-  };
+  return { getHtmlElement: getHtmlElement };
 })();
+
 PDFJS.AnnotationUtils = AnnotationUtils;
