@@ -1315,6 +1315,11 @@ canvas {
   position: absolute;
   white-space: pre;
   cursor: text;
+  -ms-transform-origin: 0% 0% 0px;
+  -moz-transform-origin: 0% 0% 0px;
+  -webkit-transform-origin: 0% 0% 0px;
+  -o-transform-origin: 0% 0% 0px;
+  transform-origin: 0% 0% 0px;
 }
 
 .textLayer .highlight {

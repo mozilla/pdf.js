@@ -91,7 +91,6 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
             transform = 'rotate(' + rotation + 'deg) ' + transform;
           }
           CustomStyle.setProp('transform' , textDiv, transform);
-          CustomStyle.setProp('transformOrigin' , textDiv, '0% 0%');
         }
       }
 
