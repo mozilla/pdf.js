@@ -18,8 +18,8 @@
            isArrayBuffer, isName, isStream, isString, createPromiseCapability,
            Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
-           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
-           */
+           MissingDataException, Promise, AnnotationLayer, ObjectLoader,
+           OperatorList */
 
 'use strict';
 
@@ -29,6 +29,7 @@ var Page = (function PageClosure() {
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
     this.pdfManager = pdfManager;
+    this.annotationLayer = new AnnotationLayer();
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
     this.xref = xref;
@@ -204,8 +205,9 @@ var Page = (function PageClosure() {
           return pageOpList;
         }
 
-        var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageOpList, pdfManager, partialEvaluator, intent);
+        var annotationsReadyPromise =
+          self.annotationLayer.appendToOperatorList(annotations, pageOpList,
+                                                    partialEvaluator, intent);
         return annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
           return pageOpList;
@@ -246,11 +248,11 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData() {
+    getAnnotations: function Page_getAnnotations() {
       var annotations = this.annotations;
       var annotationsData = [];
       for (var i = 0, n = annotations.length; i < n; ++i) {
-        annotationsData.push(annotations[i].getData());
+        annotationsData.push(annotations[i]);
       }
       return annotationsData;
     },
@@ -259,8 +261,9 @@ var Page = (function PageClosure() {
       var annotations = [];
       var annotationRefs = (this.annotationRefs || []);
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
-        var annotationRef = annotationRefs[i];
-        var annotation = Annotation.fromRef(this.xref, annotationRef);
+        var ref = annotationRefs[i];
+        var dict = this.xref.fetchIfRef(ref);
+        var annotation = this.annotationLayer.getAnnotation(dict, ref);
         if (annotation) {
           annotations.push(annotation);
         }
