@@ -239,17 +239,23 @@ var PageView = function pageView(container, id, scale,
   var self = this;
 
   function setupAnnotations(pageDiv, pdfPage, viewport) {
+    function bindLink(link, data) {
+      var destination = (data.destination ? data.destination :
+                         data.action.destination);
+      link.className = 'internalLink';
 
-    function bindLink(link, dest) {
-      link.href = PDFView.getDestinationHash(dest);
-      link.onclick = function pageViewSetupLinksOnclick() {
-        if (dest) {
-          PDFView.navigateTo(dest);
+      if (data.action && data.action.type === 'GoToR') {
+        link.href = PDFView.getAnchorUrl(data.action.url + '#' +
+                                         escape(destination));
+        if (data.action.newWindow) {
+          link.target = '_blank';
         }
-        return false;
-      };
-      if (dest) {
-        link.className = 'internalLink';
+      } else {
+        link.href = PDFView.getDestinationHash(destination);
+        link.onclick = function pageViewSetupLinksOnclick() {
+          PDFView.navigateTo(destination);
+          return false;
+        };
       }
     }
 
@@ -300,64 +306,52 @@ var PageView = function pageView(container, id, scale,
       link.className = 'internalLink';
     }
 
-    pdfPage.getAnnotations().then(function(annotationsData) {
+    pdfPage.getAnnotations().then(function(annotations) {
       viewport = viewport.clone({ dontFlip: true });
-      var transform = viewport.transform;
-      var transformStr = 'matrix(' + transform.join(',') + ')';
-      var data, element, i, ii;
+      var data, element, i, len;
 
       if (self.annotationLayer) {
-        // If an annotationLayer already exists, refresh its children's
-        // transformation matrices
-        for (i = 0, ii = annotationsData.length; i < ii; i++) {
-          data = annotationsData[i];
-          element = self.annotationLayer.querySelector(
+        // If an annotationLayer already exists, refresh the
+        // transformation matrices of its children
+        var transformString = viewport.transform.join(',');
+        for (i = 0, len = annotations.length; i < len; i++) {
+          data = annotations[i];
+          container = self.annotationLayer.querySelector(
             '[data-annotation-id="' + data.id + '"]');
-          if (element) {
-            CustomStyle.setProp('transform', element, transformStr);
+          if (container) {
+            CustomStyle.setProp('transform', container,
+                                'matrix(' + transformString + ')');
           }
         }
         // See this.reset()
         self.annotationLayer.removeAttribute('hidden');
       } else {
-        for (i = 0, ii = annotationsData.length; i < ii; i++) {
-          data = annotationsData[i];
-          if (!data || !data.hasHtml) {
-            continue;
-          }
+        for (i = 0, len = annotations.length; i < len; i++) {
+          // Get the HTML element of the annotation.
+          data = annotations[i];
+          element = PDFJS.AnnotationUtils.getHtmlElement(data, pdfPage.view,
+                                                         viewport);
 
-          element = PDFJS.AnnotationUtils.getHtmlElement(data,
-                                                         pdfPage.commonObjs);
-          element.setAttribute('data-annotation-id', data.id);
-          mozL10n.translate(element);
-
-          var rect = data.rect;
-          var view = pdfPage.view;
-          rect = PDFJS.Util.normalizeRect([
-            rect[0],
-            view[3] - rect[1] + view[1],
-            rect[2],
-            view[3] - rect[3] + view[1]
-          ]);
-          element.style.left = rect[0] + 'px';
-          element.style.top = rect[1] + 'px';
-          element.style.position = 'absolute';
-
-          CustomStyle.setProp('transform', element, transformStr);
-          var transformOriginStr = -rect[0] + 'px ' + -rect[1] + 'px';
-          CustomStyle.setProp('transformOrigin', element, transformOriginStr);
-
-          if (data.subtype === 'Link' && !data.url) {
+          // Link annotation: handle link types
+          if (data.type === PDFJS.Util.AnnotationType.LINK) {
             var link = element.getElementsByTagName('a')[0];
-            if (link) {
-              if (data.action) {
-                bindNamedAction(link, data.action);
-              } else {
-                bindLink(link, ('dest' in data) ? data.dest : null);
+            if (data.destination) { // Destination
+              bindLink(link, data);
+            } else if (data.action.type !== 'URI') { // Action
+              switch (data.action.type) {
+                case 'GoTo':
+                case 'GoToR':
+                  bindLink(link, data);
+                  break;
+
+                case 'Named':
+                  bindNamedAction(link, data.action.action);
+                  break;
               }
             }
           }
 
+          // Create annotation layer if we do not have one yet.
           if (!self.annotationLayer) {
             var annotationLayerDiv = document.createElement('div');
             annotationLayerDiv.className = 'annotationLayer';
@@ -365,6 +359,7 @@ var PageView = function pageView(container, id, scale,
             self.annotationLayer = annotationLayerDiv;
           }
 
+          // Append the annotation to the annotation layer.
           self.annotationLayer.appendChild(element);
         }
       }

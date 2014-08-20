@@ -597,6 +597,9 @@ var Util = PDFJS.Util = (function UtilClosure() {
 
   var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
 
+  // Makes annotation types available for web/page_view.js
+  Util.AnnotationType = AnnotationType;
+
   // makeCssRgb() can be called thousands of times. Using |rgbBuf| avoids
   // creating many intermediate strings.
   Util.makeCssRgb = function Util_makeCssRgb(rgb) {
