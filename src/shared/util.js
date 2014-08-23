@@ -380,6 +380,18 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
   return MissingPDFException;
 })();
 
+var AbortGetDocumentException = (function AbortGetDocumentExceptionClosure() {
+  function AbortGetDocumentException(msg) {
+    this.name = 'AbortGetDocumentException';
+    this.message = msg;
+  }
+
+  AbortGetDocumentException.prototype = new Error();
+  AbortGetDocumentException.constructor = AbortGetDocumentException;
+
+  return AbortGetDocumentException;
+})();
+
 var NotImplementedException = (function NotImplementedExceptionClosure() {
   function NotImplementedException(msg) {
     this.message = msg;
@@ -417,7 +429,6 @@ var XRefParseException = (function XRefParseExceptionClosure() {
 
   return XRefParseException;
 })();
-
 
 function bytesToString(bytes) {
   var length = bytes.length;

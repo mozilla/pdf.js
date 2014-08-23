@@ -18,7 +18,7 @@
            FontLoader, globalScope, info, isArrayBuffer, loadJpegStream,
            MessageHandler, PDFJS, Promise, StatTimer, warn,
            PasswordResponses, Util, loadScript, createPromiseCapability,
-           FontFace */
+           FontFace, AbortGetDocumentException */
 
 'use strict';
 
@@ -230,6 +230,11 @@ PDFJS.getDocument = function getDocument(source,
 
   workerInitializedCapability = createPromiseCapability();
   workerReadyCapability = createPromiseCapability();
+
+  // Add the reject method of workerReadyCapability to the global object to
+  // enable aborting the current PDFJS.getDocument call.
+  PDFJS._workerReadyCapabilityReject = workerReadyCapability.reject;
+
   transport = new WorkerTransport(workerInitializedCapability,
                                   workerReadyCapability, pdfDataRangeTransport,
                                   progressCallback);
@@ -238,6 +243,19 @@ PDFJS.getDocument = function getDocument(source,
     transport.fetchDocument(params);
   });
   return workerReadyCapability.promise;
+};
+
+/**
+ * Abort the currently active PDFJS.getDocument call.
+ * NOTE: This is only effective when PDFJS.getDocument is still pending,
+ *       i.e. when it is still neither resolved nor rejected.
+ */
+PDFJS.abortGetDocument = function abortGetDocument() {
+  if (PDFJS._workerReadyCapabilityReject) {
+    var exception =
+      new AbortGetDocumentException('PDFJS.getDocument was aborted.');
+    PDFJS._workerReadyCapabilityReject(exception);
+  }
 };
 
 /**

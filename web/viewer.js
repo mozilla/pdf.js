@@ -605,6 +605,10 @@ var PDFView = {
   },
 
   close: function pdfViewClose() {
+    if (this.loading) {
+      PDFJS.abortGetDocument();
+    }
+
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
@@ -678,6 +682,15 @@ var PDFView = {
           name = exception.name;
           message = exception.message;
         }
+
+        if (name === 'AbortGetDocumentException') {
+          console.log(message);
+          self.loading = false;
+          // No need to display the fallback bar (or errorWrapper) when
+          // PDFJS.getDocument was aborted during document load.
+          return;
+        }
+
         var loadingErrorMessage = mozL10n.get('loading_error', null,
           'An error occurred while loading the PDF.');
 
