@@ -865,36 +865,35 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.workerReadyCapability.resolve(pdfDocument);
       }, this);
 
-      messageHandler.on('NeedPassword', function transportPassword(data) {
+      messageHandler.on('NeedPassword',
+                        function transportNeedPassword(exception) {
         if (this.passwordCallback) {
           return this.passwordCallback(updatePassword,
                                        PasswordResponses.NEED_PASSWORD);
         }
-        this.workerReadyCapability.reject(data.exception.message,
-                                          data.exception);
+        this.workerReadyCapability.reject(exception);
       }, this);
 
-      messageHandler.on('IncorrectPassword', function transportBadPass(data) {
+      messageHandler.on('IncorrectPassword',
+                        function transportIncorrectPassword(exception) {
         if (this.passwordCallback) {
           return this.passwordCallback(updatePassword,
                                        PasswordResponses.INCORRECT_PASSWORD);
         }
-        this.workerReadyCapability.reject(data.exception.message,
-                                          data.exception);
+        this.workerReadyCapability.reject(exception);
       }, this);
 
-      messageHandler.on('InvalidPDF', function transportInvalidPDF(data) {
-        this.workerReadyCapability.reject(data.exception.name, data.exception);
+      messageHandler.on('InvalidPDF', function transportInvalidPDF(exception) {
+        this.workerReadyCapability.reject(exception);
       }, this);
 
-      messageHandler.on('MissingPDF', function transportMissingPDF(data) {
-        this.workerReadyCapability.reject(data.exception.message,
-                                          data.exception);
+      messageHandler.on('MissingPDF', function transportMissingPDF(exception) {
+        this.workerReadyCapability.reject(exception);
       }, this);
 
-      messageHandler.on('UnknownError', function transportUnknownError(data) {
-        this.workerReadyCapability.reject(data.exception.message,
-                                          data.exception);
+      messageHandler.on('UnknownError',
+                        function transportUnknownError(exception) {
+        this.workerReadyCapability.reject(exception);
       }, this);
 
       messageHandler.on('DataLoaded', function transportPage(data) {
