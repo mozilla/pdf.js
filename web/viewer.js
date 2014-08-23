@@ -359,7 +359,9 @@ var PDFView = {
           scale = Math.min(pageWidthScale, pageHeightScale);
           break;
         case 'auto':
-          scale = Math.min(MAX_AUTO_SCALE, pageWidthScale);
+          var isLandscape = (currentPage.width > currentPage.height);
+          var horizontalScale = isLandscape ? pageHeightScale : pageWidthScale;
+          scale = Math.min(MAX_AUTO_SCALE, horizontalScale);
           break;
         default:
           console.error('pdfViewSetScale: \'' + value +
