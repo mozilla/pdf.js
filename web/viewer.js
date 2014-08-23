@@ -1213,7 +1213,7 @@ var PDFView = {
   setInitialView: function pdfViewSetInitialView(storedHash, scale) {
     // Reset the current scale, as otherwise the page's scale might not get
     // updated if the zoom level stayed the same.
-    this.currentScale = 0;
+    this.currentScale = UNKNOWN_SCALE;
     this.currentScaleValue = null;
     // When opening a new file (when one is already loaded in the viewer):
     // Reset 'currentPageNumber', since otherwise the page's scale will be wrong
