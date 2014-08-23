@@ -672,24 +672,29 @@ var PDFView = {
         self.load(pdfDocument, scale);
         self.loading = false;
       },
-      function getDocumentError(message, exception) {
+      function getDocumentError(exception) {
+        var name, message;
+        if (exception) {
+          name = exception.name;
+          message = exception.message;
+        }
         var loadingErrorMessage = mozL10n.get('loading_error', null,
           'An error occurred while loading the PDF.');
 
-        if (exception && exception.name === 'InvalidPDFException') {
+        if (name === 'InvalidPDFException') {
           // change error message also for other builds
           loadingErrorMessage = mozL10n.get('invalid_file_error', null,
-                                        'Invalid or corrupted PDF file.');
+                                            'Invalid or corrupted PDF file.');
 //#if B2G
 //        window.alert(loadingErrorMessage);
 //        return window.close();
 //#endif
         }
 
-        if (exception && exception.name === 'MissingPDFException') {
+        if (name === 'MissingPDFException') {
           // special message for missing PDF's
           loadingErrorMessage = mozL10n.get('missing_file_error', null,
-                                        'Missing PDF file.');
+                                            'Missing PDF file.');
 
 //#if B2G
 //        window.alert(loadingErrorMessage);
