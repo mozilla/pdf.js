@@ -305,7 +305,8 @@
       "rounds": 1,
       "type": "eq",
       "link": true,
-      "lastPage": 1
+      "lastPage": 1,
+      "about": "The same file as issue2337."
     },
     {  "id": "thuluthfont-text",
        "file": "pdfs/ThuluthFeatures.pdf",
@@ -1335,14 +1336,6 @@
       "lastPage": 1,
       "link": true,
       "type": "eq"
-    },
-    {  "id": "issue2337",
-      "file": "pdfs/issue2337.pdf",
-      "md5": "ea10f4131202b9b8f2a6cb7770d3f185",
-      "rounds": 1,
-      "lastPage": 1,
-      "link": true,
-      "type": "load"
     },
     {  "id": "issue2074",
       "file": "pdfs/issue2074.pdf",
