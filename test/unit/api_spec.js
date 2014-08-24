@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
-           isArray */
+           isArray, AbortGetDocumentException */
 
 'use strict';
 
@@ -77,6 +77,13 @@ describe('api', function() {
         var promise = PDFJS.getDocument(typedArrayPdf);
         waitsForPromiseResolved(promise, function(data) {
           expect(true).toEqual(true);
+        });
+      });
+      it('aborts creation of pdf doc from URL', function() {
+        var promise = PDFJS.getDocument(basicApiUrl);
+        PDFJS.abortGetDocument();
+        waitsForPromiseRejected(promise, function(error) {
+          expect(error instanceof AbortGetDocumentException).toEqual(true);
         });
       });
     });
