@@ -410,6 +410,9 @@ html[dir='rtl'] .findbar {
   background-repeat: no-repeat;
   background-position: right;
 }
+html[dir='rtl'] #findInput[data-status="pending"] {
+  background-position: left;
+}
 
 .secondaryToolbar {
   padding: 6px;
