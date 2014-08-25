@@ -1534,6 +1534,12 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     left: 186px;
   }
 
+  .toolbarField.pageNumber.visiblePageIsLoading,
+  #findInput[data-status="pending"] {
+    background-image: url(images/loading-small@2x.png);
+    background-size: 16px 17px;
+  }
+
   .dropdownToolbarButton {
     background: url(images/toolbarButton-menuArrows@2x.png) no-repeat;
     background-size: 7px 16px;
