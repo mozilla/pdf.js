@@ -879,6 +879,7 @@ target.chromium = function() {
         'extensions/chromium/*.css',
         'extensions/chromium/icon*.png',],
        CHROME_BUILD_DIR],
+      ['extensions/chromium/pageAction/*.*', CHROME_BUILD_DIR + '/pageAction'],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['external/bcmaps/*', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
