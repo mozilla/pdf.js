@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* jshint esnext:true */
+/* jshint esnext:true, maxlen:120 */
+/* globals Components, Services */
 
 'use strict';
 
@@ -23,7 +24,7 @@ this.EXPORTED_SYMBOLS = ['PdfJsTelemetry'];
 const Cu = Components.utils;
 Cu.import('resource://gre/modules/Services.jsm');
 
-const ADDON_ID = "uriloader@pdf.js";
+const ADDON_ID = 'uriloader@pdf.js';
 
 var Telemetry = Services.telemetry;
 
@@ -36,9 +37,9 @@ try {
   if (ffVersion === 36) {
     // Probing FF36 to check if it has new API.
     try {
-      Telemetry.registerAddonHistogram(ADDON_ID, "PDF_36",
+      Telemetry.registerAddonHistogram(ADDON_ID, 'PDF_36',
         Telemetry.HISTOGRAM_LINEAR, 1, 40, 41);
-      var histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_36");
+      var histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_36');
       histogram.add(36);
     } catch (e) {
       oldTelemetryAPI = true;
@@ -66,47 +67,47 @@ registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_TIME_TO_VIEW_MS', Telemetry.HISTOGR
 
 this.PdfJsTelemetry = {
   onViewerIsUsed: function () {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_USED");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_USED');
     histogram.add(true);
   },
   onFallback: function () {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_FALLBACK_SHOWN");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_FALLBACK_SHOWN');
     histogram.add(true);
   },
   onDocumentSize: function (size) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_SIZE_KB");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_DOCUMENT_SIZE_KB');
     histogram.add(size / 1024);
   },
   onDocumentVersion: function (versionId) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_VERSION");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_DOCUMENT_VERSION');
     histogram.add(versionId);
   },
   onDocumentGenerator: function (generatorId) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_GENERATOR");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_DOCUMENT_GENERATOR');
     histogram.add(generatorId);
   },
   onEmbed: function (isObject) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_EMBED");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_EMBED');
     histogram.add(isObject);
   },
   onFontType: function (fontTypeId) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_FONT_TYPES");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_FONT_TYPES');
     histogram.add(fontTypeId);
   },
   onForm: function (isAcroform) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_FORM");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_FORM');
     histogram.add(isAcroform);
   },
   onPrint: function () {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_PRINT");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_PRINT');
     histogram.add(true);
   },
   onStreamType: function (streamTypeId) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_STREAM_TYPES");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_STREAM_TYPES');
     histogram.add(streamTypeId);
   },
   onTimeToView: function (ms) {
-    let histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_VIEWER_TIME_TO_VIEW_MS");
+    let histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_VIEWER_TIME_TO_VIEW_MS');
     histogram.add(ms);
   }
 };
