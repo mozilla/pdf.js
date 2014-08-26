@@ -1460,8 +1460,10 @@ target.lint = function() {
     echo('jshint is not installed -- installing...');
     exec('npm install jshint@2.4.x'); // TODO read version from package.json
   }
+  // Lint the Firefox specific *.jsm files.
+  var options = '--extra-ext .jsm';
 
-  var exitCode = exec('"' + jshintPath + '" .').code;
+  var exitCode = exec('"' + jshintPath + '" ' + options + ' .').code;
   if (exitCode === 0) {
     echo('files checked, no errors found');
   }
