@@ -184,7 +184,7 @@ var DocumentProperties = {
       minutes += offsetMinutes;
     } else if (utRel === '+') {
       hours -= offsetHours;
-      minutes += offsetMinutes;
+      minutes -= offsetMinutes;
     }
 
     // Return the new date format from the user's locale.
