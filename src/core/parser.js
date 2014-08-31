@@ -386,6 +386,7 @@ var Parser = (function ParserClosure() {
         }
         if (name === 'CCITTFaxDecode' || name === 'CCF') {
           xrefStreamStats[StreamType.CCF] = true;
+          params = this.fetchIfRef(params);
           return new CCITTFaxStream(stream, maybeLength, params);
         }
         if (name === 'RunLengthDecode' || name === 'RL') {
