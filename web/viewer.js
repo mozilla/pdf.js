@@ -587,13 +587,15 @@ var PDFView = {
 //#endif
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
-    this.url = url;
+    if (url === null) {
+      this.url = url;
+    }
     try {
-      this.setTitle(decodeURIComponent(getFileName(url)) || url);
+      this.setTitle(decodeURIComponent(getFileName(this.url)) || this.url);
     } catch (e) {
       // decodeURIComponent may throw URIError,
       // fall back to using the unprocessed url in that case
-      this.setTitle(url);
+      this.setTitle(this.url);
     }
   },
 
@@ -641,7 +643,7 @@ var PDFView = {
 
     var parameters = {password: password};
     if (typeof url === 'string') { // URL
-      this.setTitleUsingUrl(url);
+      this.setTitleUsingUrl();
       parameters.url = url;
     } else if (url && 'byteLength' in url) { // ArrayBuffer
       parameters.data = url;
@@ -2515,9 +2517,11 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //#if B2G
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
 //  var blob = activity.source.data.blob;
+//  var fileUrl = activity.source.data.url;
 //  PDFJS.maxImageSize = 1024 * 1024;
 //
 //  var url = URL.createObjectURL(blob);
+//  PDFView.url = fileUrl;
 //  PDFView.open(url);
 //
 //  var header = document.getElementById('header');
