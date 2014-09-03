@@ -135,6 +135,11 @@ var GrabToPan = (function GrabToPanClosure() {
       event.preventDefault();
       event.stopPropagation();
       this.document.documentElement.classList.add(this.CSS_CLASS_GRABBING);
+
+      var focusedElement = document.activeElement;
+      if (focusedElement && !focusedElement.contains(event.target)) {
+        focusedElement.blur();
+      }
     },
 
     /**
