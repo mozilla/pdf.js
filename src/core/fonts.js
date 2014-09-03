@@ -517,6 +517,49 @@ function mapSpecialUnicodeValues(code) {
     case 0xF6DB: // trademarkserif
       return 0x2122; // trademark
 
+    // The following mappings are necessary for some 'Symbol' encoded chars.
+    case 0xF8F1: // bracelefttp
+      return 0x23A7;
+    case 0xF8F2: // braceleftmid
+      return 0x23A8;
+    case 0xF8F3: // braceleftbt
+      return 0x23A9;
+
+    case 0xF8FC: // bracerighttp
+      return 0x23AB;
+    case 0xF8FD: // bracerightmid
+      return 0x23AC;
+    case 0xF8FE: // bracerightbt
+      return 0x23AD;
+
+    case 0xF8EE: // bracketlefttp
+      return 0x23A1;
+    case 0xF8EF: // bracketleftmid
+      return 0x23A2;
+    case 0xF8F0: // bracketleftbt
+      return 0x23A3;
+
+    case 0xF8F9: // bracketrighttp
+      return 0x23A4;
+    case 0xF8FA: // bracketrightmid
+      return 0x23A5;
+    case 0xF8FB: // bracketrightbt
+      return 0x23A6;
+
+    case 0xF8EB: // parenlefttp
+      return 0x239B;
+    case 0xF8EC: // parenleftmid
+      return 0x239C;
+    case 0xF8ED: // parenleftbt
+      return 0x239D;
+
+    case 0xF8F6: // parenrighttp
+      return 0x239E;
+    case 0xF8F7: // parenrightmid
+      return 0x239F;
+    case 0xF8F8: // parenrightbt
+      return 0x23A0;
+
     default:
       return code;
   }
