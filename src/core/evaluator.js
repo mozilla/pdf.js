@@ -1306,9 +1306,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // The Symbolic attribute can be misused for regular fonts
         // Heuristic: we have to check if the font is a standard one also
         if (!!(properties.flags & FontFlags.Symbolic)) {
-          encoding = (!properties.file && /Symbol/i.test(properties.name) ?
-                      Encodings.SymbolSetEncoding :
-                      Encodings.MacRomanEncoding);
+          encoding = Encodings.MacRomanEncoding;
+          if (!properties.file) {
+            if (/Symbol/i.test(properties.name)) {
+              encoding = Encodings.SymbolSetEncoding;
+            } else if (/Dingbats/i.test(properties.name)) {
+              encoding = Encodings.ZapfDingbatsEncoding;
+            }
+          }
         }
         properties.defaultEncoding = encoding;
       }

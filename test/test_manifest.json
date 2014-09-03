@@ -870,6 +870,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "ZapfDingbats",
+       "file": "pdfs/ZapfDingbats.pdf",
+       "md5": "980df9b1c86715a3d8aa2d3c807a2b2c",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3323",
        "file": "pdfs/issue3323.pdf",
        "md5": "1a14ff574013caeafa9d598269988764",
