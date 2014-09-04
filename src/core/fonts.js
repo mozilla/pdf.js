@@ -497,29 +497,42 @@ var GlyphMapForStandardFonts = {
   '3316': 578, '3379': 42785, '3393': 1159, '3416': 8377
 };
 
-// Some characters, e.g. copyrightserif, mapped to the private use area and
+// Some characters, e.g. copyrightserif, are mapped to the private use area and
 // might not be displayed using standard fonts. Mapping/hacking well-known chars
 // to the similar equivalents in the normal characters range.
+var SpecialPUASymbols = {
+  '63721': 0x00A9, // copyrightsans (0xF8E9) => copyright
+  '63193': 0x00A9, // copyrightserif (0xF6D9) => copyright
+  '63720': 0x00AE, // registersans (0xF8E8) => registered
+  '63194': 0x00AE, // registerserif (0xF6DA) => registered
+  '63722': 0x2122, // trademarksans (0xF8EA) => trademark
+  '63195': 0x2122, // trademarkserif (0xF6DB) => trademark
+  '63729': 0x23A7, // bracelefttp (0xF8F1)
+  '63730': 0x23A8, // braceleftmid (0xF8F2)
+  '63731': 0x23A9, // braceleftbt (0xF8F3)
+  '63740': 0x23AB, // bracerighttp (0xF8FC)
+  '63741': 0x23AC, // bracerightmid (0xF8FD)
+  '63742': 0x23AD, // bracerightmid (0xF8FE)
+  '63726': 0x23A1, // bracketlefttp (0xF8EE)
+  '63727': 0x23A2, // bracketleftex (0xF8EF)
+  '63728': 0x23A3, // bracketleftbt (0xF8F0)
+  '63737': 0x23A4, // bracketrighttp (0xF8F9)
+  '63738': 0x23A5, // bracketrightex (0xF8FA)
+  '63739': 0x23A6, // bracketrightbt (0xF8FB)
+  '63723': 0x239B, // parenlefttp (0xF8EB)
+  '63724': 0x239C, // parenleftex (0xF8EC)
+  '63725': 0x239D, // parenleftbt (0xF8ED)
+  '63734': 0x239E, // parenrighttp (0xF8F6)
+  '63735': 0x239F, // parenrightex (0xF8F7)
+  '63736': 0x23A0, // parenrightbt (0xF8F8)
+};
 function mapSpecialUnicodeValues(code) {
   if (code >= 0xFFF0 && code <= 0xFFFF) { // Specials unicode block.
     return 0;
+  } else if (code >= 0xF600 && code <= 0xF8FF) {
+    return (SpecialPUASymbols[code] || code);
   }
-  switch (code) {
-    case 0xF8E9: // copyrightsans
-    case 0xF6D9: // copyrightserif
-      return 0x00A9; // copyright
-
-    case 0xF8E8: // registersans
-    case 0xF6DA: // registerserif
-      return 0x00AE; // registered
-
-    case 0xF8EA: // trademarksans
-    case 0xF6DB: // trademarkserif
-      return 0x2122; // trademark
-
-    default:
-      return code;
-  }
+  return code;
 }
 
 var UnicodeRanges = [
