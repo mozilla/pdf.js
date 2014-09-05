@@ -1,6 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor */
+/* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
+           isArray */
 
 'use strict';
 
@@ -139,6 +140,13 @@ describe('api', function() {
       var promise = doc.getDownloadInfo();
       waitsForPromise(promise, function (data) {
         expect(data.length).toEqual(105779);
+      });
+    });
+    it('gets stats', function() {
+      var promise = doc.getStats();
+      waitsForPromise(promise, function (stats) {
+        expect(isArray(stats.streamTypes)).toEqual(true);
+        expect(isArray(stats.fontTypes)).toEqual(true);
       });
     });
   });
