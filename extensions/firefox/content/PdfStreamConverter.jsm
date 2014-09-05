@@ -48,6 +48,12 @@ XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
 XPCOMUtils.defineLazyModuleGetter(this, 'PdfJsTelemetry',
   'resource://pdf.js/PdfJsTelemetry.jsm');
 
+XPCOMUtils.defineLazyModuleGetter(this, 'PdfjsContentUtils',
+  'resource://pdf.js/PdfjsContentUtils.jsm');
+
+XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
+  'resource://gre/modules/BrowserUtils.jsm');
+
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
@@ -61,10 +67,16 @@ function getContainingBrowser(domWindow) {
 }
 
 function getChromeWindow(domWindow) {
+  if (PdfjsContentUtils.isRemote) {
+    return PdfjsContentUtils.getChromeWindow(domWindow);
+  }
   return getContainingBrowser(domWindow).ownerDocument.defaultView;
 }
 
 function getFindBar(domWindow) {
+  if (PdfjsContentUtils.isRemote) {
+    return PdfjsContentUtils.getFindBar(domWindow);
+  }
   var browser = getContainingBrowser(domWindow);
   try {
     var tabbrowser = browser.getTabBrowser();
@@ -77,10 +89,6 @@ function getFindBar(domWindow) {
   }
 }
 
-function setBoolPref(pref, value) {
-  Services.prefs.setBoolPref(pref, value);
-}
-
 function getBoolPref(pref, def) {
   try {
     return Services.prefs.getBoolPref(pref);
@@ -89,23 +97,12 @@ function getBoolPref(pref, def) {
   }
 }
 
-function setIntPref(pref, value) {
-  Services.prefs.setIntPref(pref, value);
-}
-
 function getIntPref(pref, def) {
   try {
     return Services.prefs.getIntPref(pref);
   } catch (ex) {
     return def;
   }
-}
-
-function setStringPref(pref, value) {
-  var str = Cc['@mozilla.org/supports-string;1']
-              .createInstance(Ci.nsISupportsString);
-  str.data = value;
-  Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
 }
 
 function getStringPref(pref, def) {
@@ -117,8 +114,6 @@ function getStringPref(pref, def) {
 }
 
 function log(aMsg) {
-  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false))
-    return;
   var msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
@@ -438,53 +433,10 @@ ChromeActions.prototype = {
     } else {
       message = getLocalizedString(strings, 'unsupported_feature');
     }
-
     PdfJsTelemetry.onFallback();
-
-    var notificationBox = null;
-    try {
-      // Based on MDN's "Working with windows in chrome code"
-      var mainWindow = domWindow
-        .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-        .getInterface(Components.interfaces.nsIWebNavigation)
-        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
-        .rootTreeItem
-        .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-        .getInterface(Components.interfaces.nsIDOMWindow);
-      var browser = mainWindow.gBrowser
-                              .getBrowserForDocument(domWindow.top.document);
-      notificationBox = mainWindow.gBrowser.getNotificationBox(browser);
-    } catch (e) {
-      log('Unable to get a notification box for the fallback message');
-      return;
-    }
-
-    // Flag so we don't call the response callback twice, since if the user
-    // clicks open with different viewer both the button callback and
-    // eventCallback will be called.
-    var sentResponse = false;
-    var buttons = [{
-      label: getLocalizedString(strings, 'open_with_different_viewer'),
-      accessKey: getLocalizedString(strings, 'open_with_different_viewer',
-                                    'accessKey'),
-      callback: function() {
-        sentResponse = true;
-        sendResponse(true);
-      }
-    }];
-    notificationBox.appendNotification(message, 'pdfjs-fallback', null,
-                                       notificationBox.PRIORITY_INFO_LOW,
-                                       buttons,
-                                       function eventsCallback(eventType) {
-      // Currently there is only one event "removed" but if there are any other
-      // added in the future we still only care about removed at the moment.
-      if (eventType !== 'removed')
-        return;
-      // Don't send a response again if we already responded when the button was
-      // clicked.
-      if (!sentResponse)
-        sendResponse(false);
-    });
+    PdfjsContentUtils.displayWarning(domWindow, message, sendResponse,
+      getLocalizedString(strings, 'open_with_different_viewer'),
+      getLocalizedString(strings, 'open_with_different_viewer', 'accessKey'));
   },
   updateFindControlState: function(data) {
     if (!this.supportsIntegratedFind())
@@ -515,17 +467,17 @@ ChromeActions.prototype = {
       prefName = (PREF_PREFIX + '.' + key);
       switch (typeof prefValue) {
         case 'boolean':
-          setBoolPref(prefName, prefValue);
+          PdfjsContentUtils.setBoolPref(prefName, prefValue);
           break;
         case 'number':
-          setIntPref(prefName, prefValue);
+          PdfjsContentUtils.setIntPref(prefName, prefValue);
           break;
         case 'string':
           if (prefValue.length > MAX_STRING_PREF_LENGTH) {
             log('setPreferences - Exceeded the maximum allowed length ' +
                 'for a string preference.');
           } else {
-            setStringPref(prefName, prefValue);
+            PdfjsContentUtils.setStringPref(prefName, prefValue);
           }
           break;
       }
@@ -808,7 +760,12 @@ FindEventManager.prototype.handleEvent = function(e) {
     detail = makeContentReadable(detail, contentWindow);
     var forward = contentWindow.document.createEvent('CustomEvent');
     forward.initCustomEvent(e.type, true, true, detail);
-    contentWindow.dispatchEvent(forward);
+    // Due to restrictions with cpow use, we can't dispatch
+    // dom events with an urgent message on the stack. So bounce
+    // this off the main thread to make it async. 
+    Services.tm.mainThread.dispatch(function () {
+      contentWindow.dispatchEvent(forward);
+    }, Ci.nsIThread.DISPATCH_NORMAL);
     e.preventDefault();
   }
 };
@@ -928,7 +885,6 @@ PdfStreamConverter.prototype = {
 
     PdfJsTelemetry.onViewerIsUsed();
     PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
-
 
     // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
