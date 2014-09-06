@@ -65,6 +65,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
       return new NotImplementedException();
     },
 
+    sendProgressiveData: function BasePdfManager_sendProgressiveData(chunk) {
+      return new NotImplementedException();
+    },
+
     updatePassword: function BasePdfManager_updatePassword(password) {
       this.pdfDocument.xref.password = this.password = password;
       if (this._passwordChangedCapability) {
@@ -199,6 +203,11 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
   NetworkPdfManager.prototype.requestLoadedStream =
       function NetworkPdfManager_requestLoadedStream() {
     this.streamManager.requestAllChunks();
+  };
+
+  NetworkPdfManager.prototype.sendProgressiveData =
+      function NetworkPdfManager_sendProgressiveData(chunk) {
+    this.streamManager.onReceiveData({ chunk: chunk });
   };
 
   NetworkPdfManager.prototype.onLoadedStream =
