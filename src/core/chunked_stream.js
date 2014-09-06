@@ -41,7 +41,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     getMissingChunks: function ChunkedStream_getMissingChunks() {
       var chunks = [];
       for (var chunk = 0, n = this.numChunks; chunk < n; ++chunk) {
-        if (!(chunk in this.loadedChunks)) {
+        if (!this.loadedChunks[chunk]) {
           chunks.push(chunk);
         }
       }
@@ -73,7 +73,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       var curChunk;
 
       for (curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
-        if (!(curChunk in this.loadedChunks)) {
+        if (!this.loadedChunks[curChunk]) {
           this.loadedChunks[curChunk] = true;
           ++this.numChunksLoaded;
         }
@@ -92,7 +92,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
                      Math.floor(position / this.chunkSize);
       var curChunk;
       for (curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
-        if (!(curChunk in this.loadedChunks)) {
+        if (!this.loadedChunks[curChunk]) {
           this.loadedChunks[curChunk] = true;
           ++this.numChunksLoaded;
         }
@@ -105,7 +105,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
         return;
       }
 
-      if (!(chunk in this.loadedChunks)) {
+      if (!this.loadedChunks[chunk]) {
         throw new MissingDataException(pos, pos + 1);
       }
       this.lastSuccessfulEnsureByteChunk = chunk;
@@ -124,7 +124,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       var beginChunk = Math.floor(begin / chunkSize);
       var endChunk = Math.floor((end - 1) / chunkSize) + 1;
       for (var chunk = beginChunk; chunk < endChunk; ++chunk) {
-        if (!(chunk in this.loadedChunks)) {
+        if (!this.loadedChunks[chunk]) {
           throw new MissingDataException(begin, end);
         }
       }
@@ -133,13 +133,13 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     nextEmptyChunk: function ChunkedStream_nextEmptyChunk(beginChunk) {
       var chunk, n;
       for (chunk = beginChunk, n = this.numChunks; chunk < n; ++chunk) {
-        if (!(chunk in this.loadedChunks)) {
+        if (!this.loadedChunks[chunk]) {
           return chunk;
         }
       }
       // Wrap around to beginning
       for (chunk = 0; chunk < beginChunk; ++chunk) {
-        if (!(chunk in this.loadedChunks)) {
+        if (!this.loadedChunks[chunk]) {
           return chunk;
         }
       }
@@ -147,7 +147,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     },
 
     hasChunk: function ChunkedStream_hasChunk(chunk) {
-      return chunk in this.loadedChunks;
+      return !!this.loadedChunks[chunk];
     },
 
     get length() {
@@ -246,7 +246,7 @@ var ChunkedStream = (function ChunkedStreamClosure() {
         var endChunk = Math.floor((this.end - 1) / chunkSize) + 1;
         var missingChunks = [];
         for (var chunk = beginChunk; chunk < endChunk; ++chunk) {
-          if (!(chunk in this.loadedChunks)) {
+          if (!this.loadedChunks[chunk]) {
             missingChunks.push(chunk);
           }
         }
