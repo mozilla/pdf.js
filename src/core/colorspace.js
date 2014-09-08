@@ -1080,20 +1080,21 @@ var CalRGBCS = (function CalRGBCSClosure() {
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
     getRgbBuffer: function CalRGBCS_getRgbBuffer(src, srcOffset, count,
-                                                 dest, destOffset, bits) {
+                                                 dest, destOffset, bits,
+                                                 alpha01) {
       var scale = 1 / ((1 << bits) - 1);
 
       for (var i = 0; i < count; ++i) {
         convertToRgb(this, src, srcOffset, dest, destOffset, scale);
         srcOffset += 3;
-        destOffset += 3;
+        destOffset += 3 + alpha01;
       }
     },
-    getOutputLength: function CalRGBCS_getOutputLength(inputLength) {
-      return inputLength;
+    getOutputLength: function CalRGBCS_getOutputLength(inputLength, alpha01) {
+      return (inputLength * (3 + alpha01) / 3) | 0;
     },
     isPassthrough: ColorSpace.prototype.isPassthrough,
-    createRgbBuffer: ColorSpace.prototype.createRgbBuffer,
+    fillRgb: ColorSpace.prototype.fillRgb,
     isDefaultDecode: function CalRGBCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
