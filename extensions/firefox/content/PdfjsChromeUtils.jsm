@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ /*globals DEFAULT_PREFERENCES */
 
 'use strict';
 
@@ -36,21 +37,12 @@ XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
 
+//#include ../../../web/default_preferences.js
+
 let PdfjsChromeUtils = {
   // For security purposes when running remote, we restrict preferences
   // content can access.
-  _allowedPrefNames: [
-    "showPreviousViewOnLoad",
-    "defaultZoomValue",
-    "sidebarViewOnLoad",
-    "enableHandToolOnLoad",
-    "enableWebGL",
-    "disableRange",
-    "disableAutoFetch",
-    "disableFontFace",
-    "disableTextLayer",
-    "useOnlyCssZoom"
-  ],
+  _allowedPrefNames: Object.keys(DEFAULT_PREFERENCES),
   _ppmm: null,
   _mmg: null,
 

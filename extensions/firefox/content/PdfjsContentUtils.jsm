@@ -60,9 +60,7 @@ let PdfjsContentUtils = {
   /*
    * prefs utilities - the child does not have write access to prefs.
    * note, the pref names here are cross-checked against a list of
-   * approved pdfjs prefs in chrome utils. If you add additional pdfjs
-   * prefs update the defaults in DEFAULT_PREFERENCES and in chrome
-   * utils _allowedPrefNames.
+   * approved pdfjs prefs in chrome utils.
    */
 
   clearUserPref: function (aPrefName) {
