@@ -83,14 +83,21 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var width = ctx.measureText(textDiv.textContent).width;
         if (width > 0) {
           textLayerFrag.appendChild(textDiv);
-          // Dataset values come of type string.
-          var textScale = textDiv.dataset.canvasWidth / width;
+          var transform;
+          if (textDiv.dataset.canvasWidth !== undefined) {
+            // Dataset values come of type string.
+            var textScale = textDiv.dataset.canvasWidth / width;
+            transform = 'scaleX(' + textScale + ')';
+          } else {
+            transform = '';
+          }
           var rotation = textDiv.dataset.angle;
-          var transform = 'scale(' + textScale + ', 1)';
           if (rotation) {
             transform = 'rotate(' + rotation + 'deg) ' + transform;
           }
-          CustomStyle.setProp('transform' , textDiv, transform);
+          if (transform) {
+            CustomStyle.setProp('transform' , textDiv, transform);
+          }
         }
       }
 
@@ -165,10 +172,15 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       if (angle !== 0) {
         textDiv.dataset.angle = angle * (180 / Math.PI);
       }
-      if (style.vertical) {
-        textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
-      } else {
-        textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
+      // We don't bother scaling single-char text divs, because it has very
+      // little effect on text highlighting. This makes scrolling on docs with
+      // lots of such divs a lot faster.
+      if (textDiv.textContent.length > 1) {
+        if (style.vertical) {
+          textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
+        } else {
+          textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
+        }
       }
     },
 
