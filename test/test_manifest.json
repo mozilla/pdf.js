@@ -1527,6 +1527,14 @@
       "type": "eq",
       "about": "True type font with encoding dict with no base encoding but with differences."
     },
+    {  "id": "issue5280",
+      "file": "pdfs/issue5280.pdf",
+      "md5": "0ea1230e2964e74cb6db063a89b78803",
+      "rounds": 1,
+      "link": false,
+      "type": "eq",
+      "about": "DecodeParams can be an indirect object"
+    },
     {  "id": "bug878194",
        "file": "pdfs/bug878194.pdf",
        "md5": "c616b21fd2a1a65acc2de0f41e59a8b5",
