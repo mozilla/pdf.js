@@ -485,18 +485,6 @@ var tests = [
     area: 'Core'
   },
   {
-    id: 'TextDecoder',
-    name: 'TextDecoder is present',
-    run: function () {
-      if (typeof TextDecoder != 'undefined')
-        return { output: 'Success', emulated: '' };
-      else
-        return { output: 'Failed', emulated: 'No' };
-    },
-    impact: 'Critical',
-    area: 'Core'
-  },
-  {
     id: 'Worker',
     name: 'Worker is present',
     run: function () {
@@ -599,46 +587,6 @@ var tests = [
         return promise;
       } catch (e) {
         return { output: 'Failed', emulated: 'Yes' };
-      }
-    },
-    impact: 'Important',
-    area: 'Core'
-  },
-  {
-    id: 'Worker-TextDecoder',
-    name: 'TextDecoder is present in web workers',
-    run: function () {
-      if (typeof Worker == 'undefined')
-        return { output: 'Skipped', emulated: '' };
-
-      var emulatable = typeof TextDecoder !== 'undefined';
-      try {
-        var worker = new Worker('worker-stub.js');
-
-        var promise = new Promise();
-        var timeout = setTimeout(function () {
-          promise.resolve({ output: 'Failed',
-                            emulated: emulatable ? '?' : 'No' });
-        }, 5000);
-
-        worker.addEventListener('message', function (e) {
-          var data = e.data;
-          if (data.action === 'TextDecoder') {
-            if (data.result) {
-              promise.resolve({ output: 'Success', emulated: '' });
-            } else {
-              promise.resolve({ output: 'Failed',
-                                emulated: data.emulated ? 'Yes' : 'No' });
-            }
-          } else {
-            promise.resolve({ output: 'Failed',
-                              emulated: emulatable ? 'Yes' : 'No' });
-          }
-        }, false);
-        worker.postMessage({action: 'TextDecoder'});
-        return promise;
-      } catch (e) {
-        return { output: 'Failed', emulated: emulatable ? 'Yes' : 'No' };
       }
     },
     impact: 'Important',
