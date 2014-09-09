@@ -180,6 +180,16 @@ limitations under the License.
    *                       (added in Chrome 29, http://crbug.com/230346)
    */
   function handleStream(mimeType, pdfUrl, streamUrl, tabId, expectedSize) {
+    if (typeof mimeType === 'object') {
+      // API change: argument list -> object, see crbug.com/345882
+      // documentation: chrome/common/extensions/api/streams_private.idl
+      var streamInfo = mimeType;
+      mimeType = streamInfo.mimeType;
+      pdfUrl = streamInfo.originalUrl;
+      streamUrl = streamInfo.streamUrl;
+      tabId = streamInfo.tabId;
+      expectedSize = streamInfo.expectedContentSize;
+    }
     console.log('Intercepted ' + mimeType + ' in tab ' + tabId + ' with URL ' +
                 pdfUrl + '\nAvailable as: ' + streamUrl);
     streamSupportsTabId = typeof tabId === 'number';
