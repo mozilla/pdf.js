@@ -633,7 +633,7 @@ var PDFView = {
   },
 
   // TODO(mack): This function signature should really be pdfViewOpen(url, args)
-  open: function pdfViewOpen(url, scale, password,
+  open: function pdfViewOpen(file, scale, password,
                              pdfDataRangeTransport, args) {
     if (this.pdfDocument) {
       // Reload the preferences if a document was previously opened.
@@ -642,11 +642,14 @@ var PDFView = {
     this.close();
 
     var parameters = {password: password};
-    if (typeof url === 'string') { // URL
-      this.setTitleUsingUrl(url);
-      parameters.url = url;
-    } else if (url && 'byteLength' in url) { // ArrayBuffer
-      parameters.data = url;
+    if (typeof file === 'string') { // URL
+      this.setTitleUsingUrl(file);
+      parameters.url = file;
+    } else if (file && 'byteLength' in file) { // ArrayBuffer
+      parameters.data = file;
+    } else if (file.url && file.originalUrl) {
+      this.setTitleUsingUrl(file.originalUrl);
+      parameters.url = file.url;
     }
     if (args) {
       for (var prop in args) {
@@ -2521,9 +2524,10 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
 //  var blob = activity.source.data.blob;
 //  PDFJS.maxImageSize = 1024 * 1024;
+//  var fileURL = activity.source.data.url;
 //
 //  var url = URL.createObjectURL(blob);
-//  PDFView.open(url);
+//  PDFView.open({url : url, originalUrl: fileURL});
 //
 //  var header = document.getElementById('header');
 //  header.addEventListener('action', function() {
