@@ -126,7 +126,6 @@ target.generic = function() {
       [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
       ['LICENSE', GENERIC_DIR],
       ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
-      ['web/viewer.css', GENERIC_DIR + '/web'],
       ['web/compatibility.js', GENERIC_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
       ['external/bcmaps/*', GENERIC_DIR + '/web/cmaps/'],
@@ -135,11 +134,16 @@ target.generic = function() {
     preprocess: [
       [BUILD_TARGETS, GENERIC_DIR + BUILD_DIR],
       [COMMON_WEB_FILES_PREPROCESS, GENERIC_DIR + '/web']
+    ],
+    preprocessCSS: [
+      ['generic', 'web/viewer.css',
+       GENERIC_DIR + '/web/viewer.css']
     ]
   };
   builder.build(setup);
 
   cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
+  cleanupCSSSource(GENERIC_DIR + '/web/viewer.css');
 };
 
 target.jsdoc = function() {
@@ -557,6 +561,16 @@ function cleanupJSSource(file) {
   content.to(file);
 }
 
+function cleanupCSSSource(file) {
+  var content = cat(file);
+
+  // Strip out all license headers in the middle.
+  var reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
+  content = content.replace(reg, '');
+
+  content.to(file);
+}
+
 //
 // make minified
 // Builds the minified production viewer that should be compatible with most
@@ -588,7 +602,6 @@ target.minified = function() {
     defines: defines,
     copy: [
       [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
-      ['web/viewer.css', MINIFIED_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
       ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
       ['web/locale', MINIFIED_DIR + '/web']
@@ -596,9 +609,15 @@ target.minified = function() {
     preprocess: [
       [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
       [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + '/web']
+    ],
+    preprocessCSS: [
+      ['minified', 'web/viewer.css',
+       MINIFIED_DIR + '/web/viewer.css']
     ]
   };
   builder.build(setup);
+
+  cleanupCSSSource(MINIFIED_DIR + '/web/viewer.css');
 
   var viewerFiles = [
     'web/compatibility.js',
@@ -750,6 +769,7 @@ target.firefox = function() {
   cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js');
   cleanupJSSource(FIREFOX_BUILD_DIR + 'bootstrap.js');
   cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
+  cleanupCSSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.css');
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -872,6 +892,7 @@ target.mozcentral = function() {
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.js');
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfJs.jsm');
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfjsChromeUtils.jsm');
+  cleanupCSSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.css');
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
@@ -982,18 +1003,22 @@ target.chromium = function() {
        CHROME_BUILD_DIR],
       ['extensions/chromium/pageAction/*.*', CHROME_BUILD_DIR + '/pageAction'],
       ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
-      ['web/viewer.css', CHROME_BUILD_CONTENT_DIR + '/web'],
       ['external/bcmaps/*', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
       ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
       [BUILD_TARGETS, CHROME_BUILD_CONTENT_DIR + BUILD_DIR],
       [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
+    ],
+    preprocessCSS: [
+      ['chrome', 'web/viewer.css',
+       CHROME_BUILD_CONTENT_DIR + '/web/viewer.css']
     ]
   };
   builder.build(setup);
 
   cleanupJSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.js');
+  cleanupCSSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.css');
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
