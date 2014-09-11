@@ -478,7 +478,7 @@ var Lexer = (function LexerClosure() {
       return (this.currentChar = this.stream.getByte());
     },
     peekChar: function Lexer_peekChar() {
-      return this.stream.peekBytes(1)[0];
+      return this.stream.peekByte();
     },
     getNumber: function Lexer_getNumber() {
       var ch = this.currentChar;
