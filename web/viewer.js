@@ -1164,7 +1164,11 @@ var PDFView = {
 
       var pdfTitle;
       if (metadata && metadata.has('dc:title')) {
-        pdfTitle = metadata.get('dc:title');
+        var title = metadata.get('dc:title');
+        // Ghostscript sometimes return 'Untitled', sets the title to 'Untitled'
+        if (title !== 'Untitled') {
+          pdfTitle = title;
+        }
       }
 
       if (!pdfTitle && info && info['Title']) {
