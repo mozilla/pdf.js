@@ -73,6 +73,11 @@ var Stream = (function StreamClosure() {
       this.pos = end;
       return bytes.subarray(pos, end);
     },
+    peekByte: function Stream_peekByte() {
+      var peekedByte = this.getByte();
+      this.pos--;
+      return peekedByte;
+    },
     peekBytes: function Stream_peekBytes(length) {
       var bytes = this.getBytes(length);
       this.pos -= bytes.length;
@@ -201,6 +206,11 @@ var DecodeStream = (function DecodeStreamClosure() {
 
       this.pos = end;
       return this.buffer.subarray(pos, end);
+    },
+    peekByte: function DecodeStream_peekByte() {
+      var peekedByte = this.getByte();
+      this.pos--;
+      return peekedByte;
     },
     peekBytes: function DecodeStream_peekBytes(length) {
       var bytes = this.getBytes(length);
@@ -527,7 +537,7 @@ var FlateStream = (function FlateStreamClosure() {
       var end = bufferLength + blockLen;
       this.bufferLength = end;
       if (blockLen === 0) {
-        if (str.peekBytes(1).length === 0) {
+        if (str.peekByte() === -1) {
           this.eof = true;
         }
       } else {
