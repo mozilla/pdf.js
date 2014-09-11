@@ -535,7 +535,7 @@ var JpxImage = (function JpxImageClosure() {
       codeblockWidth: xcb_,
       codeblockHeight: ycb_,
       numcodeblockwide: cbx1 - cbx0 + 1,
-      numcodeblockhigh: cby1 - cby1 + 1
+      numcodeblockhigh: cby1 - cby0 + 1
     };
     subband.codeblocks = codeblocks;
     subband.precincts = precincts;
