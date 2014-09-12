@@ -17,7 +17,7 @@
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, ProgressBar,
            DownloadManager, getFileName, scrollIntoView, getPDFFileNameFromURL,
            PDFHistory, Preferences, SidebarView, ViewHistory, PageView,
-           ThumbnailView, URL, noContextMenuHandler, SecondaryToolbar,
+           PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PresentationMode, HandTool, Promise,
            DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
@@ -108,19 +108,17 @@ var currentPageNumber = 1;
 
 var PDFView = {
   pages: [],
-  thumbnails: [],
   currentScale: UNKNOWN_SCALE,
   currentScaleValue: null,
   initialBookmark: document.location.hash.substring(1),
   container: null,
-  thumbnailContainer: null,
   initialized: false,
   fellback: false,
   pdfDocument: null,
   sidebarOpen: false,
   printing: false,
   pageViewScroll: null,
-  thumbnailViewScroll: null,
+  pdfThumbnailViewer: null,
   pageRotation: 0,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
@@ -137,12 +135,12 @@ var PDFView = {
     var container = this.container = document.getElementById('viewerContainer');
     this.pageViewScroll = watchScroll(container, updateViewarea);
 
-    var thumbnailContainer = this.thumbnailContainer =
-                             document.getElementById('thumbnailView');
-    this.thumbnailViewScroll = watchScroll(thumbnailContainer, function () {
-      this.renderHighestPriority();
-    }.bind(this));
-
+    var thumbnailContainer = document.getElementById('thumbnailView');
+    this.pdfThumbnailViewer = new PDFThumbnailViewer({
+      container: thumbnailContainer,
+      renderingQueue: this,
+      linkService: this
+    });
 
     Preferences.initialize();
 
@@ -591,10 +589,7 @@ var PDFView = {
     this.pdfDocument.destroy();
     this.pdfDocument = null;
 
-    var thumbsView = document.getElementById('thumbnailView');
-    while (thumbsView.hasChildNodes()) {
-      thumbsView.removeChild(thumbsView.lastChild);
-    }
+    this.pdfThumbnailViewer.removeAllThumbnails();
 
     var container = document.getElementById('viewer');
     while (container.hasChildNodes()) {
@@ -953,7 +948,6 @@ var PDFView = {
 
     var pages = this.pages = [];
     var pagesRefMap = this.pagesRefMap = {};
-    var thumbnails = this.thumbnails = [];
 
     var resolvePagesPromise;
     var pagesPromise = new Promise(function (resolve) {
@@ -963,7 +957,7 @@ var PDFView = {
 
     var firstPagePromise = pdfDocument.getPage(1);
     var container = document.getElementById('viewer');
-    var thumbsView = document.getElementById('thumbnailView');
+    var thumbsViewer = this.pdfThumbnailViewer;
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
@@ -974,11 +968,9 @@ var PDFView = {
         var pageView = new PageView(container, pageNum, scale,
                                     self.navigateTo.bind(self),
                                     viewportClone);
-        var thumbnailView = new ThumbnailView(thumbsView, pageNum,
-                                              viewportClone);
+        var thumbnailView = thumbsViewer.addThumbnail(pageNum, viewportClone);
         bindOnAfterDraw(pageView, thumbnailView);
         pages.push(pageView);
-        thumbnails.push(thumbnailView);
       }
 
       // Fetch all the pages since the viewport is needed before printing
@@ -1239,12 +1231,7 @@ var PDFView = {
     }
     // No pages needed rendering so check thumbnails.
     if (this.sidebarOpen) {
-      var visibleThumbs = this.getVisibleThumbs();
-      var thumbView = this.getHighestPriority(visibleThumbs,
-                                              this.thumbnails,
-                                              this.thumbnailViewScroll.down);
-      if (thumbView) {
-        this.renderView(thumbView, 'thumbnail');
+      if (this.pdfThumbnailViewer.forceRendering()) {
         return;
       }
     }
@@ -1268,7 +1255,7 @@ var PDFView = {
     }
     this.pdfDocument.cleanup();
 
-    ThumbnailView.tempImageCache = null;
+    this.pdfThumbnailViewer.cleanup();
   },
 
   getHighestPriority: function pdfViewGetHighestPriority(visible, views,
@@ -1424,10 +1411,7 @@ var PDFView = {
         PDFView.renderHighestPriority();
 
         if (wasAnotherViewVisible) {
-          // Ensure that the thumbnail of the current page is visible
-          // when switching from another view.
-          scrollIntoView(document.getElementById('thumbnailContainer' +
-                                                 this.page));
+          this.pdfThumbnailViewer.ensureThumbnailVisible(this.page);
         }
         break;
 
@@ -1470,10 +1454,6 @@ var PDFView = {
       visible.push({ id: currentPage.id, view: currentPage });
       return { first: currentPage, last: currentPage, views: visible };
     }
-  },
-
-  getVisibleThumbs: function pdfViewGetVisibleThumbs() {
-    return getVisibleElements(this.thumbnailContainer, this.thumbnails);
   },
 
   // Helper function to parse query string (e.g. ?param1=value&parm2=...).
@@ -1552,10 +1532,7 @@ var PDFView = {
       page.update(page.scale, this.pageRotation);
     }
 
-    for (i = 0, l = this.thumbnails.length; i < l; i++) {
-      var thumb = this.thumbnails[i];
-      thumb.update(this.pageRotation);
-    }
+    this.pdfThumbnailViewer.updateRotation(this.pageRotation);
 
     this.setScale(this.currentScaleValue, true, true);
 
@@ -2131,24 +2108,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
   if (PDFView.previousPageNumber !== page) {
     document.getElementById('pageNumber').value = page;
-    var selected = document.querySelector('.thumbnail.selected');
-    if (selected) {
-      selected.classList.remove('selected');
-    }
-    var thumbnail = document.getElementById('thumbnailContainer' + page);
-    thumbnail.classList.add('selected');
-    var visibleThumbs = PDFView.getVisibleThumbs();
-    var numVisibleThumbs = visibleThumbs.views.length;
-
-    // If the thumbnail isn't currently visible, scroll it into view.
-    if (numVisibleThumbs > 0) {
-      var first = visibleThumbs.first.id;
-      // Account for only one thumbnail being visible.
-      var last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
-      if (page <= first || page >= last) {
-        scrollIntoView(thumbnail, { top: THUMBNAIL_SCROLL_MARGIN });
-      }
-    }
+    PDFView.pdfThumbnailViewer.updatePage(page);
   }
   var numPages = PDFView.pages.length;
 

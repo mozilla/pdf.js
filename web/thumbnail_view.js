@@ -14,16 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, mozL10n, RenderingStates */
+/* globals mozL10n, RenderingStates, THUMBNAIL_SCROLL_MARGIN,
+           watchScroll, getVisibleElements, scrollIntoView */
 
 'use strict';
 
-var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
+var ThumbnailView = function thumbnailView(container, id, defaultViewport,
+                                           linkService, renderingQueue) {
   var anchor = document.createElement('a');
-  anchor.href = PDFView.getAnchorUrl('#page=' + id);
+  anchor.href = linkService.getAnchorUrl('#page=' + id);
   anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
   anchor.onclick = function stopNavigation() {
-    PDFView.page = id;
+    linkService.page = id;
     return false;
   };
 
@@ -62,6 +64,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
 
   this.hasImage = false;
   this.renderingState = RenderingStates.INITIAL;
+  this.renderingQueue = renderingQueue;
 
   this.setPdfPage = function thumbnailViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
@@ -125,7 +128,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
 
   this.draw = function thumbnailViewDraw(callback) {
     if (!this.pdfPage) {
-      var promise = PDFView.getPage(this.id);
+      var promise = this.renderingQueue.getPage(this.id);
       promise.then(function(pdfPage) {
         this.setPdfPage(pdfPage);
         this.draw(callback);
@@ -150,7 +153,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
       canvasContext: ctx,
       viewport: drawViewport,
       continueCallback: function(cont) {
-        if (PDFView.highestPriorityPage !== 'thumbnail' + self.id) {
+        if (self.renderingQueue.highestPriorityPage !== 'thumbnail' + self.id) {
           self.renderingState = RenderingStates.PAUSED;
           self.resume = function() {
             self.renderingState = RenderingStates.RUNNING;
@@ -187,7 +190,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
 
   this.setImage = function thumbnailViewSetImage(img) {
     if (!this.pdfPage) {
-      var promise = PDFView.getPage(this.id);
+      var promise = this.renderingQueue.getPage(this.id);
       promise.then(function(pdfPage) {
         this.setPdfPage(pdfPage);
         this.setImage(img);
@@ -232,3 +235,95 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport) {
 };
 
 ThumbnailView.tempImageCache = null;
+
+var PDFThumbnailViewer = (function pdfThumbnailViewer() {
+  function PDFThumbnailViewer(options) {
+    this.container = options.container;
+    this.renderingQueue = options.renderingQueue;
+    this.linkService = options.linkService;
+
+    this.scroll = watchScroll(this.container, this.scrollUpdated.bind(this));
+    this.thumbnails = [];
+    this.currentPage = -1;
+  }
+
+  PDFThumbnailViewer.prototype = {
+    scrollUpdated: function PDFThumbnailViewer_scrollUpdated() {
+      this.renderingQueue.renderHighestPriority();
+    },
+
+    getVisibleThumbs: function PDFThumbnailViewer_getVisibleThumbs() {
+      return getVisibleElements(this.container, this.thumbnails);
+    },
+
+    updatePage: function (page) {
+      var selected = document.querySelector('.thumbnail.selected');
+      if (selected) {
+        selected.classList.remove('selected');
+      }
+      var thumbnail = document.getElementById('thumbnailContainer' + page);
+      thumbnail.classList.add('selected');
+      var visibleThumbs = this.getVisibleThumbs();
+      var numVisibleThumbs = visibleThumbs.views.length;
+
+      // If the thumbnail isn't currently visible, scroll it into view.
+      if (numVisibleThumbs > 0) {
+        var first = visibleThumbs.first.id;
+        // Account for only one thumbnail being visible.
+        var last = (numVisibleThumbs > 1 ? visibleThumbs.last.id : first);
+        if (page <= first || page >= last) {
+          scrollIntoView(thumbnail, { top: THUMBNAIL_SCROLL_MARGIN });
+        }
+      }
+      this.currentPage = page;
+    },
+
+    updateRotation: function (pageRotation) {
+      for (var i = 0, l = this.thumbnails.length; i < l; i++) {
+        var thumb = this.thumbnails[i];
+        thumb.update(pageRotation);
+      }
+    },
+
+    cleanup: function PDFThumbnailViewer_cleanup() {
+      ThumbnailView.tempImageCache = null;
+    },
+
+    removeAllThumbnails: function PDFThumbnailViewer_cleanup() {
+      var thumbsView = this.container;
+      while (thumbsView.hasChildNodes()) {
+        thumbsView.removeChild(thumbsView.lastChild);
+      }
+      this.thumbnails = [];
+    },
+
+    addThumbnail: function PDFThumbnailViewer_addThumbnail(pageNum, viewport,
+                                                           linkService) {
+      var thumbnail = new ThumbnailView(this.container, pageNum, viewport,
+                                        this.linkService, this.renderingQueue);
+      this.thumbnails.push(thumbnail);
+      return thumbnail;
+    },
+
+    ensureThumbnailVisible:
+        function PDFThumbnailViewer_ensureThumbnailVisible(page) {
+      // Ensure that the thumbnail of the current page is visible
+      // when switching from another view.
+      scrollIntoView(document.getElementById('thumbnailContainer' + page));
+    },
+
+    forceRendering: function () {
+      var visibleThumbs = this.getVisibleThumbs();
+      var thumbView = this.renderingQueue.getHighestPriority(visibleThumbs,
+                                                             this.thumbnails,
+                                                             this.scroll.down);
+      if (thumbView) {
+        this.renderingQueue.renderView(thumbView, 'thumbnail');
+        return true;
+      }
+      return false;
+    }
+  };
+
+  return PDFThumbnailViewer;
+})();
