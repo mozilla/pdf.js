@@ -496,7 +496,14 @@ var PDFDocument = (function PDFDocumentClosure() {
       if (xref.trailer.has('ID')) {
         hash = stringToBytes(xref.trailer.get('ID')[0]);
       } else {
-        hash = calculateMD5(this.stream.bytes.subarray(0, 100), 0, 100);
+        // Combining filelength + startXRef to create unique number
+        // to create md5
+        var unique = this.stream.bytes.subarray(0,100);
+        var startXRef = this.startXRef.toString(2).split('');
+        for (var i = 0; i < unique.length; ++i) {
+          unique[i] += parseInt(startXRef[i], 2);
+        }
+        hash = calculateMD5(unique, 0, 100);
       }
 
       for (var i = 0, n = hash.length; i < n; i++) {
