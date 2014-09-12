@@ -20,7 +20,8 @@
            ThumbnailView, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PresentationMode, HandTool, Promise,
            DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
-           OverlayManager, PDFFindController, PDFFindBar */
+           OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
+           watchScroll */
 
 'use strict';
 
@@ -134,14 +135,14 @@ var PDFView = {
   initialize: function pdfViewInitialize() {
     var self = this;
     var container = this.container = document.getElementById('viewerContainer');
-    this.pageViewScroll = {};
-    this.watchScroll(container, this.pageViewScroll, updateViewarea);
+    this.pageViewScroll = watchScroll(container, updateViewarea);
 
     var thumbnailContainer = this.thumbnailContainer =
                              document.getElementById('thumbnailView');
-    this.thumbnailViewScroll = {};
-    this.watchScroll(thumbnailContainer, this.thumbnailViewScroll,
-                     this.renderHighestPriority.bind(this));
+    this.thumbnailViewScroll = watchScroll(thumbnailContainer, function () {
+      this.renderHighestPriority();
+    }.bind(this));
+
 
     Preferences.initialize();
 
@@ -270,36 +271,6 @@ var PDFView = {
 
   getPage: function pdfViewGetPage(n) {
     return this.pdfDocument.getPage(n);
-  },
-
-  // Helper function to keep track whether a div was scrolled up or down and
-  // then call a callback.
-  watchScroll: function pdfViewWatchScroll(viewAreaElement, state, callback) {
-    state.down = true;
-    state.lastY = viewAreaElement.scrollTop;
-    state.rAF = null;
-    viewAreaElement.addEventListener('scroll', function debounceScroll(evt) {
-      if (state.rAF) {
-        return;
-      }
-      // schedule an invocation of webViewerScrolled for next animation frame.
-      state.rAF = window.requestAnimationFrame(function webViewerScrolled() {
-        state.rAF = null;
-        if (!PDFView.pdfDocument) {
-          return;
-        }
-        var currentY = viewAreaElement.scrollTop;
-        var lastY = state.lastY;
-        if (currentY > lastY) {
-          state.down = true;
-        } else if (currentY < lastY) {
-          state.down = false;
-        }
-        // else do nothing and use previous value
-        state.lastY = currentY;
-        callback();
-      });
-    }, true);
   },
 
   _setScaleUpdatePages: function pdfView_setScaleUpdatePages(
@@ -1490,7 +1461,7 @@ var PDFView = {
 
   getVisiblePages: function pdfViewGetVisiblePages() {
     if (!PresentationMode.active) {
-      return this.getVisibleElements(this.container, this.pages, true);
+      return getVisibleElements(this.container, this.pages, true);
     } else {
       // The algorithm in getVisibleElements doesn't work in all browsers and
       // configurations when presentation mode is active.
@@ -1502,54 +1473,7 @@ var PDFView = {
   },
 
   getVisibleThumbs: function pdfViewGetVisibleThumbs() {
-    return this.getVisibleElements(this.thumbnailContainer, this.thumbnails);
-  },
-
-  // Generic helper to find out what elements are visible within a scroll pane.
-  getVisibleElements: function pdfViewGetVisibleElements(
-      scrollEl, views, sortByVisibility) {
-    var top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
-    var left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
-
-    var visible = [], view;
-    var currentHeight, viewHeight, hiddenHeight, percentHeight;
-    var currentWidth, viewWidth;
-    for (var i = 0, ii = views.length; i < ii; ++i) {
-      view = views[i];
-      currentHeight = view.el.offsetTop + view.el.clientTop;
-      viewHeight = view.el.clientHeight;
-      if ((currentHeight + viewHeight) < top) {
-        continue;
-      }
-      if (currentHeight > bottom) {
-        break;
-      }
-      currentWidth = view.el.offsetLeft + view.el.clientLeft;
-      viewWidth = view.el.clientWidth;
-      if ((currentWidth + viewWidth) < left || currentWidth > right) {
-        continue;
-      }
-      hiddenHeight = Math.max(0, top - currentHeight) +
-                     Math.max(0, currentHeight + viewHeight - bottom);
-      percentHeight = ((viewHeight - hiddenHeight) * 100 / viewHeight) | 0;
-
-      visible.push({ id: view.id, x: currentWidth, y: currentHeight,
-                     view: view, percent: percentHeight });
-    }
-
-    var first = visible[0];
-    var last = visible[visible.length - 1];
-
-    if (sortByVisibility) {
-      visible.sort(function(a, b) {
-        var pc = a.percent - b.percent;
-        if (Math.abs(pc) > 0.001) {
-          return -pc;
-        }
-        return a.id - b.id; // ensure stability
-      });
-    }
-    return {first: first, last: last, views: visible};
+    return getVisibleElements(this.thumbnailContainer, this.thumbnails);
   },
 
   // Helper function to parse query string (e.g. ?param1=value&parm2=...).
