@@ -68,7 +68,7 @@ var PresentationMode = {
   },
 
   /**
-   * Initialize a timeout that is used to reset PDFView.currentPosition when the
+   * Initialize a timeout that is used to specify switchInProgress when the
    * browser transitions to fullscreen mode. Since resize events are triggered
    * multiple times during the switch to fullscreen mode, this is necessary in
    * order to prevent the page from being scrolled partially, or completely,
@@ -82,8 +82,6 @@ var PresentationMode = {
     this.switchInProgress = setTimeout(function switchInProgressTimeout() {
       delete this.switchInProgress;
     }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
-
-    PDFView.currentPosition = null;
   },
 
   _resetSwitchInProgress: function presentationMode_resetSwitchInProgress() {
@@ -150,7 +148,7 @@ var PresentationMode = {
     // Note: This is only necessary in non-Mozilla browsers.
     setTimeout(function exitPresentationModeTimeout() {
       this.active = false;
-      PDFView.setScale(this.args.previousScale);
+      PDFView.setScale(this.args.previousScale, true);
       PDFView.page = page;
       this.args = null;
     }.bind(this), 0);

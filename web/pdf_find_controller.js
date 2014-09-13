@@ -137,7 +137,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
       this.pageContents = [];
       var extractTextPromisesResolves = [];
-      var numPages = this.pdfPageSource.pdfDocument.numPages;
+      var numPages = this.pdfPageSource.pagesCount;
       for (var i = 0; i < numPages; i++) {
         this.extractTextPromises.push(new Promise(function (resolve) {
           extractTextPromisesResolves.push(resolve);
@@ -146,7 +146,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
       var self = this;
       function extractPageText(pageIndex) {
-        self.pdfPageSource.pages[pageIndex].getTextContent().then(
+        self.pdfPageSource.getPageView(pageIndex).getTextContent().then(
           function textContentResolved(textContent) {
             var textItems = textContent.items;
             var str = [];
@@ -159,7 +159,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
             self.pageContents.push(str.join(''));
 
             extractTextPromisesResolves[pageIndex](pageIndex);
-            if ((pageIndex + 1) < self.pdfPageSource.pages.length) {
+            if ((pageIndex + 1) < self.pdfPageSource.pagesCount) {
               extractPageText(pageIndex + 1);
             }
           }
@@ -189,7 +189,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     },
 
     updatePage: function PDFFindController_updatePage(index) {
-      var page = this.pdfPageSource.pages[index];
+      var page = this.pdfPageSource.getPageView(index);
 
       if (this.selected.pageIdx === index) {
         // If the page is selected, scroll the page into view, which triggers
@@ -206,7 +206,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     nextMatch: function PDFFindController_nextMatch() {
       var previous = this.state.findPrevious;
       var currentPageIndex = this.pdfPageSource.page - 1;
-      var numPages = this.pdfPageSource.pages.length;
+      var numPages = this.pdfPageSource.pagesCount;
 
       this.active = true;
 
