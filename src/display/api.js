@@ -16,9 +16,9 @@
  */
 /* globals PDFJS, isArrayBuffer, error, combineUrl, createPromiseCapability,
            StatTimer, globalScope, MessageHandler, info, FontLoader, Util, warn,
-           PasswordResponses, PasswordException, InvalidPDFException,
+           Promise, PasswordResponses, PasswordException, InvalidPDFException,
            MissingPDFException, UnknownErrorException, FontFace, loadJpegStream,
-           createScratchCanvas, Promise, CanvasGraphics */
+           createScratchCanvas, CanvasGraphics, UnexpectedResponseException */
 
 'use strict';
 
@@ -895,6 +895,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
           new MissingPDFException(exception.message));
       }, this);
 
+      messageHandler.on('UnexpectedResponse',
+                        function transportUnexpectedResponse(exception) {
+        this.workerReadyCapability.reject(
+          new UnexpectedResponseException(exception.message, exception.status));
+      }, this);
+
       messageHandler.on('UnknownError',
                         function transportUnknownError(exception) {
         this.workerReadyCapability.reject(
@@ -992,10 +998,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
             total: data.total
           });
         }
-      }, this);
-
-      messageHandler.on('DocError', function transportDocError(data) {
-        this.workerReadyCapability.reject(data);
       }, this);
 
       messageHandler.on('PageError', function transportError(data) {

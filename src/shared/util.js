@@ -384,6 +384,21 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
 })();
 PDFJS.MissingPDFException = MissingPDFException;
 
+var UnexpectedResponseException =
+    (function UnexpectedResponseExceptionClosure() {
+  function UnexpectedResponseException(msg, status) {
+    this.name = 'UnexpectedResponseException';
+    this.message = msg;
+    this.status = status;
+  }
+
+  UnexpectedResponseException.prototype = new Error();
+  UnexpectedResponseException.constructor = UnexpectedResponseException;
+
+  return UnexpectedResponseException;
+})();
+PDFJS.UnexpectedResponseException = UnexpectedResponseException;
+
 var NotImplementedException = (function NotImplementedExceptionClosure() {
   function NotImplementedException(msg) {
     this.message = msg;
