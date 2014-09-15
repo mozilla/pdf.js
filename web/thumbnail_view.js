@@ -39,6 +39,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
   this.pageHeight = this.viewport.height;
   this.pageRatio = this.pageWidth / this.pageHeight;
   this.id = id;
+  this.renderingId = 'thumbnail' + id;
 
   this.canvasWidth = 98;
   this.canvasHeight = this.canvasWidth / this.pageWidth * this.pageHeight;
@@ -155,7 +156,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
       canvasContext: ctx,
       viewport: drawViewport,
       continueCallback: function(cont) {
-        if (self.renderingQueue.highestPriorityPage !== 'thumbnail' + self.id) {
+        if (!self.renderingQueue.isHighestPriority(self)) {
           self.renderingState = RenderingStates.PAUSED;
           self.resume = function() {
             self.renderingState = RenderingStates.RUNNING;
@@ -336,7 +337,7 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
                                                              this.thumbnails,
                                                              this.scroll.down);
       if (thumbView) {
-        this.renderingQueue.renderView(thumbView, 'thumbnail');
+        this.renderingQueue.renderView(thumbView);
         return true;
       }
       return false;

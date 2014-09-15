@@ -25,6 +25,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
                                  linkService, renderingQueue, cache,
                                  pageSource, viewer) {
   this.id = id;
+  this.renderingId = 'page' + id;
 
   this.rotation = 0;
   this.scale = scale || 1.0;
@@ -610,7 +611,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       viewport: this.viewport,
       // intent: 'default', // === 'display'
       continueCallback: function pdfViewcContinueCallback(cont) {
-        if (self.renderingQueue.highestPriorityPage !== 'page' + self.id) {
+        if (!self.renderingQueue.isHighestPriority(self)) {
           self.renderingState = RenderingStates.PAUSED;
           self.resume = function resumeCallback() {
             self.renderingState = RenderingStates.RUNNING;

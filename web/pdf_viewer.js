@@ -392,7 +392,7 @@ var PDFViewer = (function pdfViewer() {
                                                             this.pages,
                                                             this.scroll.down);
       if (pageView) {
-        this.renderingQueue.renderView(pageView, 'page');
+        this.renderingQueue.renderView(pageView);
         return;
       }
     },

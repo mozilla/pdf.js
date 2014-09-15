@@ -21,7 +21,7 @@
            PasswordPrompt, PresentationMode, HandTool, Promise,
            DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
-           watchScroll, PDFViewer */
+           watchScroll, PDFViewer, PDFRenderingQueue */
 
 'use strict';
 
@@ -46,12 +46,6 @@ var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 //PDFJS.useOnlyCssZoom = true;
 //PDFJS.disableTextLayer = true;
 //#endif
-var RenderingStates = {
-  INITIAL: 0,
-  RUNNING: 1,
-  PAUSED: 2,
-  FINISHED: 3
-};
 
 PDFJS.imageResourcesPath = './images/';
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
@@ -106,31 +100,37 @@ var PDFView = {
   printing: false,
   pdfViewer: null,
   pdfThumbnailViewer: null,
+  pdfRenderingQueue: null,
   pageRotation: 0,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
   lastScroll: 0,
   isViewerEmbedded: (window.parent !== window),
-  idleTimeout: null,
   url: '',
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
+    var pdfRenderingQueue = new PDFRenderingQueue();
+    pdfRenderingQueue.onIdle = this.cleanup.bind(this);
+    this.pdfRenderingQueue = pdfRenderingQueue;
+
     var container = document.getElementById('viewerContainer');
     var viewer = document.getElementById('viewer');
     this.pdfViewer = new PDFViewer({
       container: container,
       viewer: viewer,
-      renderingQueue: this,
+      renderingQueue: pdfRenderingQueue,
       linkService: this
     });
+    pdfRenderingQueue.setViewer(this.pdfViewer);
 
     var thumbnailContainer = document.getElementById('thumbnailView');
     this.pdfThumbnailViewer = new PDFThumbnailViewer({
       container: thumbnailContainer,
-      renderingQueue: this,
+      renderingQueue: pdfRenderingQueue,
       linkService: this
     });
+    pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
     Preferences.initialize();
 
@@ -1082,103 +1082,16 @@ var PDFView = {
     }
   },
 
-  renderHighestPriority:
-      function pdfViewRenderHighestPriority(currentlyVisiblePages) {
-    if (PDFView.idleTimeout) {
-      clearTimeout(PDFView.idleTimeout);
-      PDFView.idleTimeout = null;
-    }
-
-    // Pages have a higher priority than thumbnails, so check them first.
-    if (this.pdfViewer.forceRendering(currentlyVisiblePages)) {
-      return;
-    }
-    // No pages needed rendering so check thumbnails.
-    if (this.sidebarOpen) {
-      if (this.pdfThumbnailViewer.forceRendering()) {
-        return;
-      }
-    }
-
-    if (this.printing) {
-      // If printing is currently ongoing do not reschedule cleanup.
-      return;
-    }
-
-    PDFView.idleTimeout = setTimeout(function () {
-      PDFView.cleanup();
-    }, CLEANUP_TIMEOUT);
-  },
-
   cleanup: function pdfViewCleanup() {
     this.pdfViewer.cleanup();
     this.pdfThumbnailViewer.cleanup();
     this.pdfDocument.cleanup();
   },
 
-  getHighestPriority: function pdfViewGetHighestPriority(visible, views,
-                                                         scrolledDown) {
-    // The state has changed figure out which page has the highest priority to
-    // render next (if any).
-    // Priority:
-    // 1 visible pages
-    // 2 if last scrolled down page after the visible pages
-    // 2 if last scrolled up page before the visible pages
-    var visibleViews = visible.views;
-
-    var numVisible = visibleViews.length;
-    if (numVisible === 0) {
-      return false;
-    }
-    for (var i = 0; i < numVisible; ++i) {
-      var view = visibleViews[i].view;
-      if (!this.isViewFinished(view)) {
-        return view;
-      }
-    }
-
-    // All the visible views have rendered, try to render next/previous pages.
-    if (scrolledDown) {
-      var nextPageIndex = visible.last.id;
-      // ID's start at 1 so no need to add 1.
-      if (views[nextPageIndex] && !this.isViewFinished(views[nextPageIndex])) {
-        return views[nextPageIndex];
-      }
-    } else {
-      var previousPageIndex = visible.first.id - 2;
-      if (views[previousPageIndex] &&
-          !this.isViewFinished(views[previousPageIndex])) {
-        return views[previousPageIndex];
-      }
-    }
-    // Everything that needs to be rendered has been.
-    return false;
-  },
-
-  isViewFinished: function pdfViewIsViewFinished(view) {
-    return view.renderingState === RenderingStates.FINISHED;
-  },
-
-  // Render a page or thumbnail view. This calls the appropriate function based
-  // on the views state. If the view is already rendered it will return false.
-  renderView: function pdfViewRender(view, type) {
-    var state = view.renderingState;
-    switch (state) {
-      case RenderingStates.FINISHED:
-        return false;
-      case RenderingStates.PAUSED:
-        PDFView.highestPriorityPage = type + view.id;
-        view.resume();
-        break;
-      case RenderingStates.RUNNING:
-        PDFView.highestPriorityPage = type + view.id;
-        break;
-      case RenderingStates.INITIAL:
-        PDFView.highestPriorityPage = type + view.id;
-        view.draw(this.renderHighestPriority.bind(this));
-        break;
-    }
-    return true;
+  forceRendering: function pdfViewForceRendering() {
+    this.pdfRenderingQueue.printing = this.printing;
+    this.pdfRenderingQueue.isThumbnailViewEnabled = this.sidebarOpen;
+    this.pdfRenderingQueue.renderHighestPriority();
   },
 
   setHash: function pdfViewSetHash(hash) {
@@ -1266,7 +1179,7 @@ var PDFView = {
         outlineView.classList.add('hidden');
         attachmentsView.classList.add('hidden');
 
-        PDFView.renderHighestPriority();
+        PDFView.forceRendering();
 
         if (wasAnotherViewVisible) {
           this.pdfThumbnailViewer.ensureThumbnailVisible(this.page);
@@ -1342,7 +1255,7 @@ var PDFView = {
     }
 
     this.printing = true;
-    this.renderHighestPriority();
+    this.forceRendering();
 
     var body = document.querySelector('body');
     body.setAttribute('data-mozPrintCallback', true);
@@ -1364,7 +1277,7 @@ var PDFView = {
     }
 
     this.printing = false;
-    this.renderHighestPriority();
+    this.forceRendering();
   },
 
   setScale: function (value, resetAutoSettings, noScroll) {
@@ -1378,7 +1291,7 @@ var PDFView = {
     this.pdfViewer.updateRotation(this.pageRotation);
     this.pdfThumbnailViewer.updateRotation(this.pageRotation);
 
-    this.renderHighestPriority();
+    this.forceRendering();
 
     if (currentPage) {
       currentPage.scrollIntoView();
@@ -1454,6 +1367,7 @@ var PDFView = {
   }
 };
 
+//#include pdf_rendering_queue.js
 //#include page_view.js
 //#include pdf_viewer.js
 //#include thumbnail_view.js
@@ -1635,7 +1549,7 @@ function webViewerInitialized() {
       outerContainer.classList.add('sidebarMoving');
       outerContainer.classList.toggle('sidebarOpen');
       PDFView.sidebarOpen = outerContainer.classList.contains('sidebarOpen');
-      PDFView.renderHighestPriority();
+      PDFView.forceRendering();
     });
 
   document.getElementById('viewThumbnail').addEventListener('click',
