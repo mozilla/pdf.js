@@ -21,27 +21,20 @@
            PasswordPrompt, PresentationMode, HandTool, Promise,
            DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
-           watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState */
+           watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
+           DEFAULT_SCALE, UNKNOWN_SCALE,
+           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
 
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
-var DEFAULT_SCALE = 'auto';
 var DEFAULT_SCALE_DELTA = 1.1;
-var UNKNOWN_SCALE = 0;
-var DEFAULT_CACHE_SIZE = 10;
-var CSS_UNITS = 96.0 / 72.0;
-var SCROLLBAR_PADDING = 40;
-var VERTICAL_PADDING = 5;
-var MAX_AUTO_SCALE = 1.25;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 10.0;
 var VIEW_HISTORY_MEMORY = 20;
 var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
-var THUMBNAIL_SCROLL_MARGIN = -19;
-var CLEANUP_TIMEOUT = 30000;
-var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
+
 //#if B2G
 //PDFJS.useOnlyCssZoom = true;
 //PDFJS.disableTextLayer = true;
@@ -90,6 +83,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include overlay_manager.js
 //#include password_prompt.js
 //#include document_properties.js
+//#include pdf_viewer.js
 
 var PDFView = {
   initialBookmark: document.location.hash.substring(1),
@@ -1363,11 +1357,7 @@ var PDFView = {
   }
 };
 
-//#include pdf_rendering_queue.js
-//#include page_view.js
-//#include pdf_viewer.js
 //#include thumbnail_view.js
-//#include text_layer_builder.js
 //#include document_outline_view.js
 //#include document_attachments_view.js
 

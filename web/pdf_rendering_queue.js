@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals CLEANUP_TIMEOUT */
 
 'use strict';
+
+var CLEANUP_TIMEOUT = 30000;
 
 var RenderingStates = {
   INITIAL: 0,

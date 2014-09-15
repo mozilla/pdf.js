@@ -14,10 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, RenderingStates, THUMBNAIL_SCROLL_MARGIN, Promise,
-           watchScroll, getVisibleElements, scrollIntoView, PDFPageSource */
+/* globals mozL10n, RenderingStates, Promise, scrollIntoView, PDFPageSource,
+           watchScroll, getVisibleElements */
 
 'use strict';
+
+var THUMBNAIL_SCROLL_MARGIN = -19;
 
 var ThumbnailView = function thumbnailView(container, id, defaultViewport,
                                            linkService, renderingQueue,

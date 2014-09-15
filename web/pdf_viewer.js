@@ -15,9 +15,9 @@
  * limitations under the License.
  */
  /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PageView, UNKNOWN_SCALE,
-           IGNORE_CURRENT_POSITION_ON_ZOOM, SCROLLBAR_PADDING, VERTICAL_PADDING,
-           MAX_AUTO_SCALE, getVisibleElements, RenderingStates, Promise,
-           CSS_UNITS, PDFJS, TextLayerBuilder */
+           SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
+           getVisibleElements, RenderingStates, Promise,
+           PDFJS, TextLayerBuilder, PDFRenderingQueue */
 
 'use strict';
 
@@ -28,12 +28,26 @@ var PresentationModeState = {
   FULLSCREEN: 3,
 };
 
+var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
+
+//#include pdf_rendering_queue.js
+//#include page_view.js
+//#include text_layer_builder.js
+
 var PDFViewer = (function pdfViewer() {
   function PDFViewer(options) {
     this.container = options.container;
-    this.viewer = options.viewer;
-    this.renderingQueue = options.renderingQueue;
+    this.viewer = options.viewer || options.container.firstElementChild;
     this.linkService = options.linkService;
+
+    this.defaultRenderingQueue = !options.renderingQueue;
+    if (this.defaultRenderingQueue) {
+      // Custom rendering queue is not specified, using default one
+      this.renderingQueue = new PDFRenderingQueue();
+      this.renderingQueue.setViewer(this);
+    } else {
+      this.renderingQueue = options.renderingQueue;
+    }
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.lastScroll = 0;
@@ -162,6 +176,10 @@ var PDFViewer = (function pdfViewer() {
             resolvePagesPromise();
           }
         });
+
+        if (this.defaultRenderingQueue) {
+          firstPagePromise.then(this.update.bind(this));
+        }
       }.bind(this));
     },
 
@@ -206,7 +224,7 @@ var PDFViewer = (function pdfViewer() {
           this.presentationModeState === PresentationModeState.CHANGING ||
           this.presentationModeState === PresentationModeState.FULLSCREEN;
         if (this.location && !inPresentationMode &&
-          !IGNORE_CURRENT_POSITION_ON_ZOOM) {
+            !IGNORE_CURRENT_POSITION_ON_ZOOM) {
           page = this.location.pageNumber;
           dest = [null, { name: 'XYZ' }, this.location.left,
             this.location.top, null];
