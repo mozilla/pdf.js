@@ -14,10 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFView, PDFJS, mozL10n, CustomStyle,
+/* globals RenderingStates, PDFJS, mozL10n, CustomStyle,
            SCROLLBAR_PADDING, CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE,
-           getOutputScale, TextLayerBuilder, scrollIntoView, Stats,
-           PresentationModeState */
+           getOutputScale, scrollIntoView, Stats, PresentationModeState */
 
 'use strict';
 
@@ -509,6 +508,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
     canvas._viewport = viewport;
 
     var textLayerDiv = null;
+    var textLayer = null;
     if (!PDFJS.disableTextLayer) {
       textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
@@ -520,18 +520,12 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       } else {
         div.appendChild(textLayerDiv);
       }
+
+      textLayer = this.viewer.createTextLayerBuilder(textLayerDiv, this.id - 1,
+                                                     this.viewport);
     }
-    var isViewerInPresentationMode =
-      this.viewer.presentationModeState === PresentationModeState.FULLSCREEN;
-    var textLayer = this.textLayer =
-      textLayerDiv ? new TextLayerBuilder({
-        textLayerDiv: textLayerDiv,
-        pageIndex: this.id - 1,
-        lastScrollSource: this.linkService,
-        viewport: this.viewport,
-        isViewerInPresentationMode: isViewerInPresentationMode,
-        findController: PDFView.findController
-      }) : null;
+    this.textLayer = textLayer;
+
     // TODO(mack): use data attributes to store these
     ctx._scaleX = outputScale.sx;
     ctx._scaleY = outputScale.sy;
@@ -566,22 +560,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
         self.zoomLayer = null;
       }
 
-//#if (FIREFOX || MOZCENTRAL)
-//    if (self.textLayer && self.textLayer.textDivs &&
-//        self.textLayer.textDivs.length > 0 &&
-//        !PDFView.supportsDocumentColors) {
-//      console.error(mozL10n.get('document_colors_disabled', null,
-//        'PDF documents are not allowed to use their own colors: ' +
-//        '\'Allow pages to choose their own colors\' ' +
-//        'is deactivated in the browser.'));
-//      PDFView.fallback();
-//    }
-//#endif
-      if (error) {
-        PDFView.error(mozL10n.get('rendering_error', null,
-          'An error occurred while rendering the page.'), error);
-      }
-
+      self.error = error;
       self.stats = pdfPage.stats;
       self.updateStats();
       if (self.onAfterDraw) {
@@ -594,18 +573,6 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       });
       div.dispatchEvent(event);
 
-//#if (FIREFOX || MOZCENTRAL)
-//    FirefoxCom.request('reportTelemetry', JSON.stringify({
-//      type: 'pageInfo'
-//    }));
-//    // It is a good time to report stream and font types
-//    PDFView.pdfDocument.getStats().then(function (stats) {
-//      FirefoxCom.request('reportTelemetry', JSON.stringify({
-//        type: 'documentStats',
-//        stats: stats
-//      }));
-//    });
-//#endif
       callback();
     }
 

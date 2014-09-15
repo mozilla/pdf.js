@@ -17,7 +17,7 @@
  /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PageView, UNKNOWN_SCALE,
            IGNORE_CURRENT_POSITION_ON_ZOOM, SCROLLBAR_PADDING, VERTICAL_PADDING,
            MAX_AUTO_SCALE, getVisibleElements, RenderingStates, Promise,
-           CSS_UNITS, PDFJS */
+           CSS_UNITS, PDFJS, TextLayerBuilder */
 
 'use strict';
 
@@ -36,6 +36,7 @@ var PDFViewer = (function pdfViewer() {
     this.linkService = options.linkService;
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
+    this.lastScroll = 0;
     this.updateInProgress = false;
     this.presentationModeState = PresentationModeState.UNKNOWN;
     this.resetView();
@@ -180,6 +181,8 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _scrollUpdate: function () {
+      this.lastScroll = Date.now();
+
       if (this.pagesCount === 0) {
         return;
       }
@@ -410,6 +413,23 @@ var PDFViewer = (function pdfViewer() {
       return this.pdfDocument.getPage(pageIndex + 1).then(function (page) {
         return page.getTextContent();
       });
+    },
+
+    createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
+      var isViewerInPresentationMode =
+        this.presentationModeState === PresentationModeState.FULLSCREEN;
+      return new TextLayerBuilder({
+        textLayerDiv: textLayerDiv,
+        pageIndex: pageIndex,
+        viewport: viewport,
+        lastScrollSource: this,
+        isViewerInPresentationMode: isViewerInPresentationMode,
+        findController: this.findController
+      });
+    },
+
+    setFindController: function (findController) {
+      this.findController = findController;
     },
   };
 

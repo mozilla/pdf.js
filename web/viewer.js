@@ -104,7 +104,6 @@ var PDFView = {
   pageRotation: 0,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
-  lastScroll: 0,
   isViewerEmbedded: (window.parent !== window),
   url: '',
 
@@ -138,6 +137,7 @@ var PDFView = {
       pdfViewer: this.pdfViewer,
       integratedFind: this.supportsIntegratedFind
     });
+    this.pdfViewer.setFindController(this.findController);
 
     this.findBar = new PDFFindBar({
       bar: document.getElementById('findbar'),
@@ -210,10 +210,6 @@ var PDFView = {
       versionField: document.getElementById('versionField'),
       pageCountField: document.getElementById('pageCountField')
     });
-
-    container.addEventListener('scroll', function() {
-      self.lastScroll = Date.now();
-    }, false);
 
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
@@ -1666,6 +1662,36 @@ document.addEventListener('pagerendered', function (e) {
   var pageView = PDFView.pdfViewer.getPageView(pageIndex);
   var thumbnailView = PDFView.pdfThumbnailViewer.getThumbnail(pageIndex);
   thumbnailView.setImage(pageView.canvas);
+
+//#if (FIREFOX || MOZCENTRAL)
+//if (pageView.textLayer && pageView.textLayer.textDivs &&
+//    pageView.textLayer.textDivs.length > 0 &&
+//    !PDFView.supportsDocumentColors) {
+//  console.error(mozL10n.get('document_colors_disabled', null,
+//    'PDF documents are not allowed to use their own colors: ' +
+//    '\'Allow pages to choose their own colors\' ' +
+//    'is deactivated in the browser.'));
+//  PDFView.fallback();
+//}
+//#endif
+
+  if (pageView.error) {
+    PDFView.error(mozL10n.get('rendering_error', null,
+      'An error occurred while rendering the page.'), pageView.error);
+  }
+
+//#if (FIREFOX || MOZCENTRAL)
+//FirefoxCom.request('reportTelemetry', JSON.stringify({
+//  type: 'pageInfo'
+//}));
+//// It is a good time to report stream and font types
+//PDFView.pdfDocument.getStats().then(function (stats) {
+//  FirefoxCom.request('reportTelemetry', JSON.stringify({
+//    type: 'documentStats',
+//    stats: stats
+//  }));
+//});
+//#endif
 }, true);
 
 window.addEventListener('presentationmodechanged', function (e) {
