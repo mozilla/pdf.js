@@ -22,7 +22,8 @@
 'use strict';
 
 var PageView = function pageView(container, id, scale, defaultViewport,
-                                 linkService, renderingQueue, cache, viewer) {
+                                 linkService, renderingQueue, cache,
+                                 pageSource, viewer) {
   this.id = id;
 
   this.rotation = 0;
@@ -34,6 +35,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
   this.linkService = linkService;
   this.renderingQueue = renderingQueue;
   this.cache = cache;
+  this.pageSource = pageSource;
   this.viewer = viewer;
 
   this.renderingState = RenderingStates.INITIAL;
@@ -430,12 +432,6 @@ var PageView = function pageView(container, id, scale, defaultViewport,
     scrollIntoView(div, { left: left, top: top });
   };
 
-  this.getTextContent = function pageviewGetTextContent() {
-    return this.renderingQueue.getPage(this.id).then(function(pdfPage) {
-      return pdfPage.getTextContent();
-    });
-  };
-
   this.draw = function pageviewDraw(callback) {
     var pdfPage = this.pdfPage;
 
@@ -443,7 +439,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       return;
     }
     if (!pdfPage) {
-      var promise = this.renderingQueue.getPage(this.id);
+      var promise = this.pageSource.getPage();
       promise.then(function(pdfPage) {
         delete this.pagePdfPromise;
         this.setPdfPage(pdfPage);
@@ -631,7 +627,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       function pdfPageRenderCallback() {
         pageViewDrawCallback(null);
         if (textLayer) {
-          self.getTextContent().then(
+          self.pdfPage.getTextContent().then(
             function textContentResolved(textContent) {
               textLayer.setTextContent(textContent);
             }

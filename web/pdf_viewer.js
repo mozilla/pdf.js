@@ -17,7 +17,7 @@
  /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PageView, UNKNOWN_SCALE,
            IGNORE_CURRENT_POSITION_ON_ZOOM, SCROLLBAR_PADDING, VERTICAL_PADDING,
            MAX_AUTO_SCALE, getVisibleElements, PresentationMode,
-           RenderingStates */
+           RenderingStates, Promise, CSS_UNITS, PDFJS */
 
 'use strict';
 
@@ -29,17 +29,17 @@ var PDFViewer = (function pdfViewer() {
     this.linkService = options.linkService;
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
-    this.pages = [];
-    this.cache = new Cache(DEFAULT_CACHE_SIZE);
-    this.currentPageNumber = 1;
-    this.previousPageNumber = 1;
-    this.updateInProgress = true;
+    this.updateInProgress = false;
     this.resetView();
   }
 
   PDFViewer.prototype = {
     get pagesCount() {
       return this.pages.length;
+    },
+
+    getPageView: function (index) {
+      return this.pages[index];
     },
 
     setCurrentPageNumber: function (val) {
@@ -61,18 +61,114 @@ var PDFViewer = (function pdfViewer() {
       this.container.dispatchEvent(event);
     },
 
-    addPage: function (pageNum, scale, viewport) {
-      var pageView = new PageView(this.viewer, pageNum, scale, viewport,
-                                  this.linkService, this.renderingQueue,
-                                  this.cache, this);
-      this.pages.push(pageView);
-      return pageView;
+    setDocument: function (pdfDocument) {
+      if (this.pdfDocument) {
+        this.resetView();
+      }
+
+      this.pdfDocument = pdfDocument;
+      if (!pdfDocument) {
+        return;
+      }
+
+      var pagesCount = pdfDocument.numPages;
+      var pagesRefMap = this.pagesRefMap = {};
+      var self = this;
+
+      var resolvePagesPromise;
+      var pagesPromise = new Promise(function (resolve) {
+        resolvePagesPromise = resolve;
+      });
+      this.pagesPromise = pagesPromise;
+      pagesPromise.then(function () {
+        var event = document.createEvent('CustomEvent');
+        event.initCustomEvent('pagesloaded', true, true, {
+          pagesCount: pagesCount
+        });
+        self.container.dispatchEvent(event);
+      });
+
+      var isOnePageRenderedResolved = false;
+      var resolveOnePageRendered = null;
+      var onePageRendered = new Promise(function (resolve) {
+        resolveOnePageRendered = resolve;
+      });
+      this.onePageRendered = onePageRendered;
+
+      var bindOnAfterDraw = function (pageView) {
+        // when page is painted, using the image as thumbnail base
+        pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
+          if (!isOnePageRenderedResolved) {
+            isOnePageRenderedResolved = true;
+            resolveOnePageRendered();
+          }
+          var event = document.createEvent('CustomEvent');
+          event.initCustomEvent('pagerendered', true, true, {
+            pageNumber: pageView.id
+          });
+          self.container.dispatchEvent(event);
+        };
+      };
+
+      var firstPagePromise = pdfDocument.getPage(1);
+      this.firstPagePromise = firstPagePromise;
+
+      // Fetch a single page so we can get a viewport that will be the default
+      // viewport for all pages
+      return firstPagePromise.then(function(pdfPage) {
+        var scale = this.currentScale || 1.0;
+        var viewport = pdfPage.getViewport(scale * CSS_UNITS);
+        for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+          var pageSource = new PDFPageSource(pdfDocument, pageNum);
+          var pageView = new PageView(this.viewer, pageNum, scale,
+                                      viewport.clone(), this.linkService,
+                                      this.renderingQueue, this.cache,
+                                      pageSource, this);
+          bindOnAfterDraw(pageView);
+          this.pages.push(pageView);
+        }
+
+        // Fetch all the pages since the viewport is needed before printing
+        // starts to create the correct size canvas. Wait until one page is
+        // rendered so we don't tie up too many resources early on.
+        onePageRendered.then(function () {
+          if (!PDFJS.disableAutoFetch) {
+            var getPagesLeft = pagesCount;
+            for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+              pdfDocument.getPage(pageNum).then(function (pageNum, pdfPage) {
+                var pageView = self.pages[pageNum - 1];
+                if (!pageView.pdfPage) {
+                  pageView.setPdfPage(pdfPage);
+                }
+                var refStr = pdfPage.ref.num + ' ' + pdfPage.ref.gen + ' R';
+                pagesRefMap[refStr] = pageNum;
+                getPagesLeft--;
+                if (!getPagesLeft) {
+                  resolvePagesPromise();
+                }
+              }.bind(null, pageNum));
+            }
+          } else {
+            // XXX: Printing is semi-broken with auto fetch disabled.
+            resolvePagesPromise();
+          }
+        });
+      }.bind(this));
     },
 
     resetView: function () {
+      this.cache = new Cache(DEFAULT_CACHE_SIZE);
+      this.pages = [];
+      this.currentPageNumber = 1;
+      this.previousPageNumber = 1;
       this.currentScale = UNKNOWN_SCALE;
       this.currentScaleValue = null;
       this.location = null;
+
+      var container = this.viewer;
+      while (container.hasChildNodes()) {
+        container.removeChild(container.lastChild);
+      }
     },
 
     _scrollUpdate: function () {
@@ -169,14 +265,6 @@ var PDFViewer = (function pdfViewer() {
       }
 
       this.setScale(this.currentScaleValue, true, true);
-    },
-
-    removeAllPages: function () {
-      var container = this.viewer;
-      while (container.hasChildNodes()) {
-        container.removeChild(container.lastChild);
-      }
-      this.pages = [];
     },
 
     updateLocation: function (firstPage) {
@@ -308,7 +396,28 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
     },
+
+    getPageTextContent: function (pageIndex) {
+      return this.pdfDocument.getPage(pageIndex + 1).then(function (page) {
+        return page.getTextContent();
+      });
+    },
   };
 
   return PDFViewer;
+})();
+
+var PDFPageSource = (function PDFPageSourceClosure() {
+  function PDFPageSource(pdfDocument, pageNumber) {
+    this.pdfDocument = pdfDocument;
+    this.pageNumber = pageNumber;
+  }
+
+  PDFPageSource.prototype = {
+    getPage: function () {
+      return this.pdfDocument.getPage(this.pageNumber);
+    }
+  };
+
+  return PDFPageSource;
 })();

@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, RenderingStates, THUMBNAIL_SCROLL_MARGIN,
-           watchScroll, getVisibleElements, scrollIntoView */
+/* globals mozL10n, RenderingStates, THUMBNAIL_SCROLL_MARGIN, Promise,
+           watchScroll, getVisibleElements, scrollIntoView, PDFPageSource */
 
 'use strict';
 
 var ThumbnailView = function thumbnailView(container, id, defaultViewport,
-                                           linkService, renderingQueue) {
+                                           linkService, renderingQueue,
+                                           pageSource) {
   var anchor = document.createElement('a');
   anchor.href = linkService.getAnchorUrl('#page=' + id);
   anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
@@ -65,6 +66,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
   this.hasImage = false;
   this.renderingState = RenderingStates.INITIAL;
   this.renderingQueue = renderingQueue;
+  this.pageSource = pageSource;
 
   this.setPdfPage = function thumbnailViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
@@ -128,7 +130,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
 
   this.draw = function thumbnailViewDraw(callback) {
     if (!this.pdfPage) {
-      var promise = this.renderingQueue.getPage(this.id);
+      var promise = this.pageSource.getPage(this.id);
       promise.then(function(pdfPage) {
         this.setPdfPage(pdfPage);
         this.draw(callback);
@@ -190,7 +192,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
 
   this.setImage = function thumbnailViewSetImage(img) {
     if (!this.pdfPage) {
-      var promise = this.renderingQueue.getPage(this.id);
+      var promise = this.pageSource.getPage();
       promise.then(function(pdfPage) {
         this.setPdfPage(pdfPage);
         this.setImage(img);
@@ -252,6 +254,10 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
       this.renderingQueue.renderHighestPriority();
     },
 
+    getThumbnail: function PDFThumbnailViewer_getThumbnail(index) {
+      return this.thumbnails[index];
+    },
+
     getVisibleThumbs: function PDFThumbnailViewer_getVisibleThumbs() {
       return getVisibleElements(this.container, this.thumbnails);
     },
@@ -289,20 +295,32 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
       ThumbnailView.tempImageCache = null;
     },
 
-    removeAllThumbnails: function PDFThumbnailViewer_cleanup() {
-      var thumbsView = this.container;
-      while (thumbsView.hasChildNodes()) {
-        thumbsView.removeChild(thumbsView.lastChild);
+    setDocument: function (pdfDocument) {
+      if (this.pdfDocument) {
+        // cleanup of the elements and views
+        var thumbsView = this.container;
+        while (thumbsView.hasChildNodes()) {
+          thumbsView.removeChild(thumbsView.lastChild);
+        }
+        this.thumbnails = [];
       }
-      this.thumbnails = [];
-    },
 
-    addThumbnail: function PDFThumbnailViewer_addThumbnail(pageNum, viewport,
-                                                           linkService) {
-      var thumbnail = new ThumbnailView(this.container, pageNum, viewport,
-                                        this.linkService, this.renderingQueue);
-      this.thumbnails.push(thumbnail);
-      return thumbnail;
+      this.pdfDocument = pdfDocument;
+      if (!pdfDocument) {
+        return Promise.resolve();
+      }
+
+      return pdfDocument.getPage(1).then(function (firstPage) {
+        var pagesCount = pdfDocument.numPages;
+        var viewport = firstPage.getViewport(1.0);
+        for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+          var pageSource = new PDFPageSource(pdfDocument, pageNum);
+          var thumbnail = new ThumbnailView(this.container, pageNum,
+                                            viewport.clone(), this.linkService,
+                                            this.renderingQueue, pageSource);
+          this.thumbnails.push(thumbnail);
+        }
+      }.bind(this));
     },
 
     ensureThumbnailVisible:

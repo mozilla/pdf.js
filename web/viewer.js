@@ -52,12 +52,6 @@ var RenderingStates = {
   PAUSED: 2,
   FINISHED: 3
 };
-var FindStates = {
-  FIND_FOUND: 0,
-  FIND_NOTFOUND: 1,
-  FIND_WRAPPED: 2,
-  FIND_PENDING: 3
-};
 
 PDFJS.imageResourcesPath = './images/';
 //#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
@@ -141,7 +135,7 @@ var PDFView = {
     Preferences.initialize();
 
     this.findController = new PDFFindController({
-      pdfPageSource: this,
+      pdfViewer: this.pdfViewer,
       integratedFind: this.supportsIntegratedFind
     });
 
@@ -261,10 +255,6 @@ var PDFView = {
     return initializedPromise.then(function () {
       PDFView.initialized = true;
     });
-  },
-
-  getPage: function pdfViewGetPage(n) {
-    return this.pdfDocument.getPage(n);
   },
 
   getPageView: function pdfViewGetPageView(index) {
@@ -491,8 +481,8 @@ var PDFView = {
     this.pdfDocument.destroy();
     this.pdfDocument = null;
 
-    this.pdfThumbnailViewer.removeAllThumbnails();
-    this.pdfViewer.removeAllPages();
+    this.pdfThumbnailViewer.setDocument(null);
+    this.pdfViewer.setDocument(null);
 
     if (typeof PDFBug !== 'undefined') {
       PDFBug.cleanup();
@@ -845,21 +835,6 @@ var PDFView = {
 
   load: function pdfViewLoad(pdfDocument, scale) {
     var self = this;
-    var isOnePageRenderedResolved = false;
-    var resolveOnePageRendered = null;
-    var onePageRendered = new Promise(function (resolve) {
-      resolveOnePageRendered = resolve;
-    });
-    function bindOnAfterDraw(pageView, thumbnailView) {
-      // when page is painted, using the image as thumbnail base
-      pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
-        if (!isOnePageRenderedResolved) {
-          isOnePageRenderedResolved = true;
-          resolveOnePageRendered();
-        }
-        thumbnailView.setImage(pageView.canvas);
-      };
-    }
 
     PDFView.findController.reset();
 
@@ -884,57 +859,19 @@ var PDFView = {
     PDFView.documentFingerprint = id;
     var store = PDFView.store = new ViewHistory(id);
 
+    var pdfViewer = this.pdfViewer;
+    pdfViewer.currentScale = scale;
+    pdfViewer.setDocument(pdfDocument);
+    var firstPagePromise = pdfViewer.firstPagePromise;
+    var pagesPromise = pdfViewer.pagesPromise;
+    var onePageRendered = pdfViewer.onePageRendered;
+
     this.pageRotation = 0;
+    this.pagesRefMap = pdfViewer.pagesRefMap;
 
-    var pagesRefMap = this.pagesRefMap = {};
+    this.pdfThumbnailViewer.setDocument(pdfDocument);
 
-    var resolvePagesPromise;
-    var pagesPromise = new Promise(function (resolve) {
-      resolvePagesPromise = resolve;
-    });
-    this.pagesPromise = pagesPromise;
-
-    var firstPagePromise = pdfDocument.getPage(1);
-    var pagesViewer = this.pdfViewer;
-    var thumbsViewer = this.pdfThumbnailViewer;
-
-    // Fetch a single page so we can get a viewport that will be the default
-    // viewport for all pages
     firstPagePromise.then(function(pdfPage) {
-      var viewport = pdfPage.getViewport((scale || 1.0) * CSS_UNITS);
-      for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-        var viewportClone = viewport.clone();
-        var pageView = pagesViewer.addPage(pageNum, scale, viewportClone);
-        var thumbnailView = thumbsViewer.addThumbnail(pageNum, viewportClone);
-        bindOnAfterDraw(pageView, thumbnailView);
-      }
-
-      // Fetch all the pages since the viewport is needed before printing
-      // starts to create the correct size canvas. Wait until one page is
-      // rendered so we don't tie up too many resources early on.
-      onePageRendered.then(function () {
-        if (!PDFJS.disableAutoFetch) {
-          var getPagesLeft = pagesCount;
-          for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-            pdfDocument.getPage(pageNum).then(function (pageNum, pdfPage) {
-              var pageView = PDFView.getPageView(pageNum - 1);
-              if (!pageView.pdfPage) {
-                pageView.setPdfPage(pdfPage);
-              }
-              var refStr = pdfPage.ref.num + ' ' + pdfPage.ref.gen + ' R';
-              pagesRefMap[refStr] = pageNum;
-              getPagesLeft--;
-              if (!getPagesLeft) {
-                resolvePagesPromise();
-              }
-            }.bind(null, pageNum));
-          }
-        } else {
-          // XXX: Printing is semi-broken with auto fetch disabled.
-          resolvePagesPromise();
-        }
-      });
-
       downloadedPromise.then(function () {
         var event = document.createEvent('CustomEvent');
         event.initCustomEvent('documentload', true, true, {});
@@ -1118,10 +1055,6 @@ var PDFView = {
   },
 
   setInitialView: function pdfViewSetInitialView(storedHash, scale) {
-    // Reset the current scale, as otherwise the page's scale might not get
-    // updated if the zoom level stayed the same.
-    this.pdfViewer.resetView();
-
     // When opening a new file (when one is already loaded in the viewer):
     // Reset 'currentPageNumber', since otherwise the page's scale will be wrong
     // if 'currentPageNumber' is larger than the number of pages in the file.
@@ -1813,6 +1746,13 @@ function webViewerInitialized() {
 }
 
 document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+
+document.addEventListener('pagerendered', function (e) {
+  var pageIndex = e.detail.pageNumber - 1;
+  var pageView = PDFView.pdfViewer.getPageView(pageIndex);
+  var thumbnailView = PDFView.pdfThumbnailViewer.getThumbnail(pageIndex);
+  thumbnailView.setImage(pageView.canvas);
+}, true);
 
 function updateViewarea() {
   if (!PDFView.initialized) {
