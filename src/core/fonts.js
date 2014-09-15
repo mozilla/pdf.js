@@ -4063,7 +4063,15 @@ var Font = (function FontClosure() {
         // where the the font is symbolic and it has an encoding.
         if (hasEncoding &&
             (cmapPlatformId === 3 && cmapEncodingId === 1 ||
-             cmapPlatformId === 1 && cmapEncodingId === 0)) {
+             cmapPlatformId === 1 && cmapEncodingId === 0) ||
+            (cmapPlatformId === -1 && cmapEncodingId === -1 && // Temporary hack
+             !!Encodings[properties.baseEncodingName])) {      // Temporary hack
+          // When no preferred cmap table was found and |baseEncodingName| is
+          // one of the predefined encodings, we seem to obtain a better
+          // |charCodeToGlyphId| map from the code below (fixes bug 1057544).
+          // TODO: Note that this is a hack which should be removed as soon as
+          //       we have proper support for more exotic cmap tables.
+
           var baseEncoding = [];
           if (properties.baseEncodingName === 'MacRomanEncoding' ||
               properties.baseEncodingName === 'WinAnsiEncoding') {
