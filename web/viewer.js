@@ -21,7 +21,7 @@
            PasswordPrompt, PresentationMode, HandTool, Promise,
            DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
-           watchScroll, PDFViewer, PDFRenderingQueue */
+           watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState */
 
 'use strict';
 
@@ -1667,6 +1667,14 @@ document.addEventListener('pagerendered', function (e) {
   var thumbnailView = PDFView.pdfThumbnailViewer.getThumbnail(pageIndex);
   thumbnailView.setImage(pageView.canvas);
 }, true);
+
+window.addEventListener('presentationmodechanged', function (e) {
+  var active = e.detail.active;
+  var switchInProgress = e.detail.switchInProgress;
+  PDFView.pdfViewer.presentationModeState =
+    switchInProgress ? PresentationModeState.CHANGING :
+    active ? PresentationModeState.FULLSCREEN : PresentationModeState.NORMAL;
+});
 
 function updateViewarea() {
   if (!PDFView.initialized) {

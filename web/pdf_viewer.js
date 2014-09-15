@@ -16,10 +16,17 @@
  */
  /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PageView, UNKNOWN_SCALE,
            IGNORE_CURRENT_POSITION_ON_ZOOM, SCROLLBAR_PADDING, VERTICAL_PADDING,
-           MAX_AUTO_SCALE, getVisibleElements, PresentationMode,
-           RenderingStates, Promise, CSS_UNITS, PDFJS */
+           MAX_AUTO_SCALE, getVisibleElements, RenderingStates, Promise,
+           CSS_UNITS, PDFJS */
 
 'use strict';
+
+var PresentationModeState = {
+  UNKNOWN: 0,
+  NORMAL: 1,
+  CHANGING: 2,
+  FULLSCREEN: 3,
+};
 
 var PDFViewer = (function pdfViewer() {
   function PDFViewer(options) {
@@ -30,6 +37,7 @@ var PDFViewer = (function pdfViewer() {
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
     this.updateInProgress = false;
+    this.presentationModeState = PresentationModeState.UNKNOWN;
     this.resetView();
   }
 
@@ -191,7 +199,10 @@ var PDFViewer = (function pdfViewer() {
 
       if (!noScroll) {
         var page = this.currentPageNumber, dest;
-        if (this.location && !this.inPresentationMode &&
+        var inPresentationMode =
+          this.presentationModeState === PresentationModeState.CHANGING ||
+          this.presentationModeState === PresentationModeState.FULLSCREEN;
+        if (this.location && !inPresentationMode &&
           !IGNORE_CURRENT_POSITION_ON_ZOOM) {
           page = this.location.pageNumber;
           dest = [null, { name: 'XYZ' }, this.location.left,
@@ -223,8 +234,10 @@ var PDFViewer = (function pdfViewer() {
         if (!currentPage) {
           return;
         }
-        var hPadding = PresentationMode.active ? 0 : SCROLLBAR_PADDING;
-        var vPadding = PresentationMode.active ? 0 : VERTICAL_PADDING;
+        var inPresentationMode =
+          this.presentationModeState === PresentationModeState.FULLSCREEN;
+        var hPadding = inPresentationMode ? 0 : SCROLLBAR_PADDING;
+        var vPadding = inPresentationMode ? 0 : VERTICAL_PADDING;
         var pageWidthScale = (this.container.clientWidth - hPadding) /
                              currentPage.width * currentPage.scale;
         var pageHeightScale = (this.container.clientHeight - vPadding) /
@@ -295,10 +308,6 @@ var PDFViewer = (function pdfViewer() {
       };
     },
 
-    get inPresentationMode() {
-      return PresentationMode.active || PresentationMode.switchInProgress;
-    },
-
     update: function () {
       var visible = this.getVisiblePages();
       var visiblePages = visible.views;
@@ -334,7 +343,7 @@ var PDFViewer = (function pdfViewer() {
         currentId = visiblePages[0].id;
       }
 
-      if (!PresentationMode.active) {
+      if (this.presentationModeState !== PresentationModeState.FULLSCREEN) {
         this.setCurrentPageNumber(currentId);
       }
 
@@ -360,12 +369,12 @@ var PDFViewer = (function pdfViewer() {
     },
 
     get isHorizontalScrollbarEnabled() {
-      return (PresentationMode.active ? false :
-        (this.container.scrollWidth > this.container.clientWidth));
+      return (this.presentationModeState === PresentationModeState.FULLSCREEN ?
+        false : (this.container.scrollWidth > this.container.clientWidth));
     },
 
     getVisiblePages: function () {
-      if (!PresentationMode.active) {
+      if (this.presentationModeState !== PresentationModeState.FULLSCREEN) {
         return getVisibleElements(this.container, this.pages, true);
       } else {
         // The algorithm in getVisibleElements doesn't work in all browsers and

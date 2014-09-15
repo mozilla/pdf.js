@@ -81,6 +81,7 @@ var PresentationMode = {
     }
     this.switchInProgress = setTimeout(function switchInProgressTimeout() {
       delete this.switchInProgress;
+      this._notifyStateChange();
     }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
   },
 
@@ -97,6 +98,7 @@ var PresentationMode = {
       return false;
     }
     this._setSwitchInProgress();
+    this._notifyStateChange();
 
     if (this.container.requestFullscreen) {
       this.container.requestFullscreen();
@@ -118,9 +120,19 @@ var PresentationMode = {
     return true;
   },
 
+  _notifyStateChange: function presentationModeNotifyStateChange() {
+    var event = document.createEvent('CustomEvent');
+    event.initCustomEvent('presentationmodechanged', true, true, {
+      active: PresentationMode.active,
+      switchInProgress: !!PresentationMode.switchInProgress
+    });
+    window.dispatchEvent(event);
+  },
+
   enter: function presentationModeEnter() {
     this.active = true;
     this._resetSwitchInProgress();
+    this._notifyStateChange();
 
     // Ensure that the correct page is scrolled into view when entering
     // Presentation Mode, by waiting until fullscreen mode in enabled.
@@ -148,6 +160,8 @@ var PresentationMode = {
     // Note: This is only necessary in non-Mozilla browsers.
     setTimeout(function exitPresentationModeTimeout() {
       this.active = false;
+      this._notifyStateChange();
+
       PDFView.setScale(this.args.previousScale, true);
       PDFView.page = page;
       this.args = null;

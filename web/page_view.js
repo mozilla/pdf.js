@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFView, PDFJS, mozL10n, CustomStyle,
-           PresentationMode, scrollIntoView, SCROLLBAR_PADDING, CSS_UNITS,
-           UNKNOWN_SCALE, DEFAULT_SCALE, getOutputScale, TextLayerBuilder,
-           Stats */
+           SCROLLBAR_PADDING, CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE,
+           getOutputScale, TextLayerBuilder, scrollIntoView, Stats,
+           PresentationModeState */
 
 'use strict';
 
@@ -346,7 +346,8 @@ var PageView = function pageView(container, id, scale, defaultViewport,
   };
 
   this.scrollIntoView = function pageViewScrollIntoView(dest) {
-    if (PresentationMode.active) {
+    if (this.viewer.presentationModeState ===
+        PresentationModeState.FULLSCREEN) {
       if (this.linkService.page !== this.id) {
         // Avoid breaking getVisiblePages in presentation mode.
         this.linkService.page = this.id;
@@ -520,13 +521,15 @@ var PageView = function pageView(container, id, scale, defaultViewport,
         div.appendChild(textLayerDiv);
       }
     }
+    var isViewerInPresentationMode =
+      this.viewer.presentationModeState === PresentationModeState.FULLSCREEN;
     var textLayer = this.textLayer =
       textLayerDiv ? new TextLayerBuilder({
         textLayerDiv: textLayerDiv,
         pageIndex: this.id - 1,
         lastScrollSource: this.linkService,
         viewport: this.viewport,
-        isViewerInPresentationMode: PresentationMode.active,
+        isViewerInPresentationMode: isViewerInPresentationMode,
         findController: PDFView.findController
       }) : null;
     // TODO(mack): use data attributes to store these
