@@ -184,6 +184,7 @@ target.web = function() {
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chromium');
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/b2g');
   mkdir('-p', GH_PAGES_DIR + '/api/draft/');
+  mkdir('-p', GH_PAGES_DIR + '/examples/');
 
   cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
   cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
@@ -191,6 +192,7 @@ target.web = function() {
   cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
   cp('-R', 'test/features', GH_PAGES_DIR);
+  cp('-R', 'examples/learning', GH_PAGES_DIR + '/examples/');
   cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
   cp('-R', JSDOC_DIR + '/*', GH_PAGES_DIR + '/api/draft/');
 
