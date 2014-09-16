@@ -14,11 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, globalScope, InvalidPDFException, info,
-           MissingPDFException, PasswordException, PDFJS, Promise,
-           UnknownErrorException, NetworkManager, LocalPdfManager,
-           NetworkPdfManager, XRefParseException, createPromiseCapability,
-           isInt, PasswordResponses, MessageHandler, Ref, RANGE_CHUNK_SIZE */
+/* globals PDFJS, createPromiseCapability, LocalPdfManager, NetworkPdfManager,
+           NetworkManager, isInt, RANGE_CHUNK_SIZE, MissingPDFException,
+           UnexpectedResponseException, PasswordException, Promise,
+           PasswordResponses, InvalidPDFException, UnknownErrorException,
+           XRefParseException, Ref, info, globalScope, error, MessageHandler */
 
 'use strict';
 
@@ -141,14 +141,16 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         },
 
         onError: function onError(status) {
+          var exception;
           if (status === 404) {
-            var exception = new MissingPDFException('Missing PDF "' +
-                                                    source.url + '".');
-            handler.send('MissingPDF', { exception: exception });
+            exception = new MissingPDFException('Missing PDF "' +
+                                                source.url + '".');
+            handler.send('MissingPDF', exception);
           } else {
-            handler.send('DocError', 'Unexpected server response (' +
-                         status + ') while retrieving PDF "' +
-                         source.url + '".');
+            exception = new UnexpectedResponseException(
+              'Unexpected server response (' + status +
+              ') while retrieving PDF "' + source.url + '".', status);
+            handler.send('UnexpectedResponse', exception);
           }
         },
 
@@ -200,26 +202,19 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       var onFailure = function(e) {
         if (e instanceof PasswordException) {
           if (e.code === PasswordResponses.NEED_PASSWORD) {
-            handler.send('NeedPassword', {
-              exception: e
-            });
+            handler.send('NeedPassword', e);
           } else if (e.code === PasswordResponses.INCORRECT_PASSWORD) {
-            handler.send('IncorrectPassword', {
-              exception: e
-            });
+            handler.send('IncorrectPassword', e);
           }
         } else if (e instanceof InvalidPDFException) {
-          handler.send('InvalidPDF', {
-            exception: e
-          });
+          handler.send('InvalidPDF', e);
         } else if (e instanceof MissingPDFException) {
-          handler.send('MissingPDF', {
-            exception: e
-          });
+          handler.send('MissingPDF', e);
+        } else if (e instanceof UnexpectedResponseException) {
+          handler.send('UnexpectedResponse', e);
         } else {
-          handler.send('UnknownError', {
-            exception: new UnknownErrorException(e.message, e.toString())
-          });
+          handler.send('UnknownError',
+                       new UnknownErrorException(e.message, e.toString()));
         }
       };
 

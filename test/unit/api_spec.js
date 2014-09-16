@@ -1,14 +1,14 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
-           isArray */
+           isArray, MissingPDFException */
 
 'use strict';
 
 describe('api', function() {
   // TODO run with worker enabled
   var basicApiUrl = combineUrl(window.location.href, '../pdfs/basicapi.pdf');
-  function waitsForPromise(promise, successCallback) {
+  function waitsForPromiseResolved(promise, successCallback) {
     var data;
     promise.then(function(val) {
       data = val;
@@ -22,11 +22,25 @@ describe('api', function() {
       return data !== undefined;
     }, 20000);
   }
+  function waitsForPromiseRejected(promise, failureCallback) {
+    var data;
+    promise.then(function(val) {
+      // Shouldn't get here.
+      expect(false).toEqual(true);
+    },
+    function(error) {
+      data = error;
+      failureCallback(data);
+    });
+    waitsFor(function() {
+      return data !== undefined;
+    }, 20000);
+  }
   describe('PDFJS', function() {
     describe('getDocument', function() {
       it('creates pdf doc from URL', function() {
         var promise = PDFJS.getDocument(basicApiUrl);
-        waitsForPromise(promise, function(data) {
+        waitsForPromiseResolved(promise, function(data) {
           expect(true).toEqual(true);
         });
       });
@@ -61,8 +75,16 @@ describe('api', function() {
         expect(typedArrayPdf.length).toEqual(105779);
 
         var promise = PDFJS.getDocument(typedArrayPdf);
-        waitsForPromise(promise, function(data) {
+        waitsForPromiseResolved(promise, function(data) {
           expect(true).toEqual(true);
+        });
+      });
+      it('creates pdf doc from non-existent URL', function() {
+        var nonExistentUrl = combineUrl(window.location.href,
+                                        '../pdfs/non-existent.pdf');
+        var promise = PDFJS.getDocument(nonExistentUrl);
+        waitsForPromiseRejected(promise, function(error) {
+          expect(error instanceof MissingPDFException).toEqual(true);
         });
       });
     });
@@ -70,7 +92,7 @@ describe('api', function() {
   describe('PDFDocument', function() {
     var promise = PDFJS.getDocument(basicApiUrl);
     var doc;
-    waitsForPromise(promise, function(data) {
+    waitsForPromiseResolved(promise, function(data) {
       doc = data;
     });
     it('gets number of pages', function() {
@@ -81,7 +103,7 @@ describe('api', function() {
     });
     it('gets page', function() {
       var promise = doc.getPage(1);
-      waitsForPromise(promise, function(data) {
+      waitsForPromiseResolved(promise, function(data) {
         expect(true).toEqual(true);
       });
     });
@@ -89,32 +111,32 @@ describe('api', function() {
       // reference to second page
       var ref = {num: 17, gen: 0};
       var promise = doc.getPageIndex(ref);
-      waitsForPromise(promise, function(pageIndex) {
+      waitsForPromiseResolved(promise, function(pageIndex) {
         expect(pageIndex).toEqual(1);
       });
     });
     it('gets destinations', function() {
       var promise = doc.getDestinations();
-      waitsForPromise(promise, function(data) {
+      waitsForPromiseResolved(promise, function(data) {
         expect(data).toEqual({ chapter1: [{ gen: 0, num: 17 }, { name: 'XYZ' },
                                           0, 841.89, null] });
       });
     });
     it('gets attachments', function() {
       var promise = doc.getAttachments();
-      waitsForPromise(promise, function (data) {
+      waitsForPromiseResolved(promise, function (data) {
         expect(data).toEqual(null);
       });
     });
     it('gets javascript', function() {
       var promise = doc.getJavaScript();
-      waitsForPromise(promise, function (data) {
+      waitsForPromiseResolved(promise, function (data) {
         expect(data).toEqual([]);
       });
     });
     it('gets outline', function() {
       var promise = doc.getOutline();
-      waitsForPromise(promise, function(outline) {
+      waitsForPromiseResolved(promise, function(outline) {
         // Two top level entries.
         expect(outline.length).toEqual(2);
         // Make sure some basic attributes are set.
@@ -125,26 +147,26 @@ describe('api', function() {
     });
     it('gets metadata', function() {
       var promise = doc.getMetadata();
-      waitsForPromise(promise, function(metadata) {
+      waitsForPromiseResolved(promise, function(metadata) {
         expect(metadata.info['Title']).toEqual('Basic API Test');
         expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
       });
     });
     it('gets data', function() {
       var promise = doc.getData();
-      waitsForPromise(promise, function (data) {
+      waitsForPromiseResolved(promise, function (data) {
         expect(true).toEqual(true);
       });
     });
     it('gets filesize in bytes', function() {
       var promise = doc.getDownloadInfo();
-      waitsForPromise(promise, function (data) {
+      waitsForPromiseResolved(promise, function (data) {
         expect(data.length).toEqual(105779);
       });
     });
     it('gets stats', function() {
       var promise = doc.getStats();
-      waitsForPromise(promise, function (stats) {
+      waitsForPromiseResolved(promise, function (stats) {
         expect(isArray(stats.streamTypes)).toEqual(true);
         expect(isArray(stats.fontTypes)).toEqual(true);
       });
@@ -161,7 +183,7 @@ describe('api', function() {
       });
     });
     var page;
-    waitsForPromise(promise, function(data) {
+    waitsForPromiseResolved(promise, function(data) {
       page = data;
     });
     it('gets page number', function () {
@@ -187,13 +209,13 @@ describe('api', function() {
     });
     it('gets annotations', function () {
       var promise = page.getAnnotations();
-      waitsForPromise(promise, function (data) {
+      waitsForPromiseResolved(promise, function (data) {
         expect(data.length).toEqual(4);
       });
     });
     it('gets text content', function () {
       var promise = page.getTextContent();
-      waitsForPromise(promise, function (data) {
+      waitsForPromiseResolved(promise, function (data) {
         expect(!!data.items).toEqual(true);
         expect(data.items.length).toEqual(7);
         expect(!!data.styles).toEqual(true);
@@ -201,7 +223,7 @@ describe('api', function() {
     });
     it('gets operator list', function() {
       var promise = page.getOperatorList();
-      waitsForPromise(promise, function (oplist) {
+      waitsForPromiseResolved(promise, function (oplist) {
         expect(!!oplist.fnArray).toEqual(true);
         expect(!!oplist.argsArray).toEqual(true);
         expect(oplist.lastChunk).toEqual(true);
