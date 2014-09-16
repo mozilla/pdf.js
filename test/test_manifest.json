@@ -906,6 +906,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue5244",
+       "file": "pdfs/issue5244.pdf",
+       "md5": "a50cd364c3976c744627b4b9bb90c761",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "zerowidthline",
       "file": "pdfs/zerowidthline.pdf",
       "md5": "295d26e61a85635433f8e4b768953f60",
