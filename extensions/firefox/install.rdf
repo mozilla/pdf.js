@@ -46,6 +46,7 @@
     </em:targetApplication>
 
     <em:bootstrap>true</em:bootstrap>
+    <em:multiprocessCompatible>true</em:multiprocessCompatible>
     <em:creator>Mozilla</em:creator>
     <em:description>Uses HTML5 to display PDF files directly in Firefox.</em:description>
     <em:homepageURL>https://github.com/mozilla/pdf.js/</em:homepageURL>
