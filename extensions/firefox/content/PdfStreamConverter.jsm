@@ -114,6 +114,9 @@ function getStringPref(pref, def) {
 }
 
 function log(aMsg) {
+  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false)) {
+    return;
+  }
   var msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
