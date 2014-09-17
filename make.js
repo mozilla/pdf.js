@@ -44,6 +44,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
     JSDOC_DIR = BUILD_DIR + 'jsdoc',
     EXTENSION_SRC_DIR = 'extensions/',
+    FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
     LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
@@ -91,8 +92,12 @@ var COMMON_WEB_FILES =
        'web/debugger.js'],
     COMMON_WEB_FILES_PREPROCESS =
       ['web/viewer.js',
-       'web/viewer.html'];
-
+       'web/viewer.html'],
+    COMMON_FIREFOX_FILES_PREPROCESS =
+      [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
+       FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm',
+       FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm',
+       FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm'];
 //
 // make generic
 // Builds the generic production viewer that should be compatible with most
@@ -586,7 +591,6 @@ target.firefox = function() {
 
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
       FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
-      FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
       FIREFOX_EXTENSION_FILES_TO_COPY =
         ['*.js',
          '*.rdf',
@@ -594,6 +598,7 @@ target.firefox = function() {
          '*.png',
          '*.manifest',
          'locale',
+         'chrome',
          '../../LICENSE'],
       FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
@@ -602,6 +607,7 @@ target.firefox = function() {
          'icon.png',
          'icon64.png',
          'content',
+         'chrome',
          'locale',
          'LICENSE'],
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
@@ -641,9 +647,7 @@ target.firefox = function() {
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       [BUILD_TARGETS, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR],
-      [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
-       FIREFOX_BUILD_CONTENT_DIR],
-      [FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm', FIREFOX_BUILD_CONTENT_DIR],
+      [COMMON_FIREFOX_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR],
       [SRC_DIR + 'core/network.js', FIREFOX_BUILD_CONTENT_DIR],
       [FIREFOX_EXTENSION_DIR + 'bootstrap.js', FIREFOX_BUILD_DIR]
     ],
@@ -761,8 +765,7 @@ target.mozcentral = function() {
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
       [BUILD_TARGETS, MOZCENTRAL_CONTENT_DIR + BUILD_DIR],
       [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR],
-      [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm', MOZCENTRAL_CONTENT_DIR],
-      [FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm', MOZCENTRAL_CONTENT_DIR],
+      [COMMON_FIREFOX_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR],
       [FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR]
     ],
     preprocessCSS: [
