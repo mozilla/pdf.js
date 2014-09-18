@@ -1769,45 +1769,45 @@ function webViewerInitialized() {
   var hash = document.location.hash.substring(1);
   var hashParams = PDFView.parseQueryString(hash);
 
-  if ('disableWorker' in hashParams) {
-    PDFJS.disableWorker = (hashParams['disableWorker'] === 'true');
+  if ('disableworker' in hashParams) {
+    PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
   }
 
-  if ('disableRange' in hashParams) {
-    PDFJS.disableRange = (hashParams['disableRange'] === 'true');
+  if ('disablerange' in hashParams) {
+    PDFJS.disableRange = (hashParams['disablerange'] === 'true');
   }
 
-  if ('disableAutoFetch' in hashParams) {
-    PDFJS.disableAutoFetch = (hashParams['disableAutoFetch'] === 'true');
+  if ('disableautofetch' in hashParams) {
+    PDFJS.disableAutoFetch = (hashParams['disableautofetch'] === 'true');
   }
 
-  if ('disableFontFace' in hashParams) {
-    PDFJS.disableFontFace = (hashParams['disableFontFace'] === 'true');
+  if ('disablefontface' in hashParams) {
+    PDFJS.disableFontFace = (hashParams['disablefontface'] === 'true');
   }
 
-  if ('disableHistory' in hashParams) {
-    PDFJS.disableHistory = (hashParams['disableHistory'] === 'true');
+  if ('disablehistory' in hashParams) {
+    PDFJS.disableHistory = (hashParams['disablehistory'] === 'true');
   }
 
   if ('webgl' in hashParams) {
     PDFJS.disableWebGL = (hashParams['webgl'] !== 'true');
   }
 
-  if ('useOnlyCssZoom' in hashParams) {
-    PDFJS.useOnlyCssZoom = (hashParams['useOnlyCssZoom'] === 'true');
+  if ('useonlycsszoom' in hashParams) {
+    PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
   }
 
   if ('verbosity' in hashParams) {
     PDFJS.verbosity = hashParams['verbosity'] | 0;
   }
 
-  if ('ignoreCurrentPositionOnZoom' in hashParams) {
+  if ('ignorecurrentpositiononzoom' in hashParams) {
     IGNORE_CURRENT_POSITION_ON_ZOOM =
-      (hashParams['ignoreCurrentPositionOnZoom'] === 'true');
+      (hashParams['ignorecurrentpositiononzoom'] === 'true');
   }
 
 //#if !PRODUCTION
-  if ('disableBcmaps' in hashParams && hashParams['disableBcmaps']) {
+  if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
     PDFJS.cMapUrl = '../external/cmaps/';
     PDFJS.cMapPacked = false;
   }
@@ -1829,8 +1829,8 @@ function webViewerInitialized() {
 //}
 //#endif
 
-  if ('textLayer' in hashParams) {
-    switch (hashParams['textLayer']) {
+  if ('textlayer' in hashParams) {
+    switch (hashParams['textlayer']) {
       case 'off':
         PDFJS.disableTextLayer = true;
         break;
@@ -1838,18 +1838,18 @@ function webViewerInitialized() {
       case 'shadow':
       case 'hover':
         var viewer = document.getElementById('viewer');
-        viewer.classList.add('textLayer-' + hashParams['textLayer']);
+        viewer.classList.add('textLayer-' + hashParams['textlayer']);
         break;
     }
   }
 
 //#if !(FIREFOX || MOZCENTRAL)
-  if ('pdfBug' in hashParams) {
+  if ('pdfbug' in hashParams) {
 //#else
 //if ('pdfBug' in hashParams && FirefoxCom.requestSync('pdfBugEnabled')) {
 //#endif
     PDFJS.pdfBug = true;
-    var pdfBug = hashParams['pdfBug'];
+    var pdfBug = hashParams['pdfbug'];
     var enabled = pdfBug.split(',');
     PDFBug.enable(enabled);
     PDFBug.init();
