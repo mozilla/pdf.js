@@ -177,7 +177,7 @@ let PdfjsChromeUtils = {
     return true;
   },
 
-  _isPrefAllowed: function (aPrefName) {
+  _ensurePreferenceAllowed: function (aPrefName) {
     let unPrefixedName = aPrefName.split(PREF_PREFIX + '.');
     if (unPrefixedName[0] !== '' ||
         this._allowedPrefNames.indexOf(unPrefixedName[1]) === -1) {
@@ -188,27 +188,27 @@ let PdfjsChromeUtils = {
   },
 
   _clearUserPref: function (aPrefName) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.clearUserPref(aPrefName);
   },
 
   _setIntPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setIntPref(aPrefName, aPrefValue);
   },
 
   _setBoolPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setBoolPref(aPrefName, aPrefValue);
   },
 
   _setCharPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setCharPref(aPrefName, aPrefValue);
   },
 
   _setStringPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     let str = Cc['@mozilla.org/supports-string;1']
                 .createInstance(Ci.nsISupportsString);
     str.data = aPrefValue;
