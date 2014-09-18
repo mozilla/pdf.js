@@ -235,6 +235,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "mmtype1",
+       "file": "pdfs/mmtype1.pdf",
+       "md5": "7d632263d28bc2ff05ee0cc426966a5a",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "openoffice-pdf",
        "file": "pdfs/DiwanProfile.pdf",
        "md5": "55d0c6a1a6d26c9ec9dcecaa7a471e0e",
