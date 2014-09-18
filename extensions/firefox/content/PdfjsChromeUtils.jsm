@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- /*globals DEFAULT_PREFERENCES */
+/* jshint esnext:true */
+/* globals Components, Services, XPCOMUtils, DEFAULT_PREFERENCES */
 
 'use strict';
 
@@ -52,39 +53,42 @@ let PdfjsChromeUtils = {
   init: function () {
     if (!this._ppmm) {
       // global parent process message manager (PPMM)
-      this._ppmm = Cc["@mozilla.org/parentprocessmessagemanager;1"].getService(Ci.nsIMessageBroadcaster);
-      this._ppmm.addMessageListener("PDFJS:Parent:clearUserPref", this);
-      this._ppmm.addMessageListener("PDFJS:Parent:setIntPref", this);
-      this._ppmm.addMessageListener("PDFJS:Parent:setBoolPref", this);
-      this._ppmm.addMessageListener("PDFJS:Parent:setCharPref", this);
-      this._ppmm.addMessageListener("PDFJS:Parent:setStringPref", this);
-      this._ppmm.addMessageListener("PDFJS:Parent:isDefaultHandlerApp", this);
+      this._ppmm = Cc['@mozilla.org/parentprocessmessagemanager;1'].
+        getService(Ci.nsIMessageBroadcaster);
+      this._ppmm.addMessageListener('PDFJS:Parent:clearUserPref', this);
+      this._ppmm.addMessageListener('PDFJS:Parent:setIntPref', this);
+      this._ppmm.addMessageListener('PDFJS:Parent:setBoolPref', this);
+      this._ppmm.addMessageListener('PDFJS:Parent:setCharPref', this);
+      this._ppmm.addMessageListener('PDFJS:Parent:setStringPref', this);
+      this._ppmm.addMessageListener('PDFJS:Parent:isDefaultHandlerApp', this);
 
       // global dom message manager (MMg)
-      this._mmg = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
-      this._mmg.addMessageListener("PDFJS:Parent:getChromeWindow", this);
-      this._mmg.addMessageListener("PDFJS:Parent:getFindBar", this);
-      this._mmg.addMessageListener("PDFJS:Parent:displayWarning", this);
+      this._mmg = Cc['@mozilla.org/globalmessagemanager;1'].
+        getService(Ci.nsIMessageListenerManager);
+      this._mmg.addMessageListener('PDFJS:Parent:getChromeWindow', this);
+      this._mmg.addMessageListener('PDFJS:Parent:getFindBar', this);
+      this._mmg.addMessageListener('PDFJS:Parent:displayWarning', this);
 
       // observer to handle shutdown
-      Services.obs.addObserver(this, "quit-application", false);
+      Services.obs.addObserver(this, 'quit-application', false);
     }
   },
 
   uninit: function () {
     if (this._ppmm) {
-      this._ppmm.removeMessageListener("PDFJS:Parent:clearUserPref", this);
-      this._ppmm.removeMessageListener("PDFJS:Parent:setIntPref", this);
-      this._ppmm.removeMessageListener("PDFJS:Parent:setBoolPref", this);
-      this._ppmm.removeMessageListener("PDFJS:Parent:setCharPref", this);
-      this._ppmm.removeMessageListener("PDFJS:Parent:setStringPref", this);
-      this._ppmm.removeMessageListener("PDFJS:Parent:isDefaultHandlerApp", this);
+      this._ppmm.removeMessageListener('PDFJS:Parent:clearUserPref', this);
+      this._ppmm.removeMessageListener('PDFJS:Parent:setIntPref', this);
+      this._ppmm.removeMessageListener('PDFJS:Parent:setBoolPref', this);
+      this._ppmm.removeMessageListener('PDFJS:Parent:setCharPref', this);
+      this._ppmm.removeMessageListener('PDFJS:Parent:setStringPref', this);
+      this._ppmm.removeMessageListener('PDFJS:Parent:isDefaultHandlerApp',
+                                       this);
 
-      this._mmg.removeMessageListener("PDFJS:Parent:getChromeWindow", this);
-      this._mmg.removeMessageListener("PDFJS:Parent:getFindBar", this);
-      this._mmg.removeMessageListener("PDFJS:Parent:displayWarning", this);
+      this._mmg.removeMessageListener('PDFJS:Parent:getChromeWindow', this);
+      this._mmg.removeMessageListener('PDFJS:Parent:getFindBar', this);
+      this._mmg.removeMessageListener('PDFJS:Parent:displayWarning', this);
 
-      Services.obs.removeObserver(this, "quit-application", false);
+      Services.obs.removeObserver(this, 'quit-application', false);
 
       this._mmg = null;
       this._ppmm = null;
@@ -98,14 +102,14 @@ let PdfjsChromeUtils = {
    * the module's registration.
    */
   notifyChildOfSettingsChange: function () {
-    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT &&
-        this._ppmm) {
+    if (Services.appinfo.processType ===
+        Services.appinfo.PROCESS_TYPE_DEFAULT && this._ppmm) {
       // XXX kinda bad, we want to get the parent process mm associated
       // with the content process. _ppmm is currently the global process
       // manager, which means this is going to fire to every child process
       // we have open. Unfortunately I can't find a way to get at that
       // process specific mm from js.
-      this._ppmm.broadcastAsyncMessage("PDFJS:Child:refreshSettings", {});
+      this._ppmm.broadcastAsyncMessage('PDFJS:Child:refreshSettings', {});
     }
   },
 
@@ -114,38 +118,38 @@ let PdfjsChromeUtils = {
    */
 
   observe: function(aSubject, aTopic, aData) {
-    if (aTopic == "quit-application") {
+    if (aTopic === 'quit-application') {
       this.uninit();
     }
   },
 
   receiveMessage: function (aMsg) {
     switch (aMsg.name) {
-      case "PDFJS:Parent:clearUserPref":
+      case 'PDFJS:Parent:clearUserPref':
         this._clearUserPref(aMsg.data.name);
         break;
-      case "PDFJS:Parent:setIntPref":
+      case 'PDFJS:Parent:setIntPref':
         this._setIntPref(aMsg.data.name, aMsg.data.value);
         break;
-      case "PDFJS:Parent:setBoolPref":
+      case 'PDFJS:Parent:setBoolPref':
         this._setBoolPref(aMsg.data.name, aMsg.data.value);
         break;
-      case "PDFJS:Parent:setCharPref":
+      case 'PDFJS:Parent:setCharPref':
         this._setCharPref(aMsg.data.name, aMsg.data.value);
         break;
-      case "PDFJS:Parent:setStringPref":
+      case 'PDFJS:Parent:setStringPref':
         this._setStringPref(aMsg.data.name, aMsg.data.value);
         break;
-      case "PDFJS:Parent:isDefaultHandlerApp":
+      case 'PDFJS:Parent:isDefaultHandlerApp':
         return this.isDefaultHandlerApp();
-      case "PDFJS:Parent:displayWarning":
+      case 'PDFJS:Parent:displayWarning':
         this._displayWarning(aMsg);
         break;
 
       // CPOW getters
-      case "PDFJS:Parent:getChromeWindow":
+      case 'PDFJS:Parent:getChromeWindow':
         return this._getChromeWindow(aMsg);
-      case "PDFJS:Parent:getFindBar":
+      case 'PDFJS:Parent:getFindBar':
         return this._getFindBar(aMsg);
     }
   },
@@ -178,8 +182,8 @@ let PdfjsChromeUtils = {
     let unPrefixedName = aPrefName.split(PREF_PREFIX + '.');
     if (unPrefixedName[0] !== '' ||
         this._allowedPrefNames.indexOf(unPrefixedName[1]) === -1) {
-      let msg = "'" + aPrefName + "' ";
-      msg += "can't be accessed from content. See PdfjsChromeUtils." 
+      let msg = '"' + aPrefName + '" ' +
+                'can\'t be accessed from content. See PdfjsChromeUtils.';
       throw new Error(msg);
     }
   },
@@ -219,8 +223,8 @@ let PdfjsChromeUtils = {
    */
   isDefaultHandlerApp: function () {
     var handlerInfo = Svc.mime.getFromTypeAndExtension(PDF_CONTENT_TYPE, 'pdf');
-    return !handlerInfo.alwaysAskBeforeHandling &&
-           handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally;
+    return (!handlerInfo.alwaysAskBeforeHandling &&
+            handlerInfo.preferredAction === Ci.nsIHandlerInfo.handleInternally);
   },
 
   /*
@@ -285,13 +289,13 @@ function PdfjsFindbarWrapper(aBrowser) {
   }
 //#endif
   this._findbar = tabbrowser.getFindBar(tab);
-};
+}
 
 PdfjsFindbarWrapper.prototype = {
   __exposedProps__: {
-    addEventListener: "r",
-    removeEventListener: "r",
-    updateControlState: "r",
+    addEventListener: 'r',
+    removeEventListener: 'r',
+    updateControlState: 'r',
   },
   _findbar: null,
 
@@ -300,7 +304,8 @@ PdfjsFindbarWrapper.prototype = {
   },
 
   addEventListener: function (aType, aListener, aUseCapture, aWantsUntrusted) {
-    this._findbar.addEventListener(aType, aListener, aUseCapture, aWantsUntrusted);
+    this._findbar.addEventListener(aType, aListener, aUseCapture,
+                                   aWantsUntrusted);
   },
 
   removeEventListener: function (aType, aListener, aUseCapture) {
@@ -310,11 +315,11 @@ PdfjsFindbarWrapper.prototype = {
 
 function PdfjsWindowWrapper(aBrowser) {
   this._window = aBrowser.ownerDocument.defaultView;
-};
+}
 
 PdfjsWindowWrapper.prototype = {
   __exposedProps__: {
-    valueOf: "r",
+    valueOf: 'r',
   },
   _window: null,
 
@@ -322,4 +327,3 @@ PdfjsWindowWrapper.prototype = {
     return this._window.valueOf();
   }
 };
-
