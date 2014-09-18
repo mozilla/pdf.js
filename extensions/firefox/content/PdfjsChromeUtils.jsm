@@ -1,3 +1,5 @@
+/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +25,7 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-const PREF_PREFIX = 'pdfjs';
+const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_CONTENT_TYPE = 'application/pdf';
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
@@ -175,8 +177,10 @@ let PdfjsChromeUtils = {
     return true;
   },
 
-  _isPrefAllowed: function (aPrefName) {
-    if (this._allowedPrefNames.indexOf(aPrefName) == -1) {
+  _ensurePreferenceAllowed: function (aPrefName) {
+    let unPrefixedName = aPrefName.split(PREF_PREFIX + '.');
+    if (unPrefixedName[0] !== '' ||
+        this._allowedPrefNames.indexOf(unPrefixedName[1]) === -1) {
       let msg = "'" + aPrefName + "' ";
       msg += "can't be accessed from content. See PdfjsChromeUtils." 
       throw new Error(msg);
@@ -184,27 +188,27 @@ let PdfjsChromeUtils = {
   },
 
   _clearUserPref: function (aPrefName) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.clearUserPref(aPrefName);
   },
 
   _setIntPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setIntPref(aPrefName, aPrefValue);
   },
 
   _setBoolPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setBoolPref(aPrefName, aPrefValue);
   },
 
   _setCharPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     Services.prefs.setCharPref(aPrefName, aPrefValue);
   },
 
   _setStringPref: function (aPrefName, aPrefValue) {
-    this._isPrefAllowed(aPrefName);
+    this._ensurePreferenceAllowed(aPrefName);
     let str = Cc['@mozilla.org/supports-string;1']
                 .createInstance(Ci.nsISupportsString);
     str.data = aPrefValue;
