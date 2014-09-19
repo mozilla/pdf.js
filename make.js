@@ -766,6 +766,7 @@ target.mozcentral = function() {
     ],
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
+      [FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap.js', MOZCENTRAL_CONTENT_DIR],
       [BUILD_TARGETS, MOZCENTRAL_CONTENT_DIR + BUILD_DIR],
       [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR],
       [COMMON_FIREFOX_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR],
