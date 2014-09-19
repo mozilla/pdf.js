@@ -42,8 +42,6 @@ XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
 XPCOMUtils.defineLazyServiceGetter(Svc, 'pluginHost',
                                    '@mozilla.org/plugin/host;1',
                                    'nsIPluginHost');
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
-                                  "resource://gre/modules/BrowserUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PdfjsChromeUtils",
                                   "resource://pdf.js/PdfjsChromeUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PdfjsContentUtils",

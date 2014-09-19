@@ -51,9 +51,6 @@ XPCOMUtils.defineLazyModuleGetter(this, 'PdfJsTelemetry',
 XPCOMUtils.defineLazyModuleGetter(this, 'PdfjsContentUtils',
   'resource://pdf.js/PdfjsContentUtils.jsm');
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
-  'resource://gre/modules/BrowserUtils.jsm');
-
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
