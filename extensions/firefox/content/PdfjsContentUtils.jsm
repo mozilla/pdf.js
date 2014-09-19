@@ -25,9 +25,6 @@ const Cu = Components.utils;
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
-XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
-                                  "resource://gre/modules/BrowserUtils.jsm");
-
 let PdfjsContentUtils = {
   _mm: null,
 
@@ -113,8 +110,6 @@ let PdfjsContentUtils = {
     // the child's dom frame mm associated with the window.
     let winmm = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell)
-                       .sameTypeRootTreeItem
-                       .QueryInterface(Ci.nsIDocShell)
                        .QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIContentFrameMessageManager);
     winmm.sendAsyncMessage("PDFJS:Parent:displayWarning", {
