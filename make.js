@@ -660,6 +660,7 @@ target.firefox = function() {
 
   cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js');
   cleanupJSSource(FIREFOX_BUILD_DIR + 'bootstrap.js');
+  cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -780,6 +781,7 @@ target.mozcentral = function() {
 
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.js');
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfJs.jsm');
+  cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfjsChromeUtils.jsm');
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
