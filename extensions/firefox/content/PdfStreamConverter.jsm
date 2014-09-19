@@ -881,9 +881,11 @@ PdfStreamConverter.prototype = {
       aRequest.setResponseHeader('Content-Security-Policy', '', false);
       aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
                                  false);
+//#if !MOZCENTRAL
       aRequest.setResponseHeader('X-Content-Security-Policy', '', false);
       aRequest.setResponseHeader('X-Content-Security-Policy-Report-Only', '',
                                  false);
+//#endif
     }
 
     PdfJsTelemetry.onViewerIsUsed();
