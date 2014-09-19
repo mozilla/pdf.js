@@ -20,79 +20,84 @@
 
 'use strict';
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
-const Cm = Components.manager;
-const Cu = Components.utils;
-const Cr = Components.results;
+(function contentScriptClosure() {
+  // we need to use closure here -- we are running in the global context
 
-Cu.import('resource://gre/modules/XPCOMUtils.jsm');
-Cu.import('resource://gre/modules/Services.jsm');
+  const Cc = Components.classes;
+  const Ci = Components.interfaces;
+  const Cm = Components.manager;
+  const Cu = Components.utils;
+  const Cr = Components.results;
 
-var isRemote = Services.appinfo.processType ===
-               Services.appinfo.PROCESS_TYPE_CONTENT;
+  Cu.import('resource://gre/modules/XPCOMUtils.jsm');
+  Cu.import('resource://gre/modules/Services.jsm');
+
+  var isRemote = Services.appinfo.processType ===
+    Services.appinfo.PROCESS_TYPE_CONTENT;
 
 // Factory that registers/unregisters a constructor as a component.
-function Factory() {}
-
-Factory.prototype = {
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory]),
-  _targetConstructor: null,
-
-  register: function register(targetConstructor) {
-    this._targetConstructor = targetConstructor;
-    var proto = targetConstructor.prototype;
-    var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-    registrar.registerFactory(proto.classID, proto.classDescription,
-      proto.contractID, this);
-  },
-
-  unregister: function unregister() {
-    var proto = this._targetConstructor.prototype;
-    var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
-    registrar.unregisterFactory(proto.classID, this);
-    this._targetConstructor = null;
-  },
-
-  // nsIFactory
-  createInstance: function createInstance(aOuter, iid) {
-    if (aOuter !== null) {
-      throw Cr.NS_ERROR_NO_AGGREGATION;
-    }
-    return (new (this._targetConstructor)()).QueryInterface(iid);
-  },
-
-  // nsIFactory
-  lockFactory: function lockFactory(lock) {
-    // No longer used as of gecko 1.7.
-    throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+  function Factory() {
   }
-};
 
-var pdfStreamConverterFactory = new Factory();
+  Factory.prototype = {
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIFactory]),
+    _targetConstructor: null,
 
-function startup() {
-  Cu.import('resource://pdf.js/PdfjsContentUtils.jsm');
-  PdfjsContentUtils.init();
+    register: function register(targetConstructor) {
+      this._targetConstructor = targetConstructor;
+      var proto = targetConstructor.prototype;
+      var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
+      registrar.registerFactory(proto.classID, proto.classDescription,
+        proto.contractID, this);
+    },
 
-  Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
-  pdfStreamConverterFactory.register(PdfStreamConverter);
-}
+    unregister: function unregister() {
+      var proto = this._targetConstructor.prototype;
+      var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
+      registrar.unregisterFactory(proto.classID, this);
+      this._targetConstructor = null;
+    },
 
-function shutdown() {
-  // Remove the contract/component.
-  pdfStreamConverterFactory.unregister();
-  // Unload the converter
-  Cu.unload('resource://pdf.js/PdfStreamConverter.jsm');
+    // nsIFactory
+    createInstance: function createInstance(aOuter, iid) {
+      if (aOuter !== null) {
+        throw Cr.NS_ERROR_NO_AGGREGATION;
+      }
+      return (new (this._targetConstructor)()).QueryInterface(iid);
+    },
 
-  PdfjsContentUtils.uninit();
-  Cu.unload('resource://pdf.js/PdfjsContentUtils.jsm');
-}
+    // nsIFactory
+    lockFactory: function lockFactory(lock) {
+      // No longer used as of gecko 1.7.
+      throw Cr.NS_ERROR_NOT_IMPLEMENTED;
+    }
+  };
 
-if (isRemote) {
-  startup();
+  var pdfStreamConverterFactory = new Factory();
 
-  addMessageListener('PDFJS:Child:shutdown', function (e) {
-    shutdown();
-  });
-}
+  function startup() {
+    Cu.import('resource://pdf.js/PdfjsContentUtils.jsm');
+    PdfjsContentUtils.init();
+
+    Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
+    pdfStreamConverterFactory.register(PdfStreamConverter);
+  }
+
+  function shutdown() {
+    // Remove the contract/component.
+    pdfStreamConverterFactory.unregister();
+    // Unload the converter
+    Cu.unload('resource://pdf.js/PdfStreamConverter.jsm');
+
+    PdfjsContentUtils.uninit();
+    Cu.unload('resource://pdf.js/PdfjsContentUtils.jsm');
+  }
+
+  if (isRemote) {
+    startup();
+
+    addMessageListener('PDFJS:Child:shutdown', function (e) {
+      shutdown();
+    });
+  }
+})();
