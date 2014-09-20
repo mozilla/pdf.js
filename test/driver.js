@@ -311,7 +311,6 @@ function nextPage(task, loadError) {
         }
         var renderContext = {
           canvasContext: drawContext,
-          textLayer: textLayerBuilder,
           viewport: viewport
         };
         var completeRender = (function(error) {

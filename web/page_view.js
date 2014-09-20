@@ -644,7 +644,6 @@ var PageView = function pageView(container, id, scale,
     var renderContext = {
       canvasContext: ctx,
       viewport: this.viewport,
-      textLayer: textLayer,
       // intent: 'default', // === 'display'
       continueCallback: function pdfViewcContinueCallback(cont) {
         if (PDFView.highestPriorityPage !== 'page' + self.id) {
