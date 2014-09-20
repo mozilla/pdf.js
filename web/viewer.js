@@ -92,8 +92,11 @@ var PDFView = {
   pdfDocument: null,
   sidebarOpen: false,
   printing: false,
+  /** @type {PDFViewer} */
   pdfViewer: null,
+  /** @type {PDFThumbnailViewer} */
   pdfThumbnailViewer: null,
+  /** @type {PDFRenderingQueue} */
   pdfRenderingQueue: null,
   pageRotation: 0,
   updateScaleControls: true,

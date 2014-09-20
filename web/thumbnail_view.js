@@ -21,6 +21,17 @@
 
 var THUMBNAIL_SCROLL_MARGIN = -19;
 
+/**
+ * @constructor
+ * @param container
+ * @param id
+ * @param defaultViewport
+ * @param linkService
+ * @param renderingQueue
+ * @param pageSource
+ *
+ * @implements {IRenderableView}
+ */
 var ThumbnailView = function thumbnailView(container, id, defaultViewport,
                                            linkService, renderingQueue,
                                            pageSource) {
@@ -241,7 +252,22 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
 
 ThumbnailView.tempImageCache = null;
 
+/**
+ * @typedef {Object} PDFThumbnailViewerOptions
+ * @property {HTMLDivElement} container - The container for the thumbs elements.
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ */
+
+/**
+ * Simple viewer control to display thumbs for pages.
+ * @class
+ */
 var PDFThumbnailViewer = (function pdfThumbnailViewer() {
+  /**
+   * @constructs
+   * @param {PDFThumbnailViewerOptions} options
+   */
   function PDFThumbnailViewer(options) {
     this.container = options.container;
     this.renderingQueue = options.renderingQueue;

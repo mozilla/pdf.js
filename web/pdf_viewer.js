@@ -34,7 +34,26 @@ var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 //#include page_view.js
 //#include text_layer_builder.js
 
+/**
+ * @typedef {Object} PDFViewerOptions
+ * @property {HTMLDivElement} container - The container for the viewer element.
+ * @property {HTMLDivElement} viewer - (optional) The viewer element.
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {PDFRenderingQueue} renderingQueue - (optional) The rendering
+ *   queue object.
+ */
+
+/**
+ * Simple viewer control to display PDF content/pages.
+ * @class
+ * @implements {ILastScrollSource}
+ * @implements {IRenderableView}
+ */
 var PDFViewer = (function pdfViewer() {
+  /**
+   * @constructs PDFViewer
+   * @param {PDFViewerOptions} options
+   */
   function PDFViewer(options) {
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
@@ -56,7 +75,7 @@ var PDFViewer = (function pdfViewer() {
     this._resetView();
   }
 
-  PDFViewer.prototype = {
+  PDFViewer.prototype = /** @lends PDFViewer.prototype */{
     get pagesCount() {
       return this.pages.length;
     },
@@ -496,6 +515,12 @@ var PDFViewer = (function pdfViewer() {
       });
     },
 
+    /**
+     * @param textLayerDiv {HTMLDivElement}
+     * @param pageIndex {number}
+     * @param viewport {PageViewport}
+     * @returns {TextLayerBuilder}
+     */
     createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
       var isViewerInPresentationMode =
         this.presentationModeState === PresentationModeState.FULLSCREEN;
@@ -517,13 +542,26 @@ var PDFViewer = (function pdfViewer() {
   return PDFViewer;
 })();
 
+/**
+ * PDFPage object source.
+ * @class
+ */
 var PDFPageSource = (function PDFPageSourceClosure() {
+  /**
+   * @constructs
+   * @param {PDFDocument} pdfDocument
+   * @param {number} pageNumber
+   * @constructor
+   */
   function PDFPageSource(pdfDocument, pageNumber) {
     this.pdfDocument = pdfDocument;
     this.pageNumber = pageNumber;
   }
 
-  PDFPageSource.prototype = {
+  PDFPageSource.prototype = /** @lends PDFPageSource.prototype */ {
+    /**
+     * @returns {Promise<PDFPage>}
+     */
     getPage: function () {
       return this.pdfDocument.getPage(this.pageNumber);
     }

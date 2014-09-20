@@ -20,6 +20,20 @@
 
 'use strict';
 
+/**
+ * @constructor
+ * @param {HTMLDivElement} container - The viewer element.
+ * @param {number} id - The page unique ID (normally its number).
+ * @param {number} scale - The page scale display.
+ * @param {PageViewport} defaultViewport - The page viewport.
+ * @param {IPDFLinkService} linkService - The navigation/linking service.
+ * @param {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @param {Cache} cache - The page cache.
+ * @param {PDFPageSource} pageSource
+ * @param {PDFViewer} viewer
+ *
+ * @implements {IRenderableView}
+ */
 var PageView = function pageView(container, id, scale, defaultViewport,
                                  linkService, renderingQueue, cache,
                                  pageSource, viewer) {

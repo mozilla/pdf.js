@@ -26,7 +26,14 @@ var RenderingStates = {
   FINISHED: 3
 };
 
+/**
+ * Controls rendering of the views for pages and thumbnails.
+ * @class
+ */
 var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
+  /**
+   * @constructs
+   */
   function PDFRenderingQueue() {
     this.pdfViewer = null;
     this.pdfThumbnailViewer = null;
@@ -38,16 +45,26 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
     this.isThumbnailViewEnabled = false;
   }
 
-  PDFRenderingQueue.prototype = {
+  PDFRenderingQueue.prototype = /** @lends PDFRenderingQueue.prototype */ {
+    /**
+     * @param {PDFViewer} pdfViewer
+     */
     setViewer: function PDFRenderingQueue_setViewer(pdfViewer) {
       this.pdfViewer = pdfViewer;
     },
 
+    /**
+     * @param {PDFThumbnailViewer} pdfThumbnailViewer
+     */
     setThumbnailViewer:
         function PDFRenderingQueue_setThumbnailViewer(pdfThumbnailViewer) {
       this.pdfThumbnailViewer = pdfThumbnailViewer;
     },
 
+    /**
+     * @param {IRenderableView} view
+     * @returns {boolean}
+     */
     isHighestPriority: function PDFRenderingQueue_isHighestPriority(view) {
       return this.highestPriorityPage === view.renderingId;
     },
@@ -120,13 +137,20 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
       return null;
     },
 
+    /**
+     * @param {IRenderableView} view
+     * @returns {boolean}
+     */
     isViewFinished: function PDFRenderingQueue_isViewFinished(view) {
       return view.renderingState === RenderingStates.FINISHED;
     },
 
-    // Render a page or thumbnail view. This calls the appropriate function
-    // based on the views state. If the view is already rendered it will return
-    // false.
+    /**
+     * Render a page or thumbnail view. This calls the appropriate function
+     * based on the views state. If the view is already rendered it will return
+     * false.
+     * @param {IRenderableView} view
+     */
     renderView: function PDFRenderingQueue_renderView(view) {
       var state = view.renderingState;
       switch (state) {

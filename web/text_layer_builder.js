@@ -29,10 +29,22 @@ function isAllWhitespace(str) {
 }
 
 /**
+ * @typedef {Object} TextLayerBuilderOptions
+ * @property {HTMLDivElement} textLayerDiv - The text layer container.
+ * @property {number} pageIndex - The page index.
+ * @property {PageViewport} viewport - The viewport of the text layer.
+ * @property {ILastScrollSource} lastScrollSource - The object that records when
+ *   last time scroll happened.
+ * @property {boolean} isViewerInPresentationMode
+ * @property {PDFFindController} findController
+ */
+
+/**
  * TextLayerBuilder provides text-selection functionality for the PDF.
  * It does this by creating overlay divs over the PDF text. These divs
  * contain text that matches the PDF text they are overlaying. This object
  * also provides a way to highlight text that is being searched for.
+ * @class
  */
 var TextLayerBuilder = (function TextLayerBuilderClosure() {
   function TextLayerBuilder(options) {
