@@ -38,6 +38,12 @@
       "type": "boolean",
       "default": false
     },
+    "pdfBugEnabled": {
+      "title": "Enable debugging tools",
+      "description": "Whether to enable debugging tools.",
+      "type": "boolean",
+      "default": false
+    },
     "disableRange": {
       "title": "Disable range requests",
       "description": "Whether to disable range requests (not recommended).",
