@@ -15,7 +15,7 @@ get involved checkout:
 + [Style Guide](https://github.com/mozilla/pdf.js/wiki/Style-Guide)
 + [FAQ](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)
 + [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?direction=desc&labels=5-good-beginner-bug&page=1&sort=created&state=open)
-+ [Priorities](https://github.com/mozilla/pdf.js/issues/milestones)
++ [Priorities](https://github.com/mozilla/pdf.js/milestones)
 + [Attend a Public Meeting](https://github.com/mozilla/pdf.js/wiki/Weekly-Public-Meetings)
 
 For further questions or guidance feel free to stop by #pdfjs on
