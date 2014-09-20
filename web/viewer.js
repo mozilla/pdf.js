@@ -96,6 +96,7 @@ var PDFView = {
   pdfThumbnailViewer: null,
   pdfRenderingQueue: null,
   pageRotation: 0,
+  updateScaleControls: true,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
   isViewerEmbedded: (window.parent !== window),
@@ -258,7 +259,7 @@ var PDFView = {
       newScale = Math.ceil(newScale * 10) / 10;
       newScale = Math.min(MAX_SCALE, newScale);
     } while (--ticks && newScale < MAX_SCALE);
-    this.pdfViewer.setScale(newScale, true);
+    this.setScale(newScale, true);
   },
 
   zoomOut: function pdfViewZoomOut(ticks) {
@@ -268,7 +269,7 @@ var PDFView = {
       newScale = Math.floor(newScale * 10) / 10;
       newScale = Math.max(MIN_SCALE, newScale);
     } while (--ticks && newScale > MIN_SCALE);
-    this.pdfViewer.setScale(newScale, true);
+    this.setScale(newScale, true);
   },
 
   get currentScaleValue() {
@@ -280,7 +281,7 @@ var PDFView = {
   },
 
   set page(val) {
-    this.pdfViewer.setCurrentPageNumber(val);
+    this.pdfViewer.currentPageNumber = val;
   },
 
   get page() {
@@ -825,6 +826,7 @@ var PDFView = {
 
   load: function pdfViewLoad(pdfDocument, scale) {
     var self = this;
+    scale = scale || UNKNOWN_SCALE;
 
     PDFView.findController.reset();
 
@@ -1061,14 +1063,14 @@ var PDFView = {
     } else if (storedHash) {
       this.setHash(storedHash);
     } else if (scale) {
-      this.pdfViewer.setScale(scale, true);
+      this.setScale(scale, true);
       this.page = 1;
     }
 
     if (PDFView.pdfViewer.currentScale === UNKNOWN_SCALE) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.pdfViewer.setScale(DEFAULT_SCALE, true);
+      this.setScale(DEFAULT_SCALE, true);
     }
   },
 
@@ -1270,16 +1272,18 @@ var PDFView = {
     this.forceRendering();
   },
 
-  setScale: function (value, resetAutoSettings, noScroll) {
-    this.pdfViewer.setScale(value, resetAutoSettings, noScroll);
+  setScale: function (value, resetAutoSettings) {
+    this.updateScaleControls = !!resetAutoSettings;
+    this.pdfViewer.currentScaleValue = value;
+    this.updateScaleControls = true;
   },
 
   rotatePages: function pdfViewRotatePages(delta) {
     var currentPage = this.getPageView(this.page - 1);
 
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
-    this.pdfViewer.updateRotation(this.pageRotation);
-    this.pdfThumbnailViewer.updateRotation(this.pageRotation);
+    this.pdfViewer.pagesRotation = this.pageRotation;
+    this.pdfThumbnailViewer.pagesRotation = this.pageRotation;
 
     this.forceRendering();
 
@@ -1590,7 +1594,7 @@ function webViewerInitialized() {
 
   document.getElementById('scaleSelect').addEventListener('change',
     function() {
-      PDFView.pdfViewer.setScale(this.value);
+      PDFView.setScale(this.value, false);
     });
 
   document.getElementById('presentationMode').addEventListener('click',
@@ -1730,7 +1734,7 @@ window.addEventListener('resize', function webViewerResize(evt) {
       (document.getElementById('pageWidthOption').selected ||
        document.getElementById('pageFitOption').selected ||
        document.getElementById('pageAutoOption').selected)) {
-    PDFView.pdfViewer.setScale(document.getElementById('scaleSelect').value);
+    PDFView.setScale(document.getElementById('scaleSelect').value, false);
   }
   updateViewarea();
 
@@ -1825,7 +1829,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
   var customScaleOption = document.getElementById('customScaleOption');
   customScaleOption.selected = false;
 
-  if (!evt.resetAutoSettings &&
+  if (!PDFView.updateScaleControls &&
       (document.getElementById('pageWidthOption').selected ||
        document.getElementById('pageFitOption').selected ||
        document.getElementById('pageAutoOption').selected)) {
@@ -1849,9 +1853,9 @@ window.addEventListener('scalechange', function scalechange(evt) {
 
 window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
-  if (PDFView.pdfViewer.previousPageNumber !== page) {
+  if (evt.previousPageNumber !== page) {
     document.getElementById('pageNumber').value = page;
-    PDFView.pdfThumbnailViewer.updatePage(page);
+    PDFView.pdfThumbnailViewer.scrollThumbnailIntoView(page);
   }
   var numPages = PDFView.pagesCount;
 
@@ -1948,7 +1952,7 @@ window.addEventListener('keydown', function keydown(evt) {
         // keeping it unhandled (to restore page zoom to 100%)
         setTimeout(function () {
           // ... and resetting the scale after browser adjusts its scale
-          PDFView.pdfViewer.setScale(DEFAULT_SCALE, true);
+          PDFView.setScale(DEFAULT_SCALE, true);
         });
         handled = false;
         break;

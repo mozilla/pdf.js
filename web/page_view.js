@@ -353,7 +353,8 @@ var PageView = function pageView(container, id, scale, defaultViewport,
         return;
       }
       dest = null;
-      this.viewer.setScale(this.viewer.currentScaleValue, true, true);
+      // Fixes the case when PDF has different page sizes.
+      this.viewer.currentScaleValue = this.viewer.currentScaleValue;
     }
     if (!dest) {
       scrollIntoView(div);
@@ -413,9 +414,9 @@ var PageView = function pageView(container, id, scale, defaultViewport,
     }
 
     if (scale && scale !== this.viewer.currentScale) {
-      this.viewer.setScale(scale, true, true);
+      this.viewer.currentScaleValue = scale;
     } else if (this.viewer.currentScale === UNKNOWN_SCALE) {
-      this.viewer.setScale(DEFAULT_SCALE, true, true);
+      this.viewer.currentScaleValue = DEFAULT_SCALE;
     }
 
     if (scale === 'page-fit' && !dest[4]) {

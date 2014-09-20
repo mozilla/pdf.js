@@ -53,7 +53,7 @@ var PDFViewer = (function pdfViewer() {
     this.lastScroll = 0;
     this.updateInProgress = false;
     this.presentationModeState = PresentationModeState.UNKNOWN;
-    this.resetView();
+    this._resetView();
   }
 
   PDFViewer.prototype = {
@@ -65,28 +65,102 @@ var PDFViewer = (function pdfViewer() {
       return this.pages[index];
     },
 
-    setCurrentPageNumber: function (val) {
+    get currentPageNumber() {
+      return this._currentPageNumber;
+    },
+
+    set currentPageNumber(val) {
+      if (!this.pdfDocument) {
+        this._currentPageNumber = val;
+        return;
+      }
+
       var event = document.createEvent('UIEvents');
       event.initUIEvent('pagechange', true, true, window, 0);
       event.updateInProgress = this.updateInProgress;
 
       if (!(0 < val && val <= this.pagesCount)) {
-        this.previousPageNumber = val;
         event.pageNumber = this.page;
+        event.previousPageNumber = val;
         this.container.dispatchEvent(event);
         return;
       }
 
       this.pages[val - 1].updateStats();
-      this.previousPageNumber = this.currentPageNumber;
-      this.currentPageNumber = val;
+      event.previousPageNumber = this._currentPageNumber;
+      this._currentPageNumber = val;
       event.pageNumber = val;
       this.container.dispatchEvent(event);
     },
 
+    /**
+     * @returns {number}
+     */
+    get currentScale() {
+      return this._currentScale;
+    },
+
+    /**
+     * @param {number} val - Scale of the pages in percents.
+     */
+    set currentScale(val) {
+      if (isNaN(val))  {
+        throw new Error('Invalid numeric scale');
+      }
+      if (!this.pdfDocument) {
+        this._currentScale = val;
+        this._currentScaleValue = val.toString();
+        return;
+      }
+      this._setScale(val, false);
+    },
+
+    /**
+     * @returns {string}
+     */
+    get currentScaleValue() {
+      return this._currentScaleValue;
+    },
+
+    /**
+     * @param val - The scale of the pages (in percent or predefined value).
+     */
+    set currentScaleValue(val) {
+      if (!this.pdfDocument) {
+        this._currentScale = isNaN(val) ? UNKNOWN_SCALE : val;
+        this._currentScaleValue = val;
+        return;
+      }
+      this._setScale(val, false);
+    },
+
+    /**
+     * @returns {number}
+     */
+    get pagesRotation() {
+      return this._pagesRotation;
+    },
+
+    /**
+     * @param {number} rotation - The rotation of the pages (0, 90, 180, 270).
+     */
+    set pagesRotation(rotation) {
+      this._pagesRotation = rotation;
+
+      for (var i = 0, l = this.pages.length; i < l; i++) {
+        var page = this.pages[i];
+        page.update(page.scale, rotation);
+      }
+
+      this._setScale(this._currentScaleValue, true);
+    },
+
+    /**
+     * @param pdfDocument {PDFDocument}
+     */
     setDocument: function (pdfDocument) {
       if (this.pdfDocument) {
-        this.resetView();
+        this._resetView();
       }
 
       this.pdfDocument = pdfDocument;
@@ -139,7 +213,7 @@ var PDFViewer = (function pdfViewer() {
       // Fetch a single page so we can get a viewport that will be the default
       // viewport for all pages
       return firstPagePromise.then(function(pdfPage) {
-        var scale = this.currentScale || 1.0;
+        var scale = this._currentScale || 1.0;
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var pageSource = new PDFPageSource(pdfDocument, pageNum);
@@ -183,14 +257,14 @@ var PDFViewer = (function pdfViewer() {
       }.bind(this));
     },
 
-    resetView: function () {
+    _resetView: function () {
       this.cache = new Cache(DEFAULT_CACHE_SIZE);
       this.pages = [];
-      this.currentPageNumber = 1;
-      this.previousPageNumber = 1;
-      this.currentScale = UNKNOWN_SCALE;
-      this.currentScaleValue = null;
+      this._currentPageNumber = 1;
+      this._currentScale = UNKNOWN_SCALE;
+      this._currentScaleValue = null;
       this.location = null;
+      this._pagesRotation = 0;
 
       var container = this.viewer;
       while (container.hasChildNodes()) {
@@ -208,18 +282,18 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _setScaleUpdatePages: function pdfViewer_setScaleUpdatePages(
-        newScale, newValue, resetAutoSettings, noScroll, preset) {
-      this.currentScaleValue = newValue;
-      if (newScale === this.currentScale) {
+        newScale, newValue, noScroll, preset) {
+      this._currentScaleValue = newValue;
+      if (newScale === this._currentScale) {
         return;
       }
       for (var i = 0, ii = this.pages.length; i < ii; i++) {
         this.pages[i].update(newScale);
       }
-      this.currentScale = newScale;
+      this._currentScale = newScale;
 
       if (!noScroll) {
-        var page = this.currentPageNumber, dest;
+        var page = this._currentPageNumber, dest;
         var inPresentationMode =
           this.presentationModeState === PresentationModeState.CHANGING ||
           this.presentationModeState === PresentationModeState.FULLSCREEN;
@@ -235,23 +309,22 @@ var PDFViewer = (function pdfViewer() {
       var event = document.createEvent('UIEvents');
       event.initUIEvent('scalechange', true, true, window, 0);
       event.scale = newScale;
-      event.resetAutoSettings = resetAutoSettings;
       if (preset) {
         event.presetValue = newValue;
       }
       this.container.dispatchEvent(event);
     },
 
-    setScale: function pdfViewer_setScale(value, resetAutoSettings, noScroll) {
+    _setScale: function pdfViewer_setScale(value, noScroll) {
       if (value === 'custom') {
         return;
       }
       var scale = parseFloat(value);
 
       if (scale > 0) {
-        this._setScaleUpdatePages(scale, value, true, noScroll, false);
+        this._setScaleUpdatePages(scale, value, noScroll, false);
       } else {
-        var currentPage = this.pages[this.currentPageNumber - 1];
+        var currentPage = this.pages[this._currentPageNumber - 1];
         if (!currentPage) {
           return;
         }
@@ -287,23 +360,13 @@ var PDFViewer = (function pdfViewer() {
               '\' is an unknown zoom value.');
             return;
         }
-        this._setScaleUpdatePages(scale, value, resetAutoSettings, noScroll,
-                                  true);
+        this._setScaleUpdatePages(scale, value, noScroll, true);
       }
     },
 
-    updateRotation: function pdfViewRotatePages(rotation) {
-      for (var i = 0, l = this.pages.length; i < l; i++) {
-        var page = this.pages[i];
-        page.update(page.scale, rotation);
-      }
-
-      this.setScale(this.currentScaleValue, true, true);
-    },
-
-    updateLocation: function (firstPage) {
-      var currentScale = this.currentScale;
-      var currentScaleValue = this.currentScaleValue;
+    _updateLocation: function (firstPage) {
+      var currentScale = this._currentScale;
+      var currentScaleValue = this._currentScaleValue;
       var normalizedScaleValue =
         parseFloat(currentScaleValue) === currentScale ?
         Math.round(currentScale * 10000) / 100 : currentScaleValue;
@@ -330,7 +393,7 @@ var PDFViewer = (function pdfViewer() {
     },
 
     update: function () {
-      var visible = this.getVisiblePages();
+      var visible = this._getVisiblePages();
       var visiblePages = visible.views;
       if (visiblePages.length === 0) {
         return;
@@ -354,7 +417,7 @@ var PDFViewer = (function pdfViewer() {
         if (page.percent < 100) {
           break;
         }
-        if (page.id === this.currentPageNumber) {
+        if (page.id === currentId) {
           stillFullyVisible = true;
           break;
         }
@@ -365,10 +428,10 @@ var PDFViewer = (function pdfViewer() {
       }
 
       if (this.presentationModeState !== PresentationModeState.FULLSCREEN) {
-        this.setCurrentPageNumber(currentId);
+        this.currentPageNumber = currentId;
       }
 
-      this.updateLocation(firstPage);
+      this._updateLocation(firstPage);
 
       this.updateInProgress = false;
 
@@ -394,14 +457,14 @@ var PDFViewer = (function pdfViewer() {
         false : (this.container.scrollWidth > this.container.clientWidth));
     },
 
-    getVisiblePages: function () {
+    _getVisiblePages: function () {
       if (this.presentationModeState !== PresentationModeState.FULLSCREEN) {
         return getVisibleElements(this.container, this.pages, true);
       } else {
         // The algorithm in getVisibleElements doesn't work in all browsers and
         // configurations when presentation mode is active.
         var visible = [];
-        var currentPage = this.pages[this.currentPageNumber - 1];
+        var currentPage = this.pages[this._currentPageNumber - 1];
         visible.push({ id: currentPage.id, view: currentPage });
         return { first: currentPage, last: currentPage, views: visible };
       }
@@ -417,7 +480,7 @@ var PDFViewer = (function pdfViewer() {
     },
 
     forceRendering: function (currentlyVisiblePages) {
-      var visiblePages = currentlyVisiblePages || this.getVisiblePages();
+      var visiblePages = currentlyVisiblePages || this._getVisiblePages();
       var pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                             this.pages,
                                                             this.scroll.down);

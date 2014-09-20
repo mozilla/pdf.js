@@ -247,13 +247,12 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
     this.renderingQueue = options.renderingQueue;
     this.linkService = options.linkService;
 
-    this.scroll = watchScroll(this.container, this.scrollUpdated.bind(this));
-    this.thumbnails = [];
-    this.currentPage = -1;
+    this.scroll = watchScroll(this.container, this._scrollUpdated.bind(this));
+    this._resetView();
   }
 
   PDFThumbnailViewer.prototype = {
-    scrollUpdated: function PDFThumbnailViewer_scrollUpdated() {
+    _scrollUpdated: function PDFThumbnailViewer_scrollUpdated() {
       this.renderingQueue.renderHighestPriority();
     },
 
@@ -261,18 +260,18 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
       return this.thumbnails[index];
     },
 
-    getVisibleThumbs: function PDFThumbnailViewer_getVisibleThumbs() {
+    _getVisibleThumbs: function PDFThumbnailViewer_getVisibleThumbs() {
       return getVisibleElements(this.container, this.thumbnails);
     },
 
-    updatePage: function (page) {
+    scrollThumbnailIntoView: function (page) {
       var selected = document.querySelector('.thumbnail.selected');
       if (selected) {
         selected.classList.remove('selected');
       }
       var thumbnail = document.getElementById('thumbnailContainer' + page);
       thumbnail.classList.add('selected');
-      var visibleThumbs = this.getVisibleThumbs();
+      var visibleThumbs = this._getVisibleThumbs();
       var numVisibleThumbs = visibleThumbs.views.length;
 
       // If the thumbnail isn't currently visible, scroll it into view.
@@ -284,18 +283,27 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
           scrollIntoView(thumbnail, { top: THUMBNAIL_SCROLL_MARGIN });
         }
       }
-      this.currentPage = page;
     },
 
-    updateRotation: function (pageRotation) {
+    get pagesRotation() {
+      return this._pagesRotation;
+    },
+
+    set pagesRotation(rotation) {
+      this._pagesRotation = rotation;
       for (var i = 0, l = this.thumbnails.length; i < l; i++) {
         var thumb = this.thumbnails[i];
-        thumb.update(pageRotation);
+        thumb.update(rotation);
       }
     },
 
     cleanup: function PDFThumbnailViewer_cleanup() {
       ThumbnailView.tempImageCache = null;
+    },
+
+    _resetView: function () {
+      this.thumbnails = [];
+      this._pagesRotation = 0;
     },
 
     setDocument: function (pdfDocument) {
@@ -305,7 +313,7 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
         while (thumbsView.hasChildNodes()) {
           thumbsView.removeChild(thumbsView.lastChild);
         }
-        this.thumbnails = [];
+        this._resetView();
       }
 
       this.pdfDocument = pdfDocument;
@@ -334,7 +342,7 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
     },
 
     forceRendering: function () {
-      var visibleThumbs = this.getVisibleThumbs();
+      var visibleThumbs = this._getVisibleThumbs();
       var thumbView = this.renderingQueue.getHighestPriority(visibleThumbs,
                                                              this.thumbnails,
                                                              this.scroll.down);
