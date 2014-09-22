@@ -43,6 +43,10 @@ IPDFLinkService.prototype = {
    * @returns {string} The hyperlink to the PDF object.
    */
   getAnchorUrl: function (hash) {},
+  /**
+   * @param {string} hash
+   */
+  setHash: function (hash) {},
 };
 
 /**

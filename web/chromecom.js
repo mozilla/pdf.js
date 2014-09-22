@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* globals chrome, PDFJS, PDFView */
+/* globals chrome, PDFJS, PDFViewerApplication */
 'use strict';
 
 var ChromeCom = (function ChromeComClosure() {
@@ -64,10 +64,10 @@ var ChromeCom = (function ChromeComClosure() {
         var streamUrl = response.streamUrl;
         if (streamUrl) {
           console.log('Found data stream for ' + file);
-          PDFView.open(streamUrl, 0, undefined, undefined, {
+          PDFViewerApplication.open(streamUrl, 0, undefined, undefined, {
             length: response.contentLength
           });
-          PDFView.setTitleUsingUrl(file);
+          PDFViewerApplication.setTitleUsingUrl(file);
           return;
         }
         if (isFTPFile && !response.extensionSupportsFTP) {
@@ -91,7 +91,7 @@ var ChromeCom = (function ChromeComClosure() {
         resolveLocalFileSystemURL(file, function onResolvedFSURL(fileEntry) {
           fileEntry.file(function(fileObject) {
             var blobUrl = URL.createObjectURL(fileObject);
-            PDFView.open(blobUrl, 0, undefined, undefined, {
+            PDFViewerApplication.open(blobUrl, 0, undefined, undefined, {
               length: fileObject.size
             });
           });
@@ -100,11 +100,11 @@ var ChromeCom = (function ChromeComClosure() {
           // usual way of getting the File's data (via the Web worker).
           console.warn('Cannot resolve file ' + file + ', ' + error.name + ' ' +
                        error.message);
-          PDFView.open(file, 0);
+          PDFViewerApplication.open(file, 0);
         });
         return;
       }
-      PDFView.open(file, 0);
+      PDFViewerApplication.open(file, 0);
     });
   };
   return ChromeCom;

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, SCROLLBAR_PADDING */
+/* globals PDFViewerApplication, SCROLLBAR_PADDING */
 
 'use strict';
 
@@ -87,7 +87,7 @@ var SecondaryToolbar = {
   },
 
   downloadClick: function secondaryToolbarDownloadClick(evt) {
-    PDFView.download();
+    PDFViewerApplication.download();
     this.close();
   },
 
@@ -96,23 +96,23 @@ var SecondaryToolbar = {
   },
 
   firstPageClick: function secondaryToolbarFirstPageClick(evt) {
-    PDFView.page = 1;
+    PDFViewerApplication.page = 1;
     this.close();
   },
 
   lastPageClick: function secondaryToolbarLastPageClick(evt) {
-    if (PDFView.pdfDocument) {
-      PDFView.page = PDFView.pdfDocument.numPages;
+    if (PDFViewerApplication.pdfDocument) {
+      PDFViewerApplication.page = PDFViewerApplication.pagesCount;
     }
     this.close();
   },
 
   pageRotateCwClick: function secondaryToolbarPageRotateCwClick(evt) {
-    PDFView.rotatePages(90);
+    PDFViewerApplication.rotatePages(90);
   },
 
   pageRotateCcwClick: function secondaryToolbarPageRotateCcwClick(evt) {
-    PDFView.rotatePages(-90);
+    PDFViewerApplication.rotatePages(-90);
   },
 
   documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {

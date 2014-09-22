@@ -14,20 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, DownloadManager, getFileName */
+/* globals DownloadManager, getFileName */
 
 'use strict';
 
-var DocumentAttachmentsView = function documentAttachmentsView(attachments) {
-  var attachmentsView = document.getElementById('attachmentsView');
+var DocumentAttachmentsView = function documentAttachmentsView(options) {
+  var attachments = options.attachments;
+  var attachmentsView = options.attachmentsView;
   while (attachmentsView.firstChild) {
     attachmentsView.removeChild(attachmentsView.firstChild);
   }
 
   if (!attachments) {
-    if (!attachmentsView.classList.contains('hidden')) {
-      PDFView.switchSidebarView('thumbs');
-    }
     return;
   }
 

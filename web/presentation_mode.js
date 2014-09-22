@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, scrollIntoView, HandTool */
+/* globals scrollIntoView, HandTool, PDFViewerApplication */
 
 'use strict';
 
@@ -93,7 +93,7 @@ var PresentationMode = {
   },
 
   request: function presentationModeRequest() {
-    if (!PDFView.supportsFullscreen || this.isFullscreen ||
+    if (!PDFViewerApplication.supportsFullscreen || this.isFullscreen ||
         !this.viewer.hasChildNodes()) {
       return false;
     }
@@ -113,8 +113,8 @@ var PresentationMode = {
     }
 
     this.args = {
-      page: PDFView.page,
-      previousScale: PDFView.currentScaleValue
+      page: PDFViewerApplication.page,
+      previousScale: PDFViewerApplication.currentScaleValue
     };
 
     return true;
@@ -138,8 +138,8 @@ var PresentationMode = {
     // Presentation Mode, by waiting until fullscreen mode in enabled.
     // Note: This is only necessary in non-Mozilla browsers.
     setTimeout(function enterPresentationModeTimeout() {
-      PDFView.page = this.args.page;
-      PDFView.setScale('page-fit', true);
+      PDFViewerApplication.page = this.args.page;
+      PDFViewerApplication.setScale('page-fit', true);
     }.bind(this), 0);
 
     window.addEventListener('mousemove', this.mouseMove, false);
@@ -153,7 +153,7 @@ var PresentationMode = {
   },
 
   exit: function presentationModeExit() {
-    var page = PDFView.page;
+    var page = PDFViewerApplication.page;
 
     // Ensure that the correct page is scrolled into view when exiting
     // Presentation Mode, by waiting until fullscreen mode is disabled.
@@ -162,8 +162,8 @@ var PresentationMode = {
       this.active = false;
       this._notifyStateChange();
 
-      PDFView.setScale(this.args.previousScale, true);
-      PDFView.page = page;
+      PDFViewerApplication.setScale(this.args.previousScale, true);
+      PDFViewerApplication.page = page;
       this.args = null;
     }.bind(this), 0);
 
@@ -172,7 +172,7 @@ var PresentationMode = {
     window.removeEventListener('contextmenu', this.contextMenu, false);
 
     this.hideControls();
-    PDFView.clearMouseScrollState();
+    PDFViewerApplication.clearMouseScrollState();
     HandTool.exitPresentationMode();
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
@@ -236,7 +236,7 @@ var PresentationMode = {
       if (!isInternalLink) {
         // Unless an internal link was clicked, advance one page.
         evt.preventDefault();
-        PDFView.page += (evt.shiftKey ? -1 : 1);
+        PDFViewerApplication.page += (evt.shiftKey ? -1 : 1);
       }
     }
   },
