@@ -49,6 +49,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
+    SINGLE_FILE_DIR = BUILD_DIR + '/singlefile/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
     FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
@@ -226,6 +227,94 @@ target.web = function() {
 };
 
 target.dist = function() {
+  target.generic();
+  target.singlefile();
+
+  var DIST_DIR = BUILD_DIR + 'dist/';
+  var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
+
+  cd(ROOT_DIR);
+
+  echo();
+  echo('### Cloning baseline distribution');
+
+  rm('-rf', DIST_DIR);
+  mkdir('-p', DIST_DIR);
+  exec('git clone --depth 1 ' + DIST_REPO_URL + ' ' + DIST_DIR);
+
+  echo();
+  echo('### Overwriting all files');
+  rm('-rf', DIST_DIR + '*');
+
+  cp('-R', GENERIC_DIR + 'LICENSE', DIST_DIR);
+  cp('-R', GENERIC_DIR + 'web/cmaps', DIST_DIR);
+  mkdir('-p', DIST_DIR + 'build/');
+  cp('-R', [
+    GENERIC_DIR + 'build/pdf.js',
+    GENERIC_DIR + 'build/pdf.worker.js',
+    SINGLE_FILE_DIR + 'build/pdf.combined.js',
+  ], DIST_DIR + 'build/');
+
+  mkdir('-p', DIST_DIR + 'web/');
+  cp('-R', [
+    GENERIC_DIR + 'web/compatibility.js',
+  ], DIST_DIR + 'web/');
+
+  echo();
+  echo('### Rebuilding manifests');
+
+  var DIST_NAME = 'pdfjs-dist';
+  var DIST_DESCRIPTION = 'Generic build of Mozilla\'s PDF.js library.';
+  var DIST_KEYWORDS = ['Mozilla', 'pdf', 'pdf.js'];
+  var DIST_HOMEPAGE = 'http://mozilla.github.io/pdf.js/';
+  var DIST_BUGS_URL = 'https://github.com/mozilla/pdf.js/issues';
+  var DIST_LICENSE = 'Apache-2.0';
+  var npmManifest = {
+    name: DIST_NAME,
+    version: VERSION,
+    description: DIST_DESCRIPTION,
+    keywords: DIST_KEYWORDS,
+    homepage: DIST_HOMEPAGE,
+    bugs: DIST_BUGS_URL,
+    license: DIST_LICENSE,
+    repository: {
+      type: 'git',
+      url: DIST_REPO_URL
+    },
+  };
+  fs.writeFileSync(DIST_DIR + 'package.json',
+                   JSON.stringify(npmManifest, null, 2));
+  var bowerManifest = {
+    name: DIST_NAME,
+    version: VERSION,
+    main: [
+      'build/pdf.js',
+      'build/pdf.worker.js',
+    ],
+    ignore: [],
+    keywords: DIST_KEYWORDS,
+  };
+  fs.writeFileSync(DIST_DIR + 'bower.json',
+                   JSON.stringify(bowerManifest, null, 2));
+
+  echo();
+  echo('### Commiting changes');
+
+  cd(DIST_DIR);
+  var message = 'PDF.js version ' + VERSION;
+  exec('git add *');
+  exec('git commit -am \"' + message + '\"');
+  exec('git tag -a v' + VERSION + ' -m \"' + message + '\"');
+
+  cd(ROOT_DIR);
+
+  echo();
+  echo('Done. Push with');
+  echo('  cd ' + DIST_DIR + '; git push --tags ' + DIST_REPO_URL + ' master');
+  echo();
+};
+
+target.publish = function() {
   target.generic();
   config.stableVersion = config.betaVersion;
   config.betaVersion = VERSION;
@@ -425,7 +514,6 @@ target.singlefile = function() {
   echo();
   echo('### Creating singlefile build');
 
-  var SINGLE_FILE_DIR = BUILD_DIR + '/singlefile/';
   var SINGLE_FILE_TARGET = BUILD_DIR + 'pdf.combined.js';
 
   var defines = builder.merge(DEFINES, {SINGLE_FILE: true});
