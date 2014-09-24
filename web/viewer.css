@@ -1590,11 +1590,9 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 .debuggerShowText {
   background: none repeat scroll 0 0 yellow;
   color: blue;
-  opacity: 0.3;
 }
 .debuggerHideText:hover {
   background: none repeat scroll 0 0 yellow;
-  opacity: 0.3;
 }
 #PDFBug .stats {
   font-family: courier;
