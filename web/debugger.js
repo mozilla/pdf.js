@@ -211,6 +211,7 @@ var StepperManager = (function StepperManagerClosure() {
     },
     selectStepper: function selectStepper(pageIndex, selectPanel) {
       var i;
+      pageIndex = pageIndex | 0;
       if (selectPanel) {
         this.manager.selectPanel(this);
       }
@@ -419,7 +420,7 @@ var Stepper = (function StepperClosure() {
       var allRows = this.panel.getElementsByClassName('line');
       for (var x = 0, xx = allRows.length; x < xx; ++x) {
         var row = allRows[x];
-        if (parseInt(row.dataset.idx, 10) === idx) {
+        if ((row.dataset.idx | 0) === idx) {
           row.style.backgroundColor = 'rgb(251,250,207)';
           row.scrollIntoView();
         } else {
