@@ -246,6 +246,7 @@ target.dist = function() {
   echo('### Overwriting all files');
   rm('-rf', DIST_DIR + '*');
 
+  cp('-R', ROOT_DIR + 'external/dist/*', DIST_DIR);
   cp('-R', GENERIC_DIR + 'LICENSE', DIST_DIR);
   cp('-R', GENERIC_DIR + 'web/cmaps', DIST_DIR);
   mkdir('-p', DIST_DIR + 'build/');
