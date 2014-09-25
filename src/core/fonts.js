@@ -2546,6 +2546,9 @@ var Font = (function FontClosure() {
 
     var data;
     switch (type) {
+      case 'MMType1':
+        info('MMType1 font (' + name + '), falling back to Type1.');
+        /* falls through */
       case 'Type1':
       case 'CIDFontType0':
         this.mimetype = 'font/opentype';
