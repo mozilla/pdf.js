@@ -28,6 +28,7 @@ var DEFAULT_PREFERENCES = {
   enableWebGL: false,
   pdfBugEnabled: false,
   disableRange: false,
+  disableStream: false,
   disableAutoFetch: false,
   disableFontFace: false,
 //#if B2G

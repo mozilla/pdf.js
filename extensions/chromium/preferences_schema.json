@@ -50,6 +50,12 @@
       "type": "boolean",
       "default": false
     },
+    "disableStream": {
+      "title": "Disable streaming for requests",
+      "description": "Whether to disable streaming for requests (not recommended).",
+      "type": "boolean",
+      "default": false
+    },
     "disableAutoFetch": {
       "type": "boolean",
       "default": false

@@ -68,11 +68,11 @@ var NetworkManager = (function NetworkManagerClosure() {
       return data;
     }
     var length = data.length;
-    var buffer = new Uint8Array(length);
+    var array = new Uint8Array(length);
     for (var i = 0; i < length; i++) {
-      buffer[i] = data.charCodeAt(i) & 0xFF;
+      array[i] = data.charCodeAt(i) & 0xFF;
     }
-    return buffer;
+    return array.buffer;
   }
 
   NetworkManager.prototype = {
@@ -87,11 +87,11 @@ var NetworkManager = (function NetworkManagerClosure() {
       return this.request(args);
     },
 
-    requestFull: function NetworkManager_requestRange(listeners) {
+    requestFull: function NetworkManager_requestFull(listeners) {
       return this.request(listeners);
     },
 
-    request: function NetworkManager_requestRange(args) {
+    request: function NetworkManager_request(args) {
       var xhr = this.getXhr();
       var xhrId = this.currXhrId++;
       var pendingRequest = this.pendingRequests[xhrId] = {
@@ -115,25 +115,52 @@ var NetworkManager = (function NetworkManagerClosure() {
         pendingRequest.expectedStatus = 200;
       }
 
-      xhr.responseType = 'arraybuffer';
-
-      if (args.onProgress) {
-        xhr.onprogress = args.onProgress;
+      if (args.onProgressiveData) {
+        xhr.responseType = 'moz-chunked-arraybuffer';
+        if (xhr.responseType === 'moz-chunked-arraybuffer') {
+          pendingRequest.onProgressiveData = args.onProgressiveData;
+          pendingRequest.mozChunked = true;
+        } else {
+          xhr.responseType = 'arraybuffer';
+        }
+      } else {
+        xhr.responseType = 'arraybuffer';
       }
+
       if (args.onError) {
         xhr.onerror = function(evt) {
           args.onError(xhr.status);
         };
       }
       xhr.onreadystatechange = this.onStateChange.bind(this, xhrId);
+      xhr.onprogress = this.onProgress.bind(this, xhrId);
 
       pendingRequest.onHeadersReceived = args.onHeadersReceived;
       pendingRequest.onDone = args.onDone;
       pendingRequest.onError = args.onError;
+      pendingRequest.onProgress = args.onProgress;
 
       xhr.send(null);
 
       return xhrId;
+    },
+
+    onProgress: function NetworkManager_onProgress(xhrId, evt) {
+      var pendingRequest = this.pendingRequests[xhrId];
+      if (!pendingRequest) {
+        // Maybe abortRequest was called...
+        return;
+      }
+
+      if (pendingRequest.mozChunked) {
+        var chunk = getArrayBuffer(pendingRequest.xhr);
+        pendingRequest.onProgressiveData(chunk);
+      }
+
+      var onProgress = pendingRequest.onProgress;
+      if (onProgress) {
+        onProgress(evt);
+      }
     },
 
     onStateChange: function NetworkManager_onStateChange(xhrId, evt) {
@@ -196,6 +223,8 @@ var NetworkManager = (function NetworkManagerClosure() {
           begin: begin,
           chunk: chunk
         });
+      } else if (pendingRequest.onProgressiveData) {
+        pendingRequest.onDone(null);
       } else {
         pendingRequest.onDone({
           begin: 0,
@@ -213,6 +242,10 @@ var NetworkManager = (function NetworkManagerClosure() {
 
     getRequestXhr: function NetworkManager_getXhr(xhrId) {
       return this.pendingRequests[xhrId].xhr;
+    },
+
+    isStreamingRequest: function NetworkManager_isStreamingRequest(xhrId) {
+      return !!(this.pendingRequests[xhrId].onProgressiveData);
     },
 
     isPendingRequest: function NetworkManager_isPendingRequest(xhrId) {
