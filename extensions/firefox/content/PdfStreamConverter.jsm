@@ -554,7 +554,9 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
         this.headers[aHeader] = aValue;
       }
     };
-    originalRequest.visitRequestHeaders(httpHeaderVisitor);
+    if (originalRequest.visitRequestHeaders) {
+      originalRequest.visitRequestHeaders(httpHeaderVisitor);
+    }
 
     var self = this;
     var xhr_onreadystatechange = function xhr_onreadystatechange() {
@@ -874,8 +876,8 @@ PdfStreamConverter.prototype = {
     } catch (e) {}
 
     var rangeRequest = false;
-    var hash = aRequest.URI.ref;
-    if (isHttpRequest && !getBoolPref(PREF_PREFIX + '.disableRange', false)) {
+    var streamRequest = false;
+    if (isHttpRequest) {
       var contentEncoding = 'identity';
       try {
         contentEncoding = aRequest.getResponseHeader('Content-Encoding');
@@ -886,13 +888,19 @@ PdfStreamConverter.prototype = {
         acceptRanges = aRequest.getResponseHeader('Accept-Ranges');
       } catch (e) {}
 
+      var hash = aRequest.URI.ref;
+      var isPDFBugEnabled = getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
       rangeRequest = contentEncoding === 'identity' &&
                      acceptRanges === 'bytes' &&
                      aRequest.contentLength >= 0 &&
-                     hash.toLowerCase().indexOf('disablerange=true') < 0;
+                     !getBoolPref(PREF_PREFIX + '.disableRange', false) &&
+                     (!isPDFBugEnabled ||
+                      hash.toLowerCase().indexOf('disablerange=true') < 0);
+      streamRequest = contentEncoding === 'identity' &&
+                      !getBoolPref(PREF_PREFIX + '.disableStream', false) &&
+                      (!isPDFBugEnabled ||
+                       hash.toLowerCase().indexOf('disablestream=true') < 0);
     }
-    var streamRequest = !getBoolPref(PREF_PREFIX + '.disableStream', false) &&
-                        hash.toLowerCase().indexOf('disablestream=true') < 0;
 
     aRequest.QueryInterface(Ci.nsIChannel);
 
