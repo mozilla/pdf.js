@@ -2486,6 +2486,13 @@ var Font = (function FontClosure() {
           }
           this.toFontChar[charCode] = fontChar;
         }
+        for (charCode in properties.differences) {
+          fontChar = GlyphsUnicode[properties.differences[charCode]];
+          if (!fontChar) {
+            continue;
+          }
+          this.toFontChar[charCode] = fontChar;
+        }
       } else if (/Dingbats/i.test(fontName)) {
         var dingbats = Encodings.ZapfDingbatsEncoding;
         for (charCode in dingbats) {

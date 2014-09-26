@@ -478,6 +478,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue5238",
+       "file": "pdfs/issue5238.pdf",
+       "md5": "6ddecda00893be1793de20a70c83a3c2",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
