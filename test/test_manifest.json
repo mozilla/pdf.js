@@ -746,6 +746,13 @@
        "type": "eq",
        "about": "Seac with differences array that messes up mapping."
     },
+    {  "id": "issue2840",
+       "file": "pdfs/issue2840.pdf",
+       "md5": "d9df49f6d62668d099e0fb7e74f8f337",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug866395",
        "file": "pdfs/bug866395.pdf",
        "md5": "f03bc77e84637241980b09a0a220f575",

@@ -2475,6 +2475,12 @@ var Font = (function FontClosure() {
         for (var code in GlyphMapForStandardFonts) {
           map[+code] = GlyphMapForStandardFonts[code];
         }
+        var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
+        if (!isIdentityUnicode) {
+          this.toUnicode.forEach(function(charCode, unicodeCharCode) {
+            map[+charCode] = unicodeCharCode;
+          });
+        }
         this.toFontChar = map;
         this.toUnicode = new ToUnicodeMap(map);
       } else if (/Symbol/i.test(fontName)) {
