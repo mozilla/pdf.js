@@ -197,8 +197,6 @@ var PDFFindController = (function PDFFindControllerClosure() {
     },
 
     updatePage: function PDFFindController_updatePage(index) {
-      var page = this.pdfViewer.getPageView(index);
-
       if (this.selected.pageIdx === index) {
         // If the page is selected, scroll the page into view, which triggers
         // rendering the page, which adds the textLayer. Once the textLayer is
@@ -206,6 +204,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.pdfViewer.scrollPageIntoView(index + 1);
       }
 
+      var page = this.pdfViewer.getPageView(index);
       if (page.textLayer) {
         page.textLayer.updateMatches();
       }

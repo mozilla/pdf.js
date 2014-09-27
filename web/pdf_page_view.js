@@ -20,591 +20,616 @@
 'use strict';
 
 /**
- * @constructor
- * @param {HTMLDivElement} container - The viewer element.
- * @param {number} id - The page unique ID (normally its number).
- * @param {number} scale - The page scale display.
- * @param {PageViewport} defaultViewport - The page viewport.
- * @param {IPDFLinkService} linkService - The navigation/linking service.
- * @param {PDFRenderingQueue} renderingQueue - The rendering queue object.
- * @param {Cache} cache - The page cache.
- * @param {PDFPageSource} pageSource
- * @param {PDFViewer} viewer
- *
+ * @typedef {Object} PDFPageViewOptions
+ * @property {HTMLDivElement} container - The viewer element.
+ * @property {number} id - The page unique ID (normally its number).
+ * @property {number} scale - The page scale display.
+ * @property {PageViewport} defaultViewport - The page viewport.
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {Cache} cache - The page cache.
+ * @property {PDFPageSource} pageSource
+ * @property {PDFViewer} viewer
+ */
+
+/**
+ * @class
  * @implements {IRenderableView}
  */
-var PageView = function pageView(container, id, scale, defaultViewport,
-                                 linkService, renderingQueue, cache,
-                                 pageSource, viewer) {
-  this.id = id;
-  this.renderingId = 'page' + id;
+var PDFPageView = (function PDFPageViewClosure() {
+  /**
+   * @constructs PDFPageView
+   * @param {PDFPageViewOptions} options
+   */
+  function PDFPageView(options) {
+    var container = options.container;
+    var id = options.id;
+    var scale = options.scale;
+    var defaultViewport = options.defaultViewport;
+    var linkService = options.linkService;
+    var renderingQueue = options.renderingQueue;
+    var cache = options.cache;
+    var pageSource = options.pageSource;
+    var viewer = options.viewer;
 
-  this.rotation = 0;
-  this.scale = scale || 1.0;
-  this.viewport = defaultViewport;
-  this.pdfPageRotate = defaultViewport.rotation;
-  this.hasRestrictedScaling = false;
+    this.id = id;
+    this.renderingId = 'page' + id;
 
-  this.linkService = linkService;
-  this.renderingQueue = renderingQueue;
-  this.cache = cache;
-  this.pageSource = pageSource;
-  this.viewer = viewer;
+    this.rotation = 0;
+    this.scale = scale || 1.0;
+    this.viewport = defaultViewport;
+    this.pdfPageRotate = defaultViewport.rotation;
+    this.hasRestrictedScaling = false;
 
-  this.renderingState = RenderingStates.INITIAL;
-  this.resume = null;
+    this.linkService = linkService;
+    this.renderingQueue = renderingQueue;
+    this.cache = cache;
+    this.pageSource = pageSource;
+    this.viewer = viewer;
 
-  this.textLayer = null;
-
-  this.zoomLayer = null;
-
-  this.annotationLayer = null;
-
-  var anchor = document.createElement('a');
-  anchor.name = '' + this.id;
-
-  var div = this.el = document.createElement('div');
-  div.id = 'pageContainer' + this.id;
-  div.className = 'page';
-  div.style.width = Math.floor(this.viewport.width) + 'px';
-  div.style.height = Math.floor(this.viewport.height) + 'px';
-
-  container.appendChild(anchor);
-  container.appendChild(div);
-
-  this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
-    this.pdfPage = pdfPage;
-    this.pdfPageRotate = pdfPage.rotate;
-    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS, totalRotation);
-    this.stats = pdfPage.stats;
-    this.reset();
-  };
-
-  this.destroy = function pageViewDestroy() {
-    this.zoomLayer = null;
-    this.reset();
-    if (this.pdfPage) {
-      this.pdfPage.destroy();
-    }
-  };
-
-  this.reset = function pageViewReset(keepAnnotations) {
-    if (this.renderTask) {
-      this.renderTask.cancel();
-    }
-    this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
+    this.resume = null;
 
+    this.textLayer = null;
+
+    this.zoomLayer = null;
+
+    this.annotationLayer = null;
+
+    var anchor = document.createElement('a');
+    anchor.name = '' + this.id;
+
+    var div = document.createElement('div');
+    div.id = 'pageContainer' + this.id;
+    div.className = 'page';
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
+    this.el = div; // TODO replace 'el' property usage
+    this.div = div;
 
-    var childNodes = div.childNodes;
-    for (var i = div.childNodes.length - 1; i >= 0; i--) {
-      var node = childNodes[i];
-      if ((this.zoomLayer && this.zoomLayer === node) ||
-          (keepAnnotations && this.annotationLayer === node)) {
-        continue;
-      }
-      div.removeChild(node);
-    }
-    div.removeAttribute('data-loaded');
-
-    if (keepAnnotations) {
-      if (this.annotationLayer) {
-        // Hide annotationLayer until all elements are resized
-        // so they are not displayed on the already-resized page
-        this.annotationLayer.setAttribute('hidden', 'true');
-      }
-    } else {
-      this.annotationLayer = null;
-    }
-
-    if (this.canvas) {
-      // Zeroing the width and height causes Firefox to release graphics
-      // resources immediately, which can greatly reduce memory consumption.
-      this.canvas.width = 0;
-      this.canvas.height = 0;
-      delete this.canvas;
-    }
-
-    this.loadingIconDiv = document.createElement('div');
-    this.loadingIconDiv.className = 'loadingIcon';
-    div.appendChild(this.loadingIconDiv);
-  };
-
-  this.update = function pageViewUpdate(scale, rotation) {
-    this.scale = scale || this.scale;
-
-    if (typeof rotation !== 'undefined') {
-      this.rotation = rotation;
-    }
-
-    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = this.viewport.clone({
-      scale: this.scale * CSS_UNITS,
-      rotation: totalRotation
-    });
-
-    var isScalingRestricted = false;
-    if (this.canvas && PDFJS.maxCanvasPixels > 0) {
-      var ctx = this.canvas.getContext('2d');
-      var outputScale = getOutputScale(ctx);
-      var pixelsInViewport = this.viewport.width * this.viewport.height;
-      var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
-      if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
-          ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
-          PDFJS.maxCanvasPixels) {
-        isScalingRestricted = true;
-      }
-    }
-
-    if (this.canvas &&
-        (PDFJS.useOnlyCssZoom ||
-          (this.hasRestrictedScaling && isScalingRestricted))) {
-      this.cssTransform(this.canvas, true);
-      return;
-    } else if (this.canvas && !this.zoomLayer) {
-      this.zoomLayer = this.canvas.parentNode;
-      this.zoomLayer.style.position = 'absolute';
-    }
-    if (this.zoomLayer) {
-      this.cssTransform(this.zoomLayer.firstChild);
-    }
-    this.reset(true);
-  };
-
-  this.cssTransform = function pageCssTransform(canvas, redrawAnnotations) {
-    // Scale canvas, canvas wrapper, and page container.
-    var width = this.viewport.width;
-    var height = this.viewport.height;
-    canvas.style.width = canvas.parentNode.style.width = div.style.width =
-        Math.floor(width) + 'px';
-    canvas.style.height = canvas.parentNode.style.height = div.style.height =
-        Math.floor(height) + 'px';
-    // The canvas may have been originally rotated, so rotate relative to that.
-    var relativeRotation = this.viewport.rotation - canvas._viewport.rotation;
-    var absRotation = Math.abs(relativeRotation);
-    var scaleX = 1, scaleY = 1;
-    if (absRotation === 90 || absRotation === 270) {
-      // Scale x and y because of the rotation.
-      scaleX = height / width;
-      scaleY = width / height;
-    }
-    var cssTransform = 'rotate(' + relativeRotation + 'deg) ' +
-                       'scale(' + scaleX + ',' + scaleY + ')';
-    CustomStyle.setProp('transform', canvas, cssTransform);
-
-    if (this.textLayer) {
-      // Rotating the text layer is more complicated since the divs inside the
-      // the text layer are rotated.
-      // TODO: This could probably be simplified by drawing the text layer in
-      // one orientation then rotating overall.
-      var textLayerViewport = this.textLayer.viewport;
-      var textRelativeRotation = this.viewport.rotation -
-                                 textLayerViewport.rotation;
-      var textAbsRotation = Math.abs(textRelativeRotation);
-      var scale = width / textLayerViewport.width;
-      if (textAbsRotation === 90 || textAbsRotation === 270) {
-        scale = width / textLayerViewport.height;
-      }
-      var textLayerDiv = this.textLayer.textLayerDiv;
-      var transX, transY;
-      switch (textAbsRotation) {
-        case 0:
-          transX = transY = 0;
-          break;
-        case 90:
-          transX = 0;
-          transY = '-' + textLayerDiv.style.height;
-          break;
-        case 180:
-          transX = '-' + textLayerDiv.style.width;
-          transY = '-' + textLayerDiv.style.height;
-          break;
-        case 270:
-          transX = '-' + textLayerDiv.style.width;
-          transY = 0;
-          break;
-        default:
-          console.error('Bad rotation value.');
-          break;
-      }
-      CustomStyle.setProp('transform', textLayerDiv,
-                          'rotate(' + textAbsRotation + 'deg) ' +
-                            'scale(' + scale + ', ' + scale + ') ' +
-                            'translate(' + transX + ', ' + transY + ')');
-      CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
-    }
-
-    if (redrawAnnotations && this.annotationLayer) {
-      setupAnnotations(div, this.pdfPage, this.viewport);
-    }
-  };
-
-  Object.defineProperty(this, 'width', {
-    get: function PageView_getWidth() {
-      return this.viewport.width;
-    },
-    enumerable: true
-  });
-
-  Object.defineProperty(this, 'height', {
-    get: function PageView_getHeight() {
-      return this.viewport.height;
-    },
-    enumerable: true
-  });
-
-  var self = this;
-
-  function setupAnnotations(pageDiv, pdfPage, viewport) {
-
-    function bindLink(link, dest) {
-      link.href = linkService.getDestinationHash(dest);
-      link.onclick = function pageViewSetupLinksOnclick() {
-        if (dest) {
-          linkService.navigateTo(dest);
-        }
-        return false;
-      };
-      if (dest) {
-        link.className = 'internalLink';
-      }
-    }
-
-    function bindNamedAction(link, action) {
-      link.href = linkService.getAnchorUrl('');
-      link.onclick = function pageViewSetupNamedActionOnClick() {
-        linkService.executeNamedAction(action);
-        return false;
-      };
-      link.className = 'internalLink';
-    }
-
-    pdfPage.getAnnotations().then(function(annotationsData) {
-      viewport = viewport.clone({ dontFlip: true });
-      var transform = viewport.transform;
-      var transformStr = 'matrix(' + transform.join(',') + ')';
-      var data, element, i, ii;
-
-      if (self.annotationLayer) {
-        // If an annotationLayer already exists, refresh its children's
-        // transformation matrices
-        for (i = 0, ii = annotationsData.length; i < ii; i++) {
-          data = annotationsData[i];
-          element = self.annotationLayer.querySelector(
-            '[data-annotation-id="' + data.id + '"]');
-          if (element) {
-            CustomStyle.setProp('transform', element, transformStr);
-          }
-        }
-        // See this.reset()
-        self.annotationLayer.removeAttribute('hidden');
-      } else {
-        for (i = 0, ii = annotationsData.length; i < ii; i++) {
-          data = annotationsData[i];
-          if (!data || !data.hasHtml) {
-            continue;
-          }
-
-          element = PDFJS.AnnotationUtils.getHtmlElement(data,
-                                                         pdfPage.commonObjs);
-          element.setAttribute('data-annotation-id', data.id);
-          mozL10n.translate(element);
-
-          var rect = data.rect;
-          var view = pdfPage.view;
-          rect = PDFJS.Util.normalizeRect([
-            rect[0],
-            view[3] - rect[1] + view[1],
-            rect[2],
-            view[3] - rect[3] + view[1]
-          ]);
-          element.style.left = rect[0] + 'px';
-          element.style.top = rect[1] + 'px';
-          element.style.position = 'absolute';
-
-          CustomStyle.setProp('transform', element, transformStr);
-          var transformOriginStr = -rect[0] + 'px ' + -rect[1] + 'px';
-          CustomStyle.setProp('transformOrigin', element, transformOriginStr);
-
-          if (data.subtype === 'Link' && !data.url) {
-            var link = element.getElementsByTagName('a')[0];
-            if (link) {
-              if (data.action) {
-                bindNamedAction(link, data.action);
-              } else {
-                bindLink(link, ('dest' in data) ? data.dest : null);
-              }
-            }
-          }
-
-          if (!self.annotationLayer) {
-            var annotationLayerDiv = document.createElement('div');
-            annotationLayerDiv.className = 'annotationLayer';
-            pageDiv.appendChild(annotationLayerDiv);
-            self.annotationLayer = annotationLayerDiv;
-          }
-
-          self.annotationLayer.appendChild(element);
-        }
-      }
-    });
+    container.appendChild(anchor);
+    container.appendChild(div);
   }
 
-  this.getPagePoint = function pageViewGetPagePoint(x, y) {
-    return this.viewport.convertToPdfPoint(x, y);
-  };
+  PDFPageView.prototype = {
+    setPdfPage: function PDFPageView_setPdfPage(pdfPage) {
+      this.pdfPage = pdfPage;
+      this.pdfPageRotate = pdfPage.rotate;
+      var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+      this.viewport = pdfPage.getViewport(this.scale * CSS_UNITS,
+                                          totalRotation);
+      this.stats = pdfPage.stats;
+      this.reset();
+    },
 
-  this.draw = function pageviewDraw(callback) {
-    var pdfPage = this.pdfPage;
+    destroy: function PDFPageView_destroy() {
+      this.zoomLayer = null;
+      this.reset();
+      if (this.pdfPage) {
+        this.pdfPage.destroy();
+      }
+    },
 
-    if (this.pagePdfPromise) {
-      return;
-    }
-    if (!pdfPage) {
-      var promise = this.pageSource.getPage();
-      promise.then(function(pdfPage) {
-        delete this.pagePdfPromise;
-        this.setPdfPage(pdfPage);
-        this.draw(callback);
-      }.bind(this));
-      this.pagePdfPromise = promise;
-      return;
-    }
+    reset: function PDFPageView_reset(keepAnnotations) {
+      if (this.renderTask) {
+        this.renderTask.cancel();
+      }
+      this.resume = null;
+      this.renderingState = RenderingStates.INITIAL;
 
-    if (this.renderingState !== RenderingStates.INITIAL) {
-      console.error('Must be in new state before drawing');
-    }
+      var div = this.div;
+      div.style.width = Math.floor(this.viewport.width) + 'px';
+      div.style.height = Math.floor(this.viewport.height) + 'px';
 
-    this.renderingState = RenderingStates.RUNNING;
+      var childNodes = div.childNodes;
+      for (var i = div.childNodes.length - 1; i >= 0; i--) {
+        var node = childNodes[i];
+        if ((this.zoomLayer && this.zoomLayer === node) ||
+            (keepAnnotations && this.annotationLayer === node)) {
+          continue;
+        }
+        div.removeChild(node);
+      }
+      div.removeAttribute('data-loaded');
 
-    var viewport = this.viewport;
-    // Wrap the canvas so if it has a css transform for highdpi the overflow
-    // will be hidden in FF.
-    var canvasWrapper = document.createElement('div');
-    canvasWrapper.style.width = div.style.width;
-    canvasWrapper.style.height = div.style.height;
-    canvasWrapper.classList.add('canvasWrapper');
-
-    var canvas = document.createElement('canvas');
-    canvas.id = 'page' + this.id;
-    canvasWrapper.appendChild(canvas);
-    if (this.annotationLayer) {
-      // annotationLayer needs to stay on top
-      div.insertBefore(canvasWrapper, this.annotationLayer);
-    } else {
-      div.appendChild(canvasWrapper);
-    }
-    this.canvas = canvas;
-
-    var ctx = canvas.getContext('2d');
-    var outputScale = getOutputScale(ctx);
-
-    if (PDFJS.useOnlyCssZoom) {
-      var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
-      // Use a scale that will make the canvas be the original intended size
-      // of the page.
-      outputScale.sx *= actualSizeViewport.width / viewport.width;
-      outputScale.sy *= actualSizeViewport.height / viewport.height;
-      outputScale.scaled = true;
-    }
-
-    if (PDFJS.maxCanvasPixels > 0) {
-      var pixelsInViewport = viewport.width * viewport.height;
-      var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
-      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-        outputScale.sx = maxScale;
-        outputScale.sy = maxScale;
-        outputScale.scaled = true;
-        this.hasRestrictedScaling = true;
+      if (keepAnnotations) {
+        if (this.annotationLayer) {
+          // Hide annotationLayer until all elements are resized
+          // so they are not displayed on the already-resized page
+          this.annotationLayer.setAttribute('hidden', 'true');
+        }
       } else {
-        this.hasRestrictedScaling = false;
-      }
-    }
-
-    canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
-    canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
-    canvas.style.width = Math.floor(viewport.width) + 'px';
-    canvas.style.height = Math.floor(viewport.height) + 'px';
-    // Add the viewport so it's known what it was originally drawn with.
-    canvas._viewport = viewport;
-
-    var textLayerDiv = null;
-    var textLayer = null;
-    if (!PDFJS.disableTextLayer) {
-      textLayerDiv = document.createElement('div');
-      textLayerDiv.className = 'textLayer';
-      textLayerDiv.style.width = canvas.style.width;
-      textLayerDiv.style.height = canvas.style.height;
-      if (this.annotationLayer) {
-        // annotationLayer needs to stay on top
-        div.insertBefore(textLayerDiv, this.annotationLayer);
-      } else {
-        div.appendChild(textLayerDiv);
+        this.annotationLayer = null;
       }
 
-      textLayer = this.viewer.createTextLayerBuilder(textLayerDiv, this.id - 1,
-                                                     this.viewport);
-    }
-    this.textLayer = textLayer;
-
-    // TODO(mack): use data attributes to store these
-    ctx._scaleX = outputScale.sx;
-    ctx._scaleY = outputScale.sy;
-    if (outputScale.scaled) {
-      ctx.scale(outputScale.sx, outputScale.sy);
-    }
-
-    // Rendering area
-
-    var self = this;
-    function pageViewDrawCallback(error) {
-      // The renderTask may have been replaced by a new one, so only remove the
-      // reference to the renderTask if it matches the one that is triggering
-      // this callback.
-      if (renderTask === self.renderTask) {
-        self.renderTask = null;
+      if (this.canvas) {
+        // Zeroing the width and height causes Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        this.canvas.width = 0;
+        this.canvas.height = 0;
+        delete this.canvas;
       }
 
-      if (error === 'cancelled') {
+      this.loadingIconDiv = document.createElement('div');
+      this.loadingIconDiv.className = 'loadingIcon';
+      div.appendChild(this.loadingIconDiv);
+    },
+
+    update: function PDFPageView_update(scale, rotation) {
+      this.scale = scale || this.scale;
+
+      if (typeof rotation !== 'undefined') {
+        this.rotation = rotation;
+      }
+
+      var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+      this.viewport = this.viewport.clone({
+        scale: this.scale * CSS_UNITS,
+        rotation: totalRotation
+      });
+
+      var isScalingRestricted = false;
+      if (this.canvas && PDFJS.maxCanvasPixels > 0) {
+        var ctx = this.canvas.getContext('2d');
+        var outputScale = getOutputScale(ctx);
+        var pixelsInViewport = this.viewport.width * this.viewport.height;
+        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+        if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
+            ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
+            PDFJS.maxCanvasPixels) {
+          isScalingRestricted = true;
+        }
+      }
+
+      if (this.canvas &&
+          (PDFJS.useOnlyCssZoom ||
+            (this.hasRestrictedScaling && isScalingRestricted))) {
+        this.cssTransform(this.canvas, true);
+        return;
+      } else if (this.canvas && !this.zoomLayer) {
+        this.zoomLayer = this.canvas.parentNode;
+        this.zoomLayer.style.position = 'absolute';
+      }
+      if (this.zoomLayer) {
+        this.cssTransform(this.zoomLayer.firstChild);
+      }
+      this.reset(true);
+    },
+
+    cssTransform: function PDFPageView_transform(canvas, redrawAnnotations) {
+      // Scale canvas, canvas wrapper, and page container.
+      var width = this.viewport.width;
+      var height = this.viewport.height;
+      var div = this.div;
+      canvas.style.width = canvas.parentNode.style.width = div.style.width =
+        Math.floor(width) + 'px';
+      canvas.style.height = canvas.parentNode.style.height = div.style.height =
+        Math.floor(height) + 'px';
+      // The canvas may have been originally rotated, rotate relative to that.
+      var relativeRotation = this.viewport.rotation - canvas._viewport.rotation;
+      var absRotation = Math.abs(relativeRotation);
+      var scaleX = 1, scaleY = 1;
+      if (absRotation === 90 || absRotation === 270) {
+        // Scale x and y because of the rotation.
+        scaleX = height / width;
+        scaleY = width / height;
+      }
+      var cssTransform = 'rotate(' + relativeRotation + 'deg) ' +
+        'scale(' + scaleX + ',' + scaleY + ')';
+      CustomStyle.setProp('transform', canvas, cssTransform);
+
+      if (this.textLayer) {
+        // Rotating the text layer is more complicated since the divs inside the
+        // the text layer are rotated.
+        // TODO: This could probably be simplified by drawing the text layer in
+        // one orientation then rotating overall.
+        var textLayerViewport = this.textLayer.viewport;
+        var textRelativeRotation = this.viewport.rotation -
+          textLayerViewport.rotation;
+        var textAbsRotation = Math.abs(textRelativeRotation);
+        var scale = width / textLayerViewport.width;
+        if (textAbsRotation === 90 || textAbsRotation === 270) {
+          scale = width / textLayerViewport.height;
+        }
+        var textLayerDiv = this.textLayer.textLayerDiv;
+        var transX, transY;
+        switch (textAbsRotation) {
+          case 0:
+            transX = transY = 0;
+            break;
+          case 90:
+            transX = 0;
+            transY = '-' + textLayerDiv.style.height;
+            break;
+          case 180:
+            transX = '-' + textLayerDiv.style.width;
+            transY = '-' + textLayerDiv.style.height;
+            break;
+          case 270:
+            transX = '-' + textLayerDiv.style.width;
+            transY = 0;
+            break;
+          default:
+            console.error('Bad rotation value.');
+            break;
+        }
+        CustomStyle.setProp('transform', textLayerDiv,
+            'rotate(' + textAbsRotation + 'deg) ' +
+            'scale(' + scale + ', ' + scale + ') ' +
+            'translate(' + transX + ', ' + transY + ')');
+        CustomStyle.setProp('transformOrigin', textLayerDiv, '0% 0%');
+      }
+
+      if (redrawAnnotations && this.annotationLayer) {
+        this.setupAnnotations();
+      }
+    },
+
+    get width() {
+      return this.viewport.width;
+    },
+
+    get height() {
+      return this.viewport.height;
+    },
+
+    setupAnnotations: function PDFPageView_setupAnnotations() {
+      function bindLink(link, dest) {
+        link.href = linkService.getDestinationHash(dest);
+        link.onclick = function pageViewSetupLinksOnclick() {
+          if (dest) {
+            linkService.navigateTo(dest);
+          }
+          return false;
+        };
+        if (dest) {
+          link.className = 'internalLink';
+        }
+      }
+
+      function bindNamedAction(link, action) {
+        link.href = linkService.getAnchorUrl('');
+        link.onclick = function pageViewSetupNamedActionOnClick() {
+          linkService.executeNamedAction(action);
+          return false;
+        };
+        link.className = 'internalLink';
+      }
+
+      var linkService = this.linkService;
+      var pageDiv = this.div;
+      var pdfPage = this.pdfPage;
+      var viewport = this.viewport;
+      var self = this;
+
+      pdfPage.getAnnotations().then(function(annotationsData) {
+        viewport = viewport.clone({ dontFlip: true });
+        var transform = viewport.transform;
+        var transformStr = 'matrix(' + transform.join(',') + ')';
+        var data, element, i, ii;
+
+        if (self.annotationLayer) {
+          // If an annotationLayer already exists, refresh its children's
+          // transformation matrices
+          for (i = 0, ii = annotationsData.length; i < ii; i++) {
+            data = annotationsData[i];
+            element = self.annotationLayer.querySelector(
+                '[data-annotation-id="' + data.id + '"]');
+            if (element) {
+              CustomStyle.setProp('transform', element, transformStr);
+            }
+          }
+          // See this.reset()
+          self.annotationLayer.removeAttribute('hidden');
+        } else {
+          for (i = 0, ii = annotationsData.length; i < ii; i++) {
+            data = annotationsData[i];
+            if (!data || !data.hasHtml) {
+              continue;
+            }
+
+            element = PDFJS.AnnotationUtils.getHtmlElement(data,
+              pdfPage.commonObjs);
+            element.setAttribute('data-annotation-id', data.id);
+            mozL10n.translate(element);
+
+            var rect = data.rect;
+            var view = pdfPage.view;
+            rect = PDFJS.Util.normalizeRect([
+              rect[0],
+                view[3] - rect[1] + view[1],
+              rect[2],
+                view[3] - rect[3] + view[1]
+            ]);
+            element.style.left = rect[0] + 'px';
+            element.style.top = rect[1] + 'px';
+            element.style.position = 'absolute';
+
+            CustomStyle.setProp('transform', element, transformStr);
+            var transformOriginStr = -rect[0] + 'px ' + -rect[1] + 'px';
+            CustomStyle.setProp('transformOrigin', element, transformOriginStr);
+
+            if (data.subtype === 'Link' && !data.url) {
+              var link = element.getElementsByTagName('a')[0];
+              if (link) {
+                if (data.action) {
+                  bindNamedAction(link, data.action);
+                } else {
+                  bindLink(link, ('dest' in data) ? data.dest : null);
+                }
+              }
+            }
+
+            if (!self.annotationLayer) {
+              var annotationLayerDiv = document.createElement('div');
+              annotationLayerDiv.className = 'annotationLayer';
+              pageDiv.appendChild(annotationLayerDiv);
+              self.annotationLayer = annotationLayerDiv;
+            }
+
+            self.annotationLayer.appendChild(element);
+          }
+        }
+      });
+    },
+
+    getPagePoint: function PDFPageView_getPagePoint(x, y) {
+      return this.viewport.convertToPdfPoint(x, y);
+    },
+
+    draw: function PDFPageView_draw(callback) {
+      var pdfPage = this.pdfPage;
+
+      if (this.pagePdfPromise) {
+        return;
+      }
+      if (!pdfPage) {
+        var promise = this.pageSource.getPage();
+        promise.then(function(pdfPage) {
+          delete this.pagePdfPromise;
+          this.setPdfPage(pdfPage);
+          this.draw(callback);
+        }.bind(this));
+        this.pagePdfPromise = promise;
         return;
       }
 
-      self.renderingState = RenderingStates.FINISHED;
-
-      if (self.loadingIconDiv) {
-        div.removeChild(self.loadingIconDiv);
-        delete self.loadingIconDiv;
+      if (this.renderingState !== RenderingStates.INITIAL) {
+        console.error('Must be in new state before drawing');
       }
 
-      if (self.zoomLayer) {
-        div.removeChild(self.zoomLayer);
-        self.zoomLayer = null;
+      this.renderingState = RenderingStates.RUNNING;
+
+      var viewport = this.viewport;
+      var div = this.div;
+      // Wrap the canvas so if it has a css transform for highdpi the overflow
+      // will be hidden in FF.
+      var canvasWrapper = document.createElement('div');
+      canvasWrapper.style.width = div.style.width;
+      canvasWrapper.style.height = div.style.height;
+      canvasWrapper.classList.add('canvasWrapper');
+
+      var canvas = document.createElement('canvas');
+      canvas.id = 'page' + this.id;
+      canvasWrapper.appendChild(canvas);
+      if (this.annotationLayer) {
+        // annotationLayer needs to stay on top
+        div.insertBefore(canvasWrapper, this.annotationLayer);
+      } else {
+        div.appendChild(canvasWrapper);
+      }
+      this.canvas = canvas;
+
+      var ctx = canvas.getContext('2d');
+      var outputScale = getOutputScale(ctx);
+
+      if (PDFJS.useOnlyCssZoom) {
+        var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+        // Use a scale that will make the canvas be the original intended size
+        // of the page.
+        outputScale.sx *= actualSizeViewport.width / viewport.width;
+        outputScale.sy *= actualSizeViewport.height / viewport.height;
+        outputScale.scaled = true;
       }
 
-      self.error = error;
-      self.stats = pdfPage.stats;
-      self.updateStats();
-      if (self.onAfterDraw) {
-        self.onAfterDraw();
+      if (PDFJS.maxCanvasPixels > 0) {
+        var pixelsInViewport = viewport.width * viewport.height;
+        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+        if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
+          outputScale.sx = maxScale;
+          outputScale.sy = maxScale;
+          outputScale.scaled = true;
+          this.hasRestrictedScaling = true;
+        } else {
+          this.hasRestrictedScaling = false;
+        }
       }
 
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('pagerender', true, true, {
-        pageNumber: pdfPage.pageNumber
-      });
-      div.dispatchEvent(event);
+      canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
+      canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
+      canvas.style.width = Math.floor(viewport.width) + 'px';
+      canvas.style.height = Math.floor(viewport.height) + 'px';
+      // Add the viewport so it's known what it was originally drawn with.
+      canvas._viewport = viewport;
 
-      callback();
-    }
+      var textLayerDiv = null;
+      var textLayer = null;
+      if (!PDFJS.disableTextLayer) {
+        textLayerDiv = document.createElement('div');
+        textLayerDiv.className = 'textLayer';
+        textLayerDiv.style.width = canvas.style.width;
+        textLayerDiv.style.height = canvas.style.height;
+        if (this.annotationLayer) {
+          // annotationLayer needs to stay on top
+          div.insertBefore(textLayerDiv, this.annotationLayer);
+        } else {
+          div.appendChild(textLayerDiv);
+        }
 
-    var renderContext = {
-      canvasContext: ctx,
-      viewport: this.viewport,
-      // intent: 'default', // === 'display'
-      continueCallback: function pdfViewcContinueCallback(cont) {
-        if (!self.renderingQueue.isHighestPriority(self)) {
-          self.renderingState = RenderingStates.PAUSED;
-          self.resume = function resumeCallback() {
-            self.renderingState = RenderingStates.RUNNING;
-            cont();
-          };
+        textLayer = this.viewer.createTextLayerBuilder(textLayerDiv,
+                                                       this.id - 1,
+                                                       this.viewport);
+      }
+      this.textLayer = textLayer;
+
+      // TODO(mack): use data attributes to store these
+      ctx._scaleX = outputScale.sx;
+      ctx._scaleY = outputScale.sy;
+      if (outputScale.scaled) {
+        ctx.scale(outputScale.sx, outputScale.sy);
+      }
+
+      // Rendering area
+
+      var self = this;
+      function pageViewDrawCallback(error) {
+        // The renderTask may have been replaced by a new one, so only remove
+        // the reference to the renderTask if it matches the one that is
+        // triggering this callback.
+        if (renderTask === self.renderTask) {
+          self.renderTask = null;
+        }
+
+        if (error === 'cancelled') {
           return;
         }
-        cont();
-      }
-    };
-    var renderTask = this.renderTask = this.pdfPage.render(renderContext);
 
-    this.renderTask.promise.then(
-      function pdfPageRenderCallback() {
-        pageViewDrawCallback(null);
-        if (textLayer) {
-          self.pdfPage.getTextContent().then(
-            function textContentResolved(textContent) {
-              textLayer.setTextContent(textContent);
-            }
-          );
+        self.renderingState = RenderingStates.FINISHED;
+
+        if (self.loadingIconDiv) {
+          div.removeChild(self.loadingIconDiv);
+          delete self.loadingIconDiv;
         }
-      },
-      function pdfPageRenderError(error) {
-        pageViewDrawCallback(error);
+
+        if (self.zoomLayer) {
+          div.removeChild(self.zoomLayer);
+          self.zoomLayer = null;
+        }
+
+        self.error = error;
+        self.stats = pdfPage.stats;
+        self.updateStats();
+        if (self.onAfterDraw) {
+          self.onAfterDraw();
+        }
+
+        var event = document.createEvent('CustomEvent');
+        event.initCustomEvent('pagerender', true, true, {
+          pageNumber: pdfPage.pageNumber
+        });
+        div.dispatchEvent(event);
+
+        callback();
       }
-    );
-
-    setupAnnotations(div, pdfPage, this.viewport);
-    div.setAttribute('data-loaded', true);
-
-    // Add the page to the cache at the start of drawing. That way it can be
-    // evicted from the cache and destroyed even if we pause its rendering.
-    cache.push(this);
-  };
-
-  this.beforePrint = function pageViewBeforePrint() {
-    var pdfPage = this.pdfPage;
-
-    var viewport = pdfPage.getViewport(1);
-    // Use the same hack we use for high dpi displays for printing to get better
-    // output until bug 811002 is fixed in FF.
-    var PRINT_OUTPUT_SCALE = 2;
-    var canvas = document.createElement('canvas');
-    canvas.width = Math.floor(viewport.width) * PRINT_OUTPUT_SCALE;
-    canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
-    canvas.style.width = (PRINT_OUTPUT_SCALE * viewport.width) + 'pt';
-    canvas.style.height = (PRINT_OUTPUT_SCALE * viewport.height) + 'pt';
-    var cssScale = 'scale(' + (1 / PRINT_OUTPUT_SCALE) + ', ' +
-                              (1 / PRINT_OUTPUT_SCALE) + ')';
-    CustomStyle.setProp('transform' , canvas, cssScale);
-    CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
-
-    var printContainer = document.getElementById('printContainer');
-    var canvasWrapper = document.createElement('div');
-    canvasWrapper.style.width = viewport.width + 'pt';
-    canvasWrapper.style.height = viewport.height + 'pt';
-    canvasWrapper.appendChild(canvas);
-    printContainer.appendChild(canvasWrapper);
-
-    canvas.mozPrintCallback = function(obj) {
-      var ctx = obj.context;
-
-      ctx.save();
-      ctx.fillStyle = 'rgb(255, 255, 255)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
-      ctx.scale(PRINT_OUTPUT_SCALE, PRINT_OUTPUT_SCALE);
 
       var renderContext = {
         canvasContext: ctx,
-        viewport: viewport,
-        intent: 'print'
-      };
-
-      pdfPage.render(renderContext).promise.then(function() {
-        // Tell the printEngine that rendering this canvas/page has finished.
-        obj.done();
-      }, function(error) {
-        console.error(error);
-        // Tell the printEngine that rendering this canvas/page has failed.
-        // This will make the print proces stop.
-        if ('abort' in obj) {
-          obj.abort();
-        } else {
-          obj.done();
+        viewport: this.viewport,
+        // intent: 'default', // === 'display'
+        continueCallback: function pdfViewcContinueCallback(cont) {
+          if (!self.renderingQueue.isHighestPriority(self)) {
+            self.renderingState = RenderingStates.PAUSED;
+            self.resume = function resumeCallback() {
+              self.renderingState = RenderingStates.RUNNING;
+              cont();
+            };
+            return;
+          }
+          cont();
         }
-      });
-    };
+      };
+      var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+
+      this.renderTask.promise.then(
+        function pdfPageRenderCallback() {
+          pageViewDrawCallback(null);
+          if (textLayer) {
+            self.pdfPage.getTextContent().then(
+              function textContentResolved(textContent) {
+                textLayer.setTextContent(textContent);
+              }
+            );
+          }
+        },
+        function pdfPageRenderError(error) {
+          pageViewDrawCallback(error);
+        }
+      );
+
+      this.setupAnnotations();
+      div.setAttribute('data-loaded', true);
+
+      // Add the page to the cache at the start of drawing. That way it can be
+      // evicted from the cache and destroyed even if we pause its rendering.
+      this.cache.push(this);
+    },
+
+    beforePrint: function PDFPageView_beforePrint() {
+      var pdfPage = this.pdfPage;
+
+      var viewport = pdfPage.getViewport(1);
+      // Use the same hack we use for high dpi displays for printing to get
+      // better output until bug 811002 is fixed in FF.
+      var PRINT_OUTPUT_SCALE = 2;
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.floor(viewport.width) * PRINT_OUTPUT_SCALE;
+      canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
+      canvas.style.width = (PRINT_OUTPUT_SCALE * viewport.width) + 'pt';
+      canvas.style.height = (PRINT_OUTPUT_SCALE * viewport.height) + 'pt';
+      var cssScale = 'scale(' + (1 / PRINT_OUTPUT_SCALE) + ', ' +
+                                (1 / PRINT_OUTPUT_SCALE) + ')';
+      CustomStyle.setProp('transform' , canvas, cssScale);
+      CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
+
+      var printContainer = document.getElementById('printContainer');
+      var canvasWrapper = document.createElement('div');
+      canvasWrapper.style.width = viewport.width + 'pt';
+      canvasWrapper.style.height = viewport.height + 'pt';
+      canvasWrapper.appendChild(canvas);
+      printContainer.appendChild(canvasWrapper);
+
+      canvas.mozPrintCallback = function(obj) {
+        var ctx = obj.context;
+
+        ctx.save();
+        ctx.fillStyle = 'rgb(255, 255, 255)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        ctx.scale(PRINT_OUTPUT_SCALE, PRINT_OUTPUT_SCALE);
+
+        var renderContext = {
+          canvasContext: ctx,
+          viewport: viewport,
+          intent: 'print'
+        };
+
+        pdfPage.render(renderContext).promise.then(function() {
+          // Tell the printEngine that rendering this canvas/page has finished.
+          obj.done();
+        }, function(error) {
+          console.error(error);
+          // Tell the printEngine that rendering this canvas/page has failed.
+          // This will make the print proces stop.
+          if ('abort' in obj) {
+            obj.abort();
+          } else {
+            obj.done();
+          }
+        });
+      };
+    },
+
+    updateStats: function PDFPageView_updateStats() {
+      if (!this.stats) {
+        return;
+      }
+
+      if (PDFJS.pdfBug && Stats.enabled) {
+        var stats = this.stats;
+        Stats.add(this.id, stats);
+      }
+    },
   };
 
-  this.updateStats = function pageViewUpdateStats() {
-    if (!this.stats) {
-      return;
-    }
-
-    if (PDFJS.pdfBug && Stats.enabled) {
-      var stats = this.stats;
-      Stats.add(this.id, stats);
-    }
-  };
-};
+  return PDFPageView;
+})();

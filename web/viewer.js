@@ -16,7 +16,7 @@
  */
 /* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, ProgressBar,
            DownloadManager, getFileName, scrollIntoView, getPDFFileNameFromURL,
-           PDFHistory, Preferences, SidebarView, ViewHistory, PageView,
+           PDFHistory, Preferences, SidebarView, ViewHistory,
            PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PresentationMode, HandTool, Promise,
            DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
@@ -1353,7 +1353,6 @@ var PDFViewerApplication = {
 
   rotatePages: function pdfViewRotatePages(delta) {
     var pageNumber = this.page;
-
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
     this.pdfThumbnailViewer.pagesRotation = this.pageRotation;

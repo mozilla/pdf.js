@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PageView, UNKNOWN_SCALE,
+ /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PDFPageView, UNKNOWN_SCALE,
            SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
            DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
            PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue */
@@ -236,10 +236,17 @@ var PDFViewer = (function pdfViewer() {
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var pageSource = new PDFPageSource(pdfDocument, pageNum);
-          var pageView = new PageView(this.viewer, pageNum, scale,
-                                      viewport.clone(), this.linkService,
-                                      this.renderingQueue, this.cache,
-                                      pageSource, this);
+          var pageView = new PDFPageView({
+            container: this.viewer,
+            id: pageNum,
+            scale: scale,
+            defaultViewport: viewport.clone(),
+            linkService: this.linkService,
+            renderingQueue: this.renderingQueue,
+            cache: this.cache,
+            pageSource: pageSource,
+            viewer: this
+          });
           bindOnAfterDraw(pageView);
           this.pages.push(pageView);
         }
@@ -398,7 +405,6 @@ var PDFViewer = (function pdfViewer() {
     scrollPageIntoView: function PDFViewer_scrollPageIntoView(pageNumber,
                                                               dest) {
       var pageView = this.pages[pageNumber - 1];
-      var pageViewDiv = pageView.el;
 
       if (this.presentationModeState ===
         PresentationModeState.FULLSCREEN) {
@@ -412,7 +418,7 @@ var PDFViewer = (function pdfViewer() {
         this._setScale(this.currentScaleValue, true);
       }
       if (!dest) {
-        scrollIntoView(pageViewDiv);
+        scrollIntoView(pageView.div);
         return;
       }
 
@@ -475,7 +481,7 @@ var PDFViewer = (function pdfViewer() {
       }
 
       if (scale === 'page-fit' && !dest[4]) {
-        scrollIntoView(pageViewDiv);
+        scrollIntoView(pageView.div);
         return;
       }
 
@@ -486,7 +492,7 @@ var PDFViewer = (function pdfViewer() {
       var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
       var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
 
-      scrollIntoView(pageViewDiv, { left: left, top: top });
+      scrollIntoView(pageView.div, { left: left, top: top });
     },
 
     _updateLocation: function (firstPage) {
