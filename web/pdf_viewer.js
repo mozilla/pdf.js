@@ -31,7 +31,7 @@ var PresentationModeState = {
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 
 //#include pdf_rendering_queue.js
-//#include page_view.js
+//#include pdf_page_view.js
 //#include text_layer_builder.js
 
 /**
