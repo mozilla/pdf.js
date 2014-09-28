@@ -29,7 +29,7 @@
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {Cache} cache - The page cache.
  * @property {PDFPageSource} pageSource
- * @property {PDFViewer} viewer
+ * @property {IPDFTextLayerFactory} textLayerFactory
  */
 
 /**
@@ -50,7 +50,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     var renderingQueue = options.renderingQueue;
     var cache = options.cache;
     var pageSource = options.pageSource;
-    var viewer = options.viewer;
+    var textLayerFactory = options.textLayerFactory;
 
     this.id = id;
     this.renderingId = 'page' + id;
@@ -65,7 +65,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.renderingQueue = renderingQueue;
     this.cache = cache;
     this.pageSource = pageSource;
-    this.viewer = viewer;
+    this.textLayerFactory = textLayerFactory;
 
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
@@ -454,7 +454,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var textLayerDiv = null;
       var textLayer = null;
-      if (!PDFJS.disableTextLayer) {
+      if (this.textLayerFactory) {
         textLayerDiv = document.createElement('div');
         textLayerDiv.className = 'textLayer';
         textLayerDiv.style.width = canvas.style.width;
@@ -466,9 +466,9 @@ var PDFPageView = (function PDFPageViewClosure() {
           div.appendChild(textLayerDiv);
         }
 
-        textLayer = this.viewer.createTextLayerBuilder(textLayerDiv,
-                                                       this.id - 1,
-                                                       this.viewport);
+        textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv,
+                                                                 this.id - 1,
+                                                                 this.viewport);
       }
       this.textLayer = textLayer;
 

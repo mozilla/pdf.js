@@ -83,3 +83,17 @@ ILastScrollSource.prototype = {
    */
   get lastScroll() {},
 };
+
+/**
+ * @interface
+ */
+function IPDFTextLayerFactory() {}
+IPDFTextLayerFactory.prototype = {
+  /**
+   * @param {HTMLDivElement} textLayerDiv
+   * @param {number} pageIndex
+   * @param {PageViewport} viewport
+   * @returns {TextLayerBuilder}
+   */
+  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {}
+};

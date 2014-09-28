@@ -236,6 +236,10 @@ var PDFViewer = (function pdfViewer() {
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var pageSource = new PDFPageSource(pdfDocument, pageNum);
+          var textLayerFactory = null;
+          if (!PDFJS.disableTextLayer) {
+            textLayerFactory = this;
+          }
           var pageView = new PDFPageView({
             container: this.viewer,
             id: pageNum,
@@ -245,7 +249,7 @@ var PDFViewer = (function pdfViewer() {
             renderingQueue: this.renderingQueue,
             cache: this.cache,
             pageSource: pageSource,
-            viewer: this
+            textLayerFactory: textLayerFactory
           });
           bindOnAfterDraw(pageView);
           this.pages.push(pageView);
@@ -629,9 +633,9 @@ var PDFViewer = (function pdfViewer() {
     },
 
     /**
-     * @param textLayerDiv {HTMLDivElement}
-     * @param pageIndex {number}
-     * @param viewport {PageViewport}
+     * @param {HTMLDivElement} textLayerDiv
+     * @param {number} pageIndex
+     * @param {PageViewport} viewport
      * @returns {TextLayerBuilder}
      */
     createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
