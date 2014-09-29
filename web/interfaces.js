@@ -97,3 +97,16 @@ IPDFTextLayerFactory.prototype = {
    */
   createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {}
 };
+
+/**
+ * @interface
+ */
+function IPDFAnnotationsLayerFactory() {}
+IPDFAnnotationsLayerFactory.prototype = {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPage} pdfPage
+   * @returns {AnnotationsLayerBuilder}
+   */
+  createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {}
+};

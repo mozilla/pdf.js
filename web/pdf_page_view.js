@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, mozL10n, CustomStyle, getOutputScale, Stats,
-           CSS_UNITS */
+/* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale,
+           Stats */
 
 'use strict';
 
@@ -25,10 +25,10 @@
  * @property {number} id - The page unique ID (normally its number).
  * @property {number} scale - The page scale display.
  * @property {PageViewport} defaultViewport - The page viewport.
- * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {Cache} cache - The page cache.
  * @property {IPDFTextLayerFactory} textLayerFactory
+ * @property {IPDFAnnotationsLayerFactory} annotationsLayerFactory
  */
 
 /**
@@ -45,10 +45,10 @@ var PDFPageView = (function PDFPageViewClosure() {
     var id = options.id;
     var scale = options.scale;
     var defaultViewport = options.defaultViewport;
-    var linkService = options.linkService;
     var renderingQueue = options.renderingQueue;
     var cache = options.cache;
     var textLayerFactory = options.textLayerFactory;
+    var annotationsLayerFactory = options.annotationsLayerFactory;
 
     this.id = id;
     this.renderingId = 'page' + id;
@@ -59,10 +59,10 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
 
-    this.linkService = linkService;
     this.renderingQueue = renderingQueue;
     this.cache = cache;
     this.textLayerFactory = textLayerFactory;
+    this.annotationsLayerFactory = annotationsLayerFactory;
 
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
@@ -119,10 +119,12 @@ var PDFPageView = (function PDFPageViewClosure() {
       div.style.height = Math.floor(this.viewport.height) + 'px';
 
       var childNodes = div.childNodes;
+      var currentZoomLayer = this.zoomLayer || null;
+      var currentAnnotationNode = (keepAnnotations && this.annotationLayer &&
+                                   this.annotationLayer.div) || null;
       for (var i = div.childNodes.length - 1; i >= 0; i--) {
         var node = childNodes[i];
-        if ((this.zoomLayer && this.zoomLayer === node) ||
-            (keepAnnotations && this.annotationLayer === node)) {
+        if (currentZoomLayer === node || currentAnnotationNode === node) {
           continue;
         }
         div.removeChild(node);
@@ -133,7 +135,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         if (this.annotationLayer) {
           // Hide annotationLayer until all elements are resized
           // so they are not displayed on the already-resized page
-          this.annotationLayer.setAttribute('hidden', 'true');
+          this.annotationLayer.hide();
         }
       } else {
         this.annotationLayer = null;
@@ -258,7 +260,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
 
       if (redrawAnnotations && this.annotationLayer) {
-        this.setupAnnotations();
+        this.annotationLayer.setupAnnotations(this.viewport);
       }
     },
 
@@ -268,106 +270,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     get height() {
       return this.viewport.height;
-    },
-
-    setupAnnotations: function PDFPageView_setupAnnotations() {
-      function bindLink(link, dest) {
-        link.href = linkService.getDestinationHash(dest);
-        link.onclick = function pageViewSetupLinksOnclick() {
-          if (dest) {
-            linkService.navigateTo(dest);
-          }
-          return false;
-        };
-        if (dest) {
-          link.className = 'internalLink';
-        }
-      }
-
-      function bindNamedAction(link, action) {
-        link.href = linkService.getAnchorUrl('');
-        link.onclick = function pageViewSetupNamedActionOnClick() {
-          linkService.executeNamedAction(action);
-          return false;
-        };
-        link.className = 'internalLink';
-      }
-
-      var linkService = this.linkService;
-      var pageDiv = this.div;
-      var pdfPage = this.pdfPage;
-      var viewport = this.viewport;
-      var self = this;
-
-      pdfPage.getAnnotations().then(function(annotationsData) {
-        viewport = viewport.clone({ dontFlip: true });
-        var transform = viewport.transform;
-        var transformStr = 'matrix(' + transform.join(',') + ')';
-        var data, element, i, ii;
-
-        if (self.annotationLayer) {
-          // If an annotationLayer already exists, refresh its children's
-          // transformation matrices
-          for (i = 0, ii = annotationsData.length; i < ii; i++) {
-            data = annotationsData[i];
-            element = self.annotationLayer.querySelector(
-                '[data-annotation-id="' + data.id + '"]');
-            if (element) {
-              CustomStyle.setProp('transform', element, transformStr);
-            }
-          }
-          // See this.reset()
-          self.annotationLayer.removeAttribute('hidden');
-        } else {
-          for (i = 0, ii = annotationsData.length; i < ii; i++) {
-            data = annotationsData[i];
-            if (!data || !data.hasHtml) {
-              continue;
-            }
-
-            element = PDFJS.AnnotationUtils.getHtmlElement(data,
-              pdfPage.commonObjs);
-            element.setAttribute('data-annotation-id', data.id);
-            mozL10n.translate(element);
-
-            var rect = data.rect;
-            var view = pdfPage.view;
-            rect = PDFJS.Util.normalizeRect([
-              rect[0],
-                view[3] - rect[1] + view[1],
-              rect[2],
-                view[3] - rect[3] + view[1]
-            ]);
-            element.style.left = rect[0] + 'px';
-            element.style.top = rect[1] + 'px';
-            element.style.position = 'absolute';
-
-            CustomStyle.setProp('transform', element, transformStr);
-            var transformOriginStr = -rect[0] + 'px ' + -rect[1] + 'px';
-            CustomStyle.setProp('transformOrigin', element, transformOriginStr);
-
-            if (data.subtype === 'Link' && !data.url) {
-              var link = element.getElementsByTagName('a')[0];
-              if (link) {
-                if (data.action) {
-                  bindNamedAction(link, data.action);
-                } else {
-                  bindLink(link, ('dest' in data) ? data.dest : null);
-                }
-              }
-            }
-
-            if (!self.annotationLayer) {
-              var annotationLayerDiv = document.createElement('div');
-              annotationLayerDiv.className = 'annotationLayer';
-              pageDiv.appendChild(annotationLayerDiv);
-              self.annotationLayer = annotationLayerDiv;
-            }
-
-            self.annotationLayer.appendChild(element);
-          }
-        }
-      });
     },
 
     getPagePoint: function PDFPageView_getPagePoint(x, y) {
@@ -396,7 +298,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       canvasWrapper.appendChild(canvas);
       if (this.annotationLayer) {
         // annotationLayer needs to stay on top
-        div.insertBefore(canvasWrapper, this.annotationLayer);
+        div.insertBefore(canvasWrapper, this.annotationLayer.div);
       } else {
         div.appendChild(canvasWrapper);
       }
@@ -443,7 +345,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         textLayerDiv.style.height = canvas.style.height;
         if (this.annotationLayer) {
           // annotationLayer needs to stay on top
-          div.insertBefore(textLayerDiv, this.annotationLayer);
+          div.insertBefore(textLayerDiv, this.annotationLayer.div);
         } else {
           div.appendChild(textLayerDiv);
         }
@@ -538,7 +440,13 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       );
 
-      this.setupAnnotations();
+      if (this.annotationsLayerFactory) {
+        if (!this.annotationLayer) {
+          this.annotationLayer = this.annotationsLayerFactory.
+            createAnnotationsLayerBuilder(div, this.pdfPage);
+        }
+        this.annotationLayer.setupAnnotations(this.viewport);
+      }
       div.setAttribute('data-loaded', true);
 
       // Add the page to the cache at the start of drawing. That way it can be

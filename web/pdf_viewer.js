@@ -17,7 +17,8 @@
  /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PDFPageView, UNKNOWN_SCALE,
            SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
            DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
-           PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue */
+           PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue,
+           AnnotationsLayerBuilder */
 
 'use strict';
 
@@ -33,6 +34,7 @@ var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 //#include pdf_rendering_queue.js
 //#include pdf_page_view.js
 //#include text_layer_builder.js
+//#include annotations_layer_builder.js
 
 /**
  * @typedef {Object} PDFViewerOptions
@@ -244,10 +246,10 @@ var PDFViewer = (function pdfViewer() {
             id: pageNum,
             scale: scale,
             defaultViewport: viewport.clone(),
-            linkService: this.linkService,
             renderingQueue: this.renderingQueue,
             cache: this.cache,
-            textLayerFactory: textLayerFactory
+            textLayerFactory: textLayerFactory,
+            annotationsLayerFactory: this
           });
           bindOnAfterDraw(pageView);
           this.pages.push(pageView);
@@ -672,6 +674,19 @@ var PDFViewer = (function pdfViewer() {
         lastScrollSource: this,
         isViewerInPresentationMode: isViewerInPresentationMode,
         findController: this.findController
+      });
+    },
+
+    /**
+     * @param {HTMLDivElement} pageDiv
+     * @param {PDFPage} pdfPage
+     * @returns {AnnotationsLayerBuilder}
+     */
+    createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
+      return new AnnotationsLayerBuilder({
+        pageDiv: pageDiv,
+        pdfPage: pdfPage,
+        linkService: this.linkService
       });
     },
 
