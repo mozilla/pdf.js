@@ -235,7 +235,6 @@ var PDFViewer = (function pdfViewer() {
         var scale = this._currentScale || 1.0;
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-          var pageSource = new PDFPageSource(pdfDocument, pageNum);
           var textLayerFactory = null;
           if (!PDFJS.disableTextLayer) {
             textLayerFactory = this;
@@ -248,7 +247,6 @@ var PDFViewer = (function pdfViewer() {
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
             cache: this.cache,
-            pageSource: pageSource,
             textLayerFactory: textLayerFactory
           });
           bindOnAfterDraw(pageView);
@@ -299,6 +297,7 @@ var PDFViewer = (function pdfViewer() {
       this._currentScaleValue = null;
       this.location = null;
       this._pagesRotation = 0;
+      this._pagesRequests = [];
 
       var container = this.viewer;
       while (container.hasChildNodes()) {
@@ -614,13 +613,38 @@ var PDFViewer = (function pdfViewer() {
       }
     },
 
+    /**
+     * @param {PDFPageView} pageView
+     * @returns {PDFPage}
+     * @private
+     */
+    _ensurePdfPageLoaded: function (pageView) {
+      if (pageView.pdfPage) {
+        return Promise.resolve(pageView.pdfPage);
+      }
+      var pageNumber = pageView.id;
+      if (this._pagesRequests[pageNumber]) {
+        return this._pagesRequests[pageNumber];
+      }
+      var promise = this.pdfDocument.getPage(pageNumber).then(
+          function (pdfPage) {
+        pageView.setPdfPage(pdfPage);
+        this._pagesRequests[pageNumber] = null;
+        return pdfPage;
+      }.bind(this));
+      this._pagesRequests[pageNumber] = promise;
+      return promise;
+    },
+
     forceRendering: function (currentlyVisiblePages) {
       var visiblePages = currentlyVisiblePages || this._getVisiblePages();
       var pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                             this.pages,
                                                             this.scroll.down);
       if (pageView) {
-        this.renderingQueue.renderView(pageView);
+        this._ensurePdfPageLoaded(pageView).then(function () {
+          this.renderingQueue.renderView(pageView);
+        }.bind(this));
         return true;
       }
       return false;
@@ -704,32 +728,4 @@ var SimpleLinkService = (function SimpleLinkServiceClosure() {
     executeNamedAction: function (action) {},
   };
   return SimpleLinkService;
-})();
-
-/**
- * PDFPage object source.
- * @class
- */
-var PDFPageSource = (function PDFPageSourceClosure() {
-  /**
-   * @constructs
-   * @param {PDFDocument} pdfDocument
-   * @param {number} pageNumber
-   * @constructor
-   */
-  function PDFPageSource(pdfDocument, pageNumber) {
-    this.pdfDocument = pdfDocument;
-    this.pageNumber = pageNumber;
-  }
-
-  PDFPageSource.prototype = /** @lends PDFPageSource.prototype */ {
-    /**
-     * @returns {Promise<PDFPage>}
-     */
-    getPage: function () {
-      return this.pdfDocument.getPage(this.pageNumber);
-    }
-  };
-
-  return PDFPageSource;
 })();

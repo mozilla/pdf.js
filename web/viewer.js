@@ -1734,7 +1734,7 @@ document.addEventListener('pagerendered', function (e) {
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
   var thumbnailView = PDFViewerApplication.pdfThumbnailViewer.
                       getThumbnail(pageIndex);
-  thumbnailView.setImage(pageView.canvas);
+  thumbnailView.setImage(pageView);
 
 //#if (FIREFOX || MOZCENTRAL)
 //if (pageView.textLayer && pageView.textLayer.textDivs &&

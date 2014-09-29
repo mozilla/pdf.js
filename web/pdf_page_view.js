@@ -28,7 +28,6 @@
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {Cache} cache - The page cache.
- * @property {PDFPageSource} pageSource
  * @property {IPDFTextLayerFactory} textLayerFactory
  */
 
@@ -49,7 +48,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     var linkService = options.linkService;
     var renderingQueue = options.renderingQueue;
     var cache = options.cache;
-    var pageSource = options.pageSource;
     var textLayerFactory = options.textLayerFactory;
 
     this.id = id;
@@ -64,7 +62,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
     this.cache = cache;
-    this.pageSource = pageSource;
     this.textLayerFactory = textLayerFactory;
 
     this.renderingState = RenderingStates.INITIAL;
@@ -378,28 +375,13 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     draw: function PDFPageView_draw(callback) {
-      var pdfPage = this.pdfPage;
-
-      if (this.pagePdfPromise) {
-        return;
-      }
-      if (!pdfPage) {
-        var promise = this.pageSource.getPage();
-        promise.then(function(pdfPage) {
-          delete this.pagePdfPromise;
-          this.setPdfPage(pdfPage);
-          this.draw(callback);
-        }.bind(this));
-        this.pagePdfPromise = promise;
-        return;
-      }
-
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
       }
 
       this.renderingState = RenderingStates.RUNNING;
 
+      var pdfPage = this.pdfPage;
       var viewport = this.viewport;
       var div = this.div;
       // Wrap the canvas so if it has a css transform for highdpi the overflow
