@@ -60,7 +60,7 @@ var isStream = corePrimitives.isStream;
 var CipherTransformFactory = coreCrypto.CipherTransformFactory;
 var Lexer = coreParser.Lexer;
 var Parser = coreParser.Parser;
-var ChunkedStream = coreChunkedStream.ChunkedStream;
+var ChunkedStreamBase = coreChunkedStream.ChunkedStreamBase;
 var ColorSpace = coreColorSpace.ColorSpace;
 
 var Catalog = (function CatalogClosure() {
@@ -1515,7 +1515,7 @@ var ObjectLoader = (function() {
       var keys = this.keys;
       this.capability = createPromiseCapability();
       // Don't walk the graph if all the data is already loaded.
-      if (!(this.xref.stream instanceof ChunkedStream) ||
+      if (!(this.xref.stream instanceof ChunkedStreamBase) ||
           this.xref.stream.getMissingChunks().length === 0) {
         this.capability.resolve();
         return this.capability.promise;

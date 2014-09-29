@@ -711,7 +711,7 @@ var WorkerMessageHandler = {
         pdfManager = newPdfManager;
         handler.send('PDFManagerReady', null);
         pdfManager.onLoadedStream().then(function(stream) {
-          handler.send('DataLoaded', { length: stream.bytes.byteLength });
+          handler.send('DataLoaded', { length: stream.length });
         });
       }).then(function pdfManagerReady() {
         ensureNotTerminated();

@@ -889,7 +889,9 @@ describe('api', function() {
     }
     it('should fetch document info and page using ranges', function (done) {
       var transport;
-      var initialDataLength = 4000;
+      // initial data length needs to be less than FINGERPRINT_FIRST_BYTES
+      // to trigger request
+      var initialDataLength = 500;
       var fetches = 0;
       var getDocumentPromise = getDocumentData().then(function (data) {
         var initialData = data.subarray(0, initialDataLength);
