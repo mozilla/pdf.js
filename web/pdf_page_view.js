@@ -14,8 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale,
-           Stats */
+/* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale  */
 
 'use strict';
 
@@ -392,7 +391,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
         self.error = error;
         self.stats = pdfPage.stats;
-        self.updateStats();
         if (self.onAfterDraw) {
           self.onAfterDraw();
         }
@@ -507,17 +505,6 @@ var PDFPageView = (function PDFPageViewClosure() {
           }
         });
       };
-    },
-
-    updateStats: function PDFPageView_updateStats() {
-      if (!this.stats) {
-        return;
-      }
-
-      if (PDFJS.pdfBug && Stats.enabled) {
-        var stats = this.stats;
-        Stats.add(this.id, stats);
-      }
     },
   };
 

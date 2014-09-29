@@ -107,7 +107,6 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
 
-      this.pages[val - 1].updateStats();
       event.previousPageNumber = this._currentPageNumber;
       this._currentPageNumber = val;
       event.pageNumber = val;
