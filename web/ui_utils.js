@@ -16,6 +16,14 @@
 
 'use strict';
 
+var CSS_UNITS = 96.0 / 72.0;
+var DEFAULT_SCALE = 'auto';
+var UNKNOWN_SCALE = 0;
+var MAX_AUTO_SCALE = 1.25;
+var SCROLLBAR_PADDING = 40;
+var VERTICAL_PADDING = 5;
+var DEFAULT_CACHE_SIZE = 10;
+
 // optimised CSS custom property getter/setter
 var CustomStyle = (function CustomStyleClosure() {
 
@@ -136,6 +144,91 @@ function scrollIntoView(element, spot) {
     }
   }
   parent.scrollTop = offsetY;
+}
+
+/**
+ * Helper function to start monitoring the scroll event and converting them into
+ * PDF.js friendly one: with scroll debounce and scroll direction.
+ */
+function watchScroll(viewAreaElement, callback) {
+  var debounceScroll = function debounceScroll(evt) {
+    if (rAF) {
+      return;
+    }
+    // schedule an invocation of scroll for next animation frame.
+    rAF = window.requestAnimationFrame(function viewAreaElementScrolled() {
+      rAF = null;
+
+      var currentY = viewAreaElement.scrollTop;
+      var lastY = state.lastY;
+      if (currentY > lastY) {
+        state.down = true;
+      } else if (currentY < lastY) {
+        state.down = false;
+      }
+      state.lastY = currentY;
+      // else do nothing and use previous value
+      callback(state);
+    });
+  };
+
+  var state = {
+    down: true,
+    lastY: viewAreaElement.scrollTop,
+    _eventHandler: debounceScroll
+  };
+
+  var rAF = null;
+  viewAreaElement.addEventListener('scroll', debounceScroll, true);
+  return state;
+}
+
+/**
+ * Generic helper to find out what elements are visible within a scroll pane.
+ */
+function getVisibleElements(scrollEl, views, sortByVisibility) {
+  var top = scrollEl.scrollTop, bottom = top + scrollEl.clientHeight;
+  var left = scrollEl.scrollLeft, right = left + scrollEl.clientWidth;
+
+  var visible = [], view;
+  var currentHeight, viewHeight, hiddenHeight, percentHeight;
+  var currentWidth, viewWidth;
+  for (var i = 0, ii = views.length; i < ii; ++i) {
+    view = views[i];
+    currentHeight = view.el.offsetTop + view.el.clientTop;
+    viewHeight = view.el.clientHeight;
+    if ((currentHeight + viewHeight) < top) {
+      continue;
+    }
+    if (currentHeight > bottom) {
+      break;
+    }
+    currentWidth = view.el.offsetLeft + view.el.clientLeft;
+    viewWidth = view.el.clientWidth;
+    if ((currentWidth + viewWidth) < left || currentWidth > right) {
+      continue;
+    }
+    hiddenHeight = Math.max(0, top - currentHeight) +
+      Math.max(0, currentHeight + viewHeight - bottom);
+    percentHeight = ((viewHeight - hiddenHeight) * 100 / viewHeight) | 0;
+
+    visible.push({ id: view.id, x: currentWidth, y: currentHeight,
+      view: view, percent: percentHeight });
+  }
+
+  var first = visible[0];
+  var last = visible[visible.length - 1];
+
+  if (sortByVisibility) {
+    visible.sort(function(a, b) {
+      var pc = a.percent - b.percent;
+      if (Math.abs(pc) > 0.001) {
+        return -pc;
+      }
+      return a.id - b.id; // ensure stability
+    });
+  }
+  return {first: first, last: last, views: visible};
 }
 
 /**

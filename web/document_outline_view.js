@@ -14,27 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView */
 
 'use strict';
 
-var DocumentOutlineView = function documentOutlineView(outline) {
-  var outlineView = document.getElementById('outlineView');
+var DocumentOutlineView = function documentOutlineView(options) {
+  var outline = options.outline;
+  var outlineView = options.outlineView;
   while (outlineView.firstChild) {
     outlineView.removeChild(outlineView.firstChild);
   }
 
   if (!outline) {
-    if (!outlineView.classList.contains('hidden')) {
-      PDFView.switchSidebarView('thumbs');
-    }
     return;
   }
 
+  var linkService = options.linkService;
+
   function bindItemLink(domObj, item) {
-    domObj.href = PDFView.getDestinationHash(item.dest);
+    domObj.href = linkService.getDestinationHash(item.dest);
     domObj.onclick = function documentOutlineViewOnclick(e) {
-      PDFView.navigateTo(item.dest);
+      linkService.navigateTo(item.dest);
       return false;
     };
   }

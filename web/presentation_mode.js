@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, scrollIntoView, HandTool */
+/* globals scrollIntoView, HandTool, PDFViewerApplication */
 
 'use strict';
 
@@ -68,7 +68,7 @@ var PresentationMode = {
   },
 
   /**
-   * Initialize a timeout that is used to reset PDFView.currentPosition when the
+   * Initialize a timeout that is used to specify switchInProgress when the
    * browser transitions to fullscreen mode. Since resize events are triggered
    * multiple times during the switch to fullscreen mode, this is necessary in
    * order to prevent the page from being scrolled partially, or completely,
@@ -81,9 +81,8 @@ var PresentationMode = {
     }
     this.switchInProgress = setTimeout(function switchInProgressTimeout() {
       delete this.switchInProgress;
+      this._notifyStateChange();
     }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
-
-    PDFView.currentPosition = null;
   },
 
   _resetSwitchInProgress: function presentationMode_resetSwitchInProgress() {
@@ -94,11 +93,12 @@ var PresentationMode = {
   },
 
   request: function presentationModeRequest() {
-    if (!PDFView.supportsFullscreen || this.isFullscreen ||
+    if (!PDFViewerApplication.supportsFullscreen || this.isFullscreen ||
         !this.viewer.hasChildNodes()) {
       return false;
     }
     this._setSwitchInProgress();
+    this._notifyStateChange();
 
     if (this.container.requestFullscreen) {
       this.container.requestFullscreen();
@@ -113,23 +113,33 @@ var PresentationMode = {
     }
 
     this.args = {
-      page: PDFView.page,
-      previousScale: PDFView.currentScaleValue
+      page: PDFViewerApplication.page,
+      previousScale: PDFViewerApplication.currentScaleValue
     };
 
     return true;
   },
 
+  _notifyStateChange: function presentationModeNotifyStateChange() {
+    var event = document.createEvent('CustomEvent');
+    event.initCustomEvent('presentationmodechanged', true, true, {
+      active: PresentationMode.active,
+      switchInProgress: !!PresentationMode.switchInProgress
+    });
+    window.dispatchEvent(event);
+  },
+
   enter: function presentationModeEnter() {
     this.active = true;
     this._resetSwitchInProgress();
+    this._notifyStateChange();
 
     // Ensure that the correct page is scrolled into view when entering
     // Presentation Mode, by waiting until fullscreen mode in enabled.
     // Note: This is only necessary in non-Mozilla browsers.
     setTimeout(function enterPresentationModeTimeout() {
-      PDFView.page = this.args.page;
-      PDFView.setScale('page-fit', true);
+      PDFViewerApplication.page = this.args.page;
+      PDFViewerApplication.setScale('page-fit', true);
     }.bind(this), 0);
 
     window.addEventListener('mousemove', this.mouseMove, false);
@@ -143,15 +153,17 @@ var PresentationMode = {
   },
 
   exit: function presentationModeExit() {
-    var page = PDFView.page;
+    var page = PDFViewerApplication.page;
 
     // Ensure that the correct page is scrolled into view when exiting
     // Presentation Mode, by waiting until fullscreen mode is disabled.
     // Note: This is only necessary in non-Mozilla browsers.
     setTimeout(function exitPresentationModeTimeout() {
       this.active = false;
-      PDFView.setScale(this.args.previousScale);
-      PDFView.page = page;
+      this._notifyStateChange();
+
+      PDFViewerApplication.setScale(this.args.previousScale, true);
+      PDFViewerApplication.page = page;
       this.args = null;
     }.bind(this), 0);
 
@@ -160,7 +172,7 @@ var PresentationMode = {
     window.removeEventListener('contextmenu', this.contextMenu, false);
 
     this.hideControls();
-    PDFView.clearMouseScrollState();
+    PDFViewerApplication.clearMouseScrollState();
     HandTool.exitPresentationMode();
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
@@ -224,7 +236,7 @@ var PresentationMode = {
       if (!isInternalLink) {
         // Unless an internal link was clicked, advance one page.
         evt.preventDefault();
-        PDFView.page += (evt.shiftKey ? -1 : 1);
+        PDFViewerApplication.page += (evt.shiftKey ? -1 : 1);
       }
     }
   },

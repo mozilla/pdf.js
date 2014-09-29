@@ -13,9 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, FindStates, FirefoxCom, Promise */
+/* globals PDFJS, FirefoxCom, Promise */
 
 'use strict';
+
+var FindStates = {
+  FIND_FOUND: 0,
+  FIND_NOTFOUND: 1,
+  FIND_WRAPPED: 2,
+  FIND_PENDING: 3
+};
 
 /**
  * Provides "search" or "find" functionality for the PDF.
@@ -41,7 +48,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     this.state = null;
     this.dirtyMatch = false;
     this.findTimeout = null;
-    this.pdfPageSource = options.pdfPageSource || null;
+    this.pdfViewer = options.pdfViewer || null;
     this.integratedFind = options.integratedFind || false;
     this.charactersToNormalize = {
       '\u2018': '\'', // Left single quotation mark
@@ -137,7 +144,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
       this.pageContents = [];
       var extractTextPromisesResolves = [];
-      var numPages = this.pdfPageSource.pdfDocument.numPages;
+      var numPages = this.pdfViewer.pagesCount;
       for (var i = 0; i < numPages; i++) {
         this.extractTextPromises.push(new Promise(function (resolve) {
           extractTextPromisesResolves.push(resolve);
@@ -146,7 +153,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
       var self = this;
       function extractPageText(pageIndex) {
-        self.pdfPageSource.pages[pageIndex].getTextContent().then(
+        self.pdfViewer.getPageTextContent(pageIndex).then(
           function textContentResolved(textContent) {
             var textItems = textContent.items;
             var str = [];
@@ -159,7 +166,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
             self.pageContents.push(str.join(''));
 
             extractTextPromisesResolves[pageIndex](pageIndex);
-            if ((pageIndex + 1) < self.pdfPageSource.pages.length) {
+            if ((pageIndex + 1) < self.pdfViewer.pagesCount) {
               extractPageText(pageIndex + 1);
             }
           }
@@ -189,7 +196,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     },
 
     updatePage: function PDFFindController_updatePage(index) {
-      var page = this.pdfPageSource.pages[index];
+      var page = this.pdfViewer.getPageView(index);
 
       if (this.selected.pageIdx === index) {
         // If the page is selected, scroll the page into view, which triggers
@@ -205,8 +212,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
     nextMatch: function PDFFindController_nextMatch() {
       var previous = this.state.findPrevious;
-      var currentPageIndex = this.pdfPageSource.page - 1;
-      var numPages = this.pdfPageSource.pages.length;
+      var currentPageIndex = this.pdfViewer.currentPageNumber - 1;
+      var numPages = this.pdfViewer.pagesCount;
 
       this.active = true;
 
@@ -346,7 +353,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     
       this.updateUIState(state, this.state.findPrevious);
       if (this.selected.pageIdx !== -1) {
-        this.updatePage(this.selected.pageIdx, true);
+        this.updatePage(this.selected.pageIdx);
       }
     },
 

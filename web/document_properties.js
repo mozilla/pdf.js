@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, Promise, mozL10n, getPDFFileNameFromURL, OverlayManager */
+/* globals Promise, mozL10n, getPDFFileNameFromURL, OverlayManager */
 
 'use strict';
 
@@ -35,6 +35,8 @@ var DocumentProperties = {
   producerField: null,
   versionField: null,
   pageCountField: null,
+  url: null,
+  pdfDocument: null,
 
   initialize: function documentPropertiesInitialize(options) {
     this.overlayName = options.overlayName;
@@ -72,7 +74,7 @@ var DocumentProperties = {
       return;
     }
     // Get the file size (if it hasn't already been set).
-    PDFView.pdfDocument.getDownloadInfo().then(function(data) {
+    this.pdfDocument.getDownloadInfo().then(function(data) {
       if (data.length === this.rawFileSize) {
         return;
       }
@@ -81,10 +83,10 @@ var DocumentProperties = {
     }.bind(this));
 
     // Get the document properties.
-    PDFView.pdfDocument.getMetadata().then(function(data) {
+    this.pdfDocument.getMetadata().then(function(data) {
       var fields = [
         { field: this.fileNameField,
-          content: getPDFFileNameFromURL(PDFView.url) },
+          content: getPDFFileNameFromURL(this.url) },
         { field: this.fileSizeField, content: this.parseFileSize() },
         { field: this.titleField, content: data.info.Title },
         { field: this.authorField, content: data.info.Author },
@@ -97,7 +99,7 @@ var DocumentProperties = {
         { field: this.creatorField, content: data.info.Creator },
         { field: this.producerField, content: data.info.Producer },
         { field: this.versionField, content: data.info.PDFFormatVersion },
-        { field: this.pageCountField, content: PDFView.pdfDocument.numPages }
+        { field: this.pageCountField, content: this.pdfDocument.numPages }
       ];
 
       // Show the properties in the dialog.
