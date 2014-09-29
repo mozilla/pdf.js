@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PDFPageView, UNKNOWN_SCALE,
+ /*globals watchScroll, PDFPageView, UNKNOWN_SCALE,
            SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
            DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
            PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue,
@@ -30,6 +30,7 @@ var PresentationModeState = {
 };
 
 var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
+var DEFAULT_CACHE_SIZE = 10;
 
 //#include pdf_rendering_queue.js
 //#include pdf_page_view.js
@@ -52,6 +53,26 @@ var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
  * @implements {IRenderableView}
  */
 var PDFViewer = (function pdfViewer() {
+  function PDFPageViewBuffer(size) {
+    var data = [];
+    this.push = function cachePush(view) {
+      var i = data.indexOf(view);
+      if (i >= 0) {
+        data.splice(i, 1);
+      }
+      data.push(view);
+      if (data.length > size) {
+        data.shift().destroy();
+      }
+    };
+    this.resize = function (newSize) {
+      size = newSize;
+      while (data.length > size) {
+        data.shift().destroy();
+      }
+    };
+  }
+
   /**
    * @constructs PDFViewer
    * @param {PDFViewerOptions} options
@@ -212,7 +233,13 @@ var PDFViewer = (function pdfViewer() {
       });
       this.onePageRendered = onePageRendered;
 
-      var bindOnAfterDraw = function (pageView) {
+      var bindOnAfterAndBeforeDraw = function (pageView) {
+        pageView.onBeforeDraw = function pdfViewLoadOnBeforeDraw() {
+          // Add the page to the buffer at the start of drawing. That way it can
+          // be evicted from the buffer and destroyed even if we pause its
+          // rendering.
+          self._buffer.push(this);
+        };
         // when page is painted, using the image as thumbnail base
         pageView.onAfterDraw = function pdfViewLoadOnAfterDraw() {
           if (!isOnePageRenderedResolved) {
@@ -246,11 +273,10 @@ var PDFViewer = (function pdfViewer() {
             scale: scale,
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
-            cache: this.cache,
             textLayerFactory: textLayerFactory,
             annotationsLayerFactory: this
           });
-          bindOnAfterDraw(pageView);
+          bindOnAfterAndBeforeDraw(pageView);
           this.pages.push(pageView);
         }
 
@@ -291,11 +317,11 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _resetView: function () {
-      this.cache = new Cache(DEFAULT_CACHE_SIZE);
       this.pages = [];
       this._currentPageNumber = 1;
       this._currentScale = UNKNOWN_SCALE;
       this._currentScaleValue = null;
+      this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
       this.location = null;
       this._pagesRotation = 0;
       this._pagesRequests = [];
@@ -538,7 +564,7 @@ var PDFViewer = (function pdfViewer() {
 
       var suggestedCacheSize = Math.max(DEFAULT_CACHE_SIZE,
           2 * visiblePages.length + 1);
-      this.cache.resize(suggestedCacheSize);
+      this._buffer.resize(suggestedCacheSize);
 
       this.renderingQueue.renderHighestPriority(visible);
 

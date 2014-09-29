@@ -25,7 +25,6 @@
  * @property {number} scale - The page scale display.
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
- * @property {Cache} cache - The page cache.
  * @property {IPDFTextLayerFactory} textLayerFactory
  * @property {IPDFAnnotationsLayerFactory} annotationsLayerFactory
  */
@@ -45,7 +44,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     var scale = options.scale;
     var defaultViewport = options.defaultViewport;
     var renderingQueue = options.renderingQueue;
-    var cache = options.cache;
     var textLayerFactory = options.textLayerFactory;
     var annotationsLayerFactory = options.annotationsLayerFactory;
 
@@ -59,12 +57,14 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.hasRestrictedScaling = false;
 
     this.renderingQueue = renderingQueue;
-    this.cache = cache;
     this.textLayerFactory = textLayerFactory;
     this.annotationsLayerFactory = annotationsLayerFactory;
 
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
+
+    this.onBeforeDraw = null;
+    this.onAfterDraw = null;
 
     this.textLayer = null;
 
@@ -447,9 +447,9 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       div.setAttribute('data-loaded', true);
 
-      // Add the page to the cache at the start of drawing. That way it can be
-      // evicted from the cache and destroyed even if we pause its rendering.
-      this.cache.push(this);
+      if (self.onBeforeDraw) {
+        self.onBeforeDraw();
+      }
     },
 
     beforePrint: function PDFPageView_beforePrint() {
