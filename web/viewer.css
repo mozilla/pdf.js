@@ -1677,6 +1677,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     display: none;
     border: none;
     box-shadow: none;
+    background-clip: content-box;
+    background-color: white;
   }
 
   .page[data-loaded] {
@@ -1698,6 +1700,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     position: relative;
     top: 0;
     left: 0;
+    display: block;
   }
 }
 
