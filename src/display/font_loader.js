@@ -271,8 +271,8 @@ var FontLoader = {
 //#endif
 };
 
-var FontFace = (function FontFaceClosure() {
-  function FontFace(name, file, properties) {
+var FontFaceObject = (function FontFaceObjectClosure() {
+  function FontFaceObject(name, file, properties) {
     this.compiledGlyphs = {};
     if (arguments.length === 1) {
       // importing translated data
@@ -283,8 +283,8 @@ var FontFace = (function FontFaceClosure() {
       return;
     }
   }
-  FontFace.prototype = {
-    bindDOM: function FontFace_bindDOM() {
+  FontFaceObject.prototype = {
+    bindDOM: function FontFaceObject_bindDOM() {
       if (!this.data) {
         return null;
       }
@@ -311,7 +311,7 @@ var FontFace = (function FontFaceClosure() {
       return rule;
     },
 
-    getPathGenerator: function (objs, character) {
+    getPathGenerator: function FontLoader_getPathGenerator(objs, character) {
       if (!(character in this.compiledGlyphs)) {
         var js = objs.get(this.loadedName + '_path_' + character);
         /*jshint -W054 */
@@ -320,5 +320,5 @@ var FontFace = (function FontFaceClosure() {
       return this.compiledGlyphs[character];
     }
   };
-  return FontFace;
+  return FontFaceObject;
 })();

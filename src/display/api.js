@@ -17,8 +17,9 @@
 /* globals PDFJS, isArrayBuffer, error, combineUrl, createPromiseCapability,
            StatTimer, globalScope, MessageHandler, info, FontLoader, Util, warn,
            Promise, PasswordResponses, PasswordException, InvalidPDFException,
-           MissingPDFException, UnknownErrorException, FontFace, loadJpegStream,
-           createScratchCanvas, CanvasGraphics, UnexpectedResponseException */
+           MissingPDFException, UnknownErrorException, FontFaceObject,
+           loadJpegStream, createScratchCanvas, CanvasGraphics,
+           UnexpectedResponseException */
 
 'use strict';
 
@@ -962,7 +963,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               this.commonObjs.resolve(id, error);
               break;
             } else {
-              font = new FontFace(exportedData);
+              font = new FontFaceObject(exportedData);
             }
 
             FontLoader.bind(
