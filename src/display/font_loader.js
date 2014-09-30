@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals PDFJS, shadow, isWorker, assert, warn, bytesToString, string32, 
-           globalScope */
+           globalScope, FontFace, Promise */
 
 'use strict';
 
@@ -40,6 +40,12 @@ var FontLoader = {
     if (styleElement) {
       styleElement.parentNode.removeChild(styleElement);
     }
+//#if !(MOZCENTRAL)
+    this.nativeFontFaces.forEach(function(nativeFontFace) {
+      document.fonts.delete(nativeFontFace);
+    });
+    this.nativeFontFaces.length = 0;
+//#endif
   },
 //#if !(MOZCENTRAL)
   get loadTestFont() {
@@ -97,10 +103,21 @@ var FontLoader = {
     return false;
   })(),
 
+  nativeFontFaces: [],
+
+  isFontLoadingAPISupported: !isWorker && !!document.fonts,
+
+  addNativeFontFace: function fontLoader_addNativeFontFace(nativeFontFace) {
+    this.nativeFontFaces.push(nativeFontFace);
+    document.fonts.add(nativeFontFace);
+  },
+
   bind: function fontLoaderBind(fonts, callback) {
     assert(!isWorker, 'bind() shall be called from main thread');
 
-    var rules = [], fontsToLoad = [];
+    var rules = [];
+    var fontsToLoad = [];
+    var fontLoadPromises = [];
     for (var i = 0, ii = fonts.length; i < ii; i++) {
       var font = fonts[i];
 
@@ -111,15 +128,26 @@ var FontLoader = {
       }
       font.attached = true;
 
-      var rule = font.bindDOM();
-      if (rule) {
-        rules.push(rule);
-        fontsToLoad.push(font);
+      if (this.isFontLoadingAPISupported) {
+        var nativeFontFace = font.createNativeFontFace();
+        if (nativeFontFace) {
+          fontLoadPromises.push(nativeFontFace.loaded);
+        }
+      } else {
+        var rule = font.bindDOM();
+        if (rule) {
+          rules.push(rule);
+          fontsToLoad.push(font);
+        }
       }
     }
 
     var request = FontLoader.queueLoadingCallback(callback);
-    if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
+    if (this.isFontLoadingAPISupported) {
+      Promise.all(fontsToLoad).then(function() {
+        request.complete();
+      });
+    } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
       FontLoader.prepareFontLoadEvent(rules, fontsToLoad, request);
     } else {
       request.complete();
@@ -284,6 +312,29 @@ var FontFaceObject = (function FontFaceObjectClosure() {
     }
   }
   FontFaceObject.prototype = {
+//#if !(MOZCENTRAL)
+    createNativeFontFace: function FontFaceObject_createNativeFontFace() {
+      if (!this.data) {
+        return null;
+      }
+
+      if (PDFJS.disableFontFace) {
+        this.disableFontFace = true;
+        return null;
+      }
+
+      var nativeFontFace = new FontFace(this.loadedName, this.data);
+
+      FontLoader.addNativeFontFace(nativeFontFace);
+
+      if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
+          globalScope['FontInspector'].enabled) {
+        globalScope['FontInspector'].fontAdded(this);
+      }
+      return nativeFontFace;
+    },
+//#endif
+
     bindDOM: function FontFaceObject_bindDOM() {
       if (!this.data) {
         return null;

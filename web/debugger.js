@@ -112,13 +112,20 @@ var FontInspector = (function FontInspectorClosure() {
         return moreInfo;
       }
       var moreInfo = properties(fontObj, ['name', 'type']);
-      var m = /url\(['"]?([^\)"']+)/.exec(url);
       var fontName = fontObj.loadedName;
       var font = document.createElement('div');
       var name = document.createElement('span');
       name.textContent = fontName;
       var download = document.createElement('a');
-      download.href = m[1];
+      if (url) {
+        url = /url\(['"]?([^\)"']+)/.exec(url);
+        download.href = url[1];
+      } else if (fontObj.data) {
+        url = URL.createObjectURL(new Blob([fontObj.data], {
+          type: fontObj.mimeType
+        }));
+      }
+      download.href = url;
       download.textContent = 'Download';
       var logIt = document.createElement('a');
       logIt.href = '';
