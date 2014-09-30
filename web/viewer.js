@@ -253,10 +253,6 @@ var PDFViewerApplication = {
     });
   },
 
-  getPageView: function pdfViewGetPageView(index) {
-    return this.pdfViewer.pages[index];
-  },
-
   zoomIn: function pdfViewZoomIn(ticks) {
     var newScale = this.pdfViewer.currentScale;
     do {
@@ -663,8 +659,7 @@ var PDFViewerApplication = {
         if (pageNumber > self.pagesCount) {
           pageNumber = self.pagesCount;
         }
-        var currentPage = self.getPageView(pageNumber - 1);
-        currentPage.scrollIntoView(dest);
+        self.pdfViewer.scrollPageIntoView(pageNumber, dest);
 
         // Update the browsing history.
         PDFHistory.push({ dest: dest, hash: destString, page: pageNumber });
@@ -1190,8 +1185,7 @@ var PDFViewerApplication = {
                 zoomArg];
       }
       if (dest) {
-        var currentPage = this.getPageView((pageNumber || this.page) - 1);
-        currentPage.scrollIntoView(dest);
+        this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
       } else if (pageNumber) {
         this.page = pageNumber; // simple page
       }
@@ -1297,7 +1291,7 @@ var PDFViewerApplication = {
       alertNotReady = true;
     } else {
       for (i = 0, ii = this.pagesCount; i < ii; ++i) {
-        if (!this.getPageView(i).pdfPage) {
+        if (!this.pdfViewer.getPageView(i).pdfPage) {
           alertNotReady = true;
           break;
         }
@@ -1316,7 +1310,7 @@ var PDFViewerApplication = {
     var body = document.querySelector('body');
     body.setAttribute('data-mozPrintCallback', true);
     for (i = 0, ii = this.pagesCount; i < ii; ++i) {
-      this.getPageView(i).beforePrint();
+      this.pdfViewer.getPageView(i).beforePrint();
     }
 
 //#if (FIREFOX || MOZCENTRAL)
@@ -1343,7 +1337,7 @@ var PDFViewerApplication = {
   },
 
   rotatePages: function pdfViewRotatePages(delta) {
-    var currentPage = this.getPageView(this.page - 1);
+    var pageNumber = this.page;
 
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
@@ -1351,9 +1345,7 @@ var PDFViewerApplication = {
 
     this.forceRendering();
 
-    if (currentPage) {
-      currentPage.scrollIntoView();
-    }
+    this.pdfViewer.scrollPageIntoView(pageNumber);
   },
 
   /**
@@ -1949,7 +1941,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
   if (this.loading && page === 1) {
     return;
   }
-  PDFViewerApplication.getPageView(page - 1).scrollIntoView();
+  PDFViewerApplication.pdfViewer.scrollPageIntoView(page);
 }, true);
 
 function handleMouseWheel(evt) {

@@ -16,8 +16,8 @@
  */
  /*globals watchScroll, Cache, DEFAULT_CACHE_SIZE, PageView, UNKNOWN_SCALE,
            SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
-           getVisibleElements, RenderingStates, Promise,
-           PDFJS, TextLayerBuilder, PDFRenderingQueue */
+           DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
+           PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue */
 
 'use strict';
 
@@ -322,7 +322,7 @@ var PDFViewer = (function pdfViewer() {
           dest = [null, { name: 'XYZ' }, this.location.left,
             this.location.top, null];
         }
-        this.pages[page - 1].scrollIntoView(dest);
+        this.scrollPageIntoView(page, dest);
       }
 
       var event = document.createEvent('UIEvents');
@@ -381,6 +381,106 @@ var PDFViewer = (function pdfViewer() {
         }
         this._setScaleUpdatePages(scale, value, noScroll, true);
       }
+    },
+
+    /**
+     * Scrolls page into view.
+     * @param {number} pageNumber
+     * @param {Array} dest - (optional) original PDF destination array:
+     *   <page-ref> </XYZ|FitXXX> <args..>
+     */
+    scrollPageIntoView: function PDFViewer_scrollPageIntoView(pageNumber,
+                                                              dest) {
+      var pageView = this.pages[pageNumber - 1];
+      var pageViewDiv = pageView.el;
+
+      if (this.presentationModeState ===
+        PresentationModeState.FULLSCREEN) {
+        if (this.linkService.page !== pageView.id) {
+          // Avoid breaking getVisiblePages in presentation mode.
+          this.linkService.page = pageView.id;
+          return;
+        }
+        dest = null;
+        // Fixes the case when PDF has different page sizes.
+        this._setScale(this.currentScaleValue, true);
+      }
+      if (!dest) {
+        scrollIntoView(pageViewDiv);
+        return;
+      }
+
+      var x = 0, y = 0;
+      var width = 0, height = 0, widthScale, heightScale;
+      var changeOrientation = (pageView.rotation % 180 === 0 ? false : true);
+      var pageWidth = (changeOrientation ? pageView.height : pageView.width) /
+        pageView.scale / CSS_UNITS;
+      var pageHeight = (changeOrientation ? pageView.width : pageView.height) /
+        pageView.scale / CSS_UNITS;
+      var scale = 0;
+      switch (dest[1].name) {
+        case 'XYZ':
+          x = dest[2];
+          y = dest[3];
+          scale = dest[4];
+          // If x and/or y coordinates are not supplied, default to
+          // _top_ left of the page (not the obvious bottom left,
+          // since aligning the bottom of the intended page with the
+          // top of the window is rarely helpful).
+          x = x !== null ? x : 0;
+          y = y !== null ? y : pageHeight;
+          break;
+        case 'Fit':
+        case 'FitB':
+          scale = 'page-fit';
+          break;
+        case 'FitH':
+        case 'FitBH':
+          y = dest[2];
+          scale = 'page-width';
+          break;
+        case 'FitV':
+        case 'FitBV':
+          x = dest[2];
+          width = pageWidth;
+          height = pageHeight;
+          scale = 'page-height';
+          break;
+        case 'FitR':
+          x = dest[2];
+          y = dest[3];
+          width = dest[4] - x;
+          height = dest[5] - y;
+          var viewerContainer = this.container;
+          widthScale = (viewerContainer.clientWidth - SCROLLBAR_PADDING) /
+            width / CSS_UNITS;
+          heightScale = (viewerContainer.clientHeight - SCROLLBAR_PADDING) /
+            height / CSS_UNITS;
+          scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
+          break;
+        default:
+          return;
+      }
+
+      if (scale && scale !== this.currentScale) {
+        this.currentScaleValue = scale;
+      } else if (this.currentScale === UNKNOWN_SCALE) {
+        this.currentScaleValue = DEFAULT_SCALE;
+      }
+
+      if (scale === 'page-fit' && !dest[4]) {
+        scrollIntoView(pageViewDiv);
+        return;
+      }
+
+      var boundingRect = [
+        pageView.viewport.convertToViewportPoint(x, y),
+        pageView.viewport.convertToViewportPoint(x + width, y + height)
+      ];
+      var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
+      var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
+
+      scrollIntoView(pageViewDiv, { left: left, top: top });
     },
 
     _updateLocation: function (firstPage) {
