@@ -99,7 +99,7 @@ var PDFViewer = (function pdfViewer() {
       event.updateInProgress = this.updateInProgress;
 
       if (!(0 < val && val <= this.pagesCount)) {
-        event.pageNumber = this.page;
+        event.pageNumber = this._currentPageNumber;
         event.previousPageNumber = val;
         this.container.dispatchEvent(event);
         return;
