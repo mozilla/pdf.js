@@ -49,7 +49,8 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
-    SINGLE_FILE_DIR = BUILD_DIR + '/singlefile/',
+    SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/',
+    COMPONENTS_DIR = BUILD_DIR + 'components/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
     FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
@@ -65,7 +66,8 @@ var DEFINES = {
   B2G: false,
   CHROME: false,
   MINIFIED: false,
-  SINGLE_FILE: false
+  SINGLE_FILE: false,
+  COMPONENTS: false
 };
 
 //
@@ -144,6 +146,43 @@ target.generic = function() {
 
   cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
   cleanupCSSSource(GENERIC_DIR + '/web/viewer.css');
+};
+
+target.components = function() {
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating generic components');
+
+  rm('-rf', COMPONENTS_DIR);
+  mkdir('-p', COMPONENTS_DIR);
+  mkdir('-p', COMPONENTS_DIR + 'images');
+
+  var defines = builder.merge(DEFINES, {COMPONENTS: true});
+
+  var COMPONENTS_IMAGES = [
+    'web/images/annotation-*.svg',
+    'web/images/loading-icon.gif',
+    'web/images/shadow.png',
+    'web/images/texture.png',
+  ];
+
+  var setup = {
+    defines: defines,
+    copy: [
+      [COMPONENTS_IMAGES, COMPONENTS_DIR + 'images'],
+      ['web/compatibility.js', COMPONENTS_DIR],
+    ],
+    preprocess: [
+      ['web/pdf_viewer.component.js', COMPONENTS_DIR + 'pdf_viewer.js'],
+    ],
+    preprocessCSS: [
+      ['components', 'web/pdf_viewer.css', COMPONENTS_DIR + 'pdf_viewer.css'],
+    ]
+  };
+  builder.build(setup);
+
+  cleanupJSSource(COMPONENTS_DIR + 'pdf_viewer.js');
+  cleanupCSSSource(COMPONENTS_DIR + 'pdf_viewer.css');
 };
 
 target.jsdoc = function() {
@@ -233,6 +272,7 @@ target.web = function() {
 target.dist = function() {
   target.generic();
   target.singlefile();
+  target.components();
 
   var DIST_DIR = BUILD_DIR + 'dist/';
   var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
@@ -262,7 +302,7 @@ target.dist = function() {
 
   mkdir('-p', DIST_DIR + 'web/');
   cp('-R', [
-    GENERIC_DIR + 'web/compatibility.js',
+    COMPONENTS_DIR + '*',
   ], DIST_DIR + 'web/');
 
   echo();
