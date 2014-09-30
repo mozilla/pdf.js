@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, mozL10n, CustomStyle,
-           SCROLLBAR_PADDING, CSS_UNITS, UNKNOWN_SCALE, DEFAULT_SCALE,
-           getOutputScale, scrollIntoView, Stats, PresentationModeState */
+/* globals RenderingStates, PDFJS, mozL10n, CustomStyle, getOutputScale, Stats,
+           CSS_UNITS */
 
 'use strict';
 
@@ -356,96 +355,6 @@ var PageView = function pageView(container, id, scale, defaultViewport,
 
   this.getPagePoint = function pageViewGetPagePoint(x, y) {
     return this.viewport.convertToPdfPoint(x, y);
-  };
-
-  this.scrollIntoView = function pageViewScrollIntoView(dest) {
-    if (this.viewer.presentationModeState ===
-        PresentationModeState.FULLSCREEN) {
-      if (this.linkService.page !== this.id) {
-        // Avoid breaking getVisiblePages in presentation mode.
-        this.linkService.page = this.id;
-        return;
-      }
-      dest = null;
-      // Fixes the case when PDF has different page sizes.
-      this.viewer._setScale(this.viewer.currentScaleValue, true);
-    }
-    if (!dest) {
-      scrollIntoView(div);
-      return;
-    }
-
-    var x = 0, y = 0;
-    var width = 0, height = 0, widthScale, heightScale;
-    var changeOrientation = (this.rotation % 180 === 0 ? false : true);
-    var pageWidth = (changeOrientation ? this.height : this.width) /
-      this.scale / CSS_UNITS;
-    var pageHeight = (changeOrientation ? this.width : this.height) /
-      this.scale / CSS_UNITS;
-    var scale = 0;
-    switch (dest[1].name) {
-      case 'XYZ':
-        x = dest[2];
-        y = dest[3];
-        scale = dest[4];
-        // If x and/or y coordinates are not supplied, default to
-        // _top_ left of the page (not the obvious bottom left,
-        // since aligning the bottom of the intended page with the
-        // top of the window is rarely helpful).
-        x = x !== null ? x : 0;
-        y = y !== null ? y : pageHeight;
-        break;
-      case 'Fit':
-      case 'FitB':
-        scale = 'page-fit';
-        break;
-      case 'FitH':
-      case 'FitBH':
-        y = dest[2];
-        scale = 'page-width';
-        break;
-      case 'FitV':
-      case 'FitBV':
-        x = dest[2];
-        width = pageWidth;
-        height = pageHeight;
-        scale = 'page-height';
-        break;
-      case 'FitR':
-        x = dest[2];
-        y = dest[3];
-        width = dest[4] - x;
-        height = dest[5] - y;
-        var viewerContainer = this.viewer.container;
-        widthScale = (viewerContainer.clientWidth - SCROLLBAR_PADDING) /
-          width / CSS_UNITS;
-        heightScale = (viewerContainer.clientHeight - SCROLLBAR_PADDING) /
-          height / CSS_UNITS;
-        scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
-        break;
-      default:
-        return;
-    }
-
-    if (scale && scale !== this.viewer.currentScale) {
-      this.viewer.currentScaleValue = scale;
-    } else if (this.viewer.currentScale === UNKNOWN_SCALE) {
-      this.viewer.currentScaleValue = DEFAULT_SCALE;
-    }
-
-    if (scale === 'page-fit' && !dest[4]) {
-      scrollIntoView(div);
-      return;
-    }
-
-    var boundingRect = [
-      this.viewport.convertToViewportPoint(x, y),
-      this.viewport.convertToViewportPoint(x + width, y + height)
-    ];
-    var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
-    var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
-
-    scrollIntoView(div, { left: left, top: top });
   };
 
   this.draw = function pageviewDraw(callback) {

@@ -202,7 +202,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         // If the page is selected, scroll the page into view, which triggers
         // rendering the page, which adds the textLayer. Once the textLayer is
         // build, it will scroll onto the selected match.
-        page.scrollIntoView();
+        this.pdfViewer.scrollPageIntoView(index + 1);
       }
 
       if (page.textLayer) {
