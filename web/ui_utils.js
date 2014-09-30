@@ -355,4 +355,3 @@ var Cache = function cacheCache(size) {
     }
   };
 };
-

@@ -1053,6 +1053,12 @@ html[dir='rtl'] .verticalToolbarSeparator {
   width: 40px;
 }
 
+.toolbarField.pageNumber.visiblePageIsLoading {
+  background-image: url(images/loading-small.png);
+  background-repeat: no-repeat;
+  background-position: 1px;
+}
+
 .toolbarField.pageNumber::-webkit-inner-spin-button,
 .toolbarField.pageNumber::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -1526,6 +1532,12 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
   html[dir='rtl'] .secondaryToolbarButton::before {
     left: 186px;
+  }
+
+  .toolbarField.pageNumber.visiblePageIsLoading,
+  #findInput[data-status="pending"] {
+    background-image: url(images/loading-small@2x.png);
+    background-size: 16px 17px;
   }
 
   .dropdownToolbarButton {
