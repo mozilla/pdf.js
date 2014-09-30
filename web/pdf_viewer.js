@@ -270,8 +270,12 @@ var PDFViewer = (function pdfViewer() {
           }
         });
 
+        var event = document.createEvent('CustomEvent');
+        event.initCustomEvent('pagesinit', true, true, null);
+        self.container.dispatchEvent(event);
+
         if (this.defaultRenderingQueue) {
-          firstPagePromise.then(this.update.bind(this));
+          this.update();
         }
       }.bind(this));
     },

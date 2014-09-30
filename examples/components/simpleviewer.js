@@ -32,8 +32,14 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
 
+var container = document.getElementById('viewerContainer');
 var pdfViewer = new PDFJS.PDFViewer({
-  container: document.getElementById('viewerContainer')
+  container: container
+});
+
+container.addEventListener('pagesinit', function () {
+  // we can use pdfViewer now, e.g. let's change default scale.
+  pdfViewer.currentScaleValue = 'page-width';
 });
 
 // Loading document.
