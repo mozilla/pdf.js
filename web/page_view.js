@@ -368,7 +368,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       }
       dest = null;
       // Fixes the case when PDF has different page sizes.
-      this.viewer.currentScaleValue = this.viewer.currentScaleValue;
+      this.viewer._setScale(this.viewer.currentScaleValue, true);
     }
     if (!dest) {
       scrollIntoView(div);
