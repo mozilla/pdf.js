@@ -104,6 +104,8 @@ var PDFViewerApplication = {
   animationStartedPromise: null,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
+  preferenceSidebarViewOnLoad: false,
+  preferencesPdfBugEnabled: false,
   isViewerEmbedded: (window.parent !== window),
   url: '',
 
@@ -211,6 +213,7 @@ var PDFViewerApplication = {
       pageCountField: document.getElementById('pageCountField')
     });
 
+    var self = this;
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
