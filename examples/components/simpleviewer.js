@@ -16,16 +16,17 @@
 'use strict';
 
 if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
-  alert('Please built the library and components using\n' +
-    '  `node make generic components`');
+  alert('Please build the library and components using\n' +
+        '  `node make generic components`');
 }
 
-// If pdf.js must be execute via eval or pdf.worker.js is located at the
-// different location than pdf.js, specify workerSrc.
+// In cases when the pdf.worker.js is located at the different folder than the
+// pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
+// shall be specified.
 //
 // PDFJS.workerSrc = '../../build/pdf.worker.js';
 
-// Some PDFs need external cmaps
+// Some PDFs need external cmaps.
 //
 // PDFJS.cMapUrl = '../../external/bcmaps/';
 // PDFJS.cMapPacked = true;
