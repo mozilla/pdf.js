@@ -897,6 +897,7 @@ PdfStreamConverter.prototype = {
                      (!isPDFBugEnabled ||
                       hash.toLowerCase().indexOf('disablerange=true') < 0);
       streamRequest = contentEncoding === 'identity' &&
+                      aRequest.contentLength >= 0 &&
                       !getBoolPref(PREF_PREFIX + '.disableStream', false) &&
                       (!isPDFBugEnabled ||
                        hash.toLowerCase().indexOf('disablestream=true') < 0);
