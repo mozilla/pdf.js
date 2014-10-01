@@ -255,7 +255,14 @@ function ChromeActions(domWindow, contentDispositionFilename) {
 
 ChromeActions.prototype = {
   isInPrivateBrowsing: function() {
-    return PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
+//#if !MOZCENTRAL
+    if (!PrivateBrowsingUtils.isContentWindowPrivate) {
+      // pbu.isContentWindowPrivate was not supported prior Firefox 35.
+      // (https://bugzilla.mozilla.org/show_bug.cgi?id=1069059)
+      return PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
+    }
+//#endif
+    return PrivateBrowsingUtils.isContentWindowPrivate(this.domWindow);
   },
   download: function(data, sendResponse) {
     var self = this;
