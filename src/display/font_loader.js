@@ -323,7 +323,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         return null;
       }
 
-      var nativeFontFace = new FontFace(this.loadedName, this.data);
+      var nativeFontFace = new FontFace(this.loadedName, this.data, {});
 
       FontLoader.addNativeFontFace(nativeFontFace);
 
