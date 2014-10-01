@@ -138,7 +138,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           }
         },
 
-        onProgressiveData: PDFJS.disableStream ? null :
+        onProgressiveData: source.disableStream ? null :
             function onProgressiveData(chunk) {
           if (!pdfManager) {
             cachedChunks.push(chunk);
