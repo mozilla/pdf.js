@@ -104,8 +104,8 @@ var PDFViewerApplication = {
   animationStartedPromise: null,
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
-  preferenceSidebarViewOnLoad: false,
-  preferencesPdfBugEnabled: false,
+  preferenceSidebarViewOnLoad: SidebarView.NONE,
+  preferencePdfBugEnabled: false,
   isViewerEmbedded: (window.parent !== window),
   url: '',
 
@@ -222,7 +222,7 @@ var PDFViewerApplication = {
         self.preferenceSidebarViewOnLoad = value;
       }),
       Preferences.get('pdfBugEnabled').then(function resolved(value) {
-        self.preferencesPdfBugEnabled = value;
+        self.preferencePdfBugEnabled = value;
       }),
       Preferences.get('disableTextLayer').then(function resolved(value) {
         if (PDFJS.disableTextLayer === true) {
@@ -1485,7 +1485,7 @@ function webViewerInitialized() {
 //#if !PRODUCTION
   if (true) {
 //#else
-//if (PDFViewerApplication.preferencesPdfBugEnabled) {
+//if (PDFViewerApplication.preferencePdfBugEnabled) {
 //#endif
     // Special debugging flags in the hash section of the URL.
     var hash = document.location.hash.substring(1);
