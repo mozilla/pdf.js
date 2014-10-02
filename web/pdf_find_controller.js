@@ -257,7 +257,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
       var offset = this.offset;
       // Keep track of how many pages we should maximally iterate through.
-      this.pagesToSearch = this.pdfViewer.pagesCount;
+      this.pagesToSearch = numPages;
       // If there's already a matchIdx that means we are iterating through a
       // page's matches.
       if (offset.matchIdx !== null) {
