@@ -2675,17 +2675,12 @@ var Font = (function FontClosure() {
       var fontCharCode = originalCharCode;
       // First try to map the value to a unicode position if a non identity map
       // was created.
-      if (!isIdentityUnicode) {
-        if (toUnicode.get(originalCharCode) !== undefined) {
-          var unicode = toUnicode.get(fontCharCode);
-          // TODO: Try to map ligatures to the correct spot.
-          if (unicode.length === 1) {
-            fontCharCode = unicode.charCodeAt(0);
-          }
-        } else if (isCidFontType2) {
-          // For CIDFontType2, move characters not present in toUnicode
-          // to the private use area (fixes bug 1028735 and issue 4881).
-          fontCharCode = nextAvailableFontCharCode;
+      // console.log(fontCharCode);
+      if (!isIdentityUnicode && toUnicode.get(originalCharCode) !== undefined) {
+        var unicode = toUnicode.get(fontCharCode);
+        // TODO: Try to map ligatures to the correct spot.
+        if (unicode.length === 1) {
+          fontCharCode = unicode.charCodeAt(0);
         }
       }
       // Try to move control characters, special characters and already mapped
@@ -3526,6 +3521,7 @@ var Font = (function FontClosure() {
         var newGlyfData = new Uint8Array(oldGlyfDataLength);
         var startOffset = itemDecode(locaData, 0);
         var writeOffset = 0;
+        var missingGlyphData = {};
         itemEncode(locaData, 0, writeOffset);
         var i, j;
         for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
@@ -3541,6 +3537,10 @@ var Font = (function FontClosure() {
             itemEncode(locaData, j, writeOffset);
             startOffset = endOffset;
             continue;
+          }
+
+          if (startOffset === endOffset) {
+            missingGlyphData[i] = true;
           }
 
           var newLength = sanitizeGlyph(oldGlyfData, startOffset, endOffset,
@@ -3559,7 +3559,7 @@ var Font = (function FontClosure() {
             itemEncode(locaData, j, simpleGlyph.length);
           }
           glyf.data = simpleGlyph;
-          return;
+          return missingGlyphData;
         }
 
         if (dupFirstEntry) {
@@ -3576,6 +3576,7 @@ var Font = (function FontClosure() {
         } else {
           glyf.data = newGlyfData.subarray(0, writeOffset);
         }
+        return missingGlyphData;
       }
 
       function readPostScriptTable(post, properties, maxpNumGlyphs) {
@@ -4035,10 +4036,11 @@ var Font = (function FontClosure() {
 
       sanitizeHead(tables.head, numGlyphs, isTrueType ? tables.loca.length : 0);
 
+      var missingGlyphs = {};
       if (isTrueType) {
         var isGlyphLocationsLong = int16(tables.head.data[50],
                                          tables.head.data[51]);
-        sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
+        missingGlyphs = sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
                                isGlyphLocationsLong, hintsValid, dupFirstEntry);
       }
 
@@ -4073,7 +4075,8 @@ var Font = (function FontClosure() {
           } else if (cidToGidMap[cid] !== undefined) {
             glyphId = cidToGidMap[cid];
           }
-          if (glyphId >= 0 && glyphId < numGlyphs) {
+
+          if (glyphId >= 0 && glyphId < numGlyphs && !missingGlyphs[charCode]) {
             charCodeToGlyphId[charCode] = glyphId;
           }
         });
