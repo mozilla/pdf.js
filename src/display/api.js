@@ -139,6 +139,13 @@ PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
                         false : PDFJS.useOnlyCssZoom);
 
 /**
+ * Enables SVG rendering.
+ * @var {boolean}
+ */
+PDFJS.svgRendering = (PDFJS.svgRendering === undefined ?
+                      true : PDFJS.svgRendering);
+
+/**
  * Controls the logging level.
  * The constants from PDFJS.VERBOSITY_LEVELS should be used:
  * - errors
@@ -1164,7 +1171,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
           }
         }
         this.commonObjs.clear();
-        FontLoader.clear();
+        if (!PDFJS.svgRendering) { // HACK we might have SVGs using fonts
+          FontLoader.clear();
+        }
       }.bind(this));
     }
   };

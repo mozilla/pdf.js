@@ -31,6 +31,7 @@ var DEFAULT_PREFERENCES = {
   disableStream: false,
   disableAutoFetch: false,
   disableFontFace: false,
+  svgRendering: false,
 //#if B2G
 //disableTextLayer: true,
 //useOnlyCssZoom: true
