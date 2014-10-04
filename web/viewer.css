@@ -755,8 +755,6 @@ html[dir='rtl'] .dropdownToolbarButton {
 }
 
 .dropdownToolbarButton > select {
-  -webkit-appearance: none;
-  -moz-appearance: none; /* in the future this might matter, see bugzilla bug #649849 */
   min-width: 140px;
   font-size: 12px;
   color: hsl(0,0%,95%);
