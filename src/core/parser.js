@@ -126,17 +126,117 @@ var Parser = (function ParserClosure() {
       // simple object
       return buf1;
     },
+    /**
+     * Find the end of the stream by searching for the /EI\s/.
+     * @returns {number} The inline stream length.
+     */
+    findDefaultInlineStreamEnd:
+        function Parser_findDefaultInlineStreamEnd(stream) {
+      var E = 0x45, I = 0x49, SPACE = 0x20, LF = 0xA, CR = 0xD;
+      var startPos = stream.pos, state = 0, ch, i, n, followingBytes;
+      while ((ch = stream.getByte()) !== -1) {
+        if (state === 0) {
+          state = (ch === E) ? 1 : 0;
+        } else if (state === 1) {
+          state = (ch === I) ? 2 : 0;
+        } else {
+          assert(state === 2);
+          if (ch === SPACE || ch === LF || ch === CR) {
+            // Let's check the next five bytes are ASCII... just be sure.
+            n = 5;
+            followingBytes = stream.peekBytes(n);
+            for (i = 0; i < n; i++) {
+              ch = followingBytes[i];
+              if (ch !== LF && ch !== CR && (ch < SPACE || ch > 0x7F)) {
+                // Not a LF, CR, SPACE or any visible ASCII character, i.e.
+                // it's binary stuff. Resetting the state.
+                state = 0;
+                break;
+              }
+            }
+            if (state === 2) {
+              break;  // Finished!
+            }
+          } else {
+            state = 0;
+          }
+        }
+      }
+      return ((stream.pos - 4) - startPos);
+    },
+    /**
+     * Find the EOD (end-of-data) marker '~>' (i.e. TILDE + GT) of the stream.
+     * @returns {number} The inline stream length.
+     */
+    findASCII85DecodeInlineStreamEnd:
+        function Parser_findASCII85DecodeInlineStreamEnd(stream) {
+      var TILDE = 0x7E, GT = 0x3E;
+      var startPos = stream.pos, ch, length;
+      while ((ch = stream.getByte()) !== -1) {
+        if (ch === TILDE && stream.peekByte() === GT) {
+          stream.skip();
+          break;
+        }
+      }
+      length = stream.pos - startPos;
+      if (ch === -1) {
+        warn('Inline ASCII85Decode image stream: ' +
+             'EOD marker not found, searching for /EI/ instead.');
+        stream.skip(-length); // Reset the stream position.
+        return this.findDefaultInlineStreamEnd(stream);
+      }
+      this.inlineStreamSkipEI(stream);
+      return length;
+    },
+    /**
+     * Find the EOD (end-of-data) marker '>' (i.e. GT) of the stream.
+     * @returns {number} The inline stream length.
+     */
+    findASCIIHexDecodeInlineStreamEnd:
+        function Parser_findASCIIHexDecodeInlineStreamEnd(stream) {
+      var GT = 0x3E;
+      var startPos = stream.pos, ch, length;
+      while ((ch = stream.getByte()) !== -1) {
+        if (ch === GT) {
+          break;
+        }
+      }
+      length = stream.pos - startPos;
+      if (ch === -1) {
+        warn('Inline ASCIIHexDecode image stream: ' +
+             'EOD marker not found, searching for /EI/ instead.');
+        stream.skip(-length); // Reset the stream position.
+        return this.findDefaultInlineStreamEnd(stream);
+      }
+      this.inlineStreamSkipEI(stream);
+      return length;
+    },
+    /**
+     * Skip over the /EI/ for streams where we search for an EOD marker.
+     */
+    inlineStreamSkipEI: function Parser_inlineStreamSkipEI(stream) {
+      var E = 0x45, I = 0x49;
+      var state = 0, ch;
+      while ((ch = stream.getByte()) !== -1) {
+        if (state === 0) {
+          state = (ch === E) ? 1 : 0;
+        } else if (state === 1) {
+          state = (ch === I) ? 2 : 0;
+        } else if (state === 2) {
+          break;
+        }
+      }
+    },
     makeInlineImage: function Parser_makeInlineImage(cipherTransform) {
       var lexer = this.lexer;
       var stream = lexer.stream;
 
-      // parse dictionary
+      // Parse dictionary.
       var dict = new Dict(null);
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
           error('Dictionary key must be a name object');
         }
-
         var key = this.buf1.name;
         this.shift();
         if (isEOF(this.buf1)) {
@@ -145,45 +245,26 @@ var Parser = (function ParserClosure() {
         dict.set(key, this.getObj(cipherTransform));
       }
 
-      // parse image stream
-      var startPos = stream.pos;
-
-      // searching for the /EI\s/
-      var state = 0, ch, i, ii;
-      var E = 0x45, I = 0x49, SPACE = 0x20, NL = 0xA, CR = 0xD;
-      while ((ch = stream.getByte()) !== -1) {
-        if (state === 0) {
-          state = (ch === E) ? 1 : 0;
-        } else if (state === 1) {
-          state = (ch === I) ? 2 : 0;
-        } else {
-          assert(state === 2);
-          if (ch === SPACE || ch === NL || ch === CR) {
-            // Let's check the next five bytes are ASCII... just be sure.
-            var n = 5;
-            var followingBytes = stream.peekBytes(n);
-            for (i = 0; i < n; i++) {
-              ch = followingBytes[i];
-              if (ch !== NL && ch !== CR && (ch < SPACE || ch > 0x7F)) {
-                // Not a LF, CR, SPACE or any visible ASCII character, i.e.
-                // it's binary stuff. Resetting the state.
-                state = 0;
-                break;
-              }
-            }
-            if (state === 2) {
-              break;  // finished!
-            }
-          } else {
-            state = 0;
-          }
-        }
+      // Extract the name of the first (i.e. the current) image filter.
+      var filter = this.fetchIfRef(dict.get('Filter', 'F')), filterName;
+      if (isName(filter)) {
+        filterName = filter.name;
+      } else if (isArray(filter) && isName(filter[0])) {
+        filterName = filter[0].name;
       }
 
-      var length = (stream.pos - 4) - startPos;
+      // Parse image stream.
+      var startPos = stream.pos, length, i, ii;
+      if (filterName === 'ASCII85Decide' || filterName === 'A85') {
+        length = this.findASCII85DecodeInlineStreamEnd(stream);
+      } else if (filterName === 'ASCIIHexDecode' || filterName === 'AHx') {
+        length = this.findASCIIHexDecodeInlineStreamEnd(stream);
+      } else {
+        length = this.findDefaultInlineStreamEnd(stream);
+      }
       var imageStream = stream.makeSubStream(startPos, length, dict);
 
-      // cache all images below the MAX_LENGTH_TO_CACHE threshold by their
+      // Cache all images below the MAX_LENGTH_TO_CACHE threshold by their
       // adler32 checksum.
       var adler32;
       if (length < MAX_LENGTH_TO_CACHE) {
@@ -193,7 +274,7 @@ var Parser = (function ParserClosure() {
         var a = 1;
         var b = 0;
         for (i = 0, ii = imageBytes.length; i < ii; ++i) {
-          // no modulo required in the loop if imageBytes.length < 5552
+          // No modulo required in the loop if imageBytes.length < 5552.
           a += imageBytes[i] & 0xff;
           b += a;
         }

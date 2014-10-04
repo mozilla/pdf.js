@@ -1524,6 +1524,15 @@
       "type": "eq",
       "about": "Type3 font with negative HScale and font size"
     },
+    {  "id": "bug1077808",
+       "file": "pdfs/bug1077808.pdf",
+       "md5": "4a4bfc27e3fafe2f74e7a4a4cd04b8dc",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq",
+       "about": "Inline image with ASCII85Decode filter."
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
