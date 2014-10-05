@@ -457,6 +457,46 @@ var Catalog = (function CatalogClosure() {
       }
       return shadow(this, 'destinations', dests);
     },
+    getDestination: function Catalog_getDestination(destinationId) {
+      function fetchDestination(dest) {
+        return isDict(dest) ? dest.get('D') : dest;
+      }
+
+      var xref = this.xref;
+      var dest, nameTreeRef, nameDictionaryRef;
+      var obj = this.catDict.get('Names');
+      if (obj && obj.has('Dests')) {
+        nameTreeRef = obj.getRaw('Dests');
+      } else if (this.catDict.has('Dests')) {
+        nameDictionaryRef = this.catDict.get('Dests');
+      }
+
+      if (nameDictionaryRef) {
+        // reading simple destination dictionary
+        obj = nameDictionaryRef;
+        obj.forEach(function catalogForEach(key, value) {
+          if (!value) {
+            return;
+          }
+          if (key === destinationId) {
+            dest = fetchDestination(value);
+          }
+        });
+      }
+      if (nameTreeRef) {
+        var nameTree = new NameTree(nameTreeRef, xref);
+        var names = nameTree.getAll();
+        for (var name in names) {
+          if (!names.hasOwnProperty(name)) {
+            continue;
+          }
+          if (name === destinationId) {
+            dest = fetchDestination(names[name]);
+          }
+        }
+      }
+      return dest;
+    },
     get attachments() {
       var xref = this.xref;
       var attachments = null, nameTreeRef;

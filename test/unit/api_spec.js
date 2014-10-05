@@ -123,6 +123,13 @@ describe('api', function() {
                                           0, 841.89, null] });
       });
     });
+    it('gets a destination', function() {
+      var promise = doc.getDestination('chapter1');
+      waitsForPromiseResolved(promise, function(data) {
+        expect(data).toEqual([{ gen: 0, num: 17 }, { name: 'XYZ' },
+                              0, 841.89, null]);
+      });
+    });
     it('gets attachments', function() {
       var promise = doc.getAttachments();
       waitsForPromiseResolved(promise, function (data) {

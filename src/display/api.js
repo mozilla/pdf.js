@@ -293,9 +293,19 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     /**
      * @return {Promise} A promise that is resolved with a lookup table for
      * mapping named destinations to reference numbers.
+     *
+     * This can be slow for large documents: use getDestination instead
      */
     getDestinations: function PDFDocumentProxy_getDestinations() {
       return this.transport.getDestinations();
+    },
+    /**
+     * @param {string} id The named destination to get.
+     * @return {Promise} A promise that is resolved with all information
+     * of the given named destination.
+     */
+    getDestination: function PDFDocumentProxy_getDestination(id) {
+      return this.transport.getDestination(id);
     },
     /**
      * @return {Promise} A promise that is resolved with a lookup table for
@@ -1126,6 +1136,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getDestinations: function WorkerTransport_getDestinations() {
       return this.messageHandler.sendWithPromise('GetDestinations', null);
+    },
+
+    getDestination: function WorkerTransport_getDestination(id) {
+      return this.messageHandler.sendWithPromise('GetDestination', { id: id } );
     },
 
     getAttachments: function WorkerTransport_getAttachments() {
