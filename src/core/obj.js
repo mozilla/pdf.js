@@ -485,15 +485,7 @@ var Catalog = (function CatalogClosure() {
       }
       if (nameTreeRef) {
         var nameTree = new NameTree(nameTreeRef, xref);
-        var names = nameTree.getAll();
-        for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
-          if (name === destinationId) {
-            dest = fetchDestination(names[name]);
-          }
-        }
+        dest = fetchDestination(nameTree.get(destinationId));
       }
       return dest;
     },
@@ -1398,6 +1390,76 @@ var NameTree = (function NameTreeClosure() {
         }
       }
       return dict;
+    },
+
+    get: function NameTree_get(destinationId) {
+      if (!this.root) {
+        return null;
+      }
+
+      var xref = this.xref;
+      var kidsOrNames = xref.fetchIfRef(this.root);
+      var loopCount = 0;
+      var MAX_NAMES_LEVELS = 10;
+      var l, r, m;
+
+      // Perform a binary search to quickly find the entry that
+      // contains the named destination we are looking for.
+      while (kidsOrNames.has('Kids')) {
+        loopCount++;
+        if (loopCount > MAX_NAMES_LEVELS) {
+          warn('Search depth limit for named destionations has been reached.');
+          return null;
+        }
+        
+        var kids = kidsOrNames.get('Kids');
+        if (!isArray(kids)) {
+          return null;
+        }
+
+        l = 0;
+        r = kids.length - 1;
+        while (l <= r) {
+          m = (l + r) >> 1;
+          var kid = xref.fetchIfRef(kids[m]);
+          var limits = kid.get('Limits');
+
+          if (destinationId < limits[0]) {
+            r = m - 1;
+          } else if (destinationId > limits[1]) {
+            l = m + 1;
+          } else {
+            kidsOrNames = xref.fetchIfRef(kids[m]);
+            break;
+          }
+        }
+        if (l > r) {
+          return null;
+        }
+      }
+
+      // If we get here, then we have found the right entry. Now
+      // go through the named destinations in the Named dictionary
+      // until we find the exact destination we're looking for.
+      var names = kidsOrNames.get('Names');
+      if (isArray(names)) {
+        // Perform a binary search to reduce the lookup time.
+        l = 0;
+        r = names.length - 2;
+        while (l <= r) {
+          // Check only even indices (0, 2, 4, ...) because the
+          // odd indices contain the actual D array.
+          m = (l + r) & ~1;
+          if (destinationId < names[m]) {
+            r = m - 2;
+          } else if (destinationId > names[m]) {
+            l = m + 2;
+          } else {
+            return xref.fetchIfRef(names[m + 1]);
+          }
+        }
+      }
+      return null;
     }
   };
   return NameTree;
