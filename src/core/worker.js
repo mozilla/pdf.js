@@ -325,6 +325,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }
     );
 
+    handler.on('GetDestination',
+      function wphSetupGetDestination(data) {
+        return pdfManager.ensureCatalog('getDestination', [ data.id ]);
+      }
+    );
+
     handler.on('GetAttachments',
       function wphSetupGetAttachments(data) {
         return pdfManager.ensureCatalog('attachments');

@@ -675,15 +675,19 @@ var PDFViewerApplication = {
       }
     };
 
-    this.destinationsPromise.then(function() {
-      if (typeof dest === 'string') {
-        destString = dest;
-        dest = self.destinations[dest];
-      }
-      if (!(dest instanceof Array)) {
+    var destinationPromise;
+    if (typeof dest === 'string') {
+      destString = dest;
+      destinationPromise = this.pdfDocument.getDestination(dest);
+    } else {
+      destinationPromise = Promise.resolve(dest);
+    }
+    destinationPromise.then(function(destination) {
+      dest = destination;
+      if (!(destination instanceof Array)) {
         return; // invalid destination
       }
-      goToDestination(dest[0]);
+      goToDestination(destination[0]);
     });
   },
 
@@ -984,15 +988,8 @@ var PDFViewerApplication = {
       }
     });
 
-    var destinationsPromise =
-      this.destinationsPromise = pdfDocument.getDestinations();
-    destinationsPromise.then(function(destinations) {
-      self.destinations = destinations;
-    });
-
-    // outline depends on destinations and pagesRefMap
-    var promises = [pagesPromise, destinationsPromise,
-                    this.animationStartedPromise];
+    // outline depends on pagesRefMap
+    var promises = [pagesPromise, this.animationStartedPromise];
     Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
         var outlineView = document.getElementById('outlineView');
