@@ -1019,6 +1019,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "bug1065245",
+       "file": "pdfs/bug1065245.pdf",
+       "md5": "844b3af0a1d338a2e1bbe742f474bbb7",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "about": "Inline JPEG images."
+    },
     {  "id": "issue1655",
       "file": "pdfs/issue1655.pdf",
       "md5": "696ef6de6f4f71643771419ef04fc968",
