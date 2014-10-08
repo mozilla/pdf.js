@@ -44,6 +44,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       pageIdx: null,
       matchIdx: null
     };
+    this.pagesToSearch = null;
     this.resumePageIdx = null;
     this.state = null;
     this.dirtyMatch = false;
@@ -255,6 +256,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
 
       var offset = this.offset;
+      // Keep track of how many pages we should maximally iterate through.
+      this.pagesToSearch = numPages;
       // If there's already a matchIdx that means we are iterating through a
       // page's matches.
       if (offset.matchIdx !== null) {
@@ -293,8 +296,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.advanceOffsetPage(previous);
         if (offset.wrapped) {
           offset.matchIdx = null;
-          if (!this.hadMatch) {
-            // No point in wrapping, there were no matches.
+          if (this.pagesToSearch < 0) {
+            // No point in wrapping again, there were no matches.
             this.updateMatch(false);
             // while matches were not found, searching for a page 
             // with matches should nevertheless halt.
@@ -327,11 +330,12 @@ var PDFFindController = (function PDFFindControllerClosure() {
       var numPages = this.extractTextPromises.length;
       offset.pageIdx = (previous ? offset.pageIdx - 1 : offset.pageIdx + 1);
       offset.matchIdx = null;
+
+      this.pagesToSearch--;
       
       if (offset.pageIdx >= numPages || offset.pageIdx < 0) {
         offset.pageIdx = (previous ? numPages - 1 : 0);
         offset.wrapped = true;
-        return;
       }
     },
 
