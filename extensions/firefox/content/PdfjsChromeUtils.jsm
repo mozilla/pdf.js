@@ -272,7 +272,18 @@ let PdfjsChromeUtils = {
  */
 function PdfjsFindbarWrapper(aBrowser) {
   let tabbrowser = aBrowser.getTabBrowser();
-  let tab = tabbrowser._getTabForBrowser(aBrowser);
+  let tab;
+//#if MOZCENTRAL
+  tab = tabbrowser.getTabForBrowser(aBrowser);
+//#else
+  if (tabbrowser.getTabForBrowser) {
+    tab = tabbrowser.getTabForBrowser(aBrowser);
+  } else {
+    // _getTabForBrowser is depreciated in Firefox 35, see
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1039500.
+    tab = tabbrowser._getTabForBrowser(aBrowser);
+  }
+//#endif
   this._findbar = tabbrowser.getFindBar(tab);
 };
 
