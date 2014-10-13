@@ -77,7 +77,18 @@ function getFindBar(domWindow) {
   var browser = getContainingBrowser(domWindow);
   try {
     var tabbrowser = browser.getTabBrowser();
-    var tab = tabbrowser._getTabForBrowser(browser);
+    var tab;
+//#if MOZCENTRAL
+    tab = tabbrowser.getTabForBrowser(browser);
+//#else
+    if (tabbrowser.getTabForBrowser) {
+      tab = tabbrowser.getTabForBrowser(browser);
+    } else {
+      // _getTabForBrowser is depreciated in Firefox 35, see
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1039500.
+      tab = tabbrowser._getTabForBrowser(browser);
+    }
+//#endif
     return tabbrowser.getFindBar(tab);
   } catch (e) {
     // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
