@@ -2,7 +2,7 @@
   "name": "pdf.js",
   "version": "0.8.0",
   "devDependencies": {
-    "jsdoc": "~3.3.0",
+    "jsdoc": "3.3.0-alpha9",
     "jshint": "2.4.x",
     "wintersmith": "2.0.x",
     "moment": "2.3.x",
