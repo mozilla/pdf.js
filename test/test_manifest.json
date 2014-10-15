@@ -1602,6 +1602,14 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "bug1072164",
+      "file": "pdfs/bug1072164.pdf",
+      "md5": "cfee3c51e8464aa44218f4eaf27e084b",
+      "rounds": 1,
+      "link": true,
+      "type": "eq",
+      "about": "CMYK jpeg with mask"
+    },
     {  "id": "bug886717",
       "file": "pdfs/bug886717.pdf",
       "md5": "8ba614192797a1324765610231a1bc9d",

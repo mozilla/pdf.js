@@ -884,7 +884,7 @@ var JpegStream = (function JpegStreamClosure() {
       var jpegImage = new JpegImage();
 
       // checking if values needs to be transformed before conversion
-      if (this.dict && isArray(this.dict.get('Decode'))) {
+      if (this.forceRGB && this.dict && isArray(this.dict.get('Decode'))) {
         var decodeArr = this.dict.get('Decode');
         var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
         var decodeArrLength = decodeArr.length;
