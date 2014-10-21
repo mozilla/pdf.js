@@ -347,7 +347,7 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
       var name = namedItem.get('T');
       if (name) {
         fieldName.unshift(stringToPDFString(name));
-      } else {
+      } else if (parent && ref) {
         // The field name is absent, that means more than one field
         // with the same name may exist. Replacing the empty name
         // with the '`' plus index in the parent's 'Kids' array.
