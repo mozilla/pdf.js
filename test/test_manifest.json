@@ -1555,6 +1555,14 @@
       "type": "eq",
       "about": "True type font with encoding dict with no base encoding but with differences."
     },
+    {  "id": "issue5421",
+       "file": "pdfs/issue5421.pdf",
+       "md5": "273f6813758a2349090003c7c8a0d85e",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "Invisible Type3 font used for text selection and searching."
+    },
     {  "id": "issue5280",
       "file": "pdfs/issue5280.pdf",
       "md5": "0ea1230e2964e74cb6db063a89b78803",
