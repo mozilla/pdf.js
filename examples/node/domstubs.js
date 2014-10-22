@@ -16,6 +16,7 @@ var style = {
 
 function xmlEncode(s){
   var i = 0, ch;
+  s = String(s);
   while (i < s.length && (ch = s[i]) !== '&' && ch !== '<' &&
          ch !== '\"' && ch !== '\n' && ch !== '\r' && ch !== '\t') {
     i++;

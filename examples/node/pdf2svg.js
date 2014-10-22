@@ -14,9 +14,10 @@ global.window = global;
 global.navigator = { userAgent: 'node' };
 global.PDFJS = {};
 
+require('./domstubs.js');
+
 PDFJS.workerSrc = true;
 require('../../build/singlefile/build/pdf.combined.js');
-require('./domstubs.js');
 
 // Loading file from file system into typed array
 var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';
