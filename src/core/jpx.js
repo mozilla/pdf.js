@@ -540,6 +540,11 @@ var JpxImage = (function JpxImageClosure() {
         codeblock.precinctNumber = precinctNumber;
         codeblock.subbandType = subband.type;
         codeblock.Lblock = 3;
+
+        if (codeblock.tbx1_ <= codeblock.tbx0_ ||
+            codeblock.tby1_ <= codeblock.tby0_) {
+          continue;
+        }
         codeblocks.push(codeblock);
         // building precinct for the sub-band
         var precinct = precincts[precinctNumber];

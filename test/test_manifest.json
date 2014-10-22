@@ -1690,6 +1690,14 @@
       "type": "eq",
       "about": "JPX with 0xFF55 marker"
     },
+    {  "id": "bug865858",
+      "file": "pdfs/bug865858.pdf",
+      "md5": "7a81bd987dc1d95e9a0be46b7c3f2e18",
+      "link": true,
+      "rounds": 1,
+      "type": "eq",
+      "about": "JPX packets"
+    },
     {  "id": "bug766138",
       "file": "pdfs/bug766138.pdf",
       "md5": "b171f5cf8d9834348112fba60ee54f8c",
