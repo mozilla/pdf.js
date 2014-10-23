@@ -387,6 +387,11 @@ var JpxImage = (function JpxImageClosure() {
               length = tile.dataEnd - position;
               parseTilePackets(context, data, position, length);
               break;
+            case 0xFF58: // Packet lenght, tile-part header (PLT)
+              var Lplt = readUint16(data, position); // Marker segment length
+              // Skip tile length markers
+              position += Lplt;
+              break;
             case 0xFF64: // Comment (COM)
               length = readUint16(data, position);
               // skipping content
