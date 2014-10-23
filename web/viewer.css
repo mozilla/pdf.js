@@ -1252,6 +1252,9 @@ html[dir='rtl'] .attachmentsItem > button {
   cursor: default;
 }
 
+svg text {
+  cursor: text;
+}
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
@@ -1678,7 +1681,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     overflow: visible;
   }
 
-  #mainContainer, #viewerContainer, .page, .page canvas {
+  #mainContainer, #viewerContainer, .page, .page canvas, .page svg {
     position: static;
     padding: 0;
     margin: 0;

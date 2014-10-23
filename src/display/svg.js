@@ -19,7 +19,7 @@
 
 'use strict';
 
-//#if (GENERIC || SINGLE_FILE)
+//#if (GENERIC || SINGLE_FILE || CHROME || FIREFOX)
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
   fontWeight: 'normal',

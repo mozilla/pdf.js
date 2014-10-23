@@ -123,8 +123,10 @@ var PageView = function pageView(container, id, scale, defaultViewport,
     if (this.canvas) {
       // Zeroing the width and height causes Firefox to release graphics
       // resources immediately, which can greatly reduce memory consumption.
-      this.canvas.width = 0;
-      this.canvas.height = 0;
+      if (this.canvas.tagName === 'CANVAS') {
+        this.canvas.width = 0;
+        this.canvas.height = 0;
+      }
       delete this.canvas;
     }
 
@@ -147,7 +149,7 @@ var PageView = function pageView(container, id, scale, defaultViewport,
     });
 
     var isScalingRestricted = false;
-    if (this.canvas && PDFJS.maxCanvasPixels > 0) {
+    if (this.canvas && PDFJS.maxCanvasPixels > 0 && !PDFJS.svgRendering) {
       var ctx = this.canvas.getContext('2d');
       var outputScale = getOutputScale(ctx);
       var pixelsInViewport = this.viewport.width * this.viewport.height;
@@ -388,56 +390,67 @@ var PageView = function pageView(container, id, scale, defaultViewport,
     canvasWrapper.style.height = div.style.height;
     canvasWrapper.classList.add('canvasWrapper');
 
-    var canvas = document.createElement('canvas');
-    canvas.id = 'page' + this.id;
-    canvasWrapper.appendChild(canvas);
     if (this.annotationLayer) {
       // annotationLayer needs to stay on top
       div.insertBefore(canvasWrapper, this.annotationLayer);
     } else {
       div.appendChild(canvasWrapper);
     }
-    this.canvas = canvas;
 
-    var ctx = canvas.getContext('2d');
-    var outputScale = getOutputScale(ctx);
+    var canvas;
+    if (!PDFJS.svgRendering) {
+      canvas = document.createElement('canvas');
+      canvas.id = 'page' + this.id;
+      canvasWrapper.appendChild(canvas);
+      this.canvas = canvas;
 
-    if (PDFJS.useOnlyCssZoom) {
-      var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
-      // Use a scale that will make the canvas be the original intended size
-      // of the page.
-      outputScale.sx *= actualSizeViewport.width / viewport.width;
-      outputScale.sy *= actualSizeViewport.height / viewport.height;
-      outputScale.scaled = true;
-    }
+      var ctx = canvas.getContext('2d');
+      var outputScale = getOutputScale(ctx);
 
-    if (PDFJS.maxCanvasPixels > 0) {
-      var pixelsInViewport = viewport.width * viewport.height;
-      var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
-      if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-        outputScale.sx = maxScale;
-        outputScale.sy = maxScale;
+      if (PDFJS.useOnlyCssZoom) {
+        var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+        // Use a scale that will make the canvas be the original intended size
+        // of the page.
+        outputScale.sx *= actualSizeViewport.width / viewport.width;
+        outputScale.sy *= actualSizeViewport.height / viewport.height;
         outputScale.scaled = true;
-        this.hasRestrictedScaling = true;
-      } else {
-        this.hasRestrictedScaling = false;
+      }
+
+      if (PDFJS.maxCanvasPixels > 0) {
+        var pixelsInViewport = viewport.width * viewport.height;
+        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+        if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
+          outputScale.sx = maxScale;
+          outputScale.sy = maxScale;
+          outputScale.scaled = true;
+          this.hasRestrictedScaling = true;
+        } else {
+          this.hasRestrictedScaling = false;
+        }
+      }
+
+      canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
+      canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
+      canvas.style.width = Math.floor(viewport.width) + 'px';
+      canvas.style.height = Math.floor(viewport.height) + 'px';
+      // Add the viewport so it's known what it was originally drawn with.
+      canvas._viewport = viewport;
+
+      // TODO(mack): use data attributes to store these
+      ctx._scaleX = outputScale.sx;
+      ctx._scaleY = outputScale.sy;
+      if (outputScale.scaled) {
+        ctx.scale(outputScale.sx, outputScale.sy);
       }
     }
-
-    canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
-    canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
-    canvas.style.width = Math.floor(viewport.width) + 'px';
-    canvas.style.height = Math.floor(viewport.height) + 'px';
-    // Add the viewport so it's known what it was originally drawn with.
-    canvas._viewport = viewport;
 
     var textLayerDiv = null;
     var textLayer = null;
     if (!PDFJS.disableTextLayer) {
       textLayerDiv = document.createElement('div');
       textLayerDiv.className = 'textLayer';
-      textLayerDiv.style.width = canvas.style.width;
-      textLayerDiv.style.height = canvas.style.height;
+      textLayerDiv.style.width =  Math.floor(viewport.width) + 'px';
+      textLayerDiv.style.height = Math.floor(viewport.height) + 'px';
       if (this.annotationLayer) {
         // annotationLayer needs to stay on top
         div.insertBefore(textLayerDiv, this.annotationLayer);
@@ -449,13 +462,6 @@ var PageView = function pageView(container, id, scale, defaultViewport,
                                                      this.viewport);
     }
     this.textLayer = textLayer;
-
-    // TODO(mack): use data attributes to store these
-    ctx._scaleX = outputScale.sx;
-    ctx._scaleY = outputScale.sy;
-    if (outputScale.scaled) {
-      ctx.scale(outputScale.sx, outputScale.sy);
-    }
 
     // Rendering area
 
@@ -498,6 +504,33 @@ var PageView = function pageView(container, id, scale, defaultViewport,
       div.dispatchEvent(event);
 
       callback();
+    }
+
+    if (PDFJS.svgRendering) {
+      // the next page fetch will start only after this page rendering is done
+      this.pdfPage.getOperatorList().then(function (opList) {
+        var page = self.pdfPage;
+        var pageNum = self.id;
+        var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+        return svgGfx.getSVG(opList, viewport).then(function (svg) {
+          self.canvas = canvas = svg;
+          canvas._viewport = viewport;
+
+          canvasWrapper.appendChild(canvas);
+          pageViewDrawCallback(null);
+        }, function (reason) {
+          pageViewDrawCallback(reason);
+        });
+      });
+
+      setupAnnotations(div, pdfPage, this.viewport);
+      div.setAttribute('data-loaded', true);
+
+      // Add the page to the cache at the start of drawing. That way it can be
+      // evicted from the cache and destroyed even if we pause its rendering.
+      cache.push(this);
+
+      return;
     }
 
     var renderContext = {

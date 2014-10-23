@@ -247,6 +247,9 @@ var PDFViewerApplication = {
       }),
       Preferences.get('useOnlyCssZoom').then(function resolved(value) {
         PDFJS.useOnlyCssZoom = value;
+      }),
+      Preferences.get('svgRendering').then(function resolved(value) {
+        PDFJS.svgRendering = value;
       })
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
@@ -1512,6 +1515,9 @@ function webViewerInitialized() {
     if ('useonlycsszoom' in hashParams) {
       PDFJS.useOnlyCssZoom = (hashParams['useonlycsszoom'] === 'true');
     }
+    if ('svg' in hashParams) {
+      PDFJS.svgRendering = (hashParams['svg'] === 'true');
+    }
     if ('verbosity' in hashParams) {
       PDFJS.verbosity = hashParams['verbosity'] | 0;
     }
@@ -1525,6 +1531,12 @@ function webViewerInitialized() {
       PDFJS.cMapPacked = false;
     }
 //#endif
+
+  if (PDFJS.svgRendering) {
+    PDFJS.useOnlyCssZoom = true;
+    PDFJS.disableTextLayer = true;
+  }
+
 //#if !(FIREFOX || MOZCENTRAL)
     if ('locale' in hashParams) {
       locale = hashParams['locale'];
@@ -1718,7 +1730,9 @@ document.addEventListener('pagerendered', function (e) {
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
   var thumbnailView = PDFViewerApplication.pdfThumbnailViewer.
                       getThumbnail(pageIndex);
-  thumbnailView.setImage(pageView.canvas);
+  if (!PDFJS.svgRendering) {
+    thumbnailView.setImage(pageView.canvas);
+  }
 
 //#if (FIREFOX || MOZCENTRAL)
 //if (pageView.textLayer && pageView.textLayer.textDivs &&
