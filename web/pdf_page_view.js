@@ -414,11 +414,15 @@ var PDFPageView = (function PDFPageViewClosure() {
           self.onAfterDraw();
         }
 
+//#if GENERIC
+        // This custom event is deprecated and will be removed in the future.
+        // Please use the |pagerendered| event instead, see pdf_viewer.js.
         var event = document.createEvent('CustomEvent');
         event.initCustomEvent('pagerender', true, true, {
           pageNumber: pdfPage.pageNumber
         });
         div.dispatchEvent(event);
+//#endif
 
         if (!error) {
           resolveRenderPromise(undefined);
