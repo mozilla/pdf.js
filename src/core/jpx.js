@@ -187,11 +187,6 @@ var JpxImage = (function JpxImageClosure() {
               context.QCC = [];
               context.COC = [];
               break;
-            case 0xFF55: // Tile-part lengths, main header (TLM)
-              var Ltlm = readUint16(data, position); // Marker segment length
-              // Skip tile length markers
-              position += Ltlm;
-              break;
             case 0xFF5C: // Quantization default (QCD)
               length = readUint16(data, position);
               var qcd = {};
@@ -387,11 +382,9 @@ var JpxImage = (function JpxImageClosure() {
               length = tile.dataEnd - position;
               parseTilePackets(context, data, position, length);
               break;
+            case 0xFF55: // Tile-part lengths, main header (TLM)
+            case 0xFF57: // Packet lenght, main header (PLM)
             case 0xFF58: // Packet lenght, tile-part header (PLT)
-              var Lplt = readUint16(data, position); // Marker segment length
-              // Skip tile length markers
-              position += Lplt;
-              break;
             case 0xFF64: // Comment (COM)
               length = readUint16(data, position);
               // skipping content
