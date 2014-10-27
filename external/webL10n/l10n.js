@@ -977,7 +977,11 @@ document.webL10n = (function(window, document, undefined) {
       // http://www.w3.org/International/questions/qa-scripts
       // Arabic, Hebrew, Farsi, Pashto, Urdu
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
-      return (rtlList.indexOf(gLanguage) >= 0) ? 'rtl' : 'ltr';
+     
+      // use the short language code for "full" codes like 'ar-sa' (issue 5440) 
+      var shortCode = gLanguage.split('-')[0];
+
+      return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
     },
 
     // translate an element or document fragment
