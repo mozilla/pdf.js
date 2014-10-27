@@ -1600,7 +1600,7 @@
        "rounds": 1,
        "firstPage": 4,
        "lastPage": 4,
-       "type": "load"
+       "type": "eq"
     },
     {  "id": "p020121130574743273239",
       "file": "pdfs/P020121130574743273239.pdf",
