@@ -574,10 +574,10 @@ var Util = PDFJS.Util = (function UtilClosure() {
 
   // makeCssRgb() can be called thousands of times. Using |rgbBuf| avoids
   // creating many intermediate strings.
-  Util.makeCssRgb = function Util_makeCssRgb(rgb) {
-    rgbBuf[1] = rgb[0];
-    rgbBuf[3] = rgb[1];
-    rgbBuf[5] = rgb[2];
+  Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
+    rgbBuf[1] = r;
+    rgbBuf[3] = g;
+    rgbBuf[5] = b;
     return rgbBuf.join('');
   };
 

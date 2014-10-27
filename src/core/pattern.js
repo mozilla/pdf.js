@@ -146,14 +146,14 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       ratio[0] = i;
       fn(ratio, 0, color, 0);
       rgbColor = cs.getRgb(color, 0);
-      var cssColor = Util.makeCssRgb(rgbColor);
+      var cssColor = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
       colorStops.push([(i - t0) / diff, cssColor]);
     }
 
     var background = 'transparent';
     if (dict.has('Background')) {
       rgbColor = cs.getRgb(dict.get('Background'), 0);
-      background = Util.makeCssRgb(rgbColor);
+      background = Util.makeCssRgb(rgbColor[0], rgbColor[1], rgbColor[2]);
     }
 
     if (!extendStart) {

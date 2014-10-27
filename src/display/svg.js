@@ -822,11 +822,11 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       this.current.miterLimit = limit;
     },
     setStrokeRGBColor: function SVGGraphics_setStrokeRGBColor(r, g, b) {
-      var color = Util.makeCssRgb(arguments);
+      var color = Util.makeCssRgb(r, g, b);
       this.current.strokeColor = color;
     },
     setFillRGBColor: function SVGGraphics_setFillRGBColor(r, g, b) {
-      var color = Util.makeCssRgb(arguments);
+      var color = Util.makeCssRgb(r, g, b);
       this.current.fillColor = color;
       this.current.tspan = document.createElementNS(NS, 'svg:tspan');
       this.current.xcoords = [];

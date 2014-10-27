@@ -1551,12 +1551,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.current.fillColor = this.getColorN_Pattern(arguments);
     },
     setStrokeRGBColor: function CanvasGraphics_setStrokeRGBColor(r, g, b) {
-      var color = Util.makeCssRgb(arguments);
+      var color = Util.makeCssRgb(r, g, b);
       this.ctx.strokeStyle = color;
       this.current.strokeColor = color;
     },
     setFillRGBColor: function CanvasGraphics_setFillRGBColor(r, g, b) {
-      var color = Util.makeCssRgb(arguments);
+      var color = Util.makeCssRgb(r, g, b);
       this.ctx.fillStyle = color;
       this.current.fillColor = color;
     },
