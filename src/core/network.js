@@ -75,6 +75,28 @@ var NetworkManager = (function NetworkManagerClosure() {
     return array.buffer;
   }
 
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
+  var supportsMozChunked = (function supportsMozChunkedClosure() {
+    var x = new XMLHttpRequest();
+    try {
+      // Firefox 37- required .open() to be called before setting responseType.
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=707484
+      x.open('GET', 'https://example.com');
+    } catch (e) {
+      // Even though the URL is not visited, .open() could fail if the URL is
+      // blocked, e.g. via the connect-src CSP directive or the NoScript addon.
+      // When this error occurs, this feature detection method will mistakenly
+      // report that moz-chunked-arraybuffer is not supported in Firefox 37-.
+    }
+    try {
+      x.responseType = 'moz-chunked-arraybuffer';
+      return x.responseType === 'moz-chunked-arraybuffer';
+    } catch (e) {
+      return false;
+    }
+  })();
+//#endif
+
   NetworkManager.prototype = {
     requestRange: function NetworkManager_requestRange(begin, end, listeners) {
       var args = {
@@ -115,17 +137,19 @@ var NetworkManager = (function NetworkManagerClosure() {
         pendingRequest.expectedStatus = 200;
       }
 
-      if (args.onProgressiveData) {
-        // Some legacy browsers might throw an exception.
-        try {
-          xhr.responseType = 'moz-chunked-arraybuffer';
-        } catch(e) {}
-        if (xhr.responseType === 'moz-chunked-arraybuffer') {
-          pendingRequest.onProgressiveData = args.onProgressiveData;
-          pendingRequest.mozChunked = true;
-        } else {
-          xhr.responseType = 'arraybuffer';
-        }
+//#if CHROME
+//    var useMozChunkedLoading = false;
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
+//    var useMozChunkedLoading = !!args.onProgressiveData;
+//#endif
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
+      var useMozChunkedLoading = supportsMozChunked && !!args.onProgressiveData;
+//#endif
+      if (useMozChunkedLoading) {
+        xhr.responseType = 'moz-chunked-arraybuffer';
+        pendingRequest.onProgressiveData = args.onProgressiveData;
+        pendingRequest.mozChunked = true;
       } else {
         xhr.responseType = 'arraybuffer';
       }
