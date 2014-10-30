@@ -124,8 +124,8 @@ var FontInspector = (function FontInspectorClosure() {
         url = URL.createObjectURL(new Blob([fontObj.data], {
           type: fontObj.mimeType
         }));
+        download.href = url;
       }
-      download.href = url;
       download.textContent = 'Download';
       var logIt = document.createElement('a');
       logIt.href = '';
