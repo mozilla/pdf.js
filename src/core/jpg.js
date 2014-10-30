@@ -130,9 +130,8 @@ var JpegImage = (function jpegImage() {
 
     function decodeHuffman(tree) {
       var node = tree;
-      var bit;
-      while ((bit = readBit()) !== null) {
-        node = node[bit];
+      while (true) {
+        node = node[readBit()];
         if (typeof node === 'number') {
           return node;
         }
@@ -140,17 +139,12 @@ var JpegImage = (function jpegImage() {
           throw 'invalid huffman sequence';
         }
       }
-      return null;
     }
 
     function receive(length) {
       var n = 0;
       while (length > 0) {
-        var bit = readBit();
-        if (bit === null) {
-          return;
-        }
-        n = (n << 1) | bit;
+        n = (n << 1) | readBit();
         length--;
       }
       return n;
@@ -866,8 +860,7 @@ var JpegImage = (function jpegImage() {
         }
       }
 
-      // decodeTransform will contains pairs of multiplier (-256..256) and
-      // additive
+      // decodeTransform contains pairs of multiplier (-256..256) and additive
       var transform = this.decodeTransform;
       if (transform) {
         for (i = 0; i < dataLength;) {
