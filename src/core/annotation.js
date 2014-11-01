@@ -795,7 +795,7 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
           param2.value = 'mini';
           element.appendChild(param2);
         } else {
-          console.error('Cant play video');
+          warn('Cant play the video, unsupported');
         }
 
         var rect = this.data.rect;
