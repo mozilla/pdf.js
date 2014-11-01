@@ -371,7 +371,8 @@ var nonStdFontMap = {
   'MS-PMincho': 'MS PMincho',
   'MS-PMincho-Bold': 'MS PMincho-Bold',
   'MS-PMincho-BoldItalic': 'MS PMincho-BoldItalic',
-  'MS-PMincho-Italic': 'MS PMincho-Italic'
+  'MS-PMincho-Italic': 'MS PMincho-Italic',
+  'Wingdings': 'ZapfDingbats'
 };
 
 var serifFonts = {
@@ -2500,6 +2501,10 @@ var Font = (function FontClosure() {
           this.toFontChar[charCode] = fontChar;
         }
       } else if (/Dingbats/i.test(fontName)) {
+        if (/Wingdings/i.test(name)) {
+          warn('Wingdings font without embedded font file, ' +
+               'falling back to the ZapfDingbats encoding.');
+        }
         var dingbats = Encodings.ZapfDingbatsEncoding;
         for (charCode in dingbats) {
           fontChar = DingbatsGlyphsUnicode[dingbats[charCode]];
