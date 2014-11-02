@@ -14,61 +14,14 @@
  */
 /* globals PDFJS, Util, isDict, isName, stringToPDFString, warn, Dict, Stream,
            stringToBytes, Promise, isArray, ObjectLoader, OperatorList,
-           isValidUrl, OPS, AnnotationType, stringToUTF8String,
-           AnnotationBorderStyleType, ColorSpace, AnnotationFlag, isInt */
+           isValidUrl, OPS, createPromiseCapability, AnnotationType,
+           stringToUTF8String, AnnotationBorderStyleType, ColorSpace,
+           AnnotationFlag, isInt, InteractiveAnnotation */
 
 'use strict';
 
 var DEFAULT_ICON_SIZE = 22; // px
-
-/**
- * @class
- * @alias AnnotationFactory
- */
-function AnnotationFactory() {}
-AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
-  /**
-   * @param {XRef} xref
-   * @param {Object} ref
-   * @returns {Annotation}
-   */
-  create: function AnnotationFactory_create(xref, ref) {
-    var dict = xref.fetchIfRef(ref);
-    if (!isDict(dict)) {
-      return;
-    }
-
-    // Determine the annotation's subtype.
-    var subtype = dict.get('Subtype');
-    subtype = isName(subtype) ? subtype.name : '';
-
-    // Return the right annotation object based on the subtype and field type.
-    var parameters = {
-      dict: dict,
-      ref: ref
-    };
-
-    switch (subtype) {
-      case 'Link':
-        return new LinkAnnotation(parameters);
-
-      case 'Text':
-        return new TextAnnotation(parameters);
-
-      case 'Widget':
-        var fieldType = Util.getInheritableProperty(dict, 'FT');
-        if (isName(fieldType) && fieldType.name === 'Tx') {
-          return new TextWidgetAnnotation(parameters);
-        }
-        return new WidgetAnnotation(parameters);
-
-      default:
-        warn('Unimplemented annotation type "' + subtype + '", ' +
-             'falling back to base annotation');
-        return new Annotation(parameters);
-    }
-  }
-};
+var SUPPORTED_TYPES = ['Link', 'Text', 'Widget', 'Screen', 'Movie'];
 
 var Annotation = (function AnnotationClosure() {
   // 12.5.5: Algorithm: Appearance streams
@@ -715,31 +668,30 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 
 var VideoAnnotation = (function VideoAnnotationClosure() {
   function VideoAnnotation(params) {
-    Annotation.call(this, params);
+    InteractiveAnnotation.call(this, params);
     if (params.data) {
       return;
     }
 
     function guessContentType(dict) {
       var extToMime = {
-        'avi' : 'video/avi',
-        'mov' : 'video/quicktime',
-        'mpg' : 'video/mpeg'
+        'avi': 'video/avi',
+        'mov': 'video/quicktime',
+        'mpg': 'video/mpeg'
       };
 
       var fileName = dict.get('Movie').get('F').get('F');
       var extName = fileName.substring(fileName.lastIndexOf('.') + 1);
       extName = extName.toLowerCase();
-      if (extToMime.hasOwnProperty(extName)) {
-        var mimeType = extToMime[extName];
-        return mimeType;
-      } else {
+      if (!extToMime.hasOwnProperty(extName)) {
         return null;
       }
+      return extToMime[extName];
     }
 
     var dict = params.dict;
     var data = this.data;
+    data.annotationType = AnnotationType.VIDEO;
     // Check for various annotations related to videos.
     if (dict.get('Subtype').name === 'Screen') {
       data.contentType = dict.get('A').get('R').get('C').get('CT') || '';
@@ -768,55 +720,8 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
       data.src = dict.get('Movie').get('F').get('F');
     }
   }
-  Util.inherit(VideoAnnotation, Annotation, {
-      hasHtml: function VideoAnnotation_hasHtml() {
-        return true;
-      },
 
-      getHtmlElement: function VideoAnnotation_getHtmlElement(commonObjs) {
-        var contentType = this.data.contentType;
-        var element = document.createElement('video');
-        var checkSupport = element.canPlayType(contentType);
-        if (checkSupport === 'probably') {
-          element.src = this.data.src || '';
-          element.type = contentType || '';
-          element.poster = this.data.poster || '';
-          element.controls = true;
-        } else if (contentType in navigator.mimeTypes) {
-          element = document.createElement('object');
-          element.data = this.data.src || '';
-          element.type = this.data.contentType || '';
-          var param = document.createElement('param');
-          param.name = 'controller';
-          param.value = true;
-          element.appendChild(param);
-          var param2 = document.createElement('param');
-          param2.name = 'uiMode';
-          param2.value = 'mini';
-          element.appendChild(param2);
-        } else {
-          warn('Cant play the video, unsupported');
-        }
+  Util.inherit(VideoAnnotation, InteractiveAnnotation, { });
 
-        var rect = this.data.rect;
-        var borderWidth = this.data.borderWidth;
-
-        element.style.borderWidth = borderWidth + 'px';
-        var color = this.data.color;
-        var rgb = [];
-        for (var i = 0; i < 3; i) {
-          rgb[i] = Math.round(color[i] * 255);
-        }
-        element.style.borderColor = Util.makeCssRgb(rgb);
-        element.style.borderStyle = 'solid';
-        var width = rect[2] - rect[0] - 2 * borderWidth;
-        var height = rect[3] - rect[1] - 2 * borderWidth;
-        element.style.width = width + 'px';
-        element.style.height = height + 'px';
-        element.data = this.data.src || '';
-        element.type = this.data.contentType || '';
-        return element;
-      }
-    });
   return VideoAnnotation;
 })();

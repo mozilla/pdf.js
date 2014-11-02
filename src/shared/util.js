@@ -45,7 +45,8 @@ var ImageKind = {
 var AnnotationType = {
   WIDGET: 1,
   TEXT: 2,
-  LINK: 3
+  LINK: 3,
+  VIDEO: 4
 };
 
 var AnnotationFlag = {
