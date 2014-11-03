@@ -1,0 +1,109 @@
+<!--Change [[*pdf]] on line 49 to your url-->
+
+<style>
+.pdfPage {
+    position: relative;
+    overflow: visible;
+    font-family: arial, verdana, sans-serif;
+    clear:both;
+}
+
+.pdfPage > canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-family: arial, verdana, sans-serif;
+}
+
+/* CSS classes used by TextLayerBuilder to style the text layer divs */
+
+/* This stuff is important! Otherwise when you select the text,
+   the text in the divs will show up! */
+::selection { background:rgba(0,0,255,0.3); font-family: arial, verdana, sans-serif;}
+::-moz-selection { background:rgba(0,0,255,0.3); font-family: arial, verdana, sans-serif;}
+
+.textLayer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: #000;
+    font-family: sans-serif;
+    overflow: hidden;
+	font-family: arial, verdana, sans-serif;
+}
+
+.textLayer > div {
+    color: transparent;
+    position: absolute;
+    line-height: 1;
+    white-space: pre;
+    cursor: text;
+	font-family: arial, verdana, sans-serif;
+}
+</style>
+
+<script type="text/javascript">
+window.onload = function () {
+  var url = '[[*pdf]]';
+  var scale = 1.1; //Set this to whatever you want. This is basically the "zoom" factor for the PDF.
+  var currPage = 1; //Pages are 1-based not 0-based
+  var numPages = 0;
+  var thePDF = null;
+  PDFJS.workerSrc = '/js/build/pdf.worker.js';
+  PDFJS.getDocument(url).then(function(pdf){
+	thePDF = pdf;
+	numPages = pdf.numPages;
+	pdf.getPage(1).then(handlePages);
+  });
+  function handlePages(page){
+	var viewport = page.getViewport(scale);
+	var pdfPage = document.createElement('div');
+	pdfPage.className = 'pdfPage';
+	var pdfContainer = document.getElementById('pdfContainer');
+
+	var canvas = document.createElement( "canvas" );
+	canvas.style.display = "block";
+	var context = canvas.getContext('2d');
+	var outputScale = getOutputScale(context);
+	canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
+	canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
+	context._scaleX = outputScale.sx;
+	context._scaleY = outputScale.sy;
+	if (outputScale.scaled) {
+	  context.scale(outputScale.sx, outputScale.sy);
+	}
+	
+	// The page, canvas and text layer elements will have the same size.
+	canvas.style.width = Math.floor(viewport.width) + 'px';
+	canvas.style.height = Math.floor(viewport.height) + 'px';
+	
+	pdfPage.style.width = canvas.style.width;
+	pdfPage.style.height = canvas.style.height;
+	pdfPage.appendChild(canvas);
+
+	var textLayerDiv = document.createElement('div');
+	textLayerDiv.className = 'textLayer';
+	textLayerDiv.style.width = canvas.style.width;
+	textLayerDiv.style.height = canvas.style.height;
+	pdfPage.appendChild(textLayerDiv);
+
+	page.render({canvasContext: context, viewport: viewport});
+
+	var textLayerPromise = page.getTextContent().then(function (textContent) {
+	  var textLayerBuilder = new TextLayerBuilder({
+		textLayerDiv: textLayerDiv,
+		viewport: viewport,
+		pageIndex: 0
+	  });
+	  textLayerBuilder.setTextContent(textContent);
+	});
+
+	pdfContainer.appendChild(pdfPage);
+
+	currPage++;
+	if ( thePDF !== null && currPage <= numPages ){thePDF.getPage( currPage ).then( handlePages );}
+  }
+}
+</script>
