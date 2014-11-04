@@ -433,7 +433,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
         var cachedValue = cache[key];
         if (cachedValue !== undefined) {
-          cachedValue.set(dest, destOffset);
+          dest.set(cachedValue, destOffset);
           return;
         }
 
@@ -457,7 +457,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           cache_available--;
           cache[key] = output;
         }
-        output.set(dest, destOffset);
+        dest.set(output, destOffset);
       };
     }
   };
