@@ -492,6 +492,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5470",
+       "file": "pdfs/issue5470.pdf",
+       "md5": "4805fdcd7e142e8df3c04c6ba06025af",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
