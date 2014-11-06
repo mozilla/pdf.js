@@ -26,17 +26,42 @@ Cu.import('resource://gre/modules/Services.jsm');
 const ADDON_ID = "uriloader@pdf.js";
 
 var Telemetry = Services.telemetry;
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_USED", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_FALLBACK_SHOWN", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_VERSION", 1, 10, 11, Telemetry.HISTOGRAM_LINEAR);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_GENERATOR", 1, 25, 26, Telemetry.HISTOGRAM_LINEAR);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_DOCUMENT_SIZE_KB", 2, 64 * 1024, 20, Telemetry.HISTOGRAM_EXPONENTIAL);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_EMBED", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_FONT_TYPES", 1, 19, 20, Telemetry.HISTOGRAM_LINEAR);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_FORM", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_PRINT", 1, 2, 3, Telemetry.HISTOGRAM_BOOLEAN);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_STREAM_TYPES", 1, 19, 20, Telemetry.HISTOGRAM_LINEAR);
-Telemetry.registerAddonHistogram(ADDON_ID, "PDF_VIEWER_TIME_TO_VIEW_MS", 1, 10000, 50, Telemetry.HISTOGRAM_EXPONENTIAL);
+
+var registerAddonHistogram = Telemetry.registerAddonHistogram;
+try {
+  // Swapping arguments of the registerAddonHistogram for older Firefox versions.
+  // See https://bugzilla.mozilla.org/show_bug.cgi?id=1069953.
+  var ffVersion = parseInt(Services.appinfo.platformVersion);
+  var oldTelemetryAPI = ffVersion < 36;
+  if (ffVersion === 36) {
+    // Probing FF36 to check if it has new API.
+    try {
+      Telemetry.registerAddonHistogram(ADDON_ID, "PDF_36",
+        Telemetry.HISTOGRAM_LINEAR, 1, 40, 41);
+      var histogram = Telemetry.getAddonHistogram(ADDON_ID, "PDF_36");
+      histogram.add(36);
+    } catch (e) {
+      oldTelemetryAPI = true;
+    }
+  }
+  if (oldTelemetryAPI) {
+    registerAddonHistogram = function (p1, p2, p3, p4, p5, p6) {
+      return Telemetry.registerAddonHistogram(p1, p2, p4, p5, p6, p3);
+    };
+  }
+} catch (ex) { }
+
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_USED', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_FALLBACK_SHOWN', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_DOCUMENT_VERSION', Telemetry.HISTOGRAM_LINEAR, 1, 10, 11);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_DOCUMENT_GENERATOR', Telemetry.HISTOGRAM_LINEAR, 1, 25, 26);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_DOCUMENT_SIZE_KB', Telemetry.HISTOGRAM_EXPONENTIAL, 2, 64 * 1024, 20);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_EMBED', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_FONT_TYPES', Telemetry.HISTOGRAM_LINEAR, 1, 19, 20);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_FORM', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_PRINT', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_STREAM_TYPES', Telemetry.HISTOGRAM_LINEAR, 1, 19, 20);
+registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_TIME_TO_VIEW_MS', Telemetry.HISTOGRAM_EXPONENTIAL, 1, 10000, 50);
 
 
 this.PdfJsTelemetry = {
