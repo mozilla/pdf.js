@@ -55,6 +55,7 @@ select {
   height: 100%;
   overflow: hidden;
   cursor: none;
+  -webkit-user-select: none;
 }
 
 #viewerContainer:-moz-full-screen {
@@ -65,6 +66,7 @@ select {
   height: 100%;
   overflow: hidden;
   cursor: none;
+  -moz-user-select: none;
 }
 
 #viewerContainer:-ms-fullscreen {
@@ -74,6 +76,7 @@ select {
   height: 100%;
   overflow: hidden !important;
   cursor: none;
+  -ms-user-select: none;
 }
 
 #viewerContainer:-ms-fullscreen::-ms-backdrop {
@@ -88,6 +91,9 @@ select {
   height: 100%;
   overflow: hidden;
   cursor: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 :-webkit-full-screen a:not(.internalLink) {
