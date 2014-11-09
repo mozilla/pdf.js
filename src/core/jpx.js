@@ -480,6 +480,20 @@ var JpxImage = (function JpxImageClosure() {
     // Section B.6 Division resolution to precincts
     var precinctWidth = 1 << dimensions.PPx;
     var precinctHeight = 1 << dimensions.PPy;
+    // Jasper introduces codeblock groups for mapping each subband codeblocks to precincts.
+    // Precinct partition divides a resolution according to width and height parameters.
+    // The subband of that resolution level have different sizes, for each non-zero resolution though.
+
+    // From Jasper documentation: jpeg2000.pdf, section K: Tier-2 coding:
+    // The precinct partitioning for a particular subband is derived from a partitioning
+    // of its parent LL band (i.e., the LL band at the next higher resolution level)...
+    // The LL band associated with each resolution level is divided into precincts...
+    // Each of the resulting precinct regions is then mapped into its child subbands
+    // (if any) at the next lower resolution level. This is accomplished by using the coordinate transformation
+    // (u, v) = (ceil(x/2), ceil(y/2)) where (x, y) and (u, v) are the
+    // coordinates of a point in the LL band and child subband, respectively.
+    var cblkGroupWidth = resolution.resLevel == 0 ? (1 << dimensions.PPx) : (1 << (dimensions.PPx - 1));
+    var cblkGroupHeight = resolution.resLevel == 0 ? (1 << dimensions.PPy) : (1 << (dimensions.PPy - 1));
     var numprecinctswide = (resolution.trx1 > resolution.trx0 ?
       Math.ceil(resolution.trx1 / precinctWidth) -
       Math.floor(resolution.trx0 / precinctWidth) : 0);
@@ -498,7 +512,9 @@ var JpxImage = (function JpxImageClosure() {
       precinctHeight: precinctHeight,
       numprecinctswide: numprecinctswide,
       numprecinctshigh: numprecinctshigh,
-      numprecincts: numprecincts
+      numprecincts: numprecincts,
+      cblkGroupWidth:cblkGroupWidth,
+      cblkGroupHeight: cblkGroupHeight
     };
   }
   function buildCodeblocks(context, subband, dimensions) {
@@ -525,14 +541,15 @@ var JpxImage = (function JpxImageClosure() {
           tbx1: codeblockWidth * (i + 1),
           tby1: codeblockHeight * (j + 1)
         };
-        // calculate precinct number
+        // calculate precinct number for this codeblock,
+        // see comment about codeblock group width and height
         var pi = Math.floor((codeblock.tbx0 -
                  precinctParameters.precinctXOffset) /
-                 precinctParameters.precinctWidth);
+                 precinctParameters.cblkGroupWidth);
         var pj = Math.floor((codeblock.tby0 -
                  precinctParameters.precinctYOffset) /
-                 precinctParameters.precinctHeight);
-        precinctNumber = pj + pi * precinctParameters.numprecinctswide;
+                 precinctParameters.cblkGroupHeight);
+        precinctNumber = pi + (pj * precinctParameters.numprecinctswide);
         codeblock.tbx0_ = Math.max(subband.tbx0, codeblock.tbx0);
         codeblock.tby0_ = Math.max(subband.tby0, codeblock.tby0);
         codeblock.tbx1_ = Math.min(subband.tbx1, codeblock.tbx1);
@@ -701,6 +718,7 @@ var JpxImage = (function JpxImageClosure() {
         resolution.try0 = Math.ceil(component.tcy0 / scale);
         resolution.trx1 = Math.ceil(component.tcx1 / scale);
         resolution.try1 = Math.ceil(component.tcy1 / scale);
+        resolution.resLevel = r;
         buildPrecincts(context, resolution, blocksDimensions);
         resolutions.push(resolution);
 
