@@ -130,9 +130,8 @@ var JpegImage = (function jpegImage() {
 
     function decodeHuffman(tree) {
       var node = tree;
-      var bit;
-      while ((bit = readBit()) !== null) {
-        node = node[bit];
+      while (true) {
+        node = node[readBit()];
         if (typeof node === 'number') {
           return node;
         }
@@ -140,17 +139,12 @@ var JpegImage = (function jpegImage() {
           throw 'invalid huffman sequence';
         }
       }
-      return null;
     }
 
     function receive(length) {
       var n = 0;
       while (length > 0) {
-        var bit = readBit();
-        if (bit === null) {
-          return;
-        }
-        n = (n << 1) | bit;
+        n = (n << 1) | readBit();
         length--;
       }
       return n;
@@ -509,7 +503,7 @@ var JpegImage = (function jpegImage() {
 
       // stage 3
       // Shift v0 by 128.5 << 5 here, so we don't need to shift p0...p7 when
-      // converting to UInt8 range later.  
+      // converting to UInt8 range later.
       v0 = ((v0 + v1 + 1) >> 1) + 4112;
       v1 = v0 - v1;
       t  = (v2 * dctSin6 + v3 * dctCos6 + 2048) >> 12;
@@ -866,8 +860,7 @@ var JpegImage = (function jpegImage() {
         }
       }
 
-      // decodeTransform will contains pairs of multiplier (-256..256) and
-      // additive
+      // decodeTransform contains pairs of multiplier (-256..256) and additive
       var transform = this.decodeTransform;
       if (transform) {
         for (i = 0; i < dataLength;) {
@@ -904,7 +897,7 @@ var JpegImage = (function jpegImage() {
     },
 
     _convertYcckToRgb: function convertYcckToRgb(data) {
-      var Y, Cb, Cr, k, CbCb, CbCr, CbY, Cbk, CrCr, Crk, CrY, YY, Yk, kk;
+      var Y, Cb, Cr, k;
       var offset = 0;
       for (var i = 0, length = data.length; i < length; i += 4) {
         Y  = data[i];
@@ -912,43 +905,35 @@ var JpegImage = (function jpegImage() {
         Cr = data[i + 2];
         k = data[i + 3];
 
-        CbCb = Cb * Cb;
-        CbCr = Cb * Cr;
-        CbY = Cb * Y;
-        Cbk = Cb * k;
-        CrCr = Cr * Cr;
-        Crk = Cr * k;
-        CrY = Cr * Y;
-        YY = Y * Y;
-        Yk = Y * k;
-        kk = k * k;
-
-        var r = - 122.67195406894 -
-          6.60635669420364e-5 * CbCb + 0.000437130475926232 * CbCr -
-          5.4080610064599e-5* CbY + 0.00048449797120281* Cbk -
-          0.154362151871126 * Cb - 0.000957964378445773 * CrCr +
-          0.000817076911346625 * CrY - 0.00477271405408747 * Crk +
-          1.53380253221734 * Cr + 0.000961250184130688 * YY -
-          0.00266257332283933 * Yk + 0.48357088451265 * Y -
-          0.000336197177618394 * kk + 0.484791561490776 * k;
+        var r = -122.67195406894 +
+          Cb * (-6.60635669420364e-5 * Cb + 0.000437130475926232 * Cr -
+                5.4080610064599e-5 * Y + 0.00048449797120281 * k -
+                0.154362151871126) +
+          Cr * (-0.000957964378445773 * Cr + 0.000817076911346625 * Y -
+                0.00477271405408747 * k + 1.53380253221734) +
+          Y * (0.000961250184130688 * Y - 0.00266257332283933 * k +
+               0.48357088451265) +
+          k * (-0.000336197177618394 * k + 0.484791561490776);
 
         var g = 107.268039397724 +
-          2.19927104525741e-5 * CbCb - 0.000640992018297945 * CbCr +
-          0.000659397001245577* CbY + 0.000426105652938837* Cbk -
-          0.176491792462875 * Cb - 0.000778269941513683 * CrCr +
-          0.00130872261408275 * CrY + 0.000770482631801132 * Crk -
-          0.151051492775562 * Cr + 0.00126935368114843 * YY -
-          0.00265090189010898 * Yk + 0.25802910206845 * Y -
-          0.000318913117588328 * kk - 0.213742400323665 * k;
+          Cb * (2.19927104525741e-5 * Cb - 0.000640992018297945 * Cr +
+                0.000659397001245577 * Y + 0.000426105652938837 * k -
+                0.176491792462875) +
+          Cr * (-0.000778269941513683 * Cr + 0.00130872261408275 * Y +
+                0.000770482631801132 * k - 0.151051492775562) +
+          Y * (0.00126935368114843 * Y - 0.00265090189010898 * k +
+               0.25802910206845) +
+          k * (-0.000318913117588328 * k - 0.213742400323665);
 
-        var b = - 20.810012546947 -
-          0.000570115196973677 * CbCb - 2.63409051004589e-5 * CbCr +
-          0.0020741088115012* CbY - 0.00288260236853442* Cbk +
-          0.814272968359295 * Cb - 1.53496057440975e-5 * CrCr -
-          0.000132689043961446 * CrY + 0.000560833691242812 * Crk -
-          0.195152027534049 * Cr + 0.00174418132927582 * YY -
-          0.00255243321439347 * Yk + 0.116935020465145 * Y -
-          0.000343531996510555 * kk + 0.24165260232407 * k;
+        var b = -20.810012546947 +
+          Cb * (-0.000570115196973677 * Cb - 2.63409051004589e-5 * Cr +
+                0.0020741088115012 * Y - 0.00288260236853442 * k +
+                0.814272968359295) +
+          Cr * (-1.53496057440975e-5 * Cr - 0.000132689043961446 * Y +
+                0.000560833691242812 * k - 0.195152027534049) +
+          Y * (0.00174418132927582 * Y - 0.00255243321439347 * k +
+               0.116935020465145) +
+          k * (-0.000343531996510555 * k + 0.24165260232407);
 
         data[offset++] = clamp0to255(r);
         data[offset++] = clamp0to255(g);
