@@ -275,6 +275,7 @@ var ProgressBar = (function ProgressBarClosure() {
   }
 
   function ProgressBar(id, opts) {
+    this.visible = true;
 
     // Fetch the sub-elements for later.
     this.div = document.querySelector(id + ' .progress');
@@ -328,8 +329,21 @@ var ProgressBar = (function ProgressBarClosure() {
     },
 
     hide: function ProgressBar_hide() {
+      if (!this.visible) {
+        return;
+      }
+      this.visible = false;
       this.bar.classList.add('hidden');
-      this.bar.removeAttribute('style');
+      document.body.classList.remove('loadingInProgress');
+    },
+
+    show: function ProgressBar_show() {
+      if (this.visible) {
+        return;
+      }
+      this.visible = true;
+      document.body.classList.add('loadingInProgress');
+      this.bar.classList.remove('hidden');
     }
   };
 
