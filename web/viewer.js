@@ -2024,9 +2024,9 @@ window.addEventListener('keydown', function keydown(evt) {
   if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
     // either CTRL or META key with optional SHIFT.
     var pdfViewer = PDFViewerApplication.pdfViewer;
-    var inPresentationMode =
-      pdfViewer.presentationModeState === PresentationModeState.CHANGING ||
-      pdfViewer.presentationModeState === PresentationModeState.FULLSCREEN;
+    var inPresentationMode = pdfViewer &&
+      (pdfViewer.presentationModeState === PresentationModeState.CHANGING ||
+       pdfViewer.presentationModeState === PresentationModeState.FULLSCREEN);
 
     switch (evt.keyCode) {
       case 70: // f
