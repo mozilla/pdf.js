@@ -478,8 +478,8 @@ html[dir='ltr'] .doorHangerRight:before {
   color: #A6B7D0;
 }
 
-.notFound {
-  background-color: rgb(255, 137, 153);
+#findInput.notFound {
+  background-color: rgb(255, 102, 102);
 }
 
 html[dir='ltr'] #toolbarViewerLeft {
