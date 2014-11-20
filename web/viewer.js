@@ -2024,9 +2024,9 @@ window.addEventListener('keydown', function keydown(evt) {
   if (cmd === 1 || cmd === 8 || cmd === 5 || cmd === 12) {
     // either CTRL or META key with optional SHIFT.
     var pdfViewer = PDFViewerApplication.pdfViewer;
-    var inPresentationMode =
-      pdfViewer.presentationModeState === PresentationModeState.CHANGING ||
-      pdfViewer.presentationModeState === PresentationModeState.FULLSCREEN;
+    var inPresentationMode = pdfViewer &&
+      (pdfViewer.presentationModeState === PresentationModeState.CHANGING ||
+       pdfViewer.presentationModeState === PresentationModeState.FULLSCREEN);
 
     switch (evt.keyCode) {
       case 70: // f
@@ -2292,3 +2292,33 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //  });
 //});
 //#endif
+
+function myMatcher(self) {
+    try {
+        //wl parameter contains search terms- multiple space (%20) separated words or phrases
+        //search term syntax: a b c single words, a=b c=d e=f=g phrases
+
+        //check local window for search terms
+        var params = PDFView.parseQueryString(document.location.href.replace(/\+/ig, '%20'));
+        if (params['wl'] != null) { window.multiple = params['wl'].split(/\s+/); }
+
+        //fallback check parent window (iframe implementation)
+        if (params['wl'] == null) {
+            var params = PDFView.parseQueryString(parent.document.location.href.replace(/\+/ig, '%20'));
+            if (params['wl'] != null) { window.multiple = params['wl'].split(/\s+/); }
+        }
+
+        //sample highlighted words
+        //window.multiple = ['of','the', 'is', 'or', 'and', 'this']
+
+        if (window.multiple == null) { return }
+
+        var fc = self.textLayer.findController;
+        fc.state = { query: '', caseSensitive: false, highlightAll: true, findPrevious: false }
+        window.setTimeout(function () { fc.dirtyMatch = true; fc.extractText(); fc.nextMatch(); }, 250);
+
+
+    } catch (e) {
+    }
+}
+
