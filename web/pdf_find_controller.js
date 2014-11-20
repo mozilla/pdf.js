@@ -203,12 +203,27 @@ var PDFFindController = (function PDFFindControllerClosure() {
         // If the page is selected, scroll the page into view, which triggers
         // rendering the page, which adds the textLayer. Once the textLayer is
         // build, it will scroll onto the selected match.
-        this.pdfViewer.scrollPageIntoView(index + 1);
+          if (window.multiple == null) { this.pdfViewer.scrollPageIntoView(index + 1); }
       }
 
       if (page.textLayer) {
         page.textLayer.updateMatches();
       }
+
+      //scroll match into view
+      if (window.multiple != null) {
+          try {
+              var d = document.getElementsByClassName('highlight');
+              if (d.length > 0) {
+                  var vc = document.getElementById('viewerContainer');
+                  if (vc.scrollTop < 40) {
+                      scrollIntoView(d[0].parentNode);
+                  }
+              }
+          } catch (e) {
+          }
+      }
+
     },
 
     nextMatch: function PDFFindController_nextMatch() {
@@ -238,7 +253,17 @@ var PDFFindController = (function PDFFindControllerClosure() {
             this.pendingFindMatches[i] = true;
             this.extractTextPromises[i].then(function(pageIdx) {
               delete self.pendingFindMatches[pageIdx];
-              self.calcFindMatch(pageIdx);
+
+              if (window.multiple == null) {
+                  self.calcFindMatch(pageIdx);
+              } else {
+                  for (var i = 0; i < window.multiple.length; i++) {
+                      self.state.query = window.multiple[i].replace(/\=/ig, ' ');
+                      self.calcFindMatch(pageIdx);
+                  }
+              }
+
+
             });
           }
         }
