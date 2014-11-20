@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, FirefoxCom, Promise */
+/* globals PDFJS, FirefoxCom, Promise, scrollIntoView */
 
 'use strict';
 
@@ -203,7 +203,9 @@ var PDFFindController = (function PDFFindControllerClosure() {
         // If the page is selected, scroll the page into view, which triggers
         // rendering the page, which adds the textLayer. Once the textLayer is
         // build, it will scroll onto the selected match.
-          if (window.multiple == null) { this.pdfViewer.scrollPageIntoView(index + 1); }
+          if (window.multiple === undefined) {
+              this.pdfViewer.scrollPageIntoView(index + 1);
+          }
       }
 
       if (page.textLayer) {
@@ -211,7 +213,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
 
       //scroll match into view
-      if (window.multiple != null) {
+      if (window.multiple !== undefined) {
           try {
               var d = document.getElementsByClassName('highlight');
               if (d.length > 0) {
@@ -243,6 +245,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.resumePageIdx = null;
         this.pageMatches = [];
         var self = this;
+        var qwy = '';
 
         for (var i = 0; i < numPages; i++) {
           // Wipe out any previous highlighted matches.
@@ -254,11 +257,12 @@ var PDFFindController = (function PDFFindControllerClosure() {
             this.extractTextPromises[i].then(function(pageIdx) {
               delete self.pendingFindMatches[pageIdx];
 
-              if (window.multiple == null) {
+              if (window.multiple === undefined) {
                   self.calcFindMatch(pageIdx);
               } else {
                   for (var i = 0; i < window.multiple.length; i++) {
-                      self.state.query = window.multiple[i].replace(/\=/ig, ' ');
+                      qwy = window.multiple[i].replace(/\=/ig, ' ');
+                      self.state.query = qwy;
                       self.calcFindMatch(pageIdx);
                   }
               }
