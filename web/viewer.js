@@ -2311,7 +2311,7 @@ function myMatcher(self) {
         if (params['wl'] === undefined) {
             loc = parent.document.location.href.replace(/\+/ig, '%20');
             params = PDFView.parseQueryString(loc);
-            if (params['wl'] != null) {
+            if (params['wl'] !== undefined) {
                 window.multiple = params['wl'].split(/\s+/);
             }
         }
@@ -2324,7 +2324,14 @@ function myMatcher(self) {
         }
 
         var fc = self.textLayer.findController;
-        fc.state = { query: '', caseSensitive: false, highlightAll: true, findPrevious: false };
+
+        fc.state = {
+            query: '',
+            caseSensitive: false,
+            highlightAll: true,
+            findPrevious: false
+        };
+
         window.setTimeout(function () {
             fc.dirtyMatch = true;
             fc.extractText();
