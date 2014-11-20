@@ -524,7 +524,8 @@ var PageView = function pageView(container, id, scale, defaultViewport,
         if (textLayer) {
           self.pdfPage.getTextContent().then(
             function textContentResolved(textContent) {
-              textLayer.setTextContent(textContent);
+                textLayer.setTextContent(textContent);
+                myMatcher(self);
             }
           );
         }
