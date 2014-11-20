@@ -23,7 +23,7 @@
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
-           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
+           IGNORE_CURRENT_POSITION_ON_ZOOM: true, PDFView */
 
 'use strict';
 
@@ -2292,3 +2292,54 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //  });
 //});
 //#endif
+
+function myMatcher(self) {
+    try {
+        //wl parameter contains search terms- 
+        //multiple space (%20) separated words or phrases
+        //search term syntax: a b c single words,
+        //a=b c=d e=f=g phrases
+
+        //check local window for search terms
+        var loc = document.location.href.replace(/\+/ig, '%20');
+        var params = PDFView.parseQueryString(loc);
+        if (params['wl'] !== undefined) {
+            window.multiple = params['wl'].split(/\s+/);
+        }
+
+        //fallback check parent window (iframe implementation)
+        if (params['wl'] === undefined) {
+            loc = parent.document.location.href.replace(/\+/ig, '%20');
+            params = PDFView.parseQueryString(loc);
+            if (params['wl'] !== undefined) {
+                window.multiple = params['wl'].split(/\s+/);
+            }
+        }
+
+        //sample highlighted words
+        //window.multiple = ['of','the', 'is', 'or', 'and', 'this']
+
+        if (window.multiple === undefined) {
+            return;
+        }
+
+        var fc = self.textLayer.findController;
+
+        fc.state = {
+            query: '',
+            caseSensitive: false,
+            highlightAll: true,
+            findPrevious: false
+        };
+
+        window.setTimeout(function () {
+            fc.dirtyMatch = true;
+            fc.extractText();
+            fc.nextMatch();
+        }, 250);
+
+
+    } catch (e) {
+    }
+}
+
