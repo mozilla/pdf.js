@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFJS, mozL10n, CustomStyle, getOutputScale, Stats,
-           CSS_UNITS */
+           CSS_UNITS, myMatcher */
 
 'use strict';
 
