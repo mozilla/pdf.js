@@ -313,10 +313,16 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var isSelected = (isSelectedPage && i === selectedMatchIdx);
         var highlightSuffix = (isSelected ? ' selected' : '');
 
-        if (isSelected && !this.isViewerInPresentationMode) {
-          scrollIntoView(textDivs[begin.divIdx],
-                         { top: FIND_SCROLL_OFFSET_TOP,
-                           left: FIND_SCROLL_OFFSET_LEFT });
+        if (window.multiple == null) {
+            if (isSelected && !this.isViewerInPresentationMode) {
+                scrollIntoView(textDivs[begin.divIdx],
+                               {
+                                   top: FIND_SCROLL_OFFSET_TOP,
+                                   left: FIND_SCROLL_OFFSET_LEFT
+                               });
+            }
+        } else {
+            highlightSuffix = '';
         }
 
         // Match inside new div.
@@ -363,19 +369,21 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var clearedUntilDivIdx = -1;
 
       // Clear all current matches.
-      for (var i = 0, len = matches.length; i < len; i++) {
-        var match = matches[i];
-        var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
-        for (var n = begin, end = match.end.divIdx; n <= end; n++) {
-          var div = textDivs[n];
-          div.textContent = bidiTexts[n].str;
-          div.className = '';
-        }
-        clearedUntilDivIdx = match.end.divIdx + 1;
-      }
+      if (window.multiple == null) {
+          for (var i = 0, len = matches.length; i < len; i++) {
+              var match = matches[i];
+              var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
+              for (var n = begin, end = match.end.divIdx; n <= end; n++) {
+                  var div = textDivs[n];
+                  div.textContent = bidiTexts[n].str;
+                  div.className = '';
+              }
+              clearedUntilDivIdx = match.end.divIdx + 1;
+          }
 
-      if (this.findController === null || !this.findController.active) {
-        return;
+          if (this.findController === null || !this.findController.active) {
+              return;
+          }
       }
 
       // Convert the matches on the page controller into the match format
