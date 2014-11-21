@@ -389,7 +389,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
 
   CanvasExtraState.prototype = {
     clone: function CanvasExtraState_clone() {
-      return Object.create(this);
+      return $.extend({}, this);
     },
     setCurrentPoint: function CanvasExtraState_setCurrentPoint(x, y) {
       this.x = x;
