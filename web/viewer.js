@@ -1200,7 +1200,9 @@ var PDFViewerApplication = {
                 zoomArg];
       }
       if (dest) {
-        this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+          if (window.multiple !== undefined) {
+              this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+          }
       } else if (pageNumber) {
         this.page = pageNumber; // simple page
       }
