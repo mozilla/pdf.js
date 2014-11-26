@@ -375,7 +375,11 @@ ChromeActions.prototype = {
     return (!!prefBrowser && prefGfx);
   },
   supportsDocumentColors: function() {
-    return getBoolPref('browser.display.use_document_colors', true);
+    if (getIntPref('browser.display.document_color_use', 0) == 2 ||
+        !getBoolPref('browser.display.use_document_colors', true)) {
+      return false;
+    }
+    return true;
   },
   reportTelemetry: function (data) {
     var probeInfo = JSON.parse(data);
