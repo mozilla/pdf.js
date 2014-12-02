@@ -830,9 +830,9 @@ var JpxImage = (function JpxImageClosure() {
           new ResolutionLayerComponentPositionIterator(context);
         break;
       case 2:
-        var closestPowerOfTwo = function(inputValue) { 
+        var closestPowerOfTwo = function(inputValue) {
             var resultValue = Math.round(Math.log(inputValue)/ Math.log(2));
-            resultValue = Math.round(Math.pow(2, resultValue)); 
+            resultValue = Math.round(Math.pow(2, resultValue));
             return resultValue;
             };
         var widthCond = tile.width === closestPowerOfTwo(tile.width);
@@ -843,7 +843,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         else {
             throw new Error('JPX Error: Progression order ' +
-                            progressionOrder + 
+                            progressionOrder +
                             ' only supported for powers of two.');
         }
         break;
