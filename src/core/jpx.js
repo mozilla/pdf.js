@@ -620,6 +620,43 @@ var JpxImage = (function JpxImageClosure() {
       codeblocks: precinctCodeblocks
     };
   }
+  function ResolutionPositionComponentLayer(context) {
+    var siz = context.SIZ;
+    var tileIndex = context.currentTile.index;
+    var tile = context.tiles[tileIndex];
+    var layersCount = tile.codingStyleDefaultParameters.layersCount;
+    var componentsCount = siz.Csiz;
+    var maxDecompositionLevelsCount = 0;
+    for (var q = 0; q < componentsCount; q++) {
+      maxDecompositionLevelsCount = Math.max(maxDecompositionLevelsCount,
+        tile.components[q].codingStyleParameters.decompositionLevelsCount);
+    }
+    var r = 0, l = 0, i = 0, k = 0;
+    this.nextPacket = function JpxImage_nextPacket() {
+      // Section B.12.1.2 Resolution-layer-component-position
+      for (; r <= maxDecompositionLevelsCount; r++) {
+        var resolution = component.resolutions[r];
+        var numprecincts = resolution.precinctParameters.numprecincts;
+        for (; k < numprecincts;k++) {
+          for (; i < componentsCount; i++) {
+            var component = tile.components[i];
+            if (r > component.codingStyleParameters.decompositionLevelsCount) {
+              continue;
+            }
+            for (; l < layersCount;) {
+              var packet = createPacket(resolution, k, l);
+              l++;
+              return packet;
+            }
+            l = 0;
+          }
+          i = 0;
+        }
+        k = 0;
+      }
+      throw 'Out of packets';
+    };
+  }
   function LayerResolutionComponentPositionIterator(context) {
     var siz = context.SIZ;
     var tileIndex = context.currentTile.index;
@@ -791,6 +828,24 @@ var JpxImage = (function JpxImageClosure() {
       case 1:
         tile.packetsIterator =
           new ResolutionLayerComponentPositionIterator(context);
+        break;
+      case 2:
+        var closestPowerOfTwo = function(inputValue) { 
+            var resultValue = Math.round(Math.log(inputValue)/ Math.log(2));
+            resultValue = Math.round(Math.pow(2, resultValue)); 
+            return resultValue;
+            };
+        var widthCond = tile.width === closestPowerOfTwo(tile.width);
+        var heightCond = tile.height === closestPowerOfTwo(tile.height);
+        if( widthCond && heightCond ){
+          tile.packetsIterator =
+            new ResolutionPositionComponentLayer(context);
+        }
+        else {
+            throw new Error('JPX Error: Progression order ' +
+                            progressionOrder + 
+                            ' only supported for powers of two.');
+        }
         break;
       default:
         throw new Error('JPX Error: Unsupported progression order ' +
