@@ -661,7 +661,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
 
     // processing image in chunks to save memory
-    var PIXELS_TO_PROCESS = 65536;
+    var PIXELS_TO_PROCESS = 1048576;
     var chunkSize = Math.min(height, Math.ceil(PIXELS_TO_PROCESS / width));
     for (var row = 0; row < height; row += chunkSize) {
       var chunkHeight = Math.min(chunkSize, height - row);
