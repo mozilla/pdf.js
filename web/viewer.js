@@ -877,6 +877,11 @@ var PDFViewerApplication = {
           this.loadingBar.hide();
           this.disableAutoFetchLoadingBarTimeout = null;
         }.bind(this), DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
+      } else if (!percent) {
+        // The loaded percentage in `undefined`, which is caused by the server
+        // failing to provide the contentLength.
+        this.loadingBar.indeterminateSpeed(
+          document.getElementById('viewerContainer'));
       }
     }
   },
@@ -1841,8 +1846,11 @@ window.addEventListener('resize', function webViewerResize(evt) {
   }
   updateViewarea();
 
+  var viewerContainer = document.getElementById('viewerContainer');
   // Set the 'max-height' CSS property of the secondary toolbar.
-  SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
+  SecondaryToolbar.setMaxHeight(viewerContainer);
+  // Adjust the speed of the indeterminate loading bar, if necessary.
+  PDFViewerApplication.loadingBar.indeterminateSpeed(viewerContainer);
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {

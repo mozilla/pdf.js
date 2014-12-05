@@ -332,14 +332,12 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 @-webkit-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
+  0% { left: -50%; }
   100% { left: 100%; }
 }
 
 @keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
+  0% { left: -50%; }
   100% { left: 100%; }
 }
 
@@ -360,8 +358,8 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   background-size: 100% 100%;
   background-repeat: no-repeat;
 
-  -webkit-animation: progressIndeterminate 2s linear infinite;
-  animation: progressIndeterminate 2s linear infinite;
+  -webkit-animation: progressIndeterminate 3s linear infinite;
+  animation: progressIndeterminate 3s linear infinite;
 }
 
 .findbar, .secondaryToolbar {

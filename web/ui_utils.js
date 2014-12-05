@@ -22,6 +22,11 @@ var UNKNOWN_SCALE = 0;
 var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
+var INDETERMINATE_LOADING_BAR = {
+  hiddenPercentage: 50,
+  speed: 500, // pixels / second
+  minimumDuration: 1.5 // seconds
+};
 
 // optimised CSS custom property getter/setter
 var CustomStyle = (function CustomStyleClosure() {
@@ -343,6 +348,22 @@ var ProgressBar = (function ProgressBarClosure() {
       this.visible = true;
       document.body.classList.add('loadingInProgress');
       this.bar.classList.remove('hidden');
+    },
+
+    indeterminateSpeed: function ProgressBar_indeterminateSpeed(container) {
+      if (!this._indeterminate || !this.visible || !container) {
+        return;
+      }
+      var totalWidth = Math.ceil(container.clientWidth *
+        (1 + INDETERMINATE_LOADING_BAR.hiddenPercentage / 100));
+      if (totalWidth === this._previousIndeterminateWidth) {
+        return;
+      }
+      this._previousIndeterminateWidth = totalWidth;
+      var duration = Math.max(INDETERMINATE_LOADING_BAR.minimumDuration,
+        Math.ceil(10 * totalWidth / INDETERMINATE_LOADING_BAR.speed) / 10);
+      var glimmer = this.div.firstElementChild;
+      glimmer.setAttribute('style', 'animation-duration: ' + duration + 's;');
     }
   };
 
