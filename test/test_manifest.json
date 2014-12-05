@@ -499,6 +499,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5509",
+       "file": "pdfs/issue5509.pdf",
+       "md5": "1975ef8db7355b1d691bc79d0749574b",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "load"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
