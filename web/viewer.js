@@ -853,7 +853,7 @@ var PDFViewerApplication = {
   },
 
   progress: function pdfViewProgress(level) {
-    var percent = Math.round(level * 100);
+    var percent;// = Math.round(level * 100);
     // When we transition from full request to range requests, it's possible
     // that we discard some of the loaded data. This can cause the loading
     // bar to move backwards. So prevent this by only updating the bar if it
@@ -895,7 +895,7 @@ var PDFViewerApplication = {
 
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
-      self.loadingBar.hide();
+      //self.loadingBar.hide();
     });
 
     var pagesCount = pdfDocument.numPages;
