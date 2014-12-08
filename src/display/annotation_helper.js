@@ -62,11 +62,9 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     container.style.backgroundColor = item.color;
 
     var color = item.color;
-    var rgb = [];
-    for (var i = 0; i < 3; ++i) {
-      rgb[i] = Math.round(color[i] * 255);
-    }
-    item.colorCssRgb = Util.makeCssRgb(rgb);
+    item.colorCssRgb = Util.makeCssRgb(Math.round(color[0] * 255),
+                                       Math.round(color[1] * 255),
+                                       Math.round(color[2] * 255));
 
     var highlight = document.createElement('div');
     highlight.className = 'annotationHighlight';
@@ -136,13 +134,15 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     var i, ii;
     if (item.hasBgColor) {
       var color = item.color;
-      var rgb = [];
-      for (i = 0; i < 3; ++i) {
-        // Enlighten the color (70%)
-        var c = Math.round(color[i] * 255);
-        rgb[i] = Math.round((255 - c) * 0.7) + c;
-      }
-      content.style.backgroundColor = Util.makeCssRgb(rgb);
+
+      // Enlighten the color (70%)
+      var BACKGROUND_ENLIGHT = 0.7;
+      var r = BACKGROUND_ENLIGHT * (1.0 - color[0]) + color[0];
+      var g = BACKGROUND_ENLIGHT * (1.0 - color[1]) + color[1];
+      var b = BACKGROUND_ENLIGHT * (1.0 - color[2]) + color[2];
+      content.style.backgroundColor = Util.makeCssRgb((r * 255) | 0,
+                                                      (g * 255) | 0,
+                                                      (b * 255) | 0);
     }
 
     var title = document.createElement('h1');
