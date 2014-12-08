@@ -2295,7 +2295,7 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //});
 //#endif
 
-function myMatcher(self) {
+function searchMatcher(self) {
     try {
         //wl parameter contains search terms- 
         //multiple space (%20) separated words or phrases
