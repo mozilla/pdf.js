@@ -75,6 +75,21 @@ var NetworkManager = (function NetworkManagerClosure() {
     return array.buffer;
   }
 
+//#if (GENERIC || FIREFOX || B2G || MOZCENTRAL)
+  var supportsMozChunked = (function supportsMozChunkedClosure() {
+    var x = new XMLHttpRequest();
+    // Firefox requires that .open() is called before setting responseType.
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=707484
+    x.open('GET', 'http://example.com');
+    try {
+      x.responseType = 'moz-chunked-arraybuffer';
+      return x.responseType === 'moz-chunked-arraybuffer';
+    } catch (e) {
+      return false;
+    }
+  })();
+//#endif
+
   NetworkManager.prototype = {
     requestRange: function NetworkManager_requestRange(begin, end, listeners) {
       var args = {
@@ -115,17 +130,17 @@ var NetworkManager = (function NetworkManagerClosure() {
         pendingRequest.expectedStatus = 200;
       }
 
-      if (args.onProgressiveData) {
+//#if (GENERIC || FIREFOX || B2G || MOZCENTRAL)
+      if (args.onProgressiveData && supportsMozChunked) {
         xhr.responseType = 'moz-chunked-arraybuffer';
-        if (xhr.responseType === 'moz-chunked-arraybuffer') {
-          pendingRequest.onProgressiveData = args.onProgressiveData;
-          pendingRequest.mozChunked = true;
-        } else {
-          xhr.responseType = 'arraybuffer';
-        }
+        pendingRequest.onProgressiveData = args.onProgressiveData;
+        pendingRequest.mozChunked = true;
       } else {
         xhr.responseType = 'arraybuffer';
       }
+//#else
+      xhr.responseType = 'arraybuffer';
+//#endif
 
       if (args.onError) {
         xhr.onerror = function(evt) {
