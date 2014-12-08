@@ -2303,19 +2303,20 @@ function myMatcher(self) {
         //a=b c=d e=f=g phrases
 
         //check local window for search terms
-        var loc = document.location.href.replace(/\+/ig, '%20');
+        //make sure to check for pound symbol
+        var loc = document.location.href.replace('#', '&');
+        loc = loc.replace(/\+/ig, '%20');
         var params = PDFView.parseQueryString(loc);
-        if (params['wl'] !== undefined) {
-            window.multiple = params['wl'].split(/\s+/);
+
+        //also check parent window for any search terms
+        if (params['search'] === undefined) {
+            loc = parent.document.location.href.replace('#', '&');
+            loc = loc.replace(/\+/ig, '%20');
+            params = PDFView.parseQueryString(loc);
         }
 
-        //fallback check parent window (iframe implementation)
-        if (params['wl'] === undefined) {
-            loc = parent.document.location.href.replace(/\+/ig, '%20');
-            params = PDFView.parseQueryString(loc);
-            if (params['wl'] !== undefined) {
-                window.multiple = params['wl'].split(/\s+/);
-            }
+        if (params['search'] !== undefined) {
+            window.multiple = params['search'].split(/\s+/);
         }
 
         //sample highlighted words
@@ -2326,7 +2327,6 @@ function myMatcher(self) {
         }
 
         var fc = self.textLayer.findController;
-
         fc.state = {
             query: '',
             caseSensitive: false,
@@ -2334,14 +2334,13 @@ function myMatcher(self) {
             findPrevious: false
         };
 
+        //small delay to avoid screen jumps
         window.setTimeout(function () {
             fc.dirtyMatch = true;
             fc.extractText();
             fc.nextMatch();
         }, 250);
 
-
     } catch (e) {
     }
 }
-
