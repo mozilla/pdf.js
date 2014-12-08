@@ -1049,6 +1049,15 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "bug1064894",
+       "file": "pdfs/bug1064894.pdf",
+       "md5": "22971b6a24912bca9c773379c10ef18a",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "bug1065245",
        "file": "pdfs/bug1065245.pdf",
        "md5": "844b3af0a1d338a2e1bbe742f474bbb7",
