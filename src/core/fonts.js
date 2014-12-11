@@ -320,9 +320,12 @@ var stdFontMap = {
   'CourierNewPS-BoldMT': 'Courier-Bold',
   'CourierNewPS-ItalicMT': 'Courier-Oblique',
   'CourierNewPSMT': 'Courier',
+  'Helvetica': 'Helvetica',
   'Helvetica-Bold': 'Helvetica-Bold',
   'Helvetica-BoldItalic': 'Helvetica-BoldOblique',
+  'Helvetica-BoldOblique': 'Helvetica-BoldOblique',
   'Helvetica-Italic': 'Helvetica-Oblique',
+  'Helvetica-Oblique':'Helvetica-Oblique',
   'Symbol-Bold': 'Symbol',
   'Symbol-BoldItalic': 'Symbol',
   'Symbol-Italic': 'Symbol',
@@ -348,6 +351,10 @@ var stdFontMap = {
  * fonts without glyph data.
  */
 var nonStdFontMap = {
+  'CenturyGothic': 'Helvetica',
+  'CenturyGothic-Bold': 'Helvetica-Bold',
+  'CenturyGothic-BoldItalic': 'Helvetica-BoldOblique',
+  'CenturyGothic-Italic': 'Helvetica-Oblique',
   'ComicSansMS': 'Comic Sans MS',
   'ComicSansMS-Bold': 'Comic Sans MS-Bold',
   'ComicSansMS-BoldItalic': 'Comic Sans MS-BoldItalic',
@@ -2455,7 +2462,8 @@ var Font = (function FontClosure() {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
       var fontName = name.replace(/[,_]/g, '-');
-      var isStandardFont = fontName in stdFontMap;
+      var isStandardFont = !!stdFontMap[fontName] ||
+        (nonStdFontMap[fontName] && !!stdFontMap[nonStdFontMap[fontName]]);
       fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
 
       this.bold = (fontName.search(/bold/gi) !== -1);
