@@ -28,16 +28,14 @@ function isEOF(v) {
   return (v === EOF);
 }
 
+var MAX_LENGTH_TO_CACHE = 1000;
+
 var Parser = (function ParserClosure() {
   function Parser(lexer, allowStreams, xref) {
     this.lexer = lexer;
     this.allowStreams = allowStreams;
     this.xref = xref;
-    this.imageCache = {
-      length: 0,
-      adler32: 0,
-      stream: null
-    };
+    this.imageCache = {};
     this.refill();
   }
 
@@ -185,34 +183,29 @@ var Parser = (function ParserClosure() {
       var length = (stream.pos - 4) - startPos;
       var imageStream = stream.makeSubStream(startPos, length, dict);
 
-      // trying to cache repeat images, first we are trying to "warm up" caching
-      // using length, then comparing adler32
-      var MAX_LENGTH_TO_CACHE = 1000;
-      var cacheImage = false, adler32;
-      if (length < MAX_LENGTH_TO_CACHE && this.imageCache.length === length) {
+      // cache all images below the MAX_LENGTH_TO_CACHE threshold by their
+      // adler32 checksum.
+      var adler32;
+      if (length < MAX_LENGTH_TO_CACHE) {
         var imageBytes = imageStream.getBytes();
         imageStream.reset();
 
         var a = 1;
         var b = 0;
         for (i = 0, ii = imageBytes.length; i < ii; ++i) {
-          a = (a + (imageBytes[i] & 0xff)) % 65521;
-          b = (b + a) % 65521;
+          // no modulo required in the loop if imageBytes.length < 5552
+          a += imageBytes[i] & 0xff;
+          b += a;
         }
-        adler32 = (b << 16) | a;
+        adler32 = ((b % 65521) << 16) | (a % 65521);
 
-        if (this.imageCache.stream && this.imageCache.adler32 === adler32) {
+        if (this.imageCache.adler32 === adler32) {
           this.buf2 = Cmd.get('EI');
           this.shift();
 
-          this.imageCache.stream.reset();
-          return this.imageCache.stream;
+          this.imageCache[adler32].reset();
+          return this.imageCache[adler32];
         }
-        cacheImage = true;
-      }
-      if (!cacheImage && !this.imageCache.stream) {
-        this.imageCache.length = length;
-        this.imageCache.stream = null;
       }
 
       if (cipherTransform) {
@@ -221,10 +214,9 @@ var Parser = (function ParserClosure() {
 
       imageStream = this.filter(imageStream, dict, length);
       imageStream.dict = dict;
-      if (cacheImage) {
+      if (adler32 !== undefined) {
         imageStream.cacheKey = 'inline_' + length + '_' + adler32;
-        this.imageCache.adler32 = adler32;
-        this.imageCache.stream = imageStream;
+        this.imageCache[adler32] = imageStream;
       }
 
       this.buf2 = Cmd.get('EI');
