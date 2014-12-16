@@ -697,6 +697,230 @@ var JpxImage = (function JpxImageClosure() {
       throw new Error('JPX Error: Out of packets');
     };
   }
+  function ResolutionPositionComponentLayerIterator(context) {
+    var siz = context.SIZ;
+    var tileIndex = context.currentTile.index;
+    var tile = context.tiles[tileIndex];
+    var layersCount = tile.codingStyleDefaultParameters.layersCount;
+    var componentsCount = siz.Csiz;
+    var l, r, c, p;
+    var maxDecompositionLevelsCount = 0;
+    for (c = 0; c < componentsCount; c++) {
+      var component = tile.components[c];
+      maxDecompositionLevelsCount = Math.max(maxDecompositionLevelsCount,
+        component.codingStyleParameters.decompositionLevelsCount);
+    }
+    var maxNumPrecinctsInLevel = new Int32Array(
+      maxDecompositionLevelsCount + 1);
+    for (r = 0; r <= maxDecompositionLevelsCount; ++r) {
+      var maxNumPrecincts = 0;
+      for (c = 0; c < componentsCount; ++c) {
+        var resolutions = tile.components[c].resolutions;
+        if (r < resolutions.length) {
+          maxNumPrecincts = Math.max(maxNumPrecincts,
+            resolutions[r].precinctParameters.numprecincts);
+        }
+      }
+      maxNumPrecinctsInLevel[r] = maxNumPrecincts;
+    }
+    l = 0;
+    r = 0;
+    c = 0;
+    p = 0;
+    
+    this.nextPacket = function JpxImage_nextPacket() {
+      // Section B.12.1.3 Resolution-position-component-layer
+      for (; r <= maxDecompositionLevelsCount; r++) {
+        for (; p < maxNumPrecinctsInLevel[r]; p++) {
+          for (; c < componentsCount; c++) {
+            var component = tile.components[c];
+            if (r > component.codingStyleParameters.decompositionLevelsCount) {
+              continue;
+            }
+            var resolution = component.resolutions[r];
+            var numprecincts = resolution.precinctParameters.numprecincts;
+            if (p >= numprecincts) {
+              continue;
+            }
+            for (; l < layersCount;) {
+              var packet = createPacket(resolution, p, l);
+              l++;
+              return packet;
+            }
+            l = 0;
+          }
+          c = 0;
+        }
+        p = 0;
+      }
+      throw new Error('JPX Error: Out of packets');
+    };
+  }
+  function PositionComponentResolutionLayerIterator(context) {
+    var siz = context.SIZ;
+    var tileIndex = context.currentTile.index;
+    var tile = context.tiles[tileIndex];
+    var layersCount = tile.codingStyleDefaultParameters.layersCount;
+    var componentsCount = siz.Csiz;
+    var precinctsSizes = getPrecinctSizesInImageScale(tile);
+    var precinctsIterationSizes = precinctsSizes;
+    var l = 0, r = 0, c = 0, px = 0, py = 0;
+
+    this.nextPacket = function JpxImage_nextPacket() {
+      // Section B.12.1.4 Position-component-resolution-layer
+      for (; py < precinctsIterationSizes.maxNumHigh; py++) {
+        for (; px < precinctsIterationSizes.maxNumWide; px++) {
+          for (; c < componentsCount; c++) {
+            var component = tile.components[c];
+            var decompositionLevelsCount =
+              component.codingStyleParameters.decompositionLevelsCount;
+            for (; r <= decompositionLevelsCount; r++) {
+              var resolution = component.resolutions[r];
+              var sizeInImageScale =
+                precinctsSizes.components[c].resolutions[r];
+              var k = getPrecinctIndexIfExist(
+                px,
+                py,
+                sizeInImageScale,
+                precinctsIterationSizes,
+                resolution);
+              if (k === null) {
+                continue;
+              }
+              for (; l < layersCount;) {
+                var packet = createPacket(resolution, k, l);
+                l++;
+                return packet;
+              }
+              l = 0;
+            }
+            r = 0;
+          }
+          c = 0;
+        }
+        px = 0;
+      }
+      throw new Error('JPX Error: Out of packets');
+    };
+  }
+  function ComponentPositionResolutionLayerIterator(context) {
+    var siz = context.SIZ;
+    var tileIndex = context.currentTile.index;
+    var tile = context.tiles[tileIndex];
+    var layersCount = tile.codingStyleDefaultParameters.layersCount;
+    var componentsCount = siz.Csiz;
+    var precinctsSizes = getPrecinctSizesInImageScale(tile);
+    var l = 0, r = 0, c = 0, px = 0, py = 0;
+    
+    this.nextPacket = function JpxImage_nextPacket() {
+      // Section B.12.1.5 Component-position-resolution-layer
+      for (; c < componentsCount; ++c) {
+        var component = tile.components[c];
+        var precinctsIterationSizes = precinctsSizes.components[c];
+        var decompositionLevelsCount =
+          component.codingStyleParameters.decompositionLevelsCount;
+        for (; py < precinctsIterationSizes.maxNumHigh; py++) {
+          for (; px < precinctsIterationSizes.maxNumWide; px++) {
+            for (; r <= decompositionLevelsCount; r++) {
+              var resolution = component.resolutions[r];
+              var sizeInImageScale = precinctsIterationSizes.resolutions[r];
+              var k = getPrecinctIndexIfExist(
+                px,
+                py,
+                sizeInImageScale,
+                precinctsIterationSizes,
+                resolution);
+              if (k === null) {
+                continue;
+              }
+              for (; l < layersCount;) {
+                var packet = createPacket(resolution, k, l);
+                l++;
+                return packet;
+              }
+              l = 0;
+            }
+            r = 0;
+          }
+          px = 0;
+        }
+        py = 0;
+      }
+      throw new Error('JPX Error: Out of packets');
+    };
+  }
+  function getPrecinctIndexIfExist(
+    pxIndex, pyIndex, sizeInImageScale, precinctIterationSizes, resolution) {
+    var posX = pxIndex * precinctIterationSizes.minWidth;
+    var posY = pyIndex * precinctIterationSizes.minHeight;
+    if (posX % sizeInImageScale.width !== 0 ||
+        posY % sizeInImageScale.height !== 0) {
+      return null;
+    }
+    var startPrecinctRowIndex =
+      (posY / sizeInImageScale.width) *
+      resolution.precinctParameters.numprecinctswide;
+    return (posX / sizeInImageScale.height) + startPrecinctRowIndex;
+  }
+  function getPrecinctSizesInImageScale(tile) {
+    var componentsCount = tile.components.length;
+    var minWidth = Number.MAX_VALUE;
+    var minHeight = Number.MAX_VALUE;
+    var maxNumWide = 0;
+    var maxNumHigh = 0;
+    var sizePerComponent = new Array(componentsCount);
+    for (var c = 0; c < componentsCount; c++) {
+      var component = tile.components[c];
+      var decompositionLevelsCount =
+        component.codingStyleParameters.decompositionLevelsCount;
+      var sizePerResolution = new Array(decompositionLevelsCount + 1);
+      var minWidthCurrentComponent = Number.MAX_VALUE;
+      var minHeightCurrentComponent = Number.MAX_VALUE;
+      var maxNumWideCurrentComponent = 0;
+      var maxNumHighCurrentComponent = 0;
+      var scale = 1;
+      for (var r = decompositionLevelsCount; r >= 0; --r) {
+        var resolution = component.resolutions[r];
+        var widthCurrentResolution =
+          scale * resolution.precinctParameters.precinctWidth;
+        var heightCurrentResolution =
+          scale * resolution.precinctParameters.precinctHeight;
+        minWidthCurrentComponent = Math.min(
+          minWidthCurrentComponent,
+          widthCurrentResolution);
+        minHeightCurrentComponent = Math.min(
+          minHeightCurrentComponent,
+          heightCurrentResolution);
+        maxNumWideCurrentComponent = Math.max(maxNumWideCurrentComponent,
+          resolution.precinctParameters.numprecinctswide);
+        maxNumHighCurrentComponent = Math.max(maxNumHighCurrentComponent,
+          resolution.precinctParameters.numprecinctshigh);
+        sizePerResolution[r] = {
+          width: widthCurrentResolution,
+          height: heightCurrentResolution
+        };
+        scale <<= 1;
+      }
+      minWidth = Math.min(minWidth, minWidthCurrentComponent);
+      minHeight = Math.min(minHeight, minHeightCurrentComponent);
+      maxNumWide = Math.max(maxNumWide, maxNumWideCurrentComponent);
+      maxNumHigh = Math.max(maxNumHigh, maxNumHighCurrentComponent);
+      sizePerComponent[c] = {
+        resolutions: sizePerResolution,
+        minWidth: minWidthCurrentComponent,
+        minHeight: minHeightCurrentComponent,
+        maxNumWide: maxNumWideCurrentComponent,
+        maxNumHigh: maxNumHighCurrentComponent
+      };
+    }
+    return {
+      components: sizePerComponent,
+      minWidth: minWidth,
+      minHeight: minHeight,
+      maxNumWide: maxNumWide,
+      maxNumHigh: maxNumHigh
+    };
+  }
   function buildPackets(context) {
     var siz = context.SIZ;
     var tileIndex = context.currentTile.index;
@@ -788,6 +1012,18 @@ var JpxImage = (function JpxImageClosure() {
       case 1:
         tile.packetsIterator =
           new ResolutionLayerComponentPositionIterator(context);
+        break;
+      case 2:
+        tile.packetsIterator =
+          new ResolutionPositionComponentLayerIterator(context);
+        break;
+      case 3:
+        tile.packetsIterator =
+          new PositionComponentResolutionLayerIterator(context);
+        break;
+      case 4:
+        tile.packetsIterator =
+          new ComponentPositionResolutionLayerIterator(context);
         break;
       default:
         throw new Error('JPX Error: Unsupported progression order ' +
