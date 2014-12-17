@@ -1908,5 +1908,12 @@
        "rounds": 1,
        "type": "eq",
        "about": "Free image obtained from www.unsplash.com"
+    },
+    {  "id": "issue5475.pdf",
+       "file": "pdfs/issue5475.pdf",
+       "md5": "bda962373570ac4dfe0fbd1ad4f0d9ef",
+       "rounds": 1,
+       "type": "eq",
+       "about": "Free image obtained from www.unsplash.com"
     }
 ]
