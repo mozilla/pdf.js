@@ -49,7 +49,6 @@ var DEFAULT_CACHE_SIZE = 10;
 /**
  * Simple viewer control to display PDF content/pages.
  * @class
- * @implements {ILastScrollSource}
  * @implements {IRenderableView}
  */
 var PDFViewer = (function pdfViewer() {
@@ -92,7 +91,6 @@ var PDFViewer = (function pdfViewer() {
     }
 
     this.scroll = watchScroll(this.container, this._scrollUpdate.bind(this));
-    this.lastScroll = 0;
     this.updateInProgress = false;
     this.presentationModeState = PresentationModeState.UNKNOWN;
     this._resetView();
@@ -333,12 +331,13 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _scrollUpdate: function () {
-      this.lastScroll = Date.now();
-
       if (this.pagesCount === 0) {
         return;
       }
       this.update();
+      for (var i = 0, ii = this.pages.length; i < ii; i++) {
+        this.pages[i].updatePosition();
+      }
     },
 
     _setScaleUpdatePages: function pdfViewer_setScaleUpdatePages(
@@ -696,9 +695,7 @@ var PDFViewer = (function pdfViewer() {
         textLayerDiv: textLayerDiv,
         pageIndex: pageIndex,
         viewport: viewport,
-        lastScrollSource: this,
-        isViewerInPresentationMode: isViewerInPresentationMode,
-        findController: this.findController
+        findController: isViewerInPresentationMode ? null : this.findController
       });
     },
 

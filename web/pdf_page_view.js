@@ -18,6 +18,8 @@
 
 'use strict';
 
+var TEXT_LAYER_RENDER_DELAY = 200; // ms
+
 /**
  * @typedef {Object} PDFPageViewOptions
  * @property {HTMLDivElement} container - The viewer element.
@@ -192,6 +194,15 @@ var PDFPageView = (function PDFPageViewClosure() {
         this.cssTransform(this.zoomLayer.firstChild);
       }
       this.reset(true);
+    },
+
+    /**
+     * Called when moved in the parent's container.
+     */
+    updatePosition: function PDFPageView_updatePosition() {
+      if (this.textLayer) {
+        this.textLayer.render(TEXT_LAYER_RENDER_DELAY);
+      }
     },
 
     cssTransform: function PDFPageView_transform(canvas, redrawAnnotations) {
@@ -429,6 +440,7 @@ var PDFPageView = (function PDFPageViewClosure() {
             self.pdfPage.getTextContent().then(
               function textContentResolved(textContent) {
                 textLayer.setTextContent(textContent);
+                textLayer.render(TEXT_LAYER_RENDER_DELAY);
               }
             );
           }

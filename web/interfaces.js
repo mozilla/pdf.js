@@ -76,17 +76,6 @@ IRenderableView.prototype = {
 /**
  * @interface
  */
-function ILastScrollSource() {}
-ILastScrollSource.prototype = {
-  /**
-   * @returns {number}
-   */
-  get lastScroll() {},
-};
-
-/**
- * @interface
- */
 function IPDFTextLayerFactory() {}
 IPDFTextLayerFactory.prototype = {
   /**
