@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale  */
+/* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale,
+           TextLayerBuilder, AnnotationsLayerBuilder, Promise */
 
 'use strict';
 
@@ -286,7 +287,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       return this.viewport.convertToPdfPoint(x, y);
     },
 
-    draw: function PDFPageView_draw(callback) {
+    draw: function PDFPageView_draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
       }
@@ -373,6 +374,12 @@ var PDFPageView = (function PDFPageViewClosure() {
         ctx.scale(outputScale.sx, outputScale.sy);
       }
 
+      var resolveRenderPromise, rejectRenderPromise;
+      var promise = new Promise(function (resolve, reject) {
+        resolveRenderPromise = resolve;
+        rejectRenderPromise = reject;
+      });
+
       // Rendering area
 
       var self = this;
@@ -385,6 +392,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
 
         if (error === 'cancelled') {
+          rejectRenderPromise(error);
           return;
         }
 
@@ -412,14 +420,16 @@ var PDFPageView = (function PDFPageViewClosure() {
         });
         div.dispatchEvent(event);
 
-        callback();
+        if (!error) {
+          resolveRenderPromise(undefined);
+        } else {
+          rejectRenderPromise(error);
+        }
       }
 
-      var renderContext = {
-        canvasContext: ctx,
-        viewport: this.viewport,
-        // intent: 'default', // === 'display'
-        continueCallback: function pdfViewcContinueCallback(cont) {
+      var renderContinueCallback = null;
+      if (this.renderingQueue) {
+        renderContinueCallback = function renderContinueCallback(cont) {
           if (!self.renderingQueue.isHighestPriority(self)) {
             self.renderingState = RenderingStates.PAUSED;
             self.resume = function resumeCallback() {
@@ -429,7 +439,14 @@ var PDFPageView = (function PDFPageViewClosure() {
             return;
           }
           cont();
-        }
+        };
+      }
+
+      var renderContext = {
+        canvasContext: ctx,
+        viewport: this.viewport,
+        // intent: 'default', // === 'display'
+        continueCallback: renderContinueCallback
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
 
@@ -462,6 +479,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (self.onBeforeDraw) {
         self.onBeforeDraw();
       }
+      return promise;
     },
 
     beforePrint: function PDFPageView_beforePrint() {

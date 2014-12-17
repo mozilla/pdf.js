@@ -154,3 +154,22 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
   };
   return AnnotationsLayerBuilder;
 })();
+
+/**
+ * @constructor
+ * @implements IPDFAnnotationsLayerFactory
+ */
+function DefaultAnnotationsLayerFactory() {}
+DefaultAnnotationsLayerFactory.prototype = {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPage} pdfPage
+   * @returns {AnnotationsLayerBuilder}
+   */
+  createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
+    return new AnnotationsLayerBuilder({
+      pageDiv: pageDiv,
+      pdfPage: pdfPage
+    });
+  }
+};

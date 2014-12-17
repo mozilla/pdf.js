@@ -165,7 +165,10 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
           break;
         case RenderingStates.INITIAL:
           this.highestPriorityPage = view.renderingId;
-          view.draw(this.renderHighestPriority.bind(this));
+          var continueRendering = function () {
+            this.renderHighestPriority();
+          }.bind(this);
+          view.draw().then(continueRendering, continueRendering);
           break;
       }
       return true;

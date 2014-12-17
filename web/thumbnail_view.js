@@ -139,16 +139,21 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     return !this.hasImage;
   };
 
-  this.draw = function thumbnailViewDraw(callback) {
+  this.draw = function thumbnailViewDraw() {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error('Must be in new state before drawing');
     }
 
     this.renderingState = RenderingStates.RUNNING;
     if (this.hasImage) {
-      callback();
-      return;
+      return Promise.resolve(undefined);
     }
+
+    var resolveRenderPromise, rejectRenderPromise;
+    var promise = new Promise(function (resolve, reject) {
+      resolveRenderPromise = resolve;
+      rejectRenderPromise = reject;
+    });
 
     var self = this;
     var ctx = this.getPageDrawContext();
@@ -171,14 +176,15 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     this.pdfPage.render(renderContext).promise.then(
       function pdfPageRenderCallback() {
         self.renderingState = RenderingStates.FINISHED;
-        callback();
+        resolveRenderPromise(undefined);
       },
       function pdfPageRenderError(error) {
         self.renderingState = RenderingStates.FINISHED;
-        callback();
+        rejectRenderPromise(error);
       }
     );
     this.hasImage = true;
+    return promise;
   };
 
   function getTempCanvas(width, height) {

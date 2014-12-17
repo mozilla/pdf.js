@@ -67,9 +67,9 @@ IRenderableView.prototype = {
    */
   get renderingState() {},
   /**
-   * @param {function} callback - The draw completion callback.
+   * @returns {Promise} Resolved on draw completion.
    */
-  draw: function (callback) {},
+  draw: function () {},
   resume: function () {},
 };
 
