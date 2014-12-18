@@ -615,6 +615,14 @@
        "type": "eq",
        "about": "Glyph accent drawn as curves."
     },
+    {  "id": "issue5138",
+       "file": "pdfs/issue5138.pdf",
+       "md5": "9931686d7dee0df62640fbf58bed3323",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "Glyph that gets mapped to unicode non-breaking-space."
+    },
     {  "id": "simpletype3font",
        "file": "pdfs/simpletype3font.pdf",
        "md5": "b374c7543920840c61999e9e86939f99",
