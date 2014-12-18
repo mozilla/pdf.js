@@ -1720,6 +1720,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     left: 0;
     display: block;
   }
+  #printContainer div {
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
 }
 
 .visibleLargeView,
