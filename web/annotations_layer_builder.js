@@ -103,7 +103,9 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
             element = PDFJS.AnnotationUtils.getHtmlElement(data,
               pdfPage.commonObjs);
             element.setAttribute('data-annotation-id', data.id);
-            mozL10n.translate(element);
+            if (typeof mozL10n !== 'undefined') {
+              mozL10n.translate(element);
+            }
 
             var rect = data.rect;
             var view = pdfPage.view;

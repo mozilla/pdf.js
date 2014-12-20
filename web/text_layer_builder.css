@@ -20,6 +20,7 @@
   right: 0;
   bottom: 0;
   overflow: hidden;
+  opacity: 0.2;
 }
 
 .textLayer > div {
@@ -57,3 +58,6 @@
 .textLayer .highlight.selected {
   background-color: rgb(0, 100, 0);
 }
+
+.textLayer ::selection { background: rgb(0,0,255); }
+.textLayer ::-moz-selection { background: rgb(0,0,255); }
