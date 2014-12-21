@@ -313,7 +313,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var isSelected = (isSelectedPage && i === selectedMatchIdx);
         var highlightSuffix = (isSelected ? ' selected' : '');
 
-        if (window.multiple === undefined) {
+        if (PDFJS.multiple === undefined) {
             if (isSelected && !this.isViewerInPresentationMode) {
                 scrollIntoView(textDivs[begin.divIdx],
                                {
@@ -369,7 +369,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var clearedUntilDivIdx = -1;
 
       // Clear all current matches.
-      if (window.multiple === undefined) {
+      if (PDFJS.multiple === undefined) {
           for (var i = 0, len = matches.length; i < len; i++) {
               var match = matches[i];
               var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
