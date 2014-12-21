@@ -538,11 +538,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     return url;
   }
 
-  Util.inherit(LinkAnnotation, InteractiveAnnotation, {
-    hasOperatorList: function LinkAnnotation_hasOperatorList() {
-      return false;
-    }
-  });
+  Util.inherit(LinkAnnotation, InteractiveAnnotation, { });
 
   return LinkAnnotation;
 })();
