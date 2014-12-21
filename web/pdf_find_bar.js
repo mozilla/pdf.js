@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals FindStates, mozL10n */
+/* globals FindStates, mozL10n, PDFJS */
 
 'use strict';
 
