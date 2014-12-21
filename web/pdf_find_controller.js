@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, FirefoxCom, Promise, scrollIntoView */
+/* globals PDFJS, FirefoxCom, Promise, scrollIntoView, PDFView */
 
 'use strict';
 
@@ -430,7 +430,8 @@ var PDFURLFinder = (function PDFFindBarClosure() {
             }
 
             if (params[paramname] !== undefined) {
-                PDFJS.multiple = params[paramname].replace(/\"/ig, '').split(/\s+/);
+                var parambase = params[paramname].replace(/\"/ig, '');
+                PDFJS.multiple = parambase.split(/\s+/);
             }
 
             //sample highlighted words
