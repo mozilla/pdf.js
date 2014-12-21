@@ -49,7 +49,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
     });
 
     this.findField.addEventListener('input', function() {
-        delete window.multiple;
+        delete PDFJS.multiple;
         var spans = document.body.getElementsByClassName('highlight');
         for (var i = spans.length - 1; i >= 0; i--) {
             spans[i].className = '';
