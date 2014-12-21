@@ -228,7 +228,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
     },
 
-    nextMatch: function PDFFindController_nextMatch() {
+    nextMatch: function PDFFindController_nextMatch(page) {
       var previous = this.state.findPrevious;
       var currentPageIndex = this.pdfViewer.currentPageNumber - 1;
       var numPages = this.pdfViewer.pagesCount;
@@ -260,13 +260,14 @@ var PDFFindController = (function PDFFindControllerClosure() {
               if (PDFJS.multiple === undefined) {
                   self.calcFindMatch(pageIdx);
               } else {
-                  for (var i = 0; i < PDFJS.multiple.length; i++) {
-                      qwy = PDFJS.multiple[i].replace(/\=/ig, ' ');
+                  if(page === pageIdx) {
+                    for (var j = 0; j < PDFJS.multiple.length; j++) {
+                      qwy = PDFJS.multiple[j].replace(/\=/ig, ' ');
                       self.state.query = qwy;
                       self.calcFindMatch(pageIdx);
+                    }
                   }
               }
-
 
             });
           }
@@ -453,7 +454,7 @@ var PDFURLFinder = (function PDFFindBarClosure() {
             window.setTimeout(function () {
                 fc.dirtyMatch = true;
                 fc.extractText();
-                fc.nextMatch();
+                fc.nextMatch(parseInt(page.textLayer.pageIdx));
             }, 250);
 
         } catch (e) {
