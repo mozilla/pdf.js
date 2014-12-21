@@ -203,7 +203,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         // If the page is selected, scroll the page into view, which triggers
         // rendering the page, which adds the textLayer. Once the textLayer is
         // build, it will scroll onto the selected match.
-          if (window.multiple === undefined) {
+          if (PDFJS.multiple === undefined) {
               this.pdfViewer.scrollPageIntoView(index + 1);
           }
       }
@@ -213,7 +213,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
 
       //scroll match into view
-      if (window.multiple !== undefined) {
+      if (PDFJS.multiple !== undefined) {
           try {
               var d = document.getElementsByClassName('highlight');
               if (d.length > 0) {
@@ -257,11 +257,11 @@ var PDFFindController = (function PDFFindControllerClosure() {
             this.extractTextPromises[i].then(function(pageIdx) {
               delete self.pendingFindMatches[pageIdx];
 
-              if (window.multiple === undefined) {
+              if (PDFJS.multiple === undefined) {
                   self.calcFindMatch(pageIdx);
               } else {
-                  for (var i = 0; i < window.multiple.length; i++) {
-                      qwy = window.multiple[i].replace(/\=/ig, ' ');
+                  for (var i = 0; i < PDFJS.multiple.length; i++) {
+                      qwy = PDFJS.multiple[i].replace(/\=/ig, ' ');
                       self.state.query = qwy;
                       self.calcFindMatch(pageIdx);
                   }
@@ -406,3 +406,59 @@ var PDFFindController = (function PDFFindControllerClosure() {
   return PDFFindController;
 })();
 
+var PDFURLFinder = (function PDFFindBarClosure() {
+    function PDFURLFinder(page) {
+        try {
+            var paramname = 'search';
+
+            //search parameter contains search terms- 
+            //multiple space (%20) separated words or phrases
+            //search term syntax: a b c single words,
+            //a=b c=d e=f=g phrases
+
+            //check local window for search terms
+            //make sure to check for pound symbol
+            var loc = document.location.href.replace('#', '&');
+            loc = loc.replace(/\+/ig, '%20');
+            var params = PDFView.parseQueryString(loc);
+
+            //also check parent window for any search terms
+            if (params[paramname] === undefined) {
+                loc = parent.document.location.href.replace('#', '&');
+                loc = loc.replace(/\+/ig, '%20');
+                params = PDFView.parseQueryString(loc);
+            }
+
+            if (params[paramname] !== undefined) {
+                PDFJS.multiple = params[paramname].replace(/\"/ig, '').split(/\s+/);
+            }
+
+            //sample highlighted words
+            //PDFJS.multiple = ['of','the', 'is', 'or', 'and', 'this']
+
+            if (PDFJS.multiple === undefined) {
+                return;
+            }
+
+            var fc = page.textLayer.findController;
+            fc.state = {
+                query: '',
+                caseSensitive: false,
+                highlightAll: true,
+                findPrevious: false
+            };
+
+            //small delay to avoid screen jumps
+            window.setTimeout(function () {
+                fc.dirtyMatch = true;
+                fc.extractText();
+                fc.nextMatch();
+            }, 250);
+
+        } catch (e) {
+
+        }
+    }
+
+    return PDFURLFinder;
+})();
