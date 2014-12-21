@@ -23,7 +23,7 @@
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
-           IGNORE_CURRENT_POSITION_ON_ZOOM: true, PDFView */
+           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
 
@@ -1200,9 +1200,11 @@ var PDFViewerApplication = {
                 zoomArg];
       }
       if (dest) {
-          if (window.multiple !== undefined) {
-              this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
-          }
+        this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+         if (PDFJS.multiple !== undefined) {
+	   this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+         }
+        
       } else if (pageNumber) {
         this.page = pageNumber; // simple page
       }
@@ -2294,53 +2296,3 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //  });
 //});
 //#endif
-
-function searchMatcher(self) {
-    try {
-        //wl parameter contains search terms- 
-        //multiple space (%20) separated words or phrases
-        //search term syntax: a b c single words,
-        //a=b c=d e=f=g phrases
-
-        //check local window for search terms
-        //make sure to check for pound symbol
-        var loc = document.location.href.replace('#', '&');
-        loc = loc.replace(/\+/ig, '%20');
-        var params = PDFView.parseQueryString(loc);
-
-        //also check parent window for any search terms
-        if (params['search'] === undefined) {
-            loc = parent.document.location.href.replace('#', '&');
-            loc = loc.replace(/\+/ig, '%20');
-            params = PDFView.parseQueryString(loc);
-        }
-
-        if (params['search'] !== undefined) {
-            window.multiple = params['search'].split(/\s+/);
-        }
-
-        //sample highlighted words
-        //window.multiple = ['of','the', 'is', 'or', 'and', 'this']
-
-        if (window.multiple === undefined) {
-            return;
-        }
-
-        var fc = self.textLayer.findController;
-        fc.state = {
-            query: '',
-            caseSensitive: false,
-            highlightAll: true,
-            findPrevious: false
-        };
-
-        //small delay to avoid screen jumps
-        window.setTimeout(function () {
-            fc.dirtyMatch = true;
-            fc.extractText();
-            fc.nextMatch();
-        }, 250);
-
-    } catch (e) {
-    }
-}
