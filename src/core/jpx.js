@@ -1097,10 +1097,10 @@ var JpxImage = (function JpxImageClosure() {
         // Skip also marker segment length and packet sequence ID
         skipBytes(4);
       }
+      var packet = packetsIterator.nextPacket();
       if (!readBits(1)) {
         continue;
       }
-      var packet = packetsIterator.nextPacket();
       var layerNumber = packet.layerNumber;
       var queue = [], codeblock;
       for (var i = 0, ii = packet.codeblocks.length; i < ii; i++) {
