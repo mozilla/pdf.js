@@ -30,6 +30,9 @@ var MIN_FONT_SIZE = 16;
 var MAX_FONT_SIZE = 100;
 var MAX_GROUP_SIZE = 4096;
 
+// Heuristic value used when enforcing minimum line widths.
+var MIN_WIDTH_FACTOR = 0.65;
+
 var COMPILE_TYPE3_GLYPHS = true;
 var MAX_SIZE_TO_COMPILE = 1000;
 
@@ -434,6 +437,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     if (canvasCtx) {
       addContextCurrentTransform(canvasCtx);
     }
+    this.cachedGetSinglePixelWidth = null;
   }
 
   function putBinaryImageData(ctx, imgData) {
@@ -966,10 +970,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
         this.current = this.stateStack.pop();
         this.ctx.restore();
+
+        this.cachedGetSinglePixelWidth = null;
       }
     },
     transform: function CanvasGraphics_transform(a, b, c, d, e, f) {
       this.ctx.transform(a, b, c, d, e, f);
+
+      this.cachedGetSinglePixelWidth = null;
     },
 
     // Path
@@ -1043,9 +1051,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       consumePath = typeof consumePath !== 'undefined' ? consumePath : true;
       var ctx = this.ctx;
       var strokeColor = this.current.strokeColor;
-      if (this.current.lineWidth === 0) {
-        ctx.lineWidth = this.getSinglePixelWidth();
-      }
+      // Prevent drawing too thin lines by enforcing a minimum line width.
+      ctx.lineWidth = Math.max(this.getSinglePixelWidth() * MIN_WIDTH_FACTOR,
+                               this.current.lineWidth);
       // For stroke we want to temporarily change the global alpha to the
       // stroking alpha.
       ctx.globalAlpha = this.current.strokeAlpha;
@@ -1370,7 +1378,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var lineWidth = current.lineWidth;
       var scale = current.textMatrixScale;
       if (scale === 0 || lineWidth === 0) {
-        lineWidth = this.getSinglePixelWidth();
+        var fillStrokeMode = current.textRenderingMode &
+          TextRenderingMode.FILL_STROKE_MASK;
+        if (fillStrokeMode === TextRenderingMode.STROKE ||
+            fillStrokeMode === TextRenderingMode.FILL_STROKE) {
+          this.cachedGetSinglePixelWidth = null;
+          lineWidth = this.getSinglePixelWidth() * MIN_WIDTH_FACTOR;
+        }
       } else {
         lineWidth /= scale;
       }
@@ -2111,11 +2125,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       ctx.beginPath();
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
-      var inverse = this.ctx.mozCurrentTransformInverse;
-      // max of the current horizontal and vertical scale
-      return Math.sqrt(Math.max(
-        (inverse[0] * inverse[0] + inverse[1] * inverse[1]),
-        (inverse[2] * inverse[2] + inverse[3] * inverse[3])));
+      if (this.cachedGetSinglePixelWidth === null) {
+        var inverse = this.ctx.mozCurrentTransformInverse;
+        // max of the current horizontal and vertical scale
+        this.cachedGetSinglePixelWidth = Math.sqrt(Math.max(
+          (inverse[0] * inverse[0] + inverse[1] * inverse[1]),
+          (inverse[2] * inverse[2] + inverse[3] * inverse[3])));
+      }
+      return this.cachedGetSinglePixelWidth;
     },
     getCanvasPosition: function CanvasGraphics_getCanvasPosition(x, y) {
         var transform = this.ctx.mozCurrentTransform;
