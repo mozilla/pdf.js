@@ -246,6 +246,9 @@ PDFJS.getDocument = function getDocument(source,
     transport.passwordCallback = passwordCallback;
     transport.fetchDocument(params);
   });
+  workerReadyCapability.promise.then(null, function(){
+    transport.destroy();
+  });
   return workerReadyCapability.promise;
 };
 
