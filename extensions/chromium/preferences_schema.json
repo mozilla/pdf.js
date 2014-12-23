@@ -9,9 +9,9 @@
     },
     "defaultZoomValue": {
       "title": "Default zoom level",
-      "description": "Default zoom level of the viewer. Accepted values: 'auto', 'page-actual', 'page-width', 'page-height', 'page-fit', or a zoom level in percents.",
+      "description": "Default zoom level of the viewer. Accepted values: 'auto', 'page-actual', 'page-width', 'page-height', 'page-fit', 'full-width' or a zoom level in percents.",
       "type": "string",
-      "pattern": "|auto|page-actual|page-width|page-height|page-fit|[0-9]+\\.?[0-9]*(,[0-9]+\\.?[0-9]*){0,2}",
+      "pattern": "|auto|page-actual|page-width|page-height|page-fit|full-width|[0-9]+\\.?[0-9]*(,[0-9]+\\.?[0-9]*){0,2}",
       "default": ""
     },
     "sidebarViewOnLoad": {

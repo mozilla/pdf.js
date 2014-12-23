@@ -1831,7 +1831,8 @@ window.addEventListener('resize', function webViewerResize(evt) {
   if (PDFViewerApplication.initialized &&
       (document.getElementById('pageWidthOption').selected ||
        document.getElementById('pageFitOption').selected ||
-       document.getElementById('pageAutoOption').selected)) {
+       document.getElementById('pageAutoOption').selected ||
+       document.getElementById('fullWidthOption').selected)) {
     var selectedScale = document.getElementById('scaleSelect').value;
     PDFViewerApplication.setScale(selectedScale, false);
   }
@@ -1931,7 +1932,8 @@ window.addEventListener('scalechange', function scalechange(evt) {
   if (!PDFViewerApplication.updateScaleControls &&
       (document.getElementById('pageWidthOption').selected ||
        document.getElementById('pageFitOption').selected ||
-       document.getElementById('pageAutoOption').selected)) {
+       document.getElementById('pageAutoOption').selected ||
+       document.getElementById('fullWidthOption').selected)) {
     updateViewarea();
     return;
   }
