@@ -11,7 +11,7 @@
     "yargs": "~1.2.1"
   },
   "scripts": {
-    "test": "node ./node_modules/.bin/jshint ."
+    "test": "node ./node_modules/.bin/jshint --extra-ext .jsm ."
   },
   "repository": {
     "type": "git",
