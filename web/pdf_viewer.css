@@ -72,11 +72,6 @@
   border: 0;
 }
 
-.pdfViewer .page .annotationHighlight {
-  position: absolute;
-  border: 2px #FFFF99 solid;
-}
-
 .pdfViewer .page .annotText > img {
   position: absolute;
   cursor: pointer;
