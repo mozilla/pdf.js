@@ -50,6 +50,14 @@ var AnnotationType = {
   LINK: 3
 };
 
+var AnnotationBorderStyleType = {
+  SOLID: 1,
+  DASHED: 2,
+  BEVELED: 3,
+  INSET: 4,
+  UNDERLINE: 5
+};
+
 var StreamType = {
   UNKNOWN: 0,
   FLATE: 1,
