@@ -1,6 +1,6 @@
 # Quick notes about binary CMap format (bcmap)
 
-The format is designed to package some information from the CMap files located at external/cmap. Please notice for size optimization reasons, the original information blocks can be changed (split or joined) and items in the blocks can be swaped.
+The format is designed to package some information from the CMap files located at external/cmap. Please notice for size optimization reasons, the original information blocks can be changed (split or joined) and items in the blocks can be swapped.
 
 The data stored in binary format in network byte order (big-endian).
 
@@ -15,6 +15,51 @@ The following primitives used during encoding of the file:
   - signed fixed number (SB[n]) – similar to the SN, but it represents a signed number that is stored in B[n]
   - string (S) – the string is encoded as sequence of bytes. First comes length is characters encoded as UN, when UTF16 characters encoded as UN.
 
+# Differential compression
+
+The contents of each CMap file is either stored normally or differentially. In the latter case, a second CMap file (the 'base file') is needed for file decoding. 
+
+The first record in each file indicates if the file is stored normally or differentially. 
+It is a string (S) – let's call it *baseFileName* – which
+  - is empty ('') if the file is stored normally, or
+  - contains the file name of the base file (without path or extension) if it is stored differentially.
+
+In either case, it is followed by the (possibly decoded) file contents which are structured as described in the [file structure](#file-structure) section.
+
+### Decoding differential data
+
+If a CMap file (let's name it *A*) is stored differentially, file contents are to be constructed from the contents of *A* and from the base file (which we shall call *B*). 
+The records to follow are alternately of the following type, starting with *copy*.
+
+A **copy**-type instruction specified by 
+ - startDelta as UN
+ - length as UN
+
+which instructs to read *length* bytes from *B*, where startDelta specifies the start position as an offset from the previously used array end. (The previous array end is initialized with the position of the start of content, i.e., after *baseFileName* and *contentSize* in *B*).
+
+An **insert**-type instruction is specified by
+ - length as UN
+
+and instructs to read append the following *length* bytes from *A* and append it to the contents.
+
+It may happen that file *B* itself is stored differentially and depends on a further file. In this case, *B* has to be restored before restoring *A*. The following pseudocode accomplishes the decoding
+```
+var contents = '';
+var previousEnd = 0; // position after *baseFileName* in baseFile
+for (var copy = true; contents.length < contentSize; copy = !copy) {
+  if (copy) {
+    var start = previousEnd + A.readUN();
+    var length = A.readUN();
+    contents.append(B.subarray(start, start + length));
+    previousEnd = start + length;
+  } else {
+    var length = A.readUN();
+    contents.append(A.readBytes(length));
+  }
+}
+```
+
+<a name="file-structure"></a>
 # File structure
 
 The first byte is a header:
