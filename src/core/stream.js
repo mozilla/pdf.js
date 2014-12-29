@@ -2040,7 +2040,7 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
 
       if (!this.eoblock && this.row === this.rows - 1) {
         this.eof = true;
-      } else if (this.eoline || !this.byteAlign) {
+      } else {
         code1 = this.lookBits(12);
         if (this.eoline) {
           while (code1 !== EOF && code1 !== 1) {
