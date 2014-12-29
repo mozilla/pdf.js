@@ -343,6 +343,7 @@ target.dist = function() {
                    JSON.stringify(bowerManifest, null, 2));
 
   echo();
+  target.minifyDistFiles();
   echo('### Commiting changes');
 
   cd(DIST_DIR);
@@ -609,6 +610,94 @@ function cleanupCSSSource(file) {
   content = content.replace(reg, '');
 
   content.to(file);
+}
+
+//
+// make minified distributable files
+// Minifies the JavaScript and CSS files present under build directory.
+// Requires Google Closure Compiler for minifying JavaScript files and
+// YUI compressor for minifying css files.
+//
+target.minifyDistFiles=function(){
+  var DIST_DIR = BUILD_DIR + 'dist';
+  var pdfjsLibFiles = [
+    DIST_DIR+'/build/pdf.js',
+    DIST_DIR + '/build/pdf.worker.js',
+    DIST_DIR+ '/build/pdf.combined.js'
+  ];
+  var viewerFiles=[
+    DIST_DIR+'/web/compatibility.js',
+    DIST_DIR+'/web/pdf_viewer.js'
+  ];
+  var viewerCSSFile=DIST_DIR+'/web/pdf_viewer.css';
+  var destinationPath=DIST_DIR+'/build/';
+  var outputFile=DIST_DIR+'/web/pdf_viewer.min.css';
+  var inputFile=DIST_DIR+'/web/pdf_viewer.css';
+
+  echo('### Creating minified JavaScript files');
+
+  minifyJavaScriptFiles(pdfjsLibFiles,destinationPath);
+  destinationPath=DIST_DIR+'/web/';
+  minifyJavaScriptFiles(viewerFiles,destinationPath);
+  minifyCSSFile(inputFile,outputFile);
+};
+
+//
+// Returns file name from the path.
+// If /build/pdf.js path is passed function will return pdf.js
+//
+function getFileNameFromPath (filePath){
+  var parts=filePath.split('/');
+  return parts[parts.length-1];
+}
+
+//
+// Minifies the JavaScript files and outputs <fileName>.min.js files 
+// to destination path.
+// Requires closure compiler
+//
+function minifyJavaScriptFiles(files,destinationPath){
+  var compilerPath = process.env['CLOSURE_COMPILER'];
+  var cmdPrefix;
+
+  if (!compilerPath) {
+    echo('### Closure Compiler is not set. Specify CLOSURE_COMPILER variable');
+    exit(1);
+  }
+
+  cd(ROOT_DIR);
+  echo();
+
+  cmdPrefix = 'java -jar \"' + compilerPath + '\" ' +
+    '--language_in ECMASCRIPT5 ' +
+    '--warning_level QUIET ' +
+    '--compilation_level SIMPLE_OPTIMIZATIONS ';
+  echo();
+
+  files.forEach(function(path){
+  exec(cmdPrefix + ' ' +path+' --js_output_file '+destinationPath+
+    getFileNameFromPath(path).replace('.js','.min.js'));
+  });
+}
+
+//
+// Minify CSS file.
+// Where inputFile and outputFiles are path to input and output css
+// files including file name.
+// ex:/dist/build/pdf_viewer.css ,/dist/build/pdf_viewer.min.css
+// Requires YUI compressor
+//
+function minifyCSSFile(inputFile,outputFile){
+  var yuiCompressorPath=process.env['YUI_COMPRESSOR'];
+  if (!yuiCompressorPath) {
+    echo('### YUI Compressor is not set. Specify YUI_COMPRESSOR variable');
+    exit(1);
+  }
+  cd(ROOT_DIR);
+  echo();
+  echo('### Creating minified CSS files');
+  exec('java -jar '+ yuiCompressorPath +' --type css -o ' +
+    outputFile+' '+ inputFile);
 }
 
 //
