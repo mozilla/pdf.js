@@ -439,6 +439,8 @@ var XRefParseException = (function XRefParseExceptionClosure() {
 
 
 function bytesToString(bytes) {
+  assert(bytes !== null && typeof bytes === 'object' &&
+         bytes.length !== undefined, 'Invalid argument for bytesToString');
   var length = bytes.length;
   var MAX_ARGUMENT_COUNT = 8192;
   if (length < MAX_ARGUMENT_COUNT) {
@@ -454,6 +456,7 @@ function bytesToString(bytes) {
 }
 
 function stringToBytes(str) {
+  assert(typeof str === 'string', 'Invalid argument for stringToBytes');
   var length = str.length;
   var bytes = new Uint8Array(length);
   for (var i = 0; i < length; ++i) {
