@@ -508,6 +508,13 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue5599",
+       "file": "pdfs/issue5599.pdf",
+       "md5": "529a4a9409ac024aeb57a047210280fe",
+       "rounds": 1,
+       "link": false,
+       "type": "load"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
