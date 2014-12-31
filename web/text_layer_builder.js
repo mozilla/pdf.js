@@ -46,6 +46,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.renderingDone = false;
     this.divContentDone = false;
     this.pageIdx = options.pageIndex;
+    this.pageNumber = this.pageIdx + 1;
     this.matches = [];
     this.viewport = options.viewport;
     this.textDivs = [];
@@ -53,6 +54,16 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
   }
 
   TextLayerBuilder.prototype = {
+    _finishRendering: function TextLayerBuilder_finishRendering() {
+      this.renderingDone = true;
+
+      var event = document.createEvent('CustomEvent');
+      event.initCustomEvent('textlayerrendered', true, true, {
+        pageNumber: this.pageNumber
+      });
+      this.textLayerDiv.dispatchEvent(event);
+    },
+
     renderLayer: function TextLayerBuilder_renderLayer() {
       var textLayerFrag = document.createDocumentFragment();
       var textDivs = this.textDivs;
@@ -63,7 +74,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       // No point in rendering many divs as it would make the browser
       // unusable even after the divs are rendered.
       if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
-        this.renderingDone = true;
+        this._finishRendering();
         return;
       }
 
@@ -107,7 +118,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
 
       this.textLayerDiv.appendChild(textLayerFrag);
-      this.renderingDone = true;
+      this._finishRendering();
       this.updateMatches();
     },
 
