@@ -218,33 +218,35 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     }
     this.renderingState = RenderingStates.FINISHED;
     var ctx = this.getPageDrawContext();
+    var canvas = ctx.canvas;
 
-    var reducedImage = img;
-    var reducedWidth = img.width;
-    var reducedHeight = img.height;
-
-    // drawImage does an awful job of rescaling the image, doing it gradually
-    var MAX_SCALE_FACTOR = 2.0;
-    if (Math.max(img.width / ctx.canvas.width,
-                 img.height / ctx.canvas.height) > MAX_SCALE_FACTOR) {
-      reducedWidth >>= 1;
-      reducedHeight >>= 1;
-      reducedImage = getTempCanvas(reducedWidth, reducedHeight);
+    if (img.width <= 2 * canvas.width) {
+      ctx.drawImage(img, 0, 0, img.width, img.height,
+                    0, 0, canvas.width, canvas.height);
+    } else {
+      // drawImage does an awful job of rescaling the image, doing it gradually
+      var MAX_NUM_SCALING_STEPS = 3;
+      var reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
+      var reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
+      var reducedImage = getTempCanvas(reducedWidth, reducedHeight);
       var reducedImageCtx = reducedImage.getContext('2d');
+
+      while (reducedWidth > img.width || reducedHeight > img.height) {
+        reducedWidth >>= 1;
+        reducedHeight >>= 1;
+      }
       reducedImageCtx.drawImage(img, 0, 0, img.width, img.height,
                                 0, 0, reducedWidth, reducedHeight);
-      while (Math.max(reducedWidth / ctx.canvas.width,
-                      reducedHeight / ctx.canvas.height) > MAX_SCALE_FACTOR) {
+      while (reducedWidth > 2 * canvas.width) {
         reducedImageCtx.drawImage(reducedImage,
                                   0, 0, reducedWidth, reducedHeight,
                                   0, 0, reducedWidth >> 1, reducedHeight >> 1);
         reducedWidth >>= 1;
         reducedHeight >>= 1;
       }
+      ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
+                    0, 0, canvas.width, canvas.height);
     }
-
-    ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
-                  0, 0, ctx.canvas.width, ctx.canvas.height);
 
     this.hasImage = true;
   };
