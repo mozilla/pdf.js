@@ -2203,6 +2203,10 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
       }
     },
 
+    has: function(i) {
+      return this._map[i] !== undefined;
+    },
+
     get: function(i) {
       return this._map[i];
     },
@@ -2230,6 +2234,10 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
       for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
         callback(i, i);
       }
+    },
+
+    has: function (i) {
+      return this.firstChar <= i && i <= this.lastChar;
     },
 
     get: function (i) {
@@ -2664,7 +2672,6 @@ var Font = (function FontClosure() {
     var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
     var isIdentityUnicode =
       properties.toUnicode instanceof IdentityToUnicodeMap;
-    var isCidFontType2 = (properties.type === 'CIDFontType2');
     var newMap = Object.create(null);
     var toFontChar = [];
     var usedFontCharCodes = [];
@@ -2675,8 +2682,7 @@ var Font = (function FontClosure() {
       var fontCharCode = originalCharCode;
       // First try to map the value to a unicode position if a non identity map
       // was created.
-      // console.log(fontCharCode);
-      if (!isIdentityUnicode && toUnicode.get(originalCharCode) !== undefined) {
+      if (!isIdentityUnicode && toUnicode.has(originalCharCode)) {
         var unicode = toUnicode.get(fontCharCode);
         // TODO: Try to map ligatures to the correct spot.
         if (unicode.length === 1) {
@@ -4040,8 +4046,9 @@ var Font = (function FontClosure() {
       if (isTrueType) {
         var isGlyphLocationsLong = int16(tables.head.data[50],
                                          tables.head.data[51]);
-        missingGlyphs = sanitizeGlyphLocations(tables.loca, tables.glyf, numGlyphs,
-                               isGlyphLocationsLong, hintsValid, dupFirstEntry);
+        missingGlyphs = sanitizeGlyphLocations(tables.loca, tables.glyf,
+                                               numGlyphs, isGlyphLocationsLong,
+                                               hintsValid, dupFirstEntry);
       }
 
       if (!tables.hhea) {
@@ -4066,17 +4073,20 @@ var Font = (function FontClosure() {
       var charCodeToGlyphId = [], charCode;
       if (properties.type === 'CIDFontType2') {
         var cidToGidMap = properties.cidToGidMap || [];
-        var cidToGidMapLength = cidToGidMap.length;
+        var isCidToGidMapEmpty = cidToGidMap.length === 0;
+        var toUnicode = properties.toUnicode;
+
         properties.cMap.forEach(function(charCode, cid) {
           assert(cid <= 0xffff, 'Max size of CID is 65,535');
           var glyphId = -1;
-          if (cidToGidMapLength === 0) {
+          if (isCidToGidMapEmpty) {
             glyphId = charCode;
           } else if (cidToGidMap[cid] !== undefined) {
             glyphId = cidToGidMap[cid];
           }
 
-          if (glyphId >= 0 && glyphId < numGlyphs && !missingGlyphs[charCode]) {
+          if (glyphId >= 0 && glyphId < numGlyphs &&
+              (!missingGlyphs[glyphId] || toUnicode.has(charCode))) {
             charCodeToGlyphId[charCode] = glyphId;
           }
         });
