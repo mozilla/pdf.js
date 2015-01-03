@@ -1201,6 +1201,10 @@ var PDFViewerApplication = {
       }
       if (dest) {
         this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+         if (PDFJS.multiple !== undefined) {
+           this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+         }
+        
       } else if (pageNumber) {
         this.page = pageNumber; // simple page
       }

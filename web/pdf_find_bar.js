@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals FindStates, mozL10n */
+/* globals FindStates, mozL10n, PDFJS */
 
 'use strict';
 
@@ -49,7 +49,13 @@ var PDFFindBar = (function PDFFindBarClosure() {
     });
 
     this.findField.addEventListener('input', function() {
-      self.dispatchEvent('');
+        delete PDFJS.multiple;
+        var spans = document.body.getElementsByClassName('highlight');
+        for (var i = spans.length - 1; i >= 0; i--) {
+            spans[i].className = '';
+        }
+
+        self.dispatchEvent('');
     });
 
     this.bar.addEventListener('keydown', function(evt) {

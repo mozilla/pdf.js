@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFJS, mozL10n, CustomStyle, getOutputScale, Stats,
-           CSS_UNITS */
+           CSS_UNITS, PDFURLFinder */
 
 'use strict';
 
@@ -524,7 +524,8 @@ var PageView = function pageView(container, id, scale, defaultViewport,
         if (textLayer) {
           self.pdfPage.getTextContent().then(
             function textContentResolved(textContent) {
-              textLayer.setTextContent(textContent);
+                textLayer.setTextContent(textContent);
+                var match = new PDFURLFinder(self);
             }
           );
         }
