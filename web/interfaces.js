@@ -67,19 +67,35 @@ IRenderableView.prototype = {
    */
   get renderingState() {},
   /**
-   * @param {function} callback - The draw completion callback.
+   * @returns {Promise} Resolved on draw completion.
    */
-  draw: function (callback) {},
+  draw: function () {},
   resume: function () {},
 };
 
 /**
  * @interface
  */
-function ILastScrollSource() {}
-ILastScrollSource.prototype = {
+function IPDFTextLayerFactory() {}
+IPDFTextLayerFactory.prototype = {
   /**
-   * @returns {number}
+   * @param {HTMLDivElement} textLayerDiv
+   * @param {number} pageIndex
+   * @param {PageViewport} viewport
+   * @returns {TextLayerBuilder}
    */
-  get lastScroll() {},
+  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {}
+};
+
+/**
+ * @interface
+ */
+function IPDFAnnotationsLayerFactory() {}
+IPDFAnnotationsLayerFactory.prototype = {
+  /**
+   * @param {HTMLDivElement} pageDiv
+   * @param {PDFPage} pdfPage
+   * @returns {AnnotationsLayerBuilder}
+   */
+  createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {}
 };

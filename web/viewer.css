@@ -1256,18 +1256,11 @@ html[dir='rtl'] .attachmentsItem > button {
   cursor: default;
 }
 
-
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
 ::selection { background: rgba(0,0,255,0.3); }
 ::-moz-selection { background: rgba(0,0,255,0.3); }
-
-.textLayer ::selection { background: rgb(0,0,255); }
-.textLayer ::-moz-selection { background: rgb(0,0,255); }
-.textLayer {
-  opacity: 0.2;
-}
 
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;

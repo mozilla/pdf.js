@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 /*jshint globalstrict: false */
-/* globals PDFJS, PDFViewer */
+/* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder,
+           DefaultTextLayerFactory, AnnotationsLayerBuilder,
+           DefaultAnnotationsLayerFactory */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
@@ -29,4 +31,9 @@ if (typeof PDFJS === 'undefined') {
 //#include pdf_viewer.js
 
   PDFJS.PDFViewer = PDFViewer;
+  PDFJS.PDFPageView = PDFPageView;
+  PDFJS.TextLayerBuilder = TextLayerBuilder;
+  PDFJS.DefaultTextLayerFactory = DefaultTextLayerFactory;
+  PDFJS.AnnotationsLayerBuilder = AnnotationsLayerBuilder;
+  PDFJS.DefaultAnnotationsLayerFactory = DefaultAnnotationsLayerFactory;
 }).call((typeof window === 'undefined') ? this : window);
