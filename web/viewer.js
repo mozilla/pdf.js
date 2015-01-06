@@ -1741,18 +1741,6 @@ document.addEventListener('pagerendered', function (e) {
     Stats.add(pageNumber, pageView.stats);
   }
 
-//#if (FIREFOX || MOZCENTRAL)
-//if (pageView.textLayer && pageView.textLayer.textDivs &&
-//    pageView.textLayer.textDivs.length > 0 &&
-//    !PDFViewerApplication.supportsDocumentColors) {
-//  console.error(mozL10n.get('document_colors_disabled', null,
-//    'PDF documents are not allowed to use their own colors: ' +
-//    '\'Allow pages to choose their own colors\' ' +
-//    'is deactivated in the browser.'));
-//  PDFViewerApplication.fallback();
-//}
-//#endif
-
   if (pageView.error) {
     PDFViewerApplication.error(mozL10n.get('rendering_error', null,
       'An error occurred while rendering the page.'), pageView.error);
@@ -1777,6 +1765,23 @@ document.addEventListener('pagerendered', function (e) {
     var pageNumberInput = document.getElementById('pageNumber');
     pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
   }
+}, true);
+
+document.addEventListener('textlayerrendered', function (e) {
+  var pageIndex = e.detail.pageNumber - 1;
+  var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
+
+//#if (FIREFOX || MOZCENTRAL)
+//if (pageView.textLayer && pageView.textLayer.textDivs &&
+//    pageView.textLayer.textDivs.length > 0 &&
+//    !PDFViewerApplication.supportsDocumentColors) {
+//  console.error(mozL10n.get('document_colors_disabled', null,
+//    'PDF documents are not allowed to use their own colors: ' +
+//    '\'Allow pages to choose their own colors\' ' +
+//    'is deactivated in the browser.'));
+//  PDFViewerApplication.fallback();
+//}
+//#endif
 }, true);
 
 window.addEventListener('presentationmodechanged', function (e) {
