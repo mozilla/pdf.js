@@ -19,7 +19,7 @@
            Promise, PasswordResponses, PasswordException, InvalidPDFException,
            MissingPDFException, UnknownErrorException, FontFaceObject,
            loadJpegStream, createScratchCanvas, CanvasGraphics,
-           UnexpectedResponseException */
+           UnexpectedResponseException, CancelGetDocumentException */
 
 'use strict';
 
@@ -267,6 +267,11 @@ PDFJS.getDocument = function getDocument(src,
     transport.fetchDocument(task, params);
   });
 
+  // Ensure that the worker is terminated if document loading fails.
+  task.then(undefined, function () {
+    transport.destroy();
+  });
+
   return task;
 };
 
@@ -303,7 +308,15 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
       return this._capability.promise;
     },
 
-    // TODO add cancel or abort method
+   /**
+     * Cancels the document loading operation. If the document has already been
+     * loaded, cancelling will have no effect.
+     * The promise that this object extends will be rejected when cancelled.
+     */
+    cancel: function PDFDocumentLoadingTask_cancel() {
+      this._capability.reject(
+        new CancelGetDocumentException('Cancelled PDF file loading.'));
+    },
 
     /**
      * Registers callbacks to indicate the document loading completion.

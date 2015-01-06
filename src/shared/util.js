@@ -400,6 +400,19 @@ var UnexpectedResponseException =
 })();
 PDFJS.UnexpectedResponseException = UnexpectedResponseException;
 
+var CancelGetDocumentException = (function CancelGetDocumentExceptionClosure() {
+  function CancelGetDocumentException(msg) {
+    this.name = 'CancelGetDocumentException';
+    this.message = msg;
+  }
+
+  CancelGetDocumentException.prototype = new Error();
+  CancelGetDocumentException.constructor = CancelGetDocumentException;
+
+  return CancelGetDocumentException;
+})();
+PDFJS.CancelGetDocumentException = CancelGetDocumentException;
+
 var NotImplementedException = (function NotImplementedExceptionClosure() {
   function NotImplementedException(msg) {
     this.message = msg;
