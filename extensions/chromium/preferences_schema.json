@@ -2,7 +2,7 @@
   "type": "object",
   "properties": {
     "showPreviousViewOnLoad": {
-      "title": "Resume view on load",
+      "title": "Show previous position of PDF upon load",
       "description": "Whether to view PDF documents in the last page and position upon opening the viewer.",
       "type": "boolean",
       "default": true
