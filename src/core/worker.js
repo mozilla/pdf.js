@@ -106,6 +106,22 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
           var length = fullRequestXhr.getResponseHeader('Content-Length');
           length = parseInt(length, 10);
+//#if (GENERIC || CHROME)
+          if (fullRequestXhr.status === 206) {
+            // Since Chrome 39, there exists a bug where cached responses are
+            // served with status code 206 for non-range requests.
+            // Content-Length does not specify the total size of the resource
+            // when the status code is 206 (see RFC 2616, section 14.16).
+            // In this case, extract the file size from the Content-Range
+            // header, which is defined to be "bytes start-end/length" for
+            // byte range requests.
+            // See https://github.com/mozilla/pdf.js/issues/5512 and
+            // https://code.google.com/p/chromium/issues/detail?id=442318
+            length = fullRequestXhr.getResponseHeader('Content-Range');
+            length = length && /bytes \d+-\d+\/(\d+)/.exec(length);
+            length = length && parseInt(length[1], 10);
+          }
+//#endif
           if (!isInt(length)) {
             return;
           }
