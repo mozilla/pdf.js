@@ -273,6 +273,7 @@ target.dist = function() {
   target.generic();
   target.singlefile();
   target.components();
+  target.minified();
 
   var DIST_DIR = BUILD_DIR + 'dist/';
   var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
@@ -298,11 +299,17 @@ target.dist = function() {
     GENERIC_DIR + 'build/pdf.js',
     GENERIC_DIR + 'build/pdf.worker.js',
     SINGLE_FILE_DIR + 'build/pdf.combined.js',
+    MINIFIED_DIR + 'build/pdf.min.js',
+    MINIFIED_DIR + 'build/pdf.worker.min.js',
+    MINIFIED_DIR + 'build/pdf.combined.min.js'
   ], DIST_DIR + 'build/');
 
   mkdir('-p', DIST_DIR + 'web/');
   cp('-R', [
     COMPONENTS_DIR + '*',
+    MINIFIED_DIR + 'web/compatibility.min.js',
+    MINIFIED_DIR + 'web/pdf.viewer.min.js',
+    MINIFIED_DIR + 'web/pdf.viewer.min.css'
   ], DIST_DIR + 'web/');
 
   echo();
@@ -343,7 +350,6 @@ target.dist = function() {
                    JSON.stringify(bowerManifest, null, 2));
 
   echo();
-  target.minifyDistFiles();
   echo('### Commiting changes');
 
   cd(DIST_DIR);
@@ -613,74 +619,6 @@ function cleanupCSSSource(file) {
 }
 
 //
-// make minified distributable files
-// Minifies the JavaScript and CSS files present under build directory.
-// Requires Google Closure Compiler for minifying JavaScript files and
-// YUI compressor for minifying css files.
-//
-target.minifyDistFiles=function(){
-  var DIST_DIR = BUILD_DIR + 'dist';
-  var pdfjsLibFiles = [
-    DIST_DIR+'/build/pdf.js',
-    DIST_DIR + '/build/pdf.worker.js',
-    DIST_DIR+ '/build/pdf.combined.js'
-  ];
-  var viewerFiles=[
-    DIST_DIR+'/web/compatibility.js',
-    DIST_DIR+'/web/pdf_viewer.js'
-  ];
-  var viewerCSSFile=DIST_DIR+'/web/pdf_viewer.css';
-  var destinationPath=DIST_DIR+'/build/';
-  var outputFile=DIST_DIR+'/web/pdf_viewer.min.css';
-  var inputFile=DIST_DIR+'/web/pdf_viewer.css';
-
-  echo('### Creating minified JavaScript files');
-
-  minifyJavaScriptFiles(pdfjsLibFiles,destinationPath);
-  destinationPath=DIST_DIR+'/web/';
-  minifyJavaScriptFiles(viewerFiles,destinationPath);
-  minifyCSSFile(inputFile,outputFile);
-};
-
-//
-// Returns file name from the path.
-// If /build/pdf.js path is passed function will return pdf.js
-//
-function getFileNameFromPath (filePath){
-  var parts=filePath.split('/');
-  return parts[parts.length-1];
-}
-
-//
-// Minifies the JavaScript files and outputs <fileName>.min.js files 
-// to destination path.
-// Requires closure compiler
-//
-function minifyJavaScriptFiles(files,destinationPath){
-  var compilerPath = process.env['CLOSURE_COMPILER'];
-  var cmdPrefix;
-
-  if (!compilerPath) {
-    echo('### Closure Compiler is not set. Specify CLOSURE_COMPILER variable');
-    exit(1);
-  }
-
-  cd(ROOT_DIR);
-  echo();
-
-  cmdPrefix = 'java -jar \"' + compilerPath + '\" ' +
-    '--language_in ECMASCRIPT5 ' +
-    '--warning_level QUIET ' +
-    '--compilation_level SIMPLE_OPTIMIZATIONS ';
-  echo();
-
-  files.forEach(function(path){
-  exec(cmdPrefix + ' ' +path+' --js_output_file '+destinationPath+
-    getFileNameFromPath(path).replace('.js','.min.js'));
-  });
-}
-
-//
 // Minify CSS file.
 // Where inputFile and outputFiles are path to input and output css
 // files including file name.
@@ -693,9 +631,10 @@ function minifyCSSFile(inputFile,outputFile){
     echo('### YUI Compressor is not set. Specify YUI_COMPRESSOR variable');
     exit(1);
   }
+
   cd(ROOT_DIR);
   echo();
-  echo('### Creating minified CSS files');
+
   exec('java -jar '+ yuiCompressorPath +' --type css -o ' +
     outputFile+' '+ inputFile);
 }
@@ -707,12 +646,16 @@ function minifyCSSFile(inputFile,outputFile){
 //
 target.minified = function() {
   var compilerPath = process.env['CLOSURE_COMPILER'];
+  var inputCSSPath = MINIFIED_DIR + '/web/viewer.css';
+  var outputCSSPath = MINIFIED_DIR + '/web/pdf.viewer.min.css';
+
   if (!compilerPath) {
     echo('### Closure Compiler is not set. Specify CLOSURE_COMPILER variable');
     exit(1);
   }
 
   target.bundle({});
+  target.singlefile();
   target.locale();
 
   cd(ROOT_DIR);
@@ -732,8 +675,10 @@ target.minified = function() {
     copy: [
       [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
+      [SINGLE_FILE_DIR+'/build/pdf.combined.js',MINIFIED_DIR + '/build'],
       ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
-      ['web/locale', MINIFIED_DIR + '/web']
+      ['web/locale', MINIFIED_DIR + '/web'],
+      ['web/compatibility.js',MINIFIED_DIR + '/web']
     ],
     preprocess: [
       [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
@@ -765,23 +710,29 @@ target.minified = function() {
   exec(cmdPrefix + viewerFiles.map(function(s) {
     return '--js \"' + s + '\"';
   }).join(' ') +
-    ' --js_output_file \"' + MINIFIED_DIR + '/web/pdf.viewer.js\"');
+    ' --js_output_file \"' + MINIFIED_DIR + '/web/pdf.viewer.min.js\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/web/compatibility.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/web/compatibility.min.js' + '\"');
   exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.js' + '\" ' +
     '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.min.js' + '\"');
   exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.worker.js' + '\" ' +
     '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.worker.min.js' + '\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.combined.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.combined.min.js' + '\"');
+
+  echo('### Minifying CSS Files');
+  minifyCSSFile(inputCSSPath,outputCSSPath);
 
   echo();
   echo('### Cleaning js files');
 
   rm(MINIFIED_DIR + '/web/viewer.js');
+  rm(MINIFIED_DIR + '/web/viewer.css');
   rm(MINIFIED_DIR + '/web/debugger.js');
+  rm(MINIFIED_DIR + '/web/compatibility.js');
   rm(MINIFIED_DIR + '/build/pdf.js');
   rm(MINIFIED_DIR + '/build/pdf.worker.js');
-  mv(MINIFIED_DIR + '/build/pdf.min.js',
-     MINIFIED_DIR + '/build/pdf.js');
-  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
-     MINIFIED_DIR + '/build/pdf.worker.js');
+  rm(MINIFIED_DIR + '/build/pdf.combined.js');
 };
 
 ////////////////////////////////////////////////////////////////////////////////
