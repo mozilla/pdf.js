@@ -413,12 +413,20 @@ var PDFPageView = (function PDFPageViewClosure() {
         if (self.onAfterDraw) {
           self.onAfterDraw();
         }
-
         var event = document.createEvent('CustomEvent');
-        event.initCustomEvent('pagerender', true, true, {
-          pageNumber: pdfPage.pageNumber
+        event.initCustomEvent('pagerendered', true, true, {
+          pageNumber: self.id
         });
         div.dispatchEvent(event);
+//#if GENERIC
+        // This custom event is deprecated, and will be removed in the future,
+        // please use the |pagerendered| event instead.
+        var deprecatedEvent = document.createEvent('CustomEvent');
+        deprecatedEvent.initCustomEvent('pagerender', true, true, {
+          pageNumber: pdfPage.pageNumber
+        });
+        div.dispatchEvent(deprecatedEvent);
+//#endif
 
         if (!error) {
           resolveRenderPromise(undefined);
