@@ -289,12 +289,19 @@ ChromeActions.prototype = {
                          getService(Ci.nsIWindowWatcher).activeWindow;
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = NetUtil.newChannel(blobUri);
+    var netChannel = NetUtil.newChannel2(blobUri,
+                                         null,
+                                         null,
+                                         frontWindow,
+                                         null, // aLoadingPrincipal
+                                         null, // aTriggeringPrincipal
+                                         Ci.nsILoadInfo.SEC_NORMAL,
+                                         Ci.nsIContentPolicy.TYPE_OTHER);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
     }
-    NetUtil.asyncFetch(netChannel, function(aInputStream, aResult) {
+    NetUtil.asyncFetch2(netChannel, function(aInputStream, aResult) {
       if (!Components.isSuccessCode(aResult)) {
         if (sendResponse) {
           sendResponse(true);
@@ -956,8 +963,14 @@ PdfStreamConverter.prototype = {
 
     // Create a new channel that is viewer loaded as a resource.
     var ioService = Services.io;
-    var channel = ioService.newChannel(
-                    PDF_VIEWER_WEB_PAGE, null, null);
+    var channel = ioService.newChannel2(PDF_VIEWER_WEB_PAGE,
+                                        null,
+                                        null,
+                                        null,      // aLoadingNode
+                                        Services.scriptSecurityManager.getSystemPrincipal(),
+                                        null,      // aTriggeringPrincipal
+                                        Ci.nsILoadInfo.SEC_NORMAL,
+                                        Ci.nsIContentPolicy.TYPE_OTHER);
 
     var listener = this.listener;
     var dataListener = this.dataListener;
