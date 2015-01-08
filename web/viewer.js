@@ -373,66 +373,17 @@ var PDFViewerApplication = {
 
 //#if (FIREFOX || MOZCENTRAL)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
-    var pdfDataRangeTransportReadyResolve;
-    var pdfDataRangeTransportReady = new Promise(function (resolve) {
-      pdfDataRangeTransportReadyResolve = resolve;
-    });
-    var pdfDataRangeTransport = {
-      rangeListeners: [],
-      progressListeners: [],
-      progressiveReadListeners: [],
-      ready: pdfDataRangeTransportReady,
-
-      addRangeListener: function PdfDataRangeTransport_addRangeListener(
-                                   listener) {
-        this.rangeListeners.push(listener);
-      },
-
-      addProgressListener: function PdfDataRangeTransport_addProgressListener(
-                                      listener) {
-        this.progressListeners.push(listener);
-      },
-
-      addProgressiveReadListener:
-          function PdfDataRangeTransport_addProgressiveReadListener(listener) {
-        this.progressiveReadListeners.push(listener);
-      },
-
-      onDataRange: function PdfDataRangeTransport_onDataRange(begin, chunk) {
-        var listeners = this.rangeListeners;
-        for (var i = 0, n = listeners.length; i < n; ++i) {
-          listeners[i](begin, chunk);
-        }
-      },
-
-      onDataProgress: function PdfDataRangeTransport_onDataProgress(loaded) {
-        this.ready.then(function () {
-          var listeners = this.progressListeners;
-          for (var i = 0, n = listeners.length; i < n; ++i) {
-            listeners[i](loaded);
-          }
-        }.bind(this));
-      },
-
-      onDataProgressiveRead:
-          function PdfDataRangeTransport_onDataProgress(chunk) {
-        this.ready.then(function () {
-          var listeners = this.progressiveReadListeners;
-          for (var i = 0, n = listeners.length; i < n; ++i) {
-            listeners[i](chunk);
-          }
-        }.bind(this));
-      },
-
-      transportReady: function PdfDataRangeTransport_transportReady() {
-        pdfDataRangeTransportReadyResolve();
-      },
-
-      requestDataRange: function PdfDataRangeTransport_requestDataRange(
-                                  begin, end) {
-        FirefoxCom.request('requestDataRange', { begin: begin, end: end });
-      }
+    function FirefoxComDataRangeTransport(length, initialData) {
+      PDFJS.PDFDataRangeTransport.call(this, length, initialData);
+    }
+    FirefoxComDataRangeTransport.prototype =
+      Object.create(PDFJS.PDFDataRangeTransport.prototype);
+    FirefoxComDataRangeTransport.prototype.requestDataRange =
+        function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
+      FirefoxCom.request('requestDataRange', { begin: begin, end: end });
     };
+
+    var pdfDataRangeTransport;
 
     window.addEventListener('message', function windowMessage(e) {
       if (e.source !== null) {
@@ -447,11 +398,11 @@ var PDFViewerApplication = {
       }
       switch (args.pdfjsLoadAction) {
         case 'supportsRangedLoading':
+          pdfDataRangeTransport =
+            new FirefoxComDataRangeTransport(args.length, args.data);
+
           PDFViewerApplication.open(args.pdfUrl, 0, undefined,
-                                    pdfDataRangeTransport, {
-            length: args.length,
-            initialData: args.data
-          });
+                                    pdfDataRangeTransport);
           break;
         case 'range':
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
