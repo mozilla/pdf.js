@@ -166,7 +166,6 @@ html[dir='rtl'] .innerCenter {
   top: 0;
   bottom: 0;
   width: 200px;
-  visibility: hidden;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
   transition-duration: 200ms;
@@ -184,10 +183,6 @@ html[dir='rtl'] #sidebarContainer {
   right: -200px;
 }
 
-#outerContainer.sidebarMoving > #sidebarContainer,
-#outerContainer.sidebarOpen > #sidebarContainer {
-  visibility: visible;
-}
 html[dir='ltr'] #outerContainer.sidebarOpen > #sidebarContainer {
   left: 0px;
 }

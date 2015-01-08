@@ -1575,8 +1575,13 @@ function webViewerInitialized() {
 
   var mainContainer = document.getElementById('mainContainer');
   var outerContainer = document.getElementById('outerContainer');
+  var sidebarContainer = document.getElementById('sidebarContainer');
+
   mainContainer.addEventListener('transitionend', function(e) {
     if (e.target === mainContainer) {
+      if (!PDFViewerApplication.sidebarOpen) {
+        sidebarContainer.classList.add('hidden');
+      }
       var event = document.createEvent('UIEvents');
       event.initUIEvent('resize', false, false, window, 0);
       window.dispatchEvent(event);
@@ -1587,14 +1592,20 @@ function webViewerInitialized() {
   document.getElementById('sidebarToggle').addEventListener('click',
     function() {
       this.classList.toggle('toggled');
-      outerContainer.classList.add('sidebarMoving');
-      outerContainer.classList.toggle('sidebarOpen');
-      PDFViewerApplication.sidebarOpen =
-        outerContainer.classList.contains('sidebarOpen');
+      var wasSidebarOpen = outerContainer.classList.contains('sidebarOpen');
+      PDFViewerApplication.sidebarOpen = !wasSidebarOpen;
       if (PDFViewerApplication.sidebarOpen) {
+        sidebarContainer.classList.remove('hidden');
         PDFViewerApplication.refreshThumbnailViewer();
       }
+      // The sidebar opening transition does not work if the 'hidden' class is
+      // still active for the sidebar container. The forceRendering() call
+      // between remove('hidden') and toogle('sidebarOpen') seems to provide
+      // enough time for the remove('hidden') statement to complete before
+      // opening the sidebar.
       PDFViewerApplication.forceRendering();
+      outerContainer.classList.add('sidebarMoving');
+      outerContainer.classList.toggle('sidebarOpen');
     });
 
   document.getElementById('viewThumbnail').addEventListener('click',
