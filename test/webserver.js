@@ -174,7 +174,7 @@ WebServer.prototype = {
           res.end();
           return;
         }
-        res.write('<html><body><h1>PDFs of ' + pathPart + '</h1>\n');
+        res.write('<html><head><meta charset=\"utf-8\"></head><body><h1>PDFs of ' + pathPart + '</h1>\n');
         if (pathPart !== '/') {
           res.write('<a href=\"..\">..</a><br>\n');
         }
