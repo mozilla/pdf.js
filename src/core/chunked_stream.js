@@ -170,6 +170,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     getUint16: function ChunkedStream_getUint16() {
       var b0 = this.getByte();
       var b1 = this.getByte();
+      if (b0 === -1 || b1 === -1) {
+        return -1;
+      }
       return (b0 << 8) + b1;
     },
 
