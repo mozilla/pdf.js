@@ -2252,11 +2252,14 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //  var fileURL = activity.source.data.url;
 //
 //  var url = URL.createObjectURL(blob);
-//  PDFViewerApplication.open({url : url, originalUrl: fileURL});
+//  // We need to delay opening until all HTML is loaded.
+//  PDFViewerApplication.animationStartedPromise.then(function () {
+//    PDFViewerApplication.open({url : url, originalUrl: fileURL});
 //
-//  var header = document.getElementById('header');
-//  header.addEventListener('action', function() {
-//    activity.postResult('close');
+//    var header = document.getElementById('header');
+//    header.addEventListener('action', function() {
+//      activity.postResult('close');
+//    });
 //  });
 //});
 //#endif
