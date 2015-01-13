@@ -523,7 +523,7 @@ var SpecialPUASymbols = {
   '63731': 0x23A9, // braceleftbt (0xF8F3)
   '63740': 0x23AB, // bracerighttp (0xF8FC)
   '63741': 0x23AC, // bracerightmid (0xF8FD)
-  '63742': 0x23AD, // bracerightmid (0xF8FE)
+  '63742': 0x23AD, // bracerightbt (0xF8FE)
   '63726': 0x23A1, // bracketlefttp (0xF8EE)
   '63727': 0x23A2, // bracketleftex (0xF8EF)
   '63728': 0x23A3, // bracketleftbt (0xF8F0)
@@ -2463,7 +2463,7 @@ var Font = (function FontClosure() {
       // to be used with the canvas.font.
       var fontName = name.replace(/[,_]/g, '-');
       var isStandardFont = !!stdFontMap[fontName] ||
-        (nonStdFontMap[fontName] && !!stdFontMap[nonStdFontMap[fontName]]);
+        !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
       fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
 
       this.bold = (fontName.search(/bold/gi) !== -1);
