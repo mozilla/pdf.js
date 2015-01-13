@@ -203,7 +203,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     if (this.hasImage || !img) {
       return;
     }
-    if (this.pdfPage) {
+    if (!this.pdfPage) {
       this.setPdfPage(pageView.pdfPage);
     }
     this.renderingState = RenderingStates.FINISHED;
