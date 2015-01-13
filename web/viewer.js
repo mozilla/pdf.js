@@ -403,6 +403,10 @@ var PDFViewerApplication = {
 
           PDFViewerApplication.open(args.pdfUrl, 0, undefined,
                                     pdfDataRangeTransport);
+
+          if (args.length) {
+            DocumentProperties.setFileSize(args.length);
+          }
           break;
         case 'range':
           pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
