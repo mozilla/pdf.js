@@ -127,12 +127,7 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
 
     ring.appendChild(canvas);
 
-    var ctx = canvas.getContext('2d');
-    ctx.save();
-    ctx.fillStyle = 'rgb(255, 255, 255)';
-    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
-    ctx.restore();
-    return ctx;
+    return canvas.getContext('2d');
   };
 
   this.drawingRequired = function thumbnailViewDrawingRequired() {
