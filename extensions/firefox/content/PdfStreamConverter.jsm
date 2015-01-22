@@ -381,7 +381,7 @@ ChromeActions.prototype = {
     return (!!prefBrowser && prefGfx);
   },
   supportsDocumentColors: function() {
-    if (getIntPref('browser.display.document_color_use', 0) == 2 ||
+    if (getIntPref('browser.display.document_color_use', 0) === 2 ||
         !getBoolPref('browser.display.use_document_colors', true)) {
       return false;
     }
