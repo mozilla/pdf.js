@@ -190,6 +190,15 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     }
     tempCanvas.width = width;
     tempCanvas.height = height;
+
+    // Since this is a temporary canvas, we need to fill
+    // the canvas with a white background ourselves.
+    // |getPageDrawContext| uses CSS rules for this.
+    var ctx = tempCanvas.getContext('2d');
+    ctx.save();
+    ctx.fillStyle = 'rgb(255, 255, 255)';
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
     return tempCanvas;
   }
 
