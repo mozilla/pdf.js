@@ -1124,6 +1124,8 @@ html[dir='rtl'] .verticalToolbarSeparator {
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0.8;
   z-index: 99;
+  background-color: white;
+  background-clip: content-box;
 }
 
 .thumbnailSelectionRing {
