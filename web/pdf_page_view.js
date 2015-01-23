@@ -75,9 +75,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     this.annotationLayer = null;
 
-    var anchor = document.createElement('a');
-    anchor.name = '' + this.id;
-
     var div = document.createElement('div');
     div.id = 'pageContainer' + this.id;
     div.className = 'page';
@@ -86,7 +83,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.el = div; // TODO replace 'el' property usage
     this.div = div;
 
-    container.appendChild(anchor);
     container.appendChild(div);
   }
 
