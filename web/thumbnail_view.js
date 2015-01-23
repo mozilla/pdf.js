@@ -20,6 +20,7 @@
 'use strict';
 
 var THUMBNAIL_SCROLL_MARGIN = -19;
+var THUMBNAIL_CANVAS_BORDER_WIDTH = 1;
 
 /**
  * @constructor
@@ -53,8 +54,8 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
   this.renderingId = 'thumbnail' + id;
 
   this.canvasWidth = 98;
-  this.canvasHeight = this.canvasWidth / this.pageWidth * this.pageHeight;
-  this.scale = (this.canvasWidth / this.pageWidth);
+  this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
+  this.scale = this.canvasWidth / this.pageWidth;
 
   var div = this.el = document.createElement('div');
   div.id = 'thumbnailContainer' + id;
@@ -68,8 +69,10 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
 
   var ring = document.createElement('div');
   ring.className = 'thumbnailSelectionRing';
-  ring.style.width = this.canvasWidth + 'px';
-  ring.style.height = this.canvasHeight + 'px';
+  ring.style.width = this.canvasWidth + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
+                     'px';
+  ring.style.height = this.canvasHeight + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
+                      'px';
 
   div.appendChild(ring);
   anchor.appendChild(div);
@@ -100,13 +103,15 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     this.pageHeight = this.viewport.height;
     this.pageRatio = this.pageWidth / this.pageHeight;
 
-    this.canvasHeight = this.canvasWidth / this.pageWidth * this.pageHeight;
+    this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
     this.scale = (this.canvasWidth / this.pageWidth);
 
     div.removeAttribute('data-loaded');
     ring.textContent = '';
-    ring.style.width = this.canvasWidth + 'px';
-    ring.style.height = this.canvasHeight + 'px';
+    ring.style.width = this.canvasWidth + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
+                       'px';
+    ring.style.height = this.canvasHeight + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
+                        'px';
 
     this.hasImage = false;
     this.renderingState = RenderingStates.INITIAL;

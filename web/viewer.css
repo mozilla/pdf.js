@@ -1113,9 +1113,13 @@ html[dir='rtl'] .verticalToolbarSeparator {
   margin-bottom: 10px;
 }
 
+#thumbnailView > a:last-of-type > .thumbnail:not([data-loaded]) {
+  margin-bottom: 9px;
+}
+
 .thumbnail:not([data-loaded]) {
   border: 1px dashed rgba(255, 255, 255, 0.5);
-  margin-bottom: 10px;
+  margin: -1px -1px 4px -1px;
 }
 
 .thumbnailImage {
