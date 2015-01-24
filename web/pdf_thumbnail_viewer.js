@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals watchScroll, getVisibleElements, scrollIntoView, ThumbnailView,
+/* globals watchScroll, getVisibleElements, scrollIntoView, PDFThumbnailView,
            Promise */
 
 'use strict';
@@ -104,7 +104,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
     },
 
     cleanup: function PDFThumbnailViewer_cleanup() {
-      ThumbnailView.tempImageCache = null;
+      PDFThumbnailView.tempImageCache = null;
     },
 
     /**
@@ -135,9 +135,13 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         var pagesCount = pdfDocument.numPages;
         var viewport = firstPage.getViewport(1.0);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-          var thumbnail = new ThumbnailView(this.container, pageNum,
-                                            viewport.clone(), this.linkService,
-                                            this.renderingQueue);
+          var thumbnail = new PDFThumbnailView({
+            container: this.container,
+            id: pageNum,
+            defaultViewport: viewport.clone(),
+            linkService: this.linkService,
+            renderingQueue: this.renderingQueue
+          });
           this.thumbnails.push(thumbnail);
         }
       }.bind(this));

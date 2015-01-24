@@ -21,175 +21,24 @@
 var THUMBNAIL_CANVAS_BORDER_WIDTH = 1;
 
 /**
- * @constructor
- * @param container
- * @param id
- * @param defaultViewport
- * @param linkService
- * @param renderingQueue
- *
+ * @typedef {Object} PDFThumbnailViewOptions
+ * @property {HTMLDivElement} container - The viewer element.
+ * @property {number} id - The thumbnail's unique ID (normally its number).
+ * @property {PageViewport} defaultViewport - The page viewport.
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ */
+
+/**
+ * @class
  * @implements {IRenderableView}
  */
-var ThumbnailView = function thumbnailView(container, id, defaultViewport,
-                                           linkService, renderingQueue) {
-  var anchor = document.createElement('a');
-  anchor.href = linkService.getAnchorUrl('#page=' + id);
-  anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
-  anchor.onclick = function stopNavigation() {
-    linkService.page = id;
-    return false;
-  };
-
-  this.pdfPage = undefined;
-  this.viewport = defaultViewport;
-  this.pdfPageRotate = defaultViewport.rotation;
-
-  this.rotation = 0;
-  this.pageWidth = this.viewport.width;
-  this.pageHeight = this.viewport.height;
-  this.pageRatio = this.pageWidth / this.pageHeight;
-  this.id = id;
-  this.renderingId = 'thumbnail' + id;
-
-  this.canvasWidth = 98;
-  this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
-  this.scale = this.canvasWidth / this.pageWidth;
-
-  var div = this.el = document.createElement('div');
-  div.id = 'thumbnailContainer' + id;
-  div.className = 'thumbnail';
-
-  if (id === 1) {
-    // Highlight the thumbnail of the first page when no page number is
-    // specified (or exists in cache) when the document is loaded.
-    div.classList.add('selected');
-  }
-
-  var ring = document.createElement('div');
-  ring.className = 'thumbnailSelectionRing';
-  ring.style.width = this.canvasWidth + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
-                     'px';
-  ring.style.height = this.canvasHeight + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
-                      'px';
-
-  div.appendChild(ring);
-  anchor.appendChild(div);
-  container.appendChild(anchor);
-
-  this.hasImage = false;
-  this.renderingState = RenderingStates.INITIAL;
-  this.renderingQueue = renderingQueue;
-
-  this.setPdfPage = function thumbnailViewSetPdfPage(pdfPage) {
-    this.pdfPage = pdfPage;
-    this.pdfPageRotate = pdfPage.rotate;
-    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = pdfPage.getViewport(1, totalRotation);
-    this.update();
-  };
-
-  this.update = function thumbnailViewUpdate(rotation) {
-    if (rotation !== undefined) {
-      this.rotation = rotation;
-    }
-    var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
-    this.viewport = this.viewport.clone({
-      scale: 1,
-      rotation: totalRotation
-    });
-    this.pageWidth = this.viewport.width;
-    this.pageHeight = this.viewport.height;
-    this.pageRatio = this.pageWidth / this.pageHeight;
-
-    this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
-    this.scale = (this.canvasWidth / this.pageWidth);
-
-    div.removeAttribute('data-loaded');
-    ring.textContent = '';
-    ring.style.width = this.canvasWidth + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
-                       'px';
-    ring.style.height = this.canvasHeight + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH +
-                        'px';
-
-    this.hasImage = false;
-    this.renderingState = RenderingStates.INITIAL;
-    this.resume = null;
-  };
-
-  this.getPageDrawContext = function thumbnailViewGetPageDrawContext() {
-    var canvas = document.createElement('canvas');
-    canvas.id = 'thumbnail' + id;
-
-    canvas.width = this.canvasWidth;
-    canvas.height = this.canvasHeight;
-    canvas.className = 'thumbnailImage';
-    canvas.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
-      {page: id}, 'Thumbnail of Page {{page}}'));
-
-    div.setAttribute('data-loaded', true);
-
-    ring.appendChild(canvas);
-
-    return canvas.getContext('2d');
-  };
-
-  this.drawingRequired = function thumbnailViewDrawingRequired() {
-    return !this.hasImage;
-  };
-
-  this.draw = function thumbnailViewDraw() {
-    if (this.renderingState !== RenderingStates.INITIAL) {
-      console.error('Must be in new state before drawing');
-    }
-
-    this.renderingState = RenderingStates.RUNNING;
-    if (this.hasImage) {
-      return Promise.resolve(undefined);
-    }
-
-    var resolveRenderPromise, rejectRenderPromise;
-    var promise = new Promise(function (resolve, reject) {
-      resolveRenderPromise = resolve;
-      rejectRenderPromise = reject;
-    });
-
-    var self = this;
-    var ctx = this.getPageDrawContext();
-    var drawViewport = this.viewport.clone({ scale: this.scale });
-    var renderContext = {
-      canvasContext: ctx,
-      viewport: drawViewport,
-      continueCallback: function(cont) {
-        if (!self.renderingQueue.isHighestPriority(self)) {
-          self.renderingState = RenderingStates.PAUSED;
-          self.resume = function() {
-            self.renderingState = RenderingStates.RUNNING;
-            cont();
-          };
-          return;
-        }
-        cont();
-      }
-    };
-    this.pdfPage.render(renderContext).promise.then(
-      function pdfPageRenderCallback() {
-        self.renderingState = RenderingStates.FINISHED;
-        resolveRenderPromise(undefined);
-      },
-      function pdfPageRenderError(error) {
-        self.renderingState = RenderingStates.FINISHED;
-        rejectRenderPromise(error);
-      }
-    );
-    this.hasImage = true;
-    return promise;
-  };
-
+var PDFThumbnailView = (function PDFThumbnailViewClosure() {
   function getTempCanvas(width, height) {
-    var tempCanvas = ThumbnailView.tempImageCache;
+    var tempCanvas = PDFThumbnailView.tempImageCache;
     if (!tempCanvas) {
       tempCanvas = document.createElement('canvas');
-      ThumbnailView.tempImageCache = tempCanvas;
+      PDFThumbnailView.tempImageCache = tempCanvas;
     }
     tempCanvas.width = width;
     tempCanvas.height = height;
@@ -205,48 +54,221 @@ var ThumbnailView = function thumbnailView(container, id, defaultViewport,
     return tempCanvas;
   }
 
-  this.setImage = function thumbnailViewSetImage(pageView) {
-    var img = pageView.canvas;
-    if (this.hasImage || !img) {
-      return;
-    }
-    if (!this.pdfPage) {
-      this.setPdfPage(pageView.pdfPage);
-    }
-    this.renderingState = RenderingStates.FINISHED;
-    var ctx = this.getPageDrawContext();
-    var canvas = ctx.canvas;
+  /**
+   * @constructs PDFThumbnailView
+   * @param {PDFThumbnailViewOptions} options
+   */
+  function PDFThumbnailView(options) {
+    var container = options.container;
+    var id = options.id;
+    var defaultViewport = options.defaultViewport;
+    var linkService = options.linkService;
+    var renderingQueue = options.renderingQueue;
 
-    if (img.width <= 2 * canvas.width) {
-      ctx.drawImage(img, 0, 0, img.width, img.height,
-                    0, 0, canvas.width, canvas.height);
-    } else {
-      // drawImage does an awful job of rescaling the image, doing it gradually
-      var MAX_NUM_SCALING_STEPS = 3;
-      var reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
-      var reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
-      var reducedImage = getTempCanvas(reducedWidth, reducedHeight);
-      var reducedImageCtx = reducedImage.getContext('2d');
+    var anchor = document.createElement('a');
+    anchor.href = linkService.getAnchorUrl('#page=' + id);
+    anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
+    anchor.onclick = function stopNavigation() {
+      linkService.page = id;
+      return false;
+    };
 
-      while (reducedWidth > img.width || reducedHeight > img.height) {
-        reducedWidth >>= 1;
-        reducedHeight >>= 1;
+    this.pdfPage = undefined;
+    this.viewport = defaultViewport;
+    this.pdfPageRotate = defaultViewport.rotation;
+
+    this.rotation = 0;
+    this.pageWidth = this.viewport.width;
+    this.pageHeight = this.viewport.height;
+    this.pageRatio = this.pageWidth / this.pageHeight;
+    this.id = id;
+    this.renderingId = 'thumbnail' + id;
+
+    this.canvasWidth = 98;
+    this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
+    this.scale = this.canvasWidth / this.pageWidth;
+
+    var div = this.el = document.createElement('div');
+    div.id = 'thumbnailContainer' + id;
+    div.className = 'thumbnail';
+    this.div = div;
+
+    if (id === 1) {
+      // Highlight the thumbnail of the first page when no page number is
+      // specified (or exists in cache) when the document is loaded.
+      div.classList.add('selected');
+    }
+
+    var ring = document.createElement('div');
+    ring.className = 'thumbnailSelectionRing';
+    ring.style.width =
+      this.canvasWidth + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH + 'px';
+    ring.style.height =
+      this.canvasHeight + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH + 'px';
+    this.ring = ring;
+
+    div.appendChild(ring);
+    anchor.appendChild(div);
+    container.appendChild(anchor);
+
+    this.hasImage = false;
+    this.renderingState = RenderingStates.INITIAL;
+    this.renderingQueue = renderingQueue;
+  }
+
+  PDFThumbnailView.prototype = {
+    setPdfPage: function PDFThumbnailView_setPdfPage(pdfPage) {
+      this.pdfPage = pdfPage;
+      this.pdfPageRotate = pdfPage.rotate;
+      var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+      this.viewport = pdfPage.getViewport(1, totalRotation);
+      this.update();
+    },
+
+    update: function PDFThumbnailView_update(rotation) {
+      if (rotation !== undefined) {
+        this.rotation = rotation;
       }
-      reducedImageCtx.drawImage(img, 0, 0, img.width, img.height,
-                                0, 0, reducedWidth, reducedHeight);
-      while (reducedWidth > 2 * canvas.width) {
-        reducedImageCtx.drawImage(reducedImage,
-                                  0, 0, reducedWidth, reducedHeight,
-                                  0, 0, reducedWidth >> 1, reducedHeight >> 1);
-        reducedWidth >>= 1;
-        reducedHeight >>= 1;
-      }
-      ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
-                    0, 0, canvas.width, canvas.height);
-    }
+      var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
+      this.viewport = this.viewport.clone({
+        scale: 1,
+        rotation: totalRotation
+      });
+      this.pageWidth = this.viewport.width;
+      this.pageHeight = this.viewport.height;
+      this.pageRatio = this.pageWidth / this.pageHeight;
 
-    this.hasImage = true;
+      this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
+      this.scale = (this.canvasWidth / this.pageWidth);
+
+      this.div.removeAttribute('data-loaded');
+      this.ring.textContent = '';
+      this.ring.style.width =
+        this.canvasWidth + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH + 'px';
+      this.ring.style.height =
+        this.canvasHeight + 2 * THUMBNAIL_CANVAS_BORDER_WIDTH + 'px';
+
+      this.hasImage = false;
+      this.renderingState = RenderingStates.INITIAL;
+      this.resume = null;
+    },
+
+    getPageDrawContext: function PDFThumbnailView_getPageDrawContext() {
+      var canvas = document.createElement('canvas');
+      canvas.id = 'thumbnail' + this.id;
+
+      canvas.width = this.canvasWidth;
+      canvas.height = this.canvasHeight;
+      canvas.className = 'thumbnailImage';
+      canvas.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
+        {page: this.id}, 'Thumbnail of Page {{page}}'));
+
+      this.div.setAttribute('data-loaded', true);
+
+      this.ring.appendChild(canvas);
+
+      return canvas.getContext('2d');
+    },
+
+    drawingRequired: function PDFThumbnailView_drawingRequired() {
+      return !this.hasImage;
+    },
+
+    draw: function PDFThumbnailView_draw() {
+      if (this.renderingState !== RenderingStates.INITIAL) {
+        console.error('Must be in new state before drawing');
+      }
+
+      this.renderingState = RenderingStates.RUNNING;
+      if (this.hasImage) {
+        return Promise.resolve(undefined);
+      }
+
+      var resolveRenderPromise, rejectRenderPromise;
+      var promise = new Promise(function (resolve, reject) {
+          resolveRenderPromise = resolve;
+          rejectRenderPromise = reject;
+        });
+
+      var self = this;
+      var ctx = this.getPageDrawContext();
+      var drawViewport = this.viewport.clone({ scale: this.scale });
+      var renderContext = {
+        canvasContext: ctx,
+        viewport: drawViewport,
+        continueCallback: function(cont) {
+          if (!self.renderingQueue.isHighestPriority(self)) {
+            self.renderingState = RenderingStates.PAUSED;
+            self.resume = function() {
+              self.renderingState = RenderingStates.RUNNING;
+              cont();
+            };
+            return;
+          }
+          cont();
+        }
+      };
+      this.pdfPage.render(renderContext).promise.then(
+        function pdfPageRenderCallback() {
+          self.renderingState = RenderingStates.FINISHED;
+          resolveRenderPromise(undefined);
+        },
+        function pdfPageRenderError(error) {
+          self.renderingState = RenderingStates.FINISHED;
+          rejectRenderPromise(error);
+        }
+      );
+      this.hasImage = true;
+      return promise;
+    },
+
+    setImage: function PDFThumbnailView_setImage(pageView) {
+      var img = pageView.canvas;
+      if (this.hasImage || !img) {
+        return;
+      }
+      if (!this.pdfPage) {
+        this.setPdfPage(pageView.pdfPage);
+      }
+      this.renderingState = RenderingStates.FINISHED;
+      var ctx = this.getPageDrawContext();
+      var canvas = ctx.canvas;
+
+      if (img.width <= 2 * canvas.width) {
+        ctx.drawImage(img, 0, 0, img.width, img.height,
+                      0, 0, canvas.width, canvas.height);
+      } else {
+        // drawImage does an awful job of rescaling the image,
+        // doing it gradually.
+        var MAX_NUM_SCALING_STEPS = 3;
+        var reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
+        var reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
+        var reducedImage = getTempCanvas(reducedWidth, reducedHeight);
+        var reducedImageCtx = reducedImage.getContext('2d');
+
+        while (reducedWidth > img.width || reducedHeight > img.height) {
+          reducedWidth >>= 1;
+          reducedHeight >>= 1;
+        }
+        reducedImageCtx.drawImage(img, 0, 0, img.width, img.height,
+                                  0, 0, reducedWidth, reducedHeight);
+        while (reducedWidth > 2 * canvas.width) {
+          reducedImageCtx.drawImage(reducedImage,
+                                    0, 0, reducedWidth, reducedHeight,
+                                    0, 0,
+                                    reducedWidth >> 1, reducedHeight >> 1);
+          reducedWidth >>= 1;
+          reducedHeight >>= 1;
+        }
+        ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
+                      0, 0, canvas.width, canvas.height);
+      }
+
+      this.hasImage = true;
+    }
   };
-};
 
-ThumbnailView.tempImageCache = null;
+  return PDFThumbnailView;
+})();
+
+PDFThumbnailView.tempImageCache = null;
