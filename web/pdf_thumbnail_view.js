@@ -195,10 +195,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       return canvas.getContext('2d');
     },
 
-    drawingRequired: function PDFThumbnailView_drawingRequired() {
-      return !this.hasImage;
-    },
-
     draw: function PDFThumbnailView_draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
