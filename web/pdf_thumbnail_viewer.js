@@ -21,7 +21,7 @@
 
 var THUMBNAIL_SCROLL_MARGIN = -19;
 
-//#include thumbnail_view.js
+//#include pdf_thumbnail_view.js
 
 /**
  * @typedef {Object} PDFThumbnailViewerOptions
