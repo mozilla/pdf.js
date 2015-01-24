@@ -25,18 +25,20 @@ var THUMBNAIL_SCROLL_MARGIN = -19;
 
 /**
  * @typedef {Object} PDFThumbnailViewerOptions
- * @property {HTMLDivElement} container - The container for the thumbs elements.
+ * @property {HTMLDivElement} container - The container for the thumbnail
+ *   elements.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  */
 
 /**
- * Simple viewer control to display thumbs for pages.
+ * Simple viewer control to display thumbnails for pages.
  * @class
+ * @implements {IRenderableView}
  */
-var PDFThumbnailViewer = (function pdfThumbnailViewer() {
+var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
   /**
-   * @constructs
+   * @constructs PDFThumbnailViewer
    * @param {PDFThumbnailViewerOptions} options
    */
   function PDFThumbnailViewer(options) {
@@ -49,6 +51,9 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
   }
 
   PDFThumbnailViewer.prototype = {
+    /**
+     * @private
+     */
     _scrollUpdated: function PDFThumbnailViewer_scrollUpdated() {
       this.renderingQueue.renderHighestPriority();
     },
@@ -57,11 +62,15 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
       return this.thumbnails[index];
     },
 
+    /**
+     * @private
+     */
     _getVisibleThumbs: function PDFThumbnailViewer_getVisibleThumbs() {
       return getVisibleElements(this.container, this.thumbnails);
     },
 
-    scrollThumbnailIntoView: function (page) {
+    scrollThumbnailIntoView:
+        function PDFThumbnailViewer_scrollThumbnailIntoView(page) {
       var selected = document.querySelector('.thumbnail.selected');
       if (selected) {
         selected.classList.remove('selected');
@@ -98,13 +107,16 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
       ThumbnailView.tempImageCache = null;
     },
 
-    _resetView: function () {
+    /**
+     * @private
+     */
+    _resetView: function PDFThumbnailViewer_resetView() {
       this.thumbnails = [];
       this._pagesRotation = 0;
       this._pagesRequests = [];
     },
 
-    setDocument: function (pdfDocument) {
+    setDocument: function PDFThumbnailViewer_setDocument(pdfDocument) {
       if (this.pdfDocument) {
         // cleanup of the elements and views
         var thumbsView = this.container;
@@ -136,7 +148,8 @@ var PDFThumbnailViewer = (function pdfThumbnailViewer() {
      * @returns {PDFPage}
      * @private
      */
-    _ensurePdfPageLoaded: function (thumbView) {
+    _ensurePdfPageLoaded:
+        function PDFThumbnailViewer_ensurePdfPageLoaded(thumbView) {
       if (thumbView.pdfPage) {
         return Promise.resolve(thumbView.pdfPage);
       }
