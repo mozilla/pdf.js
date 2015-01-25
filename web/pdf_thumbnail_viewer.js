@@ -104,6 +104,13 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
     },
 
     cleanup: function PDFThumbnailViewer_cleanup() {
+      var tempCanvas = PDFThumbnailView.tempImageCache;
+      if (tempCanvas) {
+        // Zeroing the width and height causes Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        tempCanvas.width = 0;
+        tempCanvas.height = 0;
+      }
       PDFThumbnailView.tempImageCache = null;
     },
 
