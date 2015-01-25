@@ -130,6 +130,9 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     },
 
     reset: function PDFThumbnailView_reset() {
+      if (this.renderTask) {
+        this.renderTask.cancel();
+      }
       this.hasImage = false;
       this.resume = null;
       this.renderingState = RenderingStates.INITIAL;
@@ -213,31 +216,53 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       });
 
       var self = this;
+      function thumbnailDrawCallback(error) {
+        // The renderTask may have been replaced by a new one, so only remove
+        // the reference to the renderTask if it matches the one that is
+        // triggering this callback.
+        if (renderTask === self.renderTask) {
+          self.renderTask = null;
+        }
+        if (error === 'cancelled') {
+          rejectRenderPromise(error);
+          return;
+        }
+        self.renderingState = RenderingStates.FINISHED;
+
+        if (!error) {
+          resolveRenderPromise(undefined);
+        } else {
+          rejectRenderPromise(error);
+        }
+      }
+
       var ctx = this._getPageDrawContext();
       var drawViewport = this.viewport.clone({ scale: this.scale });
+      var renderContinueCallback = function renderContinueCallback(cont) {
+        if (!self.renderingQueue.isHighestPriority(self)) {
+          self.renderingState = RenderingStates.PAUSED;
+          self.resume = function resumeCallback() {
+            self.renderingState = RenderingStates.RUNNING;
+            cont();
+          };
+          return;
+        }
+        cont();
+      };
+
       var renderContext = {
         canvasContext: ctx,
         viewport: drawViewport,
-        continueCallback: function renderContinueCallback(cont) {
-          if (!self.renderingQueue.isHighestPriority(self)) {
-            self.renderingState = RenderingStates.PAUSED;
-            self.resume = function() {
-              self.renderingState = RenderingStates.RUNNING;
-              cont();
-            };
-            return;
-          }
-          cont();
-        }
+        continueCallback: renderContinueCallback
       };
-      this.pdfPage.render(renderContext).promise.then(
+      var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+
+      renderTask.promise.then(
         function pdfPageRenderCallback() {
-          self.renderingState = RenderingStates.FINISHED;
-          resolveRenderPromise(undefined);
+          thumbnailDrawCallback(null);
         },
         function pdfPageRenderError(error) {
-          self.renderingState = RenderingStates.FINISHED;
-          rejectRenderPromise(error);
+          thumbnailDrawCallback(error);
         }
       );
       return promise;
