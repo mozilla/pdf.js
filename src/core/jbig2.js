@@ -179,10 +179,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
         // At each pixel: Clear contextLabel pixels that are shifted
         // out of the context, then add new ones.
-        // If j + n is out of range at the right image border, then
-        // the undefined value of bitmap[i - 2][j + n] is shifted to 0
         contextLabel = ((contextLabel & OLD_PIXEL_MASK) << 1) |
-                       (row2[j + 3] << 11) | (row1[j + 4] << 4) | pixel;
+                       (j + 3 < width ? row2[j + 3] << 11 : 0) |
+                       (j + 4 < width ? row1[j + 4] << 4 : 0) | pixel;
       }
     }
 
