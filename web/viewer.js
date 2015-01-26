@@ -85,6 +85,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include password_prompt.js
 //#include document_properties.js
 //#include pdf_viewer.js
+//#include pdf_thumbnail_viewer.js
 
 var PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
@@ -1389,7 +1390,6 @@ var PDFViewerApplication = {
 window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 //#endif
 
-//#include thumbnail_view.js
 //#include document_outline_view.js
 //#include document_attachments_view.js
 
