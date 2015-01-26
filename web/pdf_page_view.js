@@ -120,7 +120,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       var currentZoomLayer = this.zoomLayer || null;
       var currentAnnotationNode = (keepAnnotations && this.annotationLayer &&
                                    this.annotationLayer.div) || null;
-      for (var i = div.childNodes.length - 1; i >= 0; i--) {
+      for (var i = childNodes.length - 1; i >= 0; i--) {
         var node = childNodes[i];
         if (currentZoomLayer === node || currentAnnotationNode === node) {
           continue;
