@@ -988,7 +988,8 @@ var PDFViewerApplication = {
         var container = document.getElementById('attachmentsView');
         self.attachments = new PDFAttachmentView({
           container: container,
-          attachments: attachments
+          attachments: attachments,
+          downloadManager: new DownloadManager()
         });
         self.attachments.render();
         document.getElementById('viewAttachments').disabled = !attachments;

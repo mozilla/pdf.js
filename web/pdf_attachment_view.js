@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DownloadManager, getFileName */
+/* globals getFileName */
 
 'use strict';
 
@@ -22,6 +22,7 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
   function PDFAttachmentView(options) {
     this.container = options.container;
     this.attachments = options.attachments;
+    this.downloadManager = options.downloadManager;
   }
 
   PDFAttachmentView.prototype = {
@@ -34,12 +35,11 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
 
     _bindLink: function PDFAttachmentView_bindLink(button, item) {
       button.onclick = function downloadFile(e) {
-        var downloadManager = new DownloadManager();
         var content = item.content;
         var filename = item.filename;
-        downloadManager.downloadData(content, getFileName(filename), '');
+        this.downloadManager.downloadData(content, getFileName(filename), '');
         return false;
-      };
+      }.bind(this);
     },
 
     render: function PDFAttachmentView_render() {
