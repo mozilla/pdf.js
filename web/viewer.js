@@ -108,6 +108,7 @@ var PDFViewerApplication = {
   mouseScrollDelta: 0,
   preferenceSidebarViewOnLoad: SidebarView.NONE,
   preferencePdfBugEnabled: false,
+  preferenceShowPreviousViewOnLoad: true,
   isViewerEmbedded: (window.parent !== window),
   url: '',
 
@@ -226,6 +227,12 @@ var PDFViewerApplication = {
       Preferences.get('pdfBugEnabled').then(function resolved(value) {
         self.preferencePdfBugEnabled = value;
       }),
+      Preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
+        self.preferenceShowPreviousViewOnLoad = value;
+        if (!value && window.history.state) {
+          window.history.replaceState(null, '');
+        }
+      }),
       Preferences.get('disableTextLayer').then(function resolved(value) {
         if (PDFJS.disableTextLayer === true) {
           return;
@@ -250,6 +257,7 @@ var PDFViewerApplication = {
       Preferences.get('useOnlyCssZoom').then(function resolved(value) {
         PDFJS.useOnlyCssZoom = value;
       })
+
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
@@ -894,11 +902,6 @@ var PDFViewerApplication = {
     });
 
     // Fetch the necessary preference values.
-    var showPreviousViewOnLoad;
-    var showPreviousViewOnLoadPromise =
-      Preferences.get('showPreviousViewOnLoad').then(function (prefValue) {
-        showPreviousViewOnLoad = prefValue;
-      });
     var defaultZoomValue;
     var defaultZoomValuePromise =
       Preferences.get('defaultZoomValue').then(function (prefValue) {
@@ -906,10 +909,11 @@ var PDFViewerApplication = {
       });
 
     var storePromise = store.initializedPromise;
-    Promise.all([firstPagePromise, storePromise, showPreviousViewOnLoadPromise,
-                 defaultZoomValuePromise]).then(function resolved() {
+    Promise.all([firstPagePromise, storePromise, defaultZoomValuePromise]).then(
+        function resolved() {
       var storedHash = null;
-      if (showPreviousViewOnLoad && store.get('exists', false)) {
+      if (PDFViewerApplication.preferenceShowPreviousViewOnLoad &&
+          store.get('exists', false)) {
         var pageNum = store.get('page', '1');
         var zoom = defaultZoomValue ||
                    store.get('zoom', self.pdfViewer.currentScale);
