@@ -19,7 +19,7 @@
            PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
            PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PresentationMode, HandTool, Promise,
-           DocumentProperties, PDFOutlineView, DocumentAttachmentsView,
+           DocumentProperties, PDFOutlineView, PDFAttachmentView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
@@ -986,7 +986,7 @@ var PDFViewerApplication = {
       });
       pdfDocument.getAttachments().then(function(attachments) {
         var attachmentsView = document.getElementById('attachmentsView');
-        self.attachments = new DocumentAttachmentsView({
+        self.attachments = new PDFAttachmentView({
           attachments: attachments,
           attachmentsView: attachmentsView
         });

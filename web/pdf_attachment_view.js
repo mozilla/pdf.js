@@ -18,7 +18,7 @@
 
 'use strict';
 
-var DocumentAttachmentsView = function documentAttachmentsView(options) {
+var PDFAttachmentView = function documentAttachmentsView(options) {
   var attachments = options.attachments;
   var attachmentsView = options.attachmentsView;
   while (attachmentsView.firstChild) {
