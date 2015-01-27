@@ -18,37 +18,54 @@
 
 'use strict';
 
-var PDFAttachmentView = function documentAttachmentsView(options) {
-  var attachments = options.attachments;
-  var attachmentsView = options.attachmentsView;
-  while (attachmentsView.firstChild) {
-    attachmentsView.removeChild(attachmentsView.firstChild);
+var PDFAttachmentView = (function PDFAttachmentViewClosure() {
+  function PDFAttachmentView(options) {
+    this.container = options.container;
+    this.attachments = options.attachments;
   }
 
-  if (!attachments) {
-    return;
-  }
+  PDFAttachmentView.prototype = {
+    reset: function PDFAttachmentView_reset() {
+      var container = this.container;
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+    },
 
-  function bindItemLink(domObj, item) {
-    domObj.onclick = function documentAttachmentsViewOnclick(e) {
-      var downloadManager = new DownloadManager();
-      downloadManager.downloadData(item.content, getFileName(item.filename),
-                                   '');
-      return false;
-    };
-  }
+    _bindLink: function PDFAttachmentView_bindLink(button, item) {
+      button.onclick = function downloadFile(e) {
+        var downloadManager = new DownloadManager();
+        var content = item.content;
+        var filename = item.filename;
+        downloadManager.downloadData(content, getFileName(filename), '');
+        return false;
+      };
+    },
 
-  var names = Object.keys(attachments).sort(function(a,b) {
-    return a.toLowerCase().localeCompare(b.toLowerCase());
-  });
-  for (var i = 0, ii = names.length; i < ii; i++) {
-    var item = attachments[names[i]];
-    var div = document.createElement('div');
-    div.className = 'attachmentsItem';
-    var button = document.createElement('button');
-    bindItemLink(button, item);
-    button.textContent = getFileName(item.filename);
-    div.appendChild(button);
-    attachmentsView.appendChild(div);
-  }
-};
+    render: function PDFAttachmentView_render() {
+      var attachments = this.attachments;
+
+      this.reset();
+
+      if (!attachments) {
+        return;
+      }
+
+      var names = Object.keys(attachments).sort(function(a, b) {
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+      });
+      for (var i = 0, len = names.length; i < len; i++) {
+        var item = attachments[names[i]];
+        var div = document.createElement('div');
+        div.className = 'attachmentsItem';
+        var button = document.createElement('button');
+        this._bindLink(button, item);
+        button.textContent = getFileName(item.filename);
+        div.appendChild(button);
+        this.container.appendChild(div);
+      }
+    }
+  };
+
+  return PDFAttachmentView;
+})();

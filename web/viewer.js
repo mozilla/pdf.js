@@ -985,14 +985,15 @@ var PDFViewerApplication = {
         }
       });
       pdfDocument.getAttachments().then(function(attachments) {
-        var attachmentsView = document.getElementById('attachmentsView');
+        var container = document.getElementById('attachmentsView');
         self.attachments = new PDFAttachmentView({
-          attachments: attachments,
-          attachmentsView: attachmentsView
+          container: container,
+          attachments: attachments
         });
+        self.attachments.render();
         document.getElementById('viewAttachments').disabled = !attachments;
 
-        if (!attachments && !attachmentsView.classList.contains('hidden')) {
+        if (!attachments && !container.classList.contains('hidden')) {
           self.switchSidebarView('thumbs');
         }
         if (attachments &&
