@@ -86,6 +86,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include document_properties.js
 //#include pdf_viewer.js
 //#include pdf_thumbnail_viewer.js
+//#include pdf_outline_view.js
 
 var PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
@@ -1390,7 +1391,6 @@ var PDFViewerApplication = {
 window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 //#endif
 
-//#include document_outline_view.js
 //#include document_attachments_view.js
 
 //#if CHROME
