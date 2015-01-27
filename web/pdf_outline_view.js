@@ -17,7 +17,21 @@
 
 'use strict';
 
+/**
+ * @typedef {Object} PDFOutlineViewOptions
+ * @property {HTMLDivElement} container - The viewer element.
+ * @property {Array} outline - An array of outline objects.
+ * @property {IPDFLinkService} linkService - The navigation/linking service.
+ */
+
+/**
+ * @class
+ */
 var PDFOutlineView = (function PDFOutlineViewClosure() {
+  /**
+   * @constructs PDFOutlineView
+   * @param {PDFOutlineViewOptions} options
+   */
   function PDFOutlineView(options) {
     this.container = options.container;
     this.outline = options.outline;
@@ -32,6 +46,9 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
       }
     },
 
+    /**
+     * @private
+     */
     _bindLink: function PDFOutlineView_bindLink(element, item) {
       var linkService = this.linkService;
       element.href = linkService.getDestinationHash(item.dest);
