@@ -19,7 +19,7 @@
            PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
            PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PresentationMode, HandTool, Promise,
-           DocumentProperties, DocumentOutlineView, DocumentAttachmentsView,
+           DocumentProperties, PDFOutlineView, DocumentAttachmentsView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
@@ -967,7 +967,7 @@ var PDFViewerApplication = {
     Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
         var outlineView = document.getElementById('outlineView');
-        self.outline = new DocumentOutlineView({
+        self.outline = new PDFOutlineView({
           outline: outline,
           outlineView: outlineView,
           linkService: self

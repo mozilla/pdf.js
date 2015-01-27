@@ -17,7 +17,7 @@
 
 'use strict';
 
-var DocumentOutlineView = function documentOutlineView(options) {
+var PDFOutlineView = function documentOutlineView(options) {
   var outline = options.outline;
   var outlineView = options.outlineView;
   while (outlineView.firstChild) {
