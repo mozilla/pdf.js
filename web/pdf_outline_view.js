@@ -17,48 +17,63 @@
 
 'use strict';
 
-var PDFOutlineView = function documentOutlineView(options) {
-  var outline = options.outline;
-  var outlineView = options.outlineView;
-  while (outlineView.firstChild) {
-    outlineView.removeChild(outlineView.firstChild);
+var PDFOutlineView = (function PDFOutlineViewClosure() {
+  function PDFOutlineView(options) {
+    this.container = options.container;
+    this.outline = options.outline;
+    this.linkService = options.linkService;
   }
 
-  if (!outline) {
-    return;
-  }
+  PDFOutlineView.prototype = {
+    reset: function PDFOutlineView_reset() {
+      var container = this.container;
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+    },
 
-  var linkService = options.linkService;
+    _bindLink: function PDFOutlineView_bindLink(element, item) {
+      var linkService = this.linkService;
+      element.href = linkService.getDestinationHash(item.dest);
+      element.onclick = function goToDestination(e) {
+        linkService.navigateTo(item.dest);
+        return false;
+      };
+    },
 
-  function bindItemLink(domObj, item) {
-    domObj.href = linkService.getDestinationHash(item.dest);
-    domObj.onclick = function documentOutlineViewOnclick(e) {
-      linkService.navigateTo(item.dest);
-      return false;
-    };
-  }
+    render: function PDFOutlineView_render() {
+      var outline = this.outline;
 
-  var queue = [{parent: outlineView, items: outline}];
-  while (queue.length > 0) {
-    var levelData = queue.shift();
-    var i, n = levelData.items.length;
-    for (i = 0; i < n; i++) {
-      var item = levelData.items[i];
-      var div = document.createElement('div');
-      div.className = 'outlineItem';
-      var a = document.createElement('a');
-      bindItemLink(a, item);
-      a.textContent = item.title;
-      div.appendChild(a);
+      this.reset();
 
-      if (item.items.length > 0) {
-        var itemsDiv = document.createElement('div');
-        itemsDiv.className = 'outlineItems';
-        div.appendChild(itemsDiv);
-        queue.push({parent: itemsDiv, items: item.items});
+      if (!outline) {
+        return;
       }
 
-      levelData.parent.appendChild(div);
+      var queue = [{ parent: this.container, items: this.outline }];
+      while (queue.length > 0) {
+        var levelData = queue.shift();
+        for (var i = 0, len = levelData.items.length; i < len; i++) {
+          var item = levelData.items[i];
+          var div = document.createElement('div');
+          div.className = 'outlineItem';
+          var element = document.createElement('a');
+          this._bindLink(element, item);
+          element.textContent = item.title;
+          div.appendChild(element);
+
+          if (item.items.length > 0) {
+            var itemsDiv = document.createElement('div');
+            itemsDiv.className = 'outlineItems';
+            div.appendChild(itemsDiv);
+            queue.push({ parent: itemsDiv, items: item.items });
+          }
+
+          levelData.parent.appendChild(div);
+        }
+      }
     }
-  }
-};
+  };
+
+  return PDFOutlineView;
+})();

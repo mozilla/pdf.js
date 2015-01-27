@@ -966,15 +966,16 @@ var PDFViewerApplication = {
     var promises = [pagesPromise, this.animationStartedPromise];
     Promise.all(promises).then(function() {
       pdfDocument.getOutline().then(function(outline) {
-        var outlineView = document.getElementById('outlineView');
+        var container = document.getElementById('outlineView');
         self.outline = new PDFOutlineView({
+          container: container,
           outline: outline,
-          outlineView: outlineView,
           linkService: self
         });
+        self.outline.render();
         document.getElementById('viewOutline').disabled = !outline;
 
-        if (!outline && !outlineView.classList.contains('hidden')) {
+        if (!outline && !container.classList.contains('hidden')) {
           self.switchSidebarView('thumbs');
         }
         if (outline &&
