@@ -50,11 +50,9 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
     /**
      * @private
      */
-    _bindLink: function PDFAttachmentView_bindLink(button, item) {
+    _bindLink: function PDFAttachmentView_bindLink(button, content, filename) {
       button.onclick = function downloadFile(e) {
-        var content = item.content;
-        var filename = item.filename;
-        this.downloadManager.downloadData(content, getFileName(filename), '');
+        this.downloadManager.downloadData(content, filename, '');
         return false;
       }.bind(this);
     },
@@ -73,11 +71,12 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
       });
       for (var i = 0, len = names.length; i < len; i++) {
         var item = attachments[names[i]];
+        var filename = getFileName(item.filename);
         var div = document.createElement('div');
         div.className = 'attachmentsItem';
         var button = document.createElement('button');
-        this._bindLink(button, item);
-        button.textContent = getFileName(item.filename);
+        this._bindLink(button, item.content, filename);
+        button.textContent = filename;
         div.appendChild(button);
         this.container.appendChild(div);
       }
