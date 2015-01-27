@@ -18,7 +18,21 @@
 
 'use strict';
 
+/**
+ * @typedef {Object} PDFAttachmentViewOptions
+ * @property {HTMLDivElement} container - The viewer element.
+ * @property {Array} attachments - An array of attachment objects.
+ * @property {DownloadManager} downloadManager - The download manager.
+ */
+
+/**
+ * @class
+ */
 var PDFAttachmentView = (function PDFAttachmentViewClosure() {
+  /**
+   * @constructs PDFAttachmentView
+   * @param {PDFAttachmentViewOptions} options
+   */
   function PDFAttachmentView(options) {
     this.container = options.container;
     this.attachments = options.attachments;
@@ -33,6 +47,9 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
       }
     },
 
+    /**
+     * @private
+     */
     _bindLink: function PDFAttachmentView_bindLink(button, item) {
       button.onclick = function downloadFile(e) {
         var content = item.content;
