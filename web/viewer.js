@@ -1177,6 +1177,23 @@ var PDFViewerApplication = {
     }
   },
 
+  refreshThumbnailViewer: function pdfViewRefreshThumbnailViewer() {
+    var pdfViewer = this.pdfViewer;
+    var thumbnailViewer = this.pdfThumbnailViewer;
+
+    // set thumbnail images of rendered pages
+    var pagesCount = pdfViewer.pagesCount;
+    for (var pageIndex = 0; pageIndex < pagesCount; pageIndex++) {
+      var pageView = pdfViewer.getPageView(pageIndex);
+      if (pageView && pageView.renderingState === RenderingStates.FINISHED) {
+        var thumbnailView = thumbnailViewer.getThumbnail(pageIndex);
+        thumbnailView.setImage(pageView);
+      }
+    }
+
+    thumbnailViewer.scrollThumbnailIntoView(this.page);
+  },
+
   switchSidebarView: function pdfViewSwitchSidebarView(view, openSidebar) {
     if (openSidebar && !this.sidebarOpen) {
       document.getElementById('sidebarToggle').click();
@@ -1575,8 +1592,7 @@ function webViewerInitialized() {
       PDFViewerApplication.sidebarOpen =
         outerContainer.classList.contains('sidebarOpen');
       if (PDFViewerApplication.sidebarOpen) {
-        PDFViewerApplication.pdfThumbnailViewer.
-          scrollThumbnailIntoView(PDFViewerApplication.page);
+        PDFViewerApplication.refreshThumbnailViewer();
       }
       PDFViewerApplication.forceRendering();
     });
@@ -1692,9 +1708,12 @@ document.addEventListener('pagerendered', function (e) {
   var pageNumber = e.detail.pageNumber;
   var pageIndex = pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
-  var thumbnailView = PDFViewerApplication.pdfThumbnailViewer.
-                      getThumbnail(pageIndex);
-  thumbnailView.setImage(pageView);
+
+  if (PDFViewerApplication.sidebarOpen) {
+    var thumbnailView = PDFViewerApplication.pdfThumbnailViewer.
+                        getThumbnail(pageIndex);
+    thumbnailView.setImage(pageView);
+  }
 
   if (PDFJS.pdfBug && Stats.enabled && pageView.stats) {
     Stats.add(pageNumber, pageView.stats);
