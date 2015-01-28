@@ -22,7 +22,7 @@ var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
 var SELECTOR = 'presentationControls';
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1000; // in ms
 
-var PresentationMode = {
+var PDFPresentationMode = {
   initialized: false,
   active: false,
   args: null,
@@ -30,13 +30,20 @@ var PresentationMode = {
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
 
-  initialize: function presentationModeInitialize(options) {
+  initialize: function pdfPresentationModeInitialize(options) {
     this.initialized = true;
     this.container = options.container;
     this.pdfThumbnailViewer = options.pdfThumbnailViewer || null;
     var contextMenuItems = options.contextMenuItems || null;
 
     this.viewer = this.container.firstElementChild;
+
+    window.addEventListener('fullscreenchange', this._fullscreenChange);
+    window.addEventListener('mozfullscreenchange', this._fullscreenChange);
+//#if !(FIREFOX || MOZCENTRAL)
+    window.addEventListener('webkitfullscreenchange', this._fullscreenChange);
+    window.addEventListener('MSFullscreenChange', this._fullscreenChange);
+//#endif
 
     if (contextMenuItems) {
       for (var i = 0, ii = contextMenuItems.length; i < ii; i++) {
@@ -56,6 +63,15 @@ var PresentationMode = {
             document.msFullscreenElement);
   },
 
+  _fullscreenChange: function pdfPresentationModeFullscreenChange() {
+    var self = PDFPresentationMode;
+    if (self.isFullscreen) {
+      self._enter();
+    } else {
+      self._exit();
+    }
+  },
+
   /**
    * Initialize a timeout that is used to specify switchInProgress when the
    * browser transitions to fullscreen mode. Since resize events are triggered
@@ -64,7 +80,7 @@ var PresentationMode = {
    * out of view when Presentation Mode is enabled.
    * Note: This is only an issue at certain zoom levels, e.g. 'page-width'.
    */
-  _setSwitchInProgress: function presentationMode_setSwitchInProgress() {
+  _setSwitchInProgress: function pdfPresentationMode_setSwitchInProgress() {
     if (this.switchInProgress) {
       clearTimeout(this.switchInProgress);
     }
@@ -74,14 +90,14 @@ var PresentationMode = {
     }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
   },
 
-  _resetSwitchInProgress: function presentationMode_resetSwitchInProgress() {
+  _resetSwitchInProgress: function pdfPresentationMode_resetSwitchInProgress() {
     if (this.switchInProgress) {
       clearTimeout(this.switchInProgress);
       delete this.switchInProgress;
     }
   },
 
-  request: function presentationModeRequest() {
+  request: function pdfPresentationModeRequest() {
     if (!this.initialized || this.isFullscreen ||
         !this.viewer.hasChildNodes()) {
       return false;
@@ -109,16 +125,17 @@ var PresentationMode = {
     return true;
   },
 
-  _notifyStateChange: function presentationModeNotifyStateChange() {
+  _notifyStateChange: function pdfPresentationModeNotifyStateChange() {
+    var self = PDFPresentationMode;
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('presentationmodechanged', true, true, {
-      active: PresentationMode.active,
-      switchInProgress: !!PresentationMode.switchInProgress
+      active: self.active,
+      switchInProgress: !!self.switchInProgress
     });
     window.dispatchEvent(event);
   },
 
-  enter: function presentationModeEnter() {
+  _enter: function pdfPresentationModeEnter() {
     this.active = true;
     this._resetSwitchInProgress();
     this._notifyStateChange();
@@ -131,12 +148,12 @@ var PresentationMode = {
       PDFViewerApplication.setScale('page-fit', true);
     }.bind(this), 0);
 
-    window.addEventListener('mousemove', this.mouseMove, false);
-    window.addEventListener('mousedown', this.mouseDown, false);
-    window.addEventListener('keydown', this.keyDown, false);
-    window.addEventListener('contextmenu', this.contextMenu, false);
+    window.addEventListener('mousemove', this._mouseMove, false);
+    window.addEventListener('mousedown', this._mouseDown, false);
+    window.addEventListener('keydown', this._keyDown, false);
+    window.addEventListener('contextmenu', this._contextMenu, false);
 
-    this.showControls();
+    this._showControls();
     this.contextMenuOpen = false;
     this.container.setAttribute('contextmenu', 'viewerContextMenu');
 
@@ -146,7 +163,7 @@ var PresentationMode = {
     window.getSelection().removeAllRanges();
   },
 
-  exit: function presentationModeExit() {
+  _exit: function pdfPresentationModeExit() {
     var page = PDFViewerApplication.page;
 
     // Ensure that the correct page is scrolled into view when exiting
@@ -161,13 +178,13 @@ var PresentationMode = {
       this.args = null;
     }.bind(this), 0);
 
-    window.removeEventListener('mousemove', this.mouseMove, false);
-    window.removeEventListener('mousedown', this.mouseDown, false);
-    window.removeEventListener('keydown', this.keyDown, false);
-    window.removeEventListener('contextmenu', this.contextMenu, false);
+    window.removeEventListener('mousemove', this._mouseMove, false);
+    window.removeEventListener('mousedown', this._mouseDown, false);
+    window.removeEventListener('keydown', this._keyDown, false);
+    window.removeEventListener('contextmenu', this._contextMenu, false);
 
-    this.hideControls();
-    this.clearMouseScrollState();
+    this._hideControls();
+    this._clearMouseScrollState();
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
 
@@ -178,19 +195,19 @@ var PresentationMode = {
     }
   },
 
-  showControls: function presentationModeShowControls() {
+  _showControls: function pdfPresentationModeShowControls() {
     if (this.controlsTimeout) {
       clearTimeout(this.controlsTimeout);
     } else {
       this.container.classList.add(SELECTOR);
     }
-    this.controlsTimeout = setTimeout(function hideControlsTimeout() {
+    this.controlsTimeout = setTimeout(function showControlsTimeout() {
       this.container.classList.remove(SELECTOR);
       delete this.controlsTimeout;
     }.bind(this), DELAY_BEFORE_HIDING_CONTROLS);
   },
 
-  hideControls: function presentationModeHideControls() {
+  _hideControls: function pdfPresentationModeHideControls() {
     if (!this.controlsTimeout) {
       return;
     }
@@ -199,12 +216,12 @@ var PresentationMode = {
     delete this.controlsTimeout;
   },
 
-  mouseMove: function presentationModeMouseMove(evt) {
-    PresentationMode.showControls();
+  _mouseMove: function pdfPresentationModeMouseMove(evt) {
+    PDFPresentationMode._showControls();
   },
 
-  mouseDown: function presentationModeMouseDown(evt) {
-    var self = PresentationMode;
+  _mouseDown: function pdfPresentationModeMouseDown(evt) {
+    var self = PDFPresentationMode;
     if (self.contextMenuOpen) {
       self.contextMenuOpen = false;
       evt.preventDefault();
@@ -224,12 +241,12 @@ var PresentationMode = {
     }
   },
 
-  keyDown: function presentationModeKeyDown(evt) {
-    PresentationMode.clearMouseScrollState();
+  _keyDown: function pdfPresentationModeKeyDown(evt) {
+    PDFPresentationMode._clearMouseScrollState();
   },
 
-  contextMenu: function presentationModeContextMenu(evt) {
-    PresentationMode.contextMenuOpen = true;
+  _contextMenu: function pdfPresentationModeContextMenu(evt) {
+    PDFPresentationMode.contextMenuOpen = true;
   },
 
   /**
@@ -237,7 +254,7 @@ var PresentationMode = {
    * or down with large enough motion and prevents page flipping too often.
    * @param {number} mouseScrollDelta The delta value from the mouse event.
    */
-  mouseScroll: function presentationModeMouseScroll(mouseScrollDelta) {
+  mouseScroll: function pdfPresentationModeMouseScroll(mouseScrollDelta) {
     if (!this.initialized) {
       return;
     }
@@ -257,7 +274,7 @@ var PresentationMode = {
     // clear the accumulated delta.
     if ((this.mouseScrollDelta > 0 && mouseScrollDelta < 0) ||
         (this.mouseScrollDelta < 0 && mouseScrollDelta > 0)) {
-      this.clearMouseScrollState();
+      this._clearMouseScrollState();
     }
 
     this.mouseScrollDelta += mouseScrollDelta;
@@ -274,7 +291,7 @@ var PresentationMode = {
       var pageFlipDirection = (this.mouseScrollDelta > 0) ?
         PageFlipDirection.UP :
         PageFlipDirection.DOWN;
-      this.clearMouseScrollState();
+      this._clearMouseScrollState();
       var currentPage = PDFViewerApplication.page;
 
       // In case we are already on the first or the last page there is no need
@@ -294,24 +311,8 @@ var PresentationMode = {
    * This function clears the member attributes used with mouse scrolling in
    * presentation mode.
    */
-  clearMouseScrollState: function presentationModeClearMouseScrollState() {
+  _clearMouseScrollState: function pdfPresentationModeClearMouseScrollState() {
     this.mouseScrollTimeStamp = 0;
     this.mouseScrollDelta = 0;
   }
 };
-
-(function presentationModeClosure() {
-  function presentationModeChange(e) {
-    if (PresentationMode.isFullscreen) {
-      PresentationMode.enter();
-    } else {
-      PresentationMode.exit();
-    }
-  }
-
-  window.addEventListener('fullscreenchange', presentationModeChange, false);
-  window.addEventListener('mozfullscreenchange', presentationModeChange, false);
-  window.addEventListener('webkitfullscreenchange', presentationModeChange,
-                          false);
-  window.addEventListener('MSFullscreenChange', presentationModeChange, false);
-})();

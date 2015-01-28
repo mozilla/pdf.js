@@ -18,7 +18,7 @@
            DownloadManager, getFileName, getPDFFileNameFromURL,
            PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
            PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
-           PasswordPrompt, PresentationMode, HandTool, Promise,
+           PasswordPrompt, PDFPresentationMode, HandTool, Promise,
            DocumentProperties, PDFOutlineView, PDFAttachmentView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
@@ -84,7 +84,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include pdf_find_controller.js
 //#include pdf_history.js
 //#include secondary_toolbar.js
-//#include presentation_mode.js
+//#include pdf_presentation_mode.js
 //#include hand_tool.js
 //#include overlay_manager.js
 //#include password_prompt.js
@@ -189,7 +189,7 @@ var PDFViewerApplication = {
 
     if (this.supportsFullscreen) {
       var toolbar = SecondaryToolbar;
-      PresentationMode.initialize({
+      PDFPresentationMode.initialize({
         container: container,
         pdfThumbnailViewer: this.pdfThumbnailViewer,
         contextMenuItems: [
@@ -1344,14 +1344,14 @@ var PDFViewerApplication = {
     if (!this.supportsFullscreen) {
       return;
     }
-    PresentationMode.request();
+    PDFPresentationMode.request();
   },
 
   scrollPresentationMode: function pdfViewScrollPresentationMode(delta) {
     if (!this.supportsFullscreen) {
       return;
     }
-    PresentationMode.mouseScroll(delta);
+    PDFPresentationMode.mouseScroll(delta);
   }
 };
 //#if GENERIC
