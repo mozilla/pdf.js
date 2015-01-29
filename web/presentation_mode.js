@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals scrollIntoView, HandTool, PDFViewerApplication */
+/* globals scrollIntoView, PDFViewerApplication */
 
 'use strict';
 
@@ -23,6 +23,7 @@ var SELECTOR = 'presentationControls';
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1000; // in ms
 
 var PresentationMode = {
+  initialized: false,
   active: false,
   args: null,
   contextMenuOpen: false,
@@ -31,6 +32,7 @@ var PresentationMode = {
 //#endif
 
   initialize: function presentationModeInitialize(options) {
+    this.initialized = true;
     this.container = options.container;
     this.secondaryToolbar = options.secondaryToolbar;
 
@@ -93,7 +95,7 @@ var PresentationMode = {
   },
 
   request: function presentationModeRequest() {
-    if (!PDFViewerApplication.supportsFullscreen || this.isFullscreen ||
+    if (!this.initialized || this.isFullscreen ||
         !this.viewer.hasChildNodes()) {
       return false;
     }
@@ -147,7 +149,6 @@ var PresentationMode = {
     window.addEventListener('contextmenu', this.contextMenu, false);
 
     this.showControls();
-    HandTool.enterPresentationMode();
     this.contextMenuOpen = false;
     this.container.setAttribute('contextmenu', 'viewerContextMenu');
 
@@ -178,7 +179,6 @@ var PresentationMode = {
 
     this.hideControls();
     PDFViewerApplication.clearMouseScrollState();
-    HandTool.exitPresentationMode();
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
 
