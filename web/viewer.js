@@ -320,8 +320,7 @@ var PDFViewerApplication = {
 
   get supportsIntegratedFind() {
     var support = false;
-//#if !(FIREFOX || MOZCENTRAL)
-//#else
+//#if (FIREFOX || MOZCENTRAL)
 //  support = FirefoxCom.requestSync('supportsIntegratedFind');
 //#endif
 
@@ -330,8 +329,7 @@ var PDFViewerApplication = {
 
   get supportsDocumentFonts() {
     var support = true;
-//#if !(FIREFOX || MOZCENTRAL)
-//#else
+//#if (FIREFOX || MOZCENTRAL)
 //  support = FirefoxCom.requestSync('supportsDocumentFonts');
 //#endif
 
@@ -340,8 +338,7 @@ var PDFViewerApplication = {
 
   get supportsDocumentColors() {
     var support = true;
-//#if !(FIREFOX || MOZCENTRAL)
-//#else
+//#if (FIREFOX || MOZCENTRAL)
 //  support = FirefoxCom.requestSync('supportsDocumentColors');
 //#endif
 
