@@ -30,6 +30,8 @@ var PresentationMode = {
 //#if (GENERIC || CHROME)
   prevCoords: { x: null, y: null },
 //#endif
+  mouseScrollTimeStamp: 0,
+  mouseScrollDelta: 0,
 
   initialize: function presentationModeInitialize(options) {
     this.initialized = true;
@@ -146,6 +148,7 @@ var PresentationMode = {
 
     window.addEventListener('mousemove', this.mouseMove, false);
     window.addEventListener('mousedown', this.mouseDown, false);
+    window.addEventListener('keydown', this.keyDown, false);
     window.addEventListener('contextmenu', this.contextMenu, false);
 
     this.showControls();
@@ -175,10 +178,11 @@ var PresentationMode = {
 
     window.removeEventListener('mousemove', this.mouseMove, false);
     window.removeEventListener('mousedown', this.mouseDown, false);
+    window.removeEventListener('keydown', this.keyDown, false);
     window.removeEventListener('contextmenu', this.contextMenu, false);
 
     this.hideControls();
-    PDFViewerApplication.clearMouseScrollState();
+    this.clearMouseScrollState();
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
 
@@ -246,8 +250,79 @@ var PresentationMode = {
     }
   },
 
+  keyDown: function presentationModeKeyDown(evt) {
+    PresentationMode.clearMouseScrollState();
+  },
+
   contextMenu: function presentationModeContextMenu(evt) {
     PresentationMode.contextMenuOpen = true;
+  },
+
+  /**
+   * This function flips the page in presentation mode if the user scrolls up
+   * or down with large enough motion and prevents page flipping too often.
+   * @param {number} mouseScrollDelta The delta value from the mouse event.
+   */
+  mouseScroll: function presentationModeMouseScroll(mouseScrollDelta) {
+    if (!this.initialized) {
+      return;
+    }
+    var MOUSE_SCROLL_COOLDOWN_TIME = 50;
+
+    var currentTime = (new Date()).getTime();
+    var storedTime = this.mouseScrollTimeStamp;
+
+    // In case one page has already been flipped there is a cooldown time
+    // which has to expire before next page can be scrolled on to.
+    if (currentTime > storedTime &&
+        currentTime - storedTime < MOUSE_SCROLL_COOLDOWN_TIME) {
+      return;
+    }
+
+    // In case the user decides to scroll to the opposite direction than before
+    // clear the accumulated delta.
+    if ((this.mouseScrollDelta > 0 && mouseScrollDelta < 0) ||
+        (this.mouseScrollDelta < 0 && mouseScrollDelta > 0)) {
+      this.clearMouseScrollState();
+    }
+
+    this.mouseScrollDelta += mouseScrollDelta;
+
+    var PAGE_FLIP_THRESHOLD = 120;
+    if (Math.abs(this.mouseScrollDelta) >= PAGE_FLIP_THRESHOLD) {
+
+      var PageFlipDirection = {
+        UP: -1,
+        DOWN: 1
+      };
+
+      // In presentation mode scroll one page at a time.
+      var pageFlipDirection = (this.mouseScrollDelta > 0) ?
+        PageFlipDirection.UP :
+        PageFlipDirection.DOWN;
+      this.clearMouseScrollState();
+      var currentPage = PDFViewerApplication.page;
+
+      // In case we are already on the first or the last page there is no need
+      // to do anything.
+      if ((currentPage === 1 && pageFlipDirection === PageFlipDirection.UP) ||
+          (currentPage === PDFViewerApplication.pagesCount &&
+           pageFlipDirection === PageFlipDirection.DOWN)) {
+        return;
+      }
+
+      PDFViewerApplication.page += pageFlipDirection;
+      this.mouseScrollTimeStamp = currentTime;
+    }
+  },
+
+  /**
+   * This function clears the member attributes used with mouse scrolling in
+   * presentation mode.
+   */
+  clearMouseScrollState: function presentationModeClearMouseScrollState() {
+    this.mouseScrollTimeStamp = 0;
+    this.mouseScrollDelta = 0;
   }
 };
 
