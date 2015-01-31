@@ -1111,15 +1111,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 } else {
                   var val = items[j] / 1000;
                   if (!textState.font.vertical) {
-                    offset = -val * textState.fontSize * textState.textHScale *
-                      textState.textMatrix[0];
+                    offset = -val * textState.fontSize * textState.textHScale;
                     textState.translateTextMatrix(offset, 0);
-                    textChunk.width += offset;
+                    textChunk.width += offset * textState.textMatrix[0];
                   } else {
-                    offset = -val * textState.fontSize *
-                      textState.textMatrix[3];
+                    offset = -val * textState.fontSize;
                     textState.translateTextMatrix(0, offset);
-                    textChunk.height += offset;
+                    textChunk.height += offset * textState.textMatrix[3];
                   }
                   if (items[j] < 0 && textState.font.spaceWidth > 0) {
                     var fakeSpaces = -items[j] / textState.font.spaceWidth;
