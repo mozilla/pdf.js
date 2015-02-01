@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals scrollIntoView, PDFViewerApplication */
+/* globals PDFViewerApplication */
 
 'use strict';
 
@@ -27,41 +27,26 @@ var PresentationMode = {
   active: false,
   args: null,
   contextMenuOpen: false,
-//#if (GENERIC || CHROME)
-  prevCoords: { x: null, y: null },
-//#endif
   mouseScrollTimeStamp: 0,
   mouseScrollDelta: 0,
 
   initialize: function presentationModeInitialize(options) {
     this.initialized = true;
     this.container = options.container;
-    this.secondaryToolbar = options.secondaryToolbar;
+    this.pdfThumbnailViewer = options.pdfThumbnailViewer || null;
+    var contextMenuItems = options.contextMenuItems || null;
 
     this.viewer = this.container.firstElementChild;
 
-    this.firstPage = options.firstPage;
-    this.lastPage = options.lastPage;
-    this.pageRotateCw = options.pageRotateCw;
-    this.pageRotateCcw = options.pageRotateCcw;
-
-    this.firstPage.addEventListener('click', function() {
-      this.contextMenuOpen = false;
-      this.secondaryToolbar.firstPageClick();
-    }.bind(this));
-    this.lastPage.addEventListener('click', function() {
-      this.contextMenuOpen = false;
-      this.secondaryToolbar.lastPageClick();
-    }.bind(this));
-
-    this.pageRotateCw.addEventListener('click', function() {
-      this.contextMenuOpen = false;
-      this.secondaryToolbar.pageRotateCwClick();
-    }.bind(this));
-    this.pageRotateCcw.addEventListener('click', function() {
-      this.contextMenuOpen = false;
-      this.secondaryToolbar.pageRotateCcwClick();
-    }.bind(this));
+    if (contextMenuItems) {
+      for (var i = 0, ii = contextMenuItems.length; i < ii; i++) {
+        var item = contextMenuItems[i];
+        item.element.addEventListener('click', function (handler) {
+          this.contextMenuOpen = false;
+          handler();
+        }.bind(this, item.handler));
+      }
+    }
   },
 
   get isFullscreen() {
@@ -186,9 +171,11 @@ var PresentationMode = {
     this.container.removeAttribute('contextmenu');
     this.contextMenuOpen = false;
 
-    // Ensure that the thumbnail of the current page is visible
-    // when exiting presentation mode.
-    scrollIntoView(document.getElementById('thumbnailContainer' + page));
+    if (this.pdfThumbnailViewer) {
+      // Ensure that the thumbnail of the current page is visible
+      // when exiting presentation mode.
+      this.pdfThumbnailViewer.ensureThumbnailVisible(page);
+    }
   },
 
   showControls: function presentationModeShowControls() {
@@ -213,19 +200,6 @@ var PresentationMode = {
   },
 
   mouseMove: function presentationModeMouseMove(evt) {
-//#if (GENERIC || CHROME)
-    // Workaround for a bug in WebKit browsers that causes the 'mousemove' event
-    // to be fired when the cursor is changed. For details, see:
-    // http://code.google.com/p/chromium/issues/detail?id=103041.
-
-    var currCoords = { x: evt.clientX, y: evt.clientY };
-    var prevCoords = PresentationMode.prevCoords;
-    PresentationMode.prevCoords = currCoords;
-
-    if (currCoords.x === prevCoords.x && currCoords.y === prevCoords.y) {
-      return;
-    }
-//#endif
     PresentationMode.showControls();
   },
 
