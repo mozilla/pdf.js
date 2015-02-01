@@ -191,6 +191,7 @@ var PDFViewerApplication = {
       var toolbar = SecondaryToolbar;
       PDFPresentationMode.initialize({
         container: container,
+        viewer: viewer,
         pdfThumbnailViewer: this.pdfThumbnailViewer,
         contextMenuItems: [
           { element: document.getElementById('contextFirstPage'),
@@ -1347,6 +1348,9 @@ var PDFViewerApplication = {
     PDFPresentationMode.request();
   },
 
+  /**
+   * @param {number} delta - The delta value from the mouse event.
+   */
   scrollPresentationMode: function pdfViewScrollPresentationMode(delta) {
     if (!this.supportsFullscreen) {
       return;
