@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, shadow, isWorker, assert, warn, bytesToString, string32, 
+/* globals PDFJS, shadow, isWorker, assert, warn, bytesToString, string32,
            globalScope, FontFace, Promise */
 
 'use strict';

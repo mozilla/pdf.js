@@ -330,7 +330,7 @@ function objEquiv(a, b) {
   // The same set of keys (although not necessarily the same order),
   ka.sort();
   kb.sort();
-  // Equivalent values for every corresponding key, and possibly expensive deep 
+  // Equivalent values for every corresponding key, and possibly expensive deep
   // test
   for (i = ka.length - 1; i >= 0; i--) {
     key = ka[i];

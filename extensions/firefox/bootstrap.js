@@ -203,4 +203,3 @@ function install(aData, aReason) {
 
 function uninstall(aData, aReason) {
 }
-

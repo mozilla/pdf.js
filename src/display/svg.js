@@ -252,7 +252,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.lineJoin = '';
     this.lineCap = '';
     this.miterLimit = 0;
-    
+
     this.dashArray = [];
     this.dashPhase = 0;
 
@@ -479,7 +479,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       }
       return opListToTree(opList);
     },
-    
+
     executeOpTree: function SVGGraphics_executeOpTree(opTree) {
       var opTreeLen = opTree.length;
       for(var x = 0; x < opTreeLen; x++) {

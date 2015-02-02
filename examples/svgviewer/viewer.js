@@ -26,7 +26,7 @@ PDFJS.getDocument(url).then(function(pdf) {
   // For testing only.
   var MAX_NUM_PAGES = 50;
   var ii = Math.min(MAX_NUM_PAGES, numPages);
-  
+
   var promise = Promise.resolve();
   for (var i = 1; i <= ii; i++) {
     var anchor = document.createElement('a');
@@ -56,4 +56,3 @@ PDFJS.getDocument(url).then(function(pdf) {
     }.bind(null, i, anchor));
   }
 });
-

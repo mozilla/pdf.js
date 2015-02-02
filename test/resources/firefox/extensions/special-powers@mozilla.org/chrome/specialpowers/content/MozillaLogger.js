@@ -8,7 +8,7 @@ function MozillaLogger(aPath) {
 MozillaLogger.prototype = {
 
   init : function(path) {},
-  
+
   getLogCallback : function() {
     return function (msg) {
       var data = msg.num + " " + msg.level + " " + msg.info.join(' ') + "\n";
@@ -76,7 +76,7 @@ function MozillaFileLogger(aPath) {
 }
 
 MozillaFileLogger.prototype = {
-  
+
   init : function (path) {
     var PR_WRITE_ONLY   = 0x02; // Open for writing only.
     var PR_CREATE_FILE  = 0x08;
@@ -110,7 +110,7 @@ MozillaFileLogger.prototype = {
   close : function() {
     if(this._foStream)
       this._foStream.close();
-  
+
     this._foStream = null;
     this._file = null;
   }

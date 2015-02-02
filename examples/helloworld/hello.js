@@ -34,4 +34,3 @@ PDFJS.getDocument('helloworld.pdf').then(function(pdf) {
     page.render(renderContext);
   });
 });
-

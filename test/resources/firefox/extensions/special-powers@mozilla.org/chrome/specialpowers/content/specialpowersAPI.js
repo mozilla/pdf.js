@@ -695,7 +695,7 @@ SpecialPowersAPI.prototype = {
      we will revert the permission back to the original.
 
      inPermissions is an array of objects where each object has a type, action, context, ex:
-     [{'type': 'SystemXHR', 'allow': 1, 'context': document}, 
+     [{'type': 'SystemXHR', 'allow': 1, 'context': document},
       {'type': 'SystemXHR', 'allow': Ci.nsIPermissionManager.PROMPT_ACTION, 'context': document}]
 
      Allow can be a boolean value of true/false or ALLOW_ACTION/DENY_ACTION/PROMPT_ACTION/UNKNOWN_ACTION
@@ -1706,7 +1706,7 @@ SpecialPowersAPI.prototype = {
     var msg = {
       'op': 'test',
       'type': type,
-      'value': value, 
+      'value': value,
       'url': url,
       'appId': appId,
       'isInBrowserElement': isInBrowserElement

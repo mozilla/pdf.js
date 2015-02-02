@@ -431,4 +431,3 @@ function writeToFile(aBytes, aFilePath) {
   bos.writeByteArray(aBytes, aBytes.length);
   stream.close();
 }
-

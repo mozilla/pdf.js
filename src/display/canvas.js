@@ -2149,4 +2149,3 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   return CanvasGraphics;
 })();
-

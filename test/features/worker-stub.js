@@ -37,4 +37,3 @@ onmessage = function (e) {
     break;
   }
 };
-

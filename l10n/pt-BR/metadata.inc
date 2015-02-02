@@ -5,4 +5,3 @@
         <em:description>Aprensenta PDFs no browser usando a tecnologia HTML5.</em:description>
       </Description>
     </em:localized>
-

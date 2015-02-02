@@ -89,7 +89,7 @@ var DownloadManager = (function DownloadManagerClosure() {
     downloadData: function DownloadManager_downloadData(data, filename,
                                                         contentType) {
       var blobUrl = PDFJS.createObjectURL(data, contentType);
-      
+
       FirefoxCom.request('download', {
         blobUrl: blobUrl,
         originalUrl: blobUrl,

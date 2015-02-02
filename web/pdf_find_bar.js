@@ -163,4 +163,3 @@ var PDFFindBar = (function PDFFindBarClosure() {
   };
   return PDFFindBar;
 })();
-

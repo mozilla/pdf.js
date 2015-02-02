@@ -8,7 +8,7 @@
     <em:version>2010.07.23</em:version>
     <em:type>2</em:type>
 
-    <!-- Target Application this extension can install into, 
+    <!-- Target Application this extension can install into,
          with minimum and maximum supported versions. -->
     <em:targetApplication>
       <Description>
@@ -22,5 +22,5 @@
     <em:name>Special Powers</em:name>
     <em:description>Special powers for use in testing.</em:description>
     <em:creator>Mozilla</em:creator>
-  </Description>      
+  </Description>
 </RDF>

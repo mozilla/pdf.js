@@ -96,11 +96,11 @@ Original author: L. David Baron <dbaron@dbaron.org>
     <form id="imgcontrols">
       <label>
         <input type="radio" name="which" id="testImage" value="0" checked="checked"> Test
-      </label> 
+      </label>
       <label>
         <input type="radio" name="which" id="referenceImage" value="1"> Reference
       </label>
-      <label> 
+      <label>
         <input type="checkbox" id="differences"> Circle differences
       </label>
     </form>
@@ -146,12 +146,12 @@ Original author: L. David Baron <dbaron@dbaron.org>
           <feComposite result="c" in="c1" in2="c2" operator="arithmetic" k2="255" k3="255" />
           <!-- a will be opaque for every pixel with differences and transparent for all others -->
           <feColorMatrix result="a" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 1 1 0 0" />
-          
+
           <!-- a, dilated by 4 pixels -->
           <feMorphology result="dila4" in="a" operator="dilate" radius="4" />
           <!-- a, dilated by 1 pixel -->
           <feMorphology result="dila1" in="a" operator="dilate" radius="1" />
-          
+
           <!-- all the pixels in the 3-pixel dilation of a but not in the 1-pixel dilation of a, to highlight the diffs -->
           <feComposite result="highlight" in="dila4" in2="dila1" operator="out" />
 

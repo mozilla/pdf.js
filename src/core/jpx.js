@@ -2213,4 +2213,3 @@ var JpxImage = (function JpxImageClosure() {
 
   return JpxImage;
 })();
-

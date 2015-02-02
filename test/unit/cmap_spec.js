@@ -108,4 +108,3 @@ describe('cmap', function() {
     expect(cmap.builtInCMap).toBeTruthy();
   });
 });
-

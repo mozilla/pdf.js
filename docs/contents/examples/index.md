@@ -61,5 +61,3 @@ var viewport = page.getViewport(1);
 var scale = desiredWidth / viewport.width;
 var scaledViewport = page.getViewport(scale);
 ```
-
-

@@ -5,4 +5,3 @@
         <em:description>Usa HTML5 per visualizzare i file PDF direttamente in Firefox.</em:description>
       </Description>
     </em:localized>
-

@@ -49,10 +49,10 @@ this.MockPermissionPrompt = {
       registrar.registerFactory(newClassID, "", CONTRACT_ID, newFactory);
     }
   },
-  
+
   reset: function() {
   },
-  
+
   cleanup: function() {
     this.reset();
     if (oldFactory) {

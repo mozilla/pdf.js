@@ -25,7 +25,7 @@ Promise.prototype = {
   resolve: function (result) {
     if ('result' in this) return;
     this.result = result;
-    if ('callback' in this) this.callback(result); 
+    if ('callback' in this) this.callback(result);
   }
 };
 
@@ -665,4 +665,3 @@ function checkCanvas(font) {
     colors[2][2] * 3 < counts[2][2];
   return isPlus;
 }
-

@@ -240,10 +240,10 @@ SpecialPowersObserverAPI.prototype = {
           case "BOOL":
             if (aMessage.json.op == "get")
               return(prefs.getBoolPref(prefName));
-            else 
+            else
               return(prefs.setBoolPref(prefName, prefValue));
           case "INT":
-            if (aMessage.json.op == "get") 
+            if (aMessage.json.op == "get")
               return(prefs.getIntPref(prefName));
             else
               return(prefs.setIntPref(prefName, prefValue));
@@ -297,7 +297,7 @@ SpecialPowersObserverAPI.prototype = {
             break;
           case "has":
             let hasPerm = Services.perms.testPermissionFromPrincipal(principal, msg.type);
-            if (hasPerm == Ci.nsIPermissionManager.ALLOW_ACTION) 
+            if (hasPerm == Ci.nsIPermissionManager.ALLOW_ACTION)
               return true;
             return false;
             break;
@@ -411,4 +411,3 @@ SpecialPowersObserverAPI.prototype = {
     return undefined;
   }
 };
-
