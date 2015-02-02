@@ -142,7 +142,7 @@ document.webL10n = (function(window, document, undefined) {
    *    URL of the l10n resource to parse.
    *
    * @param {string} lang
-   *    locale (language) to parse.
+   *    locale (language) to parse. Must be a lowercase string.
    *
    * @param {Function} successCallback
    *    triggered when the l10n resource has been successully parsed.
@@ -188,7 +188,7 @@ document.webL10n = (function(window, document, undefined) {
       function parseRawLines(rawText, extendedSyntax) {
         var entries = rawText.replace(reBlank, '').split(/[\r\n]+/);
         var currentLang = '*';
-        var genericLang = lang.replace(/-[a-z]+$/i, '');
+        var genericLang = lang.split('-', 1)[0];
         var skipLang = false;
         var match = '';
 
@@ -203,7 +203,9 @@ document.webL10n = (function(window, document, undefined) {
           if (extendedSyntax) {
             if (reSection.test(line)) { // section start?
               match = reSection.exec(line);
-              currentLang = match[1];
+              // RFC 4646, section 4.4, "All comparisons MUST be performed
+              // in a case-insensitive manner."
+              currentLang = match[1].toLowerCase();
               skipLang = (currentLang !== '*') &&
                   (currentLang !== lang) && (currentLang !== genericLang);
               continue;
@@ -268,6 +270,12 @@ document.webL10n = (function(window, document, undefined) {
 
   // load and parse all resources for the specified locale
   function loadLocale(lang, callback) {
+    // RFC 4646, section 2.1 states that language tags have to be treated as
+    // case-insensitive. Convert to lowercase for case-insensitive comparisons.
+    if (lang) {
+      lang = lang.toLowerCase();
+    }
+
     callback = callback || function _callback() {};
 
     clear();
@@ -282,7 +290,19 @@ document.webL10n = (function(window, document, undefined) {
       var dict = getL10nDictionary();
       if (dict && dict.locales && dict.default_locale) {
         console.log('using the embedded JSON directory, early way out');
-        gL10nData = dict.locales[lang] || dict.locales[dict.default_locale];
+        gL10nData = dict.locales[lang];
+        if (!gL10nData) {
+          var defaultLocale = dict.default_locale.toLowerCase();
+          for (var anyCaseLang in dict.locales) {
+            anyCaseLang = anyCaseLang.toLowerCase();
+            if (anyCaseLang === lang) {
+              gL10nData = dict.locales[lang];
+              break;
+            } else if (anyCaseLang === defaultLocale) {
+              gL10nData = dict.locales[defaultLocale];
+            }
+          }
+        }
         callback();
       } else {
         console.log('no resource to load, early way out');
