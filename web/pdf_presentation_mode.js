@@ -68,53 +68,6 @@ var PDFPresentationMode = {
     }
   },
 
-  get isFullscreen() {
-    return !!(document.fullscreenElement ||
-              document.mozFullScreen ||
-              document.webkitIsFullScreen ||
-              document.msFullscreenElement);
-  },
-
-  /**
-   * @private
-   */
-  _fullscreenChange: function pdfPresentationModeFullscreenChange() {
-    var self = PDFPresentationMode;
-    if (self.isFullscreen) {
-      self._enter();
-    } else {
-      self._exit();
-    }
-  },
-
-  /**
-   * Used to initialize a timeout when requesting Presentation Mode,
-   * i.e. when the browser is requested to enter fullscreen mode.
-   * This timeout is used to prevent the current page from being scrolled
-   * partially, or completely, out of view when entering Presentation Mode.
-   * NOTE: This issue seems limited to certain zoom levels (e.g. 'page-width').
-   * @private
-   */
-  _setSwitchInProgress: function pdfPresentationMode_setSwitchInProgress() {
-    if (this.switchInProgress) {
-      clearTimeout(this.switchInProgress);
-    }
-    this.switchInProgress = setTimeout(function switchInProgressTimeout() {
-      delete this.switchInProgress;
-      this._notifyStateChange();
-    }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
-  },
-
-  /**
-   * @private
-   */
-  _resetSwitchInProgress: function pdfPresentationMode_resetSwitchInProgress() {
-    if (this.switchInProgress) {
-      clearTimeout(this.switchInProgress);
-      delete this.switchInProgress;
-    }
-  },
-
   /**
    * Request the browser to enter fullscreen mode.
    * @returns {boolean} Indicating if the request was successful.
@@ -148,6 +101,73 @@ var PDFPresentationMode = {
   },
 
   /**
+   * Switches page when the user scrolls (using a scroll wheel or a touchpad)
+   * with large enough motion, to prevent accidental page switches.
+   * @param {number} delta - The delta value from the mouse event.
+   */
+  mouseScroll: function pdfPresentationModeMouseScroll(delta) {
+    if (!this.initialized && !this.active) {
+      return;
+    }
+    var MOUSE_SCROLL_COOLDOWN_TIME = 50;
+    var PAGE_SWITCH_THRESHOLD = 120;
+    var PageSwitchDirection = {
+      UP: -1,
+      DOWN: 1
+    };
+
+    var currentTime = (new Date()).getTime();
+    var storedTime = this.mouseScrollTimeStamp;
+
+    // If we've already switched page, avoid accidentally switching page again.
+    if (currentTime > storedTime &&
+        currentTime - storedTime < MOUSE_SCROLL_COOLDOWN_TIME) {
+      return;
+    }
+    // If the user changes scroll direction, reset the accumulated scroll delta.
+    if ((this.mouseScrollDelta > 0 && delta < 0) ||
+        (this.mouseScrollDelta < 0 && delta > 0)) {
+      this._resetMouseScrollState();
+    }
+    this.mouseScrollDelta += delta;
+
+    if (Math.abs(this.mouseScrollDelta) >= PAGE_SWITCH_THRESHOLD) {
+      var pageSwitchDirection = (this.mouseScrollDelta > 0) ?
+        PageSwitchDirection.UP : PageSwitchDirection.DOWN;
+      var page = PDFViewerApplication.page;
+      this._resetMouseScrollState();
+
+      // If we're already on the first/last page, we don't need to do anything.
+      if ((page === 1 && pageSwitchDirection === PageSwitchDirection.UP) ||
+          (page === PDFViewerApplication.pagesCount &&
+           pageSwitchDirection === PageSwitchDirection.DOWN)) {
+        return;
+      }
+      PDFViewerApplication.page = (page + pageSwitchDirection);
+      this.mouseScrollTimeStamp = currentTime;
+    }
+  },
+
+  get isFullscreen() {
+    return !!(document.fullscreenElement ||
+              document.mozFullScreen ||
+              document.webkitIsFullScreen ||
+              document.msFullscreenElement);
+  },
+
+  /**
+   * @private
+   */
+  _fullscreenChange: function pdfPresentationModeFullscreenChange() {
+    var self = PDFPresentationMode;
+    if (self.isFullscreen) {
+      self._enter();
+    } else {
+      self._exit();
+    }
+  },
+
+  /**
    * @private
    */
   _notifyStateChange: function pdfPresentationModeNotifyStateChange() {
@@ -158,6 +178,34 @@ var PDFPresentationMode = {
       switchInProgress: !!self.switchInProgress
     });
     window.dispatchEvent(event);
+  },
+
+  /**
+   * Used to initialize a timeout when requesting Presentation Mode,
+   * i.e. when the browser is requested to enter fullscreen mode.
+   * This timeout is used to prevent the current page from being scrolled
+   * partially, or completely, out of view when entering Presentation Mode.
+   * NOTE: This issue seems limited to certain zoom levels (e.g. 'page-width').
+   * @private
+   */
+  _setSwitchInProgress: function pdfPresentationMode_setSwitchInProgress() {
+    if (this.switchInProgress) {
+      clearTimeout(this.switchInProgress);
+    }
+    this.switchInProgress = setTimeout(function switchInProgressTimeout() {
+      delete this.switchInProgress;
+      this._notifyStateChange();
+    }.bind(this), DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS);
+  },
+
+  /**
+   * @private
+   */
+  _resetSwitchInProgress: function pdfPresentationMode_resetSwitchInProgress() {
+    if (this.switchInProgress) {
+      clearTimeout(this.switchInProgress);
+      delete this.switchInProgress;
+    }
   },
 
   /**
@@ -225,35 +273,6 @@ var PDFPresentationMode = {
   /**
    * @private
    */
-  _showControls: function pdfPresentationModeShowControls() {
-    var self = PDFPresentationMode;
-    if (self.controlsTimeout) {
-      clearTimeout(self.controlsTimeout);
-    } else {
-      self.container.classList.add(SELECTOR);
-    }
-    self.controlsTimeout = setTimeout(function showControlsTimeout() {
-      self.container.classList.remove(SELECTOR);
-      delete self.controlsTimeout;
-    }, DELAY_BEFORE_HIDING_CONTROLS);
-  },
-
-  /**
-   * @private
-   */
-  _hideControls: function pdfPresentationModeHideControls() {
-    var self = PDFPresentationMode;
-    if (!self.controlsTimeout) {
-      return;
-    }
-    clearTimeout(self.controlsTimeout);
-    self.container.classList.remove(SELECTOR);
-    delete self.controlsTimeout;
-  },
-
-  /**
-   * @private
-   */
   _mouseDown: function pdfPresentationModeMouseDown(evt) {
     var self = PDFPresentationMode;
     if (self.contextMenuOpen) {
@@ -282,51 +301,32 @@ var PDFPresentationMode = {
   },
 
   /**
-   * Switches page when the user scrolls (using a scroll wheel or a touchpad)
-   * with large enough motion, to prevent accidental page switches.
-   * @param {number} delta - The delta value from the mouse event.
+   * @private
    */
-  mouseScroll: function pdfPresentationModeMouseScroll(delta) {
-    if (!this.initialized && !this.active) {
+  _showControls: function pdfPresentationModeShowControls() {
+    var self = PDFPresentationMode;
+    if (self.controlsTimeout) {
+      clearTimeout(self.controlsTimeout);
+    } else {
+      self.container.classList.add(SELECTOR);
+    }
+    self.controlsTimeout = setTimeout(function showControlsTimeout() {
+      self.container.classList.remove(SELECTOR);
+      delete self.controlsTimeout;
+    }, DELAY_BEFORE_HIDING_CONTROLS);
+  },
+
+  /**
+   * @private
+   */
+  _hideControls: function pdfPresentationModeHideControls() {
+    var self = PDFPresentationMode;
+    if (!self.controlsTimeout) {
       return;
     }
-    var MOUSE_SCROLL_COOLDOWN_TIME = 50;
-    var PAGE_SWITCH_THRESHOLD = 120;
-    var PageSwitchDirection = {
-      UP: -1,
-      DOWN: 1
-    };
-
-    var currentTime = (new Date()).getTime();
-    var storedTime = this.mouseScrollTimeStamp;
-
-    // If we've already switched page, avoid accidentally switching page again.
-    if (currentTime > storedTime &&
-        currentTime - storedTime < MOUSE_SCROLL_COOLDOWN_TIME) {
-      return;
-    }
-    // If the user changes scroll direction, reset the accumulated scroll delta.
-    if ((this.mouseScrollDelta > 0 && delta < 0) ||
-        (this.mouseScrollDelta < 0 && delta > 0)) {
-      this._resetMouseScrollState();
-    }
-    this.mouseScrollDelta += delta;
-
-    if (Math.abs(this.mouseScrollDelta) >= PAGE_SWITCH_THRESHOLD) {
-      var pageSwitchDirection = (this.mouseScrollDelta > 0) ?
-        PageSwitchDirection.UP : PageSwitchDirection.DOWN;
-      var page = PDFViewerApplication.page;
-      this._resetMouseScrollState();
-
-      // If we're already on the first/last page, we don't need to do anything.
-      if ((page === 1 && pageSwitchDirection === PageSwitchDirection.UP) ||
-          (page === PDFViewerApplication.pagesCount &&
-           pageSwitchDirection === PageSwitchDirection.DOWN)) {
-        return;
-      }
-      PDFViewerApplication.page = (page + pageSwitchDirection);
-      this.mouseScrollTimeStamp = currentTime;
-    }
+    clearTimeout(self.controlsTimeout);
+    self.container.classList.remove(SELECTOR);
+    delete self.controlsTimeout;
   },
 
   /**
