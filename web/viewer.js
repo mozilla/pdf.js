@@ -107,6 +107,8 @@ var PDFViewerApplication = {
   pdfThumbnailViewer: null,
   /** @type {PDFRenderingQueue} */
   pdfRenderingQueue: null,
+  /** @type {PDFPresentationMode} */
+  pdfPresentationMode: null,
   pageRotation: 0,
   updateScaleControls: true,
   isInitialViewSet: false,
@@ -189,7 +191,7 @@ var PDFViewerApplication = {
 
     if (this.supportsFullscreen) {
       var toolbar = SecondaryToolbar;
-      PDFPresentationMode.initialize({
+      this.pdfPresentationMode = new PDFPresentationMode({
         container: container,
         viewer: viewer,
         pdfThumbnailViewer: this.pdfThumbnailViewer,
@@ -1342,20 +1344,20 @@ var PDFViewerApplication = {
   },
 
   requestPresentationMode: function pdfViewRequestPresentationMode() {
-    if (!this.supportsFullscreen) {
+    if (!this.pdfPresentationMode) {
       return;
     }
-    PDFPresentationMode.request();
+    this.pdfPresentationMode.request();
   },
 
   /**
    * @param {number} delta - The delta value from the mouse event.
    */
   scrollPresentationMode: function pdfViewScrollPresentationMode(delta) {
-    if (!this.supportsFullscreen) {
+    if (!this.pdfPresentationMode) {
       return;
     }
-    PDFPresentationMode.mouseScroll(delta);
+    this.pdfPresentationMode.mouseScroll(delta);
   }
 };
 //#if GENERIC
