@@ -20,7 +20,8 @@
 
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
-var SELECTOR = 'presentationControls';
+var ACTIVE_SELECTOR = 'pdfPresentationMode';
+var CONTROLS_SELECTOR = 'pdfPresentationModeControls';
 
 /**
  * @typedef {Object} PDFPresentationModeOptions
@@ -201,6 +202,7 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
       this.active = true;
       this._resetSwitchInProgress();
       this._notifyStateChange();
+      this.container.classList.add(ACTIVE_SELECTOR);
 
       // Ensure that the correct page is scrolled into view when entering
       // Presentation Mode, by waiting until fullscreen mode in enabled.
@@ -225,6 +227,7 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
      */
     _exit: function PDFPresentationMode_exit() {
       var page = PDFViewerApplication.page;
+      this.container.classList.remove(ACTIVE_SELECTOR);
 
       // Ensure that the correct page is scrolled into view when exiting
       // Presentation Mode, by waiting until fullscreen mode is disabled.
@@ -285,10 +288,10 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
       if (this.controlsTimeout) {
         clearTimeout(this.controlsTimeout);
       } else {
-        this.container.classList.add(SELECTOR);
+        this.container.classList.add(CONTROLS_SELECTOR);
       }
       this.controlsTimeout = setTimeout(function showControlsTimeout() {
-        this.container.classList.remove(SELECTOR);
+        this.container.classList.remove(CONTROLS_SELECTOR);
         delete this.controlsTimeout;
       }.bind(this), DELAY_BEFORE_HIDING_CONTROLS);
     },
@@ -301,7 +304,7 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
         return;
       }
       clearTimeout(this.controlsTimeout);
-      this.container.classList.remove(SELECTOR);
+      this.container.classList.remove(CONTROLS_SELECTOR);
       delete this.controlsTimeout;
     },
 
