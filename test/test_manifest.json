@@ -1022,6 +1022,20 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue5704",
+       "file": "pdfs/issue5704.pdf",
+       "md5": "6e0b62585feef24dff2d7e7687cd8128",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "bug893730",
+       "file": "pdfs/bug893730.pdf",
+       "md5": "2587379fb1b3bbff89c14f0863e78383",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "pdfkit_compressed",
       "file": "pdfs/pdfkit_compressed.pdf",
       "md5": "ffe9c571d0a1572e234253e6c7cdee6c",

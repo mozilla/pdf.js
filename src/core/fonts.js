@@ -4070,11 +4070,21 @@ var Font = (function FontClosure() {
         }
       }
 
-      var charCodeToGlyphId = [], charCode;
+      var charCodeToGlyphId = [], charCode, toUnicode = properties.toUnicode;
+
+      function hasGlyph(glyphId, charCode) {
+        if (!missingGlyphs[glyphId]) {
+          return true;
+        }
+        if (charCode >= 0 && toUnicode.has(charCode)) {
+          return true;
+        }
+        return false;
+      }
+
       if (properties.type === 'CIDFontType2') {
         var cidToGidMap = properties.cidToGidMap || [];
         var isCidToGidMapEmpty = cidToGidMap.length === 0;
-        var toUnicode = properties.toUnicode;
 
         properties.cMap.forEach(function(charCode, cid) {
           assert(cid <= 0xffff, 'Max size of CID is 65,535');
@@ -4086,7 +4096,7 @@ var Font = (function FontClosure() {
           }
 
           if (glyphId >= 0 && glyphId < numGlyphs &&
-              (!missingGlyphs[glyphId] || toUnicode.has(charCode))) {
+              hasGlyph(glyphId, charCode)) {
             charCodeToGlyphId[charCode] = glyphId;
           }
         });
@@ -4146,7 +4156,8 @@ var Font = (function FontClosure() {
 
             var found = false;
             for (i = 0; i < cmapMappingsLength; ++i) {
-              if (cmapMappings[i].charCode === unicodeOrCharCode) {
+              if (cmapMappings[i].charCode === unicodeOrCharCode &&
+                  hasGlyph(cmapMappings[i].glyphId, unicodeOrCharCode)) {
                 charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
                 found = true;
                 break;
@@ -4156,7 +4167,7 @@ var Font = (function FontClosure() {
               // Try to map using the post table. There are currently no known
               // pdfs that this fixes.
               var glyphId = properties.glyphNames.indexOf(glyphName);
-              if (glyphId > 0) {
+              if (glyphId > 0 && hasGlyph(glyphId, -1)) {
                 charCodeToGlyphId[charCode] = glyphId;
               }
             }
