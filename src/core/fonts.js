@@ -2700,6 +2700,7 @@ var Font = (function FontClosure() {
            fontCharCode === 0xAD || // Soft hyphen
            fontCharCode === 0xA0 || // Non breaking space
            (fontCharCode >= 0x80 && fontCharCode <= 0x9F) || // Control chars
+           fontCharCode === 0x0E33 || // THAI CHARACTER SARA AM (0x0E4D, 0x0E32)
            // Prevent drawing characters in the specials unicode block.
            (fontCharCode >= 0xFFF0 && fontCharCode <= 0xFFFF) ||
            (isSymbolic && isIdentityUnicode)) &&
