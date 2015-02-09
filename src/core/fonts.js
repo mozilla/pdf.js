@@ -2223,7 +2223,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
 
   IdentityToUnicodeMap.prototype = {
     get length() {
-      error('should not access .length');
+      return (this.lastChar + 1) - this.firstChar;
     },
 
     forEach: function (callback) {
