@@ -2685,7 +2685,7 @@ var Font = (function FontClosure() {
       if (!isIdentityUnicode && toUnicode.has(originalCharCode)) {
         var unicode = toUnicode.get(fontCharCode);
         // TODO: Try to map ligatures to the correct spot.
-        if (unicode.length === 1) {
+        if (unicode.length === 1 && !NormalizedUnicodes[unicode]) {
           fontCharCode = unicode.charCodeAt(0);
         }
       }
