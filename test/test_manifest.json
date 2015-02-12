@@ -485,6 +485,20 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue4061",
+       "file": "pdfs/issue4061.pdf",
+       "md5": "236aaa8840a47c3c061f8e3034549764",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue5202",
+       "file": "pdfs/issue5202.pdf",
+       "md5": "bb9cc69211112e66aab40828086a4e5a",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue5238",
        "file": "pdfs/issue5238.pdf",
        "md5": "6ddecda00893be1793de20a70c83a3c2",
@@ -1014,6 +1028,20 @@
       "lastPage": 7,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue5704",
+       "file": "pdfs/issue5704.pdf",
+       "md5": "6e0b62585feef24dff2d7e7687cd8128",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "bug893730",
+       "file": "pdfs/bug893730.pdf",
+       "md5": "2587379fb1b3bbff89c14f0863e78383",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
     },
     {  "id": "pdfkit_compressed",
       "file": "pdfs/pdfkit_compressed.pdf",

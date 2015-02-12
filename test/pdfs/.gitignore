@@ -18,6 +18,7 @@
 !sizes.pdf
 !close-path-bug.pdf
 !issue4630.pdf
+!issue5202.pdf
 !issue5280.pdf
 !alphatrans.pdf
 !devicen.pdf
@@ -58,10 +59,13 @@
 !zerowidthline.pdf
 !bug868745.pdf
 !mmtype1.pdf
+!issue5704.pdf
+!bug893730.pdf
 !bug864847.pdf
 !issue1002.pdf
 !issue925.pdf
 !issue2840.pdf
+!issue4061.pdf
 !issue4668.pdf
 !issue5039.pdf
 !issue5070.pdf
