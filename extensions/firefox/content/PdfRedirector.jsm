@@ -123,7 +123,14 @@ PdfRedirector.prototype = {
 
     // Create a new channel that is viewer loaded as a resource.
     var ioService = Services.io;
-    var channel = ioService.newChannel(pdfUrl, null, null);
+    var channel = ioService.newChannel2(pdfUrl,
+                                        null,
+                                        null,
+                                        domWindow,
+                                        nullptr, // aLoadingPrincipal
+                                        null,    // aTriggeringPrincipal
+                                        Ci.nsILoadInfo.SEC_NORMAL,
+                                        Ci.nsIContentPolicy.TYPE_OTHER);
 
     channel.loadGroup = aRequest.loadGroup;
 
