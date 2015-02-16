@@ -956,7 +956,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
         if (typeof workerSrc === 'function') {
             // call the supplied function and when the src is delivered, create worker from a blob:
-            workerSrc(function(src) { // callee will supply us JS in out callback
+            workerSrc(function(src) { // callee will supply us JS in our callback
               worker = new Worker(PDFJS.createObjectURL(src, "application/javascript"));
               workerBackend(worker);
             });
