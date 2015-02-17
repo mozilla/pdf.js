@@ -56,6 +56,20 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     <script src="../src/display/font_loader.js"></script>
     <script src="../src/display/annotation_helper.js"></script>
     <script>PDFJS.workerSrc = '../src/worker_loader.js';</script>
+<!-- example showing the workerSrc blob delivery callback mechanism:
+    <script>PDFJS.workerSrc = function (sourceCallback) {
+        var src = "../build/pdf.worker.js", 
+            request = new XMLHttpRequest();
+
+        request.open("GET", src);
+        request.onreadystatechange = function () {
+          if (request.readyState == 4 && request.status == 200) {
+            sourceCallback(request.responseText);
+          }
+        }
+        request.send();
+    }</script>
+end of example blob delivery callback mechanism -->
 <!--#endif-->
 
 <!--#if (GENERIC && !MINIFIED) -->

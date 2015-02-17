@@ -923,33 +923,50 @@ var WorkerTransport = (function WorkerTransportClosure() {
       try {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        var worker = new Worker(workerSrc);
-        var messageHandler = new MessageHandler('main', worker);
-        this.messageHandler = messageHandler;
+        var worker,
+            workerBackend = function(worker) { // called once worker created
+              var messageHandler = new MessageHandler('main', worker);
+              this.messageHandler = messageHandler;
 
-        messageHandler.on('test', function transportTest(data) {
-          var supportTypedArray = data && data.supportTypedArray;
-          if (supportTypedArray) {
-            this.worker = worker;
-            if (!data.supportTransfers) {
-              PDFJS.postMessageTransfers = false;
-            }
-            this.setupMessageHandler(messageHandler);
-            workerInitializedCapability.resolve();
-          } else {
-            this.setupFakeWorker();
-          }
-        }.bind(this));
+              messageHandler.on('test', function transportTest(data) {
+                var supportTypedArray = data && data.supportTypedArray;
+                if (supportTypedArray) {
+                  this.worker = worker;
+                  if (!data.supportTransfers) {
+                    PDFJS.postMessageTransfers = false;
+                  }
+                  this.setupMessageHandler(messageHandler);
+                  workerInitializedCapability.resolve();
+                } else {
+                  this.setupFakeWorker();
+                }
+              }.bind(this));
 
-        var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
-        // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
-        // typed array. Also, checking if we can use transfers.
-        try {
-          messageHandler.send('test', testObj, [testObj.buffer]);
-        } catch (ex) {
-          info('Cannot use postMessage transfers');
-          testObj[0] = 0;
-          messageHandler.send('test', testObj);
+              var testObj =
+                    new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
+              // Some versions of Opera throw a DATA_CLONE_ERR on serializing
+              // the typed array. Also, checking if we can use transfers.
+              try {
+                messageHandler.send('test', testObj, [testObj.buffer]);
+              } catch (ex) {
+                info('Cannot use postMessage transfers');
+                testObj[0] = 0;
+                messageHandler.send('test', testObj);
+              }
+            }.bind(this);
+
+        if (typeof workerSrc === 'function') {
+            // call the supplied function and when the src is
+            // delivered, create worker from a blob:
+            workerSrc(function(src) { // callee will callback w/ JS
+              worker =
+                new Worker(PDFJS.createObjectURL(src,
+                            'application/javascript'));
+              workerBackend(worker);
+            });
+        } else {
+            worker = new Worker(workerSrc);
+            workerBackend(worker);
         }
         return;
       } catch (e) {
