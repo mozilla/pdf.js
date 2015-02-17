@@ -942,7 +942,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
                 }
               }.bind(this));
 
-              var testObj = 
+              var testObj =
                     new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
               // Some versions of Opera throw a DATA_CLONE_ERR on serializing
               // the typed array. Also, checking if we can use transfers.
@@ -959,7 +959,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             // call the supplied function and when the src is
             // delivered, create worker from a blob:
             workerSrc(function(src) { // callee will callback w/ JS
-              worker = 
+              worker =
                 new Worker(PDFJS.createObjectURL(src,
                             'application/javascript'));
               workerBackend(worker);
