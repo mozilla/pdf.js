@@ -924,7 +924,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
         var worker,
-            workerBackend = function(worker) { // called after worker is created
+            workerBackend = function(worker) { // called once worker created
               var messageHandler = new MessageHandler('main', worker);
               this.messageHandler = messageHandler;
 
@@ -942,9 +942,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
                 }
               }.bind(this));
 
-              var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
-              // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
-              // typed array. Also, checking if we can use transfers.
+              var testObj = 
+                    new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
+              // Some versions of Opera throw a DATA_CLONE_ERR on serializing
+              // the typed array. Also, checking if we can use transfers.
               try {
                 messageHandler.send('test', testObj, [testObj.buffer]);
               } catch (ex) {
@@ -958,7 +959,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
             // call the supplied function and when the src is
             // delivered, create worker from a blob:
             workerSrc(function(src) { // callee will callback w/ JS
-              worker = new Worker(PDFJS.createObjectURL(src, 'application/javascript'));
+              worker = 
+                new Worker(PDFJS.createObjectURL(src,
+                            'application/javascript'));
               workerBackend(worker);
             });
         } else {
