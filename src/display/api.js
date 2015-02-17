@@ -955,9 +955,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
             }.bind(this);
 
         if (typeof workerSrc === 'function') {
-            // call the supplied function and when the src is delivered, create worker from a blob:
-            workerSrc(function(src) { // callee will supply us JS in our callback
-              worker = new Worker(PDFJS.createObjectURL(src, "application/javascript"));
+            // call the supplied function and when the src is
+            // delivered, create worker from a blob:
+            workerSrc(function(src) { // callee will callback w/ JS
+              worker = new Worker(PDFJS.createObjectURL(src, 'application/javascript'));
               workerBackend(worker);
             });
         } else {
