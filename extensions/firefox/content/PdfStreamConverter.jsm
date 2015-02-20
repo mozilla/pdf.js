@@ -72,7 +72,7 @@ function getChromeWindow(domWindow) {
 
 function getFindBar(domWindow) {
   if (PdfjsContentUtils.isRemote) {
-    return PdfjsContentUtils.getFindBar(domWindow);
+    throw new Error('FindBar is not accessible from the content process.');
   }
   var browser = getContainingBrowser(domWindow);
   try {
@@ -371,7 +371,13 @@ ChromeActions.prototype = {
     if (this.domWindow.frameElement !== null) {
       return false;
     }
-    // ... and when the new find events code exists.
+
+    // ... and we are in a child process
+    if (PdfjsContentUtils.isRemote) {
+      return true;
+    }
+
+    // ... or when the new find events code exists.
     var findBar = getFindBar(this.domWindow);
     return findBar && ('updateControlState' in findBar);
   },
@@ -473,7 +479,15 @@ ChromeActions.prototype = {
         (findPreviousType !== 'undefined' && findPreviousType !== 'boolean')) {
       return;
     }
-    getFindBar(this.domWindow).updateControlState(result, findPrevious);
+
+    var winmm = this.domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDocShell)
+                              .sameTypeRootTreeItem
+                              .QueryInterface(Ci.nsIDocShell)
+                              .QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIContentFrameMessageManager);
+
+    winmm.sendAsyncMessage('PDFJS:Parent:updateControlState', data);
   },
   setPreferences: function(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
@@ -778,14 +792,14 @@ RequestListener.prototype.receive = function(event) {
 
 // Forwards events from the eventElement to the contentWindow only if the
 // content window matches the currently selected browser window.
-function FindEventManager(eventElement, contentWindow, chromeWindow) {
-  this.types = ['find',
-                'findagain',
-                'findhighlightallchange',
-                'findcasesensitivitychange'];
-  this.chromeWindow = chromeWindow;
+function FindEventManager(contentWindow) {
   this.contentWindow = contentWindow;
-  this.eventElement = eventElement;
+  this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIDocShell)
+                            .sameTypeRootTreeItem
+                            .QueryInterface(Ci.nsIDocShell)
+                            .QueryInterface(Ci.nsIInterfaceRequestor)
+                            .getInterface(Ci.nsIContentFrameMessageManager);
 }
 
 FindEventManager.prototype.bind = function() {
@@ -795,41 +809,27 @@ FindEventManager.prototype.bind = function() {
   }.bind(this);
   this.contentWindow.addEventListener('unload', unload);
 
-  for (var i = 0; i < this.types.length; i++) {
-    var type = this.types[i];
-    this.eventElement.addEventListener(type, this, true);
-  }
+  // We cannot directly attach listeners to for the find events
+  // since the FindBar is in the parent process. Instead we're
+  // asking the PdfjsChromeUtils to do it for us and forward
+  // all the find events to us.
+  this.winmm.sendAsyncMessage('PDFJS:Parent:addEventListener');
+  this.winmm.addMessageListener('PDFJS:Child:handleEvent', this);
 };
 
-FindEventManager.prototype.handleEvent = function(e) {
-  var chromeWindow = this.chromeWindow;
+FindEventManager.prototype.receiveMessage = function(msg) {
+  var detail = msg.data.detail;
+  var type = msg.data.type;
   var contentWindow = this.contentWindow;
-  // Only forward the events if they are for our dom window.
-  if (chromeWindow.gBrowser.selectedBrowser.contentWindow === contentWindow) {
-    var detail = {
-      query: e.detail.query,
-      caseSensitive: e.detail.caseSensitive,
-      highlightAll: e.detail.highlightAll,
-      findPrevious: e.detail.findPrevious
-    };
-    detail = makeContentReadable(detail, contentWindow);
-    var forward = contentWindow.document.createEvent('CustomEvent');
-    forward.initCustomEvent(e.type, true, true, detail);
-    // Due to restrictions with cpow use, we can't dispatch
-    // dom events with an urgent message on the stack. So bounce
-    // this off the main thread to make it async.
-    Services.tm.mainThread.dispatch(function () {
-      contentWindow.dispatchEvent(forward);
-    }, Ci.nsIThread.DISPATCH_NORMAL);
-    e.preventDefault();
-  }
+
+  detail = makeContentReadable(detail, contentWindow);
+  var forward = contentWindow.document.createEvent('CustomEvent');
+  forward.initCustomEvent(type, true, true, detail);
+  contentWindow.dispatchEvent(forward);
 };
 
 FindEventManager.prototype.unbind = function() {
-  for (var i = 0; i < this.types.length; i++) {
-    var type = this.types[i];
-    this.eventElement.removeEventListener(type, this, true);
-  }
+  this.winmm.sendAsyncMessage('PDFJS:Parent:removeEventListener');
 };
 
 function PdfStreamConverter() {
@@ -994,11 +994,7 @@ PdfStreamConverter.prototype = {
           requestListener.receive(event);
         }, false, true);
         if (actions.supportsIntegratedFind()) {
-          var chromeWindow = getChromeWindow(domWindow);
-          var findBar = getFindBar(domWindow);
-          var findEventManager = new FindEventManager(findBar,
-                                                      domWindow,
-                                                      chromeWindow);
+          var findEventManager = new FindEventManager(domWindow);
           findEventManager.bind();
         }
         listener.onStopRequest(aRequest, context, statusCode);
