@@ -275,10 +275,10 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'CMYK':
           return 'DeviceCmykCS';
         case 'CalGray':
-          params = cs[1].getAll();
+          params = xref.fetchIfRef(cs[1]).getAll();
           return ['CalGrayCS', params];
         case 'CalRGB':
-          params = cs[1].getAll();
+          params = xref.fetchIfRef(cs[1]).getAll();
           return ['CalRGBCS', params];
         case 'ICCBased':
           var stream = xref.fetchIfRef(cs[1]);
