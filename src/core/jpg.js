@@ -792,6 +792,13 @@ var JpegImage = (function jpegImage() {
               successiveApproximation >> 4, successiveApproximation & 15);
             offset += processed;
             break;
+
+          case 0xFFFF: // Fill bytes
+            if (data[offset] !== 0xFF) { // Avoid skipping a valid marker.
+              offset--;
+            }
+            break;
+
           default:
             if (data[offset - 3] === 0xFF &&
                 data[offset - 2] >= 0xC0 && data[offset - 2] <= 0xFE) {
