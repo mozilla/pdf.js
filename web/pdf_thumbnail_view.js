@@ -99,7 +99,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     var div = document.createElement('div');
     div.id = 'thumbnailContainer' + id;
     div.className = 'thumbnail';
-    this.el = div; // TODO: replace 'el' property usage.
     this.div = div;
 
     if (id === 1) {

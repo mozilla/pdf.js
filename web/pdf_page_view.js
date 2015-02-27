@@ -80,7 +80,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     div.className = 'page';
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
-    this.el = div; // TODO replace 'el' property usage
     this.div = div;
 
     container.appendChild(div);
