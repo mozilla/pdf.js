@@ -2572,8 +2572,6 @@ var Font = (function FontClosure() {
     if (subtype === 'CIDFontType0C' && type !== 'CIDFontType0') {
       type = 'CIDFontType0';
     }
-    // XXX: Temporarily change the type for open type so we trigger a warning.
-    // This should be removed when we add support for open type.
     if (subtype === 'OpenType') {
       type = 'OpenType';
     }
@@ -3980,7 +3978,8 @@ var Font = (function FontClosure() {
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
         // OpenType font
-        if (!tables.head || !tables.hhea || !tables.maxp || !tables.post) {
+        if (header.version === 'OTTO' ||
+            !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
           // no major tables: throwing everything at CFFFont
           cffFile = new Stream(tables['CFF '].data);
           cff = new CFFFont(cffFile, properties);
