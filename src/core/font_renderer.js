@@ -710,4 +710,3 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     }
   };
 })();
-

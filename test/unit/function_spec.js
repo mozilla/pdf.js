@@ -520,4 +520,3 @@ describe('function', function() {
     });
   });
 });
-

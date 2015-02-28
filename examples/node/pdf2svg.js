@@ -63,7 +63,7 @@ PDFJS.getDocument(data).then(function (doc) {
       var viewport = page.getViewport(1.0 /* scale */);
       console.log('Size: ' + viewport.width + 'x' + viewport.height);
       console.log();
-      
+
       return page.getOperatorList().then(function (opList) {
         var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
         svgGfx.embedFonts = true;
@@ -74,7 +74,7 @@ PDFJS.getDocument(data).then(function (doc) {
       });
     })
   };
-  
+
   for (var i = 1; i <= numPages; i++) {
     lastPromise = lastPromise.then(loadPage.bind(null, i));
   }
@@ -84,4 +84,3 @@ PDFJS.getDocument(data).then(function (doc) {
 }, function (err) {
   console.error('Error: ' + err);
 });
-

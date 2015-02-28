@@ -5,4 +5,3 @@
         <em:description>Dùng HTML5 để hiện thị PDF trực tiếp trên FireFox.</em:description>
       </Description>
     </em:localized>
-

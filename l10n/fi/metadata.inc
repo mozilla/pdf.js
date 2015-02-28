@@ -5,4 +5,3 @@
         <em:description>Näyttää PDF tiedostot suoraan Firefox:ssa HTML5:n avulla.</em:description>
       </Description>
     </em:localized>
-

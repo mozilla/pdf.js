@@ -123,7 +123,7 @@ DOMElement.prototype = {
     return newNode;
   },
 }
-  
+
 global.document = {
   childNodes : [],
 
@@ -138,4 +138,3 @@ global.document = {
     return elObject;
   },
 };
-

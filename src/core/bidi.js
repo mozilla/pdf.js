@@ -424,4 +424,3 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
   return bidi;
 })();
-

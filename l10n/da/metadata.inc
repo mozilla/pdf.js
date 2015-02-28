@@ -5,4 +5,3 @@
         <em:description>Benytter HTML5 til at vise PDF-filer direkte i Firefox.</em:description>
       </Description>
     </em:localized>
-

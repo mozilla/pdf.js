@@ -222,4 +222,3 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
   return NetworkPdfManager;
 })();
-

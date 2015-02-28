@@ -229,4 +229,3 @@ describe('evaluator', function() {
     });
   });
 });
-

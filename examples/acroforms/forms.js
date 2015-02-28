@@ -150,4 +150,3 @@ PDFJS.getDocument(pdfWithFormsPath).then(function getPdfForm(pdf) {
     renderPage(viewer, pdf, pageNumber++, pageRenderingComplete);
   });
 });
-

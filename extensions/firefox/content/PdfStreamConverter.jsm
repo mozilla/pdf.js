@@ -817,7 +817,7 @@ FindEventManager.prototype.handleEvent = function(e) {
     forward.initCustomEvent(e.type, true, true, detail);
     // Due to restrictions with cpow use, we can't dispatch
     // dom events with an urgent message on the stack. So bounce
-    // this off the main thread to make it async. 
+    // this off the main thread to make it async.
     Services.tm.mainThread.dispatch(function () {
       contentWindow.dispatchEvent(forward);
     }, Ci.nsIThread.DISPATCH_NORMAL);

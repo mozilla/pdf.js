@@ -251,9 +251,9 @@ let PdfJs = {
       PdfjsChromeUtils.notifyChildOfSettingsChange();
     }
   },
-  
+
   /**
-   * pdf.js is only enabled if it is both selected as the pdf viewer and if the 
+   * pdf.js is only enabled if it is both selected as the pdf viewer and if the
    * global switch enabling it is true.
    * @return {boolean} Wether or not it's enabled.
    */

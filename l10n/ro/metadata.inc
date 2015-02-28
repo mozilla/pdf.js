@@ -5,4 +5,3 @@
         <em:description>Afișează fișierele PDF direct în Firefox.</em:description>
       </Description>
     </em:localized>
-

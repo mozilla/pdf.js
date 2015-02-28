@@ -560,4 +560,3 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
   return ChunkedStreamManager;
 })();
-

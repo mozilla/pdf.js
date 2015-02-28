@@ -124,7 +124,7 @@
       // Arabic, Hebrew, Farsi, Pashto, Urdu
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
 
-      // use the short language code for "full" codes like 'ar-sa' (issue 5440) 
+      // use the short language code for "full" codes like 'ar-sa' (issue 5440)
       var shortCode = gLanguage.split('-')[0];
 
       return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
@@ -134,4 +134,3 @@
     translate: translateFragment
   };
 })(this);
-
