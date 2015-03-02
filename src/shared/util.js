@@ -976,10 +976,6 @@ function isString(v) {
   return typeof v === 'string';
 }
 
-function isNull(v) {
-  return v === null;
-}
-
 function isName(v) {
   return v instanceof Name;
 }
