@@ -1713,6 +1713,13 @@
        "type": "eq",
        "about": "Invisible Type3 font used for text selection and searching."
     },
+    {  "id": "issue5421-text",
+       "file": "pdfs/issue5421.pdf",
+       "md5": "273f6813758a2349090003c7c8a0d85e",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "issue5701",
        "file": "pdfs/issue5701.pdf",
        "md5": "7ec476aee12e8bd6be79140223d329c1",
