@@ -397,7 +397,7 @@ var PDFViewer = (function pdfViewer() {
         }
         var inPresentationMode =
           this.presentationModeState === PresentationModeState.FULLSCREEN;
-        var hPadding = inPresentationMode ? 0 : SCROLLBAR_PADDING;
+        var hPadding = this.isHorizontalScrollbarEnabled ? SCROLLBAR_PADDING : 0;
         var vPadding = inPresentationMode ? 0 : VERTICAL_PADDING;
         var pageWidthScale = (this.container.clientWidth - hPadding) /
                              currentPage.width * currentPage.scale;
