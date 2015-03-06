@@ -893,7 +893,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         styles: Object.create(null)
       };
       var bidiTexts = textContent.items;
-      var SPACE_FACTOR = 0.35;
+      var SPACE_FACTOR = 0.3;
       var MULTI_SPACE_FACTOR = 1.5;
 
       var self = this;
