@@ -1080,6 +1080,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5801",
+       "file": "pdfs/issue5801.pdf",
+       "md5": "e9548650ad40e13e00d2a486bbc2bb1b",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "pdfkit_compressed",
       "file": "pdfs/pdfkit_compressed.pdf",
       "md5": "ffe9c571d0a1572e234253e6c7cdee6c",
