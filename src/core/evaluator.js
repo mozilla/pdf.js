@@ -964,14 +964,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             textChunk.width = Math.sqrt(trm[0] * trm[0] + trm[1] * trm[1]);
           }
         }
+        // width/height include fontsize, HScale, charspacing, not textMatrix.
         var width = 0;
         var height = 0;
         var glyphs = font.charsToGlyphs(chars);
         var defaultVMetrics = font.defaultVMetrics;
         for (var i = 0; i < glyphs.length; i++) {
           var glyph = glyphs[i];
-          if (!glyph) { // Previous glyph was a space.
-            width += textState.wordSpacing * textState.textHScale;
+          if (!glyph) {
+            // Previous glyph was a space, implying a new word. Add wordSpacing.
+            if (font.vertical) {
+              height += textState.wordSpacing;
+              textState.translateTextMatrix(0, textState.wordSpacing);
+            } else {
+              var wordDeltaX = textState.wordSpacing * textState.textHScale;
+              width += wordDeltaX;
+              textState.translateTextMatrix(wordDeltaX, 0);
+            }
             continue;
           }
           var vMetricX = null;
@@ -1109,16 +1118,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeof items[j] === 'string') {
                   buildTextGeometry(items[j], textChunk);
                 } else {
+                  // See Section 5.3.2. Shift right/down by unit thousanths.
                   var val = items[j] / 1000;
                   if (!textState.font.vertical) {
                     offset = -val * textState.fontSize * textState.textHScale *
                       textState.textMatrix[0];
-                    textState.translateTextMatrix(offset, 0);
+                    // Translate in x direction by offset, and add to width.
+                    textState.textMatrix[4] += offset;
                     textChunk.width += offset;
                   } else {
                     offset = -val * textState.fontSize *
                       textState.textMatrix[3];
-                    textState.translateTextMatrix(0, offset);
+                    // Translate in y direction by offset, and add to height.
+                    textState.textMatrix[5] += offset;
                     textChunk.height += offset;
                   }
                   if (items[j] < 0 && textState.font.spaceWidth > 0) {
