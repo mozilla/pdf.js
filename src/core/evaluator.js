@@ -893,6 +893,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         styles: Object.create(null)
       };
       var bidiTexts = textContent.items;
+      // At the end of each textChunk, auto insert spaces based on:
+      var SPACE_FACTOR_CHUNKS = 0.6;
+      // If performing a spacedText operation, auto insert spaces based on:
       var SPACE_FACTOR = 0.35;
       var MULTI_SPACE_FACTOR = 1.5;
 
@@ -1037,7 +1040,72 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         } else {
           textChunk.height += Math.abs(height * scaleCtmX * scaleLineX);
         }
+        addSpaceIfNecessary(textChunk, font);
         return textChunk;
+      }
+      function getChunkPosition(chunk, font) {
+        var tx = chunk.transform;
+        var angle = Math.atan2(tx[1], tx[0]);
+        if (font.vertical) {
+          angle += Math.PI / 2;
+        }
+        // Start by calculating the height
+        var fontAscent = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+        // Then modify to add the ascent
+        if (font.ascent) {
+          fontAscent = font.ascent * fontAscent;
+        } else if (font.descent) {
+          fontAscent = (1 + font.descent) * fontAscent;
+        }
+        return {
+          x: (angle === 0 ? tx[4] : tx[4] + (fontAscent * Math.sin(angle))),
+          y: tx[5]
+        };
+      }
+      function addSpaceIfNecessary(newChunk, font) {
+        // If the new chunk starts with a space, it does not need one.
+        if (newChunk.str[0] === ' ' || newChunk.str[0] === '-') {
+          return;
+        }
+        if (bidiTexts.length === 0) {
+          return;
+        }
+        // If the last chunk ends with a space it does not need one.
+        var lastChunk = bidiTexts[bidiTexts.length - 1];
+        if (lastChunk.str.length === 0) {
+          return;
+        }
+        var lastChar = lastChunk.str[lastChunk.str.length - 1];
+        if (lastChar === ' ' || lastChar === '-') {
+          return;
+        }
+        var lastPosition = getChunkPosition(lastChunk, font);
+        var newPosition = getChunkPosition(newChunk, font);
+        var yDiff = Math.abs(lastPosition.y  - newPosition.y);
+        if (yDiff >= lastChunk.height || yDiff >= newChunk.height) {
+          // On different lines, add a space.
+          lastChunk.str += ' ';
+        } else {
+          var wordSpacing = textState.wordSpacing; // Try default wordSpacing.
+          if (wordSpacing === 0) {
+            // Heuristic for wordSpacing
+            wordSpacing = newChunk.width / newChunk.str.length *
+              SPACE_FACTOR_CHUNKS;
+          }
+          var addSpace;
+          if (newPosition.x >= lastPosition.x) {
+            // Left to right. Add a space if next is past wordSpacing.
+            addSpace = newPosition.x >= lastPosition.x + lastChunk.width +
+              wordSpacing;
+          } else {
+            // Right to left. Add space if next is before sart.
+            addSpace = lastPosition.x >= newPosition.x + newChunk.width +
+              wordSpacing;
+          }
+          if (addSpace) {
+            lastChunk.str += ' ';
+          }
+        }
       }
 
       var timeSlotManager = new TimeSlotManager();
@@ -1121,6 +1189,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     textState.translateTextMatrix(0, offset);
                     textChunk.height += offset;
                   }
+                  // Automatically insert spaces if the shift is big enough.
                   if (items[j] < 0 && textState.font.spaceWidth > 0) {
                     var fakeSpaces = -items[j] / textState.font.spaceWidth;
                     if (fakeSpaces > MULTI_SPACE_FACTOR) {
