@@ -490,6 +490,14 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "franz",
+       "file": "pdfs/franz.pdf",
+       "md5": "12f0bbdec09900cbdd86e1737ed5f992",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",

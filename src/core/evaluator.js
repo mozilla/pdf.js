@@ -1284,8 +1284,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var data = diffEncoding[j];
               if (isNum(data)) {
                 index = data;
-              } else {
+              } else if (isName(data)) {
                 differences[index++] = data.name;
+              } else if (isRef(data)) {
+                diffEncoding[j--] = xref.fetch(data);
+                continue;
+              } else {
+                error('Invalid entry in \'Differences\' array: ' + data);
               }
             }
           }

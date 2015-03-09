@@ -2,6 +2,7 @@
 *.error
 
 !tracemonkey.pdf
+!franz.pdf
 !issue2391-1.pdf
 !issue2391-2.pdf
 !filled-background.pdf
