@@ -188,6 +188,31 @@ function makeContentReadable(obj, window) {
 //#endif
 }
 
+function createNewChannel(uri, node, principal) {
+//#if !MOZCENTRAL
+  if (!NetUtil.newChannel2) {
+    return NetUtil.newChannel(uri);
+  }
+//#endif
+  return NetUtil.newChannel2(uri,
+                             null,
+                             null,
+                             node, // aLoadingNode
+                             principal, // aLoadingPrincipal
+                             null, // aTriggeringPrincipal
+                             Ci.nsILoadInfo.SEC_NORMAL,
+                             Ci.nsIContentPolicy.TYPE_OTHER);
+}
+
+function asyncFetchChannel(channel, callback) {
+//#if !MOZCENTRAL
+  if (!NetUtil.newChannel2) {
+    return NetUtil.asyncFetch(channel, callback);
+  }
+//#endif
+  return NetUtil.asyncFetch2(channel, callback);
+}
+
 // PDF data storage
 function PdfDataListener(length) {
   this.length = length; // less than 0, if length is unknown
@@ -273,15 +298,16 @@ ChromeActions.prototype = {
   download: function(data, sendResponse) {
     var self = this;
     var originalUrl = data.originalUrl;
+    var blobUrl = data.blobUrl || originalUrl;
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
-    var originalUri = NetUtil.newURI(data.originalUrl);
+    var originalUri = NetUtil.newURI(originalUrl);
     var filename = data.filename;
     if (typeof filename !== 'string' ||
         (!/\.pdf$/i.test(filename) && !data.isAttachment)) {
       filename = 'document.pdf';
     }
-    var blobUri = data.blobUrl ? NetUtil.newURI(data.blobUrl) : originalUri;
+    var blobUri = NetUtil.newURI(blobUrl);
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
              getService(Ci.nsIExternalHelperAppService);
@@ -289,12 +315,12 @@ ChromeActions.prototype = {
                          getService(Ci.nsIWindowWatcher).activeWindow;
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = NetUtil.newChannel(blobUri);
+    var netChannel = createNewChannel(blobUri, frontWindow.document, null);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
     }
-    NetUtil.asyncFetch(netChannel, function(aInputStream, aResult) {
+    asyncFetchChannel(netChannel, function(aInputStream, aResult) {
       if (!Components.isSuccessCode(aResult)) {
         if (sendResponse) {
           sendResponse(true);
@@ -959,9 +985,8 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
-    var ioService = Services.io;
-    var channel = ioService.newChannel(
-                    PDF_VIEWER_WEB_PAGE, null, null);
+    var systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE, null, systemPrincipal);
 
     var listener = this.listener;
     var dataListener = this.dataListener;
@@ -1019,7 +1044,7 @@ PdfStreamConverter.prototype = {
     // e.g. useful for NoScript
     var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
                           .getService(Ci.nsIScriptSecurityManager);
-    var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
     // FF16 and below had getCodebasePrincipal, it was replaced by
     // getNoAppCodebasePrincipal (bug 758258).
     var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
