@@ -104,8 +104,70 @@ var ChromeCom = (function ChromeComClosure() {
         });
         return;
       }
+      if (/^https?:/.test(file)) {
+        // Assumption: The file being opened is the file that was requested.
+        // There is no UI to input a different URL, so this assumption will hold
+        // for now.
+        setReferer(file, function() {
+          PDFViewerApplication.open(file, 0);
+        });
+        return;
+      }
       PDFViewerApplication.open(file, 0);
     });
   };
+
+  // This port is used for several purposes:
+  // 1. When disconnected, the background page knows that the frame has unload.
+  // 2. When the referrer was saved in history.state.chromecomState, it is sent
+  //    to the background page.
+  // 3. When the background page knows the referrer of the page, the referrer is
+  //    saved in history.state.chromecomState.
+  var port;
+  // Set the referer for the given URL.
+  // 0. Background: If loaded via a http(s) URL: Save referer.
+  // 1. Page -> background: send URL and referer from history.state
+  // 2. Background: Bind referer to URL (via webRequest).
+  // 3. Background -> page: Send latest referer and save to history.
+  // 4. Page: Invoke callback.
+  function setReferer(url, callback) {
+    if (!port) {
+      // The background page will accept the port, and keep adding the Referer
+      // request header to requests to |url| until the port is disconnected.
+      port = chrome.runtime.connect({name: 'chromecom-referrer'});
+    }
+    port.onDisconnect.addListener(onDisconnect);
+    port.onMessage.addListener(onMessage);
+    // Initiate the information exchange.
+    port.postMessage({
+      referer: window.history.state && window.history.state.chromecomState,
+      requestUrl: url
+    });
+
+    function onMessage(referer) {
+      if (referer) {
+        // The background extracts the Referer from the initial HTTP request for
+        // the PDF file. When the viewer is reloaded or when the user navigates
+        // back and forward, the background page will not observe a HTTP request
+        // with Referer. To make sure that the Referer is preserved, store it in
+        // history.state, which is preserved accross reloads/navigations.
+        var state = window.history.state || {};
+        state.chromecomState = referer;
+        window.history.replaceState(state, '');
+      }
+      onCompleted();
+    }
+    function onDisconnect() {
+      // When the connection fails, ignore the error and call the callback.
+      port = null;
+      onCompleted();
+    }
+    function onCompleted() {
+      port.onDisconnect.removeListener(onDisconnect);
+      port.onMessage.removeListener(onMessage);
+      callback();
+    }
+  }
+
   return ChromeCom;
 })();

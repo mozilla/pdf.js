@@ -124,6 +124,10 @@ var PDFHistory = {
     }, false);
   },
 
+  clearHistoryState: function pdfHistory_clearHistoryState() {
+    this._pushOrReplaceState(null, true);
+  },
+
   _isStateObjectDefined: function pdfHistory_isStateObjectDefined(state) {
     return (state && state.uid >= 0 &&
             state.fingerprint && this.fingerprint === state.fingerprint &&
@@ -132,6 +136,13 @@ var PDFHistory = {
 
   _pushOrReplaceState: function pdfHistory_pushOrReplaceState(stateObj,
                                                               replace) {
+//#if CHROME
+    // history.state.chromecomState is managed by chromecom.js.
+    if (window.history.state && 'chromecomState' in window.history.state) {
+      stateObj = stateObj || {};
+      stateObj.chromecomState = window.history.state.chromecomState;
+    }
+//#endif
     if (replace) {
 //#if (GENERIC || CHROME)
       window.history.replaceState(stateObj, '', document.URL);
