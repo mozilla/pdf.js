@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome, Features */
+/* globals chrome, Features, saveReferer */
 
 'use strict';
 
@@ -112,6 +112,9 @@ chrome.webRequest.onHeadersReceived.addListener(
     }
 
     var viewerUrl = getViewerURL(details.url);
+
+    // Implemented in preserve-referer.js
+    saveReferer(details);
 
     // Replace frame with viewer
     if (Features.webRequestRedirectUrl) {
