@@ -19,14 +19,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-/*
-  Additional modifications for PDF.js project:
-    - Disables language initialization on page loading;
-    - Removes consoleWarn and consoleLog and use console.log/warn directly.
-    - Removes window._ assignment.
-*/
 
-/*jshint browser: true, devel: true, globalstrict: true */
+/*jshint browser: true, devel: true, es5: true, globalstrict: true */
 'use strict';
 
 document.webL10n = (function(window, document, undefined) {
@@ -51,6 +45,29 @@ document.webL10n = (function(window, document, undefined) {
    */
 
   var gAsyncResourceLoading = true; // read-only
+
+
+  /**
+   * Debug helpers
+   *
+   *   gDEBUG == 0: don't display any console message
+   *   gDEBUG == 1: display only warnings, not logs
+   *   gDEBUG == 2: display all console messages
+   */
+
+  var gDEBUG = 1;
+
+  function consoleLog(message) {
+    if (gDEBUG >= 2) {
+      console.log('[l10n] ' + message);
+    }
+  }
+
+  function consoleWarn(message) {
+    if (gDEBUG) {
+      console.warn('[l10n] ' + message);
+    }
+  }
 
 
   /**
@@ -85,7 +102,7 @@ document.webL10n = (function(window, document, undefined) {
       try {
         args = JSON.parse(l10nArgs);
       } catch (e) {
-        console.warn('could not parse arguments for #' + l10nId);
+        consoleWarn('could not parse arguments for #' + l10nId);
       }
     }
     return { id: l10nId, args: args };
@@ -98,14 +115,14 @@ document.webL10n = (function(window, document, undefined) {
     document.dispatchEvent(evtObject);
   }
 
-  function xhrLoadText(url, onSuccess, onFailure, asynchronous) {
+  function xhrLoadText(url, onSuccess, onFailure) {
     onSuccess = onSuccess || function _onSuccess(data) {};
     onFailure = onFailure || function _onFailure() {
-      console.warn(url + ' not found.');
+      consoleWarn(url + ' not found.');
     };
 
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, asynchronous);
+    xhr.open('GET', url, gAsyncResourceLoading);
     if (xhr.overrideMimeType) {
       xhr.overrideMimeType('text/plain; charset=utf-8');
     }
@@ -174,8 +191,10 @@ document.webL10n = (function(window, document, undefined) {
     }
 
     // parse *.properties text data into an l10n dictionary
-    function parseProperties(text) {
-      var dictionary = [];
+    // If gAsyncResourceLoading is false, then the callback will be called
+    // synchronously. Otherwise it is called asynchronously.
+    function parseProperties(text, parsedPropertiesCallback) {
+      var dictionary = {};
 
       // token expressions
       var reBlank = /^\s*|\s*$/;
@@ -185,57 +204,69 @@ document.webL10n = (function(window, document, undefined) {
       var reSplit = /^([^=\s]*)\s*=\s*(.+)$/; // TODO: escape EOLs with '\'
 
       // parse the *.properties file into an associative array
-      function parseRawLines(rawText, extendedSyntax) {
+      function parseRawLines(rawText, extendedSyntax, parsedRawLinesCallback) {
         var entries = rawText.replace(reBlank, '').split(/[\r\n]+/);
         var currentLang = '*';
         var genericLang = lang.split('-', 1)[0];
         var skipLang = false;
         var match = '';
 
-        for (var i = 0; i < entries.length; i++) {
-          var line = entries[i];
+        function nextEntry() {
+          // Use infinite loop instead of recursion to avoid reaching the
+          // maximum recursion limit for content with many lines.
+          while (true) {
+            if (!entries.length) {
+              parsedRawLinesCallback();
+              return;
+            }
+            var line = entries.shift();
 
-          // comment or blank line?
-          if (reComment.test(line))
-            continue;
+            // comment or blank line?
+            if (reComment.test(line))
+              continue;
 
-          // the extended syntax supports [lang] sections and @import rules
-          if (extendedSyntax) {
-            if (reSection.test(line)) { // section start?
+            // the extended syntax supports [lang] sections and @import rules
+            if (extendedSyntax) {
               match = reSection.exec(line);
-              // RFC 4646, section 4.4, "All comparisons MUST be performed
-              // in a case-insensitive manner."
-              currentLang = match[1].toLowerCase();
-              skipLang = (currentLang !== '*') &&
-                  (currentLang !== lang) && (currentLang !== genericLang);
-              continue;
-            } else if (skipLang) {
-              continue;
-            }
-            if (reImport.test(line)) { // @import rule?
-              match = reImport.exec(line);
-              loadImport(baseURL + match[1]); // load the resource synchronously
-            }
-          }
+              if (match) { // section start?
+                // RFC 4646, section 4.4, "All comparisons MUST be performed
+                // in a case-insensitive manner."
 
-          // key-value pair
-          var tmp = line.match(reSplit);
-          if (tmp && tmp.length == 3) {
-            dictionary[tmp[1]] = evalString(tmp[2]);
+                currentLang = match[1].toLowerCase();
+                skipLang = (currentLang !== '*') &&
+                    (currentLang !== lang) && (currentLang !== genericLang);
+                continue;
+              } else if (skipLang) {
+                continue;
+              }
+              match = reImport.exec(line);
+              if (match) { // @import rule?
+                loadImport(baseURL + match[1], nextEntry);
+                return;
+              }
+            }
+
+            // key-value pair
+            var tmp = line.match(reSplit);
+            if (tmp && tmp.length == 3) {
+              dictionary[tmp[1]] = evalString(tmp[2]);
+            }
           }
         }
+        nextEntry();
       }
 
       // import another *.properties file
-      function loadImport(url) {
+      function loadImport(url, callback) {
         xhrLoadText(url, function(content) {
-          parseRawLines(content, false); // don't allow recursive imports
-        }, null, false); // load synchronously
+          parseRawLines(content, false, callback); // don't allow recursive imports
+        }, null);
       }
 
       // fill the dictionary
-      parseRawLines(text, true);
-      return dictionary;
+      parseRawLines(text, true, function() {
+        parsedPropertiesCallback(dictionary);
+      });
     }
 
     // load and parse l10n data (warning: global variables are used here)
@@ -243,29 +274,30 @@ document.webL10n = (function(window, document, undefined) {
       gTextData += response; // mostly for debug
 
       // parse *.properties text data into an l10n dictionary
-      var data = parseProperties(response);
+      parseProperties(response, function(data) {
 
-      // find attribute descriptions, if any
-      for (var key in data) {
-        var id, prop, index = key.lastIndexOf('.');
-        if (index > 0) { // an attribute has been specified
-          id = key.substring(0, index);
-          prop = key.substr(index + 1);
-        } else { // no attribute: assuming text content by default
-          id = key;
-          prop = gTextProp;
+        // find attribute descriptions, if any
+        for (var key in data) {
+          var id, prop, index = key.lastIndexOf('.');
+          if (index > 0) { // an attribute has been specified
+            id = key.substring(0, index);
+            prop = key.substr(index + 1);
+          } else { // no attribute: assuming text content by default
+            id = key;
+            prop = gTextProp;
+          }
+          if (!gL10nData[id]) {
+            gL10nData[id] = {};
+          }
+          gL10nData[id][prop] = data[key];
         }
-        if (!gL10nData[id]) {
-          gL10nData[id] = {};
-        }
-        gL10nData[id][prop] = data[key];
-      }
 
-      // trigger callback
-      if (successCallback) {
-        successCallback();
-      }
-    }, failureCallback, gAsyncResourceLoading);
+        // trigger callback
+        if (successCallback) {
+          successCallback();
+        }
+      });
+    }, failureCallback);
   }
 
   // load and parse all resources for the specified locale
@@ -289,7 +321,7 @@ document.webL10n = (function(window, document, undefined) {
       // we might have a pre-compiled dictionary instead
       var dict = getL10nDictionary();
       if (dict && dict.locales && dict.default_locale) {
-        console.log('using the embedded JSON directory, early way out');
+        consoleLog('using the embedded JSON directory, early way out');
         gL10nData = dict.locales[lang];
         if (!gL10nData) {
           var defaultLocale = dict.default_locale.toLowerCase();
@@ -305,7 +337,7 @@ document.webL10n = (function(window, document, undefined) {
         }
         callback();
       } else {
-        console.log('no resource to load, early way out');
+        consoleLog('no resource to load, early way out');
       }
       // early way out
       fireL10nReadyEvent(lang);
@@ -328,24 +360,23 @@ document.webL10n = (function(window, document, undefined) {
     // load all resource files
     function L10nResourceLink(link) {
       var href = link.href;
-      var type = link.type;
+      // Note: If |gAsyncResourceLoading| is false, then the following callbacks
+      // are synchronously called.
       this.load = function(lang, callback) {
-        var applied = lang;
         parseResource(href, lang, callback, function() {
-          console.warn(href + ' not found.');
-          applied = '';
+          consoleWarn(href + ' not found.');
+          // lang not found, used default resource instead
+          consoleWarn('"' + lang + '" resource not found');
+          gLanguage = '';
+          // Resource not loaded, but we still need to call the callback.
+          callback();
         });
-        return applied; // return lang if found, an empty string if not found
       };
     }
 
     for (var i = 0; i < langCount; i++) {
       var resource = new L10nResourceLink(langLinks[i]);
-      var rv = resource.load(lang, onResourceLoaded);
-      if (rv != lang) { // lang not found, used default resource instead
-        console.warn('"' + lang + '" resource not found');
-        gLanguage = '';
-      }
+      resource.load(lang, onResourceLoaded);
     }
   }
 
@@ -764,7 +795,7 @@ document.webL10n = (function(window, document, undefined) {
     // return a function that gives the plural form name for a given integer
     var index = locales2rules[lang.replace(/-.*$/, '')];
     if (!(index in pluralRules)) {
-      console.warn('plural form unknown for [' + lang + ']');
+      consoleWarn('plural form unknown for [' + lang + ']');
       return function() { return 'other'; };
     }
     return pluralRules[index];
@@ -811,7 +842,7 @@ document.webL10n = (function(window, document, undefined) {
   function getL10nData(key, args, fallback) {
     var data = gL10nData[key];
     if (!data) {
-      console.warn('#' + key + ' is undefined.');
+      consoleWarn('#' + key + ' is undefined.');
       if (!fallback) {
         return null;
       }
@@ -861,28 +892,17 @@ document.webL10n = (function(window, document, undefined) {
 
   // replace {{arguments}} with their values
   function substArguments(str, args, key) {
-    var reArgs = /\{\{\s*(.+?)\s*\}\}/;
-    var match = reArgs.exec(str);
-    while (match) {
-      if (!match || match.length < 2)
-        return str; // argument key not found
-
-      var arg = match[1];
-      var sub = '';
+    var reArgs = /\{\{\s*(.+?)\s*\}\}/g;
+    return str.replace(reArgs, function(matched_text, arg) {
       if (args && arg in args) {
-        sub = args[arg];
-      } else if (arg in gL10nData) {
-        sub = gL10nData[arg][gTextProp];
-      } else {
-        console.log('argument {{' + arg + '}} for #' + key + ' is undefined.');
-        return str;
+        return args[arg];
       }
-
-      str = str.substring(0, match.index) + sub +
-            str.substr(match.index + match[0].length);
-      match = reArgs.exec(str);
-    }
-    return str;
+      if (arg in gL10nData) {
+        return gL10nData[arg];
+      }
+      consoleLog('argument {{' + arg + '}} for #' + key + ' is undefined.');
+      return matched_text;
+    });
   }
 
   // translate an HTML element
@@ -894,7 +914,7 @@ document.webL10n = (function(window, document, undefined) {
     // get the related l10n object
     var data = getL10nData(l10n.id, l10n.args);
     if (!data) {
-      console.warn('#' + l10n.id + ' is undefined.');
+      consoleWarn('#' + l10n.id + ' is undefined.');
       return;
     }
 
@@ -962,6 +982,151 @@ document.webL10n = (function(window, document, undefined) {
     translateElement(element);
   }
 
+
+  /**
+   * Startup & Public API
+   *
+   * Warning: this part of the code contains browser-specific chunks --
+   * that's where obsolete browsers, namely IE8 and earlier, are handled.
+   *
+   * Unlike the rest of the lib, this section is not shared with FirefoxOS/Gaia.
+   */
+
+  // load the default locale on startup
+  function l10nStartup() {
+    gReadyState = 'interactive';
+
+    // most browsers expose the UI language as `navigator.language'
+    // but IE uses `navigator.userLanguage' instead
+    var userLocale = navigator.language || navigator.userLanguage;
+    consoleLog('loading [' + userLocale + '] resources, ' +
+        (gAsyncResourceLoading ? 'asynchronously.' : 'synchronously.'));
+
+    // load the default locale and translate the document if required
+    if (document.documentElement.lang === userLocale) {
+      loadLocale(userLocale);
+    } else {
+      loadLocale(userLocale, translateFragment);
+    }
+  }
+
+  // browser-specific startup
+  if (document.addEventListener) { // modern browsers and IE9+
+    if (document.readyState === 'loading') {
+      // the document is not fully loaded yet: wait for DOMContentLoaded.
+      document.addEventListener('DOMContentLoaded', l10nStartup);
+    } else {
+      // l10n.js is being loaded with <script defer> or <script async>,
+      // the DOM is ready for parsing.
+      window.setTimeout(l10nStartup);
+    }
+  } else if (window.attachEvent) { // IE8 and before (= oldIE)
+    // TODO: check if jQuery is loaded (CSS selector + JSON + events)
+
+    // dummy `console.log' and `console.warn' functions
+    if (!window.console) {
+      consoleLog = function(message) {}; // just ignore console.log calls
+      consoleWarn = function(message) {
+        if (gDEBUG) {
+          alert('[l10n] ' + message); // vintage debugging, baby!
+        }
+      };
+    }
+
+    // XMLHttpRequest for IE6
+    if (!window.XMLHttpRequest) {
+      xhrLoadText = function(url, onSuccess, onFailure) {
+        onSuccess = onSuccess || function _onSuccess(data) {};
+        onFailure = onFailure || function _onFailure() {
+          consoleWarn(url + ' not found.');
+        };
+        var xhr = new ActiveXObject('Microsoft.XMLHTTP');
+        xhr.open('GET', url, gAsyncResourceLoading);
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+              onSuccess(xhr.responseText);
+            } else {
+              onFailure();
+            }
+          }
+        };
+        xhr.send(null);
+      };
+    }
+
+    // worst hack ever for IE6 and IE7
+    if (!window.JSON) {
+      getL10nAttributes = function(element) {
+        if (!element)
+          return {};
+        var l10nId = element.getAttribute('data-l10n-id'),
+            l10nArgs = element.getAttribute('data-l10n-args'),
+            args = {};
+        if (l10nArgs) try {
+          args = eval(l10nArgs); // XXX yeah, I know...
+        } catch (e) {
+          consoleWarn('could not parse arguments for #' + l10nId);
+        }
+        return { id: l10nId, args: args };
+      };
+    }
+
+    // override `getTranslatableChildren' and `getL10nResourceLinks'
+    if (!document.querySelectorAll) {
+      getTranslatableChildren = function(element) {
+        if (!element)
+          return [];
+        var nodes = element.getElementsByTagName('*'),
+            l10nElements = [],
+            n = nodes.length;
+        for (var i = 0; i < n; i++) {
+          if (nodes[i].getAttribute('data-l10n-id'))
+            l10nElements.push(nodes[i]);
+        }
+        return l10nElements;
+      };
+      getL10nResourceLinks = function() {
+        var links = document.getElementsByTagName('link'),
+            l10nLinks = [],
+            n = links.length;
+        for (var i = 0; i < n; i++) {
+          if (links[i].type == 'application/l10n')
+            l10nLinks.push(links[i]);
+        }
+        return l10nLinks;
+      };
+    }
+
+    // override `getL10nDictionary'
+    if (!window.JSON || !document.querySelectorAll) {
+      getL10nDictionary = function() {
+        var scripts = document.getElementsByName('script');
+        for (var i = 0; i < scripts.length; i++) {
+          if (scripts[i].type == 'application/l10n') {
+            return eval(scripts[i].innerHTML);
+          }
+        }
+        return null;
+      };
+    }
+
+    // fire non-standard `localized' DOM events
+    if (document.createEventObject && !document.createEvent) {
+      fireL10nReadyEvent = function(lang) {
+        // hack to simulate a custom event in IE:
+        // to catch this event, add an event handler to `onpropertychange'
+        document.documentElement.localized = 1;
+      };
+    }
+
+    // startup for IE<9
+    window.attachEvent('onload', function() {
+      gTextProp = document.textContent === null ? 'textContent' : 'innerText';
+      l10nStartup();
+    });
+  }
+
   // cross-browser API (sorry, oldIE doesn't support getters & setters)
   return {
     // get a localized string
@@ -990,17 +1155,20 @@ document.webL10n = (function(window, document, undefined) {
 
     // get|set the document language
     getLanguage: function() { return gLanguage; },
-    setLanguage: function(lang) { loadLocale(lang, translateFragment); },
+    setLanguage: function(lang, callback) {
+      loadLocale(lang, function() {
+        if (callback)
+          callback();
+        translateFragment();
+      });
+    },
 
     // get the direction (ltr|rtl) of the current language
     getDirection: function() {
       // http://www.w3.org/International/questions/qa-scripts
       // Arabic, Hebrew, Farsi, Pashto, Urdu
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
-     
-      // use the short language code for "full" codes like 'ar-sa' (issue 5440) 
-      var shortCode = gLanguage.split('-')[0];
-
+      var shortCode = gLanguage.split('-', 1)[0];
       return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
     },
 
@@ -1013,12 +1181,18 @@ document.webL10n = (function(window, document, undefined) {
       if (!callback) {
         return;
       } else if (gReadyState == 'complete' || gReadyState == 'interactive') {
-        window.setTimeout(callback);
+        window.setTimeout(function() {
+          callback();
+        });
       } else if (document.addEventListener) {
-        document.addEventListener('localized', callback);
+        document.addEventListener('localized', function once() {
+          document.removeEventListener('localized', once);
+          callback();
+        });
       } else if (document.attachEvent) {
-        document.documentElement.attachEvent('onpropertychange', function(e) {
+        document.documentElement.attachEvent('onpropertychange', function once(e) {
           if (e.propertyName === 'localized') {
+            document.documentElement.detachEvent('onpropertychange', once);
             callback();
           }
         });
@@ -1026,3 +1200,9 @@ document.webL10n = (function(window, document, undefined) {
     }
   };
 }) (window, document);
+
+// gettext-like shortcut for document.webL10n.get
+if (window._ === undefined) {
+  var _ = document.webL10n.get;
+}
+
