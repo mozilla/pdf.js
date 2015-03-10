@@ -669,9 +669,9 @@ var JpegImage = (function jpegImage() {
             if (fileMarker === 0xFFEE) {
               if (appData[0] === 0x41 && appData[1] === 0x64 &&
                   appData[2] === 0x6F && appData[3] === 0x62 &&
-                  appData[4] === 0x65 && appData[5] === 0) { // 'Adobe\x00'
+                  appData[4] === 0x65) { // 'Adobe'
                 adobe = {
-                  version: appData[6],
+                  version: (appData[5] << 8) | appData[6],
                   flags0: (appData[7] << 8) | appData[8],
                   flags1: (appData[9] << 8) | appData[10],
                   transformCode: appData[11]
