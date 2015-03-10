@@ -1104,10 +1104,6 @@ var PDFViewerApplication = {
       this.initialBookmark = hash;
       return;
     }
-
-    var validFitZoomValues = ['Fit','FitB','FitH','FitBH',
-      'FitV','FitBV','FitR'];
-
     if (!hash) {
       return;
     }
@@ -1125,23 +1121,39 @@ var PDFViewerApplication = {
         pageNumber = (params.page | 0) || 1;
       }
       if ('zoom' in params) {
+        // Build the destination array.
         var zoomArgs = params.zoom.split(','); // scale,left,top
-        // building destination array
-
-        // If the zoom value, it has to get divided by 100. If it is a string,
-        // it should stay as it is.
         var zoomArg = zoomArgs[0];
         var zoomArgNumber = parseFloat(zoomArg);
-        var destName = 'XYZ';
-        if (zoomArgNumber) {
-          zoomArg = zoomArgNumber / 100;
-        } else if (validFitZoomValues.indexOf(zoomArg) >= 0) {
-          destName = zoomArg;
+
+        if (zoomArg.indexOf('Fit') === -1) {
+          // If the zoomArg is a number, it has to get divided by 100. If it's
+          // a string, it should stay as it is.
+          dest = [null, { name: 'XYZ' },
+                  zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null,
+                  zoomArgs.length > 2 ? (zoomArgs[2] | 0) : null,
+                  (zoomArgNumber ? zoomArgNumber / 100 : zoomArg)];
+        } else {
+          if (zoomArg === 'Fit' || zoomArg === 'FitB') {
+            dest = [null, { name: zoomArg }];
+          } else if ((zoomArg === 'FitH' || zoomArg === 'FitBH') ||
+                     (zoomArg === 'FitV' || zoomArg === 'FitBV')) {
+            dest = [null, { name: zoomArg },
+                    zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null];
+          } else if (zoomArg === 'FitR') {
+            if (zoomArgs.length !== 5) {
+              console.error('pdfViewSetHash: ' +
+                            'Not enough parameters for \'FitR\'.');
+            } else {
+              dest = [null, { name: zoomArg },
+                      (zoomArgs[1] | 0), (zoomArgs[2] | 0),
+                      (zoomArgs[3] | 0), (zoomArgs[4] | 0)];
+            }
+          } else {
+            console.error('pdfViewSetHash: \'' + zoomArg +
+                          '\' is not a valid zoom value.');
+          }
         }
-        dest = [null, { name: destName },
-                zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null,
-                zoomArgs.length > 2 ? (zoomArgs[2] | 0) : null,
-                zoomArg];
       }
       if (dest) {
         this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
