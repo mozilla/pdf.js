@@ -1608,6 +1608,15 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "bug1140761",
+       "file": "pdfs/bug1140761.pdf",
+       "md5": "b74eced7634d4f248dc6265f8225d432",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "bug1011159",
       "file": "pdfs/bug1011159.pdf",
       "md5": "4532e22deb92d4cd2992d0cfe255582a",
