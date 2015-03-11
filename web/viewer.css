@@ -1268,6 +1268,20 @@ html[dir='rtl'] .attachmentsItem > button {
 ::selection { background: rgba(0,0,255,0.3); }
 ::-moz-selection { background: rgba(0,0,255,0.3); }
 
+.textLayer ::selection { background: rgb(0,0,255); }
+.textLayer ::-moz-selection { background: rgb(0,0,255); }
+.textLayer .whitespace::selection { background: none; }
+.textLayer .whitespace::-moz-selection { background: none; }
+.textLayer {
+  opacity: 0.2;
+}
+/* We need to calculate font height before rendering. Setting line-height to
+   normal is inconsistent across browsers.  Instead, set it to a common
+   value. */
+.textLayer div {
+  line-height: 1.14;
+}
+
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;
   color: white;
