@@ -31,6 +31,11 @@
   background-color: white;
 }
 
+.pdfViewer.removePageBorders .page {
+  margin: 0px auto 10px auto;
+  border: none;
+}
+
 .pdfViewer .page canvas {
   margin: 0;
   display: block;
