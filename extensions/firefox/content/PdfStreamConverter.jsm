@@ -16,7 +16,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
-           dump, NetworkManager, PdfJsTelemetry */
+           dump, NetworkManager, PdfJsTelemetry, PdfjsContentUtils */
 
 'use strict';
 
@@ -32,14 +32,15 @@ const PDFJS_EVENT_ID = 'pdf.js.message';
 const PDF_CONTENT_TYPE = 'application/pdf';
 const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
 const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
-const MAX_DATABASE_LENGTH = 4096;
 const MAX_NUMBER_OF_PREFS = 50;
 const MAX_STRING_PREF_LENGTH = 128;
 
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
-Cu.import('resource://pdf.js/network.js');
+
+XPCOMUtils.defineLazyModuleGetter(this, 'NetworkManager',
+  'resource://pdf.js/network.js');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');
@@ -47,21 +48,53 @@ XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
 XPCOMUtils.defineLazyModuleGetter(this, 'PdfJsTelemetry',
   'resource://pdf.js/PdfJsTelemetry.jsm');
 
+XPCOMUtils.defineLazyModuleGetter(this, 'PdfjsContentUtils',
+  'resource://pdf.js/PdfjsContentUtils.jsm');
+
 var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
 
-function getChromeWindow(domWindow) {
-  var containingBrowser = domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                                   .getInterface(Ci.nsIWebNavigation)
-                                   .QueryInterface(Ci.nsIDocShell)
-                                   .chromeEventHandler;
-  return containingBrowser.ownerDocument.defaultView;
+function getContainingBrowser(domWindow) {
+  return domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                  .getInterface(Ci.nsIWebNavigation)
+                  .QueryInterface(Ci.nsIDocShell)
+                  .chromeEventHandler;
 }
 
-function setBoolPref(pref, value) {
-  Services.prefs.setBoolPref(pref, value);
+function getChromeWindow(domWindow) {
+  if (PdfjsContentUtils.isRemote) {
+    return PdfjsContentUtils.getChromeWindow(domWindow);
+  }
+  return getContainingBrowser(domWindow).ownerDocument.defaultView;
+}
+
+function getFindBar(domWindow) {
+  if (PdfjsContentUtils.isRemote) {
+    return PdfjsContentUtils.getFindBar(domWindow);
+  }
+  var browser = getContainingBrowser(domWindow);
+  try {
+    var tabbrowser = browser.getTabBrowser();
+    var tab;
+//#if MOZCENTRAL
+    tab = tabbrowser.getTabForBrowser(browser);
+//#else
+    if (tabbrowser.getTabForBrowser) {
+      tab = tabbrowser.getTabForBrowser(browser);
+    } else {
+      // _getTabForBrowser is depreciated in Firefox 35, see
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1039500.
+      tab = tabbrowser._getTabForBrowser(browser);
+    }
+//#endif
+    return tabbrowser.getFindBar(tab);
+  } catch (e) {
+    // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
+    var chromeWindow = browser.ownerDocument.defaultView;
+    return chromeWindow.gFindBar;
+  }
 }
 
 function getBoolPref(pref, def) {
@@ -72,23 +105,12 @@ function getBoolPref(pref, def) {
   }
 }
 
-function setIntPref(pref, value) {
-  Services.prefs.setIntPref(pref, value);
-}
-
 function getIntPref(pref, def) {
   try {
     return Services.prefs.getIntPref(pref);
   } catch (ex) {
     return def;
   }
-}
-
-function setStringPref(pref, value) {
-  var str = Cc['@mozilla.org/supports-string;1']
-              .createInstance(Ci.nsISupportsString);
-  str.data = value;
-  Services.prefs.setComplexValue(pref, Ci.nsISupportsString, str);
 }
 
 function getStringPref(pref, def) {
@@ -100,8 +122,9 @@ function getStringPref(pref, def) {
 }
 
 function log(aMsg) {
-  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false))
+  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false)) {
     return;
+  }
   var msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
   Services.console.logStringMessage(msg);
   dump(msg + '\n');
@@ -130,56 +153,101 @@ function getLocalizedStrings(path) {
       property = key.substring(i + 1);
       key = key.substring(0, i);
     }
-    if (!(key in map))
+    if (!(key in map)) {
       map[key] = {};
+    }
     map[key][property] = string.value;
   }
   return map;
 }
 function getLocalizedString(strings, id, property) {
   property = property || 'textContent';
-  if (id in strings)
+  if (id in strings) {
     return strings[id][property];
+  }
   return id;
+}
+
+function makeContentReadable(obj, window) {
+//#if MOZCENTRAL
+  /* jshint -W027 */
+  return Cu.cloneInto(obj, window);
+//#else
+  if (Cu.cloneInto) {
+    return Cu.cloneInto(obj, window);
+  }
+  if (typeof obj !== 'object' || obj === null) {
+    return obj;
+  }
+  var expose = {};
+  for (let k in obj) {
+    expose[k] = 'r';
+  }
+  obj.__exposedProps__ = expose;
+  return obj;
+//#endif
+}
+
+function createNewChannel(uri, node, principal) {
+//#if !MOZCENTRAL
+  if (!NetUtil.newChannel2) {
+    return NetUtil.newChannel(uri);
+  }
+//#endif
+  return NetUtil.newChannel2(uri,
+                             null,
+                             null,
+                             node, // aLoadingNode
+                             principal, // aLoadingPrincipal
+                             null, // aTriggeringPrincipal
+                             Ci.nsILoadInfo.SEC_NORMAL,
+                             Ci.nsIContentPolicy.TYPE_OTHER);
+}
+
+function asyncFetchChannel(channel, callback) {
+//#if !MOZCENTRAL
+  if (!NetUtil.newChannel2) {
+    return NetUtil.asyncFetch(channel, callback);
+  }
+//#endif
+  return NetUtil.asyncFetch2(channel, callback);
 }
 
 // PDF data storage
 function PdfDataListener(length) {
   this.length = length; // less than 0, if length is unknown
-  this.data = new Uint8Array(length >= 0 ? length : 0x10000);
+  this.buffer = null;
   this.loaded = 0;
 }
 
 PdfDataListener.prototype = {
   append: function PdfDataListener_append(chunk) {
-    var willBeLoaded = this.loaded + chunk.length;
-    if (this.length >= 0 && this.length < willBeLoaded) {
+    // In most of the cases we will pass data as we receive it, but at the
+    // beginning of the loading we may accumulate some data.
+    if (!this.buffer) {
+      this.buffer = new Uint8Array(chunk);
+    } else {
+      var buffer = this.buffer;
+      var newBuffer = new Uint8Array(buffer.length + chunk.length);
+      newBuffer.set(buffer);
+      newBuffer.set(chunk, buffer.length);
+      this.buffer = newBuffer;
+    }
+    this.loaded += chunk.length;
+    if (this.length >= 0 && this.length < this.loaded) {
       this.length = -1; // reset the length, server is giving incorrect one
     }
-    if (this.length < 0 && this.data.length < willBeLoaded) {
-      // data length is unknown and new chunk will not fit in the existing
-      // buffer, resizing the buffer by doubling the its last length
-      var newLength = this.data.length;
-      for (; newLength < willBeLoaded; newLength *= 2) {}
-      var newData = new Uint8Array(newLength);
-      newData.set(this.data);
-      this.data = newData;
-    }
-    this.data.set(chunk, this.loaded);
-    this.loaded = willBeLoaded;
     this.onprogress(this.loaded, this.length >= 0 ? this.length : void(0));
   },
-  getData: function PdfDataListener_getData() {
-    var data = this.data;
-    if (this.loaded != data.length)
-      data = data.subarray(0, this.loaded);
-    delete this.data; // releasing temporary storage
-    return data;
+  readData: function PdfDataListener_readData() {
+    var result = this.buffer;
+    this.buffer = null;
+    return result;
   },
   finish: function PdfDataListener_finish() {
     this.isDataReady = true;
     if (this.oncompleteCallback) {
-      this.oncompleteCallback(this.getData());
+      this.oncompleteCallback(this.readData());
     }
   },
   error: function PdfDataListener_error(errorCode) {
@@ -195,7 +263,7 @@ PdfDataListener.prototype = {
   set oncomplete(value) {
     this.oncompleteCallback = value;
     if (this.isDataReady) {
-      value(this.getData());
+      value(this.readData());
     }
     if (this.errorCode) {
       value(null, this.errorCode);
@@ -211,25 +279,35 @@ function ChromeActions(domWindow, contentDispositionFilename) {
     documentInfo: false,
     firstPageInfo: false,
     streamTypesUsed: [],
+    fontTypesUsed: [],
     startAt: Date.now()
   };
 }
 
 ChromeActions.prototype = {
   isInPrivateBrowsing: function() {
-    return PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
+//#if !MOZCENTRAL
+    if (!PrivateBrowsingUtils.isContentWindowPrivate) {
+      // pbu.isContentWindowPrivate was not supported prior Firefox 35.
+      // (https://bugzilla.mozilla.org/show_bug.cgi?id=1069059)
+      return PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
+    }
+//#endif
+    return PrivateBrowsingUtils.isContentWindowPrivate(this.domWindow);
   },
   download: function(data, sendResponse) {
     var self = this;
     var originalUrl = data.originalUrl;
+    var blobUrl = data.blobUrl || originalUrl;
     // The data may not be downloaded so we need just retry getting the pdf with
     // the original url.
-    var originalUri = NetUtil.newURI(data.originalUrl);
+    var originalUri = NetUtil.newURI(originalUrl);
     var filename = data.filename;
-    if (typeof filename !== 'string' || !/\.pdf$/i.test(filename)) {
+    if (typeof filename !== 'string' ||
+        (!/\.pdf$/i.test(filename) && !data.isAttachment)) {
       filename = 'document.pdf';
     }
-    var blobUri = data.blobUrl ? NetUtil.newURI(data.blobUrl) : originalUri;
+    var blobUri = NetUtil.newURI(blobUrl);
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
              getService(Ci.nsIExternalHelperAppService);
@@ -237,15 +315,16 @@ ChromeActions.prototype = {
                          getService(Ci.nsIWindowWatcher).activeWindow;
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = NetUtil.newChannel(blobUri);
+    var netChannel = createNewChannel(blobUri, frontWindow.document, null);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
     }
-    NetUtil.asyncFetch(netChannel, function(aInputStream, aResult) {
+    asyncFetchChannel(netChannel, function(aInputStream, aResult) {
       if (!Components.isSuccessCode(aResult)) {
-        if (sendResponse)
+        if (sendResponse) {
           sendResponse(true);
+        }
         return;
       }
       // Create a nsIInputStreamChannel so we can set the url on the channel
@@ -272,16 +351,20 @@ ChromeActions.prototype = {
       var listener = {
         extListener: null,
         onStartRequest: function(aRequest, aContext) {
-          this.extListener = extHelperAppSvc.doContent('application/pdf',
-                                aRequest, frontWindow, false);
+          this.extListener = extHelperAppSvc.doContent(
+            (data.isAttachment ? 'application/octet-stream' :
+                                 'application/pdf'),
+            aRequest, frontWindow, false);
           this.extListener.onStartRequest(aRequest, aContext);
         },
         onStopRequest: function(aRequest, aContext, aStatusCode) {
-          if (this.extListener)
+          if (this.extListener) {
             this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
+          }
           // Notify the content code we're done downloading.
-          if (sendResponse)
+          if (sendResponse) {
             sendResponse(false);
+          }
         },
         onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
                                   aCount) {
@@ -293,28 +376,15 @@ ChromeActions.prototype = {
       channel.asyncOpen(listener, null);
     });
   },
-  setDatabase: function(data) {
-    if (this.isInPrivateBrowsing())
-      return;
-    // Protect against something sending tons of data to setDatabase.
-    if (data.length > MAX_DATABASE_LENGTH)
-      return;
-    setStringPref(PREF_PREFIX + '.database', data);
-  },
-  getDatabase: function() {
-    if (this.isInPrivateBrowsing())
-      return '{}';
-    return getStringPref(PREF_PREFIX + '.database', '{}');
-  },
   getLocale: function() {
     return getStringPref('general.useragent.locale', 'en-US');
   },
   getStrings: function(data) {
     try {
       // Lazy initialization of localizedStrings
-      if (!('localizedStrings' in this))
+      if (!('localizedStrings' in this)) {
         this.localizedStrings = getLocalizedStrings('viewer.properties');
-
+      }
       var result = this.localizedStrings[data];
       return JSON.stringify(result || null);
     } catch (e) {
@@ -322,15 +392,14 @@ ChromeActions.prototype = {
       return 'null';
     }
   },
-  pdfBugEnabled: function() {
-    return getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
-  },
   supportsIntegratedFind: function() {
-    // Integrated find is only supported when we're not in a frame and when the
-    // new find events code exists.
-    return this.domWindow.frameElement === null &&
-           getChromeWindow(this.domWindow).gFindBar &&
-           'updateControlState' in getChromeWindow(this.domWindow).gFindBar;
+    // Integrated find is only supported when we're not in a frame
+    if (this.domWindow.frameElement !== null) {
+      return false;
+    }
+    // ... and when the new find events code exists.
+    var findBar = getFindBar(this.domWindow);
+    return findBar && ('updateControlState' in findBar);
   },
   supportsDocumentFonts: function() {
     var prefBrowser = getIntPref('browser.display.use_document_fonts', 1);
@@ -338,7 +407,11 @@ ChromeActions.prototype = {
     return (!!prefBrowser && prefGfx);
   },
   supportsDocumentColors: function() {
-    return getBoolPref('browser.display.use_document_colors', true);
+    if (getIntPref('browser.display.document_color_use', 0) === 2 ||
+        !getBoolPref('browser.display.use_document_colors', true)) {
+      return false;
+    }
+    return true;
   },
   reportTelemetry: function (data) {
     var probeInfo = JSON.parse(data);
@@ -360,18 +433,39 @@ ChromeActions.prototype = {
           this.telemetryState.firstPageInfo = true;
         }
         break;
-      case 'streamInfo':
-        if (!Array.isArray(probeInfo.streamTypes)) {
+      case 'documentStats':
+        // documentStats can be called several times for one documents.
+        // if stream/font types are reported, trying not to submit the same
+        // enumeration value multiple times.
+        var documentStats = probeInfo.stats;
+        if (!documentStats || typeof documentStats !== 'object') {
           break;
         }
-        for (var i = 0; i < probeInfo.streamTypes.length; i++) {
-          var streamTypeId = probeInfo.streamTypes[i] | 0;
-          if (streamTypeId >= 0 && streamTypeId < 10 &&
-              !this.telemetryState.streamTypesUsed[streamTypeId]) {
-            PdfJsTelemetry.onStreamType(streamTypeId);
-            this.telemetryState.streamTypesUsed[streamTypeId] = true;
+        var i, streamTypes = documentStats.streamTypes;
+        if (Array.isArray(streamTypes)) {
+          var STREAM_TYPE_ID_LIMIT = 20;
+          for (i = 0; i < STREAM_TYPE_ID_LIMIT; i++) {
+            if (streamTypes[i] &&
+                !this.telemetryState.streamTypesUsed[i]) {
+              PdfJsTelemetry.onStreamType(i);
+              this.telemetryState.streamTypesUsed[i] = true;
+            }
           }
         }
+        var fontTypes = documentStats.fontTypes;
+        if (Array.isArray(fontTypes)) {
+          var FONT_TYPE_ID_LIMIT = 20;
+          for (i = 0; i < FONT_TYPE_ID_LIMIT; i++) {
+            if (fontTypes[i] &&
+                !this.telemetryState.fontTypesUsed[i]) {
+              PdfJsTelemetry.onFontType(i);
+              this.telemetryState.fontTypesUsed[i] = true;
+            }
+          }
+        }
+        break;
+      case 'print':
+        PdfJsTelemetry.onPrint();
         break;
     }
   },
@@ -388,57 +482,15 @@ ChromeActions.prototype = {
     } else {
       message = getLocalizedString(strings, 'unsupported_feature');
     }
-
     PdfJsTelemetry.onFallback();
-
-    var notificationBox = null;
-    try {
-      // Based on MDN's "Working with windows in chrome code"
-      var mainWindow = domWindow
-        .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-        .getInterface(Components.interfaces.nsIWebNavigation)
-        .QueryInterface(Components.interfaces.nsIDocShellTreeItem)
-        .rootTreeItem
-        .QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-        .getInterface(Components.interfaces.nsIDOMWindow);
-      var browser = mainWindow.gBrowser
-                              .getBrowserForDocument(domWindow.top.document);
-      notificationBox = mainWindow.gBrowser.getNotificationBox(browser);
-    } catch (e) {
-      log('Unable to get a notification box for the fallback message');
-      return;
-    }
-
-    // Flag so we don't call the response callback twice, since if the user
-    // clicks open with different viewer both the button callback and
-    // eventCallback will be called.
-    var sentResponse = false;
-    var buttons = [{
-      label: getLocalizedString(strings, 'open_with_different_viewer'),
-      accessKey: getLocalizedString(strings, 'open_with_different_viewer',
-                                    'accessKey'),
-      callback: function() {
-        sentResponse = true;
-        sendResponse(true);
-      }
-    }];
-    notificationBox.appendNotification(message, 'pdfjs-fallback', null,
-                                       notificationBox.PRIORITY_INFO_LOW,
-                                       buttons,
-                                       function eventsCallback(eventType) {
-      // Currently there is only one event "removed" but if there are any other
-      // added in the future we still only care about removed at the moment.
-      if (eventType !== 'removed')
-        return;
-      // Don't send a response again if we already responded when the button was
-      // clicked.
-      if (!sentResponse)
-        sendResponse(false);
-    });
+    PdfjsContentUtils.displayWarning(domWindow, message, sendResponse,
+      getLocalizedString(strings, 'open_with_different_viewer'),
+      getLocalizedString(strings, 'open_with_different_viewer', 'accessKey'));
   },
   updateFindControlState: function(data) {
-    if (!this.supportsIntegratedFind())
+    if (!this.supportsIntegratedFind()) {
       return;
+    }
     // Verify what we're sending to the findbar.
     var result = data.result;
     var findPrevious = data.findPrevious;
@@ -447,10 +499,9 @@ ChromeActions.prototype = {
         (findPreviousType !== 'undefined' && findPreviousType !== 'boolean')) {
       return;
     }
-    getChromeWindow(this.domWindow).gFindBar
-                                   .updateControlState(result, findPrevious);
+    getFindBar(this.domWindow).updateControlState(result, findPrevious);
   },
-  setPreferences: function(prefs) {
+  setPreferences: function(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
     var numberOfPrefs = 0;
     var prefValue, prefName;
@@ -466,23 +517,26 @@ ChromeActions.prototype = {
       prefName = (PREF_PREFIX + '.' + key);
       switch (typeof prefValue) {
         case 'boolean':
-          setBoolPref(prefName, prefValue);
+          PdfjsContentUtils.setBoolPref(prefName, prefValue);
           break;
         case 'number':
-          setIntPref(prefName, prefValue);
+          PdfjsContentUtils.setIntPref(prefName, prefValue);
           break;
         case 'string':
           if (prefValue.length > MAX_STRING_PREF_LENGTH) {
             log('setPreferences - Exceeded the maximum allowed length ' +
                 'for a string preference.');
           } else {
-            setStringPref(prefName, prefValue);
+            PdfjsContentUtils.setStringPref(prefName, prefValue);
           }
           break;
       }
     }
+    if (sendResponse) {
+      sendResponse(true);
+    }
   },
-  getPreferences: function(prefs) {
+  getPreferences: function(prefs, sendResponse) {
     var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
     var currentPrefs = {}, numberOfPrefs = 0;
     var prefValue, prefName;
@@ -508,7 +562,11 @@ ChromeActions.prototype = {
           break;
       }
     }
-    return JSON.stringify(currentPrefs);
+    if (sendResponse) {
+      sendResponse(JSON.stringify(currentPrefs));
+    } else {
+      return JSON.stringify(currentPrefs);
+    }
   }
 };
 
@@ -518,11 +576,13 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
    */
   function RangedChromeActions(
               domWindow, contentDispositionFilename, originalRequest,
-              dataListener) {
+              rangeEnabled, streamingEnabled, dataListener) {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
     this.dataListener = dataListener;
     this.originalRequest = originalRequest;
+    this.rangeEnabled = rangeEnabled;
+    this.streamingEnabled = streamingEnabled;
 
     this.pdfUrl = originalRequest.URI.spec;
     this.contentLength = originalRequest.contentLength;
@@ -541,7 +601,9 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
         this.headers[aHeader] = aValue;
       }
     };
-    originalRequest.visitRequestHeaders(httpHeaderVisitor);
+    if (originalRequest.visitRequestHeaders) {
+      originalRequest.visitRequestHeaders(httpHeaderVisitor);
+    }
 
     var self = this;
     var xhr_onreadystatechange = function xhr_onreadystatechange() {
@@ -580,20 +642,46 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
   proto.constructor = RangedChromeActions;
 
   proto.initPassiveLoading = function RangedChromeActions_initPassiveLoading() {
-    this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
-    this.originalRequest = null;
+    var self = this;
+    var data;
+    if (!this.streamingEnabled) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+      data = this.dataListener.readData();
+      this.dataListener = null;
+    } else {
+      data = this.dataListener.readData();
+
+      this.dataListener.onprogress = function (loaded, total) {
+        self.domWindow.postMessage({
+          pdfjsLoadAction: 'progressiveRead',
+          loaded: loaded,
+          total: total,
+          chunk: self.dataListener.readData()
+        }, '*');
+      };
+      this.dataListener.oncomplete = function () {
+        delete self.dataListener;
+      };
+    }
+
     this.domWindow.postMessage({
       pdfjsLoadAction: 'supportsRangedLoading',
+      rangeEnabled: this.rangeEnabled,
+      streamingEnabled: this.streamingEnabled,
       pdfUrl: this.pdfUrl,
       length: this.contentLength,
-      data: this.dataListener.getData()
+      data: data
     }, '*');
-    this.dataListener = null;
 
     return true;
   };
 
   proto.requestDataRange = function RangedChromeActions_requestDataRange(args) {
+    if (!this.rangeEnabled) {
+      return;
+    }
+
     var begin = args.begin;
     var end = args.end;
     var domWindow = this.domWindow;
@@ -671,7 +759,7 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
   return StandardChromeActions;
 })();
 
-// Event listener to trigger chrome privedged code.
+// Event listener to trigger chrome privileged code.
 function RequestListener(actions) {
   this.actions = actions;
 }
@@ -687,23 +775,21 @@ RequestListener.prototype.receive = function(event) {
     log('Unknown action: ' + action);
     return;
   }
+  var response;
   if (sync) {
-    var response = actions[action].call(this.actions, data);
-    var detail = event.detail;
-    detail.__exposedProps__ = {response: 'r'};
-    detail.response = response;
+    response = actions[action].call(this.actions, data);
+    event.detail.response = response;
   } else {
-    var response;
-    if (!event.detail.callback) {
+    if (!event.detail.responseExpected) {
       doc.documentElement.removeChild(message);
       response = null;
     } else {
       response = function sendResponse(response) {
         try {
           var listener = doc.createEvent('CustomEvent');
-          listener.initCustomEvent('pdf.js.response', true, false,
-                                   {response: response,
-                                    __exposedProps__: {response: 'r'}});
+          let detail = makeContentReadable({response: response},
+                                           doc.defaultView);
+          listener.initCustomEvent('pdf.js.response', true, false, detail);
           return message.dispatchEvent(listener);
         } catch (e) {
           // doc is no longer accessible because the requestor is already
@@ -746,16 +832,21 @@ FindEventManager.prototype.handleEvent = function(e) {
   var contentWindow = this.contentWindow;
   // Only forward the events if they are for our dom window.
   if (chromeWindow.gBrowser.selectedBrowser.contentWindow === contentWindow) {
-    var detail = e.detail;
-    detail.__exposedProps__ = {
-      query: 'r',
-      caseSensitive: 'r',
-      highlightAll: 'r',
-      findPrevious: 'r'
+    var detail = {
+      query: e.detail.query,
+      caseSensitive: e.detail.caseSensitive,
+      highlightAll: e.detail.highlightAll,
+      findPrevious: e.detail.findPrevious
     };
+    detail = makeContentReadable(detail, contentWindow);
     var forward = contentWindow.document.createEvent('CustomEvent');
     forward.initCustomEvent(e.type, true, true, detail);
-    contentWindow.dispatchEvent(forward);
+    // Due to restrictions with cpow use, we can't dispatch
+    // dom events with an urgent message on the stack. So bounce
+    // this off the main thread to make it async.
+    Services.tm.mainThread.dispatch(function () {
+      contentWindow.dispatchEvent(forward);
+    }, Ci.nsIThread.DISPATCH_NORMAL);
     e.preventDefault();
   }
 };
@@ -833,6 +924,7 @@ PdfStreamConverter.prototype = {
     } catch (e) {}
 
     var rangeRequest = false;
+    var streamRequest = false;
     if (isHttpRequest) {
       var contentEncoding = 'identity';
       try {
@@ -845,10 +937,18 @@ PdfStreamConverter.prototype = {
       } catch (e) {}
 
       var hash = aRequest.URI.ref;
+      var isPDFBugEnabled = getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
       rangeRequest = contentEncoding === 'identity' &&
                      acceptRanges === 'bytes' &&
                      aRequest.contentLength >= 0 &&
-                     hash.indexOf('disableRange=true') < 0;
+                     !getBoolPref(PREF_PREFIX + '.disableRange', false) &&
+                     (!isPDFBugEnabled ||
+                      hash.toLowerCase().indexOf('disablerange=true') < 0);
+      streamRequest = contentEncoding === 'identity' &&
+                      aRequest.contentLength >= 0 &&
+                      !getBoolPref(PREF_PREFIX + '.disableStream', false) &&
+                      (!isPDFBugEnabled ||
+                       hash.toLowerCase().indexOf('disablestream=true') < 0);
     }
 
     aRequest.QueryInterface(Ci.nsIChannel);
@@ -868,14 +968,15 @@ PdfStreamConverter.prototype = {
       aRequest.setResponseHeader('Content-Security-Policy', '', false);
       aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
                                  false);
+//#if !MOZCENTRAL
       aRequest.setResponseHeader('X-Content-Security-Policy', '', false);
       aRequest.setResponseHeader('X-Content-Security-Policy-Report-Only', '',
                                  false);
+//#endif
     }
 
     PdfJsTelemetry.onViewerIsUsed();
     PdfJsTelemetry.onDocumentSize(aRequest.contentLength);
-
 
     // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
@@ -884,9 +985,8 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
-    var ioService = Services.io;
-    var channel = ioService.newChannel(
-                    PDF_VIEWER_WEB_PAGE, null, null);
+    var systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE, null, systemPrincipal);
 
     var listener = this.listener;
     var dataListener = this.dataListener;
@@ -906,12 +1006,13 @@ PdfStreamConverter.prototype = {
         // may have changed during a redirect.
         var domWindow = getDOMWindow(channel);
         var actions;
-        if (rangeRequest) {
+        if (rangeRequest || streamRequest) {
           actions = new RangedChromeActions(
-              domWindow, contentDispositionFilename, aRequest, dataListener);
+            domWindow, contentDispositionFilename, aRequest,
+            rangeRequest, streamRequest, dataListener);
         } else {
           actions = new StandardChromeActions(
-              domWindow, contentDispositionFilename, dataListener);
+            domWindow, contentDispositionFilename, dataListener);
         }
         var requestListener = new RequestListener(actions);
         domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
@@ -919,12 +1020,19 @@ PdfStreamConverter.prototype = {
         }, false, true);
         if (actions.supportsIntegratedFind()) {
           var chromeWindow = getChromeWindow(domWindow);
-          var findEventManager = new FindEventManager(chromeWindow.gFindBar,
+          var findBar = getFindBar(domWindow);
+          var findEventManager = new FindEventManager(findBar,
                                                       domWindow,
                                                       chromeWindow);
           findEventManager.bind();
         }
         listener.onStopRequest(aRequest, context, statusCode);
+
+        if (domWindow.frameElement) {
+          var isObjectEmbed = domWindow.frameElement.tagName !== 'IFRAME' ||
+            domWindow.frameElement.className === 'previewPluginContentFrame';
+          PdfJsTelemetry.onEmbed(isObjectEmbed);
+        }
       }
     };
 
@@ -936,7 +1044,7 @@ PdfStreamConverter.prototype = {
     // e.g. useful for NoScript
     var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
                           .getService(Ci.nsIScriptSecurityManager);
-    var uri = ioService.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
     // FF16 and below had getCodebasePrincipal, it was replaced by
     // getNoAppCodebasePrincipal (bug 758258).
     var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
@@ -953,10 +1061,11 @@ PdfStreamConverter.prototype = {
       return;
     }
 
-    if (Components.isSuccessCode(aStatusCode))
+    if (Components.isSuccessCode(aStatusCode)) {
       this.dataListener.finish();
-    else
+    } else {
       this.dataListener.error(aStatusCode);
+    }
     delete this.dataListener;
     delete this.binaryStream;
   }

@@ -28,8 +28,8 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
       var chars = '';
       for (var i = 0; i < bytes.length; i += 2) {
         var code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
-        chars += code >= 32 && code < 127 && code != 60 && code != 62 &&
-          code != 38 && false ? String.fromCharCode(code) :
+        chars += code >= 32 && code < 127 && code !== 60 && code !== 62 &&
+          code !== 38 && false ? String.fromCharCode(code) :
           '&#x' + (0x10000 + code).toString(16).substring(1) + ';';
       }
       return '>' + chars;

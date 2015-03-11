@@ -77,9 +77,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
   }
 
   function findUnequal(arr, start, value) {
-    var j;
     for (var j = start, jj = arr.length; j < jj; ++j) {
-      if (arr[j] != value) {
+      if (arr[j] !== value) {
         return j;
       }
     }
@@ -100,64 +99,32 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
   }
 
-  function mirrorGlyphs(c) {
-    /*
-     # BidiMirroring-1.txt
-     0028; 0029 # LEFT PARENTHESIS
-     0029; 0028 # RIGHT PARENTHESIS
-     003C; 003E # LESS-THAN SIGN
-     003E; 003C # GREATER-THAN SIGN
-     005B; 005D # LEFT SQUARE BRACKET
-     005D; 005B # RIGHT SQUARE BRACKET
-     007B; 007D # LEFT CURLY BRACKET
-     007D; 007B # RIGHT CURLY BRACKET
-     00AB; 00BB # LEFT-POINTING DOUBLE ANGLE QUOTATION MARK
-     00BB; 00AB # RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK
-     */
-    switch (c) {
-      case '(':
-        return ')';
-      case ')':
-        return '(';
-      case '<':
-        return '>';
-      case '>':
-        return '<';
-      case ']':
-        return '[';
-      case '[':
-        return ']';
-      case '}':
-        return '{';
-      case '{':
-        return '}';
-      case '\u00AB':
-        return '\u00BB';
-      case '\u00BB':
-        return '\u00AB';
-      default:
-        return c;
-    }
+  function createBidiText(str, isLTR, vertical) {
+    return {
+      str: str,
+      dir: (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'))
+    };
   }
 
-  function BidiResult(str, isLTR, vertical) {
-    this.str = str;
-    this.dir = (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'));
-  }
+  // These are used in bidi(), which is called frequently. We re-use them on
+  // each call to avoid unnecessary allocations.
+  var chars = [];
+  var types = [];
 
   function bidi(str, startLevel, vertical) {
     var isLTR = true;
     var strLength = str.length;
     if (strLength === 0 || vertical) {
-      return new BidiResult(str, isLTR, vertical);
+      return createBidiText(str, isLTR, vertical);
     }
 
     // Get types and fill arrays
-    var chars = [];
-    var types = [];
+    chars.length = strLength;
+    types.length = strLength;
     var numBidi = 0;
 
-    for (var i = 0; i < strLength; ++i) {
+    var i, ii;
+    for (i = 0; i < strLength; ++i) {
       chars[i] = str.charAt(i);
 
       var charCode = str.charCodeAt(i);
@@ -171,7 +138,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
       } else if (0x0700 <= charCode && charCode <= 0x08AC) {
         charType = 'AL';
       }
-      if (charType == 'R' || charType == 'AL' || charType == 'AN') {
+      if (charType === 'R' || charType === 'AL' || charType === 'AN') {
         numBidi++;
       }
       types[i] = charType;
@@ -183,10 +150,10 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     // - If more than 30% chars are rtl then string is primarily rtl
     if (numBidi === 0) {
       isLTR = true;
-      return new BidiResult(str, isLTR);
+      return createBidiText(str, isLTR);
     }
 
-    if (startLevel == -1) {
+    if (startLevel === -1) {
       if ((strLength / numBidi) < 0.3) {
         isLTR = true;
         startLevel = 0;
@@ -197,7 +164,7 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
 
     var levels = [];
-    for (var i = 0; i < strLength; ++i) {
+    for (i = 0; i < strLength; ++i) {
       levels[i] = startLevel;
     }
 
@@ -214,8 +181,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      start of the level run, it will get the type of sor.
      */
     var lastType = sor;
-    for (var i = 0; i < strLength; ++i) {
-      if (types[i] == 'NSM') {
+    for (i = 0; i < strLength; ++i) {
+      if (types[i] === 'NSM') {
         types[i] = lastType;
       } else {
         lastType = types[i];
@@ -227,12 +194,13 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      first strong type (R, L, AL, or sor) is found.  If an AL is found, change
      the type of the European number to Arabic number.
      */
-    var lastType = sor;
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
-      if (t == 'EN') {
-        types[i] = (lastType == 'AL') ? 'AN' : 'EN';
-      } else if (t == 'R' || t == 'L' || t == 'AL') {
+    lastType = sor;
+    var t;
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
+      if (t === 'EN') {
+        types[i] = (lastType === 'AL') ? 'AN' : 'EN';
+      } else if (t === 'R' || t === 'L' || t === 'AL') {
         lastType = t;
       }
     }
@@ -240,9 +208,9 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     /*
      W3. Change all ALs to R.
      */
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
-      if (t == 'AL') {
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
+      if (t === 'AL') {
         types[i] = 'R';
       }
     }
@@ -252,12 +220,13 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      European number. A single common separator between two numbers of the same
      type changes to that type:
      */
-    for (var i = 1; i < strLength - 1; ++i) {
-      if (types[i] == 'ES' && types[i - 1] == 'EN' && types[i + 1] == 'EN') {
+    for (i = 1; i < strLength - 1; ++i) {
+      if (types[i] === 'ES' && types[i - 1] === 'EN' && types[i + 1] === 'EN') {
         types[i] = 'EN';
       }
-      if (types[i] == 'CS' && (types[i - 1] == 'EN' || types[i - 1] == 'AN') &&
-          types[i + 1] == types[i - 1]) {
+      if (types[i] === 'CS' &&
+          (types[i - 1] === 'EN' || types[i - 1] === 'AN') &&
+          types[i + 1] === types[i - 1]) {
         types[i] = types[i - 1];
       }
     }
@@ -266,18 +235,19 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      W5. A sequence of European terminators adjacent to European numbers changes
      to all European numbers:
      */
-    for (var i = 0; i < strLength; ++i) {
-      if (types[i] == 'EN') {
+    for (i = 0; i < strLength; ++i) {
+      if (types[i] === 'EN') {
         // do before
-        for (var j = i - 1; j >= 0; --j) {
-          if (types[j] != 'ET') {
+        var j;
+        for (j = i - 1; j >= 0; --j) {
+          if (types[j] !== 'ET') {
             break;
           }
           types[j] = 'EN';
         }
         // do after
-        for (var j = i + 1; j < strLength; --j) {
-          if (types[j] != 'ET') {
+        for (j = i + 1; j < strLength; --j) {
+          if (types[j] !== 'ET') {
             break;
           }
           types[j] = 'EN';
@@ -288,9 +258,9 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     /*
      W6. Otherwise, separators and terminators change to Other Neutral:
      */
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
-      if (t == 'WS' || t == 'ES' || t == 'ET' || t == 'CS') {
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
+      if (t === 'WS' || t === 'ES' || t === 'ET' || t === 'CS') {
         types[i] = 'ON';
       }
     }
@@ -300,12 +270,12 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      first strong type (R, L, or sor) is found. If an L is found,  then change
      the type of the European number to L.
      */
-    var lastType = sor;
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
-      if (t == 'EN') {
-        types[i] = ((lastType == 'L') ? 'L' : 'EN');
-      } else if (t == 'R' || t == 'L') {
+    lastType = sor;
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
+      if (t === 'EN') {
+        types[i] = ((lastType === 'L') ? 'L' : 'EN');
+      } else if (t === 'R' || t === 'L') {
         lastType = t;
       }
     }
@@ -316,8 +286,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      numbers are treated as though they were R. Start-of-level-run (sor) and
      end-of-level-run (eor) are used at level run boundaries.
      */
-    for (var i = 0; i < strLength; ++i) {
-      if (types[i] == 'ON') {
+    for (i = 0; i < strLength; ++i) {
+      if (types[i] === 'ON') {
         var end = findUnequal(types, i + 1, 'ON');
         var before = sor;
         if (i > 0) {
@@ -328,13 +298,13 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
         if (end + 1 < strLength) {
           after = types[end + 1];
         }
-        if (before != 'L') {
+        if (before !== 'L') {
           before = 'R';
         }
-        if (after != 'L') {
+        if (after !== 'L') {
           after = 'R';
         }
-        if (before == after) {
+        if (before === after) {
           setValues(types, i, end, before);
         }
         i = end - 1; // reset to end (-1 so next iteration is ok)
@@ -344,8 +314,8 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     /*
      N2. Any remaining neutrals take the embedding direction.
      */
-    for (var i = 0; i < strLength; ++i) {
-      if (types[i] == 'ON') {
+    for (i = 0; i < strLength; ++i) {
+      if (types[i] === 'ON') {
         types[i] = e;
       }
     }
@@ -357,16 +327,16 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
      I2. For all characters with an odd (right-to-left) embedding direction,
      those of type L, EN or AN go up one level.
      */
-    for (var i = 0; i < strLength; ++i) {
-      var t = types[i];
+    for (i = 0; i < strLength; ++i) {
+      t = types[i];
       if (isEven(levels[i])) {
-        if (t == 'R') {
+        if (t === 'R') {
           levels[i] += 1;
-        } else if (t == 'AN' || t == 'EN') {
+        } else if (t === 'AN' || t === 'EN') {
           levels[i] += 2;
         }
       } else { // isOdd
-        if (t == 'L' || t == 'AN' || t == 'EN') {
+        if (t === 'L' || t === 'AN' || t === 'EN') {
           levels[i] += 1;
         }
       }
@@ -394,8 +364,9 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     // find highest level & lowest odd level
     var highestLevel = -1;
     var lowestOddLevel = 99;
-    for (var i = 0, ii = levels.length; i < ii; ++i) {
-      var level = levels[i];
+    var level;
+    for (i = 0, ii = levels.length; i < ii; ++i) {
+      level = levels[i];
       if (highestLevel < level) {
         highestLevel = level;
       }
@@ -405,10 +376,10 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
 
     // now reverse between those limits
-    for (var level = highestLevel; level >= lowestOddLevel; --level) {
+    for (level = highestLevel; level >= lowestOddLevel; --level) {
       // find segments to reverse
       var start = -1;
-      for (var i = 0, ii = levels.length; i < ii; ++i) {
+      for (i = 0, ii = levels.length; i < ii; ++i) {
         if (levels[i] < level) {
           if (start >= 0) {
             reverseValues(chars, start, i);
@@ -442,15 +413,14 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
     // Finally, return string
     var result = '';
-    for (var i = 0, ii = chars.length; i < ii; ++i) {
+    for (i = 0, ii = chars.length; i < ii; ++i) {
       var ch = chars[i];
-      if (ch != '<' && ch != '>') {
+      if (ch !== '<' && ch !== '>') {
         result += ch;
       }
     }
-    return new BidiResult(result, isLTR);
+    return createBidiText(result, isLTR);
   }
 
   return bidi;
 })();
-

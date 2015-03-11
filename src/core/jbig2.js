@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ArithmeticDecoder, error, shadow */
+/* globals ArithmeticDecoder, error, log2, readInt8, readUint16, readUint32,
+           shadow */
 
 'use strict';
 
@@ -27,7 +28,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       if (id in this) {
         return this[id];
       }
-      return (this[id] = new Int8Array(1<<16));
+      return (this[id] = new Int8Array(1 << 16));
     }
   };
 
@@ -52,69 +53,32 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   // A.2 Procedure for decoding values
   function decodeInteger(contextCache, procedure, decoder) {
     var contexts = contextCache.getContexts(procedure);
-
     var prev = 1;
-    var state = 1, v = 0, s;
-    var toRead = 32, offset = 4436; // defaults for state 7
-    while (state) {
-      var bit = decoder.readBit(contexts, prev);
-      prev = (prev < 256 ? (prev << 1) | bit :
-              (((prev << 1) | bit) & 511) | 256);
-      switch (state) {
-        case 1:
-          s = !!bit;
-          break;
-        case 2:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 2;
-          offset = 0;
-          break;
-        case 3:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 4;
-          offset = 4;
-          break;
-        case 4:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 6;
-          offset = 20;
-          break;
-        case 5:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 8;
-          offset = 84;
-          break;
-        case 6:
-          if (bit) {
-            break;
-          }
-          state = 7;
-          toRead = 12;
-          offset = 340;
-          break;
-        default:
-          v = ((v << 1) | bit) >>> 0;
-          if (--toRead === 0) {
-            state = 0;
-          }
-          continue;
+
+    function readBits(length) {
+      var v = 0;
+      for (var i = 0; i < length; i++) {
+        var bit = decoder.readBit(contexts, prev);
+        prev = (prev < 256 ? (prev << 1) | bit :
+                (((prev << 1) | bit) & 511) | 256);
+        v = (v << 1) | bit;
       }
-      state++;
+      return v >>> 0;
     }
-    v += offset;
-    return (!s ? v : (v > 0 ? -v : null));
+
+    var sign = readBits(1);
+    var value = readBits(1) ?
+                  (readBits(1) ?
+                    (readBits(1) ?
+                      (readBits(1) ?
+                        (readBits(1) ?
+                          (readBits(32) + 4436) :
+                        readBits(12) + 340) :
+                      readBits(8) + 84) :
+                    readBits(6) + 20) :
+                  readBits(4) + 4) :
+                readBits(2);
+    return (sign === 0 ? value : (value > 0 ? -value : null));
   }
 
   // A.3 The IAID decoding procedure
@@ -176,11 +140,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
   ];
 
+  // See 6.2.5.7 Decoding the bitmap.
   var ReusedContexts = [
-    0x1CD3, // '00111001101' (template) + '0011' (at),
-    0x079A, // '001111001101' + '0',
-    0x00E3, // '001110001' + '1',
-    0x018B  // '011000101' + '1'
+    0x9B25, // 10011 0110010 0101
+    0x0795, // 0011 110010 101
+    0x00E5, // 001 11001 01
+    0x0195  // 011001 0101
   ];
 
   var RefinementReusedContexts = [
@@ -188,31 +153,39 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     0x0008  // '0000' + '001000'
   ];
 
-  function log2(x) {
-    var n = 1, i = 0;
-    while (x > n) {
-      n <<= 1;
-      i++;
+  function decodeBitmapTemplate0(width, height, decodingContext) {
+    var decoder = decodingContext.decoder;
+    var contexts = decodingContext.contextCache.getContexts('GB');
+    var contextLabel, i, j, pixel, row, row1, row2, bitmap = [];
+
+    // ...ooooo....
+    // ..ooooooo... Context template for current pixel (X)
+    // .ooooX...... (concatenate values of 'o'-pixels to get contextLabel)
+    var OLD_PIXEL_MASK = 0x7BF7; // 01111 0111111 0111
+
+    for (i = 0; i < height; i++) {
+      row = bitmap[i] = new Uint8Array(width);
+      row1 = (i < 1) ? row : bitmap[i - 1];
+      row2 = (i < 2) ? row : bitmap[i - 2];
+
+      // At the beginning of each row:
+      // Fill contextLabel with pixels that are above/right of (X)
+      contextLabel = (row2[0] << 13) | (row2[1] << 12) | (row2[2] << 11) |
+                     (row1[0] << 7) | (row1[1] << 6) | (row1[2] << 5) |
+                     (row1[3] << 4);
+
+      for (j = 0; j < width; j++) {
+        row[j] = pixel = decoder.readBit(contexts, contextLabel);
+
+        // At each pixel: Clear contextLabel pixels that are shifted
+        // out of the context, then add new ones.
+        contextLabel = ((contextLabel & OLD_PIXEL_MASK) << 1) |
+                       (j + 3 < width ? row2[j + 3] << 11 : 0) |
+                       (j + 4 < width ? row1[j + 4] << 4 : 0) | pixel;
+      }
     }
-    return i;
-  }
 
-  function readInt32(data, start) {
-    return (data[start] << 24) | (data[start + 1] << 16) |
-           (data[start + 2] << 8) | data[start + 3];
-  }
-
-  function readUint32(data, start) {
-    var value = readInt32(data, start);
-    return value & 0x80000000 ? (value + 4294967296) : value;
-  }
-
-  function readUint16(data, start) {
-    return (data[start] << 8) | data[start + 1];
-  }
-
-  function readInt8(data, start) {
-    return (data[start] << 24) >> 24;
+    return bitmap;
   }
 
   // 6.2 Generic Region Decoding Procedure
@@ -220,6 +193,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                         decodingContext) {
     if (mmr) {
       error('JBIG2 error: MMR encoding is not supported');
+    }
+
+    // Use optimized version for the most common case
+    if (templateIndex === 0 && !skip && !prediction && at.length === 4 &&
+        at[0].x === 3 && at[0].y === -1 && at[1].x === -3 && at[1].y === -1 &&
+        at[2].x === 2 && at[2].y === -2 && at[3].x === -2 && at[3].y === -2) {
+      return decodeBitmapTemplate0(width, height, decodingContext);
     }
 
     var useskip = !!skip;
@@ -237,8 +217,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var templateY = new Int8Array(templateLength);
     var changingTemplateEntries = [];
     var reuseMask = 0, minX = 0, maxX = 0, minY = 0;
+    var c, k;
 
-    for (var k = 0; k < templateLength; k++) {
+    for (k = 0; k < templateLength; k++) {
       templateX[k] = template[k].x;
       templateY[k] = template[k].y;
       minX = Math.min(minX, template[k].x);
@@ -260,7 +241,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var changingTemplateX = new Int8Array(changingEntriesLength);
     var changingTemplateY = new Int8Array(changingEntriesLength);
     var changingTemplateBit = new Uint16Array(changingEntriesLength);
-    for (var c = 0; c < changingEntriesLength; c++) {
+    for (c = 0; c < changingEntriesLength; c++) {
       k = changingTemplateEntries[c];
       changingTemplateX[c] = template[k].x;
       changingTemplateY[c] = template[k].y;
@@ -279,7 +260,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var decoder = decodingContext.decoder;
     var contexts = decodingContext.contextCache.getContexts('GB');
 
-    var ltp = 0, c, j, i0, j0, k, contextLabel = 0, bit, shift;
+    var ltp = 0, j, i0, j0, contextLabel = 0, bit, shift;
     for (var i = 0; i < height; i++) {
       if (prediction) {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
@@ -346,7 +327,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var codingTemplateLength = codingTemplate.length;
     var codingTemplateX = new Int32Array(codingTemplateLength);
     var codingTemplateY = new Int32Array(codingTemplateLength);
-    for (var k = 0; k < codingTemplateLength; k++) {
+    var k;
+    for (k = 0; k < codingTemplateLength; k++) {
       codingTemplateX[k] = codingTemplate[k].x;
       codingTemplateY[k] = codingTemplate[k].y;
     }
@@ -358,7 +340,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referenceTemplateLength = referenceTemplate.length;
     var referenceTemplateX = new Int32Array(referenceTemplateLength);
     var referenceTemplateY = new Int32Array(referenceTemplateLength);
-    for (var k = 0; k < referenceTemplateLength; k++) {
+    for (k = 0; k < referenceTemplateLength; k++) {
       referenceTemplateX[k] = referenceTemplate[k].x;
       referenceTemplateY[k] = referenceTemplate[k].y;
     }
@@ -383,19 +365,20 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var row = new Uint8Array(width);
       bitmap.push(row);
       for (var j = 0; j < width; j++) {
-
+        var i0, j0;
         var contextLabel = 0;
-        for (var k = 0; k < codingTemplateLength; k++) {
-          var i0 = i + codingTemplateY[k], j0 = j + codingTemplateX[k];
+        for (k = 0; k < codingTemplateLength; k++) {
+          i0 = i + codingTemplateY[k];
+          j0 = j + codingTemplateX[k];
           if (i0 < 0 || j0 < 0 || j0 >= width) {
             contextLabel <<= 1; // out of bound pixel
           } else {
             contextLabel = (contextLabel << 1) | bitmap[i0][j0];
           }
         }
-        for (var k = 0; k < referenceTemplateLength; k++) {
-          var i0 = i + referenceTemplateY[k] + offsetY;
-          var j0 = j + referenceTemplateX[k] + offsetX;
+        for (k = 0; k < referenceTemplateLength; k++) {
+          i0 = i + referenceTemplateY[k] + offsetY;
+          j0 = j + referenceTemplateX[k] + offsetX;
           if (i0 < 0 || i0 >= referenceHeight || j0 < 0 ||
               j0 >= referenceWidth) {
             contextLabel <<= 1; // out of bound pixel
@@ -445,16 +428,28 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           // 6.5.8.2 Refinement/aggregate-coded symbol bitmap
           var numberOfInstances = decodeInteger(contextCache, 'IAAI', decoder);
           if (numberOfInstances > 1) {
-            error('JBIG2 error: number of instances > 1 is not supported');
-          }
-          var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
-          var rdx = decodeInteger(contextCache, 'IARDX', decoder); // 6.4.11.3
-          var rdy = decodeInteger(contextCache, 'IARDY', decoder); // 6.4.11.4
-          var symbol = (symbolId < symbols.length ? symbols[symbolId] :
-                        newSymbols[symbolId - symbols.length]);
-          bitmap = decodeRefinement(currentWidth, currentHeight,
+            bitmap = decodeTextRegion(huffman, refinement,
+                                      currentWidth, currentHeight, 0,
+                                      numberOfInstances, 1, //strip size
+                                      symbols.concat(newSymbols),
+                                      symbolCodeLength,
+                                      0, //transposed
+                                      0, //ds offset
+                                      1, //top left 7.4.3.1.1
+                                      0, //OR operator
+                                      huffmanTables,
+                                      refinementTemplateIndex, refinementAt,
+                                      decodingContext);
+          } else {
+            var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
+            var rdx = decodeInteger(contextCache, 'IARDX', decoder); // 6.4.11.3
+            var rdy = decodeInteger(contextCache, 'IARDY', decoder); // 6.4.11.4
+            var symbol = (symbolId < symbols.length ? symbols[symbolId] :
+                          newSymbols[symbolId - symbols.length]);
+            bitmap = decodeRefinement(currentWidth, currentHeight,
             refinementTemplateIndex, symbol, rdx, rdy, false, refinementAt,
             decodingContext);
+          }
         } else {
           // 6.5.8.1 Direct-coded symbol bitmap
           bitmap = decodeBitmap(false, currentWidth, currentHeight,
@@ -500,8 +495,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
     // Prepare bitmap
     var bitmap = [];
-    for (var i = 0; i < height; i++) {
-      var row = new Uint8Array(width);
+    var i, row;
+    for (i = 0; i < height; i++) {
+      row = new Uint8Array(width);
       if (defaultPixelValue) {
         for (var j = 0; j < width; j++) {
           row[j] = defaultPixelValue;
@@ -514,7 +510,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var contextCache = decodingContext.contextCache;
     var stripT = -decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
     var firstS = 0;
-    var i = 0;
+    i = 0;
     while (i < numberOfSymbolInstances) {
       var deltaT = decodeInteger(contextCache, 'IADT', decoder); // 6.4.6
       stripT += deltaT;
@@ -523,12 +519,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       firstS += deltaFirstS;
       var currentS = firstS;
       do {
-        var currentT = stripSize == 1 ? 0 :
-          decodeInteger(contextCache, 'IAIT', decoder); // 6.4.9
+        var currentT = (stripSize === 1 ? 0 :
+                        decodeInteger(contextCache, 'IAIT', decoder)); // 6.4.9
         var t = stripSize * stripT + currentT;
         var symbolId = decodeIAID(contextCache, decoder, symbolCodeLength);
-        var applyRefinement = refinement &&
-          decodeInteger(contextCache, 'IARI', decoder);
+        var applyRefinement = (refinement &&
+                               decodeInteger(contextCache, 'IARI', decoder));
         var symbolBitmap = inputSymbols[symbolId];
         var symbolWidth = symbolBitmap[0].length;
         var symbolHeight = symbolBitmap.length;
@@ -546,25 +542,26 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         }
         var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
         var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
+        var s2, t2, symbolRow;
         if (transposed) {
           // Place Symbol Bitmap from T1,S1
-          for (var s2 = 0; s2 < symbolHeight; s2++) {
-            var row = bitmap[offsetS + s2];
+          for (s2 = 0; s2 < symbolHeight; s2++) {
+            row = bitmap[offsetS + s2];
             if (!row) {
               continue;
             }
-            var symbolRow = symbolBitmap[s2];
+            symbolRow = symbolBitmap[s2];
             // To ignore Parts of Symbol bitmap which goes
             // outside bitmap region
             var maxWidth = Math.min(width - offsetT, symbolWidth);
             switch (combinationOperator) {
               case 0: // OR
-                for (var t2 = 0; t2 < maxWidth; t2++) {
+                for (t2 = 0; t2 < maxWidth; t2++) {
                   row[offsetT + t2] |= symbolRow[t2];
                 }
                 break;
               case 2: // XOR
-                for (var t2 = 0; t2 < maxWidth; t2++) {
+                for (t2 = 0; t2 < maxWidth; t2++) {
                   row[offsetT + t2] ^= symbolRow[t2];
                 }
                 break;
@@ -575,20 +572,20 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
           currentS += symbolHeight - 1;
         } else {
-          for (var t2 = 0; t2 < symbolHeight; t2++) {
-            var row = bitmap[offsetT + t2];
+          for (t2 = 0; t2 < symbolHeight; t2++) {
+            row = bitmap[offsetT + t2];
             if (!row) {
               continue;
             }
-            var symbolRow = symbolBitmap[t2];
+            symbolRow = symbolBitmap[t2];
             switch (combinationOperator) {
               case 0: // OR
-                for (var s2 = 0; s2 < symbolWidth; s2++) {
+                for (s2 = 0; s2 < symbolWidth; s2++) {
                   row[offsetS + s2] |= symbolRow[s2];
                 }
                 break;
               case 2: // XOR
-                for (var s2 = 0; s2 < symbolWidth; s2++) {
+                for (s2 = 0; s2 < symbolWidth; s2++) {
                   row[offsetS + s2] ^= symbolRow[s2];
                 }
                 break;
@@ -627,15 +624,15 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referredToCount = (referredFlags >> 5) & 7;
     var retainBits = [referredFlags & 31];
     var position = start + 6;
-    if (referredFlags == 7) {
-      referredToCount = readInt32(data, position - 1) & 0x1FFFFFFF;
+    if (referredFlags === 7) {
+      referredToCount = readUint32(data, position - 1) & 0x1FFFFFFF;
       position += 3;
       var bytes = (referredToCount + 7) >> 3;
       retainBits[0] = data[position++];
       while (--bytes > 0) {
         retainBits.push(data[position++]);
       }
-    } else if (referredFlags == 5 || referredFlags == 6) {
+    } else if (referredFlags === 5 || referredFlags === 6) {
       error('JBIG2 error: invalid referred-to flags');
     }
 
@@ -643,9 +640,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var referredToSegmentNumberSize = (segmentHeader.number <= 256 ? 1 :
       (segmentHeader.number <= 65536 ? 2 : 4));
     var referredTo = [];
-    for (var i = 0; i < referredToCount; i++) {
-      var number = (referredToSegmentNumberSize == 1 ? data[position] :
-        (referredToSegmentNumberSize == 2 ? readUint16(data, position) :
+    var i, ii;
+    for (i = 0; i < referredToCount; i++) {
+      var number = (referredToSegmentNumberSize === 1 ? data[position] :
+        (referredToSegmentNumberSize === 2 ? readUint16(data, position) :
         readUint32(data, position)));
       referredTo.push(number);
       position += referredToSegmentNumberSize;
@@ -660,7 +658,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     segmentHeader.length = readUint32(data, position);
     position += 4;
 
-    if (segmentHeader.length == 0xFFFFFFFF) {
+    if (segmentHeader.length === 0xFFFFFFFF) {
       // 7.2.7 Segment data length, unknown segment length
       if (segmentType === 38) { // ImmediateGenericRegion
         var genericRegionInfo = readRegionSegmentInformation(data, position);
@@ -678,17 +676,17 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         searchPattern[3] = (genericRegionInfo.height >> 16) & 0xFF;
         searchPattern[4] = (genericRegionInfo.height >> 8) & 0xFF;
         searchPattern[5] = genericRegionInfo.height & 0xFF;
-        for (var i = position, ii = data.length; i < ii; i++) {
+        for (i = position, ii = data.length; i < ii; i++) {
           var j = 0;
           while (j < searchPatternLength && searchPattern[j] === data[i + j]) {
             j++;
           }
-          if (j == searchPatternLength) {
+          if (j === searchPatternLength) {
             segmentHeader.length = i + searchPatternLength;
             break;
           }
         }
-        if (segmentHeader.length == 0xFFFFFFFF) {
+        if (segmentHeader.length === 0xFFFFFFFF) {
           error('JBIG2 error: segment end was not found');
         }
       } else {
@@ -715,7 +713,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         segment.end = position;
       }
       segments.push(segment);
-      if (segmentHeader.type == 51) {
+      if (segmentHeader.type === 51) {
         break; // end of file is found
       }
     }
@@ -745,7 +743,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var header = segment.header;
 
     var data = segment.data, position = segment.start, end = segment.end;
-    var args;
+    var args, at, i, atLength;
     switch (header.type) {
       case 0: // SymbolDictionary
         // 7.4.2 Symbol dictionary segment syntax
@@ -763,9 +761,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         dictionary.refinementTemplate = (dictionaryFlags >> 12) & 1;
         position += 2;
         if (!dictionary.huffman) {
-          var atLength = dictionary.template === 0 ? 4 : 1;
-          var at = [];
-          for (var i = 0; i < atLength; i++) {
+          atLength = dictionary.template === 0 ? 4 : 1;
+          at = [];
+          for (i = 0; i < atLength; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -775,8 +773,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           dictionary.at = at;
         }
         if (dictionary.refinement && !dictionary.refinementTemplate) {
-          var at = [];
-          for (var i = 0; i < 2; i++) {
+          at = [];
+          for (i = 0; i < 2; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -822,8 +820,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             !!(textRegionHuffmanFlags & 14);
         }
         if (textRegion.refinement && !textRegion.refinementTemplate) {
-          var at = [];
-          for (var i = 0; i < 2; i++) {
+          at = [];
+          for (i = 0; i < 2; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -850,9 +848,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         genericRegion.template = (genericRegionSegmentFlags >> 1) & 3;
         genericRegion.prediction = !!(genericRegionSegmentFlags & 8);
         if (!genericRegion.mmr) {
-          var atLength = genericRegion.template === 0 ? 4 : 1;
-          var at = [];
-          for (var i = 0; i < atLength; i++) {
+          atLength = genericRegion.template === 0 ? 4 : 1;
+          at = [];
+          for (i = 0; i < atLength; i++) {
             at.push({
               x: readInt8(data, position),
               y: readInt8(data, position + 1)
@@ -870,7 +868,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           resolutionX: readUint32(data, position + 8),
           resolutionY: readUint32(data, position + 12)
         };
-        if (pageInfo.height == 0xFFFFFFFF) {
+        if (pageInfo.height === 0xFFFFFFFF) {
           delete pageInfo.height;
         }
         var pageSegmentFlags = data[position + 16];
@@ -910,10 +908,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
 
   function parseJbig2(data, start, end) {
     var position = start;
-    if (data[position] != 0x97 || data[position + 1] != 0x4A ||
-        data[position + 2] != 0x42 || data[position + 3] != 0x32 ||
-        data[position + 4] != 0x0D || data[position + 5] != 0x0A ||
-        data[position + 6] != 0x1A || data[position + 7] != 0x0A) {
+    if (data[position] !== 0x97 || data[position + 1] !== 0x4A ||
+        data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
+        data[position + 4] !== 0x0D || data[position + 5] !== 0x0A ||
+        data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
       error('JBIG2 error: invalid header');
     }
     var header = {};
@@ -964,12 +962,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var buffer = this.buffer;
       var mask0 =  128 >> (regionInfo.x & 7);
       var offset0 = regionInfo.y * rowSize + (regionInfo.x >> 3);
+      var i, j, mask, offset;
       switch (combinationOperator) {
         case 0: // OR
-          for (var i = 0; i < height; i++) {
-            var mask = mask0;
-            var offset = offset0;
-            for (var j = 0; j < width; j++) {
+          for (i = 0; i < height; i++) {
+            mask = mask0;
+            offset = offset0;
+            for (j = 0; j < width; j++) {
               if (bitmap[i][j]) {
                 buffer[offset] |= mask;
               }
@@ -983,10 +982,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
         break;
         case 2: // XOR
-          for (var i = 0; i < height; i++) {
-            var mask = mask0;
-            var offset = offset0;
-            for (var j = 0; j < width; j++) {
+          for (i = 0; i < height; i++) {
+            mask = mask0;
+            offset = offset0;
+            for (j = 0; j < width; j++) {
               if (bitmap[i][j]) {
                 buffer[offset] ^= mask;
               }

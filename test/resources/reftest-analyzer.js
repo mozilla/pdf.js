@@ -68,7 +68,7 @@ window.onload = function() {
       ID("logEntry").value = params.log;
       logPasted();
     } else if (params.web) {
-      loadFromWeb(params.web); 
+      loadFromWeb(params.web);
     }
     ID("logEntry").focus();
   }
@@ -189,7 +189,7 @@ window.onload = function() {
         var random = match[2];
         var url = match[3];
         var extra = match[4];
-      
+
         gTestItems.push({
           pass: !state.match(/FAIL$/),
           // only one of the following three should ever be true
@@ -220,7 +220,7 @@ window.onload = function() {
     var table = document.getElementById("itemtable");
     while (table.childNodes.length > 0) {
       table.removeChild(table.childNodes[table.childNodes.length - 1]);
-    } 
+    }
     var tbody = document.createElement("tbody");
     table.appendChild(tbody);
 
@@ -234,7 +234,7 @@ window.onload = function() {
       var rowclass = item.pass ? "pass" : "fail";
       var td = document.createElement("td");
       var text = "";
-    
+
       if (item.unexpected) {
         text += "!";
         rowclass += " unexpected";
@@ -253,7 +253,7 @@ window.onload = function() {
       td = document.createElement("td");
       td.id = "url" + i;
       td.className = "url";
-    
+
       var match = item.url.match(/\/mozilla\/(.*)/);
       text = document.createTextNode(match ? match[1] : item.url);
       if (item.images.length > 0) {
@@ -464,6 +464,9 @@ window.onload = function() {
         val = 1;
       }
       document.querySelector('input[name="which"][value="' + val + '"]').click();
+    } else if (event.which === 68) {
+      // 'd' toggle differences
+      document.getElementById("differences").click();
     } else if (event.which === 78 || event.which === 80) {
       // 'n' next image, 'p' previous image
       var select = gSelected;

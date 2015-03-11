@@ -9,7 +9,7 @@ describe('stream', function() {
     this.addMatchers({
       toMatchTypedArray: function(expected) {
         var actual = this.actual;
-        if (actual.length != expected.length) {
+        if (actual.length !== expected.length) {
           return false;
         }
         for (var i = 0, ii = expected.length; i < ii; i++) {
@@ -41,4 +41,3 @@ describe('stream', function() {
     });
   });
 });
-

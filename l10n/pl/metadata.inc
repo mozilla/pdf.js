@@ -5,4 +5,3 @@
         <em:description>Używa HTML5 do wyświetlania plików PDF bezpośrednio w Firefoksie.</em:description>
       </Description>
     </em:localized>
-

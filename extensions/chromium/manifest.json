@@ -25,8 +25,11 @@
       "file://*/*"
     ],
     "run_at": "document_start",
+    "all_frames": true,
+    "css": ["contentstyle.css"],
     "js": ["contentscript.js"]
   }],
+  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "file_browser_handlers": [{
     "id": "open-as-pdf",
     "default_title": "Open with PDF Viewer",
@@ -37,6 +40,14 @@
   "mime_types": [
     "application/pdf"
   ],
+  "storage": {
+    "managed_schema": "preferences_schema.json"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "chrome_style": true
+  },
+  "options_page": "options/options.html",
   "background": {
     "page": "pdfHandler.html"
   },

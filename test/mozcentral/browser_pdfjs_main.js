@@ -31,20 +31,25 @@ function test() {
         window = newTabBrowser.contentWindow;
 
     // Runs tests after all 'load' event handlers have fired off
-    setTimeout(function() {
-      runTests(document, window, finish);
-    }, 0);
+    window.addEventListener("documentload", function() {
+      runTests(document, window, tab, finish);
+    }, false, true);
   }, true);
 }
 
 
-function runTests(document, window, callback) {
+function runTests(document, window, tab, callback) {
 
   //
   // Overall sanity tests
   //
   ok(document.querySelector('div#viewer'), "document content has viewer UI");
   ok('PDFJS' in window.wrappedJSObject, "window content has PDFJS object");
+
+  //
+  // Browser Find
+  //
+  ok(gBrowser.isFindBarInitialized(tab), "Browser FindBar initialized!");
 
   //
   // Sidebar: open

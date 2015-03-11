@@ -25,9 +25,10 @@ if (typeof PDFJS === 'undefined') {
 }
 
 // Checking if the typed arrays are supported
+// Support: iOS<6.0 (subarray), IE<10, Android<4.0
 (function checkTypedArrayCompatibility() {
   if (typeof Uint8Array !== 'undefined') {
-    // some mobile versions do not support subarray (e.g. safari 5 / iOS)
+    // Support: iOS<6.0
     if (typeof Uint8Array.prototype.subarray === 'undefined') {
         Uint8Array.prototype.subarray = function subarray(start, end) {
           return new Uint8Array(this.slice(start, end));
@@ -37,7 +38,7 @@ if (typeof PDFJS === 'undefined') {
         };
     }
 
-    // some mobile version might not support Float64Array
+    // Support: Android<4.1
     if (typeof Float64Array === 'undefined') {
       window.Float64Array = Float32Array;
     }
@@ -58,17 +59,17 @@ if (typeof PDFJS === 'undefined') {
   }
 
   function TypedArray(arg1) {
-    var result;
+    var result, i, n;
     if (typeof arg1 === 'number') {
       result = [];
-      for (var i = 0; i < arg1; ++i) {
+      for (i = 0; i < arg1; ++i) {
         result[i] = 0;
       }
     } else if ('slice' in arg1) {
       result = arg1.slice(0);
     } else {
       result = [];
-      for (var i = 0, n = arg1.length; i < n; ++i) {
+      for (i = 0, n = arg1.length; i < n; ++i) {
         result[i] = arg1[i];
       }
     }
@@ -85,6 +86,7 @@ if (typeof PDFJS === 'undefined') {
   }
 
   window.Uint8Array = TypedArray;
+  window.Int8Array = TypedArray;
 
   // we don't need support for set, byteLength for 32-bit array
   // so we can use the TypedArray as well
@@ -96,26 +98,15 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 // URL = URL || webkitURL
+// Support: Safari<7, Android 4.2+
 (function normalizeURLObject() {
   if (!window.URL) {
     window.URL = window.webkitURL;
   }
 })();
 
-// Object.create() ?
-(function checkObjectCreateCompatibility() {
-  if (typeof Object.create !== 'undefined') {
-    return;
-  }
-
-  Object.create = function objectCreate(proto) {
-    function Constructor() {}
-    Constructor.prototype = proto;
-    return new Constructor();
-  };
-})();
-
-// Object.defineProperty() ?
+// Object.defineProperty()?
+// Support: Android<4.0, Safari<5.1
 (function checkObjectDefinePropertyCompatibility() {
   if (typeof Object.defineProperty !== 'undefined') {
     var definePropertyPossible = true;
@@ -156,109 +147,73 @@ if (typeof PDFJS === 'undefined') {
   };
 })();
 
-// Object.keys() ?
-(function checkObjectKeysCompatibility() {
-  if (typeof Object.keys !== 'undefined') {
-    return;
-  }
 
-  Object.keys = function objectKeys(obj) {
-    var result = [];
-    for (var i in obj) {
-      if (obj.hasOwnProperty(i)) {
-        result.push(i);
-      }
-    }
-    return result;
-  };
-})();
-
-// No readAsArrayBuffer ?
-(function checkFileReaderReadAsArrayBuffer() {
-  if (typeof FileReader === 'undefined') {
-    return; // FileReader is not implemented
-  }
-  var frPrototype = FileReader.prototype;
-  // Older versions of Firefox might not have readAsArrayBuffer
-  if ('readAsArrayBuffer' in frPrototype) {
-    return; // readAsArrayBuffer is implemented
-  }
-  Object.defineProperty(frPrototype, 'readAsArrayBuffer', {
-    value: function fileReaderReadAsArrayBuffer(blob) {
-      var fileReader = new FileReader();
-      var originalReader = this;
-      fileReader.onload = function fileReaderOnload(evt) {
-        var data = evt.target.result;
-        var buffer = new ArrayBuffer(data.length);
-        var uint8Array = new Uint8Array(buffer);
-
-        for (var i = 0, ii = data.length; i < ii; i++) {
-          uint8Array[i] = data.charCodeAt(i);
-        }
-
-        Object.defineProperty(originalReader, 'result', {
-          value: buffer,
-          enumerable: true,
-          writable: false,
-          configurable: true
-        });
-
-        var event = document.createEvent('HTMLEvents');
-        event.initEvent('load', false, false);
-        originalReader.dispatchEvent(event);
-      };
-      fileReader.readAsBinaryString(blob);
-    }
-  });
-})();
-
-// No XMLHttpRequest.response ?
+// No XMLHttpRequest#response?
+// Support: IE<11, Android <4.0
 (function checkXMLHttpRequestResponseCompatibility() {
   var xhrPrototype = XMLHttpRequest.prototype;
-  if (!('overrideMimeType' in xhrPrototype)) {
+  var xhr = new XMLHttpRequest();
+  if (!('overrideMimeType' in xhr)) {
     // IE10 might have response, but not overrideMimeType
+    // Support: IE10
     Object.defineProperty(xhrPrototype, 'overrideMimeType', {
       value: function xmlHttpRequestOverrideMimeType(mimeType) {}
     });
   }
-  if ('response' in xhrPrototype ||
-      'mozResponseArrayBuffer' in xhrPrototype ||
-      'mozResponse' in xhrPrototype ||
-      'responseArrayBuffer' in xhrPrototype) {
+  if ('responseType' in xhr) {
     return;
   }
-  // IE9 ?
+
+  // The worker will be using XHR, so we can save time and disable worker.
+  PDFJS.disableWorker = true;
+
+  Object.defineProperty(xhrPrototype, 'responseType', {
+    get: function xmlHttpRequestGetResponseType() {
+      return this._responseType || 'text';
+    },
+    set: function xmlHttpRequestSetResponseType(value) {
+      if (value === 'text' || value === 'arraybuffer') {
+        this._responseType = value;
+        if (value === 'arraybuffer' &&
+            typeof this.overrideMimeType === 'function') {
+          this.overrideMimeType('text/plain; charset=x-user-defined');
+        }
+      }
+    }
+  });
+
+  // Support: IE9
   if (typeof VBArray !== 'undefined') {
     Object.defineProperty(xhrPrototype, 'response', {
       get: function xmlHttpRequestResponseGet() {
-        return new Uint8Array(new VBArray(this.responseBody).toArray());
+        if (this.responseType === 'arraybuffer') {
+          return new Uint8Array(new VBArray(this.responseBody).toArray());
+        } else {
+          return this.responseText;
+        }
       }
     });
     return;
   }
 
-  // other browsers
-  function responseTypeSetter() {
-    // will be only called to set "arraybuffer"
-    this.overrideMimeType('text/plain; charset=x-user-defined');
-  }
-  if (typeof xhrPrototype.overrideMimeType === 'function') {
-    Object.defineProperty(xhrPrototype, 'responseType',
-                          { set: responseTypeSetter });
-  }
-  function responseGetter() {
-    var text = this.responseText;
-    var i, n = text.length;
-    var result = new Uint8Array(n);
-    for (i = 0; i < n; ++i) {
-      result[i] = text.charCodeAt(i) & 0xFF;
+  Object.defineProperty(xhrPrototype, 'response', {
+    get: function xmlHttpRequestResponseGet() {
+      if (this.responseType !== 'arraybuffer') {
+        return this.responseText;
+      }
+      var text = this.responseText;
+      var i, n = text.length;
+      var result = new Uint8Array(n);
+      for (i = 0; i < n; ++i) {
+        result[i] = text.charCodeAt(i) & 0xFF;
+      }
+      return result.buffer;
     }
-    return result;
-  }
-  Object.defineProperty(xhrPrototype, 'response', { get: responseGetter });
+  });
 })();
 
 // window.btoa (base64 encode function) ?
+// Support: IE<10
 (function checkWindowBtoaCompatibility() {
   if ('btoa' in window) {
     return;
@@ -284,7 +239,8 @@ if (typeof PDFJS === 'undefined') {
   };
 })();
 
-// window.atob (base64 encode function) ?
+// window.atob (base64 encode function)?
+// Support: IE<10
 (function checkWindowAtobCompatibility() {
   if ('atob' in window) {
     return;
@@ -295,7 +251,7 @@ if (typeof PDFJS === 'undefined') {
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
   window.atob = function (input) {
     input = input.replace(/=+$/, '');
-    if (input.length % 4 == 1) {
+    if (input.length % 4 === 1) {
       throw new Error('bad atob input');
     }
     for (
@@ -317,7 +273,8 @@ if (typeof PDFJS === 'undefined') {
   };
 })();
 
-// Function.prototype.bind ?
+// Function.prototype.bind?
+// Support: Android<4.0, iOS<6.0
 (function checkFunctionPrototypeBindCompatibility() {
   if (typeof Function.prototype.bind !== 'undefined') {
     return;
@@ -334,6 +291,7 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 // HTMLElement dataset property
+// Support: IE<11, Safari<5.1, Android<4.0
 (function checkDatasetProperty() {
   var div = document.createElement('div');
   if ('dataset' in div) {
@@ -349,7 +307,7 @@ if (typeof PDFJS === 'undefined') {
       var dataset = {};
       for (var j = 0, jj = this.attributes.length; j < jj; j++) {
         var attribute = this.attributes[j];
-        if (attribute.name.substring(0, 5) != 'data-') {
+        if (attribute.name.substring(0, 5) !== 'data-') {
           continue;
         }
         var key = attribute.name.substring(5).replace(/\-([a-z])/g,
@@ -371,6 +329,7 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 // HTMLElement classList property
+// Support: IE<10, Android<4.0, iOS<5.0
 (function checkClassListProperty() {
   var div = document.createElement('div');
   if ('classList' in div) {
@@ -434,6 +393,9 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 // Check console compatibility
+// In older IE versions the console object is not available
+// unless console is open.
+// Support: IE<10
 (function checkConsoleCompatibility() {
   if (!('console' in window)) {
     window.console = {
@@ -456,6 +418,7 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 // Check onclick compatibility in Opera
+// Support: Opera<15
 (function checkOnClickCompatibility() {
   // workaround for reported Opera bug DSK-354448:
   // onclick fires on disabled buttons with opaque content
@@ -467,13 +430,14 @@ if (typeof PDFJS === 'undefined') {
   function isDisabled(node) {
     return node.disabled || (node.parentNode && isDisabled(node.parentNode));
   }
-  if (navigator.userAgent.indexOf('Opera') != -1) {
+  if (navigator.userAgent.indexOf('Opera') !== -1) {
     // use browser detection since we cannot feature-check this bug
     document.addEventListener('click', ignoreIfTargetDisabled, true);
   }
 })();
 
 // Checks if possible to use URL.createObjectURL()
+// Support: IE
 (function checkOnBlobSupport() {
   // sometimes IE loosing the data created with createObjectURL(), see #3977
   if (navigator.userAgent.indexOf('Trident') >= 0) {
@@ -483,26 +447,17 @@ if (typeof PDFJS === 'undefined') {
 
 // Checks if navigator.language is supported
 (function checkNavigatorLanguage() {
-  if ('language' in navigator &&
-      /^[a-z]+(-[A-Z]+)?$/.test(navigator.language)) {
+  if ('language' in navigator) {
     return;
   }
-  function formatLocale(locale) {
-    var split = locale.split(/[-_]/);
-    split[0] = split[0].toLowerCase();
-    if (split.length > 1) {
-      split[1] = split[1].toUpperCase();
-    }
-    return split.join('-');
-  }
-  var language = navigator.language || navigator.userLanguage || 'en-US';
-  PDFJS.locale = formatLocale(language);
+  PDFJS.locale = navigator.userLanguage || 'en-US';
 })();
 
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
   // https://github.com/mozilla/pdf.js/issues/3260
   // Last tested with version 6.0.4.
+  // Support: Safari 6.0+
   var isSafari = Object.prototype.toString.call(
                   window.HTMLElement).indexOf('Constructor') > 0;
 
@@ -510,22 +465,30 @@ if (typeof PDFJS === 'undefined') {
   // https://github.com/mozilla/pdf.js/issues/3381.
   // Make sure that we only match webkit-based Android browsers,
   // since Firefox/Fennec works as expected.
+  // Support: Android<3.0
   var regex = /Android\s[0-2][^\d]/;
   var isOldAndroid = regex.test(navigator.userAgent);
 
   if (isSafari || isOldAndroid) {
     PDFJS.disableRange = true;
+    PDFJS.disableStream = true;
   }
 })();
 
 // Check if the browser supports manipulation of the history.
+// Support: IE<10, Android<4.2
 (function checkHistoryManipulation() {
-  if (!window.history.pushState) {
+  // Android 2.x has so buggy pushState support that it was removed in
+  // Android 3.0 and restored as late as in Android 4.2.
+  // Support: Android 2.x
+  if (!history.pushState || navigator.userAgent.indexOf('Android 2.') >= 0) {
     PDFJS.disableHistory = true;
   }
 })();
 
+// Support: IE<11, Chrome<21, Android<4.4, Safari<6
 (function checkSetPresenceInImageData() {
+  // IE < 11 will use window.CanvasPixelArray which lacks set function.
   if (window.CanvasPixelArray) {
     if (typeof window.CanvasPixelArray.prototype.set !== 'function') {
       window.CanvasPixelArray.prototype.set = function(arr) {
@@ -534,5 +497,68 @@ if (typeof PDFJS === 'undefined') {
         }
       };
     }
+  } else {
+    // Old Chrome and Android use an inaccessible CanvasPixelArray prototype.
+    // Because we cannot feature detect it, we rely on user agent parsing.
+    var polyfill = false, versionMatch;
+    if (navigator.userAgent.indexOf('Chrom') >= 0) {
+      versionMatch = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+      // Chrome < 21 lacks the set function.
+      polyfill = versionMatch && parseInt(versionMatch[2]) < 21;
+    } else if (navigator.userAgent.indexOf('Android') >= 0) {
+      // Android < 4.4 lacks the set function.
+      // Android >= 4.4 will contain Chrome in the user agent,
+      // thus pass the Chrome check above and not reach this block.
+      polyfill = /Android\s[0-4][^\d]/g.test(navigator.userAgent);
+    } else if (navigator.userAgent.indexOf('Safari') >= 0) {
+      versionMatch = navigator.userAgent.
+        match(/Version\/([0-9]+)\.([0-9]+)\.([0-9]+) Safari\//);
+      // Safari < 6 lacks the set function.
+      polyfill = versionMatch && parseInt(versionMatch[1]) < 6;
+    }
+
+    if (polyfill) {
+      var contextPrototype = window.CanvasRenderingContext2D.prototype;
+      contextPrototype._createImageData = contextPrototype.createImageData;
+      contextPrototype.createImageData = function(w, h) {
+        var imageData = this._createImageData(w, h);
+        imageData.data.set = function(arr) {
+          for (var i = 0, ii = this.length; i < ii; i++) {
+            this[i] = arr[i];
+          }
+        };
+        return imageData;
+      };
+    }
+  }
+})();
+
+// Support: IE<10, Android<4.0, iOS
+(function checkRequestAnimationFrame() {
+  function fakeRequestAnimationFrame(callback) {
+    window.setTimeout(callback, 20);
+  }
+
+  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
+  if (isIOS) {
+    // requestAnimationFrame on iOS is broken, replacing with fake one.
+    window.requestAnimationFrame = fakeRequestAnimationFrame;
+    return;
+  }
+  if ('requestAnimationFrame' in window) {
+    return;
+  }
+  window.requestAnimationFrame =
+    window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
+    fakeRequestAnimationFrame;
+})();
+
+(function checkCanvasSizeLimitation() {
+  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
+  var isAndroid = /Android/g.test(navigator.userAgent);
+  if (isIOS || isAndroid) {
+    // 5MP
+    PDFJS.maxCanvasPixels = 5242880;
   }
 })();

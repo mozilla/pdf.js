@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, Stream, GlyphsUnicode, CFFParser, Encodings, Util */
+/* globals error, bytesToString, Stream, GlyphsUnicode, CFFParser, Encodings,
+           Util */
 
 'use strict';
 
@@ -29,25 +30,26 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   function parseCmap(data, start, end) {
-    var offset = getUshort(data, start + 2) === 1 ? getLong(data, start + 8) :
-                                                    getLong(data, start + 16);
+    var offset = (getUshort(data, start + 2) === 1 ?
+                  getLong(data, start + 8) : getLong(data, start + 16));
     var format = getUshort(data, start + offset);
+    var length, ranges, p, i;
     if (format === 4) {
-      var length = getUshort(data, start + offset + 2);
+      length = getUshort(data, start + offset + 2);
       var segCount = getUshort(data, start + offset + 6) >> 1;
-      var p = start + offset + 14;
-      var ranges = [];
-      for (var i = 0; i < segCount; i++, p += 2) {
+      p = start + offset + 14;
+      ranges = [];
+      for (i = 0; i < segCount; i++, p += 2) {
         ranges[i] = {end: getUshort(data, p)};
       }
       p += 2;
-      for (var i = 0; i < segCount; i++, p += 2) {
+      for (i = 0; i < segCount; i++, p += 2) {
         ranges[i].start = getUshort(data, p);
       }
-      for (var i = 0; i < segCount; i++, p += 2) {
+      for (i = 0; i < segCount; i++, p += 2) {
         ranges[i].idDelta = getUshort(data, p);
       }
-      for (var i = 0; i < segCount; i++, p += 2) {
+      for (i = 0; i < segCount; i++, p += 2) {
         var idOffset = getUshort(data, p);
         if (idOffset === 0) {
           continue;
@@ -60,11 +62,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
       return ranges;
     } else if (format === 12) {
-      var length = getLong(data, start + offset + 4);
+      length = getLong(data, start + offset + 4);
       var groups = getLong(data, start + offset + 12);
-      var p = start + offset + 16;
-      var ranges = [];
-      for (var i = 0; i < groups; i++) {
+      p = start + offset + 16;
+      ranges = [];
+      for (i = 0; i < groups; i++) {
         ranges.push({
           start: getLong(data, p),
           end: getLong(data, p + 4),
@@ -79,13 +81,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
   function parseCff(data, start, end) {
     var properties = {};
-    var parser = new CFFParser(
-      new Stream(data, start, end - start), properties);
+    var parser = new CFFParser(new Stream(data, start, end - start),
+                               properties);
     var cff = parser.parse();
     return {
       glyphs: cff.charStrings.objects,
-      subrs: cff.topDict.privateDict && cff.topDict.privateDict.subrsIndex &&
-             cff.topDict.privateDict.subrsIndex.objects,
+      subrs: (cff.topDict.privateDict && cff.topDict.privateDict.subrsIndex &&
+              cff.topDict.privateDict.subrsIndex.objects),
       gsubrs: cff.globalSubrIndex && cff.globalSubrIndex.objects
     };
   }
@@ -146,16 +148,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
     var i = 0;
     var numberOfContours = ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
-    var xMin = ((code[i + 2] << 24) | (code[i + 3] << 16)) >> 16;
-    var yMin = ((code[i + 4] << 24) | (code[i + 5] << 16)) >> 16;
-    var xMax = ((code[i + 6] << 24) | (code[i + 7] << 16)) >> 16;
-    var yMax = ((code[i + 8] << 24) | (code[i + 9] << 16)) >> 16;
+    var flags;
+    var x = 0, y = 0;
     i += 10;
     if (numberOfContours < 0) {
       // composite glyph
-      var x = 0, y = 0;
       do {
-        var flags = (code[i] << 8) | code[i + 1];
+        flags = (code[i] << 8) | code[i + 1];
         var glyphIndex = (code[i + 2] << 8) | code[i + 3];
         i += 4;
         var arg1, arg2;
@@ -200,7 +199,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     } else {
       // simple glyph
       var endPtsOfContours = [];
-      for (var j = 0; j < numberOfContours; j++) {
+      var j, jj;
+      for (j = 0; j < numberOfContours; j++) {
         endPtsOfContours.push((code[i] << 8) | code[i + 1]);
         i += 2;
       }
@@ -209,7 +209,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       var numberOfPoints = endPtsOfContours[endPtsOfContours.length - 1] + 1;
       var points = [];
       while (points.length < numberOfPoints) {
-        var flags = code[i++], repeat = 1;
+        flags = code[i++];
+        var repeat = 1;
         if ((flags & 0x08)) {
           repeat += code[i++];
         }
@@ -217,8 +218,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
           points.push({flags: flags});
         }
       }
-      var x = 0, y = 0;
-      for (var j = 0; j < numberOfPoints; j++) {
+      for (j = 0; j < numberOfPoints; j++) {
         switch (points[j].flags & 0x12) {
           case 0x00:
             x += ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
@@ -233,7 +233,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         }
         points[j].x = x;
       }
-      for (var j = 0; j < numberOfPoints; j++) {
+      for (j = 0; j < numberOfPoints; j++) {
         switch (points[j].flags & 0x24) {
           case 0x00:
             y += ((code[i] << 24) | (code[i + 1] << 16)) >> 16;
@@ -250,7 +250,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
 
       var startPoint = 0;
-      for (var i = 0; i < numberOfContours; i++) {
+      for (i = 0; i < numberOfContours; i++) {
         var endPoint = endPtsOfContours[i];
         // contours might have implicit points, which is located in the middle
         // between two neighboring off-curve points
@@ -271,7 +271,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
           contour.push(p);
         }
         moveTo(contour[0].x, contour[0].y);
-        for (var j = 1, jj = contour.length; j < jj; j++) {
+        for (j = 1, jj = contour.length; j < jj; j++) {
           if ((contour[j].flags & 1)) {
             lineTo(contour[j].x, contour[j].y);
           } else if ((contour[j + 1].flags & 1)){
@@ -310,6 +310,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       while (i < code.length) {
         var stackClean = false;
         var v = code[i++];
+        var xa, xb, ya, yb, y1, y2, y3, n, subrCode;
         switch (v) {
           case 1: // hstem
             stems += stack.length >> 1;
@@ -355,15 +356,15 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             break;
           case 8: // rrcurveto
             while (stack.length > 0) {
-              var xa = x + stack.shift(), ya = y + stack.shift();
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x + stack.shift(); ya = y + stack.shift();
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               x = xb + stack.shift(); y = yb + stack.shift();
               bezierCurveTo(xa, ya, xb, yb, x, y);
             }
             break;
           case 10: // callsubr
-            var n = stack.pop() + font.subrsBias;
-            var subrCode = font.subrs[n];
+            n = stack.pop() + font.subrsBias;
+            subrCode = font.subrs[n];
             if (subrCode) {
               parse(subrCode);
             }
@@ -374,49 +375,50 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             v = code[i++];
             switch (v) {
               case 34: // flex
-                var xa = x + stack.shift();
-                var xb = xa + stack.shift(), y1 = y + stack.shift();
+                xa = x + stack.shift();
+                xb = xa + stack.shift(); y1 = y + stack.shift();
                 x = xb + stack.shift();
                 bezierCurveTo(xa, y, xb, y1, x, y1);
-                var xa = x + stack.shift();
-                var xb = xa + stack.shift();
+                xa = x + stack.shift();
+                xb = xa + stack.shift();
                 x = xb + stack.shift();
                 bezierCurveTo(xa, y1, xb, y, x, y);
                 break;
               case 35: // flex
-                var xa = x + stack.shift(), ya = y + stack.shift();
-                var xb = xa + stack.shift(), yb = ya + stack.shift();
+                xa = x + stack.shift(); ya = y + stack.shift();
+                xb = xa + stack.shift(); yb = ya + stack.shift();
                 x = xb + stack.shift(); y = yb + stack.shift();
                 bezierCurveTo(xa, ya, xb, yb, x, y);
-                var xa = x + stack.shift(), ya = y + stack.shift();
-                var xb = xa + stack.shift(), yb = ya + stack.shift();
+                xa = x + stack.shift(); ya = y + stack.shift();
+                xb = xa + stack.shift(); yb = ya + stack.shift();
                 x = xb + stack.shift(); y = yb + stack.shift();
                 bezierCurveTo(xa, ya, xb, yb, x, y);
                 stack.pop(); // fd
                 break;
               case 36: // hflex1
-                var xa = x + stack.shift(), y1 = y + stack.shift();
-                var xb = xa + stack.shift(), y2 = y1 + stack.shift();
+                xa = x + stack.shift(); y1 = y + stack.shift();
+                xb = xa + stack.shift(); y2 = y1 + stack.shift();
                 x = xb + stack.shift();
                 bezierCurveTo(xa, y1, xb, y2, x, y2);
-                var xa = x + stack.shift();
-                var xb = xa + stack.shift(), y3 = y2 + stack.shift();
+                xa = x + stack.shift();
+                xb = xa + stack.shift(); y3 = y2 + stack.shift();
                 x = xb + stack.shift();
                 bezierCurveTo(xa, y2, xb, y3, x, y);
                 break;
               case 37: // flex1
                 var x0 = x, y0 = y;
-                var xa = x + stack.shift(), ya = y + stack.shift();
-                var xb = xa + stack.shift(), yb = ya + stack.shift();
+                xa = x + stack.shift(); ya = y + stack.shift();
+                xb = xa + stack.shift(); yb = ya + stack.shift();
                 x = xb + stack.shift(); y = yb + stack.shift();
                 bezierCurveTo(xa, ya, xb, yb, x, y);
-                var xa = x + stack.shift(), ya = y + stack.shift();
-                var xb = xa + stack.shift(), yb = ya + stack.shift();
+                xa = x + stack.shift(); ya = y + stack.shift();
+                xb = xa + stack.shift(); yb = ya + stack.shift();
                 x = xb; y = yb;
-                if (Math.abs(x - x0) > Math.abs(y - y0))
+                if (Math.abs(x - x0) > Math.abs(y - y0)) {
                   x += stack.shift();
-                else
+                } else  {
                   y += stack.shift();
+                }
                 bezierCurveTo(xa, ya, xb, yb, x, y);
                 break;
               default:
@@ -472,8 +474,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             break;
           case 24: // rcurveline
             while (stack.length > 2) {
-              var xa = x + stack.shift(), ya = y + stack.shift();
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x + stack.shift(); ya = y + stack.shift();
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               x = xb + stack.shift(); y = yb + stack.shift();
               bezierCurveTo(xa, ya, xb, yb, x, y);
             }
@@ -487,8 +489,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               y += stack.shift();
               lineTo(x, y);
             }
-            var xa = x + stack.shift(), ya = y + stack.shift();
-            var xb = xa + stack.shift(), yb = ya + stack.shift();
+            xa = x + stack.shift(); ya = y + stack.shift();
+            xb = xa + stack.shift(); yb = ya + stack.shift();
             x = xb + stack.shift(); y = yb + stack.shift();
             bezierCurveTo(xa, ya, xb, yb, x, y);
             break;
@@ -497,8 +499,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               x += stack.shift();
             }
             while (stack.length > 0) {
-              var xa = x, ya = y + stack.shift();
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x; ya = y + stack.shift();
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               x = xb; y = yb + stack.shift();
               bezierCurveTo(xa, ya, xb, yb, x, y);
             }
@@ -508,8 +510,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               y += stack.shift();
             }
             while (stack.length > 0) {
-              var xa = x + stack.shift(), ya = y;
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x + stack.shift(); ya = y;
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               x = xb + stack.shift(); y = yb;
               bezierCurveTo(xa, ya, xb, yb, x, y);
             }
@@ -519,16 +521,16 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             i += 2;
             break;
           case 29: // callgsubr
-            var n = stack.pop() + font.gsubrsBias;
-            var subrCode = font.gsubrs[n];
+            n = stack.pop() + font.gsubrsBias;
+            subrCode = font.gsubrs[n];
             if (subrCode) {
               parse(subrCode);
             }
             break;
           case 30: // vhcurveto
             while (stack.length > 0) {
-              var xa = x, ya = y + stack.shift();
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x; ya = y + stack.shift();
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               x = xb + stack.shift();
               y = yb + (stack.length === 1 ? stack.shift() : 0);
               bezierCurveTo(xa, ya, xb, yb, x, y);
@@ -536,8 +538,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 break;
               }
 
-              var xa = x + stack.shift(), ya = y;
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x + stack.shift(); ya = y;
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               y = yb + stack.shift();
               x = xb + (stack.length === 1 ? stack.shift() : 0);
               bezierCurveTo(xa, ya, xb, yb, x, y);
@@ -545,8 +547,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             break;
           case 31: // hvcurveto
             while (stack.length > 0) {
-              var xa = x + stack.shift(), ya = y;
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x + stack.shift(); ya = y;
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               y = yb + stack.shift();
               x = xb + (stack.length === 1 ? stack.shift() : 0);
               bezierCurveTo(xa, ya, xb, yb, x, y);
@@ -554,23 +556,24 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 break;
               }
 
-              var xa = x, ya = y + stack.shift();
-              var xb = xa + stack.shift(), yb = ya + stack.shift();
+              xa = x; ya = y + stack.shift();
+              xb = xa + stack.shift(); yb = ya + stack.shift();
               x = xb + stack.shift();
               y = yb + (stack.length === 1 ? stack.shift() : 0);
               bezierCurveTo(xa, ya, xb, yb, x, y);
             }
             break;
           default:
-            if (v < 32)
+            if (v < 32) {
               error('unknown operator: ' + v);
-            if (v < 247)
+            }
+            if (v < 247) {
               stack.push(v - 139);
-            else if (v < 251)
+            } else if (v < 251) {
               stack.push((v - 247) * 256 + code[i++] + 108);
-            else if (v < 255)
+            } else if (v < 255) {
               stack.push(-(v - 251) * 256 - code[i++] - 108);
-            else {
+            } else {
               stack.push(((code[i] << 24) | (code[i + 1] << 16) |
                          (code[i + 2] << 8) | code[i + 3]) / 65536);
               i += 4;
@@ -654,10 +657,10 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     this.glyphNameMap = glyphNameMap || GlyphsUnicode;
 
     this.compiledGlyphs = [];
-    this.gsubrsBias = this.gsubrs.length < 1240 ? 107 :
-                      this.gsubrs.length < 33900 ? 1131 : 32768;
-    this.subrsBias = this.subrs.length < 1240 ? 107 :
-                     this.subrs.length < 33900 ? 1131 : 32768;
+    this.gsubrsBias = (this.gsubrs.length < 1240 ?
+                       107 : (this.gsubrs.length < 33900 ? 1131 : 32768));
+    this.subrsBias = (this.subrs.length < 1240 ?
+                      107 : (this.subrs.length < 33900 ? 1131 : 32768));
   }
 
   Util.inherit(Type2Compiled, CompiledFont, {
@@ -673,7 +676,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       var cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
       var numTables = getUshort(data, 4);
       for (var i = 0, p = 12; i < numTables; i++, p += 16) {
-        var tag = String.fromCharCode.apply(null, data.subarray(p, p + 4));
+        var tag = bytesToString(data.subarray(p, p + 4));
         var offset = getLong(data, p + 8);
         var length = getLong(data, p + 12);
         switch (tag) {
@@ -697,8 +700,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
 
       if (glyf) {
-        var fontMatrix = !unitsPerEm ? font.fontMatrix :
-          [1 / unitsPerEm, 0, 0, 1 / unitsPerEm, 0, 0];
+        var fontMatrix = (!unitsPerEm ? font.fontMatrix :
+                          [1 / unitsPerEm, 0, 0, 1 / unitsPerEm, 0, 0]);
         return new TrueTypeCompiled(
           parseGlyfTable(glyf, loca, indexToLocFormat), cmap, fontMatrix);
       } else {
@@ -707,4 +710,3 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     }
   };
 })();
-

@@ -1,0 +1,13 @@
+/**
+ * Detect creation of <embed> and <object> tags.
+ */
+@-webkit-keyframes pdfjs-detected-object-or-embed { from {} }
+@keyframes         pdfjs-detected-object-or-embed { from {} }
+object, embed {
+  -webkit-animation-delay: 0s !important;
+  -webkit-animation-name: pdfjs-detected-object-or-embed !important;
+  -webkit-animation-play-state: running !important;
+  animation-delay: 0s !important;
+  animation-name: pdfjs-detected-object-or-embed !important;
+  animation-play-state: running !important;
+}

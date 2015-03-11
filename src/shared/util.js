@@ -21,7 +21,7 @@
 
 var globalScope = (typeof window === 'undefined') ? this : window;
 
-var isWorker = (typeof window == 'undefined');
+var isWorker = (typeof window === 'undefined');
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -42,6 +42,39 @@ var ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
   RGBA_32BPP: 3
+};
+
+var AnnotationType = {
+  WIDGET: 1,
+  TEXT: 2,
+  LINK: 3
+};
+
+var StreamType = {
+  UNKNOWN: 0,
+  FLATE: 1,
+  LZW: 2,
+  DCT: 3,
+  JPX: 4,
+  JBIG: 5,
+  A85: 6,
+  AHX: 7,
+  CCF: 8,
+  RL: 9
+};
+
+var FontType = {
+  UNKNOWN: 0,
+  TYPE1: 1,
+  TYPE1C: 2,
+  CIDFONTTYPE0: 3,
+  CIDFONTTYPE0C: 4,
+  TRUETYPE: 5,
+  CIDFONTTYPE2: 6,
+  TYPE3: 7,
+  OPENTYPE: 8,
+  TYPE0: 9,
+  MMTYPE1: 10
 };
 
 // The global PDFJS object exposes the API
@@ -151,7 +184,9 @@ var OPS = PDFJS.OPS = {
   paintInlineImageXObject: 86,
   paintInlineImageXObjectGroup: 87,
   paintImageXObjectRepeat: 88,
-  paintImageMaskXObjectRepeat: 89
+  paintImageMaskXObjectRepeat: 89,
+  paintSolidColorImageMask: 90,
+  constructPath: 91
 };
 
 // A notice for devs. These are good for things that are helpful to devs, such
@@ -236,9 +271,10 @@ function combineUrl(baseUrl, url) {
   if (/^[a-z][a-z0-9+\-.]*:/i.test(url)) {
     return url;
   }
-  if (url.charAt(0) == '/') {
+  var i;
+  if (url.charAt(0) === '/') {
     // absolute path
-    var i = baseUrl.indexOf('://');
+    i = baseUrl.indexOf('://');
     if (url.charAt(1) === '/') {
       ++i;
     } else {
@@ -247,7 +283,7 @@ function combineUrl(baseUrl, url) {
     return baseUrl.substring(0, i) + url;
   } else {
     // relative path
-    var pathLength = baseUrl.length, i;
+    var pathLength = baseUrl.length;
     i = baseUrl.lastIndexOf('#');
     pathLength = i >= 0 ? i : pathLength;
     i = baseUrl.lastIndexOf('?', pathLength);
@@ -274,20 +310,13 @@ function isValidUrl(url, allowRelative) {
     case 'https':
     case 'ftp':
     case 'mailto':
+    case 'tel':
       return true;
     default:
       return false;
   }
 }
 PDFJS.isValidUrl = isValidUrl;
-
-// In a well-formed PDF, |cond| holds.  If it doesn't, subsequent
-// behavior is undefined.
-function assertWellFormed(cond, msg) {
-  if (!cond) {
-    error(msg);
-  }
-}
 
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
@@ -296,6 +325,7 @@ function shadow(obj, prop, value) {
                                      writable: false });
   return value;
 }
+PDFJS.shadow = shadow;
 
 var PasswordResponses = PDFJS.PasswordResponses = {
   NEED_PASSWORD: 1,
@@ -314,6 +344,7 @@ var PasswordException = (function PasswordExceptionClosure() {
 
   return PasswordException;
 })();
+PDFJS.PasswordException = PasswordException;
 
 var UnknownErrorException = (function UnknownErrorExceptionClosure() {
   function UnknownErrorException(msg, details) {
@@ -327,6 +358,7 @@ var UnknownErrorException = (function UnknownErrorExceptionClosure() {
 
   return UnknownErrorException;
 })();
+PDFJS.UnknownErrorException = UnknownErrorException;
 
 var InvalidPDFException = (function InvalidPDFExceptionClosure() {
   function InvalidPDFException(msg) {
@@ -339,6 +371,7 @@ var InvalidPDFException = (function InvalidPDFExceptionClosure() {
 
   return InvalidPDFException;
 })();
+PDFJS.InvalidPDFException = InvalidPDFException;
 
 var MissingPDFException = (function MissingPDFExceptionClosure() {
   function MissingPDFException(msg) {
@@ -351,6 +384,22 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
 
   return MissingPDFException;
 })();
+PDFJS.MissingPDFException = MissingPDFException;
+
+var UnexpectedResponseException =
+    (function UnexpectedResponseExceptionClosure() {
+  function UnexpectedResponseException(msg, status) {
+    this.name = 'UnexpectedResponseException';
+    this.message = msg;
+    this.status = status;
+  }
+
+  UnexpectedResponseException.prototype = new Error();
+  UnexpectedResponseException.constructor = UnexpectedResponseException;
+
+  return UnexpectedResponseException;
+})();
+PDFJS.UnexpectedResponseException = UnexpectedResponseException;
 
 var NotImplementedException = (function NotImplementedExceptionClosure() {
   function NotImplementedException(msg) {
@@ -392,35 +441,149 @@ var XRefParseException = (function XRefParseExceptionClosure() {
 
 
 function bytesToString(bytes) {
-  var strBuf = [];
+  assert(bytes !== null && typeof bytes === 'object' &&
+         bytes.length !== undefined, 'Invalid argument for bytesToString');
   var length = bytes.length;
-  for (var n = 0; n < length; ++n) {
-    strBuf.push(String.fromCharCode(bytes[n]));
+  var MAX_ARGUMENT_COUNT = 8192;
+  if (length < MAX_ARGUMENT_COUNT) {
+    return String.fromCharCode.apply(null, bytes);
+  }
+  var strBuf = [];
+  for (var i = 0; i < length; i += MAX_ARGUMENT_COUNT) {
+    var chunkEnd = Math.min(i + MAX_ARGUMENT_COUNT, length);
+    var chunk = bytes.subarray(i, chunkEnd);
+    strBuf.push(String.fromCharCode.apply(null, chunk));
   }
   return strBuf.join('');
 }
 
 function stringToBytes(str) {
+  assert(typeof str === 'string', 'Invalid argument for stringToBytes');
   var length = str.length;
   var bytes = new Uint8Array(length);
-  for (var n = 0; n < length; ++n) {
-    bytes[n] = str.charCodeAt(n) & 0xFF;
+  for (var i = 0; i < length; ++i) {
+    bytes[i] = str.charCodeAt(i) & 0xFF;
   }
   return bytes;
 }
+
+function string32(value) {
+  return String.fromCharCode((value >> 24) & 0xff, (value >> 16) & 0xff,
+                             (value >> 8) & 0xff, value & 0xff);
+}
+
+function log2(x) {
+  var n = 1, i = 0;
+  while (x > n) {
+    n <<= 1;
+    i++;
+  }
+  return i;
+}
+
+function readInt8(data, start) {
+  return (data[start] << 24) >> 24;
+}
+
+function readUint16(data, offset) {
+  return (data[offset] << 8) | data[offset + 1];
+}
+
+function readUint32(data, offset) {
+  return ((data[offset] << 24) | (data[offset + 1] << 16) |
+         (data[offset + 2] << 8) | data[offset + 3]) >>> 0;
+}
+
+// Lazy test the endianness of the platform
+// NOTE: This will be 'true' for simulated TypedArrays
+function isLittleEndian() {
+  var buffer8 = new Uint8Array(2);
+  buffer8[0] = 1;
+  var buffer16 = new Uint16Array(buffer8.buffer);
+  return (buffer16[0] === 1);
+}
+
+Object.defineProperty(PDFJS, 'isLittleEndian', {
+  configurable: true,
+  get: function PDFJS_isLittleEndian() {
+    return shadow(PDFJS, 'isLittleEndian', isLittleEndian());
+  }
+});
+
+//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
+//// Lazy test if the userAgant support CanvasTypedArrays
+function hasCanvasTypedArrays() {
+  var canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1;
+  var ctx = canvas.getContext('2d');
+  var imageData = ctx.createImageData(1, 1);
+  return (typeof imageData.data.buffer !== 'undefined');
+}
+
+Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
+  configurable: true,
+  get: function PDFJS_hasCanvasTypedArrays() {
+    return shadow(PDFJS, 'hasCanvasTypedArrays', hasCanvasTypedArrays());
+  }
+});
+
+var Uint32ArrayView = (function Uint32ArrayViewClosure() {
+
+  function Uint32ArrayView(buffer, length) {
+    this.buffer = buffer;
+    this.byteLength = buffer.length;
+    this.length = length === undefined ? (this.byteLength >> 2) : length;
+    ensureUint32ArrayViewProps(this.length);
+  }
+  Uint32ArrayView.prototype = Object.create(null);
+
+  var uint32ArrayViewSetters = 0;
+  function createUint32ArrayProp(index) {
+    return {
+      get: function () {
+        var buffer = this.buffer, offset = index << 2;
+        return (buffer[offset] | (buffer[offset + 1] << 8) |
+          (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
+      },
+      set: function (value) {
+        var buffer = this.buffer, offset = index << 2;
+        buffer[offset] = value & 255;
+        buffer[offset + 1] = (value >> 8) & 255;
+        buffer[offset + 2] = (value >> 16) & 255;
+        buffer[offset + 3] = (value >>> 24) & 255;
+      }
+    };
+  }
+
+  function ensureUint32ArrayViewProps(length) {
+    while (uint32ArrayViewSetters < length) {
+      Object.defineProperty(Uint32ArrayView.prototype,
+        uint32ArrayViewSetters,
+        createUint32ArrayProp(uint32ArrayViewSetters));
+      uint32ArrayViewSetters++;
+    }
+  }
+
+  return Uint32ArrayView;
+})();
+//#else
+//PDFJS.hasCanvasTypedArrays = true;
+//#endif
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
 var Util = PDFJS.Util = (function UtilClosure() {
   function Util() {}
 
-  Util.makeCssRgb = function Util_makeCssRgb(rgb) {
-    return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
-  };
+  var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
 
-  Util.makeCssCmyk = function Util_makeCssCmyk(cmyk) {
-    var rgb = ColorSpace.singletons.cmyk.getRgb(cmyk, 0);
-    return Util.makeCssRgb(rgb);
+  // makeCssRgb() can be called thousands of times. Using |rgbBuf| avoids
+  // creating many intermediate strings.
+  Util.makeCssRgb = function Util_makeCssRgb(r, g, b) {
+    rgbBuf[1] = r;
+    rgbBuf[3] = g;
+    rgbBuf[5] = b;
+    return rgbBuf.join('');
   };
 
   // Concatenates two transformation matrices together and returns the result.
@@ -570,12 +733,11 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return num < 0 ? -1 : 1;
   };
 
-  // TODO(mack): Rename appendToArray
-  Util.concatenateToArray = function concatenateToArray(arr1, arr2) {
+  Util.appendToArray = function Util_appendToArray(arr1, arr2) {
     Array.prototype.push.apply(arr1, arr2);
   };
 
-  Util.prependToArray = function concatenateToArray(arr1, arr2) {
+  Util.prependToArray = function Util_prependToArray(arr1, arr2) {
     Array.prototype.unshift.apply(arr1, arr2);
   };
 
@@ -622,7 +784,22 @@ var Util = PDFJS.Util = (function UtilClosure() {
   return Util;
 })();
 
+/**
+ * PDF page viewport created based on scale, rotation and offset.
+ * @class
+ * @alias PDFJS.PageViewport
+ */
 var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
+  /**
+   * @constructor
+   * @private
+   * @param viewBox {Array} xMin, yMin, xMax and yMax coordinates.
+   * @param scale {number} scale of the viewport.
+   * @param rotation {number} rotations of the viewport in degrees.
+   * @param offsetX {number} offset X
+   * @param offsetY {number} offset Y
+   * @param dontFlip {boolean} if true, axis Y will not be flipped.
+   */
   function PageViewport(viewBox, scale, rotation, offsetX, offsetY, dontFlip) {
     this.viewBox = viewBox;
     this.scale = scale;
@@ -686,7 +863,14 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
     this.height = height;
     this.fontScale = scale;
   }
-  PageViewport.prototype = {
+  PageViewport.prototype = /** @lends PDFJS.PageViewport.prototype */ {
+    /**
+     * Clones viewport with additional properties.
+     * @param args {Object} (optional) If specified, may contain the 'scale' or
+     * 'rotation' properties to override the corresponding properties in
+     * the cloned viewport.
+     * @returns {PDFJS.PageViewport} Cloned viewport.
+     */
     clone: function PageViewPort_clone(args) {
       args = args || {};
       var scale = 'scale' in args ? args.scale : this.scale;
@@ -694,15 +878,41 @@ var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
       return new PageViewport(this.viewBox.slice(), scale, rotation,
                               this.offsetX, this.offsetY, args.dontFlip);
     },
+    /**
+     * Converts PDF point to the viewport coordinates. For examples, useful for
+     * converting PDF location into canvas pixel coordinates.
+     * @param x {number} X coordinate.
+     * @param y {number} Y coordinate.
+     * @returns {Object} Object that contains 'x' and 'y' properties of the
+     * point in the viewport coordinate space.
+     * @see {@link convertToPdfPoint}
+     * @see {@link convertToViewportRectangle}
+     */
     convertToViewportPoint: function PageViewport_convertToViewportPoint(x, y) {
       return Util.applyTransform([x, y], this.transform);
     },
+    /**
+     * Converts PDF rectangle to the viewport coordinates.
+     * @param rect {Array} xMin, yMin, xMax and yMax coordinates.
+     * @returns {Array} Contains corresponding coordinates of the rectangle
+     * in the viewport coordinate space.
+     * @see {@link convertToViewportPoint}
+     */
     convertToViewportRectangle:
       function PageViewport_convertToViewportRectangle(rect) {
       var tl = Util.applyTransform([rect[0], rect[1]], this.transform);
       var br = Util.applyTransform([rect[2], rect[3]], this.transform);
       return [tl[0], tl[1], br[0], br[1]];
     },
+    /**
+     * Converts viewport coordinates to the PDF location. For examples, useful
+     * for converting canvas pixel location into PDF one.
+     * @param x {number} X coordinate.
+     * @param y {number} Y coordinate.
+     * @returns {Object} Object that contains 'x' and 'y' properties of the
+     * point in the PDF coordinate space.
+     * @see {@link convertToViewportPoint}
+     */
     convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
       return Util.applyInverseTransform([x, y], this.transform);
     }
@@ -751,23 +961,19 @@ function isEmptyObj(obj) {
 }
 
 function isBool(v) {
-  return typeof v == 'boolean';
+  return typeof v === 'boolean';
 }
 
 function isInt(v) {
-  return typeof v == 'number' && ((v | 0) == v);
+  return typeof v === 'number' && ((v | 0) === v);
 }
 
 function isNum(v) {
-  return typeof v == 'number';
+  return typeof v === 'number';
 }
 
 function isString(v) {
-  return typeof v == 'string';
-}
-
-function isNull(v) {
-  return v === null;
+  return typeof v === 'string';
 }
 
 function isName(v) {
@@ -775,7 +981,7 @@ function isName(v) {
 }
 
 function isCmd(v, cmd) {
-  return v instanceof Cmd && (!cmd || v.cmd == cmd);
+  return v instanceof Cmd && (cmd === undefined || v.cmd === cmd);
 }
 
 function isDict(v, type) {
@@ -786,7 +992,7 @@ function isDict(v, type) {
     return true;
   }
   var dictType = v.get('Type');
-  return isName(dictType) && dictType.name == type;
+  return isName(dictType) && dictType.name === type;
 }
 
 function isArray(v) {
@@ -794,53 +1000,47 @@ function isArray(v) {
 }
 
 function isStream(v) {
-  return typeof v == 'object' && v !== null && v !== undefined &&
-         ('getBytes' in v);
+  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
 
 function isArrayBuffer(v) {
-  return typeof v == 'object' && v !== null && v !== undefined &&
-         ('byteLength' in v);
+  return typeof v === 'object' && v !== null && v.byteLength !== undefined;
 }
 
 function isRef(v) {
   return v instanceof Ref;
 }
 
-function isPDFFunction(v) {
-  var fnDict;
-  if (typeof v != 'object') {
-    return false;
-  } else if (isDict(v)) {
-    fnDict = v;
-  } else if (isStream(v)) {
-    fnDict = v.dict;
-  } else {
-    return false;
-  }
-  return fnDict.has('FunctionType');
-}
+/**
+ * Promise Capability object.
+ *
+ * @typedef {Object} PromiseCapability
+ * @property {Promise} promise - A promise object.
+ * @property {function} resolve - Fullfills the promise.
+ * @property {function} reject - Rejects the promise.
+ */
 
 /**
- * Legacy support for PDFJS Promise implementation.
- * TODO remove eventually
+ * Creates a promise capability object.
+ * @alias PDFJS.createPromiseCapability
+ *
+ * @return {PromiseCapability} A capability object contains:
+ * - a Promise, resolve and reject methods.
  */
-var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
-  return function LegacyPromise() {
-    var resolve, reject;
-    var promise = new Promise(function (resolve_, reject_) {
-      resolve = resolve_;
-      reject = reject_;
-    });
-    promise.resolve = resolve;
-    promise.reject = reject;
-    return promise;
-  };
-})();
+function createPromiseCapability() {
+  var capability = {};
+  capability.promise = new Promise(function (resolve, reject) {
+    capability.resolve = resolve;
+    capability.reject = reject;
+  });
+  return capability;
+}
+
+PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
  * Polyfill for Promises:
- * The following promise implementation tries to generally implment the
+ * The following promise implementation tries to generally implement the
  * Promise/A+ spec. Some notable differences from other promise libaries are:
  * - There currently isn't a seperate deferred and promise object.
  * - Unhandled rejections eventually show an error if they aren't handled.
@@ -875,8 +1075,20 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
       };
     }
     if (typeof globalScope.Promise.resolve !== 'function') {
-      globalScope.Promise.resolve = function (x) {
-        return new globalScope.Promise(function (resolve) { resolve(x); });
+      globalScope.Promise.resolve = function (value) {
+        return new globalScope.Promise(function (resolve) { resolve(value); });
+      };
+    }
+    if (typeof globalScope.Promise.reject !== 'function') {
+      globalScope.Promise.reject = function (reason) {
+        return new globalScope.Promise(function (resolve, reject) {
+          reject(reason);
+        });
+      };
+    }
+    if (typeof globalScope.Promise.prototype.catch !== 'function') {
+      globalScope.Promise.prototype.catch = function (onReject) {
+        return globalScope.Promise.prototype.then(undefined, onReject);
       };
     }
     return;
@@ -898,7 +1110,7 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
     pendingRejectionCheck: false,
 
     scheduleHandlers: function scheduleHandlers(promise) {
-      if (promise._status == STATUS_PENDING) {
+      if (promise._status === STATUS_PENDING) {
         return;
       }
 
@@ -924,10 +1136,10 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
 
         try {
           if (nextStatus === STATUS_RESOLVED) {
-            if (typeof(handler.onResolve) == 'function') {
+            if (typeof handler.onResolve === 'function') {
               nextValue = handler.onResolve(nextValue);
             }
-          } else if (typeof(handler.onReject) === 'function') {
+          } else if (typeof handler.onReject === 'function') {
               nextValue = handler.onReject(nextValue);
               nextStatus = STATUS_RESOLVED;
 
@@ -1002,7 +1214,11 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
   function Promise(resolver) {
     this._status = STATUS_PENDING;
     this._handlers = [];
-    resolver.call(this, this._resolve.bind(this), this._reject.bind(this));
+    try {
+      resolver.call(this, this._resolve.bind(this), this._reject.bind(this));
+    } catch (e) {
+      this._reject(e);
+    }
   }
   /**
    * Builds a promise that is resolved when all the passed in promises are
@@ -1054,18 +1270,28 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
 
   /**
    * Checks if the value is likely a promise (has a 'then' function).
-   * @return {boolean} true if x is thenable
+   * @return {boolean} true if value is thenable
    */
   Promise.isPromise = function Promise_isPromise(value) {
     return value && typeof value.then === 'function';
   };
+
   /**
    * Creates resolved promise
-   * @param x resolve value
+   * @param value resolve value
    * @returns {Promise}
    */
-  Promise.resolve = function Promise_resolve(x) {
-    return new Promise(function (resolve) { resolve(x); });
+  Promise.resolve = function Promise_resolve(value) {
+    return new Promise(function (resolve) { resolve(value); });
+  };
+
+  /**
+   * Creates rejected promise
+   * @param reason rejection value
+   * @returns {Promise}
+   */
+  Promise.reject = function Promise_reject(reason) {
+    return new Promise(function (resolve, reject) { reject(reason); });
   };
 
   Promise.prototype = {
@@ -1080,7 +1306,7 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
         return;
       }
 
-      if (status == STATUS_RESOLVED &&
+      if (status === STATUS_RESOLVED &&
           Promise.isPromise(value)) {
         value.then(this._updateStatus.bind(this, STATUS_RESOLVED),
                    this._updateStatus.bind(this, STATUS_REJECTED));
@@ -1108,7 +1334,7 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
 
     then: function Promise_then(onResolve, onReject) {
       var nextPromise = new Promise(function (resolve, reject) {
-        this.resolve = reject;
+        this.resolve = resolve;
         this.reject = reject;
       });
       this._handlers.push({
@@ -1119,6 +1345,10 @@ var LegacyPromise = PDFJS.LegacyPromise = (function LegacyPromiseClosure() {
       });
       HandlerManager.scheduleHandlers(this);
       return nextPromise;
+    },
+
+    catch: function Promise_catch(onReject) {
+      return this.then(undefined, onReject);
     }
   };
 
@@ -1166,17 +1396,18 @@ var StatTimer = (function StatTimerClosure() {
       delete this.started[name];
     },
     toString: function StatTimer_toString() {
+      var i, ii;
       var times = this.times;
       var out = '';
       // Find the longest name for padding purposes.
       var longest = 0;
-      for (var i = 0, ii = times.length; i < ii; ++i) {
+      for (i = 0, ii = times.length; i < ii; ++i) {
         var name = times[i]['name'];
         if (name.length > longest) {
           longest = name.length;
         }
       }
-      for (var i = 0, ii = times.length; i < ii; ++i) {
+      for (i = 0, ii = times.length; i < ii; ++i) {
         var span = times[i];
         var duration = span.end - span.start;
         out += rpad(span['name'], ' ', longest) + ' ' + duration + 'ms\n';
@@ -1228,7 +1459,7 @@ function MessageHandler(name, comObj) {
   this.comObj = comObj;
   this.callbackIndex = 1;
   this.postMessageTransfers = true;
-  var callbacks = this.callbacks = {};
+  var callbacksCapabilities = this.callbacksCapabilities = {};
   var ah = this.actionHandler = {};
 
   ah['console_log'] = [function ahConsoleLog(data) {
@@ -1245,35 +1476,40 @@ function MessageHandler(name, comObj) {
     var data = event.data;
     if (data.isReply) {
       var callbackId = data.callbackId;
-      if (data.callbackId in callbacks) {
-        var callback = callbacks[callbackId];
-        delete callbacks[callbackId];
-        callback(data.data);
+      if (data.callbackId in callbacksCapabilities) {
+        var callback = callbacksCapabilities[callbackId];
+        delete callbacksCapabilities[callbackId];
+        if ('error' in data) {
+          callback.reject(data.error);
+        } else {
+          callback.resolve(data.data);
+        }
       } else {
         error('Cannot resolve callback ' + callbackId);
       }
     } else if (data.action in ah) {
       var action = ah[data.action];
       if (data.callbackId) {
-        var deferred = {};
-        var promise = new Promise(function (resolve, reject) {
-          deferred.resolve = resolve;
-          deferred.reject = reject;
-        });
-        deferred.promise = promise;
-        promise.then(function(resolvedData) {
+        Promise.resolve().then(function () {
+          return action[0].call(action[1], data.data);
+        }).then(function (result) {
           comObj.postMessage({
             isReply: true,
             callbackId: data.callbackId,
-            data: resolvedData
+            data: result
+          });
+        }, function (reason) {
+          comObj.postMessage({
+            isReply: true,
+            callbackId: data.callbackId,
+            error: reason
           });
         });
-        action[0].call(action[1], data.data, deferred);
       } else {
         action[0].call(action[1], data.data);
       }
     } else {
-      error('Unkown action from worker: ' + data.action);
+      error('Unknown action from worker: ' + data.action);
     }
   };
 }
@@ -1290,19 +1526,47 @@ MessageHandler.prototype = {
    * Sends a message to the comObj to invoke the action with the supplied data.
    * @param {String} actionName Action to call.
    * @param {JSON} data JSON data to send.
-   * @param {function} [callback] Optional callback that will handle a reply.
    * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
    */
-  send: function messageHandlerSend(actionName, data, callback, transfers) {
+  send: function messageHandlerSend(actionName, data, transfers) {
     var message = {
       action: actionName,
       data: data
     };
-    if (callback) {
-      var callbackId = this.callbackIndex++;
-      this.callbacks[callbackId] = callback;
-      message.callbackId = callbackId;
+    this.postMessage(message, transfers);
+  },
+  /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * Expects that other side will callback with the response.
+   * @param {String} actionName Action to call.
+   * @param {JSON} data JSON data to send.
+   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
+   * @returns {Promise} Promise to be resolved with response data.
+   */
+  sendWithPromise:
+    function messageHandlerSendWithPromise(actionName, data, transfers) {
+    var callbackId = this.callbackIndex++;
+    var message = {
+      action: actionName,
+      data: data,
+      callbackId: callbackId
+    };
+    var capability = createPromiseCapability();
+    this.callbacksCapabilities[callbackId] = capability;
+    try {
+      this.postMessage(message, transfers);
+    } catch (e) {
+      capability.reject(e);
     }
+    return capability.promise;
+  },
+  /**
+   * Sends raw message to the comObj.
+   * @private
+   * @param message {Object} Raw message.
+   * @param transfers List of transfers/ArrayBuffers, or undefined.
+   */
+  postMessage: function (message, transfers) {
     if (transfers && this.postMessageTransfers) {
       this.comObj.postMessage(message, transfers);
     } else {
@@ -1315,6 +1579,10 @@ function loadJpegStream(id, imageUrl, objs) {
   var img = new Image();
   img.onload = (function loadJpegStream_onloadClosure() {
     objs.resolve(id, img);
+  });
+  img.onerror = (function loadJpegStream_onerrorClosure() {
+    objs.resolve(id, null);
+    warn('Error during JPEG image loading');
   });
   img.src = imageUrl;
 }

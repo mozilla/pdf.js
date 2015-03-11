@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, getPdf, combineUrl, StatTimer, SpecialPowers, Promise */
+/* globals PDFJS, combineUrl, StatTimer, SpecialPowers, Promise */
 
 'use strict';
 
@@ -28,11 +28,15 @@
 //   "firefox-bin: Fatal IO error 12 (Cannot allocate memory) on X server :1."
 // PDFJS.disableWorker = true;
 PDFJS.enableStats = true;
-PDFJS.cMapUrl = '../external/cmaps/';
+PDFJS.cMapUrl = '../external/bcmaps/';
+PDFJS.cMapPacked = true;
 
 var appPath, masterMode, browser, canvas, dummyCanvas, currentTaskIdx,
     manifest, stdout;
 var inFlightRequests = 0;
+
+// Chrome for Windows locks during testing on low end machines
+var letItCooldown = /Windows.*?Chrom/i.test(navigator.userAgent);
 
 function queryParams() {
   var qs = window.location.search.substring(1);
@@ -66,7 +70,7 @@ window.load = function load() {
   var r = new XMLHttpRequest();
   r.open('GET', manifestFile, false);
   r.onreadystatechange = function loadOnreadystatechange(e) {
-    if (r.readyState == 4) {
+    if (r.readyState === 4) {
       log('done\n');
       manifest = JSON.parse(r.responseText);
       currentTaskIdx = 0;
@@ -83,7 +87,7 @@ window.load = function load() {
   }, delay);
 };
 
-function cleanup() {
+function cleanup(callback) {
   // Clear out all the stylesheets since a new one is created for each font.
   while (document.styleSheets.length > 0) {
     var styleSheet = document.styleSheets[0];
@@ -106,6 +110,11 @@ function cleanup() {
       delete manifest[i].pdfDoc;
     }
   }
+  if (letItCooldown) {
+    setTimeout(callback, 500);
+  } else {
+    callback();
+  }
 }
 
 function exceptionToString(e) {
@@ -119,9 +128,11 @@ function exceptionToString(e) {
 }
 
 function nextTask() {
-  cleanup();
+  cleanup(continueNextTask);
+}
 
-  if (currentTaskIdx == manifest.length) {
+function continueNextTask() {
+  if (currentTaskIdx === manifest.length) {
     done();
     return;
   }
@@ -192,38 +203,39 @@ function SimpleTextLayerBuilder(ctx, viewport) {
   this.textCounter = 0;
 }
 SimpleTextLayerBuilder.prototype = {
-  beginLayout: function SimpleTextLayerBuilder_BeginLayout() {
-    this.ctx.save();
-  },
-  endLayout: function SimpleTextLayerBuilder_EndLayout() {
-    this.ctx.restore();
-  },
-  appendText: function SimpleTextLayerBuilder_AppendText(geom) {
+  appendText: function SimpleTextLayerBuilder_AppendText(geom, styles) {
+    var style = styles[geom.fontName];
     var ctx = this.ctx, viewport = this.viewport;
-    // vScale and hScale already contain the scaling to pixel units
-    var fontHeight = geom.fontSize * Math.abs(geom.vScale);
-    var fontAscent = (geom.ascent ? geom.ascent * fontHeight :
-      (geom.descent ? (1 + geom.descent) * fontHeight : fontHeight));
+    var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
+    var angle = Math.atan2(tx[1], tx[0]);
+    var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+    var fontAscent = (style.ascent ? style.ascent * fontHeight :
+      (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
     ctx.save();
     ctx.beginPath();
     ctx.strokeStyle = 'red';
     ctx.fillStyle = 'yellow';
-    ctx.translate(geom.x + (fontAscent * Math.sin(geom.angle)),
-                  geom.y - (fontAscent * Math.cos(geom.angle)));
-    ctx.rotate(geom.angle);
-    ctx.rect(0, 0, geom.canvasWidth * Math.abs(geom.hScale), fontHeight);
+    ctx.translate(tx[4] + (fontAscent * Math.sin(angle)),
+                  tx[5] - (fontAscent * Math.cos(angle)));
+    ctx.rotate(angle);
+    ctx.rect(0, 0, geom.width * viewport.scale, geom.height * viewport.scale);
     ctx.stroke();
     ctx.fill();
     ctx.restore();
-    var textContent = this.textContent[this.textCounter].str;
-    ctx.font = fontHeight + 'px ' + geom.fontFamily;
+    ctx.font = fontHeight + 'px ' + style.fontFamily;
     ctx.fillStyle = 'black';
-    ctx.fillText(textContent, geom.x, geom.y);
+    ctx.fillText(geom.str, tx[4], tx[5]);
 
     this.textCounter++;
   },
   setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
-    this.textContent = textContent;
+    this.ctx.save();
+    var textItems = textContent.items;
+    for (var i = 0; i < textItems.length; i++) {
+      this.appendText(textItems[i], textContent.styles);
+    }
+
+    this.ctx.restore();
   }
 };
 
@@ -231,10 +243,11 @@ function nextPage(task, loadError) {
   var failure = loadError || '';
 
   if (!task.pdfDoc) {
-    sendTaskResult(canvasToDataURL(), task, failure);
-    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
-    ++currentTaskIdx;
-    nextTask();
+    sendTaskResult(canvasToDataURL(), task, failure, function () {
+      log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+      ++currentTaskIdx;
+      nextTask();
+    });
     return;
   }
 
@@ -261,8 +274,6 @@ function nextPage(task, loadError) {
     return;
   }
 
-  var page = null;
-
   if (!failure) {
     try {
       log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
@@ -280,7 +291,7 @@ function nextPage(task, loadError) {
         var initPromise = new Promise(function (resolve) {
           resolveInitPromise = resolve;
         });
-        if (task.type == 'text') {
+        if (task.type === 'text') {
           // using dummy canvas for pdf context drawing operations
           if (!dummyCanvas) {
             dummyCanvas = document.createElement('canvas');
@@ -300,7 +311,6 @@ function nextPage(task, loadError) {
         }
         var renderContext = {
           canvasContext: drawContext,
-          textLayer: textLayerBuilder,
           viewport: viewport
         };
         var completeRender = (function(error) {
@@ -331,23 +341,24 @@ function nextPage(task, loadError) {
 function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
-  sendTaskResult(canvasToDataURL(), task, failure);
-  log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+  sendTaskResult(canvasToDataURL(), task, failure, function () {
+    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
-  // Set up the next request
-  var backoff = (inFlightRequests > 0) ? inFlightRequests * 10 : 0;
-  setTimeout(
-    function snapshotCurrentPageSetTimeout() {
-      ++task.pageNum;
-      nextPage(task);
-    },
-    backoff
-  );
+    ++task.pageNum;
+    nextPage(task);
+  });
 }
 
-function sendQuitRequest() {
+function sendQuitRequest(cb) {
   var r = new XMLHttpRequest();
   r.open('POST', '/tellMeToQuit?path=' + escape(appPath), false);
+  r.onreadystatechange = function sendQuitRequestOnreadystatechange(e) {
+    if (r.readyState === 4) {
+      if (cb) {
+        cb();
+      }
+    }
+  };
   r.send(null);
 }
 
@@ -355,12 +366,13 @@ function quitApp() {
   log('Done !');
   document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>' +
                              document.body.innerHTML;
-  if (window.SpecialPowers) {
-    SpecialPowers.quitApplication();
-  } else {
-    sendQuitRequest();
-    window.close();
-  }
+  sendQuitRequest(function () {
+    if (window.SpecialPowers) {
+      SpecialPowers.quit();
+    } else {
+      window.close();
+    }
+  });
 }
 
 function done() {
@@ -372,40 +384,44 @@ function done() {
   }
 }
 
-function sendTaskResult(snapshot, task, failure, result) {
-  // Optional result argument is for retrying XHR requests - see below
-  if (!result) {
-    result = JSON.stringify({
-      browser: browser,
-      id: task.id,
-      numPages: task.pdfDoc ?
-               (task.lastPage || task.pdfDoc.numPages) : 0,
-      lastPageNum: getLastPageNum(task),
-      failure: failure,
-      file: task.file,
-      round: task.round,
-      page: task.pageNum,
-      snapshot: snapshot,
-      stats: task.stats.times
-    });
-  }
+function sendTaskResult(snapshot, task, failure, callback) {
+  var result = JSON.stringify({
+    browser: browser,
+    id: task.id,
+    numPages: task.pdfDoc ?
+             (task.lastPage || task.pdfDoc.numPages) : 0,
+    lastPageNum: getLastPageNum(task),
+    failure: failure,
+    file: task.file,
+    round: task.round,
+    page: task.pageNum,
+    snapshot: snapshot,
+    stats: task.stats.times
+  });
 
-  send('/submit_task_results', result);
+  send('/submit_task_results', result, callback);
 }
 
-function send(url, message) {
+function send(url, message, callback) {
   var r = new XMLHttpRequest();
   // (The POST URI is ignored atm.)
   r.open('POST', url, true);
   r.setRequestHeader('Content-Type', 'application/json');
   r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
-    if (r.readyState == 4) {
+    if (r.readyState === 4) {
       inFlightRequests--;
       // Retry until successful
       if (r.status !== 200) {
         setTimeout(function() {
           send(url, message);
         });
+      }
+      if (callback) {
+        if (letItCooldown) {
+          setTimeout(callback, 100);
+        } else {
+          callback();
+        }
       }
     }
   };

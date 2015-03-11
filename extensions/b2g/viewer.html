@@ -23,21 +23,25 @@ limitations under the License.
 
     <link rel="stylesheet" href="viewer.css"/>
     <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
-    <link rel="stylesheet" href="/shared/style/headers.css" type="text/css" />
-    <script type="text/javascript" src="l10n.js"></script>
-    <script type="text/javascript" src="../build/pdf.js"></script>
-    <script type="text/javascript" src="/shared/js/async_storage.js"></script>
+    <script src="l10n.js"></script>
+    <script src="../build/pdf.js"></script>
+    <script src="/shared/js/async_storage.js"></script>
 
-    <script type="text/javascript" src="viewer.js"></script>
+    <script src="viewer.js"></script>
+
+    <!-- Web Components -->
+    <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-theme/style.css" />
+    <!-- <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-icons/style.css" /> -->
+    <script type="text/javascript" src="/shared/elements/config.js"></script>
+    <script type="text/javascript" src="/shared/elements/gaia-header/dist/script.js"></script>
   </head>
 
 
   <body>
-    <section role="region" id="activityHeader" class="skin-organic">
-      <header>
-        <button id="activityClose"><span class="icon icon-close"></span></button>
+    <section role="region" id="activityHeader" class="skin-organic theme-settings">
+      <gaia-header id="header" action="close">
         <h1 id="activityTitle"></h1>
-      </header>
+      </gaia-header>
 
       <footer id="open-toolbar">
         <button class="toolbarButton pageUp" title="Previous Page" id="previous" data-l10n-id="previous"></button>
@@ -89,10 +93,12 @@ limitations under the License.
         <div id="toolbarSidebar">
           <button id="viewThumbnail"></button>
           <button id="viewOutline"></button>
+          <button id="viewAttachments"></button>
         </div>
         <div id="sidebarContent">
           <div id="thumbnailView"></div>
           <div id="outlineView"></div>
+          <div id="attachmentsView"></div>
         </div>
       </div>  <!-- sidebarContainer -->
 
@@ -200,25 +206,69 @@ limitations under the License.
       </div> <!-- mainContainer -->
 
       <div id="overlayContainer" class="hidden">
-        <div id="promptContainer">
-          <div id="passwordContainer" class="prompt doorHanger">
+        <div id="passwordOverlay" class="container hidden">
+          <div class="dialog">
             <div class="row">
               <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
             </div>
             <div class="row">
               <input type="password" id="password" class="toolbarField" />
             </div>
-            <div class="row">
-              <button id="passwordCancel" class="promptButton"><span data-l10n-id="password_cancel">Cancel</span></button>
-              <button id="passwordSubmit" class="promptButton"><span data-l10n-id="password_ok">OK</span></button>
+            <div class="buttonRow">
+              <button id="passwordCancel" class="overlayButton"><span data-l10n-id="password_cancel">Cancel</span></button>
+              <button id="passwordSubmit" class="overlayButton"><span data-l10n-id="password_ok">OK</span></button>
             </div>
           </div>
         </div>
-      </div>
+        <div id="documentPropertiesOverlay" class="container hidden">
+          <div class="dialog">
+            <div class="row">
+              <span data-l10n-id="document_properties_file_name">File name:</span> <p id="fileNameField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_file_size">File size:</span> <p id="fileSizeField">-</p>
+            </div>
+            <div class="separator"></div>
+            <div class="row">
+              <span data-l10n-id="document_properties_title">Title:</span> <p id="titleField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_author">Author:</span> <p id="authorField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_subject">Subject:</span> <p id="subjectField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_keywords">Keywords:</span> <p id="keywordsField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_creation_date">Creation Date:</span> <p id="creationDateField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_modification_date">Modification Date:</span> <p id="modificationDateField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_creator">Creator:</span> <p id="creatorField">-</p>
+            </div>
+            <div class="separator"></div>
+            <div class="row">
+              <span data-l10n-id="document_properties_producer">PDF Producer:</span> <p id="producerField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_version">PDF Version:</span> <p id="versionField">-</p>
+            </div>
+            <div class="row">
+              <span data-l10n-id="document_properties_page_count">Page Count:</span> <p id="pageCountField">-</p>
+            </div>
+            <div class="buttonRow">
+              <button id="documentPropertiesClose" class="overlayButton"><span data-l10n-id="document_properties_close">Close</span></button>
+            </div>
+          </div>
+        </div>
+      </div>  <!-- overlayContainer -->
 
       <div id="printContainer"></div>
     </div>
     <!-- END STUBS -->
   </body>
 </html>
-

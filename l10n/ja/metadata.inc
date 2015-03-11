@@ -5,4 +5,3 @@
         <em:description>HTML5を使用して、Firefoxで直接PDFファイルを表示します。</em:description>
       </Description>
     </em:localized>
-

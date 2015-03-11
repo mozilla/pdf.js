@@ -14,15 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFView, mozL10n, getPDFFileNameFromURL */
+/* globals Promise, mozL10n, getPDFFileNameFromURL, OverlayManager */
 
 'use strict';
 
 var DocumentProperties = {
-  overlayContainer: null,
-  fileName: '',
-  fileSize: '',
-  visible: false,
+  overlayName: null,
+  rawFileSize: 0,
 
   // Document property fields (in the viewer).
   fileNameField: null,
@@ -37,9 +35,11 @@ var DocumentProperties = {
   producerField: null,
   versionField: null,
   pageCountField: null,
+  url: null,
+  pdfDocument: null,
 
   initialize: function documentPropertiesInitialize(options) {
-    this.overlayContainer = options.overlayContainer;
+    this.overlayName = options.overlayName;
 
     // Set the document property fields.
     this.fileNameField = options.fileNameField;
@@ -57,96 +57,102 @@ var DocumentProperties = {
 
     // Bind the event listener for the Close button.
     if (options.closeButton) {
-      options.closeButton.addEventListener('click', this.hide.bind(this));
+      options.closeButton.addEventListener('click', this.close.bind(this));
     }
 
-    // Bind the event listener for the Esc key (to close the dialog).
-    window.addEventListener('keydown',
-      function (e) {
-        if (e.keyCode === 27) { // Esc key
-          this.hide();
-        }
-      }.bind(this));
+    this.dataAvailablePromise = new Promise(function (resolve) {
+      this.resolveDataAvailable = resolve;
+    }.bind(this));
+
+    OverlayManager.register(this.overlayName, this.close.bind(this));
   },
 
   getProperties: function documentPropertiesGetProperties() {
-    var self = this;
+    if (!OverlayManager.active) {
+      // If the dialog was closed before dataAvailablePromise was resolved,
+      // don't bother updating the properties.
+      return;
+    }
+    // Get the file size (if it hasn't already been set).
+    this.pdfDocument.getDownloadInfo().then(function(data) {
+      if (data.length === this.rawFileSize) {
+        return;
+      }
+      this.setFileSize(data.length);
+      this.updateUI(this.fileSizeField, this.parseFileSize());
+    }.bind(this));
 
-    // Get the file name.
-    this.fileName = getPDFFileNameFromURL(PDFView.url);
-
-    // Get the file size.
-    PDFView.pdfDocument.getDownloadInfo().then(function(data) {
-      self.setFileSize(data.length);
-    });
-
-    // Get the other document properties.
-    PDFView.pdfDocument.getMetadata().then(function(data) {
+    // Get the document properties.
+    this.pdfDocument.getMetadata().then(function(data) {
       var fields = [
-        { field: self.fileNameField, content: self.fileName },
-        { field: self.fileSizeField, content: self.fileSize },
-        { field: self.titleField, content: data.info.Title },
-        { field: self.authorField, content: data.info.Author },
-        { field: self.subjectField, content: data.info.Subject },
-        { field: self.keywordsField, content: data.info.Keywords },
-        { field: self.creationDateField,
-          content: self.parseDate(data.info.CreationDate) },
-        { field: self.modificationDateField,
-          content: self.parseDate(data.info.ModDate) },
-        { field: self.creatorField, content: data.info.Creator },
-        { field: self.producerField, content: data.info.Producer },
-        { field: self.versionField, content: data.info.PDFFormatVersion },
-        { field: self.pageCountField, content: PDFView.pdfDocument.numPages }
+        { field: this.fileNameField,
+          content: getPDFFileNameFromURL(this.url) },
+        { field: this.fileSizeField, content: this.parseFileSize() },
+        { field: this.titleField, content: data.info.Title },
+        { field: this.authorField, content: data.info.Author },
+        { field: this.subjectField, content: data.info.Subject },
+        { field: this.keywordsField, content: data.info.Keywords },
+        { field: this.creationDateField,
+          content: this.parseDate(data.info.CreationDate) },
+        { field: this.modificationDateField,
+          content: this.parseDate(data.info.ModDate) },
+        { field: this.creatorField, content: data.info.Creator },
+        { field: this.producerField, content: data.info.Producer },
+        { field: this.versionField, content: data.info.PDFFormatVersion },
+        { field: this.pageCountField, content: this.pdfDocument.numPages }
       ];
 
       // Show the properties in the dialog.
       for (var item in fields) {
         var element = fields[item];
-        if (element.field && element.content !== undefined &&
-            element.content !== '') {
-          element.field.textContent = element.content;
-        }
+        this.updateUI(element.field, element.content);
       }
-    });
+    }.bind(this));
+  },
+
+  updateUI: function documentPropertiesUpdateUI(field, content) {
+    if (field && content !== undefined && content !== '') {
+      field.textContent = content;
+    }
   },
 
   setFileSize: function documentPropertiesSetFileSize(fileSize) {
-    var kb = fileSize / 1024;
-    if (kb < 1024) {
-      this.fileSize = mozL10n.get('document_properties_kb', {
+    if (fileSize > 0) {
+      this.rawFileSize = fileSize;
+    }
+  },
+
+  parseFileSize: function documentPropertiesParseFileSize() {
+    var fileSize = this.rawFileSize, kb = fileSize / 1024;
+    if (!kb) {
+      return;
+    } else if (kb < 1024) {
+      return mozL10n.get('document_properties_kb', {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
         size_b: fileSize.toLocaleString()
       }, '{{size_kb}} KB ({{size_b}} bytes)');
     } else {
-      this.fileSize = mozL10n.get('document_properties_mb', {
+      return mozL10n.get('document_properties_mb', {
         size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
         size_b: fileSize.toLocaleString()
       }, '{{size_mb}} MB ({{size_b}} bytes)');
     }
   },
 
-  show: function documentPropertiesShow() {
-    if (this.visible) {
-      return;
-    }
-    this.visible = true;
-    this.overlayContainer.classList.remove('hidden');
-    this.overlayContainer.lastElementChild.classList.remove('hidden');
-    this.getProperties();
+  open: function documentPropertiesOpen() {
+    Promise.all([OverlayManager.open(this.overlayName),
+                 this.dataAvailablePromise]).then(function () {
+      this.getProperties();
+    }.bind(this));
   },
 
-  hide: function documentPropertiesClose() {
-    if (!this.visible) {
-      return;
-    }
-    this.visible = false;
-    this.overlayContainer.classList.add('hidden');
-    this.overlayContainer.lastElementChild.classList.add('hidden');
+  close: function documentPropertiesClose() {
+    OverlayManager.close(this.overlayName);
   },
 
   parseDate: function documentPropertiesParseDate(inputDate) {
     // This is implemented according to the PDF specification (see
-    // http://www.gnupdf.org/Date for an overview), but note that 
+    // http://www.gnupdf.org/Date for an overview), but note that
     // Adobe Reader doesn't handle changing the date to universal time
     // and doesn't use the user's time zone (they're effectively ignoring
     // the HH' and mm' parts of the date string).
@@ -175,12 +181,12 @@ var DocumentProperties = {
 
     // As per spec, utRel = 'Z' means equal to universal time.
     // The other cases ('-' and '+') have to be handled here.
-    if (utRel == '-') {
+    if (utRel === '-') {
       hours += offsetHours;
       minutes += offsetMinutes;
-    } else if (utRel == '+') {
+    } else if (utRel === '+') {
       hours -= offsetHours;
-      minutes += offsetMinutes;
+      minutes -= offsetMinutes;
     }
 
     // Return the new date format from the user's locale.

@@ -5,4 +5,3 @@
         <em:description>Показывает файлы PDF непосредственно в Firefox используя HTML5.</em:description>
       </Description>
     </em:localized>
-

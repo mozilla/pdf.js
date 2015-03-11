@@ -5,4 +5,3 @@
         <em:description>PDF bylos vaizduojamos tiesiogiai, naudojant HTML5 Firefox naršyklėje.</em:description>
       </Description>
     </em:localized>
-

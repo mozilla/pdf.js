@@ -1,13 +1,15 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor, runs */
+/* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
+           isArray, MissingPDFException */
 
 'use strict';
 
 describe('api', function() {
   // TODO run with worker enabled
   var basicApiUrl = combineUrl(window.location.href, '../pdfs/basicapi.pdf');
-  function waitsForPromise(promise, successCallback) {
+  var basicApiFileLength = 105779; // bytes
+  function waitsForPromiseResolved(promise, successCallback) {
     var data;
     promise.then(function(val) {
       data = val;
@@ -21,25 +23,77 @@ describe('api', function() {
       return data !== undefined;
     }, 20000);
   }
+  function waitsForPromiseRejected(promise, failureCallback) {
+    var data;
+    promise.then(function(val) {
+      // Shouldn't get here.
+      expect(false).toEqual(true);
+    },
+    function(error) {
+      data = error;
+      failureCallback(data);
+    });
+    waitsFor(function() {
+      return data !== undefined;
+    }, 20000);
+  }
   describe('PDFJS', function() {
     describe('getDocument', function() {
       it('creates pdf doc from URL', function() {
         var promise = PDFJS.getDocument(basicApiUrl);
-        waitsForPromise(promise, function(data) {
+        waitsForPromiseResolved(promise, function(data) {
           expect(true).toEqual(true);
         });
       });
-      /*
       it('creates pdf doc from typed array', function() {
-        // TODO
+        var nonBinaryRequest = PDFJS.disableWorker;
+        var request = new XMLHttpRequest();
+        request.open('GET', basicApiUrl, false);
+        if (!nonBinaryRequest) {
+          try {
+            request.responseType = 'arraybuffer';
+            nonBinaryRequest = request.responseType !== 'arraybuffer';
+          } catch (e) {
+            nonBinaryRequest = true;
+          }
+        }
+        if (nonBinaryRequest && request.overrideMimeType) {
+          request.overrideMimeType('text/plain; charset=x-user-defined');
+        }
+        request.send(null);
+
+        var typedArrayPdf;
+        if (nonBinaryRequest) {
+          var data = Array.prototype.map.call(request.responseText,
+              function (ch) {
+            return ch.charCodeAt(0) & 0xFF;
+          });
+          typedArrayPdf = new Uint8Array(data);
+        } else {
+          typedArrayPdf = new Uint8Array(request.response);
+        }
+        // Sanity check to make sure that we fetched the entire PDF file.
+        expect(typedArrayPdf.length).toEqual(basicApiFileLength);
+
+        var promise = PDFJS.getDocument(typedArrayPdf);
+        waitsForPromiseResolved(promise, function(data) {
+          expect(true).toEqual(true);
+        });
       });
-      */
+      it('creates pdf doc from non-existent URL', function() {
+        var nonExistentUrl = combineUrl(window.location.href,
+                                        '../pdfs/non-existent.pdf');
+        var promise = PDFJS.getDocument(nonExistentUrl);
+        waitsForPromiseRejected(promise, function(error) {
+          expect(error instanceof MissingPDFException).toEqual(true);
+        });
+      });
     });
   });
   describe('PDFDocument', function() {
     var promise = PDFJS.getDocument(basicApiUrl);
     var doc;
-    waitsForPromise(promise, function(data) {
+    waitsForPromiseResolved(promise, function(data) {
       doc = data;
     });
     it('gets number of pages', function() {
@@ -50,19 +104,47 @@ describe('api', function() {
     });
     it('gets page', function() {
       var promise = doc.getPage(1);
-      waitsForPromise(promise, function(data) {
+      waitsForPromiseResolved(promise, function(data) {
         expect(true).toEqual(true);
+      });
+    });
+    it('gets page index', function() {
+      // reference to second page
+      var ref = {num: 17, gen: 0};
+      var promise = doc.getPageIndex(ref);
+      waitsForPromiseResolved(promise, function(pageIndex) {
+        expect(pageIndex).toEqual(1);
       });
     });
     it('gets destinations', function() {
       var promise = doc.getDestinations();
-      waitsForPromise(promise, function(data) {
-        // TODO this seems to be broken for the test pdf
+      waitsForPromiseResolved(promise, function(data) {
+        expect(data).toEqual({ chapter1: [{ gen: 0, num: 17 }, { name: 'XYZ' },
+                                          0, 841.89, null] });
+      });
+    });
+    it('gets a destination', function() {
+      var promise = doc.getDestination('chapter1');
+      waitsForPromiseResolved(promise, function(data) {
+        expect(data).toEqual([{ gen: 0, num: 17 }, { name: 'XYZ' },
+                              0, 841.89, null]);
+      });
+    });
+    it('gets attachments', function() {
+      var promise = doc.getAttachments();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data).toEqual(null);
+      });
+    });
+    it('gets javascript', function() {
+      var promise = doc.getJavaScript();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data).toEqual([]);
       });
     });
     it('gets outline', function() {
       var promise = doc.getOutline();
-      waitsForPromise(promise, function(outline) {
+      waitsForPromiseResolved(promise, function(outline) {
         // Two top level entries.
         expect(outline.length).toEqual(2);
         // Make sure some basic attributes are set.
@@ -73,9 +155,29 @@ describe('api', function() {
     });
     it('gets metadata', function() {
       var promise = doc.getMetadata();
-      waitsForPromise(promise, function(metadata) {
+      waitsForPromiseResolved(promise, function(metadata) {
         expect(metadata.info['Title']).toEqual('Basic API Test');
         expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
+      });
+    });
+    it('gets data', function() {
+      var promise = doc.getData();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data instanceof Uint8Array).toEqual(true);
+        expect(data.length).toEqual(basicApiFileLength);
+      });
+    });
+    it('gets filesize in bytes', function() {
+      var promise = doc.getDownloadInfo();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data.length).toEqual(basicApiFileLength);
+      });
+    });
+    it('gets stats', function() {
+      var promise = doc.getStats();
+      waitsForPromiseResolved(promise, function (stats) {
+        expect(isArray(stats.streamTypes)).toEqual(true);
+        expect(isArray(stats.fontTypes)).toEqual(true);
       });
     });
   });
@@ -90,17 +192,51 @@ describe('api', function() {
       });
     });
     var page;
-    waitsForPromise(promise, function(data) {
+    waitsForPromiseResolved(promise, function(data) {
       page = data;
     });
-
-    it('gets ref', function() {
-      expect(page.ref).toEqual({num: 15, gen: 0});
+    it('gets page number', function () {
+      expect(page.pageNumber).toEqual(1);
     });
-    // TODO rotate
-    // TODO viewport
-    // TODO annotaions
-    // TOOD text content
-    // TODO operation list
+    it('gets rotate', function () {
+      expect(page.rotate).toEqual(0);
+    });
+    it('gets ref', function () {
+      expect(page.ref).toEqual({ num: 15, gen: 0 });
+    });
+    it('gets view', function () {
+      expect(page.view).toEqual([0, 0, 595.28, 841.89]);
+    });
+    it('gets viewport', function () {
+      var viewport = page.getViewport(1.5, 90);
+      expect(viewport.viewBox).toEqual(page.view);
+      expect(viewport.scale).toEqual(1.5);
+      expect(viewport.rotation).toEqual(90);
+      expect(viewport.transform).toEqual([0, 1.5, 1.5, 0, 0, 0]);
+      expect(viewport.width).toEqual(1262.835);
+      expect(viewport.height).toEqual(892.92);
+    });
+    it('gets annotations', function () {
+      var promise = page.getAnnotations();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data.length).toEqual(4);
+      });
+    });
+    it('gets text content', function () {
+      var promise = page.getTextContent();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(!!data.items).toEqual(true);
+        expect(data.items.length).toEqual(7);
+        expect(!!data.styles).toEqual(true);
+      });
+    });
+    it('gets operator list', function() {
+      var promise = page.getOperatorList();
+      waitsForPromiseResolved(promise, function (oplist) {
+        expect(!!oplist.fnArray).toEqual(true);
+        expect(!!oplist.argsArray).toEqual(true);
+        expect(oplist.lastChunk).toEqual(true);
+      });
+    });
   });
 });

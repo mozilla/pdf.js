@@ -14,14 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals */
 
 'use strict';
 
-var EXPORTED_SYMBOLS = ['DEFAULT_PREFERENCES'];
-
+//#if CHROME
+////Note: Keep in sync with extensions/chromium/preferences_schema.json !
+//#endif
 var DEFAULT_PREFERENCES = {
   showPreviousViewOnLoad: true,
   defaultZoomValue: '',
-  ifAvailableShowOutlineOnLoad: false
+  sidebarViewOnLoad: 0,
+  enableHandToolOnLoad: false,
+  enableWebGL: false,
+  pdfBugEnabled: false,
+  disableRange: false,
+  disableStream: false,
+  disableAutoFetch: false,
+  disableFontFace: false,
+//#if B2G
+//disableTextLayer: true,
+//useOnlyCssZoom: true
+//#else
+  disableTextLayer: false,
+  useOnlyCssZoom: false
+//#endif
 };

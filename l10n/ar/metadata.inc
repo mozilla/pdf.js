@@ -5,4 +5,3 @@
         <em:description>يستخدم HTML5 لعرض ملفات PDF مباشره من خلال Firefox.</em:description>
       </Description>
     </em:localized>
-

@@ -19,9 +19,9 @@
 
 /* This class implements the QM Coder decoding as defined in
  *   JPEG 2000 Part I Final Committee Draft Version 1.0
- *   Annex C.3 Arithmetic decoding procedure 
+ *   Annex C.3 Arithmetic decoding procedure
  * available at http://www.jpeg.org/public/fcd15444-1.pdf
- * 
+ *
  * The arithmetic decoder is used in conjunction with context models to decode
  * JPEG2000 and JBIG2 streams.
  */
@@ -99,7 +99,7 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
     byteIn: function ArithmeticDecoder_byteIn() {
       var data = this.data;
       var bp = this.bp;
-      if (data[bp] == 0xFF) {
+      if (data[bp] === 0xFF) {
         var b1 = data[bp + 1];
         if (b1 > 0x8F) {
           this.clow += 0xFF00;

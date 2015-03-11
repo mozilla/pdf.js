@@ -56,39 +56,6 @@ limitations under the License.
     }
   }
 
-  /**
-   * @param {string} url URL of PDF Viewer.
-   * @return {string|undefined} The percent-encoded URL of the (PDF) file.
-   */
-  function parseViewerURL(url) {
-    if (url.lastIndexOf(VIEWER_URL, 0) !== 0) {
-      // Does not even start with the correct URL. Bye!
-      return;
-    }
-    url = url.match(/[&?]file=([^&#]+)/);
-    if (url) {
-      url = url[1];
-      return url;
-    }
-  }
-
-  /**
-   * @param {number} tabId ID of tab where the page action will be shown
-   * @param {string} url URL to be displayed in page action
-   */
-  function showPageAction(tabId, displayUrl) {
-    var url = parseExtensionURL(displayUrl) || parseViewerURL(displayUrl);
-    if (url) {
-      chrome.pageAction.setPopup({
-        tabId: tabId,
-        popup: 'pageActionPopup.html?file=' + url
-      });
-      chrome.pageAction.show(tabId);
-    } else {
-      console.log('Unable to get PDF url from ' + displayUrl);
-    }
-  }
-
   // TODO(rob): Use declarativeWebRequest once declared URL-encoding is
   //            supported, see http://crbug.com/273589
   //            (or rewrite the query string parser in viewer.js to get it to
@@ -99,6 +66,10 @@ limitations under the License.
     var url = parseExtensionURL(details.url);
     if (url) {
       url = VIEWER_URL + '?file=' + url;
+      var i = details.url.indexOf('#');
+      if (i > 0) {
+        url += details.url.slice(i);
+      }
       console.log('Redirecting ' + details.url + ' to ' + url);
       return { redirectUrl: url };
     }
@@ -109,12 +80,6 @@ limitations under the License.
       return CRX_BASE_URL + scheme + '*';
     })
   }, ['blocking']);
-
-  chrome.runtime.onMessage.addListener(function(message, sender) {
-    if (message === 'showPageAction' && sender.tab) {
-      showPageAction(sender.tab.id, sender.tab.url);
-    }
-  });
 
   // When session restore is used, viewer pages may be loaded before the
   // webRequest event listener is attached (= page not found).

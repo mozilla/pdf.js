@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "properties": {
+    "showPreviousViewOnLoad": {
+      "title": "Show previous position of PDF upon load",
+      "description": "Whether to view PDF documents in the last page and position upon opening the viewer.",
+      "type": "boolean",
+      "default": true
+    },
+    "defaultZoomValue": {
+      "title": "Default zoom level",
+      "description": "Default zoom level of the viewer. Accepted values: 'auto', 'page-actual', 'page-width', 'page-height', 'page-fit', or a zoom level in percents.",
+      "type": "string",
+      "pattern": "|auto|page-actual|page-width|page-height|page-fit|[0-9]+\\.?[0-9]*(,[0-9]+\\.?[0-9]*){0,2}",
+      "default": ""
+    },
+    "sidebarViewOnLoad": {
+      "title": "Sidebar state on load",
+      "description": "Controls the state of the sidebar upon load.\n 0 = do not show sidebar.\n 1 = show thumbnails in sidebar.\n 2 = show document outline in sidebar.\n 3 = Show attachments in sidebar.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": 0
+    },
+    "enableHandToolOnLoad": {
+      "title": "Activate Hand tool by default",
+      "description": "Whether to activate the hand tool by default.",
+      "type": "boolean",
+      "default": false
+    },
+    "enableWebGL": {
+      "title": "Enable WebGL",
+      "description": "Whether to enable WebGL.",
+      "type": "boolean",
+      "default": false
+    },
+    "pdfBugEnabled": {
+      "title": "Enable debugging tools",
+      "description": "Whether to enable debugging tools.",
+      "type": "boolean",
+      "default": false
+    },
+    "disableRange": {
+      "title": "Disable range requests",
+      "description": "Whether to disable range requests (not recommended).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableStream": {
+      "title": "Disable streaming for requests",
+      "description": "Whether to disable streaming for requests (not recommended).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableAutoFetch": {
+      "type": "boolean",
+      "default": false
+    },
+    "disableFontFace": {
+      "title": "Disable @font-face",
+      "description": "Whether to disable @font-face and fall back to canvas rendering (this is more resource-intensive).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableTextLayer": {
+      "title": "Disable text selection layer",
+      "description": "Whether to disable the text selection layer.",
+      "type": "boolean",
+      "default": false
+    },
+    "useOnlyCssZoom": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

@@ -1,20 +1,24 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/*jshint globalstrict: false */
+/* globals SpecialPowers */
+
+'use strict';
 
 var TestReporter = function(browser, appPath) {
-  'use strict';
-
-  function send(action, json) {
+  function send(action, json, cb) {
     var r = new XMLHttpRequest();
     // (The POST URI is ignored atm.)
     r.open('POST', action, true);
     r.setRequestHeader('Content-Type', 'application/json');
     r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
-      if (r.readyState == 4) {
+      if (r.readyState === 4) {
         // Retry until successful
         if (r.status !== 200) {
-          send(action, json);
+          send(action, json, cb);
+        } else {
+          if (cb) {
+            cb();
+          }
         }
       }
     };
@@ -38,7 +42,11 @@ var TestReporter = function(browser, appPath) {
   }
 
   function sendQuitRequest() {
-    send('/tellMeToQuit?path=' + escape(appPath), {});
+    send('/tellMeToQuit?path=' + escape(appPath), {}, function () {
+      if (window.SpecialPowers) {
+        SpecialPowers.quit();
+      }
+    });
   }
 
   this.now = function() {

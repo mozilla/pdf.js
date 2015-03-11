@@ -5,4 +5,3 @@
         <em:description>利用 HTML5 技術在 Firefox 中直接顯示 PDF 格式檔案。</em:description>
       </Description>
     </em:localized>
-

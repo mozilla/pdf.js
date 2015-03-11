@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assertWellFormed, calculateMD5, Catalog, error, info, isArray,
-           isArrayBuffer, isName, isStream, isString, LegacyPromise,
+/* globals assert, calculateMD5, Catalog, Dict, error, info, isArray,
+           isArrayBuffer, isName, isStream, isString, createPromiseCapability,
            Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
            MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
@@ -24,6 +24,8 @@
 'use strict';
 
 var Page = (function PageClosure() {
+
+  var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
     this.pdfManager = pdfManager;
@@ -42,51 +44,69 @@ var Page = (function PageClosure() {
     getPageProp: function Page_getPageProp(key) {
       return this.pageDict.get(key);
     },
-    inheritPageProp: function Page_inheritPageProp(key) {
+
+    getInheritedPageProp: function Page_inheritPageProp(key) {
       var dict = this.pageDict;
-      var obj = dict.get(key);
-      while (obj === undefined) {
+      var value = dict.get(key);
+      while (value === undefined) {
         dict = dict.get('Parent');
-        if (!dict)
+        if (!dict) {
           break;
-        obj = dict.get(key);
+        }
+        value = dict.get(key);
       }
-      return obj;
+      return value;
     },
+
     get content() {
       return this.getPageProp('Contents');
     },
+
     get resources() {
-      return shadow(this, 'resources', this.inheritPageProp('Resources'));
+      var value = this.getInheritedPageProp('Resources');
+      // For robustness: The spec states that a \Resources entry has to be
+      // present, but can be empty. Some document omit it still. In this case
+      // return an empty dictionary:
+      if (value === undefined) {
+        value = Dict.empty;
+      }
+      return shadow(this, 'resources', value);
     },
+
     get mediaBox() {
-      var obj = this.inheritPageProp('MediaBox');
+      var obj = this.getInheritedPageProp('MediaBox');
       // Reset invalid media box to letter size.
-      if (!isArray(obj) || obj.length !== 4)
-        obj = [0, 0, 612, 792];
+      if (!isArray(obj) || obj.length !== 4) {
+        obj = LETTER_SIZE_MEDIABOX;
+      }
       return shadow(this, 'mediaBox', obj);
     },
+
     get view() {
       var mediaBox = this.mediaBox;
-      var cropBox = this.inheritPageProp('CropBox');
-      if (!isArray(cropBox) || cropBox.length !== 4)
+      var cropBox = this.getInheritedPageProp('CropBox');
+      if (!isArray(cropBox) || cropBox.length !== 4) {
         return shadow(this, 'view', mediaBox);
+      }
 
       // From the spec, 6th ed., p.963:
       // "The crop, bleed, trim, and art boxes should not ordinarily
       // extend beyond the boundaries of the media box. If they do, they are
       // effectively reduced to their intersection with the media box."
       cropBox = Util.intersect(cropBox, mediaBox);
-      if (!cropBox)
+      if (!cropBox) {
         return shadow(this, 'view', mediaBox);
-
+      }
       return shadow(this, 'view', cropBox);
     },
+
     get annotationRefs() {
-      return shadow(this, 'annotationRefs', this.inheritPageProp('Annots'));
+      return shadow(this, 'annotationRefs',
+                    this.getInheritedPageProp('Annots'));
     },
+
     get rotate() {
-      var rotate = this.inheritPageProp('Rotate') || 0;
+      var rotate = this.getInheritedPageProp('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
       if (rotate % 90 !== 0) {
         rotate = 0;
@@ -99,6 +119,7 @@ var Page = (function PageClosure() {
       }
       return shadow(this, 'rotate', rotate);
     },
+
     getContentStream: function Page_getContentStream() {
       var content = this.content;
       var stream;
@@ -107,8 +128,9 @@ var Page = (function PageClosure() {
         var xref = this.xref;
         var i, n = content.length;
         var streams = [];
-        for (i = 0; i < n; ++i)
+        for (i = 0; i < n; ++i) {
           streams.push(xref.fetchIfRef(content[i]));
+        }
         stream = new StreamsSequenceStream(streams);
       } else if (isStream(content)) {
         stream = content;
@@ -118,31 +140,22 @@ var Page = (function PageClosure() {
       }
       return stream;
     },
-    loadResources: function(keys) {
+
+    loadResources: function Page_loadResources(keys) {
       if (!this.resourcesPromise) {
-        // TODO: add async inheritPageProp and remove this.
+        // TODO: add async getInheritedPageProp and remove this.
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
-      var promise = new LegacyPromise();
-      this.resourcesPromise.then(function resourceSuccess() {
+      return this.resourcesPromise.then(function resourceSuccess() {
         var objectLoader = new ObjectLoader(this.resources.map,
                                             keys,
                                             this.xref);
-        objectLoader.load().then(function objectLoaderSuccess() {
-          promise.resolve();
-        });
+        return objectLoader.load();
       }.bind(this));
-      return promise;
     },
+
     getOperatorList: function Page_getOperatorList(handler, intent) {
       var self = this;
-      var promise = new LegacyPromise();
-
-      function reject(e) {
-        promise.reject(e);
-      }
-
-      var pageListPromise = new LegacyPromise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
@@ -153,22 +166,20 @@ var Page = (function PageClosure() {
         'Pattern',
         'Shading',
         'XObject',
-        'Font',
+        'Font'
         // ProcSet
         // Properties
       ]);
 
-      var partialEvaluator = new PartialEvaluator(
-            pdfManager, this.xref, handler,
-            this.pageIndex, 'p' + this.pageIndex + '_',
-            this.idCounters, this.fontCache);
+      var partialEvaluator = new PartialEvaluator(pdfManager, this.xref,
+                                                  handler, this.pageIndex,
+                                                  'p' + this.pageIndex + '_',
+                                                  this.idCounters,
+                                                  this.fontCache);
 
-      var dataPromises = Promise.all(
-          [contentStreamPromise, resourcesPromise], reject);
-      dataPromises.then(function(data) {
+      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+      var pageListPromise = dataPromises.then(function(data) {
         var contentStream = data[0];
-
-
         var opList = new OperatorList(intent, handler, self.pageIndex);
 
         handler.send('StartRenderPage', {
@@ -176,31 +187,32 @@ var Page = (function PageClosure() {
           pageIndex: self.pageIndex,
           intent: intent
         });
-        partialEvaluator.getOperatorList(contentStream, self.resources, opList);
-        pageListPromise.resolve(opList);
+        return partialEvaluator.getOperatorList(contentStream, self.resources,
+          opList).then(function () {
+            return opList;
+          });
       });
 
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
-      Promise.all([pageListPromise, annotationsPromise]).then(function(datas) {
+      return Promise.all([pageListPromise, annotationsPromise]).then(
+          function(datas) {
         var pageOpList = datas[0];
         var annotations = datas[1];
 
         if (annotations.length === 0) {
           pageOpList.flush(true);
-          promise.resolve(pageOpList);
-          return;
+          return pageOpList;
         }
 
         var annotationsReadyPromise = Annotation.appendToOperatorList(
           annotations, pageOpList, pdfManager, partialEvaluator, intent);
-        annotationsReadyPromise.then(function () {
+        return annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
-          promise.resolve(pageOpList);
-        }, reject);
-      }, reject);
-
-      return promise;
+          return pageOpList;
+        });
+      });
     },
+
     extractTextContent: function Page_extractTextContent() {
       var handler = {
         on: function nullHandlerOn() {},
@@ -208,8 +220,6 @@ var Page = (function PageClosure() {
       };
 
       var self = this;
-
-      var textContentPromise = new LegacyPromise();
 
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
@@ -223,19 +233,17 @@ var Page = (function PageClosure() {
 
       var dataPromises = Promise.all([contentStreamPromise,
                                       resourcesPromise]);
-      dataPromises.then(function(data) {
+      return dataPromises.then(function(data) {
         var contentStream = data[0];
-        var partialEvaluator = new PartialEvaluator(
-              pdfManager, self.xref, handler,
-              self.pageIndex, 'p' + self.pageIndex + '_',
-              self.idCounters, self.fontCache);
+        var partialEvaluator = new PartialEvaluator(pdfManager, self.xref,
+                                                    handler, self.pageIndex,
+                                                    'p' + self.pageIndex + '_',
+                                                    self.idCounters,
+                                                    self.fontCache);
 
-        var bidiTexts = partialEvaluator.getTextContent(contentStream,
-                                                        self.resources);
-        textContentPromise.resolve(bidiTexts);
+        return partialEvaluator.getTextContent(contentStream,
+                                               self.resources);
       });
-
-      return textContentPromise;
     },
 
     getAnnotationsData: function Page_getAnnotationsData() {
@@ -249,7 +257,7 @@ var Page = (function PageClosure() {
 
     get annotations() {
       var annotations = [];
-      var annotationRefs = this.annotationRefs || [];
+      var annotationRefs = (this.annotationRefs || []);
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = Annotation.fromRef(this.xref, annotationRef);
@@ -272,17 +280,22 @@ var Page = (function PageClosure() {
  * `PDFDocument` objects on the main thread created.
  */
 var PDFDocument = (function PDFDocumentClosure() {
+  var FINGERPRINT_FIRST_BYTES = 1024;
+  var EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
+    '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
+
   function PDFDocument(pdfManager, arg, password) {
-    if (isStream(arg))
+    if (isStream(arg)) {
       init.call(this, pdfManager, arg, password);
-    else if (isArrayBuffer(arg))
+    } else if (isArrayBuffer(arg)) {
       init.call(this, pdfManager, new Stream(arg), password);
-    else
+    } else {
       error('PDFDocument: Unknown argument type');
+    }
   }
 
   function init(pdfManager, stream, password) {
-    assertWellFormed(stream.length > 0, 'stream must have data');
+    assert(stream.length > 0, 'stream must have data');
     this.pdfManager = pdfManager;
     this.stream = stream;
     var xref = new XRef(this.stream, password, pdfManager);
@@ -293,16 +306,18 @@ var PDFDocument = (function PDFDocumentClosure() {
     var pos = stream.pos;
     var end = stream.end;
     var strBuf = [];
-    if (pos + limit > end)
+    if (pos + limit > end) {
       limit = end - pos;
+    }
     for (var n = 0; n < limit; ++n) {
       strBuf.push(String.fromCharCode(stream.getByte()));
     }
     var str = strBuf.join('');
     stream.pos = pos;
     var index = backwards ? str.lastIndexOf(needle) : str.indexOf(needle);
-    if (index == -1)
+    if (index === -1) {
       return false; /* not found */
+    }
     stream.pos += index;
     return true; /* found */
   }
@@ -347,22 +362,15 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
 
     get linearization() {
-      var length = this.stream.length;
-      var linearization = false;
-      if (length) {
+      var linearization = null;
+      if (this.stream.length) {
         try {
-          linearization = new Linearization(this.stream);
-          if (linearization.length != length) {
-            linearization = false;
-          }
+          linearization = Linearization.create(this.stream);
         } catch (err) {
           if (err instanceof MissingDataException) {
             throw err;
           }
-
-          info('The linearization data is not available ' +
-               'or unreadable PDF data is found');
-          linearization = false;
+          info(err);
         }
       }
       // shadow the prototype getter with a data property
@@ -375,16 +383,18 @@ var PDFDocument = (function PDFDocumentClosure() {
       if (linearization) {
         // Find end of first obj.
         stream.reset();
-        if (find(stream, 'endobj', 1024))
+        if (find(stream, 'endobj', 1024)) {
           startXRef = stream.pos + 6;
+        }
       } else {
         // Find startxref by jumping backward from the end of the file.
         var step = 1024;
         var found = false, pos = stream.end;
         while (!found && pos > 0) {
           pos -= step - 'startxref'.length;
-          if (pos < 0)
+          if (pos < 0) {
             pos = 0;
+          }
           stream.pos = pos;
           found = find(stream, 'startxref', step, true);
         }
@@ -400,8 +410,9 @@ var PDFDocument = (function PDFDocumentClosure() {
             ch = stream.getByte();
           }
           startXRef = parseInt(str, 10);
-          if (isNaN(startXRef))
+          if (isNaN(startXRef)) {
             startXRef = 0;
+          }
         }
       }
       // shadow the prototype getter with a data property
@@ -410,8 +421,9 @@ var PDFDocument = (function PDFDocumentClosure() {
     get mainXRefEntriesOffset() {
       var mainXRefEntriesOffset = 0;
       var linearization = this.linearization;
-      if (linearization)
+      if (linearization) {
         mainXRefEntriesOffset = linearization.mainXRefEntriesOffset;
+      }
       // shadow the prototype getter with a data property
       return shadow(this, 'mainXRefEntriesOffset', mainXRefEntriesOffset);
     },
@@ -472,8 +484,8 @@ var PDFDocument = (function PDFDocumentClosure() {
             var value = infoDict.get(key);
             // Make sure the value conforms to the spec.
             if (validEntries[key](value)) {
-              docInfo[key] = typeof value !== 'string' ? value :
-                stringToPDFString(value);
+              docInfo[key] = (typeof value !== 'string' ?
+                              value : stringToPDFString(value));
             } else {
               info('Bad value in document info for "' + key + '"');
             }
@@ -483,16 +495,25 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'documentInfo', docInfo);
     },
     get fingerprint() {
-      var xref = this.xref, hash, fileID = '';
+      var xref = this.xref, idArray, hash, fileID = '';
 
       if (xref.trailer.has('ID')) {
-        hash = stringToBytes(xref.trailer.get('ID')[0]);
+        idArray = xref.trailer.get('ID');
+      }
+      if (idArray && isArray(idArray) && idArray[0] !== EMPTY_FINGERPRINT) {
+        hash = stringToBytes(idArray[0]);
       } else {
-        hash = calculateMD5(this.stream.bytes.subarray(0, 100), 0, 100);
+        if (this.stream.ensureRange) {
+          this.stream.ensureRange(0,
+            Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
+        }
+        hash = calculateMD5(this.stream.bytes.subarray(0,
+          FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
       }
 
       for (var i = 0, n = hash.length; i < n; i++) {
-        fileID += hash[i].toString(16);
+        var hex = hash[i].toString(16);
+        fileID += hex.length === 1 ? '0' + hex : hex;
       }
 
       return shadow(this, 'fingerprint', fileID);
@@ -509,4 +530,3 @@ var PDFDocument = (function PDFDocumentClosure() {
 
   return PDFDocument;
 })();
-

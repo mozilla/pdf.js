@@ -1,6 +1,6 @@
 # PDF.js
 
-PDF.js is Portable Document Format (PDF) viewer that is built with HTML5.
+PDF.js is a Portable Document Format (PDF) viewer that is built with HTML5.
 
 PDF.js is community-driven and supported by Mozilla Labs. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
@@ -13,8 +13,9 @@ get involved checkout:
 
 + [Workflow](https://github.com/mozilla/pdf.js/wiki/Contributing)
 + [Style Guide](https://github.com/mozilla/pdf.js/wiki/Style-Guide)
++ [FAQ](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)
 + [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?direction=desc&labels=5-good-beginner-bug&page=1&sort=created&state=open)
-+ [Priorities](https://github.com/mozilla/pdf.js/issues/milestones)
++ [Priorities](https://github.com/mozilla/pdf.js/milestones)
 + [Attend a Public Meeting](https://github.com/mozilla/pdf.js/wiki/Weekly-Public-Meetings)
 
 For further questions or guidance feel free to stop by #pdfjs on
@@ -30,11 +31,9 @@ irc.mozilla.org.
 
 #### Firefox
 
-PDF.js is built into version 19+ of Firefox, however two extensions are still
-available that are updated at a different rate:
+PDF.js is built into version 19+ of Firefox, however one extension is still available:
 
 + [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This version is updated every time new code is merged into the PDF.js codebase. This should be quite stable but still might break from time to time.
-+ [Stable Version](https://addons.mozilla.org/firefox/addon/pdfjs) - After version 24 of Firefox is released we no longer plan to support the stable extension. The stable version will then be considered whatever is built into Firefox.
 
 #### Chrome and Opera
 
@@ -88,8 +87,8 @@ should be minified for production.
 You can play with the PDF.js API directly from your browser through the live
 demos below:
 
-+ Hello world: http://jsbin.com/pdfjs-helloworld-v2/edit#html,live
-+ Simple reader with prev/next page controls: http://jsbin.com/pdfjs-prevnext-v2/edit#html,live
++ [Hello world](http://mozilla.github.io/pdf.js/examples/learning/helloworld.html)
++ [Simple reader with prev/next page controls](http://mozilla.github.io/pdf.js/examples/learning/prevnext.html)
 
 The repo contains a hello world example that you can run locally:
 
@@ -110,6 +109,10 @@ Even more learning resources can be found at:
 + https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
 
 ## Questions
+
+Check out our FAQs and get answers to common questions:
+
++ https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions
 
 Talk to us on IRC:
 

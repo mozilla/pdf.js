@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 /*jshint globalstrict: false */
+/* globals PDFJS */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {

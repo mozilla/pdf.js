@@ -148,4 +148,3 @@ describe('obj', function() {
     });
   });
 });
-

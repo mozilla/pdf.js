@@ -20,7 +20,6 @@
 
 var FontInspector = (function FontInspectorClosure() {
   var fonts;
-  var panelWidth = 300;
   var active = false;
   var fontAttribute = 'data-font-name';
   function removeSelection() {
@@ -54,7 +53,7 @@ var FontInspector = (function FontInspectorClosure() {
     var selects = document.getElementsByTagName('input');
     for (var i = 0; i < selects.length; ++i) {
       var select = selects[i];
-      if (select.dataset.fontName != fontName) {
+      if (select.dataset.fontName !== fontName) {
         continue;
       }
       select.checked = !select.checked;
@@ -78,6 +77,9 @@ var FontInspector = (function FontInspectorClosure() {
 
       fonts = document.createElement('div');
       panel.appendChild(fonts);
+    },
+    cleanup: function cleanup() {
+      fonts.textContent = '';
     },
     enabled: false,
     get active() {
@@ -110,13 +112,20 @@ var FontInspector = (function FontInspectorClosure() {
         return moreInfo;
       }
       var moreInfo = properties(fontObj, ['name', 'type']);
-      var m = /url\(['"]?([^\)"']+)/.exec(url);
       var fontName = fontObj.loadedName;
       var font = document.createElement('div');
       var name = document.createElement('span');
       name.textContent = fontName;
       var download = document.createElement('a');
-      download.href = m[1];
+      if (url) {
+        url = /url\(['"]?([^\)"']+)/.exec(url);
+        download.href = url[1];
+      } else if (fontObj.data) {
+        url = URL.createObjectURL(new Blob([fontObj.data], {
+          type: fontObj.mimeType
+        }));
+        download.href = url;
+      }
       download.textContent = 'Download';
       var logIt = document.createElement('a');
       logIt.href = '';
@@ -181,6 +190,11 @@ var StepperManager = (function StepperManagerClosure() {
         breakPoints = JSON.parse(sessionStorage.getItem('pdfjsBreakPoints'));
       }
     },
+    cleanup: function cleanup() {
+      stepperChooser.textContent = '';
+      stepperDiv.textContent = '';
+      steppers = [];
+    },
     enabled: false,
     active: false,
     // Stepper specific functions.
@@ -203,21 +217,23 @@ var StepperManager = (function StepperManagerClosure() {
       return stepper;
     },
     selectStepper: function selectStepper(pageIndex, selectPanel) {
+      var i;
+      pageIndex = pageIndex | 0;
       if (selectPanel) {
-        this.manager.selectPanel(1);
+        this.manager.selectPanel(this);
       }
-      for (var i = 0; i < steppers.length; ++i) {
+      for (i = 0; i < steppers.length; ++i) {
         var stepper = steppers[i];
-        if (stepper.pageIndex == pageIndex) {
+        if (stepper.pageIndex === pageIndex) {
           stepper.panel.removeAttribute('hidden');
         } else {
           stepper.panel.setAttribute('hidden', true);
         }
       }
       var options = stepperChooser.options;
-      for (var i = 0; i < options.length; ++i) {
+      for (i = 0; i < options.length; ++i) {
         var option = options[i];
-        option.selected = option.value == pageIndex;
+        option.selected = (option.value | 0) === pageIndex;
       }
     },
     saveBreakPoints: function saveBreakPoints(pageIndex, bps) {
@@ -238,26 +254,34 @@ var Stepper = (function StepperClosure() {
     return d;
   }
 
-  function glyphsToString(glyphs) {
-    var out = '';
-    for (var i = 0; i < glyphs.length; i++) {
-      if (glyphs[i] === null) {
-        out += ' ';
-      } else {
-        out += glyphs[i].fontChar;
-      }
-    }
-    return out;
-  }
-
   var opMap = null;
 
-  var glyphCommands = {
-    'showText': 0,
-    'showSpacedText': 0,
-    'nextLineShowText': 0,
-    'nextLineSetSpacingShowText': 2
-  };
+  function simplifyArgs(args) {
+    if (typeof args === 'string') {
+      var MAX_STRING_LENGTH = 75;
+      return args.length <= MAX_STRING_LENGTH ? args :
+        args.substr(0, MAX_STRING_LENGTH) + '...';
+    }
+    if (typeof args !== 'object' || args === null) {
+      return args;
+    }
+    if ('length' in args) { // array
+      var simpleArgs = [], i, ii;
+      var MAX_ITEMS = 10;
+      for (i = 0, ii = Math.min(MAX_ITEMS, args.length); i < ii; i++) {
+        simpleArgs.push(simplifyArgs(args[i]));
+      }
+      if (i < args.length) {
+        simpleArgs.push('...');
+      }
+      return simpleArgs;
+    }
+    var simpleObj = {};
+    for (var key in args) {
+      simpleObj[key] = simplifyArgs(args[key]);
+    }
+    return simpleObj;
+  }
 
   function Stepper(panel, pageIndex, initialBreakPoints) {
     this.panel = panel;
@@ -292,57 +316,78 @@ var Stepper = (function StepperClosure() {
     },
     updateOperatorList: function updateOperatorList(operatorList) {
       var self = this;
-      for (var i = this.operatorListIdx; i < operatorList.fnArray.length; i++) {
+
+      function cboxOnClick() {
+        var x = +this.dataset.idx;
+        if (this.checked) {
+          self.breakPoints.push(x);
+        } else {
+          self.breakPoints.splice(self.breakPoints.indexOf(x), 1);
+        }
+        StepperManager.saveBreakPoints(self.pageIndex, self.breakPoints);
+      }
+
+      var MAX_OPERATORS_COUNT = 15000;
+      if (this.operatorListIdx > MAX_OPERATORS_COUNT) {
+        return;
+      }
+
+      var chunk = document.createDocumentFragment();
+      var operatorsToDisplay = Math.min(MAX_OPERATORS_COUNT,
+                                        operatorList.fnArray.length);
+      for (var i = this.operatorListIdx; i < operatorsToDisplay; i++) {
         var line = c('tr');
         line.className = 'line';
         line.dataset.idx = i;
-        this.table.appendChild(line);
-        var checked = this.breakPoints.indexOf(i) != -1;
-        var args = operatorList.argsArray[i] ? operatorList.argsArray[i] : [];
+        chunk.appendChild(line);
+        var checked = this.breakPoints.indexOf(i) !== -1;
+        var args = operatorList.argsArray[i] || [];
 
         var breakCell = c('td');
         var cbox = c('input');
         cbox.type = 'checkbox';
         cbox.className = 'points';
         cbox.checked = checked;
-        cbox.onclick = (function(x) {
-          return function() {
-            if (this.checked) {
-              self.breakPoints.push(x);
-            } else {
-              self.breakPoints.splice(self.breakPoints.indexOf(x), 1);
-            }
-            StepperManager.saveBreakPoints(self.pageIndex, self.breakPoints);
-          };
-        })(i);
+        cbox.dataset.idx = i;
+        cbox.onclick = cboxOnClick;
 
         breakCell.appendChild(cbox);
         line.appendChild(breakCell);
         line.appendChild(c('td', i.toString()));
         var fn = opMap[operatorList.fnArray[i]];
         var decArgs = args;
-        if (fn in glyphCommands) {
-          var glyphIndex = glyphCommands[fn];
-          var glyphs = args[glyphIndex];
-          var decArgs = args.slice();
-          var newArg;
-          if (fn === 'showSpacedText') {
-            newArg = [];
-            for (var j = 0; j < glyphs.length; j++) {
-              if (typeof glyphs[j] === 'number') {
-                newArg.push(glyphs[j]);
-              } else {
-                newArg.push(glyphsToString(glyphs[j]));
+        if (fn === 'showText') {
+          var glyphs = args[0];
+          var newArgs = [];
+          var str = [];
+          for (var j = 0; j < glyphs.length; j++) {
+            var glyph = glyphs[j];
+            if (typeof glyph === 'object' && glyph !== null) {
+              str.push(glyph.fontChar);
+            } else {
+              if (str.length > 0) {
+                newArgs.push(str.join(''));
+                str = [];
               }
+              newArgs.push(glyph); // null or number
             }
-          } else {
-            newArg = glyphsToString(glyphs);
           }
-          decArgs[glyphIndex] = newArg;
+          if (str.length > 0) {
+            newArgs.push(str.join(''));
+          }
+          decArgs = [newArgs];
         }
         line.appendChild(c('td', fn));
-        line.appendChild(c('td', JSON.stringify(decArgs)));
+        line.appendChild(c('td', JSON.stringify(simplifyArgs(decArgs))));
       }
+      if (operatorsToDisplay < operatorList.fnArray.length) {
+        line = c('tr');
+        var lastCell = c('td', '...');
+        lastCell.colspan = 4;
+        chunk.appendChild(lastCell);
+      }
+      this.operatorListIdx = operatorList.fnArray.length;
+      this.table.appendChild(chunk);
     },
     getNextBreakPoint: function getNextBreakPoint() {
       this.breakPoints.sort(function(a, b) { return a - b; });
@@ -382,7 +427,7 @@ var Stepper = (function StepperClosure() {
       var allRows = this.panel.getElementsByClassName('line');
       for (var x = 0, xx = allRows.length; x < xx; ++x) {
         var row = allRows[x];
-        if (row.dataset.idx == idx) {
+        if ((row.dataset.idx | 0) === idx) {
           row.style.backgroundColor = 'rgb(251,250,207)';
           row.scrollIntoView();
         } else {
@@ -447,6 +492,10 @@ var Stats = (function Stats() {
       for (var i = 0, ii = stats.length; i < ii; ++i) {
         this.panel.appendChild(stats[i].div);
       }
+    },
+    cleanup: function () {
+      stats = [];
+      clear(this.panel);
     }
   };
 })();
@@ -539,14 +588,24 @@ var PDFBug = (function PDFBugClosure() {
       }
       this.selectPanel(0);
     },
+    cleanup: function cleanup() {
+      for (var i = 0, ii = this.tools.length; i < ii; i++) {
+        if (this.tools[i].enabled) {
+          this.tools[i].cleanup();
+        }
+      }
+    },
     selectPanel: function selectPanel(index) {
+      if (typeof index !== 'number') {
+        index = this.tools.indexOf(index);
+      }
       if (index === activePanel) {
         return;
       }
       activePanel = index;
       var tools = this.tools;
       for (var j = 0; j < tools.length; ++j) {
-        if (j == index) {
+        if (j === index) {
           buttons[j].setAttribute('class', 'active');
           tools[j].active = true;
           tools[j].panel.removeAttribute('hidden');

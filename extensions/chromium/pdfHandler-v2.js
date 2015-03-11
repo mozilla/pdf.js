@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome, URL, getViewerURL */
+/* globals chrome, URL, getViewerURL, Features */
 
 (function() {
   'use strict';
@@ -158,7 +158,8 @@ limitations under the License.
       var streamInfo = getStream(sender.tab.id, pdfUrl) || {};
       sendResponse({
         streamUrl: streamInfo.streamUrl,
-        contentLength: streamInfo.contentLength
+        contentLength: streamInfo.contentLength,
+        extensionSupportsFTP: Features.extensionSupportsFTP
       });
     }
   });
@@ -179,6 +180,16 @@ limitations under the License.
    *                       (added in Chrome 29, http://crbug.com/230346)
    */
   function handleStream(mimeType, pdfUrl, streamUrl, tabId, expectedSize) {
+    if (typeof mimeType === 'object') {
+      // API change: argument list -> object, see crbug.com/345882
+      // documentation: chrome/common/extensions/api/streams_private.idl
+      var streamInfo = mimeType;
+      mimeType = streamInfo.mimeType;
+      pdfUrl = streamInfo.originalUrl;
+      streamUrl = streamInfo.streamUrl;
+      tabId = streamInfo.tabId;
+      expectedSize = streamInfo.expectedContentSize;
+    }
     console.log('Intercepted ' + mimeType + ' in tab ' + tabId + ' with URL ' +
                 pdfUrl + '\nAvailable as: ' + streamUrl);
     streamSupportsTabId = typeof tabId === 'number';
