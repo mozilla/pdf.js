@@ -22,7 +22,7 @@
 /*
   Additional modifications for PDF.js project:
     - Disables language initialization on page loading;
-    - Removes console.warn and console.log and use console.log/warn directly.
+    - Removes consoleWarn and consoleLog and use console.log/warn directly.
     - Removes window._ assignment.
     - Remove compatibility code for OldIE.
 */
