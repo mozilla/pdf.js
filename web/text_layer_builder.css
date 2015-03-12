@@ -23,6 +23,12 @@
   opacity: 0.2;
 }
 
+@media print {
+  .textLayer {
+    display: none;
+  }
+}
+
 .textLayer > div {
   color: transparent;
   position: absolute;
