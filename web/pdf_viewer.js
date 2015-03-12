@@ -401,6 +401,8 @@ var PDFViewer = (function pdfViewer() {
         var vPadding = inPresentationMode ? 0 : VERTICAL_PADDING;
         var pageWidthScale = (this.container.clientWidth - hPadding) /
                              currentPage.width * currentPage.scale;
+        var fullWidthScale = (this.container.clientWidth) /
+                             currentPage.width * currentPage.scale;
         var pageHeightScale = (this.container.clientHeight - vPadding) /
                               currentPage.height * currentPage.scale;
         switch (value) {
@@ -415,6 +417,9 @@ var PDFViewer = (function pdfViewer() {
             break;
           case 'page-fit':
             scale = Math.min(pageWidthScale, pageHeightScale);
+            break;
+          case 'full-width':
+            scale = fullWidthScale;
             break;
           case 'auto':
             var isLandscape = (currentPage.width > currentPage.height);

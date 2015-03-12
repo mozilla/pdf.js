@@ -772,7 +772,7 @@ html[dir='rtl'] .dropdownToolbarButton {
   display: none;
 }
 
-#pageWidthOption {
+#fullWidthOption {
   border-bottom: 1px rgba(255, 255, 255, .5) solid;
 }
 
