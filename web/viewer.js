@@ -322,6 +322,9 @@ var PDFViewerApplication = {
         document.msFullscreenEnabled === false) {
       support = false;
     }
+    if (support && PDFJS.disableFullscreen === true) {
+      support = false;
+    }
 
     return PDFJS.shadow(this, 'supportsFullscreen', support);
   },
