@@ -986,7 +986,7 @@ target.b2g = function() {
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/cmaps');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/bower_components');
 
   var setup = {
     defines: defines,
@@ -995,11 +995,7 @@ target.b2g = function() {
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps']
-    ],
-    preprocess: [
-      ['build/components/pdf_viewer.js', B2G_BUILD_CONTENT_DIR + '/build'],
-      [BUILD_TARGETS, B2G_BUILD_CONTENT_DIR + BUILD_DIR]
+      ['build/dist/*', B2G_BUILD_CONTENT_DIR + '/web/bower_components']
     ]
   };
   builder.build(setup);
