@@ -986,7 +986,7 @@ target.b2g = function() {
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/bower_components');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/bower_components/pdfjs-dist');
 
   var setup = {
     defines: defines,
@@ -995,7 +995,7 @@ target.b2g = function() {
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['build/dist/*', B2G_BUILD_CONTENT_DIR + '/web/bower_components']
+      ['build/dist/*', B2G_BUILD_CONTENT_DIR + '/web/bower_components/pdfjs-dist']
     ],
     preprocess: []
   };
