@@ -17,8 +17,8 @@
 
 PDFJS.useOnlyCssZoom = true;
 PDFJS.disableTextLayer = true;
-PDFJS.workerSrc = './bower_components/pdfjs_dist/build/pdf.worker.js';
-PDFJS.cMapUrl = './bower_components/pdfjs_dist/cmaps/';
+PDFJS.workerSrc = './bower_components/pdfjs-dist/build/pdf.worker.js';
+PDFJS.cMapUrl = './bower_components/pdfjs-dist/cmaps/';
 PDFJS.cMapPacked = true;
 
 var DEFAULT_SCALE_DELTA = 1.1;
