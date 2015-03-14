@@ -22,8 +22,8 @@
            Promise, PDFLinkService, PDFOutlineView, PDFAttachmentView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
-           parseQueryString, RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
-           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
+           parseQueryString, RenderingStates, UNKNOWN_SCALE,
+           DEFAULT_SCALE_VALUE, IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
 
@@ -994,10 +994,10 @@ var PDFViewerApplication = {
       this.page = 1;
     }
 
-    if (this.pdfViewer.currentScale === UNKNOWN_SCALE) {
+    if (!this.pdfViewer.currentScaleValue) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.setScale(DEFAULT_SCALE, true);
+      this.setScale(DEFAULT_SCALE_VALUE, true);
     }
   },
 
@@ -1903,7 +1903,7 @@ window.addEventListener('keydown', function keydown(evt) {
           // keeping it unhandled (to restore page zoom to 100%)
           setTimeout(function () {
             // ... and resetting the scale after browser adjusts its scale
-            PDFViewerApplication.setScale(DEFAULT_SCALE, true);
+            PDFViewerApplication.setScale(DEFAULT_SCALE_VALUE, true);
           });
           handled = false;
         }

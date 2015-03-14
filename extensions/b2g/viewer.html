@@ -20,22 +20,25 @@ limitations under the License.
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <title>PDF.js viewer</title>
 
+    <script src="../pdfjs-components/build/pdf.js"></script>
+    <script src="../pdfjs-components/web/pdf_viewer.js"></script>
+    <script src="/shared/js/l10n.js"></script>
 
-    <link rel="stylesheet" href="viewer.css"/>
-    <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
-    <script src="l10n.js"></script>
-    <script src="../build/pdf.js"></script>
-    <script src="/shared/js/async_storage.js"></script>
+    <!-- Localization -->
+    <meta name="defaultLanguage" content="en-US">
+    <meta name="availableLanguages" content="ach,af,ak,an,ar,as,ast,az,be,bg,bn-BD,bn-IN,br,bs,ca,cs,csb,cy,da,de,el,en-GB,en-ZA,eo,es-AR,es-CL,es-ES,es-MX,et,eu,fa,ff,fi,fr,fy-NL,ga-IE,gd,gl,gu-IN,he,hi-IN,hr,hu,hy-AM,id,is,it,ja,ka,kk,km,kn,ko,ku,lg,lij,lt,lv,mai,mk,ml,mn,mr,ms,my,nb-NO,nl,nn-NO,nso,oc,or,pa-IN,pl,pt-BR,pt-PT,rm,ro,ru,rw,sah,si,sk,sl,son,sq,sr,sv-SE,sw,ta,ta-LK,te,th,tl,tn,tr,uk,ur,vi,wo,xh,zh-CN,zh-TW,zu">
+    <link rel="localization" href="locale/{locale}/viewer.properties">
 
     <script src="viewer.js"></script>
 
     <!-- Web Components -->
-    <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-theme/style.css" />
-    <!-- <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-icons/style.css" /> -->
-    <script type="text/javascript" src="/shared/elements/config.js"></script>
-    <script type="text/javascript" src="/shared/elements/gaia-header/dist/script.js"></script>
-  </head>
+    <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-theme/gaia-theme.css">
+    <script src="/shared/elements/config.js" defer></script>
+    <script src="/shared/elements/gaia-header/dist/gaia-header.js" defer></script>
 
+    <link rel="stylesheet" type="text/css" href="../pdfjs-components/web/pdf_viewer.css">
+    <link rel="stylesheet" type="text/css" href="viewer.css">
+  </head>
 
   <body>
     <section role="region" id="activityHeader" class="skin-organic theme-settings">
@@ -55,7 +58,7 @@ limitations under the License.
     </section>
 
     <div id="viewerContainer">
-      <div id="viewer"></div>
+      <div id="viewer" class="pdfViewer"></div>
     </div>
 
     <div id="loadingBar">
@@ -81,194 +84,5 @@ limitations under the License.
       <div class="clearBoth"></div>
       <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
     </div>
-
-    <!-- BEGIN STUBS -->
-    <!--
-      Nothing below here is visible, the elements are just here
-      to prevent the viewer from breaking until we refactor it.
-    -->
-    <div id="stubs" style="display: none;">
-      <div id="outerContainer"></div>
-      <div id="sidebarContainer">
-        <div id="toolbarSidebar">
-          <button id="viewThumbnail"></button>
-          <button id="viewOutline"></button>
-          <button id="viewAttachments"></button>
-        </div>
-        <div id="sidebarContent">
-          <div id="thumbnailView"></div>
-          <div id="outlineView"></div>
-          <div id="attachmentsView"></div>
-        </div>
-      </div>  <!-- sidebarContainer -->
-
-      <button id="secondaryToolbarToggle" class="toolbarButton" title="Tools" tabindex="17" data-l10n-id="tools">
-        <span data-l10n-id="tools_label">Tools</span>
-      </button>
-      <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
-        <div id="secondaryToolbarButtonContainer">
-          <button id="secondaryPresentationMode" class="secondaryToolbarButton presentationMode visibleLargeView" title="Switch to Presentation Mode" tabindex="18" data-l10n-id="presentation_mode">
-            <span data-l10n-id="presentation_mode_label">Presentation Mode</span>
-          </button>
-
-          <button id="secondaryOpenFile" class="secondaryToolbarButton openFile visibleLargeView" title="Open File" tabindex="19" data-l10n-id="open_file">
-            <span data-l10n-id="open_file_label">Open</span>
-          </button>
-
-          <button id="secondaryPrint" class="secondaryToolbarButton print visibleMediumView" title="Print" tabindex="20" data-l10n-id="print">
-            <span data-l10n-id="print_label">Print</span>
-          </button>
-
-          <button id="secondaryDownload" class="secondaryToolbarButton download visibleMediumView" title="Download" tabindex="21" data-l10n-id="download">
-            <span data-l10n-id="download_label">Download</span>
-          </button>
-
-          <a href="#" id="secondaryViewBookmark" class="secondaryToolbarButton bookmark visibleSmallView" title="Current view (copy or open in new window)" tabindex="22" data-l10n-id="bookmark">
-              <span data-l10n-id="bookmark_label">Current View</span>
-          </a>
-
-          <div class="horizontalToolbarSeparator visibleLargeView"></div>
-
-          <button id="firstPage" class="secondaryToolbarButton firstPage" title="Go to First Page" tabindex="22" data-l10n-id="first_page">
-            <span data-l10n-id="first_page_label">Go to First Page</span>
-          </button>
-          <button id="lastPage" class="secondaryToolbarButton lastPage" title="Go to Last Page" tabindex="23" data-l10n-id="last_page">
-            <span data-l10n-id="last_page_label">Go to Last Page</span>
-          </button>
-
-          <div class="horizontalToolbarSeparator"></div>
-
-          <button id="pageRotateCw" class="secondaryToolbarButton rotateCw" title="Rotate Clockwise" tabindex="24" data-l10n-id="page_rotate_cw">
-            <span data-l10n-id="page_rotate_cw_label">Rotate Clockwise</span>
-          </button>
-          <button id="pageRotateCcw" class="secondaryToolbarButton rotateCcw" title="Rotate Counterclockwise" tabindex="25" data-l10n-id="page_rotate_ccw">
-            <span data-l10n-id="page_rotate_ccw_label">Rotate Counterclockwise</span>
-          </button>
-        </div>
-      </div>  <!-- secondaryToolbar -->
-
-      <div id="mainContainer">
-        <div id="findbar">
-          <input id="findInput">
-          <button id="findPrevious"></button>
-          <button id="findNext"></button>
-          <input type="checkbox" id="findHighlightAll">
-          <input type="checkbox" id="findMatchCase">
-          <span id="findMsg"></span>
-        </div>
-        <div id="toolbarContainer">
-          <div id="toolbarViewer">
-            <div id="toolbarViewerLeft">
-              <button id="sidebarToggle"></button>
-              <button id="viewFind"></button>
-              <span id="numPages"></span>
-            </div>
-            <div id="toolbarViewerRight">
-              <button id="presentationMode"></button>
-              <input id="fileInput" type="file" />
-              <button id="fullscreen"></button>
-              <button id="openFile"></button>
-              <button id="print"></button>
-              <button id="download"></button>
-              <!-- <div class="toolbarButtonSpacer"></div> -->
-              <a href="#" id="viewBookmark"></a>
-            </div>
-            <div id="toolbarViewerMiddle">
-              <span id="scaleSelectContainer">
-                 <select id="scaleSelect">
-                  <option id="pageAutoOption" value="auto" selected="selected">Automatic Zoom</option>
-                  <option id="pageActualOption" value="page-actual">Actual Size</option>
-                  <option id="pageFitOption" value="page-fit">Fit Page</option>
-                  <option id="pageWidthOption" value="page-width">Full Width</option>
-                  <option id="customScaleOption" value="custom"></option>
-                  <option value="0.5">50%</option>
-                  <option value="0.75">75%</option>
-                  <option value="1">100%</option>
-                  <option value="1.25">125%</option>
-                  <option value="1.5">150%</option>
-                  <option value="2">200%</option>
-                </select>
-              </span>
-            </div>
-          </div>
-        </div>
-        <menu type="context" id="viewerContextMenu">
-          <menuitem id="contextFirstPage" label="First Page"
-                    data-l10n-id="first_page"></menuitem>
-          <menuitem id="contextLastPage" label="Last Page"
-                    data-l10n-id="last_page"></menuitem>
-          <menuitem id="contextPageRotateCw" label="Rotate Clockwise"
-                    data-l10n-id="page_rotate_cw"></menuitem>
-          <menuitem id="contextPageRotateCcw" label="Rotate Counter-Clockwise"
-                    data-l10n-id="page_rotate_ccw"></menuitem>
-        </menu>
-
-      </div> <!-- mainContainer -->
-
-      <div id="overlayContainer" class="hidden">
-        <div id="passwordOverlay" class="container hidden">
-          <div class="dialog">
-            <div class="row">
-              <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
-            </div>
-            <div class="row">
-              <input type="password" id="password" class="toolbarField" />
-            </div>
-            <div class="buttonRow">
-              <button id="passwordCancel" class="overlayButton"><span data-l10n-id="password_cancel">Cancel</span></button>
-              <button id="passwordSubmit" class="overlayButton"><span data-l10n-id="password_ok">OK</span></button>
-            </div>
-          </div>
-        </div>
-        <div id="documentPropertiesOverlay" class="container hidden">
-          <div class="dialog">
-            <div class="row">
-              <span data-l10n-id="document_properties_file_name">File name:</span> <p id="fileNameField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_file_size">File size:</span> <p id="fileSizeField">-</p>
-            </div>
-            <div class="separator"></div>
-            <div class="row">
-              <span data-l10n-id="document_properties_title">Title:</span> <p id="titleField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_author">Author:</span> <p id="authorField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_subject">Subject:</span> <p id="subjectField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_keywords">Keywords:</span> <p id="keywordsField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_creation_date">Creation Date:</span> <p id="creationDateField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_modification_date">Modification Date:</span> <p id="modificationDateField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_creator">Creator:</span> <p id="creatorField">-</p>
-            </div>
-            <div class="separator"></div>
-            <div class="row">
-              <span data-l10n-id="document_properties_producer">PDF Producer:</span> <p id="producerField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_version">PDF Version:</span> <p id="versionField">-</p>
-            </div>
-            <div class="row">
-              <span data-l10n-id="document_properties_page_count">Page Count:</span> <p id="pageCountField">-</p>
-            </div>
-            <div class="buttonRow">
-              <button id="documentPropertiesClose" class="overlayButton"><span data-l10n-id="document_properties_close">Close</span></button>
-            </div>
-          </div>
-        </div>
-      </div>  <!-- overlayContainer -->
-
-      <div id="printContainer"></div>
-    </div>
-    <!-- END STUBS -->
   </body>
 </html>
