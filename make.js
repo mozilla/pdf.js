@@ -284,7 +284,7 @@ target.dist = function() {
 
   rm('-rf', DIST_DIR);
   mkdir('-p', DIST_DIR);
-  exec('git clone --depth 1 ' + DIST_REPO_URL + ' ' + DIST_DIR);
+//  exec('git clone --depth 1 ' + DIST_REPO_URL + ' ' + DIST_DIR);
 
   echo();
   echo('### Overwriting all files');
@@ -972,7 +972,7 @@ target.mozcentral = function() {
 };
 
 target.b2g = function() {
-  target.locale();
+  target.dist();
 
   echo();
   echo('### Building B2G (Firefox OS App)');
@@ -994,12 +994,11 @@ target.b2g = function() {
       ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
-      ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
+      ['extensions/b2g/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps']
     ],
     preprocess: [
-      ['web/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['build/components/pdf_viewer.js', B2G_BUILD_CONTENT_DIR + '/build'],
       [BUILD_TARGETS, B2G_BUILD_CONTENT_DIR + BUILD_DIR]
     ]
   };
