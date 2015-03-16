@@ -518,6 +518,9 @@ var SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.setWordSpacing:
             this.setWordSpacing(args[0]);
             break;
+          case OPS.setHScale:
+            this.setHScale(args[0]);
+            break;
           case OPS.setTextMatrix:
             this.setTextMatrix(args[0], args[1], args[2],
                                args[3], args[4], args[5]);
