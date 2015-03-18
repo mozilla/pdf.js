@@ -1300,6 +1300,35 @@ var PDFViewerApplication = {
 
     var body = document.querySelector('body');
     body.setAttribute('data-mozPrintCallback', true);
+
+    if (!this.hasEqualPageSizes) {
+      console.warn('Not all pages have the same size. The printed result ' +
+          'may be incorrect!');
+    }
+
+    // Insert a @page + size rule to make sure that the page size is correctly
+    // set. Note that we assume that all pages have the same size, because
+    // variable-size pages are not supported yet (at least in Chrome & Firefox).
+    // TODO(robwu): Use named pages when size calculation bugs get resolved
+    // (e.g. https://crbug.com/355116) AND when support for named pages is
+    // added (http://www.w3.org/TR/css3-page/#using-named-pages).
+    // In browsers where @page + size is not supported (such as Firefox,
+    // https://bugzil.la/851441), the next stylesheet will be ignored and the
+    // user has to select the correct paper size in the UI if wanted.
+    this.pageStyleSheet = document.createElement('style');
+    var pageSize = this.pdfViewer.getPageView(0).pdfPage.getViewport(1);
+    this.pageStyleSheet.textContent =
+      // "size:<width> <height>" is what we need. But also add "A4" because
+      // Firefox incorrectly reports support for the other value.
+      '@supports ((size:A4) and (size:1pt 1pt)) {' +
+      '@page { size: ' + pageSize.width + 'pt ' + pageSize.height + 'pt;}' +
+      // The canvas and each ancestor node must have a height of 100% to make
+      // sure that each canvas is printed on exactly one page.
+      '#printContainer {height:100%}' +
+      '#printContainer > div {width:100% !important;height:100% !important;}' +
+      '}';
+    body.appendChild(this.pageStyleSheet);
+
     for (i = 0, ii = this.pagesCount; i < ii; ++i) {
       this.pdfViewer.getPageView(i).beforePrint();
     }
@@ -1311,10 +1340,28 @@ var PDFViewerApplication = {
 //#endif
   },
 
+  // Whether all pages of the PDF have the same width and height.
+  get hasEqualPageSizes() {
+    var firstPage = this.pdfViewer.getPageView(0);
+    for (var i = 1, ii = this.pagesCount; i < ii; ++i) {
+      var pageView = this.pdfViewer.getPageView(i);
+      if (pageView.width !== firstPage.width ||
+          pageView.height !== firstPage.height) {
+        return false;
+      }
+    }
+    return true;
+  },
+
   afterPrint: function pdfViewSetupAfterPrint() {
     var div = document.getElementById('printContainer');
     while (div.hasChildNodes()) {
       div.removeChild(div.lastChild);
+    }
+
+    if (this.pageStyleSheet && this.pageStyleSheet.parentNode) {
+      this.pageStyleSheet.parentNode.removeChild(this.pageStyleSheet);
+      this.pageStyleSheet = null;
     }
 
     this.printing = false;
