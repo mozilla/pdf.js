@@ -185,68 +185,18 @@ function isLastPage(task) {
   return task.pageNum > getLastPageNum(task);
 }
 
-function canvasToDataURL() {
-  return canvas.toDataURL('image/png');
-}
-
-function NullTextLayerBuilder() {
-}
-NullTextLayerBuilder.prototype = {
-  beginLayout: function NullTextLayerBuilder_BeginLayout() {},
-  endLayout: function NullTextLayerBuilder_EndLayout() {},
-  appendText: function NullTextLayerBuilder_AppendText() {}
-};
-
-function SimpleTextLayerBuilder(ctx, viewport) {
-  this.ctx = ctx;
-  this.viewport = viewport;
-  this.textCounter = 0;
-}
-SimpleTextLayerBuilder.prototype = {
-  appendText: function SimpleTextLayerBuilder_AppendText(geom, styles) {
-    var style = styles[geom.fontName];
-    var ctx = this.ctx, viewport = this.viewport;
-    var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
-    var angle = Math.atan2(tx[1], tx[0]);
-    var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-    var fontAscent = (style.ascent ? style.ascent * fontHeight :
-      (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = 'red';
-    ctx.fillStyle = 'yellow';
-    ctx.translate(tx[4] + (fontAscent * Math.sin(angle)),
-                  tx[5] - (fontAscent * Math.cos(angle)));
-    ctx.rotate(angle);
-    ctx.rect(0, 0, geom.width * viewport.scale, geom.height * viewport.scale);
-    ctx.stroke();
-    ctx.fill();
-    ctx.restore();
-    ctx.font = fontHeight + 'px ' + style.fontFamily;
-    ctx.fillStyle = 'black';
-    ctx.fillText(geom.str, tx[4], tx[5]);
-
-    this.textCounter++;
-  },
-  setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
-    this.ctx.save();
-    var textItems = textContent.items;
-    for (var i = 0; i < textItems.length; i++) {
-      this.appendText(textItems[i], textContent.styles);
-    }
-
-    this.ctx.restore();
-  }
-};
-
 function nextPage(task, loadError) {
   var failure = loadError || '';
 
   if (!task.pdfDoc) {
-    sendTaskResult(canvasToDataURL(), task, failure, function () {
-      log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
-      ++currentTaskIdx;
-      nextTask();
+    canvas.toDataURL('image/png', {
+      callback: function(data) {
+        sendTaskResult(data, task, failure, function () {
+          log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+          ++currentTaskIdx;
+          nextTask();
+        });
+      }
     });
     return;
   }
@@ -278,12 +228,21 @@ function nextPage(task, loadError) {
     try {
       log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
           '... ');
-      var ctx = canvas.getContext('2d');
+
+      var ctx = document.createElement('canvas').getContext("2d");
       task.pdfDoc.getPage(task.pageNum).then(function(page) {
+        page.getOperatorList().then(function (opList) {
+          if (PDFJS.displayBackend === 'svg') {
+            var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+            svgGfx.getSVG(opList, viewport).then(function (svg) {
+              canvas = svg;
+              canvas._viewport = viewport;
+            });
+          }
+        });
+
         var pdfToCssUnitsCoef = 96.0 / 72.0;
         var viewport = page.getViewport(pdfToCssUnitsCoef);
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
         clear(ctx);
 
         var drawContext, textLayerBuilder;
@@ -291,24 +250,10 @@ function nextPage(task, loadError) {
         var initPromise = new Promise(function (resolve) {
           resolveInitPromise = resolve;
         });
-        if (task.type === 'text') {
-          // using dummy canvas for pdf context drawing operations
-          if (!dummyCanvas) {
-            dummyCanvas = document.createElement('canvas');
-          }
-          drawContext = dummyCanvas.getContext('2d');
-          // ... text builder will draw its content on the test canvas
-          textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
 
-          page.getTextContent().then(function(textContent) {
-            textLayerBuilder.setTextContent(textContent);
-            resolveInitPromise();
-          });
-        } else {
-          drawContext = ctx;
-          textLayerBuilder = new NullTextLayerBuilder();
-          resolveInitPromise();
-        }
+        drawContext = ctx;
+        resolveInitPromise();
+        
         var renderContext = {
           canvasContext: drawContext,
           viewport: viewport
@@ -341,11 +286,15 @@ function nextPage(task, loadError) {
 function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
-  sendTaskResult(canvasToDataURL(), task, failure, function () {
-    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+  canvas.toDataURL('image/png', {
+    callback: function(data) {
+      sendTaskResult(data, task, failure, function () {
+        log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
-    ++task.pageNum;
-    nextPage(task);
+        ++task.pageNum;
+        nextPage(task);
+      });
+    }
   });
 }
 
