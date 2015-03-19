@@ -19,7 +19,6 @@
 
 'use strict';
 
-//#if (GENERIC || SINGLE_FILE)
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
   fontWeight: 'normal',
@@ -1191,4 +1190,3 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 })();
 
 PDFJS.SVGGraphics = SVGGraphics;
-//#endif
