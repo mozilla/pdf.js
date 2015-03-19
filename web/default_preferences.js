@@ -36,6 +36,7 @@ var DEFAULT_PREFERENCES = {
 //useOnlyCssZoom: true
 //#else
   disableTextLayer: false,
-  useOnlyCssZoom: false
+  useOnlyCssZoom: false,
+  displayBackend: 'svg'
 //#endif
 };

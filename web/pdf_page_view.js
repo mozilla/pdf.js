@@ -141,8 +141,10 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (this.canvas) {
         // Zeroing the width and height causes Firefox to release graphics
         // resources immediately, which can greatly reduce memory consumption.
-        this.canvas.width = 0;
-        this.canvas.height = 0;
+        if (this.canvas.tagName === 'CANVAS') {
+          this.canvas.width = 0;
+          this.canvas.height = 0;
+        }
         delete this.canvas;
       }
 
@@ -165,7 +167,8 @@ var PDFPageView = (function PDFPageViewClosure() {
       });
 
       var isScalingRestricted = false;
-      if (this.canvas && PDFJS.maxCanvasPixels > 0) {
+      if (this.canvas && PDFJS.maxCanvasPixels > 0 &&
+          PDFJS.displayBackend === 'canvas') {
         var ctx = this.canvas.getContext('2d');
         var outputScale = getOutputScale(ctx);
         var pixelsInViewport = this.viewport.width * this.viewport.height;
@@ -299,75 +302,78 @@ var PDFPageView = (function PDFPageViewClosure() {
       canvasWrapper.style.height = div.style.height;
       canvasWrapper.classList.add('canvasWrapper');
 
-      var canvas = document.createElement('canvas');
-      canvas.id = 'page' + this.id;
-      canvasWrapper.appendChild(canvas);
       if (this.annotationLayer) {
         // annotationLayer needs to stay on top
         div.insertBefore(canvasWrapper, this.annotationLayer.div);
       } else {
         div.appendChild(canvasWrapper);
       }
-      this.canvas = canvas;
 
-      var ctx = canvas.getContext('2d');
-      var outputScale = getOutputScale(ctx);
+      var canvas;
+      if (PDFJS.displayBackend === 'canvas') {
+        canvas = document.createElement('canvas');
+        canvas.id = 'page' + this.id;
+        canvasWrapper.appendChild(canvas);
+        this.canvas = canvas;
 
-      if (PDFJS.useOnlyCssZoom) {
-        var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
-        // Use a scale that will make the canvas be the original intended size
-        // of the page.
-        outputScale.sx *= actualSizeViewport.width / viewport.width;
-        outputScale.sy *= actualSizeViewport.height / viewport.height;
-        outputScale.scaled = true;
-      }
+        var ctx = canvas.getContext('2d');
+        var outputScale = getOutputScale(ctx);
 
-      if (PDFJS.maxCanvasPixels > 0) {
-        var pixelsInViewport = viewport.width * viewport.height;
-        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
-        if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
-          outputScale.sx = maxScale;
-          outputScale.sy = maxScale;
+        if (PDFJS.useOnlyCssZoom) {
+          var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+          // Use a scale that will make the canvas be the original intended size
+          // of the page.
+          outputScale.sx *= actualSizeViewport.width / viewport.width;
+          outputScale.sy *= actualSizeViewport.height / viewport.height;
           outputScale.scaled = true;
-          this.hasRestrictedScaling = true;
-        } else {
-          this.hasRestrictedScaling = false;
+        }
+
+        if (PDFJS.maxCanvasPixels > 0) {
+          var pixelsInViewport = viewport.width * viewport.height;
+          var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+          if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
+            outputScale.sx = maxScale;
+            outputScale.sy = maxScale;
+            outputScale.scaled = true;
+            this.hasRestrictedScaling = true;
+          } else {
+            this.hasRestrictedScaling = false;
+          }
+        }
+
+        canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
+        canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
+        canvas.style.width = Math.floor(viewport.width) + 'px';
+        canvas.style.height = Math.floor(viewport.height) + 'px';
+        // Add the viewport so it's known what it was originally drawn with.
+        canvas._viewport = viewport;
+
+        // TODO(mack): use data attributes to store these
+        ctx._scaleX = outputScale.sx;
+        ctx._scaleY = outputScale.sy;
+        if (outputScale.scaled) {
+          ctx.scale(outputScale.sx, outputScale.sy);
         }
       }
-
-      canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
-      canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
-      canvas.style.width = Math.floor(viewport.width) + 'px';
-      canvas.style.height = Math.floor(viewport.height) + 'px';
-      // Add the viewport so it's known what it was originally drawn with.
-      canvas._viewport = viewport;
 
       var textLayerDiv = null;
       var textLayer = null;
       if (this.textLayerFactory) {
         textLayerDiv = document.createElement('div');
         textLayerDiv.className = 'textLayer';
-        textLayerDiv.style.width = canvas.style.width;
-        textLayerDiv.style.height = canvas.style.height;
+        textLayerDiv.style.width = Math.floor(viewport.width) + 'px';
+        textLayerDiv.style.height = Math.floor(viewport.height) + 'px';
         if (this.annotationLayer) {
           // annotationLayer needs to stay on top
           div.insertBefore(textLayerDiv, this.annotationLayer.div);
         } else {
           div.appendChild(textLayerDiv);
         }
-
         textLayer = this.textLayerFactory.createTextLayerBuilder(textLayerDiv,
                                                                  this.id - 1,
                                                                  this.viewport);
       }
       this.textLayer = textLayer;
-
-      // TODO(mack): use data attributes to store these
-      ctx._scaleX = outputScale.sx;
-      ctx._scaleY = outputScale.sy;
-      if (outputScale.scaled) {
-        ctx.scale(outputScale.sx, outputScale.sy);
-      }
 
       var resolveRenderPromise, rejectRenderPromise;
       var promise = new Promise(function (resolve, reject) {
@@ -428,6 +434,26 @@ var PDFPageView = (function PDFPageViewClosure() {
         } else {
           rejectRenderPromise(error);
         }
+      }
+
+      if (PDFJS.displayBackend === 'svg') {
+        // The next page fetch will start after this page rendering is done
+        this.pdfPage.getOperatorList().then(function (opList) {
+          var page = self.pdfPage;
+          var pageNum = self.id;
+          var svgGfx = new PDFJS.SVGGraphics(page.commonObjs, page.objs);
+          
+          return svgGfx.getSVG(opList, viewport).then(function (svg) {
+            self.canvas = canvas = svg;
+            canvas._viewport = viewport;
+            canvasWrapper.appendChild(canvas);
+            pageViewDrawCallback(null);
+          }, function (reason) {
+            pageViewDrawCallback(reason);
+          });
+        });
+        div.setAttribute('data-loaded', true);
+        return;
       }
 
       var renderContinueCallback = null;

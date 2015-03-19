@@ -40,6 +40,10 @@ select {
   outline: none;
 }
 
+svg text {
+  cursor: text;
+}
+
 .hidden {
   display: none !important;
 }
@@ -1681,7 +1685,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     overflow: visible;
   }
 
-  #mainContainer, #viewerContainer, .page, .page canvas {
+  #mainContainer, #viewerContainer, .page, .page canvas, .page svg {
     position: static;
     padding: 0;
     margin: 0;
