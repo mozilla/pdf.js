@@ -50,6 +50,17 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
     /**
      * @private
      */
+    _dispatchEvent: function PDFAttachmentView_dispatchEvent(attachmentsCount) {
+      var event = document.createEvent('CustomEvent');
+      event.initCustomEvent('attachmentsloaded', true, true, {
+        attachmentsCount: attachmentsCount
+      });
+      this.container.dispatchEvent(event);
+    },
+
+    /**
+     * @private
+     */
     _bindLink: function PDFAttachmentView_bindLink(button, content, filename) {
       button.onclick = function downloadFile(e) {
         this.downloadManager.downloadData(content, filename, '');
@@ -59,17 +70,21 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
 
     render: function PDFAttachmentView_render() {
       var attachments = this.attachments;
+      var attachmentsCount = 0;
 
       this.reset();
 
       if (!attachments) {
+        this._dispatchEvent(attachmentsCount);
         return;
       }
 
       var names = Object.keys(attachments).sort(function(a, b) {
         return a.toLowerCase().localeCompare(b.toLowerCase());
       });
-      for (var i = 0, len = names.length; i < len; i++) {
+      attachmentsCount = names.length;
+
+      for (var i = 0; i < attachmentsCount; i++) {
         var item = attachments[names[i]];
         var filename = getFileName(item.filename);
         var div = document.createElement('div');
@@ -80,6 +95,8 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
         div.appendChild(button);
         this.container.appendChild(div);
       }
+
+      this._dispatchEvent(attachmentsCount);
     }
   };
 

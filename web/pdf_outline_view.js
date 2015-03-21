@@ -49,6 +49,17 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
     /**
      * @private
      */
+    _dispatchEvent: function PDFOutlineView_dispatchEvent(outlineCount) {
+      var event = document.createEvent('CustomEvent');
+      event.initCustomEvent('outlineloaded', true, true, {
+        outlineCount: outlineCount
+      });
+      this.container.dispatchEvent(event);
+    },
+
+    /**
+     * @private
+     */
     _bindLink: function PDFOutlineView_bindLink(element, item) {
       var linkService = this.linkService;
       element.href = linkService.getDestinationHash(item.dest);
@@ -60,10 +71,12 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
 
     render: function PDFOutlineView_render() {
       var outline = this.outline;
+      var outlineCount = 0;
 
       this.reset();
 
       if (!outline) {
+        this._dispatchEvent(outlineCount);
         return;
       }
 
@@ -87,8 +100,11 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
           }
 
           levelData.parent.appendChild(div);
+          outlineCount++;
         }
       }
+
+      this._dispatchEvent(outlineCount);
     }
   };
 
