@@ -2698,6 +2698,7 @@ var Font = (function FontClosure() {
            fontCharCode === 0x7F || // Control char
            fontCharCode === 0xAD || // Soft hyphen
            fontCharCode === 0xA0 || // Non breaking space
+           fontCharCode === 0x25CC || // Dotted circle (combining mark)
            (fontCharCode >= 0x80 && fontCharCode <= 0x9F) || // Control chars
            // Prevent drawing characters in the specials unicode block.
            (fontCharCode >= 0xFFF0 && fontCharCode <= 0xFFFF) ||
