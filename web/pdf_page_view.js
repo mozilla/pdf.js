@@ -80,6 +80,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     div.className = 'page';
     div.style.width = Math.floor(this.viewport.width) + 'px';
     div.style.height = Math.floor(this.viewport.height) + 'px';
+    div.setAttribute('data-page-number', this.id);
     this.div = div;
 
     container.appendChild(div);
