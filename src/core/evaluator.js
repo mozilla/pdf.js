@@ -14,15 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, ColorSpace, DecodeStream, Dict, Encodings,
+/* globals assert, CMapFactory, ColorSpace, DecodeStream, Dict, Encodings,
            error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode,
            FontFlags, ImageKind, info, isArray, isCmd, isDict, isEOF, isName,
-           isNum, isStream, isString, JpegStream, Lexer, Metrics,
+           isNum, isStream, isString, JpegStream, Lexer, Metrics, IdentityCMap,
            MurmurHash3_64, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts,
            stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
-           RefSetCache, isRef, TextRenderingMode, ToUnicodeMap, CMapFactory,
+           RefSetCache, isRef, TextRenderingMode, IdentityToUnicodeMap,
            OPS, UNSUPPORTED_FEATURES, UnsupportedManager, NormalizedUnicodes,
-           IDENTITY_MATRIX, reverseIfRtl, createPromiseCapability,
+           IDENTITY_MATRIX, reverseIfRtl, createPromiseCapability, ToUnicodeMap,
            getFontType */
 
 'use strict';
@@ -1332,8 +1332,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var cmap, cmapObj = toUnicode;
       if (isName(cmapObj)) {
         cmap = CMapFactory.create(cmapObj,
-          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
-        return new ToUnicodeMap(cmap);
+          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null);
+        if (cmap instanceof IdentityCMap) {
+          return new IdentityToUnicodeMap(0, 0xFFFF);
+        }
+        return new ToUnicodeMap(cmap.getMap());
       } else if (isStream(cmapObj)) {
         cmap = CMapFactory.create(cmapObj,
           { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
