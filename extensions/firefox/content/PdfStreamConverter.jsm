@@ -63,13 +63,6 @@ function getContainingBrowser(domWindow) {
                   .chromeEventHandler;
 }
 
-function getChromeWindow(domWindow) {
-  if (PdfjsContentUtils.isRemote) {
-    return PdfjsContentUtils.getChromeWindow(domWindow);
-  }
-  return getContainingBrowser(domWindow).ownerDocument.defaultView;
-}
-
 function getFindBar(domWindow) {
   if (PdfjsContentUtils.isRemote) {
     throw new Error('FindBar is not accessible from the content process.');
