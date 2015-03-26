@@ -24,6 +24,13 @@
 'use strict';
 
 /**
+ * Specifies the display backend to use.
+ * @var {string}
+ */
+PDFJS.displayBackend = (PDFJS.displayBackend === undefined ?
+                        'svg' : PDFJS.displayBackend);
+
+/**
  * The maximum allowed image size in total pixels e.g. width * height. Images
  * above this value will not be drawn. Use -1 for no limit.
  * @var {number}
@@ -1372,7 +1379,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
           }
         }
         this.commonObjs.clear();
-        FontLoader.clear();
+        if (PDFJS.displayBackend === 'canvas') {
+          FontLoader.clear();
+        }
       }.bind(this));
     }
   };

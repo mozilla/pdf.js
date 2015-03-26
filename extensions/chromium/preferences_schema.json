@@ -75,6 +75,13 @@
     "useOnlyCssZoom": {
       "type": "boolean",
       "default": false
+    },
+    "displayBackend": {
+      "title": "Display backend",
+      "description": "The display backend to use. Accepted values: 'canvas' and 'svg'.",
+      "type": "string",
+      "pattern": "|canvas|svg|",
+      "default": "svg"
     }
   }
 }

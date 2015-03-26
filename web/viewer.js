@@ -220,6 +220,9 @@ var PDFViewerApplication = {
 
     var self = this;
     var initializedPromise = Promise.all([
+      Preferences.get('displayBackend').then(function resolved(value) {
+        PDFJS.displayBackend = value;
+      }),
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
       }),
@@ -1476,6 +1479,9 @@ function webViewerInitialized() {
     var hash = document.location.hash.substring(1);
     var hashParams = PDFViewerApplication.parseQueryString(hash);
 
+    if ('displayBackend' in hashParams) {
+      PDFJS.displayBackend = hashParams['displaybackend'];
+    }
     if ('disableworker' in hashParams) {
       PDFJS.disableWorker = (hashParams['disableworker'] === 'true');
     }
@@ -1511,6 +1517,10 @@ function webViewerInitialized() {
     if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
       PDFJS.cMapUrl = '../external/cmaps/';
       PDFJS.cMapPacked = false;
+    }
+    if (PDFJS.displayBackend === 'svg') {
+      PDFJS.useOnlyCssZoom = true;
+      PDFJS.disableTextLayer = true;
     }
 //#endif
 //#if !(FIREFOX || MOZCENTRAL)
