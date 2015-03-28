@@ -151,8 +151,7 @@ var DocumentProperties = {
   },
 
   parseDate: function documentPropertiesParseDate(inputDate) {
-    // This is implemented according to the PDF specification (see
-    // http://www.gnupdf.org/Date for an overview), but note that
+    // This is implemented according to the PDF specification, but note that
     // Adobe Reader doesn't handle changing the date to universal time
     // and doesn't use the user's time zone (they're effectively ignoring
     // the HH' and mm' parts of the date string).
