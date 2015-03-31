@@ -232,9 +232,6 @@ var PDFViewerApplication = {
       }),
       Preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
         self.preferenceShowPreviousViewOnLoad = value;
-        if (!value && window.history.state) {
-          window.history.replaceState(null, '');
-        }
       }),
       Preferences.get('defaultZoomValue').then(function resolved(value) {
         self.preferenceDefaultZoomValue = value;
@@ -884,6 +881,9 @@ var PDFViewerApplication = {
       if (!PDFJS.disableHistory && !self.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
+        if (!self.preferenceShowPreviousViewOnLoad && window.history.state) {
+          window.history.replaceState(null, '');
+        }
         PDFHistory.initialize(self.documentFingerprint, self);
       }
     });
@@ -891,7 +891,7 @@ var PDFViewerApplication = {
     var storePromise = store.initializedPromise;
     Promise.all([firstPagePromise, storePromise]).then(function resolved() {
       var storedHash = null;
-      if (PDFViewerApplication.preferenceShowPreviousViewOnLoad &&
+      if (self.preferenceShowPreviousViewOnLoad &&
           store.get('exists', false)) {
         var pageNum = store.get('page', '1');
         var zoom = self.preferenceDefaultZoomValue ||
