@@ -1459,7 +1459,15 @@ target.lint = function() {
   var jshintPath = path.normalize('./node_modules/.bin/jshint');
   if (!test('-f', jshintPath)) {
     echo('jshint is not installed -- installing...');
-    exec('npm install jshint@2.4.x'); // TODO read version from package.json
+    // Read the jshint version to be installed from package.json.
+    try {
+      var rawConfiguration = fs.readFileSync('package.json', 'utf8');
+      var configuration = JSON.parse(rawConfiguration);
+      exec('npm install jshint@' + configuration.devDependencies.jshint);
+    } catch (e) {
+      echo('package.json does not exist -- aborting...');
+      return;
+    }
   }
   // Lint the Firefox specific *.jsm files.
   var options = '--extra-ext .jsm';
