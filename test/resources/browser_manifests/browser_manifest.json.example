@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Firefox",
+    "path": "/path/to/firefox/executable"
+  },
+  {
+    "name": "Chrome",
+    "path": "/path/to/chrome/executable"
+  }
+]

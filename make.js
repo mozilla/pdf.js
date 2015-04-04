@@ -1101,7 +1101,7 @@ target.chromium = function() {
 
   if (!test('-f', browserManifest)) {
     echo('Browser manifest file ' + browserManifest + ' does not exist.');
-    echo('Try copying one of the examples in test/resources/browser_manifests');
+    echo('Copy and adjust the example in test/resources/browser_manifests.');
     exit(1);
   }
 
@@ -1189,7 +1189,7 @@ target.browsertest = function(options) {
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy one of the examples in test/resources/browser_manifests/');
+    echo('Copy and adjust the example in test/resources/browser_manifests.');
     exit(1);
   }
 
@@ -1213,7 +1213,7 @@ target.unittest = function(options, callback) {
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy one of the examples in test/resources/browser_manifests/');
+    echo('Copy and adjust the example in test/resources/browser_manifests.');
     exit(1);
   }
   callback = callback || function() {};
@@ -1235,7 +1235,7 @@ target.fonttest = function(options, callback) {
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy one of the examples in test/resources/browser_manifests/');
+    echo('Copy and adjust the example in test/resources/browser_manifests.');
     exit(1);
   }
   callback = callback || function() {};
@@ -1258,7 +1258,7 @@ target.botmakeref = function() {
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {
     echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy one of the examples in test/resources/browser_manifests/');
+    echo('Copy and adjust the example in test/resources/browser_manifests.');
     exit(1);
   }
 
