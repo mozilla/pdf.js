@@ -892,6 +892,12 @@ var PDFViewerApplication = {
         PDFHistory.initialize(self.documentFingerprint, self);
       }
 
+      var docLoadedEvent = new CustomEvent('documentloaded', {
+        bubbles: true,
+        cancelable: true
+      });
+      window.dispatchEvent(docLoadedEvent);
+
       store.initializedPromise.then(function resolved() {
         var storedHash = null;
         if (self.preferenceShowPreviousViewOnLoad &&
@@ -1025,6 +1031,12 @@ var PDFViewerApplication = {
         console.warn('Warning: AcroForm/XFA is not supported');
         self.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
+
+      var metaLoadedEvent = new CustomEvent('metadataloaded', {
+        bubbles: true,
+        cancelable: true
+      });
+      window.dispatchEvent(metaLoadedEvent);
 
 //#if (FIREFOX || MOZCENTRAL)
 //    var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
