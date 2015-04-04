@@ -20,7 +20,14 @@
 
 'use strict';
 
-require('./external/shelljs/make');
+try {
+  require('shelljs/make');
+} catch (e) {
+  console.log('ShellJS is not installed. Run "npm install" to install ' +
+              'all dependencies.');
+  return;
+}
+
 var builder = require('./external/builder/builder.js');
 var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
 var path = require('path');
