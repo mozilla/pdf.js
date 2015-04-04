@@ -6,7 +6,6 @@
 'use strict';
 
 describe('api', function() {
-  // TODO run with worker enabled
   var basicApiUrl = combineUrl(window.location.href, '../pdfs/basicapi.pdf');
   var basicApiFileLength = 105779; // bytes
   function waitsForPromiseResolved(promise, successCallback) {
