@@ -65,6 +65,11 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#if GENERIC || CHROME
 //#include download_manager.js
 //#endif
+//#if B2G
+//var DownloadManager = (function DownloadManagerClosure() {
+//  return function DownloadManager() {};
+//})();
+//#endif
 
 //#if FIREFOX || MOZCENTRAL
 //#include firefoxcom.js
