@@ -501,8 +501,6 @@ ChromeActions.prototype = {
 
     var winmm = this.domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIDocShell)
-                              .sameTypeRootTreeItem
-                              .QueryInterface(Ci.nsIDocShell)
                               .QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIContentFrameMessageManager);
 
@@ -815,8 +813,6 @@ function FindEventManager(contentWindow) {
   this.contentWindow = contentWindow;
   this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIDocShell)
-                            .sameTypeRootTreeItem
-                            .QueryInterface(Ci.nsIDocShell)
                             .QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIContentFrameMessageManager);
 }

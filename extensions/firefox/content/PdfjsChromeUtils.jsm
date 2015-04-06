@@ -179,9 +179,8 @@ let PdfjsChromeUtils = {
   },
 
   handleEvent: function(aEvent) {
-    // We cannot just forward the message as a CPOW without setting up
-    // __exposedProps__ on it. Instead, let's just create a structured
-    // cloneable version of the event for performance and for the ease of usage.
+    // To avoid forwarding the message as a CPOW, create a structured cloneable
+    // version of the event for both performance, and ease of usage, reasons.
     let type = aEvent.type;
     let detail = {
       query: aEvent.detail.query,
@@ -190,16 +189,16 @@ let PdfjsChromeUtils = {
       findPrevious: aEvent.detail.findPrevious
     };
 
-    let chromeWindow = aEvent.target.ownerDocument.defaultView;
-    let browser = chromeWindow.gBrowser.selectedBrowser;
-    if (this._browsers.has(browser)) {
-      // Only forward the events if the selected browser is a registered
-      // browser.
-      let mm = browser.messageManager;
-      mm.sendAsyncMessage('PDFJS:Child:handleEvent',
-                          { type: type, detail: detail });
-      aEvent.preventDefault();
+    let browser = aEvent.currentTarget.browser;
+    if (!this._browsers.has(browser)) {
+      throw new Error('FindEventManager was not bound ' +
+                      'for the current browser.');
     }
+    // Only forward the events if the current browser is a registered browser.
+    let mm = browser.messageManager;
+    mm.sendAsyncMessage('PDFJS:Child:handleEvent',
+                        { type: type, detail: detail });
+    aEvent.preventDefault();
   },
 
   _types: ['find',
