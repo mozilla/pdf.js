@@ -7,6 +7,7 @@
     "wintersmith": "~2.0.0",
     "moment": "~2.3.0",
     "underscore": "~1.4.0",
+    "shelljs": "~0.4.0",
     "typogr": "~0.5.0",
     "yargs": "~1.2.1"
   },
