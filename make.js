@@ -486,8 +486,15 @@ target.bundle = function(args) {
 
     var bundleContent = cat(SRC_FILES),
         bundleVersion = VERSION,
-        bundleBuild = exec('git log --format="%h" -n 1',
-          {silent: true}).output.replace('\n', '');
+        bundleBuild;
+
+    var gitHashExec = exec('git log --format="%h" -n 1',
+          {silent: true});
+    if (gitHashExec.code !== 0) {
+        bundleBuild = 'unknown';
+    } else {
+        bundleBuild = gitHashExec.output.replace('\n', '');
+    }
 
     crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
 
