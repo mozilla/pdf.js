@@ -1967,7 +1967,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       this.cf = dict.get('CF');
       this.stmf = dict.get('StmF') || identityName;
       this.strf = dict.get('StrF') || identityName;
-      this.eff = dict.get('EFF') || this.strf;
+      this.eff = dict.get('EFF') || this.stmf;
     }
   }
 
