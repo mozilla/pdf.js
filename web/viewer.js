@@ -1981,7 +1981,8 @@ function handleMouseWheel(evt) {
   if (PresentationMode.active) {
     evt.preventDefault();
     PDFViewerApplication.mouseScroll(ticks * MOUSE_WHEEL_DELTA_FACTOR);
-  } else if (evt.ctrlKey) { // Only zoom the pages, not the entire viewer
+  } else if (evt.ctrlKey || evt.metaKey) {
+    // Only zoom the pages, not the entire viewer
     evt.preventDefault();
     PDFViewerApplication[direction](Math.abs(ticks));
   }
