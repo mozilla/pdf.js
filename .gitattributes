@@ -16,3 +16,7 @@
 
 # PDF files shall not modify CRLF line endings
 *.pdf -crlf
+
+# Linguist language overrides
+*.js linguist-language=JavaScript
+*.jsm linguist-language=JavaScript
