@@ -52,6 +52,13 @@
        "type": "eq",
        "about": "Fonts referenced only by name and not by an object identifier."
     },
+    {  "id": "bug911034",
+       "file": "pdfs/bug911034.pdf",
+       "md5": "54ee432a4e16b26b242fbf549cdad177",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug921760",
        "file": "pdfs/bug921760.pdf",
        "md5": "1aa136d786a65b0d7cce7bdb3c58c6c3",

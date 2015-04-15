@@ -2656,6 +2656,38 @@ var Font = (function FontClosure() {
   }
 
   /**
+   * Helper function for |adjustMapping|.
+   * @return {boolean}
+   */
+  function isProblematicUnicodeLocation(code) {
+    if (code <= 0x1F) { // Control chars
+      return true;
+    }
+    if (code >= 0x80 && code <= 0x9F) { // Control chars
+      return true;
+    }
+    if ((code >= 0x2000 && code <= 0x200F) || // General punctuation chars
+        (code >= 0x2028 && code <= 0x202F) ||
+        (code >= 0x2060 && code <= 0x206F)) {
+      return true;
+    }
+    if (code >= 0xFFF0 && code <= 0xFFFF) { // Specials Unicode block
+      return true;
+    }
+    switch (code) {
+      case 0x7F: // Control char
+      case 0xA0: // Non breaking space
+      case 0xAD: // Soft hyphen
+      case 0x0E33: // Thai character SARA AM
+      case 0x2011: // Non breaking hyphen
+      case 0x205F: // Medium mathematical space
+      case 0x25CC: // Dotted circle (combining mark)
+        return true;
+    }
+    return false;
+  }
+
+  /**
    * Rebuilds the char code to glyph ID map by trying to replace the char codes
    * with their unicode value. It also moves char codes that are in known
    * problematic locations.
@@ -2694,15 +2726,7 @@ var Font = (function FontClosure() {
       // characters probably aren't in the correct position (fixes an issue
       // with firefox and thuluthfont).
       if ((usedFontCharCodes[fontCharCode] !== undefined ||
-           fontCharCode <= 0x1f || // Control chars
-           fontCharCode === 0x7F || // Control char
-           fontCharCode === 0xAD || // Soft hyphen
-           fontCharCode === 0xA0 || // Non breaking space
-           fontCharCode === 0x0E33 || // Thai character SARA AM 
-           fontCharCode === 0x25CC || // Dotted circle (combining mark)
-           (fontCharCode >= 0x80 && fontCharCode <= 0x9F) || // Control chars
-           // Prevent drawing characters in the specials unicode block.
-           (fontCharCode >= 0xFFF0 && fontCharCode <= 0xFFFF) ||
+           isProblematicUnicodeLocation(fontCharCode) ||
            (isSymbolic && isIdentityUnicode)) &&
           nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END) { // Room left.
         // Loop to try and find a free spot in the private use area.
