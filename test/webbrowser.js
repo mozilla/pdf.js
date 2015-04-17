@@ -145,6 +145,10 @@ ChromiumBrowser.prototype.buildArguments = function (url) {
 
 WebBrowser.create = function (desc) {
   var name = desc.name;
+
+  // Throws an exception if the path doesn't exist.
+  fs.statSync(desc.path);
+
   if (/firefox/i.test(name)) {
     return new FirefoxBrowser(desc.name, desc.path);
   }
