@@ -288,12 +288,24 @@ var PDFViewerApplication = {
       }),
       Preferences.get('useOnlyCssZoom').then(function resolved(value) {
         PDFJS.useOnlyCssZoom = value;
-      })
+      }),
+      Preferences.get('externalLinkTarget').then(function resolved(value) {
+        if (PDFJS.isExternalLinkTargetSet()) {
+          return;
+        }
+        PDFJS.externalLinkTarget = value;
+      }),
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
     return initializedPromise.then(function () {
-      PDFViewerApplication.initialized = true;
+      if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
+        // Prevent external links from "replacing" the viewer,
+        // when it's embedded in e.g. an iframe or an object.
+        PDFJS.externalLinkTarget = PDFJS.LinkTarget.TOP;
+      }
+
+      self.initialized = true;
     });
   },
 
