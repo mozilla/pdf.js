@@ -328,6 +328,49 @@ function shadow(obj, prop, value) {
 }
 PDFJS.shadow = shadow;
 
+var LinkTarget = PDFJS.LinkTarget = {
+  NONE: '', // Default value.
+  SELF: '_self',
+  BLANK: '_blank',
+  PARENT: '_parent',
+  TOP: '_top',
+};
+
+function isExternalLinkTargetSet() {
+//#if GENERIC
+  if (PDFJS.openExternalLinksInNewWindow) {
+    warn('PDFJS.openExternalLinksInNewWindow is deprecated, ' +
+         'use PDFJS.externalLinkTarget instead.');
+    if (PDFJS.externalLinkTarget === LinkTarget.NONE) {
+      PDFJS.externalLinkTarget = LinkTarget.BLANK;
+    }
+    // Reset the deprecated parameter, to suppress further warnings.
+    PDFJS.openExternalLinksInNewWindow = false;
+  }
+//#endif
+  switch (PDFJS.externalLinkTarget) {
+    case LinkTarget.NONE:
+      return false;
+    case LinkTarget.SELF:
+    case LinkTarget.BLANK:
+    case LinkTarget.PARENT:
+    case LinkTarget.TOP:
+      return true;
+  }
+  warn('PDFJS.externalLinkTarget is invalid: ' + PDFJS.externalLinkTarget);
+  // When the external link target is not valid,
+  // reset it to the default value to suppress further warnings.
+  PDFJS.externalLinkTarget = LinkTarget.NONE;
+  return false;
+}
+
+Object.defineProperty(PDFJS, 'isExternalLinkTargetSet', {
+  configurable: true,
+  get: function PDFJS_isExternalLinkTargetSet() {
+    return isExternalLinkTargetSet();
+  }
+});
+
 var PasswordResponses = PDFJS.PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2
