@@ -901,6 +901,11 @@ var PDFViewerApplication = {
                      store.get('zoom', self.pdfViewer.currentScale);
           var left = store.get('scrollLeft', '0');
           var top = store.get('scrollTop', '0');
+          var rotation = store.get('rotation', '0') | 0;
+
+          if (rotation !== self.pageRotation) {
+            self.rotatePages(rotation, true);
+          }
 
           storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
                        left + ',' + top;
@@ -1323,15 +1328,16 @@ var PDFViewerApplication = {
     this.updateScaleControls = true;
   },
 
-  rotatePages: function pdfViewRotatePages(delta) {
+  rotatePages: function pdfViewRotatePages(delta, noRendering) {
     var pageNumber = this.page;
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
     this.pdfThumbnailViewer.pagesRotation = this.pageRotation;
 
-    this.forceRendering();
-
-    this.pdfViewer.scrollPageIntoView(pageNumber);
+    if (!noRendering) {
+      this.forceRendering();
+      this.pdfViewer.scrollPageIntoView(pageNumber);
+    }
   },
 
   /**
@@ -1786,7 +1792,8 @@ window.addEventListener('updateviewarea', function () {
       'page': location.pageNumber,
       'zoom': location.scale,
       'scrollLeft': location.left,
-      'scrollTop': location.top
+      'scrollTop': location.top,
+      'rotation': location.rotation
     }).catch(function() {
       // unable to write to storage
     });

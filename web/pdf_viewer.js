@@ -198,7 +198,9 @@ var PDFViewer = (function pdfViewer() {
         page.update(page.scale, rotation);
       }
 
-      this._setScale(this._currentScaleValue, true);
+      if (this._currentScale !== UNKNOWN_SCALE) {
+        this._setScale(this._currentScaleValue, true);
+      }
     },
 
     /**
@@ -568,7 +570,8 @@ var PDFViewer = (function pdfViewer() {
         scale: normalizedScaleValue,
         top: intTop,
         left: intLeft,
-        pdfOpenParams: pdfOpenParams
+        pdfOpenParams: pdfOpenParams,
+        rotation: this._pagesRotation
       };
     },
 
