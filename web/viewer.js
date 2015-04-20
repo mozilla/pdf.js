@@ -1684,9 +1684,7 @@ function webViewerInitialized() {
     }
     return;
   }
-//#endif
 
-//#if !B2G && !CHROME
   if (file) {
     PDFViewerApplication.open(file, 0);
   }
