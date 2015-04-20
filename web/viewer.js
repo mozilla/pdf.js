@@ -268,6 +268,12 @@ var PDFViewerApplication = {
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
+    if (this.isViewerEmbedded) {
+      // Prevent external links from "replacing" the viewer when it's embedded
+      // in e.g. an iframe or an object.
+      PDFJS.openExternalLinksInNewWindow = true;
+    }
+
     return initializedPromise.then(function () {
       PDFViewerApplication.initialized = true;
     });
