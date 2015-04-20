@@ -833,6 +833,15 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5644",
+       "file": "pdfs/issue5644.pdf",
+       "md5": "6f9313c5043b3ecb0ab2df321d3e1847",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 6,
+       "type": "eq"
+    },
     {  "id": "bug866395",
        "file": "pdfs/bug866395.pdf",
        "md5": "f03bc77e84637241980b09a0a220f575",
