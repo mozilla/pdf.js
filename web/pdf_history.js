@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, PresentationMode */
 
 'use strict';
 
@@ -31,6 +30,7 @@ var PDFHistory = {
     this.reInitialized = false;
     this.allowHashChange = true;
     this.historyUnlocked = true;
+    this.isViewerInPresentationMode = false;
 
     this.previousHash = window.location.hash.substring(1);
     this.currentBookmark = '';
@@ -122,6 +122,10 @@ var PDFHistory = {
       // the 'DOMContentLoaded' event is not fired on 'pageshow'.
       window.addEventListener('beforeunload', pdfHistoryBeforeUnload, false);
     }, false);
+
+    window.addEventListener('presentationmodechanged', function(e) {
+      self.isViewerInPresentationMode = !!e.detail.active;
+    });
   },
 
   _isStateObjectDefined: function pdfHistory_isStateObjectDefined(state) {
@@ -286,7 +290,7 @@ var PDFHistory = {
       return null;
     }
     var params = { hash: this.currentBookmark, page: this.currentPage };
-    if (PresentationMode.active) {
+    if (this.isViewerInPresentationMode) {
       params.hash = null;
     }
     return params;

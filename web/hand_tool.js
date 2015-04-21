@@ -51,6 +51,17 @@ var HandTool = {
           }
         }.bind(this), function rejected(reason) {});
       }.bind(this));
+
+      window.addEventListener('presentationmodechanged', function (evt) {
+        if (evt.detail.switchInProgress) {
+          return;
+        }
+        if (evt.detail.active) {
+          this.enterPresentationMode();
+        } else {
+          this.exitPresentationMode();
+        }
+      }.bind(this));
     }
   },
 
