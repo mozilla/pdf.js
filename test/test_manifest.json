@@ -558,6 +558,13 @@
        "link": false,
        "type": "load"
     },
+    {  "id": "issue5954",
+       "file": "pdfs/issue5954.pdf",
+       "md5": "4f60ec0d9bbeec845b681242b8982361",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",

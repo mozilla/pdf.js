@@ -589,7 +589,7 @@ var Catalog = (function CatalogClosure() {
             var dict = a[0];
             var ref = a[1];
             return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
-                            this.fontCache);
+                            this.fontCache, this.toplevelPagesDict);
           }.bind(this)
         );
       }
