@@ -18,7 +18,7 @@
 
 'use strict';
 
-var DocumentProperties = {
+var PDFDocumentProperties = {
   overlayName: null,
   rawFileSize: 0,
 

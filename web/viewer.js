@@ -19,7 +19,7 @@
            PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
            PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
            PasswordPrompt, PDFPresentationMode, HandTool, Promise,
-           DocumentProperties, PDFOutlineView, PDFAttachmentView,
+           PDFDocumentProperties, PDFOutlineView, PDFAttachmentView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
            RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
@@ -88,7 +88,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include hand_tool.js
 //#include overlay_manager.js
 //#include password_prompt.js
-//#include document_properties.js
+//#include pdf_document_properties.js
 //#include pdf_viewer.js
 //#include pdf_thumbnail_viewer.js
 //#include pdf_outline_view.js
@@ -185,7 +185,7 @@ var PDFViewerApplication = {
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
       pageRotateCcw: document.getElementById('pageRotateCcw'),
-      documentProperties: DocumentProperties,
+      documentProperties: PDFDocumentProperties,
       documentPropertiesButton: document.getElementById('documentProperties')
     });
 
@@ -216,7 +216,7 @@ var PDFViewerApplication = {
       passwordCancel: document.getElementById('passwordCancel')
     });
 
-    DocumentProperties.initialize({
+    PDFDocumentProperties.initialize({
       overlayName: 'documentPropertiesOverlay',
       closeButton: document.getElementById('documentPropertiesClose'),
       fileNameField: document.getElementById('fileNameField'),
@@ -410,7 +410,7 @@ var PDFViewerApplication = {
                                     pdfDataRangeTransport);
 
           if (args.length) {
-            DocumentProperties.setFileSize(args.length);
+            PDFDocumentProperties.setFileSize(args.length);
           }
           break;
         case 'range':
@@ -556,7 +556,7 @@ var PDFViewerApplication = {
     );
 
     if (args && args.length) {
-      DocumentProperties.setFileSize(args.length);
+      PDFDocumentProperties.setFileSize(args.length);
     }
   },
 
@@ -853,9 +853,9 @@ var PDFViewerApplication = {
 
     this.pdfDocument = pdfDocument;
 
-    DocumentProperties.url = this.url;
-    DocumentProperties.pdfDocument = pdfDocument;
-    DocumentProperties.resolveDataAvailable();
+    PDFDocumentProperties.url = this.url;
+    PDFDocumentProperties.pdfDocument = pdfDocument;
+    PDFDocumentProperties.resolveDataAvailable();
 
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
