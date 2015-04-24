@@ -25,7 +25,6 @@ var SecondaryToolbar = {
 
   initialize: function secondaryToolbarInitialize(options) {
     this.toolbar = options.toolbar;
-    this.documentProperties = options.documentProperties;
     this.buttonContainer = this.toolbar.firstElementChild;
 
     // Define the toolbar buttons.
@@ -115,7 +114,7 @@ var SecondaryToolbar = {
   },
 
   documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {
-    this.documentProperties.open();
+    PDFViewerApplication.pdfDocumentProperties.open();
     this.close();
   },
 

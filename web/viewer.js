@@ -177,18 +177,20 @@ var PDFViewerApplication = {
     this.pdfDocumentProperties = new PDFDocumentProperties({
       overlayName: 'documentPropertiesOverlay',
       closeButton: document.getElementById('documentPropertiesClose'),
-      fileNameField: document.getElementById('fileNameField'),
-      fileSizeField: document.getElementById('fileSizeField'),
-      titleField: document.getElementById('titleField'),
-      authorField: document.getElementById('authorField'),
-      subjectField: document.getElementById('subjectField'),
-      keywordsField: document.getElementById('keywordsField'),
-      creationDateField: document.getElementById('creationDateField'),
-      modificationDateField: document.getElementById('modificationDateField'),
-      creatorField: document.getElementById('creatorField'),
-      producerField: document.getElementById('producerField'),
-      versionField: document.getElementById('versionField'),
-      pageCountField: document.getElementById('pageCountField')
+      fields: {
+        'fileName': document.getElementById('fileNameField'),
+        'fileSize': document.getElementById('fileSizeField'),
+        'title': document.getElementById('titleField'),
+        'author': document.getElementById('authorField'),
+        'subject': document.getElementById('subjectField'),
+        'keywords': document.getElementById('keywordsField'),
+        'creationDate': document.getElementById('creationDateField'),
+        'modificationDate': document.getElementById('modificationDateField'),
+        'creator': document.getElementById('creatorField'),
+        'producer': document.getElementById('producerField'),
+        'version': document.getElementById('versionField'),
+        'pageCount': document.getElementById('pageCountField')
+      }
     });
 
     SecondaryToolbar.initialize({
@@ -204,7 +206,6 @@ var PDFViewerApplication = {
       lastPage: document.getElementById('lastPage'),
       pageRotateCw: document.getElementById('pageRotateCw'),
       pageRotateCcw: document.getElementById('pageRotateCcw'),
-      documentProperties: this.pdfDocumentProperties,
       documentPropertiesButton: document.getElementById('documentProperties')
     });
 

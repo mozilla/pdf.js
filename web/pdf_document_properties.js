@@ -20,7 +20,9 @@
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
- * @property {string} overlayName - Name/identifier for the overlay
+ * @property {string} overlayName - Name/identifier for the overlay.
+ * @property {Object} fields - Names and elements of the overlay's fields.
+ * @property {HTMLButtonElement} closeButton - Button for closing the overlay.
  */
 
 /**
@@ -32,24 +34,12 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
    * @param {PDFDocumentPropertiesOptions} options
    */
   function PDFDocumentProperties(options) {
+    this.fields = options.fields;
+    this.overlayName = options.overlayName;
+
     this.rawFileSize = 0;
     this.url = null;
     this.pdfDocument = null;
-    this.overlayName = options.overlayName;
-
-    // Set the document property fields.
-    this.fileNameField = options.fileNameField || null;
-    this.fileSizeField = options.fileSizeField || null;
-    this.titleField = options.titleField || null;
-    this.authorField = options.authorField || null;
-    this.subjectField = options.subjectField || null;
-    this.keywordsField = options.keywordsField || null;
-    this.creationDateField = options.creationDateField || null;
-    this.modificationDateField = options.modificationDateField || null;
-    this.creatorField = options.creatorField || null;
-    this.producerField = options.producerField || null;
-    this.versionField = options.versionField || null;
-    this.pageCountField = options.pageCountField || null;
 
     // Bind the event listener for the Close button.
     if (options.closeButton) {
@@ -125,33 +115,29 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
           return;
         }
         this.setFileSize(data.length);
-        this._updateUI(this.fileSizeField, this._parseFileSize());
+        this._updateUI(this.fields['fileSize'], this._parseFileSize());
       }.bind(this));
 
       // Get the document properties.
       this.pdfDocument.getMetadata().then(function(data) {
-        var fields = [
-          { field: this.fileNameField,
-            content: getPDFFileNameFromURL(this.url) },
-          { field: this.fileSizeField, content: this._parseFileSize() },
-          { field: this.titleField, content: data.info.Title },
-          { field: this.authorField, content: data.info.Author },
-          { field: this.subjectField, content: data.info.Subject },
-          { field: this.keywordsField, content: data.info.Keywords },
-          { field: this.creationDateField,
-            content: this._parseDate(data.info.CreationDate) },
-          { field: this.modificationDateField,
-            content: this._parseDate(data.info.ModDate) },
-          { field: this.creatorField, content: data.info.Creator },
-          { field: this.producerField, content: data.info.Producer },
-          { field: this.versionField, content: data.info.PDFFormatVersion },
-          { field: this.pageCountField, content: this.pdfDocument.numPages }
-        ];
+        var content = {
+          'fileName': getPDFFileNameFromURL(this.url),
+          'fileSize': this._parseFileSize(),
+          'title': data.info.Title,
+          'author': data.info.Author,
+          'subject': data.info.Subject,
+          'keywords': data.info.Keywords,
+          'creationDate': this._parseDate(data.info.CreationDate),
+          'modificationDate': this._parseDate(data.info.ModDate),
+          'creator': data.info.Creator,
+          'producer': data.info.Producer,
+          'version': data.info.PDFFormatVersion,
+          'pageCount': this.pdfDocument.numPages
+        };
 
         // Show the properties in the dialog.
-        for (var item in fields) {
-          var element = fields[item];
-          this._updateUI(element.field, element.content);
+        for (var identifier in content) {
+          this._updateUI(this.fields[identifier], content[identifier]);
         }
       }.bind(this));
     },
