@@ -19,6 +19,11 @@
 'use strict';
 
 /**
+ * @typedef {Object} PDFDocumentPropertiesOptions
+ * @property {string} overlayName - Name/identifier for the overlay
+ */
+
+/**
  * @class
  */
 var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
@@ -59,7 +64,56 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
   }
 
   PDFDocumentProperties.prototype = {
-    getProperties: function PDFDocumentProperties_getProperties() {
+    /**
+     * Open the document properties overlay.
+     */
+    open: function PDFDocumentProperties_open() {
+      Promise.all([OverlayManager.open(this.overlayName),
+                   this.dataAvailablePromise]).then(function () {
+        this._getProperties();
+      }.bind(this));
+    },
+
+    /**
+     * Close the document properties overlay.
+     */
+    close: function PDFDocumentProperties_close() {
+      OverlayManager.close(this.overlayName);
+    },
+
+    /**
+     * Set the file size of the PDF document. This method is used to
+     * update the file size in the document properties overlay once it
+     * is known so we do not have to wait until the entire file is loaded.
+     *
+     * @param {number} fileSize - The file size of the PDF document.
+     */
+    setFileSize: function PDFDocumentProperties_setFileSize(fileSize) {
+      if (fileSize > 0) {
+        this.rawFileSize = fileSize;
+      }
+    },
+
+    /**
+     * Set a reference to the PDF document and the URL in order
+     * to populate the overlay fields with the document properties.
+     * Note that the overlay will contain no information if this method
+     * is not called.
+     *
+     * @param {Object} pdfDocument - A reference to the PDF document.
+     * @param {string} url - The URL of the document.
+     */
+    setDocumentAndUrl:
+        function PDFDocumentProperties_setDocumentAndUrl(pdfDocument, url) {
+      this.pdfDocument = pdfDocument;
+      this.url = url;
+      this.resolveDataAvailable();
+    },
+
+    /**
+     * @private
+     */
+    _getProperties: function PDFDocumentProperties_getProperties() {
       if (!OverlayManager.active) {
         // If the dialog was closed before dataAvailablePromise was resolved,
         // don't bother updating the properties.
@@ -71,7 +125,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
           return;
         }
         this.setFileSize(data.length);
-        this.updateUI(this.fileSizeField, this.parseFileSize());
+        this._updateUI(this.fileSizeField, this._parseFileSize());
       }.bind(this));
 
       // Get the document properties.
@@ -79,15 +133,15 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
         var fields = [
           { field: this.fileNameField,
             content: getPDFFileNameFromURL(this.url) },
-          { field: this.fileSizeField, content: this.parseFileSize() },
+          { field: this.fileSizeField, content: this._parseFileSize() },
           { field: this.titleField, content: data.info.Title },
           { field: this.authorField, content: data.info.Author },
           { field: this.subjectField, content: data.info.Subject },
           { field: this.keywordsField, content: data.info.Keywords },
           { field: this.creationDateField,
-            content: this.parseDate(data.info.CreationDate) },
+            content: this._parseDate(data.info.CreationDate) },
           { field: this.modificationDateField,
-            content: this.parseDate(data.info.ModDate) },
+            content: this._parseDate(data.info.ModDate) },
           { field: this.creatorField, content: data.info.Creator },
           { field: this.producerField, content: data.info.Producer },
           { field: this.versionField, content: data.info.PDFFormatVersion },
@@ -97,24 +151,24 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
         // Show the properties in the dialog.
         for (var item in fields) {
           var element = fields[item];
-          this.updateUI(element.field, element.content);
+          this._updateUI(element.field, element.content);
         }
       }.bind(this));
     },
 
-    updateUI: function PDFDocumentProperties_updateUI(field, content) {
+    /**
+     * @private
+     */
+    _updateUI: function PDFDocumentProperties_updateUI(field, content) {
       if (field && content !== undefined && content !== '') {
         field.textContent = content;
       }
     },
 
-    setFileSize: function PDFDocumentProperties_setFileSize(fileSize) {
-      if (fileSize > 0) {
-        this.rawFileSize = fileSize;
-      }
-    },
-
-    parseFileSize: function PDFDocumentProperties_parseFileSize() {
+    /**
+     * @private
+     */
+    _parseFileSize: function PDFDocumentProperties_parseFileSize() {
       var fileSize = this.rawFileSize, kb = fileSize / 1024;
       if (!kb) {
         return;
@@ -131,18 +185,10 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
       }
     },
 
-    open: function PDFDocumentProperties_open() {
-      Promise.all([OverlayManager.open(this.overlayName),
-                   this.dataAvailablePromise]).then(function () {
-        this.getProperties();
-      }.bind(this));
-    },
-
-    close: function PDFDocumentProperties_close() {
-      OverlayManager.close(this.overlayName);
-    },
-
-    parseDate: function PDFDocumentProperties_parseDate(inputDate) {
+    /**
+     * @private
+     */
+    _parseDate: function PDFDocumentProperties_parseDate(inputDate) {
       // This is implemented according to the PDF specification, but note that
       // Adobe Reader doesn't handle changing the date to universal time
       // and doesn't use the user's time zone (they're effectively ignoring

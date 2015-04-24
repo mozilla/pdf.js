@@ -856,9 +856,7 @@ var PDFViewerApplication = {
 
     this.pdfDocument = pdfDocument;
 
-    this.pdfDocumentProperties.url = this.url;
-    this.pdfDocumentProperties.pdfDocument = pdfDocument;
-    this.pdfDocumentProperties.resolveDataAvailable();
+    this.pdfDocumentProperties.setDocumentAndUrl(pdfDocument, this.url);
 
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
