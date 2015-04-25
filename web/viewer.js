@@ -595,21 +595,23 @@ var PDFViewerApplication = {
 
   fallback: function pdfViewFallback(featureId) {
 //#if !(FIREFOX || MOZCENTRAL)
-//  return;
+    /* jshint -W027 */
+    return;
 //#else
-//  // Only trigger the fallback once so we don't spam the user with messages
-//  // for one PDF.
-//  if (this.fellback)
-//    return;
-//  this.fellback = true;
-//  var url = this.url.split('#')[0];
-//  FirefoxCom.request('fallback', { featureId: featureId, url: url },
-//    function response(download) {
-//      if (!download) {
-//        return;
-//      }
-//      PDFViewerApplication.download();
-//    });
+    // Only trigger the fallback once so we don't spam the user with messages
+    // for one PDF.
+    if (this.fellback) {
+      return;
+    }
+    this.fellback = true;
+    var url = this.url.split('#')[0];
+    FirefoxCom.request('fallback', { featureId: featureId, url: url },
+      function response(download) {
+        if (!download) {
+          return;
+        }
+        PDFViewerApplication.download();
+      });
 //#endif
   },
 
@@ -1035,32 +1037,37 @@ var PDFViewerApplication = {
         self.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
 
+//#if !PRODUCTION
+      /* jshint -W027 */
+      return;
+//#endif
 //#if (FIREFOX || MOZCENTRAL)
-//    var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
-//    var generatorId = 0;
-//    var KNOWN_GENERATORS = ["acrobat distiller", "acrobat pdfwritter",
-//     "adobe livecycle", "adobe pdf library", "adobe photoshop", "ghostscript",
-//     "tcpdf", "cairo", "dvipdfm", "dvips", "pdftex", "pdfkit", "itext",
-//     "prince", "quarkxpress", "mac os x", "microsoft", "openoffice", "oracle",
-//     "luradocument", "pdf-xchange", "antenna house", "aspose.cells", "fpdf"];
-//    var generatorId = 0;
-//    if (info.Producer) {
-//      KNOWN_GENERATORS.some(function (generator, s, i) {
-//        if (generator.indexOf(s) < 0) {
-//          return false;
-//        }
-//        generatorId = i + 1;
-//        return true;
-//      }.bind(null, info.Producer.toLowerCase()));
-//    }
-//    var formType = !info.IsAcroFormPresent ? null : info.IsXFAPresent ?
-//                   'xfa' : 'acroform';
-//    FirefoxCom.request('reportTelemetry', JSON.stringify({
-//      type: 'documentInfo',
-//      version: versionId,
-//      generator: generatorId,
-//      formType: formType
-//    }));
+      var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
+      var generatorId = 0;
+      var KNOWN_GENERATORS = [
+        'acrobat distiller', 'acrobat pdfwriter', 'adobe livecycle',
+        'adobe pdf library', 'adobe photoshop', 'ghostscript', 'tcpdf',
+        'cairo', 'dvipdfm', 'dvips', 'pdftex', 'pdfkit', 'itext', 'prince',
+        'quarkxpress', 'mac os x', 'microsoft', 'openoffice', 'oracle',
+        'luradocument', 'pdf-xchange', 'antenna house', 'aspose.cells', 'fpdf'
+      ];
+      if (info.Producer) {
+        KNOWN_GENERATORS.some(function (generator, s, i) {
+          if (generator.indexOf(s) < 0) {
+            return false;
+          }
+          generatorId = i + 1;
+          return true;
+        }.bind(null, info.Producer.toLowerCase()));
+      }
+      var formType = !info.IsAcroFormPresent ? null : info.IsXFAPresent ?
+                     'xfa' : 'acroform';
+      FirefoxCom.request('reportTelemetry', JSON.stringify({
+        type: 'documentInfo',
+        version: versionId,
+        generator: generatorId,
+        formType: formType
+      }));
 //#endif
     });
   },
@@ -1309,10 +1316,14 @@ var PDFViewerApplication = {
       this.pdfViewer.getPageView(i).beforePrint();
     }
 
+//#if !PRODUCTION
+    /* jshint -W027 */
+    return;
+//#endif
 //#if (FIREFOX || MOZCENTRAL)
-//    FirefoxCom.request('reportTelemetry', JSON.stringify({
-//      type: 'print'
-//    }));
+    FirefoxCom.request('reportTelemetry', JSON.stringify({
+      type: 'print'
+    }));
 //#endif
   },
 
@@ -1398,7 +1409,7 @@ function webViewerInitialized() {
 //var file = DEFAULT_URL;
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME || B2G)
+//#if GENERIC
   var fileInput = document.createElement('input');
   fileInput.id = 'fileInput';
   fileInput.className = 'fileInput';
@@ -1498,11 +1509,11 @@ function webViewerInitialized() {
   mozL10n.setLanguage(locale);
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
-//if (!PDFViewerApplication.supportsDocumentFonts) {
-//  PDFJS.disableFontFace = true;
-//  console.warn(mozL10n.get('web_fonts_disabled', null,
-//    'Web fonts are disabled: unable to use embedded PDF fonts.'));
-//}
+  if (!PDFViewerApplication.supportsDocumentFonts) {
+    PDFJS.disableFontFace = true;
+    console.warn(mozL10n.get('web_fonts_disabled', null,
+      'Web fonts are disabled: unable to use embedded PDF fonts.'));
+  }
 //#endif
 
   if (!PDFViewerApplication.supportsPrinting) {
@@ -1676,41 +1687,49 @@ document.addEventListener('pagerendered', function (e) {
       'An error occurred while rendering the page.'), pageView.error);
   }
 
-//#if (FIREFOX || MOZCENTRAL)
-//FirefoxCom.request('reportTelemetry', JSON.stringify({
-//  type: 'pageInfo'
-//}));
-//// It is a good time to report stream and font types
-//PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
-//  FirefoxCom.request('reportTelemetry', JSON.stringify({
-//    type: 'documentStats',
-//    stats: stats
-//  }));
-//});
-//#endif
-
   // If the page is still visible when it has finished rendering,
   // ensure that the page number input loading indicator is hidden.
   if (pageNumber === PDFViewerApplication.page) {
     var pageNumberInput = document.getElementById('pageNumber');
     pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
   }
+
+//#if !PRODUCTION
+  /* jshint -W027 */
+  return;
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
+  FirefoxCom.request('reportTelemetry', JSON.stringify({
+    type: 'pageInfo'
+  }));
+  // It is a good time to report stream and font types.
+  PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
+    FirefoxCom.request('reportTelemetry', JSON.stringify({
+      type: 'documentStats',
+      stats: stats
+    }));
+  });
+//#endif
 }, true);
 
 document.addEventListener('textlayerrendered', function (e) {
   var pageIndex = e.detail.pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
+//#if !PRODUCTION
+  /* jshint -W027 */
+  return;
+//#endif
 //#if (FIREFOX || MOZCENTRAL)
-//if (pageView.textLayer && pageView.textLayer.textDivs &&
-//    pageView.textLayer.textDivs.length > 0 &&
-//    !PDFViewerApplication.supportsDocumentColors) {
-//  console.error(mozL10n.get('document_colors_disabled', null,
-//    'PDF documents are not allowed to use their own colors: ' +
-//    '\'Allow pages to choose their own colors\' ' +
-//    'is deactivated in the browser.'));
-//  PDFViewerApplication.fallback();
-//}
+  if (pageView.textLayer && pageView.textLayer.textDivs &&
+      pageView.textLayer.textDivs.length > 0 &&
+      !PDFViewerApplication.supportsDocumentColors) {
+    console.error(mozL10n.get('document_colors_disabled', null,
+      'PDF documents are not allowed to use their own colors: ' +
+      '\'Allow pages to choose their own colors\' ' +
+      'is deactivated in the browser.'));
+    PDFViewerApplication.fallback();
+  }
 //#endif
 }, true);
 
