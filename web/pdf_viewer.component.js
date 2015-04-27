@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /*jshint globalstrict: false */
-/* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder,
+/* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder, PDFLinkService,
            DefaultTextLayerFactory, AnnotationsLayerBuilder,
            DefaultAnnotationsLayerFactory */
 
@@ -28,10 +28,12 @@ if (typeof PDFJS === 'undefined') {
   'use strict';
 
 //#include ui_utils.js
+//#include pdf_link_service.js
 //#include pdf_viewer.js
 
   PDFJS.PDFViewer = PDFViewer;
   PDFJS.PDFPageView = PDFPageView;
+  PDFJS.PDFLinkService = PDFLinkService;
   PDFJS.TextLayerBuilder = TextLayerBuilder;
   PDFJS.DefaultTextLayerFactory = DefaultTextLayerFactory;
   PDFJS.AnnotationsLayerBuilder = AnnotationsLayerBuilder;

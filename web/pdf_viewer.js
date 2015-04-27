@@ -215,7 +215,6 @@ var PDFViewer = (function pdfViewer() {
       }
 
       var pagesCount = pdfDocument.numPages;
-      var pagesRefMap = this.pagesRefMap = {};
       var self = this;
 
       var resolvePagesPromise;
@@ -280,6 +279,8 @@ var PDFViewer = (function pdfViewer() {
           this._pages.push(pageView);
         }
 
+        var linkService = this.linkService;
+
         // Fetch all the pages since the viewport is needed before printing
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
@@ -292,8 +293,7 @@ var PDFViewer = (function pdfViewer() {
                 if (!pageView.pdfPage) {
                   pageView.setPdfPage(pdfPage);
                 }
-                var refStr = pdfPage.ref.num + ' ' + pdfPage.ref.gen + ' R';
-                pagesRefMap[refStr] = pageNum;
+                linkService.cachePageRef(pageNum, pdfPage.ref);
                 getPagesLeft--;
                 if (!getPagesLeft) {
                   resolvePagesPromise();
@@ -780,6 +780,11 @@ var SimpleLinkService = (function SimpleLinkServiceClosure() {
      * @param {string} action
      */
     executeNamedAction: function (action) {},
+    /**
+     * @param {number} pageNum - page number.
+     * @param {Object} pageRef - reference to the page.
+     */
+    cachePageRef: function (pageNum, pageRef) {}
   };
   return SimpleLinkService;
 })();
