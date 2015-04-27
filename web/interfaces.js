@@ -62,6 +62,17 @@ IPDFLinkService.prototype = {
 /**
  * @interface
  */
+function IPDFHistory() {}
+IPDFHistory.prototype = {
+  forward: function () {},
+  back: function () {},
+  push: function (params) {},
+  updateNextHashParam: function (hash) {},
+};
+
+/**
+ * @interface
+ */
 function IRenderableView() {}
 IRenderableView.prototype = {
   /**

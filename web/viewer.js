@@ -97,6 +97,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 
 var PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
+  initialDestination: null,
   initialized: false,
   fellback: false,
   pdfDocument: null,
@@ -114,6 +115,8 @@ var PDFViewerApplication = {
   pdfDocumentProperties: null,
   /** @type {PDFLinkService} */
   pdfLinkService: null,
+  /** @type {PDFHistory} */
+  pdfHistory: null,
   pageRotation: 0,
   updateScaleControls: true,
   isInitialViewSet: false,
@@ -154,6 +157,11 @@ var PDFViewerApplication = {
     pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
     Preferences.initialize();
+
+    this.pdfHistory = new PDFHistory({
+      linkService: pdfLinkService
+    });
+    pdfLinkService.setHistory(this.pdfHistory);
 
     this.findController = new PDFFindController({
       pdfViewer: this.pdfViewer,
@@ -790,7 +798,9 @@ var PDFViewerApplication = {
         if (!self.preferenceShowPreviousViewOnLoad && window.history.state) {
           window.history.replaceState(null, '');
         }
-        PDFHistory.initialize(self.documentFingerprint, self.pdfLinkService);
+        self.pdfHistory.initialize(self.documentFingerprint);
+        self.initialDestination = self.pdfHistory.initialDestination;
+        self.initialBookmark = self.pdfHistory.initialBookmark;
       }
 
       store.initializedPromise.then(function resolved() {
@@ -969,12 +979,12 @@ var PDFViewerApplication = {
     document.getElementById('pageNumber').value =
       this.pdfViewer.currentPageNumber = 1;
 
-    if (PDFHistory.initialDestination) {
-      this.pdfLinkService.navigateTo(PDFHistory.initialDestination);
-      PDFHistory.initialDestination = null;
+    if (this.initialDestination) {
+      this.pdfLinkService.navigateTo(this.initialDestination);
+      this.initialDestination = null;
     } else if (this.initialBookmark) {
       this.pdfLinkService.setHash(this.initialBookmark);
-      PDFHistory.push({ hash: this.initialBookmark }, !!this.initialBookmark);
+      this.pdfHistory.push({ hash: this.initialBookmark }, true);
       this.initialBookmark = null;
     } else if (storedHash) {
       this.pdfLinkService.setHash(storedHash);
@@ -1635,7 +1645,8 @@ window.addEventListener('updateviewarea', function (evt) {
   document.getElementById('secondaryViewBookmark').href = href;
 
   // Update the current bookmark in the browsing history.
-  PDFHistory.updateCurrentBookmark(location.pdfOpenParams, location.pageNumber);
+  PDFViewerApplication.pdfHistory.updateCurrentBookmark(location.pdfOpenParams,
+                                                        location.pageNumber);
 
   // Show/hide the loading indicator in the page number input element.
   var pageNumberInput = document.getElementById('pageNumber');
@@ -1665,7 +1676,7 @@ window.addEventListener('resize', function webViewerResize(evt) {
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
-  if (PDFHistory.isHashChangeUnlocked) {
+  if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
     var hash = document.location.hash.substring(1);
     if (!hash) {
       return;
@@ -2070,13 +2081,13 @@ window.addEventListener('keydown', function keydown(evt) {
     switch (evt.keyCode) {
       case 37: // left arrow
         if (isViewerInPresentationMode) {
-          PDFHistory.back();
+          PDFViewerApplication.pdfHistory.back();
           handled = true;
         }
         break;
       case 39: // right arrow
         if (isViewerInPresentationMode) {
-          PDFHistory.forward();
+          PDFViewerApplication.pdfHistory.forward();
           handled = true;
         }
         break;

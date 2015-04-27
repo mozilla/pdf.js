@@ -16,8 +16,8 @@
  */
 /*jshint globalstrict: false */
 /* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder, PDFLinkService,
-           DefaultTextLayerFactory, AnnotationsLayerBuilder,
-           DefaultAnnotationsLayerFactory */
+           DefaultTextLayerFactory, AnnotationsLayerBuilder, PDFHistory,
+           DefaultAnnotationsLayerFactory, getFileName */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
@@ -30,6 +30,7 @@ if (typeof PDFJS === 'undefined') {
 //#include ui_utils.js
 //#include pdf_link_service.js
 //#include pdf_viewer.js
+//#include pdf_history.js
 
   PDFJS.PDFViewer = PDFViewer;
   PDFJS.PDFPageView = PDFPageView;
@@ -38,4 +39,7 @@ if (typeof PDFJS === 'undefined') {
   PDFJS.DefaultTextLayerFactory = DefaultTextLayerFactory;
   PDFJS.AnnotationsLayerBuilder = AnnotationsLayerBuilder;
   PDFJS.DefaultAnnotationsLayerFactory = DefaultAnnotationsLayerFactory;
+  PDFJS.PDFHistory = PDFHistory;
+
+  PDFJS.getFileName = getFileName;
 }).call((typeof window === 'undefined') ? this : window);
