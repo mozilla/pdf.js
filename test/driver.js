@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, combineUrl, StatTimer, SpecialPowers, Promise */
+/* globals PDFJS, combineUrl, StatTimer, Promise */
 
 'use strict';
 
@@ -363,11 +363,7 @@ function quitApp() {
   document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>' +
                              document.body.innerHTML;
   sendQuitRequest(function () {
-    if (window.SpecialPowers) {
-      SpecialPowers.quit();
-    } else {
-      window.close();
-    }
+    window.close();
   });
 }
 
