@@ -1339,7 +1339,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return new ToUnicodeMap(cmap.getMap());
       } else if (isStream(cmapObj)) {
         cmap = CMapFactory.create(cmapObj,
-          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).getMap();
+          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null);
+        if (cmap instanceof IdentityCMap) {
+          return new IdentityToUnicodeMap(0, 0xFFFF);
+        }
+        cmap = cmap.getMap();
         // Convert UTF-16BE
         // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
         // to iterate over all keys.
