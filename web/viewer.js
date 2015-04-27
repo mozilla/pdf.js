@@ -926,9 +926,6 @@ var PDFViewerApplication = {
         // unless the viewer is embedded in a web page.
         if (!self.isViewerEmbedded) {
           self.pdfViewer.focus();
-//#if (FIREFOX || MOZCENTRAL)
-//        self.pdfViewer.blur();
-//#endif
         }
       }, function rejected(reason) {
         console.error(reason);
@@ -2190,16 +2187,9 @@ window.addEventListener('keydown', function keydown(evt) {
       pdfViewer.focus();
     }
     // 32=Spacebar
-    if (evt.keyCode === 32 && curElementTagName !== 'BUTTON') {
-//#if (FIREFOX || MOZCENTRAL)
-//    // Workaround for issue in Firefox, that prevents scroll keys from
-//    // working when elements with 'tabindex' are focused. (#3498)
-//    pdfViewer.blur();
-//#else
-      if (!pdfViewer.containsElement(curElement)) {
-        pdfViewer.focus();
-      }
-//#endif
+    if (evt.keyCode === 32 && curElementTagName !== 'BUTTON' &&
+        !pdfViewer.containsElement(curElement)) {
+      pdfViewer.focus();
     }
   }
 

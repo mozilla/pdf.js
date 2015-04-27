@@ -622,10 +622,6 @@ var PDFViewer = (function pdfViewer() {
       this.container.focus();
     },
 
-    blur: function () {
-      this.container.blur();
-    },
-
     get isInPresentationMode() {
       return this.presentationModeState === PresentationModeState.FULLSCREEN;
     },
