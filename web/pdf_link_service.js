@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFViewer, Promise, parseQueryString */
+/* globals Promise, parseQueryString */
 
 'use strict';
 
@@ -24,7 +24,7 @@
  * @class
  * @implements {IPDFLinkService}
  */
-var PDFLinkService = (function () {
+var PDFLinkService = (function PDFLinkServiceClosure () {
   /**
    * @constructs PDFLinkService
    */
@@ -125,27 +125,8 @@ var PDFLinkService = (function () {
         return this.getAnchorUrl('#' + escape(dest));
       }
       if (dest instanceof Array) {
-        var destRef = dest[0]; // see navigateTo method for dest format
-        var pageNumber = destRef instanceof Object ?
-          this._pagesRefCache[destRef.num + ' ' + destRef.gen + ' R'] :
-          (destRef + 1);
-        if (pageNumber) {
-          var pdfOpenParams = this.getAnchorUrl('#page=' + pageNumber);
-          var destKind = dest[1];
-          if (typeof destKind === 'object' && 'name' in destKind &&
-              destKind.name === 'XYZ') {
-            var scale = (dest[4] || this.pdfViewer.currentScaleValue);
-            var scaleNumber = parseFloat(scale);
-            if (scaleNumber) {
-              scale = scaleNumber * 100;
-            }
-            pdfOpenParams += '&zoom=' + scale;
-            if (dest[2] || dest[3]) {
-              pdfOpenParams += ',' + (dest[2] || 0) + ',' + (dest[3] || 0);
-            }
-          }
-          return pdfOpenParams;
-        }
+        var str = JSON.stringify(dest);
+        return this.getAnchorUrl('#' + escape(str));
       }
       return '';
     },
@@ -164,6 +145,7 @@ var PDFLinkService = (function () {
      * @param {string} hash
      */
     setHash: function PDFLinkService_setHash(hash) {
+      var pageNumber, dest;
       if (hash.indexOf('=') >= 0) {
         var params = parseQueryString(hash);
         // borrowing syntax from "Parameters for Opening PDF Files"
@@ -171,7 +153,6 @@ var PDFLinkService = (function () {
           this.navigateTo(params.nameddest);
           return;
         }
-        var pageNumber, dest;
         if ('page' in params) {
           pageNumber = (params.page | 0) || 1;
         }
@@ -224,8 +205,18 @@ var PDFLinkService = (function () {
         }
       } else if (/^\d+$/.test(hash)) { // page number
         this.page = hash;
-      } else { // named destination
-        this.navigateTo(unescape(hash));
+      } else { // Named (or explicit) destination.
+        dest = unescape(hash);
+        try {
+          dest = JSON.parse(dest);
+        } catch (ex) {}
+
+        if (typeof dest === 'string' || isValidExplicitDestination(dest)) {
+          this.navigateTo(dest);
+        } else {
+          console.error('PDFLinkService_setHash: \'' + unescape(hash) +
+                        '\' is not a valid destination.');
+        }
       }
     },
 
@@ -283,6 +274,58 @@ var PDFLinkService = (function () {
       this._pagesRefCache[refStr] = pageNum;
     }
   };
+
+  function isValidExplicitDestination(dest) {
+    if (!(dest instanceof Array)) {
+      return false;
+    }
+    var destLength = dest.length, allowNull = true;
+    if (destLength < 2) {
+      return false;
+    }
+    if (!((typeof dest[0] === 'object' && typeof dest[0].num === 'number' &&
+           typeof dest[0].gen === 'number') || typeof dest[0] === 'number')) {
+      return false;
+    }
+    if (!(typeof dest[1] === 'object' && typeof dest[1].name === 'string')) {
+      return false;
+    }
+    switch (dest[1].name) {
+      case 'XYZ':
+        if (destLength !== 5) {
+          return false;
+        }
+        break;
+      case 'Fit':
+      case 'FitB':
+        if (destLength !== 2) {
+          return false;
+        }
+        return true;
+      case 'FitH':
+      case 'FitBH':
+      case 'FitV':
+      case 'FitBV':
+        if (destLength !== 3) {
+          return false;
+        }
+        break;
+      case 'FitR':
+        if (destLength !== 6) {
+          return false;
+        }
+        allowNull = false;
+        break;
+      default:
+        return false;
+    }
+    for (var i = 2; i < destLength; i++) {
+      if (!(typeof dest[i] === 'number' || (allowNull && dest[i] === null))) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   return PDFLinkService;
 })();
