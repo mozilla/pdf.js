@@ -64,10 +64,9 @@ IPDFLinkService.prototype = {
  */
 function IPDFHistory() {}
 IPDFHistory.prototype = {
-  forward: function () {},
+  push: function () {},
   back: function () {},
-  push: function (params) {},
-  updateNextHashParam: function (hash) {},
+  forward: function () {},
 };
 
 /**
