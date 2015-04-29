@@ -363,10 +363,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.textLayer = textLayer;
 
-      // TODO(mack): use data attributes to store these
-      ctx._scaleX = outputScale.sx;
-      ctx._scaleY = outputScale.sy;
       if (outputScale.scaled) {
+//#if !(MOZCENTRAL || FIREFOX)
+        // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
+        ctx._transformMatrix = [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
+//#endif
         ctx.scale(outputScale.sx, outputScale.sy);
       }
 
@@ -517,6 +518,11 @@ var PDFPageView = (function PDFPageViewClosure() {
         ctx.fillStyle = 'rgb(255, 255, 255)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
+//#if !(MOZCENTRAL || FIREFOX)
+        // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
+        ctx._transformMatrix =
+          [PRINT_OUTPUT_SCALE, 0, 0, PRINT_OUTPUT_SCALE, 0, 0];
+//#endif
         ctx.scale(PRINT_OUTPUT_SCALE, PRINT_OUTPUT_SCALE);
 
         var renderContext = {
