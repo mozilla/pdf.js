@@ -598,10 +598,12 @@ var PDFViewerApplication = {
   },
 
   fallback: function pdfViewFallback(featureId) {
-//#if !(FIREFOX || MOZCENTRAL)
-    /* jshint -W027 */
-    return;
-//#else
+//#if !PRODUCTION
+    if (true) {
+      return;
+    }
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
     // Only trigger the fallback once so we don't spam the user with messages
     // for one PDF.
     if (this.fellback) {
@@ -1037,8 +1039,9 @@ var PDFViewerApplication = {
       }
 
 //#if !PRODUCTION
-      /* jshint -W027 */
-      return;
+      if (true) {
+        return;
+      }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
       var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
@@ -1316,8 +1319,9 @@ var PDFViewerApplication = {
     }
 
 //#if !PRODUCTION
-    /* jshint -W027 */
-    return;
+    if (true) {
+      return;
+    }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
     FirefoxCom.request('reportTelemetry', JSON.stringify({
@@ -1694,8 +1698,9 @@ document.addEventListener('pagerendered', function (e) {
   }
 
 //#if !PRODUCTION
-  /* jshint -W027 */
-  return;
+  if (true) {
+    return;
+  }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
   FirefoxCom.request('reportTelemetry', JSON.stringify({
@@ -1716,8 +1721,9 @@ document.addEventListener('textlayerrendered', function (e) {
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
 //#if !PRODUCTION
-  /* jshint -W027 */
-  return;
+  if (true) {
+    return;
+  }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
   if (pageView.textLayer && pageView.textLayer.textDivs &&
@@ -1805,7 +1811,7 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
   }
 });
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//#if GENERIC
 window.addEventListener('change', function webViewerChange(evt) {
   var files = evt.target.files;
   if (!files || files.length === 0) {
