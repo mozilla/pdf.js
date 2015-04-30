@@ -52,11 +52,12 @@ The version of the extension for the Opera browser can be found at the [Opera ad
 To get a local copy of the current code, clone it using git:
 
     $ git clone git://github.com/mozilla/pdf.js.git pdfjs
-    $ cd pdfjs
+    $ cd pdf.js
 
 Next, you need to start a local web server as some browsers don't allow opening
 PDF files for a file:// url:
-
+    
+    $ npm install
     $ node make server
 
 You can install Node via [nvm](https://github.com/creationix/nvm) or the
