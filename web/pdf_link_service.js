@@ -89,6 +89,11 @@ var PDFLinkService = (function PDFLinkServiceClosure () {
           if (pageNumber > self.pagesCount) {
             pageNumber = self.pagesCount;
           }
+          if (self.pdfHistory) {
+            self.pdfHistory.pushCurrentPosition();
+            self.pdfHistory.push(dest, destString, pageNumber);
+          }
+
           self.pdfViewer.scrollPageIntoView(pageNumber, dest);
         } else {
           self.pdfDocument.getPageIndex(destRef).then(function (pageIndex) {

@@ -65,6 +65,7 @@ IPDFLinkService.prototype = {
 function IPDFHistory() {}
 IPDFHistory.prototype = {
   push: function () {},
+  pushCurrentPosition: function() {},
   back: function () {},
   forward: function () {},
 };

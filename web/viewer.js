@@ -87,6 +87,7 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include pdf_attachment_view.js
 
 var PDFViewerApplication = {
+  initialDestination: null,
   initialBookmark: document.location.hash.substring(1),
   initialized: false,
   fellback: false,
@@ -148,7 +149,9 @@ var PDFViewerApplication = {
 
     Preferences.initialize();
 
-    this.pdfHistory = new PDFHistory();
+    this.pdfHistory = new PDFHistory({
+      linkService: pdfLinkService,
+    });
     pdfLinkService.setHistory(this.pdfHistory);
 
     this.findController = new PDFFindController({
@@ -851,6 +854,14 @@ var PDFViewerApplication = {
       if (!PDFJS.disableHistory && !self.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
+        var resetHistory = !self.preferenceShowPreviousViewOnLoad;
+        self.pdfHistory.initialize(self.documentFingerprint, resetHistory);
+
+        if (self.pdfHistory.initialDestination) {
+          self.initialDestination = self.pdfHistory.initialDestination;
+        } else if (self.pdfHistory.initialBookmark) {
+          self.initialBookmark = self.pdfHistory.initialBookmark;
+        }
       }
 
       store.initializedPromise.then(function resolved() {
