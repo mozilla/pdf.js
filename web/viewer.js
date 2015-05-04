@@ -2242,7 +2242,9 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 //window.navigator.mozSetMessageHandler('activity', function(activity) {
 //  var blob = activity.source.data.blob;
 //  PDFJS.maxImageSize = 1024 * 1024;
-//  var fileURL = activity.source.data.url;
+//  var fileURL = activity.source.data.url ||
+//    activity.source.data.filename ||
+//    " "; // if no url or filename, use a non-empty string
 //
 //  var url = URL.createObjectURL(blob);
 //  // We need to delay opening until all HTML is loaded.
