@@ -192,6 +192,10 @@ var Dict = (function DictClosure() {
       return all;
     },
 
+    getKeys: function Dict_getKeys() {
+      return Object.keys(this.map);
+    },
+
     set: function Dict_set(key, value) {
       this.map[key] = value;
     },
