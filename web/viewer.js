@@ -1753,12 +1753,11 @@ function updateViewarea() {
   PDFViewerApplication.pdfViewer.update();
 }
 
-window.addEventListener('updateviewarea', function () {
+window.addEventListener('updateviewarea', function (evt) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
-
-  var location = PDFViewerApplication.pdfViewer.location;
+  var location = evt.location;
 
   PDFViewerApplication.store.initializedPromise.then(function() {
     PDFViewerApplication.store.setMultiple({
