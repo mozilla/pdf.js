@@ -1081,6 +1081,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue5994",
+       "file": "pdfs/issue5994.pdf",
+       "md5": "6799733a39d29b3828d6628bf2c5c382",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "zerowidthline",
       "file": "pdfs/zerowidthline.pdf",
       "md5": "295d26e61a85635433f8e4b768953f60",
