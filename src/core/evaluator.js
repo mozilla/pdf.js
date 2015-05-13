@@ -509,7 +509,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         if (!fontAliases[hash]) {
           fontAliases[hash] = {
-            fontID: Font.getFontID()
+            fontID: Font.getFontID(this.pdfManager.documentID)
           };
         }
 
