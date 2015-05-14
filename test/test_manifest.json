@@ -1095,6 +1095,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5972",
+       "file": "pdfs/issue5972.pdf",
+       "md5": "51f03e1d38410b04c9dda7e75fe8a0a3",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "pdfkit_compressed",
       "file": "pdfs/pdfkit_compressed.pdf",
       "md5": "ffe9c571d0a1572e234253e6c7cdee6c",
