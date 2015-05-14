@@ -291,7 +291,7 @@ var PDFViewerApplication = {
       newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.ceil(newScale * 10) / 10;
       newScale = Math.min(MAX_SCALE, newScale);
-    } while (--ticks && newScale < MAX_SCALE);
+    } while (--ticks > 0 && newScale < MAX_SCALE);
     this.setScale(newScale, true);
   },
 
@@ -301,7 +301,7 @@ var PDFViewerApplication = {
       newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
       newScale = Math.floor(newScale * 10) / 10;
       newScale = Math.max(MIN_SCALE, newScale);
-    } while (--ticks && newScale > MIN_SCALE);
+    } while (--ticks > 0 && newScale > MIN_SCALE);
     this.setScale(newScale, true);
   },
 
