@@ -1358,10 +1358,6 @@ html[dir='rtl'] .attachmentsItem > button {
 .dialog .toolbarField {
   margin: 5px 0;
 }
-.dialog .toolbarField:hover,
-.dialog .toolbarField:focus {
-  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
-}
 
 .dialog .separator {
   display: block;
