@@ -1402,6 +1402,13 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "issue5896-text",
+       "file": "pdfs/issue5896.pdf",
+       "md5": "08f69084d72dabc5dfdcf5c1ff2a719f",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "issue845",
       "file": "pdfs/issue845.pdf",
       "md5": "89ddf9e63cac4fa2dedcfe32a62e5407",
