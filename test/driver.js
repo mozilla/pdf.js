@@ -18,6 +18,9 @@
 
 'use strict';
 
+var WAITING_TIME = 100; // ms
+var PDF_TO_CSS_UNITS = 96.0 / 72.0;
+
 /**
  * @class
  */
@@ -133,28 +136,27 @@ var Driver = (function DriverClosure() {
 
   Driver.prototype = {
     _getQueryStringParameters: function Driver_getQueryStringParameters() {
-      var qs = window.location.search.substring(1);
-      var kvs = qs.split('&');
-      var params = { };
-      for (var i = 0; i < kvs.length; ++i) {
-        var kv = kvs[i].split('=');
-        params[unescape(kv[0])] = unescape(kv[1]);
+      var queryString = window.location.search.substring(1);
+      var values = queryString.split('&');
+      var parameters = {};
+      for (var i = 0, ii = values.length; i < ii; i++) {
+        var value = values[i].split('=');
+        parameters[unescape(value[0])] = unescape(value[1]);
       }
-      return params;
+      return parameters;
     },
 
     run: function Driver_run() {
-      this._info('User Agent: ' + navigator.userAgent);
-      this._log('load...\n');
+      var self = this;
 
+      this._info('User agent: ' + navigator.userAgent);
       this._log('Harness thinks this browser is "' + this.browser +
         '" with path "' + this.appPath + '"\n');
       this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
       var r = new XMLHttpRequest();
-      var self = this;
       r.open('GET', this.manifestFile, false);
-      r.onreadystatechange = function loadOnreadystatechange(e) {
+      r.onreadystatechange = function() {
         if (r.readyState === 4) {
           self._log('done\n');
           self.manifest = JSON.parse(r.responseText);
@@ -162,17 +164,20 @@ var Driver = (function DriverClosure() {
           self._nextTask();
         }
       };
-      if (this.delay) {
-        this._log('\nDelaying for ' + this.delay + 'ms...\n');
+      if (this.delay > 0) {
+        this._log('\nDelaying for ' + this.delay + ' ms...\n');
       }
       // When gathering the stats the numbers seem to be more reliable
-      // if the browser is given more time to startup.
+      // if the browser is given more time to start.
       setTimeout(function() {
         r.send(null);
       }, this.delay);
     },
 
     _nextTask: function Driver_nextTask() {
+      var self = this;
+      var failure = '';
+
       this._cleanup();
 
       if (this.currentTask === this.manifest.length) {
@@ -181,17 +186,12 @@ var Driver = (function DriverClosure() {
       }
       var task = this.manifest[this.currentTask];
       task.round = 0;
+      task.pageNum = task.firstPage || 1;
       task.stats = { times: [] };
 
       this._log('Loading file "' + task.file + '"\n');
 
       var absoluteUrl = combineUrl(window.location.href, task.file);
-      var failure;
-      var self = this;
-      function continuation() {
-        task.pageNum = task.firstPage || 1;
-        self._nextPage(task, failure);
-      }
 
       PDFJS.disableRange = task.disableRange;
       PDFJS.disableAutoFetch = !task.enableAutoFetch;
@@ -201,16 +201,16 @@ var Driver = (function DriverClosure() {
           password: task.password
         }).then(function(doc) {
           task.pdfDoc = doc;
-          continuation();
+          self._nextPage(task, failure);
         }, function(e) {
-          failure = 'load PDF doc : ' + e;
-          continuation();
+          failure = 'Loading PDF document: ' + e;
+          self._nextPage(task, failure);
         });
         return;
       } catch (e) {
-        failure = 'load PDF doc : ' + this._exceptionToString(e);
+        failure = 'Loading PDF document: ' + this._exceptionToString(e);
       }
-      continuation();
+      this._nextPage(task, failure);
     },
 
     _cleanup: function Driver_cleanup() {
@@ -247,20 +247,20 @@ var Driver = (function DriverClosure() {
       return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
     },
 
-    _getLastPageNum: function Driver_getLastPageNum(task) {
+    _getLastPageNumber: function Driver_getLastPageNumber(task) {
       if (!task.pdfDoc) {
         return task.firstPage || 1;
       }
-      var lastPageNum = task.lastPage || 0;
-      if (!lastPageNum || lastPageNum > task.pdfDoc.numPages) {
-        lastPageNum = task.pdfDoc.numPages;
+      var lastPageNumber = task.lastPage || 0;
+      if (!lastPageNumber || lastPageNumber > task.pdfDoc.numPages) {
+        lastPageNumber = task.pdfDoc.numPages;
       }
-      return lastPageNum;
+      return lastPageNumber;
     },
 
     _nextPage: function Driver_nextPage(task, loadError) {
-      var failure = loadError || '';
       var self = this;
+      var failure = loadError || '';
 
       if (!task.pdfDoc) {
         var dataUrl = this.canvas.toDataURL('image/png');
@@ -273,7 +273,7 @@ var Driver = (function DriverClosure() {
         return;
       }
 
-      if (task.pageNum > this._getLastPageNum(task)) {
+      if (task.pageNum > this._getLastPageNumber(task)) {
         if (++task.round < task.rounds) {
           this._log(' Round ' + (1 + task.round) + '\n');
           task.pageNum = task.firstPage || 1;
@@ -285,13 +285,13 @@ var Driver = (function DriverClosure() {
       }
 
       if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
-        this._log(' skipping page ' + task.pageNum + '/' +
+        this._log(' Skipping page ' + task.pageNum + '/' +
           task.pdfDoc.numPages + '... ');
 
         // Empty the canvas
         this.canvas.width = 1;
         this.canvas.height = 1;
-        this._clearCanvas(this.canvas.getContext('2d'));
+        this._clearCanvas();
 
         this._snapshot(task, '');
         return;
@@ -299,15 +299,14 @@ var Driver = (function DriverClosure() {
 
       if (!failure) {
         try {
-          this._log(' loading page ' + task.pageNum + '/' +
+          this._log(' Loading page ' + task.pageNum + '/' +
             task.pdfDoc.numPages + '... ');
           var ctx = this.canvas.getContext('2d');
           task.pdfDoc.getPage(task.pageNum).then(function(page) {
-            var pdfToCssUnitsCoef = 96.0 / 72.0;
-            var viewport = page.getViewport(pdfToCssUnitsCoef);
+            var viewport = page.getViewport(PDF_TO_CSS_UNITS);
             self.canvas.width = viewport.width;
             self.canvas.height = viewport.height;
-            self._clearCanvas(ctx);
+            self._clearCanvas();
 
             var drawContext, textLayerBuilder;
             var resolveInitPromise;
@@ -369,7 +368,7 @@ var Driver = (function DriverClosure() {
 
     _snapshot: function Driver_snapshot(task, failure) {
       var self = this;
-      this._log('done, snapshotting... ');
+      this._log('Snapshotting... ');
 
       var dataUrl = this.canvas.toDataURL('image/png');
       this._sendResult(dataUrl, task, failure, function () {
@@ -382,21 +381,14 @@ var Driver = (function DriverClosure() {
 
     _quit: function Driver_quit() {
       this._log('Done !');
-      document.body.innerHTML = 'Tests finished. <h1>Close this window.</h1>' +
-                                 document.body.innerHTML;
-      this._sendQuitRequest(function () {
-        window.close();
-      });
-    },
+      this.end.textContent = 'Tests finished. Close this window!';
 
-    _sendQuitRequest: function Driver_sendQuitRequest(callback) {
+      // Send the quit request
       var r = new XMLHttpRequest();
       r.open('POST', '/tellMeToQuit?path=' + escape(this.appPath), false);
-      r.onreadystatechange = function sendQuitRequestOnreadystatechange(e) {
+      r.onreadystatechange = function(e) {
         if (r.readyState === 4) {
-          if (callback) {
-            callback();
-          }
+          window.close();
         }
       };
       r.send(null);
@@ -409,14 +401,16 @@ var Driver = (function DriverClosure() {
       }));
     },
 
-    _log: function Driver_log(str) {
-      if (output.insertAdjacentHTML) {
-        this.output.insertAdjacentHTML('BeforeEnd', str);
+    _log: function Driver_log(message) {
+      // Using insertAdjacentHTML yields a large performance gain and
+      // reduces runtime significantly.
+      if (this.output.insertAdjacentHTML) {
+        this.output.insertAdjacentHTML('BeforeEnd', message);
       } else {
-        this.output.innerHTML += str;
+        this.output.textContent += message;
       }
 
-      if (str.lastIndexOf('\n') >= 0) {
+      if (message.lastIndexOf('\n') >= 0) {
         // Scroll to the bottom of the page
         window.scrollTo(0, document.body.scrollHeight);
       }
@@ -424,10 +418,10 @@ var Driver = (function DriverClosure() {
 
     _done: function Driver_done() {
       if (this.inFlightRequests > 0) {
-        this.inflight.innerHTML = this.inFlightRequests;
-        setTimeout(this._done(), 100);
+        this.inflight.textContent = this.inFlightRequests;
+        setTimeout(this._done(), WAITING_TIME);
       } else {
-        setTimeout(this._quit(), 100);
+        setTimeout(this._quit(), WAITING_TIME);
       }
     },
 
@@ -438,7 +432,7 @@ var Driver = (function DriverClosure() {
         id: task.id,
         numPages: task.pdfDoc ?
                   (task.lastPage || task.pdfDoc.numPages) : 0,
-        lastPageNum: this._getLastPageNum(task),
+        lastPageNum: this._getLastPageNumber(task),
         failure: failure,
         file: task.file,
         round: task.round,
@@ -454,7 +448,7 @@ var Driver = (function DriverClosure() {
       var r = new XMLHttpRequest();
       r.open('POST', url, true);
       r.setRequestHeader('Content-Type', 'application/json');
-      r.onreadystatechange = function sendResultOnreadystatechange(e) {
+      r.onreadystatechange = function(e) {
         if (r.readyState === 4) {
           self.inFlightRequests--;
 
@@ -469,7 +463,7 @@ var Driver = (function DriverClosure() {
           }
         }
       };
-      this.inflight.innerHTML = this.inFlightRequests++;
+      this.inflight.textContent = this.inFlightRequests++;
       r.send(message);
     }
   };
