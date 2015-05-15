@@ -5,7 +5,6 @@
 
 'use strict';
 
-require('shelljs/make');
 var fs = require('fs'),
     path = require('path'),
     vm = require('vm');
