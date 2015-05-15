@@ -953,8 +953,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           });
       }
 
-      function buildTextGeometry(chars, textChunk) {
+      function buildTextGeometry(chars, textChunk, previousChars) {
         var font = textState.font;
+        var offset = (isNum(previousChars) ? previousChars / 1000 : 0);
         textChunk = textChunk || newTextChunk();
         if (!textChunk.transform) {
           // 9.4.4 Text Space Details
@@ -1036,17 +1037,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var ty = 0;
           if (!font.vertical) {
             var w0 = glyphWidth * textState.fontMatrix[0];
-            tx = (w0 * textState.fontSize + charSpacing) *
+            tx = ((w0 - offset) * textState.fontSize + charSpacing) *
                  textState.textHScale;
             width += tx;
           } else {
             var w1 = glyphWidth * textState.fontMatrix[0];
-            ty = w1 * textState.fontSize + charSpacing;
+            ty = (w1 - offset) * textState.fontSize + charSpacing;
             height += ty;
           }
           textState.translateTextMatrix(tx, ty);
 
           textChunk.str.push(glyphUnicode);
+
+          offset = 0;
         }
 
         var a = textState.textLineMatrix[0];
@@ -1130,7 +1133,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var offset;
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  buildTextGeometry(items[j], textChunk);
+                  buildTextGeometry(items[j], textChunk,
+                                   (j > 0 ? items[j - 1] : 0));
                 } else {
                   // PDF Specification 5.3.2 states:
                   // The number is expressed in thousandths of a unit of text
