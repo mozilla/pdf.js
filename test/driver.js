@@ -18,412 +18,461 @@
 
 'use strict';
 
-/*
- * A Test Driver for PDF.js
+/**
+ * @class
  */
-(function DriverClosure() {
+var NullTextLayerBuilder = (function NullTextLayerBuilderClosure() {
+  /**
+   * @constructs NullTextLayerBuilder
+   */
+  function NullTextLayerBuilder() {}
 
-PDFJS.enableStats = true;
-PDFJS.cMapUrl = '../external/bcmaps/';
-PDFJS.cMapPacked = true;
+  NullTextLayerBuilder.prototype = {
+    beginLayout: function NullTextLayerBuilder_BeginLayout() {},
+    endLayout: function NullTextLayerBuilder_EndLayout() {},
+    appendText: function NullTextLayerBuilder_AppendText() {}
+  };
 
-var appPath, masterMode, browser, canvas, dummyCanvas, currentTaskIdx,
-    manifest, stdout;
-var inFlightRequests = 0;
+  return NullTextLayerBuilder;
+})();
 
-function queryParams() {
-  var qs = window.location.search.substring(1);
-  var kvs = qs.split('&');
-  var params = { };
-  for (var i = 0; i < kvs.length; ++i) {
-    var kv = kvs[i].split('=');
-    params[unescape(kv[0])] = unescape(kv[1]);
+/**
+ * @class
+ */
+var SimpleTextLayerBuilder = (function SimpleTextLayerBuilderClosure() {
+  /**
+   * @constructs SimpleTextLayerBuilder
+   */
+  function SimpleTextLayerBuilder(ctx, viewport) {
+    this.ctx = ctx;
+    this.viewport = viewport;
+    this.textCounter = 0;
   }
-  return params;
-}
 
-window.load = function load() {
-  var params = queryParams();
-  browser = params.browser;
-  var manifestFile = params.manifestFile;
-  appPath = params.path;
-  masterMode = params.masterMode === 'True';
-  var delay = params.delay || 0;
+  SimpleTextLayerBuilder.prototype = {
+    appendText: function SimpleTextLayerBuilder_AppendText(geom, styles) {
+      var style = styles[geom.fontName];
+      var ctx = this.ctx, viewport = this.viewport;
+      var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
+      var angle = Math.atan2(tx[1], tx[0]);
+      var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+      var fontAscent = (style.ascent ? style.ascent * fontHeight :
+        (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
 
-  canvas = document.createElement('canvas');
-  stdout = document.getElementById('output');
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = 'red';
+      ctx.fillStyle = 'yellow';
+      ctx.translate(tx[4] + (fontAscent * Math.sin(angle)),
+                    tx[5] - (fontAscent * Math.cos(angle)));
+      ctx.rotate(angle);
+      ctx.rect(0, 0, geom.width * viewport.scale, geom.height * viewport.scale);
+      ctx.stroke();
+      ctx.fill();
+      ctx.restore();
+      ctx.font = fontHeight + 'px ' + style.fontFamily;
+      ctx.fillStyle = 'black';
+      ctx.fillText(geom.str, tx[4], tx[5]);
 
-  info('User Agent: ' + navigator.userAgent);
-  log('load...\n');
+      this.textCounter++;
+    },
 
-  log('Harness thinks this browser is "' + browser + '" with path "' +
-      appPath + '"\n');
-  log('Fetching manifest "' + manifestFile + '"... ');
-
-  var r = new XMLHttpRequest();
-  r.open('GET', manifestFile, false);
-  r.onreadystatechange = function loadOnreadystatechange(e) {
-    if (r.readyState === 4) {
-      log('done\n');
-      manifest = JSON.parse(r.responseText);
-      currentTaskIdx = 0;
-      nextTask();
+    setTextContent:
+        function SimpleTextLayerBuilder_SetTextContent(textContent) {
+      this.ctx.save();
+      var textItems = textContent.items;
+      for (var i = 0, ii = textItems.length; i < ii; i++) {
+        this.appendText(textItems[i], textContent.styles);
+      }
+      this.ctx.restore();
     }
   };
-  if (delay) {
-    log('\nDelaying for ' + delay + 'ms...\n');
-  }
-  // When gathering the stats the numbers seem to be more reliable if the
-  // browser is given more time to startup.
-  setTimeout(function() {
-    r.send(null);
-  }, delay);
-};
 
-function cleanup() {
-  // Clear out all the stylesheets since a new one is created for each font.
-  while (document.styleSheets.length > 0) {
-    var styleSheet = document.styleSheets[0];
-    while (styleSheet.cssRules.length > 0) {
-      styleSheet.deleteRule(0);
-    }
-    var ownerNode = styleSheet.ownerNode;
-    ownerNode.parentNode.removeChild(ownerNode);
-  }
-  var guard = document.getElementById('end');
-  var body = document.body;
-  while (body.lastChild !== guard) {
-    body.removeChild(body.lastChild);
-  }
+  return SimpleTextLayerBuilder;
+})();
 
-  // Wipe out the link to the pdfdoc so it can be GC'ed.
-  for (var i = 0; i < manifest.length; i++) {
-    if (manifest[i].pdfDoc) {
-      manifest[i].pdfDoc.destroy();
-      delete manifest[i].pdfDoc;
-    }
-  }
-}
+/**
+ * @typedef {Object} DriverOptions
+ * @property {HTMLPreElement} output - Container for all output messages.
+ * @property {HTMLSpanElement} inflight - Field displaying the number of
+ *   inflight requests.
+ * @property {HTMLDivElement} end - Container for a completion message.
+ */
 
-function exceptionToString(e) {
-  if (typeof e !== 'object') {
-    return String(e);
-  }
-  if (!('message' in e)) {
-    return JSON.stringify(e);
-  }
-  return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
-}
+/**
+ * @class
+ */
+var Driver = (function DriverClosure() {
+  /**
+   * @constructs Driver
+   * @param {DriverOptions} options
+   */
+  function Driver(options) {
+    // Configure the global PDFJS object
+    PDFJS.workerSrc = '../src/worker_loader.js';
+    PDFJS.cMapPacked = true;
+    PDFJS.cMapUrl = '../external/bcmaps/';
+    PDFJS.enableStats = true;
 
-function nextTask() {
-  cleanup();
+    // Set the passed options
+    this.output = options.output;
+    this.inflight = options.inflight;
+    this.end = options.end;
 
-  if (currentTaskIdx === manifest.length) {
-    done();
-    return;
-  }
-  var task = manifest[currentTaskIdx];
-  task.round = 0;
-  task.stats = {times: []};
+    // Set parameters from the query string
+    var parameters = this._getQueryStringParameters();
+    this.browser = parameters.browser;
+    this.manifestFile = parameters.manifestFile;
+    this.appPath = parameters.path;
+    this.delay = (parameters.delay | 0) || 0;
+    this.inFlightRequests = 0;
 
-  log('Loading file "' + task.file + '"\n');
-
-  var absoluteUrl = combineUrl(window.location.href, task.file);
-  var failure;
-  function continuation() {
-    task.pageNum = task.firstPage || 1;
-    nextPage(task, failure);
+    // Create a working canvas
+    this.canvas = document.createElement('canvas');
   }
 
-  PDFJS.disableRange = task.disableRange;
-  PDFJS.disableAutoFetch = !task.enableAutoFetch;
-  try {
-    var promise = PDFJS.getDocument({
-      url: absoluteUrl,
-      password: task.password
-    });
-    promise.then(function(doc) {
-      task.pdfDoc = doc;
-      continuation();
-    }, function(e) {
-      failure = 'load PDF doc : ' + e;
-      continuation();
-    });
-    return;
-  } catch (e) {
-    failure = 'load PDF doc : ' + exceptionToString(e);
-  }
-  continuation();
-}
+  Driver.prototype = {
+    _getQueryStringParameters: function Driver_getQueryStringParameters() {
+      var qs = window.location.search.substring(1);
+      var kvs = qs.split('&');
+      var params = { };
+      for (var i = 0; i < kvs.length; ++i) {
+        var kv = kvs[i].split('=');
+        params[unescape(kv[0])] = unescape(kv[1]);
+      }
+      return params;
+    },
 
-function getLastPageNum(task) {
-  if (!task.pdfDoc) {
-    return task.firstPage || 1;
-  }
-  var lastPageNum = task.lastPage || 0;
-  if (!lastPageNum || lastPageNum > task.pdfDoc.numPages) {
-    lastPageNum = task.pdfDoc.numPages;
-  }
-  return lastPageNum;
-}
+    run: function Driver_run() {
+      this._info('User Agent: ' + navigator.userAgent);
+      this._log('load...\n');
 
-function NullTextLayerBuilder() {
-}
-NullTextLayerBuilder.prototype = {
-  beginLayout: function NullTextLayerBuilder_BeginLayout() {},
-  endLayout: function NullTextLayerBuilder_EndLayout() {},
-  appendText: function NullTextLayerBuilder_AppendText() {}
-};
+      this._log('Harness thinks this browser is "' + this.browser +
+        '" with path "' + this.appPath + '"\n');
+      this._log('Fetching manifest "' + this.manifestFile + '"... ');
 
-function SimpleTextLayerBuilder(ctx, viewport) {
-  this.ctx = ctx;
-  this.viewport = viewport;
-  this.textCounter = 0;
-}
-SimpleTextLayerBuilder.prototype = {
-  appendText: function SimpleTextLayerBuilder_AppendText(geom, styles) {
-    var style = styles[geom.fontName];
-    var ctx = this.ctx, viewport = this.viewport;
-    var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
-    var angle = Math.atan2(tx[1], tx[0]);
-    var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-    var fontAscent = (style.ascent ? style.ascent * fontHeight :
-      (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
-    ctx.save();
-    ctx.beginPath();
-    ctx.strokeStyle = 'red';
-    ctx.fillStyle = 'yellow';
-    ctx.translate(tx[4] + (fontAscent * Math.sin(angle)),
-                  tx[5] - (fontAscent * Math.cos(angle)));
-    ctx.rotate(angle);
-    ctx.rect(0, 0, geom.width * viewport.scale, geom.height * viewport.scale);
-    ctx.stroke();
-    ctx.fill();
-    ctx.restore();
-    ctx.font = fontHeight + 'px ' + style.fontFamily;
-    ctx.fillStyle = 'black';
-    ctx.fillText(geom.str, tx[4], tx[5]);
-
-    this.textCounter++;
-  },
-  setTextContent: function SimpleTextLayerBuilder_SetTextContent(textContent) {
-    this.ctx.save();
-    var textItems = textContent.items;
-    for (var i = 0; i < textItems.length; i++) {
-      this.appendText(textItems[i], textContent.styles);
-    }
-
-    this.ctx.restore();
-  }
-};
-
-function nextPage(task, loadError) {
-  var failure = loadError || '';
-
-  if (!task.pdfDoc) {
-    var dataUrl = canvas.toDataURL('image/png');
-    sendTaskResult(dataUrl, task, failure, function () {
-      log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
-      ++currentTaskIdx;
-      nextTask();
-    });
-    return;
-  }
-
-  if (task.pageNum > getLastPageNum(task)) {
-    if (++task.round < task.rounds) {
-      log(' Round ' + (1 + task.round) + '\n');
-      task.pageNum = task.firstPage || 1;
-    } else {
-      ++currentTaskIdx;
-      nextTask();
-      return;
-    }
-  }
-
-  if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
-    log(' skipping page ' + task.pageNum + '/' + task.pdfDoc.numPages +
-        '... ');
-    // empty the canvas
-    canvas.width = 1;
-    canvas.height = 1;
-    clear(canvas.getContext('2d'));
-
-    snapshotCurrentPage(task, '');
-    return;
-  }
-
-  if (!failure) {
-    try {
-      log(' loading page ' + task.pageNum + '/' + task.pdfDoc.numPages +
-          '... ');
-      var ctx = canvas.getContext('2d');
-      task.pdfDoc.getPage(task.pageNum).then(function(page) {
-        var pdfToCssUnitsCoef = 96.0 / 72.0;
-        var viewport = page.getViewport(pdfToCssUnitsCoef);
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        clear(ctx);
-
-        var drawContext, textLayerBuilder;
-        var resolveInitPromise;
-        var initPromise = new Promise(function (resolve) {
-          resolveInitPromise = resolve;
-        });
-        if (task.type === 'text') {
-          // using dummy canvas for pdf context drawing operations
-          if (!dummyCanvas) {
-            dummyCanvas = document.createElement('canvas');
-          }
-          drawContext = dummyCanvas.getContext('2d');
-          // ... text builder will draw its content on the test canvas
-          textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
-
-          page.getTextContent().then(function(textContent) {
-            textLayerBuilder.setTextContent(textContent);
-            resolveInitPromise();
-          });
-        } else {
-          drawContext = ctx;
-          textLayerBuilder = new NullTextLayerBuilder();
-          resolveInitPromise();
+      var r = new XMLHttpRequest();
+      var self = this;
+      r.open('GET', this.manifestFile, false);
+      r.onreadystatechange = function loadOnreadystatechange(e) {
+        if (r.readyState === 4) {
+          self._log('done\n');
+          self.manifest = JSON.parse(r.responseText);
+          self.currentTask = 0;
+          self._nextTask();
         }
-        var renderContext = {
-          canvasContext: drawContext,
-          viewport: viewport
-        };
-        var completeRender = (function(error) {
-          page.destroy();
-          task.stats = page.stats;
-          page.stats = new StatTimer();
-          snapshotCurrentPage(task, error);
+      };
+      if (this.delay) {
+        this._log('\nDelaying for ' + this.delay + 'ms...\n');
+      }
+      // When gathering the stats the numbers seem to be more reliable
+      // if the browser is given more time to startup.
+      setTimeout(function() {
+        r.send(null);
+      }, this.delay);
+    },
+
+    _nextTask: function Driver_nextTask() {
+      this._cleanup();
+
+      if (this.currentTask === this.manifest.length) {
+        this._done();
+        return;
+      }
+      var task = this.manifest[this.currentTask];
+      task.round = 0;
+      task.stats = { times: [] };
+
+      this._log('Loading file "' + task.file + '"\n');
+
+      var absoluteUrl = combineUrl(window.location.href, task.file);
+      var failure;
+      var self = this;
+      function continuation() {
+        task.pageNum = task.firstPage || 1;
+        self._nextPage(task, failure);
+      }
+
+      PDFJS.disableRange = task.disableRange;
+      PDFJS.disableAutoFetch = !task.enableAutoFetch;
+      try {
+        PDFJS.getDocument({
+          url: absoluteUrl,
+          password: task.password
+        }).then(function(doc) {
+          task.pdfDoc = doc;
+          continuation();
+        }, function(e) {
+          failure = 'load PDF doc : ' + e;
+          continuation();
         });
-        initPromise.then(function () {
-          page.render(renderContext).promise.then(function() {
-            completeRender(false);
+        return;
+      } catch (e) {
+        failure = 'load PDF doc : ' + this._exceptionToString(e);
+      }
+      continuation();
+    },
+
+    _cleanup: function Driver_cleanup() {
+      // Clear out all the stylesheets since a new one is created for each font.
+      while (document.styleSheets.length > 0) {
+        var styleSheet = document.styleSheets[0];
+        while (styleSheet.cssRules.length > 0) {
+          styleSheet.deleteRule(0);
+        }
+        var ownerNode = styleSheet.ownerNode;
+        ownerNode.parentNode.removeChild(ownerNode);
+      }
+      var body = document.body;
+      while (body.lastChild !== this.end) {
+        body.removeChild(body.lastChild);
+      }
+
+      // Wipe out the link to the pdfdoc so it can be GC'ed.
+      for (var i = 0; i < this.manifest.length; i++) {
+        if (this.manifest[i].pdfDoc) {
+          this.manifest[i].pdfDoc.destroy();
+          delete this.manifest[i].pdfDoc;
+        }
+      }
+    },
+
+    _exceptionToString: function Driver_exceptionToString(e) {
+      if (typeof e !== 'object') {
+        return String(e);
+      }
+      if (!('message' in e)) {
+        return JSON.stringify(e);
+      }
+      return e.message + ('stack' in e ? ' at ' + e.stack.split('\n')[0] : '');
+    },
+
+    _getLastPageNum: function Driver_getLastPageNum(task) {
+      if (!task.pdfDoc) {
+        return task.firstPage || 1;
+      }
+      var lastPageNum = task.lastPage || 0;
+      if (!lastPageNum || lastPageNum > task.pdfDoc.numPages) {
+        lastPageNum = task.pdfDoc.numPages;
+      }
+      return lastPageNum;
+    },
+
+    _nextPage: function Driver_nextPage(task, loadError) {
+      var failure = loadError || '';
+      var self = this;
+
+      if (!task.pdfDoc) {
+        var dataUrl = this.canvas.toDataURL('image/png');
+        this._sendResult(dataUrl, task, failure, function () {
+          self._log('done' + (failure ? ' (failed !: ' + failure + ')' : '') +
+            '\n');
+          self.currentTask++;
+          self._nextTask();
+        });
+        return;
+      }
+
+      if (task.pageNum > this._getLastPageNum(task)) {
+        if (++task.round < task.rounds) {
+          this._log(' Round ' + (1 + task.round) + '\n');
+          task.pageNum = task.firstPage || 1;
+        } else {
+          this.currentTask++;
+          this._nextTask();
+          return;
+        }
+      }
+
+      if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
+        this._log(' skipping page ' + task.pageNum + '/' +
+          task.pdfDoc.numPages + '... ');
+
+        // Empty the canvas
+        this.canvas.width = 1;
+        this.canvas.height = 1;
+        this._clearCanvas(this.canvas.getContext('2d'));
+
+        this._snapshot(task, '');
+        return;
+      }
+
+      if (!failure) {
+        try {
+          this._log(' loading page ' + task.pageNum + '/' +
+            task.pdfDoc.numPages + '... ');
+          var ctx = this.canvas.getContext('2d');
+          task.pdfDoc.getPage(task.pageNum).then(function(page) {
+            var pdfToCssUnitsCoef = 96.0 / 72.0;
+            var viewport = page.getViewport(pdfToCssUnitsCoef);
+            self.canvas.width = viewport.width;
+            self.canvas.height = viewport.height;
+            self._clearCanvas(ctx);
+
+            var drawContext, textLayerBuilder;
+            var resolveInitPromise;
+            var initPromise = new Promise(function (resolve) {
+              resolveInitPromise = resolve;
+            });
+            if (task.type === 'text') {
+              // Using a dummy canvas for PDF context drawing operations
+              if (!self.dummyCanvas) {
+                self.dummyCanvas = document.createElement('canvas');
+              }
+              drawContext = self.dummyCanvas.getContext('2d');
+              // The text builder will draw its content on the test canvas
+              textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
+
+              page.getTextContent().then(function(textContent) {
+                textLayerBuilder.setTextContent(textContent);
+                resolveInitPromise();
+              });
+            } else {
+              drawContext = ctx;
+              textLayerBuilder = new NullTextLayerBuilder();
+              resolveInitPromise();
+            }
+            var renderContext = {
+              canvasContext: drawContext,
+              viewport: viewport
+            };
+            var completeRender = (function(error) {
+              page.destroy();
+              task.stats = page.stats;
+              page.stats = new StatTimer();
+              self._snapshot(task, error);
+            });
+            initPromise.then(function () {
+              page.render(renderContext).promise.then(function() {
+                completeRender(false);
+              },
+              function(error) {
+                completeRender('render : ' + error);
+              });
+            });
           },
           function(error) {
-            completeRender('render : ' + error);
+            self._snapshot(task, 'render : ' + error);
           });
-        });
-      },
-      function(error) {
-        snapshotCurrentPage(task, 'render : ' + error);
+        } catch (e) {
+          failure = 'page setup : ' + this._exceptionToString(e);
+          this._snapshot(task, failure);
+        }
+      }
+    },
+
+    _clearCanvas: function Driver_clearCanvas() {
+      var ctx = this.canvas.getContext('2d');
+      ctx.beginPath();
+      ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+
+    _snapshot: function Driver_snapshot(task, failure) {
+      var self = this;
+      this._log('done, snapshotting... ');
+
+      var dataUrl = this.canvas.toDataURL('image/png');
+      this._sendResult(dataUrl, task, failure, function () {
+        self._log('done' + (failure ? ' (failed !: ' + failure + ')' : '') +
+          '\n');
+        task.pageNum++;
+        self._nextPage(task);
       });
-    } catch (e) {
-      failure = 'page setup : ' + exceptionToString(e);
-      snapshotCurrentPage(task, failure);
-    }
-  }
-}
+    },
 
-function snapshotCurrentPage(task, failure) {
-  log('done, snapshotting... ');
+    _quit: function Driver_quit() {
+      this._log('Done !');
+      document.body.innerHTML = 'Tests finished. <h1>Close this window.</h1>' +
+                                 document.body.innerHTML;
+      this._sendQuitRequest(function () {
+        window.close();
+      });
+    },
 
-  var dataUrl = canvas.toDataURL('image/png');
-  sendTaskResult(dataUrl, task, failure, function () {
-    log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
+    _sendQuitRequest: function Driver_sendQuitRequest(callback) {
+      var r = new XMLHttpRequest();
+      r.open('POST', '/tellMeToQuit?path=' + escape(this.appPath), false);
+      r.onreadystatechange = function sendQuitRequestOnreadystatechange(e) {
+        if (r.readyState === 4) {
+          if (callback) {
+            callback();
+          }
+        }
+      };
+      r.send(null);
+    },
 
-    ++task.pageNum;
-    nextPage(task);
-  });
-}
+    _info: function Driver_info(message) {
+      this._send('/info', JSON.stringify({
+        browser: this.browser,
+        message: message
+      }));
+    },
 
-function sendQuitRequest(cb) {
-  var r = new XMLHttpRequest();
-  r.open('POST', '/tellMeToQuit?path=' + escape(appPath), false);
-  r.onreadystatechange = function sendQuitRequestOnreadystatechange(e) {
-    if (r.readyState === 4) {
-      if (cb) {
-        cb();
+    _log: function Driver_log(str) {
+      if (output.insertAdjacentHTML) {
+        this.output.insertAdjacentHTML('BeforeEnd', str);
+      } else {
+        this.output.innerHTML += str;
       }
+
+      if (str.lastIndexOf('\n') >= 0) {
+        // Scroll to the bottom of the page
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    },
+
+    _done: function Driver_done() {
+      if (this.inFlightRequests > 0) {
+        this.inflight.innerHTML = this.inFlightRequests;
+        setTimeout(this._done(), 100);
+      } else {
+        setTimeout(this._quit(), 100);
+      }
+    },
+
+    _sendResult: function Driver_sendResult(snapshot, task, failure,
+        callback) {
+      var result = JSON.stringify({
+        browser: this.browser,
+        id: task.id,
+        numPages: task.pdfDoc ?
+                  (task.lastPage || task.pdfDoc.numPages) : 0,
+        lastPageNum: this._getLastPageNum(task),
+        failure: failure,
+        file: task.file,
+        round: task.round,
+        page: task.pageNum,
+        snapshot: snapshot,
+        stats: task.stats.times
+      });
+      this._send('/submit_task_results', result, callback);
+    },
+
+    _send: function Driver_send(url, message, callback) {
+      var self = this;
+      var r = new XMLHttpRequest();
+      r.open('POST', url, true);
+      r.setRequestHeader('Content-Type', 'application/json');
+      r.onreadystatechange = function sendResultOnreadystatechange(e) {
+        if (r.readyState === 4) {
+          self.inFlightRequests--;
+
+          // Retry until successful
+          if (r.status !== 200) {
+            setTimeout(function() {
+              self._send(url, message);
+            });
+          }
+          if (callback) {
+            callback();
+          }
+        }
+      };
+      this.inflight.innerHTML = this.inFlightRequests++;
+      r.send(message);
     }
   };
-  r.send(null);
-}
 
-function quitApp() {
-  log('Done !');
-  document.body.innerHTML = 'Tests are finished. <h1>CLOSE ME!</h1>' +
-                             document.body.innerHTML;
-  sendQuitRequest(function () {
-    window.close();
-  });
-}
-
-function done() {
-  if (inFlightRequests > 0) {
-    document.getElementById('inflight').innerHTML = inFlightRequests;
-    setTimeout(done, 100);
-  } else {
-    setTimeout(quitApp, 100);
-  }
-}
-
-function sendTaskResult(snapshot, task, failure, callback) {
-  var result = JSON.stringify({
-    browser: browser,
-    id: task.id,
-    numPages: task.pdfDoc ?
-             (task.lastPage || task.pdfDoc.numPages) : 0,
-    lastPageNum: getLastPageNum(task),
-    failure: failure,
-    file: task.file,
-    round: task.round,
-    page: task.pageNum,
-    snapshot: snapshot,
-    stats: task.stats.times
-  });
-
-  send('/submit_task_results', result, callback);
-}
-
-function send(url, message, callback) {
-  var r = new XMLHttpRequest();
-  // (The POST URI is ignored atm.)
-  r.open('POST', url, true);
-  r.setRequestHeader('Content-Type', 'application/json');
-  r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
-    if (r.readyState === 4) {
-      inFlightRequests--;
-      // Retry until successful
-      if (r.status !== 200) {
-        setTimeout(function() {
-          send(url, message);
-        });
-      }
-      if (callback) {
-        callback();
-      }
-    }
-  };
-  document.getElementById('inflight').innerHTML = inFlightRequests++;
-  r.send(message);
-}
-
-function info(message) {
-  send('/info', JSON.stringify({
-    browser: browser,
-    message: message
-  }));
-}
-
-function clear(ctx) {
-  ctx.beginPath();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function log(str) {
-  if (stdout.insertAdjacentHTML) {
-    stdout.insertAdjacentHTML('BeforeEnd', str);
-  } else {
-    stdout.innerHTML += str;
-  }
-
-  if (str.lastIndexOf('\n') >= 0) {
-    // Scroll to the bottom of the page
-    window.scrollTo(0, document.body.scrollHeight);
-  }
-}
-
-})(); // DriverClosure
+  return Driver;
+})();

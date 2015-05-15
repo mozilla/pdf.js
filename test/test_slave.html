@@ -34,7 +34,11 @@ limitations under the License.
     <div id="end"></div>
   </body>
   <script>
-    PDFJS.workerSrc = '../src/worker_loader.js';
-    load();
+    var driver = new Driver({
+      output: document.getElementById('output'),
+      inflight: document.getElementById('inflight'),
+      end: document.getElementById('end')
+    });
+    driver.run();
   </script>
 </html>
