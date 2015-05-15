@@ -96,9 +96,11 @@ var SimpleTextLayerBuilder = (function SimpleTextLayerBuilderClosure() {
 
 /**
  * @typedef {Object} DriverOptions
- * @property {HTMLPreElement} output - Container for all output messages.
  * @property {HTMLSpanElement} inflight - Field displaying the number of
  *   inflight requests.
+ * @property {HTMLInputElement} disableScrolling - Checkbox to disable
+ *   automatic scrolling of the output container.
+ * @property {HTMLPreElement} output - Container for all output messages.
  * @property {HTMLDivElement} end - Container for a completion message.
  */
 
@@ -118,8 +120,9 @@ var Driver = (function DriverClosure() {
     PDFJS.enableStats = true;
 
     // Set the passed options
-    this.output = options.output;
     this.inflight = options.inflight;
+    this.disableScrolling = options.disableScrolling;
+    this.output = options.output;
     this.end = options.end;
 
     // Set parameters from the query string
@@ -410,9 +413,9 @@ var Driver = (function DriverClosure() {
         this.output.textContent += message;
       }
 
-      if (message.lastIndexOf('\n') >= 0) {
+      if (message.lastIndexOf('\n') >= 0 && !this.disableScrolling.checked) {
         // Scroll to the bottom of the page
-        window.scrollTo(0, document.body.scrollHeight);
+        this.output.scrollTop = this.output.scrollHeight;
       }
     },
 

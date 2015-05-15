@@ -29,14 +29,19 @@ limitations under the License.
     <script src="driver.js"></script>
   </head>
   <body>
-    <pre id="output"></pre>
     <p>Inflight requests: <span id="inflight"></span></p>
+    <p>
+      <input type="checkbox" id="disableScrolling">
+      <label for="disableScrolling">Disable automatic scrolling</label>
+    </p>
+    <pre id="output" style="max-height: 800px; overflow-y: scroll;"></pre>
     <div id="end"></div>
   </body>
   <script>
     var driver = new Driver({
-      output: document.getElementById('output'),
+      disableScrolling: document.getElementById('disableScrolling'),
       inflight: document.getElementById('inflight'),
+      output: document.getElementById('output'),
       end: document.getElementById('end')
     });
     driver.run();
