@@ -31,9 +31,6 @@ var appPath, masterMode, browser, canvas, dummyCanvas, currentTaskIdx,
     manifest, stdout;
 var inFlightRequests = 0;
 
-// Chrome for Windows locks during testing on low end machines
-var letItCooldown = /Windows.*?Chrom/i.test(navigator.userAgent);
-
 function queryParams() {
   var qs = window.location.search.substring(1);
   var kvs = qs.split('&');
@@ -83,7 +80,7 @@ window.load = function load() {
   }, delay);
 };
 
-function cleanup(callback) {
+function cleanup() {
   // Clear out all the stylesheets since a new one is created for each font.
   while (document.styleSheets.length > 0) {
     var styleSheet = document.styleSheets[0];
@@ -106,11 +103,6 @@ function cleanup(callback) {
       delete manifest[i].pdfDoc;
     }
   }
-  if (letItCooldown) {
-    setTimeout(callback, 500);
-  } else {
-    callback();
-  }
 }
 
 function exceptionToString(e) {
@@ -124,10 +116,8 @@ function exceptionToString(e) {
 }
 
 function nextTask() {
-  cleanup(continueNextTask);
-}
+  cleanup();
 
-function continueNextTask() {
   if (currentTaskIdx === manifest.length) {
     done();
     return;
@@ -175,14 +165,6 @@ function getLastPageNum(task) {
     lastPageNum = task.pdfDoc.numPages;
   }
   return lastPageNum;
-}
-
-function isLastPage(task) {
-  return task.pageNum > getLastPageNum(task);
-}
-
-function canvasToDataURL() {
-  return canvas.toDataURL('image/png');
 }
 
 function NullTextLayerBuilder() {
@@ -239,7 +221,8 @@ function nextPage(task, loadError) {
   var failure = loadError || '';
 
   if (!task.pdfDoc) {
-    sendTaskResult(canvasToDataURL(), task, failure, function () {
+    var dataUrl = canvas.toDataURL('image/png');
+    sendTaskResult(dataUrl, task, failure, function () {
       log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
       ++currentTaskIdx;
       nextTask();
@@ -247,7 +230,7 @@ function nextPage(task, loadError) {
     return;
   }
 
-  if (isLastPage(task)) {
+  if (task.pageNum > getLastPageNum(task)) {
     if (++task.round < task.rounds) {
       log(' Round ' + (1 + task.round) + '\n');
       task.pageNum = task.firstPage || 1;
@@ -337,7 +320,8 @@ function nextPage(task, loadError) {
 function snapshotCurrentPage(task, failure) {
   log('done, snapshotting... ');
 
-  sendTaskResult(canvasToDataURL(), task, failure, function () {
+  var dataUrl = canvas.toDataURL('image/png');
+  sendTaskResult(dataUrl, task, failure, function () {
     log('done' + (failure ? ' (failed !: ' + failure + ')' : '') + '\n');
 
     ++task.pageNum;
@@ -409,11 +393,7 @@ function send(url, message, callback) {
         });
       }
       if (callback) {
-        if (letItCooldown) {
-          setTimeout(callback, 100);
-        } else {
-          callback();
-        }
+        callback();
       }
     }
   };
@@ -433,10 +413,6 @@ function clear(ctx) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-function scroll() {
-  window.scrollTo(0, document.body.scrollHeight);
-}
-
 function log(str) {
   if (stdout.insertAdjacentHTML) {
     stdout.insertAdjacentHTML('BeforeEnd', str);
@@ -445,7 +421,8 @@ function log(str) {
   }
 
   if (str.lastIndexOf('\n') >= 0) {
-    scroll();
+    // Scroll to the bottom of the page
+    window.scrollTo(0, document.body.scrollHeight);
   }
 }
 
