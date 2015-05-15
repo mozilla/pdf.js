@@ -54,7 +54,7 @@ window.load = function load() {
   var delay = params.delay || 0;
 
   canvas = document.createElement('canvas');
-  stdout = document.getElementById('stdout');
+  stdout = document.getElementById('output');
 
   info('User Agent: ' + navigator.userAgent);
   log('load...\n');
@@ -93,7 +93,7 @@ function cleanup(callback) {
     var ownerNode = styleSheet.ownerNode;
     ownerNode.parentNode.removeChild(ownerNode);
   }
-  var guard = document.getElementById('content-end');
+  var guard = document.getElementById('end');
   var body = document.body;
   while (body.lastChild !== guard) {
     body.removeChild(body.lastChild);
@@ -369,7 +369,7 @@ function quitApp() {
 
 function done() {
   if (inFlightRequests > 0) {
-    document.getElementById('inFlightCount').innerHTML = inFlightRequests;
+    document.getElementById('inflight').innerHTML = inFlightRequests;
     setTimeout(done, 100);
   } else {
     setTimeout(quitApp, 100);
@@ -417,7 +417,7 @@ function send(url, message, callback) {
       }
     }
   };
-  document.getElementById('inFlightCount').innerHTML = inFlightRequests++;
+  document.getElementById('inflight').innerHTML = inFlightRequests++;
   r.send(message);
 }
 
@@ -433,11 +433,8 @@ function clear(ctx) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-/* Auto-scroll if the scrollbar is near the bottom, otherwise do nothing. */
-function checkScrolling() {
-  if ((stdout.scrollHeight - stdout.scrollTop) <= stdout.offsetHeight) {
-    stdout.scrollTop = stdout.scrollHeight;
-  }
+function scroll() {
+  window.scrollTo(0, document.body.scrollHeight);
 }
 
 function log(str) {
@@ -448,7 +445,7 @@ function log(str) {
   }
 
   if (str.lastIndexOf('\n') >= 0) {
-    checkScrolling();
+    scroll();
   }
 }
 
