@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, RenderingStates, Promise */
+/* globals mozL10n, RenderingStates, Promise, getOutputScale */
 
 'use strict';
 
@@ -177,12 +177,11 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     /**
      * @private
      */
-    _getPageDrawContext: function PDFThumbnailView_getPageDrawContext() {
+    _getPageDrawContext:
+        function PDFThumbnailView_getPageDrawContext(noCtxScale) {
       var canvas = document.createElement('canvas');
       canvas.id = this.renderingId;
 
-      canvas.width = this.canvasWidth;
-      canvas.height = this.canvasHeight;
       canvas.className = 'thumbnailImage';
       canvas.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
         {page: this.id}, 'Thumbnail of Page {{page}}'));
@@ -191,7 +190,16 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       this.div.setAttribute('data-loaded', true);
       this.ring.appendChild(canvas);
 
-      return canvas.getContext('2d');
+      var ctx = canvas.getContext('2d');
+      var outputScale = getOutputScale(ctx);
+      canvas.width = (this.canvasWidth * outputScale.sx) | 0;
+      canvas.height = (this.canvasHeight * outputScale.sy) | 0;
+      canvas.style.width = this.canvasWidth + 'px';
+      canvas.style.height = this.canvasHeight + 'px';
+      if (!noCtxScale && outputScale.scaled) {
+        ctx.scale(outputScale.sx, outputScale.sy);
+      }
+      return ctx;
     },
 
     draw: function PDFThumbnailView_draw() {
@@ -274,7 +282,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       this.hasImage = true;
       this.renderingState = RenderingStates.FINISHED;
 
-      var ctx = this._getPageDrawContext();
+      var ctx = this._getPageDrawContext(true);
       var canvas = ctx.canvas;
 
       if (img.width <= 2 * canvas.width) {
