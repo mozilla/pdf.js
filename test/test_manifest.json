@@ -1500,6 +1500,23 @@
       "type": "eq",
       "about": "Rotated transparency group with blend mode."
     },
+    {  "id": "issue6010_1",
+       "file": "pdfs/issue6010_1.pdf",
+       "md5": "b58adce5dbb08936ddb0d904f0da8716",
+       "rounds": 1,
+       "link": false,
+       "type": "load",
+       "password": "abc"
+    },
+    {  "id": "issue6010_2",
+       "file": "pdfs/issue6010_2.pdf",
+       "md5": "73a8091d0ab2a47af5ca45047f04da99",
+       "rounds": 1,
+       "link": false,
+       "type": "load",
+       "password": "\u00E6\u00F8\u00E5",
+       "about": "The password (זרו) is UTF8 encoded."
+    },
     { "id": "issue3458.pdf",
       "file": "pdfs/issue3458.pdf",
       "md5": "dab8bd3ad1acfc8dc82a8381a3c8ff94",
