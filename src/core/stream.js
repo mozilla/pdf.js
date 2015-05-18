@@ -941,6 +941,15 @@ var JpegStream = (function JpegStreamClosure() {
    */
   JpegStream.prototype.isNativelySupported =
       function JpegStream_isNativelySupported(xref, res) {
+//#if FIREFOX
+//  // Workaround for:
+//  //  - https://bugzilla.mozilla.org/show_bug.cgi?id=1164199.
+//  //  - https://github.com/mozilla/pdf.js/issues/6017.
+//  // TODO: Remove this no later than July 1, 2015.
+//  if (/\bFirefox\/4[01].0/.test(navigator.userAgent)) {
+//    return false;
+//  }
+//#endif
     var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
     return cs.name === 'DeviceGray' || cs.name === 'DeviceRGB';
   };
@@ -949,6 +958,15 @@ var JpegStream = (function JpegStreamClosure() {
    */
   JpegStream.prototype.isNativelyDecodable =
       function JpegStream_isNativelyDecodable(xref, res) {
+//#if FIREFOX
+//  // Workaround for:
+//  //  - https://bugzilla.mozilla.org/show_bug.cgi?id=1164199.
+//  //  - https://github.com/mozilla/pdf.js/issues/6017.
+//  // TODO: Remove this no later than July 1, 2015.
+//  if (/\bFirefox\/4[01].0/.test(navigator.userAgent)) {
+//    return false;
+//  }
+//#endif
     var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
     var numComps = cs.numComps;
     return numComps === 1 || numComps === 3;
