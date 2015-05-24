@@ -2438,6 +2438,7 @@ var Font = (function FontClosure() {
     this.ascent = properties.ascent / PDF_GLYPH_SPACE_UNITS;
     this.descent = properties.descent / PDF_GLYPH_SPACE_UNITS;
     this.fontMatrix = properties.fontMatrix;
+    this.bbox = properties.bbox;
 
     this.toUnicode = properties.toUnicode = this.buildToUnicode(properties);
 
@@ -3249,7 +3250,10 @@ var Font = (function FontClosure() {
           }
         }
 
-        if (!potentialTable) {
+        if (potentialTable) {
+          font.pos = start + potentialTable.offset;
+        }
+        if (!potentialTable || font.peekByte() === -1) {
           warn('Could not find a preferred cmap table.');
           return {
             platformId: -1,
@@ -3259,7 +3263,6 @@ var Font = (function FontClosure() {
           };
         }
 
-        font.pos = start + potentialTable.offset;
         var format = font.getUint16();
         var length = font.getUint16();
         var language = font.getUint16();
@@ -3694,6 +3697,9 @@ var Font = (function FontClosure() {
           default:
             warn('Unknown/unsupported post table version ' + version);
             valid = false;
+            if (properties.defaultEncoding) {
+              glyphNames = properties.defaultEncoding;
+            }
             break;
         }
         properties.glyphNames = glyphNames;

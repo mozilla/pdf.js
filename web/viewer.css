@@ -1127,7 +1127,6 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .thumbnailImage {
-  transition-duration: 150ms;
   border: 1px solid transparent;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   opacity: 0.8;
@@ -1139,7 +1138,6 @@ html[dir='rtl'] .verticalToolbarSeparator {
 .thumbnailSelectionRing {
   border-radius: 2px;
   padding: 7px;
-  transition-duration: 150ms;
 }
 
 a:focus > .thumbnail > .thumbnailSelectionRing > .thumbnailImage,
@@ -1357,10 +1355,6 @@ html[dir='rtl'] .attachmentsItem > button {
 
 .dialog .toolbarField {
   margin: 5px 0;
-}
-.dialog .toolbarField:hover,
-.dialog .toolbarField:focus {
-  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
 }
 
 .dialog .separator {
@@ -1715,10 +1709,14 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   body[data-mozPrintCallback] #printContainer {
     display: block;
   }
-  #printContainer canvas {
+  /* wrapper around (scaled) print canvas elements */
+  #printContainer > div {
     position: relative;
     top: 0;
     left: 0;
+    overflow: hidden;
+  }
+  #printContainer canvas {
     display: block;
   }
 }

@@ -1061,12 +1061,13 @@ var XRef = (function XRefClosure() {
           trailers.push(position);
           position += skipUntil(buffer, position, startxrefBytes);
         } else if ((m = /^(\d+)\s+(\d+)\s+obj\b/.exec(token))) {
-          this.entries[m[1]] = {
-            offset: position,
-            gen: m[2] | 0,
-            uncompressed: true
-          };
-
+          if (typeof this.entries[m[1]] === 'undefined') {
+            this.entries[m[1]] = {
+              offset: position,
+              gen: m[2] | 0,
+              uncompressed: true
+            };
+          }
           var contentLength = skipUntil(buffer, position, endobjBytes) + 7;
           var content = buffer.subarray(position, position + contentLength);
 

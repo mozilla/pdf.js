@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 /* globals bytesToString, DecryptStream, error, isInt, isName, Name,
-           PasswordException, PasswordResponses, stringToBytes */
+           PasswordException, PasswordResponses, stringToBytes, warn,
+           utf8StringToString */
 
 'use strict';
 
@@ -1918,6 +1919,14 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     var fileIdBytes = stringToBytes(fileId);
     var passwordBytes;
     if (password) {
+      if (revision === 6) {
+        try {
+          password = utf8StringToString(password);
+        } catch (ex) {
+          warn('CipherTransformFactory: ' +
+               'Unable to convert UTF8 encoded password.');
+        }
+      }
       passwordBytes = stringToBytes(password);
     }
 
@@ -2022,7 +2031,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   CipherTransformFactory.prototype = {
     createCipherTransform:
-      function CipherTransformFactory_createCipherTransform(num, gen) {
+        function CipherTransformFactory_createCipherTransform(num, gen) {
       if (this.algorithm === 4 || this.algorithm === 5) {
         return new CipherTransform(
           buildCipherConstructor(this.cf, this.stmf,
