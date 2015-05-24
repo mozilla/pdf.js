@@ -177,7 +177,6 @@ PDFJS.openExternalLinksInNewWindow = (
   PDFJS.openExternalLinksInNewWindow === undefined ?
     false : PDFJS.openExternalLinksInNewWindow);
 
-
 /**
  * Document initialization / loading parameters object.
  *
