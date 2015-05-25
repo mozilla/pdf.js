@@ -513,7 +513,7 @@ var Parser = (function ParserClosure() {
       return stream;
     },
     makeFilter: function Parser_makeFilter(stream, name, maybeLength, params) {
-      if (stream.dict.get('Length') === 0) {
+      if (this.fetchIfRef(stream.dict.get('Length')) === 0) {
         return new NullStream(stream);
       }
       try {
