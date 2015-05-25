@@ -156,6 +156,7 @@ describe('api', function() {
       var promise = doc.getMetadata();
       waitsForPromiseResolved(promise, function(metadata) {
         expect(metadata.info['Title']).toEqual('Basic API Test');
+        expect(metadata.info['PDFFormatVersion']).toEqual('1.7');
         expect(metadata.metadata.get('dc:title')).toEqual('Basic API Test');
       });
     });
