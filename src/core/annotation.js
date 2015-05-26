@@ -350,7 +350,10 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     data.fieldType = isName(fieldType) ? fieldType.name : '';
     data.fieldFlags = Util.getInheritableProperty(dict, 'Ff') || 0;
     this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
-
+    if (fieldType.name=='Ch') {
+      data.options = dict.get('Opt');
+    }
+    
     // Building the full field name by collecting the field and
     // its ancestors 'T' data and joining them using '.'.
     var fieldName = [];
