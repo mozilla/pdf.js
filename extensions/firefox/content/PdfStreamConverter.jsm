@@ -183,27 +183,38 @@ function makeContentReadable(obj, window) {
 
 function createNewChannel(uri, node, principal) {
 //#if !MOZCENTRAL
-  if (!NetUtil.newChannel2) {
+  if (NetUtil.newChannel2) {
+    return NetUtil.newChannel2(uri,
+                               null,
+                               null,
+                               node, // aLoadingNode
+                               principal, // aLoadingPrincipal
+                               null, // aTriggeringPrincipal
+                               Ci.nsILoadInfo.SEC_NORMAL,
+                               Ci.nsIContentPolicy.TYPE_OTHER);
+  }
+  // The signature of `NetUtil.newChannel` changed in Firefox 38,
+  // see https://bugzilla.mozilla.org/show_bug.cgi?id=1125618.
+  var ffVersion = parseInt(Services.appinfo.platformVersion);
+  if (ffVersion < 38) {
     return NetUtil.newChannel(uri);
   }
 //#endif
-  return NetUtil.newChannel2(uri,
-                             null,
-                             null,
-                             node, // aLoadingNode
-                             principal, // aLoadingPrincipal
-                             null, // aTriggeringPrincipal
-                             Ci.nsILoadInfo.SEC_NORMAL,
-                             Ci.nsIContentPolicy.TYPE_OTHER);
+  return NetUtil.newChannel({
+    uri: uri,
+    loadingNode: node,
+    loadingPrincipal: principal,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
 }
 
 function asyncFetchChannel(channel, callback) {
 //#if !MOZCENTRAL
-  if (!NetUtil.newChannel2) {
-    return NetUtil.asyncFetch(channel, callback);
+  if (NetUtil.asyncFetch2) {
+    return NetUtil.asyncFetch2(channel, callback);
   }
 //#endif
-  return NetUtil.asyncFetch2(channel, callback);
+  return NetUtil.asyncFetch(channel, callback);
 }
 
 // PDF data storage
