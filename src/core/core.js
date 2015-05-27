@@ -343,6 +343,10 @@ var PDFDocument = (function PDFDocumentClosure() {
   PDFDocument.prototype = {
     parse: function PDFDocument_parse(recoveryMode) {
       this.setup(recoveryMode);
+      var version = this.catalog.catDict.get('Version');
+      if (isName(version)) {
+        this.pdfFormatVersion = version.name;
+      }
       try {
         // checking if AcroForm is present
         this.acroForm = this.catalog.catDict.get('AcroForm');
@@ -444,8 +448,10 @@ var PDFDocument = (function PDFDocumentClosure() {
           }
           version += String.fromCharCode(ch);
         }
-        // removing "%PDF-"-prefix
-        this.pdfFormatVersion = version.substring(5);
+        if (!this.pdfFormatVersion) {
+          // removing "%PDF-"-prefix
+          this.pdfFormatVersion = version.substring(5);
+        }
         return;
       }
       // May not be a PDF file, continue anyway.
