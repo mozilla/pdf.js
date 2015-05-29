@@ -18,7 +18,8 @@
            isArrayBuffer, isName, isStream, isString, createPromiseCapability,
            Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
            StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
-           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
+           MissingDataException, Promise, Annotation, ObjectLoader, 
+           OperatorList, TextLayoutEvaluator
            */
 
 'use strict';
@@ -242,7 +243,15 @@ var Page = (function PageClosure() {
                                                     self.fontCache);
 
         return partialEvaluator.getTextContent(contentStream,
-                                               self.resources);
+                                              self.resources).then(
+            function (data) {
+          var bounds = { y: self.mediaBox[0], x: self.mediaBox[1],
+                        width: self.mediaBox[2], height: self.mediaBox[3] };
+          var layout = new TextLayoutEvaluator();
+          // The following will mutate data.items adding supplemental info.
+          layout.calculateTextFlow(bounds, data.items, data.styles);
+          return data;
+        });
       });
     },
 

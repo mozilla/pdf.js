@@ -228,6 +228,10 @@ describe('api', function() {
         expect(!!data.items).toEqual(true);
         expect(data.items.length).toEqual(7);
         expect(!!data.styles).toEqual(true);
+        
+        // Make sure the text is ordered properly.
+        expect(data.items[1].str).toEqual('Table Of Content');
+        expect(data.items[6].str.replace(/^\s+/,'')).toEqual('page 1 / 3');
       });
     });
     it('gets operator list', function() {

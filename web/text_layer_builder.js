@@ -67,9 +67,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     renderLayer: function TextLayerBuilder_renderLayer() {
       var textLayerFrag = document.createDocumentFragment();
       var textDivs = this.textDivs;
+      var textItems = this.textContent.items;
       var textDivsLength = textDivs.length;
-      var canvas = document.createElement('canvas');
-      var ctx = canvas.getContext('2d');
 
       // No point in rendering many divs as it would make the browser
       // unusable even after the divs are rendered.
@@ -78,42 +77,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         return;
       }
 
-      var lastFontSize;
-      var lastFontFamily;
       for (var i = 0; i < textDivsLength; i++) {
-        var textDiv = textDivs[i];
-        if (textDiv.dataset.isWhitespace !== undefined) {
-          continue;
-        }
-
-        var fontSize = textDiv.style.fontSize;
-        var fontFamily = textDiv.style.fontFamily;
-
-        // Only build font string and set to context if different from last.
-        if (fontSize !== lastFontSize || fontFamily !== lastFontFamily) {
-          ctx.font = fontSize + ' ' + fontFamily;
-          lastFontSize = fontSize;
-          lastFontFamily = fontFamily;
-        }
-
-        var width = ctx.measureText(textDiv.textContent).width;
-        if (width > 0) {
-          textLayerFrag.appendChild(textDiv);
-          var transform;
-          if (textDiv.dataset.canvasWidth !== undefined) {
-            // Dataset values come of type string.
-            var textScale = textDiv.dataset.canvasWidth / width;
-            transform = 'scaleX(' + textScale + ')';
-          } else {
-            transform = '';
-          }
-          var rotation = textDiv.dataset.angle;
-          if (rotation) {
-            transform = 'rotate(' + rotation + 'deg) ' + transform;
-          }
-          if (transform) {
-            CustomStyle.setProp('transform' , textDiv, transform);
-          }
+        if (textItems[i].width > 0) {
+          textLayerFrag.appendChild(textDivs[i]);
         }
       }
 
@@ -148,14 +114,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
     },
 
-    appendText: function TextLayerBuilder_appendText(geom, styles) {
+    appendText: function TextLayerBuilder_appendText(geom, styles, ctx) {
       var style = styles[geom.fontName];
       var textDiv = document.createElement('div');
-      this.textDivs.push(textDiv);
-      if (isAllWhitespace(geom.str)) {
-        textDiv.dataset.isWhitespace = true;
-        return;
-      }
       var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
       var angle = Math.atan2(tx[1], tx[0]);
       if (style.vertical) {
@@ -178,41 +139,239 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         left = tx[4] + (fontAscent * Math.sin(angle));
         top = tx[5] - (fontAscent * Math.cos(angle));
       }
+      
+      // Only build font string and set to context if different from last.
+      if (fontHeight !== ctx.lastFontHeight ||
+          style.fontFamily !== ctx.lastFontFamily) {
+        ctx.ctx.font = fontHeight + 'px ' + style.fontFamily;
+        ctx.lastFontHeight = fontHeight;
+        ctx.lastFontFamily = style.fontFamily;
+      }
+      
+      // Save info about the div in the geom for fast access.
+      geom.divLeft = left;
+      geom.divTop = top;
+      if (angle) {
+        geom.divAngle = angle;
+      }
+      geom.vertical = style.vertical ? true : false;
+      geom.textScale = (geom.vertical ? geom.height : geom.width ) /
+        (ctx.ctx.measureText(geom.str).width / this.viewport.scale);
+            
       textDiv.style.left = left + 'px';
       textDiv.style.top = top + 'px';
       textDiv.style.fontSize = fontHeight + 'px';
       textDiv.style.fontFamily = style.fontFamily;
-
       textDiv.textContent = geom.str;
+      
+      // Always set scaleX. Chrome has selection padding artifacts if not.
+      var transform = 'scaleX(' + geom.textScale + ')';
+      if (angle) {
+        transform = 'rotate(' + (angle * (180 / Math.PI)) + 'deg) ' +
+                    transform;
+      }
+      CustomStyle.setProp('transform' , textDiv, transform);
+          
       // |fontName| is only used by the Font Inspector. This test will succeed
       // when e.g. the Font Inspector is off but the Stepper is on, but it's
       // not worth the effort to do a more accurate test.
       if (PDFJS.pdfBug) {
         textDiv.dataset.fontName = geom.fontName;
       }
-      // Storing into dataset will convert number into string.
-      if (angle !== 0) {
-        textDiv.dataset.angle = angle * (180 / Math.PI);
-      }
-      // We don't bother scaling single-char text divs, because it has very
-      // little effect on text highlighting. This makes scrolling on docs with
-      // lots of such divs a lot faster.
-      if (textDiv.textContent.length > 1) {
-        if (style.vertical) {
-          textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
-        } else {
-          textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
-        }
-      }
+        
+      return textDiv;
     },
 
     setTextContent: function TextLayerBuilder_setTextContent(textContent) {
+      // This function will add the text divs and append them to the DOM
       this.textContent = textContent;
-
       var textItems = textContent.items;
-      for (var i = 0, len = textItems.length; i < len; i++) {
-        this.appendText(textItems[i], textContent.styles);
+      var len = textItems.length;
+      // Construct an object to keep track of current fonts.
+      var canvas = document.createElement('canvas');
+      var ctx = {
+        ctx: canvas.getContext('2d'),
+        lastFontHeight: null,
+        lastFontFamily: null,
+      };
+      var EPSILON = 1e-5;
+      // Set in viewer.css.
+      var LINE_HEIGHT = 1.14;
+      var textDivs = []; // Just temporary
+      var dontDoPadding = false;
+      for (var i = 0; i < len; i++) {
+        textDivs.push(this.appendText(textItems[i], textContent.styles, ctx));
+        // If any divs are angled, don't pad.
+        if(Math.abs(textItems[i].transform[1]) > EPSILON) {
+          dontDoPadding = true;
+        }
       }
+      // Get the page rotation in degrees.
+      var rotate = (360 + Math.atan2(this.viewport.transform[1],
+        this.viewport.transform[0]) / Math.PI * 180) % 360;
+      // Lock it into an integer so we can compare it.
+      rotate = Math.abs(rotate) < EPSILON ? 0 :
+          Math.abs(rotate - 90) < EPSILON ? 90 :
+          Math.abs(rotate - 180) < EPSILON ? 180 :
+          Math.abs(rotate - 270) < EPSILON ? 270 :
+          rotate;
+      
+      var getDivPosition = rotate === 0 ? function (obj) {
+        return {
+          top: obj.divTop,
+          bottom: obj.divTop + obj.height * scale * LINE_HEIGHT,
+          right: obj.divLeft + obj.width * scale,
+          left: obj.divLeft
+        };
+      } : rotate === 90 ? function(obj) {
+        return {
+          top: obj.divLeft,
+          bottom: obj.divLeft - obj.height * scale * LINE_HEIGHT,
+          right: obj.divTop + obj.width * scale,
+          left: obj.divTop
+        };
+      } : rotate === 180 ? function (obj) {
+        return {
+          top: obj.divTop,
+          bottom: obj.divTop - obj.height * scale * LINE_HEIGHT,
+          left: obj.divLeft,
+          right: obj.divLeft - obj.width * scale
+        };
+      } : rotate === 270 ? function(obj) {
+        return {
+          top: obj.divLeft,
+          bottom: obj.divLeft + obj.height * scale * LINE_HEIGHT,
+          right: obj.divTop - obj.width * scale,
+          left: obj.divTop
+        };
+      } :  null;
+      
+      // Set the object to the top of the PDF page.
+      var toTopPage = rotate === 0 ? function (obj) {
+        divi.style.top = '0px';
+      } : rotate === 90 ? function (obj) {
+        divi.style.left = pageH + 'px';
+      } : rotate === 180 ? function (obj) {
+        divi.style.top = pageH + 'px';
+      } : rotate === 270 ? function(obj) {
+        divi.style.left = '0px';
+      } : null;
+      
+      var toLeftPage = rotate === 0 ? function (obj, offset) {
+        obj.style.left = offset + 'px';
+      } : rotate === 90 ? function (obj, offset) {
+        obj.style.top = offset + 'px';
+      } : rotate === 180 ? function (obj, offset) {
+        obj.style.left = offset + 'px';
+      } : rotate === 270 ? function (obj, offset) {
+        obj.style.top = offset + 'px';
+      } : null;
+      
+      var bounds = rotate === 0 ? {
+        top: 0,
+        bottom: this.textLayerDiv.offsetHeight,
+        right: this.textLayerDiv.offsetWidth,
+        left: 0
+      } : rotate === 90 ? {
+        top: this.textLayerDiv.offsetWidth,
+        bottom: 0,
+        right: this.textLayerDiv.offsetHeight,
+        left: 0
+      } : rotate === 180 ? {
+        top: this.textLayerDiv.offsetHeight,
+        bottom: 0,
+        right: 0,
+        left: this.textLayerDiv.offsetWidth
+      } : rotate === 270 ? {
+        top: 0,
+        bottom: this.textLayerDiv.offsetWidth,
+        right: 0,
+        left: this.textLayerDiv.offsetHeight
+      } : null;
+      
+      var diffX = rotate === 0 ? function (far, near) {
+        return far - near;
+      } : rotate === 90 ? function (far, near) {
+        return far - near;
+      } : rotate === 180 ? function (far, near) {
+        return near - far;
+      } : rotate === 270 ? function (far, near) {
+        return near - far;
+      } : null;
+      
+      var diffY = rotate === 0 ? function (far, near) {
+        return far - near;
+      } : rotate === 90 ? function (far, near) {
+        return near - far;
+      } : rotate === 180 ? function (far, near) {
+        return near - far;
+      } : rotate === 270 ? function (far, near) {
+        return far - near;
+      } : null;
+      
+      // Set each element's padding to run to the nearest right and bottom 
+      // element. The padding ensures that text selection works.
+      var pageW = this.textLayerDiv.offsetWidth;
+      var pageH = this.textLayerDiv.offsetHeight;
+      if (rotate === 90 || rotate === 270) {
+        var temp = pageW;
+        pageW = pageH;
+        pageH = temp;
+      }
+      var scale = this.viewport.scale;
+      for (i = dontDoPadding ? len : 0; i < len; i++) {
+        var geom = textItems[i];
+        var divi = textDivs[i];
+        
+        var divPos = getDivPosition(geom);
+        var bottom = divPos.bottom;
+        var right = divPos.right;
+        var top = divPos.top;
+        var left = divPos.left;
+        
+        var farRight = geom.right !== null ?
+                getDivPosition(textItems[geom.right]).left : bounds.right;
+        var farBottom = geom.bottom !== null ?
+                getDivPosition(textItems[geom.bottom]).top : bounds.bottom;
+        
+        // Update Padding. Apply textScale as appropriate (horizontal only).
+        divi.style.paddingRight = Math.abs(farRight - right) /
+          geom.textScale + 'px';
+        divi.style.paddingBottom = Math.abs(farBottom - bottom) + 'px';
+        var paddingLeft = null;
+        // If there is nothing to the left, then pad to the left
+        if (geom.left === null) {
+          // Fix left padding, taking into account the text scaling.
+          paddingLeft = Math.abs(bounds.left - left) / geom.textScale;
+          divi.style.paddingLeft = paddingLeft + 'px';
+          toLeftPage(divi, bounds.left);
+        } else {
+          // Still need to make the following work with rotation.
+          var leftItem = textItems[geom.left];
+          if (leftItem.right !== null &&
+              leftItem.right !== i && (leftItem.top === null ||
+              diffY(getDivPosition(leftItem).top, top) <= 0) && (
+              leftItem.bottom === null ||diffY(getDivPosition(
+                textItems[leftItem.bottom]).top, bottom) >= 0)) {
+            // The left object is too tall for its right padding to reach this 
+            // object. This object should extend its left padding to the right 
+            // padding of the left-most object.
+            var farLeft = getDivPosition(textItems[leftItem.right]).left;
+            paddingLeft = Math.abs(left - farLeft) / geom.textScale;
+            // No text scaling here because scaling is based on the left.
+            toLeftPage(divi, farLeft);
+            divi.style.paddingLeft = paddingLeft + 'px';
+          }
+        }
+        // If there is nothing above us, then pad to the top
+        if (geom.top === null) {
+          toTopPage(divi);
+          var paddingTop = Math.abs(bounds.top - top);
+          divi.style.paddingTop = paddingTop + 'px';
+        }
+      }
+      this.textDivs = textDivs;
+      
       this.divContentDone = true;
     },
 
