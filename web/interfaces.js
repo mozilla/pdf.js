@@ -51,6 +51,23 @@ IPDFLinkService.prototype = {
    * @param {string} action
    */
   executeNamedAction: function (action) {},
+
+  /**
+   * @param {number} pageNum - page number.
+   * @param {Object} pageRef - reference to the page.
+   */
+  cachePageRef: function (pageNum, pageRef) {},
+};
+
+/**
+ * @interface
+ */
+function IPDFHistory() {}
+IPDFHistory.prototype = {
+  forward: function () {},
+  back: function () {},
+  push: function (params) {},
+  updateNextHashParam: function (hash) {},
 };
 
 /**
