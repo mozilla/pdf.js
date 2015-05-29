@@ -27,13 +27,15 @@ var Page = (function PageClosure() {
 
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
-  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
+  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
+                toplevelPagesDict) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
     this.xref = xref;
     this.ref = ref;
     this.fontCache = fontCache;
+    this.toplevelPagesDict = toplevelPagesDict;
     this.idCounters = {
       obj: 0
     };
@@ -69,6 +71,23 @@ var Page = (function PageClosure() {
       // return an empty dictionary:
       if (value === undefined) {
         value = Dict.empty;
+      }
+      // Some PDF generators put \Resources entries in both the pageDict *and*
+      // the toplevelPagesDict (see issue5954.pdf). In these cases, attempt to
+      // amend the pageDict \Resources with entries from the toplevelPagesDict.
+      var toplevelResources =
+        this.toplevelPagesDict && this.toplevelPagesDict.get('Resources');
+      if (toplevelResources) {
+        var keys = toplevelResources.getKeys();
+        for (var i = 0, ii = keys.length; i < ii; i++) {
+          var keyName = keys[i];
+          if (!value.has(keyName)) {
+            if (!value.xref) {
+              value.assignXref(this.xref);
+            }
+            value.set(keyName, toplevelResources.getRaw(keyName));
+          }
+        }
       }
       return shadow(this, 'resources', value);
     },
