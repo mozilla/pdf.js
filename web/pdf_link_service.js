@@ -89,12 +89,14 @@ var PDFLinkService = (function () {
           }
           self.pdfViewer.scrollPageIntoView(pageNumber, dest);
 
-          // Update the browsing history.
-          self.pdfHistory.push({
-            dest: dest,
-            hash: destString,
-            page: pageNumber
-          });
+          if (self.pdfHistory) {
+            // Update the browsing history.
+            self.pdfHistory.push({
+              dest: dest,
+              hash: destString,
+              page: pageNumber
+            });
+          }
         } else {
           self.pdfDocument.getPageIndex(destRef).then(function (pageIndex) {
             var pageNum = pageIndex + 1;
@@ -173,7 +175,9 @@ var PDFLinkService = (function () {
         var params = parseQueryString(hash);
         // borrowing syntax from "Parameters for Opening PDF Files"
         if ('nameddest' in params) {
-          this.pdfHistory.updateNextHashParam(params.nameddest);
+          if (this.pdfHistory) {
+            this.pdfHistory.updateNextHashParam(params.nameddest);
+          }
           this.navigateTo(params.nameddest);
           return;
         }
@@ -233,7 +237,9 @@ var PDFLinkService = (function () {
       } else if (/^\d+$/.test(hash)) { // page number
         this.page = hash;
       } else { // named destination
-        this.pdfHistory.updateNextHashParam(unescape(hash));
+        if (this.pdfHistory) {
+          this.pdfHistory.updateNextHashParam(unescape(hash));
+        }
         this.navigateTo(unescape(hash));
       }
     },
@@ -245,11 +251,15 @@ var PDFLinkService = (function () {
       // See PDF reference, table 8.45 - Named action
       switch (action) {
         case 'GoBack':
-          this.pdfHistory.back();
+          if (this.pdfHistory) {
+            this.pdfHistory.back();
+          }
           break;
 
         case 'GoForward':
-          this.pdfHistory.forward();
+          if (this.pdfHistory) {
+            this.pdfHistory.forward();
+          }
           break;
 
         case 'NextPage':
