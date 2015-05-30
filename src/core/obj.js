@@ -213,6 +213,24 @@ var Dict = (function DictClosure() {
 
   Dict.empty = new Dict(null);
 
+  Dict.merge = function Dict_merge(xref, dictArray) {
+    var mergedDict = new Dict(xref);
+
+    for (var i = 0, ii = dictArray.length; i < ii; i++) {
+      var dict = dictArray[i];
+      if (!isDict(dict)) {
+        continue;
+      }
+      for (var keyName in dict.map) {
+        if (mergedDict.map[keyName]) {
+          continue;
+        }
+        mergedDict.map[keyName] = dict.map[keyName];
+      }
+    }
+    return mergedDict;
+  };
+
   return Dict;
 })();
 

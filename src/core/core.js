@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, calculateMD5, Catalog, Dict, error, info, isArray,
-           isArrayBuffer, isName, isStream, isString, createPromiseCapability,
-           Linearization, NullStream, PartialEvaluator, shadow, Stream, Lexer,
-           StreamsSequenceStream, stringToPDFString, stringToBytes, Util, XRef,
-           MissingDataException, Promise, Annotation, ObjectLoader, OperatorList
-           */
+/* globals warn, Dict, isDict, shadow, isArray, Util, StreamsSequenceStream,
+           isStream, NullStream, ObjectLoader, PartialEvaluator, Promise,
+           OperatorList, Annotation, error, assert, XRef, isArrayBuffer, Stream,
+           isString, isName, info, Linearization, MissingDataException, Lexer,
+           Catalog, stringToPDFString, stringToBytes, calculateMD5 */
 
 'use strict';
 
@@ -45,17 +44,33 @@ var Page = (function PageClosure() {
       return this.pageDict.get(key);
     },
 
-    getInheritedPageProp: function Page_inheritPageProp(key) {
-      var dict = this.pageDict;
-      var value = dict.get(key);
-      while (value === undefined) {
-        dict = dict.get('Parent');
-        if (!dict) {
+    getInheritedPageProp: function Page_getInheritedPageProp(key) {
+      var dict = this.pageDict, valueArray = null, loopCount = 0;
+      var MAX_LOOP_COUNT = 100;
+      // Always walk up the entire parent chain, to be able to find
+      // e.g. \Resources placed on multiple levels of the tree.
+      while (dict) {
+        var value = dict.get(key);
+        if (value) {
+          if (!valueArray) {
+            valueArray = [];
+          }
+          valueArray.push(value);
+        }
+        if (++loopCount > MAX_LOOP_COUNT) {
+          warn('Page_getInheritedPageProp: maximum loop count exceeded.');
           break;
         }
-        value = dict.get(key);
+        dict = dict.get('Parent');
       }
-      return value;
+      if (!valueArray) {
+        return Dict.empty;
+      }
+      if (valueArray.length === 1 || !isDict(valueArray[0]) ||
+          loopCount > MAX_LOOP_COUNT) {
+        return valueArray[0];
+      }
+      return Dict.merge(this.xref, valueArray);
     },
 
     get content() {
@@ -63,14 +78,10 @@ var Page = (function PageClosure() {
     },
 
     get resources() {
-      var value = this.getInheritedPageProp('Resources');
       // For robustness: The spec states that a \Resources entry has to be
-      // present, but can be empty. Some document omit it still. In this case
-      // return an empty dictionary:
-      if (value === undefined) {
-        value = Dict.empty;
-      }
-      return shadow(this, 'resources', value);
+      // present, but can be empty. Some document omit it still, in this case
+      // we return an empty dictionary.
+      return shadow(this, 'resources', this.getInheritedPageProp('Resources'));
     },
 
     get mediaBox() {
