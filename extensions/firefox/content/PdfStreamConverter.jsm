@@ -423,6 +423,12 @@ ChromeActions.prototype = {
     }
     return true;
   },
+  supportedMouseWheelZoomModifierKeys: function() {
+    return {
+      ctrlKey: getIntPref('mousewheel.with_control.action', 3) === 3,
+      metaKey: getIntPref('mousewheel.with_meta.action', 1) === 3,
+    };
+  },
   reportTelemetry: function (data) {
     var probeInfo = JSON.parse(data);
     switch (probeInfo.type) {

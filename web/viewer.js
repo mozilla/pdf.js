@@ -394,6 +394,18 @@ var PDFViewerApplication = {
     return PDFJS.shadow(this, 'loadingBar', bar);
   },
 
+  get supportedMouseWheelZoomModifierKeys() {
+    var support = {
+      ctrlKey: true,
+      metaKey: true,
+    };
+//#if (FIREFOX || MOZCENTRAL)
+//  support = FirefoxCom.requestSync('supportedMouseWheelZoomModifierKeys');
+//#endif
+
+    return PDFJS.shadow(this, 'supportedMouseWheelZoomModifierKeys', support);
+  },
+
 //#if (FIREFOX || MOZCENTRAL)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     function FirefoxComDataRangeTransport(length, initialData) {
@@ -1845,6 +1857,11 @@ function handleMouseWheel(evt) {
     PDFViewerApplication.scrollPresentationMode(ticks *
                                                 MOUSE_WHEEL_DELTA_FACTOR);
   } else if (evt.ctrlKey || evt.metaKey) {
+    var support = PDFViewerApplication.supportedMouseWheelZoomModifierKeys;
+    if ((evt.ctrlKey && !support.ctrlKey) ||
+        (evt.metaKey && !support.metaKey)) {
+      return;
+    }
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();
     PDFViewerApplication[direction](Math.abs(ticks));
