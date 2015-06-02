@@ -423,6 +423,12 @@ ChromeActions.prototype = {
     }
     return true;
   },
+  supportsMouseWheelZoomWithControlKey: function() {
+    return (getIntPref('mousewheel.with_control.action', 3) === 3);
+  },
+  supportsMouseWheelZoomWithMetaKey: function() {
+    return (getIntPref('mousewheel.with_meta.action', 1) === 3);
+  },
   reportTelemetry: function (data) {
     var probeInfo = JSON.parse(data);
     switch (probeInfo.type) {
