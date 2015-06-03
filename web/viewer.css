@@ -747,7 +747,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .dropdownToolbarButton {
   width: 120px;
   max-width: 120px;
-  padding: 3px 2px 2px;
+  padding: 0;
   overflow: hidden;
   background: url(images/toolbarButton-menuArrows.png) no-repeat;
 }
@@ -763,7 +763,7 @@ html[dir='rtl'] .dropdownToolbarButton {
   font-size: 12px;
   color: hsl(0,0%,95%);
   margin: 0;
-  padding: 0;
+  padding: 3px 2px 2px;
   border: none;
   background: rgba(0,0,0,0); /* Opera does not support 'transparent' <select> background */
 }
