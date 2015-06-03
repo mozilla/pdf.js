@@ -1332,6 +1332,7 @@ html[dir='rtl'] .attachmentsItem > button {
   color: hsl(0,0%,85%);
   font-size: 12px;
   line-height: 14px;
+  overflow: auto;
   background-color: #474747; /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
@@ -1840,5 +1841,34 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 @media all and (max-width: 510px) {
   #scaleSelectContainer, #pageNumberLabel {
     display: none;
+  }
+  #overlayContainer > .container > .dialog {
+    position: absolute;
+    left: 10px !important;
+    right: 10px !important;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+            transform: translateY(-50%);
+  }
+}
+
+@media all and (max-height: 400px) {
+  #overlayContainer > .container > .dialog {
+    position: absolute;
+    top: 10px !important;
+    bottom: 10px !important;
+    left: 50%;
+    -webkit-transform: translateX(-50%);
+        -ms-transform: translateX(-50%);
+            transform: translateX(-50%);
+  }
+}
+
+@media all and (max-height: 400px) and (max-width: 510px) {
+  #overlayContainer > .container > .dialog {
+    -webkit-transform: none;
+        -ms-transform: none;
+            transform: none;
   }
 }
