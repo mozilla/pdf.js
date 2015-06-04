@@ -1531,6 +1531,13 @@
       "type": "eq",
       "about": "Pattern with current transform different than base transform."
     },
+    {  "id": "issue6081",
+       "file": "pdfs/issue6081.pdf",
+       "md5": "854326ce9178d10ff4a0ff2aedf67e45",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue2462",
       "file": "pdfs/issue2462.pdf",
       "md5": "d4e3dddfdd35464c71cf0310bff29b42",
