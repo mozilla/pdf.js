@@ -799,8 +799,12 @@ var PDFViewerApplication = {
           window.history.replaceState(null, '');
         }
         self.pdfHistory.initialize(self.documentFingerprint);
-        self.initialDestination = self.pdfHistory.initialDestination;
-        self.initialBookmark = self.pdfHistory.initialBookmark;
+
+        if (self.pdfHistory.initialDestination) {
+          self.initialDestination = self.pdfHistory.initialDestination;
+        } else if (self.pdfHistory.initialBookmark) {
+          self.initialBookmark = self.pdfHistory.initialBookmark;
+        }
       }
 
       store.initializedPromise.then(function resolved() {
