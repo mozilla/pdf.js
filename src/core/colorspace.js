@@ -260,7 +260,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           error('unrecognized colorspace ' + mode);
       }
     } else if (isArray(cs)) {
-      mode = cs[0].name;
+      mode = xref.fetchIfRef(cs[0]).name;
       this.mode = mode;
       var numComps, params;
 
@@ -293,7 +293,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           }
           break;
         case 'Pattern':
-          var basePatternCS = cs[1];
+          var basePatternCS = xref.fetchIfRef(cs[1]) || null;
           if (basePatternCS) {
             basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res);
           }
