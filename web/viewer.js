@@ -1094,14 +1094,14 @@ var PDFViewerApplication = {
   beforePrint: function pdfViewSetupBeforePrint() {
     if (!this.supportsPrinting) {
       var printMessage = mozL10n.get('printing_not_supported', null,
-          'Warning: Printing is not fully supported by this browser.');
+        'Warning: Printing is not fully supported by this browser.');
       this.error(printMessage);
       return;
     }
 
     var alertNotReady = false;
     var i, ii;
-    if (!this.pagesCount) {
+    if (!this.pdfDocument || !this.pagesCount) {
       alertNotReady = true;
     } else {
       for (i = 0, ii = this.pagesCount; i < ii; ++i) {
@@ -1113,7 +1113,7 @@ var PDFViewerApplication = {
     }
     if (alertNotReady) {
       var notReadyMessage = mozL10n.get('printing_not_ready', null,
-          'Warning: The PDF is not fully loaded for printing.');
+        'Warning: The PDF is not fully loaded for printing.');
       window.alert(notReadyMessage);
       return;
     }
@@ -1125,8 +1125,8 @@ var PDFViewerApplication = {
     body.setAttribute('data-mozPrintCallback', true);
 
     if (!this.hasEqualPageSizes) {
-      console.warn('Not all pages have the same size. The printed result ' +
-          'may be incorrect!');
+      console.warn('Not all pages have the same size. ' +
+                   'The printed result may be incorrect!');
     }
 
     // Insert a @page + size rule to make sure that the page size is correctly
