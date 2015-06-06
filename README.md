@@ -37,15 +37,12 @@ PDF.js is built into version 19+ of Firefox, however one extension is still avai
 
 #### Chrome and Opera
 
-The Chromium extension is still somewhat experimental but it can be installed two
-ways:
-
-+ [Unofficial Version](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm) - *This extension is maintained by a PDF.js contributor.*
++ The official extension for Chrome can be installed from the [Chrome Web Store](https://chrome.google.com/webstore/detail/pdf-viewer/oemmndcbldboiebfnladdacbdfmadadm).
+*This extension is maintained by [@Rob--W](https://github.com/Rob--W).*
++ Opera has also published an extension for their browser at the [Opera add-ons catalog](https://addons.opera.com/en/extensions/details/pdf-viewer/).
 + Build Your Own - Get the code as explained below and issue `node make chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
 directory `build/chromium`.
-
-The version of the extension for the Opera browser can be found at the [Opera add-ons catalog](https://addons.opera.com/en/extensions/details/pdf-viewer/).
 
 ## Getting the Code
 
