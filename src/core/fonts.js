@@ -2697,11 +2697,13 @@ var Font = (function FontClosure() {
       case 0x7F: // Control char
       case 0xA0: // Non breaking space
       case 0xAD: // Soft hyphen
-      case 0x0E33: // Thai character SARA AM
       case 0x2011: // Non breaking hyphen
       case 0x205F: // Medium mathematical space
       case 0x25CC: // Dotted circle (combining mark)
         return true;
+    }
+    if ((code & ~0xFF) === 0x0E00) { // Thai/Lao chars (with combining mark)
+      return true;
     }
     return false;
   }
