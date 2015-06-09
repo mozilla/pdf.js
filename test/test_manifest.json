@@ -1117,6 +1117,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue6099",
+       "file": "pdfs/issue6099.pdf",
+       "md5": "f8e9a26637c1b0d35f2bc653122a9c73",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug893730",
        "file": "pdfs/bug893730.pdf",
        "md5": "2587379fb1b3bbff89c14f0863e78383",
