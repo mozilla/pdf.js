@@ -75,6 +75,10 @@
     "useOnlyCssZoom": {
       "type": "boolean",
       "default": false
+    },
+    "disablePrintAutoRotate": {
+      "type": "boolean",
+      "default": false
     }
   }
 }

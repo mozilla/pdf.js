@@ -297,6 +297,9 @@ var PDFViewerApplication = {
         }
         PDFJS.externalLinkTarget = value;
       }),
+      Preferences.get('disablePrintAutoRotate').then(function resolved(value) {
+        PDFJS.disablePrintAutoRotate = value;
+      }),
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
@@ -1239,8 +1242,10 @@ var PDFViewerApplication = {
       '}';
     body.appendChild(this.pageStyleSheet);
 
+    var isFirstPagePortrait = pageSize.height > pageSize.width;
+
     for (i = 0, ii = this.pagesCount; i < ii; ++i) {
-      this.pdfViewer.getPageView(i).beforePrint();
+      this.pdfViewer.getPageView(i).beforePrint(isFirstPagePortrait);
     }
 
 //#if !PRODUCTION
@@ -1445,6 +1450,10 @@ function webViewerInitialized() {
           viewer.classList.add('textLayer-' + hashParams['textlayer']);
           break;
       }
+    }
+    if ('disableprintautorotate' in hashParams) {
+      PDFJS.disablePrintAutoRotate =
+        (hashParams['disableprintautorotate'] === 'true');
     }
     if ('pdfbug' in hashParams) {
       PDFJS.pdfBug = true;
