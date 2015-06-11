@@ -455,14 +455,14 @@ var PDFViewer = (function pdfViewer() {
       var pageView = this._pages[pageNumber - 1];
 
       if (this.isInPresentationMode) {
-        if (this.linkService.page !== pageView.id) {
+        if (this._currentPageNumber !== pageView.id) {
           // Avoid breaking getVisiblePages in presentation mode.
-          this.linkService.page = pageView.id;
+          this.currentPageNumber = pageView.id;
           return;
         }
         dest = null;
         // Fixes the case when PDF has different page sizes.
-        this._setScale(this.currentScaleValue, true);
+        this._setScale(this._currentScaleValue, true);
       }
       if (!dest) {
         scrollIntoView(pageView.div);
@@ -510,13 +510,12 @@ var PDFViewer = (function pdfViewer() {
           y = dest[3];
           width = dest[4] - x;
           height = dest[5] - y;
-          var viewerContainer = this.container;
           var hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
           var vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
-          widthScale = (viewerContainer.clientWidth - hPadding) /
+          widthScale = (this.container.clientWidth - hPadding) /
             width / CSS_UNITS;
-          heightScale = (viewerContainer.clientHeight - vPadding) /
+          heightScale = (this.container.clientHeight - vPadding) /
             height / CSS_UNITS;
           scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
           break;
