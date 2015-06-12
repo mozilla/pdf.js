@@ -1151,6 +1151,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue6068",
+       "file": "pdfs/issue6068.pdf",
+       "md5": "bbcedb94776b40352729c16940a5b2bd",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "tamreview",
       "file": "pdfs/TAMReview.pdf",
       "md5": "8039aba56790d3597d2bc8c794a51301",

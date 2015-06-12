@@ -4227,11 +4227,12 @@ var Font = (function FontClosure() {
               }
             }
             if (!found && properties.glyphNames) {
-              // Try to map using the post table. There are currently no known
-              // pdfs that this fixes.
+              // Try to map using the post table.
               var glyphId = properties.glyphNames.indexOf(glyphName);
               if (glyphId > 0 && hasGlyph(glyphId, -1, -1)) {
                 charCodeToGlyphId[charCode] = glyphId;
+              } else {
+                charCodeToGlyphId[charCode] = 0; // notdef
               }
             }
           }
