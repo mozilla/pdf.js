@@ -728,6 +728,15 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue5939",
+       "file": "pdfs/issue5939.pdf",
+       "md5": "43c61e06ad407c158763f0860c99bb04",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "cmykjpeg",
        "file": "pdfs/cmykjpeg.pdf",
        "md5": "85d162b48ce98503a382d96f574f70a2",
