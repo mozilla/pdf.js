@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals Util, isString, isInt, warn, error, isCmd, isEOF, isName, Lexer,
-           isStream, StringStream, PDFJS, assert */
+           isStream, StringStream, PDFJS, assert, isNum */
 
 'use strict';
 
@@ -306,17 +306,37 @@ var CMap = (function CMapClosure() {
       out.length = 1;
     },
 
+    /**
+     * A set of heuristics to infer if a standard CMap actually contains
+     * an IdentityCMap.
+     */
     get isIdentityCMap() {
-      if (!(this.name === 'Identity-H' || this.name === 'Identity-V')) {
+      if (!this.name || this.name.indexOf('Identity') === -1) {
         return false;
       }
       if (this._map.length !== 0x10000) {
         return false;
       }
       for (var i = 0; i < 0x10000; i++) {
-        if (this._map[i] !== i) {
+        var entry = this._map[i];
+        if (isNum(entry)) {
+          if (entry !== i) {
+            return false;
+          }
+        } else if (isString(entry)) {
+          if (entry.length !== 2) {
+            return false;
+          }
+          var charCode = (entry.charCodeAt(0) << 8) + entry.charCodeAt(1);
+          if (charCode !== i) {
+            return false;
+          }
+        } else {
           return false;
         }
+      }
+      if (!(this.name === 'Identity-H' || this.name === 'Identity-V')) {
+        this.name = this.vertical ? 'Identity-V' : 'Identity-H';
       }
       return true;
     }
