@@ -1538,15 +1538,6 @@
       "rounds": 1,
       "type": "eq"
     },
-    {  "id": "issue6113",
-       "file": "pdfs/issue6113.pdf",
-       "md5": "7919dbdcd1da04914d7e8dfb05aeb86a",
-       "rounds": 1,
-       "link": true,
-       "firstPage": 1,
-       "lastPage": 1,
-       "type": "eq"
-    },
     {  "id": "blendmode",
       "file": "pdfs/blendmode.pdf",
       "md5": "5a86e7e9333e93c58abc3f382e1e6ea2",
