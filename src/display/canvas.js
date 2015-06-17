@@ -1485,6 +1485,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (isTextInvisible || fontSize === 0) {
         return;
       }
+      this.cachedGetSinglePixelWidth = null;
 
       ctx.save();
       ctx.transform.apply(ctx, current.textMatrix);

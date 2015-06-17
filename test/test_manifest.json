@@ -1315,6 +1315,15 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue6117",
+       "file": "pdfs/issue6117.pdf",
+       "md5": "691f5f8268e07f3831e8293258a68da7",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 6,
+       "lastPage": 6,
+       "type": "eq"
+    },
     {  "id": "cid_cff",
       "file": "pdfs/cid_cff.pdf",
       "md5": "a19a18eaa626262cc45e0760004d6de9",
