@@ -70,7 +70,6 @@ var DEFINES = {
   GENERIC: false,
   FIREFOX: false,
   MOZCENTRAL: false,
-  B2G: false,
   CHROME: false,
   MINIFIED: false,
   SINGLE_FILE: false,
@@ -985,8 +984,7 @@ target.b2g = function() {
   echo();
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
-  var defines = builder.merge(DEFINES, { B2G: true });
-  target.bundle({ defines: defines });
+  target.bundle();
 
   // Clear out everything in the b2g build directory
   cd(ROOT_DIR);
@@ -999,7 +997,7 @@ target.b2g = function() {
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/cmaps');
 
   var setup = {
-    defines: defines,
+    defines: DEFINES,
     copy: [
       ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],

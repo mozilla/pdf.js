@@ -35,7 +35,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
   }
 
   var alwaysUseUint32ArrayView = false;
-//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
   // old webkits have issues with non-aligned arrays
   try {
     new Uint32Array(new Uint8Array(5).buffer, 0, 1);

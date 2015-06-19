@@ -25,7 +25,6 @@
  * The way that the view parameters are stored depends on how PDF.js is built,
  * for 'node make <flag>' the following cases exist:
  *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
- *  - B2G                   - uses asyncStorage.
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
 var ViewHistory = (function ViewHistoryClosure() {
@@ -64,16 +63,12 @@ var ViewHistory = (function ViewHistoryClosure() {
       return new Promise(function (resolve) {
         var databaseStr = JSON.stringify(this.database);
 
-//#if B2G
-//      asyncStorage.setItem('database', databaseStr, resolve);
-//#endif
-
 //#if FIREFOX || MOZCENTRAL
 //      sessionStorage.setItem('pdfjsHistory', databaseStr);
 //      resolve();
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL || B2G)
+//#if !(FIREFOX || MOZCENTRAL)
         localStorage.setItem('database', databaseStr);
         resolve();
 //#endif
@@ -82,15 +77,11 @@ var ViewHistory = (function ViewHistoryClosure() {
 
     _readFromStorage: function ViewHistory_readFromStorage() {
       return new Promise(function (resolve) {
-//#if B2G
-//      asyncStorage.getItem('database', resolve);
-//#endif
-
 //#if FIREFOX || MOZCENTRAL
 //      resolve(sessionStorage.getItem('pdfjsHistory'));
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL || B2G)
+//#if !(FIREFOX || MOZCENTRAL)
         resolve(localStorage.getItem('database'));
 //#endif
       });

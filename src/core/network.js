@@ -50,11 +50,7 @@ var NetworkManager = (function NetworkManagerClosure() {
     this.withCredentials = args.withCredentials || false;
     this.getXhr = args.getXhr ||
       function NetworkManager_getXhr() {
-//#if B2G
-//      return new XMLHttpRequest({ mozSystem: true });
-//#else
         return new XMLHttpRequest();
-//#endif
       };
 
     this.currXhrId = 0;

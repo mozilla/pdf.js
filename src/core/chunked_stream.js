@@ -287,11 +287,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     } else {
 
       var getXhr = function getXhr() {
-//#if B2G
-//      return new XMLHttpRequest({ mozSystem: true });
-//#else
         return new XMLHttpRequest();
-//#endif
       };
       this.networkManager = new NetworkManager(this.url, {
         getXhr: getXhr,

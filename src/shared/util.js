@@ -503,8 +503,8 @@ Object.defineProperty(PDFJS, 'isLittleEndian', {
   }
 });
 
-//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
-//// Lazy test if the userAgant support CanvasTypedArrays
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//// Lazy test if the userAgent support CanvasTypedArrays
 function hasCanvasTypedArrays() {
   var canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
