@@ -227,5 +227,16 @@ describe('evaluator', function() {
         expect(result.fnArray[3]).toEqual(OPS.restore);
       });
     });
+    it('should skip paint form XObject if name is missing', function() {
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
+                                           'prefix');
+      var stream = new StringStream('/ Do');
+      runOperatorListCheck(evaluator, stream, new ResourcesMock(),
+          function (result) {
+        expect(result.argsArray).toEqual([]);
+        expect(result.fnArray).toEqual([]);
+      });
+    });
   });
 });
