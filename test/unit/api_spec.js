@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
-           isArray, MissingPDFException */
+           isArray, MissingPDFException, StreamType, FontType */
 
 'use strict';
 
@@ -167,17 +167,36 @@ describe('api', function() {
         expect(data.length).toEqual(basicApiFileLength);
       });
     });
-    it('gets filesize in bytes', function() {
+    it('gets download info', function() {
       var promise = doc.getDownloadInfo();
       waitsForPromiseResolved(promise, function (data) {
-        expect(data.length).toEqual(basicApiFileLength);
+        expect(data).toEqual({ length: basicApiFileLength });
       });
     });
     it('gets stats', function() {
-      var promise = doc.getStats();
+      var pageOpListPromises = [];
+      for (var i = 1, ii = doc.numPages; i <= ii; i++) {
+        var pagePromise = doc.getPage(i);
+        var opListPromise = pagePromise.then(function (page) {
+          return page.getOperatorList();
+        });
+        pageOpListPromises.push(opListPromise);
+      }
+      expect(pageOpListPromises.length).toEqual(doc.numPages);
+
+      var promise = Promise.all(pageOpListPromises).then(function () {
+        return doc.getStats();
+      });
       waitsForPromiseResolved(promise, function (stats) {
-        expect(isArray(stats.streamTypes)).toEqual(true);
-        expect(isArray(stats.fontTypes)).toEqual(true);
+        var expectedStreamTypes = [];
+        expectedStreamTypes[StreamType.FLATE] = true;
+
+        var expectedFontTypes = [];
+        expectedFontTypes[FontType.TYPE1] = true;
+        expectedFontTypes[FontType.CIDFONTTYPE2] = true;
+
+        expect(stats).toEqual({ streamTypes: expectedStreamTypes,
+                                fontTypes: expectedFontTypes });
       });
     });
   });
