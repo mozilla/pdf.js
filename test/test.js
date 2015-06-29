@@ -25,6 +25,7 @@ var path = require('path');
 var fs = require('fs');
 var os = require('os');
 var url = require('url');
+var Throttle = require('stream-throttle').Throttle;
 var testUtils = require('./testutils.js');
 
 function parseOptions() {
@@ -541,6 +542,7 @@ function unitTestPostHandler(req, res) {
   if (pathname !== '/tellMeToQuit' &&
       pathname !== '/info' &&
       pathname !== '/ttx' &&
+      pathname !== '/server' &&
       pathname !== '/submit_task_results') {
     return false;
   }
@@ -567,11 +569,47 @@ function unitTestPostHandler(req, res) {
         });
       return;
     }
+    
+    var data = JSON.parse(body);
 
+    if (pathname === '/server') {
+      var server;
+      if (data.action === 'start') {
+        server = new WebServer();
+        server.port = data.port;
+        if (data.throttle) {
+          server.connectionTransform = function() {
+            return new Throttle({rate: data.throttle});
+          };
+        }
+        server.start(function() {
+          var address = 'http://' + server.host + ':' + server.port;
+          servers[address] = server;
+          res.writeHead(200, {'Content-Type': 'text/plain'});
+          res.end(address);
+        });
+        return;
+      }
+      if (data.action === 'stop') {
+        server = servers[data.address];
+        if (server) {
+          server.terminate(function() {
+            console.log('Stopped server at: ' + data.address);
+          });
+        }
+        delete servers[data.address];
+        res.writeHead(200, {'Content-Type': 'text/plain'});
+        res.end();
+        return;
+      }
+      res.writeHead(400, {'Content-Type': 'text/plain'});
+      res.end();
+      return;
+    }
+    
     res.writeHead(200, {'Content-Type': 'text/plain'});
     res.end();
 
-    var data = JSON.parse(body);
     if (pathname === '/tellMeToQuit') {
       closeSession(data.browser);
       return;
@@ -704,6 +742,7 @@ function main() {
 }
 
 var server;
+var servers = {};
 var sessions;
 var onAllSessionsClosed;
 var host = '127.0.0.1';

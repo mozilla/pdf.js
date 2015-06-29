@@ -764,6 +764,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           internalRenderTask.operatorListChanged();
         },
         function pageDisplayReadPromiseError(reason) {
+          intentState.displayReadyCapability = undefined;
           complete(reason);
         }
       );
@@ -1315,6 +1316,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
         var page = new PDFPageProxy(pageIndex, pageInfo, this);
         this.pageCache[pageIndex] = page;
         return page;
+      }.bind(this), function(reason) {
+        delete this.pagePromises[pageIndex];
+        return Promise.reject(reason);
       }.bind(this));
       this.pagePromises[pageIndex] = promise;
       return promise;

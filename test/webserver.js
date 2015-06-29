@@ -53,13 +53,38 @@ function WebServer() {
     'GET': [],
     'POST': []
   };
+  this.connections = {};
+  this.connectionTransform = null;
 }
 WebServer.prototype = {
   start: function (callback) {
     this.server = http.createServer(this._handler.bind(this));
-    this.server.listen(this.port, this.host, callback);
-    console.log(
-      'Server running at http://' + this.host + ':' + this.port + '/');
+    if (this.port) {
+      this.server.listen(this.port, this.host, callback);
+      console.log(
+        'Server running at http://' + this.host + ':' + this.port + '/');
+    } else {
+      this.server.listen(function() {
+        var address = this.server.address();
+        this.port = address.port;
+        console.log(
+          'Server running at http://' + this.host + ':' + this.port + '/');
+        if (callback) { callback(); }
+      }.bind(this));
+    }
+    this.server.on('connection', function(conn) {
+      var key = conn.remoteAddress + ':' + conn.remotePort;
+      this.connections[key] = conn;
+      conn.on('close', function() {
+        delete this.connections[key];
+      }.bind(this));
+    }.bind(this));
+  },
+  terminate: function (callback) {
+    this.stop(callback);
+    for (var key in this.connections) {
+      this.connections[key].destroy();
+    }
   },
   stop: function (callback) {
     this.server.close(callback);
@@ -70,7 +95,24 @@ WebServer.prototype = {
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];
     var verbose = this.verbose;
-
+    
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Expose-Headers',
+                  'Content-Length,Accept-Ranges,Content-Encoding,' +
+                  'Content-Range');
+    res.setHeader('Access-Control-Allow-Headers',
+                  'X-Requested-With,Content-Type,Content-Length,' +
+                  'Last-Modified,Authorization,Origin,Accept,Range');
+    res.setHeader('Access-Control-Allow-Methods',
+                  'GET,HEAD,PUT,POST,DELETE,OPTIONS');
+    
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+    
     var methodHooks = this.hooks[req.method];
     if (!methodHooks) {
       res.writeHead(405);
@@ -92,6 +134,7 @@ WebServer.prototype = {
 
     var disableRangeRequests = this.disableRangeRequests;
     var cacheExpirationTime = this.cacheExpirationTime;
+    var connectionTransform = this.connectionTransform;
 
     var filePath;
     fs.realpath(path.join(this.root, pathPart), checkFile);
@@ -231,7 +274,11 @@ WebServer.prototype = {
       }
       res.writeHead(200);
 
-      stream.pipe(res);
+      if (connectionTransform) {
+        stream.pipe(connectionTransform()).pipe(res);
+      } else {
+        stream.pipe(res);
+      }
     }
 
     function serveRequestedFileRange(filePath, start, end) {
@@ -253,7 +300,11 @@ WebServer.prototype = {
         'bytes ' + start + '-' + (end - 1) + '/' + fileSize);
       res.writeHead(206);
 
-      stream.pipe(res);
+      if (connectionTransform) {
+        stream.pipe(connectionTransform()).pipe(res);
+      } else {
+        stream.pipe(res);
+      }
     }
 
   }

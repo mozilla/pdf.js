@@ -17,6 +17,7 @@ describe('api', function() {
     function(error) {
       // Shouldn't get here.
       expect(false).toEqual(true);
+      data = error;
     });
     waitsFor(function() {
       return data !== undefined;
@@ -27,6 +28,7 @@ describe('api', function() {
     promise.then(function(val) {
       // Shouldn't get here.
       expect(false).toEqual(true);
+      data = 'success';
     },
     function(error) {
       data = error;
@@ -34,6 +36,31 @@ describe('api', function() {
     });
     waitsFor(function() {
       return data !== undefined;
+    }, 20000);
+  }
+  function send(action, json, cb) {
+    var success;
+    var r = new XMLHttpRequest();
+    // (The POST URI is ignored atm.)
+    r.open('POST', action, true);
+    r.setRequestHeader('Content-Type', 'application/json');
+    r.onreadystatechange = function sendTaskResultOnreadystatechange(e) {
+      if (r.readyState === 4) {
+        expect(r.status).toEqual(200);
+        if (r.status !== 200) {
+          // Shouldn't get here.
+          success = false;
+        } else {
+          success = true;
+          if (cb) {
+            cb(r.responseText);
+          }
+        }
+      }
+    };
+    r.send(JSON.stringify(json));
+    waitsFor(function() {
+      return success !== undefined;
     }, 20000);
   }
   describe('PDFJS', function() {
@@ -105,6 +132,43 @@ describe('api', function() {
       var promise = doc.getPage(1);
       waitsForPromiseResolved(promise, function(data) {
         expect(true).toEqual(true);
+      });
+    });
+    it('reports failure to get page', function() {
+      send('/server', {action: 'start',
+                       throttle: 1024*1024}, function(address) {
+        var chunkedUrl = address + '/pdfs/pdf.pdf?cachebust=' +
+                         new Date().getTime();
+        var promise = PDFJS.getDocument(chunkedUrl);
+        var doc;
+        waitsForPromiseResolved(promise, function(data) {
+          doc = data;
+          send('/server', {action: 'stop', address: address}, function() {
+            var done;
+            function iterate(index) {
+              doc.getPage(index).then(function(page) {
+                page.getOperatorList().then(function() {
+                  if (index === 1) {
+                    done = true;
+                    expect(false).toEqual(true);
+                  } else {
+                    setTimeout(iterate.bind(null, --index), 10);
+                  }
+                }, function() {
+                  expect(true).toEqual(true);
+                  done = true;
+                });
+              }, function(err) {
+                expect(true).toEqual(true);
+                done = true;
+              });
+            }
+            iterate(doc.numPages);
+            waitsFor(function() {
+              return typeof done !== 'undefined';
+            }, 20000);
+          });
+        });
       });
     });
     it('gets page index', function() {
