@@ -764,8 +764,7 @@ target.firefox = function() {
          'chrome',
          'locale',
          'LICENSE'],
-      FIREFOX_EXTENSION_NAME = 'pdf.js.xpi',
-      FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
+      FIREFOX_EXTENSION_NAME = 'pdf.js.xpi';
 
   target.locale();
   target.bundle({ excludes: ['core/network.js'], defines: defines });
@@ -852,14 +851,6 @@ target.firefox = function() {
   exec('zip -r ' + FIREFOX_EXTENSION_NAME + ' ' +
        FIREFOX_EXTENSION_FILES.join(' '));
   echo('extension created: ' + FIREFOX_EXTENSION_NAME);
-  cd(ROOT_DIR);
-
-  // Build the amo extension too (remove the updateUrl)
-  cd(FIREFOX_BUILD_DIR);
-  sed('-i', /.*updateURL.*\n/, '', 'install.rdf');
-  exec('zip -r ' + FIREFOX_AMO_EXTENSION_NAME + ' ' +
-       FIREFOX_EXTENSION_FILES.join(' '));
-  echo('AMO extension created: ' + FIREFOX_AMO_EXTENSION_NAME);
   cd(ROOT_DIR);
 };
 
