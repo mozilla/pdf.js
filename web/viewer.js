@@ -22,8 +22,8 @@
            Promise, PDFLinkService, PDFOutlineView, PDFAttachmentView,
            OverlayManager, PDFFindController, PDFFindBar, getVisibleElements,
            watchScroll, PDFViewer, PDFRenderingQueue, PresentationModeState,
-           parseQueryString, RenderingStates, DEFAULT_SCALE, UNKNOWN_SCALE,
-           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
+           parseQueryString, RenderingStates, UNKNOWN_SCALE,
+           DEFAULT_SCALE_VALUE, IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
 
@@ -36,13 +36,9 @@ var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
-//#if B2G
-//PDFJS.useOnlyCssZoom = true;
-//PDFJS.disableTextLayer = true;
-//#endif
 
 PDFJS.imageResourcesPath = './images/';
-//#if (FIREFOX || MOZCENTRAL || B2G || GENERIC || CHROME)
+//#if (FIREFOX || MOZCENTRAL || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.worker.js';
 //#endif
 //#if !PRODUCTION
@@ -58,17 +54,12 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include ui_utils.js
 //#include preferences.js
 
-//#if !(FIREFOX || MOZCENTRAL || B2G)
+//#if !(FIREFOX || MOZCENTRAL)
 //#include mozPrintCallback_polyfill.js
 //#endif
 
 //#if GENERIC || CHROME
 //#include download_manager.js
-//#endif
-//#if B2G
-//var DownloadManager = (function DownloadManagerClosure() {
-//  return function DownloadManager() {};
-//})();
 //#endif
 
 //#if FIREFOX || MOZCENTRAL
@@ -475,9 +466,6 @@ var PDFViewerApplication = {
       return;
     }
     document.title = title;
-//#if B2G
-//  document.getElementById('activityTitle').textContent = title;
-//#endif
   },
 
   close: function pdfViewClose() {
@@ -560,10 +548,6 @@ var PDFViewerApplication = {
           loadingErrorMessage = mozL10n.get('unexpected_response_error', null,
                                             'Unexpected server response.');
         }
-//#if B2G
-//      window.alert(loadingErrorMessage);
-//      return window.close();
-//#endif
 
         var moreInfo = {
           message: message
@@ -757,7 +741,7 @@ var PDFViewerApplication = {
     var id = this.documentFingerprint = pdfDocument.fingerprint;
     var store = this.store = new ViewHistory(id);
 
-//#if (GENERIC || B2G)
+//#if GENERIC
     var baseDocumentUrl = null;
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
@@ -994,10 +978,10 @@ var PDFViewerApplication = {
       this.page = 1;
     }
 
-    if (this.pdfViewer.currentScale === UNKNOWN_SCALE) {
+    if (!this.pdfViewer.currentScaleValue) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
       // Setting the default one.
-      this.setScale(DEFAULT_SCALE, true);
+      this.setScale(DEFAULT_SCALE_VALUE, true);
     }
   },
 
@@ -1253,7 +1237,7 @@ function webViewerLoad(evt) {
 }
 
 function webViewerInitialized() {
-//#if (GENERIC || B2G)
+//#if GENERIC
   var queryString = document.location.search.substring(1);
   var params = parseQueryString(queryString);
   var file = 'file' in params ? params.file : DEFAULT_URL;
@@ -1903,7 +1887,7 @@ window.addEventListener('keydown', function keydown(evt) {
           // keeping it unhandled (to restore page zoom to 100%)
           setTimeout(function () {
             // ... and resetting the scale after browser adjusts its scale
-            PDFViewerApplication.setScale(DEFAULT_SCALE, true);
+            PDFViewerApplication.setScale(DEFAULT_SCALE_VALUE, true);
           });
           handled = false;
         }
@@ -2106,24 +2090,3 @@ window.addEventListener('afterprint', function afterPrint(evt) {
     window.requestAnimationFrame(resolve);
   });
 })();
-
-//#if B2G
-//window.navigator.mozSetMessageHandler('activity', function(activity) {
-//  var blob = activity.source.data.blob;
-//  PDFJS.maxImageSize = 1024 * 1024;
-//  var fileURL = activity.source.data.url ||
-//    activity.source.data.filename ||
-//    " "; // if no url or filename, use a non-empty string
-//
-//  var url = URL.createObjectURL(blob);
-//  // We need to delay opening until all HTML is loaded.
-//  PDFViewerApplication.animationStartedPromise.then(function () {
-//    PDFViewerApplication.open({url : url, originalUrl: fileURL});
-//
-//    var header = document.getElementById('header');
-//    header.addEventListener('action', function() {
-//      activity.postResult('close');
-//    });
-//  });
-//});
-//#endif

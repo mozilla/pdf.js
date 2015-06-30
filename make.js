@@ -70,7 +70,6 @@ var DEFINES = {
   GENERIC: false,
   FIREFOX: false,
   MOZCENTRAL: false,
-  B2G: false,
   CHROME: false,
   MINIFIED: false,
   SINGLE_FILE: false,
@@ -979,36 +978,45 @@ target.mozcentral = function() {
 };
 
 target.b2g = function() {
-  target.locale();
+  target.generic();
+  target.components();
 
   echo();
   echo('### Building B2G (Firefox OS App)');
   var B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
-  var defines = builder.merge(DEFINES, { B2G: true });
-  target.bundle({ defines: defines });
+  target.bundle();
 
   // Clear out everything in the b2g build directory
   cd(ROOT_DIR);
   rm('-Rf', B2G_BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR);
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web/cmaps');
+  // Simulating pdfjs-dist structure in the pdfjs-components folder.
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/build');
+  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/cmaps');
 
   var setup = {
-    defines: defines,
+    defines: DEFINES,
     copy: [
       ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
       ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
+      ['extensions/b2g/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
       ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/web/cmaps'],
-      ['external/webL10n/l10n.js', B2G_BUILD_CONTENT_DIR + '/web']
+      ['build/generic/build/pdf.js',
+        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/build'],
+      ['build/generic/build/pdf.worker.js',
+        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/build'],
+      ['build/components/pdf_viewer.js',
+        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web'],
+      ['build/components/pdf_viewer.css',
+        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web'],
+      ['build/components/images',
+        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web'],
+      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/cmaps']
     ],
-    preprocess: [
-      ['web/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
-      [BUILD_TARGETS, B2G_BUILD_CONTENT_DIR + BUILD_DIR]
-    ]
+    preprocess: []
   };
   builder.build(setup);
 

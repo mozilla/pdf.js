@@ -17,7 +17,8 @@
 'use strict';
 
 var CSS_UNITS = 96.0 / 72.0;
-var DEFAULT_SCALE = 'auto';
+var DEFAULT_SCALE_VALUE = 'auto';
+var DEFAULT_SCALE = 1.0;
 var UNKNOWN_SCALE = 0;
 var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;

@@ -17,7 +17,7 @@
 /*jshint globalstrict: false */
 /* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder, PDFLinkService,
            DefaultTextLayerFactory, AnnotationsLayerBuilder, PDFHistory,
-           DefaultAnnotationsLayerFactory, getFileName */
+           DefaultAnnotationsLayerFactory, getFileName, ProgressBar */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
@@ -42,4 +42,5 @@ if (typeof PDFJS === 'undefined') {
   PDFJS.PDFHistory = PDFHistory;
 
   PDFJS.getFileName = getFileName;
+  PDFJS.ProgressBar = ProgressBar;
 }).call((typeof window === 'undefined') ? this : window);
