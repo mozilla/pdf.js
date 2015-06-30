@@ -455,7 +455,7 @@ target.cmaps = function (args) {
   // testing a file that usually present
   if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
     echo('./external/cmaps has no cmap files, please download them from:');
-    echo('  http://sourceforge.net/adobe/cmap/wiki/Home/');
+    echo('  https://github.com/adobe-type-tools/cmap-resources');
     exit(1);
   }
 
