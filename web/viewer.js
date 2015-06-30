@@ -526,7 +526,6 @@ var PDFViewerApplication = {
     }
 
     var self = this;
-    self.loading = true;
     self.downloadComplete = false;
 
     var passwordNeeded = function passwordNeeded(updatePassword, reason) {
@@ -543,7 +542,6 @@ var PDFViewerApplication = {
                       getDocumentProgress).then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
-        self.loading = false;
       },
       function getDocumentError(exception) {
         var message = exception && exception.message;
@@ -571,7 +569,6 @@ var PDFViewerApplication = {
           message: message
         };
         self.error(loadingErrorMessage, moreInfo);
-        self.loading = false;
       }
     );
 
@@ -1822,16 +1819,6 @@ window.addEventListener('pagechange', function pagechange(evt) {
       Stats.add(page, pageView.stats);
     }
   }
-
-  // checking if the this.page was called from the updateViewarea function
-  if (evt.updateInProgress) {
-    return;
-  }
-  // Avoid scrolling the first page during loading
-  if (this.loading && page === 1) {
-    return;
-  }
-  PDFViewerApplication.pdfViewer.scrollPageIntoView(page);
 }, true);
 
 function handleMouseWheel(evt) {
