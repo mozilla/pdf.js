@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFViewerApplication */
 
 'use strict';
 
@@ -27,6 +26,7 @@ var CONTROLS_SELECTOR = 'pdfPresentationModeControls';
  * @typedef {Object} PDFPresentationModeOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} viewer - (optional) The viewer element.
+ * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {PDFThumbnailViewer} pdfThumbnailViewer - (optional) The thumbnail
  *   viewer.
  * @property {Array} contextMenuItems - (optional) The menuitems that are added
@@ -44,6 +44,7 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
   function PDFPresentationMode(options) {
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
+    this.pdfViewer = options.pdfViewer;
     this.pdfThumbnailViewer = options.pdfThumbnailViewer || null;
     var contextMenuItems = options.contextMenuItems || null;
 
@@ -91,8 +92,8 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
       }
 
       this.args = {
-        page: PDFViewerApplication.page,
-        previousScale: PDFViewerApplication.currentScaleValue
+        page: this.pdfViewer.currentPageNumber,
+        previousScale: this.pdfViewer.currentScaleValue,
       };
 
       return true;
@@ -132,16 +133,16 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
       if (Math.abs(this.mouseScrollDelta) >= PAGE_SWITCH_THRESHOLD) {
         var pageSwitchDirection = (this.mouseScrollDelta > 0) ?
           PageSwitchDirection.UP : PageSwitchDirection.DOWN;
-        var page = PDFViewerApplication.page;
+        var page = this.pdfViewer.currentPageNumber;
         this._resetMouseScrollState();
 
         // If we're at the first/last page, we don't need to do anything.
         if ((page === 1 && pageSwitchDirection === PageSwitchDirection.UP) ||
-            (page === PDFViewerApplication.pagesCount &&
+            (page === this.pdfViewer.pagesCount &&
              pageSwitchDirection === PageSwitchDirection.DOWN)) {
           return;
         }
-        PDFViewerApplication.page = (page + pageSwitchDirection);
+        this.pdfViewer.currentPageNumber = (page + pageSwitchDirection);
         this.mouseScrollTimeStamp = currentTime;
       }
     },
@@ -207,8 +208,8 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
       // Ensure that the correct page is scrolled into view when entering
       // Presentation Mode, by waiting until fullscreen mode in enabled.
       setTimeout(function enterPresentationModeTimeout() {
-        PDFViewerApplication.page = this.args.page;
-        PDFViewerApplication.setScale('page-fit', true);
+        this.pdfViewer.currentPageNumber = this.args.page;
+        this.pdfViewer.currentScaleValue = 'page-fit';
       }.bind(this), 0);
 
       this._addWindowListeners();
@@ -226,7 +227,7 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
      * @private
      */
     _exit: function PDFPresentationMode_exit() {
-      var page = PDFViewerApplication.page;
+      var page = this.pdfViewer.currentPageNumber;
       this.container.classList.remove(ACTIVE_SELECTOR);
 
       // Ensure that the correct page is scrolled into view when exiting
@@ -236,8 +237,8 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
         this._removeFullscreenChangeListeners();
         this._notifyStateChange();
 
-        PDFViewerApplication.setScale(this.args.previousScale, true);
-        PDFViewerApplication.page = page;
+        this.pdfViewer.currentScaleValue = this.args.previousScale;
+        this.pdfViewer.currentPageNumber = page;
         this.args = null;
       }.bind(this), 0);
 
@@ -269,7 +270,7 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
         if (!isInternalLink) {
           // Unless an internal link was clicked, advance one page.
           evt.preventDefault();
-          PDFViewerApplication.page += (evt.shiftKey ? -1 : 1);
+          this.pdfViewer.currentPageNumber += (evt.shiftKey ? -1 : 1);
         }
       }
     },
