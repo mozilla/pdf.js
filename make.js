@@ -198,7 +198,8 @@ target.jsdoc = function() {
   var JSDOC_FILES = [
     'src/doc_helper.js',
     'src/display/api.js',
-    'src/shared/util.js'
+    'src/shared/util.js',
+    'src/core/annotation.js'
   ];
 
   if (test('-d', JSDOC_DIR)) {
