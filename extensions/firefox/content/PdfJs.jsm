@@ -112,11 +112,20 @@ Factory.prototype = {
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.registerFactory(proto.classID, proto.classDescription,
                               proto.contractID, factory);
+
+    if (proto.classID2) {
+      this._classID2 = proto.classID2;
+      registrar.registerFactory(proto.classID2, proto.classDescription,
+                                proto.contractID2, factory);
+    }
   },
 
   unregister: function unregister() {
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.unregisterFactory(this._classID, this._factory);
+    if (this._classID2) {
+      registrar.unregisterFactory(this._classID2, this._factory);
+    }
     this._factory = null;
   }
 };
@@ -305,13 +314,6 @@ let PdfJs = {
     Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
     this._pdfStreamConverterFactory.register(PdfStreamConverter);
 
-    this._pdfRedirectorFactory = new Factory();
-    Cu.import('resource://pdf.js/PdfRedirector.jsm');
-    this._pdfRedirectorFactory.register(PdfRedirector);
-
-    Svc.pluginHost.registerPlayPreviewMimeType(PDF_CONTENT_TYPE, true,
-      'data:application/x-moz-playpreview-pdfjs;,');
-
     this._registered = true;
   },
 
@@ -322,12 +324,6 @@ let PdfJs = {
     this._pdfStreamConverterFactory.unregister();
     Cu.unload('resource://pdf.js/PdfStreamConverter.jsm');
     delete this._pdfStreamConverterFactory;
-
-    this._pdfRedirectorFactory.unregister();
-    Cu.unload('resource://pdf.js/PdfRedirector.jsm');
-    delete this._pdfRedirectorFactory;
-
-    Svc.pluginHost.unregisterPlayPreviewMimeType(PDF_CONTENT_TYPE);
 
     this._registered = false;
   }

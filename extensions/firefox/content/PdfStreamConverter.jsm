@@ -868,6 +868,9 @@ PdfStreamConverter.prototype = {
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
 
+  classID2: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER2_ID}'),
+  contractID2: '@mozilla.org/streamconv;1?from=application/pdf&to=text/html',
+
   QueryInterface: XPCOMUtils.generateQI([
       Ci.nsISupports,
       Ci.nsIStreamConverter,
