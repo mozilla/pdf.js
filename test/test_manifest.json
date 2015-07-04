@@ -1650,6 +1650,21 @@
       "lastPage": 1,
       "about": "CFF font with multiply-encoded glyph and no pdf encoding dict."
     },
+    {  "id": "bug1151216",
+       "file": "pdfs/bug1151216.pdf",
+       "md5": "e66ea6ee0e0cdd5119224eb073055eca",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "bug1175962",
+       "file": "pdfs/bug1175962.pdf",
+       "md5": "012a5ea0d2733408ac7f8b88f7352bba",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "about": "The same PDF file as in bug1175943."
+    },
     {  "id": "issue1878",
       "file": "pdfs/issue1878.pdf",
       "md5": "b4fb0ce7c19368e7104dce3d0d34bcb3",
