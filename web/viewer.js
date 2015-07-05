@@ -220,6 +220,7 @@ var PDFViewerApplication = {
       this.pdfPresentationMode = new PDFPresentationMode({
         container: container,
         viewer: viewer,
+        pdfViewer: this.pdfViewer,
         pdfThumbnailViewer: this.pdfThumbnailViewer,
         contextMenuItems: [
           { element: document.getElementById('contextFirstPage'),
