@@ -85,12 +85,21 @@ Factory.prototype = {
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.registerFactory(proto.classID, proto.classDescription,
                               proto.contractID, this);
+
+    if (proto.classID2) {
+      this._classID2 = proto.classID2;
+      registrar.registerFactory(proto.classID2, proto.classDescription,
+                                proto.contractID2, this);
+    }
   },
 
   unregister: function unregister() {
     var proto = this._targetConstructor.prototype;
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.unregisterFactory(proto.classID, this);
+    if (this._classID2) {
+      registrar.unregisterFactory(this._classID2, this);
+    }
     this._targetConstructor = null;
   },
 
