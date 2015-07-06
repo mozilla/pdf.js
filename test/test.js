@@ -38,7 +38,7 @@ function parseOptions() {
   var yargs = require('yargs')
     .usage('Usage: $0')
     .boolean(['help', 'masterMode', 'reftest', 'unitTest', 'fontTest',
-              'noPrompts', 'noDownload'])
+              'noPrompts', 'noDownload', 'downloadOnly'])
     .string(['manifestFile', 'browser', 'browserManifestFile',
              'port', 'statsFile', 'statsDelay'])
     .alias('browser', 'b').alias('help', 'h').alias('masterMode', 'm')
@@ -59,6 +59,7 @@ function parseOptions() {
     .describe('unitTest', 'Run the unit tests.')
     .describe('fontTest', 'Run the font tests.')
     .describe('noDownload', 'Skips test PDFs downloading.')
+    .describe('downloadOnly', 'Download test PDFs without running the tests.')
     .describe('statsFile', 'The file where to store stats.')
     .describe('statsDelay', 'The amount of time in milliseconds the browser ' +
       'should wait before starting stats.')
@@ -68,6 +69,9 @@ function parseOptions() {
         argv.masterMode <= 1;
     }, '--reftest, --unitTest, --fontTest and --masterMode must not be ' +
       'specified at the same time.'))
+    .check(describeCheck(function (argv) {
+      return !argv.noDownload || !argv.downloadOnly;
+    }, '--noDownload and --downloadOnly cannot be used together.'))
     .check(describeCheck(function (argv) {
       return !argv.masterMode || argv.manifestFile === 'test_manifest.json';
     }, 'when --masterMode is specified --manifestFile shall be equal ' +
@@ -692,7 +696,9 @@ function main() {
     stats = [];
   }
 
-  if (!options.browser && !options.browserManifestFile) {
+  if (options.downloadOnly) {
+    ensurePDFsDownloaded(function() {});
+  } else if (!options.browser && !options.browserManifestFile) {
     startServer();
   } else if (options.unitTest) {
     startUnitTest('/test/unit/unit_test.html', 'unit');
