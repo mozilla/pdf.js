@@ -312,10 +312,6 @@ var PDFViewerApplication = {
     this.setScale(newScale, true);
   },
 
-  get currentScaleValue() {
-    return this.pdfViewer.currentScaleValue;
-  },
-
   get pagesCount() {
     return this.pdfDocument.numPages;
   },
@@ -1964,7 +1960,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 33: // pg up
       case 8: // backspace
         if (!isViewerInPresentationMode &&
-            PDFViewerApplication.currentScaleValue !== 'page-fit') {
+            pdfViewer.currentScaleValue !== 'page-fit') {
           break;
         }
         /* in presentation mode */
@@ -1995,7 +1991,7 @@ window.addEventListener('keydown', function keydown(evt) {
       case 34: // pg down
       case 32: // spacebar
         if (!isViewerInPresentationMode &&
-            PDFViewerApplication.currentScaleValue !== 'page-fit') {
+            pdfViewer.currentScaleValue !== 'page-fit') {
           break;
         }
         /* falls through */
@@ -2040,7 +2036,7 @@ window.addEventListener('keydown', function keydown(evt) {
     switch (evt.keyCode) {
       case 32: // spacebar
         if (!isViewerInPresentationMode &&
-            PDFViewerApplication.currentScaleValue !== 'page-fit') {
+            pdfViewer.currentScaleValue !== 'page-fit') {
           break;
         }
         PDFViewerApplication.page--;
