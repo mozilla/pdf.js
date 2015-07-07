@@ -485,7 +485,7 @@ var Catalog = (function CatalogClosure() {
       }
 
       var xref = this.xref;
-      var dest, nameTreeRef, nameDictionaryRef;
+      var dest = null, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
       if (obj && obj.has('Dests')) {
         nameTreeRef = obj.getRaw('Dests');
