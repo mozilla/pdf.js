@@ -119,7 +119,7 @@
     if (event.keyCode === 27 && canvases) { // Esc
       abort();
     }
-  }, true);
+  }, false);
   if (hasAttachEvent) {
     document.attachEvent('onkeydown', function(event) {
       event = event || window.event;

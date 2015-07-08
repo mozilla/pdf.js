@@ -54,10 +54,6 @@ var mozL10n = document.mozL10n || document.webL10n;
 //#include ui_utils.js
 //#include preferences.js
 
-//#if !(FIREFOX || MOZCENTRAL)
-//#include mozPrintCallback_polyfill.js
-//#endif
-
 //#if GENERIC || CHROME
 //#include download_manager.js
 //#endif
@@ -590,6 +586,11 @@ var PDFViewerApplication = {
     ).then(null, downloadByUrl);
   },
 
+
+  requestPrint: function pdfViewRequestPrint() {
+    window.print();
+  },
+
   fallback: function pdfViewFallback(featureId) {
 //#if !PRODUCTION
     if (true) {
@@ -825,7 +826,7 @@ var PDFViewerApplication = {
             var js = javaScript[i];
             if (js && regex.test(js)) {
               setTimeout(function() {
-                window.print();
+                PDFViewerApplication.requestPrint();
               });
               return;
             }
@@ -1885,6 +1886,24 @@ window.addEventListener('keydown', function keydown(evt) {
           handled = false;
         }
         break;
+      case 80: // p
+//#if FIREFOX || MOZCENTRAL
+//      // Ctrl + Shift + P = new private window.
+//      var shouldHandlePKey = !evt.shiftKey;
+//#endif
+//#if CHROME
+//      var shouldHandlePKey = true;
+//#endif
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
+        var shouldHandlePKey = !evt.shiftKey || window.chrome || window.opera;
+//#endif
+        if (shouldHandlePKey) {
+          PDFViewerApplication.requestPrint();
+          evt.stopImmediatePropagation();
+          evt.preventDefault();
+          return;
+        }
+        break;
     }
   }
 
@@ -2074,6 +2093,12 @@ window.addEventListener('beforeprint', function beforePrint(evt) {
 window.addEventListener('afterprint', function afterPrint(evt) {
   PDFViewerApplication.afterPrint();
 });
+
+//#if !(FIREFOX || MOZCENTRAL)
+//// The polyfill must be loaded at the end, to make sure that the Ctrl+P key
+//// is processed by the viewer code before the polyfill.
+//#include mozPrintCallback_polyfill.js
+//#endif
 
 (function animationStartedClosure() {
   // The offsetParent is not set until the pdf.js iframe or object is visible.

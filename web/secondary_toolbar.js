@@ -80,7 +80,7 @@ var SecondaryToolbar = {
   },
 
   printClick: function secondaryToolbarPrintClick(evt) {
-    window.print();
+    PDFViewerApplication.requestPrint();
     this.close();
   },
 
