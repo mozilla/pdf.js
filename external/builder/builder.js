@@ -235,21 +235,29 @@ function getWorkerSrcFiles(filePath) {
   var src = fs.readFileSync(filePath).toString();
   var reSrcFiles = /var\s+otherFiles\s*=\s*(\[[^\]]*\])/;
   var match = reSrcFiles.exec(src);
-  try {
-    var files = JSON.parse(match[1].replace(/'/g, '"'));
-    var srcFiles = files.filter(function(name) {
-      return name.indexOf('external') === -1;
-    });
-    var externalSrcFiles = files.filter(function(name) {
-      return name.indexOf('external') > -1;
-    });
-    return {
-      srcFiles: srcFiles,
-      externalSrcFiles: externalSrcFiles
-    };
-  } catch(e) {
-    return {};
+  if (!match) {
+    throw new Error('Cannot find otherFiles array in ' + filePath);
   }
+
+  var files = match[1].replace(/'/g, '"').replace(/^\s*\/\/.*/gm, '')
+    .replace(/,\s*]$/, ']');
+  try {
+    files = JSON.parse(files);
+  } catch (e) {
+    throw new Error('Failed to parse otherFiles in ' + filePath + ' as JSON, ' +
+                    e);
+  }
+
+  var srcFiles = files.filter(function(name) {
+    return name.indexOf('external') === -1;
+  });
+  var externalSrcFiles = files.filter(function(name) {
+    return name.indexOf('external') > -1;
+  });
+  return {
+    srcFiles: srcFiles,
+    externalSrcFiles: externalSrcFiles
+  };
 }
 exports.getWorkerSrcFiles = getWorkerSrcFiles;
 
