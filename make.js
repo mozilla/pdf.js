@@ -75,7 +75,8 @@ var DEFINES = {
   CHROME: false,
   MINIFIED: false,
   SINGLE_FILE: false,
-  COMPONENTS: false
+  COMPONENTS: false,
+  WITH_EDITING: false,
 };
 
 //
@@ -115,7 +116,8 @@ var COMMON_WEB_FILES =
 // modern HTML5 browsers.
 //
 target.generic = function() {
-  target.bundle({});
+  var defines = builder.merge(DEFINES, {GENERIC: true, WITH_EDITING: true});
+  target.bundle({defines: defines});
   target.locale();
 
   cd(ROOT_DIR);
@@ -127,8 +129,6 @@ target.generic = function() {
   mkdir('-p', GENERIC_DIR + BUILD_DIR);
   mkdir('-p', GENERIC_DIR + '/web');
   mkdir('-p', GENERIC_DIR + '/web/cmaps');
-
-  var defines = builder.merge(DEFINES, {GENERIC: true});
 
   var setup = {
     defines: defines,
@@ -536,6 +536,12 @@ target.bundle = function(args) {
 
   var srcFiles = builder.getWorkerSrcFiles('src/worker_loader.js');
   var WORKER_SRC_FILES = srcFiles.srcFiles;
+
+  if (!defines.WITH_EDITING) {
+    WORKER_SRC_FILES = WORKER_SRC_FILES.filter(function(file) {
+      return file.lastIndexOf('editing/', 0) === -1;
+    });
+  }
 
   if (!defines.SINGLE_FILE) {
     // We want shared_src_files in both pdf.js and pdf.worker.js
@@ -1049,7 +1055,7 @@ target.chromium = function() {
   cd(ROOT_DIR);
   echo();
   echo('### Building Chromium extension');
-  var defines = builder.merge(DEFINES, {CHROME: true});
+  var defines = builder.merge(DEFINES, {CHROME: true, WITH_EDITING: true});
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';

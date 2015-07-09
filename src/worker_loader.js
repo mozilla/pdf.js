@@ -52,7 +52,9 @@ var otherFiles = [
   'core/jpx.js',
   'core/jbig2.js',
   'core/bidi.js',
-  'core/murmurhash3.js'
+  'core/murmurhash3.js',
+  'editing/pdf_data_writer.js',
+  'editing/printing.js',
 ];
 
 function loadInOrder(index, path, files) {

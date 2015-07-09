@@ -538,6 +538,17 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
     getData: function PDFDocumentProxy_getData() {
       return this.transport.getData();
     },
+//#if WITH_EDITING
+    /**
+     * @return {Promise} A promise that is resolved with an {Object} that has
+     * the pdfBlobUrl property. pdfBlobUrl is a blob:-URL that represents the
+     * current PDF file with automatic printing enabled. The caller should
+     * revoke the URL when the data is no longer needed.
+     */
+    getDataForPrinting: function PDFDocumentProxy_getDataForPrinting() {
+      return this.transport.getDataForPrinting();
+    },
+//#endif
     /**
      * @return {Promise} A promise that is resolved when the document's data
      * is loaded. It is resolved with an {Object} that contains the length
@@ -1295,6 +1306,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
     getData: function WorkerTransport_getData() {
       return this.messageHandler.sendWithPromise('GetData', null);
     },
+//#if WITH_EDITING
+    getDataForPrinting: function WorkerTransport_getDataForPrinting() {
+      return this.messageHandler.sendWithPromise('GetDataForPrinting', null);
+    },
+//#endif
 
     getPage: function WorkerTransport_getPage(pageNumber, capability) {
       if (pageNumber <= 0 || pageNumber > this.numPages ||

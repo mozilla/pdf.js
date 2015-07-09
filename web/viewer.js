@@ -588,7 +588,108 @@ var PDFViewerApplication = {
 
 
   requestPrint: function pdfViewRequestPrint() {
-    window.print();
+//#if !(CHROME || GENERIC) || !WITH_EDITING
+//  window.print();
+//#else
+    var printAction = {
+      embed: null,
+      pdfBlobUrl: '',
+      handleEvent: function onWindowFocus() {
+        disposePrintAction(printAction);
+      },
+    };
+    if (this._printAction) {
+      if (!this._printAction.embed) {
+        // Do not restart a print request if the previous one is still pending.
+        return;
+      }
+      disposePrintAction(this._printAction);
+    }
+    this._printAction = printAction;
+
+    canUsePDFium(function yes() {
+      PDFViewerApplication.pdfDocument.getDataForPrinting().then(function(res) {
+        printAction.pdfBlobUrl = res.pdfBlobUrl;
+        printAction.embed = createPDFiumEmbed();
+        printAction.embed.src = printAction.pdfBlobUrl;
+        document.body.appendChild(printAction.embed);
+        // Clean up when the print dialog is closed.
+        window.addEventListener('focus', printAction);
+      }, onFallback);
+    }, onFallback);
+
+    function onFallback() {
+      disposePrintAction(printAction);
+      window.print();
+    }
+
+    function disposePrintAction(printAction) {
+      window.removeEventListener('focus', printAction);
+      if (printAction.embed) {
+        printAction.embed.remove();
+      }
+      if (printAction.pdfBlobUrl) {
+        URL.revokeObjectURL(printAction.pdfBlobUrl);
+      }
+      if (PDFViewerApplication._printAction === printAction) {
+        PDFViewerApplication._printAction = null;
+      }
+    }
+
+    // Create an off-screen <embed> element.
+    function createPDFiumEmbed() {
+      var embed = document.createElement('embed');
+      embed.type = 'application/x-google-chrome-pdf';
+      embed.style.position = 'fixed';
+      embed.style.width = '9px';
+      embed.style.height = '9px';
+      embed.style.top = '-9990px;';
+      embed.style.left = '-999px';
+      return embed;
+    }
+
+    // Check whether Chromium's built-in PDF renderer (PDFium) plugin is enabled
+    // and usable without click-to-play. The result is not cached because the
+    // user can change the value via the browser settings.
+    // This feature detection never has false positives, only false negatives.
+    function canUsePDFium(yes, no) {
+      var isPDFiumAvailable = false;
+      for (var i = 0, plugins = navigator.plugins; i < plugins.length; ++i) {
+        var pluginName = plugins[i].name;
+        if (pluginName === 'Chrome PDF Viewer' ||
+            pluginName === 'Chromium PDF Viewer') {
+          isPDFiumAvailable = true;
+          break;
+        }
+      }
+      if (!isPDFiumAvailable) {
+        no();
+        return;
+      }
+
+      var testEmbed = createPDFiumEmbed();
+      var hasCalledDone = false;
+      function done(callback) {
+        if (!hasCalledDone) {
+          hasCalledDone = true;
+          testEmbed.remove();
+          URL.revokeObjectURL(testEmbed.src);
+          callback();
+        }
+      }
+      // Should usually get a reply within a few tens of ms.
+      var noReplyAssumeNotAvailable = setTimeout(done, 200, no);
+      // The PDFium plugin notifies the embed element at initialization (see
+      // OutOfProcessInstance::Init, introduced in Chromium r271531, May 2014).
+      // Given the lack of alternatives, this is the best that we can get in
+      // terms of feature detection.
+      testEmbed.addEventListener('message', function() {
+        done(yes);
+      });
+      testEmbed.src = URL.createObjectURL(new Blob([]), {type: testEmbed.type});
+      document.body.appendChild(testEmbed);
+    }
+//#endif
   },
 
   fallback: function pdfViewFallback(featureId) {

@@ -18,7 +18,8 @@
            NetworkManager, isInt, RANGE_CHUNK_SIZE, MissingPDFException,
            UnexpectedResponseException, PasswordException, Promise, warn,
            PasswordResponses, InvalidPDFException, UnknownErrorException,
-           XRefParseException, Ref, info, globalScope, error, MessageHandler */
+           XRefParseException, Ref, info, globalScope, error, MessageHandler,
+           getDataForPrintingImplementation */
 
 'use strict';
 
@@ -357,6 +358,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         return stream.bytes;
       });
     });
+
+//#if WITH_EDITING
+    handler.on('GetDataForPrinting', function wphSetupGetDataForPrinting(data) {
+      return getDataForPrintingImplementation(pdfManager);
+    });
+//#endif
 
     handler.on('GetStats',
       function wphSetupGetStats(data) {
