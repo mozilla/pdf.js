@@ -74,6 +74,18 @@ var PDFViewer = (function pdfViewer() {
     };
   }
 
+  function isSameScale(oldScale, newScale) {
+    if (newScale === oldScale) {
+      return true;
+    }
+    if (Math.abs(newScale - oldScale) < 1e-15) {
+      // Prevent unnecessary re-rendering of all pages when the scale
+      // changes only because of limited numerical precision.
+      return true;
+    }
+    return false;
+  }
+
   /**
    * @constructs PDFViewer
    * @param {PDFViewerOptions} options
@@ -367,7 +379,8 @@ var PDFViewer = (function pdfViewer() {
     _setScaleUpdatePages: function pdfViewer_setScaleUpdatePages(
         newScale, newValue, noScroll, preset) {
       this._currentScaleValue = newValue;
-      if (newScale === this._currentScale) {
+
+      if (isSameScale(this._currentScale, newScale)) {
         if (preset) {
           this._setScaleDispatchEvent(newScale, newValue, true);
         }
