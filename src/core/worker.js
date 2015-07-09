@@ -49,12 +49,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         loadDocumentCapability.reject(e);
       };
 
-      pdfManager.ensureDoc('checkHeader', []).then(function() {
-        pdfManager.ensureDoc('parseStartXRef', []).then(function() {
-          pdfManager.ensureDoc('parse', [recoveryMode]).then(
-            parseSuccess, parseFailure);
-        }, parseFailure);
-      }, parseFailure);
+      pdfManager.parseDoc(recoveryMode).then(parseSuccess, parseFailure);
 
       return loadDocumentCapability.promise;
     }

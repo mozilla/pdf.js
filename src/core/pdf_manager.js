@@ -25,12 +25,31 @@ var RANGE_CHUNK_SIZE = 65536;
 // TODO(mack): Make use of PDFJS.Util.inherit() when it becomes available
 var BasePdfManager = (function BasePdfManagerClosure() {
   function BasePdfManager() {
-    throw new Error('Cannot initialize BaseManagerManager');
+    if (this.constructor === BasePdfManager) {
+      throw new Error('Cannot initialize BaseManagerManager');
+    }
+    this._parsedDocCapability = createPromiseCapability();
   }
 
   BasePdfManager.prototype = {
     onLoadedStream: function BasePdfManager_onLoadedStream() {
       throw new NotImplementedException();
+    },
+
+    onParsedDoc: function BasePdfManager_onParsedDoc() {
+      return this._parsedDocCapability.promise;
+    },
+
+    parseDoc: function BasePdfManager_getParsedDoc(recoveryMode) {
+      var pdfManager = this;
+      return this.ensureDoc('checkHeader', [])
+        .then(function() {
+          return pdfManager.ensureDoc('parseStartXRef', []);
+        }).then(function() {
+          return pdfManager.ensureDoc('parse', [recoveryMode]);
+        }).then(function() {
+          pdfManager._parsedDocCapability.resolve();
+        });
     },
 
     ensureDoc: function BasePdfManager_ensureDoc(prop, args) {
@@ -91,6 +110,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 
 var LocalPdfManager = (function LocalPdfManagerClosure() {
   function LocalPdfManager(data, password) {
+    BasePdfManager.call(this);
     var stream = new Stream(data);
     this.pdfDocument = new PDFDocument(this, stream, password);
     this._loadedStreamCapability = createPromiseCapability();
@@ -142,6 +162,7 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 
 var NetworkPdfManager = (function NetworkPdfManagerClosure() {
   function NetworkPdfManager(args, msgHandler) {
+    BasePdfManager.call(this);
 
     this.msgHandler = msgHandler;
 
