@@ -287,7 +287,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           pdfManager.onLoadedStream().then(function() {
             loadDocument(true).then(onSuccess, onFailure);
           });
-        }, onFailure);
+        });
       }, onFailure);
     });
 
