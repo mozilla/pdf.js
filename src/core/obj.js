@@ -1081,7 +1081,7 @@ var XRef = (function XRefClosure() {
         } else if ((m = /^(\d+)\s+(\d+)\s+obj\b/.exec(token))) {
           if (typeof this.entries[m[1]] === 'undefined') {
             this.entries[m[1]] = {
-              offset: position,
+              offset: position - stream.start,
               gen: m[2] | 0,
               uncompressed: true
             };
@@ -1094,8 +1094,8 @@ var XRef = (function XRefClosure() {
           var xrefTagOffset = skipUntil(content, 0, xrefBytes);
           if (xrefTagOffset < contentLength &&
               content[xrefTagOffset + 5] < 64) {
-            xrefStms.push(position);
-            this.xrefstms[position] = 1; // don't read it recursively
+            xrefStms.push(position - stream.start);
+            this.xrefstms[position - stream.start] = 1; // Avoid recursion
           }
 
           position += contentLength;
