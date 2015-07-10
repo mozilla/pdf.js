@@ -838,9 +838,8 @@ var Lexer = (function LexerClosure() {
           strBuf.push(String.fromCharCode(ch));
         }
       }
-      if (strBuf.length > 128) {
-        error('Warning: name token is longer than allowed by the spec: ' +
-              strBuf.length);
+      if (strBuf.length > 127) {
+        warn('name token is longer than allowed by the spec: ' + strBuf.length);
       }
       return Name.get(strBuf.join(''));
     },
