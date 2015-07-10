@@ -1643,13 +1643,16 @@ window.addEventListener('updateviewarea', function (evt) {
 }, true);
 
 window.addEventListener('resize', function webViewerResize(evt) {
-  if (PDFViewerApplication.initialized &&
-      (document.getElementById('pageAutoOption').selected ||
-       /* Note: the scale is constant for |pageActualOption|. */
-       document.getElementById('pageFitOption').selected ||
-       document.getElementById('pageWidthOption').selected)) {
-    var selectedScale = document.getElementById('scaleSelect').value;
-    PDFViewerApplication.setScale(selectedScale, false);
+  if (PDFViewerApplication.initialized) {
+    var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
+    switch (currentScaleValue) {
+      case 'auto':
+      case 'page-fit':
+      case 'page-width':
+        // Note: the scale is constant for 'page-actual'.
+        PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
+        break;
+    }
   }
   updateViewarea();
 
@@ -1707,7 +1710,7 @@ window.addEventListener('change', function webViewerChange(evt) {
 function selectScaleOption(value) {
   var options = document.getElementById('scaleSelect').options;
   var predefinedValueFound = false;
-  for (var i = 0; i < options.length; i++) {
+  for (var i = 0, ii = options.length; i < ii; i++) {
     var option = options[i];
     if (option.value !== value) {
       option.selected = false;
