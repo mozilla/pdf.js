@@ -40,8 +40,9 @@ function parseOptions() {
     .boolean(['help', 'masterMode', 'reftest', 'unitTest', 'fontTest',
               'noPrompts', 'noDownload', 'downloadOnly'])
     .string(['manifestFile', 'browser', 'browserManifestFile',
-             'port', 'statsFile', 'statsDelay'])
+             'port', 'statsFile', 'statsDelay', 'testfilter'])
     .alias('browser', 'b').alias('help', 'h').alias('masterMode', 'm')
+    .alias('testfilter', 't')
     .describe('help', 'Show this help message')
     .describe('masterMode', 'Run the script in master mode.')
     .describe('noPrompts',
@@ -54,6 +55,10 @@ function parseOptions() {
       'those found in resources/browser_manifests/')
     .describe('reftest', 'Automatically start reftest showing comparison ' +
       'test failures, if there are any.')
+    .describe('testfilter', 'Run specific reftest(s).')
+    .default('testfilter', [])
+    .example('$0 --b=firefox -t=issue5567 -t=issue5909',
+      'Run the reftest identified by issue5567 and issue5909 in Firefox.')
     .describe('port', 'The port the HTTP server should listen on.')
     .default('port', 8000)
     .describe('unitTest', 'Run the unit tests.')
@@ -85,6 +90,8 @@ function parseOptions() {
     yargs.showHelp();
     process.exit(0);
   }
+  result.testfilter = Array.isArray(result.testfilter) ?
+    result.testfilter : [result.testfilter];
   return result;
 }
 
@@ -254,7 +261,10 @@ function startRefTest(masterMode, showRefImages) {
   }
 
   var startTime;
-  var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
+  var manifest = getTestManifest();
+  if (!manifest) {
+    return;
+  }
   if (options.noDownload) {
     checkRefsTmp();
   } else {
@@ -272,6 +282,26 @@ function handleSessionTimeout(session) {
   session.numErrors += session.remaining;
   session.remaining = 0;
   closeSession(browser);
+}
+
+function getTestManifest() {
+  var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
+
+  var testFilter = options.testfilter.slice(0);
+  if (testFilter.length) {
+    manifest = manifest.filter(function(item) {
+      var i = testFilter.indexOf(item.id);
+      if (i !== -1) {
+        testFilter.splice(i, 1);
+        return true;
+      }
+    });
+    if (testFilter.length) {
+      console.error('Unrecognized test IDs: ' + testFilter.join(' '));
+      return;
+    }
+  }
+  return manifest;
 }
 
 function checkEq(task, results, browser, masterMode) {
@@ -616,6 +646,7 @@ function startBrowsers(url, initSessionCallback) {
     var startUrl = getServerBaseAddress() + url +
       '?browser=' + encodeURIComponent(b.name) +
       '&manifestFile=' + encodeURIComponent('/test/' + options.manifestFile) +
+      '&testFilter=' + JSON.stringify(options.testfilter) +
       '&path=' + encodeURIComponent(b.path) +
       '&delay=' + options.statsDelay +
       '&masterMode=' + options.masterMode;
@@ -677,7 +708,7 @@ function closeSession(browser) {
 
 function ensurePDFsDownloaded(callback) {
   var downloadUtils = require('./downloadutils.js');
-  var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
+  var manifest = getTestManifest();
   downloadUtils.downloadManifestFiles(manifest, function () {
     downloadUtils.verifyManifestFiles(manifest, function (hasErrors) {
       if (hasErrors) {
