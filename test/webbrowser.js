@@ -157,17 +157,18 @@ ChromiumBrowser.prototype.buildArguments = function (url) {
 
 WebBrowser.create = function (desc) {
   var name = desc.name;
-
-  // Throws an exception if the path doesn't exist.
-  fs.statSync(desc.path);
+  var path = shelljs.which(desc.path);
+  if (!path) {
+    throw new Error('Browser executable not found: ' + desc.path);
+  }
 
   if (/firefox/i.test(name)) {
-    return new FirefoxBrowser(desc.name, desc.path);
+    return new FirefoxBrowser(name, path);
   }
   if (/(chrome|chromium|opera)/i.test(name)) {
-    return new ChromiumBrowser(desc.name, desc.path);
+    return new ChromiumBrowser(name, path);
   }
-  return new WebBrowser(desc.name, desc.path);
+  return new WebBrowser(name, path);
 };
 
 
