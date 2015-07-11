@@ -2278,5 +2278,11 @@
        "md5": "51a724136c0c10008bd061a78ea4b8fc",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "issue6069",
+       "file": "pdfs/issue6069.pdf",
+       "md5": "d0ad8871f4116bca8e39513ffa8b7d8e",
+       "rounds": 1,
+       "type": "load"
     }
 ]
