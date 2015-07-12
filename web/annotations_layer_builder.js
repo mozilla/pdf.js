@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals PDFJS, CustomStyle, mozL10n */
+/*globals PDFJS, CustomStyle, mozL10n, SimpleLinkService */
 
 'use strict';
 
@@ -171,7 +171,8 @@ DefaultAnnotationsLayerFactory.prototype = {
   createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
     return new AnnotationsLayerBuilder({
       pageDiv: pageDiv,
-      pdfPage: pdfPage
+      pdfPage: pdfPage,
+      linkService: new SimpleLinkService(),
     });
   }
 };

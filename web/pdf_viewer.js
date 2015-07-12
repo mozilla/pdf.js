@@ -93,7 +93,7 @@ var PDFViewer = (function pdfViewer() {
   function PDFViewer(options) {
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
-    this.linkService = options.linkService || new SimpleLinkService(this);
+    this.linkService = options.linkService || new SimpleLinkService();
     this.removePageBorders = options.removePageBorders || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
@@ -468,14 +468,14 @@ var PDFViewer = (function pdfViewer() {
       var pageView = this._pages[pageNumber - 1];
 
       if (this.isInPresentationMode) {
-        if (this.linkService.page !== pageView.id) {
+        if (this._currentPageNumber !== pageView.id) {
           // Avoid breaking getVisiblePages in presentation mode.
-          this.linkService.page = pageView.id;
+          this.currentPageNumber = pageView.id;
           return;
         }
         dest = null;
         // Fixes the case when PDF has different page sizes.
-        this._setScale(this.currentScaleValue, true);
+        this._setScale(this._currentScaleValue, true);
       }
       if (!dest) {
         scrollIntoView(pageView.div);
@@ -523,13 +523,12 @@ var PDFViewer = (function pdfViewer() {
           y = dest[3];
           width = dest[4] - x;
           height = dest[5] - y;
-          var viewerContainer = this.container;
           var hPadding = this.removePageBorders ? 0 : SCROLLBAR_PADDING;
           var vPadding = this.removePageBorders ? 0 : VERTICAL_PADDING;
 
-          widthScale = (viewerContainer.clientWidth - hPadding) /
+          widthScale = (this.container.clientWidth - hPadding) /
             width / CSS_UNITS;
-          heightScale = (viewerContainer.clientHeight - vPadding) /
+          heightScale = (this.container.clientHeight - vPadding) /
             height / CSS_UNITS;
           scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
           break;
@@ -758,22 +757,19 @@ var PDFViewer = (function pdfViewer() {
 })();
 
 var SimpleLinkService = (function SimpleLinkServiceClosure() {
-  function SimpleLinkService(pdfViewer) {
-    this.pdfViewer = pdfViewer;
-  }
+  function SimpleLinkService() {}
+
   SimpleLinkService.prototype = {
     /**
      * @returns {number}
      */
     get page() {
-      return this.pdfViewer.currentPageNumber;
+      return 0;
     },
     /**
      * @param {number} value
      */
-    set page(value) {
-      this.pdfViewer.currentPageNumber = value;
-    },
+    set page(value) {},
     /**
      * @param dest - The PDF destination object.
      */
