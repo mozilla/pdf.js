@@ -24,6 +24,7 @@ var fs = require('fs');
 var path = require('path');
 var spawn = require('child_process').spawn;
 var testUtils = require('./testutils.js');
+var shelljs = require('shelljs');
 
 var tempDirPrefix = 'pdfjs_';
 
@@ -96,7 +97,18 @@ WebBrowser.prototype = {
     }
 
     if (this.process) {
-      this.process.kill('SIGTERM');
+      if (process.platform === 'win32') {
+        // process.kill is not reliable on Windows (Firefox sticks around). The
+        // work-around was to manually open the task manager and terminate the
+        // process. Instead of doing that manually, use taskkill to kill.
+        // (https://technet.microsoft.com/en-us/library/cc725602.aspx)
+        var result = shelljs.exec('taskkill /f /t /pid ' + this.process.pid);
+        if (result.code) {
+          console.error('taskkill failed with exit code ' + result.code);
+        }
+      } else {
+        this.process.kill('SIGTERM');
+      }
     }
   }
 };
