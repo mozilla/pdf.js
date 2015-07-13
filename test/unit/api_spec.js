@@ -129,6 +129,12 @@ describe('api', function() {
                               0, 841.89, null]);
       });
     });
+    it('gets a non-existent destination', function() {
+      var promise = doc.getDestination('non-existent-named-destination');
+      waitsForPromiseResolved(promise, function(data) {
+        expect(data).toEqual(null);
+      });
+    });
     it('gets attachments', function() {
       var promise = doc.getAttachments();
       waitsForPromiseResolved(promise, function (data) {
