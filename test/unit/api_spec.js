@@ -1,7 +1,7 @@
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
            InvalidPDFException, MissingPDFException, StreamType, FontType,
            PDFDocumentProxy, PasswordException, PasswordResponses,
-           PDFPageProxy, createPromiseCapability */
+           PDFPageProxy, createPromiseCapability, afterEach */
 
 'use strict';
 
@@ -16,7 +16,7 @@ describe('api', function() {
     },
     function(error) {
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(error).toEqual('the promise should not have been rejected');
     });
     waitsFor(function() {
       return resolved;
@@ -511,6 +511,71 @@ describe('api', function() {
         expect(stats).toEqual({ streamTypes: expectedStreamTypes,
                                 fontTypes: expectedFontTypes });
       });
+    });
+  });
+  describe('Multiple PDFJS instances', function() {
+    // Regression test for https://github.com/mozilla/pdf.js/issues/6205
+    // A PDF using the Helvetica font.
+    var pdf1 = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+    // A PDF using the Times font.
+    var pdf2 = combineUrl(window.location.href, '../pdfs/TAMReview.pdf');
+    // A PDF using the Arial font.
+    var pdf3 = combineUrl(window.location.href, '../pdfs/issue6068.pdf');
+    var pdfDocuments = [];
+
+    // Render the first page of the given PDF file.
+    // Fulfills the promise with the base64-encoded version of the PDF.
+    function renderPDF(filename) {
+      return PDFJS.getDocument(filename)
+        .then(function(pdf) {
+          pdfDocuments.push(pdf);
+          return pdf.getPage(1);
+        }).then(function(page) {
+          var c = document.createElement('canvas');
+          var v = page.getViewport(1.2);
+          c.width = v.width;
+          c.height = v.height;
+          return page.render({
+            canvasContext: c.getContext('2d'),
+            viewport: v,
+          }).then(function() {
+            return c.toDataURL();
+          });
+        });
+    }
+
+    afterEach(function() {
+      // Issue 6205 reported an issue with font rendering, so clear the loaded
+      // fonts so that we can see whether loading PDFs in parallel does not
+      // cause any issues with the rendered fonts.
+      var destroyPromises = pdfDocuments.map(function(pdfDocument) {
+        return pdfDocument.destroy();
+      });
+      waitsForPromiseResolved(Promise.all(destroyPromises), function() {});
+    });
+
+    it('should correctly render PDFs in parallel', function() {
+      var baseline1, baseline2, baseline3;
+      var promiseDone = renderPDF(pdf1).then(function(data1) {
+        baseline1 = data1;
+        return renderPDF(pdf2);
+      }).then(function(data2) {
+        baseline2 = data2;
+        return renderPDF(pdf3);
+      }).then(function(data3) {
+        baseline3 = data3;
+        return Promise.all([
+          renderPDF(pdf1),
+          renderPDF(pdf2),
+          renderPDF(pdf3),
+        ]);
+      }).then(function(dataUrls) {
+        expect(dataUrls[0]).toEqual(baseline1);
+        expect(dataUrls[1]).toEqual(baseline2);
+        expect(dataUrls[2]).toEqual(baseline3);
+        return true;
+      });
+      waitsForPromiseResolved(promiseDone, function() {});
     });
   });
 });
