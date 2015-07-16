@@ -21,19 +21,13 @@
 
 var fs = require('fs');
 var path = require('path');
+var rimrafSync = require('rimraf').sync;
 
 exports.removeDirSync = function removeDirSync(dir) {
-  var files = fs.readdirSync(dir);
-  files.forEach(function (filename) {
-    var file = path.join(dir, filename);
-    var stats = fs.statSync(file);
-    if (stats.isDirectory()) {
-      removeDirSync(file);
-    } else {
-      fs.unlinkSync(file);
-    }
+  fs.readdirSync(dir); // Will throw if dir is not a directory
+  rimrafSync(dir, {
+    disableGlob: true,
   });
-  fs.rmdirSync(dir);
 };
 
 exports.copySubtreeSync = function copySubtreeSync(src, dest) {
