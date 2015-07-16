@@ -27,6 +27,13 @@ describe('parser', function() {
       }
     });
 
+    it('should ignore double negative before number', function() {
+      var input = new StringStream('--205.88');
+      var lexer = new Lexer(input);
+      var result = lexer.getNumber();
+
+      expect(result).toEqual(-205.88);
+    });
 
     it('should handle glued numbers and operators', function() {
       var input = new StringStream('123ET');
