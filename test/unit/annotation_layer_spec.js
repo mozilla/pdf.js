@@ -1,6 +1,6 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, Dict, Annotation, AnnotationBorderStyle,
+/* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
            AnnotationBorderStyleType */
 
 'use strict';
@@ -79,9 +79,7 @@ describe('Annotation layer', function() {
 
     it('should set and get a valid style', function() {
       var borderStyle = new AnnotationBorderStyle();
-      var dict = new Dict();
-      dict.name = 'D';
-      borderStyle.setStyle(dict);
+      borderStyle.setStyle(Name.get('D'));
 
       expect(borderStyle.style).toEqual(AnnotationBorderStyleType.DASHED);
     });
