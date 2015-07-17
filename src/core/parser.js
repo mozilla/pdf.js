@@ -671,6 +671,11 @@ var Lexer = (function LexerClosure() {
       if (ch === 0x2D) { // '-'
         sign = -1;
         ch = this.nextChar();
+
+        if (ch === 0x2D) { // '-'
+          // Ignore double negative (this is consistent with Adobe Reader).
+          ch = this.nextChar();
+        }
       } else if (ch === 0x2B) { // '+'
         ch = this.nextChar();
       }
