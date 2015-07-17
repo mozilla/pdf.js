@@ -160,7 +160,6 @@ var Annotation = (function AnnotationClosure() {
           this.borderStyle.setHorizontalCornerRadius(array[0]);
           this.borderStyle.setVerticalCornerRadius(array[1]);
           this.borderStyle.setWidth(array[2]);
-          this.borderStyle.setStyle('S');
 
           if (array.length === 4) { // Dash array available
             this.borderStyle.setDashArray(array[3]);
