@@ -113,6 +113,14 @@ var ChromeCom = (function ChromeComClosure() {
         });
         return;
       }
+      if (/^file?:/.test(file)) {
+        if (top !== window && !/^file:/i.test(location.ancestorOrigins[0])) {
+          PDFViewerApplication.error('Blocked ' + location.ancestorOrigins[0] +
+              ' from loading ' + file + '. Refused to load a local file in a ' +
+              ' non-local page for security reasons.');
+          return;
+        }
+      }
       PDFViewerApplication.open(file, 0);
     });
   };
