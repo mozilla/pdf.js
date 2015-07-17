@@ -158,22 +158,25 @@ WebBrowser.prototype = {
         return pgrepStatus === 1; // "No process matched.", per man pgrep.
       };
     }
-    function execAsyncNoStdin(cmd, silent, onExit) {
+    function execAsyncNoStdin(cmd, onExit) {
       var proc = shelljs.exec(cmd, {
         async: true,
-        silent: silent === true,
+        silent: true,
       }, onExit);
       // Close stdin, otherwise wmic won't run.
       proc.stdin.end();
     }
     var killDateStart = Date.now();
     // Note: First process' output it shown, the later outputs are suppressed.
-    execAsyncNoStdin(cmdKillAll, false, function checkAlive() {
-      execAsyncNoStdin(cmdCheckAllKilled, true, function(exitCode, stdout) {
+    execAsyncNoStdin(cmdKillAll, function checkAlive(exitCode, firstStdout) {
+      execAsyncNoStdin(cmdCheckAllKilled, function(exitCode, stdout) {
         if (isAllKilled(exitCode, stdout)) {
           callback();
         } else if (Date.now() - killDateStart > 10000) {
           // Should finish termination within 10 (generous) seconds.
+          if (firstStdout) {
+            this.log('Output of first command:\n' + firstStdout);
+          }
           if (stdout) {
             this.log('Output of last command:\n' + stdout);
           }
