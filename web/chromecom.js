@@ -181,6 +181,18 @@ var ChromeCom = (function ChromeComClosure() {
       document.getElementById('chrome-pdfjs-logo-bg').style.backgroundImage =
         'url(' + chrome.runtime.getURL(iconPath) + ')';
 
+      // Use Chrome's definition of UI language instead of PDF.js's #lang=...,
+      // because the shown string should match the UI at chrome://extensions.
+      // These strings are from chrome/app/resources/generated_resources_*.xtb.
+      var i18nFileAccessLabel =
+//#include chrome-i18n-allow-access-to-file-urls.json
+        [chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
+
+      if (i18nFileAccessLabel) {
+        document.getElementById('chrome-file-access-label').textContent =
+          i18nFileAccessLabel;
+      }
+
       var link = document.getElementById('chrome-link-to-extensions-page');
       link.href = 'chrome://extensions/?id=' + chrome.runtime.id;
       link.onclick = function(e) {
