@@ -415,9 +415,6 @@ var PDFViewer = (function pdfViewer() {
     },
 
     _setScale: function pdfViewer_setScale(value, noScroll) {
-      if (value === 'custom') {
-        return;
-      }
       var scale = parseFloat(value);
 
       if (scale > 0) {
