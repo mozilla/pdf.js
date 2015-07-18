@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/* globals chrome, PDFJS, PDFViewerApplication */
+/* globals chrome, PDFJS, PDFViewerApplication, OverlayManager */
 'use strict';
 
 var ChromeCom = (function ChromeComClosure() {
@@ -120,10 +120,88 @@ var ChromeCom = (function ChromeComClosure() {
               ' non-local page for security reasons.');
           return;
         }
+        isAllowedFileSchemeAccess(function(isAllowedAccess) {
+          if (isAllowedAccess) {
+            PDFViewerApplication.open(file, 0);
+          } else {
+            requestAccessToLocalFile(file);
+          }
+        });
+        return;
       }
       PDFViewerApplication.open(file, 0);
     });
   };
+
+  function isAllowedFileSchemeAccess(callback) {
+    ChromeCom.request('isAllowedFileSchemeAccess', null, callback);
+  }
+
+  function isRuntimeAvailable() {
+    try {
+      // When the extension is reloaded, the extension runtime is destroyed and
+      // the extension APIs become unavailable.
+      if (chrome.runtime && chrome.runtime.getManifest()) {
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function reloadIfRuntimeIsUnavailable() {
+    if (!isRuntimeAvailable()) {
+      location.reload();
+    }
+  }
+
+  var chromeFileAccessOverlayPromise;
+  function requestAccessToLocalFile(fileUrl) {
+    var onCloseOverlay = null;
+    if (top !== window) {
+      // When the extension reloads after receiving new permissions, the pages
+      // have to be reloaded to restore the extension runtime. Auto-reload
+      // frames, because users should not have to reload the whole page just to
+      // update the viewer.
+      // Top-level frames are closed by Chrome upon reload, so there is no need
+      // for detecting unload of the top-level frame. Should this ever change
+      // (crbug.com/511670), then the user can just reload the tab.
+      window.addEventListener('focus', reloadIfRuntimeIsUnavailable);
+      onCloseOverlay = function() {
+        window.removeEventListener('focus', reloadIfRuntimeIsUnavailable);
+        reloadIfRuntimeIsUnavailable();
+        OverlayManager.close('chromeFileAccessOverlay');
+      };
+    }
+    if (!chromeFileAccessOverlayPromise) {
+      chromeFileAccessOverlayPromise = OverlayManager.register(
+          'chromeFileAccessOverlay', onCloseOverlay, true);
+    }
+    chromeFileAccessOverlayPromise.then(function() {
+      var iconPath = chrome.runtime.getManifest().icons[48];
+      document.getElementById('chrome-pdfjs-logo-bg').style.backgroundImage =
+        'url(' + chrome.runtime.getURL(iconPath) + ')';
+
+      var link = document.getElementById('chrome-link-to-extensions-page');
+      link.href = 'chrome://extensions/?id=' + chrome.runtime.id;
+      link.onclick = function(e) {
+        // Direct navigation to chrome:// URLs is blocked by Chrome, so we
+        // have to ask the background page to open chrome://extensions/?id=...
+        e.preventDefault();
+        // Open in the current tab by default, because toggling the file access
+        // checkbox causes the extension to reload, and Chrome will close all
+        // tabs upon reload.
+        ChromeCom.request('openExtensionsPageForFileAccess', {
+          newTab: e.ctrlKey || e.metaKey || e.button === 1 || window !== top
+        });
+      };
+
+      // Show which file is being opened to help the user with understanding
+      // why this permission request is shown.
+      document.getElementById('chrome-url-of-local-file').textContent = fileUrl;
+
+      OverlayManager.open('chromeFileAccessOverlay');
+    });
+  }
 
   // This port is used for several purposes:
   // 1. When disconnected, the background page knows that the frame has unload.
