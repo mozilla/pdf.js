@@ -688,13 +688,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * annotation objects.
      */
     getAnnotations: function PDFPageProxy_getAnnotations() {
-      if (this.annotationsPromise) {
-        return this.annotationsPromise;
+      if (!this.annotationsPromise) {
+        this.annotationsPromise = this.transport.getAnnotations(this.pageIndex);
       }
-
-      var promise = this.transport.getAnnotations(this.pageIndex);
-      this.annotationsPromise = promise;
-      return promise;
+      return this.annotationsPromise;
     },
     /**
      * Begins the process of rendering a page to the desired context.
