@@ -34,9 +34,15 @@ function isPdfDownloadable(details) {
   if (details.url.indexOf('pdfjs.action=download') >= 0) {
     return true;
   }
-  // Display the PDF viewer regardless of the Content-Disposition header
-  // if the file is displayed in the main frame.
-  if (details.type === 'main_frame') {
+  // Display the PDF viewer regardless of the Content-Disposition header if the
+  // file is displayed in the main frame, since most often users want to view
+  // a PDF, and servers are often misconfigured.
+  // If the query string contains "=download", do not unconditionally force the
+  // viewer to open the PDF, but first check whether the Content-Disposition
+  // header specifies an attachment. This allows sites like Google Drive to
+  // operate correctly (#6106).
+  if (details.type === 'main_frame' &&
+      details.url.indexOf('=download') === -1) {
     return false;
   }
   var cdHeader = (details.responseHeaders &&
