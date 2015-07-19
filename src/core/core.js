@@ -111,11 +111,6 @@ var Page = (function PageClosure() {
       return shadow(this, 'view', cropBox);
     },
 
-    get annotationRefs() {
-      return shadow(this, 'annotationRefs',
-                    this.getInheritedPageProp('Annots'));
-    },
-
     get rotate() {
       var rotate = this.getInheritedPageProp('Rotate') || 0;
       // Normalize rotation so it's a multiple of 90 and between 0 and 270
@@ -261,14 +256,14 @@ var Page = (function PageClosure() {
       var annotations = this.annotations;
       var annotationsData = [];
       for (var i = 0, n = annotations.length; i < n; ++i) {
-        annotationsData.push(annotations[i].getData());
+        annotationsData.push(annotations[i].data);
       }
       return annotationsData;
     },
 
     get annotations() {
       var annotations = [];
-      var annotationRefs = (this.annotationRefs || []);
+      var annotationRefs = this.getInheritedPageProp('Annots') || [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = Annotation.fromRef(this.xref, annotationRef);

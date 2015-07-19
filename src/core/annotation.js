@@ -175,10 +175,6 @@ var Annotation = (function AnnotationClosure() {
       }
     },
 
-    getData: function Annotation_getData() {
-      return this.data;
-    },
-
     isInvisible: function Annotation_isInvisible() {
       var data = this.data;
       if (data && SUPPORTED_TYPES.indexOf(data.subtype) !== -1) {
