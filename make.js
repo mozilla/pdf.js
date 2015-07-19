@@ -482,9 +482,8 @@ target.bundle = function(args) {
   cd(ROOT_DIR);
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
-  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
 
-  function bundle(filename, dir, SRC_FILES, EXT_SRC_FILES) {
+  function bundle(filename, outfilename, SRC_FILES, EXT_SRC_FILES) {
     for (var i = 0, length = excludes.length; i < length; ++i) {
       var exclude = excludes[i];
       var index = SRC_FILES.indexOf(exclude);
@@ -500,15 +499,17 @@ target.bundle = function(args) {
 
     crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
 
-    // Strip out all the vim/license headers.
-    bundleContent = bundleContent.replace(reg, '');
+    // Prepend a newline because stripCommentHeaders only strips comments that
+    // follow a line feed. The file where bundleContent is inserted already
+    // contains a license header, so the header of bundleContent can be removed.
+    bundleContent = stripCommentHeaders('\n' + bundleContent);
 
     // Append external files last since we don't want to modify them.
     bundleContent += cat(EXT_SRC_FILES);
 
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
-    builder.preprocess(filename, dir, builder.merge(defines,
+    builder.preprocess(filename, outfilename, builder.merge(defines,
                            {BUNDLE: bundleContent,
                             BUNDLE_VERSION: bundleVersion,
                             BUNDLE_BUILD: bundleBuild}));
@@ -600,12 +601,21 @@ target.singlefile = function() {
 
 };
 
+function stripCommentHeaders(content, filename) {
+  // Strip out all the vim/license headers.
+  var notEndOfComment = '(?:[^*]|\\*(?!/))+';
+  var reg = new RegExp(
+    '\n/\\* -\\*- Mode' + notEndOfComment + '\\*/\\s*' +
+    '(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)+' +
+    '\'use strict\';', 'g');
+  content = content.replace(reg, '');
+  return content;
+}
+
 function cleanupJSSource(file) {
   var content = cat(file);
 
-  // Strip out all the vim/license headers.
-  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
-  content = content.replace(reg, '');
+  content = stripCommentHeaders(content, file);
 
   content.to(file);
 }
