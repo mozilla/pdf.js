@@ -215,6 +215,23 @@ var ChromeCom = (function ChromeComClosure() {
     });
   }
 
+  if (window === top) {
+    // Chrome closes all extension tabs (crbug.com/511670) when the extension
+    // reloads. To counter this, the tab URL and history state is saved to
+    // localStorage and restored by extension-router.js.
+    // Unfortunately, the window and tab index are not restored. And if it was
+    // the only tab in an incognito window, then the tab is not restored either.
+    addEventListener('unload', function() {
+      // If the runtime is still available, the unload is most likely a normal
+      // tab closure. Otherwise it is most likely an extension reload.
+      if (!isRuntimeAvailable()) {
+        localStorage.setItem(
+          'unload-' + Date.now() + '-' + document.hidden + '-' + location.href,
+          JSON.stringify(history.state));
+      }
+    });
+  }
+
   // This port is used for several purposes:
   // 1. When disconnected, the background page knows that the frame has unload.
   // 2. When the referrer was saved in history.state.chromecomState, it is sent
