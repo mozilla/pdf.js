@@ -7,6 +7,24 @@
 
 describe('Annotation layer', function() {
   describe('Annotation', function() {
+    it('should set and get a valid rectangle', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setRectangle([117, 694, 164.298, 720]);
+
+      expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
+    });
+
+    it('should not set and get an invalid rectangle', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setRectangle([117, 694, 164.298]);
+
+      expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
+    });
+
     it('should reject a color if it is not an array', function() {
       var dict = new Dict();
       dict.set('Subtype', '');
