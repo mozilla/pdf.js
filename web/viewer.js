@@ -820,7 +820,7 @@ var PDFViewerApplication = {
             self.fallback(PDFJS.UNSUPPORTED_FEATURES.javaScript);
           }
           // Hack to support auto printing.
-          var regex = /\bprint\s*\(/g;
+          var regex = /\bprint\s*\(/;
           for (var i = 0, ii = javaScript.length; i < ii; i++) {
             var js = javaScript[i];
             if (js && regex.test(js)) {

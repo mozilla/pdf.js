@@ -147,6 +147,32 @@ describe('api', function() {
         expect(data).toEqual([]);
       });
     });
+    // Keep this in sync with the pattern in viewer.js. The pattern is used to
+    // detect whether or not to automatically start printing.
+    var viewerPrintRegExp = /\bprint\s*\(/;
+    it('gets javascript with printing instructions (Print action)', function() {
+      // PDF document with "Print" Named action in OpenAction
+      var pdfUrl = combineUrl(window.location.href, '../pdfs/bug1001080.pdf');
+      var promise = PDFJS.getDocument(pdfUrl).then(function(doc) {
+        return doc.getJavaScript();
+      });
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data).toEqual(['print({});']);
+        expect(data[0]).toMatch(viewerPrintRegExp);
+      });
+    });
+    it('gets javascript with printing instructions (JS action)', function() {
+      // PDF document with "JavaScript" action in OpenAction
+      var pdfUrl = combineUrl(window.location.href, '../pdfs/issue6106.pdf');
+      var promise = PDFJS.getDocument(pdfUrl).then(function(doc) {
+        return doc.getJavaScript();
+      });
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data).toEqual(
+          ['this.print({bUI:true,bSilent:false,bShrinkToFit:true});']);
+        expect(data[0]).toMatch(viewerPrintRegExp);
+      });
+    });
     it('gets outline', function() {
       var promise = doc.getOutline();
       waitsForPromiseResolved(promise, function(outline) {
