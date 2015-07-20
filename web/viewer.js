@@ -1440,6 +1440,9 @@ function webViewerInitialized() {
   });
 
   document.getElementById('scaleSelect').addEventListener('change', function() {
+    if (this.value === 'custom') {
+      return;
+    }
     PDFViewerApplication.pdfViewer.currentScaleValue = this.value;
   });
 
