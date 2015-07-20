@@ -1338,6 +1338,15 @@
        "lastPage": 6,
        "type": "eq"
     },
+    {  "id": "issue6238",
+       "file": "pdfs/issue6238.pdf",
+       "md5": "6d7731ee22fbbdf746c8da01b8922d50",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 3,
+       "lastPage": 3,
+       "type": "eq"
+    },
     {  "id": "cid_cff",
       "file": "pdfs/cid_cff.pdf",
       "md5": "a19a18eaa626262cc45e0760004d6de9",
