@@ -861,6 +861,9 @@ target.firefox = function() {
   sed('-i', /.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifest,
       FIREFOX_BUILD_DIR + '/chrome.manifest');
 
+  // Set timezone to UTC before calling zip to get reproducible results.
+  process.env.TZ = 'UTC';
+
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
   exec('zip -r ' + FIREFOX_EXTENSION_NAME + ' ' +
