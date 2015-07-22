@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 /* globals PDFJS, createPromiseCapability, LocalPdfManager, NetworkPdfManager,
-           NetworkManager, isInt, RANGE_CHUNK_SIZE, MissingPDFException,
+           NetworkManager, isInt, isNum, isBool, isName, isDict, isArray, isRef,
+           isString, isStream, RANGE_CHUNK_SIZE, MissingPDFException,
            UnexpectedResponseException, PasswordException, Promise, warn,
            PasswordResponses, InvalidPDFException, UnknownErrorException,
            XRefParseException, Ref, info, globalScope, error, MessageHandler */
@@ -33,12 +34,17 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var numPagesPromise = pdfManager.ensureDoc('numPages');
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
+        var linearizedPromise = pdfManager.ensureXRef('linearization');
+        var startXRefPromise = pdfManager.ensureXRef('startXRef');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise]).then(function onDocReady(results) {
+                     encryptedPromise, linearizedPromise, startXRefPromise]).
+          then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
             encrypted: !!results[2],
+            linearized: !!results[3],
+            startXRef: results[4],
           };
           loadDocumentCapability.resolve(doc);
         },
@@ -433,6 +439,55 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
                (Date.now() - start) + 'ms');
           return textContent;
         });
+      });
+    });
+
+    handler.on('GetRawObject', function wphGetRawObject(data) {
+      function clone(obj) {
+        if (!obj || isBool(obj) || isNum(obj) || isString(obj)) {
+          return obj;
+        } else if (isName(obj)) {
+          return obj;
+        } else if (isDict(obj)) {
+          var clonedMap = {};
+          var map = obj.map;
+          for (var k in map) {
+            clonedMap[k] = clone(map[k]);
+          }
+          return { map: clonedMap };
+        } else if (isArray(obj)) {
+          var clonedArray = [];
+          for (var i = 0, ii = obj.length; i < ii; i++) {
+            clonedArray.push(clone(obj[i]));
+          }
+          return clonedArray;
+        } else if (isStream(obj)) {
+          if (obj.str) {
+            return clone(obj.str);
+          } else if (obj.stream) {
+            return clone(obj.stream);
+          } else if (obj.streams) {
+            return clone(obj.streams);
+          }
+          return { dict: clone(obj.dict), start: obj.start, end: obj.end };
+        } else if (isRef(obj)) {
+          return obj;
+        }
+        throw new Error('Unknown object type.');
+      }
+
+      if (data.ref === null) {
+        return clone(pdfManager.pdfDocument.xref.trailer);
+      }
+      var ref = new Ref(data.ref.num, data.ref.gen);
+      return pdfManager.pdfDocument.xref.fetchAsync(ref).then(clone);
+    });
+
+    handler.on('GetStreamBytes', function wphGetStreamBytes(data) {
+      var ref = new Ref(data.ref.num, data.ref.gen);
+      return pdfManager.pdfDocument.xref.fetchAsync(ref).then(function(obj) {
+        obj.reset(); 
+        return obj.getBytes();
       });
     });
 
