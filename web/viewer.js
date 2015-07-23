@@ -1938,6 +1938,7 @@ window.addEventListener('keydown', function keydown(evt) {
       return;
     }
   }
+  var ensureViewerFocused = false;
 
   if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
@@ -1996,6 +1997,7 @@ window.addEventListener('keydown', function keydown(evt) {
         if (isViewerInPresentationMode || PDFViewerApplication.page > 1) {
           PDFViewerApplication.page = 1;
           handled = true;
+          ensureViewerFocused = true;
         }
         break;
       case 35: // end
@@ -2003,6 +2005,7 @@ window.addEventListener('keydown', function keydown(evt) {
             PDFViewerApplication.page < PDFViewerApplication.pagesCount)) {
           PDFViewerApplication.page = PDFViewerApplication.pagesCount;
           handled = true;
+          ensureViewerFocused = true;
         }
         break;
 
@@ -2037,17 +2040,10 @@ window.addEventListener('keydown', function keydown(evt) {
   if (!handled && !isViewerInPresentationMode) {
     // 33=Page Up  34=Page Down  35=End    36=Home
     // 37=Left     38=Up         39=Right  40=Down
-    if (evt.keyCode >= 33 && evt.keyCode <= 40 &&
-        !pdfViewer.containsElement(curElement)) {
-      // The page container is not focused, but a page navigation key has been
-      // pressed. Change the focus to the viewer container to make sure that
-      // navigation by keyboard works as expected.
-      pdfViewer.focus();
-    }
     // 32=Spacebar
-    if (evt.keyCode === 32 && curElementTagName !== 'BUTTON' &&
-        !pdfViewer.containsElement(curElement)) {
-      pdfViewer.focus();
+    if ((evt.keyCode >= 33 && evt.keyCode <= 40) ||
+        (evt.keyCode === 32 && curElementTagName !== 'BUTTON')) {
+      ensureViewerFocused = true;
     }
   }
 
@@ -2066,6 +2062,13 @@ window.addEventListener('keydown', function keydown(evt) {
         }
         break;
     }
+  }
+
+  if (ensureViewerFocused && !pdfViewer.containsElement(curElement)) {
+    // The page container is not focused, but a page navigation key has been
+    // pressed. Change the focus to the viewer container to make sure that
+    // navigation by keyboard works as expected.
+    pdfViewer.focus();
   }
 
   if (handled) {
