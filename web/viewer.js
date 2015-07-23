@@ -1993,6 +1993,9 @@ window.addEventListener('keydown', function keydown(evt) {
         if (isViewerInPresentationMode || PDFViewerApplication.page > 1) {
           PDFViewerApplication.page = 1;
           handled = true;
+          if (!pdfViewer.containsElement(curElement)) {
+            pdfViewer.focus();
+          }
         }
         break;
       case 35: // end
@@ -2000,6 +2003,9 @@ window.addEventListener('keydown', function keydown(evt) {
             PDFViewerApplication.page < PDFViewerApplication.pagesCount)) {
           PDFViewerApplication.page = PDFViewerApplication.pagesCount;
           handled = true;
+          if (!pdfViewer.containsElement(curElement)) {
+            pdfViewer.focus();
+          }
         }
         break;
 
