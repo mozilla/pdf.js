@@ -402,6 +402,10 @@ var Catalog = (function CatalogClosure() {
             var dest = outlineDict.get('A');
             if (dest) {
               dest = dest.get('D');
+			  if (!dest) {
+                // In case of external file
+                dest={file: outlineDict.get('A').get('F').get('F')};
+              }
             } else if (outlineDict.has('Dest')) {
               dest = outlineDict.getRaw('Dest');
               if (isName(dest)) {
