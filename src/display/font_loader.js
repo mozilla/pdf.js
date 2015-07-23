@@ -106,7 +106,7 @@ var FontLoader = {
   nativeFontFaces: [],
 
   isFontLoadingAPISupported: (!isWorker && typeof document !== 'undefined' &&
-                              !!document.fonts),
+                              !!document.fonts && FontFace.prototype.hasOwnProperty('loaded')),
 
   addNativeFontFace: function fontLoader_addNativeFontFace(nativeFontFace) {
     this.nativeFontFaces.push(nativeFontFace);
