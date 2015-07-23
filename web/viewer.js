@@ -790,7 +790,7 @@ var PDFViewerApplication = {
             store.get('exists', false)) {
           var pageNum = store.get('page', '1');
           var zoom = self.preferenceDefaultZoomValue ||
-                     store.get('zoom', self.pdfViewer.currentScale);
+                     store.get('zoom', DEFAULT_SCALE_VALUE);
           var left = store.get('scrollLeft', '0');
           var top = store.get('scrollTop', '0');
 
@@ -1639,13 +1639,16 @@ window.addEventListener('updateviewarea', function (evt) {
 window.addEventListener('resize', function webViewerResize(evt) {
   if (PDFViewerApplication.initialized) {
     var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
-    switch (currentScaleValue) {
-      case 'auto':
-      case 'page-fit':
-      case 'page-width':
-        // Note: the scale is constant for 'page-actual'.
-        PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
-        break;
+    if (currentScaleValue === 'auto' ||
+        currentScaleValue === 'page-fit' ||
+        currentScaleValue === 'page-width') {
+      // Note: the scale is constant for 'page-actual'.
+      PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
+    } else if (!currentScaleValue) {
+      // Normally this shouldn't happen, but if the scale wasn't initialized
+      // we set it to the default value in order to prevent any issues.
+      // (E.g. the document being rendered with the wrong scale on load.)
+      PDFViewerApplication.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
     }
   }
   updateViewarea();
