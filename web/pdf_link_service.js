@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFViewer, PDFHistory, Promise, parseQueryString */
+/* globals PDFViewer, PDFHistory, PDFViewerApplication, Promise, parseQueryString */
 
 'use strict';
 
@@ -33,6 +33,7 @@ var PDFLinkService = (function () {
     this.pdfDocument = null;
     this.pdfViewer = null;
     this.pdfHistory = null;
+	this.pdfViewerApplication = null;
 
     this._pagesRefCache = null;
   }
@@ -46,6 +47,10 @@ var PDFLinkService = (function () {
 
     setViewer: function PDFLinkService_setViewer(pdfViewer) {
       this.pdfViewer = pdfViewer;
+    },
+	
+	setApplication: function PDFLinkService_setApplication(pdfViewerApplication) {
+      this.pdfViewerApplication = pdfViewerApplication;
     },
 
     setHistory: function PDFLinkService_setHistory(pdfHistory) {
@@ -115,8 +120,8 @@ var PDFLinkService = (function () {
         destinationPromise = this.pdfDocument.getDestination(dest);
       } else {
         if (dest.file) {
-          PDFViewerApplication.initialBookmark=null;
-          PDFViewerApplication.open(dest.file);
+          this.pdfViewerApplication.initialBookmark=null;
+          this.pdfViewerApplication.open(dest.file);
         }
         destinationPromise = Promise.resolve(dest);
       }
