@@ -114,10 +114,10 @@ var PDFLinkService = (function () {
         destString = dest;
         destinationPromise = this.pdfDocument.getDestination(dest);
       } else {
-		if (dest.file) {
-			PDFViewerApplication.initialBookmark=null;
-			PDFViewerApplication.open(dest.file);
-		}
+        if (dest.file) {
+          PDFViewerApplication.initialBookmark=null;
+          PDFViewerApplication.open(dest.file);
+        }
         destinationPromise = Promise.resolve(dest);
       }
       destinationPromise.then(function(destination) {
