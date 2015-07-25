@@ -435,6 +435,20 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1186827",
+       "file": "pdfs/bug1186827.pdf",
+       "md5": "6c5526ae1a9d66cb517153001afc196e",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue215",
+       "file": "pdfs/issue215.pdf",
+       "md5": "31f3dc60ecf008987d970edfd2b1df61",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug850854",
        "file": "pdfs/bug850854.pdf",
        "md5": "346a034a80120d123b9fefc42bcb11da",
