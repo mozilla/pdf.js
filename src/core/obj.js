@@ -534,6 +534,19 @@ var Catalog = (function CatalogClosure() {
       var obj = this.catDict.get('Names');
 
       var javaScript = [];
+      function appendIfJavaScriptDict(jsDict) {
+        var type = jsDict.get('S');
+        if (!isName(type) || type.name !== 'JavaScript') {
+          return;
+        }
+        var js = jsDict.get('JS');
+        if (isStream(js)) {
+          js = bytesToString(js.getBytes());
+        } else if (!isString(js)) {
+          return;
+        }
+        javaScript.push(stringToPDFString(js));
+      }
       if (obj && obj.has('JavaScript')) {
         var nameTree = new NameTree(obj.getRaw('JavaScript'), xref);
         var names = nameTree.getAll();
@@ -544,36 +557,25 @@ var Catalog = (function CatalogClosure() {
           // We don't really use the JavaScript right now. This code is
           // defensive so we don't cause errors on document load.
           var jsDict = names[name];
-          if (!isDict(jsDict)) {
-            continue;
+          if (isDict(jsDict)) {
+            appendIfJavaScriptDict(jsDict);
           }
-          var type = jsDict.get('S');
-          if (!isName(type) || type.name !== 'JavaScript') {
-            continue;
-          }
-          var js = jsDict.get('JS');
-          if (!isString(js) && !isStream(js)) {
-            continue;
-          }
-          if (isStream(js)) {
-            js = bytesToString(js.getBytes());
-          }
-          javaScript.push(stringToPDFString(js));
         }
       }
 
       // Append OpenAction actions to javaScript array
       var openactionDict = this.catDict.get('OpenAction');
-      if (isDict(openactionDict)) {
-        var objType = openactionDict.get('Type');
+      if (isDict(openactionDict, 'Action')) {
         var actionType = openactionDict.get('S');
-        var action = openactionDict.get('N');
-        var isPrintAction = (isName(objType) && objType.name === 'Action' &&
-                            isName(actionType) && actionType.name === 'Named' &&
-                            isName(action) && action.name === 'Print');
-
-        if (isPrintAction) {
-          javaScript.push('print(true);');
+        if (isName(actionType) && actionType.name === 'Named') {
+          // The named Print action is not a part of the PDF 1.7 specification,
+          // but is supported by many PDF readers/writers (including Adobe's).
+          var action = openactionDict.get('N');
+          if (isName(action) && action.name === 'Print') {
+            javaScript.push('print({});');
+          }
+        } else {
+          appendIfJavaScriptDict(openactionDict);
         }
       }
 
