@@ -18,7 +18,8 @@
            isStream, NullStream, ObjectLoader, PartialEvaluator, Promise,
            OperatorList, Annotation, error, assert, XRef, isArrayBuffer, Stream,
            isString, isName, info, Linearization, MissingDataException, Lexer,
-           Catalog, stringToPDFString, stringToBytes, calculateMD5 */
+           Catalog, stringToPDFString, stringToBytes, calculateMD5,
+           AnnotationFactory */
 
 'use strict';
 
@@ -264,10 +265,12 @@ var Page = (function PageClosure() {
     get annotations() {
       var annotations = [];
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
+      var annotationFactory = new AnnotationFactory();
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = Annotation.fromRef(this.xref, annotationRef);
-        if (annotation) {
+        var annotation = annotationFactory.create(this.xref, annotationRef);
+        if (annotation &&
+            (annotation.isViewable() || annotation.isPrintable())) {
           annotations.push(annotation);
         }
       }
