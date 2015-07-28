@@ -486,7 +486,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     handler.on('GetStreamBytes', function wphGetStreamBytes(data) {
       var ref = new Ref(data.ref.num, data.ref.gen);
       return pdfManager.pdfDocument.xref.fetchAsync(ref).then(function(obj) {
-        obj.reset(); 
+        obj.reset();
         return obj.getBytes();
       });
     });
