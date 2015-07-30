@@ -194,7 +194,7 @@ describe('api', function() {
       });
     });
     it('gets PDF trailer object', function() {
-      var promise = doc.getRawObject('trailer');
+      var promise = doc.getRawObject({ ref: null });
       waitsForPromiseResolved(promise, function (data) {
         expect(data.map.Root.num).toEqual(38);
       });
