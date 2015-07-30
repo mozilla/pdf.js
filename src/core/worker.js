@@ -35,7 +35,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         Promise.all([numPagesPromise, fingerprintPromise,
-          encryptedPromise] ).then(function onDocReady(results) {
+          encryptedPromise]).then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
@@ -442,20 +442,9 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         if (!obj || isBool(obj) || isNum(obj) || isString(obj)) {
           return obj;
         } else if (isName(obj)) {
-          return obj;
-        } else if (isDict(obj)) {
-          var clonedMap = {};
-          var map = obj.map;
-          for (var k in map) {
-            clonedMap[k] = clone(map[k]);
-          }
-          return { map: clonedMap };
-        } else if (isArray(obj)) {
-          var clonedArray = [];
-          for (var i = 0, ii = obj.length; i < ii; i++) {
-            clonedArray.push(clone(obj[i]));
-          }
-          return clonedArray;
+          return { name: obj.name };
+        } else if (isDict(obj) || isArray(obj)) {
+          return obj.map(clone);
         } else if (isStream(obj)) {
           if (obj.str) {
             return clone(obj.str);
@@ -466,7 +455,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           }
           return { dict: clone(obj.dict), start: obj.start, end: obj.end };
         } else if (isRef(obj)) {
-          return obj;
+          return { num: obj.num, gen: obj.gen };
         }
         throw new Error('Unknown object type.');
       }
