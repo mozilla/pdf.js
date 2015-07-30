@@ -20,7 +20,7 @@
 
 'use strict';
 
-var PatternType = {
+var ShadingType = {
   FUNCTION_BASED: 1,
   AXIAL: 2,
   RADIAL: 3,
@@ -52,17 +52,17 @@ var Pattern = (function PatternClosure() {
 
     try {
       switch (type) {
-        case PatternType.AXIAL:
-        case PatternType.RADIAL:
+        case ShadingType.AXIAL:
+        case ShadingType.RADIAL:
           // Both radial and axial shadings are handled by RadialAxial shading.
           return new Shadings.RadialAxial(dict, matrix, xref, res);
-        case PatternType.FREE_FORM_MESH:
-        case PatternType.LATTICE_FORM_MESH:
-        case PatternType.COONS_PATCH_MESH:
-        case PatternType.TENSOR_PATCH_MESH:
+        case ShadingType.FREE_FORM_MESH:
+        case ShadingType.LATTICE_FORM_MESH:
+        case ShadingType.COONS_PATCH_MESH:
+        case ShadingType.TENSOR_PATCH_MESH:
           return new Shadings.Mesh(shading, matrix, xref, res);
         default:
-          throw new Error('Unknown PatternType: ' + type);
+          throw new Error('Unsupported ShadingType: ' + type);
       }
     } catch (ex) {
       if (ex instanceof MissingDataException) {
@@ -110,7 +110,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       extendEnd = extendArr[1];
     }
 
-    if (this.shadingType === PatternType.RADIAL &&
+    if (this.shadingType === ShadingType.RADIAL &&
        (!extendStart || !extendEnd)) {
       // Radial gradient only currently works if either circle is fully within
       // the other circle.
@@ -185,13 +185,13 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
       var coordsArr = this.coordsArr;
       var shadingType = this.shadingType;
       var type, p0, p1, r0, r1;
-      if (shadingType === PatternType.AXIAL) {
+      if (shadingType === ShadingType.AXIAL) {
         p0 = [coordsArr[0], coordsArr[1]];
         p1 = [coordsArr[2], coordsArr[3]];
         r0 = null;
         r1 = null;
         type = 'axial';
-      } else if (shadingType === PatternType.RADIAL) {
+      } else if (shadingType === ShadingType.RADIAL) {
         p0 = [coordsArr[0], coordsArr[1]];
         p1 = [coordsArr[3], coordsArr[4]];
         r0 = coordsArr[2];
@@ -732,19 +732,19 @@ Shadings.Mesh = (function MeshClosure() {
 
     var patchMesh = false;
     switch (this.shadingType) {
-      case PatternType.FREE_FORM_MESH:
+      case ShadingType.FREE_FORM_MESH:
         decodeType4Shading(this, reader);
         break;
-      case PatternType.LATTICE_FORM_MESH:
+      case ShadingType.LATTICE_FORM_MESH:
         var verticesPerRow = dict.get('VerticesPerRow') | 0;
         assert(verticesPerRow >= 2, 'Invalid VerticesPerRow');
         decodeType5Shading(this, reader, verticesPerRow);
         break;
-      case PatternType.COONS_PATCH_MESH:
+      case ShadingType.COONS_PATCH_MESH:
         decodeType6Shading(this, reader);
         patchMesh = true;
         break;
-      case PatternType.TENSOR_PATCH_MESH:
+      case ShadingType.TENSOR_PATCH_MESH:
         decodeType7Shading(this, reader);
         patchMesh = true;
         break;
