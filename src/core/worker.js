@@ -34,17 +34,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var numPagesPromise = pdfManager.ensureDoc('numPages');
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        var linearizedPromise = pdfManager.ensureXRef('linearization');
-        var startXRefPromise = pdfManager.ensureXRef('startXRef');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise, linearizedPromise, startXRefPromise]).
-          then(function onDocReady(results) {
+          encryptedPromise] ).then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
             encrypted: !!results[2],
-            linearized: !!results[3],
-            startXRef: results[4],
           };
           loadDocumentCapability.resolve(doc);
         },
