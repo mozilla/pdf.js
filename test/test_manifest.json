@@ -634,6 +634,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue2948",
+       "file": "pdfs/issue2948.pdf",
+       "md5": "26210bed6a57d5466042aff22f0249f0",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "usmanm-bad-auto-fetch",
        "file": "pdfs/usmanm-bad.pdf",
        "md5": "38afb822433aaf07fc8f54807cd4f61a",
