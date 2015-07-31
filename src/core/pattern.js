@@ -225,7 +225,7 @@ Shadings.Mesh = (function MeshClosure() {
 
     var numComps = context.numComps;
     this.tmpCompsBuf = new Float32Array(numComps);
-    var csNumComps = context.colorSpace;
+    var csNumComps = context.colorSpace.numComps;
     this.tmpCsCompsBuf = context.colorFn ? new Float32Array(csNumComps) :
                                            this.tmpCompsBuf;
   }
