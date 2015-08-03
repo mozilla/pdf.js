@@ -25,6 +25,7 @@ var path = require('path');
 var spawn = require('child_process').spawn;
 var testUtils = require('./testutils.js');
 var shelljs = require('shelljs');
+var crypto = require('crypto');
 
 var tempDirPrefix = 'pdfjs_';
 
@@ -34,8 +35,12 @@ function WebBrowser(name, path) {
   this.tmpDir = null;
   this.profileDir = null;
   this.process = null;
+  this.requestedExit = false;
   this.finished = false;
   this.callback = null;
+  // Used to identify processes whose pid is lost. This string is directly used
+  // as a command-line argument, so it only consists of letters.
+  this.uniqStringId = 'webbrowser' + crypto.randomBytes(32).toString('hex');
 }
 WebBrowser.prototype = {
   start: function (url) {
@@ -43,7 +48,7 @@ WebBrowser.prototype = {
     if (!fs.existsSync(this.tmpDir)) {
       fs.mkdirSync(this.tmpDir);
     }
-    this.process = this.startProcess(url);
+    this.startProcess(url);
   },
   getProfileDir: function () {
     if (!this.profileDir) {
@@ -63,54 +68,128 @@ WebBrowser.prototype = {
   setupProfileDir: function (dir) {
   },
   startProcess: function (url) {
+    console.assert(!this.process, 'startProcess may be called only once');
+
     var args = this.buildArguments(url);
-    var proc = spawn(this.path, args);
-    proc.on('exit', function (code) {
-      this.finished = true;
-      this.cleanup(this.callback && this.callback.bind(null, code));
+    args = args.concat('--' + this.uniqStringId);
+    this.process = spawn(this.path, args);
+    this.process.on('exit', function (code, signal) {
+      this.process = null;
+      var exitInfo = code !== null ? ' with status ' + code :
+        ' in response to signal ' + signal;
+      if (this.requestedExit) {
+        this.log('Browser process exited' + exitInfo);
+      } else {
+        // This was observed on Windows bots with Firefox. Apparently the
+        // Firefox Maintenance Service restarts Firefox shortly after starting
+        // up. When this happens, we no longer know the pid of the process.
+        this.log('Browser process unexpectedly exited' + exitInfo);
+      }
     }.bind(this));
-    return proc;
   },
-  cleanup: function (callback) {
+  cleanup: function () {
+    console.assert(this.requestedExit,
+        'cleanup should only be called after an explicit stop() request');
+
     try {
       testUtils.removeDirSync(this.tmpDir);
-      this.process = null;
-      if (callback) {
-        callback();
-      }
     } catch (e) {
-      console.error('Unable to cleanup after the process: ' + e);
-      try {
-        if (this.process) {
-          this.process.kill('SIGKILL');
+      if (e.code !== 'ENOENT') {
+        this.log('Failed to remove profile directory: ' + e);
+        if (!this.cleanupFailStart) {
+          this.cleanupFailStart = Date.now();
+        } else if (Date.now() - this.cleanupFailStart > 10000) {
+          throw new Error('Failed to remove profile dir within 10 seconds');
         }
-      } catch (e) {}
+        this.log('Retrying in a second...');
+        setTimeout(this.cleanup.bind(this), 1000);
+        return;
+      }
+      // This should not happen, but we just warn instead of failing loudly
+      // because the post-condition of cleanup is that the profile directory is
+      // gone. If the directory does not exists, then this post-condition is
+      // satisfied.
+      this.log('Cannot remove non-existent directory: ' + e);
     }
+    this.finished = true;
+    this.log('Clean-up finished. Going to call callback...');
+    this.callback();
   },
   stop: function (callback) {
-    if (this.finished) {
-      if (callback) {
-        callback();
-      }
-    } else {
-      this.callback = callback;
-    }
+    console.assert(this.tmpDir, '.start() must be called before stop()');
+    // Require the callback to ensure that callers do not make any assumptions
+    // on the state of this browser instance until the callback is called.
+    console.assert(typeof callback === 'function', 'callback is required');
+    console.assert(!this.requestedExit, '.stop() may be called only once');
 
-    if (this.process) {
-      if (process.platform === 'win32') {
-        // process.kill is not reliable on Windows (Firefox sticks around). The
-        // work-around was to manually open the task manager and terminate the
-        // process. Instead of doing that manually, use taskkill to kill.
-        // (https://technet.microsoft.com/en-us/library/cc725602.aspx)
-        var result = shelljs.exec('taskkill /f /t /pid ' + this.process.pid);
-        if (result.code) {
-          console.error('taskkill failed with exit code ' + result.code);
-        }
-      } else {
-        this.process.kill('SIGTERM');
-      }
+    this.requestedExit = true;
+    if (this.finished) {
+      this.log('Browser already stopped, invoking callback...');
+      callback();
+    } else if (this.process) {
+      this.log('Going to wait until the browser process has exited.');
+      this.callback = callback;
+      this.process.once('exit', this.cleanup.bind(this));
+      this.process.kill('SIGTERM');
+    } else {
+      this.log('Process already exited, checking if the process restarted...');
+      this.callback = callback;
+      this.killProcessUnknownPid(this.cleanup.bind(this));
     }
-  }
+  },
+  killProcessUnknownPid: function(callback) {
+    this.log('pid unknown, killing processes matching ' + this.uniqStringId);
+
+    var cmdKillAll, cmdCheckAllKilled, isAllKilled;
+
+    if (process.platform === 'win32') {
+      var wmicPrefix = 'wmic process where "not Name = \'cmd.exe\' ' +
+        'and not Name like \'%wmic%\' ' +
+        'and CommandLine like \'%' + this.uniqStringId + '%\'" ';
+      cmdKillAll = wmicPrefix + 'call terminate';
+      cmdCheckAllKilled = wmicPrefix + 'get CommandLine';
+      isAllKilled = function(exitCode, stdout) {
+        return stdout.indexOf(this.uniqStringId) === -1;
+      }.bind(this);
+    } else {
+      cmdKillAll = 'pkill -f ' + this.uniqStringId;
+      cmdCheckAllKilled = 'pgrep -f ' + this.uniqStringId;
+      isAllKilled = function(pgrepStatus) {
+        return pgrepStatus === 1; // "No process matched.", per man pgrep.
+      };
+    }
+    function execAsyncNoStdin(cmd, onExit) {
+      var proc = shelljs.exec(cmd, {
+        async: true,
+        silent: true,
+      }, onExit);
+      // Close stdin, otherwise wmic won't run.
+      proc.stdin.end();
+    }
+    var killDateStart = Date.now();
+    // Note: First process' output it shown, the later outputs are suppressed.
+    execAsyncNoStdin(cmdKillAll, function checkAlive(exitCode, firstStdout) {
+      execAsyncNoStdin(cmdCheckAllKilled, function(exitCode, stdout) {
+        if (isAllKilled(exitCode, stdout)) {
+          callback();
+        } else if (Date.now() - killDateStart > 10000) {
+          // Should finish termination within 10 (generous) seconds.
+          if (firstStdout) {
+            this.log('Output of first command:\n' + firstStdout);
+          }
+          if (stdout) {
+            this.log('Output of last command:\n' + stdout);
+          }
+          throw new Error('Failed to kill process of ' + this.name);
+        } else {
+          setTimeout(checkAlive.bind(this), 500);
+        }
+      }.bind(this));
+    }.bind(this));
+  },
+  log: function(msg) {
+    console.log('[' + this.name + '] ' + msg);
+  },
 };
 
 var firefoxResourceDir = path.join(__dirname, 'resources', 'firefox');
