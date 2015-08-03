@@ -2247,6 +2247,12 @@
        "lastPage": 4,
        "type": "eq"
     },
+    {  "id": "issue4227",
+       "file": "pdfs/coons-allflags-withfunction.pdf",
+       "md5": "c5f79c24bf9eb66698be0e4ecaa1bdf8",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4246",
       "file": "pdfs/issue4246.pdf",
       "md5": "ed81787b83cc317c9f049643b853bea3",
