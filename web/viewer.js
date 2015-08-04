@@ -1591,17 +1591,20 @@ document.addEventListener('pagemode', function (evt) {
 }, true);
 
 document.addEventListener('namedaction', function (e) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
   // Processing couple of named actions that might be useful.
   // See also PDFLinkService.executeNamedAction
-  var action = e.action;
+  var action = e.detail.action;
   switch (action) {
     case 'GoToPage':
       document.getElementById('pageNumber').focus();
       break;
 
     case 'Find':
-      if (!this.supportsIntegratedFind) {
-        this.findBar.toggle();
+      if (!PDFViewerApplication.supportsIntegratedFind) {
+        PDFViewerApplication.findBar.toggle();
       }
       break;
   }
