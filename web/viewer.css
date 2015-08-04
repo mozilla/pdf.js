@@ -591,6 +591,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .splitToolbarButton > .toolbarButton:focus,
 .dropdownToolbarButton:hover,
 .overlayButton:hover,
+.overlayButton:focus,
 .toolbarButton.textButton:hover,
 .toolbarButton.textButton:focus {
   background-color: hsla(0,0%,0%,.2);
