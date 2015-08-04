@@ -2253,6 +2253,12 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue6305-part-1",
+       "file": "pdfs/tensor-allflags-withfunction.pdf",
+       "md5": "b47260d50f6a0f26aaccbfa3b7176ae8",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue4246",
       "file": "pdfs/issue4246.pdf",
       "md5": "ed81787b83cc317c9f049643b853bea3",
