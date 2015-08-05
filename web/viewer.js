@@ -790,6 +790,12 @@ var PDFViewerApplication = {
         }
       }
 
+      var initialParams = {
+        destination: self.initialDestination,
+        bookmark: self.initialBookmark,
+        hash: null,
+      };
+
       store.initializedPromise.then(function resolved() {
         var storedHash = null;
         if (self.preferenceShowPreviousViewOnLoad &&
@@ -807,6 +813,8 @@ var PDFViewerApplication = {
         }
         self.setInitialView(storedHash, scale);
 
+        initialParams.hash = storedHash;
+
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
         if (!self.isViewerEmbedded) {
@@ -815,6 +823,23 @@ var PDFViewerApplication = {
       }, function rejected(reason) {
         console.error(reason);
         self.setInitialView(null, scale);
+      });
+
+      // For documents with different page sizes,
+      // ensure that the correct location becomes visible on load.
+      pagesPromise.then(function resolved() {
+        if (!initialParams.destination && !initialParams.bookmark &&
+            !initialParams.hash) {
+          return;
+        }
+        if (self.hasEqualPageSizes) {
+          return;
+        }
+        self.initialDestination = initialParams.destination;
+        self.initialBookmark = initialParams.bookmark;
+
+        self.pdfViewer.currentScaleValue = self.pdfViewer.currentScaleValue;
+        self.setInitialView(initialParams.hash, scale);
       });
     });
 
