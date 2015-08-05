@@ -291,23 +291,19 @@ var PDFViewerApplication = {
     });
   },
 
-  zoomIn: function pdfViewZoomIn(ticks) {
+  zoomIn: function pdfViewZoomIn() {
     var newScale = this.pdfViewer.currentScale;
-    do {
-      newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.ceil(newScale * 10) / 10;
-      newScale = Math.min(MAX_SCALE, newScale);
-    } while (--ticks > 0 && newScale < MAX_SCALE);
+    newScale = (newScale * DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.ceil(newScale * 10) / 10;
+    newScale = Math.min(MAX_SCALE, newScale);
     this.pdfViewer.currentScaleValue = newScale;
   },
 
-  zoomOut: function pdfViewZoomOut(ticks) {
+  zoomOut: function pdfViewZoomOut() {
     var newScale = this.pdfViewer.currentScale;
-    do {
-      newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
-      newScale = Math.floor(newScale * 10) / 10;
-      newScale = Math.max(MIN_SCALE, newScale);
-    } while (--ticks > 0 && newScale > MIN_SCALE);
+    newScale = (newScale / DEFAULT_SCALE_DELTA).toFixed(2);
+    newScale = Math.floor(newScale * 10) / 10;
+    newScale = Math.max(MIN_SCALE, newScale);
     this.pdfViewer.currentScaleValue = newScale;
   },
 
@@ -1799,8 +1795,8 @@ function handleMouseWheel(evt) {
     evt.preventDefault();
 
     var previousScale = pdfViewer.currentScale;
-
-    PDFViewerApplication[direction](Math.abs(ticks));
+    // Just zoom in the right direction
+    PDFViewerApplication[direction]();
 
     var currentScale = pdfViewer.currentScale;
     if (previousScale !== currentScale) {
