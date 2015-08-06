@@ -107,8 +107,7 @@ var COMMON_WEB_FILES =
     COMMON_FIREFOX_FILES_PREPROCESS =
       [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
        FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm'];
+       FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm'];
 //
 // make generic
 // Builds the generic production viewer that should be compatible with most

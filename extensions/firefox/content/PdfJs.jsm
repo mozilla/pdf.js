@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* jshint esnext:true */
-/* globals Components, Services, XPCOMUtils, PdfjsChromeUtils, PdfRedirector,
+/* globals Components, Services, XPCOMUtils, PdfjsChromeUtils,
            PdfjsContentUtils, DEFAULT_PREFERENCES, PdfStreamConverter */
 
 'use strict';
