@@ -1566,18 +1566,45 @@ document.addEventListener('textlayerrendered', function (e) {
 //#endif
 }, true);
 
+document.addEventListener('pagemode', function (evt) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
+  // Handle the 'pagemode' hash parameter, see also `PDFLinkService_setHash`.
+  var mode = evt.detail.mode;
+  switch (mode) {
+    case 'bookmarks':
+      // Note: Our code calls this property 'outline', even though the
+      //       Open Parameter specification calls it 'bookmarks'.
+      mode = 'outline';
+      /* falls through */
+    case 'thumbs':
+    case 'attachments':
+      PDFViewerApplication.switchSidebarView(mode, true);
+      break;
+    case 'none':
+      if (PDFViewerApplication.sidebarOpen) {
+        document.getElementById('sidebarToggle').click();
+      }
+      break;
+  }
+}, true);
+
 document.addEventListener('namedaction', function (e) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
   // Processing couple of named actions that might be useful.
   // See also PDFLinkService.executeNamedAction
-  var action = e.action;
+  var action = e.detail.action;
   switch (action) {
     case 'GoToPage':
       document.getElementById('pageNumber').focus();
       break;
 
     case 'Find':
-      if (!this.supportsIntegratedFind) {
-        this.findBar.toggle();
+      if (!PDFViewerApplication.supportsIntegratedFind) {
+        PDFViewerApplication.findBar.toggle();
       }
       break;
   }
