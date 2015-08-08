@@ -1504,6 +1504,10 @@ function MessageHandler(name, comObj) {
             data: result
           });
         }, function (reason) {
+          if (reason instanceof Error) {
+            // Serialize error to avoid "DataCloneError"
+            reason = reason + '';
+          }
           comObj.postMessage({
             isReply: true,
             callbackId: data.callbackId,
