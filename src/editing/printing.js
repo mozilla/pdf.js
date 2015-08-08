@@ -34,6 +34,10 @@ function getDataForPrintingImplementation(pdfManager) {
     var startXRef = pdfDocument.startXRef;
     var catalogRef = trailer.getRaw('Root');
 
+    if (trailer.get('Encrypt')) {
+      return Promise.reject('Encrypted PDFs cannot be modified yet');
+    }
+
     var newCatDict = new Dict();
     for (var k in catDict.map) {
       if (k !== 'OpenAction') {
