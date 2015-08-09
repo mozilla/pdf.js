@@ -4236,9 +4236,10 @@ var Font = (function FontClosure() {
             if (!glyphName) {
               continue;
             }
-            var unicodeOrCharCode;
+            var unicodeOrCharCode, isUnicode = false;
             if (cmapPlatformId === 3 && cmapEncodingId === 1) {
               unicodeOrCharCode = GlyphsUnicode[glyphName];
+              isUnicode = true;
             } else if (cmapPlatformId === 1 && cmapEncodingId === 0) {
               // TODO: the encoding needs to be updated with mac os table.
               unicodeOrCharCode = Encodings.MacRomanEncoding.indexOf(glyphName);
@@ -4246,8 +4247,11 @@ var Font = (function FontClosure() {
 
             var found = false;
             for (i = 0; i < cmapMappingsLength; ++i) {
-              if (cmapMappings[i].charCode === unicodeOrCharCode &&
-                  hasGlyph(cmapMappings[i].glyphId, unicodeOrCharCode, -1)) {
+              if (cmapMappings[i].charCode !== unicodeOrCharCode) {
+                continue;
+              }
+              var code = isUnicode ? charCode : unicodeOrCharCode;
+              if (hasGlyph(cmapMappings[i].glyphId, code, -1)) {
                 charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
                 found = true;
                 break;
