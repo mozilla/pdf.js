@@ -1370,11 +1370,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (cmap instanceof IdentityCMap) {
           return new IdentityToUnicodeMap(0, 0xFFFF);
         }
-        cmap = cmap.getMap();
+        var map = [];
         // Convert UTF-16BE
         // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
         // to iterate over all keys.
-        cmap.forEach(function(token, i) {
+        cmap.forEach(function(charCode, token) {
           var str = [];
           for (var k = 0; k < token.length; k += 2) {
             var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
@@ -1386,9 +1386,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
             str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
           }
-          cmap[i] = String.fromCharCode.apply(String, str);
+          map[charCode] = String.fromCharCode.apply(String, str);
         });
-        return new ToUnicodeMap(cmap);
+        return new ToUnicodeMap(map);
       }
       return null;
     },
