@@ -185,18 +185,20 @@ describe('api', function() {
         expect(stats).toEqual({ streamTypes: [], fontTypes: [] });
       });
     });
-    it('gets a raw PDF object', function() {
-      var promise = doc.getRawObject({ num: 20, gen: 0 });
-      waitsForPromiseResolved(promise, function (data) {
-        expect(data.dict.map.Length).toEqual(281);
-        expect(data.start).toEqual(1956);
-        expect(data.end).toEqual(1956+281);
-      });
-    });
     it('gets PDF trailer object', function() {
-      var promise = doc.getRawObject({ ref: null });
+      var promise = doc.getRawObject(null);
       waitsForPromiseResolved(promise, function (data) {
         expect(data.map.Root.num).toEqual(38);
+        expect(data.map.Size).toEqual(39);
+      });
+    });
+    it('gets a raw PDF dict object', function() {
+      var ref = {num: 17, gen: 0};
+      var promise = doc.getRawObject(ref);
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data.map.Type).toEqual({ name : 'Page' });
+        expect(data.map.Parent.num).toEqual(1);
+        expect(data.map.Contents.num).toEqual(18);
       });
     });
     it('gets stream bytes', function() {
