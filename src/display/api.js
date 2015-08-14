@@ -1379,17 +1379,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.messageHandler.sendWithPromise('GetStats', null);
     },
 
-    getRawObject: function WorkerTransport_getRawObject(r) {
+    getRawObject: function WorkerTransport_getRawObject(ref) {
       return this.messageHandler.
-        sendWithPromise('GetRawObject', { ref: r }).
-          then(function transportObject(results) {
-          return results;
-      });
+        sendWithPromise('GetRawObject', { ref: ref });
     },
 
-    getStreamBytes: function WorkerTransport_getStreamBytes(r) {
+    getStreamBytes: function WorkerTransport_getStreamBytes(ref) {
       return this.messageHandler.
-        sendWithPromise('GetStreamBytes', { ref: r });
+        sendWithPromise('GetStreamBytes', { ref: ref });
     },
 
     startCleanup: function WorkerTransport_startCleanup() {

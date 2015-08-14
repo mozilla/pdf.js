@@ -193,10 +193,9 @@ describe('api', function() {
       });
     });
     it('gets a raw PDF dict object', function() {
-      var ref = {num: 17, gen: 0};
-      var promise = doc.getRawObject(ref);
+      var promise = doc.getRawObject({ num: 17, gen: 0 });
       waitsForPromiseResolved(promise, function (data) {
-        expect(data.map.Type).toEqual({ name : 'Page' });
+        expect(data.map.Type).toEqual({ name: 'Page' });
         expect(data.map.Parent.num).toEqual(1);
         expect(data.map.Contents.num).toEqual(18);
       });

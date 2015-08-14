@@ -35,7 +35,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise]).then(function onDocReady(results) {
+          encryptedPromise]).then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
@@ -466,14 +466,11 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         }
         throw new Error('Unknown object type.');
       }
-
       if (data.ref === null) {
         return Promise.resolve(clone(pdfManager.pdfDocument.xref.trailer));
       }
       var ref = new Ref(data.ref.num, data.ref.gen);
-      return Promise.resolve(
-	clone(pdfManager.pdfDocument.xref.fetch(ref))
-      );
+      return pdfManager.pdfDocument.xref.fetchAsync(ref).then(clone);
     });
 
     handler.on('GetStreamBytes', function wphGetStreamBytes(data) {

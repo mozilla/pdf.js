@@ -1340,7 +1340,6 @@ var XRef = (function XRefClosure() {
     },
 
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
-      assert(isRef(ref), 'ref object is not a reference');
       var streamManager = this.stream.manager;
       var xref = this;
       return new Promise(function tryFetch(resolve, reject) {
