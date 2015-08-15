@@ -1372,6 +1372,10 @@ html[dir='rtl'] .attachmentsItem > button {
   vertical-align: middle;
 }
 
+.dialog :link {
+  color: white;
+}
+
 #passwordOverlay > .dialog {
   text-align: center;
 }
