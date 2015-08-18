@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, CSS_UNITS, getOutputScale,
+/* globals RenderingStates, PDFJS, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
            TextLayerBuilder, AnnotationsLayerBuilder, Promise,
            approximateFraction, roundToDivide */
 
@@ -55,7 +55,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.renderingId = 'page' + id;
 
     this.rotation = 0;
-    this.scale = scale || 1.0;
+    this.scale = scale || DEFAULT_SCALE;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
