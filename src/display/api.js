@@ -178,6 +178,14 @@ PDFJS.openExternalLinksInNewWindow = (
     false : PDFJS.openExternalLinksInNewWindow);
 
 /**
+  * Determines if we can eval strings as JS. Primarily used to improve
+  * performance for font rendering.
+  * @var {boolean}
+  */
+PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
+                         true : PDFJS.isEvalSupported);
+
+/**
  * Document initialization / loading parameters object.
  *
  * @typedef {Object} DocumentInitParameters
