@@ -271,6 +271,12 @@ var PDFViewerApplication = {
         }
         PDFJS.disableRange = value;
       }),
+      Preferences.get('disableStream').then(function resolved(value) {
+        if (PDFJS.disableStream === true) {
+          return;
+        }
+        PDFJS.disableStream = value;
+      }),
       Preferences.get('disableAutoFetch').then(function resolved(value) {
         PDFJS.disableAutoFetch = value;
       }),
