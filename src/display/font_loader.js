@@ -270,7 +270,8 @@ var FontLoader = {
       }
       data = spliceString(data, CFF_CHECKSUM_OFFSET, 4, string32(checksum));
 
-      var url = 'url(data:font/opentype;base64,' + btoa(data) + ');';
+      var url = 'url(data:font/opentype;base64,' +
+                btoa(unescape(encodeURIComponent(data))) + ');';
       var rule = '@font-face { font-family:"' + loadTestFontId + '";src:' +
                  url + '}';
       FontLoader.insertRule(rule);
