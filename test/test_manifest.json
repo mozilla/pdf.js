@@ -1062,6 +1062,15 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue6360",
+       "file": "pdfs/issue6360.pdf",
+       "md5": "58c5455ffd84b1c07ad2d0fa90cd5e26",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue2931",
        "file": "pdfs/issue2931.pdf",
        "md5": "ea40940eaf3541b312bda9329167da11",
