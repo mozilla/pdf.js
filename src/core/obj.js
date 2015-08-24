@@ -16,10 +16,11 @@
  */
 /* globals assert, bytesToString, CipherTransformFactory, error, info,
            InvalidPDFException, isArray, isCmd, isDict, isInt, isName, isRef,
-           isStream, Lexer, Page, Parser, Promise, shadow,
+           isStream, Lexer, Page, Parser, Promise, shadow, UnsupportedManager,
            stringToPDFString, stringToUTF8String, warn, isString,
            Promise, MissingDataException, XRefParseException, Stream,
-           ChunkedStream, createPromiseCapability */
+           ChunkedStream, createPromiseCapability, UNSUPPORTED_FEATURES,
+           suppressErrorNotificationForFunctionNames */
 
 'use strict';
 
@@ -776,7 +777,7 @@ var XRef = (function XRefClosure() {
       if (!recoveryMode) {
         trailerDict = this.readXRef();
       } else {
-        warn('Indexing all PDF objects');
+        warn('Invalid XRef table: Indexing all PDF objects');
         trailerDict = this.indexObjects();
       }
       trailerDict.assignXref(this);
@@ -1136,10 +1137,13 @@ var XRef = (function XRefClosure() {
       }
       // nothing helps
       // calling error() would reject worker with an UnknownErrorException.
+      UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
       throw new InvalidPDFException('Invalid PDF structure');
     },
 
     readXRef: function XRef_readXRef(recoveryMode) {
+      suppressErrorNotificationForFunctionNames['XRef_readXRef'] = true;
+
       var stream = this.stream;
 
       try {
@@ -1207,7 +1211,7 @@ var XRef = (function XRefClosure() {
         if (e instanceof MissingDataException) {
           throw e;
         }
-        info('(while reading XRef): ' + e);
+        warn('(while reading XRef): ' + e);
       }
 
       if (recoveryMode) {
