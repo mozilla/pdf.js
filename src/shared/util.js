@@ -213,12 +213,26 @@ function warn(msg) {
   }
 }
 
+// Used in order to prevent displaying the fallback UI, and logging debug
+// information, when calling `error`. This can be useful for code executed
+// e.g. within a try-catch block, where custom exception handling is wanted.
+var suppressErrorNotificationForFunctionNames = Object.create(null);
+
 // Fatal errors that should trigger the fallback UI and halt execution by
 // throwing an exception.
 function error(msg) {
+  var backTrace;
+  if (suppressErrorNotificationForFunctionNames) {
+    backTrace = backtrace();
+    for (var name in suppressErrorNotificationForFunctionNames) {
+      if ((new RegExp('\\b' + name + '\\b')).test(backTrace)) {
+        throw new Error(msg);
+      }
+    }
+  }
   if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.errors) {
     console.log('Error: ' + msg);
-    console.log(backtrace());
+    console.log(backTrace || backtrace());
   }
   UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
   throw new Error(msg);
