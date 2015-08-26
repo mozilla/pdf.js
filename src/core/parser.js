@@ -525,6 +525,7 @@ var Parser = (function ParserClosure() {
     },
     makeFilter: function Parser_makeFilter(stream, name, maybeLength, params) {
       if (stream.dict.get('Length') === 0 && !maybeLength) {
+        warn('Empty "' + name + '" stream.');
         return new NullStream(stream);
       }
       try {
