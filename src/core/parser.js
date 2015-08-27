@@ -58,6 +58,9 @@ var Parser = (function ParserClosure() {
         this.shift();
         return true;
       } catch (e) {
+        if (e instanceof MissingDataException) {
+          throw e;
+        }
         // Upon failure, the caller should reset this.lexer.pos to a known good
         // state and call this.shift() twice to reset the buffers.
         return false;
