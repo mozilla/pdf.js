@@ -1246,12 +1246,12 @@ html[dir='rtl'] .attachmentsItem > button {
   color: hsla(0,0%,100%,.5);
 }
 .outlineItemToggler::before {
-  content: url(images/treeitem-collapsed.png);
+  content: url(images/treeitem-expanded.png);
   display: inline-block;
   position: absolute;
 }
 .outlineItemToggler.outlineItemsHidden::before {
-  content: url(images/treeitem-expanded.png);
+  content: url(images/treeitem-collapsed.png);
 }
 .outlineItemToggler.outlineItemsHidden ~ .outlineItems {
   display: none;
@@ -1708,10 +1708,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -1px;
-    content: url(images/treeitem-collapsed@2x.png);
+    content: url(images/treeitem-expanded@2x.png);
   }
   .outlineItemToggler.outlineItemsHidden::before {
-    content: url(images/treeitem-expanded@2x.png);
+    content: url(images/treeitem-collapsed@2x.png);
   }
   html[dir='ltr'] .outlineItemToggler::before {
     right: 0;
