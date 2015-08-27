@@ -1703,6 +1703,22 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   .secondaryToolbarButton.documentProperties::before {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
   }
+
+  .outlineItemToggler::before {
+    -webkit-transform: scale(0.5);
+    transform: scale(0.5);
+    top: -1px;
+    content: url(images/treeitem-collapsed@2x.png);
+  }
+  .outlineItemToggler.outlineItemsHidden::before {
+    content: url(images/treeitem-expanded@2x.png);
+  }
+  html[dir='ltr'] .outlineItemToggler::before {
+    right: 0;
+  }
+  html[dir='rtl'] .outlineItemToggler::before {
+    left: 0;
+  }
 }
 
 @media print {
