@@ -36,6 +36,7 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
     this.container = options.container;
     this.outline = options.outline;
     this.linkService = options.linkService;
+    this.lastToggleIsShow = true;
   }
 
   PDFOutlineView.prototype = {
@@ -44,6 +45,7 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
       while (container.firstChild) {
         container.removeChild(container.firstChild);
       }
+      this.lastToggleIsShow = true;
     },
 
     /**
@@ -69,6 +71,51 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
       };
     },
 
+    /**
+     * Prepend a button before an outline item which allows the user to toggle
+     * the visibility of all outline items at that level.
+     *
+     * @private
+     */
+    _addToggleButton: function PDFOutlineView_addToggleButton(div) {
+      var toggler = document.createElement('div');
+      toggler.className = 'outlineItemToggler';
+      toggler.onclick = function(event) {
+        event.stopPropagation();
+        toggler.classList.toggle('outlineItemsHidden');
+
+        if (event.shiftKey) {
+          var shouldShowAll = !toggler.classList.contains('outlineItemsHidden');
+          this._toggleOutlineItem(div, shouldShowAll);
+        }
+      }.bind(this);
+      div.insertBefore(toggler, div.firstChild);
+    },
+
+    /**
+     * Toggle the visibility of the subtree of an outline item.
+     *
+     * @param {Element} root - the root of the outline (sub)tree.
+     * @param {boolean} state - whether to show the outline (sub)tree. If false,
+     *   the outline subtree rooted at |root| will be collapsed.
+     *
+     * @private
+     */
+    _toggleOutlineItem: function PDFOutlineView_toggleOutlineItem(root, show) {
+      this.lastToggleIsShow = show;
+      var togglers = root.querySelectorAll('.outlineItemToggler');
+      for (var i = 0, ii = togglers.length; i < ii; ++i) {
+        togglers[i].classList[show ? 'remove' : 'add']('outlineItemsHidden');
+      }
+    },
+
+    /**
+     * Collapse or expand all subtrees of the outline.
+     */
+    toggleOutlineTree: function PDFOutlineView_toggleOutlineTree() {
+      this._toggleOutlineItem(this.container, !this.lastToggleIsShow);
+    },
+
     render: function PDFOutlineView_render() {
       var outline = this.outline;
       var outlineCount = 0;
@@ -80,7 +127,9 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
         return;
       }
 
-      var queue = [{ parent: this.container, items: this.outline }];
+      var fragment = document.createDocumentFragment();
+      var queue = [{ parent: fragment, items: this.outline }];
+      var hasAnyNesting = false;
       while (queue.length > 0) {
         var levelData = queue.shift();
         for (var i = 0, len = levelData.items.length; i < len; i++) {
@@ -93,6 +142,9 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
           div.appendChild(element);
 
           if (item.items.length > 0) {
+            hasAnyNesting = true;
+            this._addToggleButton(div);
+
             var itemsDiv = document.createElement('div');
             itemsDiv.className = 'outlineItems';
             div.appendChild(itemsDiv);
@@ -103,6 +155,11 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
           outlineCount++;
         }
       }
+      if (hasAnyNesting) {
+        this.container.classList.add('outlineWithDeepNesting');
+      }
+
+      this.container.appendChild(fragment);
 
       this._dispatchEvent(outlineCount);
     }

@@ -1405,6 +1405,11 @@ function webViewerInitialized() {
       PDFViewerApplication.switchSidebarView('outline');
     });
 
+  document.getElementById('viewOutline').addEventListener('dblclick',
+    function() {
+      PDFViewerApplication.outline.toggleOutlineTree();
+    });
+
   document.getElementById('viewAttachments').addEventListener('click',
     function() {
       PDFViewerApplication.switchSidebarView('attachments');
