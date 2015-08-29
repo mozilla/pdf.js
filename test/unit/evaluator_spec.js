@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, PartialEvaluator, StringStream, OPS,
-           OperatorList, waitsFor, runs */
+           OperatorList, waitsFor, runs, Dict, Name, Stream */
 
 'use strict';
 
@@ -227,13 +227,33 @@ describe('evaluator', function() {
         expect(result.fnArray[3]).toEqual(OPS.restore);
       });
     });
-    it('should skip paint form XObject if name is missing', function() {
+    it('should skip paintXObject if name is missing', function() {
       var evaluator = new PartialEvaluator(new PdfManagerMock(),
                                            new XrefMock(), new HandlerMock(),
                                            'prefix');
       var stream = new StringStream('/ Do');
       runOperatorListCheck(evaluator, stream, new ResourcesMock(),
           function (result) {
+        expect(result.argsArray).toEqual([]);
+        expect(result.fnArray).toEqual([]);
+      });
+    });
+    it('should skip paintXObject if subtype is PS', function() {
+      var evaluator = new PartialEvaluator(new PdfManagerMock(),
+                                           new XrefMock(), new HandlerMock(),
+                                           'prefix');
+      var xobjStreamDict = new Dict();
+      xobjStreamDict.set('Subtype', Name.get('PS'));
+      var xobjStream = new Stream([], 0, 0, xobjStreamDict);
+
+      var xobjs = new Dict();
+      xobjs.set('Res1', xobjStream);
+
+      var resources = new Dict();
+      resources.set('XObject', xobjs);
+
+      var stream = new StringStream('/Res1 Do');
+      runOperatorListCheck(evaluator, stream, resources, function (result) {
         expect(result.argsArray).toEqual([]);
         expect(result.fnArray).toEqual([]);
       });
