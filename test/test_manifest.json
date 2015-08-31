@@ -298,6 +298,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "taro",
+       "file": "pdfs/TaroUTR50SortedList112.pdf",
+       "md5": "ce63eab622ff473a43f8a8de85ef8a46",
+       "link": true,
+       "rounds": 1,
+       "lastPage": 4,
+       "type": "eq"
+    },
     {  "id": "taro-text",
        "file": "pdfs/TaroUTR50SortedList112.pdf",
        "md5": "ce63eab622ff473a43f8a8de85ef8a46",
