@@ -970,6 +970,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         this.current = this.stateStack.pop();
         this.ctx.restore();
 
+        // Ensure that the clipping path is reset (fixes issue6413.pdf).
+        this.pendingClip = null;
+
         this.cachedGetSinglePixelWidth = null;
       }
     },
