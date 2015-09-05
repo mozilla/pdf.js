@@ -2076,6 +2076,14 @@
        "rounds": 1,
        "type": "text"
     },
+    {  "id": "pr4922",
+       "file": "pdfs/pr4922.pdf",
+       "md5": "178a55510931bc6ecd2f0f848a8fcacc",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "Type3 font with a missing /CharProcs resource."
+    },
     {  "id": "issue5701",
        "file": "pdfs/issue5701.pdf",
        "md5": "7ec476aee12e8bd6be79140223d329c1",
