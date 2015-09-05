@@ -3390,7 +3390,13 @@ var Font = (function FontClosure() {
             });
           }
         } else {
-          error('cmap table has unsupported format: ' + format);
+          warn('cmap table has unsupported format: ' + format);
+          return {
+            platformId: -1,
+            encodingId: -1,
+            mappings: [],
+            hasShortCmap: false
+          };
         }
 
         // removing duplicate entries
