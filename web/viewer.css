@@ -1252,8 +1252,11 @@ html[dir='rtl'] .attachmentsItem > button {
   display: inline-block;
   position: absolute;
 }
-.outlineItemToggler.outlineItemsHidden::before {
+html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
   content: url(images/treeitem-collapsed.png);
+}
+html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
+  content: url(images/treeitem-collapsed-rtl.png);
 }
 .outlineItemToggler.outlineItemsHidden ~ .outlineItems {
   display: none;
@@ -1713,8 +1716,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     top: -1px;
     content: url(images/treeitem-expanded@2x.png);
   }
-  .outlineItemToggler.outlineItemsHidden::before {
+  html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
     content: url(images/treeitem-collapsed@2x.png);
+  }
+  html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
+    content: url(images/treeitem-collapsed-rtl@2x.png);
   }
   html[dir='ltr'] .outlineItemToggler::before {
     right: 0;
