@@ -2370,12 +2370,10 @@
       "about": "Image mask in higher resolution than the image itself"
     },
     {  "id": "issue4436",
-       "file": "pdfs/issue4436.pdf",
-       "md5": "34e6af7441961f5940e6440a62e37427",
+       "file": "pdfs/issue4436r.pdf",
+       "md5": "4e43d692d213f56674fcac92110c7364",
        "rounds": 1,
-       "link": true,
-       "firstPage": 9,
-       "lastPage": 9,
+       "link": false,
        "type": "eq"
     },
     {  "id": "issue4926",
