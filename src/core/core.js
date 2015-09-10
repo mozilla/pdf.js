@@ -510,12 +510,11 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'documentInfo', docInfo);
     },
     get fingerprint() {
-      var xref = this.xref, idArray, hash, fileID = '';
+      var xref = this.xref, hash, fileID = '';
+      var idArray = xref.trailer.get('ID');
 
-      if (xref.trailer.has('ID')) {
-        idArray = xref.trailer.get('ID');
-      }
-      if (idArray && isArray(idArray) && idArray[0] !== EMPTY_FINGERPRINT) {
+      if (idArray && isArray(idArray) && idArray[0] && isString(idArray[0]) &&
+          idArray[0] !== EMPTY_FINGERPRINT) {
         hash = stringToBytes(idArray[0]);
       } else {
         if (this.stream.ensureRange) {
