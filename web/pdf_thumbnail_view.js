@@ -315,6 +315,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (img.width <= 2 * canvas.width) {
         ctx.drawImage(img, 0, 0, img.width, img.height,
                       0, 0, canvas.width, canvas.height);
+        this._convertCanvasToImage();
         return;
       }
       // drawImage does an awful job of rescaling the image, doing it gradually.
