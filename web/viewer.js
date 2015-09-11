@@ -1868,6 +1868,10 @@ window.addEventListener('keydown', function keydown(evt) {
     return;
   }
 
+  if (!PDFViewerApplication.pdfDocument) {
+    return;
+  }
+
   var handled = false;
   var cmd = (evt.ctrlKey ? 1 : 0) |
             (evt.altKey ? 2 : 0) |
