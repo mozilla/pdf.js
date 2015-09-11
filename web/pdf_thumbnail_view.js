@@ -160,6 +160,10 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         this.canvas.height = 0;
         delete this.canvas;
       }
+      if (this.image) {
+        this.image.removeAttribute('src');
+        delete this.image;
+      }
     },
 
     update: function PDFThumbnailView_update(rotation) {
