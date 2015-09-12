@@ -184,9 +184,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     _getPageDrawContext:
         function PDFThumbnailView_getPageDrawContext(noCtxScale) {
       var canvas = document.createElement('canvas');
-
       this.canvas = canvas;
-      this.div.setAttribute('data-loaded', true);
 
       var ctx = canvas.getContext('2d');
       var outputScale = getOutputScale(ctx);
@@ -201,17 +199,15 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       }
 
       var image = document.createElement('img');
-      image.id = this.renderingId;
+      this.image = image;
 
+      image.id = this.renderingId;
       image.className = 'thumbnailImage';
       image.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
         { page: this.id }, 'Thumbnail of Page {{page}}'));
 
       image.style.width = canvas.style.width;
       image.style.height = canvas.style.height;
-
-      this.image = image;
-      this.ring.appendChild(this.image);
 
       return ctx;
     },
@@ -220,16 +216,19 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
      * @private
      */
     _convertCanvasToImage: function PDFThumbnailView_convertCanvasToImage() {
-       if (!this.canvas) {
-         return;
-       }
-       this.image.src = this.canvas.toDataURL();
+      if (!this.canvas) {
+        return;
+      }
+      this.image.src = this.canvas.toDataURL();
 
-       // Zeroing the width and height causes Firefox to release graphics
-       // resources immediately, which can greatly reduce memory consumption.
-       this.canvas.width = 0;
-       this.canvas.height = 0;
-       delete this.canvas;
+      this.div.setAttribute('data-loaded', true);
+      this.ring.appendChild(this.image);
+
+      // Zeroing the width and height causes Firefox to release graphics
+      // resources immediately, which can greatly reduce memory consumption.
+      this.canvas.width = 0;
+      this.canvas.height = 0;
+      delete this.canvas;
     },
 
     draw: function PDFThumbnailView_draw() {
