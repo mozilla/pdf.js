@@ -470,6 +470,10 @@ var PDFViewer = (function pdfViewer() {
      */
     scrollPageIntoView: function PDFViewer_scrollPageIntoView(pageNumber,
                                                               dest) {
+      if (!this.pdfDocument) {
+        return;
+      }
+      
       var pageView = this._pages[pageNumber - 1];
 
       if (this.isInPresentationMode) {
