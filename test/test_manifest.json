@@ -1574,6 +1574,19 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue6387-canvas",
+       "file": "pdfs/issue6387.pdf",
+       "md5": "08c39ac6d0aab1596e6e59793eaf3ee4",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue6387-text",
+       "file": "pdfs/issue6387.pdf",
+       "md5": "08c39ac6d0aab1596e6e59793eaf3ee4",
+       "rounds": 1,
+       "type": "text",
+       "about": "Note that the text layer seems to be off to the right."
+    },
     {  "id": "issue4890",
        "file": "pdfs/issue4890.pdf",
        "md5": "1666feb4cd26318c2bdbea6a175dce87",
