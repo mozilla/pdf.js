@@ -1913,12 +1913,11 @@
       "type": "eq"
     },
     {  "id": "javauninstall-7",
-      "file": "pdfs/javauninstall-7.pdf",
-      "md5": "c9eb59503923c9125b9660e348618675",
-      "rounds": 1,
-      "link": true,
-      "lastPage": 1,
-      "type": "eq"
+       "file": "pdfs/javauninstall-7r.pdf",
+       "md5": "c0089082a86826fa0195eeeb73f7f895",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
     },
     {  "id": "jst2007-5",
       "file": "pdfs/JST2007-5.pdf",
