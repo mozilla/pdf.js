@@ -1,0 +1,13 @@
+{
+  "name": "pdf.js",
+  "homepage": "https://github.com/gigaga/pdf.js",
+  "_release": "f507621f98",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "f507621f98affcecfa45a349efc21dc307979949"
+  },
+  "_source": "https://github.com/gigaga/pdf.js.git",
+  "_target": "master",
+  "_originalSource": "https://github.com/gigaga/pdf.js.git"
+}

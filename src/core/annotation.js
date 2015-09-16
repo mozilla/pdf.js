@@ -645,7 +645,6 @@ var TextAnnotation = (function TextAnnotationClosure() {
 var LinkAnnotation = (function LinkAnnotationClosure() {
   function LinkAnnotation(params) {
     Annotation.call(this, params);
-
     var dict = params.dict;
     var data = this.data;
     data.annotationType = AnnotationType.LINK;
@@ -664,7 +663,8 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         }
         // TODO: pdf spec mentions urls can be relative to a Base
         // entry in the dictionary.
-        if (!isValidUrl(url, false)) {
+          data.dest={file: url};
+          if (!isValidUrl(url, false)) {
           url = '';
         }
         // According to ISO 32000-1:2008, section 12.6.4.7, 

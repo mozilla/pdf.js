@@ -27,7 +27,7 @@
 
 'use strict';
 
-var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
+var DEFAULT_URL = '';
 var DEFAULT_SCALE_DELTA = 1.1;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 10.0;
@@ -117,6 +117,7 @@ var PDFViewerApplication = {
   preferenceDefaultZoomValue: '',
   isViewerEmbedded: (window.parent !== window),
   url: '',
+  authToken: '',
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -504,6 +505,10 @@ var PDFViewerApplication = {
       this.setTitleUsingUrl(file.originalUrl);
       parameters.url = file.url;
     }
+
+      if (this.authToken) {
+          parameters.httpHeaders = {Authorization: 'Basic '+this.authToken}
+      }
     if (args) {
       for (var prop in args) {
         parameters[prop] = args[prop];
@@ -554,6 +559,7 @@ var PDFViewerApplication = {
     );
 
     if (args && args.length) {
+        console.log(args);
       PDFViewerApplication.pdfDocumentProperties.setFileSize(args.length);
     }
   },
@@ -1098,7 +1104,7 @@ var PDFViewerApplication = {
     this.printing = true;
     this.forceRendering();
 
-    var body = document.querySelector('body');
+    var body = document.querySelector('#viewerDiv');
     body.setAttribute('data-mozPrintCallback', true);
 
     if (!this.hasEqualPageSizes) {

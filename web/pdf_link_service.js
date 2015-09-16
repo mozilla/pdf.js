@@ -48,7 +48,7 @@ var PDFLinkService = (function () {
     setViewer: function PDFLinkService_setViewer(pdfViewer) {
       this.pdfViewer = pdfViewer;
     },
-	
+
 	setApplication: function PDFLinkService_setApplication(pdfViewerApplication) {
       this.pdfViewerApplication = pdfViewerApplication;
     },
@@ -120,8 +120,12 @@ var PDFLinkService = (function () {
         destinationPromise = this.pdfDocument.getDestination(dest);
       } else {
         if (dest.file) {
-          this.pdfViewerApplication.initialBookmark=null;
-          this.pdfViewerApplication.open(dest.file);
+            if (this.pdfViewerApplication.openEvent) {
+                this.pdfViewerApplication.openEvent(dest.file);
+            } else {
+              this.pdfViewerApplication.initialBookmark=null;
+              this.pdfViewerApplication.open(dest.file);
+            }
         }
         destinationPromise = Promise.resolve(dest);
       }
