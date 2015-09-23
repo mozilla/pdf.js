@@ -178,19 +178,21 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       }
 
-      if (this.canvas &&
-          (PDFJS.useOnlyCssZoom ||
-            (this.hasRestrictedScaling && isScalingRestricted))) {
-        this.cssTransform(this.canvas, true);
-        return;
-      } else if (this.canvas && !this.zoomLayer) {
-        this.zoomLayer = this.canvas.parentNode;
-        this.zoomLayer.style.position = 'absolute';
+      if (this.canvas) {
+        if (PDFJS.useOnlyCssZoom ||
+            (this.hasRestrictedScaling && isScalingRestricted)) {
+          this.cssTransform(this.canvas, true);
+          return;
+        }
+        if (!this.zoomLayer) {
+          this.zoomLayer = this.canvas.parentNode;
+          this.zoomLayer.style.position = 'absolute';
+        }
       }
       if (this.zoomLayer) {
         this.cssTransform(this.zoomLayer.firstChild);
       }
-      this.reset(/* keepZoomLayer = */ true, true);
+      this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
     },
 
     /**
