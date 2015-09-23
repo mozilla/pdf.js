@@ -483,10 +483,6 @@ target.bundle = function(args) {
   var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
 
   function bundle(filename, dir, SRC_FILES, EXT_SRC_FILES) {
-    var out = '',
-        lineFilter = function (line) {
-          out += line.replace(/'use strict';/g, "") + '\n';
-        };
     for (var i = 0, length = excludes.length; i < length; ++i) {
       var exclude = excludes[i];
       var index = SRC_FILES.indexOf(exclude);
@@ -510,13 +506,10 @@ target.bundle = function(args) {
 
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
-    builder.preprocess(filename, lineFilter, builder.merge(defines,
+    builder.preprocess(filename, dir, builder.merge(defines,
                            {BUNDLE: bundleContent,
                             BUNDLE_VERSION: bundleVersion,
                             BUNDLE_BUILD: bundleBuild}));
-
-    fs.writeFileSync(dir, out);
-
   }
 
   if (!test('-d', BUILD_DIR)) {
