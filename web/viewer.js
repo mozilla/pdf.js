@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, PDFBug, FirefoxCom, Stats, Cache, ProgressBar,
+/* globals PDFJS, PDFBug, FirefoxCom, ChromeCom, Stats, Cache, ProgressBar,
            DownloadManager, getFileName, getPDFFileNameFromURL,
            PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
            PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
@@ -1467,19 +1467,6 @@ function webViewerInitialized() {
   document.getElementById('download').addEventListener('click',
     SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
 
-//#if (FIREFOX || MOZCENTRAL)
-//PDFViewerApplication.setTitleUsingUrl(file);
-//PDFViewerApplication.initPassiveLoading();
-//
-//// Clicking on either of the viewBookmark buttons throws a SecurityError
-//// for file:// URLs, hence we hide the buttons since they won't work.
-//if (file && file.lastIndexOf('file:', 0) === 0) {
-//  document.getElementById('viewBookmark').classList.add('hidden');
-//  document.getElementById('secondaryViewBookmark').classList.add('hidden');
-//}
-//return;
-//#endif
-
 //#if GENERIC
   if (file && file.lastIndexOf('file:', 0) === 0) {
     // file:-scheme. Load the contents in the main thread because QtWebKit
@@ -1505,10 +1492,26 @@ function webViewerInitialized() {
     PDFViewerApplication.open(file, 0);
   }
 //#endif
+//#if !PRODUCTION
+  if (true) {
+    return;
+  }
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
+  PDFViewerApplication.setTitleUsingUrl(file);
+  PDFViewerApplication.initPassiveLoading();
+
+  // Clicking on either of the viewBookmark buttons throws a SecurityError
+  // for file:// URLs, hence we hide the buttons since they won't work.
+  if (file && file.lastIndexOf('file:', 0) === 0) {
+    document.getElementById('viewBookmark').classList.add('hidden');
+    document.getElementById('secondaryViewBookmark').classList.add('hidden');
+  }
+//#endif
 //#if CHROME
-//if (file) {
-//  ChromeCom.openPDFFile(file);
-//}
+  if (file) {
+    ChromeCom.openPDFFile(file);
+  }
 //#endif
 }
 
