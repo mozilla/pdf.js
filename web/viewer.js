@@ -1470,6 +1470,13 @@ function webViewerInitialized() {
 //#if (FIREFOX || MOZCENTRAL)
 //PDFViewerApplication.setTitleUsingUrl(file);
 //PDFViewerApplication.initPassiveLoading();
+//
+//// Clicking on either of the viewBookmark buttons throws a SecurityError
+//// for file:// URLs, hence we hide the buttons since they won't work.
+//if (file && file.lastIndexOf('file:', 0) === 0) {
+//  document.getElementById('viewBookmark').classList.add('hidden');
+//  document.getElementById('secondaryViewBookmark').classList.add('hidden');
+//}
 //return;
 //#endif
 
