@@ -1558,8 +1558,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var pattern;
       if (IR[0] === 'TilingPattern') {
         var color = IR[1];
+        var baseTransform = this.baseTransform ||
+                            this.ctx.mozCurrentTransform.slice();
         pattern = new TilingPattern(IR, color, this.ctx, this.objs,
-                                    this.commonObjs, this.baseTransform);
+                                    this.commonObjs, baseTransform);
       } else {
         pattern = getShadingPatternFromIR(IR);
       }
