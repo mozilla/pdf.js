@@ -129,12 +129,10 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       div.removeAttribute('data-loaded');
 
-      if (keepAnnotations) {
-        if (this.annotationLayer) {
-          // Hide annotationLayer until all elements are resized
-          // so they are not displayed on the already-resized page
-          this.annotationLayer.hide();
-        }
+      if (currentAnnotationNode) {
+        // Hide annotationLayer until all elements are resized
+        // so they are not displayed on the already-resized page
+        this.annotationLayer.hide();
       } else {
         this.annotationLayer = null;
       }
@@ -305,7 +303,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;
       canvasWrapper.appendChild(canvas);
-      if (this.annotationLayer) {
+      if (this.annotationLayer && this.annotationLayer.div) {
         // annotationLayer needs to stay on top
         div.insertBefore(canvasWrapper, this.annotationLayer.div);
       } else {
@@ -352,7 +350,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         textLayerDiv.className = 'textLayer';
         textLayerDiv.style.width = canvas.style.width;
         textLayerDiv.style.height = canvas.style.height;
-        if (this.annotationLayer) {
+        if (this.annotationLayer && this.annotationLayer.div) {
           // annotationLayer needs to stay on top
           div.insertBefore(textLayerDiv, this.annotationLayer.div);
         } else {
