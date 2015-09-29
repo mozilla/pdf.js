@@ -527,6 +527,14 @@
        "type": "eq",
        "about": "Type1 font with |Ref|s in the Differences array of the Encoding dictionary."
     },
+    {  "id": "franz_2",
+       "file": "pdfs/franz_2.pdf",
+       "md5": "9d301ed8816e879891115b5cc3c39559",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "about": "XObject with BBox array containing indirect object."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
