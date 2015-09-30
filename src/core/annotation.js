@@ -537,6 +537,17 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
       ref = parentRef;
     }
     data.fullName = fieldName.join('.');
+
+    // get details of Choice and Radio
+    if(data.fieldType === 'Ch') {
+      data.fieldValues = dict.get('Opt');
+    } else if (data.fieldType === 'Btn' && (data.fieldFlags & 32768)) {
+      data.fieldValue = {
+        group: Util.getInheritableProperty(dict, 'T'),
+        name: Util.getInheritableProperty(dict, 'V').name,
+        value: dict.get('AS').name
+      }
+    }
   }
 
   var parent = Annotation.prototype;
