@@ -22,6 +22,6 @@
 // See https://mxr.mozilla.org/mozilla-central/source/browser/components/nsBrowserGlue.js
 var EXPORTED_SYMBOLS = ['PdfJs'];
 
-let PdfJs = {
+var PdfJs = {
   init: function PdfJs_init() {}
 };
