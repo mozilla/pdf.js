@@ -32,7 +32,7 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
-let Svc = {};
+var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
