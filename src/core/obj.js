@@ -1118,6 +1118,10 @@ var XRef = (function XRefClosure() {
           }
 
           position += contentLength;
+        } else if (token.indexOf('trailer') === 0 &&
+                   (token.length === 7 || /\s/.test(token[7]))) {
+          trailers.push(position);
+          position += skipUntil(buffer, position, startxrefBytes);
         } else {
           position += token.length + 1;
         }

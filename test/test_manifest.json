@@ -572,6 +572,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "xref_command_missing",
+       "file": "pdfs/xref_command_missing.pdf",
+       "md5": "06cdb0f13cfeff41d6bfb24b7bbe1268",
+       "rounds": 1,
+       "link": false,
+       "type": "load"
+    },
     {  "id": "issue5501",
        "file": "pdfs/issue5501.pdf",
        "md5": "55a60699728fc92f491a2d7d490474e4",
