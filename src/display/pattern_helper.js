@@ -332,13 +332,6 @@ var TilingPattern = (function TilingPatternClosure() {
 
       var x0 = bbox[0], y0 = bbox[1], x1 = bbox[2], y1 = bbox[3];
 
-      var topLeft = [x0, y0];
-      // we want the canvas to be as large as the step size
-      var botRight = [x0 + xstep, y0 + ystep];
-
-      var width = botRight[0] - topLeft[0];
-      var height = botRight[1] - topLeft[1];
-
       // Obtain scale from matrix and current transformation matrix.
       var matrixScale = Util.singularValueDecompose2dScale(this.matrix);
       var curMatrixScale = Util.singularValueDecompose2dScale(
@@ -346,50 +339,42 @@ var TilingPattern = (function TilingPatternClosure() {
       var combinedScale = [matrixScale[0] * curMatrixScale[0],
         matrixScale[1] * curMatrixScale[1]];
 
-      // MAX_PATTERN_SIZE is used to avoid OOM situation.
       // Use width and height values that are as close as possible to the end
       // result when the pattern is used. Too low value makes the pattern look
       // blurry. Too large value makes it look too crispy.
-      width = Math.min(Math.ceil(Math.abs(width * combinedScale[0])),
-        MAX_PATTERN_SIZE);
-
-      height = Math.min(Math.ceil(Math.abs(height * combinedScale[1])),
-        MAX_PATTERN_SIZE);
+      var dimx = this.getSizeAndScale(xstep, combinedScale[0]);
+      var dimy = this.getSizeAndScale(ystep, combinedScale[1]);
 
       var tmpCanvas = owner.cachedCanvases.getCanvas('pattern',
-        width, height, true);
+        dimx.size, dimy.size, true);
       var tmpCtx = tmpCanvas.context;
       var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
       this.setFillAndStrokeStyleToContext(graphics, paintType, color);
 
-      this.setScale(width, height, xstep, ystep);
-      this.transformToScale(graphics);
+      graphics.transform(dimx.scale, 0, 0, dimy.scale, 0, 0);
 
       // transform coordinates to pattern space
-      var tmpTranslate = [1, 0, 0, 1, -topLeft[0], -topLeft[1]];
-      graphics.transform.apply(graphics, tmpTranslate);
+      graphics.transform(1, 0, 0, 1, -x0, -y0);
 
       this.clipBbox(graphics, bbox, x0, y0, x1, y1);
 
       graphics.executeOperatorList(operatorList);
+
+      // Rescale canvas so that the ctx.createPattern call generates a pattern
+      // with the desired size.
+      this.ctx.scale(1 / dimx.scale, 1 / dimy.scale);
       return tmpCanvas.canvas;
     },
 
-    setScale: function TilingPattern_setScale(width, height, xstep, ystep) {
-      this.scale = [width / xstep, height / ystep];
-    },
-
-    transformToScale: function TilingPattern_transformToScale(graphics) {
-      var scale = this.scale;
-      var tmpScale = [scale[0], 0, 0, scale[1], 0, 0];
-      graphics.transform.apply(graphics, tmpScale);
-    },
-
-    scaleToContext: function TilingPattern_scaleToContext() {
-      var scale = this.scale;
-      this.ctx.scale(1 / scale[0], 1 / scale[1]);
+    getSizeAndScale: function TilingPattern_getSizeAndScale(step, scale) {
+      // xstep / ystep may be negative -- normalize.
+      step = Math.abs(step);
+      // MAX_PATTERN_SIZE is used to avoid OOM situation.
+      var size = Math.min(Math.ceil(step * scale), MAX_PATTERN_SIZE);
+      scale = size / step;
+      return { scale, size, };
     },
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
@@ -427,12 +412,12 @@ var TilingPattern = (function TilingPatternClosure() {
       },
 
     getPattern: function TilingPattern_getPattern(ctx, owner) {
-      var temporaryPatternCanvas = this.createPatternCanvas(owner);
-
       ctx = this.ctx;
+      // PDF spec 8.7.2 NOTE 1: pattern's matrix is relative to initial matrix.
       ctx.setTransform.apply(ctx, this.baseTransform);
       ctx.transform.apply(ctx, this.matrix);
-      this.scaleToContext();
+
+      var temporaryPatternCanvas = this.createPatternCanvas(owner);
 
       return ctx.createPattern(temporaryPatternCanvas, 'repeat');
     },
