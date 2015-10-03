@@ -342,8 +342,10 @@ var TilingPattern = (function TilingPatternClosure() {
       // Use width and height values that are as close as possible to the end
       // result when the pattern is used. Too low value makes the pattern look
       // blurry. Too large value makes it look too crispy.
-      var dimx = this.getSizeAndScale(xstep, combinedScale[0]);
-      var dimy = this.getSizeAndScale(ystep, combinedScale[1]);
+      var dimx = this.getSizeAndScale(xstep, this.ctx.canvas.width,
+        combinedScale[0]);
+      var dimy = this.getSizeAndScale(ystep, this.ctx.canvas.height,
+        combinedScale[1]);
 
       var tmpCanvas = owner.cachedCanvases.getCanvas('pattern',
         dimx.size, dimy.size, true);
@@ -368,12 +370,21 @@ var TilingPattern = (function TilingPatternClosure() {
       return tmpCanvas.canvas;
     },
 
-    getSizeAndScale: function TilingPattern_getSizeAndScale(step, scale) {
+    getSizeAndScale:
+        function TilingPattern_getSizeAndScale(step, realOutputSize, scale) {
       // xstep / ystep may be negative -- normalize.
       step = Math.abs(step);
       // MAX_PATTERN_SIZE is used to avoid OOM situation.
-      var size = Math.min(Math.ceil(step * scale), MAX_PATTERN_SIZE);
-      scale = size / step;
+      // Use the destination canvas's size if it is bigger than the hard-coded
+      // limit of MAX_PATTERN_SIZE to avoid clipping patterns that cover the
+      // whole canvas.
+      var maxSize = Math.max(MAX_PATTERN_SIZE, realOutputSize);
+      var size = Math.ceil(step * scale);
+      if (size >= maxSize) {
+        size = maxSize;
+      } else {
+        scale = size / step;
+      }
       return { scale, size, };
     },
 
