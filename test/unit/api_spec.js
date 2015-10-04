@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
-           MissingPDFException, StreamType, FontType */
+           MissingPDFException, StreamType, FontType, PDFPageProxy */
 
 'use strict';
 
@@ -104,7 +104,14 @@ describe('api', function() {
     it('gets page', function() {
       var promise = doc.getPage(1);
       waitsForPromiseResolved(promise, function(data) {
-        expect(true).toEqual(true);
+        expect(data instanceof PDFPageProxy).toEqual(true);
+        expect(data.pageIndex).toEqual(0);
+      });
+    });
+    it('gets non-existent page', function() {
+      var promise = doc.getPage(100);
+      waitsForPromiseRejected(promise, function(data) {
+        expect(data instanceof Error).toEqual(true);
       });
     });
     it('gets page index', function() {
