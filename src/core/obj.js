@@ -1060,6 +1060,7 @@ var XRef = (function XRefClosure() {
         }
         return skipped;
       }
+      var objRegExp = /^(\d+)\s+(\d+)\s+obj\b/;
       var trailerBytes = new Uint8Array([116, 114, 97, 105, 108, 101, 114]);
       var startxrefBytes = new Uint8Array([115, 116, 97, 114, 116, 120, 114,
                                           101, 102]);
@@ -1097,7 +1098,7 @@ var XRef = (function XRefClosure() {
           position += skipUntil(buffer, position, trailerBytes);
           trailers.push(position);
           position += skipUntil(buffer, position, startxrefBytes);
-        } else if ((m = /^(\d+)\s+(\d+)\s+obj\b/.exec(token))) {
+        } else if ((m = objRegExp.exec(token))) {
           if (typeof this.entries[m[1]] === 'undefined') {
             this.entries[m[1]] = {
               offset: position - stream.start,
@@ -1118,6 +1119,10 @@ var XRef = (function XRefClosure() {
           }
 
           position += contentLength;
+        } else if (token.indexOf('trailer') === 0 &&
+                   (token.length === 7 || /\s/.test(token[7]))) {
+          trailers.push(position);
+          position += skipUntil(buffer, position, startxrefBytes);
         } else {
           position += token.length + 1;
         }
