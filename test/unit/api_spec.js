@@ -1,7 +1,8 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
-           MissingPDFException, StreamType, FontType, PDFPageProxy */
+           InvalidPDFException, MissingPDFException, StreamType, FontType,
+           PDFPageProxy */
 
 'use strict';
 
@@ -77,6 +78,15 @@ describe('api', function() {
         var promise = PDFJS.getDocument(typedArrayPdf);
         waitsForPromiseResolved(promise, function(data) {
           expect(true).toEqual(true);
+        });
+      });
+      it('creates pdf doc from invalid PDF file', function() {
+        // A severely corrupt PDF file (even Adobe Reader fails to open it).
+        var url = combineUrl(window.location.href, '../pdfs/bug1020226.pdf');
+
+        var promise = PDFJS.getDocument(url);
+        waitsForPromiseRejected(promise, function (error) {
+          expect(error instanceof InvalidPDFException).toEqual(true);
         });
       });
       it('creates pdf doc from non-existent URL', function() {
