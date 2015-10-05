@@ -39,7 +39,7 @@ XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
 
 //#include ../../../web/default_preferences.js
 
-let PdfjsChromeUtils = {
+var PdfjsChromeUtils = {
   // For security purposes when running remote, we restrict preferences
   // content can access.
   _allowedPrefNames: Object.keys(DEFAULT_PREFERENCES),
