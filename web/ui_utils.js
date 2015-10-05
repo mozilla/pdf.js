@@ -122,13 +122,14 @@ function scrollIntoView(element, spot) {
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStartedClosure.
   var parent = element.offsetParent;
-  var offsetY = element.offsetTop + element.clientTop;
-  var offsetX = element.offsetLeft + element.clientLeft;
   if (!parent) {
     console.error('offsetParent is not set -- cannot scroll');
     return;
   }
-  while (parent.clientHeight === parent.scrollHeight) {
+  var offsetY = element.offsetTop + element.clientTop;
+  var offsetX = element.offsetLeft + element.clientLeft;
+  while (parent.clientHeight === parent.scrollHeight ||
+         getComputedStyle(parent).overflow === 'hidden') {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
       offsetX /= parent.dataset._scaleX;
