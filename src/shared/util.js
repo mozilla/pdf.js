@@ -1097,7 +1097,7 @@ PDFJS.createPromiseCapability = createPromiseCapability;
       };
     }
     return;
-  }
+  };
 //#if !MOZCENTRAL
   var STATUS_PENDING = 0;
   var STATUS_RESOLVED = 1;
@@ -1359,7 +1359,7 @@ PDFJS.createPromiseCapability = createPromiseCapability;
 
   globalScope.Promise = Promise;
 //#else
-//throw new Error('DOM Promise is not present');
+// Throw new Error('DOM Promise is not present');
 //#endif
 })();
 
