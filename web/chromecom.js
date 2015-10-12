@@ -275,7 +275,7 @@ var ChromeCom = (function ChromeComClosure() {
     function onDisconnect() {
       // When the connection fails, ignore the error and call the callback.
       port = null;
-      onCompleted();
+      callback();
     }
     function onCompleted() {
       port.onDisconnect.removeListener(onDisconnect);
