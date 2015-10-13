@@ -113,11 +113,13 @@ function getOutputScale(ctx) {
 
 /**
  * Scrolls specified element into view of its parent.
- * element {Object} The element to be visible.
- * spot {Object} An object with optional top and left properties,
- *               specifying the offset from the top left edge.
+ * @param {Object} element - The element to be visible.
+ * @param {Object} spot - An object with optional top and left properties,
+ *   specifying the offset from the top left edge.
+ * @param {boolean} skipOverflowHiddenElements - Ignore elements that have
+ *   the CSS rule `overflow: hidden;` set. The default is false.
  */
-function scrollIntoView(element, spot) {
+function scrollIntoView(element, spot, skipOverflowHiddenElements) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
   // producing the error. See also animationStartedClosure.
@@ -126,10 +128,11 @@ function scrollIntoView(element, spot) {
     console.error('offsetParent is not set -- cannot scroll');
     return;
   }
+  var checkOverflow = skipOverflowHiddenElements || false;
   var offsetY = element.offsetTop + element.clientTop;
   var offsetX = element.offsetLeft + element.clientLeft;
   while (parent.clientHeight === parent.scrollHeight ||
-         getComputedStyle(parent).overflow === 'hidden') {
+         (checkOverflow && getComputedStyle(parent).overflow === 'hidden')) {
     if (parent.dataset._scaleY) {
       offsetY /= parent.dataset._scaleY;
       offsetX /= parent.dataset._scaleX;
