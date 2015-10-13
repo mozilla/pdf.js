@@ -169,13 +169,26 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
                          16777216 : PDFJS.maxCanvasPixels);
 
 /**
- * Opens external links in a new window if enabled. The default behavior opens
- * external links in the PDF.js window.
+ * (Deprecated) Opens external links in a new window if enabled.
+ * The default behavior opens external links in the PDF.js window.
  * @var {boolean}
  */
 PDFJS.openExternalLinksInNewWindow = (
   PDFJS.openExternalLinksInNewWindow === undefined ?
     false : PDFJS.openExternalLinksInNewWindow);
+
+/**
+ * Specifies the |target| attribute for external links.
+ * The constants from PDFJS.LinkTarget should be used:
+ *  - NONE [default]
+ *  - SELF
+ *  - BLANK
+ *  - PARENT
+ *  - TOP
+ * @var {number}
+ */
+PDFJS.externalLinkTarget = (PDFJS.externalLinkTarget === undefined ?
+                            PDFJS.LinkTarget.NONE : PDFJS.externalLinkTarget);
 
 /**
   * Determines if we can eval strings as JS. Primarily used to improve

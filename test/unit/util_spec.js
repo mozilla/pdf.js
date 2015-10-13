@@ -1,7 +1,7 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, combineUrl, Dict, isDict, Name,
-           stringToPDFString */
+/* globals expect, it, describe, combineUrl, Dict, isDict, Name, PDFJS,
+           stringToPDFString, isExternalLinkTargetSet, LinkTarget */
 
 'use strict';
 
@@ -98,5 +98,33 @@ describe('util', function() {
       var str2 = '\xFE\xFF';
       expect(stringToPDFString(str2)).toEqual('');
     });
+  });
+
+  describe('isExternalLinkTargetSet', function() {
+    // Save the current state, to avoid interfering with other tests.
+    var previousExternalLinkTarget = PDFJS.externalLinkTarget;
+
+    it('handles the predefined LinkTargets', function() {
+      for (var key in LinkTarget) {
+        var linkTarget = LinkTarget[key];
+        PDFJS.externalLinkTarget = linkTarget;
+
+        expect(isExternalLinkTargetSet()).toEqual(!!linkTarget);
+      }
+    });
+
+    it('handles incorrect LinkTargets', function() {
+      var targets = [true, '', false, -1, '_blank', null];
+
+      for (var i = 0, ii = targets.length; i < ii; i++) {
+        var linkTarget = targets[i];
+        PDFJS.externalLinkTarget = linkTarget;
+
+        expect(isExternalLinkTargetSet()).toEqual(false);
+      }
+    });
+
+    // Reset the state.
+    PDFJS.externalLinkTarget = previousExternalLinkTarget;
   });
 });
