@@ -138,7 +138,8 @@ var Dict = (function DictClosure() {
     // Same as get(), but dereferences all elements if the result is an Array.
     getArray: function Dict_getArray(key1, key2, key3) {
       var value = this.get(key1, key2, key3);
-      if (!isArray(value)) {
+      var xref = this.xref;
+      if (!isArray(value) || !xref) {
         return value;
       }
       value = value.slice(); // Ensure that we don't modify the Dict data.
@@ -146,7 +147,7 @@ var Dict = (function DictClosure() {
         if (!isRef(value[i])) {
           continue;
         }
-        value[i] = this.xref.fetch(value[i]);
+        value[i] = xref.fetch(value[i]);
       }
       return value;
     },
