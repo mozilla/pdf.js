@@ -1136,38 +1136,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   var prevChar = j > 0 ? items[j - 1] : null;
                   offset = isNum(prevChar) ? items[j - 1] / 1000 : 0;
                   buildTextGeometry(items[j], textChunk, offset);
-                } else {
-                  // PDF Specification 5.3.2 states:
-                  // The number is expressed in thousandths of a unit of text
-                  // space.
-                  // This amount is subtracted from the current horizontal or
-                  // vertical coordinate, depending on the writing mode.
-                  // In the default coordinate system, a positive adjustment
-                  // has the effect of moving the next glyph painted either to
-                  // the left or down by the given amount.
-                  var val = items[j] * textState.fontSize / 1000;
-                  if (textState.font.vertical) {
-                    offset = val * textState.textMatrix[3];
-                    textState.translateTextMatrix(0, offset);
-                    // Value needs to be added to height to paint down.
-                    textChunk.height += offset;
-                  } else {
-                    offset = val * textState.textHScale *
-                                   textState.textMatrix[0];
-                    textState.translateTextMatrix(offset, 0);
-                    // Value needs to be subtracted from width to paint left.
-                    textChunk.width -= offset;
-                  }
-                  if (items[j] < 0 && textState.font.spaceWidth > 0) {
-                    var fakeSpaces = -items[j] / textState.font.spaceWidth;
-                    if (fakeSpaces > MULTI_SPACE_FACTOR) {
-                      fakeSpaces = Math.round(fakeSpaces);
-                      while (fakeSpaces--) {
-                        textChunk.str.push(' ');
-                      }
-                    } else if (fakeSpaces > SPACE_FACTOR) {
+                } else if (items[j] < 0 && textState.font.spaceWidth > 0) {
+                  var fakeSpaces = -items[j] / textState.font.spaceWidth;
+                  if (fakeSpaces > MULTI_SPACE_FACTOR) {
+                    fakeSpaces = Math.round(fakeSpaces);
+                    while (fakeSpaces--) {
                       textChunk.str.push(' ');
                     }
+                  } else if (fakeSpaces > SPACE_FACTOR) {
+                    textChunk.str.push(' ');
                   }
                 }
               }
