@@ -2,6 +2,7 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals PDFJS, expect, it, describe, Promise, combineUrl, waitsFor,
            InvalidPDFException, MissingPDFException, StreamType, FontType,
+           PDFDocumentProxy, PasswordException, PasswordResponses,
            PDFPageProxy */
 
 'use strict';
@@ -42,7 +43,7 @@ describe('api', function() {
       it('creates pdf doc from URL', function() {
         var promise = PDFJS.getDocument(basicApiUrl);
         waitsForPromiseResolved(promise, function(data) {
-          expect(true).toEqual(true);
+          expect(data instanceof PDFDocumentProxy).toEqual(true);
         });
       });
       it('creates pdf doc from typed array', function() {
@@ -77,7 +78,7 @@ describe('api', function() {
 
         var promise = PDFJS.getDocument(typedArrayPdf);
         waitsForPromiseResolved(promise, function(data) {
-          expect(true).toEqual(true);
+          expect(data instanceof PDFDocumentProxy).toEqual(true);
         });
       });
       it('creates pdf doc from invalid PDF file', function() {
@@ -95,6 +96,60 @@ describe('api', function() {
         var promise = PDFJS.getDocument(nonExistentUrl);
         waitsForPromiseRejected(promise, function(error) {
           expect(error instanceof MissingPDFException).toEqual(true);
+        });
+      });
+      it('creates pdf doc from PDF file protected with user and owner password',
+         function () {
+        var url = combineUrl(window.location.href, '../pdfs/pr6531_1.pdf');
+
+        var passwordNeededPromise = PDFJS.getDocument({
+          url: url, password: '',
+        });
+        waitsForPromiseRejected(passwordNeededPromise, function (data) {
+          expect(data instanceof PasswordException).toEqual(true);
+          expect(data.code).toEqual(PasswordResponses.NEED_PASSWORD);
+        });
+
+        var passwordIncorrectPromise = PDFJS.getDocument({
+          url: url, password: 'qwerty',
+        });
+        waitsForPromiseRejected(passwordIncorrectPromise, function (data) {
+          expect(data instanceof PasswordException).toEqual(true);
+          expect(data.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
+        });
+
+        var passwordAcceptedPromise = PDFJS.getDocument({
+          url: url, password: 'asdfasdf',
+        });
+        waitsForPromiseResolved(passwordAcceptedPromise, function (data) {
+          expect(data instanceof PDFDocumentProxy).toEqual(true);
+        });
+      });
+      it('creates pdf doc from PDF file protected with only a user password',
+         function () {
+        var url = combineUrl(window.location.href, '../pdfs/pr6531_2.pdf');
+
+        var passwordNeededPromise = PDFJS.getDocument({
+          url: url, password: '',
+        });
+        waitsForPromiseRejected(passwordNeededPromise, function (data) {
+          expect(data instanceof PasswordException).toEqual(true);
+          expect(data.code).toEqual(PasswordResponses.NEED_PASSWORD);
+        });
+
+        var passwordIncorrectPromise = PDFJS.getDocument({
+          url: url, password: 'qwerty',
+        });
+        waitsForPromiseRejected(passwordIncorrectPromise, function (data) {
+          expect(data instanceof PasswordException).toEqual(true);
+          expect(data.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
+        });
+
+        var passwordAcceptedPromise = PDFJS.getDocument({
+          url: url, password: 'asdfasdf',
+        });
+        waitsForPromiseResolved(passwordAcceptedPromise, function (data) {
+          expect(data instanceof PDFDocumentProxy).toEqual(true);
         });
       });
     });
