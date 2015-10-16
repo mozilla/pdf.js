@@ -953,10 +953,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           });
       }
 
-      function buildTextGeometry(chars, textChunk, previousChars) {
+      function buildTextGeometry(chars, textChunk, offset) {
         var font = textState.font;
-        var offset = (isNum(previousChars) ? previousChars / 1000 : 0);
         textChunk = textChunk || newTextChunk();
+        offset = offset || 0;
         if (!textChunk.transform) {
           // 9.4.4 Text Space Details
           var tsm = [textState.fontSize * textState.textHScale, 0,
@@ -1133,8 +1133,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var offset;
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  buildTextGeometry(items[j], textChunk,
-                                    (j > 0 ? items[j - 1] : null));
+                  var prevChar = j > 0 ? items[j - 1] : null;
+                  offset = isNum(prevChar) ? items[j - 1] / 1000 : 0;
+                  buildTextGeometry(items[j], textChunk, offset);
                 } else {
                   // PDF Specification 5.3.2 states:
                   // The number is expressed in thousandths of a unit of text
