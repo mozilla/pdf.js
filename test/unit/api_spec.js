@@ -43,7 +43,7 @@ describe('api', function() {
       it('creates pdf doc from URL', function() {
         var promise = PDFJS.getDocument(basicApiUrl);
         waitsForPromiseResolved(promise, function(data) {
-          expect(true).toEqual(true);
+          expect(data instanceof PDFDocumentProxy).toEqual(true);
         });
       });
       it('creates pdf doc from typed array', function() {
@@ -78,7 +78,7 @@ describe('api', function() {
 
         var promise = PDFJS.getDocument(typedArrayPdf);
         waitsForPromiseResolved(promise, function(data) {
-          expect(true).toEqual(true);
+          expect(data instanceof PDFDocumentProxy).toEqual(true);
         });
       });
       it('creates pdf doc from invalid PDF file', function() {
