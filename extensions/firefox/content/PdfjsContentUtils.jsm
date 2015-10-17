@@ -112,7 +112,7 @@ let PdfjsContentUtils = {
    * Request the display of a notification warning in the associated window
    * when the renderer isn't sure a pdf displayed correctly.
    */
-  displayWarning: function (aWindow, aMessage, aCallback, aLabel, accessKey) {
+  displayWarning: function (aWindow, aMessage, aLabel, accessKey) {
     // the child's dom frame mm associated with the window.
     let winmm = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell)
@@ -122,8 +122,6 @@ let PdfjsContentUtils = {
       message: aMessage,
       label: aLabel,
       accessKey: accessKey
-    }, {
-      callback: aCallback
     });
   },
 

@@ -75,6 +75,19 @@ function watchObjectOrEmbed(elem) {
     return;
   }
 
+  if (elem.tagName === 'EMBED' && elem.name === 'plugin' &&
+      elem.parentNode === document.body &&
+      elem.parentNode.childElementCount === 1 && elem.src === location.href) {
+    // This page is most likely Chrome's default page that embeds a PDF file.
+    // The fact that the extension's background page did not intercept and
+    // redirect this PDF request means that this PDF cannot be opened by PDF.js,
+    // e.g. because it is a response to a POST request (as in #6174).
+    // A reduced test case to test PDF response to POST requests is available at
+    // https://robwu.nl/pdfjs/issue6174/.
+    // Until #4483 is fixed, POST requests should be ignored.
+    return;
+  }
+
   if (elem[shadowRoot]) {
     // If the element already has a shadow root, assume that we've already
     // seen this element.

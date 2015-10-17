@@ -119,6 +119,13 @@ var FontLoader = {
     var rules = [];
     var fontsToLoad = [];
     var fontLoadPromises = [];
+    var getNativeFontPromise = function(nativeFontFace) {
+      // Return a promise that is always fulfilled, even when the font fails to
+      // load.
+      return nativeFontFace.loaded.catch(function(e) {
+        warn('Failed to load font "' + nativeFontFace.family + '": ' + e);
+      });
+    };
     for (var i = 0, ii = fonts.length; i < ii; i++) {
       var font = fonts[i];
 
@@ -132,7 +139,7 @@ var FontLoader = {
       if (this.isFontLoadingAPISupported) {
         var nativeFontFace = font.createNativeFontFace();
         if (nativeFontFace) {
-          fontLoadPromises.push(nativeFontFace.loaded);
+          fontLoadPromises.push(getNativeFontPromise(nativeFontFace));
         }
       } else {
         var rule = font.bindDOM();
@@ -145,7 +152,7 @@ var FontLoader = {
 
     var request = FontLoader.queueLoadingCallback(callback);
     if (this.isFontLoadingAPISupported) {
-      Promise.all(fontsToLoad).then(function() {
+      Promise.all(fontLoadPromises).then(function() {
         request.complete();
       });
     } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
