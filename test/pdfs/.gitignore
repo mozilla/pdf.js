@@ -3,6 +3,8 @@
 
 !tracemonkey.pdf
 !franz.pdf
+!franz_2.pdf
+!xref_command_missing.pdf
 !issue2391-1.pdf
 !issue2391-2.pdf
 !issue5801.pdf
@@ -14,14 +16,21 @@
 !arial_unicode_ab_cidfont.pdf
 !arial_unicode_en_cidfont.pdf
 !asciihexdecode.pdf
+!bug1020858.pdf
 !bug1050040.pdf
+!bug1200096.pdf
 !canvas.pdf
 !complex_ttf_font.pdf
 !extgstate.pdf
 !rotation.pdf
 !simpletype3font.pdf
 !sizes.pdf
+!javauninstall-7r.pdf
+!issue3205r.pdf
 !close-path-bug.pdf
+!issue2948.pdf
+!issue6231_1.pdf
+!issue6413.pdf
 !issue4630.pdf
 !issue4909.pdf
 !issue5202.pdf
@@ -45,6 +54,9 @@
 !freeculture.pdf
 !pdfkit_compressed.pdf
 !TAMReview.pdf
+!pr4922.pdf
+!pr6531_1.pdf
+!pr6531_2.pdf
 !bug900822.pdf
 !issue918.pdf
 !issue1905.pdf
@@ -73,6 +85,7 @@
 !zerowidthline.pdf
 !bug868745.pdf
 !mmtype1.pdf
+!issue4436r.pdf
 !issue5704.pdf
 !issue5751.pdf
 !bug893730.pdf
@@ -93,6 +106,9 @@
 !issue5599.pdf
 !issue5747.pdf
 !issue6099.pdf
+!issue6336.pdf
+!issue6387.pdf
+!issue6410.pdf
 !gradientfill.pdf
 !bug903856.pdf
 !bug850854.pdf
@@ -103,6 +119,7 @@
 !bug1065245.pdf
 !bug1151216.pdf
 !bug1175962.pdf
+!bug1020226.pdf
 !basicapi.pdf
 !mixedfonts.pdf
 !shading_extend.pdf
@@ -125,6 +142,8 @@
 !bug946506.pdf
 !issue3885.pdf
 !bug859204.pdf
+!coons-allflags-withfunction.pdf
+!tensor-allflags-withfunction.pdf
 !issue4246.pdf
 !issue4461.pdf
 !issue4573.pdf
@@ -132,6 +151,8 @@
 !issue4800.pdf
 !issue4801.pdf
 !issue5334.pdf
+!bug1186827.pdf
+!issue215.pdf
 !issue5540.pdf
 !issue5549.pdf
 !issue5475.pdf
@@ -145,3 +166,8 @@
 !issue6010_2.pdf
 !issue6068.pdf
 !issue6081.pdf
+!issue6069.pdf
+!issue6106.pdf
+!bug1001080.pdf
+!issue6108.pdf
+!issue6113.pdf

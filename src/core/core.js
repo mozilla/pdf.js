@@ -18,7 +18,8 @@
            isStream, NullStream, ObjectLoader, PartialEvaluator, Promise,
            OperatorList, Annotation, error, assert, XRef, isArrayBuffer, Stream,
            isString, isName, info, Linearization, MissingDataException, Lexer,
-           Catalog, stringToPDFString, stringToBytes, calculateMD5 */
+           Catalog, stringToPDFString, stringToBytes, calculateMD5,
+           AnnotationFactory */
 
 'use strict';
 
@@ -109,11 +110,6 @@ var Page = (function PageClosure() {
         return shadow(this, 'view', mediaBox);
       }
       return shadow(this, 'view', cropBox);
-    },
-
-    get annotationRefs() {
-      return shadow(this, 'annotationRefs',
-                    this.getInheritedPageProp('Annots'));
     },
 
     get rotate() {
@@ -261,18 +257,20 @@ var Page = (function PageClosure() {
       var annotations = this.annotations;
       var annotationsData = [];
       for (var i = 0, n = annotations.length; i < n; ++i) {
-        annotationsData.push(annotations[i].getData());
+        annotationsData.push(annotations[i].data);
       }
       return annotationsData;
     },
 
     get annotations() {
       var annotations = [];
-      var annotationRefs = (this.annotationRefs || []);
+      var annotationRefs = this.getInheritedPageProp('Annots') || [];
+      var annotationFactory = new AnnotationFactory();
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = Annotation.fromRef(this.xref, annotationRef);
-        if (annotation) {
+        var annotation = annotationFactory.create(this.xref, annotationRef);
+        if (annotation &&
+            (annotation.isViewable() || annotation.isPrintable())) {
           annotations.push(annotation);
         }
       }
@@ -512,12 +510,11 @@ var PDFDocument = (function PDFDocumentClosure() {
       return shadow(this, 'documentInfo', docInfo);
     },
     get fingerprint() {
-      var xref = this.xref, idArray, hash, fileID = '';
+      var xref = this.xref, hash, fileID = '';
+      var idArray = xref.trailer.get('ID');
 
-      if (xref.trailer.has('ID')) {
-        idArray = xref.trailer.get('ID');
-      }
-      if (idArray && isArray(idArray) && idArray[0] !== EMPTY_FINGERPRINT) {
+      if (idArray && isArray(idArray) && idArray[0] && isString(idArray[0]) &&
+          idArray[0] !== EMPTY_FINGERPRINT) {
         hash = stringToBytes(idArray[0]);
       } else {
         if (this.stream.ensureRange) {

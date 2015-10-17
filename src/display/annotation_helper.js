@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 /* globals PDFJS, Util, AnnotationType, AnnotationBorderStyleType, warn,
-           CustomStyle */
+           CustomStyle, isExternalLinkTargetSet, LinkTargetStringMap */
 
 'use strict';
 
@@ -45,7 +45,7 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     style.fontFamily = fontFamily + fallbackName;
   }
 
-  function initContainer(item, drawBorder) {
+  function initContainer(item) {
     var container = document.createElement('section');
     var cstyle = container.style;
     var width = item.rect[2] - item.rect[0];
@@ -100,12 +100,12 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
       // Border color
       if (item.color) {
         container.style.borderColor =
-          Util.makeCssRgb(Math.round(item.color[0] * 255),
-                          Math.round(item.color[1] * 255),
-                          Math.round(item.color[2] * 255));
+          Util.makeCssRgb(item.color[0] | 0,
+                          item.color[1] | 0,
+                          item.color[2] | 0);
       } else {
-        // Default color is black, but that's not obvious from the spec.
-        container.style.borderColor = 'rgb(0,0,0)';
+        // Transparent (invisible) border, so do not draw it at all.
+        container.style.borderWidth = 0;
       }
     }
 
@@ -149,7 +149,7 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
       rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
     }
 
-    var container = initContainer(item, false);
+    var container = initContainer(item);
     container.className = 'annotText';
 
     var image  = document.createElement('img');
@@ -172,17 +172,15 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     content.setAttribute('hidden', true);
 
     var i, ii;
-    if (item.hasBgColor) {
+    if (item.hasBgColor && item.color) {
       var color = item.color;
 
       // Enlighten the color (70%)
       var BACKGROUND_ENLIGHT = 0.7;
-      var r = BACKGROUND_ENLIGHT * (1.0 - color[0]) + color[0];
-      var g = BACKGROUND_ENLIGHT * (1.0 - color[1]) + color[1];
-      var b = BACKGROUND_ENLIGHT * (1.0 - color[2]) + color[2];
-      content.style.backgroundColor = Util.makeCssRgb((r * 255) | 0,
-                                                      (g * 255) | 0,
-                                                      (b * 255) | 0);
+      var r = BACKGROUND_ENLIGHT * (255 - color[0]) + color[0];
+      var g = BACKGROUND_ENLIGHT * (255 - color[1]) + color[1];
+      var b = BACKGROUND_ENLIGHT * (255 - color[2]) + color[2];
+      content.style.backgroundColor = Util.makeCssRgb(r | 0, g | 0, b | 0);
     }
 
     var title = document.createElement('h1');
@@ -258,13 +256,14 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
   }
 
   function getHtmlElementForLinkAnnotation(item) {
-    var container = initContainer(item, true);
+    var container = initContainer(item);
     container.className = 'annotLink';
 
     var link = document.createElement('a');
     link.href = link.title = item.url || '';
-    if (item.url && PDFJS.openExternalLinksInNewWindow) {
-      link.target = '_blank';
+
+    if (item.url && isExternalLinkTargetSet()) {
+      link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
     }
 
     container.appendChild(link);

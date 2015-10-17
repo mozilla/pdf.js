@@ -32,5 +32,6 @@ var DEFAULT_PREFERENCES = {
   disableAutoFetch: false,
   disableFontFace: false,
   disableTextLayer: false,
-  useOnlyCssZoom: false
+  useOnlyCssZoom: false,
+  externalLinkTarget: 0,
 };

@@ -132,6 +132,8 @@ var Driver = (function DriverClosure() {
     this.appPath = parameters.path;
     this.delay = (parameters.delay | 0) || 0;
     this.inFlightRequests = 0;
+    this.testFilter = parameters.testFilter ?
+      JSON.parse(parameters.testFilter) : [];
 
     // Create a working canvas
     this.canvas = document.createElement('canvas');
@@ -163,6 +165,11 @@ var Driver = (function DriverClosure() {
         if (r.readyState === 4) {
           self._log('done\n');
           self.manifest = JSON.parse(r.responseText);
+          if (self.testFilter && self.testFilter.length) {
+            self.manifest = self.manifest.filter(function(item) {
+              return self.testFilter.indexOf(item.id) !== -1;
+            });
+          }
           self.currentTask = 0;
           self._nextTask();
         }
@@ -422,9 +429,9 @@ var Driver = (function DriverClosure() {
     _done: function Driver_done() {
       if (this.inFlightRequests > 0) {
         this.inflight.textContent = this.inFlightRequests;
-        setTimeout(this._done(), WAITING_TIME);
+        setTimeout(this._done.bind(this), WAITING_TIME);
       } else {
-        setTimeout(this._quit(), WAITING_TIME);
+        setTimeout(this._quit.bind(this), WAITING_TIME);
       }
     },
 

@@ -160,6 +160,10 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         this.canvas.height = 0;
         delete this.canvas;
       }
+      if (this.image) {
+        this.image.removeAttribute('src');
+        delete this.image;
+      }
     },
 
     update: function PDFThumbnailView_update(rotation) {
@@ -180,26 +184,51 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     _getPageDrawContext:
         function PDFThumbnailView_getPageDrawContext(noCtxScale) {
       var canvas = document.createElement('canvas');
-      canvas.id = this.renderingId;
-
-      canvas.className = 'thumbnailImage';
-      canvas.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
-        {page: this.id}, 'Thumbnail of Page {{page}}'));
-
       this.canvas = canvas;
-      this.div.setAttribute('data-loaded', true);
-      this.ring.appendChild(canvas);
 
       var ctx = canvas.getContext('2d');
       var outputScale = getOutputScale(ctx);
+
       canvas.width = (this.canvasWidth * outputScale.sx) | 0;
       canvas.height = (this.canvasHeight * outputScale.sy) | 0;
       canvas.style.width = this.canvasWidth + 'px';
       canvas.style.height = this.canvasHeight + 'px';
+
       if (!noCtxScale && outputScale.scaled) {
         ctx.scale(outputScale.sx, outputScale.sy);
       }
+
+      var image = document.createElement('img');
+      this.image = image;
+
+      image.id = this.renderingId;
+      image.className = 'thumbnailImage';
+      image.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
+        { page: this.id }, 'Thumbnail of Page {{page}}'));
+
+      image.style.width = canvas.style.width;
+      image.style.height = canvas.style.height;
+
       return ctx;
+    },
+
+    /**
+     * @private
+     */
+    _convertCanvasToImage: function PDFThumbnailView_convertCanvasToImage() {
+      if (!this.canvas) {
+        return;
+      }
+      this.image.src = this.canvas.toDataURL();
+
+      this.div.setAttribute('data-loaded', true);
+      this.ring.appendChild(this.image);
+
+      // Zeroing the width and height causes Firefox to release graphics
+      // resources immediately, which can greatly reduce memory consumption.
+      this.canvas.width = 0;
+      this.canvas.height = 0;
+      delete this.canvas;
     },
 
     draw: function PDFThumbnailView_draw() {
@@ -231,6 +260,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
           return;
         }
         self.renderingState = RenderingStates.FINISHED;
+        self._convertCanvasToImage();
 
         if (!error) {
           resolveRenderPromise(undefined);
@@ -288,6 +318,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (img.width <= 2 * canvas.width) {
         ctx.drawImage(img, 0, 0, img.width, img.height,
                       0, 0, canvas.width, canvas.height);
+        this._convertCanvasToImage();
         return;
       }
       // drawImage does an awful job of rescaling the image, doing it gradually.
@@ -312,6 +343,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       }
       ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
                     0, 0, canvas.width, canvas.height);
+      this._convertCanvasToImage();
     }
   };
 

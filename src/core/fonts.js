@@ -508,6 +508,13 @@ var GlyphMapForStandardFonts = {
   '3316': 578, '3379': 42785, '3393': 1159, '3416': 8377
 };
 
+// The glyph map for ArialBlack differs slightly from the glyph map used for
+// other well-known standard fonts. Hence we use this (incomplete) CID to GID
+// mapping to adjust the glyph map for non-embedded ArialBlack fonts.
+var SupplementalGlyphMapForArialBlack = {
+  '227': 322, '264': 261, '291': 346,
+};
+
 // Some characters, e.g. copyrightserif, are mapped to the private use area and
 // might not be displayed using standard fonts. Mapping/hacking well-known chars
 // to the similar equivalents in the normal characters range.
@@ -2516,8 +2523,13 @@ var Font = (function FontClosure() {
         // Standard fonts might be embedded as CID font without glyph mapping.
         // Building one based on GlyphMapForStandardFonts.
         var map = [];
-        for (var code in GlyphMapForStandardFonts) {
-          map[+code] = GlyphMapForStandardFonts[code];
+        for (charCode in GlyphMapForStandardFonts) {
+          map[+charCode] = GlyphMapForStandardFonts[charCode];
+        }
+        if (/ArialBlack/i.test(name)) {
+          for (charCode in SupplementalGlyphMapForArialBlack) {
+            map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
+          }
         }
         var isIdentityUnicode = this.toUnicode instanceof IdentityToUnicodeMap;
         if (!isIdentityUnicode) {
@@ -3210,7 +3222,7 @@ var Font = (function FontClosure() {
        * Read the appropriate subtable from the cmap according to 9.6.6.4 from
        * PDF spec
        */
-      function readCmapTable(cmap, font, isSymbolicFont) {
+      function readCmapTable(cmap, font, isSymbolicFont, hasEncoding) {
         var segment;
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
@@ -3241,7 +3253,7 @@ var Font = (function FontClosure() {
             // Continue the loop since there still may be a higher priority
             // table.
           } else if (platformId === 3 && encodingId === 1 &&
-                     (!isSymbolicFont || !potentialTable)) {
+                     ((!isSymbolicFont && hasEncoding) || !potentialTable)) {
             useTable = true;
             if (!isSymbolicFont) {
               canBreak = true;
@@ -3378,7 +3390,13 @@ var Font = (function FontClosure() {
             });
           }
         } else {
-          error('cmap table has unsupported format: ' + format);
+          warn('cmap table has unsupported format: ' + format);
+          return {
+            platformId: -1,
+            encodingId: -1,
+            mappings: [],
+            hasShortCmap: false
+          };
         }
 
         // removing duplicate entries
@@ -4041,7 +4059,7 @@ var Font = (function FontClosure() {
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
         // OpenType font
-        if (header.version === 'OTTO' ||
+        if ((header.version === 'OTTO' && properties.type !== 'CIDFontType2') ||
             !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
           // no major tables: throwing everything at CFFFont
           cffFile = new Stream(tables['CFF '].data);
@@ -4184,13 +4202,14 @@ var Font = (function FontClosure() {
       } else {
         // Most of the following logic in this code branch is based on the
         // 9.6.6.4 of the PDF spec.
-        var cmapTable = readCmapTable(tables.cmap, font, this.isSymbolicFont);
+        var hasEncoding =
+          properties.differences.length > 0 || !!properties.baseEncodingName;
+        var cmapTable =
+          readCmapTable(tables.cmap, font, this.isSymbolicFont, hasEncoding);
         var cmapPlatformId = cmapTable.platformId;
         var cmapEncodingId = cmapTable.encodingId;
         var cmapMappings = cmapTable.mappings;
         var cmapMappingsLength = cmapMappings.length;
-        var hasEncoding = properties.differences.length ||
-                          !!properties.baseEncodingName;
 
         // The spec seems to imply that if the font is symbolic the encoding
         // should be ignored, this doesn't appear to work for 'preistabelle.pdf'
@@ -4224,9 +4243,10 @@ var Font = (function FontClosure() {
             if (!glyphName) {
               continue;
             }
-            var unicodeOrCharCode;
+            var unicodeOrCharCode, isUnicode = false;
             if (cmapPlatformId === 3 && cmapEncodingId === 1) {
               unicodeOrCharCode = GlyphsUnicode[glyphName];
+              isUnicode = true;
             } else if (cmapPlatformId === 1 && cmapEncodingId === 0) {
               // TODO: the encoding needs to be updated with mac os table.
               unicodeOrCharCode = Encodings.MacRomanEncoding.indexOf(glyphName);
@@ -4234,8 +4254,11 @@ var Font = (function FontClosure() {
 
             var found = false;
             for (i = 0; i < cmapMappingsLength; ++i) {
-              if (cmapMappings[i].charCode === unicodeOrCharCode &&
-                  hasGlyph(cmapMappings[i].glyphId, unicodeOrCharCode, -1)) {
+              if (cmapMappings[i].charCode !== unicodeOrCharCode) {
+                continue;
+              }
+              var code = isUnicode ? charCode : unicodeOrCharCode;
+              if (hasGlyph(cmapMappings[i].glyphId, code, -1)) {
                 charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
                 found = true;
                 break;

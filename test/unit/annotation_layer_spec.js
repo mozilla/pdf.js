@@ -1,11 +1,85 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, Dict, AnnotationBorderStyle,
+/* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
            AnnotationBorderStyleType */
 
 'use strict';
 
 describe('Annotation layer', function() {
+  describe('Annotation', function() {
+    it('should set and get a valid rectangle', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setRectangle([117, 694, 164.298, 720]);
+
+      expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
+    });
+
+    it('should not set and get an invalid rectangle', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setRectangle([117, 694, 164.298]);
+
+      expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
+    });
+
+    it('should reject a color if it is not an array', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setColor('red');
+
+      expect(annotation.color).toEqual([0, 0, 0]);
+    });
+
+    it('should set and get a transparent color', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setColor([]);
+
+      expect(annotation.color).toEqual(null);
+    });
+
+    it('should set and get a grayscale color', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setColor([0.4]);
+
+      expect(annotation.color).toEqual([102, 102, 102]);
+    });
+
+    it('should set and get an RGB color', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setColor([0, 0, 1]);
+
+      expect(annotation.color).toEqual([0, 0, 255]);
+    });
+
+    it('should set and get a CMYK color', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setColor([0.1, 0.92, 0.84, 0.02]);
+
+      expect(annotation.color).toEqual([233, 59, 47]);
+    });
+
+    it('should not set and get an invalid color', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setColor([0.4, 0.6]);
+
+      expect(annotation.color).toEqual([0, 0, 0]);
+    });
+  });
+
   describe('AnnotationBorderStyle', function() {
     it('should set and get a valid width', function() {
       var borderStyle = new AnnotationBorderStyle();
@@ -23,9 +97,7 @@ describe('Annotation layer', function() {
 
     it('should set and get a valid style', function() {
       var borderStyle = new AnnotationBorderStyle();
-      var dict = new Dict();
-      dict.name = 'D';
-      borderStyle.setStyle(dict);
+      borderStyle.setStyle(Name.get('D'));
 
       expect(borderStyle.style).toEqual(AnnotationBorderStyleType.DASHED);
     });

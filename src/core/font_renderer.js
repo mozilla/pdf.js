@@ -134,16 +134,15 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     return 0;
   }
 
-  function compileGlyf(code, js, font) {
+  function compileGlyf(code, cmds, font) {
     function moveTo(x, y) {
-      js.push('c.moveTo(' + x + ',' + y + ');');
+      cmds.push({cmd: 'moveTo', args: [x, y]});
     }
     function lineTo(x, y) {
-      js.push('c.lineTo(' + x + ',' + y + ');');
+      cmds.push({cmd: 'lineTo', args: [x, y]});
     }
     function quadraticCurveTo(xa, ya, x, y) {
-      js.push('c.quadraticCurveTo(' + xa + ',' + ya + ',' +
-                                   x + ',' + y + ');');
+      cmds.push({cmd: 'quadraticCurveTo', args: [xa, ya, x, y]});
     }
 
     var i = 0;
@@ -189,11 +188,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         }
         var subglyph = font.glyphs[glyphIndex];
         if (subglyph) {
-          js.push('c.save();');
-          js.push('c.transform(' + scaleX + ',' + scale01 + ',' +
-                  scale10 + ',' + scaleY + ',' + x + ',' + y + ');');
-          compileGlyf(subglyph, js, font);
-          js.push('c.restore();');
+          cmds.push({cmd: 'save'});
+          cmds.push({cmd: 'transform',
+                     args: [scaleX, scale01, scale10, scaleY, x, y]});
+          compileGlyf(subglyph, cmds, font);
+          cmds.push({cmd: 'restore'});
         }
       } while ((flags & 0x20));
     } else {
@@ -289,20 +288,19 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     }
   }
 
-  function compileCharString(code, js, font) {
+  function compileCharString(code, cmds, font) {
     var stack = [];
     var x = 0, y = 0;
     var stems = 0;
 
     function moveTo(x, y) {
-      js.push('c.moveTo(' + x + ',' + y + ');');
+      cmds.push({cmd: 'moveTo', args: [x, y]});
     }
     function lineTo(x, y) {
-      js.push('c.lineTo(' + x + ',' + y + ');');
+      cmds.push({cmd: 'lineTo', args: [x, y]});
     }
     function bezierCurveTo(x1, y1, x2, y2, x, y) {
-      js.push('c.bezierCurveTo(' + x1 + ',' + y1 + ',' + x2 + ',' + y2 + ',' +
-                                   x + ',' + y + ');');
+      cmds.push({cmd: 'bezierCurveTo', args: [x1, y1, x2, y2, x, y]});
     }
 
     function parse(code) {
@@ -431,16 +429,16 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               var bchar = stack.pop();
               y = stack.pop();
               x = stack.pop();
-              js.push('c.save();');
-              js.push('c.translate('+ x + ',' + y + ');');
+              cmds.push({cmd: 'save'});
+              cmds.push({cmd: 'translate', args: [x, y]});
               var gid = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[Encodings.StandardEncoding[achar]]));
-              compileCharString(font.glyphs[gid], js, font);
-              js.push('c.restore();');
+              compileCharString(font.glyphs[gid], cmds, font);
+              cmds.push({cmd: 'restore'});
 
               gid = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[Encodings.StandardEncoding[bchar]]));
-              compileCharString(font.glyphs[gid], js, font);
+              compileCharString(font.glyphs[gid], cmds, font);
             }
             return;
           case 18: // hstemhm
@@ -609,16 +607,16 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         return noop;
       }
 
-      var js = [];
-      js.push('c.save();');
-      js.push('c.transform(' + this.fontMatrix.join(',') + ');');
-      js.push('c.scale(size, -size);');
+      var cmds = [];
+      cmds.push({cmd: 'save'});
+      cmds.push({cmd: 'transform', args: this.fontMatrix.slice()});
+      cmds.push({cmd: 'scale', args: ['size', '-size']});
 
-      this.compileGlyphImpl(code, js);
+      this.compileGlyphImpl(code, cmds);
 
-      js.push('c.restore();');
+      cmds.push({cmd: 'restore'});
 
-      return js.join('\n');
+      return cmds;
     },
 
     compileGlyphImpl: function () {
@@ -642,8 +640,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   Util.inherit(TrueTypeCompiled, CompiledFont, {
-    compileGlyphImpl: function (code, js) {
-      compileGlyf(code, js, this);
+    compileGlyphImpl: function (code, cmds) {
+      compileGlyf(code, cmds, this);
     }
   });
 
@@ -664,8 +662,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   Util.inherit(Type2Compiled, CompiledFont, {
-    compileGlyphImpl: function (code, js) {
-      compileCharString(code, js, this);
+    compileGlyphImpl: function (code, cmds) {
+      compileCharString(code, cmds, this);
     }
   });
 

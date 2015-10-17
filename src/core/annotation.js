@@ -17,12 +17,59 @@
 /* globals PDFJS, Util, isDict, isName, stringToPDFString, warn, Dict, Stream,
            stringToBytes, Promise, isArray, ObjectLoader, OperatorList,
            isValidUrl, OPS, createPromiseCapability, AnnotationType,
-           stringToUTF8String, AnnotationBorderStyleType */
+           stringToUTF8String, AnnotationBorderStyleType, ColorSpace */
 
 'use strict';
 
 var DEFAULT_ICON_SIZE = 22; // px
-var SUPPORTED_TYPES = ['Link', 'Text', 'Widget'];
+
+/**
+ * @constructor
+ */
+function AnnotationFactory() {}
+AnnotationFactory.prototype = {
+  /**
+   * @param {XRef} xref
+   * @param {Object} ref
+   * @returns {Annotation}
+   */
+  create: function AnnotationFactory_create(xref, ref) {
+    var dict = xref.fetchIfRef(ref);
+    if (!isDict(dict)) {
+      return;
+    }
+
+    // Determine the annotation's subtype.
+    var subtype = dict.get('Subtype');
+    subtype = isName(subtype) ? subtype.name : '';
+
+    // Return the right annotation object based on the subtype and field type.
+    var parameters = {
+      dict: dict,
+      ref: ref
+    };
+
+    switch (subtype) {
+      case 'Link':
+        return new LinkAnnotation(parameters);
+
+      case 'Text':
+        return new TextAnnotation(parameters);
+
+      case 'Widget':
+        var fieldType = Util.getInheritableProperty(dict, 'FT');
+        if (isName(fieldType) && fieldType.name === 'Tx') {
+          return new TextWidgetAnnotation(parameters);
+        }
+        return new WidgetAnnotation(parameters);
+
+      default:
+        warn('Unimplemented annotation type "' + subtype + '", ' +
+             'falling back to base annotation');
+        return new Annotation(parameters);
+    }
+  }
+};
 
 var Annotation = (function AnnotationClosure() {
   // 12.5.5: Algorithm: Appearance streams
@@ -75,32 +122,13 @@ var Annotation = (function AnnotationClosure() {
     var data = this.data = {};
 
     data.subtype = dict.get('Subtype').name;
-    var rect = dict.get('Rect') || [0, 0, 0, 0];
-    data.rect = Util.normalizeRect(rect);
     data.annotationFlags = dict.get('F');
 
-    var color = dict.get('C');
-    if (!color) {
-      // The PDF spec does not mention how a missing color array is interpreted.
-      // Adobe Reader seems to default to black in this case.
-      data.color = [0, 0, 0];
-    } else if (isArray(color)) {
-      switch (color.length) {
-        case 0:
-          // Empty array denotes transparent border.
-          data.color = null;
-          break;
-        case 1:
-          // TODO: implement DeviceGray
-          break;
-        case 3:
-          data.color = color;
-          break;
-        case 4:
-          // TODO: implement DeviceCMYK
-          break;
-      }
-    }
+    this.setRectangle(dict.get('Rect'));
+    data.rect = this.rectangle;
+
+    this.setColor(dict.get('C'));
+    data.color = this.color;
 
     this.borderStyle = data.borderStyle = new AnnotationBorderStyle();
     this.setBorderStyle(dict);
@@ -111,6 +139,63 @@ var Annotation = (function AnnotationClosure() {
   }
 
   Annotation.prototype = {
+    /**
+     * Set the rectangle.
+     *
+     * @public
+     * @memberof Annotation
+     * @param {Array} rectangle - The rectangle array with exactly four entries
+     */
+    setRectangle: function Annotation_setRectangle(rectangle) {
+      if (isArray(rectangle) && rectangle.length === 4) {
+        this.rectangle = Util.normalizeRect(rectangle);
+      } else {
+        this.rectangle = [0, 0, 0, 0];
+      }
+    },
+
+    /**
+     * Set the color and take care of color space conversion.
+     *
+     * @public
+     * @memberof Annotation
+     * @param {Array} color - The color array containing either 0
+     *                        (transparent), 1 (grayscale), 3 (RGB) or
+     *                        4 (CMYK) elements
+     */
+    setColor: function Annotation_setColor(color) {
+      var rgbColor = new Uint8Array(3); // Black in RGB color space (default)
+      if (!isArray(color)) {
+        this.color = rgbColor;
+        return;
+      }
+
+      switch (color.length) {
+        case 0: // Transparent, which we indicate with a null value
+          this.color = null;
+          break;
+
+        case 1: // Convert grayscale to RGB
+          ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+          this.color = rgbColor;
+          break;
+
+        case 3: // Convert RGB percentages to RGB
+          ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+          this.color = rgbColor;
+          break;
+
+        case 4: // Convert CMYK to RGB
+          ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+          this.color = rgbColor;
+          break;
+
+        default:
+          this.color = rgbColor;
+          break;
+      }
+    },
+
     /**
      * Set the border style (as AnnotationBorderStyle object).
      *
@@ -138,7 +223,6 @@ var Annotation = (function AnnotationClosure() {
           this.borderStyle.setHorizontalCornerRadius(array[0]);
           this.borderStyle.setVerticalCornerRadius(array[1]);
           this.borderStyle.setWidth(array[2]);
-          this.borderStyle.setStyle('S');
 
           if (array.length === 4) { // Dash array available
             this.borderStyle.setDashArray(array[3]);
@@ -154,19 +238,11 @@ var Annotation = (function AnnotationClosure() {
       }
     },
 
-    getData: function Annotation_getData() {
-      return this.data;
-    },
-
     isInvisible: function Annotation_isInvisible() {
       var data = this.data;
-      if (data && SUPPORTED_TYPES.indexOf(data.subtype) !== -1) {
-        return false;
-      } else {
-        return !!(data &&
-                  data.annotationFlags &&            // Default: not invisible
-                  data.annotationFlags & 0x1);       // Invisible
-      }
+      return !!(data &&
+                data.annotationFlags &&            // Default: not invisible
+                data.annotationFlags & 0x1);       // Invisible
     },
 
     isViewable: function Annotation_isViewable() {
@@ -239,70 +315,6 @@ var Annotation = (function AnnotationClosure() {
               return opList;
             });
         });
-    }
-  };
-
-  Annotation.getConstructor =
-      function Annotation_getConstructor(subtype, fieldType) {
-
-    if (!subtype) {
-      return;
-    }
-
-    // TODO(mack): Implement FreeText annotations
-    if (subtype === 'Link') {
-      return LinkAnnotation;
-    } else if (subtype === 'Text') {
-      return TextAnnotation;
-    } else if (subtype === 'Widget') {
-      if (!fieldType) {
-        return;
-      }
-
-      if (fieldType === 'Tx') {
-        return TextWidgetAnnotation;
-      } else {
-        return WidgetAnnotation;
-      }
-    } else {
-      return Annotation;
-    }
-  };
-
-  Annotation.fromRef = function Annotation_fromRef(xref, ref) {
-
-    var dict = xref.fetchIfRef(ref);
-    if (!isDict(dict)) {
-      return;
-    }
-
-    var subtype = dict.get('Subtype');
-    subtype = isName(subtype) ? subtype.name : '';
-    if (!subtype) {
-      return;
-    }
-
-    var fieldType = Util.getInheritableProperty(dict, 'FT');
-    fieldType = isName(fieldType) ? fieldType.name : '';
-
-    var Constructor = Annotation.getConstructor(subtype, fieldType);
-    if (!Constructor) {
-      return;
-    }
-
-    var params = {
-      dict: dict,
-      ref: ref,
-    };
-
-    var annotation = new Constructor(params);
-
-    if (annotation.isViewable() || annotation.isPrintable()) {
-      return annotation;
-    } else {
-      if (SUPPORTED_TYPES.indexOf(subtype) === -1) {
-        warn('unimplemented annotation type: ' + subtype);
-      }
     }
   };
 

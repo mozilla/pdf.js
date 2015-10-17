@@ -53,6 +53,19 @@ var Parser = (function ParserClosure() {
         this.buf2 = this.lexer.getObj();
       }
     },
+    tryShift: function Parser_tryShift() {
+      try {
+        this.shift();
+        return true;
+      } catch (e) {
+        if (e instanceof MissingDataException) {
+          throw e;
+        }
+        // Upon failure, the caller should reset this.lexer.pos to a known good
+        // state and call this.shift() twice to reset the buffers.
+        return false;
+      }
+    },
     getObj: function Parser_getObj(cipherTransform) {
       var buf1 = this.buf1;
       this.shift();
@@ -328,7 +341,7 @@ var Parser = (function ParserClosure() {
       var stream = lexer.stream;
 
       // Parse dictionary.
-      var dict = new Dict(null);
+      var dict = new Dict(this.xref);
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
           error('Dictionary key must be a name object');
@@ -342,7 +355,7 @@ var Parser = (function ParserClosure() {
       }
 
       // Extract the name of the first (i.e. the current) image filter.
-      var filter = this.fetchIfRef(dict.get('Filter', 'F')), filterName;
+      var filter = dict.get('Filter', 'F'), filterName;
       if (isName(filter)) {
         filterName = filter.name;
       } else if (isArray(filter) && isName(filter[0])) {
@@ -403,10 +416,6 @@ var Parser = (function ParserClosure() {
 
       return imageStream;
     },
-    fetchIfRef: function Parser_fetchIfRef(obj) {
-      // not relying on the xref.fetchIfRef -- xref might not be set
-      return (isRef(obj) ? this.xref.fetch(obj) : obj);
-    },
     makeStream: function Parser_makeStream(dict, cipherTransform) {
       var lexer = this.lexer;
       var stream = lexer.stream;
@@ -416,7 +425,7 @@ var Parser = (function ParserClosure() {
       var pos = stream.pos - 1;
 
       // get length
-      var length = this.fetchIfRef(dict.get('Length'));
+      var length = dict.get('Length');
       if (!isInt(length)) {
         info('Bad ' + length + ' attribute in stream');
         length = 0;
@@ -426,9 +435,10 @@ var Parser = (function ParserClosure() {
       stream.pos = pos + length;
       lexer.nextChar();
 
-      this.shift(); // '>>'
-      this.shift(); // 'stream'
-      if (!isCmd(this.buf1, 'endstream')) {
+      // Shift '>>' and check whether the new object marks the end of the stream
+      if (this.tryShift() && isCmd(this.buf2, 'endstream')) {
+        this.shift(); // 'stream'
+      } else {
         // bad stream length, scanning for endstream
         stream.pos = pos;
         var SCAN_BLOCK_SIZE = 2048;
@@ -485,8 +495,8 @@ var Parser = (function ParserClosure() {
       return stream;
     },
     filter: function Parser_filter(stream, dict, length) {
-      var filter = this.fetchIfRef(dict.get('Filter', 'F'));
-      var params = this.fetchIfRef(dict.get('DecodeParms', 'DP'));
+      var filter = dict.get('Filter', 'F');
+      var params = dict.get('DecodeParms', 'DP');
       if (isName(filter)) {
         return this.makeFilter(stream, filter.name, length, params);
       }
@@ -513,12 +523,13 @@ var Parser = (function ParserClosure() {
       return stream;
     },
     makeFilter: function Parser_makeFilter(stream, name, maybeLength, params) {
-      if (stream.dict.get('Length') === 0) {
+      if (stream.dict.get('Length') === 0 && !maybeLength) {
+        warn('Empty "' + name + '" stream.');
         return new NullStream(stream);
       }
       try {
-        if (params) {
-          params = this.fetchIfRef(params);
+        if (params && this.xref) {
+          params = this.xref.fetchIfRef(params);
         }
         var xrefStreamStats = this.xref.stats.streamTypes;
         if (name === 'FlateDecode' || name === 'Fl') {
@@ -660,6 +671,11 @@ var Lexer = (function LexerClosure() {
       if (ch === 0x2D) { // '-'
         sign = -1;
         ch = this.nextChar();
+
+        if (ch === 0x2D) { // '-'
+          // Ignore double negative (this is consistent with Adobe Reader).
+          ch = this.nextChar();
+        }
       } else if (ch === 0x2B) { // '+'
         ch = this.nextChar();
       }
@@ -838,9 +854,8 @@ var Lexer = (function LexerClosure() {
           strBuf.push(String.fromCharCode(ch));
         }
       }
-      if (strBuf.length > 128) {
-        error('Warning: name token is longer than allowed by the spec: ' +
-              strBuf.length);
+      if (strBuf.length > 127) {
+        warn('name token is longer than allowed by the spec: ' + strBuf.length);
       }
       return Name.get(strBuf.join(''));
     },

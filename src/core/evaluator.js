@@ -126,8 +126,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                  xobj, smask,
                                                                  operatorList,
                                                                  initialState) {
-      var matrix = xobj.dict.get('Matrix');
-      var bbox = xobj.dict.get('BBox');
+      var matrix = xobj.dict.getArray('Matrix');
+      var bbox = xobj.dict.getArray('BBox');
       var group = xobj.dict.get('Group');
       if (group) {
         var groupOptions = {
@@ -731,11 +731,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var arr = args[0];
               var combinedGlyphs = [];
               var arrLength = arr.length;
+              var state = stateManager.state;
               for (i = 0; i < arrLength; ++i) {
                 var arrItem = arr[i];
                 if (isString(arrItem)) {
                   Array.prototype.push.apply(combinedGlyphs,
-                    self.handleText(arrItem, stateManager.state));
+                    self.handleText(arrItem, state));
                 } else if (isNum(arrItem)) {
                   combinedGlyphs.push(arrItem);
                 }
@@ -1131,17 +1132,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeof items[j] === 'string') {
                   buildTextGeometry(items[j], textChunk);
                 } else {
-                  var val = items[j] / 1000;
-                  if (!textState.font.vertical) {
-                    offset = -val * textState.fontSize * textState.textHScale *
-                      textState.textMatrix[0];
-                    textState.translateTextMatrix(offset, 0);
-                    textChunk.width += offset;
-                  } else {
-                    offset = -val * textState.fontSize *
-                      textState.textMatrix[3];
+                  // PDF Specification 5.3.2 states:
+                  // The number is expressed in thousandths of a unit of text
+                  // space.
+                  // This amount is subtracted from the current horizontal or
+                  // vertical coordinate, depending on the writing mode.
+                  // In the default coordinate system, a positive adjustment
+                  // has the effect of moving the next glyph painted either to
+                  // the left or down by the given amount.
+                  var val = items[j] * textState.fontSize / 1000;
+                  if (textState.font.vertical) {
+                    offset = val * textState.textMatrix[3];
                     textState.translateTextMatrix(0, offset);
+                    // Value needs to be added to height to paint down.
                     textChunk.height += offset;
+                  } else {
+                    offset = val * textState.textHScale *
+                                   textState.textMatrix[0];
+                    textState.translateTextMatrix(offset, 0);
+                    // Value needs to be subtracted from width to paint left.
+                    textChunk.width -= offset;
                   }
                   if (items[j] < 0 && textState.font.spaceWidth > 0) {
                     var fakeSpaces = -items[j] / textState.font.spaceWidth;
@@ -1370,11 +1380,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (cmap instanceof IdentityCMap) {
           return new IdentityToUnicodeMap(0, 0xFFFF);
         }
-        cmap = cmap.getMap();
+        var map = new Array(cmap.length);
         // Convert UTF-16BE
         // NOTE: cmap can be a sparse array, so use forEach instead of for(;;)
         // to iterate over all keys.
-        cmap.forEach(function(token, i) {
+        cmap.forEach(function(charCode, token) {
           var str = [];
           for (var k = 0; k < token.length; k += 2) {
             var w1 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
@@ -1386,9 +1396,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var w2 = (token.charCodeAt(k) << 8) | token.charCodeAt(k + 1);
             str.push(((w1 & 0x3ff) << 10) + (w2 & 0x3ff) + 0x10000);
           }
-          cmap[i] = String.fromCharCode.apply(String, str);
+          map[charCode] = String.fromCharCode.apply(String, str);
         });
-        return new ToUnicodeMap(cmap);
+        return new ToUnicodeMap(map);
       }
       return null;
     },

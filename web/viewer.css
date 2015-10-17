@@ -591,6 +591,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .splitToolbarButton > .toolbarButton:focus,
 .dropdownToolbarButton:hover,
 .overlayButton:hover,
+.overlayButton:focus,
 .toolbarButton.textButton:hover,
 .toolbarButton.textButton:focus {
   background-color: hsla(0,0%,0%,.2);
@@ -1190,10 +1191,12 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding: 3px 4px 0;
 }
 
+html[dir='ltr'] .outlineWithDeepNesting > .outlineItem,
 html[dir='ltr'] .outlineItem > .outlineItems {
   margin-left: 20px;
 }
 
+html[dir='rtl'] .outlineWithDeepNesting > .outlineItem,
 html[dir='rtl'] .outlineItem > .outlineItems {
   margin-right: 20px;
 }
@@ -1203,6 +1206,8 @@ html[dir='rtl'] .outlineItem > .outlineItems {
   text-decoration: none;
   display: inline-block;
   min-width: 95%;
+  min-width: calc(100% - 4px); /* Subtract the right padding (left, in RTL mode)
+                                  of the container. */
   height: auto;
   margin-bottom: 1px;
   border-radius: 2px;
@@ -1221,7 +1226,7 @@ html[dir='rtl'] .outlineItem > .outlineItems {
 }
 
 html[dir='ltr'] .outlineItem > a {
-  padding: 2px 0 5px 10px;
+  padding: 2px 0 5px 4px;
 }
 html[dir='ltr'] .attachmentsItem > button {
   padding: 2px 0 3px 7px;
@@ -1229,13 +1234,49 @@ html[dir='ltr'] .attachmentsItem > button {
 }
 
 html[dir='rtl'] .outlineItem > a {
-  padding: 2px 10px 5px 0;
+  padding: 2px 4px 5px 0;
 }
 html[dir='rtl'] .attachmentsItem > button {
   padding: 2px 7px 3px 0;
   text-align: right;
 }
 
+.outlineItemToggler {
+  position: relative;
+  height: 0;
+  width: 0;
+  color: hsla(0,0%,100%,.5);
+}
+.outlineItemToggler::before {
+  content: url(images/treeitem-expanded.png);
+  display: inline-block;
+  position: absolute;
+}
+html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
+  content: url(images/treeitem-collapsed.png);
+}
+html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
+  content: url(images/treeitem-collapsed-rtl.png);
+}
+.outlineItemToggler.outlineItemsHidden ~ .outlineItems {
+  display: none;
+}
+html[dir='ltr'] .outlineItemToggler {
+  float: left;
+}
+html[dir='rtl'] .outlineItemToggler {
+  float: right;
+}
+html[dir='ltr'] .outlineItemToggler::before {
+  right: 4px;
+}
+html[dir='rtl'] .outlineItemToggler::before {
+  left: 4px;
+}
+
+.outlineItemToggler:hover,
+.outlineItemToggler:hover + a,
+.outlineItemToggler:hover ~ .outlineItems,
 .outlineItem > a:hover,
 .attachmentsItem > button:hover {
   background-color: hsla(0,0%,100%,.02);
@@ -1244,6 +1285,7 @@ html[dir='rtl'] .attachmentsItem > button {
   box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
               0 0 1px hsla(0,0%,100%,.2) inset,
               0 0 1px hsla(0,0%,0%,.2);
+  border-radius: 2px;
   color: hsla(0,0%,100%,.9);
 }
 
@@ -1369,6 +1411,10 @@ html[dir='rtl'] .attachmentsItem > button {
 .dialog .buttonRow {
   text-align: center;
   vertical-align: middle;
+}
+
+.dialog :link {
+  color: white;
 }
 
 #passwordOverlay > .dialog {
@@ -1662,6 +1708,25 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .secondaryToolbarButton.documentProperties::before {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
+  }
+
+  .outlineItemToggler::before {
+    -webkit-transform: scale(0.5);
+    transform: scale(0.5);
+    top: -1px;
+    content: url(images/treeitem-expanded@2x.png);
+  }
+  html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
+    content: url(images/treeitem-collapsed@2x.png);
+  }
+  html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
+    content: url(images/treeitem-collapsed-rtl@2x.png);
+  }
+  html[dir='ltr'] .outlineItemToggler::before {
+    right: 0;
+  }
+  html[dir='rtl'] .outlineItemToggler::before {
+    left: 0;
   }
 }
 
