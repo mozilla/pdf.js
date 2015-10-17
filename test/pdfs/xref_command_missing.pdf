@@ -1,0 +1,66 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Pages 2 0 R
+/Type /Catalog
+>>
+endobj 
+2 0 obj 
+<<
+/Kids [3 0 R]
+/Type /Pages
+/Count 1
+>>
+endobj 
+3 0 obj 
+<<
+/Parent 2 0 R
+/Resources 
+<<
+/Font 
+<<
+/F1 4 0 R
+>>
+>>
+/MediaBox [0 0 200 50]
+/Type /Page
+/Contents 5 0 R
+>>
+endobj 
+4 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Type /Font
+/Encoding /WinAnsiEncoding
+>>
+endobj 
+5 0 obj 
+<<
+/Length 48
+>>
+stream
+BT
+10 20 TD
+/F1 20 Tf
+(Reduced test-case) Tj
+ET
+
+endstream 
+endobj 
+0000000000 65535 f 
+0000000015 00000 n 
+0000000066 00000 n 
+0000000125 00000 n 
+0000000254 00000 n 
+0000000355 00000 n 
+trailer
+
+<<
+/Root 1 0 R
+/Size 6
+>>
+startxref
+455
+%%EOF

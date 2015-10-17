@@ -412,14 +412,13 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     // don't mirror as characters are already mirrored in the pdf
 
     // Finally, return string
-    var result = '';
     for (i = 0, ii = chars.length; i < ii; ++i) {
       var ch = chars[i];
-      if (ch !== '<' && ch !== '>') {
-        result += ch;
+      if (ch === '<' || ch === '>') {
+        chars[i] = '';
       }
     }
-    return createBidiText(result, isLTR);
+    return createBidiText(chars.join(''), isLTR);
   }
 
   return bidi;

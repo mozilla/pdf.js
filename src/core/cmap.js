@@ -306,6 +306,10 @@ var CMap = (function CMapClosure() {
       out.length = 1;
     },
 
+    get length() {
+      return this._map.length;
+    },
+
     get isIdentityCMap() {
       if (!(this.name === 'Identity-H' || this.name === 'Identity-V')) {
         return false;
@@ -381,6 +385,10 @@ var IdentityCMap = (function IdentityCMapClosure() {
     },
 
     readCharCode: CMap.prototype.readCharCode,
+
+    get length() {
+      return 0x10000;
+    },
 
     get isIdentityCMap() {
       error('should not access .isIdentityCMap');

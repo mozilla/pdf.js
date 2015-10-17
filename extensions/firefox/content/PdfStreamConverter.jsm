@@ -493,9 +493,23 @@ ChromeActions.prototype = {
       message = getLocalizedString(strings, 'unsupported_feature');
     }
     PdfJsTelemetry.onFallback();
-    PdfjsContentUtils.displayWarning(domWindow, message, sendResponse,
+    PdfjsContentUtils.displayWarning(domWindow, message,
       getLocalizedString(strings, 'open_with_different_viewer'),
       getLocalizedString(strings, 'open_with_different_viewer', 'accessKey'));
+
+    let winmm = domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDocShell)
+                         .QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIContentFrameMessageManager);
+
+    winmm.addMessageListener('PDFJS:Child:fallbackDownload',
+      function fallbackDownload(msg) {
+        let data = msg.data;
+        sendResponse(data.download);
+
+        winmm.removeMessageListener('PDFJS:Child:fallbackDownload',
+                                    fallbackDownload);
+      });
   },
   updateFindControlState: function(data) {
     if (!this.supportsIntegratedFind()) {
@@ -868,6 +882,9 @@ PdfStreamConverter.prototype = {
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
 
+  classID2: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER2_ID}'),
+  contractID2: '@mozilla.org/streamconv;1?from=application/pdf&to=text/html',
+
   QueryInterface: XPCOMUtils.generateQI([
       Ci.nsISupports,
       Ci.nsIStreamConverter,
@@ -1038,14 +1055,25 @@ PdfStreamConverter.prototype = {
 
     // We can use resource principal when data is fetched by the chrome
     // e.g. useful for NoScript
-    var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
-                          .getService(Ci.nsIScriptSecurityManager);
+    var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
+                .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var resourcePrincipal;
+//#if MOZCENTRAL
+    resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+//#else
     // FF16 and below had getCodebasePrincipal, it was replaced by
     // getNoAppCodebasePrincipal (bug 758258).
-    var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
-                            securityManager.getNoAppCodebasePrincipal(uri) :
-                            securityManager.getCodebasePrincipal(uri);
+    // FF43 then replaced getNoAppCodebasePrincipal with
+    // createCodebasePrincipal (bug 1165272).
+    if ('createCodebasePrincipal' in ssm) {
+      resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+    } else if ('getNoAppCodebasePrincipal' in ssm) {
+      resourcePrincipal = ssm.getNoAppCodebasePrincipal(uri);
+    } else {
+      resourcePrincipal = ssm.getCodebasePrincipal(uri);
+    }
+//#endif
     aRequest.owner = resourcePrincipal;
     channel.asyncOpen(proxy, aContext);
   },

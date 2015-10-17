@@ -62,7 +62,9 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     MOZCENTRAL_PREF_PREFIX = 'pdfjs',
     FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
     MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
-    FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1';
+    FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1',
+    MOZCENTRAL_STREAM_CONVERTER2_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2292',
+    FIREFOX_STREAM_CONVERTER2_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb2';
 
 var DEFINES = {
   PRODUCTION: true,
@@ -105,8 +107,7 @@ var COMMON_WEB_FILES =
     COMMON_FIREFOX_FILES_PREPROCESS =
       [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
        FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfRedirector.jsm'];
+       FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm'];
 //
 // make generic
 // Builds the generic production viewer that should be compatible with most
@@ -198,7 +199,8 @@ target.jsdoc = function() {
   var JSDOC_FILES = [
     'src/doc_helper.js',
     'src/display/api.js',
-    'src/shared/util.js'
+    'src/shared/util.js',
+    'src/core/annotation.js'
   ];
 
   if (test('-d', JSDOC_DIR)) {
@@ -454,7 +456,7 @@ target.cmaps = function (args) {
   // testing a file that usually present
   if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
     echo('./external/cmaps has no cmap files, please download them from:');
-    echo('  http://sourceforge.net/adobe/cmap/wiki/Home/');
+    echo('  https://github.com/adobe-type-tools/cmap-resources');
     exit(1);
   }
 
@@ -479,9 +481,8 @@ target.bundle = function(args) {
   cd(ROOT_DIR);
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
-  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
 
-  function bundle(filename, dir, SRC_FILES, EXT_SRC_FILES) {
+  function bundle(filename, outfilename, SRC_FILES, EXT_SRC_FILES) {
     for (var i = 0, length = excludes.length; i < length; ++i) {
       var exclude = excludes[i];
       var index = SRC_FILES.indexOf(exclude);
@@ -497,15 +498,17 @@ target.bundle = function(args) {
 
     crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
 
-    // Strip out all the vim/license headers.
-    bundleContent = bundleContent.replace(reg, '');
+    // Prepend a newline because stripCommentHeaders only strips comments that
+    // follow a line feed. The file where bundleContent is inserted already
+    // contains a license header, so the header of bundleContent can be removed.
+    bundleContent = stripCommentHeaders('\n' + bundleContent);
 
     // Append external files last since we don't want to modify them.
     bundleContent += cat(EXT_SRC_FILES);
 
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
-    builder.preprocess(filename, dir, builder.merge(defines,
+    builder.preprocess(filename, outfilename, builder.merge(defines,
                            {BUNDLE: bundleContent,
                             BUNDLE_VERSION: bundleVersion,
                             BUNDLE_BUILD: bundleBuild}));
@@ -597,12 +600,21 @@ target.singlefile = function() {
 
 };
 
+function stripCommentHeaders(content, filename) {
+  // Strip out all the vim/license headers.
+  var notEndOfComment = '(?:[^*]|\\*(?!/))+';
+  var reg = new RegExp(
+    '\n/\\* -\\*- Mode' + notEndOfComment + '\\*/\\s*' +
+    '(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)+' +
+    '\'use strict\';', 'g');
+  content = content.replace(reg, '');
+  return content;
+}
+
 function cleanupJSSource(file) {
   var content = cat(file);
 
-  // Strip out all the vim/license headers.
-  var reg = /\n\/\* -\*- Mode(.|\n)*?Mozilla Foundation(.|\n)*?'use strict';/g;
-  content = content.replace(reg, '');
+  content = stripCommentHeaders(content, file);
 
   content.to(file);
 }
@@ -832,6 +844,8 @@ target.firefox = function() {
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID,
       FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
+  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER2_ID/, FIREFOX_STREAM_CONVERTER2_ID,
+      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX,
       FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_MOZ_CENTRAL/, 'false',
@@ -846,6 +860,9 @@ target.firefox = function() {
   var chromeManifest = cat(EXTENSION_SRC_DIR + '/firefox/chrome.manifest.inc');
   sed('-i', /.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifest,
       FIREFOX_BUILD_DIR + '/chrome.manifest');
+
+  // Set timezone to UTC before calling zip to get reproducible results.
+  process.env.TZ = 'UTC';
 
   // Create the xpi
   cd(FIREFOX_BUILD_DIR);
@@ -964,6 +981,8 @@ target.mozcentral = function() {
       MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
 
   sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID,
+      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
+  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER2_ID/, MOZCENTRAL_STREAM_CONVERTER2_ID,
       MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX,
       MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');

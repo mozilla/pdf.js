@@ -169,13 +169,34 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
                          16777216 : PDFJS.maxCanvasPixels);
 
 /**
- * Opens external links in a new window if enabled. The default behavior opens
- * external links in the PDF.js window.
+ * (Deprecated) Opens external links in a new window if enabled.
+ * The default behavior opens external links in the PDF.js window.
  * @var {boolean}
  */
 PDFJS.openExternalLinksInNewWindow = (
   PDFJS.openExternalLinksInNewWindow === undefined ?
     false : PDFJS.openExternalLinksInNewWindow);
+
+/**
+ * Specifies the |target| attribute for external links.
+ * The constants from PDFJS.LinkTarget should be used:
+ *  - NONE [default]
+ *  - SELF
+ *  - BLANK
+ *  - PARENT
+ *  - TOP
+ * @var {number}
+ */
+PDFJS.externalLinkTarget = (PDFJS.externalLinkTarget === undefined ?
+                            PDFJS.LinkTarget.NONE : PDFJS.externalLinkTarget);
+
+/**
+  * Determines if we can eval strings as JS. Primarily used to improve
+  * performance for font rendering.
+  * @var {boolean}
+  */
+PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
+                         true : PDFJS.isEvalSupported);
 
 /**
  * Document initialization / loading parameters object.
@@ -286,6 +307,8 @@ PDFJS.getDocument = function getDocument(src,
         params[key] = stringToBytes(pdfBytes);
       } else if (typeof pdfBytes === 'object' && pdfBytes !== null &&
                  !isNaN(pdfBytes.length)) {
+        params[key] = new Uint8Array(pdfBytes);
+      } else if (isArrayBuffer(pdfBytes)) {
         params[key] = new Uint8Array(pdfBytes);
       } else {
         error('Invalid PDF binary data: either typed array, string or ' +
@@ -688,13 +711,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * annotation objects.
      */
     getAnnotations: function PDFPageProxy_getAnnotations() {
-      if (this.annotationsPromise) {
-        return this.annotationsPromise;
+      if (!this.annotationsPromise) {
+        this.annotationsPromise = this.transport.getAnnotations(this.pageIndex);
       }
-
-      var promise = this.transport.getAnnotations(this.pageIndex);
-      this.annotationsPromise = promise;
-      return promise;
+      return this.annotationsPromise;
     },
     /**
      * Begins the process of rendering a page to the desired context.

@@ -325,10 +325,12 @@ var PDFFindController = (function PDFFindControllerClosure() {
         pageIndex, index, elements, beginIdx, endIdx) {
       if (this.selected.matchIdx === index &&
           this.selected.pageIdx === pageIndex) {
-        scrollIntoView(elements[beginIdx], {
+        var spot = {
           top: FIND_SCROLL_OFFSET_TOP,
           left: FIND_SCROLL_OFFSET_LEFT
-        });
+        };
+        scrollIntoView(elements[beginIdx], spot,
+                       /* skipOverflowHiddenElements = */ true);
       }
     },
 

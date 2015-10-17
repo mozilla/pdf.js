@@ -197,7 +197,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       // We don't bother scaling single-char text divs, because it has very
       // little effect on text highlighting. This makes scrolling on docs with
       // lots of such divs a lot faster.
-      if (textDiv.textContent.length > 1) {
+      if (geom.str.length > 1) {
         if (style.vertical) {
           textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
         } else {

@@ -1,10 +1,21 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, binarySearchFirstItem */
+/* globals expect, it, describe, binarySearchFirstItem, removeNullCharacters */
 
 'use strict';
 
 describe('ui_utils', function() {
+  describe('removeNullCharacters', function() {
+    it('should not modify string without null characters', function() {
+      var str = 'string without null chars';
+      expect(removeNullCharacters(str)).toEqual('string without null chars');
+    });
+
+    it('should modify string with null characters', function() {
+      var str = 'string\x00With\x00Null\x00Chars';
+      expect(removeNullCharacters(str)).toEqual('stringWithNullChars');
+    });
+  });
 
   describe('binary search', function() {
     function isTrue(boolean) {
