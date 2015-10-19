@@ -292,7 +292,8 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       this.sendRequest = function ChunkedStreamManager_sendRequest(begin, end) {
         this.networkManager.requestRange(begin, end, {
           onDone: this.onReceiveData.bind(this),
-          onProgress: this.onProgress.bind(this)
+          onProgress: this.onProgress.bind(this),
+          onError: this.onError.bind(this, begin, end)
         });
       };
     }
@@ -302,6 +303,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     this.chunksNeededByRequest = {};
     this.requestsByChunk = {};
     this.callbacksByRequest = {};
+    this.errorHandlersByRequest = {};
     this.progressiveDataLength = 0;
 
     this._loadedStreamCapability = createPromiseCapability();
@@ -320,12 +322,16 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     // contiguous ranges to load in as few requests as possible
     requestAllChunks: function ChunkedStreamManager_requestAllChunks() {
       var missingChunks = this.stream.getMissingChunks();
-      this.requestChunks(missingChunks);
-      return this._loadedStreamCapability.promise;
+      return new Promise(function(resolve, reject) {
+        this.requestChunks(missingChunks, function() {
+          resolve(this.stream);
+        }.bind(this), reject);
+      }.bind(this));
     },
 
     requestChunks: function ChunkedStreamManager_requestChunks(chunks,
-                                                               callback) {
+                                                               callback,
+                                                               errorHandler) {
       var requestId = this.currRequestId++;
 
       var chunksNeeded;
@@ -345,6 +351,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       this.callbacksByRequest[requestId] = callback;
+      this.errorHandlersByRequest[requestId] = errorHandler;
 
       var chunksToRequest = [];
       for (var chunk in chunksNeeded) {
@@ -362,7 +369,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
       var groupedChunksToRequest = this.groupChunks(chunksToRequest);
 
-      for (i = 0; i < groupedChunksToRequest.length; ++i) {
+      for (i = 0, ii = groupedChunksToRequest.length; i < ii; ++i) {
         var groupedChunk = groupedChunksToRequest[i];
         var begin = groupedChunk.beginChunk * this.chunkSize;
         var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
@@ -376,7 +383,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
     // Loads any chunks in the requested range that are not yet loaded
     requestRange: function ChunkedStreamManager_requestRange(
-                      begin, end, callback) {
+                      begin, end, callback, errorHandler) {
 
       end = Math.min(end, this.length);
 
@@ -388,15 +395,16 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         chunks.push(chunk);
       }
 
-      this.requestChunks(chunks, callback);
+      this.requestChunks(chunks, callback, errorHandler);
     },
 
     requestRanges: function ChunkedStreamManager_requestRanges(ranges,
-                                                               callback) {
+                                                               callback,
+                                                               errorHandler) {
       ranges = ranges || [];
       var chunksToRequest = [];
 
-      for (var i = 0; i < ranges.length; i++) {
+      for (var i = 0, len = ranges.length; i < len; i++) {
         var beginChunk = this.getBeginChunk(ranges[i].begin);
         var endChunk = this.getEndChunk(ranges[i].end);
         for (var chunk = beginChunk; chunk < endChunk; ++chunk) {
@@ -407,7 +415,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       chunksToRequest.sort(function(a, b) { return a - b; });
-      this.requestChunks(chunksToRequest, callback);
+      this.requestChunks(chunksToRequest, callback, errorHandler);
     },
 
     // Groups a sorted array of chunks into as few contiguous larger
@@ -416,7 +424,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       var groupedChunks = [];
       var beginChunk = -1;
       var prevChunk = -1;
-      for (var i = 0; i < chunks.length; ++i) {
+      for (var i = 0, len = chunks.length; i < len; ++i) {
         var chunk = chunks[i];
 
         if (beginChunk < 0) {
@@ -469,13 +477,13 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       var loadedRequests = [];
-      var i, requestId;
+      var i, len, requestId;
       for (chunk = beginChunk; chunk < endChunk; ++chunk) {
         // The server might return more chunks than requested
         var requestIds = this.requestsByChunk[chunk] || [];
         delete this.requestsByChunk[chunk];
 
-        for (i = 0; i < requestIds.length; ++i) {
+        for (i = 0, len = requestIds.length; i < len; ++i) {
           requestId = requestIds[i];
           var chunksNeeded = this.chunksNeededByRequest[requestId];
           if (chunk in chunksNeeded) {
@@ -510,10 +518,11 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         }
       }
 
-      for (i = 0; i < loadedRequests.length; ++i) {
+      for (i = 0, len = loadedRequests.length; i < len; ++i) {
         requestId = loadedRequests[i];
         var callback = this.callbacksByRequest[requestId];
         delete this.callbacksByRequest[requestId];
+        delete this.errorHandlersByRequest[requestId];
         if (callback) {
           callback();
         }
@@ -525,8 +534,48 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       });
     },
 
-    onError: function ChunkedStreamManager_onError(err) {
-      this._loadedStreamCapability.reject(err);
+    onError: function ChunkedStreamManager_onError(begin, end, err) {
+      var beginChunk = Math.floor(begin / this.chunkSize);
+      var endChunk = end < this.length ? Math.floor(end / this.chunkSize) :
+                                         Math.ceil(end / this.chunkSize);
+
+      var failedRequests = [];
+      var i, len, requestId;
+      for (var chunk = beginChunk; chunk < endChunk; ++chunk) {
+        var requestIds = this.requestsByChunk[chunk] || [];
+        delete this.requestsByChunk[chunk];
+
+        for (i = 0; i < requestIds.length; ++i) {
+          requestId = requestIds[i];
+          var chunksNeeded = this.chunksNeededByRequest[requestId] || {};
+          // A single chunk failure in the request fails the whole request
+          var chunkRequestIds;
+          for (var chunkNeeded in chunksNeeded) {
+            chunkRequestIds = this.requestsByChunk[chunkNeeded] || [];
+            this.requestsByChunk[chunkNeeded] = chunkRequestIds.filter(
+              function(reqId) {
+                return reqId !== requestId;
+              }
+            );
+            if (this.requestsByChunk[chunkNeeded].length === 0) {
+              delete this.requestsByChunk[chunkNeeded];
+            }
+          }
+          delete this.chunksNeededByRequest[requestId];
+          
+          failedRequests.push(requestId);
+        }
+      }
+      
+      for (i = 0, len = failedRequests.length; i < len; ++i) {
+        requestId = failedRequests[i];
+        var errorHandler = this.errorHandlersByRequest[requestId];
+        delete this.errorHandlersByRequest[requestId];
+        delete this.callbacksByRequest[requestId];
+        if (errorHandler) {
+          errorHandler(err);
+        }
+      }
     },
 
     getBeginChunk: function ChunkedStreamManager_getBeginChunk(begin) {

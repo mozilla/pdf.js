@@ -621,6 +621,10 @@ var Catalog = (function CatalogClosure() {
             var ref = a[1];
             return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
                             this.fontCache);
+          }.bind(this),
+          function (reason) {
+            delete this.pagePromises[pageIndex];
+            return Promise.reject(reason);
           }.bind(this)
         );
       }
@@ -1380,7 +1384,7 @@ var XRef = (function XRefClosure() {
           if (e instanceof MissingDataException) {
             streamManager.requestRange(e.begin, e.end, function () {
               tryFetch(resolve, reject);
-            });
+            }, reject);
             return;
           }
           reject(e);
@@ -1739,7 +1743,7 @@ var ObjectLoader = (function() {
             }
           }
           this.walk(nodesToVisit);
-        }.bind(this));
+        }.bind(this), this.capability.reject);
         return;
       }
       // Everything is loaded.

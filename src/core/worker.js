@@ -288,10 +288,9 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             return;
           }
 
-          pdfManager.requestLoadedStream();
-          pdfManager.onLoadedStream().then(function() {
+          pdfManager.requestLoadedStream().then(function() {
             loadDocument(true).then(onSuccess, onFailure);
-          });
+          }, onFailure);
         }, onFailure);
       }, onFailure);
     });
@@ -357,8 +356,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     );
 
     handler.on('GetData', function wphSetupGetData(data) {
-      pdfManager.requestLoadedStream();
-      return pdfManager.onLoadedStream().then(function(stream) {
+      return pdfManager.requestLoadedStream().then(function(stream) {
         return stream.bytes;
       });
     });
@@ -380,8 +378,39 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     });
 
     handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
-      pdfManager.getPage(data.pageIndex).then(function(page) {
 
+      var onError = function (e) {
+        var minimumStackMessage =
+          'worker.js: while trying to getPage() and getOperatorList()';
+
+        var wrappedException;
+
+        // Turn the error into an obj that can be serialized
+        if (typeof e === 'string') {
+          wrappedException = {
+            message: e,
+            stack: minimumStackMessage
+          };
+        } else if (typeof e === 'object') {
+          wrappedException = {
+            message: e.message || e.toString(),
+            stack: e.stack || minimumStackMessage
+          };
+        } else {
+          wrappedException = {
+            message: 'Unknown exception type: ' + (typeof e),
+            stack: minimumStackMessage
+          };
+        }
+
+        handler.send('PageError', {
+          pageNum: data.pageIndex + 1,
+          error: wrappedException,
+          intent: data.intent
+        });
+      };
+
+      pdfManager.getPage(data.pageIndex).then(function(page) {
         var pageNum = data.pageIndex + 1;
         var start = Date.now();
         // Pre compile the pdf page and fetch the fonts/images.
@@ -390,38 +419,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           info('page=' + pageNum + ' - getOperatorList: time=' +
                (Date.now() - start) + 'ms, len=' + operatorList.fnArray.length);
 
-        }, function(e) {
-
-          var minimumStackMessage =
-            'worker.js: while trying to getPage() and getOperatorList()';
-
-          var wrappedException;
-
-          // Turn the error into an obj that can be serialized
-          if (typeof e === 'string') {
-            wrappedException = {
-              message: e,
-              stack: minimumStackMessage
-            };
-          } else if (typeof e === 'object') {
-            wrappedException = {
-              message: e.message || e.toString(),
-              stack: e.stack || minimumStackMessage
-            };
-          } else {
-            wrappedException = {
-              message: 'Unknown exception type: ' + (typeof e),
-              stack: minimumStackMessage
-            };
-          }
-
-          handler.send('PageError', {
-            pageNum: pageNum,
-            error: wrappedException,
-            intent: data.intent
-          });
-        });
-      });
+        }, onError);
+      }, onError);
     }, this);
 
     handler.on('GetTextContent', function wphExtractText(data) {
