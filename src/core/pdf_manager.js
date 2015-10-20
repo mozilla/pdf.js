@@ -183,7 +183,8 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
             reject(e);
             return;
           }
-          pdfManager.streamManager.requestRange(e.begin, e.end, ensureHelper);
+          pdfManager.streamManager.requestRange(e.begin, e.end).
+            then(ensureHelper, reject);
         }
       }
 
@@ -193,11 +194,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
   NetworkPdfManager.prototype.requestRange =
       function NetworkPdfManager_requestRange(begin, end) {
-    return new Promise(function (resolve) {
-      this.streamManager.requestRange(begin, end, function() {
-        resolve();
-      });
-    }.bind(this));
+    return this.streamManager.requestRange(begin, end);
   };
 
   NetworkPdfManager.prototype.requestLoadedStream =
@@ -217,7 +214,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
   NetworkPdfManager.prototype.terminate =
       function NetworkPdfManager_terminate() {
-    this.streamManager.networkManager.abortAllRequests();
+    this.streamManager.abort();
   };
 
   return NetworkPdfManager;
