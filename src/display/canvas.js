@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, PDFJS, assert, info, shadow, TextRenderingMode,
-           FONT_IDENTITY_MATRIX, Uint32ArrayView, IDENTITY_MATRIX, ImageData,
-           ImageKind, isArray, isNum, TilingPattern, OPS, Util, warn,
-           getShadingPatternFromIR, WebGLUtils */
+/* globals IDENTITY_MATRIX, FONT_IDENTITY_MATRIX, TextRenderingMode, ImageData,
+           ImageKind, PDFJS, Uint32ArrayView, error, WebGLUtils, OPS, warn,
+           shadow, isNum, Util, TilingPattern, getShadingPatternFromIR, isArray,
+           info, assert, UnsupportedManager, UNSUPPORTED_FEATURES */
 
 'use strict';
 
@@ -2071,6 +2071,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     paintSolidColorImageMask:
       function CanvasGraphics_paintSolidColorImageMask() {
         this.ctx.fillRect(0, 0, 1, 1);
+    },
+
+    paintXObject: function CanvasGraphics_paintXObject() {
+      UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
+      warn('Unsupported \'paintXObject\' command.');
     },
 
     // Marked content
