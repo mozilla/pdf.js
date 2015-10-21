@@ -213,6 +213,11 @@ function warn(msg) {
   }
 }
 
+// Deprecated API function -- treated as warnings.
+function deprecated(details) {
+  warn('Deprecated API usage: ' + details);
+}
+
 // Fatal errors that should trigger the fallback UI and halt execution by
 // throwing an exception.
 function error(msg) {

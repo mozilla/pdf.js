@@ -526,6 +526,9 @@ var PDFViewerApplication = {
       this.setTitleUsingUrl(file.originalUrl);
       parameters.url = file.url;
     }
+    if (pdfDataRangeTransport) {
+      parameters.range = pdfDataRangeTransport;
+    }
     if (args) {
       for (var prop in args) {
         parameters[prop] = args[prop];
@@ -535,18 +538,19 @@ var PDFViewerApplication = {
     var self = this;
     self.downloadComplete = false;
 
-    var passwordNeeded = function passwordNeeded(updatePassword, reason) {
+    var loadingTask = PDFJS.getDocument(parameters);
+
+    loadingTask.onPassword = function passwordNeeded(updatePassword, reason) {
       PasswordPrompt.updatePassword = updatePassword;
       PasswordPrompt.reason = reason;
       PasswordPrompt.open();
     };
 
-    function getDocumentProgress(progressData) {
+    loadingTask.onProgress = function getDocumentProgress(progressData) {
       self.progress(progressData.loaded / progressData.total);
-    }
+    };
 
-    PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded,
-                      getDocumentProgress).then(
+    loadingTask.promise.then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
       },

@@ -285,10 +285,10 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
       var renderContext = {
         canvasContext: ctx,
-        viewport: drawViewport,
-        continueCallback: renderContinueCallback
+        viewport: drawViewport
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+      renderTask.onContinue = renderContinueCallback;
 
       renderTask.promise.then(
         function pdfPageRenderCallback() {

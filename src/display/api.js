@@ -19,7 +19,7 @@
            Promise, PasswordResponses, PasswordException, InvalidPDFException,
            MissingPDFException, UnknownErrorException, FontFaceObject,
            loadJpegStream, createScratchCanvas, CanvasGraphics, stringToBytes,
-           UnexpectedResponseException */
+           UnexpectedResponseException, deprecated */
 
 'use strict';
 
@@ -259,6 +259,10 @@ PDFJS.getDocument = function getDocument(src,
   var task = new PDFDocumentLoadingTask();
 
   // Support of the obsolete arguments (for compatibility with API v1.0)
+  if (arguments.length > 1) {
+    deprecated('getDocument is called with pdfDataRangeTransport, ' +
+               'passwordCallback or progressCallback argument');
+  }
   if (pdfDataRangeTransport) {
     if (!(pdfDataRangeTransport instanceof PDFDataRangeTransport)) {
       // Not a PDFDataRangeTransport instance, trying to add missing properties.
@@ -786,6 +790,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       // Obsolete parameter support
       if (params.continueCallback) {
+        deprecated('render is used with continueCallback parameter');
         renderTask.onContinue = params.continueCallback;
       }
 
@@ -900,10 +905,10 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
 
     /**
-     * Cleans up resources allocated by the page.
-     * Deprecated, use cleanup() instead.
+     * Cleans up resources allocated by the page. (deprecated)
      */
     destroy: function() {
+      deprecated('page destroy method, use cleanup() instead');
       this.cleanup();
     },
 

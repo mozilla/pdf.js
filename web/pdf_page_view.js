@@ -457,9 +457,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         canvasContext: ctx,
         viewport: this.viewport,
         // intent: 'default', // === 'display'
-        continueCallback: renderContinueCallback
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+      renderTask.onContinue = renderContinueCallback;
 
       this.renderTask.promise.then(
         function pdfPageRenderCallback() {
