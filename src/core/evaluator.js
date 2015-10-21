@@ -870,6 +870,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.rectangle:
               self.buildPath(operatorList, fn, args);
               continue;
+            case OPS.markPoint:
+            case OPS.markPointProps:
+            case OPS.beginMarkedContent:
+            case OPS.beginMarkedContentProps:
+            case OPS.endMarkedContent:
+            case OPS.beginCompat:
+            case OPS.endCompat:
+              // Ignore operators where the corresponding handlers are known to
+              // be no-op in CanvasGraphics (display/canvas.js). This prevents
+              // serialization errors and is also a bit more efficient.
+              // We could also try to serialize all objects in a general way,
+              // e.g. as done in https://github.com/mozilla/pdf.js/pull/6266,
+              // but doing so is meaningless without knowing the semantics.
+              continue;
+            default:
+              // Note: Let's hope that the ignored operator does not have any
+              // non-serializable arguments, otherwise postMessage will throw
+              // "An object could not be cloned.".
           }
           operatorList.addOp(fn, args);
         }
