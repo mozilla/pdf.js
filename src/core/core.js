@@ -161,7 +161,7 @@ var Page = (function PageClosure() {
       }.bind(this));
     },
 
-    getOperatorList: function Page_getOperatorList(handler, intent) {
+    getOperatorList: function Page_getOperatorList(handler, task, intent) {
       var self = this;
 
       var pdfManager = this.pdfManager;
@@ -194,8 +194,8 @@ var Page = (function PageClosure() {
           pageIndex: self.pageIndex,
           intent: intent
         });
-        return partialEvaluator.getOperatorList(contentStream, self.resources,
-          opList).then(function () {
+        return partialEvaluator.getOperatorList(contentStream, task,
+          self.resources, opList).then(function () {
             return opList;
           });
       });
@@ -212,7 +212,7 @@ var Page = (function PageClosure() {
         }
 
         var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageOpList, pdfManager, partialEvaluator, intent);
+          annotations, pageOpList, pdfManager, partialEvaluator, task, intent);
         return annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
           return pageOpList;
@@ -220,7 +220,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    extractTextContent: function Page_extractTextContent() {
+    extractTextContent: function Page_extractTextContent(task) {
       var handler = {
         on: function nullHandlerOn() {},
         send: function nullHandlerSend() {}
@@ -249,6 +249,7 @@ var Page = (function PageClosure() {
                                                     self.fontCache);
 
         return partialEvaluator.getTextContent(contentStream,
+                                               task,
                                                self.resources);
       });
     },

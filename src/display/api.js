@@ -883,15 +883,20 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.destroyed = true;
       this.transport.pageCache[this.pageIndex] = null;
 
+      var waitOn = [];
       Object.keys(this.intentStates).forEach(function(intent) {
         var intentState = this.intentStates[intent];
         intentState.renderTasks.forEach(function(renderTask) {
+          var renderCompleted = renderTask.capability.promise.
+            catch(function () {}); // ignoring failures
+          waitOn.push(renderCompleted);
           renderTask.cancel();
         });
       }, this);
       this.objs.clear();
       this.annotationsPromise = null;
       this.pendingCleanup = false;
+      return Promise.all(waitOn);
     },
 
     /**
@@ -1054,15 +1059,21 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.destroyed = true;
       this.destroyCapability = createPromiseCapability();
 
+      var waitOn = [];
+      // We need to wait for all renderings to be completed, e.g.
+      // timeout/rAF can take a long time.
       this.pageCache.forEach(function (page) {
         if (page) {
-          page._destroy();
+          waitOn.push(page._destroy());
         }
       });
       this.pageCache = [];
       this.pagePromises = [];
       var self = this;
-      this.messageHandler.sendWithPromise('Terminate', null).then(function () {
+      // We also need to wait for the worker to finish its long running tasks.
+      var terminated = this.messageHandler.sendWithPromise('Terminate', null);
+      waitOn.push(terminated);
+      Promise.all(waitOn).then(function () {
         FontLoader.clear();
         if (self.worker) {
           self.worker.terminate();

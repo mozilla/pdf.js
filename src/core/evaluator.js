@@ -125,6 +125,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     buildFormXObject: function PartialEvaluator_buildFormXObject(resources,
                                                                  xobj, smask,
                                                                  operatorList,
+                                                                 task,
                                                                  initialState) {
       var matrix = xobj.dict.getArray('Matrix');
       var bbox = xobj.dict.getArray('BBox');
@@ -157,7 +158,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
-      return this.getOperatorList(xobj,
+      return this.getOperatorList(xobj, task,
         (xobj.dict.get('Resources') || resources), operatorList, initialState).
         then(function () {
           operatorList.addOp(OPS.paintFormXObjectEnd, []);
@@ -269,7 +270,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
-                                                       operatorList,
+                                                       operatorList, task,
                                                        stateManager) {
       var smaskContent = smask.get('G');
       var smaskOptions = {
@@ -277,13 +278,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         backdrop: smask.get('BC')
       };
       return this.buildFormXObject(resources, smaskContent, smaskOptions,
-                            operatorList, stateManager.state.clone());
+                            operatorList, task, stateManager.state.clone());
     },
 
     handleTilingType:
         function PartialEvaluator_handleTilingType(fn, args, resources,
                                                    pattern, patternDict,
-                                                   operatorList) {
+                                                   operatorList, task) {
       // Create an IR of the pattern code.
       var tilingOpList = new OperatorList();
       // Merge the available resources, to prevent issues when the patternDict
@@ -291,8 +292,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var resourcesArray = [patternDict.get('Resources'), resources];
       var patternResources = Dict.merge(this.xref, resourcesArray);
 
-      return this.getOperatorList(pattern, patternResources, tilingOpList).then(
-        function () {
+      return this.getOperatorList(pattern, task, patternResources,
+                                  tilingOpList).then(function () {
           // Add the dependencies to the parent operator list so they are
           // resolved before sub operator list is executed synchronously.
           operatorList.addDependencies(tilingOpList.dependencies);
@@ -305,7 +306,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     handleSetFont:
         function PartialEvaluator_handleSetFont(resources, fontArgs, fontRef,
-                                                operatorList, state) {
+                                                operatorList, task, state) {
       // TODO(mack): Not needed?
       var fontName;
       if (fontArgs) {
@@ -319,8 +320,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!translated.font.isType3Font) {
           return translated;
         }
-        return translated.loadType3Data(self, resources, operatorList).then(
-            function () {
+        return translated.loadType3Data(self, resources, operatorList, task).
+          then(function () {
           return translated;
         });
       }).then(function (translated) {
@@ -367,8 +368,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     setGState: function PartialEvaluator_setGState(resources, gState,
-                                                   operatorList, xref,
-                                                   stateManager) {
+                                                   operatorList, task,
+                                                   xref, stateManager) {
       // This array holds the converted/processed state data.
       var gStateObj = [];
       var gStateMap = gState.map;
@@ -392,8 +393,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             break;
           case 'Font':
             promise = promise.then(function () {
-              return self.handleSetFont(resources, null, value[0],
-                                        operatorList, stateManager.state).
+              return self.handleSetFont(resources, null, value[0], operatorList,
+                                        task, stateManager.state).
                 then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   gStateObj.push([key, [loadedName, value[1]]]);
@@ -412,7 +413,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (isDict(dict)) {
               promise = promise.then(function () {
                 return self.handleSMask(dict, resources, operatorList,
-                                        stateManager);
+                                        task, stateManager);
               });
               gStateObj.push([key, true]);
             } else {
@@ -593,7 +594,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     handleColorN: function PartialEvaluator_handleColorN(operatorList, fn, args,
-          cs, patterns, resources, xref) {
+          cs, patterns, resources, task, xref) {
       // compile tiling patterns
       var patternName = args[args.length - 1];
       // SCN/scn applies patterns along with normal colors
@@ -606,7 +607,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (typeNum === TILING_PATTERN) {
           var color = cs.base ? cs.base.getRgb(args, 0) : null;
           return this.handleTilingType(fn, color, resources, pattern,
-                                       dict, operatorList);
+                                       dict, operatorList, task);
         } else if (typeNum === SHADING_PATTERN) {
           var shading = dict.get('Shading');
           var matrix = dict.get('Matrix');
@@ -623,6 +624,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     getOperatorList: function PartialEvaluator_getOperatorList(stream,
+                                                               task,
                                                                resources,
                                                                operatorList,
                                                                initialState) {
@@ -641,6 +643,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function next(resolve, reject) {
+        task.ensureNotTerminated();
         timeSlotManager.reset();
         var stop, operation = {}, i, ii, cs;
         while (!(stop = timeSlotManager.check())) {
@@ -683,7 +686,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (type.name === 'Form') {
                   stateManager.save();
                   return self.buildFormXObject(resources, xobj, null,
-                                               operatorList,
+                                               operatorList, task,
                                                stateManager.state.clone()).
                     then(function () {
                       stateManager.restore();
@@ -707,8 +710,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.setFont:
               var fontSize = args[1];
               // eagerly collect all fonts
-              return self.handleSetFont(resources, args, null,
-                                        operatorList, stateManager.state).
+              return self.handleSetFont(resources, args, null, operatorList,
+                                        task, stateManager.state).
                 then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
@@ -814,7 +817,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               cs = stateManager.state.fillColorSpace;
               if (cs.name === 'Pattern') {
                 return self.handleColorN(operatorList, OPS.setFillColorN,
-                  args, cs, patterns, resources, xref).then(function() {
+                  args, cs, patterns, resources, task, xref).then(function() {
                     next(resolve, reject);
                   }, reject);
               }
@@ -825,7 +828,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               cs = stateManager.state.strokeColorSpace;
               if (cs.name === 'Pattern') {
                 return self.handleColorN(operatorList, OPS.setStrokeColorN,
-                  args, cs, patterns, resources, xref).then(function() {
+                  args, cs, patterns, resources, task, xref).then(function() {
                     next(resolve, reject);
                   }, reject);
               }
@@ -859,8 +862,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var gState = extGState.get(dictName.name);
-              return self.setGState(resources, gState, operatorList, xref,
-                stateManager).then(function() {
+              return self.setGState(resources, gState, operatorList, task,
+                xref, stateManager).then(function() {
                   next(resolve, reject);
                 }, reject);
             case OPS.moveTo:
@@ -898,7 +901,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (stop) {
           deferred.then(function () {
             next(resolve, reject);
-          });
+          }, reject);
           return;
         }
         // Some PDFs don't close all restores inside object/form.
@@ -910,7 +913,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    getTextContent: function PartialEvaluator_getTextContent(stream, resources,
+    getTextContent: function PartialEvaluator_getTextContent(stream, task,
+                                                             resources,
                                                              stateManager) {
 
       stateManager = (stateManager || new StateManager(new TextState()));
@@ -1088,6 +1092,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function next(resolve, reject) {
+        task.ensureNotTerminated();
         timeSlotManager.reset();
         var stop, operation = {}, args = [];
         while (!(stop = timeSlotManager.check())) {
@@ -1243,7 +1248,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 stateManager.transform(matrix);
               }
 
-              return self.getTextContent(xobj,
+              return self.getTextContent(xobj, task,
                 xobj.dict.get('Resources') || resources, stateManager).
                 then(function (formTextContent) {
                   Util.appendToArray(bidiTexts, formTextContent.items);
@@ -1283,7 +1288,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (stop) {
           deferred.then(function () {
             next(resolve, reject);
-          });
+          }, reject);
           return;
         }
         resolve(textContent);
@@ -1848,7 +1853,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
       ]);
       this.sent = true;
     },
-    loadType3Data: function (evaluator, resources, parentOperatorList) {
+    loadType3Data: function (evaluator, resources, parentOperatorList, task) {
       assert(this.font.isType3Font);
 
       if (this.type3Loaded) {
@@ -1865,7 +1870,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
         loadCharProcsPromise = loadCharProcsPromise.then(function (key) {
           var glyphStream = charProcs[key];
           var operatorList = new OperatorList();
-          return evaluator.getOperatorList(glyphStream, fontResources,
+          return evaluator.getOperatorList(glyphStream, task, fontResources,
                                            operatorList).then(function () {
             charProcOperatorList[key] = operatorList.getIR();
 

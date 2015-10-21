@@ -22,16 +22,57 @@
 
 'use strict';
 
+var WorkerTask = (function WorkerTaskClosure() {
+  function WorkerTask(name) {
+    this.name = name;
+    this.terminated = false;
+    this._capability = createPromiseCapability();
+  }
+
+  WorkerTask.prototype = {
+    get finished() {
+      return this._capability.promise;
+    },
+
+    finish: function () {
+      this._capability.resolve();
+    },
+
+    terminate: function () {
+      this.terminated = true;
+    },
+
+    ensureNotTerminated: function () {
+      if (this.terminated) {
+        throw new Error('Worker task was terminated');
+      }
+    }
+  };
+
+  return WorkerTask;
+})();
+
 var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
   setup: function wphSetup(handler) {
     var pdfManager;
     var terminated = false;
     var cancelXHRs = null;
+    var WorkerTasks = [];
 
     function ensureNotTerminated() {
       if (terminated) {
         throw new Error('Worker was terminated');
       }
+    }
+
+    function startWorkerTask(task) {
+      WorkerTasks.push(task);
+    }
+
+    function finishWorkerTask(task) {
+      task.finish();
+      var i = WorkerTasks.indexOf(task);
+      WorkerTasks.splice(i, 1);
     }
 
     function loadDocument(recoveryMode) {
@@ -413,17 +454,25 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     });
 
     handler.on('RenderPageRequest', function wphSetupRenderPage(data) {
-      pdfManager.getPage(data.pageIndex).then(function(page) {
+      var pageIndex = data.pageIndex;
+      pdfManager.getPage(pageIndex).then(function(page) {
+        var task = new WorkerTask('RenderPageRequest: page ' + pageIndex);
+        startWorkerTask(task);
 
-        var pageNum = data.pageIndex + 1;
+        var pageNum = pageIndex + 1;
         var start = Date.now();
         // Pre compile the pdf page and fetch the fonts/images.
-        page.getOperatorList(handler, data.intent).then(function(operatorList) {
+        page.getOperatorList(handler, task, data.intent).then(
+            function(operatorList) {
+          finishWorkerTask(task);
 
           info('page=' + pageNum + ' - getOperatorList: time=' +
                (Date.now() - start) + 'ms, len=' + operatorList.fnArray.length);
-
         }, function(e) {
+          finishWorkerTask(task);
+          if (task.terminated) {
+            return; // ignoring errors from the terminated thread
+          }
 
           var minimumStackMessage =
             'worker.js: while trying to getPage() and getOperatorList()';
@@ -458,13 +507,23 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     }, this);
 
     handler.on('GetTextContent', function wphExtractText(data) {
-      return pdfManager.getPage(data.pageIndex).then(function(page) {
-        var pageNum = data.pageIndex + 1;
+      var pageIndex = data.pageIndex;
+      return pdfManager.getPage(pageIndex).then(function(page) {
+        var task = new WorkerTask('GetTextContent: page ' + pageIndex);
+        startWorkerTask(task);
+        var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent().then(function(textContent) {
+        return page.extractTextContent(task).then(function(textContent) {
+          finishWorkerTask(task);
           info('text indexing: page=' + pageNum + ' - time=' +
                (Date.now() - start) + 'ms');
           return textContent;
+        }, function (reason) {
+          finishWorkerTask(task);
+          if (task.terminated) {
+            return; // ignoring errors from the terminated thread
+          }
+          throw reason;
         });
       });
     });
@@ -482,6 +541,14 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       if (cancelXHRs) {
         cancelXHRs();
       }
+
+      var waitOn = [];
+      WorkerTasks.forEach(function (task) {
+        waitOn.push(task.finished);
+        task.terminate();
+      });
+
+      return Promise.all(waitOn).then(function () {});
     });
   }
 };

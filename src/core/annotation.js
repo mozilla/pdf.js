@@ -281,7 +281,7 @@ var Annotation = (function AnnotationClosure() {
       }.bind(this));
     },
 
-    getOperatorList: function Annotation_getOperatorList(evaluator) {
+    getOperatorList: function Annotation_getOperatorList(evaluator, task) {
 
       if (!this.appearance) {
         return Promise.resolve(new OperatorList());
@@ -308,7 +308,8 @@ var Annotation = (function AnnotationClosure() {
       return resourcesPromise.then(function(resources) {
           var opList = new OperatorList();
           opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-          return evaluator.getOperatorList(self.appearance, resources, opList).
+          return evaluator.getOperatorList(self.appearance, task,
+                                           resources, opList).
             then(function () {
               opList.addOp(OPS.endAnnotation, []);
               self.appearance.reset();
@@ -319,7 +320,7 @@ var Annotation = (function AnnotationClosure() {
   };
 
   Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, opList, pdfManager, partialEvaluator, intent) {
+      annotations, opList, pdfManager, partialEvaluator, task, intent) {
 
     function reject(e) {
       annotationsReadyCapability.reject(e);
@@ -332,7 +333,7 @@ var Annotation = (function AnnotationClosure() {
       if (intent === 'display' && annotations[i].isViewable() ||
           intent === 'print' && annotations[i].isPrintable()) {
         annotationPromises.push(
-          annotations[i].getOperatorList(partialEvaluator));
+          annotations[i].getOperatorList(partialEvaluator, task));
       }
     }
     Promise.all(annotationPromises).then(function(datas) {
@@ -564,9 +565,10 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
-    getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator) {
+    getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator,
+                                                                   task) {
       if (this.appearance) {
-        return Annotation.prototype.getOperatorList.call(this, evaluator);
+        return Annotation.prototype.getOperatorList.call(this, evaluator, task);
       }
 
       var opList = new OperatorList();
@@ -579,7 +581,8 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       }
 
       var stream = new Stream(stringToBytes(data.defaultAppearance));
-      return evaluator.getOperatorList(stream, this.fieldResources, opList).
+      return evaluator.getOperatorList(stream, task,
+                                       this.fieldResources, opList).
         then(function () {
           return opList;
         });
