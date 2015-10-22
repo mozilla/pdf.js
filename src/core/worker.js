@@ -24,6 +24,7 @@
 
 var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
   setup: function wphSetup(handler) {
+    var documentID = '';
     var pdfManager;
 
     function loadDocument(recoveryMode) {
@@ -66,7 +67,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       var disableRange = data.disableRange;
       if (source.data) {
         try {
-          pdfManager = new LocalPdfManager(source.data, source.password);
+          pdfManager = new LocalPdfManager(source.data, source.password,
+                                           documentID);
           pdfManagerCapability.resolve();
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -74,7 +76,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         return pdfManagerCapability.promise;
       } else if (source.chunkedViewerLoading) {
         try {
-          pdfManager = new NetworkPdfManager(source, handler);
+          pdfManager = new NetworkPdfManager(source, handler, documentID);
           pdfManagerCapability.resolve();
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -131,7 +133,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           }
 
           try {
-            pdfManager = new NetworkPdfManager(source, handler);
+            pdfManager = new NetworkPdfManager(source, handler, documentID);
             pdfManagerCapability.resolve(pdfManager);
           } catch (ex) {
             pdfManagerCapability.reject(ex);
@@ -175,7 +177,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
           // the data is array, instantiating directly from it
           try {
-            pdfManager = new LocalPdfManager(pdfFile, source.password);
+            pdfManager = new LocalPdfManager(pdfFile, source.password,
+                                             documentID);
             pdfManagerCapability.resolve();
           } catch (ex) {
             pdfManagerCapability.reject(ex);
@@ -236,7 +239,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     });
 
     handler.on('GetDocRequest', function wphSetupDoc(data) {
-
+      documentID = data.documentID;
+      
       var onSuccess = function(doc) {
         handler.send('GetDoc', { pdfInfo: doc });
       };

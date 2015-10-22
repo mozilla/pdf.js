@@ -999,7 +999,15 @@ var WorkerTransport = (function WorkerTransportClosure() {
     // Thus, we fallback to a faked worker.
     this.setupFakeWorker();
   }
+
   WorkerTransport.prototype = {
+    getDocumentID: (function () {
+      var ID = 1;
+      return function WorkerTransport_getDocumentID() {
+        return String(ID++);
+      };
+    })(),
+
     destroy: function WorkerTransport_destroy() {
       this.pageCache = [];
       this.pagePromises = [];
@@ -1294,6 +1302,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     fetchDocument: function WorkerTransport_fetchDocument(loadingTask, source) {
+      var docID = this.getDocumentID();
       this.loadingTask = loadingTask;
 
       source.disableAutoFetch = PDFJS.disableAutoFetch;
@@ -1311,7 +1320,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         cMapPacked: PDFJS.cMapPacked,
         disableFontFace: PDFJS.disableFontFace,
         disableCreateObjectURL: PDFJS.disableCreateObjectURL,
-        verbosity: PDFJS.verbosity
+        verbosity: PDFJS.verbosity,
+        documentID: docID
       });
     },
 

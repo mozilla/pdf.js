@@ -2670,8 +2670,8 @@ var Font = (function FontClosure() {
 
   Font.getFontID = (function () {
     var ID = 1;
-    return function Font_getFontID() {
-      return String(ID++);
+    return function Font_getFontID(documentID) {
+      return documentID + '_' + (ID++);
     };
   })();
 
