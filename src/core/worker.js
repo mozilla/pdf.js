@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 /* globals PDFJS, createPromiseCapability, LocalPdfManager, NetworkPdfManager,
-           NetworkManager, isInt, RANGE_CHUNK_SIZE, MissingPDFException,
+           NetworkManager, isInt, isNum, isBool, isName, isDict, isArray, isRef,
+           isString, isStream, RANGE_CHUNK_SIZE, MissingPDFException,
            UnexpectedResponseException, PasswordException, Promise, warn,
            PasswordResponses, InvalidPDFException, UnknownErrorException,
            XRefParseException, Ref, info, globalScope, error, MessageHandler */
@@ -83,7 +84,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise]).then(function onDocReady(results) {
+          encryptedPromise]).then(function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],
@@ -525,6 +526,50 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           }
           throw reason;
         });
+      });
+    });
+
+    handler.on('GetRawObject', function wphGetRawObject(data) {
+      function clone(obj) {
+        if (!obj || isBool(obj) || isNum(obj) || isString(obj)) {
+          return obj;
+        } else if (isName(obj)) {
+          return { name: obj.name };
+        } else if (isDict(obj)) {
+          var clonedMap = {};
+          var map = obj.map;
+          for (var k in map) {
+            clonedMap[k] = clone(map[k]);
+          }
+          return { map: clonedMap };
+        } else if (isArray(obj)) {
+          return obj.map(clone);
+        } else if (isStream(obj)) {
+          if (obj.str) {
+            return clone(obj.str);
+          } else if (obj.stream) {
+            return clone(obj.stream);
+          } else if (obj.streams) {
+            return clone(obj.streams);
+          }
+          return { dict: clone(obj.dict), start: obj.start, end: obj.end };
+        } else if (isRef(obj)) {
+          return { num: obj.num, gen: obj.gen };
+        }
+        throw new Error('Unknown object type.');
+      }
+      if (data.ref === null) {
+        return Promise.resolve(clone(pdfManager.pdfDocument.xref.trailer));
+      }
+      var ref = new Ref(data.ref.num, data.ref.gen);
+      return pdfManager.pdfDocument.xref.fetchAsync(ref).then(clone);
+    });
+
+    handler.on('GetStreamBytes', function wphGetStreamBytes(data) {
+      var ref = new Ref(data.ref.num, data.ref.gen);
+      return pdfManager.pdfDocument.xref.fetchAsync(ref).then(function(obj) {
+        obj.reset();
+        return obj.getBytes();
       });
     });
 
