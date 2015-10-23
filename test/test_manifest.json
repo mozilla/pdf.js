@@ -2436,6 +2436,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue4575",
+       "file": "pdfs/issue4575.pdf",
+       "md5": "9ea15032afd330916a4d7475cbdb55f6",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6305-part-1",
        "file": "pdfs/tensor-allflags-withfunction.pdf",
        "md5": "b47260d50f6a0f26aaccbfa3b7176ae8",
