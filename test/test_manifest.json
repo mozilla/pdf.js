@@ -1773,6 +1773,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue6151",
+       "file": "pdfs/issue6151.pdf",
+       "md5": "926f8c6b25e6f0978759f7947d70e079",
+       "rounds": 1,
+       "link": false,
+       "type": "load"
+    },
     {  "id": "blendmode",
       "file": "pdfs/blendmode.pdf",
       "md5": "5a86e7e9333e93c58abc3f382e1e6ea2",
