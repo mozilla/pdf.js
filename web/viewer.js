@@ -92,6 +92,7 @@ var PDFViewerApplication = {
   initialized: false,
   fellback: false,
   pdfDocument: null,
+  pdfLoadingTask: null,
   sidebarOpen: false,
   printing: false,
   /** @type {PDFViewer} */
@@ -410,6 +411,11 @@ var PDFViewerApplication = {
         function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
       FirefoxCom.request('requestDataRange', { begin: begin, end: end });
     };
+    FirefoxComDataRangeTransport.prototype.abort =
+        function FirefoxComDataRangeTransport_abort() {
+      // Sync call to ensure abort is really started.
+      FirefoxCom.requestSync('abortLoading', null);
+    };
 
     var pdfDataRangeTransport;
 
@@ -429,8 +435,8 @@ var PDFViewerApplication = {
           pdfDataRangeTransport =
             new FirefoxComDataRangeTransport(args.length, args.data);
 
-          PDFViewerApplication.open(args.pdfUrl, 0, undefined,
-                                    pdfDataRangeTransport);
+          PDFViewerApplication.open(args.pdfUrl,
+                                    {range: pdfDataRangeTransport});
 
           if (args.length) {
             PDFViewerApplication.pdfDocumentProperties
@@ -455,7 +461,7 @@ var PDFViewerApplication = {
               'An error occurred while loading the PDF.'), e);
             break;
           }
-          PDFViewerApplication.open(args.data, 0);
+          PDFViewerApplication.open(args.data);
           break;
       }
     });
@@ -482,36 +488,76 @@ var PDFViewerApplication = {
     document.title = title;
   },
 
+  /**
+   * Closes opened PDF document.
+   * @returns {Promise} - Returns the promise, which is resolved when all
+   *                      destruction is completed.
+   */
   close: function pdfViewClose() {
     var errorWrapper = document.getElementById('errorWrapper');
     errorWrapper.setAttribute('hidden', 'true');
 
-    if (!this.pdfDocument) {
-      return;
+    if (!this.pdfLoadingTask) {
+      return Promise.resolve();
     }
 
-    this.pdfDocument.destroy();
-    this.pdfDocument = null;
+    var promise = this.pdfLoadingTask.destroy();
+    this.pdfLoadingTask = null;
 
-    this.pdfThumbnailViewer.setDocument(null);
-    this.pdfViewer.setDocument(null);
-    this.pdfLinkService.setDocument(null, null);
+    if (this.pdfDocument) {
+      this.pdfDocument = null;
+
+      this.pdfThumbnailViewer.setDocument(null);
+      this.pdfViewer.setDocument(null);
+      this.pdfLinkService.setDocument(null, null);
+    }
 
     if (typeof PDFBug !== 'undefined') {
       PDFBug.cleanup();
     }
+    return promise;
   },
 
-  // TODO(mack): This function signature should really be pdfViewOpen(url, args)
-  open: function pdfViewOpen(file, scale, password,
-                             pdfDataRangeTransport, args) {
-    if (this.pdfDocument) {
-      // Reload the preferences if a document was previously opened.
-      Preferences.reload();
+  /**
+   * Opens PDF document specified by URL or array with additional arguments.
+   * @param {string|TypedArray|ArrayBuffer} file - PDF location or binary data.
+   * @param {Object} args - (optional) Additional arguments for the getDocument
+   *                        call, e.g. HTTP headers ('httpHeaders') or
+   *                        alternative data transport ('range').
+   * @returns {Promise} - Returns the promise, which is resolved when document
+   *                      is opened.
+   */
+  open: function pdfViewOpen(file, args) {
+    var scale = 0;
+    if (arguments.length > 2 || typeof args === 'number') {
+      console.warn('Call of open() with obsolete signature.');
+      if (typeof args === 'number') {
+        scale = args; // scale argument was found
+      }
+      args = arguments[4] || null;
+      if (arguments[3] && typeof arguments[3] === 'object') {
+        // The pdfDataRangeTransport argument is present.
+        args = Object.create(args);
+        args.range = arguments[3];
+      }
+      if (typeof arguments[2] === 'string') {
+        // The password argument is present.
+        args = Object.create(args);
+        args.password = arguments[2];
+      }
     }
-    this.close();
 
-    var parameters = {password: password};
+    if (this.pdfLoadingTask) {
+      // We need to destroy already opened document.
+      return this.close().then(function () {
+        // Reload the preferences if a document was previously opened.
+        Preferences.reload();
+        // ... and repeat the open() call.
+        return this.open(file, args);
+      }.bind(this));
+    }
+
+    var parameters = Object.create(null);
     if (typeof file === 'string') { // URL
       this.setTitleUsingUrl(file);
       parameters.url = file;
@@ -530,18 +576,20 @@ var PDFViewerApplication = {
     var self = this;
     self.downloadComplete = false;
 
-    var passwordNeeded = function passwordNeeded(updatePassword, reason) {
+    var loadingTask = PDFJS.getDocument(parameters);
+    this.pdfLoadingTask = loadingTask;
+
+    loadingTask.onPassword = function passwordNeeded(updatePassword, reason) {
       PasswordPrompt.updatePassword = updatePassword;
       PasswordPrompt.reason = reason;
       PasswordPrompt.open();
     };
 
-    function getDocumentProgress(progressData) {
+    loadingTask.onProgress = function getDocumentProgress(progressData) {
       self.progress(progressData.loaded / progressData.total);
-    }
+    };
 
-    PDFJS.getDocument(parameters, pdfDataRangeTransport, passwordNeeded,
-                      getDocumentProgress).then(
+    var result = loadingTask.promise.then(
       function getDocumentCallback(pdfDocument) {
         self.load(pdfDocument, scale);
       },
@@ -567,12 +615,15 @@ var PDFViewerApplication = {
           message: message
         };
         self.error(loadingErrorMessage, moreInfo);
+
+        throw new Error(loadingErrorMessage);
       }
     );
 
     if (args && args.length) {
       PDFViewerApplication.pdfDocumentProperties.setFileSize(args.length);
     }
+    return result;
   },
 
   download: function pdfViewDownload() {
@@ -999,6 +1050,9 @@ var PDFViewerApplication = {
   },
 
   cleanup: function pdfViewCleanup() {
+    if (!this.pdfDocument) {
+      return; // run cleanup when document is loaded
+    }
     this.pdfViewer.cleanup();
     this.pdfThumbnailViewer.cleanup();
     this.pdfDocument.cleanup();
@@ -1493,7 +1547,7 @@ function webViewerInitialized() {
     PDFViewerApplication.setTitleUsingUrl(file);
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
-      PDFViewerApplication.open(new Uint8Array(xhr.response), 0);
+      PDFViewerApplication.open(new Uint8Array(xhr.response));
     };
     try {
       xhr.open('GET', file);
@@ -1507,7 +1561,7 @@ function webViewerInitialized() {
   }
 
   if (file) {
-    PDFViewerApplication.open(file, 0);
+    PDFViewerApplication.open(file);
   }
 //#endif
 //#if CHROME
@@ -1722,14 +1776,14 @@ window.addEventListener('change', function webViewerChange(evt) {
 
   if (!PDFJS.disableCreateObjectURL &&
       typeof URL !== 'undefined' && URL.createObjectURL) {
-    PDFViewerApplication.open(URL.createObjectURL(file), 0);
+    PDFViewerApplication.open(URL.createObjectURL(file));
   } else {
     // Read the local file into a Uint8Array.
     var fileReader = new FileReader();
     fileReader.onload = function webViewerChangeFileReaderOnload(evt) {
       var buffer = evt.target.result;
       var uint8Array = new Uint8Array(buffer);
-      PDFViewerApplication.open(uint8Array, 0);
+      PDFViewerApplication.open(uint8Array);
     };
     fileReader.readAsArrayBuffer(file);
   }

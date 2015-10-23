@@ -11,31 +11,31 @@ describe('api', function() {
   var basicApiUrl = combineUrl(window.location.href, '../pdfs/basicapi.pdf');
   var basicApiFileLength = 105779; // bytes
   function waitsForPromiseResolved(promise, successCallback) {
-    var data;
+    var resolved = false;
     promise.then(function(val) {
-      data = val;
-      successCallback(data);
+      resolved = true;
+      successCallback(val);
     },
     function(error) {
       // Shouldn't get here.
       expect(false).toEqual(true);
     });
     waitsFor(function() {
-      return data !== undefined;
+      return resolved;
     }, 20000);
   }
   function waitsForPromiseRejected(promise, failureCallback) {
-    var data;
+    var rejected = false;
     promise.then(function(val) {
       // Shouldn't get here.
       expect(false).toEqual(true);
     },
     function(error) {
-      data = error;
-      failureCallback(data);
+      rejected = true;
+      failureCallback(error);
     });
     waitsFor(function() {
-      return data !== undefined;
+      return rejected;
     }, 20000);
   }
 
@@ -63,6 +63,28 @@ describe('api', function() {
         waitsForPromiseResolved(Promise.all(promises), function (data) {
           expect((data[0].loaded / data[0].total) > 0).toEqual(true);
           expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
+          expect(loadingTask).toEqual(data[1].loadingTask);
+        });
+      });
+      it('creates pdf doc from URL and aborts before worker initialized',
+          function() {
+        var loadingTask = PDFJS.getDocument(basicApiUrl);
+        loadingTask.destroy();
+        waitsForPromiseRejected(loadingTask.promise, function(reason) {
+          expect(true).toEqual(true);
+        });
+      });
+      it('creates pdf doc from URL and aborts loading after worker initialized',
+          function() {
+        var loadingTask = PDFJS.getDocument(basicApiUrl);
+        // This can be somewhat random -- we cannot guarantee perfect
+        // 'Terminate' message to the worker before/after setting up pdfManager.
+        var destroyed = loadingTask._transport.workerInitializedCapability.
+          promise.then(function () {
+          return loadingTask.destroy();
+        });
+        waitsForPromiseResolved(destroyed, function (data) {
+          expect(true).toEqual(true);
         });
       });
       it('creates pdf doc from typed array', function() {

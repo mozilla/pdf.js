@@ -101,7 +101,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       this.zoomLayer = null;
       this.reset();
       if (this.pdfPage) {
-        this.pdfPage.destroy();
+        this.pdfPage.cleanup();
       }
     },
 
@@ -457,9 +457,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         canvasContext: ctx,
         viewport: this.viewport,
         // intent: 'default', // === 'display'
-        continueCallback: renderContinueCallback
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+      renderTask.onContinue = renderContinueCallback;
 
       this.renderTask.promise.then(
         function pdfPageRenderCallback() {

@@ -301,7 +301,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
     this.chunksNeededByRequest = {};
     this.requestsByChunk = {};
-    this.callbacksByRequest = {};
+    this.promisesByRequest = {};
     this.progressiveDataLength = 0;
 
     this._loadedStreamCapability = createPromiseCapability();
@@ -320,12 +320,11 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     // contiguous ranges to load in as few requests as possible
     requestAllChunks: function ChunkedStreamManager_requestAllChunks() {
       var missingChunks = this.stream.getMissingChunks();
-      this.requestChunks(missingChunks);
+      this._requestChunks(missingChunks);
       return this._loadedStreamCapability.promise;
     },
 
-    requestChunks: function ChunkedStreamManager_requestChunks(chunks,
-                                                               callback) {
+    _requestChunks: function ChunkedStreamManager_requestChunks(chunks) {
       var requestId = this.currRequestId++;
 
       var chunksNeeded;
@@ -338,13 +337,11 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       if (isEmptyObj(chunksNeeded)) {
-        if (callback) {
-          callback();
-        }
-        return;
+        return Promise.resolve();
       }
 
-      this.callbacksByRequest[requestId] = callback;
+      var capability = createPromiseCapability();
+      this.promisesByRequest[requestId] = capability;
 
       var chunksToRequest = [];
       for (var chunk in chunksNeeded) {
@@ -357,7 +354,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       if (!chunksToRequest.length) {
-        return;
+        return capability.promise;
       }
 
       var groupedChunksToRequest = this.groupChunks(chunksToRequest);
@@ -368,6 +365,8 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
         this.sendRequest(begin, end);
       }
+
+      return capability.promise;
     },
 
     getStream: function ChunkedStreamManager_getStream() {
@@ -375,8 +374,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     },
 
     // Loads any chunks in the requested range that are not yet loaded
-    requestRange: function ChunkedStreamManager_requestRange(
-                      begin, end, callback) {
+    requestRange: function ChunkedStreamManager_requestRange(begin, end) {
 
       end = Math.min(end, this.length);
 
@@ -388,11 +386,10 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         chunks.push(chunk);
       }
 
-      this.requestChunks(chunks, callback);
+      return this._requestChunks(chunks);
     },
 
-    requestRanges: function ChunkedStreamManager_requestRanges(ranges,
-                                                               callback) {
+    requestRanges: function ChunkedStreamManager_requestRanges(ranges) {
       ranges = ranges || [];
       var chunksToRequest = [];
 
@@ -407,7 +404,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       chunksToRequest.sort(function(a, b) { return a - b; });
-      this.requestChunks(chunksToRequest, callback);
+      return this._requestChunks(chunksToRequest);
     },
 
     // Groups a sorted array of chunks into as few contiguous larger
@@ -506,17 +503,15 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
           nextEmptyChunk = this.stream.nextEmptyChunk(endChunk);
         }
         if (isInt(nextEmptyChunk)) {
-          this.requestChunks([nextEmptyChunk]);
+          this._requestChunks([nextEmptyChunk]);
         }
       }
 
       for (i = 0; i < loadedRequests.length; ++i) {
         requestId = loadedRequests[i];
-        var callback = this.callbacksByRequest[requestId];
-        delete this.callbacksByRequest[requestId];
-        if (callback) {
-          callback();
-        }
+        var capability = this.promisesByRequest[requestId];
+        delete this.promisesByRequest[requestId];
+        capability.resolve();
       }
 
       this.msgHandler.send('DocProgress', {
@@ -537,6 +532,16 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     getEndChunk: function ChunkedStreamManager_getEndChunk(end) {
       var chunk = Math.floor((end - 1) / this.chunkSize) + 1;
       return chunk;
+    },
+
+    abort: function ChunkedStreamManager_abort() {
+      if (this.networkManager) {
+        this.networkManager.abortAllRequests();
+      }
+      for(var requestId in this.promisesByRequest) {
+        var capability = this.promisesByRequest[requestId];
+        capability.reject(new Error('Request was aborted'));
+      }
     }
   };
 

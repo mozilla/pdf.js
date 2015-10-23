@@ -662,8 +662,8 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     // If we are in range request mode, this means we manually issued xhr
     // requests, which we need to abort when we leave the page
     domWindow.addEventListener('unload', function unload(e) {
-      self.networkManager.abortAllRequests();
       domWindow.removeEventListener(e.type, unload);
+      self.abortLoading();
     });
   }
 
@@ -691,7 +691,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
         }, '*');
       };
       this.dataListener.oncomplete = function () {
-        delete self.dataListener;
+        self.dataListener = null;
       };
     }
 
@@ -735,6 +735,15 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     });
   };
 
+  proto.abortLoading = function RangedChromeActions_abortLoading() {
+    this.networkManager.abortAllRequests();
+    if (this.originalRequest) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+    }
+    this.dataListener = null;
+  };
+
   return RangedChromeActions;
 })();
 
@@ -744,9 +753,10 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
    * This is for a single network stream
    */
   function StandardChromeActions(domWindow, contentDispositionFilename,
-                                 dataListener) {
+                                 originalRequest, dataListener) {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
+    this.originalRequest = originalRequest;
     this.dataListener = dataListener;
   }
 
@@ -772,18 +782,27 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
       }, '*');
     };
 
-    this.dataListener.oncomplete = function ChromeActions_dataListenerComplete(
-                                      data, errorCode) {
+    this.dataListener.oncomplete =
+        function StandardChromeActions_dataListenerComplete(data, errorCode) {
       self.domWindow.postMessage({
         pdfjsLoadAction: 'complete',
         data: data,
         errorCode: errorCode
       }, '*');
 
-      delete self.dataListener;
+      self.dataListener = null;
+      self.originalRequest = null;
     };
 
     return true;
+  };
+
+  proto.abortLoading = function StandardChromeActions_abortLoading() {
+    if (this.originalRequest) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+    }
+    this.dataListener = null;
   };
 
   return StandardChromeActions;
@@ -1029,7 +1048,7 @@ PdfStreamConverter.prototype = {
             rangeRequest, streamRequest, dataListener);
         } else {
           actions = new StandardChromeActions(
-            domWindow, contentDispositionFilename, dataListener);
+            domWindow, contentDispositionFilename, aRequest, dataListener);
         }
         var requestListener = new RequestListener(actions);
         domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
