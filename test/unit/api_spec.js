@@ -220,7 +220,9 @@ describe('api', function() {
       expect(doc.numPages).toEqual(3);
     });
     it('gets fingerprint', function() {
-      expect(typeof doc.fingerprint).toEqual('string');
+      var fingerprint = doc.fingerprint;
+      expect(typeof fingerprint).toEqual('string');
+      expect(fingerprint.length > 0).toEqual(true);
     });
     it('gets page', function() {
       var promise = doc.getPage(1);
@@ -337,6 +339,28 @@ describe('api', function() {
       var promise = doc.getStats();
       waitsForPromiseResolved(promise, function (stats) {
         expect(stats).toEqual({ streamTypes: [], fontTypes: [] });
+      });
+    });
+
+    it('checks that fingerprints are unique', function() {
+      var url1 = combineUrl(window.location.href, '../pdfs/issue4436r.pdf');
+      var loadingTask1 = PDFJS.getDocument(url1);
+
+      var url2 = combineUrl(window.location.href, '../pdfs/issue4575.pdf');
+      var loadingTask2 = PDFJS.getDocument(url2);
+
+      var promises = [loadingTask1.promise,
+                      loadingTask2.promise];
+      waitsForPromiseResolved(Promise.all(promises), function (data) {
+        var fingerprint1 = data[0].fingerprint;
+        expect(typeof fingerprint1).toEqual('string');
+        expect(fingerprint1.length > 0).toEqual(true);
+
+        var fingerprint2 = data[1].fingerprint;
+        expect(typeof fingerprint2).toEqual('string');
+        expect(fingerprint2.length > 0).toEqual(true);
+
+        expect(fingerprint1).not.toEqual(fingerprint2);
       });
     });
   });
