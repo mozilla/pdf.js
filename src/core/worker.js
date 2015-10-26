@@ -467,7 +467,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           finishWorkerTask(task);
 
           info('page=' + pageNum + ' - getOperatorList: time=' +
-               (Date.now() - start) + 'ms, len=' + operatorList.fnArray.length);
+               (Date.now() - start) + 'ms, len=' + operatorList.totalLength);
         }, function(e) {
           finishWorkerTask(task);
           if (task.terminated) {

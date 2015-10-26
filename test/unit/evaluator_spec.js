@@ -305,4 +305,25 @@ describe('evaluator', function() {
       });
     });
   });
+
+  describe('operator list', function () {
+    function MessageHandlerMock() { }
+    MessageHandlerMock.prototype = {
+      send: function () { },
+    };
+
+    it('should get correct total length after flushing', function () {
+      var operatorList = new OperatorList(null, new MessageHandlerMock());
+      operatorList.addOp(OPS.save, null);
+      operatorList.addOp(OPS.restore, null);
+
+      expect(operatorList.totalLength).toEqual(2);
+      expect(operatorList.length).toEqual(2);
+
+      operatorList.flush();
+
+      expect(operatorList.totalLength).toEqual(2);
+      expect(operatorList.length).toEqual(0);
+    });
+  });
 });

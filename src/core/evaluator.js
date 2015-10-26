@@ -1920,6 +1920,7 @@ var OperatorList = (function OperatorListClosure() {
     this.fnArray = [];
     this.argsArray = [];
     this.dependencies = {};
+    this._totalLength = 0;
     this.pageIndex = pageIndex;
     this.intent = intent;
   }
@@ -1927,6 +1928,14 @@ var OperatorList = (function OperatorListClosure() {
   OperatorList.prototype = {
     get length() {
       return this.argsArray.length;
+    },
+
+    /**
+     * @returns {number} The total length of the entire operator list,
+     *                   since `this.length === 0` after flushing.
+     */
+    get totalLength() {
+      return (this._totalLength + this.length);
     },
 
     addOp: function(fn, args) {
@@ -1977,12 +1986,15 @@ var OperatorList = (function OperatorListClosure() {
         new QueueOptimizer().optimize(this);
       }
       var transfers = getTransfers(this);
+      var length = this.length;
+      this._totalLength += length;
+
       this.messageHandler.send('RenderPageChunk', {
         operatorList: {
           fnArray: this.fnArray,
           argsArray: this.argsArray,
           lastChunk: lastChunk,
-          length: this.length
+          length: length
         },
         pageIndex: this.pageIndex,
         intent: this.intent
