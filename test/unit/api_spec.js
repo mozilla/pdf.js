@@ -77,8 +77,7 @@ describe('api', function() {
         var loadingTask = PDFJS.getDocument(basicApiUrl);
         // This can be somewhat random -- we cannot guarantee perfect
         // 'Terminate' message to the worker before/after setting up pdfManager.
-        var destroyed = loadingTask._transport.workerInitializedCapability.
-          promise.then(function () {
+        var destroyed = loadingTask._worker.promise.then(function () {
           return loadingTask.destroy();
         });
         waitsForPromiseResolved(destroyed, function (data) {
@@ -205,6 +204,73 @@ describe('api', function() {
         waitsForPromiseResolved(passwordAcceptedPromise, function (data) {
           expect(data instanceof PDFDocumentProxy).toEqual(true);
         });
+      });
+    });
+  });
+  describe('PDFWorker', function() {
+    it('worker created or destroyed', function () {
+      var worker = new PDFJS.PDFWorker('test1');
+      waitsForPromiseResolved(worker.promise, function () {
+        expect(worker.name).toEqual('test1');
+        expect(!!worker.port).toEqual(true);
+        expect(worker.destroyed).toEqual(false);
+        expect(!!worker._webWorker).toEqual(true);
+        expect(worker.port === worker._webWorker).toEqual(true);
+
+        worker.destroy();
+        expect(!!worker.port).toEqual(false);
+        expect(worker.destroyed).toEqual(true);
+      });
+    });
+    it('worker created or destroyed by getDocument', function () {
+      var loadingTask = PDFJS.getDocument(basicApiUrl);
+      var worker;
+      waitsForPromiseResolved(loadingTask.promise, function () {
+        worker = loadingTask._worker;
+        expect(!!worker).toEqual(true);
+      });
+
+      var destroyPromise = loadingTask.promise.then(function () {
+        return loadingTask.destroy();
+      });
+      waitsForPromiseResolved(destroyPromise, function () {
+        var destroyedWorker = loadingTask._worker;
+        expect(!!destroyedWorker).toEqual(false);
+        expect(worker.destroyed).toEqual(true);
+      });
+    });
+    it('worker created and can be used in getDocument', function () {
+      var worker = new PDFJS.PDFWorker('test1');
+      var loadingTask = PDFJS.getDocument({url: basicApiUrl, worker: worker});
+      waitsForPromiseResolved(loadingTask.promise, function () {
+        var docWorker = loadingTask._worker;
+        expect(!!docWorker).toEqual(false);
+        // checking is the same port is used in the MessageHandler
+        var messageHandlerPort = loadingTask._transport.messageHandler.comObj;
+        expect(messageHandlerPort === worker.port).toEqual(true);
+      });
+
+      var destroyPromise = loadingTask.promise.then(function () {
+        return loadingTask.destroy();
+      });
+      waitsForPromiseResolved(destroyPromise, function () {
+        expect(worker.destroyed).toEqual(false);
+        worker.destroy();
+      });
+    });
+    it('creates more than one worker', function () {
+      var worker1 = new PDFJS.PDFWorker('test1');
+      var worker2 = new PDFJS.PDFWorker('test2');
+      var worker3 = new PDFJS.PDFWorker('test3');
+      var ready = Promise.all([worker1.promise, worker2.promise,
+        worker3.promise]);
+      waitsForPromiseResolved(ready, function () {
+        expect(worker1.port !== worker2.port &&
+               worker1.port !== worker3.port &&
+               worker2.port !== worker3.port).toEqual(true);
+        worker1.destroy();
+        worker2.destroy();
+        worker3.destroy();
       });
     });
   });

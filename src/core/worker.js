@@ -85,6 +85,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     });
   },
   createDocumentHandler: function wphCreateDocumentHandler(data, port) {
+    // This context is actually holds references on pdfManager and handler,
+    // until the latter is destroyed.
     var pdfManager;
     var terminated = false;
     var cancelXHRs = null;
@@ -555,7 +557,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         task.terminate();
       });
 
-      return Promise.all(waitOn).then(function () {});
+      return Promise.all(waitOn).then(function () {
+        // Notice that even if we destroying handler, resolved response promise
+        // must be sent back.
+        handler.destroy();
+        handler = null;
+      });
     });
 
     setupDoc(data);

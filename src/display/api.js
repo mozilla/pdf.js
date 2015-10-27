@@ -222,6 +222,8 @@ PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
  * @property {number}     rangeChunkSize - Optional parameter to specify
  *   maximum number of bytes fetched per range request. The default value is
  *   2^16 = 65536.
+ * @property {PDFWorker}  worker - The worker that will be used for the loading
+ *   and parsing of the PDF data.
  */
 
 /**
@@ -284,7 +286,6 @@ PDFJS.getDocument = function getDocument(src,
   task.onPassword = passwordCallback || null;
   task.onProgress = progressCallback || null;
 
-  var workerInitializedCapability, transport;
   var source;
   if (typeof src === 'string') {
     source = { url: src };
@@ -305,12 +306,18 @@ PDFJS.getDocument = function getDocument(src,
   }
 
   var params = {};
+  var rangeTransport = null;
+  var worker = null;
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
       // The full path is required in the 'url' field.
       params[key] = combineUrl(window.location.href, source[key]);
       continue;
     } else if (key === 'range') {
+      rangeTransport = source[key];
+      continue;
+    } else if (key === 'worker') {
+      worker = source[key];
       continue;
     } else if (key === 'data' && !(source[key] instanceof Uint8Array)) {
       // Converting string or array-like data to Uint8Array.
@@ -331,17 +338,71 @@ PDFJS.getDocument = function getDocument(src,
     params[key] = source[key];
   }
 
-  params.rangeChunkSize = source.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
+  params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
 
-  workerInitializedCapability = createPromiseCapability();
-  transport = new WorkerTransport(workerInitializedCapability, source.range);
-  workerInitializedCapability.promise.then(function transportInitialized() {
-    transport.fetchDocument(task, params);
-  });
-  task._transport = transport;
+  if (!worker) {
+    // Worker was not provided -- creating and owning our own.
+    worker = new PDFWorker();
+    task._worker = worker;
+  }
+  var docId = task.docId;
+  worker.promise.then(function () {
+    if (task.destroyed) {
+      throw new Error('Loading aborted');
+    }
+    return _fetchDocument(worker, params, rangeTransport, docId).then(
+        function (workerId) {
+      if (task.destroyed) {
+        throw new Error('Loading aborted');
+      }
+      var messageHandler = new MessageHandler(docId, workerId, worker.port);
+      var transport = new WorkerTransport(messageHandler, task, rangeTransport);
+      task._transport = transport;
+    });
+  }, task._capability.reject);
 
   return task;
 };
+
+/**
+ * Starts fetching of specified PDF document/data.
+ * @param {PDFWorker} worker
+ * @param {Object} source
+ * @param {PDFDataRangeTransport} pdfDataRangeTransport
+ * @param {string} docId Unique document id, used as MessageHandler id.
+ * @returns {Promise} The promise, which is resolved when worker id of
+ *                    MessageHandler is known.
+ * @private
+ */
+function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
+  if (worker.destroyed) {
+    return Promise.reject(new Error('Worker was destroyed'));
+  }
+
+  source.disableAutoFetch = PDFJS.disableAutoFetch;
+  source.disableStream = PDFJS.disableStream;
+  source.chunkedViewerLoading = !!pdfDataRangeTransport;
+  if (pdfDataRangeTransport) {
+    source.length = pdfDataRangeTransport.length;
+    source.initialData = pdfDataRangeTransport.initialData;
+  }
+  return worker.messageHandler.sendWithPromise('GetDocRequest', {
+    docId: docId,
+    source: source,
+    disableRange: PDFJS.disableRange,
+    maxImageSize: PDFJS.maxImageSize,
+    cMapUrl: PDFJS.cMapUrl,
+    cMapPacked: PDFJS.cMapPacked,
+    disableFontFace: PDFJS.disableFontFace,
+    disableCreateObjectURL: PDFJS.disableCreateObjectURL,
+    verbosity: PDFJS.verbosity
+  }).then(function (workerId) {
+    if (worker.destroyed) {
+      throw new Error('Worker was destroyed');
+    }
+    return workerId;
+  });
+}
 
 /**
  * PDF document loading operation.
@@ -349,9 +410,19 @@ PDFJS.getDocument = function getDocument(src,
  * @alias PDFDocumentLoadingTask
  */
 var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
+  var nextDocumentId = 0;
+
+  /** @constructs PDFDocumentLoadingTask */
   function PDFDocumentLoadingTask() {
     this._capability = createPromiseCapability();
     this._transport = null;
+    this._worker = null;
+
+    /**
+     * Unique document loading task id -- used in MessageHandlers.
+     * @type {string}
+     */
+    this.docId = 'd' + (nextDocumentId++);
 
     /**
      * Shows if loading task is destroyed.
@@ -390,10 +461,16 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
      */
     destroy: function () {
       this.destroyed = true;
-      if (!this._transport) {
-        return Promise.resolve();
-      }
-      return this._transport.destroy();
+
+      var transportDestroyed = !this._transport ? Promise.resolve() :
+        this._transport.destroy();
+      return transportDestroyed.then(function () {
+        this._transport = null;
+        if (this._worker) {
+          this._worker.destroy();
+          this._worker = null;
+        }
+      }.bind(this));
     },
 
     /**
@@ -622,7 +699,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      * Destroys current document instance and terminates worker.
      */
     destroy: function PDFDocumentProxy_destroy() {
-      return this.transport.destroy();
+      return this.loadingTask.destroy();
     }
   };
   return PDFDocumentProxy;
@@ -1019,16 +1096,210 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 })();
 
 /**
+ * PDF.js web worker abstraction, it controls instantiation of PDF documents and
+ * WorkerTransport for them.  If creation of a web worker is not possible,
+ * a "fake" worker will be used instead.
+ * @class
+ */
+var PDFWorker = (function PDFWorkerClosure() {
+  var nextFakeWorkerId = 0;
+
+  // Loads worker code into main thread.
+  function setupFakeWorkerGlobal() {
+    if (!PDFJS.fakeWorkerFilesLoadedCapability) {
+      PDFJS.fakeWorkerFilesLoadedCapability = createPromiseCapability();
+      // In the developer build load worker_loader which in turn loads all the
+      // other files and resolves the promise. In production only the
+      // pdf.worker.js file is needed.
+//#if !PRODUCTION
+      Util.loadScript(PDFJS.workerSrc);
+//#endif
+//#if PRODUCTION && SINGLE_FILE
+//    PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+//#endif
+//#if PRODUCTION && !SINGLE_FILE
+//    Util.loadScript(PDFJS.workerSrc, function() {
+//      PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+//    });
+//#endif
+    }
+    return PDFJS.fakeWorkerFilesLoadedCapability.promise;
+  }
+
+  function PDFWorker(name) {
+    this.name = name;
+    this.destroyed = false;
+
+    this._readyCapability = createPromiseCapability();
+    this._port = null;
+    this._webWorker = null;
+    this._messageHandler = null;
+    this._initialize();
+  }
+
+  PDFWorker.prototype =  /** @lends PDFWorker.prototype */ {
+    get promise() {
+      return this._readyCapability.promise;
+    },
+
+    get port() {
+      return this._port;
+    },
+
+    get messageHandler() {
+      return this._messageHandler;
+    },
+
+    _initialize: function PDFWorker_initialize() {
+      // If worker support isn't disabled explicit and the browser has worker
+      // support, create a new web worker and test if it/the browser fullfills
+      // all requirements to run parts of pdf.js in a web worker.
+      // Right now, the requirement is, that an Uint8Array is still an
+      // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
+//#if !SINGLE_FILE
+      if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
+        var workerSrc = PDFJS.workerSrc;
+        if (!workerSrc) {
+          error('No PDFJS.workerSrc specified');
+        }
+
+        try {
+          // Some versions of FF can't create a worker on localhost, see:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+          var worker = new Worker(workerSrc);
+          var messageHandler = new MessageHandler('main', 'worker', worker);
+
+          messageHandler.on('test', function PDFWorker_test(data) {
+            if (this.destroyed) {
+              this._readyCapability.reject(new Error('Worker was destroyed'));
+              messageHandler.destroy();
+              worker.terminate();
+              return; // worker was destroyed
+            }
+            var supportTypedArray = data && data.supportTypedArray;
+            if (supportTypedArray) {
+              this._messageHandler = messageHandler;
+              this._port = worker;
+              this._webWorker = worker;
+              if (!data.supportTransfers) {
+                PDFJS.postMessageTransfers = false;
+              }
+              this._readyCapability.resolve();
+            } else {
+              this._setupFakeWorker();
+              messageHandler.destroy();
+              worker.terminate();
+            }
+          }.bind(this));
+
+          messageHandler.on('console_log', function (data) {
+            console.log.apply(console, data);
+          });
+          messageHandler.on('console_error', function (data) {
+            console.error.apply(console, data);
+          });
+          messageHandler.on('_unsupported_feature', function (data) {
+            UnsupportedManager.notify(data);
+          });
+
+          var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
+          // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
+          // typed array. Also, checking if we can use transfers.
+          try {
+            messageHandler.send('test', testObj, [testObj.buffer]);
+          } catch (ex) {
+            info('Cannot use postMessage transfers');
+            testObj[0] = 0;
+            messageHandler.send('test', testObj);
+          }
+          return;
+        } catch (e) {
+          info('The worker has been disabled.');
+        }
+      }
+//#endif
+      // Either workers are disabled, not supported or have thrown an exception.
+      // Thus, we fallback to a faked worker.
+      this._setupFakeWorker();
+    },
+
+    _setupFakeWorker: function PDFWorker_setupFakeWorker() {
+      warn('Setting up fake worker.');
+      globalScope.PDFJS.disableWorker = true;
+
+      setupFakeWorkerGlobal().then(function () {
+        if (this.destroyed) {
+          this._readyCapability.reject(new Error('Worker was destroyed'));
+          return;
+        }
+
+        // If we don't use a worker, just post/sendMessage to the main thread.
+        var port = {
+          _listeners: [],
+          postMessage: function (obj) {
+            var e = {data: obj};
+            this._listeners.forEach(function (listener) {
+              listener.call(this, e);
+            }, this);
+          },
+          addEventListener: function (name, listener) {
+            this._listeners.push(listener);
+          },
+          removeEventListener: function (name, listener) {
+            var i = this._listeners.indexOf(listener);
+            this._listeners.splice(i, 1);
+          },
+          terminate: function () {}
+        };
+        this._port = port;
+
+        // All fake workers use the same port, making id unique.
+        var id = 'fake' + (nextFakeWorkerId++);
+
+        // If the main thread is our worker, setup the handling for the
+        // messages -- the main thread sends to it self.
+        var workerHandler = new MessageHandler(id + '_worker', id, port);
+        PDFJS.WorkerMessageHandler.setup(workerHandler, port);
+
+        var messageHandler = new MessageHandler(id, id + '_worker', port);
+        this._messageHandler = messageHandler;
+        this._readyCapability.resolve();
+      }.bind(this));
+    },
+
+    /**
+     * Destroys the worker instance.
+     */
+    destroy: function PDFWorker_destroy() {
+      this.destroyed = true;
+      if (this._webWorker) {
+        // We need to terminate only web worker created resource.
+        this._webWorker.terminate();
+        this._webWorker = null;
+      }
+      this._port = null;
+      if (this._messageHandler) {
+        this._messageHandler.destroy();
+        this._messageHandler = null;
+      }
+    }
+  };
+
+  return PDFWorker;
+})();
+PDFJS.PDFWorker = PDFWorker;
+
+/**
  * For internal use only.
  * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(workerInitializedCapability, pdfDataRangeTransport) {
+  function WorkerTransport(messageHandler, loadingTask, pdfDataRangeTransport) {
+    this.messageHandler = messageHandler;
+    this.loadingTask = loadingTask;
     this.pdfDataRangeTransport = pdfDataRangeTransport;
-    this.workerInitializedCapability = workerInitializedCapability;
     this.commonObjs = new PDFObjects();
 
-    this.loadingTask = null;
     this.destroyed = false;
     this.destroyCapability = null;
 
@@ -1036,67 +1307,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.pagePromises = [];
     this.downloadInfoCapability = createPromiseCapability();
 
-    // If worker support isn't disabled explicit and the browser has worker
-    // support, create a new web worker and test if it/the browser fullfills
-    // all requirements to run parts of pdf.js in a web worker.
-    // Right now, the requirement is, that an Uint8Array is still an Uint8Array
-    // as it arrives on the worker. Chrome added this with version 15.
-//#if !SINGLE_FILE
-    if (!globalScope.PDFJS.disableWorker && typeof Worker !== 'undefined') {
-      var workerSrc = PDFJS.workerSrc;
-      if (!workerSrc) {
-        error('No PDFJS.workerSrc specified');
-      }
-
-      try {
-        // Some versions of FF can't create a worker on localhost, see:
-        // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-        var worker = new Worker(workerSrc);
-        var messageHandler = new MessageHandler('main', 'worker', worker);
-
-        messageHandler.on('test', function transportTest(data) {
-          var supportTypedArray = data && data.supportTypedArray;
-          if (supportTypedArray) {
-            this.worker = worker;
-            if (!data.supportTransfers) {
-              PDFJS.postMessageTransfers = false;
-            }
-            this.setupMainMessageHandler(messageHandler, worker);
-            workerInitializedCapability.resolve();
-          } else {
-            this.setupFakeWorker();
-          }
-        }.bind(this));
-
-        messageHandler.on('console_log', function (data) {
-          console.log.apply(console, data);
-        });
-        messageHandler.on('console_error', function (data) {
-          console.error.apply(console, data);
-        });
-        messageHandler.on('_unsupported_feature', function (data) {
-          UnsupportedManager.notify(data);
-        });
-
-        var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
-        // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
-        // typed array. Also, checking if we can use transfers.
-        try {
-          messageHandler.send('test', testObj, [testObj.buffer]);
-        } catch (ex) {
-          info('Cannot use postMessage transfers');
-          testObj[0] = 0;
-          messageHandler.send('test', testObj);
-        }
-        return;
-      } catch (e) {
-        info('The worker has been disabled.');
-      }
-    }
-//#endif
-    // Either workers are disabled, not supported or have thrown an exception.
-    // Thus, we fallback to a faked worker.
-    this.setupFakeWorker();
+    this.setupMessageHandler();
   }
   WorkerTransport.prototype = {
     destroy: function WorkerTransport_destroy() {
@@ -1123,81 +1334,22 @@ var WorkerTransport = (function WorkerTransportClosure() {
       waitOn.push(terminated);
       Promise.all(waitOn).then(function () {
         FontLoader.clear();
-        if (self.worker) {
-          self.worker.terminate();
-        }
         if (self.pdfDataRangeTransport) {
           self.pdfDataRangeTransport.abort();
           self.pdfDataRangeTransport = null;
         }
-        self.messageHandler = null;
+        if (self.messageHandler) {
+          self.messageHandler.destroy();
+          self.messageHandler = null;
+        }
         self.destroyCapability.resolve();
       }, this.destroyCapability.reject);
       return this.destroyCapability.promise;
     },
 
-    setupFakeWorker: function WorkerTransport_setupFakeWorker() {
-      globalScope.PDFJS.disableWorker = true;
-
-      if (!PDFJS.fakeWorkerFilesLoadedCapability) {
-        PDFJS.fakeWorkerFilesLoadedCapability = createPromiseCapability();
-        // In the developer build load worker_loader which in turn loads all the
-        // other files and resolves the promise. In production only the
-        // pdf.worker.js file is needed.
-//#if !PRODUCTION
-        Util.loadScript(PDFJS.workerSrc);
-//#endif
-//#if PRODUCTION && SINGLE_FILE
-//      PDFJS.fakeWorkerFilesLoadedCapability.resolve();
-//#endif
-//#if PRODUCTION && !SINGLE_FILE
-//      Util.loadScript(PDFJS.workerSrc, function() {
-//        PDFJS.fakeWorkerFilesLoadedCapability.resolve();
-//      });
-//#endif
-      }
-      PDFJS.fakeWorkerFilesLoadedCapability.promise.then(function () {
-        warn('Setting up fake worker.');
-        // If we don't use a worker, just post/sendMessage to the main thread.
-        var fakeWorker = {
-          _listeners: [],
-          postMessage: function WorkerTransport_postMessage(obj) {
-            var e = {data: obj};
-            this._listeners.forEach(function (listener) {
-              listener.call(this, e);
-            }, this);
-          },
-          addEventListener: function (name, listener) {
-            this._listeners.push(listener);
-          },
-          removeEventListener: function (name, listener) {
-            var i = this._listeners.indexOf(listener);
-            this._listeners.splice(i, 1);
-          },
-          terminate: function WorkerTransport_terminate() {}
-        };
-
-        var messageHandler = new MessageHandler('main', 'worker', fakeWorker);
-        this.setupMainMessageHandler(messageHandler, fakeWorker);
-
-        // If the main thread is our worker, setup the handling for the messages
-        // the main thread sends to it self.
-        var workerHandler = new MessageHandler('worker', 'main', fakeWorker);
-        PDFJS.WorkerMessageHandler.setup(workerHandler, fakeWorker);
-
-        this.workerInitializedCapability.resolve();
-      }.bind(this));
-    },
-
-    setupMainMessageHandler:
-        function WorkerTransport_setupMainMessageHandler(messageHandler, port) {
-      this.mainMessageHandler = messageHandler;
-      this.port = port;
-    },
-
     setupMessageHandler:
-      function WorkerTransport_setupMessageHandler(messageHandler) {
-      this.messageHandler = messageHandler;
+      function WorkerTransport_setupMessageHandler() {
+      var messageHandler = this.messageHandler;
 
       function updatePassword(password) {
         messageHandler.send('UpdatePassword', password);
@@ -1460,45 +1612,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
           img.src = imageUrl;
         });
       }, this);
-    },
-
-    fetchDocument: function WorkerTransport_fetchDocument(loadingTask, source) {
-      if (this.destroyed) {
-        loadingTask._capability.reject(new Error('Loading aborted'));
-        this.destroyCapability.resolve();
-        return;
-      }
-
-      this.loadingTask = loadingTask;
-
-      source.disableAutoFetch = PDFJS.disableAutoFetch;
-      source.disableStream = PDFJS.disableStream;
-      source.chunkedViewerLoading = !!this.pdfDataRangeTransport;
-      if (this.pdfDataRangeTransport) {
-        source.length = this.pdfDataRangeTransport.length;
-        source.initialData = this.pdfDataRangeTransport.initialData;
-      }
-      var docId = 'doc';
-      this.mainMessageHandler.sendWithPromise('GetDocRequest', {
-        docId: docId,
-        source: source,
-        disableRange: PDFJS.disableRange,
-        maxImageSize: PDFJS.maxImageSize,
-        cMapUrl: PDFJS.cMapUrl,
-        cMapPacked: PDFJS.cMapPacked,
-        disableFontFace: PDFJS.disableFontFace,
-        disableCreateObjectURL: PDFJS.disableCreateObjectURL,
-        verbosity: PDFJS.verbosity
-      }).then(function (workerId) {
-        if (this.destroyed) {
-          loadingTask._capability.reject(new Error('Loading aborted'));
-          this.destroyCapability.resolve();
-          return;
-        }
-
-        var messageHandler = new MessageHandler(docId, workerId, this.port);
-        this.setupMessageHandler(messageHandler);
-      }.bind(this), loadingTask._capability.reject);
     },
 
     getData: function WorkerTransport_getData() {
