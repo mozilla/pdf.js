@@ -1518,26 +1518,20 @@ PDFJS.createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
-function MessageHandler(name, comObj) {
-  this.name = name;
+function MessageHandler(sourceName, targetName, comObj) {
+  this.sourceName = sourceName;
+  this.targetName = targetName;
   this.comObj = comObj;
   this.callbackIndex = 1;
   this.postMessageTransfers = true;
   var callbacksCapabilities = this.callbacksCapabilities = {};
   var ah = this.actionHandler = {};
 
-  ah['console_log'] = [function ahConsoleLog(data) {
-    console.log.apply(console, data);
-  }];
-  ah['console_error'] = [function ahConsoleError(data) {
-    console.error.apply(console, data);
-  }];
-  ah['_unsupported_feature'] = [function ah_unsupportedFeature(data) {
-    UnsupportedManager.notify(data);
-  }];
-
-  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
+  this._onComObjOnMessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
+    if (data.targetName !== this.sourceName) {
+      return;
+    }
     if (data.isReply) {
       var callbackId = data.callbackId;
       if (data.callbackId in callbacksCapabilities) {
@@ -1554,10 +1548,14 @@ function MessageHandler(name, comObj) {
     } else if (data.action in ah) {
       var action = ah[data.action];
       if (data.callbackId) {
+        var sourceName = this.sourceName;
+        var targetName = data.sourceName;
         Promise.resolve().then(function () {
           return action[0].call(action[1], data.data);
         }).then(function (result) {
           comObj.postMessage({
+            sourceName: sourceName,
+            targetName: targetName,
             isReply: true,
             callbackId: data.callbackId,
             data: result
@@ -1568,6 +1566,8 @@ function MessageHandler(name, comObj) {
             reason = reason + '';
           }
           comObj.postMessage({
+            sourceName: sourceName,
+            targetName: targetName,
             isReply: true,
             callbackId: data.callbackId,
             error: reason
@@ -1579,7 +1579,8 @@ function MessageHandler(name, comObj) {
     } else {
       error('Unknown action from worker: ' + data.action);
     }
-  };
+  }.bind(this);
+  comObj.addEventListener('message', this._onComObjOnMessage);
 }
 
 MessageHandler.prototype = {
@@ -1598,6 +1599,8 @@ MessageHandler.prototype = {
    */
   send: function messageHandlerSend(actionName, data, transfers) {
     var message = {
+      sourceName: this.sourceName,
+      targetName: this.targetName,
       action: actionName,
       data: data
     };
@@ -1615,6 +1618,8 @@ MessageHandler.prototype = {
     function messageHandlerSendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackIndex++;
     var message = {
+      sourceName: this.sourceName,
+      targetName: this.targetName,
       action: actionName,
       data: data,
       callbackId: callbackId
@@ -1640,6 +1645,10 @@ MessageHandler.prototype = {
     } else {
       this.comObj.postMessage(message);
     }
+  },
+
+  destroy: function () {
+    this.comObj.removeEventListener('message', this._onComObjOnMessage);
   }
 };
 

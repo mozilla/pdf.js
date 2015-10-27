@@ -17,7 +17,7 @@
            Promise, PasswordResponses, PasswordException, InvalidPDFException,
            MissingPDFException, UnknownErrorException, FontFaceObject,
            loadJpegStream, createScratchCanvas, CanvasGraphics, stringToBytes,
-           UnexpectedResponseException, deprecated */
+           UnexpectedResponseException, deprecated, UnsupportedManager */
 
 'use strict';
 
@@ -354,6 +354,12 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
     this._transport = null;
 
     /**
+     * Shows if loading task is destroyed.
+     * @type {boolean}
+     */
+    this.destroyed = false;
+
+    /**
      * Callback to request a password if wrong or no password was provided.
      * The callback receives two parameters: function that needs to be called
      * with new password and reason (see {PasswordResponses}).
@@ -383,6 +389,10 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
      *                   is completed.
      */
     destroy: function () {
+      this.destroyed = true;
+      if (!this._transport) {
+        return Promise.resolve();
+      }
       return this._transport.destroy();
     },
 
@@ -1042,8 +1052,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         // Some versions of FF can't create a worker on localhost, see:
         // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
         var worker = new Worker(workerSrc);
-        var messageHandler = new MessageHandler('main', worker);
-        this.messageHandler = messageHandler;
+        var messageHandler = new MessageHandler('main', 'worker', worker);
 
         messageHandler.on('test', function transportTest(data) {
           var supportTypedArray = data && data.supportTypedArray;
@@ -1052,12 +1061,22 @@ var WorkerTransport = (function WorkerTransportClosure() {
             if (!data.supportTransfers) {
               PDFJS.postMessageTransfers = false;
             }
-            this.setupMessageHandler(messageHandler);
+            this.setupMainMessageHandler(messageHandler, worker);
             workerInitializedCapability.resolve();
           } else {
             this.setupFakeWorker();
           }
         }.bind(this));
+
+        messageHandler.on('console_log', function (data) {
+          console.log.apply(console, data);
+        });
+        messageHandler.on('console_error', function (data) {
+          console.error.apply(console, data);
+        });
+        messageHandler.on('_unsupported_feature', function (data) {
+          UnsupportedManager.notify(data);
+        });
 
         var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
         // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
@@ -1141,21 +1160,39 @@ var WorkerTransport = (function WorkerTransportClosure() {
         warn('Setting up fake worker.');
         // If we don't use a worker, just post/sendMessage to the main thread.
         var fakeWorker = {
+          _listeners: [],
           postMessage: function WorkerTransport_postMessage(obj) {
-            fakeWorker.onmessage({data: obj});
+            var e = {data: obj};
+            this._listeners.forEach(function (listener) {
+              listener.call(this, e);
+            }, this);
+          },
+          addEventListener: function (name, listener) {
+            this._listeners.push(listener);
+          },
+          removeEventListener: function (name, listener) {
+            var i = this._listeners.indexOf(listener);
+            this._listeners.splice(i, 1);
           },
           terminate: function WorkerTransport_terminate() {}
         };
 
-        var messageHandler = new MessageHandler('main', fakeWorker);
-        this.setupMessageHandler(messageHandler);
+        var messageHandler = new MessageHandler('main', 'worker', fakeWorker);
+        this.setupMainMessageHandler(messageHandler, fakeWorker);
 
         // If the main thread is our worker, setup the handling for the messages
         // the main thread sends to it self.
-        PDFJS.WorkerMessageHandler.setup(messageHandler);
+        var workerHandler = new MessageHandler('worker', 'main', fakeWorker);
+        PDFJS.WorkerMessageHandler.setup(workerHandler, fakeWorker);
 
         this.workerInitializedCapability.resolve();
       }.bind(this));
+    },
+
+    setupMainMessageHandler:
+        function WorkerTransport_setupMainMessageHandler(messageHandler, port) {
+      this.mainMessageHandler = messageHandler;
+      this.port = port;
     },
 
     setupMessageHandler:
@@ -1441,7 +1478,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
         source.length = this.pdfDataRangeTransport.length;
         source.initialData = this.pdfDataRangeTransport.initialData;
       }
-      this.messageHandler.send('GetDocRequest', {
+      var docId = 'doc';
+      this.mainMessageHandler.sendWithPromise('GetDocRequest', {
+        docId: docId,
         source: source,
         disableRange: PDFJS.disableRange,
         maxImageSize: PDFJS.maxImageSize,
@@ -1450,7 +1489,16 @@ var WorkerTransport = (function WorkerTransportClosure() {
         disableFontFace: PDFJS.disableFontFace,
         disableCreateObjectURL: PDFJS.disableCreateObjectURL,
         verbosity: PDFJS.verbosity
-      });
+      }).then(function (workerId) {
+        if (this.destroyed) {
+          loadingTask._capability.reject(new Error('Loading aborted'));
+          this.destroyCapability.resolve();
+          return;
+        }
+
+        var messageHandler = new MessageHandler(docId, workerId, this.port);
+        this.setupMessageHandler(messageHandler);
+      }.bind(this), loadingTask._capability.reject);
     },
 
     getData: function WorkerTransport_getData() {
