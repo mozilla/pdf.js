@@ -529,7 +529,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // Keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page.
-      font.loadedName = 'g_font_' + (fontRefIsDict ?
+      font.loadedName = 'g_' + this.pdfManager.docId + '_f' + (fontRefIsDict ?
         fontName.replace(/\W/g, '') : fontID);
 
       font.translated = fontCapability.promise;

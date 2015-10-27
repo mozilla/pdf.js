@@ -1299,6 +1299,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.loadingTask = loadingTask;
     this.pdfDataRangeTransport = pdfDataRangeTransport;
     this.commonObjs = new PDFObjects();
+    this.fontLoader = new FontLoader(loadingTask.docId);
 
     this.destroyed = false;
     this.destroyCapability = null;
@@ -1333,7 +1334,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var terminated = this.messageHandler.sendWithPromise('Terminate', null);
       waitOn.push(terminated);
       Promise.all(waitOn).then(function () {
-        FontLoader.clear();
+        self.fontLoader.clear();
         if (self.pdfDataRangeTransport) {
           self.pdfDataRangeTransport.abort();
           self.pdfDataRangeTransport = null;
@@ -1489,7 +1490,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               font = new FontFaceObject(exportedData);
             }
 
-            FontLoader.bind(
+            this.fontLoader.bind(
               [font],
               function fontReady(fontObjs) {
                 this.commonObjs.resolve(id, font);
@@ -1697,7 +1698,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
           }
         }
         this.commonObjs.clear();
-        FontLoader.clear();
+        this.fontLoader.clear();
       }.bind(this));
     }
   };

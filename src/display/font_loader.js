@@ -19,12 +19,24 @@
 
 PDFJS.disableFontFace = false;
 
-var FontLoader = {
+function FontLoader(docId) {
+  this.docId = docId;
+  this.styleElement = null;
+//#if !(MOZCENTRAL)
+  this.nativeFontFaces = [];
+  this.loadTestFontId = 0;
+  this.loadingContext = {
+    requests: [],
+    nextRequestId: 0
+  };
+//#endif
+}
+FontLoader.prototype = {
   insertRule: function fontLoaderInsertRule(rule) {
-    var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
+    var styleElement = this.styleElement;
     if (!styleElement) {
-      styleElement = document.createElement('style');
-      styleElement.id = 'PDFJS_FONT_STYLE_TAG';
+      styleElement = this.styleElement = document.createElement('style');
+      styleElement.id = 'PDFJS_FONT_STYLE_TAG_' + this.docId;
       document.documentElement.getElementsByTagName('head')[0].appendChild(
         styleElement);
     }
@@ -34,7 +46,7 @@ var FontLoader = {
   },
 
   clear: function fontLoaderClear() {
-    var styleElement = document.getElementById('PDFJS_FONT_STYLE_TAG');
+    var styleElement = this.styleElement;
     if (styleElement) {
       styleElement.parentNode.removeChild(styleElement);
     }
@@ -75,49 +87,6 @@ var FontLoader = {
     ));
   },
 
-  get isEvalSupported() {
-    var evalSupport = false;
-    if (PDFJS.isEvalSupported) {
-      try {
-        /* jshint evil: true */
-        new Function('');
-        evalSupport = true;
-      } catch (e) {}
-    }
-    return shadow(this, 'isEvalSupported', evalSupport);
-  },
-
-  loadTestFontId: 0,
-
-  loadingContext: {
-    requests: [],
-    nextRequestId: 0
-  },
-
-  isSyncFontLoadingSupported: (function detectSyncFontLoadingSupport() {
-    if (isWorker) {
-      return false;
-    }
-
-    // User agent string sniffing is bad, but there is no reliable way to tell
-    // if font is fully loaded and ready to be used with canvas.
-    var userAgent = window.navigator.userAgent;
-    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
-    if (m && m[1] >= 14) {
-      return true;
-    }
-    // TODO other browsers
-    if (userAgent === 'node') {
-      return true;
-    }
-    return false;
-  })(),
-
-  nativeFontFaces: [],
-
-  isFontLoadingAPISupported: (!isWorker && typeof document !== 'undefined' &&
-                              !!document.fonts),
-
   addNativeFontFace: function fontLoader_addNativeFontFace(nativeFontFace) {
     this.nativeFontFaces.push(nativeFontFace);
     document.fonts.add(nativeFontFace);
@@ -146,27 +115,29 @@ var FontLoader = {
       }
       font.attached = true;
 
-      if (this.isFontLoadingAPISupported) {
+      if (FontLoader.isFontLoadingAPISupported) {
         var nativeFontFace = font.createNativeFontFace();
         if (nativeFontFace) {
+          this.addNativeFontFace(nativeFontFace);
           fontLoadPromises.push(getNativeFontPromise(nativeFontFace));
         }
       } else {
-        var rule = font.bindDOM();
+        var rule = font.createFontFaceRule();
         if (rule) {
+          this.insertRule(rule);
           rules.push(rule);
           fontsToLoad.push(font);
         }
       }
     }
 
-    var request = FontLoader.queueLoadingCallback(callback);
-    if (this.isFontLoadingAPISupported) {
+    var request = this.queueLoadingCallback(callback);
+    if (FontLoader.isFontLoadingAPISupported) {
       Promise.all(fontLoadPromises).then(function() {
         request.complete();
       });
-    } else if (rules.length > 0 && !this.isSyncFontLoadingSupported) {
-      FontLoader.prepareFontLoadEvent(rules, fontsToLoad, request);
+    } else if (rules.length > 0 && !FontLoader.isSyncFontLoadingSupported) {
+      this.prepareFontLoadEvent(rules, fontsToLoad, request);
     } else {
       request.complete();
     }
@@ -184,7 +155,7 @@ var FontLoader = {
       }
     }
 
-    var context = FontLoader.loadingContext;
+    var context = this.loadingContext;
     var requestId = 'pdfjs-font-loading-' + (context.nextRequestId++);
     var request = {
       id: requestId,
@@ -271,7 +242,7 @@ var FontLoader = {
       var url = 'url(data:font/opentype;base64,' + btoa(data) + ');';
       var rule = '@font-face { font-family:"' + loadTestFontId + '";src:' +
                  url + '}';
-      FontLoader.insertRule(rule);
+      this.insertRule(rule);
 
       var names = [];
       for (i = 0, ii = fonts.length; i < ii; i++) {
@@ -316,19 +287,56 @@ var FontLoader = {
 //}
 //#endif
 };
+//#if !(MOZCENTRAL)
+FontLoader.isFontLoadingAPISupported = (!isWorker &&
+  typeof document !== 'undefined' && !!document.fonts);
+//#endif
+//#if !(MOZCENTRAL || CHROME)
+Object.defineProperty(FontLoader, 'isSyncFontLoadingSupported', {
+  get: function () {
+    var supported = false;
+
+    // User agent string sniffing is bad, but there is no reliable way to tell
+    // if font is fully loaded and ready to be used with canvas.
+    var userAgent = window.navigator.userAgent;
+    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
+    if (m && m[1] >= 14) {
+      supported = true;
+    }
+    // TODO other browsers
+    if (userAgent === 'node') {
+      supported = true;
+    }
+    return shadow(FontLoader, 'isSyncFontLoadingSupported', supported);
+  },
+  enumerable: true,
+  configurable: true
+});
+//#endif
 
 var FontFaceObject = (function FontFaceObjectClosure() {
-  function FontFaceObject(name, file, properties) {
+  function FontFaceObject(translatedData) {
     this.compiledGlyphs = {};
-    if (arguments.length === 1) {
-      // importing translated data
-      var data = arguments[0];
-      for (var i in data) {
-        this[i] = data[i];
-      }
-      return;
+    // importing translated data
+    for (var i in translatedData) {
+      this[i] = translatedData[i];
     }
   }
+  Object.defineProperty(FontFaceObject, 'isEvalSupported', {
+    get: function () {
+      var evalSupport = false;
+      if (PDFJS.isEvalSupported) {
+        try {
+          /* jshint evil: true */
+          new Function('');
+          evalSupport = true;
+        } catch (e) {}
+      }
+      return shadow(this, 'isEvalSupported', evalSupport);
+    },
+    enumerable: true,
+    configurable: true
+  });
   FontFaceObject.prototype = {
 //#if !(MOZCENTRAL)
     createNativeFontFace: function FontFaceObject_createNativeFontFace() {
@@ -343,8 +351,6 @@ var FontFaceObject = (function FontFaceObjectClosure() {
 
       var nativeFontFace = new FontFace(this.loadedName, this.data, {});
 
-      FontLoader.addNativeFontFace(nativeFontFace);
-
       if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
           globalScope['FontInspector'].enabled) {
         globalScope['FontInspector'].fontAdded(this);
@@ -353,7 +359,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
     },
 //#endif
 
-    bindDOM: function FontFaceObject_bindDOM() {
+    createFontFaceRule: function FontFaceObject_createFontFaceRule() {
       if (!this.data) {
         return null;
       }
@@ -370,7 +376,6 @@ var FontFaceObject = (function FontFaceObjectClosure() {
       var url = ('url(data:' + this.mimetype + ';base64,' +
                  window.btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
-      FontLoader.insertRule(rule);
 
       if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
           globalScope['FontInspector'].enabled) {
@@ -380,13 +385,14 @@ var FontFaceObject = (function FontFaceObjectClosure() {
       return rule;
     },
 
-    getPathGenerator: function FontLoader_getPathGenerator(objs, character) {
+    getPathGenerator:
+        function FontFaceObject_getPathGenerator(objs, character) {
       if (!(character in this.compiledGlyphs)) {
         var cmds = objs.get(this.loadedName + '_path_' + character);
         var current, i, len;
 
         // If we can, compile cmds into JS for MAXIMUM SPEED
-        if (FontLoader.isEvalSupported) {
+        if (FontFaceObject.isEvalSupported) {
           var args, js = '';
           for (i = 0, len = cmds.length; i < len; i++) {
             current = cmds[i];
