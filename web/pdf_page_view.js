@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale,
-           TextLayerBuilder, AnnotationsLayerBuilder, Promise */
+           TextLayerBuilder, AnnotationsLayerBuilder, Promise,
+           approximateFraction, roundToDivide */
 
 'use strict';
 
@@ -315,7 +316,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       var outputScale = getOutputScale(ctx);
 
       if (PDFJS.useOnlyCssZoom) {
-        var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+        var actualSizeViewport = viewport.clone({scale: CSS_UNITS});
         // Use a scale that will make the canvas be the original intended size
         // of the page.
         outputScale.sx *= actualSizeViewport.width / viewport.width;
@@ -336,10 +337,12 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       }
 
-      canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
-      canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
-      canvas.style.width = Math.floor(viewport.width) + 'px';
-      canvas.style.height = Math.floor(viewport.height) + 'px';
+      var sfx = approximateFraction(outputScale.sx);
+      var sfy = approximateFraction(outputScale.sy);
+      canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
+      canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
+      canvas.style.width = roundToDivide(viewport.width, sfx[1]) + 'px';
+      canvas.style.height = roundToDivide(viewport.height, sfy[1]) + 'px';
       // Add the viewport so it's known what it was originally drawn with.
       canvas._viewport = viewport;
 
