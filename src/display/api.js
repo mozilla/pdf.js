@@ -23,6 +23,8 @@
 
 'use strict';
 
+var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
+
 /**
  * The maximum allowed image size in total pixels e.g. width * height. Images
  * above this value will not be drawn. Use -1 for no limit.
@@ -217,6 +219,9 @@ PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
  * @property {number}     length - The PDF file length. It's used for progress
  *   reports and range requests operations.
  * @property {PDFDataRangeTransport} range
+ * @property {number}     rangeChunkSize - Optional parameter to specify
+ *   maximum number of bytes fetched per range request. The default value is
+ *   2^16 = 65536.
  */
 
 /**
@@ -325,6 +330,8 @@ PDFJS.getDocument = function getDocument(src,
     }
     params[key] = source[key];
   }
+
+  params.rangeChunkSize = source.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
 
   workerInitializedCapability = createPromiseCapability();
   transport = new WorkerTransport(workerInitializedCapability, source.range);
