@@ -1252,6 +1252,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('commonobj', function transportObj(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
         var id = data[0];
         var type = data[1];
         if (this.commonObjs.hasData(id)) {
@@ -1288,6 +1292,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('obj', function transportObj(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
         var id = data[0];
         var pageIndex = data[1];
         var type = data[2];
@@ -1319,6 +1327,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('DocProgress', function transportDocProgress(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
         var loadingTask = this.loadingTask;
         if (loadingTask.onProgress) {
           loadingTask.onProgress({
@@ -1329,6 +1341,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('PageError', function transportError(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
         var page = this.pageCache[data.pageNum - 1];
         var intentState = page.intentStates[data.intent];
         if (intentState.displayReadyCapability) {
@@ -1339,6 +1355,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('JpegDecode', function(data) {
+        if (this.destroyed) {
+          return Promise.reject('Worker was terminated');
+        }
+
         var imageUrl = data[0];
         var components = data[1];
         if (components !== 3 && components !== 1) {
@@ -1378,7 +1398,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
           };
           img.src = imageUrl;
         });
-      });
+      }, this);
     },
 
     fetchDocument: function WorkerTransport_fetchDocument(loadingTask, source) {
