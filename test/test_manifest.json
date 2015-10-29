@@ -33,12 +33,10 @@
        "type": "text"
     },
     {  "id": "issue1293",
-       "file": "pdfs/issue1293.pdf",
-       "md5": "0a744b3bbf2fd8da0131fd3c01dd1e30",
+       "file": "pdfs/issue1293r.pdf",
+       "md5": "4a098f5051f34fab036f5bbe88f8deef",
        "rounds": 1,
-       "link": true,
-       "firstPage": 1,
-       "lastPage": 1,
+       "link": false,
        "type": "load",
        "about": "PDF with undefined stream length."
     },
