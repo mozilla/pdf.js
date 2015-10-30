@@ -39,6 +39,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     this.active = false; // If active, find results will be highlighted.
     this.pageContents = []; // Stores the text for each page.
     this.pageMatches = [];
+    this.matchCount = 0;
     this.selected = { // Currently selected match.
       pageIdx: -1,
       matchIdx: -1
@@ -116,7 +117,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
       var queryLen = query.length;
 
       if (queryLen === 0) {
-        return; // Do nothing: the matches should be wiped out already.
+        // Do nothing: the matches should be wiped out already.
+        return;
       }
 
       if (!caseSensitive) {
@@ -138,6 +140,12 @@ var PDFFindController = (function PDFFindControllerClosure() {
       if (this.resumePageIdx === pageIndex) {
         this.resumePageIdx = null;
         this.nextPageMatch();
+      }
+
+      // Update the matches count
+      if (matches.length > 0) {
+        this.matchCount += matches.length;
+        this.updateUIResultsCount();
       }
     },
 
@@ -230,6 +238,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.hadMatch = false;
         this.resumePageIdx = null;
         this.pageMatches = [];
+        this.matchCount = 0;
         var self = this;
 
         for (var i = 0; i < numPages; i++) {
@@ -386,6 +395,15 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
     },
 
+    updateUIResultsCount:
+        function PDFFindController_updateUIResultsCount() {
+      if (this.findBar === null) {
+        throw new Error('PDFFindController is not initialized with a ' +
+          'PDFFindBar instance.');
+      }
+      this.findBar.updateResultsCount(this.matchCount);
+    },
+
     updateUIState: function PDFFindController_updateUIState(state, previous) {
       if (this.integratedFind) {
         FirefoxCom.request('updateFindControlState',
@@ -396,7 +414,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         throw new Error('PDFFindController is not initialized with a ' +
                         'PDFFindBar instance.');
       }
-      this.findBar.updateUIState(state, previous);
+      this.findBar.updateUIState(state, previous, this.matchCount);
     }
   };
   return PDFFindController;

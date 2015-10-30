@@ -477,6 +477,13 @@ html[dir='ltr'] .doorHangerRight:before {
   margin-right: -9px;
 }
 
+#findResultsCount {
+  background-color: hsl(0, 0%, 85%);
+  color: hsl(0, 0%, 32%);
+  text-align: center;
+  padding: 3px 4px;
+}
+
 #findMsg {
   font-style: italic;
   color: #A6B7D0;
