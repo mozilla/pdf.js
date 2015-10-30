@@ -17,5 +17,6 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
+  "bugs": "https://github.com/mozilla/pdf.js/issues",
   "license": "Apache-2.0"
 }
