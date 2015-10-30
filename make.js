@@ -486,6 +486,8 @@ target.bundle = function(args) {
   echo('### Bundling files into ' + BUILD_TARGET);
 
   function bundle(filename, outfilename, SRC_FILES, EXT_SRC_FILES) {
+    echo('### excludes ' + JSON.stringify(excludes));
+    echo('### SRC_FILES ' + JSON.stringify(SRC_FILES));
     for (var i = 0, length = excludes.length; i < length; ++i) {
       var exclude = excludes[i];
       var index = SRC_FILES.indexOf(exclude);
