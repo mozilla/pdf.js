@@ -95,7 +95,8 @@ var PDFFindBar = (function PDFFindBarClosure() {
       return window.dispatchEvent(event);
     },
 
-    updateUIState: function PDFFindBar_updateUIState(state, previous) {
+    updateUIState:
+        function PDFFindBar_updateUIState(state, previous, matchCount) {
       var notFound = false;
       var findMsg = '';
       var status = '';
@@ -132,34 +133,26 @@ var PDFFindBar = (function PDFFindBarClosure() {
 
       this.findField.setAttribute('data-status', status);
       this.findMsg.textContent = findMsg;
+
+      this.updateResultsCount(matchCount);
     },
 
-    updateResultsCount: function(matches) {
-      if (!matches) {
-        return this.hideResultsCount();
-      }
-
-      // Loop through and add up all the matches between pages
-      var matchCounter = 0;
-
-      for (var i = 0, len = matches.length; i < len; i++) {
-        matchCounter += matches[i].length;
+    updateResultsCount: function(matchCount) {
+      if (!this.findResultsCount) {
+        return; // no UI control is provided
       }
 
       // If there are no matches, hide the counter
-      if (!matchCounter) {
-        return this.hideResultsCount();
+      if (!matchCount) {
+        this.findResultsCount.classList.add('hidden');
+        return;
       }
 
       // Create the match counter
-      this.findResultsCount.textContent = matchCounter;
+      this.findResultsCount.textContent = matchCount.toLocaleString();
 
       // Show the counter
       this.findResultsCount.classList.remove('hidden');
-    },
-
-    hideResultsCount: function() {
-      this.findResultsCount.classList.add('hidden');
     },
 
     open: function PDFFindBar_open() {
