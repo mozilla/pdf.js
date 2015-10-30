@@ -10,6 +10,10 @@
     "typogr": "~0.6.5",
     "yargs": "^3.14.0"
   },
+  "keywords": [
+    "mozilla",
+    "pdf.js"
+  ],
   "scripts": {
     "test": "node ./node_modules/.bin/jshint --extra-ext .jsm ."
   },
