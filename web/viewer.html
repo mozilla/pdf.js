@@ -133,7 +133,7 @@ See https://github.com/adobe-type-tools/cmap-resources
       </div>  <!-- sidebarContainer -->
 
       <div id="mainContainer">
-        <div class="findbar hidden doorHanger hiddenSmallView" id="findbar">
+        <div class="findbar hidden doorHanger" id="findbar">
           <label for="findInput" class="toolbarLabel" data-l10n-id="find_label">Find:</label>
           <input id="findInput" class="toolbarField" tabindex="91">
           <div class="splitToolbarButton">
@@ -145,11 +145,17 @@ See https://github.com/adobe-type-tools/cmap-resources
               <span data-l10n-id="find_next_label">Next</span>
             </button>
           </div>
-          <input type="checkbox" id="findHighlightAll" class="toolbarField" tabindex="94">
-          <label for="findHighlightAll" class="toolbarLabel" data-l10n-id="find_highlight">Highlight all</label>
-          <input type="checkbox" id="findMatchCase" class="toolbarField" tabindex="95">
-          <label for="findMatchCase" class="toolbarLabel" data-l10n-id="find_match_case_label">Match case</label>
-          <span id="findMsg" class="toolbarLabel"></span>
+          <div id="findControls">
+            <label class="toolbarLabel">
+              <input type="checkbox" id="findHighlightAll" class="toolbarField" tabindex="94">
+              <span data-l10n-id="find_highlight">Highlight all</span>
+            </label>
+            <label class="toolbarLabel">
+              <input type="checkbox" id="findMatchCase" class="toolbarField" tabindex="95">
+              <span data-l10n-id="find_match_case_label">Match case</span>
+            </label>
+            <div id="findMsg" class="toolbarLabel"></div>
+          </div>
         </div>  <!-- findbar -->
 
         <div id="secondaryToolbar" class="secondaryToolbar hidden doorHangerRight">
@@ -214,10 +220,10 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
                 <div class="toolbarButtonSpacer"></div>
-                <button id="viewFind" class="toolbarButton group hiddenSmallView" title="Find in Document" tabindex="12" data-l10n-id="findbar">
+                <button id="viewFind" class="toolbarButton group" title="Find in Document" tabindex="12" data-l10n-id="findbar">
                    <span data-l10n-id="findbar_label">Find</span>
                 </button>
-                <div class="splitToolbarButton">
+                <div class="splitToolbarButton hiddenSmallView">
                   <button class="toolbarButton pageUp" title="Previous Page" id="previous" tabindex="13" data-l10n-id="previous">
                     <span data-l10n-id="previous_label">Previous</span>
                   </button>

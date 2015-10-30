@@ -40,6 +40,10 @@ select {
   outline: none;
 }
 
+label > input, label > span {
+  vertical-align: middle;
+}
+
 .hidden {
   display: none !important;
 }
@@ -372,7 +376,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   top: 32px;
   position: absolute;
   z-index: 10000;
-  height: 32px;
+  height: auto;
 
   min-width: 16px;
   padding: 0px 6px 0px 6px;
@@ -477,9 +481,20 @@ html[dir='ltr'] .doorHangerRight:before {
   margin-right: -9px;
 }
 
+#findControls {
+  margin-top: 1px;
+}
+
 #findMsg {
   font-style: italic;
   color: #A6B7D0;
+  margin-top: 2px;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+#findMsg:empty {
+  display: none;
 }
 
 #findInput.notFound {
@@ -1880,29 +1895,42 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-@media all and (max-width: 600px) {
-  .hiddenSmallView {
+@media all and (max-width: 570px) {
+  .hiddenSmallView,
+  .hiddenSmallView * {
     display: none;
   }
+
   .visibleSmallView {
     display: inherit;
   }
+
   html[dir='ltr'] #outerContainer.sidebarMoving .outerCenter,
   html[dir='ltr'] #outerContainer.sidebarOpen .outerCenter,
   html[dir='ltr'] .outerCenter {
-    left: 156px;
+    left: 120px;
   }
+
   html[dir='rtl'] #outerContainer.sidebarMoving .outerCenter,
   html[dir='rtl'] #outerContainer.sidebarOpen .outerCenter,
   html[dir='rtl'] .outerCenter {
-    right: 156px;
+    right: 120px;
   }
+
   .toolbarButtonSpacer {
     width: 0;
   }
+
+  html[dir='ltr'] .findbar {
+    left: 38px;
+  }
+
+  html[dir='rtl'] .findbar {
+    right: 38px;
+  }
 }
 
-@media all and (max-width: 510px) {
+@media all and (max-width: 440px) {
   #scaleSelectContainer, #pageNumberLabel {
     display: none;
   }
