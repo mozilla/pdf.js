@@ -67,12 +67,10 @@
        "type": "eq"
     },
     {  "id": "issue3879",
-       "file": "pdfs/issue3879.pdf",
-       "md5": "1cd1f1c3271515a14e65ff2980e14663",
+       "file": "pdfs/issue3879r.pdf",
+       "md5": "756cdaf5eb54c7d78b0aa737236b9a4f",
        "rounds": 1,
-       "link": true,
-       "firstPage": 2,
-       "lastPage": 2,
+       "link": false,
        "type": "eq"
     },
     {  "id": "issue3885",
