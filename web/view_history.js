@@ -14,9 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, VIEW_HISTORY_MEMORY, Promise */
+/* globals PDFJS, Promise */
 
 'use strict';
+
+var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
 
 /**
  * View History - This is a utility for saving various view parameters for
@@ -28,8 +30,9 @@
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
 var ViewHistory = (function ViewHistoryClosure() {
-  function ViewHistory(fingerprint) {
+  function ViewHistory(fingerprint, cacheSize) {
     this.fingerprint = fingerprint;
+    this.cacheSize = cacheSize || DEFAULT_VIEW_HISTORY_CACHE_SIZE;
     this.isInitializedPromiseResolved = false;
     this.initializedPromise =
         this._readFromStorage().then(function (databaseStr) {
@@ -39,7 +42,7 @@ var ViewHistory = (function ViewHistoryClosure() {
       if (!('files' in database)) {
         database.files = [];
       }
-      if (database.files.length >= VIEW_HISTORY_MEMORY) {
+      if (database.files.length >= this.cacheSize) {
         database.files.shift();
       }
       var index;
