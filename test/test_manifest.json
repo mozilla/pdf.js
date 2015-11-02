@@ -925,6 +925,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "pr6019",
+      "file": "pdfs/pr6019.pdf",
+      "md5": "7a2e5dda3b0fc5c2e9060e378a8cdc4e",
+      "rounds": 1,
+      "type": "text",
+      "link": false
+    },
     {  "id": "type4psfunc",
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",

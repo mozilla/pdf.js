@@ -979,9 +979,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           });
       }
 
-      function buildTextGeometry(chars, textChunk) {
+      function buildTextGeometry(chars, textChunk, offset) {
         var font = textState.font;
         textChunk = textChunk || newTextChunk();
+        offset = offset || 0;
         if (!textChunk.transform) {
           // 9.4.4 Text Space Details
           var tsm = [textState.fontSize * textState.textHScale, 0,
@@ -1062,17 +1063,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var ty = 0;
           if (!font.vertical) {
             var w0 = glyphWidth * textState.fontMatrix[0];
-            tx = (w0 * textState.fontSize + charSpacing) *
+            tx = ((w0 - offset) * textState.fontSize + charSpacing) *
                  textState.textHScale;
             width += tx;
           } else {
             var w1 = glyphWidth * textState.fontMatrix[0];
-            ty = w1 * textState.fontSize + charSpacing;
+            ty = (w1 - offset) * textState.fontSize + charSpacing;
             height += ty;
           }
           textState.translateTextMatrix(tx, ty);
 
           textChunk.str.push(glyphUnicode);
+
+          offset = 0;
         }
 
         var a = textState.textLineMatrix[0];
@@ -1157,39 +1160,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var offset;
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
-                  buildTextGeometry(items[j], textChunk);
-                } else {
-                  // PDF Specification 5.3.2 states:
-                  // The number is expressed in thousandths of a unit of text
-                  // space.
-                  // This amount is subtracted from the current horizontal or
-                  // vertical coordinate, depending on the writing mode.
-                  // In the default coordinate system, a positive adjustment
-                  // has the effect of moving the next glyph painted either to
-                  // the left or down by the given amount.
-                  var val = items[j] * textState.fontSize / 1000;
-                  if (textState.font.vertical) {
-                    offset = val * textState.textMatrix[3];
-                    textState.translateTextMatrix(0, offset);
-                    // Value needs to be added to height to paint down.
-                    textChunk.height += offset;
-                  } else {
-                    offset = val * textState.textHScale *
-                                   textState.textMatrix[0];
-                    textState.translateTextMatrix(offset, 0);
-                    // Value needs to be subtracted from width to paint left.
-                    textChunk.width -= offset;
-                  }
-                  if (items[j] < 0 && textState.font.spaceWidth > 0) {
-                    var fakeSpaces = -items[j] / textState.font.spaceWidth;
-                    if (fakeSpaces > MULTI_SPACE_FACTOR) {
-                      fakeSpaces = Math.round(fakeSpaces);
-                      while (fakeSpaces--) {
-                        textChunk.str.push(' ');
-                      }
-                    } else if (fakeSpaces > SPACE_FACTOR) {
+                  var prevChar = j > 0 ? items[j - 1] : null;
+                  offset = isNum(prevChar) ? items[j - 1] / 1000 : 0;
+                  buildTextGeometry(items[j], textChunk, offset);
+                } else if (items[j] < 0 && textState.font.spaceWidth > 0) {
+                  var fakeSpaces = -items[j] / textState.font.spaceWidth;
+                  if (fakeSpaces > MULTI_SPACE_FACTOR) {
+                    fakeSpaces = Math.round(fakeSpaces);
+                    while (fakeSpaces--) {
                       textChunk.str.push(' ');
                     }
+                  } else if (fakeSpaces > SPACE_FACTOR) {
+                    textChunk.str.push(' ');
                   }
                 }
               }
