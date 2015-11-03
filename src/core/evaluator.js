@@ -350,9 +350,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         for (var i = 0, ii = glyphs.length; i < ii; i++) {
           var glyph = glyphs[i];
-          if (glyph === null) {
-            continue;
-          }
           buildPath(glyph.fontChar);
 
           // If the glyph has an accent we need to build a path for its
@@ -1012,10 +1009,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var defaultVMetrics = font.defaultVMetrics;
         for (var i = 0; i < glyphs.length; i++) {
           var glyph = glyphs[i];
-          if (!glyph) { // Previous glyph was a space.
-            width += textState.wordSpacing * textState.textHScale;
-            continue;
-          }
           var vMetricX = null;
           var vMetricY = null;
           var glyphWidth = null;
@@ -1051,11 +1044,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // var x = pt[0];
           // var y = pt[1];
 
-          var charSpacing = 0;
-          if (textChunk.str.length > 0) {
-            // Apply char spacing only when there are chars.
-            // As a result there is only spacing between glyphs.
-            charSpacing = textState.charSpacing;
+          var charSpacing = textState.charSpacing;
+          if (glyph.isSpace) {
+            var wordSpacing = textState.wordSpacing;
+            charSpacing += wordSpacing;
+            if (wordSpacing > 0) {
+              addFakeSpaces(wordSpacing * 1000 / textState.fontSize,
+                            textChunk.str);
+            }
           }
 
           var tx = 0;
@@ -1087,6 +1083,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           textChunk.height += Math.abs(height * scaleCtmX * scaleLineX);
         }
         return textChunk;
+      }
+
+      function addFakeSpaces(width, strBuf) {
+        var spaceWidth = textState.font.spaceWidth;
+        if (spaceWidth <= 0) {
+          return;
+        }
+        var fakeSpaces = width / spaceWidth;
+        if (fakeSpaces > MULTI_SPACE_FACTOR) {
+          fakeSpaces = Math.round(fakeSpaces);
+          while (fakeSpaces--) {
+            strBuf.push(' ');
+          }
+        } else if (fakeSpaces > SPACE_FACTOR) {
+          strBuf.push(' ');
+        }
       }
 
       var timeSlotManager = new TimeSlotManager();
@@ -1167,29 +1179,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // In the default coordinate system, a positive adjustment
                   // has the effect of moving the next glyph painted either to
                   // the left or down by the given amount.
-                  var val = items[j] * textState.fontSize / 1000;
+                  var advance = items[j];
+                  var val = advance * textState.fontSize / 1000;
                   if (textState.font.vertical) {
-                    offset = val * textState.textMatrix[3];
-                    textState.translateTextMatrix(0, offset);
+                    offset = val *
+                      (textState.textHScale * textState.textMatrix[2] +
+                       textState.textMatrix[3]);
+                    textState.translateTextMatrix(0, val);
                     // Value needs to be added to height to paint down.
                     textChunk.height += offset;
                   } else {
-                    offset = val * textState.textHScale *
-                                   textState.textMatrix[0];
-                    textState.translateTextMatrix(offset, 0);
+                    offset = val * (
+                      textState.textHScale * textState.textMatrix[0] +
+                      textState.textMatrix[1]);
+                    textState.translateTextMatrix(-val, 0);
                     // Value needs to be subtracted from width to paint left.
                     textChunk.width -= offset;
+                    advance = -advance;
                   }
-                  if (items[j] < 0 && textState.font.spaceWidth > 0) {
-                    var fakeSpaces = -items[j] / textState.font.spaceWidth;
-                    if (fakeSpaces > MULTI_SPACE_FACTOR) {
-                      fakeSpaces = Math.round(fakeSpaces);
-                      while (fakeSpaces--) {
-                        textChunk.str.push(' ');
-                      }
-                    } else if (fakeSpaces > SPACE_FACTOR) {
-                      textChunk.str.push(' ');
-                    }
+                  if (advance > 0) {
+                    addFakeSpaces(advance, textChunk.str);
                   }
                 }
               }

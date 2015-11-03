@@ -2170,23 +2170,26 @@ function getFontType(type, subtype) {
 }
 
 var Glyph = (function GlyphClosure() {
-  function Glyph(fontChar, unicode, accent, width, vmetric, operatorListId) {
+  function Glyph(fontChar, unicode, accent, width, vmetric, operatorListId,
+                 isSpace) {
     this.fontChar = fontChar;
     this.unicode = unicode;
     this.accent = accent;
     this.width = width;
     this.vmetric = vmetric;
     this.operatorListId = operatorListId;
+    this.isSpace = isSpace;
   }
 
-  Glyph.prototype.matchesForCache =
-      function(fontChar, unicode, accent, width, vmetric, operatorListId) {
+  Glyph.prototype.matchesForCache = function(fontChar, unicode, accent, width,
+                                             vmetric, operatorListId, isSpace) {
     return this.fontChar === fontChar &&
            this.unicode === unicode &&
            this.accent === accent &&
            this.width === width &&
            this.vmetric === vmetric &&
-           this.operatorListId === operatorListId;
+           this.operatorListId === operatorListId &&
+           this.isSpace === isSpace;
   };
 
   return Glyph;
@@ -4701,7 +4704,7 @@ var Font = (function FontClosure() {
       return width;
     },
 
-    charToGlyph: function Font_charToGlyph(charcode) {
+    charToGlyph: function Font_charToGlyph(charcode, isSpace) {
       var fontCharCode, width, operatorListId;
 
       var widthCode = charcode;
@@ -4744,9 +4747,9 @@ var Font = (function FontClosure() {
       var glyph = this.glyphCache[charcode];
       if (!glyph ||
           !glyph.matchesForCache(fontChar, unicode, accent, width, vmetric,
-                                 operatorListId)) {
+                                 operatorListId, isSpace)) {
         glyph = new Glyph(fontChar, unicode, accent, width, vmetric,
-                          operatorListId);
+                          operatorListId, isSpace);
         this.glyphCache[charcode] = glyph;
       }
       return glyph;
@@ -4782,22 +4785,16 @@ var Font = (function FontClosure() {
           charcode = c.charcode;
           var length = c.length;
           i += length;
-          glyph = this.charToGlyph(charcode);
+          // Space is char with code 0x20 and length 1 in multiple-byte codes.
+          var isSpace = length === 1 && chars.charCodeAt(i - 1) === 0x20;
+          glyph = this.charToGlyph(charcode, isSpace);
           glyphs.push(glyph);
-          // placing null after each word break charcode (ASCII SPACE)
-          // Ignore occurences of 0x20 in multiple-byte codes.
-          if (length === 1 && chars.charCodeAt(i - 1) === 0x20) {
-            glyphs.push(null);
-          }
         }
       } else {
         for (i = 0, ii = chars.length; i < ii; ++i) {
           charcode = chars.charCodeAt(i);
-          glyph = this.charToGlyph(charcode);
+          glyph = this.charToGlyph(charcode, charcode === 0x20);
           glyphs.push(glyph);
-          if (charcode === 0x20) {
-            glyphs.push(null);
-          }
         }
       }
 
