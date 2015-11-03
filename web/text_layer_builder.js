@@ -51,11 +51,16 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.viewport = options.viewport;
     this.textDivs = [];
     this.findController = options.findController || null;
+    this._bindMouse();
   }
 
   TextLayerBuilder.prototype = {
     _finishRendering: function TextLayerBuilder_finishRendering() {
       this.renderingDone = true;
+
+      var endOfContent = document.createElement('div');
+      endOfContent.className = 'endOfContent';
+      this.textLayerDiv.appendChild(endOfContent);
 
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('textlayerrendered', true, true, {
@@ -392,7 +397,49 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       this.matches = this.convertMatches(this.findController === null ?
         [] : (this.findController.pageMatches[this.pageIdx] || []));
       this.renderMatches(this.matches);
-    }
+    },
+
+    /**
+     * Fixes text selection: adds additional div where mouse was clicked.
+     * This reduces flickering of the content if mouse slowly dragged down/up.
+     * @private
+     */
+    _bindMouse: function TextLayerBuilder_bindMouse() {
+      var div = this.textLayerDiv;
+      div.addEventListener('mousedown', function (e) {
+        var end = div.querySelector('.endOfContent');
+        if (!end) {
+          return;
+        }
+//#if !(MOZCENTRAL || FIREFOX)
+        // On non-Firefox browsers, the selection will feel better if the height
+        // of the endOfContent div will be adjusted to start at mouse click
+        // location -- this will avoid flickering when selections moves up.
+        // However it does not work when selection started on empty space.
+        var adjustTop = e.target !== div;
+//#if GENERIC
+        adjustTop = adjustTop && window.getComputedStyle(end).
+          getPropertyValue('-moz-user-select') !== 'none';
+//#endif
+        if (adjustTop) {
+          var divBounds = div.getBoundingClientRect();
+          var r = Math.max(0, (e.pageY - divBounds.top) / divBounds.height);
+          end.style.top = (r * 100).toFixed(2) + '%';
+        }
+//#endif
+        end.classList.add('active');
+      });
+      div.addEventListener('mouseup', function (e) {
+        var end = div.querySelector('.endOfContent');
+        if (!end) {
+          return;
+        }
+//#if !(MOZCENTRAL || FIREFOX)
+        end.style.top = '';
+//#endif
+        end.classList.remove('active');
+      });
+    },
   };
   return TextLayerBuilder;
 })();
