@@ -336,15 +336,13 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 }
 
 @-webkit-keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
+  0% { left: -142px; }
+  100% { left: 0; }
 }
 
 @keyframes progressIndeterminate {
-  0% { left: 0%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
+  0% { left: -142px; }
+  100% { left: 0; }
 }
 
 #loadingBar .progress.indeterminate {
@@ -353,19 +351,20 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   transition: none;
 }
 
-#loadingBar .indeterminate .glimmer {
+#loadingBar .progress.indeterminate .glimmer {
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
-  width: 50px;
+  width: calc(100% + 150px);
 
-  background-image: linear-gradient(to right, #999 0%, #fff 50%, #999 100%);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+  background: repeating-linear-gradient(135deg,
+                                        #bbb 0, #999 5px,
+                                        #999 45px, #ddd 55px,
+                                        #ddd 95px, #bbb 100px);
 
-  -webkit-animation: progressIndeterminate 2s linear infinite;
-  animation: progressIndeterminate 2s linear infinite;
+  -webkit-animation: progressIndeterminate 950ms linear infinite;
+  animation: progressIndeterminate 950ms linear infinite;
 }
 
 .findbar, .secondaryToolbar {
