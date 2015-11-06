@@ -4152,6 +4152,20 @@ var Font = (function FontClosure() {
         tables.hhea.data[11] = 0xFF;
       }
 
+      // Extract some more font properties from the OpenType head and
+      // hhea tables; yMin and descent value are always negative.
+      var metricsOverride = {
+        unitsPerEm: int16(tables.head.data[18], tables.head.data[19]),
+        yMax: int16(tables.head.data[42], tables.head.data[43]),
+        yMin: int16(tables.head.data[38], tables.head.data[39]) - 0x10000,
+        ascent: int16(tables.hhea.data[4], tables.hhea.data[5]),
+        descent: int16(tables.hhea.data[6], tables.hhea.data[7]) - 0x10000
+      };
+
+      // PDF FontDescriptor metrics lie -- using data from actual font.
+      this.ascent = metricsOverride.ascent / metricsOverride.unitsPerEm;
+      this.descent = metricsOverride.descent / metricsOverride.unitsPerEm;
+
       // The 'post' table has glyphs names.
       if (tables.post) {
         var valid = readPostScriptTable(tables.post, properties, numGlyphs);
@@ -4318,20 +4332,10 @@ var Font = (function FontClosure() {
       };
 
       if (!tables['OS/2'] || !validateOS2Table(tables['OS/2'])) {
-        // extract some more font properties from the OpenType head and
-        // hhea tables; yMin and descent value are always negative
-        var override = {
-          unitsPerEm: int16(tables.head.data[18], tables.head.data[19]),
-          yMax: int16(tables.head.data[42], tables.head.data[43]),
-          yMin: int16(tables.head.data[38], tables.head.data[39]) - 0x10000,
-          ascent: int16(tables.hhea.data[4], tables.hhea.data[5]),
-          descent: int16(tables.hhea.data[6], tables.hhea.data[7]) - 0x10000
-        };
-
         tables['OS/2'] = {
           tag: 'OS/2',
           data: createOS2Table(properties, newMapping.charCodeToGlyphId,
-                               override)
+                               metricsOverride)
         };
       }
 
