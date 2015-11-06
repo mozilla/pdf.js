@@ -577,3 +577,19 @@ if (typeof PDFJS === 'undefined') {
     PDFJS.disableFullscreen = true;
   }
 })();
+
+// Provides document.currentScript support
+// Support: IE, Chrome<29.
+(function checkCurrentScript() {
+  if ('currentScript' in document) {
+    return;
+  }
+  Object.defineProperty(document, 'currentScript', {
+    get: function () {
+      var scripts = document.getElementsByTagName('script');
+      return scripts[scripts.length - 1];
+    },
+    enumerable: true,
+    configurable: true
+  });
+})();
