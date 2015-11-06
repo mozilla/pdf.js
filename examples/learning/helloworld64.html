@@ -40,11 +40,10 @@
   //
   // PDFJS.disableWorker = true;
 
-  // In cases when the pdf.worker.js is located at the different folder than the
-  // pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
-  // shall be specified.
   //
-  // PDFJS.workerSrc = '../../build/pdf.worker.js';
+  // The workerSrc property shall be specified.
+  //
+  PDFJS.workerSrc = '../../build/pdf.worker.js';
 
   // Opening PDF by passing its binary data as a string. It is still preferable
   // to use Uint8Array, but string or array-like structure will work too.

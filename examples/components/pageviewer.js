@@ -20,11 +20,9 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
         '  `node make generic components`');
 }
 
-// In cases when the pdf.worker.js is located at the different folder than the
-// pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
-// shall be specified.
+// The workerSrc property shall be specified.
 //
-// PDFJS.workerSrc = '../../build/pdf.worker.js';
+PDFJS.workerSrc = '../../build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
 //
