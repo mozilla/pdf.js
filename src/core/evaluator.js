@@ -929,11 +929,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         lastAdvanceWidth: 0,
         lastAdvanceHeight: 0,
         textAdvanceScale: 0,
+        spaceWidth: 0,
+        fakeSpaceMin: Infinity,
+        fakeMultiSpaceMin: Infinity,
+        fakeMultiSpaceMax: -0,
+        textRunBreakAllowed: false,
         transform: null,
         fontName: null
       };
       var SPACE_FACTOR = 0.3;
       var MULTI_SPACE_FACTOR = 1.5;
+      var MULTI_SPACE_FACTOR_MAX = 4;
 
       var self = this;
       var xref = this.xref;
@@ -1000,6 +1006,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         textContentItem.textAdvanceScale = scaleCtmX * scaleLineX;
         textContentItem.lastAdvanceWidth = 0;
         textContentItem.lastAdvanceHeight = 0;
+
+        var spaceWidth = font.spaceWidth / 1000 * textState.fontSize;
+        if (spaceWidth) {
+          textContentItem.spaceWidth = spaceWidth;
+          textContentItem.fakeSpaceMin = spaceWidth * SPACE_FACTOR;
+          textContentItem.fakeMultiSpaceMin = spaceWidth * MULTI_SPACE_FACTOR;
+          textContentItem.fakeMultiSpaceMax =
+            spaceWidth * MULTI_SPACE_FACTOR_MAX;
+          // It's okay for monospace fonts to fake as much space as needed.
+          textContentItem.textRunBreakAllowed = !font.isMonospace;
+        } else {
+          textContentItem.spaceWidth = 0;
+          textContentItem.fakeSpaceMin = Infinity;
+          textContentItem.fakeMultiSpaceMin = Infinity;
+          textContentItem.fakeMultiSpaceMax = 0;
+          textContentItem.textRunBreakAllowed = false;
+        }
+
 
         textContentItem.initialized = true;
         return textContentItem;
@@ -1076,8 +1100,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var wordSpacing = textState.wordSpacing;
             charSpacing += wordSpacing;
             if (wordSpacing > 0) {
-              addFakeSpaces(wordSpacing * 1000 / textState.fontSize,
-                            textChunk.str);
+              addFakeSpaces(wordSpacing, textChunk.str);
             }
           }
 
@@ -1105,21 +1128,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           textChunk.lastAdvanceHeight = height;
           textChunk.height += Math.abs(height * textChunk.textAdvanceScale);
         }
+
         return textChunk;
       }
 
       function addFakeSpaces(width, strBuf) {
-        var spaceWidth = textState.font.spaceWidth;
-        if (spaceWidth <= 0) {
+        if (width < textContentItem.fakeSpaceMin) {
           return;
         }
-        var fakeSpaces = width / spaceWidth;
-        if (fakeSpaces > MULTI_SPACE_FACTOR) {
-          fakeSpaces = Math.round(fakeSpaces);
-          while (fakeSpaces--) {
-            strBuf.push(' ');
-          }
-        } else if (fakeSpaces > SPACE_FACTOR) {
+        if (width < textContentItem.fakeMultiSpaceMin) {
+          strBuf.push(' ');
+          return;
+        }
+        var fakeSpaces = Math.round(width / textContentItem.spaceWidth);
+        while (fakeSpaces-- > 0) {
           strBuf.push(' ');
         }
       }
@@ -1177,16 +1199,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Optimization to treat same line movement as advance
               var isSameTextLine = !textState.font ? false :
                 ((textState.font.vertical ? args[0] : args[1]) === 0);
-              if (isSameTextLine && textContentItem.initialized) {
+              advance = args[0] - args[1];
+              if (isSameTextLine && textContentItem.initialized &&
+                  advance > 0 &&
+                  advance <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(args[0], args[1]);
                 textContentItem.width +=
                   (args[0] - textContentItem.lastAdvanceWidth);
                 textContentItem.height +=
                   (args[1] - textContentItem.lastAdvanceHeight);
-                advance = (args[0] - args[1]) * 1000 / textState.fontSize;
-                if (advance > 0) {
-                  addFakeSpaces(advance, textContentItem.str);
-                }
+                var diff = (args[0] - textContentItem.lastAdvanceWidth) -
+                           (args[1] - textContentItem.lastAdvanceHeight);
+                addFakeSpaces(diff, textContentItem.str);
                 break;
               }
 
@@ -1229,9 +1253,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 if (typeof items[j] === 'string') {
                   buildTextContentItem(items[j]);
                 } else {
-                  if (j === 0) {
-                    ensureTextContentItem();
-                  }
+                  ensureTextContentItem();
+
                   // PDF Specification 5.3.2 states:
                   // The number is expressed in thousandths of a unit of text
                   // space.
@@ -1240,25 +1263,35 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   // In the default coordinate system, a positive adjustment
                   // has the effect of moving the next glyph painted either to
                   // the left or down by the given amount.
-                  advance = items[j];
-                  var val = advance * textState.fontSize / 1000;
+                  advance = items[j] * textState.fontSize / 1000;
+                  var breakTextRun = false;
                   if (textState.font.vertical) {
-                    offset = val *
+                    offset = advance *
                       (textState.textHScale * textState.textMatrix[2] +
                        textState.textMatrix[3]);
-                    textState.translateTextMatrix(0, val);
-                    // Value needs to be added to height to paint down.
-                    textContentItem.height += offset;
+                    textState.translateTextMatrix(0, advance);
+                    breakTextRun = textContentItem.textRunBreakAllowed &&
+                                   advance > textContentItem.fakeMultiSpaceMax;
+                    if (!breakTextRun) {
+                      // Value needs to be added to height to paint down.
+                      textContentItem.height += offset;
+                    }
                   } else {
-                    offset = val * (
+                    advance = -advance;
+                    offset = advance * (
                       textState.textHScale * textState.textMatrix[0] +
                       textState.textMatrix[1]);
-                    textState.translateTextMatrix(-val, 0);
-                    // Value needs to be subtracted from width to paint left.
-                    textContentItem.width -= offset;
-                    advance = -advance;
+                    textState.translateTextMatrix(advance, 0);
+                    breakTextRun = textContentItem.textRunBreakAllowed &&
+                                   advance > textContentItem.fakeMultiSpaceMax;
+                    if (!breakTextRun) {
+                      // Value needs to be subtracted from width to paint left.
+                      textContentItem.width += offset;
+                    }
                   }
-                  if (advance > 0) {
+                  if (breakTextRun) {
+                    flushTextContentItem();
+                  } else if (advance > 0) {
                     addFakeSpaces(advance, textContentItem.str);
                   }
                 }
