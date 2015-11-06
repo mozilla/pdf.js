@@ -607,6 +607,13 @@
        "link": false,
        "type": "load"
     },
+    {  "id": "issue1045",
+       "file": "pdfs/issue1045.pdf",
+       "md5": "61d7e9bfbc03cd457dcefeab3e78a687",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue5677",
        "file": "pdfs/issue5677.pdf",
        "md5": "c9101578fcb806269145132724d24ac1",
