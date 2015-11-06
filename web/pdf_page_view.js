@@ -351,8 +351,8 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (this.textLayerFactory) {
         textLayerDiv = document.createElement('div');
         textLayerDiv.className = 'textLayer';
-        textLayerDiv.style.width = canvas.style.width;
-        textLayerDiv.style.height = canvas.style.height;
+        textLayerDiv.style.width = canvasWrapper.style.width;
+        textLayerDiv.style.height = canvasWrapper.style.height;
         if (this.annotationLayer && this.annotationLayer.div) {
           // annotationLayer needs to stay on top
           div.insertBefore(textLayerDiv, this.annotationLayer.div);
