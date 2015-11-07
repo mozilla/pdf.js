@@ -492,6 +492,13 @@
        "type": "eq",
        "about": "PDF with annotations, some of which have the Hidden flag set."
     },
+    {  "id": "issue4665-text",
+       "file": "pdfs/issue4665.pdf",
+       "md5": "0de1308432819c101881df7ca4424575",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "fit11-talk",
        "file": "pdfs/fit11-talk.pdf",
        "md5": "eb7b224107205db4fea9f7df0185f77d",
