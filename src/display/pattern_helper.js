@@ -364,6 +364,8 @@ var TilingPattern = (function TilingPatternClosure() {
 
       graphics.executeOperatorList(operatorList);
 
+      this.ctx.transform(1, 0, 0, 1, x0, y0);
+
       // Rescale canvas so that the ctx.createPattern call generates a pattern
       // with the desired size.
       this.ctx.scale(1 / dimx.scale, 1 / dimy.scale);
