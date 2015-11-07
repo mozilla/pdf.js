@@ -29,9 +29,9 @@ irc.mozilla.org.
 
 ### Browser Extensions
 
-#### Firefox
+#### Firefox and Seamonkey
 
-PDF.js is built into version 19+ of Firefox, however one extension is still available:
+PDF.js is built into version 19+ of Firefox, however one extension is still available, in Seamonkey it needs to be manually installed:
 
 + [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This version is updated every time new code is merged into the PDF.js codebase. This should be quite stable but still might break from time to time.
 
