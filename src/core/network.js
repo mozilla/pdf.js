@@ -245,11 +245,13 @@ var NetworkManager = (function NetworkManagerClosure() {
         });
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
-      } else {
+      } else if (chunk) {
         pendingRequest.onDone({
           begin: 0,
           chunk: chunk
         });
+      } else if (pendingRequest.onError) {
+        pendingRequest.onError(xhr.status);
       }
     },
 
