@@ -1196,6 +1196,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "TrueType_without_cmap",
+       "file": "pdfs/TrueType_without_cmap.pdf",
+       "md5": "afca8bb11f2e1f7298b4e5dd85785fb0",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3323",
        "file": "pdfs/issue3323.pdf",
        "md5": "1a14ff574013caeafa9d598269988764",

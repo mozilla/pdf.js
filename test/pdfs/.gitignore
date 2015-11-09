@@ -2,6 +2,7 @@
 *.error
 
 !tracemonkey.pdf
+!TrueType_without_cmap.pdf
 !franz.pdf
 !franz_2.pdf
 !xref_command_missing.pdf
