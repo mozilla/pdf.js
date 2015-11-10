@@ -530,6 +530,7 @@ target.bundle = function(args) {
     'display/webgl.js',
     'display/pattern_helper.js',
     'display/font_loader.js',
+    'display/dom_utils.js',
     'display/annotation_helper.js',
     'display/svg.js'
   ]);
