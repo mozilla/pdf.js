@@ -44,7 +44,7 @@ var defaultMimeType = 'application/octet-stream';
 function WebServer() {
   this.root = '.';
   this.host = 'localhost';
-  this.port = 8000;
+  this.port = 0;
   this.server = null;
   this.verbose = false;
   this.cacheExpirationTime = 0;
@@ -56,6 +56,7 @@ function WebServer() {
 }
 WebServer.prototype = {
   start: function (callback) {
+    this._ensureNonZeroPort();
     this.server = http.createServer(this._handler.bind(this));
     this.server.listen(this.port, this.host, callback);
     console.log(
@@ -64,6 +65,19 @@ WebServer.prototype = {
   stop: function (callback) {
     this.server.close(callback);
     this.server = null;
+  },
+  _ensureNonZeroPort: function () {
+    if (!this.port) {
+      // If port is 0, a random port will be chosen instead. Do not set a host
+      // name to make sure that the port is synchronously set by .listen().
+      var server = http.createServer().listen(0);
+      var address = server.address();
+      // .address().port being available synchronously is merely an
+      // implementation detail. So we are defensive here and fall back to some
+      // fixed port when the address is not available yet.
+      this.port = address ? address.port : 8000;
+      server.close();
+    }
   },
   _handler: function (req, res) {
     var url = req.url;
