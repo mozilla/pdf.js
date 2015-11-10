@@ -532,6 +532,7 @@ target.bundle = function(args) {
     'display/font_loader.js',
     'display/dom_utils.js',
     'display/annotation_helper.js',
+    'display/text_layer.js',
     'display/svg.js'
   ]);
 
