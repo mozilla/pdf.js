@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CustomStyle, PDFJS */
+/* globals PDFJS */
 
 'use strict';
 
@@ -119,7 +119,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
             transform = 'rotate(' + rotation + 'deg) ' + transform;
           }
           if (transform) {
-            CustomStyle.setProp('transform' , textDiv, transform);
+            PDFJS.CustomStyle.setProp('transform' , textDiv, transform);
           }
         }
       }

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals PDFJS, CustomStyle, mozL10n, SimpleLinkService */
+/*globals PDFJS, mozL10n, SimpleLinkService */
 
 'use strict';
 
@@ -27,6 +27,8 @@
  * @class
  */
 var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
+  var CustomStyle = PDFJS.CustomStyle;
+
   /**
    * @param {AnnotationsLayerBuilderOptions} options
    * @constructs AnnotationsLayerBuilder
