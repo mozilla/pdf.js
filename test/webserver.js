@@ -80,7 +80,7 @@ WebServer.prototype = {
     }
   },
   _handler: function (req, res) {
-    var url = req.url;
+    var url = req.url.replace(/\/\//g, '/');
     var urlParts = /([^?]*)((?:\?(.*))?)/.exec(url);
     var pathPart = decodeURI(urlParts[1]), queryPart = urlParts[3];
     var verbose = this.verbose;
@@ -172,6 +172,17 @@ WebServer.prototype = {
       serveRequestedFile(filePath);
     }
 
+    function escapeHTML(untrusted) {
+      // Escape untrusted input so that it can safely be used in a HTML response
+      // in HTML and in HTML attributes.
+      return untrusted
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function serveDirectoryIndex(dir) {
       res.setHeader('Content-Type', 'text/html');
       res.writeHead(200);
@@ -194,21 +205,34 @@ WebServer.prototype = {
           res.write('<a href=\"..\">..</a><br>\n');
         }
         files.forEach(function (file) {
-          var stat = fs.statSync(path.join(dir, file));
+          var stat;
           var item = pathPart + file;
-          if (stat.isDirectory()) {
-            res.write('<a href=\"' + encodeURI(item) + '\">' +
-              file + '</a><br>\n');
-            return;
+          var href = '';
+          var label = '';
+          var extraAttributes = '';
+          try {
+            stat = fs.statSync(path.join(dir, file));
+          } catch (e) {
+            href = encodeURI(item);
+            label = file + ' (' + e + ')';
+            extraAttributes = ' style="color:red"';
           }
-          var ext = path.extname(file).toLowerCase();
-          if (ext === '.pdf') {
-            res.write('<a href=\"/web/viewer.html?file=' +
-              encodeURI(item) + '\" target=pdf>' +
-              file + '</a><br>\n');
-          } else if (all) {
-            res.write('<a href=\"' + encodeURI(item) + '\">' +
-              file + '</a><br>\n');
+          if (stat) {
+            if (stat.isDirectory()) {
+              href = encodeURI(item);
+              label = file;
+            } else if (path.extname(file).toLowerCase() === '.pdf') {
+              href = '/web/viewer.html?file=' + encodeURIComponent(item);
+              label = file;
+              extraAttributes = ' target="pdf"';
+            } else if (all) {
+              href = encodeURI(item);
+              label = file;
+            }
+          }
+          if (label) {
+            res.write('<a href=\"' + escapeHTML(href) + '\"' +
+              extraAttributes + '>' + escapeHTML(label) + '</a><br>\n');
           }
         });
         if (files.length === 0) {
