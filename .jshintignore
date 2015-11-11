@@ -13,6 +13,5 @@ shared/
 test/tmp/
 test/features/
 test/resources/
-test/mozcentral/
 test/font/*_spec.js
 *~/
