@@ -662,7 +662,7 @@ var PDFViewer = (function pdfViewer() {
     },
 
     get isChangingPresentationMode() {
-      return this.PresentationModeState === PresentationModeState.CHANGING;
+      return this.presentationModeState === PresentationModeState.CHANGING;
     },
 
     get isHorizontalScrollbarEnabled() {
