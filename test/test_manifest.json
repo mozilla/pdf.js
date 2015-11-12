@@ -732,6 +732,13 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue6621",
+       "file": "pdfs/issue6621.pdf",
+       "md5": "8079ce514fb2cdded4251eade6380ba9",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "scan-bad",
        "file": "pdfs/scan-bad.pdf",
        "md5": "4cf988f01ab83f61aca57f406dfd6584",
