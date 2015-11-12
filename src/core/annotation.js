@@ -24,10 +24,11 @@
 var DEFAULT_ICON_SIZE = 22; // px
 
 /**
- * @constructor
+ * @class
+ * @alias AnnotationFactory
  */
 function AnnotationFactory() {}
-AnnotationFactory.prototype = {
+AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
   /**
    * @param {XRef} xref
    * @param {Object} ref
