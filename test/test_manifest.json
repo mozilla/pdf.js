@@ -2272,12 +2272,10 @@
       "about": "Annotation that has no resources."
     },
     {  "id": "issue3263",
-      "file": "pdfs/issue3263.pdf",
-      "md5": "cee1cf0bd7ce6681cdb97c8e42697d81",
+      "file": "pdfs/issue3263r.pdf",
+      "md5": "0ef82d7a6998c3919cf5595dd47b31a6",
       "rounds": 1,
-      "link": true,
-      "firstPage": 18,
-      "lastPage": 19,
+      "link": false,
       "type": "eq"
     },
     {  "id": "issue2761",
