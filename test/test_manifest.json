@@ -2301,13 +2301,11 @@
       "type": "eq"
     },
     {  "id": "issue3207",
-      "file": "pdfs/issue3207.pdf",
-      "md5": "667248adae0462c7f5acc7757d97b720",
-      "link": true,
-      "firstPage": 1,
-      "lastPage": 1,
-      "rounds": 1,
-      "type": "eq"
+       "file": "pdfs/issue3207r.pdf",
+       "md5": "617bcf475c109365a113cf9fb6711b0a",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "issue3591",
       "file": "pdfs/issue3591.pdf",
