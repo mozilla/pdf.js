@@ -1749,12 +1749,11 @@
       "type": "eq"
     },
     {  "id": "issue3405",
-      "file": "pdfs/issue3405.pdf",
-      "md5": "58bd4bf790f15f849d1c932e3eda0406",
-      "rounds": 1,
-      "lastPage": 1,
-      "link": true,
-      "type": "eq"
+       "file": "pdfs/issue3405r.pdf",
+       "md5": "12e8c6b3437e659f9138d892d10c7d3d",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
     },
     {  "id": "issue2006",
       "file": "pdfs/issue2006.pdf",
