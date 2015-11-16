@@ -164,10 +164,9 @@
        "type": "eq"
     },
     {  "id": "german-umlaut",
-       "file": "pdfs/german-umlaut.pdf",
-       "md5": "fb4948876f5ff57847f94192aa3df211",
-       "link": true,
-       "lastPage": 1,
+       "file": "pdfs/german-umlaut-r.pdf",
+       "md5": "baa2cd74c76473cf7b914a17403a7f9a",
+       "link": false,
        "rounds": 1,
        "type": "eq"
     },
@@ -195,10 +194,9 @@
        "type": "eq"
     },
     {  "id": "issue1512",
-       "file": "pdfs/issue1512.pdf",
-       "md5": "41a19fe03d522346ee3baa732403fca4",
-       "link": true,
-       "lastPage": 1,
+       "file": "pdfs/issue1512r.pdf",
+       "md5": "af48ede2658d99cca423147085c6609b",
+       "link": false,
        "rounds": 1,
        "type": "eq"
     },
