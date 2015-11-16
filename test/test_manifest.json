@@ -245,9 +245,9 @@
        "type": "eq"
     },
     {  "id": "openoffice-pdf",
-       "file": "pdfs/DiwanProfile.pdf",
-       "md5": "55d0c6a1a6d26c9ec9dcecaa7a471e0e",
-       "link": true,
+       "file": "pdfs/openoffice.pdf",
+       "md5": "ecb0225c7ce2df2cd9a5323a349f8f84",
+       "link": false,
        "rounds": 1,
        "type": "load"
     },
