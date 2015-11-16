@@ -1724,11 +1724,11 @@
        "type": "text"
     },
     {  "id": "issue845",
-      "file": "pdfs/issue845.pdf",
-      "md5": "89ddf9e63cac4fa2dedcfe32a62e5407",
-      "rounds": 1,
-      "link": true,
-      "type": "eq"
+       "file": "pdfs/issue845r.pdf",
+       "md5": "b5f8fe4005cf3fb685fdb4a4c44ee4a2",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
     },
     {  "id": "helloworld-bad",
       "file": "pdfs/helloworld-bad.pdf",
