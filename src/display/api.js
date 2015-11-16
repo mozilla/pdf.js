@@ -660,6 +660,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *                                calling of PDFPage.getViewport method.
  * @property {string} intent - Rendering intent, can be 'display' or 'print'
  *                    (default value is 'display').
+ * @property {Array}  transform - (optional) Additional transform, applied
+ *                    just before viewport transform.
  * @property {Object} imageLayer - (optional) An object that has beginLayout,
  *                    endLayout and appendImage functions.
  * @property {function} continueCallback - (deprecated) A function that will be
@@ -1732,7 +1734,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
                                     this.objs, params.imageLayer);
 
-      this.gfx.beginDrawing(params.viewport, transparency);
+      this.gfx.beginDrawing(params.transform, params.viewport, transparency);
       this.operatorListIdx = 0;
       this.graphicsReady = true;
       if (this.graphicsReadyCallback) {

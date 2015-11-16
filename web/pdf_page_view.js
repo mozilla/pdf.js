@@ -166,8 +166,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var isScalingRestricted = false;
       if (this.canvas && PDFJS.maxCanvasPixels > 0) {
-        var ctx = this.canvas.getContext('2d');
-        var outputScale = getOutputScale(ctx);
+        var outputScale = this.outputScale;
         var pixelsInViewport = this.viewport.width * this.viewport.height;
         var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
         if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
@@ -311,6 +310,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;
+      canvas.setAttribute('hidden', 'hidden');
       canvasWrapper.appendChild(canvas);
       if (this.annotationLayer && this.annotationLayer.div) {
         // annotationLayer needs to stay on top
@@ -318,10 +318,15 @@ var PDFPageView = (function PDFPageViewClosure() {
       } else {
         div.appendChild(canvasWrapper);
       }
+      var isCanvasHidden = true;
       this.canvas = canvas;
 
-      var ctx = canvas.getContext('2d');
+//#if MOZCENTRAL || FIREFOX || GENERIC
+      canvas.mozOpaque = true;
+//#endif
+      var ctx = canvas.getContext('2d', {alpha: false});
       var outputScale = getOutputScale(ctx);
+      this.outputScale = outputScale;
 
       if (PDFJS.useOnlyCssZoom) {
         var actualSizeViewport = viewport.clone({scale: CSS_UNITS});
@@ -373,14 +378,6 @@ var PDFPageView = (function PDFPageViewClosure() {
                                                                  this.viewport);
       }
       this.textLayer = textLayer;
-
-      if (outputScale.scaled) {
-//#if !(MOZCENTRAL || FIREFOX)
-        // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
-        ctx._transformMatrix = [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
-//#endif
-        ctx.scale(outputScale.sx, outputScale.sy);
-      }
 
       var resolveRenderPromise, rejectRenderPromise;
       var promise = new Promise(function (resolve, reject) {
@@ -461,12 +458,19 @@ var PDFPageView = (function PDFPageViewClosure() {
             };
             return;
           }
+          if (isCanvasHidden) {
+            self.canvas.removeAttribute('hidden');
+            isCanvasHidden = false;
+          }
           cont();
         };
       }
 
+      var transform = !outputScale.scaled ? null :
+        [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
       var renderContext = {
         canvasContext: ctx,
+        transform: transform,
         viewport: this.viewport,
         // intent: 'default', // === 'display'
       };
