@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, calculateMD5, ARCFourCipher, Name,
            CipherTransformFactory, calculateSHA256, calculateSHA384,
            calculateSHA512, AES128Cipher, AES256Cipher, PDF17, PDF20,

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -604,11 +602,9 @@ target.singlefile = function() {
 };
 
 function stripCommentHeaders(content, filename) {
-  // Strip out all the vim/license headers.
   var notEndOfComment = '(?:[^*]|\\*(?!/))+';
   var reg = new RegExp(
-    '\n/\\* -\\*- Mode' + notEndOfComment + '\\*/\\s*' +
-    '(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)+' +
+    '\n(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)+' +
     '\'use strict\';', 'g');
   content = content.replace(reg, '');
   return content;
