@@ -1421,16 +1421,22 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           scaledY = 0;
         }
 
-        if (font.remeasure && width > 0 && this.isFontSubpixelAAEnabled) {
-          // some standard fonts may not have the exact width, trying to
-          // rescale per character
+        if (font.remeasure && width > 0) {
+          // Some standard fonts may not have the exact width: rescale per
+          // character if measured width is greater than expected glyph width
+          // and subpixel-aa is enabled, otherwise just center the glyph.
           var measuredWidth = ctx.measureText(character).width * 1000 /
             fontSize * fontSizeScale;
-          var characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
-          ctx.scale(characterScaleX, 1);
-          scaledX /= characterScaleX;
+          if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
+            var characterScaleX = width / measuredWidth;
+            restoreNeeded = true;
+            ctx.save();
+            ctx.scale(characterScaleX, 1);
+            scaledX /= characterScaleX;
+          } else if (width !== measuredWidth) {
+            scaledX += (width - measuredWidth) / 2000 *
+              fontSize / fontSizeScale;
+          }
         }
 
         if (simpleFillText && !accent) {
