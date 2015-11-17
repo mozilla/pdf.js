@@ -148,6 +148,13 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "intelisa-reduced",
+       "file": "pdfs/intelisa-r.pdf",
+       "md5": "ab101952caad17ca286914a0b42d7f41",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "intelisa-eq",
        "file": "pdfs/intelisa.pdf",
        "md5": "24643ebe348a568cfe6a532055c71493",
