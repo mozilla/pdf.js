@@ -1126,11 +1126,11 @@
        "type": "eq"
     },
     {  "id": "issue1055",
-      "file": "pdfs/issue1055.pdf",
-      "md5": "3ba56c2e48dce81da8669b1b9cf98ff0",
-      "rounds": 1,
-      "link": true,
-      "type": "eq"
+       "file": "pdfs/issue1055r.pdf",
+       "md5": "4aa72bb4779e3f301c45492f2a590459",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
     },
     {  "id": "issue1629",
       "file": "pdfs/issue1629.pdf",
