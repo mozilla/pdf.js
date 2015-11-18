@@ -48,6 +48,12 @@ var SimpleTextLayerBuilder = (function SimpleTextLayerBuilderClosure() {
     this.ctx = ctx;
     this.viewport = viewport;
     this.textCounter = 0;
+
+    // clear canvas
+    ctx.save();
+    ctx.fillStyle = 'rgb(255,255,255)';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.restore();
   }
 
   SimpleTextLayerBuilder.prototype = {
@@ -269,6 +275,7 @@ var Driver = (function DriverClosure() {
     _nextPage: function Driver_nextPage(task, loadError) {
       var self = this;
       var failure = loadError || '';
+      var ctx;
 
       if (!task.pdfDoc) {
         var dataUrl = this.canvas.toDataURL('image/png');
@@ -299,7 +306,11 @@ var Driver = (function DriverClosure() {
         // Empty the canvas
         this.canvas.width = 1;
         this.canvas.height = 1;
-        this._clearCanvas();
+        ctx = this.canvas.getContext('2d', {alpha: false});
+        ctx.save();
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, 1, 1);
+        ctx.restore();
 
         this._snapshot(task, '');
         return;
@@ -309,7 +320,8 @@ var Driver = (function DriverClosure() {
         try {
           this._log(' Loading page ' + task.pageNum + '/' +
             task.pdfDoc.numPages + '... ');
-          var ctx = this.canvas.getContext('2d');
+          this.canvas.mozOpaque = true;
+          ctx = this.canvas.getContext('2d', {alpha: false});
           task.pdfDoc.getPage(task.pageNum).then(function(page) {
             var viewport = page.getViewport(PDF_TO_CSS_UNITS);
             self.canvas.width = viewport.width;
@@ -369,7 +381,7 @@ var Driver = (function DriverClosure() {
     },
 
     _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext('2d');
+      var ctx = this.canvas.getContext('2d', {alpha: false});
       ctx.beginPath();
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },

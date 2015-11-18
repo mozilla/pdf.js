@@ -73,7 +73,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var textDivs = this.textDivs;
       var textDivsLength = textDivs.length;
       var canvas = document.createElement('canvas');
-      var ctx = canvas.getContext('2d');
+//#if MOZCENTRAL || FIREFOX || GENERIC
+      canvas.mozOpaque = true;
+//#endif
+      var ctx = canvas.getContext('2d', {alpha: false});
 
       // No point in rendering many divs as it would make the browser
       // unusable even after the divs are rendered.
