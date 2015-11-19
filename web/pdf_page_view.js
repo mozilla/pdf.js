@@ -308,7 +308,11 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;
+      // Keep the canvas hidden until the first draw callback, or until drawing
+      // is complete when `!this.renderingQueue`, to prevent black flickering.
       canvas.setAttribute('hidden', 'hidden');
+      var isCanvasHidden = true;
+
       canvasWrapper.appendChild(canvas);
       if (this.annotationLayer && this.annotationLayer.div) {
         // annotationLayer needs to stay on top
@@ -316,7 +320,6 @@ var PDFPageView = (function PDFPageViewClosure() {
       } else {
         div.appendChild(canvasWrapper);
       }
-      var isCanvasHidden = true;
       this.canvas = canvas;
 
 //#if MOZCENTRAL || FIREFOX || GENERIC
@@ -400,6 +403,11 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
 
         self.renderingState = RenderingStates.FINISHED;
+
+        if (isCanvasHidden) {
+          self.canvas.removeAttribute('hidden');
+          isCanvasHidden = false;
+        }
 
         if (self.loadingIconDiv) {
           div.removeChild(self.loadingIconDiv);
