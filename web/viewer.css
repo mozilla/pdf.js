@@ -1515,7 +1515,27 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   font-size: 10px;
 }
 
-#viewer.textLayer-visible .textLayer > div,
+#viewer.textLayer-visible .textLayer {
+  opacity: 1.0;
+}
+
+#viewer.textLayer-visible .canvasWrapper {
+  background-color: rgb(128,255,128);
+}
+
+#viewer.textLayer-visible .canvasWrapper canvas {
+  mix-blend-mode: screen;
+}
+
+#viewer.textLayer-visible .textLayer > div {
+  background-color: rgba(255, 255, 0, 0.1);
+  color: black;
+  border: solid 1px rgba(255, 0, 0, 0.5);
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
 #viewer.textLayer-hover .textLayer > div:hover {
   background-color: white;
   color: black;

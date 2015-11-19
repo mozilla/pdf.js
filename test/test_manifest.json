@@ -323,12 +323,6 @@
       "lastPage": 1,
       "about": "The same file as issue2337."
     },
-    {  "id": "thuluthfont-text",
-       "file": "pdfs/ThuluthFeatures.pdf",
-       "md5": "b7e18bf7a3d6a9c82aefa12d721072fc",
-       "rounds": 1,
-       "type": "text"
-    },
     {  "id": "freeculture",
        "file": "pdfs/freeculture.pdf",
        "md5": "dcdf3a8268e6a18938a42d5149efcfca",
