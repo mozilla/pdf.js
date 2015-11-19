@@ -22,80 +22,71 @@ var PDF_TO_CSS_UNITS = 96.0 / 72.0;
 /**
  * @class
  */
-var NullTextLayerBuilder = (function NullTextLayerBuilderClosure() {
-  /**
-   * @constructs NullTextLayerBuilder
-   */
-  function NullTextLayerBuilder() {}
+var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
+  var SVG_NS = 'http://www.w3.org/2000/svg';
 
-  NullTextLayerBuilder.prototype = {
-    beginLayout: function NullTextLayerBuilder_BeginLayout() {},
-    endLayout: function NullTextLayerBuilder_EndLayout() {},
-    appendText: function NullTextLayerBuilder_AppendText() {}
-  };
-
-  return NullTextLayerBuilder;
-})();
-
-/**
- * @class
- */
-var SimpleTextLayerBuilder = (function SimpleTextLayerBuilderClosure() {
-  /**
-   * @constructs SimpleTextLayerBuilder
-   */
-  function SimpleTextLayerBuilder(ctx, viewport) {
-    this.ctx = ctx;
-    this.viewport = viewport;
-    this.textCounter = 0;
-
-    // clear canvas
-    ctx.save();
-    ctx.fillStyle = 'rgb(255,255,255)';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    ctx.restore();
+  var textLayerStylePromise = null;
+  function getTextLayerStyle() {
+    if (textLayerStylePromise) {
+      return textLayerStylePromise;
+    }
+    textLayerStylePromise = new Promise(function (resolve) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', './text_layer_test.css');
+      xhr.onload = function () {
+        resolve(xhr.responseText);
+      };
+      xhr.send(null);
+    });
+    return textLayerStylePromise;
   }
 
-  SimpleTextLayerBuilder.prototype = {
-    appendText: function SimpleTextLayerBuilder_AppendText(geom, styles) {
-      var style = styles[geom.fontName];
-      var ctx = this.ctx, viewport = this.viewport;
-      var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
-      var angle = Math.atan2(tx[1], tx[0]);
-      var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-      var fontAscent = (style.ascent ? style.ascent * fontHeight :
-        (style.descent ? (1 + style.descent) * fontHeight : fontHeight));
+  function rasterizeTextLayer(ctx, viewport, textContent) {
+    return new Promise(function (resolve) {
+      // Building SVG with size of the viewport.
+      var svg = document.createElementNS(SVG_NS, 'svg:svg');
+      svg.setAttribute('width', viewport.width + 'px');
+      svg.setAttribute('height', viewport.height + 'px');
+      // items are transformed to have 1px font size
+      svg.setAttribute('font-size', 1);
 
-      ctx.save();
-      ctx.beginPath();
-      ctx.strokeStyle = 'red';
-      ctx.fillStyle = 'yellow';
-      ctx.translate(tx[4] + (fontAscent * Math.sin(angle)),
-                    tx[5] - (fontAscent * Math.cos(angle)));
-      ctx.rotate(angle);
-      ctx.rect(0, 0, geom.width * viewport.scale, geom.height * viewport.scale);
-      ctx.stroke();
-      ctx.fill();
-      ctx.restore();
-      ctx.font = fontHeight + 'px ' + style.fontFamily;
-      ctx.fillStyle = 'black';
-      ctx.fillText(geom.str, tx[4], tx[5]);
+      // Adding element to host our HTML (style + text layer div).
+      var foreignObject = document.createElementNS(SVG_NS, 'svg:foreignObject');
+      foreignObject.setAttribute('x', '0');
+      foreignObject.setAttribute('y', '0');
+      foreignObject.setAttribute('width', viewport.width + 'px');
+      foreignObject.setAttribute('height', viewport.height + 'px');
+      var style = document.createElement('style');
+      var stylePromise = getTextLayerStyle();
+      foreignObject.appendChild(style);
+      var div = document.createElement('div');
+      div.className = 'textLayer';
+      foreignObject.appendChild(div);
 
-      this.textCounter++;
-    },
+      // Rendering text layer as HTML.
+      var task = PDFJS.renderTextLayer({
+        textContent: textContent,
+        container: div,
+        viewport: viewport
+      });
+      Promise.all([stylePromise, task.promise]).then(function (results) {
+        style.textContent = results[0];
+        svg.appendChild(foreignObject);
 
-    setTextContent:
-        function SimpleTextLayerBuilder_SetTextContent(textContent) {
-      this.ctx.save();
-      var textItems = textContent.items;
-      for (var i = 0, ii = textItems.length; i < ii; i++) {
-        this.appendText(textItems[i], textContent.styles);
-      }
-      this.ctx.restore();
-    }
-  };
+        // We need to have UTF-8 encoded XML.
+        var svg_xml = unescape(encodeURIComponent(
+          (new XMLSerializer()).serializeToString(svg)));
+        var img = new Image();
+        img.src = 'data:image/svg+xml;base64,' + btoa(svg_xml);
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0);
+          resolve();
+        };
+      });
+    });
+  }
 
-  return SimpleTextLayerBuilder;
+  return rasterizeTextLayer;
 })();
 
 /**
@@ -328,35 +319,44 @@ var Driver = (function DriverClosure() {
             self.canvas.height = viewport.height;
             self._clearCanvas();
 
-            var drawContext, textLayerBuilder;
-            var resolveInitPromise;
-            var initPromise = new Promise(function (resolve) {
-              resolveInitPromise = resolve;
-            });
+            var textLayerCanvas;
+            var initPromise;
             if (task.type === 'text') {
               // Using a dummy canvas for PDF context drawing operations
-              if (!self.dummyCanvas) {
-                self.dummyCanvas = document.createElement('canvas');
+              textLayerCanvas = self.textLayerCanvas;
+              if (!textLayerCanvas) {
+                textLayerCanvas = document.createElement('canvas');
+                self.textLayerCanvas = textLayerCanvas;
               }
-              drawContext = self.dummyCanvas.getContext('2d');
+              textLayerCanvas.width = viewport.width;
+              textLayerCanvas.height = viewport.height;
+              var textLayerContext = textLayerCanvas.getContext('2d');
+              textLayerContext.clearRect(0, 0,
+                textLayerCanvas.width, textLayerCanvas.height);
               // The text builder will draw its content on the test canvas
-              textLayerBuilder = new SimpleTextLayerBuilder(ctx, viewport);
-
-              page.getTextContent().then(function(textContent) {
-                textLayerBuilder.setTextContent(textContent);
-                resolveInitPromise();
+              initPromise = page.getTextContent().then(function(textContent) {
+                return rasterizeTextLayer(textLayerContext, viewport,
+                                          textContent);
               });
             } else {
-              drawContext = ctx;
-              textLayerBuilder = new NullTextLayerBuilder();
-              resolveInitPromise();
+              textLayerCanvas = null;
+              initPromise = Promise.resolve();
             }
             var renderContext = {
-              canvasContext: drawContext,
+              canvasContext: ctx,
               viewport: viewport
             };
             var completeRender = (function(error) {
-              page.destroy();
+              // if text layer is present, compose it on top of the page
+              if (textLayerCanvas) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'screen';
+                ctx.fillStyle = 'rgb(128, 255, 128)'; // making it green
+                ctx.fillRect(0, 0, viewport.width, viewport.height);
+                ctx.restore();
+                ctx.drawImage(textLayerCanvas, 0, 0);
+              }
+              page.cleanup();
               task.stats = page.stats;
               page.stats = new StatTimer();
               self._snapshot(task, error);
