@@ -27,6 +27,7 @@
   color: transparent;
   position: absolute;
   white-space: pre;
+  tab-size: 1;
   cursor: text;
   -webkit-transform-origin: 0% 0%;
   -moz-transform-origin: 0% 0%;
