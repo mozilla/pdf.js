@@ -3,6 +3,12 @@
   "browser": true,
   "devel": true,
   "worker": true,
+  "predef": [
+    "Promise",
+    "require",
+    "define",
+    "exports"
+  ],
 
   // Enforcing
   "maxlen": 80,

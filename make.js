@@ -520,19 +520,20 @@ target.bundle = function(args) {
   }
 
   var SHARED_SRC_FILES = [
-    'shared/util.js',
+    'shared/global.js',
+    'shared/util.js'
   ];
 
   var MAIN_SRC_FILES = SHARED_SRC_FILES.concat([
-    'display/api.js',
-    'display/metadata.js',
-    'display/canvas.js',
-    'display/webgl.js',
-    'display/pattern_helper.js',
-    'display/font_loader.js',
     'display/dom_utils.js',
     'display/annotation_layer.js',
+    'display/font_loader.js',
+    'display/metadata.js',
     'display/text_layer.js',
+    'display/webgl.js',
+    'display/pattern_helper.js',
+    'display/canvas.js',
+    'display/api.js',
     'display/svg.js'
   ]);
 

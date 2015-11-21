@@ -12,10 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, Util, AnnotationType, AnnotationBorderStyleType, warn,
-           CustomStyle, isExternalLinkTargetSet, LinkTargetStringMap */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/annotation_layer', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/dom_utils'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./dom_utils.js'));
+  } else {
+    factory((root.pdfjsDisplayAnnotationLayer = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayDOMUtils);
+  }
+}(this, function (exports, sharedUtil, displayDOMUtils) {
+
+var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
+var AnnotationType = sharedUtil.AnnotationType;
+var Util = sharedUtil.Util;
+var isExternalLinkTargetSet = sharedUtil.Util;
+var LinkTargetStringMap = sharedUtil.LinkTargetStringMap;
+var warn = sharedUtil.warn;
+var CustomStyle = displayDOMUtils.CustomStyle;
 
 var ANNOT_MIN_SIZE = 10; // px
 
@@ -354,5 +373,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     update: update
   };
 })();
-
 PDFJS.AnnotationLayer = AnnotationLayer;
+
+exports.AnnotationLayer = AnnotationLayer;
+}));

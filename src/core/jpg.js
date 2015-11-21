@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/jpg', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreJpg = {}));
+  }
+}(this, function (exports) {
+
 /*
 This code was forked from https://github.com/notmasteryet/jpgjs. The original
 version was created by github user notmasteryet
@@ -26,8 +38,6 @@ version was created by github user notmasteryet
  in PostScript Level 2, Technical Note #5116
  (partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf)
 */
-
-'use strict';
 
 var JpegImage = (function jpegImage() {
   var dctZigZag = new Uint8Array([
@@ -1033,3 +1043,6 @@ var JpegImage = (function jpegImage() {
 
   return constructor;
 })();
+
+exports.JpegImage = JpegImage;
+}));

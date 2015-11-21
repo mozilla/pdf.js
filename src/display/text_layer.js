@@ -12,9 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, createPromiseCapability */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/text_layer', ['exports', 'pdfjs/shared/util'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'));
+  } else {
+    factory((root.pdfjsDisplayTextLayer = {}), root.pdfjsSharedUtil);
+  }
+}(this, function (exports, sharedUtil) {
+
+var createPromiseCapability = sharedUtil.createPromiseCapability;
 
 /**
  * Text layer render parameters.
@@ -235,3 +248,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
 })();
 
 PDFJS.renderTextLayer = renderTextLayer;
+
+exports.renderTextLayer = renderTextLayer;
+}));

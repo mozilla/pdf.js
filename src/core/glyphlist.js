@@ -15,6 +15,16 @@
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/glyphlist', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreGlyphList = {}));
+  }
+}(this, function (exports) {
+
 var GlyphsUnicode = {
   A: 0x0041,
   AE: 0x00C6,
@@ -4427,3 +4437,7 @@ var DingbatsGlyphsUnicode = {
   a96: 0x2775, // 0xF8E4
   '.notdef': 0x0000
 };
+
+exports.GlyphsUnicode = GlyphsUnicode;
+exports.DingbatsGlyphsUnicode = DingbatsGlyphsUnicode;
+}));

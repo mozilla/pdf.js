@@ -12,12 +12,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, Util, isDict, isName, stringToPDFString, warn, Dict, Stream,
-           stringToBytes, Promise, isArray, ObjectLoader, OperatorList,
-           isValidUrl, OPS, AnnotationType, stringToUTF8String,
-           AnnotationBorderStyleType, ColorSpace, AnnotationFlag, isInt */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/annotation', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/colorspace',
+      'pdfjs/core/obj', 'pdfjs/core/evaluator'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'), require('./colorspace.js'), require('./obj.js'),
+      require('./evaluator.js'));
+  } else {
+    factory((root.pdfjsCoreAnnotation = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreColorSpace,
+      root.pdfjsCoreObj, root.pdfjsCoreEvaluator);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream,
+                  coreColorSpace, coreObj, coreEvaluator) {
+
+var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
+var AnnotationFlag = sharedUtil.AnnotationFlag;
+var AnnotationType = sharedUtil.AnnotationType;
+var OPS = sharedUtil.OPS;
+var Util = sharedUtil.Util;
+var isArray = sharedUtil.isArray;
+var isInt = sharedUtil.isInt;
+var isValidUrl = sharedUtil.isValidUrl;
+var stringToBytes = sharedUtil.stringToBytes;
+var stringToPDFString = sharedUtil.stringToPDFString;
+var stringToUTF8String = sharedUtil.stringToUTF8String;
+var warn = sharedUtil.warn;
+var Dict = corePrimitives.Dict;
+var Name = corePrimitives.Name;
+var isDict = corePrimitives.isDict;
+var isName = corePrimitives.isName;
+var Stream = coreStream.Stream;
+var ColorSpace = coreColorSpace.ColorSpace;
+var ObjectLoader = coreObj.ObjectLoader;
+var OperatorList = coreEvaluator.OperatorList;
 
 var DEFAULT_ICON_SIZE = 22; // px
 
@@ -712,3 +747,8 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 
   return LinkAnnotation;
 })();
+
+exports.Annotation = Annotation;
+exports.AnnotationBorderStyle = AnnotationBorderStyle;
+exports.AnnotationFactory = AnnotationFactory;
+}));

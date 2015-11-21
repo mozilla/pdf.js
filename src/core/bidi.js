@@ -12,9 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/bidi', ['exports', 'pdfjs/shared/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/global.js'));
+  } else {
+    factory((root.pdfjsCoreBidi = {}), root.pdfjsSharedGlobal);
+  }
+}(this, function (exports, sharedGlobal) {
+
+var PDFJS = sharedGlobal.PDFJS;
 
 var bidi = PDFJS.bidi = (function bidiClosure() {
   // Character types for symbols from 0000 to 00FF.
@@ -421,3 +432,6 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
 
   return bidi;
 })();
+
+exports.bidi = bidi;
+}));

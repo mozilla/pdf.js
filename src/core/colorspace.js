@@ -12,10 +12,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, info, isArray, isDict, isName, isStream, isString,
-           PDFFunction, PDFImage, shadow, warn */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/colorspace', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/function', 'pdfjs/core/stream'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./function.js'), require('./stream.js'));
+  } else {
+    factory((root.pdfjsCoreColorSpace = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreFunction, root.pdfjsCoreStream);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreFunction,
+                  coreStream) {
+
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var isString = sharedUtil.isString;
+var shadow = sharedUtil.shadow;
+var warn = sharedUtil.warn;
+var isDict = corePrimitives.isDict;
+var isName = corePrimitives.isName;
+var isStream = corePrimitives.isStream;
+var PDFFunction = coreFunction.PDFFunction;
+
+var coreImage; // see _setCoreImage below
+var PDFImage; // = coreImage.PDFImage;
 
 var ColorSpace = (function ColorSpaceClosure() {
   // Constructor should define this.numComps, this.defaultColor, this.name
@@ -1253,3 +1280,16 @@ var LabCS = (function LabCSClosure() {
   };
   return LabCS;
 })();
+
+// TODO refactor to remove dependency on image.js
+function _setCoreImage(coreImage_) {
+  coreImage = coreImage_;
+  PDFImage = coreImage_.PDFImage;
+}
+exports._setCoreImage = _setCoreImage;
+
+exports.ColorSpace = ColorSpace;
+
+// TODO refactor to remove dependency on colorspace.js
+coreStream._setCoreColorSpace(exports);
+}));

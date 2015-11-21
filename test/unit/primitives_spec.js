@@ -3,7 +3,7 @@
 
 'use strict';
 
-describe('obj', function() {
+describe('primitives', function() {
 
   describe('Name', function() {
     it('should retain the given name', function() {

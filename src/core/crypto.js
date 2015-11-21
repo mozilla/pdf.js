@@ -12,11 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals bytesToString, DecryptStream, error, isInt, isName, Name,
-           PasswordException, PasswordResponses, stringToBytes, warn,
-           utf8StringToString */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/crypto', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'));
+  } else {
+    factory((root.pdfjsCoreCrypto = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream) {
+
+var PasswordException = sharedUtil.PasswordException;
+var PasswordResponses = sharedUtil.PasswordResponses;
+var bytesToString = sharedUtil.bytesToString;
+var error = sharedUtil.error;
+var isInt = sharedUtil.isInt;
+var stringToBytes = sharedUtil.stringToBytes;
+var utf8StringToString = sharedUtil.utf8StringToString;
+var warn = sharedUtil.warn;
+var Name = corePrimitives.Name;
+var isName = corePrimitives.isName;
+var DecryptStream = coreStream.DecryptStream;
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
   function ARCFourCipher(key) {
@@ -2049,3 +2071,15 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   return CipherTransformFactory;
 })();
+
+exports.AES128Cipher = AES128Cipher;
+exports.AES256Cipher = AES256Cipher;
+exports.ARCFourCipher = ARCFourCipher;
+exports.CipherTransformFactory = CipherTransformFactory;
+exports.PDF17 = PDF17;
+exports.PDF20 = PDF20;
+exports.calculateMD5 = calculateMD5;
+exports.calculateSHA256 = calculateSHA256;
+exports.calculateSHA384 = calculateSHA384;
+exports.calculateSHA512 = calculateSHA512;
+}));

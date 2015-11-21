@@ -12,10 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CanvasGraphics, CachedCanvases, ColorSpace, Util, error, info,
-           isArray, makeCssRgb, WebGLUtils */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/pattern_helper', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/webgl'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./webgl.js'));
+  } else {
+    factory((root.pdfjsDisplayPatternHelper = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayWebGL);
+  }
+}(this, function (exports, sharedUtil, displayWebGL) {
+
+var Util = sharedUtil.Util;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var error = sharedUtil.error;
+var WebGLUtils = displayWebGL.WebGLUtils;
 
 var ShadingIRs = {};
 
@@ -289,7 +305,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
   var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
-  function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
+  function TilingPattern(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
     this.bbox = IR[4];
@@ -298,8 +314,7 @@ var TilingPattern = (function TilingPatternClosure() {
     this.paintType = IR[7];
     this.tilingType = IR[8];
     this.color = color;
-    this.objs = objs;
-    this.commonObjs = commonObjs;
+    this.canvasGraphicsFactory = canvasGraphicsFactory;
     this.baseTransform = baseTransform;
     this.type = 'Pattern';
     this.ctx = ctx;
@@ -314,8 +329,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var paintType = this.paintType;
       var tilingType = this.tilingType;
       var color = this.color;
-      var objs = this.objs;
-      var commonObjs = this.commonObjs;
+      var canvasGraphicsFactory = this.canvasGraphicsFactory;
 
       info('TilingType: ' + tilingType);
 
@@ -348,7 +362,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var tmpCanvas = owner.cachedCanvases.getCanvas('pattern',
         width, height, true);
       var tmpCtx = tmpCanvas.context;
-      var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
+      var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
       this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
@@ -423,3 +437,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
   return TilingPattern;
 })();
+
+exports.getShadingPatternFromIR = getShadingPatternFromIR;
+exports.TilingPattern = TilingPattern;
+}));

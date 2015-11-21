@@ -12,10 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals NotImplementedException, MissingDataException, Promise, Stream,
-           PDFDocument, ChunkedStreamManager, createPromiseCapability, Util */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/pdf_manager', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/stream', 'pdfjs/core/chunked_stream', 'pdfjs/core/document'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./stream.js'),
+      require('./chunked_stream.js'), require('./document.js'));
+  } else {
+    factory((root.pdfjsCorePdfManager = {}), root.pdfjsSharedUtil,
+      root.pdfjsCoreStream, root.pdfjsCoreChunkedStream,
+      root.pdfjsCoreDocument);
+  }
+}(this, function (exports, sharedUtil, coreStream, coreChunkedStream,
+                  coreDocument) {
+
+var NotImplementedException = sharedUtil.NotImplementedException;
+var MissingDataException = sharedUtil.MissingDataException;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var Util = sharedUtil.Util;
+var Stream = coreStream.Stream;
+var ChunkedStreamManager = coreChunkedStream.ChunkedStreamManager;
+var PDFDocument = coreDocument.PDFDocument;
 
 var BasePdfManager = (function BasePdfManagerClosure() {
   function BasePdfManager() {
@@ -207,3 +229,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
   return NetworkPdfManager;
 })();
+
+exports.LocalPdfManager = LocalPdfManager;
+exports.NetworkPdfManager = NetworkPdfManager;
+}));

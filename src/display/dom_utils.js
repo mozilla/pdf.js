@@ -12,9 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/dom_utils', ['exports', 'pdfjs/shared/global'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/global.js'));
+  } else {
+    factory((root.pdfjsDisplayDOMUtils = {}), root.pdfjsSharedGlobal);
+  }
+}(this, function (exports, sharedGlobal) {
+
+var PDFJS = sharedGlobal.PDFJS;
 
 /**
  * Optimised CSS custom property getter/setter.
@@ -71,3 +83,6 @@ var CustomStyle = (function CustomStyleClosure() {
 })();
 
 PDFJS.CustomStyle = CustomStyle;
+
+exports.CustomStyle = CustomStyle;
+}));
