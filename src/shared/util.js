@@ -48,6 +48,19 @@ var AnnotationType = {
   LINK: 3
 };
 
+var AnnotationFlag = {
+  INVISIBLE: 0x01,
+  HIDDEN: 0x02,
+  PRINT: 0x04,
+  NOZOOM: 0x08,
+  NOROTATE: 0x10,
+  NOVIEW: 0x20,
+  READONLY: 0x40,
+  LOCKED: 0x80,
+  TOGGLENOVIEW: 0x100,
+  LOCKEDCONTENTS: 0x200
+};
+
 var AnnotationBorderStyleType = {
   SOLID: 1,
   DASHED: 2,
