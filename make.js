@@ -606,8 +606,9 @@ target.singlefile = function() {
 function stripCommentHeaders(content, filename) {
   var notEndOfComment = '(?:[^*]|\\*(?!/))+';
   var reg = new RegExp(
-    '\n(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)+' +
-    '\'use strict\';', 'g');
+    '\n/\\* Copyright' + notEndOfComment + '\\*/\\s*' +
+    '(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)*' +
+    '\\s*\'use strict\';', 'g');
   content = content.replace(reg, '');
   return content;
 }
