@@ -1667,7 +1667,7 @@ document.addEventListener('textlayerrendered', function (e) {
   if (pageView.textLayer && pageView.textLayer.textDivs &&
       pageView.textLayer.textDivs.length > 0 &&
       !PDFViewerApplication.supportsDocumentColors) {
-    console.error(mozL10n.get('document_colors_disabled', null,
+    console.error(mozL10n.get('document_colors_not_allowed', null,
       'PDF documents are not allowed to use their own colors: ' +
       '\'Allow pages to choose their own colors\' ' +
       'is deactivated in the browser.'));
