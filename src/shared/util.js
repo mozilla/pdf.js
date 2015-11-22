@@ -980,6 +980,7 @@ var PDFStringTranslateTable = [
 ];
 
 function stringToPDFString(str) {
+  str = typeof str == 'object' ? str[Object.keys(str)[0]] : str;
   var i, n = str.length, strBuf = [];
   if (str[0] === '\xFE' && str[1] === '\xFF') {
     // UTF16BE BOM
