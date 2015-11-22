@@ -268,8 +268,7 @@ var Page = (function PageClosure() {
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = annotationFactory.create(this.xref, annotationRef);
-        if (annotation &&
-            (annotation.isViewable() || annotation.isPrintable())) {
+        if (annotation && (annotation.viewable || annotation.printable)) {
           annotations.push(annotation);
         }
       }

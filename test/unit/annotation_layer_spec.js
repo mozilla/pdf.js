@@ -1,10 +1,31 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType */
+           AnnotationBorderStyleType, AnnotationFlag */
 
 'use strict';
 
 describe('Annotation layer', function() {
   describe('Annotation', function() {
+    it('should set and get flags', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setFlags(13);
+
+      expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.NOZOOM)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.PRINT)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.READONLY)).toEqual(false);
+    });
+
+    it('should be viewable and not printable by default', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+
+      expect(annotation.viewable).toEqual(true);
+      expect(annotation.printable).toEqual(false);
+    });
+
     it('should set and get a valid rectangle', function() {
       var dict = new Dict();
       dict.set('Subtype', '');
