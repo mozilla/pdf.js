@@ -45,9 +45,10 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
 
     /**
      * @param {PageViewport} viewport
+     * @param {string} intent (default value is 'display')
      */
     setupAnnotations:
-        function AnnotationsLayerBuilder_setupAnnotations(viewport) {
+        function AnnotationsLayerBuilder_setupAnnotations(viewport, intent) {
       function bindLink(link, dest) {
         link.href = linkService.getDestinationHash(dest);
         link.onclick = function annotationsLayerBuilderLinksOnclick() {
@@ -73,8 +74,12 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
       var linkService = this.linkService;
       var pdfPage = this.pdfPage;
       var self = this;
+      var getAnnotationsParams = {
+        intent: (intent === undefined ? 'display' : intent),
+      };
 
-      pdfPage.getAnnotations().then(function (annotationsData) {
+      pdfPage.getAnnotations(getAnnotationsParams).then(
+          function (annotationsData) {
         viewport = viewport.clone({ dontFlip: true });
         var transform = viewport.transform;
         var transformStr = 'matrix(' + transform.join(',') + ')';
