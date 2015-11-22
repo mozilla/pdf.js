@@ -400,8 +400,18 @@ describe('api', function() {
       expect(viewport.height).toEqual(892.92);
     });
     it('gets annotations', function () {
-      var promise = page.getAnnotations();
-      waitsForPromiseResolved(promise, function (data) {
+      var defaultPromise = page.getAnnotations();
+      waitsForPromiseResolved(defaultPromise, function (data) {
+        expect(data.length).toEqual(4);
+      });
+
+      var displayPromise = page.getAnnotations({ intent: 'display' });
+      waitsForPromiseResolved(displayPromise, function (data) {
+        expect(data.length).toEqual(4);
+      });
+
+      var printPromise = page.getAnnotations({ intent: 'print' });
+      waitsForPromiseResolved(printPromise, function (data) {
         expect(data.length).toEqual(4);
       });
     });
