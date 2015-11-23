@@ -218,7 +218,8 @@ var Page = (function PageClosure() {
       });
     },
 
-    extractTextContent: function Page_extractTextContent(task) {
+    extractTextContent: function Page_extractTextContent(task,
+                                                         normalizeWhitespace) {
       var handler = {
         on: function nullHandlerOn() {},
         send: function nullHandlerSend() {}
@@ -248,7 +249,9 @@ var Page = (function PageClosure() {
 
         return partialEvaluator.getTextContent(contentStream,
                                                task,
-                                               self.resources);
+                                               self.resources,
+                                               /* stateManager = */ null,
+                                               normalizeWhitespace);
       });
     },
 
