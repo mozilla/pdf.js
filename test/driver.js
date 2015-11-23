@@ -334,10 +334,12 @@ var Driver = (function DriverClosure() {
               textLayerContext.clearRect(0, 0,
                 textLayerCanvas.width, textLayerCanvas.height);
               // The text builder will draw its content on the test canvas
-              initPromise = page.getTextContent().then(function(textContent) {
-                return rasterizeTextLayer(textLayerContext, viewport,
-                                          textContent);
-              });
+              initPromise =
+                page.getTextContent({ normalizeWhitespace: true }).then(
+                  function(textContent) {
+                    return rasterizeTextLayer(textLayerContext, viewport,
+                                              textContent);
+                });
             } else {
               textLayerCanvas = null;
               initPromise = Promise.resolve();
