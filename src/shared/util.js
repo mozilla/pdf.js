@@ -360,10 +360,10 @@ var LinkTargetStringMap = [
 ];
 
 function isExternalLinkTargetSet() {
-//#if GENERIC
+//#if !MOZCENTRAL
   if (PDFJS.openExternalLinksInNewWindow) {
-    warn('PDFJS.openExternalLinksInNewWindow is deprecated, ' +
-         'use PDFJS.externalLinkTarget instead.');
+    deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
+               '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');
     if (PDFJS.externalLinkTarget === LinkTarget.NONE) {
       PDFJS.externalLinkTarget = LinkTarget.BLANK;
     }
