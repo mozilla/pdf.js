@@ -19,7 +19,7 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/api', ['exports', 'pdfjs/shared/util',
       'pdfjs/display/font_loader', 'pdfjs/display/canvas',
-      'pdfjs/shared/global'], factory);
+      'pdfjs/shared/global', 'require'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./font_loader.js'),
       require('./canvas.js'), require('../shared/global.js'));
@@ -29,7 +29,7 @@
       root.pdfjsSharedGlobal);
   }
 }(this, function (exports, sharedUtil, displayFontLoader, displayCanvas,
-                  sharedGlobal) {
+                  sharedGlobal, amdRequire) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MessageHandler = sharedUtil.MessageHandler;
@@ -1169,7 +1169,16 @@ var PDFWorker = (function PDFWorkerClosure() {
       // other files and resolves the promise. In production only the
       // pdf.worker.js file is needed.
 //#if !PRODUCTION
-      Util.loadScript(PDFJS.workerSrc);
+      if (typeof amdRequire === 'function') {
+        amdRequire(['pdfjs/core/worker'], function () {
+          PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+        });
+      } else if (typeof require === 'function') {
+        require('../core/worker.js');
+        PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+      } else {
+        Util.loadScript(PDFJS.workerSrc);
+      }
 //#endif
 //#if PRODUCTION && SINGLE_FILE
 //    PDFJS.fakeWorkerFilesLoadedCapability.resolve();

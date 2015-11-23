@@ -648,7 +648,7 @@ var workerConsole = {
 
 
 // Worker thread?
-if (typeof window === 'undefined') {
+if (typeof window === 'undefined' && typeof require === 'undefined') {
   if (!('console' in globalScope)) {
     globalScope.console = workerConsole;
   }
