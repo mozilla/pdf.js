@@ -281,6 +281,7 @@ target.dist = function() {
   target.generic();
   target.singlefile();
   target.components();
+  target.minified();
 
   var DIST_DIR = BUILD_DIR + 'dist/';
   var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
@@ -306,11 +307,17 @@ target.dist = function() {
     GENERIC_DIR + 'build/pdf.js',
     GENERIC_DIR + 'build/pdf.worker.js',
     SINGLE_FILE_DIR + 'build/pdf.combined.js',
+    MINIFIED_DIR + 'build/pdf.min.js',
+    MINIFIED_DIR + 'build/pdf.worker.min.js',
+    MINIFIED_DIR + 'build/pdf.combined.min.js'
   ], DIST_DIR + 'build/');
 
   mkdir('-p', DIST_DIR + 'web/');
   cp('-R', [
     COMPONENTS_DIR + '*',
+    MINIFIED_DIR + 'web/compatibility.min.js',
+    MINIFIED_DIR + 'web/pdf.viewer.min.js',
+    MINIFIED_DIR + 'web/pdf.viewer.min.css'
   ], DIST_DIR + 'web/');
 
   echo();
@@ -632,18 +639,43 @@ function cleanupCSSSource(file) {
 }
 
 //
+// Minify CSS file.
+// Where inputFile and outputFiles are path to input and output css
+// files including file name.
+// ex:/dist/build/pdf_viewer.css ,/dist/build/pdf_viewer.min.css
+// Requires YUI compressor
+//
+function minifyCSSFile(inputFile,outputFile){
+  var yuiCompressorPath=process.env['YUI_COMPRESSOR'];
+  if (!yuiCompressorPath) {
+    echo('### YUI Compressor is not set. Specify YUI_COMPRESSOR variable');
+    exit(1);
+  }
+
+  cd(ROOT_DIR);
+  echo();
+
+  exec('java -jar '+ yuiCompressorPath +' --type css -o ' +
+    outputFile+' '+ inputFile);
+}
+
+//
 // make minified
 // Builds the minified production viewer that should be compatible with most
 // modern HTML5 browsers. Requires Google Closure Compiler.
 //
 target.minified = function() {
   var compilerPath = process.env['CLOSURE_COMPILER'];
+  var inputCSSPath = MINIFIED_DIR + '/web/viewer.css';
+  var outputCSSPath = MINIFIED_DIR + '/web/pdf.viewer.min.css';
+
   if (!compilerPath) {
     echo('### Closure Compiler is not set. Specify CLOSURE_COMPILER variable');
     exit(1);
   }
 
   target.bundle({});
+  target.singlefile();
   target.locale();
 
   cd(ROOT_DIR);
@@ -663,8 +695,10 @@ target.minified = function() {
     copy: [
       [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
       ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
+      [SINGLE_FILE_DIR+'/build/pdf.combined.js',MINIFIED_DIR + '/build'],
       ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
-      ['web/locale', MINIFIED_DIR + '/web']
+      ['web/locale', MINIFIED_DIR + '/web'],
+      ['web/compatibility.js',MINIFIED_DIR + '/web']
     ],
     preprocess: [
       [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
@@ -696,23 +730,29 @@ target.minified = function() {
   exec(cmdPrefix + viewerFiles.map(function(s) {
     return '--js \"' + s + '\"';
   }).join(' ') +
-    ' --js_output_file \"' + MINIFIED_DIR + '/web/pdf.viewer.js\"');
+    ' --js_output_file \"' + MINIFIED_DIR + '/web/pdf.viewer.min.js\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/web/compatibility.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/web/compatibility.min.js' + '\"');
   exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.js' + '\" ' +
     '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.min.js' + '\"');
   exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.worker.js' + '\" ' +
     '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.worker.min.js' + '\"');
+  exec(cmdPrefix + '--js \"' + MINIFIED_DIR + '/build/pdf.combined.js' + '\" ' +
+    '--js_output_file \"' + MINIFIED_DIR + '/build/pdf.combined.min.js' + '\"');
+
+  echo('### Minifying CSS Files');
+  minifyCSSFile(inputCSSPath,outputCSSPath);
 
   echo();
   echo('### Cleaning js files');
 
   rm(MINIFIED_DIR + '/web/viewer.js');
+  rm(MINIFIED_DIR + '/web/viewer.css');
   rm(MINIFIED_DIR + '/web/debugger.js');
+  rm(MINIFIED_DIR + '/web/compatibility.js');
   rm(MINIFIED_DIR + '/build/pdf.js');
   rm(MINIFIED_DIR + '/build/pdf.worker.js');
-  mv(MINIFIED_DIR + '/build/pdf.min.js',
-     MINIFIED_DIR + '/build/pdf.js');
-  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
-     MINIFIED_DIR + '/build/pdf.worker.js');
+  rm(MINIFIED_DIR + '/build/pdf.combined.js');
 };
 
 ////////////////////////////////////////////////////////////////////////////////
