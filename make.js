@@ -1497,6 +1497,13 @@ target.lint = function() {
     exit(1);
   }
 
+  echo();
+  echo('### Checking UMD dependencies');
+  var umd = require('./external/umdutils/verifier.js');
+  if (!umd.validateFiles({'pdfjs': './src'})) {
+    exit(1);
+  }
+
   echo('files checked, no errors found');
 };
 
