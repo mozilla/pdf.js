@@ -24,6 +24,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
   }
 
   BasePdfManager.prototype = {
+    get docId() {
+      return this._docId;
+    },
+
     onLoadedStream: function BasePdfManager_onLoadedStream() {
       throw new NotImplementedException();
     },
@@ -85,7 +89,8 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 })();
 
 var LocalPdfManager = (function LocalPdfManagerClosure() {
-  function LocalPdfManager(data, password) {
+  function LocalPdfManager(docId, data, password) {
+    this._docId = docId;
     var stream = new Stream(data);
     this.pdfDocument = new PDFDocument(this, stream, password);
     this._loadedStreamCapability = createPromiseCapability();
@@ -136,8 +141,8 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 })();
 
 var NetworkPdfManager = (function NetworkPdfManagerClosure() {
-  function NetworkPdfManager(args, msgHandler) {
-
+  function NetworkPdfManager(docId, args, msgHandler) {
+    this._docId = docId;
     this.msgHandler = msgHandler;
 
     var params = {

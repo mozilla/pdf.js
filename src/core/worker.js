@@ -51,11 +51,50 @@ var WorkerTask = (function WorkerTaskClosure() {
 })();
 
 var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
-  setup: function wphSetup(handler) {
+  setup: function wphSetup(handler, port) {
+    handler.on('test', function wphSetupTest(data) {
+      // check if Uint8Array can be sent to worker
+      if (!(data instanceof Uint8Array)) {
+        handler.send('test', 'main', false);
+        return;
+      }
+      // making sure postMessage transfers are working
+      var supportTransfers = data[0] === 255;
+      handler.postMessageTransfers = supportTransfers;
+      // check if the response property is supported by xhr
+      var xhr = new XMLHttpRequest();
+      var responseExists = 'response' in xhr;
+      // check if the property is actually implemented
+      try {
+        var dummy = xhr.responseType;
+      } catch (e) {
+        responseExists = false;
+      }
+      if (!responseExists) {
+        handler.send('test', false);
+        return;
+      }
+      handler.send('test', {
+        supportTypedArray: true,
+        supportTransfers: supportTransfers
+      });
+    });
+
+    handler.on('GetDocRequest', function wphSetupDoc(data) {
+      return WorkerMessageHandler.createDocumentHandler(data, port);
+    });
+  },
+  createDocumentHandler: function wphCreateDocumentHandler(data, port) {
+    // This context is actually holds references on pdfManager and handler,
+    // until the latter is destroyed.
     var pdfManager;
     var terminated = false;
     var cancelXHRs = null;
     var WorkerTasks = [];
+
+    var docId = data.docId;
+    var workerHandlerName = data.docId + '_worker';
+    var handler = new MessageHandler(workerHandlerName, docId, port);
 
     function ensureNotTerminated() {
       if (terminated) {
@@ -114,7 +153,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       var disableRange = data.disableRange;
       if (source.data) {
         try {
-          pdfManager = new LocalPdfManager(source.data, source.password);
+          pdfManager = new LocalPdfManager(docId, source.data, source.password);
           pdfManagerCapability.resolve(pdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -122,7 +161,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         return pdfManagerCapability.promise;
       } else if (source.chunkedViewerLoading) {
         try {
-          pdfManager = new NetworkPdfManager(source, handler);
+          pdfManager = new NetworkPdfManager(docId, source, handler);
           pdfManagerCapability.resolve(pdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -179,7 +218,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           }
 
           try {
-            pdfManager = new NetworkPdfManager(source, handler);
+            pdfManager = new NetworkPdfManager(docId, source, handler);
             pdfManagerCapability.resolve(pdfManager);
           } catch (ex) {
             pdfManagerCapability.reject(ex);
@@ -224,7 +263,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
           // the data is array, instantiating directly from it
           try {
-            pdfManager = new LocalPdfManager(pdfFile, source.password);
+            pdfManager = new LocalPdfManager(docId, pdfFile, source.password);
             pdfManagerCapability.resolve(pdfManager);
           } catch (ex) {
             pdfManagerCapability.reject(ex);
@@ -262,35 +301,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       return pdfManagerCapability.promise;
     }
 
-    handler.on('test', function wphSetupTest(data) {
-      // check if Uint8Array can be sent to worker
-      if (!(data instanceof Uint8Array)) {
-        handler.send('test', false);
-        return;
-      }
-      // making sure postMessage transfers are working
-      var supportTransfers = data[0] === 255;
-      handler.postMessageTransfers = supportTransfers;
-      // check if the response property is supported by xhr
-      var xhr = new XMLHttpRequest();
-      var responseExists = 'response' in xhr;
-      // check if the property is actually implemented
-      try {
-        var dummy = xhr.responseType;
-      } catch (e) {
-        responseExists = false;
-      }
-      if (!responseExists) {
-        handler.send('test', false);
-        return;
-      }
-      handler.send('test', {
-        supportTypedArray: true,
-        supportTransfers: supportTransfers
-      });
-    });
-
-    handler.on('GetDocRequest', function wphSetupDoc(data) {
+    var setupDoc = function(data) {
       var onSuccess = function(doc) {
         ensureNotTerminated();
         handler.send('GetDoc', { pdfInfo: doc });
@@ -366,7 +377,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           });
         }, onFailure);
       }, onFailure);
-    });
+    };
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
@@ -546,8 +557,16 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         task.terminate();
       });
 
-      return Promise.all(waitOn).then(function () {});
+      return Promise.all(waitOn).then(function () {
+        // Notice that even if we destroying handler, resolved response promise
+        // must be sent back.
+        handler.destroy();
+        handler = null;
+      });
     });
+
+    setupDoc(data);
+    return workerHandlerName;
   }
 };
 
@@ -557,6 +576,7 @@ var workerConsole = {
   log: function log() {
     var args = Array.prototype.slice.call(arguments);
     globalScope.postMessage({
+      targetName: 'main',
       action: 'console_log',
       data: args
     });
@@ -565,6 +585,7 @@ var workerConsole = {
   error: function error() {
     var args = Array.prototype.slice.call(arguments);
     globalScope.postMessage({
+      targetName: 'main',
       action: 'console_error',
       data: args
     });
@@ -594,11 +615,12 @@ if (typeof window === 'undefined') {
   // Listen for unsupported features so we can pass them on to the main thread.
   PDFJS.UnsupportedManager.listen(function (msg) {
     globalScope.postMessage({
+      targetName: 'main',
       action: '_unsupported_feature',
       data: msg
     });
   });
 
-  var handler = new MessageHandler('worker_processor', this);
-  WorkerMessageHandler.setup(handler);
+  var handler = new MessageHandler('worker', 'main', this);
+  WorkerMessageHandler.setup(handler, this);
 }

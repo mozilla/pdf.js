@@ -1,17 +1,6 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
-var sheet = {
-  cssRules: [],
-  insertRule: function(rule) {
-    this.cssRules.push(rule);
-  },
-};
-
-var style = {
-  sheet: sheet,
-};
-
 function xmlEncode(s){
   var i = 0, ch;
   s = String(s);
@@ -75,6 +64,15 @@ function DOMElement(name) {
   this.childNodes = [];
   this.attributes = {};
   this.textContent = '';
+
+  if (name === 'style') {
+    this.sheet = {
+      cssRules: [],
+      insertRule: function (rule) {
+        this.cssRules.push(rule);
+      },
+    };
+  }
 }
 
 DOMElement.prototype = {
@@ -125,14 +123,23 @@ DOMElement.prototype = {
 global.document = {
   childNodes : [],
 
-  getElementById: function (id) {
-    if (id === 'PDFJS_FONT_STYLE_TAG') {
-      return style;
-    }
+  get documentElement() {
+    return this;
   },
 
   createElementNS: function (NS, element) {
     var elObject = new DOMElement(element);
     return elObject;
   },
+
+  createElement: function (element) {
+    return this.createElementNS('', element);
+  },
+
+  getElementsByTagName: function (element) {
+    if (element === 'head') {
+      return [this.head || (this.head = new DOMElement('head'))];
+    }
+    return [];
+  }
 };
