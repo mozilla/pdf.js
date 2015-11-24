@@ -252,10 +252,16 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData() {
+    getAnnotationsData: function Page_getAnnotationsData(intent) {
       var annotations = this.annotations;
       var annotationsData = [];
       for (var i = 0, n = annotations.length; i < n; ++i) {
+        if (intent) {
+          if (!(intent === 'display' && annotations[i].viewable) &&
+              !(intent === 'print' && annotations[i].printable)) {
+            continue;
+          }
+        }
         annotationsData.push(annotations[i].data);
       }
       return annotationsData;
@@ -268,7 +274,7 @@ var Page = (function PageClosure() {
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = annotationFactory.create(this.xref, annotationRef);
-        if (annotation && (annotation.viewable || annotation.printable)) {
+        if (annotation) {
           annotations.push(annotation);
         }
       }

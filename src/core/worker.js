@@ -399,7 +399,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
     handler.on('GetDestination',
       function wphSetupGetDestination(data) {
-        return pdfManager.ensureCatalog('getDestination', [ data.id ]);
+        return pdfManager.ensureCatalog('getDestination', [data.id]);
       }
     );
 
@@ -447,7 +447,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
     handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
-        return pdfManager.ensure(page, 'getAnnotationsData', []);
+        return pdfManager.ensure(page, 'getAnnotationsData', [data.intent]);
       });
     });
 
