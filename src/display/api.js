@@ -173,6 +173,9 @@ PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
 /**
  * (Deprecated) Opens external links in a new window if enabled.
  * The default behavior opens external links in the PDF.js window.
+ *
+ * NOTE: This property has been deprecated, please use
+ *       `PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK` instead.
  * @var {boolean}
  */
 PDFJS.openExternalLinksInNewWindow = (
