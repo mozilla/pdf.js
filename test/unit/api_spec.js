@@ -482,11 +482,21 @@ describe('api', function() {
       });
     });
     it('gets text content', function () {
-      var promise = page.getTextContent();
-      waitsForPromiseResolved(promise, function (data) {
-        expect(!!data.items).toEqual(true);
-        expect(data.items.length).toEqual(7);
-        expect(!!data.styles).toEqual(true);
+      var defaultPromise = page.getTextContent();
+      var normalizeWhitespacePromise = page.getTextContent({
+        normalizeWhitespace: true });
+
+      var promises = [
+        defaultPromise,
+        normalizeWhitespacePromise
+      ];
+      waitsForPromiseResolved(Promise.all(promises), function (data) {
+        expect(!!data[0].items).toEqual(true);
+        expect(data[0].items.length).toEqual(7);
+        expect(!!data[0].styles).toEqual(true);
+
+        // A simple check that ensures the two `textContent` object match.
+        expect(JSON.stringify(data[0])).toEqual(JSON.stringify(data[1]));
       });
     });
     it('gets operator list', function() {

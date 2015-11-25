@@ -709,6 +709,14 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
 })();
 
 /**
+ * Page getTextContent parameters.
+ *
+ * @typedef {Object} getTextContentParameters
+ * @param {boolean} normalizeWhitespace - replaces all occurrences of
+ *   whitespace with standard spaces (0x20). The default value is `false`.
+ */
+
+/**
  * Page text content.
  *
  * @typedef {Object} TextContent
@@ -986,12 +994,16 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
 
     /**
+     * @param {getTextContentParameters} params - getTextContent parameters.
      * @return {Promise} That is resolved a {@link TextContent}
      * object that represent the page text content.
      */
-    getTextContent: function PDFPageProxy_getTextContent() {
+    getTextContent: function PDFPageProxy_getTextContent(params) {
+      var normalizeWhitespace = (params && params.normalizeWhitespace) || false;
+
       return this.transport.messageHandler.sendWithPromise('GetTextContent', {
-        pageIndex: this.pageNumber - 1
+        pageIndex: this.pageNumber - 1,
+        normalizeWhitespace: normalizeWhitespace,
       });
     },
 
