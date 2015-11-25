@@ -1089,6 +1089,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (isPatternFill) {
         ctx.save();
+        if (this.baseTransform) {
+          ctx.setTransform.apply(ctx, this.baseTransform);
+        }
         ctx.fillStyle = fillColor.getPattern(ctx, this);
         needRestore = true;
       }
