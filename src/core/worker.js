@@ -142,15 +142,14 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
               var count = 0;
               // TODO not kosher accessing these props
-              var s = todo.xref.stream.makeSubStream(byteRange[0], byteRange[1]);
-              for(var i = byteRange[0]; i < (byteRange[0] + byteRange[1]); i++, count++)
-                  signedDataView[count] = s.getByte();
+              var view = todo.xref.stream.makeSubStream(byteRange[0], byteRange[1]).getBytes(byteRange[1]);
+              for(var i = 0; i < view.length; i++, count++)
+                  signedDataView[count] = view[i];
 
-              var s2 = todo.xref.stream.makeSubStream(byteRange[2], byteRange[3]);
-              for(var j = byteRange[2]; j < (byteRange[2] + byteRange[3]); j++, count++)
-                  signedDataView[count] = s2.getByte();
+              var view = todo.xref.stream.makeSubStream(byteRange[2], byteRange[3]).getBytes(byteRange[3]);
+              for(var j = 0; j < view.length; j++, count++)
+                  signedDataView[count] = view[j];
 
-              console.log(signedDataView);
               sequence = sequence.then(
                   function()
                   {
@@ -197,7 +196,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
                       function(result)
                       {
                           var messageDigest = new ArrayBuffer(0);
-                          console.log(cms_signed_simp);
 
                           for(var j = 0; j < cms_signed_simp.signerInfos[0].signedAttrs.attributes.length; j++)
                           {
