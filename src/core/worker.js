@@ -84,7 +84,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       return WorkerMessageHandler.createDocumentHandler(data, port);
     });
   },
-  createDocumentHandler: function wphCreateDocumentHandler(data, port) {
+  createDocumentHandler: function wphCreateDocumentHandler(docParams, port) {
     // This context is actually holds references on pdfManager and handler,
     // until the latter is destroyed.
     var pdfManager;
@@ -92,8 +92,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     var cancelXHRs = null;
     var WorkerTasks = [];
 
-    var docId = data.docId;
-    var workerHandlerName = data.docId + '_worker';
+    var docId = docParams.docId;
+    var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
     function ensureNotTerminated() {
@@ -346,7 +346,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         }
 
         pdfManager = newPdfManager;
-
         handler.send('PDFManagerReady', null);
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength });
@@ -567,7 +566,10 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       });
     });
 
-    setupDoc(data);
+    handler.on('Ready', function wphReady(data) {
+      setupDoc(docParams);
+      docParams = null; // we don't need docParams anymore -- saving memory.
+    });
     return workerHandlerName;
   }
 };
