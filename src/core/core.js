@@ -17,7 +17,7 @@
            OperatorList, Annotation, error, assert, XRef, isArrayBuffer, Stream,
            isString, isName, info, Linearization, MissingDataException, Lexer,
            Catalog, stringToPDFString, stringToBytes, calculateMD5,
-           AnnotationFactory */
+           AnnotationFactory, SignatureVerifierPromise */
 
 'use strict';
 
@@ -529,6 +529,10 @@ var PDFDocument = (function PDFDocumentClosure() {
       }
 
       return shadow(this, 'fingerprint', fileID);
+    },
+    get signatures() {
+      var signatures = new SignatureVerifierPromise(this);
+      return shadow(this, 'signatures', signatures);
     },
 
     getPage: function PDFDocument_getPage(pageIndex) {

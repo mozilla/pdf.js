@@ -50,7 +50,8 @@ var otherFiles = [
   'core/jpx.js',
   'core/jbig2.js',
   'core/bidi.js',
-  'core/murmurhash3.js'
+  'core/murmurhash3.js',
+  'core/signatures.js'
 ];
 
 function loadInOrder(index, path, files) {

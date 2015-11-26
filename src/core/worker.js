@@ -17,7 +17,7 @@
            UnexpectedResponseException, PasswordException, Promise, warn,
            PasswordResponses, InvalidPDFException, UnknownErrorException,
            XRefParseException, Ref, info, globalScope, error, MessageHandler,
-           org */
+           SignatureChecker */
 
 'use strict';
 
@@ -59,204 +59,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     var cancelXHRs = null;
     var WorkerTasks = [];
 
-    function findSignatures() {
-      return new Promise(function(resolve, reject) {
-        pdfManager.ensureXRef('root').then(function foundAcroForm(results) {
-          todo = results;
-          var acroForm = results.get('AcroForm');
-          if (acroForm) {
-            var fields = acroForm.get('Fields');
-            var promises = [];
-            for (var i = 0; i < fields.length; i ++) {
-              if (isRef(fields[i])) {
-                var promise = pdfManager.ensureXRef('fetch', [fields[i]]);
-                promises.push(promise);
-              }
-            }
-            
-            var signatureData = [];
-            Promise.all(promises).then(function foundSignatures(signatures) {
-              for (var i = 0; i < signatures.length; i ++) {
-                var sigField = signatures[i];
-                var sigFieldType = sigField.get('FT');
-                if ((typeof sigFieldType === 'undefined') || (sigFieldType.name !== 'Sig'))
-                  continue;
-
-                var v = sigField.get('V');
-                var byteRange = v.get('ByteRange');
-                var subFilter = v.get('SubFilter');
-                var contents = v.get('Contents');
-                var reason = v.get('Reason');
-                var time = v.get('M');
-                var name = v.get('Name');
-                var location = v.get('Location');
-                var contactInfo = v.get('ContactInfo');
-                
-                signatureData.push({
-                  contents: contents,
-                  byteRange: byteRange,
-                  type: subFilter.name,
-                  name: name,
-                  reason: reason,
-                  time: time,
-                  location: location,
-                  contactInfo: contactInfo
-                });
-              }
-              resolve(signatureData);
-            }, function() {
-              resolve([]);
-            });
-          } else {
-            resolve([]);
-          }
-        });
-      }).then(function(signatures) {
-        function checkSig(sigData) {
-          // TODO reformat, clean up
-          try
-          {
-              var trustedCertificates = [];
-              // TODO hack
-              globalScope.exports = globalScope;
-              importScripts('../src/pkijs/common.js', '../src/pkijs/asn1.js', '../src/pkijs/x509_schema.js', '../src/pkijs/x509_simpl.js', '../src/pkijs/cms_schema.js', '../src/pkijs/cms_simpl.js');
-              var byteRange = sigData.byteRange;
-              var contents = sigData.contents;
-
-              var contentLength = contents.length;
-              var contentBuffer = new ArrayBuffer(contentLength);
-              var contentView = new Uint8Array(contentBuffer);
-
-              for(var i = 0; i < contentLength; i++)
-                  contentView[i] = contents.charCodeAt(i);
-
-              var sequence = Promise.resolve();
-
-              var asn1 = org.pkijs.fromBER(contentBuffer);
-
-              var cms_content_simp = new org.pkijs.simpl.CMS_CONTENT_INFO({ schema: asn1.result });
-              var cms_signed_simp = new org.pkijs.simpl.CMS_SIGNED_DATA({ schema: cms_content_simp.content });
-
-              var signedDataBuffer = new ArrayBuffer(byteRange[1] + byteRange[3]);
-              var signedDataView = new Uint8Array(signedDataBuffer);
-
-              var count = 0;
-              // TODO not kosher accessing these props
-              var view = todo.xref.stream.makeSubStream(byteRange[0], byteRange[1]).getBytes(byteRange[1]);
-              for(var i = 0; i < view.length; i++, count++)
-                  signedDataView[count] = view[i];
-
-              var view = todo.xref.stream.makeSubStream(byteRange[2], byteRange[3]).getBytes(byteRange[3]);
-              for(var j = 0; j < view.length; j++, count++)
-                  signedDataView[count] = view[j];
-
-              sequence = sequence.then(
-                  function()
-                  {
-                      return cms_signed_simp.verify({ signer: 0, data: signedDataBuffer, trusted_certs: trustedCertificates });
-                  }
-                  );
-
-              if("signedAttrs" in cms_signed_simp.signerInfos[0])
-              {
-                  var crypto = org.pkijs.getCrypto();
-                  if(typeof crypto == "undefined")
-                      throw new Error("WebCrypto extension is not installed");
-
-                  var sha_algorithm = "";
-
-                  switch(cms_signed_simp.signerInfos[0].digestAlgorithm.algorithm_id)
-                  {
-                      case "1.3.14.3.2.26":
-                          sha_algorithm = "sha-1";
-                          break;
-                      case "2.16.840.1.101.3.4.2.1":
-                          sha_algorithm = "sha-256";
-                          break;
-                      case "2.16.840.1.101.3.4.2.2":
-                          sha_algorithm = "sha-384";
-                          break;
-                      case "2.16.840.1.101.3.4.2.3":
-                          sha_algorithm = "sha-512";
-                          break;
-                      default:
-                              throw new Error("Unknown hashing algorithm");
-                  };
-
-                  sequence = sequence.then(
-                      function(result)
-                      {
-                          if(result === false)
-                              return new Promise(function(resolve, reject) { reject("Signature verification failed"); });
-
-                          return crypto.digest({ name: sha_algorithm }, new Uint8Array(signedDataBuffer));
-                      });
-
-                  sequence = sequence.then(
-                      function(result)
-                      {
-                          var messageDigest = new ArrayBuffer(0);
-
-                          for(var j = 0; j < cms_signed_simp.signerInfos[0].signedAttrs.attributes.length; j++)
-                          {
-                              if(cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrType === "1.2.840.113549.1.9.4")
-                              {
-                                  messageDigest = cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrValues[0].value_block.value_hex;
-                                  break;
-                              }
-                          }
-
-                          if(messageDigest.byteLength === 0)
-                              return new Promise(function(resolve, reject) { reject("No signed attribute \"MessageDigest\""); });
-
-                          var view1 = new Uint8Array(messageDigest);
-                          var view2 = new Uint8Array(result);
-
-                          if(view1.length !== view2.length)
-                              return new Promise(function(resolve, reject) { reject("Hash is not correct"); });
-
-                          for(var i = 0; i < view1.length; i++)
-                          {
-                              if(view1[i] !== view2[i])
-                                  return new Promise(function(resolve, reject) { reject("Hash is not correct"); });
-                          }
-                      });
-              }
-
-              sequence.then(
-                  function(result)
-                  {
-                      if(typeof result !== "undefined")
-                      {
-                          if(result === false)
-                          {
-                              console.log("PDF verification failed!")
-                              return;
-                          }
-                      }
-
-                      console.log("PDF successfully verified!")
-                  },
-                  function(error)
-                  {
-                      console.error("Error: " + error);
-                  }
-                  );
-          }
-          catch(err)
-          {
-              console.error(err);
-          }
-        }
-
-        signatures.forEach(function(sigData) {
-          checkSig(sigData);
-        });
-
-        return signatures;
-      });
-    }
-
     function ensureNotTerminated() {
       if (terminated) {
         throw new Error('Worker was terminated');
@@ -281,7 +83,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
         // TODO don't need signatures, but do need to pass info that shows whether sigs exist and are valid
-        var signaturesPromise = findSignatures();
+        var signaturesPromise = pdfManager.ensureDoc('signatures');
         Promise.all([numPagesPromise, fingerprintPromise,
                      encryptedPromise, signaturesPromise]).then(function onDocReady(results) {
           var doc = {
@@ -290,6 +92,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             encrypted: !!results[2],
             signatures: results[3],
           };
+          // TODO
+          console.log(results[3]);
           loadDocumentCapability.resolve(doc);
         },
         parseFailure);
@@ -307,7 +111,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }, parseFailure);
 
       return loadDocumentCapability.promise.then(function(doc) {
-        findSignatures();
         return doc;
       });
     }
