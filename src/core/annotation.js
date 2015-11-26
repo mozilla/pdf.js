@@ -16,7 +16,7 @@
            stringToBytes, Promise, isArray, ObjectLoader, OperatorList,
            isValidUrl, OPS, createPromiseCapability, AnnotationType,
            stringToUTF8String, AnnotationBorderStyleType, ColorSpace,
-           AnnotationFlag, isInt, InteractiveAnnotation */
+           AnnotationFlag, isInt */
 
 'use strict';
 
@@ -668,7 +668,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
 
 var VideoAnnotation = (function VideoAnnotationClosure() {
   function VideoAnnotation(params) {
-    InteractiveAnnotation.call(this, params);
+    Annotation.call(this, params);
     if (params.data) {
       return;
     }
@@ -721,7 +721,7 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
     }
   }
 
-  Util.inherit(VideoAnnotation, InteractiveAnnotation, { });
+  Util.inherit(VideoAnnotation, Annotation, { });
 
   return VideoAnnotation;
 })();

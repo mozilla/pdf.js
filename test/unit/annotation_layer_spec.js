@@ -172,4 +172,8 @@ describe('Annotation layer', function() {
       expect(borderStyle.verticalCornerRadius).toEqual(0);
     });
   });
+  describe('VideoAnnotation', function() {
+    // unit tests functions here
+  });
 });
+
