@@ -83,19 +83,20 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       this.loadPkiJs();
 
       var promises = signaturesData.map(function(sigData) {
-        return this.isValid(sigData);
+        return this.processSignature(sigData);
       }, this);
 
       Promise.all(promises).then(function(validResults) {
         var combined = {valid: [], invalid: []};
         for (var i = 0; i < validResults.length; i++) {
+          var sigData = signaturesData[i];
           // Remove unnecessary properties
-          delete signaturesData[i].byteRange;
-          delete signaturesData[i].contents;
-          if (validResults[i]) {
-            combined.valid.push(signaturesData[i]);
+          delete sigData.byteRange;
+          delete sigData.contents;
+          if (sigData.isValid) {
+            combined.valid.push(sigData);
           } else {
-            combined.invalid.push(signaturesData[i]);
+            combined.invalid.push(sigData);
           }
         }
         this._capability.resolve(combined);
@@ -103,11 +104,12 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
     },
     loadPkiJs: function SignatureVerifierPromise_loadPkiJs() {
       // Ensure PKIjs is exported to globalScope, since otherwise it will try to
-      // export to window which doesn't exist for a  worker.
+      // export to window which doesn't exist for a worker.
       globalScope.exports = globalScope;
       importScripts('../external/PKIjs/org/pkijs/common.js', '../external/ASN1js/org/pkijs/asn1.js', '../external/PKIjs/org/pkijs/x509_schema.js', '../external/PKIjs/org/pkijs/x509_simpl.js', '../external/PKIjs/org/pkijs/cms_schema.js', '../external/PKIjs/org/pkijs/cms_simpl.js');
     },
-    isValid: function SignatureVerifierPromise_isValid(sigData) {
+    // Check for validity and add certificate info
+    processSignature: function SignatureVerifierPromise_isValid(sigData) {
       var byteRange = sigData.byteRange;
       var contents = sigData.contents;
       var contentLength = contents.length;
@@ -121,10 +123,10 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       var asn1 = org.pkijs.fromBER(contentBuffer);
       var cms_content_simp = new org.pkijs.simpl.CMS_CONTENT_INFO({ schema: asn1.result });
       var cms_signed_simp = new org.pkijs.simpl.CMS_SIGNED_DATA({ schema: cms_content_simp.content });
+      this.addCertInfo(sigData, cms_signed_simp.certificates);
 
       var signedDataBuffer = new ArrayBuffer(byteRange[1] + byteRange[3]);
       var signedDataView = new Uint8Array(signedDataBuffer);
-
       var count = 0;
       var view = this._pdfDocument.xref.stream.makeSubStream(byteRange[0], byteRange[1]).getBytes(byteRange[1]);
       for (var i = 0; i < view.length; i++, count++) {
@@ -135,13 +137,13 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
         signedDataView[count] = view[j];
       }
 
-      return Promise.resolve().then(function() {
+      return Promise.resolve().then(function() { // Verify certificate
         return cms_signed_simp.verify({ signer: 0, data: signedDataBuffer, trusted_certs: trustedCertificates });
       }).then(function(result) {
         if (result === false) {
           throw "Signature verification failed";
         }
-      }).then(function() {
+      }).then(function() { // Calculate the PDF data's actual digest
         if ("signedAttrs" in cms_signed_simp.signerInfos[0]) {
           var crypto = org.pkijs.getCrypto();
           if (typeof crypto == "undefined") {
@@ -161,21 +163,21 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
             throw "Unknown hashing algorithm";
           }
         }
-      }).then(function(expectedDigest) {
-        var messageDigest = new ArrayBuffer(0);
+      }).then(function(actualDigest) { // Check (embedded) expected = actual digest
+        var expectedDigest = null;
         for (var j = 0; j < cms_signed_simp.signerInfos[0].signedAttrs.attributes.length; j++) {
           if (cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrType === "1.2.840.113549.1.9.4") {
-            messageDigest = cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrValues[0].value_block.value_hex;
+            expectedDigest = cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrValues[0].value_block.value_hex;
             break;
           }
         }
 
-        if (messageDigest.byteLength === 0) {
+        if (expectedDigest === null) {
           throw "No signed attribute \"MessageDigest\"";
         }
 
-        var view1 = new Uint8Array(messageDigest);
-        var view2 = new Uint8Array(expectedDigest);
+        var view1 = new Uint8Array(expectedDigest);
+        var view2 = new Uint8Array(actualDigest);
         if (view1.length !== view2.length) {
           throw "Hash is not correct";
         }
@@ -187,11 +189,26 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
         }
       }).then(function() {
         // Successfully verified PDF without throwing errors
-        return true;
+        sigData.isValid = true;
       }).catch(function(reason) {
         sigData.invalidReason = reason;
-        return false;
+        sigData.isValid = false;
       });
+    },
+    addCertInfo: function SignatureVerifierPromise_addCertInfo(sigData, certs) {
+      var leafCertSubject = certs[certs.length - 1].subject.types_and_values;
+      var cn = "";
+      var on = "";
+      
+      leafCertSubject.forEach(function(attr) {
+        if (attr.type === "2.5.4.3") {
+          cn = attr.value.value_block.value;
+        } else if (attr.type === "2.5.4.10") {
+          on = attr.value.value_block.value;
+        }
+      });
+
+      sigData.certInfo = {cn: cn, on: on};
     },
   };
 
