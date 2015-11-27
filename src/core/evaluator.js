@@ -321,6 +321,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return translated.loadType3Data(self, resources, operatorList, task).
           then(function () {
           return translated;
+        }, function (reason) {
+          return new TranslatedFont('g_font_error',
+            new ErrorFont('Type3 font load error: ' + reason), translated.font);
         });
       }).then(function (translated) {
         state.font = translated.font;
