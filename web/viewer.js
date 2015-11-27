@@ -813,6 +813,30 @@ var PDFViewerApplication = {
       mozL10n.get('page_of', {pageCount: pagesCount}, 'of {{pageCount}}');
     document.getElementById('pageNumber').max = pagesCount;
 
+    var signatures = pdfDocument.pdfInfo.signatures;
+    var hasSignature = signatures.invalid.length > 0 ||
+      signatures.valid.length > 0;
+    var container = document.getElementById('viewerContainer');
+    var signatureBar = document.getElementById('signatureBar');
+    if (hasSignature) {
+      container.classList.add('hasSignature');
+      if (signatures.invalid.length > 0) {
+        signatureBar.className = 'invalid';
+        document.getElementById('signatureInvalidReason').textContent =
+          signatures.invalid[0].invalidReason;
+      } else if (signatures.valid.length > 0) {
+        signatureBar.className = 'valid';
+        document.getElementById('signatureInfo').textContent =
+          signatures.valid.map(function(sigData) {
+            var info = sigData.certInfo;
+            return info.cn + ', ' + info.on;
+          }).join('; ');
+      }
+    } else {
+      container.classList.remove('hasSignature');
+      signatureBar.className = 'hidden';
+    }
+
     var id = this.documentFingerprint = pdfDocument.fingerprint;
     var store = this.store = new ViewHistory(id);
 

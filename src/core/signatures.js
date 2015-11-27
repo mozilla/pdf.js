@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals createPromiseCapability, Promise, globalScope, org, isRef */
+/* globals createPromiseCapability, Promise, globalScope, org, isRef, warn */
 
 'use strict';
 
@@ -85,8 +85,15 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       this.checkAllValidity(signaturesData);
     },
     checkAllValidity:
-    function SignatureVerifierPromise_checkAllValidity(signaturesData) {
+        function SignatureVerifierPromise_checkAllValidity(signaturesData) {
       this.loadPkiJs();
+      var crypto = org.pkijs.getCrypto();
+      if (typeof crypto === 'undefined') {
+        warn('WebCrypto is not available');
+        // Don't show any signature information
+        this._capability.resolve(emptyResult);
+        return;
+      }
 
       var promises = signaturesData.map(function(sigData) {
         return this.processSignature(sigData);
@@ -165,10 +172,6 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       }).then(function() { // Calculate the PDF data's actual digest
         if ('signedAttrs' in cmsSigned.signerInfos[0]) {
           var crypto = org.pkijs.getCrypto();
-          if (typeof crypto === 'undefined') {
-            throw 'WebCrypto extension is not installed';
-          }
-
           var algoMap = {
             '1.3.14.3.2.26': 'sha-1',
             '2.16.840.1.101.3.4.2.1': 'sha-256',

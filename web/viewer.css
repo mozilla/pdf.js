@@ -296,14 +296,20 @@ html[dir='rtl'] #toolbarSidebar {
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
 }
-html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
+html[dir='ltr'] #toolbarContainer,
+html[dir='ltr'] .findbar,
+html[dir='ltr'] .secondaryToolbar,
+html[dir='ltr'] #signatureBarContainer {
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
-html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
+html[dir='rtl'] #toolbarContainer,
+html[dir='rtl'] .findbar,
+html[dir='rtl'] .secondaryToolbar,
+html[dir='rtl'] #signatureBarContainer {
   box-shadow: inset -1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
@@ -1571,6 +1577,57 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   bottom: 0;
   overflow: hidden;
   z-index: 50000; /* should be higher than anything else in PDF.js! */
+}
+
+#viewerContainer.hasSignature {
+  top: 64px;
+}
+
+#signatureBar {
+  height: 32px;
+  position: relative;
+}
+
+#signatureBarContainer {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  width: 100%;
+  position: absolute;
+  left: 0; /* Required because sometimes the toolbar icons can mess with the layout of this */
+  padding: 8px 6px 8px 25px;
+  border-top: 1px solid hsla(0,0%,0%,.25);
+  font-size: 12px;
+  line-height: 14px;
+  color: hsl(0,0%,85%);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+#signatureValid, #signatureInvalid {
+  display: none;
+}
+
+#signatureBar.valid #signatureValid, #signatureBar.invalid #signatureInvalid {
+  display: block;
+}
+
+#signatureBar.valid {
+  background-color: #006603; /* fallback */
+  background-image: url(images/texture.png),
+                    linear-gradient(hsla(122, 100%, 25%, 0.99), hsla(122, 100%, 20%, 0.95));
+}
+
+#signatureBar.invalid {
+  background-color: #600; /* fallback */
+  background-image: url(images/texture.png),
+                    linear-gradient(hsla(0, 100%, 25%, 0.99), hsla(0, 100%, 20%, 0.95));
+}
+
+#signatureValidIcon, #signatureInvalidIcon {
+  font-size: 20px;
+  float: left;
+  margin-right: 7px;
 }
 
 @page {

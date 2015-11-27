@@ -92,8 +92,6 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             encrypted: !!results[2],
             signatures: results[3],
           };
-          // TODO
-          console.log(results[3]);
           loadDocumentCapability.resolve(doc);
         },
         parseFailure);
