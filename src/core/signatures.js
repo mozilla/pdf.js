@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals createPromiseCapability, Promise, globalScope */
+/* globals createPromiseCapability, Promise, globalScope, org, isRef */
+
+'use strict';
 
 var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
   var emptyResult = {valid: [], invalid: []};
@@ -22,7 +24,7 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
     this._pdfDocument = pdfDocument;
     this._capability = createPromiseCapability();
 
-    var acroForm = this._pdfDocument.acroForm;
+    var acroForm = this._pdfDocument.xref.root.get('AcroForm');
     if (acroForm) {
       this.findSignatures(acroForm);
     } else {
@@ -38,7 +40,8 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       var promises = [];
       fields.forEach(function(field) {
         if (isRef(field)) {
-          var promise = this._pdfDocument.pdfManager.ensureXRef('fetch', [field]);
+          var promise = this._pdfDocument.pdfManager.ensureXRef('fetch',
+                                                                [field]);
           promises.push(promise);
         }
       }, this);
@@ -47,11 +50,13 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
         this._capability.resolve(emptyResult);
       }.bind(this));
     },
-    getSignatureData: function SignatureVerifierPromise_getSignatureData(signatures) {
+    getSignatureData:
+        function SignatureVerifierPromise_getSignatureData(signatures) {
       var signaturesData = [];
       signatures.forEach(function(sigField) {
         var sigFieldType = sigField.get('FT');
-        if (typeof sigFieldType === 'undefined' || sigFieldType.name !== 'Sig') {
+        if (typeof sigFieldType === 'undefined' ||
+            sigFieldType.name !== 'Sig') {
           return;
         }
 
@@ -73,13 +78,14 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
           time: time,
           name: name,
           location: location,
-          contactInfo: contactInfo
+          contactInfo: contactInfo,
         });
       });
 
       this.checkAllValidity(signaturesData);
     },
-    checkAllValidity: function SignatureVerifierPromise_checkAllValidity(signaturesData) {
+    checkAllValidity:
+    function SignatureVerifierPromise_checkAllValidity(signaturesData) {
       this.loadPkiJs();
 
       var promises = signaturesData.map(function(sigData) {
@@ -106,7 +112,12 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       // Ensure PKIjs is exported to globalScope, since otherwise it will try to
       // export to window which doesn't exist for a worker.
       globalScope.exports = globalScope;
-      importScripts('../external/PKIjs/org/pkijs/common.js', '../external/ASN1js/org/pkijs/asn1.js', '../external/PKIjs/org/pkijs/x509_schema.js', '../external/PKIjs/org/pkijs/x509_simpl.js', '../external/PKIjs/org/pkijs/cms_schema.js', '../external/PKIjs/org/pkijs/cms_simpl.js');
+      importScripts('../external/PKIjs/org/pkijs/common.js',
+                    '../external/ASN1js/org/pkijs/asn1.js',
+                    '../external/PKIjs/org/pkijs/x509_schema.js',
+                    '../external/PKIjs/org/pkijs/x509_simpl.js',
+                    '../external/PKIjs/org/pkijs/cms_schema.js',
+                    '../external/PKIjs/org/pkijs/cms_simpl.js');
     },
     // Check for validity and add certificate info
     processSignature: function SignatureVerifierPromise_isValid(sigData) {
@@ -115,76 +126,87 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
       var contentLength = contents.length;
       var contentBuffer = new ArrayBuffer(contentLength);
       var contentView = new Uint8Array(contentBuffer);
+      var i;
 
-      for (var i = 0; i < contentLength; i++) {
+      for (i = 0; i < contentLength; i++) {
         contentView[i] = contents.charCodeAt(i);
       }
 
       var asn1 = org.pkijs.fromBER(contentBuffer);
-      var cms_content_simp = new org.pkijs.simpl.CMS_CONTENT_INFO({ schema: asn1.result });
-      var cms_signed_simp = new org.pkijs.simpl.CMS_SIGNED_DATA({ schema: cms_content_simp.content });
-      this.addCertInfo(sigData, cms_signed_simp.certificates);
+      var cmsContent = new org.pkijs.simpl.CMS_CONTENT_INFO({
+        schema: asn1.result
+      });
+      var cmsSigned = new org.pkijs.simpl.CMS_SIGNED_DATA({
+        schema: cmsContent.content
+      });
+      this.addCertInfo(sigData, cmsSigned.certificates);
 
       var signedDataBuffer = new ArrayBuffer(byteRange[1] + byteRange[3]);
       var signedDataView = new Uint8Array(signedDataBuffer);
       var count = 0;
-      var view = this._pdfDocument.xref.stream.makeSubStream(byteRange[0], byteRange[1]).getBytes(byteRange[1]);
-      for (var i = 0; i < view.length; i++, count++) {
+      var view = this._pdfDocument.xref.stream.makeSubStream(byteRange[0],
+        byteRange[1]).getBytes(byteRange[1]);
+      for (i = 0; i < view.length; i++, count++) {
         signedDataView[count] = view[i];
       }
-      var view = this._pdfDocument.xref.stream.makeSubStream(byteRange[2], byteRange[3]).getBytes(byteRange[3]);
-      for (var j = 0; j < view.length; j++, count++) {
-        signedDataView[count] = view[j];
+      view = this._pdfDocument.xref.stream.makeSubStream(byteRange[2],
+        byteRange[3]).getBytes(byteRange[3]);
+      for (i = 0; i < view.length; i++, count++) {
+        signedDataView[count] = view[i];
       }
 
       return Promise.resolve().then(function() { // Verify certificate
-        return cms_signed_simp.verify({ signer: 0, data: signedDataBuffer, trusted_certs: trustedCertificates });
+        return cmsSigned.verify({ signer: 0, data: signedDataBuffer,
+          trusted_certs: trustedCertificates });
       }).then(function(result) {
         if (result === false) {
-          throw "Signature verification failed";
+          throw 'Signature verification failed';
         }
       }).then(function() { // Calculate the PDF data's actual digest
-        if ("signedAttrs" in cms_signed_simp.signerInfos[0]) {
+        if ('signedAttrs' in cmsSigned.signerInfos[0]) {
           var crypto = org.pkijs.getCrypto();
-          if (typeof crypto == "undefined") {
-            throw "WebCrypto extension is not installed";
+          if (typeof crypto === 'undefined') {
+            throw 'WebCrypto extension is not installed';
           }
 
           var algoMap = {
-            "1.3.14.3.2.26": "sha-1",
-            "2.16.840.1.101.3.4.2.1": "sha-256",
-            "2.16.840.1.101.3.4.2.2": "sha-384",
-            "2.16.840.1.101.3.4.2.3": "sha-512",
+            '1.3.14.3.2.26': 'sha-1',
+            '2.16.840.1.101.3.4.2.1': 'sha-256',
+            '2.16.840.1.101.3.4.2.2': 'sha-384',
+            '2.16.840.1.101.3.4.2.3': 'sha-512',
           };
-          var algId = cms_signed_simp.signerInfos[0].digestAlgorithm.algorithm_id;
+          var algId = cmsSigned.signerInfos[0].digestAlgorithm.algorithm_id;
           if (algoMap.hasOwnProperty(algId)) {
-            return crypto.digest({ name: algoMap[algId] }, new Uint8Array(signedDataBuffer));
+            return crypto.digest({ name: algoMap[algId] },
+                                 new Uint8Array(signedDataBuffer));
           } else {
-            throw "Unknown hashing algorithm";
+            throw 'Unknown hashing algorithm';
           }
         }
-      }).then(function(actualDigest) { // Check (embedded) expected = actual digest
+      }).then(function(actualDigest) { // Check expected = actual digest
         var expectedDigest = null;
-        for (var j = 0; j < cms_signed_simp.signerInfos[0].signedAttrs.attributes.length; j++) {
-          if (cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrType === "1.2.840.113549.1.9.4") {
-            expectedDigest = cms_signed_simp.signerInfos[0].signedAttrs.attributes[j].attrValues[0].value_block.value_hex;
+        var attributes = cmsSigned.signerInfos[0].signedAttrs.attributes;
+        for (var j = 0; j < attributes.length; j++) {
+          var attrType = attributes[j].attrType;
+          if (attrType === '1.2.840.113549.1.9.4') {
+            expectedDigest = attributes[j].attrValues[0].value_block.value_hex;
             break;
           }
         }
 
         if (expectedDigest === null) {
-          throw "No signed attribute \"MessageDigest\"";
+          throw 'No signed attribute "MessageDigest"';
         }
 
         var view1 = new Uint8Array(expectedDigest);
         var view2 = new Uint8Array(actualDigest);
         if (view1.length !== view2.length) {
-          throw "Hash is not correct";
+          throw 'Hash is not correct';
         }
 
         for (var i = 0; i < view1.length; i++) {
           if (view1[i] !== view2[i]) {
-            throw "Incorrect hash";
+            throw 'Incorrect hash';
           }
         }
       }).then(function() {
@@ -197,13 +219,13 @@ var SignatureVerifierPromise = (function SignatureVerifierPromiseClosure() {
     },
     addCertInfo: function SignatureVerifierPromise_addCertInfo(sigData, certs) {
       var leafCertSubject = certs[certs.length - 1].subject.types_and_values;
-      var cn = "";
-      var on = "";
+      var cn = '';
+      var on = '';
       
       leafCertSubject.forEach(function(attr) {
-        if (attr.type === "2.5.4.3") {
+        if (attr.type === '2.5.4.3') {
           cn = attr.value.value_block.value;
-        } else if (attr.type === "2.5.4.10") {
+        } else if (attr.type === '2.5.4.10') {
           on = attr.value.value_block.value;
         }
       });

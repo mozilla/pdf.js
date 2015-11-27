@@ -82,10 +82,10 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         var numPagesPromise = pdfManager.ensureDoc('numPages');
         var fingerprintPromise = pdfManager.ensureDoc('fingerprint');
         var encryptedPromise = pdfManager.ensureXRef('encrypt');
-        // TODO don't need signatures, but do need to pass info that shows whether sigs exist and are valid
         var signaturesPromise = pdfManager.ensureDoc('signatures');
         Promise.all([numPagesPromise, fingerprintPromise,
-                     encryptedPromise, signaturesPromise]).then(function onDocReady(results) {
+                     encryptedPromise, signaturesPromise]).then(
+        function onDocReady(results) {
           var doc = {
             numPages: results[0],
             fingerprint: results[1],

@@ -9,6 +9,8 @@ external/jpgjs/
 external/jasmine/
 external/cmapscompress/
 external/importL10n/
+external/ASN1js
+external/PKIjs
 shared/
 test/tmp/
 test/features/
