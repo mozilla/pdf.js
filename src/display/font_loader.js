@@ -280,7 +280,10 @@ FontLoader.prototype = {
 //    }
 //
 //    font.attached = true;
-//    font.bindDOM()
+//    var rule = font.createFontFaceRule();
+//    if (rule) {
+//      this.insertRule(rule);
+//    }
 //  }
 //
 //  setTimeout(callback);
