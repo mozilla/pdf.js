@@ -14,9 +14,8 @@
  */
 /* globals PDFJS, Util, isDict, isName, stringToPDFString, warn, Dict, Stream,
            stringToBytes, Promise, isArray, ObjectLoader, OperatorList,
-           isValidUrl, OPS, createPromiseCapability, AnnotationType,
-           stringToUTF8String, AnnotationBorderStyleType, ColorSpace,
-           AnnotationFlag, isInt */
+           isValidUrl, OPS, AnnotationType, stringToUTF8String,
+           AnnotationBorderStyleType, ColorSpace, AnnotationFlag, isInt */
 
 'use strict';
 
@@ -119,25 +118,22 @@ var Annotation = (function AnnotationClosure() {
 
   function Annotation(params) {
     var dict = params.dict;
-    var data = this.data = {};
-
-    data.subtype = dict.get('Subtype').name;
 
     this.setFlags(dict.get('F'));
-    data.annotationFlags = this.flags;
-
     this.setRectangle(dict.get('Rect'));
-    data.rect = this.rectangle;
-
     this.setColor(dict.get('C'));
-    data.color = this.color;
-
-    this.borderStyle = data.borderStyle = new AnnotationBorderStyle();
     this.setBorderStyle(dict);
-
     this.appearance = getDefaultAppearance(dict);
-    data.hasAppearance = !!this.appearance;
-    data.id = params.ref.num;
+
+    // Expose public properties using a data object.
+    this.data = {};
+    this.data.id = params.ref.num;
+    this.data.subtype = dict.get('Subtype').name;
+    this.data.annotationFlags = this.flags;
+    this.data.rect = this.rectangle;
+    this.data.color = this.color;
+    this.data.borderStyle = this.borderStyle;
+    this.data.hasAppearance = !!this.appearance;
   }
 
   Annotation.prototype = {
@@ -264,6 +260,7 @@ var Annotation = (function AnnotationClosure() {
      * @param {Dict} borderStyle - The border style dictionary
      */
     setBorderStyle: function Annotation_setBorderStyle(borderStyle) {
+      this.borderStyle = new AnnotationBorderStyle();
       if (!isDict(borderStyle)) {
         return;
       }
@@ -316,13 +313,11 @@ var Annotation = (function AnnotationClosure() {
     },
 
     getOperatorList: function Annotation_getOperatorList(evaluator, task) {
-
       if (!this.appearance) {
         return Promise.resolve(new OperatorList());
       }
 
       var data = this.data;
-
       var appearanceDict = this.appearance.dict;
       var resourcesPromise = this.loadResources([
         'ExtGState',
@@ -354,33 +349,22 @@ var Annotation = (function AnnotationClosure() {
   };
 
   Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, opList, pdfManager, partialEvaluator, task, intent) {
-
-    function reject(e) {
-      annotationsReadyCapability.reject(e);
-    }
-
-    var annotationsReadyCapability = createPromiseCapability();
-
+      annotations, opList, partialEvaluator, task, intent) {
     var annotationPromises = [];
     for (var i = 0, n = annotations.length; i < n; ++i) {
-      if (intent === 'display' && annotations[i].viewable ||
-          intent === 'print' && annotations[i].printable) {
+      if ((intent === 'display' && annotations[i].viewable) ||
+          (intent === 'print' && annotations[i].printable)) {
         annotationPromises.push(
           annotations[i].getOperatorList(partialEvaluator, task));
       }
     }
-    Promise.all(annotationPromises).then(function(datas) {
+    return Promise.all(annotationPromises).then(function(operatorLists) {
       opList.addOp(OPS.beginAnnotations, []);
-      for (var i = 0, n = datas.length; i < n; ++i) {
-        var annotOpList = datas[i];
-        opList.addOpList(annotOpList);
+      for (var i = 0, n = operatorLists.length; i < n; ++i) {
+        opList.addOpList(operatorLists[i]);
       }
       opList.addOp(OPS.endAnnotations, []);
-      annotationsReadyCapability.resolve();
-    }, reject);
-
-    return annotationsReadyCapability.promise;
+    });
   };
 
   return Annotation;
@@ -525,7 +509,6 @@ var AnnotationBorderStyle = (function AnnotationBorderStyleClosure() {
 })();
 
 var WidgetAnnotation = (function WidgetAnnotationClosure() {
-
   function WidgetAnnotation(params) {
     Annotation.call(this, params);
 
@@ -649,7 +632,7 @@ var TextAnnotation = (function TextAnnotationClosure() {
     }
   }
 
-  Util.inherit(TextAnnotation, Annotation, { });
+  Util.inherit(TextAnnotation, Annotation, {});
 
   return TextAnnotation;
 })();
@@ -725,7 +708,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     return url;
   }
 
-  Util.inherit(LinkAnnotation, Annotation, { });
+  Util.inherit(LinkAnnotation, Annotation, {});
 
   return LinkAnnotation;
 })();
