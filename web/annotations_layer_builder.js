@@ -40,6 +40,7 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
 
     this.div = null;
   }
+
   AnnotationsLayerBuilder.prototype =
       /** @lends AnnotationsLayerBuilder.prototype */ {
 
@@ -81,8 +82,6 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
       pdfPage.getAnnotations(getAnnotationsParams).then(
           function (annotationsData) {
         viewport = viewport.clone({ dontFlip: true });
-        var transform = viewport.transform;
-        var transformStr = 'matrix(' + transform.join(',') + ')';
         var data, element, i, ii;
 
         if (self.div) {
@@ -91,9 +90,10 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
           for (i = 0, ii = annotationsData.length; i < ii; i++) {
             data = annotationsData[i];
             element = self.div.querySelector(
-                '[data-annotation-id="' + data.id + '"]');
+              '[data-annotation-id="' + data.id + '"]');
             if (element) {
-              CustomStyle.setProp('transform', element, transformStr);
+              CustomStyle.setProp('transform', element,
+                'matrix(' + viewport.transform.join(',') + ')');
             }
           }
           // See PDFPageView.reset()
@@ -105,28 +105,11 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
               continue;
             }
 
-            element = PDFJS.AnnotationLayer.getHtmlElement(data,
-              pdfPage.commonObjs);
-            element.setAttribute('data-annotation-id', data.id);
+            element = PDFJS.AnnotationLayer.getHtmlElement(data, pdfPage,
+                                                           viewport);
             if (typeof mozL10n !== 'undefined') {
               mozL10n.translate(element);
             }
-
-            var rect = data.rect;
-            var view = pdfPage.view;
-            rect = PDFJS.Util.normalizeRect([
-              rect[0],
-                view[3] - rect[1] + view[1],
-              rect[2],
-                view[3] - rect[3] + view[1]
-            ]);
-            element.style.left = rect[0] + 'px';
-            element.style.top = rect[1] + 'px';
-            element.style.position = 'absolute';
-
-            CustomStyle.setProp('transform', element, transformStr);
-            var transformOriginStr = -rect[0] + 'px ' + -rect[1] + 'px';
-            CustomStyle.setProp('transformOrigin', element, transformOriginStr);
 
             if (data.subtype === 'Link' && !data.url) {
               var link = element.getElementsByTagName('a')[0];
@@ -159,6 +142,7 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
       this.div.setAttribute('hidden', 'true');
     }
   };
+
   return AnnotationsLayerBuilder;
 })();
 

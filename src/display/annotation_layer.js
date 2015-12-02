@@ -42,11 +42,27 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     style.fontFamily = fontFamily + fallbackName;
   }
 
-  function getContainer(data) {
+  function getContainer(data, page, viewport) {
     var container = document.createElement('section');
-    var cstyle = container.style;
     var width = data.rect[2] - data.rect[0];
     var height = data.rect[3] - data.rect[1];
+
+    // ID
+    container.setAttribute('data-annotation-id', data.id);
+
+    // Normalize rectangle
+    data.rect = Util.normalizeRect([
+      data.rect[0],
+      page.view[3] - data.rect[1] + page.view[1],
+      data.rect[2],
+      page.view[3] - data.rect[3] + page.view[1]
+    ]);
+
+    // Transform
+    CustomStyle.setProp('transform', container,
+                        'matrix(' + viewport.transform.join(',') + ')');
+    CustomStyle.setProp('transformOrigin', container,
+                        -data.rect[0] + 'px ' + -data.rect[1] + 'px');
 
     // Border
     if (data.borderStyle.width > 0) {
@@ -106,12 +122,18 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       }
     }
 
-    cstyle.width = width + 'px';
-    cstyle.height = height + 'px';
+    // Position
+    container.style.left = data.rect[0] + 'px';
+    container.style.top = data.rect[1] + 'px';
+
+    // Size
+    container.style.width = width + 'px';
+    container.style.height = height + 'px';
+
     return container;
   }
 
-  function getHtmlElementForTextWidgetAnnotation(item, commonObjs) {
+  function getHtmlElementForTextWidgetAnnotation(item, page) {
     var element = document.createElement('div');
     var width = item.rect[2] - item.rect[0];
     var height = item.rect[3] - item.rect[1];
@@ -127,7 +149,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     content.style.display = 'table-cell';
 
     var fontObj = item.fontRefName ?
-      commonObjs.getData(item.fontRefName) : null;
+      page.commonObjs.getData(item.fontRefName) : null;
     setTextStyles(content, item, fontObj);
 
     element.appendChild(content);
@@ -135,7 +157,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     return element;
   }
 
-  function getHtmlElementForTextAnnotation(item) {
+  function getHtmlElementForTextAnnotation(item, page, viewport) {
     var rect = item.rect;
 
     // sanity check because of OOo-generated PDFs
@@ -146,7 +168,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
     }
 
-    var container = getContainer(item);
+    var container = getContainer(item, page, viewport);
     container.className = 'annotText';
 
     var image  = document.createElement('img');
@@ -252,8 +274,8 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     return container;
   }
 
-  function getHtmlElementForLinkAnnotation(item) {
-    var container = getContainer(item);
+  function getHtmlElementForLinkAnnotation(item, page, viewport) {
+    var container = getContainer(item, page, viewport);
     container.className = 'annotLink';
 
     var link = document.createElement('a');
@@ -268,14 +290,14 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     return container;
   }
 
-  function getHtmlElement(data, objs) {
+  function getHtmlElement(data, page, viewport) {
     switch (data.annotationType) {
       case AnnotationType.WIDGET:
-        return getHtmlElementForTextWidgetAnnotation(data, objs);
+        return getHtmlElementForTextWidgetAnnotation(data, page);
       case AnnotationType.TEXT:
-        return getHtmlElementForTextAnnotation(data);
+        return getHtmlElementForTextAnnotation(data, page, viewport);
       case AnnotationType.LINK:
-        return getHtmlElementForLinkAnnotation(data);
+        return getHtmlElementForLinkAnnotation(data, page, viewport);
       default:
         throw new Error('Unsupported annotationType: ' + data.annotationType);
     }
