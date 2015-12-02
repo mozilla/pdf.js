@@ -236,7 +236,6 @@ function error(msg) {
     console.log('Error: ' + msg);
     console.log(backtrace());
   }
-  UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
   throw new Error(msg);
 }
 
@@ -262,22 +261,6 @@ var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
   shadingPattern: 'shadingPattern',
   font: 'font'
 };
-
-var UnsupportedManager = PDFJS.UnsupportedManager =
-  (function UnsupportedManagerClosure() {
-  var listeners = [];
-  return {
-    listen: function (cb) {
-      listeners.push(cb);
-    },
-    notify: function (featureId) {
-      warn('Unsupported feature "' + featureId + '"');
-      for (var i = 0, ii = listeners.length; i < ii; i++) {
-        listeners[i](featureId);
-      }
-    }
-  };
-})();
 
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.

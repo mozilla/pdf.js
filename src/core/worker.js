@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* globals PDFJS, createPromiseCapability, LocalPdfManager, NetworkPdfManager,
-           NetworkManager, isInt, MissingPDFException,
+           NetworkManager, isInt, MissingPDFException, UNSUPPORTED_FEATURES,
            UnexpectedResponseException, PasswordException, Promise, warn,
            PasswordResponses, InvalidPDFException, UnknownErrorException,
            XRefParseException, Ref, info, globalScope, error, MessageHandler */
@@ -482,6 +482,11 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
             return; // ignoring errors from the terminated thread
           }
 
+          // For compatibility with older behavior, generating unknown
+          // unsupported feature notification on errors.
+          handler.send('UnsupportedFeature',
+                       {featureId: UNSUPPORTED_FEATURES.unknown});
+
           var minimumStackMessage =
             'worker.js: while trying to getPage() and getOperatorList()';
 
@@ -615,15 +620,6 @@ if (typeof window === 'undefined') {
   if (!('console' in globalScope)) {
     globalScope.console = workerConsole;
   }
-
-  // Listen for unsupported features so we can pass them on to the main thread.
-  PDFJS.UnsupportedManager.listen(function (msg) {
-    globalScope.postMessage({
-      targetName: 'main',
-      action: '_unsupported_feature',
-      data: msg
-    });
-  });
 
   var handler = new MessageHandler('worker', 'main', this);
   WorkerMessageHandler.setup(handler, this);
