@@ -19,7 +19,7 @@
 
 var ANNOT_MIN_SIZE = 10; // px
 
-var AnnotationUtils = (function AnnotationUtilsClosure() {
+var AnnotationLayer = (function AnnotationLayerClosure() {
   // TODO(mack): This dupes some of the logic in CanvasGraphics.setFont()
   function setTextStyles(element, item, fontObj) {
 
@@ -286,4 +286,5 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     getHtmlElement: getHtmlElement
   };
 })();
-PDFJS.AnnotationUtils = AnnotationUtils;
+
+PDFJS.AnnotationLayer = AnnotationLayer;

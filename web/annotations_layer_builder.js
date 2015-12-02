@@ -105,7 +105,7 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
               continue;
             }
 
-            element = PDFJS.AnnotationUtils.getHtmlElement(data,
+            element = PDFJS.AnnotationLayer.getHtmlElement(data,
               pdfPage.commonObjs);
             element.setAttribute('data-annotation-id', data.id);
             if (typeof mozL10n !== 'undefined') {
