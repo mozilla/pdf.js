@@ -22,7 +22,6 @@ var ANNOT_MIN_SIZE = 10; // px
 var AnnotationLayer = (function AnnotationLayerClosure() {
   // TODO(mack): This dupes some of the logic in CanvasGraphics.setFont()
   function setTextStyles(element, item, fontObj) {
-
     var style = element.style;
     style.fontSize = item.fontSize + 'px';
     style.direction = item.fontDirection < 0 ? 'rtl': 'ltr';
@@ -43,34 +42,34 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     style.fontFamily = fontFamily + fallbackName;
   }
 
-  function initContainer(item) {
+  function getContainer(data) {
     var container = document.createElement('section');
     var cstyle = container.style;
-    var width = item.rect[2] - item.rect[0];
-    var height = item.rect[3] - item.rect[1];
+    var width = data.rect[2] - data.rect[0];
+    var height = data.rect[3] - data.rect[1];
 
     // Border
-    if (item.borderStyle.width > 0) {
+    if (data.borderStyle.width > 0) {
       // Border width
-      container.style.borderWidth = item.borderStyle.width + 'px';
-      if (item.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
+      container.style.borderWidth = data.borderStyle.width + 'px';
+      if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
         // Underline styles only have a bottom border, so we do not need
         // to adjust for all borders. This yields a similar result as
         // Adobe Acrobat/Reader.
-        width = width - 2 * item.borderStyle.width;
-        height = height - 2 * item.borderStyle.width;
+        width = width - 2 * data.borderStyle.width;
+        height = height - 2 * data.borderStyle.width;
       }
 
       // Horizontal and vertical border radius
-      var horizontalRadius = item.borderStyle.horizontalCornerRadius;
-      var verticalRadius = item.borderStyle.verticalCornerRadius;
+      var horizontalRadius = data.borderStyle.horizontalCornerRadius;
+      var verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
         var radius = horizontalRadius + 'px / ' + verticalRadius + 'px';
         CustomStyle.setProp('borderRadius', container, radius);
       }
 
       // Border style
-      switch (item.borderStyle.style) {
+      switch (data.borderStyle.style) {
         case AnnotationBorderStyleType.SOLID:
           container.style.borderStyle = 'solid';
           break;
@@ -96,11 +95,11 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       }
 
       // Border color
-      if (item.color) {
+      if (data.color) {
         container.style.borderColor =
-          Util.makeCssRgb(item.color[0] | 0,
-                          item.color[1] | 0,
-                          item.color[2] | 0);
+          Util.makeCssRgb(data.color[0] | 0,
+                          data.color[1] | 0,
+                          data.color[2] | 0);
       } else {
         // Transparent (invisible) border, so do not draw it at all.
         container.style.borderWidth = 0;
@@ -147,7 +146,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
     }
 
-    var container = initContainer(item);
+    var container = getContainer(item);
     container.className = 'annotText';
 
     var image  = document.createElement('img');
@@ -254,7 +253,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
   }
 
   function getHtmlElementForLinkAnnotation(item) {
-    var container = initContainer(item);
+    var container = getContainer(item);
     container.className = 'annotLink';
 
     var link = document.createElement('a');
