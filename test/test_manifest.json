@@ -1324,6 +1324,14 @@
        "type": "eq"
     },
     {
+      "id": "issue6032",
+      "file": "pdfs/issue6032.pdf",
+      "md5": "88b4cc989f5a1e072b992dec5635e83c",
+      "rounds": 1,
+      "link": true,
+      "type": "eq"
+    },
+    {
       "id": "issue6019-text",
       "file": "pdfs/issue6019.pdf",
       "md5": "7a2e5dda3b0fc5c2e9060e378a8cdc4e",
