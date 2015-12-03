@@ -564,7 +564,8 @@ var PDFImage = (function PDFImageClosure() {
                 // 2 = dividend & (divisor - 1) = dividend % divisor
                 // https://www.chrisnewland.com/high-performance-modulo-operation-317
 
-                var originalColByte = imgData.data[originalRowStart + originalColByteStart];
+                var originalColByte =
+                    imgData.data[originalRowStart + originalColByteStart];
                 var pixelValue = originalColByte & originalColBitMask;
 
                 if (pixelValue > 0) {
@@ -573,7 +574,8 @@ var PDFImage = (function PDFImageClosure() {
                   // most signifcant bit is first pixel 
                   // due to Little Endian
 
-                  var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
+                  var newColByte =
+                      pixelArrayOutput[newRowStart + newColByteStart];
 
                   newColByte = newColByte | newColBitMask;
                   //set pixel bit to 1
@@ -590,7 +592,8 @@ var PDFImage = (function PDFImageClosure() {
               for (j = 0; j < w2; j++) {
                 x2 = j << scaleBits;
 
-                pixelArrayOutput[newRowStart + j] = imgData.data[originalRowStart + x2];
+                pixelArrayOutput[newRowStart + j] =
+                    imgData.data[originalRowStart + x2];
               }
             }
           }
