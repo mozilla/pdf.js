@@ -506,6 +506,99 @@ var PDFImage = (function PDFImageClosure() {
       }
     },
 
+    /**
+     * Added by RamSoft (11/5/2015) to resize large resolution PDFS as to improve rendering time
+     */
+    resizeGrayPixels: function(imgData, comps, bpc) {
+      var result = false;
+
+      //we only resize 1 bit per pixel or 8 bits per pixel grayscale image
+      if (comps == 1 && (bpc == 1 || bpc == 8)) {
+        var scaleBits;
+        var h1 = imgData.height;
+        var w1 = imgData.width;
+
+        if ((h1 > 15000) || (w1 > 15000)) {
+          scaleBits = 3;
+        } else if ((h1 > 10000) || (w1 > 10000)) {
+          scaleBits = 2;
+        } else if ((h1 > 5000) || (w1 > 5000)) {
+          scaleBits = 1; // 25% - 4
+        } else {
+          scaleBits = 0;
+        }
+
+        if (scaleBits > 0) {
+          var w2 = w1 >> scaleBits;
+          var h2 = h1 >> scaleBits;
+
+          var newRowBytes = (w2 * comps * bpc + 7) >> 3;
+          var originalRowBytes = (w1 * comps * bpc + 7) >> 3;;
+
+          var numBytes = h2 * newRowBytes;
+          var pixelArrayOutput = new Uint8Array(numBytes);
+
+          if (bpc == 1) {
+
+            for (var i = 0; i < h2; i++) {
+              var y2 = i << scaleBits;
+              var originalRowStart = y2 * originalRowBytes;
+              var newRowStart = i * newRowBytes;
+
+              for (var j = 0; j < w2; j++) {
+                var x2 = j << scaleBits;
+
+                //we want original value of pixel [x2, y2] value in original image
+                //to populate pixel [i, j] in new image
+
+                var originalColByteStart = x2 >> 3;
+                var originalColBitMask = 1 << (7 - (x2 & 7));
+                //most signifcant bit is first pixel due to Little Endian
+
+                //fastmodule for power of 2 = dividend & (divisor - 1) = dividend % divisor
+                //https://www.chrisnewland.com/high-performance-modulo-operation-317
+
+                var originalColByte = imgData.data[originalRowStart + originalColByteStart];
+                var pixelValue = originalColByte & originalColBitMask;
+
+                if (pixelValue > 0) {
+                  var newColByteStart = j >> 3;
+                  var newColBitMask = 1 << (7 - (j & 7));
+                  //most signifcant bit is first pixel due to Little Endian
+
+                  var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
+
+                  newColByte = newColByte | newColBitMask;
+                  //set pixel bit to 1
+                  pixelArrayOutput[newRowStart + newColByteStart] = newColByte;
+                }
+              }
+            }
+          } else {
+            for (var i = 0; i < h2; i++) {
+              var newRowStart = i * newRowBytes;
+              var y2 = i << scaleBits;
+              var originalRowStart = y2 * originalRowBytes;
+
+              for (var j = 0; j < w2; j++) {
+                var x2 = j << scaleBits;
+
+                pixelArrayOutput[newRowStart + j] = imgData.data[originalRowStart + x2];
+              }
+            }
+          }
+
+          imgData.data = pixelArrayOutput;
+          imgData.width = w2;
+          imgData.height = h2;
+
+          result = true;
+        }
+      }
+
+      return result;
+    },
+
     createImageData: function PDFImage_createImageData(forceRGBA) {
       var drawWidth = this.drawWidth;
       var drawHeight = this.drawHeight;
@@ -563,6 +656,12 @@ var PDFImage = (function PDFImageClosure() {
               buffer[i] ^= 0xff;
             }
           }
+
+          // Added by RamSoft (11/4/2015)
+          if (kind == ImageKind.GRAYSCALE_1BPP) {
+            this.resizeGrayPixels(imgData, numComps, bpc);
+          }
+
           return imgData;
         }
         if (this.image instanceof JpegStream && !this.smask && !this.mask &&
@@ -577,6 +676,23 @@ var PDFImage = (function PDFImageClosure() {
       }
 
       imgArray = this.getImageBytes(originalHeight * rowBytes);
+
+      if (this.colorSpace.name === 'DeviceGray') {
+        var resizedImgData = {
+          data: imgArray,
+          width: originalWidth,
+          height: originalHeight
+        };
+
+        //Added by RamSoft (11/4/2015)
+        if (this.resizeGrayPixels(resizedImgData, numComps, bpc)) {
+          imgArray = resizedImgData.data;
+          originalHeight = resizedImgData.height;
+          originalWidth = resizedImgData.width;
+          rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
+        }
+      }
+
       // imgArray can be incomplete (e.g. after CCITT fax encoding).
       var actualHeight = 0 | (imgArray.length / rowBytes *
                          drawHeight / originalHeight);
