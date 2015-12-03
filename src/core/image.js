@@ -538,7 +538,7 @@ var PDFImage = (function PDFImageClosure() {
 
           var numBytes = h2 * newRowBytes;
           var pixelArrayOutput = new Uint8Array(numBytes);
-          var y2;
+          var x2, y2;
           var originalRowStart;
           var newRowStart;
           var i, j;
@@ -551,17 +551,18 @@ var PDFImage = (function PDFImageClosure() {
               newRowStart = i * newRowBytes;
 
               for (j = 0; j < w2; j++) {
-                var x2 = j << scaleBits;
+                x2 = j << scaleBits;
 
-                //we want original value of pixel [x2, y2] value in original image
-                //to populate pixel [i, j] in new image
+                // we want original value of pixel [x2, y2] value
+                // in original image to populate pixel [i, j] in new image
 
                 var originalColByteStart = x2 >> 3;
                 var originalColBitMask = 1 << (7 - (x2 & 7));
                 //most signifcant bit is first pixel due to Little Endian
 
-                //fastmodule for power of 2 = dividend & (divisor - 1) = dividend % divisor
-                //https://www.chrisnewland.com/high-performance-modulo-operation-317
+                // fastmodule for power of
+                // 2 = dividend & (divisor - 1) = dividend % divisor
+                // https://www.chrisnewland.com/high-performance-modulo-operation-317
 
                 var originalColByte = imgData.data[originalRowStart + originalColByteStart];
                 var pixelValue = originalColByte & originalColBitMask;
@@ -569,7 +570,8 @@ var PDFImage = (function PDFImageClosure() {
                 if (pixelValue > 0) {
                   var newColByteStart = j >> 3;
                   var newColBitMask = 1 << (7 - (j & 7));
-                  //most signifcant bit is first pixel due to Little Endian
+                  // most signifcant bit is first pixel 
+                  // due to Little Endian
 
                   var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
 
@@ -586,7 +588,7 @@ var PDFImage = (function PDFImageClosure() {
               originalRowStart = y2 * originalRowBytes;
 
               for (j = 0; j < w2; j++) {
-                var x2 = j << scaleBits;
+                x2 = j << scaleBits;
 
                 pixelArrayOutput[newRowStart + j] = imgData.data[originalRowStart + x2];
               }
