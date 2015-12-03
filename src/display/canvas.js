@@ -15,7 +15,7 @@
 /* globals IDENTITY_MATRIX, FONT_IDENTITY_MATRIX, TextRenderingMode, ImageData,
            ImageKind, PDFJS, Uint32ArrayView, error, WebGLUtils, OPS, warn,
            shadow, isNum, Util, TilingPattern, getShadingPatternFromIR, isArray,
-           info, assert */
+           info, assert, UnsupportedManager, UNSUPPORTED_FEATURES */
 
 'use strict';
 
@@ -2092,6 +2092,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     paintXObject: function CanvasGraphics_paintXObject() {
+      UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
       warn('Unsupported \'paintXObject\' command.');
     },
 

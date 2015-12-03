@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 /* globals ColorSpace, PDFFunction, Util, error, warn, info, isArray, isStream,
-           assert, isPDFFunction, UNSUPPORTED_FEATURES, MissingDataException */
+           assert, isPDFFunction, UnsupportedManager, UNSUPPORTED_FEATURES,
+           MissingDataException */
 
 'use strict';
 
@@ -42,7 +43,7 @@ var Pattern = (function PatternClosure() {
   };
 
   Pattern.parseShading = function Pattern_parseShading(shading, matrix, xref,
-                                                       res, handler) {
+                                                       res) {
 
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
@@ -65,8 +66,7 @@ var Pattern = (function PatternClosure() {
       if (ex instanceof MissingDataException) {
         throw ex;
       }
-      handler.send('UnsupportedFeature',
-                   {featureId: UNSUPPORTED_FEATURES.shadingPattern});
+      UnsupportedManager.notify(UNSUPPORTED_FEATURES.shadingPattern);
       warn(ex);
       return new Shadings.Dummy();
     }
