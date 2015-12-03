@@ -506,6 +506,128 @@ var PDFImage = (function PDFImageClosure() {
       }
     },
 
+    /**
+     * Check whether resize image data or not
+     * @param {Number} comps Number of color components, 1 or 3 is supported.
+     * @param {Number} bpc Number of bits per component.
+     * @return {Boolean}
+     */
+    shallResizeImage: function PDFImage_shallResizeImage(comps, bpc) {
+      return (comps === 1 && (bpc === 1 || bpc === 8));
+    },
+
+    /**
+     * Resize black white image data
+     * @param {Uint8Array} imgData image data.
+     * @param {Number} scaleBits
+     * @author Ramsoft
+     */
+    resizeBWPixels: function PDFImage_resizeBWPixels(imgData, scaleBits) {
+      var newWidth = imgData.width >> scaleBits;
+      var newHeight = imgData.height >> scaleBits;
+
+      //we want to output 1 byte per pixel
+      var newRowBytes = (newWidth + 7) >> 3;
+      var originalRowBytes = (imgData.width + 7) >> 3;
+      var step = 1 << scaleBits;
+      var numBytes = newHeight * newRowBytes;
+      var pixelArrayOutput = new Uint8Array(numBytes);
+
+      for (var i = 0, y2 = 0; i < newHeight; i++, y2 += step) {
+        var originalRowStart = y2 * originalRowBytes;
+        var newRowStart = i * newRowBytes;
+
+        for (var j = 0, x2 = 0; j < newWidth; j++, x2 += step) {
+          // we want original value of pixel [x2, y2] value in original image
+          // to populate pixel [i, j] in new image
+
+          var originalColByteStart = x2 >> 3;
+          var originalColBitMask = 1 << (7 - (x2 & 7));
+          // most signifcant bit is first pixel due to Little Endian
+
+          var originalColByte =
+            imgData.data[originalRowStart + originalColByteStart];
+          var pixelValue = originalColByte & originalColBitMask;
+
+          if (pixelValue > 0) {
+            // most signifcant bit is first pixel due to Little Endian
+            var newColByteStart = j >> 3;
+            var newColBitMask = 1 << (7 - (j & 7));
+
+            var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
+
+            newColByte = newColByte | newColBitMask;
+            // set pixel bit to 1
+            pixelArrayOutput[newRowStart + newColByteStart] = newColByte;
+          }
+        }
+      }
+
+      imgData.data = pixelArrayOutput;
+      imgData.width = newWidth;
+      imgData.height = newHeight;
+    },
+
+    /**
+     * Resize large resolution PDFS as to improve rendering time
+     * @param  {Uint8Array} imgData image data.
+     * @param  {Number} comps Number of color components.
+     * @param  {Number} bpc Number of bits per component.
+     */
+    resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
+      var scaleBits;
+      var h1 = imgData.height;
+      var w1 = imgData.width;
+
+      // Reduce the pixel dimensions to around 2000.
+      // to improve performance for large grayscale bitmaps > 10K width 
+      // or height
+      // If Width or Height > 15K, scale down the size to 10% of original size.
+      // If Width or Height > 10K, scale down the size to 15% of original size.
+      // If Width or Height > 5K, scale down the size to 25% of original size.
+      // Otherwise, use the original size.
+      if ((h1 > 15000) || (w1 > 15000)) {
+        scaleBits = 3;
+      } else if ((h1 > 10000) || (w1 > 10000)) {
+        scaleBits = 2;
+      } else if ((h1 > 5000) || (w1 > 5000)) {
+        scaleBits = 1; // 25% - 4
+      } else {
+        scaleBits = 0;
+      }
+
+      if (scaleBits > 0) {
+        if (bpc === 1) {
+          this.resizeBWPixels(imgData, scaleBits);
+        } else {
+          var w2 = w1 >> scaleBits;
+          var h2 = h1 >> scaleBits;
+          // we want to output 1 byte per pixel
+          var newRowBytes = (w2 * comps * bpc + 7) >> 3;
+          var originalRowBytes = (w1 * comps * bpc + 7) >> 3;
+          var step = 1 << scaleBits;
+          var numBytes = h2 * newRowBytes;
+          var pixelArrayOutput = new Uint8Array(numBytes);
+
+          for (var i = 0, y2 = 0; i < h2; i++, y2 += step) {
+            var newRowStart = i * newRowBytes;
+            var originalRowStart = y2 * originalRowBytes;
+
+            for (var j = 0, x2 = 0; j < w2; j++, x2 += step) {
+              pixelArrayOutput[newRowStart + j] =
+                imgData.data[originalRowStart + x2];
+            }
+          }
+
+          imgData.data = pixelArrayOutput;
+          imgData.width = w2;
+          imgData.height = h2;
+        }
+      }
+
+      return imgData;
+    },
+
     createImageData: function PDFImage_createImageData(forceRGBA) {
       var drawWidth = this.drawWidth;
       var drawHeight = this.drawHeight;
@@ -563,6 +685,15 @@ var PDFImage = (function PDFImageClosure() {
               buffer[i] ^= 0xff;
             }
           }
+
+          // Not resize data when rendering on web
+          if (!this.print) {
+            if (kind === ImageKind.GRAYSCALE_1BPP && 
+              this.shallResizeImage(numComps, bpc)) {
+              this.resizeGrayPixels(imgData, numComps, bpc);
+            }
+          }
+
           return imgData;
         }
         if (this.image instanceof JpegStream && !this.smask && !this.mask &&
@@ -577,6 +708,29 @@ var PDFImage = (function PDFImageClosure() {
       }
 
       imgArray = this.getImageBytes(originalHeight * rowBytes);
+
+      if (this.colorSpace.name === 'DeviceGray') {
+        var resizedImgData = {
+          data: imgArray,
+          width: originalWidth,
+          height: originalHeight
+        };
+
+        if (!this.print) {
+          var needResize = this.shallResizeImage(numComps, bpc);
+
+          if (needResize) {
+            this.resizeGrayPixels(resizedImgData,
+              numComps, bpc);
+
+            imgArray = resizedImgData.data;
+            originalHeight = resizedImgData.height;
+            originalWidth = resizedImgData.width;
+            rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
+          }
+        }
+      }
+
       // imgArray can be incomplete (e.g. after CCITT fax encoding).
       var actualHeight = 0 | (imgArray.length / rowBytes *
                          drawHeight / originalHeight);
