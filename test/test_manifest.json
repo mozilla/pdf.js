@@ -40,6 +40,16 @@
        "type": "load",
        "about": "PDF with undefined stream length."
     },
+    {  "id": "issue5564_reduced",
+       "file": "pdfs/issue5564_reduced.pdf",
+       "md5": "097853614b56fc10bfbf7e56daa0c66b",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq",
+       "about": "Causes cmap to be created with invalid glyph ids."
+    },
     {  "id": "bug946506",
        "file": "pdfs/bug946506.pdf",
        "md5": "c28911b5c31bdc337c2ce404c5971cfc",
