@@ -507,13 +507,14 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     /**
-     * Added by RamSoft (11/5/2015) to resize large resolution PDFS as to improve rendering time
+     * Added by RamSoft (11/5/2015) to resize large resolution PDFS 
+     * as to improve rendering time
      */
     resizeGrayPixels: function(imgData, comps, bpc) {
       var result = false;
 
       //we only resize 1 bit per pixel or 8 bits per pixel grayscale image
-      if (comps == 1 && (bpc == 1 || bpc == 8)) {
+      if (comps === 1 && (bpc === 1 || bpc === 8)) {
         var scaleBits;
         var h1 = imgData.height;
         var w1 = imgData.width;
@@ -533,19 +534,23 @@ var PDFImage = (function PDFImageClosure() {
           var h2 = h1 >> scaleBits;
 
           var newRowBytes = (w2 * comps * bpc + 7) >> 3;
-          var originalRowBytes = (w1 * comps * bpc + 7) >> 3;;
+          var originalRowBytes = (w1 * comps * bpc + 7) >> 3;
 
           var numBytes = h2 * newRowBytes;
           var pixelArrayOutput = new Uint8Array(numBytes);
+          var y2;
+          var originalRowStart;
+          var newRowStart;
+          var i, j;
 
-          if (bpc == 1) {
+          if (bpc === 1) {
 
-            for (var i = 0; i < h2; i++) {
-              var y2 = i << scaleBits;
-              var originalRowStart = y2 * originalRowBytes;
-              var newRowStart = i * newRowBytes;
+            for (i = 0; i < h2; i++) {
+              y2 = i << scaleBits;
+              originalRowStart = y2 * originalRowBytes;
+              newRowStart = i * newRowBytes;
 
-              for (var j = 0; j < w2; j++) {
+              for (j = 0; j < w2; j++) {
                 var x2 = j << scaleBits;
 
                 //we want original value of pixel [x2, y2] value in original image
@@ -575,12 +580,12 @@ var PDFImage = (function PDFImageClosure() {
               }
             }
           } else {
-            for (var i = 0; i < h2; i++) {
-              var newRowStart = i * newRowBytes;
-              var y2 = i << scaleBits;
-              var originalRowStart = y2 * originalRowBytes;
+            for (i = 0; i < h2; i++) {
+              newRowStart = i * newRowBytes;
+              y2 = i << scaleBits;
+              originalRowStart = y2 * originalRowBytes;
 
-              for (var j = 0; j < w2; j++) {
+              for (j = 0; j < w2; j++) {
                 var x2 = j << scaleBits;
 
                 pixelArrayOutput[newRowStart + j] = imgData.data[originalRowStart + x2];
@@ -658,7 +663,7 @@ var PDFImage = (function PDFImageClosure() {
           }
 
           // Added by RamSoft (11/4/2015)
-          if (kind == ImageKind.GRAYSCALE_1BPP) {
+          if (kind === ImageKind.GRAYSCALE_1BPP) {
             this.resizeGrayPixels(imgData, numComps, bpc);
           }
 
