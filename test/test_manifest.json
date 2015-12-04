@@ -430,6 +430,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5044",
+       "file": "pdfs/issue5044.pdf",
+       "md5": "44788cd31dcb4a2495ded34a84c4a765",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug1186827",
        "file": "pdfs/bug1186827.pdf",
        "md5": "6c5526ae1a9d66cb517153001afc196e",

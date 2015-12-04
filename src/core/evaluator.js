@@ -20,7 +20,8 @@
            stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
            RefSetCache, isRef, TextRenderingMode, IdentityToUnicodeMap,
            OPS, UNSUPPORTED_FEATURES, NormalizedUnicodes, IDENTITY_MATRIX,
-           reverseIfRtl, createPromiseCapability, ToUnicodeMap, getFontType */
+           reverseIfRtl, createPromiseCapability, ToUnicodeMap, getFontType,
+           isPDFFunction, PDFFunction */
 
 'use strict';
 
@@ -274,6 +275,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         subtype: smask.get('S').name,
         backdrop: smask.get('BC')
       };
+
+      // The SMask might have a alpha/luminosity value transfer function --
+      // we will build a map of integer values in range 0..255 to be fast.
+      var transferObj = smask.get('TR');
+      if (isPDFFunction(transferObj)) {
+        var transferFn = PDFFunction.parse(this.xref, transferObj);
+        var transferMap = new Uint8Array(256);
+        var tmp = new Float32Array(1);
+        for (var i = 0; i < 255; i++) {
+          tmp[0] = i / 255;
+          transferFn(tmp, 0, tmp, 0);
+          transferMap[i] = (tmp[0] * 255) | 0;
+        }
+        smaskOptions.transferMap = transferMap;
+      }
+
       return this.buildFormXObject(resources, smaskContent, smaskOptions,
                             operatorList, task, stateManager.state.clone());
     },
