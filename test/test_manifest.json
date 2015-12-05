@@ -1453,6 +1453,13 @@
       "lastPage": 1,
       "type": "eq"
     },
+    {  "id": "IdentityToUnicodeMap_charCodeOf",
+       "file": "pdfs/IdentityToUnicodeMap_charCodeOf.pdf",
+       "md5": "da030686418c5e37d889127a05dafb83",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "bug894572",
        "file": "pdfs/bug894572.pdf",
        "md5": "e54a6b0451939f685ed37e3d46e16158",

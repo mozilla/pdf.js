@@ -15,7 +15,7 @@
 /* globals FONT_IDENTITY_MATRIX, FontType, warn, GlyphsUnicode, error, string32,
            readUint32, Stream, FontRendererFactory, shadow, stringToBytes,
            bytesToString, info, assert, IdentityCMap, Name, CMapFactory, PDFJS,
-           isNum, Lexer, isArray, ISOAdobeCharset, ExpertCharset,
+           isNum, Lexer, isArray, ISOAdobeCharset, ExpertCharset, isInt,
            ExpertSubsetCharset, Util, DingbatsGlyphsUnicode */
 
 'use strict';
@@ -2256,7 +2256,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     charCodeOf: function (v) {
-      error('should not call .charCodeOf');
+      return (isInt(v) && v >= this.firstChar && v <= this.lastChar) ? v : -1;
     }
   };
 
@@ -4700,7 +4700,7 @@ var Font = (function FontClosure() {
           }
         }
         // ... via toUnicode map
-        if (!charcode && 'toUnicode' in this) {
+        if (!charcode && this.toUnicode) {
           charcode = this.toUnicode.charCodeOf(glyphUnicode);
         }
         // setting it to unicode if negative or undefined
