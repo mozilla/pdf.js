@@ -632,27 +632,29 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
-  function composeSMaskAlpha(maskData, layerData) {
+  function composeSMaskAlpha(maskData, layerData, transferMap) {
     var length = maskData.length;
     var scale = 1 / 255;
     for (var i = 3; i < length; i += 4) {
-      var alpha = maskData[i];
+      var alpha = transferMap ? transferMap[maskData[i]] : maskData[i];
       layerData[i] = (layerData[i] * alpha * scale) | 0;
     }
   }
 
-  function composeSMaskLuminosity(maskData, layerData) {
+  function composeSMaskLuminosity(maskData, layerData, transferMap) {
     var length = maskData.length;
     for (var i = 3; i < length; i += 4) {
       var y = (maskData[i - 3] * 77) +  // * 0.3 / 255 * 0x10000
               (maskData[i - 2] * 152) + // * 0.59 ....
               (maskData[i - 1] * 28);   // * 0.11 ....
-      layerData[i] = (layerData[i] * y) >> 16;
+      layerData[i] = transferMap ?
+        (layerData[i] * transferMap[y >> 8]) >> 8 :
+        (layerData[i] * y) >> 16;
     }
   }
 
   function genericComposeSMask(maskCtx, layerCtx, width, height,
-                               subtype, backdrop) {
+                               subtype, backdrop, transferMap) {
     var hasBackdrop = !!backdrop;
     var r0 = hasBackdrop ? backdrop[0] : 0;
     var g0 = hasBackdrop ? backdrop[1] : 0;
@@ -676,7 +678,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (hasBackdrop) {
         composeSMaskBackdrop(maskData.data, r0, g0, b0);
       }
-      composeFn(maskData.data, layerData.data);
+      composeFn(maskData.data, layerData.data, transferMap);
 
       maskCtx.putImageData(layerData, 0, row);
     }
@@ -690,7 +692,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                      smask.offsetX, smask.offsetY);
 
     var backdrop = smask.backdrop || null;
-    if (WebGLUtils.isEnabled) {
+    if (!smask.transferMap && WebGLUtils.isEnabled) {
       var composed = WebGLUtils.composeSMask(layerCtx.canvas, mask,
         {subtype: smask.subtype, backdrop: backdrop});
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -698,7 +700,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return;
     }
     genericComposeSMask(maskCtx, layerCtx, mask.width, mask.height,
-                        smask.subtype, backdrop);
+                        smask.subtype, backdrop, smask.transferMap);
     ctx.drawImage(mask, 0, 0);
   }
 
@@ -1749,7 +1751,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           scaleX: scaleX,
           scaleY: scaleY,
           subtype: group.smask.subtype,
-          backdrop: group.smask.backdrop
+          backdrop: group.smask.backdrop,
+          transferMap: group.smask.transferMap || null
         });
       } else {
         // Setup the current ctx so when the group is popped we draw it at the
