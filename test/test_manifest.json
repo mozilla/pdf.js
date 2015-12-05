@@ -1334,9 +1334,9 @@
        "type": "eq"
     },
     {
-      "id": "issue6032",
-      "file": "pdfs/issue6032.pdf",
-      "md5": "88b4cc989f5a1e072b992dec5635e83c",
+      "id": "bug1123803",
+      "file": "pdfs/bug1123803.pdf",
+      "md5": "0f3870ac5ad8899aec34d734e045a514",
       "rounds": 1,
       "link": true,
       "type": "eq"
