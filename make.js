@@ -1492,9 +1492,11 @@ target.lint = function() {
   var options = '--extra-ext .jsm';
 
   var exitCode = exec('"' + jshintPath + '" ' + options + ' .').code;
-  if (exitCode === 0) {
-    echo('files checked, no errors found');
+  if (exitCode !== 0) {
+    exit(1);
   }
+
+  echo('files checked, no errors found');
 };
 
 //

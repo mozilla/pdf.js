@@ -11,7 +11,7 @@
     "yargs": "^3.14.0"
   },
   "scripts": {
-    "test": "node ./node_modules/.bin/jshint --extra-ext .jsm ."
+    "test": "node make lint"
   },
   "repository": {
     "type": "git",
