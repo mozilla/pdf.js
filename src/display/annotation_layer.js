@@ -274,7 +274,29 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     return container;
   }
 
-  function getHtmlElementForLinkAnnotation(item, page, viewport) {
+  function getHtmlElementForLinkAnnotation(item, page, viewport, linkService) {
+    function bindLink(link, dest) {
+      link.href = linkService.getDestinationHash(dest);
+      link.onclick = function annotationsLayerBuilderLinksOnclick() {
+        if (dest) {
+          linkService.navigateTo(dest);
+        }
+        return false;
+      };
+      if (dest) {
+        link.className = 'internalLink';
+      }
+    }
+
+    function bindNamedAction(link, action) {
+      link.href = linkService.getAnchorUrl('');
+      link.onclick = function annotationsLayerBuilderNamedActionOnClick() {
+        linkService.executeNamedAction(action);
+        return false;
+      };
+      link.className = 'internalLink';
+    }
+
     var container = getContainer(item, page, viewport);
     container.className = 'annotLink';
 
@@ -285,19 +307,28 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
     }
 
+    if (!item.url) {
+      if (item.action) {
+        bindNamedAction(link, item.action);
+      } else {
+        bindLink(link, ('dest' in item) ? item.dest : null);
+      }
+    }
+
     container.appendChild(link);
 
     return container;
   }
 
-  function getHtmlElement(data, page, viewport) {
+  function getHtmlElement(data, page, viewport, linkService) {
     switch (data.annotationType) {
       case AnnotationType.WIDGET:
         return getHtmlElementForTextWidgetAnnotation(data, page);
       case AnnotationType.TEXT:
         return getHtmlElementForTextAnnotation(data, page, viewport);
       case AnnotationType.LINK:
-        return getHtmlElementForLinkAnnotation(data, page, viewport);
+        return getHtmlElementForLinkAnnotation(data, page, viewport,
+                                               linkService);
       default:
         throw new Error('Unsupported annotationType: ' + data.annotationType);
     }

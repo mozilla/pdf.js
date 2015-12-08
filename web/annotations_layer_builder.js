@@ -48,47 +48,21 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
      * @param {PageViewport} viewport
      * @param {string} intent (default value is 'display')
      */
-    setupAnnotations:
-        function AnnotationsLayerBuilder_setupAnnotations(viewport, intent) {
-      function bindLink(link, dest) {
-        link.href = linkService.getDestinationHash(dest);
-        link.onclick = function annotationsLayerBuilderLinksOnclick() {
-          if (dest) {
-            linkService.navigateTo(dest);
-          }
-          return false;
-        };
-        if (dest) {
-          link.className = 'internalLink';
-        }
-      }
-
-      function bindNamedAction(link, action) {
-        link.href = linkService.getAnchorUrl('');
-        link.onclick = function annotationsLayerBuilderNamedActionOnClick() {
-          linkService.executeNamedAction(action);
-          return false;
-        };
-        link.className = 'internalLink';
-      }
-
-      var linkService = this.linkService;
-      var pdfPage = this.pdfPage;
+    render: function AnnotationsLayerBuilder_render(viewport, intent) {
       var self = this;
-      var getAnnotationsParams = {
+      var parameters = {
         intent: (intent === undefined ? 'display' : intent),
       };
 
-      pdfPage.getAnnotations(getAnnotationsParams).then(
-          function (annotationsData) {
+      this.pdfPage.getAnnotations(parameters).then(function (annotations) {
         viewport = viewport.clone({ dontFlip: true });
         var data, element, i, ii;
 
         if (self.div) {
           // If an annotationLayer already exists, refresh its children's
-          // transformation matrices
-          for (i = 0, ii = annotationsData.length; i < ii; i++) {
-            data = annotationsData[i];
+          // transformation matrices.
+          for (i = 0, ii = annotations.length; i < ii; i++) {
+            data = annotations[i];
             element = self.div.querySelector(
               '[data-annotation-id="' + data.id + '"]');
             if (element) {
@@ -96,46 +70,35 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
                 'matrix(' + viewport.transform.join(',') + ')');
             }
           }
-          // See PDFPageView.reset()
           self.div.removeAttribute('hidden');
         } else {
-          for (i = 0, ii = annotationsData.length; i < ii; i++) {
-            data = annotationsData[i];
+          if (annotations.length === 0) {
+            return;
+          }
+
+          self.div = document.createElement('div');
+          self.div.className = 'annotationLayer';
+          self.pageDiv.appendChild(self.div);
+
+          for (i = 0, ii = annotations.length; i < ii; i++) {
+            data = annotations[i];
             if (!data || !data.hasHtml) {
               continue;
             }
 
-            element = PDFJS.AnnotationLayer.getHtmlElement(data, pdfPage,
-                                                           viewport);
+            element = PDFJS.AnnotationLayer.getHtmlElement(data, self.pdfPage,
+                                                           viewport,
+                                                           self.linkService);
             if (typeof mozL10n !== 'undefined') {
               mozL10n.translate(element);
             }
-
-            if (data.subtype === 'Link' && !data.url) {
-              var link = element.getElementsByTagName('a')[0];
-              if (link) {
-                if (data.action) {
-                  bindNamedAction(link, data.action);
-                } else {
-                  bindLink(link, ('dest' in data) ? data.dest : null);
-                }
-              }
-            }
-
-            if (!self.div) {
-              var annotationLayerDiv = document.createElement('div');
-              annotationLayerDiv.className = 'annotationLayer';
-              self.pageDiv.appendChild(annotationLayerDiv);
-              self.div = annotationLayerDiv;
-            }
-
             self.div.appendChild(element);
           }
         }
       });
     },
 
-    hide: function () {
+    hide: function AnnotationsLayerBuilder_hide() {
       if (!this.div) {
         return;
       }
