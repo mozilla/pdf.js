@@ -17,8 +17,6 @@
 
 'use strict';
 
-PDFJS.disableFontFace = false;
-
 function FontLoader(docId) {
   this.docId = docId;
   this.styleElement = null;
