@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, Util, AnnotationType, AnnotationBorderStyleType,
-           isExternalLinkTargetSet, LinkTargetStringMap, CustomStyle, warn */
+/* globals PDFJS, Util, AnnotationType, AnnotationBorderStyleType, warn,
+           CustomStyle, isExternalLinkTargetSet, LinkTargetStringMap */
 
 'use strict';
 

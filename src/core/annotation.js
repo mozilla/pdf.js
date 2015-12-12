@@ -21,7 +21,59 @@
 'use strict';
 
 var DEFAULT_ICON_SIZE = 22; // px
-var SUPPORTED_TYPES = ['Link', 'Text', 'Widget', 'Screen', 'Movie'];
+
+/**
+ * @class
+ * @alias AnnotationFactory
+ */
+function AnnotationFactory() {}
+AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
+  /**
+   * @param {XRef} xref
+   * @param {Object} ref
+   * @returns {Annotation}
+   */
+  create: function AnnotationFactory_create(xref, ref) {
+    var dict = xref.fetchIfRef(ref);
+    if (!isDict(dict)) {
+      return;
+    }
+
+    // Determine the annotation's subtype.
+    var subtype = dict.get('Subtype');
+    subtype = isName(subtype) ? subtype.name : '';
+
+    // Return the right annotation object based on the subtype and field type.
+    var parameters = {
+      dict: dict,
+      ref: ref
+    };
+
+    switch (subtype) {
+      case 'Link':
+        return new LinkAnnotation(parameters);
+
+      case 'Movie':
+      case 'Screen':
+        return new VideoAnnotation(parameters);
+
+      case 'Text':
+        return new TextAnnotation(parameters);
+
+      case 'Widget':
+        var fieldType = Util.getInheritableProperty(dict, 'FT');
+        if (isName(fieldType) && fieldType.name === 'Tx') {
+          return new TextWidgetAnnotation(parameters);
+        }
+        return new WidgetAnnotation(parameters);
+
+      default:
+        warn('Unimplemented annotation type "' + subtype + '", ' +
+             'falling back to base annotation');
+        return new Annotation(parameters);
+    }
+  }
+};
 
 var Annotation = (function AnnotationClosure() {
   // 12.5.5: Algorithm: Appearance streams
@@ -692,6 +744,8 @@ var VideoAnnotation = (function VideoAnnotationClosure() {
     var dict = params.dict;
     var data = this.data;
     data.annotationType = AnnotationType.VIDEO;
+    data.hasHtml = true;
+
     // Check for various annotations related to videos.
     if (dict.get('Subtype').name === 'Screen') {
       data.contentType = dict.get('A').get('R').get('C').get('CT') || '';
