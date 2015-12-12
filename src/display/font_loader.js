@@ -52,7 +52,7 @@ function FontLoader(docId) {
 //#endif
 }
 FontLoader.prototype = {
-  insertRule: function fontLoaderInsertRule(rule) {
+  insertRule: function FontLoader_insertRule(rule) {
     var styleElement = this.styleElement;
     if (!styleElement) {
       styleElement = this.styleElement = document.createElement('style');
@@ -65,7 +65,7 @@ FontLoader.prototype = {
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
   },
 
-  clear: function fontLoaderClear() {
+  clear: function FontLoader_clear() {
     var styleElement = this.styleElement;
     if (styleElement) {
       styleElement.parentNode.removeChild(styleElement);
@@ -108,12 +108,12 @@ FontLoader.prototype = {
     ));
   },
 
-  addNativeFontFace: function fontLoader_addNativeFontFace(nativeFontFace) {
+  addNativeFontFace: function FontLoader_addNativeFontFace(nativeFontFace) {
     this.nativeFontFaces.push(nativeFontFace);
     document.fonts.add(nativeFontFace);
   },
 
-  bind: function fontLoaderBind(fonts, callback) {
+  bind: function FontLoader_bind(fonts, callback) {
     assert(!isWorker, 'bind() shall be called from main thread');
 
     var rules = [];
@@ -165,7 +165,7 @@ FontLoader.prototype = {
   },
 
   queueLoadingCallback: function FontLoader_queueLoadingCallback(callback) {
-    function LoadLoader_completeRequest() {
+    function FontLoader_completeRequest() {
       assert(!request.end, 'completeRequest() cannot be called twice');
       request.end = Date.now();
 
@@ -180,7 +180,7 @@ FontLoader.prototype = {
     var requestId = 'pdfjs-font-loading-' + (context.nextRequestId++);
     var request = {
       id: requestId,
-      complete: LoadLoader_completeRequest,
+      complete: FontLoader_completeRequest,
       callback: callback,
       started: Date.now()
     };
@@ -188,9 +188,9 @@ FontLoader.prototype = {
     return request;
   },
 
-  prepareFontLoadEvent: function fontLoaderPrepareFontLoadEvent(rules,
-                                                                fonts,
-                                                                request) {
+  prepareFontLoadEvent: function FontLoader_prepareFontLoadEvent(rules,
+                                                                 fonts,
+                                                                 request) {
       /** Hack begin */
       // There's currently no event when a font has finished downloading so the
       // following code is a dirty hack to 'guess' when a font is
@@ -291,7 +291,7 @@ FontLoader.prototype = {
       /** Hack end */
   }
 //#else
-//bind: function fontLoaderBind(fonts, callback) {
+//bind: function FontLoader_bind(fonts, callback) {
 //  assert(!isWorker, 'bind() shall be called from main thread');
 //
 //  for (var i = 0, ii = fonts.length; i < ii; i++) {
