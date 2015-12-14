@@ -51,6 +51,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     this.resumePageIdx = null;
     this.state = null;
     this.dirtyMatch = false;
+    this.showCurrentMatch = false;
     this.findTimeout = null;
     this.pdfViewer = options.pdfViewer || null;
     this.integratedFind = options.integratedFind || false;
@@ -207,7 +208,10 @@ var PDFFindController = (function PDFFindControllerClosure() {
     },
 
     updatePage: function PDFFindController_updatePage(index) {
-      if (this.selected.pageIdx === index) {
+      // Only scroll if:
+      // - We're actually looking for a match.
+      // - That match is in this page.
+      if (this.showCurrentMatch && this.selected.pageIdx === index) {
         // If the page is selected, scroll the page into view, which triggers
         // rendering the page, which adds the textLayer. Once the textLayer is
         // build, it will scroll onto the selected match.
@@ -264,6 +268,9 @@ var PDFFindController = (function PDFFindControllerClosure() {
       if (this.resumePageIdx) {
         return;
       }
+
+      // We're specifically looking for a match, make sure it's visible later.
+      this.showCurrentMatch = true;
 
       var offset = this.offset;
       // Keep track of how many pages we should maximally iterate through.
@@ -330,8 +337,15 @@ var PDFFindController = (function PDFFindControllerClosure() {
      */
     updateMatchPosition: function PDFFindController_updateMatchPosition(
         pageIndex, index, elements, beginIdx, endIdx) {
+      // Only scroll matches into view when a find actually runs, and not while
+      // scrolling the document (rendering a page calls this as well).
+      if (!this.showCurrentMatch) {
+        return;
+      }
+
       if (this.selected.matchIdx === index &&
           this.selected.pageIdx === pageIndex) {
+        this.showCurrentMatch = false;
         var spot = {
           top: FIND_SCROLL_OFFSET_TOP,
           left: FIND_SCROLL_OFFSET_LEFT
