@@ -269,6 +269,45 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
     return container;
   }
 
+  function getHtmlElementForVideoAnnotation(item) {
+    var container = initContainer(item);
+    container.className = 'annotVideo';
+
+    container.style.borderColor = item.colorCssRgb;
+    container.style.borderStyle = 'solid';
+
+    var contentType = item.contentType;
+    var element = document.createElement('video');
+    var checkSupport = element.canPlayType(contentType);
+    if (!checkSupport && (contentType in navigator.mimeTypes)) {
+      element = document.createElement('object');
+      element.data = item.src || '';
+      element.type = item.contentType || '';
+      var param = document.createElement('param');
+      param.name = 'controller';
+      param.value = true;
+      element.appendChild(param);
+      var param2 = document.createElement('param');
+      param2.name = 'uiMode';
+      param2.value = 'mini';
+      element.appendChild(param2);
+    } else if (checkSupport) {
+      // "maybe" and "probably"
+      element.src = item.src || '';
+      element.type = contentType || '';
+      element.poster = item.poster || '';
+      element.controls = true;
+    } else {
+      warn('Cant play the video, unsupported');
+    }
+
+    element.data = item.src || '';
+    element.type = item.contentType || '';
+
+    container.appendChild(element);
+    return container;
+  }
+
   function getHtmlElement(data, objs) {
     switch (data.annotationType) {
       case AnnotationType.WIDGET:
@@ -277,6 +316,8 @@ var AnnotationUtils = (function AnnotationUtilsClosure() {
         return getHtmlElementForTextAnnotation(data);
       case AnnotationType.LINK:
         return getHtmlElementForLinkAnnotation(data);
+      case AnnotationType.VIDEO:
+        return getHtmlElementForVideoAnnotation(data);
       default:
         throw new Error('Unsupported annotationType: ' + data.annotationType);
     }

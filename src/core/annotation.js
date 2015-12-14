@@ -14,8 +14,9 @@
  */
 /* globals PDFJS, Util, isDict, isName, stringToPDFString, warn, Dict, Stream,
            stringToBytes, Promise, isArray, ObjectLoader, OperatorList,
-           isValidUrl, OPS, AnnotationType, stringToUTF8String,
-           AnnotationBorderStyleType, ColorSpace, AnnotationFlag, isInt */
+           isValidUrl, OPS, createPromiseCapability, AnnotationType,
+           stringToUTF8String, AnnotationBorderStyleType, ColorSpace,
+           AnnotationFlag, isInt */
 
 'use strict';
 
@@ -51,6 +52,10 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
     switch (subtype) {
       case 'Link':
         return new LinkAnnotation(parameters);
+
+      case 'Movie':
+      case 'Screen':
+        return new VideoAnnotation(parameters);
 
       case 'Text':
         return new TextAnnotation(parameters);
@@ -711,4 +716,66 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
   Util.inherit(LinkAnnotation, Annotation, {});
 
   return LinkAnnotation;
+})();
+
+var VideoAnnotation = (function VideoAnnotationClosure() {
+  function VideoAnnotation(params) {
+    Annotation.call(this, params);
+    if (params.data) {
+      return;
+    }
+
+    function guessContentType(dict) {
+      var extToMime = {
+        'avi': 'video/avi',
+        'mov': 'video/quicktime',
+        'mpg': 'video/mpeg'
+      };
+
+      var fileName = dict.get('Movie').get('F').get('F');
+      var extName = fileName.substring(fileName.lastIndexOf('.') + 1);
+      extName = extName.toLowerCase();
+      if (!extToMime.hasOwnProperty(extName)) {
+        return null;
+      }
+      return extToMime[extName];
+    }
+
+    var dict = params.dict;
+    var data = this.data;
+    data.annotationType = AnnotationType.VIDEO;
+    data.hasHtml = true;
+
+    // Check for various annotations related to videos.
+    if (dict.get('Subtype').name === 'Screen') {
+      data.contentType = dict.get('A').get('R').get('C').get('CT') || '';
+      if ((/^(video|audio)\//).test(data.contentType) === false) {
+        return;
+      }
+      var dest = dict.get('A').get('R').get('C').get('D');
+      if (dest.has('EF')) {
+        var fileStream = dest.get('EF').get('F').getBytes();
+        var blob = new Blob([fileStream], {type: data.contentType});
+        data.src = PDFJS.createObjectURL(blob);
+      } else {
+        var fileUrl = dest.get('F');
+        data.src = fileUrl;
+      }
+    } else {
+      data.contentType = guessContentType(dict);
+      if (data.contentType === null) {
+        return;
+      }
+      if (dict.get('Movie').has('Poster')) {
+        var poster = dict.get('Movie').get('Poster').getBytes();
+        var posterBlob = new Blob([poster]);
+        data.poster = PDFJS.createObjectURL(posterBlob);
+      }
+      data.src = dict.get('Movie').get('F').get('F');
+    }
+  }
+
+  Util.inherit(VideoAnnotation, Annotation, { });
+
+  return VideoAnnotation;
 })();
