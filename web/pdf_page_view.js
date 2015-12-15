@@ -275,7 +275,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
 
       if (redrawAnnotations && this.annotationLayer) {
-        this.annotationLayer.setupAnnotations(this.viewport, 'display');
+        this.annotationLayer.render(this.viewport, 'display');
       }
     },
 
@@ -507,7 +507,7 @@ var PDFPageView = (function PDFPageViewClosure() {
           this.annotationLayer = this.annotationsLayerFactory.
             createAnnotationsLayerBuilder(div, this.pdfPage);
         }
-        this.annotationLayer.setupAnnotations(this.viewport, 'display');
+        this.annotationLayer.render(this.viewport, 'display');
       }
       div.setAttribute('data-loaded', true);
 
