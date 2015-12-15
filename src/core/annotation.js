@@ -515,6 +515,7 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     var dict = params.dict;
     var data = this.data;
 
+    data.annotationType = AnnotationType.WIDGET;
     data.fieldValue = stringToPDFString(
       Util.getInheritableProperty(dict, 'V') || '');
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
@@ -573,7 +574,6 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     WidgetAnnotation.call(this, params);
 
     this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
-    this.data.annotationType = AnnotationType.WIDGET;
     this.data.hasHtml = !this.data.hasAppearance && !!this.data.fieldValue;
   }
 
