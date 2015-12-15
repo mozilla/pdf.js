@@ -47,10 +47,8 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     var width = data.rect[2] - data.rect[0];
     var height = data.rect[3] - data.rect[1];
 
-    // ID
     container.setAttribute('data-annotation-id', data.id);
 
-    // Normalize rectangle
     data.rect = Util.normalizeRect([
       data.rect[0],
       page.view[3] - data.rect[1] + page.view[1],
@@ -58,15 +56,12 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       page.view[3] - data.rect[3] + page.view[1]
     ]);
 
-    // Transform
     CustomStyle.setProp('transform', container,
                         'matrix(' + viewport.transform.join(',') + ')');
     CustomStyle.setProp('transformOrigin', container,
                         -data.rect[0] + 'px ' + -data.rect[1] + 'px');
 
-    // Border
     if (data.borderStyle.width > 0) {
-      // Border width
       container.style.borderWidth = data.borderStyle.width + 'px';
       if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
         // Underline styles only have a bottom border, so we do not need
@@ -76,7 +71,6 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
         height = height - 2 * data.borderStyle.width;
       }
 
-      // Horizontal and vertical border radius
       var horizontalRadius = data.borderStyle.horizontalCornerRadius;
       var verticalRadius = data.borderStyle.verticalCornerRadius;
       if (horizontalRadius > 0 || verticalRadius > 0) {
@@ -84,7 +78,6 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
         CustomStyle.setProp('borderRadius', container, radius);
       }
 
-      // Border style
       switch (data.borderStyle.style) {
         case AnnotationBorderStyleType.SOLID:
           container.style.borderStyle = 'solid';
@@ -110,7 +103,6 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
           break;
       }
 
-      // Border color
       if (data.color) {
         container.style.borderColor =
           Util.makeCssRgb(data.color[0] | 0,
@@ -122,11 +114,9 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       }
     }
 
-    // Position
     container.style.left = data.rect[0] + 'px';
     container.style.top = data.rect[1] + 'px';
 
-    // Size
     container.style.width = width + 'px';
     container.style.height = height + 'px';
 
