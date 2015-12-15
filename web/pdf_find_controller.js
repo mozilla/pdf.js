@@ -35,6 +35,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
     this.startedTextExtraction = false;
     this.extractTextPromises = [];
     this.pendingFindMatches = {};
+    this.pendingFindMatchesLength = 0;
     this.active = false; // If active, find results will be highlighted.
     this.pageContents = []; // Stores the text for each page.
     this.pageMatches = [];
@@ -192,6 +193,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.dirtyMatch = true;
       }
       this.state = e.detail;
+      this.state.type = e.type;
       this.updateUIState(FindStates.FIND_PENDING);
 
       this.firstPagePromise.then(function() {
@@ -234,12 +236,16 @@ var PDFFindController = (function PDFFindControllerClosure() {
       if (this.dirtyMatch) {
         // Need to recalculate the matches, reset everything.
         this.dirtyMatch = false;
-        this.selected.pageIdx = this.selected.matchIdx = -1;
-        this.offset.pageIdx = currentPageIndex;
-        this.offset.matchIdx = null;
-        this.hadMatch = false;
-        this.resumePageIdx = null;
-        this.pageMatches = [];
+        // When toggling the "Highlight All" button we really only want to
+        // update the pages to remove the highlights.
+        if (this.state.type !== 'findhighlightallchange') {
+          this.selected.pageIdx = this.selected.matchIdx = -1;
+          this.offset.pageIdx = currentPageIndex;
+          this.offset.matchIdx = null;
+          this.hadMatch = false;
+          this.resumePageIdx = null;
+          this.pageMatches = [];
+        }
         this.matchCount = 0;
         var self = this;
 
@@ -250,9 +256,21 @@ var PDFFindController = (function PDFFindControllerClosure() {
           // As soon as the text is extracted start finding the matches.
           if (!(i in this.pendingFindMatches)) {
             this.pendingFindMatches[i] = true;
+            this.pendingFindMatchesLength++;
             this.extractTextPromises[i].then(function(pageIdx) {
               delete self.pendingFindMatches[pageIdx];
+              self.pendingFindMatchesLength--;
               self.calcFindMatch(pageIdx);
+
+              // Find bar would not show the correct status if toggling
+              // the Highlight All button before a find actually ran.
+              if (self.state.type === 'findhighlightallchange' &&
+                  !self.pendingFindMatchesLength) {
+                self.hadMatch = !!self.matchCount;
+                var state = self.hadMatch ? FindStates.FIND_FOUND :
+                                            FindStates.FIND_NOTFOUND;
+                self.updateUIState(state);
+              }
             });
           }
         }
@@ -269,8 +287,18 @@ var PDFFindController = (function PDFFindControllerClosure() {
         return;
       }
 
-      // We're specifically looking for a match, make sure it's visible later.
-      this.showCurrentMatch = true;
+      if (this.state.type !== 'findhighlightallchange') {
+        // We're specifically looking for a match, make sure it's visible later.
+        this.showCurrentMatch = true;
+      } else {
+        // Don't look for a next match when just toggling highlights.
+        if (!this.pendingFindMatchesLength) {
+          var state = this.hadMatch ? FindStates.FIND_FOUND :
+                                      FindStates.FIND_NOTFOUND;
+          this.updateUIState(state);
+        }
+        return;
+      }
 
       var offset = this.offset;
       // Keep track of how many pages we should maximally iterate through.
@@ -292,6 +320,10 @@ var PDFFindController = (function PDFFindControllerClosure() {
         // We went beyond the current page's matches, so we advance to
         // the next page.
         this.advanceOffsetPage(previous);
+      } else if (offset.pageIdx === null) {
+        // This won't be set if the first action is to toggle the highlights.
+        // We can't proceed without this.
+        offset.pageIdx = currentPageIndex;
       }
       // Start searching through the page.
       this.nextPageMatch();
