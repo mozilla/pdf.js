@@ -27,8 +27,6 @@
  * @class
  */
 var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
-  var CustomStyle = PDFJS.CustomStyle;
-
   /**
    * @param {AnnotationsLayerBuilderOptions} options
    * @constructs AnnotationsLayerBuilder
@@ -56,22 +54,14 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
 
       this.pdfPage.getAnnotations(parameters).then(function (annotations) {
         viewport = viewport.clone({ dontFlip: true });
-        var data, element, i, ii;
 
         if (self.div) {
           // If an annotationLayer already exists, refresh its children's
           // transformation matrices.
-          for (i = 0, ii = annotations.length; i < ii; i++) {
-            data = annotations[i];
-            element = self.div.querySelector(
-              '[data-annotation-id="' + data.id + '"]');
-            if (element) {
-              CustomStyle.setProp('transform', element,
-                'matrix(' + viewport.transform.join(',') + ')');
-            }
-          }
-          self.div.removeAttribute('hidden');
+          PDFJS.AnnotationLayer.update(viewport, self.div, annotations);
         } else {
+          // Create an annotation layer div and render the annotations
+          // if there is at least one annotation.
           if (annotations.length === 0) {
             return;
           }
@@ -80,19 +70,10 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
           self.div.className = 'annotationLayer';
           self.pageDiv.appendChild(self.div);
 
-          for (i = 0, ii = annotations.length; i < ii; i++) {
-            data = annotations[i];
-            if (!data || !data.hasHtml) {
-              continue;
-            }
-
-            element = PDFJS.AnnotationLayer.getHtmlElement(data, self.pdfPage,
-                                                           viewport,
-                                                           self.linkService);
-            if (typeof mozL10n !== 'undefined') {
-              mozL10n.translate(element);
-            }
-            self.div.appendChild(element);
+          PDFJS.AnnotationLayer.render(viewport, self.div, annotations,
+                                       self.pdfPage, self.linkService);
+          if (typeof mozL10n !== 'undefined') {
+            mozL10n.translate(self.div);
           }
         }
       });

@@ -324,8 +324,34 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     }
   }
 
+  function render(viewport, div, annotations, page, linkService) {
+    for (var i = 0, ii = annotations.length; i < ii; i++) {
+      var data = annotations[i];
+      if (!data || !data.hasHtml) {
+        continue;
+      }
+
+      var element = getHtmlElement(data, page, viewport, linkService);
+      div.appendChild(element);
+    }
+  }
+
+  function update(viewport, div, annotations) {
+    for (var i = 0, ii = annotations.length; i < ii; i++) {
+      var data = annotations[i];
+      var element = div.querySelector(
+        '[data-annotation-id="' + data.id + '"]');
+      if (element) {
+        CustomStyle.setProp('transform', element,
+          'matrix(' + viewport.transform.join(',') + ')');
+      }
+    }
+    div.removeAttribute('hidden');
+  }
+
   return {
-    getHtmlElement: getHtmlElement
+    render: render,
+    update: update
   };
 })();
 
