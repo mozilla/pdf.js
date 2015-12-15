@@ -123,13 +123,8 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
     return container;
   }
 
-  function getHtmlElementForTextWidgetAnnotation(item, page) {
-    var element = document.createElement('div');
-    var width = item.rect[2] - item.rect[0];
-    var height = item.rect[3] - item.rect[1];
-    element.style.width = width + 'px';
-    element.style.height = height + 'px';
-    element.style.display = 'table';
+  function getHtmlElementForTextWidgetAnnotation(item, page, viewport) {
+    var container = getContainer(item, page, viewport);
 
     var content = document.createElement('div');
     content.textContent = item.fieldValue;
@@ -142,9 +137,9 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       page.commonObjs.getData(item.fontRefName) : null;
     setTextStyles(content, item, fontObj);
 
-    element.appendChild(content);
+    container.appendChild(content);
 
-    return element;
+    return container;
   }
 
   function getHtmlElementForTextAnnotation(item, page, viewport) {
@@ -313,7 +308,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
   function getHtmlElement(data, page, viewport, linkService) {
     switch (data.annotationType) {
       case AnnotationType.WIDGET:
-        return getHtmlElementForTextWidgetAnnotation(data, page);
+        return getHtmlElementForTextWidgetAnnotation(data, page, viewport);
       case AnnotationType.TEXT:
         return getHtmlElementForTextAnnotation(data, page, viewport);
       case AnnotationType.LINK:
