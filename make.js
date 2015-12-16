@@ -504,6 +504,9 @@ target.bundle = function(args) {
     // contains a license header, so the header of bundleContent can be removed.
     bundleContent = stripCommentHeaders('\n' + bundleContent);
 
+    // Removes AMD and CommonJS branches from UMD headers.
+    bundleContent = stripUMDHeaders(bundleContent);
+
     // Append external files last since we don't want to modify them.
     bundleContent += cat(EXT_SRC_FILES);
 
@@ -612,6 +615,14 @@ function stripCommentHeaders(content, filename) {
     '\\s*\'use strict\';', 'g');
   content = content.replace(reg, '');
   return content;
+}
+
+function stripUMDHeaders(content) {
+  var reg = new RegExp(
+    'if \\(typeof define === \'function\' && define.amd\\) \\{[^}]*' +
+    '\\} else if \\(typeof exports !== \'undefined\'\\) \\{[^}]*' +
+    '\\} else ', 'g');
+  return content.replace(reg, '');
 }
 
 function cleanupJSSource(file) {
