@@ -446,7 +446,7 @@ target.locale = function() {
 // Compresses cmap files. Ensure that Adobe cmap download and uncompressed at
 // ./external/cmaps location.
 //
-target.cmaps = function (args) {
+target.cmaps = function () {
   var CMAP_INPUT = 'external/cmaps';
   var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
 
@@ -604,7 +604,7 @@ target.singlefile = function() {
 
 };
 
-function stripCommentHeaders(content, filename) {
+function stripCommentHeaders(content) {
   var notEndOfComment = '(?:[^*]|\\*(?!/))+';
   var reg = new RegExp(
     '\n/\\* Copyright' + notEndOfComment + '\\*/\\s*' +
@@ -617,7 +617,7 @@ function stripCommentHeaders(content, filename) {
 function cleanupJSSource(file) {
   var content = cat(file);
 
-  content = stripCommentHeaders(content, file);
+  content = stripCommentHeaders(content);
 
   content.to(file);
 }
@@ -1284,8 +1284,7 @@ target.botmakeref = function() {
   echo();
   echo('### Creating reference images');
 
-  var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
-      PDF_BROWSERS = env['PDF_BROWSERS'] ||
+  var PDF_BROWSERS = env['PDF_BROWSERS'] ||
                      'resources/browser_manifests/browser_manifest.json';
 
   if (!test('-f', 'test/' + PDF_BROWSERS)) {

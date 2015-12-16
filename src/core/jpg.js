@@ -109,12 +109,8 @@ var JpegImage = (function jpegImage() {
 
   function decodeScan(data, offset, frame, components, resetInterval,
                       spectralStart, spectralEnd, successivePrev, successive) {
-    var precision = frame.precision;
-    var samplesPerLine = frame.samplesPerLine;
-    var scanLines = frame.scanLines;
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
-    var maxH = frame.maxH, maxV = frame.maxV;
 
     var startOffset = offset, bitsData = 0, bitsCount = 0;
 
@@ -622,10 +618,9 @@ var JpegImage = (function jpegImage() {
         frame.mcusPerColumn = mcusPerColumn;
       }
 
-      var offset = 0, length = data.length;
+      var offset = 0;
       var jfif = null;
       var adobe = null;
-      var pixels = null;
       var frame, resetInterval;
       var quantizationTables = [];
       var huffmanTablesAC = [], huffmanTablesDC = [];

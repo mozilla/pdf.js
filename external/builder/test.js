@@ -6,7 +6,6 @@ require('shelljs/make');
 
 var builder = require('./builder');
 var fs = require('fs');
-var path = require('path');
 
 var errors = 0;
 
