@@ -6,54 +6,11 @@
   <link rel="shortcut icon" type="image/png" href="../../external/jasmine/jasmine_favicon.png">
   <link rel="stylesheet" type="text/css" href="../../external/jasmine/jasmine.css">
 
+  <script src="../../node_modules/requirejs/require.js"></script>
   <script src="../../external/jasmine/jasmine.js"></script>
   <script src="../../external/jasmine/jasmine-html.js"></script>
   <script src="../unit/testreporter.js"></script>
   <script src="fontutils.js"></script>
-
-  <!-- include source files here... -->
-  <script src="../../src/core/network.js"></script>
-  <script src="../../src/core/arithmetic_decoder.js"></script>
-  <script src="../../src/core/charsets.js"></script>
-  <script src="../../src/core/glyphlist.js"></script>
-  <script src="../../src/core/jpg.js"></script>
-  <script src="../../src/core/metrics.js"></script>
-  <script src="../../src/shared/global.js"></script>
-  <script src="../../src/core/bidi.js"></script>
-  <script src="../../src/display/dom_utils.js"></script>
-  <script src="../../src/shared/util.js"></script>
-  <script src="../../src/core/chunked_stream.js"></script>
-  <script src="../../src/core/jbig2.js"></script>
-  <script src="../../src/core/jpx.js"></script>
-  <script src="../../src/core/murmurhash3.js"></script>
-  <script src="../../src/core/primitives.js"></script>
-  <script src="../../src/display/annotation_layer.js"></script>
-  <script src="../../src/display/font_loader.js"></script>
-  <script src="../../src/display/metadata.js"></script>
-  <script src="../../src/display/text_layer.js"></script>
-  <script src="../../src/display/webgl.js"></script>
-  <script src="../../src/core/stream.js"></script>
-  <script src="../../src/display/pattern_helper.js"></script>
-  <script src="../../src/core/crypto.js"></script>
-  <script src="../../src/core/font_renderer.js"></script>
-  <script src="../../src/core/parser.js"></script>
-  <script src="../../src/display/canvas.js"></script>
-  <script src="../../src/core/cmap.js"></script>
-  <script src="../../src/core/obj.js"></script>
-  <script src="../../src/core/ps_parser.js"></script>
-  <script src="../../src/display/api.js"></script>
-  <script src="../../src/core/fonts.js"></script>
-  <script src="../../src/core/function.js"></script>
-  <script src="../../src/core/colorspace.js"></script>
-  <script src="../../src/core/image.js"></script>
-  <script src="../../src/core/pattern.js"></script>
-  <script src="../../src/core/evaluator.js"></script>
-  <script src="../../src/core/annotation.js"></script>
-  <script src="../../src/core/document.js"></script>
-  <script src="../../src/core/pdf_manager.js"></script>
-  <script src="../../src/core/worker.js"></script>
-  <script src="../../src/expose_to_global.js"></script>
-  <script>PDFJS.workerSrc = '../../src/worker_loader.js';</script>
 
   <!-- include spec files here... -->
   <script src="font_core_spec.js"></script>
@@ -63,6 +20,20 @@
 
   <script>
     'use strict';
+
+    function initializePDFJS(callback) {
+      require.config({paths: {'pdfjs': '../../src'}});
+      require(['pdfjs/core/fonts', 'pdfjs/core/stream', 'pdfjs/core/primitives',
+          'pdfjs/core/cmap'], function (fonts, stream, primitives, cmap) {
+        // Expose some of the PDFJS members to global scope for tests.
+        window.Font = fonts.Font;
+        window.Stream = stream.Stream;
+        window.Name = primitives.Name;
+        window.CMapFactory = cmap.CMapFactory;
+
+        callback();
+      });
+    }
 
     (function pdfJsUnitTest() {
       function queryParams() {
@@ -99,7 +70,7 @@
         if (currentWindowOnload) {
           currentWindowOnload();
         }
-        execJasmine();
+        initializePDFJS(execJasmine);
       };
 
       function execJasmine() {

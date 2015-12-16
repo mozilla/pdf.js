@@ -34,17 +34,20 @@ var SCALE_SELECT_PADDING = 22;
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
-PDFJS.imageResourcesPath = './images/';
+function configure(PDFJS) {
+  PDFJS.imageResourcesPath = './images/';
 //#if (FIREFOX || MOZCENTRAL || GENERIC || CHROME)
 //PDFJS.workerSrc = '../build/pdf.worker.js';
 //#endif
 //#if !PRODUCTION
-PDFJS.cMapUrl = '../external/bcmaps/';
-PDFJS.cMapPacked = true;
+  PDFJS.cMapUrl = '../external/bcmaps/';
+  PDFJS.cMapPacked = true;
+  PDFJS.workerSrc = '../src/worker_loader.js';
 //#else
 //PDFJS.cMapUrl = '../web/cmaps/';
 //PDFJS.cMapPacked = true;
 //#endif
+}
 
 var mozL10n = document.mozL10n || document.webL10n;
 
@@ -1330,7 +1333,20 @@ window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 //#endif
 
 function webViewerLoad(evt) {
-  PDFViewerApplication.initialize().then(webViewerInitialized);
+//#if !PRODUCTION
+  require.config({paths: {'pdfjs': '../src'}});
+  require(['pdfjs/display/api',
+           'pdfjs/display/annotation_layer',
+           'pdfjs/display/text_layer',
+           'pdfjs/display/metadata'],
+    function (api, annotationLayer, textLayer, metadata) {
+      configure(PDFJS);
+      PDFViewerApplication.initialize().then(webViewerInitialized);
+    });
+//#else
+//  configure(PDFJS);
+//  PDFViewerApplication.initialize().then(webViewerInitialized);
+//#endif
 }
 
 function webViewerInitialized() {

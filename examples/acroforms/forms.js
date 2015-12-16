@@ -5,6 +5,9 @@
 
 'use strict';
 
+// Specify the PDF with AcroForm here
+var pdfWithFormsPath = '../../test/pdfs/f1040.pdf';
+
 var formFields = {};
 
 function setupForm(div, content, viewport) {
@@ -135,16 +138,23 @@ function renderPage(div, pdf, pageNumber, callback) {
   });
 }
 
-// Fetch the PDF document from the URL using promices
-PDFJS.getDocument(pdfWithFormsPath).then(function getPdfForm(pdf) {
-  // Rendering all pages starting from first
-  var viewer = document.getElementById('viewer');
-  var pageNumber = 1;
-  renderPage(viewer, pdf, pageNumber++, function pageRenderingComplete() {
-    if (pageNumber > pdf.numPages) {
-      return; // All pages rendered
-    }
-    // Continue rendering of the next page
-    renderPage(viewer, pdf, pageNumber++, pageRenderingComplete);
+// In production, the bundled pdf.js shall be used instead of RequireJS.
+require.config({paths: {'pdfjs': '../../src'}});
+require(['pdfjs/display/api'], function (api) {
+  // In production, change this to point to the built `pdf.worker.js` file.
+  PDFJS.workerSrc = '../../src/worker_loader.js';
+
+  // Fetch the PDF document from the URL using promises.
+  api.getDocument(pdfWithFormsPath).then(function getPdfForm(pdf) {
+    // Rendering all pages starting from first
+    var viewer = document.getElementById('viewer');
+    var pageNumber = 1;
+    renderPage(viewer, pdf, pageNumber++, function pageRenderingComplete() {
+      if (pageNumber > pdf.numPages) {
+        return; // All pages rendered
+      }
+      // Continue rendering of the next page
+      renderPage(viewer, pdf, pageNumber++, pageRenderingComplete);
+    });
   });
 });
