@@ -12,14 +12,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, isArrayBuffer, error, combineUrl, createPromiseCapability,
-           StatTimer, globalScope, MessageHandler, info, FontLoader, Util, warn,
-           Promise, PasswordResponses, PasswordException, InvalidPDFException,
-           MissingPDFException, UnknownErrorException, FontFaceObject,
-           loadJpegStream, createScratchCanvas, CanvasGraphics, stringToBytes,
-           UnexpectedResponseException, deprecated */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/api', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/font_loader', 'pdfjs/display/canvas',
+      'pdfjs/shared/global', 'require'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./font_loader.js'),
+      require('./canvas.js'), require('../shared/global.js'));
+  } else {
+    factory((root.pdfjsDisplayAPI = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayFontLoader, root.pdfjsDisplayCanvas,
+      root.pdfjsSharedGlobal);
+  }
+}(this, function (exports, sharedUtil, displayFontLoader, displayCanvas,
+                  sharedGlobal, amdRequire) {
+
+var InvalidPDFException = sharedUtil.InvalidPDFException;
+var MessageHandler = sharedUtil.MessageHandler;
+var MissingPDFException = sharedUtil.MissingPDFException;
+var PasswordResponses = sharedUtil.PasswordResponses;
+var PasswordException = sharedUtil.PasswordException;
+var StatTimer = sharedUtil.StatTimer;
+var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
+var UnknownErrorException = sharedUtil.UnknownErrorException;
+var Util = sharedUtil.Util;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var combineUrl = sharedUtil.combineUrl;
+var error = sharedUtil.error;
+var deprecated = sharedUtil.deprecated;
+var info = sharedUtil.info;
+var isArrayBuffer = sharedUtil.isArrayBuffer;
+var loadJpegStream = sharedUtil.loadJpegStream;
+var stringToBytes = sharedUtil.stringToBytes;
+var warn = sharedUtil.warn;
+var FontFaceObject = displayFontLoader.FontFaceObject;
+var FontLoader = displayFontLoader.FontLoader;
+var CanvasGraphics = displayCanvas.CanvasGraphics;
+var createScratchCanvas = displayCanvas.createScratchCanvas;
+var PDFJS = sharedGlobal.PDFJS;
+var globalScope = sharedGlobal.globalScope;
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
@@ -1134,7 +1169,16 @@ var PDFWorker = (function PDFWorkerClosure() {
       // other files and resolves the promise. In production only the
       // pdf.worker.js file is needed.
 //#if !PRODUCTION
-      Util.loadScript(PDFJS.workerSrc);
+      if (typeof amdRequire === 'function') {
+        amdRequire(['pdfjs/core/worker'], function () {
+          PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+        });
+      } else if (typeof require === 'function') {
+        require('../core/worker.js');
+        PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+      } else {
+        Util.loadScript(PDFJS.workerSrc);
+      }
 //#endif
 //#if PRODUCTION && SINGLE_FILE
 //    PDFJS.fakeWorkerFilesLoadedCapability.resolve();
@@ -2036,3 +2080,9 @@ PDFJS.UnsupportedManager = (function UnsupportedManagerClosure() {
     }
   };
 })();
+
+exports.getDocument = PDFJS.getDocument;
+exports.PDFDataRangeTransport = PDFDataRangeTransport;
+exports.PDFDocumentProxy = PDFDocumentProxy;
+exports.PDFPageProxy = PDFPageProxy;
+}));

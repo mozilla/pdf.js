@@ -12,10 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals bytesToString, ColorSpace, Dict, EOF, error, info, isArray,
-           Jbig2Image, JpegImage, JpxImage, Lexer, PDFJS, shadow, Util, warn */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/stream', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/jbig2', 'pdfjs/core/jpg',
+      'pdfjs/core/jpx'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./jbig2.js'), require('./jpg.js'), require('./jpx.js'));
+  } else {
+    factory((root.pdfjsCoreStream = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreJbig2, root.pdfjsCoreJpg,
+      root.pdfjsCoreJpx);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreJbig2, coreJpg,
+                  coreJpx) {
+
+var Util = sharedUtil.Util;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var shadow = sharedUtil.shadow;
+var warn = sharedUtil.warn;
+var Dict = corePrimitives.Dict;
+var Jbig2Image = coreJbig2.Jbig2Image;
+var JpegImage = coreJpg.JpegImage;
+var JpxImage = coreJpx.JpxImage;
+
+var coreParser; // see _setCoreParser below
+var EOF; // = coreParser.EOF;
+var Lexer; // = coreParser.Lexer;
+
+var coreColorSpace; // see _setCoreColorSpace below
+var ColorSpace; // = coreColorSpace.ColorSpace;
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
@@ -2464,3 +2497,36 @@ var NullStream = (function NullStreamClosure() {
 
   return NullStream;
 })();
+
+// TODO refactor to remove dependency on parser.js
+function _setCoreParser(coreParser_) {
+  coreParser = coreParser_;
+  EOF = coreParser_.EOF;
+  Lexer = coreParser_.Lexer;
+}
+exports._setCoreParser = _setCoreParser;
+
+// TODO refactor to remove dependency on colorspace.js
+function _setCoreColorSpace(coreColorSpace_) {
+  coreColorSpace = coreColorSpace_;
+  ColorSpace = coreColorSpace_.ColorSpace;
+}
+exports._setCoreColorSpace = _setCoreColorSpace;
+
+exports.Ascii85Stream = Ascii85Stream;
+exports.AsciiHexStream = AsciiHexStream;
+exports.CCITTFaxStream = CCITTFaxStream;
+exports.DecryptStream = DecryptStream;
+exports.DecodeStream = DecodeStream;
+exports.FlateStream = FlateStream;
+exports.Jbig2Stream = Jbig2Stream;
+exports.JpegStream = JpegStream;
+exports.JpxStream = JpxStream;
+exports.NullStream = NullStream;
+exports.PredictorStream = PredictorStream;
+exports.RunLengthStream = RunLengthStream;
+exports.Stream = Stream;
+exports.StreamsSequenceStream = StreamsSequenceStream;
+exports.StringStream = StringStream;
+exports.LZWStream = LZWStream;
+}));

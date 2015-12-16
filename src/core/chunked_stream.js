@@ -12,10 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, MissingDataException, isInt, NetworkManager, Promise,
-           isEmptyObj, createPromiseCapability */
+/* globals NetworkManager */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/chunked_stream', ['exports', 'pdfjs/shared/util'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'));
+  } else {
+    factory((root.pdfjsCoreChunkedStream = {}), root.pdfjsSharedUtil);
+  }
+}(this, function (exports, sharedUtil) {
+
+var MissingDataException = sharedUtil.MissingDataException;
+var assert = sharedUtil.assert;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var isInt = sharedUtil.isInt;
+var isEmptyObj = sharedUtil.isEmptyObj;
 
 var ChunkedStream = (function ChunkedStreamClosure() {
   function ChunkedStream(length, chunkSize, manager) {
@@ -545,3 +561,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
   return ChunkedStreamManager;
 })();
+
+exports.ChunkedStream = ChunkedStream;
+exports.ChunkedStreamManager = ChunkedStreamManager;
+}));

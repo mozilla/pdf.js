@@ -12,13 +12,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals FONT_IDENTITY_MATRIX, FontType, warn, GlyphsUnicode, error, string32,
-           readUint32, Stream, FontRendererFactory, shadow, stringToBytes,
-           bytesToString, info, assert, IdentityCMap, Name, CMapFactory, PDFJS,
-           isNum, Lexer, isArray, ISOAdobeCharset, ExpertCharset, isInt,
-           ExpertSubsetCharset, Util, DingbatsGlyphsUnicode */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/fonts', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
+      'pdfjs/core/cmap', 'pdfjs/core/glyphlist', 'pdfjs/core/charsets',
+      'pdfjs/core/font_renderer'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'), require('./parser.js'), require('./cmap.js'),
+      require('./glyphlist.js'), require('./charsets.js'),
+      require('./font_renderer.js'));
+  } else {
+    factory((root.pdfjsCoreFonts = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
+      root.pdfjsCoreCMap, root.pdfjsCoreGlyphList, root.pdfjsCoreCharsets,
+      root.pdfjsCoreFontRenderer);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
+                  coreCMap, coreGlyphList, coreCharsets, coreFontRenderer) {
+
+var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
+var FontType = sharedUtil.FontType;
+var Util = sharedUtil.Util;
+var assert = sharedUtil.assert;
+var bytesToString = sharedUtil.bytesToString;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var isInt = sharedUtil.isInt;
+var isNum = sharedUtil.isNum;
+var readUint32 = sharedUtil.readUint32;
+var shadow = sharedUtil.shadow;
+var stringToBytes = sharedUtil.stringToBytes;
+var string32 = sharedUtil.string32;
+var warn = sharedUtil.warn;
+var Name = corePrimitives.Name;
+var Stream = coreStream.Stream;
+var Lexer = coreParser.Lexer;
+var CMapFactory = coreCMap.CMapFactory;
+var IdentityCMap = coreCMap.IdentityCMap;
+var GlyphsUnicode = coreGlyphList.GlyphsUnicode;
+var DingbatsGlyphsUnicode = coreGlyphList.DingbatsGlyphsUnicode;
+var ISOAdobeCharset = coreCharsets.ISOAdobeCharset;
+var ExpertCharset = coreCharsets.ExpertCharset;
+var ExpertSubsetCharset = coreCharsets.ExpertSubsetCharset;
+var FontRendererFactory = coreFontRenderer.FontRendererFactory;
 
 // Unicode Private Use Area
 var PRIVATE_USE_OFFSET_START = 0xE000;
@@ -7354,9 +7397,13 @@ var CFFCompiler = (function CFFCompilerClosure() {
   return CFFCompiler;
 })();
 
+function _enableSeacAnalysis(enabled) {
+  exports.SEAC_ANALYSIS_ENABLED = SEAC_ANALYSIS_ENABLED = enabled;
+}
+
 // Workaround for seac on Windows.
 (function checkSeacSupport() {
-  if (/Windows/.test(navigator.userAgent)) {
+  if (typeof navigator !== 'undefined' && /Windows/.test(navigator.userAgent)) {
     SEAC_ANALYSIS_ENABLED = true;
   }
 })();
@@ -7365,7 +7412,32 @@ var CFFCompiler = (function CFFCompilerClosure() {
 // http://code.google.com/p/chromium/issues/detail?id=122465
 // https://github.com/mozilla/pdf.js/issues/1689
 (function checkChromeWindows() {
-  if (/Windows.*Chrome/.test(navigator.userAgent)) {
+  if (typeof navigator !== 'undefined' &&
+      /Windows.*Chrome/.test(navigator.userAgent)) {
     SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = true;
   }
 })();
+
+exports.SEAC_ANALYSIS_ENABLED = SEAC_ANALYSIS_ENABLED;
+exports.CFFCompiler = CFFCompiler;
+exports.CFFIndex = CFFIndex;
+exports.CFFParser = CFFParser;
+exports.CFFStrings = CFFStrings;
+exports.Encodings = Encodings;
+exports.ErrorFont = ErrorFont;
+exports.FontFlags = FontFlags;
+exports.Font = Font;
+exports.IdentityToUnicodeMap = IdentityToUnicodeMap;
+exports.NormalizedUnicodes = NormalizedUnicodes;
+exports.ToUnicodeMap = ToUnicodeMap;
+exports.Type1Parser = Type1Parser;
+exports.getFontType = getFontType;
+exports.reverseIfRtl = reverseIfRtl;
+exports.serifFonts = serifFonts;
+exports.symbolsFonts = symbolsFonts;
+exports.stdFontMap = stdFontMap;
+exports._enableSeacAnalysis = _enableSeacAnalysis;
+
+// TODO refactor to remove cyclic dependency on font_renderer.js
+coreFontRenderer._setCoreFonts(exports);
+}));

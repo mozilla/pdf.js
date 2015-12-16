@@ -12,10 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals error, bytesToString, Stream, GlyphsUnicode, CFFParser, Encodings,
-           Util */
 
 'use strict';
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/font_renderer', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/stream', 'pdfjs/core/glyphlist'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./stream.js'),
+      require('./glyphlist.js'));
+  } else {
+    factory((root.pdfjsCoreFontRenderer = {}), root.pdfjsSharedUtil,
+      root.pdfjsCoreStream, root.pdfjsCoreGlyphList);
+  }
+}(this, function (exports, sharedUtil, coreStream, coreGlyphList) {
+
+var Util = sharedUtil.Util;
+var bytesToString = sharedUtil.bytesToString;
+var error = sharedUtil.error;
+var Stream = coreStream.Stream;
+var GlyphsUnicode = coreGlyphList.GlyphsUnicode;
+
+var coreFonts; // see _setCoreFonts below
+var CFFParser; // = coreFonts.CFFParser;
+var Encodings; // = coreFonts.Encodings;
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
@@ -706,3 +726,15 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     }
   };
 })();
+
+
+// TODO refactor to remove cyclic dependency on fonts.js
+function _setCoreFonts(coreFonts_) {
+  coreFonts = coreFonts_;
+  Encodings = coreFonts_.Encodings;
+  CFFParser = coreFonts_.CFFParser;
+}
+exports._setCoreFonts = _setCoreFonts;
+
+exports.FontRendererFactory = FontRendererFactory;
+}));

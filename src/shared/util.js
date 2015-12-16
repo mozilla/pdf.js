@@ -12,14 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL,
-           Promise */
+/* globals MozBlobBuilder, URL */
 
 'use strict';
 
-var globalScope = (typeof window === 'undefined') ? this : window;
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/shared/util', ['exports', 'pdfjs/shared/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./global.js'));
+  } else {
+    factory((root.pdfjsSharedUtil = {}), root.pdfjsSharedGlobal);
+  }
+}(this, function (exports, sharedGlobal) {
 
-var isWorker = (typeof window === 'undefined');
+var PDFJS = sharedGlobal.PDFJS;
+var globalScope = sharedGlobal.globalScope;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -118,15 +126,6 @@ var FontType = {
   TYPE0: 9,
   MMTYPE1: 10
 };
-
-// The global PDFJS object exposes the API
-// In production, it will be declared outside a global wrapper
-// In development, it will be declared here
-if (!globalScope.PDFJS) {
-  globalScope.PDFJS = {};
-}
-
-globalScope.PDFJS.pdfBug = false;
 
 PDFJS.VERBOSITY_LEVELS = {
   errors: 0,
@@ -1046,39 +1045,12 @@ function isString(v) {
   return typeof v === 'string';
 }
 
-function isName(v) {
-  return v instanceof Name;
-}
-
-function isCmd(v, cmd) {
-  return v instanceof Cmd && (cmd === undefined || v.cmd === cmd);
-}
-
-function isDict(v, type) {
-  if (!(v instanceof Dict)) {
-    return false;
-  }
-  if (!type) {
-    return true;
-  }
-  var dictType = v.get('Type');
-  return isName(dictType) && dictType.name === type;
-}
-
 function isArray(v) {
   return v instanceof Array;
 }
 
-function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
-}
-
 function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
-}
-
-function isRef(v) {
-  return v instanceof Ref;
 }
 
 /**
@@ -1669,3 +1641,59 @@ function loadJpegStream(id, imageUrl, objs) {
   });
   img.src = imageUrl;
 }
+
+exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
+exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
+exports.OPS = OPS;
+exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
+exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
+exports.AnnotationFlag = AnnotationFlag;
+exports.AnnotationType = AnnotationType;
+exports.FontType = FontType;
+exports.ImageKind = ImageKind;
+exports.InvalidPDFException = InvalidPDFException;
+exports.LinkTarget = LinkTarget;
+exports.LinkTargetStringMap = LinkTargetStringMap;
+exports.MessageHandler = MessageHandler;
+exports.MissingDataException = MissingDataException;
+exports.MissingPDFException = MissingPDFException;
+exports.NotImplementedException = NotImplementedException;
+exports.PasswordException = PasswordException;
+exports.PasswordResponses = PasswordResponses;
+exports.StatTimer = StatTimer;
+exports.StreamType = StreamType;
+exports.TextRenderingMode = TextRenderingMode;
+exports.Uint32ArrayView = Uint32ArrayView;
+exports.UnexpectedResponseException = UnexpectedResponseException;
+exports.UnknownErrorException = UnknownErrorException;
+exports.Util = Util;
+exports.XRefParseException = XRefParseException;
+exports.assert = assert;
+exports.bytesToString = bytesToString;
+exports.combineUrl = combineUrl;
+exports.createPromiseCapability = createPromiseCapability;
+exports.deprecated = deprecated;
+exports.error = error;
+exports.info = info;
+exports.isArray = isArray;
+exports.isArrayBuffer = isArrayBuffer;
+exports.isBool = isBool;
+exports.isEmptyObj = isEmptyObj;
+exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
+exports.isInt = isInt;
+exports.isNum = isNum;
+exports.isString = isString;
+exports.isValidUrl = isValidUrl;
+exports.loadJpegStream = loadJpegStream;
+exports.log2 = log2;
+exports.readInt8 = readInt8;
+exports.readUint16 = readUint16;
+exports.readUint32 = readUint32;
+exports.shadow = shadow;
+exports.string32 = string32;
+exports.stringToBytes = stringToBytes;
+exports.stringToPDFString = stringToPDFString;
+exports.stringToUTF8String = stringToUTF8String;
+exports.utf8StringToString = utf8StringToString;
+exports.warn = warn;
+}));

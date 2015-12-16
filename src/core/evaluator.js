@@ -12,18 +12,84 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, CMapFactory, ColorSpace, DecodeStream, Dict, Encodings,
-           error, ErrorFont, Font, FONT_IDENTITY_MATRIX, fontCharsToUnicode,
-           FontFlags, ImageKind, info, isArray, isCmd, isDict, isEOF, isName,
-           isNum, isStream, isString, JpegStream, Lexer, Metrics, IdentityCMap,
-           MurmurHash3_64, Name, Parser, Pattern, PDFImage, PDFJS, serifFonts,
-           stdFontMap, symbolsFonts, getTilingPatternIR, warn, Util, Promise,
-           RefSetCache, isRef, TextRenderingMode, IdentityToUnicodeMap,
-           OPS, UNSUPPORTED_FEATURES, NormalizedUnicodes, IDENTITY_MATRIX,
-           reverseIfRtl, createPromiseCapability, ToUnicodeMap, getFontType,
-           isPDFFunction, PDFFunction */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/evaluator', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
+      'pdfjs/core/image', 'pdfjs/core/colorspace', 'pdfjs/core/murmurhash3',
+      'pdfjs/core/fonts', 'pdfjs/core/function', 'pdfjs/core/pattern',
+      'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'), require('./parser.js'), require('./image.js'),
+      require('./colorspace.js'), require('./murmurhash3.js'),
+      require('./fonts.js'), require('./function.js'), require('./pattern.js'),
+      require('./cmap.js'), require('./metrics.js'), require('./bidi.js'));
+  } else {
+    factory((root.pdfjsCoreEvaluator = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
+      root.pdfjsCoreImage, root.pdfjsCoreColorSpace, root.pdfjsCoreMurmurHash3,
+      root.pdfjsCoreFonts, root.pdfjsCoreFunction, root.pdfjsCorePattern,
+      root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
+                  coreImage, coreColorSpace, coreMurmurHash3, coreFonts,
+                  coreFunction, corePattern, coreCMap, coreMetrics, coreBidi) {
+
+var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
+var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
+var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
+var ImageKind = sharedUtil.ImageKind;
+var OPS = sharedUtil.OPS;
+var TextRenderingMode = sharedUtil.TextRenderingMode;
+var Util = sharedUtil.Util;
+var assert = sharedUtil.assert;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var isNum = sharedUtil.isNum;
+var isString = sharedUtil.isString;
+var warn = sharedUtil.warn;
+var Dict = corePrimitives.Dict;
+var Name = corePrimitives.Name;
+var isCmd = corePrimitives.isCmd;
+var isDict = corePrimitives.isDict;
+var isName = corePrimitives.isName;
+var isRef = corePrimitives.isRef;
+var isStream = corePrimitives.isStream;
+var DecodeStream = coreStream.DecodeStream;
+var JpegStream = coreStream.JpegStream;
+var Lexer = coreParser.Lexer;
+var Parser = coreParser.Parser;
+var isEOF = coreParser.isEOF;
+var PDFImage = coreImage.PDFImage;
+var ColorSpace = coreColorSpace.ColorSpace;
+var MurmurHash3_64 = coreMurmurHash3.MurmurHash3_64;
+var Encodings = coreFonts.Encodings;
+var ErrorFont = coreFonts.ErrorFont;
+var FontFlags = coreFonts.FontFlags;
+var Font = coreFonts.Font;
+var IdentityToUnicodeMap = coreFonts.IdentityToUnicodeMap;
+var NormalizedUnicodes = coreFonts.NormalizedUnicodes;
+var ToUnicodeMap = coreFonts.ToUnicodeMap;
+var getFontType = coreFonts.getFontType;
+var reverseIfRtl = coreFonts.reverseIfRtl;
+var serifFonts = coreFonts.serifFonts;
+var symbolsFonts = coreFonts.symbolsFonts;
+var stdFontMap = coreFonts.stdFontMap;
+var isPDFFunction = coreFunction.isPDFFunction;
+var PDFFunction = coreFunction.PDFFunction;
+var Pattern = corePattern.Pattern;
+var getTilingPatternIR = corePattern.getTilingPatternIR;
+var CMapFactory = coreCMap.CMapFactory;
+var IdentityCMap = coreCMap.IdentityCMap;
+var Metrics = coreMetrics.Metrics;
+var bidi = coreBidi.bidi;
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -2889,3 +2955,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   };
   return QueueOptimizer;
 })();
+
+exports.OperatorList = OperatorList;
+exports.PartialEvaluator = PartialEvaluator;
+}));

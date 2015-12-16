@@ -15,6 +15,16 @@
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/metrics', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreMetrics = {}));
+  }
+}(this, function (exports) {
+
 // The Metrics object contains glyph widths (in glyph space units).
 // As per PDF spec, for most fonts (Type 3 being an exception) a glyph
 // space unit corresponds to 1/1000th of text space unit.
@@ -2956,3 +2966,6 @@ var Metrics = {
     'a191': 918
   }
 };
+
+exports.Metrics = Metrics;
+}));

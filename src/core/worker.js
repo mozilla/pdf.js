@@ -12,13 +12,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, createPromiseCapability, LocalPdfManager, NetworkPdfManager,
-           NetworkManager, isInt, MissingPDFException, UNSUPPORTED_FEATURES,
-           UnexpectedResponseException, PasswordException, Promise, warn,
-           PasswordResponses, InvalidPDFException, UnknownErrorException,
-           XRefParseException, Ref, info, globalScope, error, MessageHandler */
+/* globals NetworkManager */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/worker', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/pdf_manager', 'pdfjs/shared/global'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./pdf_manager.js'), require('../shared/global.js'));
+  } else {
+    factory((root.pdfjsCoreWorker = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCorePdfManager,
+      root.pdfjsSharedGlobal);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, corePdfManager,
+                  sharedGlobal) {
+
+var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
+var InvalidPDFException = sharedUtil.InvalidPDFException;
+var MessageHandler = sharedUtil.MessageHandler;
+var MissingPDFException = sharedUtil.MissingPDFException;
+var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
+var PasswordException = sharedUtil.PasswordException;
+var PasswordResponses = sharedUtil.PasswordResponses;
+var UnknownErrorException = sharedUtil.UnknownErrorException;
+var XRefParseException = sharedUtil.XRefParseException;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isInt = sharedUtil.isInt;
+var warn = sharedUtil.warn;
+var Ref = corePrimitives.Ref;
+var LocalPdfManager = corePdfManager.LocalPdfManager;
+var NetworkPdfManager = corePdfManager.NetworkPdfManager;
+var globalScope = sharedGlobal.globalScope;
+var PDFJS = sharedGlobal.PDFJS;
 
 var WorkerTask = (function WorkerTaskClosure() {
   function WorkerTask(name) {
@@ -616,11 +648,15 @@ var workerConsole = {
 
 
 // Worker thread?
-if (typeof window === 'undefined') {
+if (typeof window === 'undefined' && typeof require === 'undefined') {
   if (!('console' in globalScope)) {
     globalScope.console = workerConsole;
   }
 
-  var handler = new MessageHandler('worker', 'main', this);
-  WorkerMessageHandler.setup(handler, this);
+  var handler = new MessageHandler('worker', 'main', self);
+  WorkerMessageHandler.setup(handler, self);
 }
+
+exports.WorkerTask = WorkerTask;
+exports.WorkerMessageHandler = WorkerMessageHandler;
+}));

@@ -12,12 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, isArray,
-           isNum, OPS, Promise, Util, warn, ImageKind, PDFJS */
+/* globals PDFJS */
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'));
+  } else {
+    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil);
+  }
+}(this, function (exports, sharedUtil) {
 //#if (GENERIC || SINGLE_FILE)
+
+var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
+var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
+var ImageKind = sharedUtil.ImageKind;
+var OPS = sharedUtil.OPS;
+var Util = sharedUtil.Util;
+var isNum = sharedUtil.isNum;
+var isArray = sharedUtil.isArray;
+var warn = sharedUtil.warn;
+
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
   fontWeight: 'normal',
@@ -1189,4 +1207,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 })();
 
 PDFJS.SVGGraphics = SVGGraphics;
+
+exports.SVGGraphics = SVGGraphics;
 //#endif
+}));

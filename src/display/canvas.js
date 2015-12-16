@@ -12,12 +12,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals IDENTITY_MATRIX, FONT_IDENTITY_MATRIX, TextRenderingMode, ImageData,
-           ImageKind, PDFJS, Uint32ArrayView, error, WebGLUtils, OPS, warn,
-           shadow, isNum, Util, TilingPattern, getShadingPatternFromIR, isArray,
-           info, assert */
+/* globals PDFJS, ImageData */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/canvas', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/pattern_helper', 'pdfjs/display/webgl'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'),
+      require('./pattern_helper.js'), require('./webgl.js'));
+  } else {
+    factory((root.pdfjsDisplayCanvas = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayPatternHelper, root.pdfjsDisplayWebGL);
+  }
+}(this, function (exports, sharedUtil, displayPatternHelper, displayWebGL) {
+
+var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
+var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
+var ImageKind = sharedUtil.ImageKind;
+var OPS = sharedUtil.OPS;
+var TextRenderingMode = sharedUtil.TextRenderingMode;
+var Uint32ArrayView = sharedUtil.Uint32ArrayView;
+var Util = sharedUtil.Util;
+var assert = sharedUtil.assert;
+var info = sharedUtil.info;
+var isNum = sharedUtil.isNum;
+var isArray = sharedUtil.isArray;
+var error = sharedUtil.error;
+var shadow = sharedUtil.shadow;
+var warn = sharedUtil.warn;
+var TilingPattern = displayPatternHelper.TilingPattern;
+var getShadingPatternFromIR = displayPatternHelper.getShadingPatternFromIR;
+var WebGLUtils = displayWebGL.WebGLUtils;
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -1580,8 +1608,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var color = IR[1];
         var baseTransform = this.baseTransform ||
                             this.ctx.mozCurrentTransform.slice();
-        pattern = new TilingPattern(IR, color, this.ctx, this.objs,
-                                    this.commonObjs, baseTransform);
+        var self = this;
+        var canvasGraphicsFactory = {
+          createCanvasGraphics: function (ctx) {
+            return new CanvasGraphics(ctx, self.commonObjs, self.objs);
+          }
+        };
+        pattern = new TilingPattern(IR, color, this.ctx, canvasGraphicsFactory,
+                                    baseTransform);
       } else {
         pattern = getShadingPatternFromIR(IR);
       }
@@ -2181,3 +2215,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
   return CanvasGraphics;
 })();
+
+exports.CanvasGraphics = CanvasGraphics;
+exports.createScratchCanvas = createScratchCanvas;
+}));

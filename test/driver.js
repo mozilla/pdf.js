@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, combineUrl, StatTimer, Promise */
+/* globals PDFJS, pdfjsSharedUtil */
 
 'use strict';
 
@@ -196,7 +196,8 @@ var Driver = (function DriverClosure() {
 
       this._log('Loading file "' + task.file + '"\n');
 
-      var absoluteUrl = combineUrl(window.location.href, task.file);
+      var absoluteUrl = pdfjsSharedUtil.combineUrl(window.location.href,
+                                                   task.file);
 
       PDFJS.disableRange = task.disableRange;
       PDFJS.disableAutoFetch = !task.enableAutoFetch;
@@ -360,7 +361,7 @@ var Driver = (function DriverClosure() {
               }
               page.cleanup();
               task.stats = page.stats;
-              page.stats = new StatTimer();
+              page.stats = new pdfjsSharedUtil.StatTimer();
               self._snapshot(task, error);
             });
             initPromise.then(function () {

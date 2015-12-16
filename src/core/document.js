@@ -12,14 +12,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals warn, Dict, isDict, shadow, isArray, Util, StreamsSequenceStream,
-           isStream, NullStream, ObjectLoader, PartialEvaluator, Promise,
-           OperatorList, Annotation, error, assert, XRef, isArrayBuffer, Stream,
-           isString, isName, info, Linearization, MissingDataException, Lexer,
-           Catalog, stringToPDFString, stringToBytes, calculateMD5,
-           AnnotationFactory */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/document', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/obj',
+      'pdfjs/core/parser', 'pdfjs/core/crypto', 'pdfjs/core/evaluator',
+      'pdfjs/core/annotation'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'), require('./obj.js'), require('./parser.js'),
+      require('./crypto.js'), require('./evaluator.js'),
+      require('./annotation.js'));
+  } else {
+    factory((root.pdfjsCoreDocument = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream,
+      root.pdfjsCoreObj, root.pdfjsCoreParser, root.pdfjsCoreCrypto,
+      root.pdfjsCoreEvaluator, root.pdfjsCoreAnnotation);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreObj,
+                  coreParser, coreCrypto, coreEvaluator, coreAnnotation) {
+
+var MissingDataException = sharedUtil.MissingDataException;
+var Util = sharedUtil.Util;
+var assert = sharedUtil.assert;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var isArrayBuffer = sharedUtil.isArrayBuffer;
+var isString = sharedUtil.isString;
+var shadow = sharedUtil.shadow;
+var stringToBytes = sharedUtil.stringToBytes;
+var stringToPDFString = sharedUtil.stringToPDFString;
+var warn = sharedUtil.warn;
+var Dict = corePrimitives.Dict;
+var isDict = corePrimitives.isDict;
+var isName = corePrimitives.isName;
+var isStream = corePrimitives.isStream;
+var NullStream = coreStream.NullStream;
+var Stream = coreStream.Stream;
+var StreamsSequenceStream = coreStream.StreamsSequenceStream;
+var Catalog = coreObj.Catalog;
+var ObjectLoader = coreObj.ObjectLoader;
+var XRef = coreObj.XRef;
+var Lexer = coreParser.Lexer;
+var Linearization = coreParser.Linearization;
+var calculateMD5 = coreCrypto.calculateMD5;
+var OperatorList = coreEvaluator.OperatorList;
+var PartialEvaluator = coreEvaluator.PartialEvaluator;
+var Annotation = coreAnnotation.Annotation;
+var AnnotationFactory = coreAnnotation.AnnotationFactory;
 
 var Page = (function PageClosure() {
 
@@ -478,7 +522,14 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     setup: function PDFDocument_setup(recoveryMode) {
       this.xref.parse(recoveryMode);
-      this.catalog = new Catalog(this.pdfManager, this.xref);
+      var self = this;
+      var pageFactory = {
+        createPage: function (pageIndex, dict, ref, fontCache) {
+          return new Page(self.pdfManager, self.xref, pageIndex, dict, ref,
+                          fontCache);
+        }
+      };
+      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
     },
     get numPages() {
       var linearization = this.linearization;
@@ -551,3 +602,7 @@ var PDFDocument = (function PDFDocumentClosure() {
 
   return PDFDocument;
 })();
+
+exports.Page = Page;
+exports.PDFDocument = PDFDocument;
+}));

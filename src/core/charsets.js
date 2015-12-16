@@ -15,6 +15,16 @@
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/charsets', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreCharsets = {}));
+  }
+}(this, function (exports) {
+
 var ISOAdobeCharset = [
   '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar',
   'percent', 'ampersand', 'quoteright', 'parenleft', 'parenright',
@@ -114,3 +124,8 @@ var ExpertSubsetCharset = [
   'eightinferior', 'nineinferior', 'centinferior', 'dollarinferior',
   'periodinferior', 'commainferior'
 ];
+
+exports.ISOAdobeCharset = ISOAdobeCharset;
+exports.ExpertCharset = ExpertCharset;
+exports.ExpertSubsetCharset = ExpertSubsetCharset;
+}));

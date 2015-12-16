@@ -12,10 +12,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ColorSpace, PDFFunction, Util, error, warn, info, isArray, isStream,
-           assert, isPDFFunction, UNSUPPORTED_FEATURES, MissingDataException */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/pattern', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/function',
+      'pdfjs/core/colorspace'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./function.js'), require('./colorspace.js'));
+  } else {
+    factory((root.pdfjsCorePattern = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreFunction,
+      root.pdfjsCoreColorSpace);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreFunction,
+                  coreColorSpace) {
+
+var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
+var MissingDataException = sharedUtil.MissingDataException;
+var Util = sharedUtil.Util;
+var assert = sharedUtil.assert;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var warn = sharedUtil.warn;
+var isStream = corePrimitives.isStream;
+var PDFFunction = coreFunction.PDFFunction;
+var ColorSpace = coreColorSpace.ColorSpace;
 
 var ShadingType = {
   FUNCTION_BASED: 1,
@@ -805,3 +830,7 @@ function getTilingPatternIR(operatorList, dict, args) {
     paintType, tilingType
   ];
 }
+
+exports.Pattern = Pattern;
+exports.getTilingPatternIR = getTilingPatternIR;
+}));
