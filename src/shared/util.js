@@ -631,6 +631,8 @@ var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   return Uint32ArrayView;
 })();
+
+exports.Uint32ArrayView = Uint32ArrayView;
 //#else
 //PDFJS.hasCanvasTypedArrays = true;
 //#endif
@@ -1663,7 +1665,6 @@ exports.PasswordResponses = PasswordResponses;
 exports.StatTimer = StatTimer;
 exports.StreamType = StreamType;
 exports.TextRenderingMode = TextRenderingMode;
-exports.Uint32ArrayView = Uint32ArrayView;
 exports.UnexpectedResponseException = UnexpectedResponseException;
 exports.UnknownErrorException = UnknownErrorException;
 exports.Util = Util;
