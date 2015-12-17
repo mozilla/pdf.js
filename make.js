@@ -542,8 +542,37 @@ target.bundle = function(args) {
     'display/svg.js'
   ]);
 
-  var srcFiles = builder.getWorkerSrcFiles('src/worker_loader.js');
-  var WORKER_SRC_FILES = srcFiles.srcFiles;
+  var WORKER_SRC_FILES = [
+    'core/network.js',
+    'core/arithmetic_decoder.js',
+    'core/charsets.js',
+    'core/glyphlist.js',
+    'core/jpg.js',
+    'core/metrics.js',
+    'core/bidi.js',
+    'core/chunked_stream.js',
+    'core/jbig2.js',
+    'core/jpx.js',
+    'core/murmurhash3.js',
+    'core/primitives.js',
+    'core/stream.js',
+    'core/crypto.js',
+    'core/font_renderer.js',
+    'core/parser.js',
+    'core/cmap.js',
+    'core/obj.js',
+    'core/ps_parser.js',
+    'core/fonts.js',
+    'core/function.js',
+    'core/colorspace.js',
+    'core/image.js',
+    'core/pattern.js',
+    'core/evaluator.js',
+    'core/annotation.js',
+    'core/document.js',
+    'core/pdf_manager.js',
+    'core/worker.js'
+  ];
 
   if (!defines.SINGLE_FILE) {
     // We want shared_src_files in both pdf.js and pdf.worker.js
@@ -555,7 +584,7 @@ target.bundle = function(args) {
     MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
   }
 
-  var EXT_SRC_FILES = srcFiles.externalSrcFiles;
+  var EXT_SRC_FILES = [];
 
   cd(SRC_DIR);
 

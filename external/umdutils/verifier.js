@@ -59,7 +59,7 @@ function parseUmd(filePath) {
   var umdStart = '\\(function\\s\\(root,\\sfactory\\)\\s\\{';
   var umdImports = '\\}\\(this,\\sfunction\\s\\(exports\\b';
   var umdBody = '\\)\\s\\{';
-  var umdEnd = '\\}\\)\\);\\s*$';
+  var umdEnd = '\\}\\)\\);\\s*(//#endif\\s*)?$';
   var m, re;
   m = new RegExp(umdStart + '([\\s\\S]*?)' + umdImports + '([\\s\\S]*?)' +
     umdBody + '([\\s\\S]*?)' + umdEnd).exec(jscode);
