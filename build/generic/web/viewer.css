@@ -193,31 +193,6 @@
   border: 0;
 }
 
-* {
-  padding: 0;
-  margin: 0;
-}
-
-html {
-  height: 100%;
-  /* Font size is needed to make the activity bar the correct size. */
-  font-size: 10px;
-}
-
-body {
-  height: 100%;
-  background-color: #404040;
-  background-image: url(images/texture.png);
-}
-
-body,
-input,
-button,
-select {
-  font: message-box;
-  outline: none;
-}
-
 .hidden {
   display: none !important;
 }
