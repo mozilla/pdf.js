@@ -17,7 +17,7 @@
 'use strict';
 
 /**
- * @typedef {Object} AnnotationsLayerBuilderOptions
+ * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
  * @property {IPDFLinkService} linkService
@@ -26,12 +26,12 @@
 /**
  * @class
  */
-var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
+var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
   /**
-   * @param {AnnotationsLayerBuilderOptions} options
-   * @constructs AnnotationsLayerBuilder
+   * @param {AnnotationLayerBuilderOptions} options
+   * @constructs AnnotationLayerBuilder
    */
-  function AnnotationsLayerBuilder(options) {
+  function AnnotationLayerBuilder(options) {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
     this.linkService = options.linkService;
@@ -39,14 +39,14 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
     this.div = null;
   }
 
-  AnnotationsLayerBuilder.prototype =
-      /** @lends AnnotationsLayerBuilder.prototype */ {
+  AnnotationLayerBuilder.prototype =
+      /** @lends AnnotationLayerBuilder.prototype */ {
 
     /**
      * @param {PageViewport} viewport
      * @param {string} intent (default value is 'display')
      */
-    render: function AnnotationsLayerBuilder_render(viewport, intent) {
+    render: function AnnotationLayerBuilder_render(viewport, intent) {
       var self = this;
       var parameters = {
         intent: (intent === undefined ? 'display' : intent),
@@ -79,7 +79,7 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
       });
     },
 
-    hide: function AnnotationsLayerBuilder_hide() {
+    hide: function AnnotationLayerBuilder_hide() {
       if (!this.div) {
         return;
       }
@@ -87,22 +87,22 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
     }
   };
 
-  return AnnotationsLayerBuilder;
+  return AnnotationLayerBuilder;
 })();
 
 /**
  * @constructor
- * @implements IPDFAnnotationsLayerFactory
+ * @implements IPDFAnnotationLayerFactory
  */
-function DefaultAnnotationsLayerFactory() {}
-DefaultAnnotationsLayerFactory.prototype = {
+function DefaultAnnotationLayerFactory() {}
+DefaultAnnotationLayerFactory.prototype = {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @returns {AnnotationsLayerBuilder}
+   * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
-    return new AnnotationsLayerBuilder({
+  createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+    return new AnnotationLayerBuilder({
       pageDiv: pageDiv,
       pdfPage: pdfPage,
       linkService: new SimpleLinkService(),
