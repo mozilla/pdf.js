@@ -477,7 +477,6 @@ target.cmaps = function () {
 target.bundle = function(args) {
   args = args || {};
   var defines = args.defines || DEFINES;
-  var excludes = args.excludes || [];
 
   target.buildnumber();
 
@@ -485,21 +484,13 @@ target.bundle = function(args) {
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
 
-  function bundle(filename, outfilename, SRC_FILES, EXT_SRC_FILES) {
-    for (var i = 0, length = excludes.length; i < length; ++i) {
-      var exclude = excludes[i];
-      var index = SRC_FILES.indexOf(exclude);
-      if (index >= 0) {
-        SRC_FILES.splice(index, 1);
-      }
-    }
-
-    var bundleContent = cat(SRC_FILES),
+  function bundle(filename, outfilename, files) {
+    var bundleContent = cat(files),
         bundleVersion = VERSION,
         bundleBuild = exec('git log --format="%h" -n 1',
           {silent: true}).output.replace('\n', '');
 
-    crlfchecker.checkIfCrlfIsPresent(SRC_FILES);
+    crlfchecker.checkIfCrlfIsPresent(files);
 
     // Prepend a newline because stripCommentHeaders only strips comments that
     // follow a line feed. The file where bundleContent is inserted already
@@ -508,9 +499,6 @@ target.bundle = function(args) {
 
     // Removes AMD and CommonJS branches from UMD headers.
     bundleContent = stripUMDHeaders(bundleContent);
-
-    // Append external files last since we don't want to modify them.
-    bundleContent += cat(EXT_SRC_FILES);
 
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
@@ -524,76 +512,51 @@ target.bundle = function(args) {
     mkdir(BUILD_DIR);
   }
 
-  var SHARED_SRC_FILES = [
-    'shared/global.js',
-    'shared/util.js'
+  var umd = require('./external/umdutils/verifier.js');
+  var MAIN_SRC_FILES = [
+    SRC_DIR + 'display/annotation_layer.js',
+    SRC_DIR + 'display/metadata.js',
+    SRC_DIR + 'display/text_layer.js',
+    SRC_DIR + 'display/api.js'
   ];
-
-  var MAIN_SRC_FILES = SHARED_SRC_FILES.concat([
-    'display/dom_utils.js',
-    'display/annotation_layer.js',
-    'display/font_loader.js',
-    'display/metadata.js',
-    'display/text_layer.js',
-    'display/webgl.js',
-    'display/pattern_helper.js',
-    'display/canvas.js',
-    'display/api.js',
-    'display/svg.js'
-  ]);
 
   var WORKER_SRC_FILES = [
-    'core/network.js',
-    'core/arithmetic_decoder.js',
-    'core/charsets.js',
-    'core/glyphlist.js',
-    'core/jpg.js',
-    'core/metrics.js',
-    'core/bidi.js',
-    'core/chunked_stream.js',
-    'core/jbig2.js',
-    'core/jpx.js',
-    'core/murmurhash3.js',
-    'core/primitives.js',
-    'core/stream.js',
-    'core/crypto.js',
-    'core/font_renderer.js',
-    'core/parser.js',
-    'core/cmap.js',
-    'core/obj.js',
-    'core/ps_parser.js',
-    'core/fonts.js',
-    'core/function.js',
-    'core/colorspace.js',
-    'core/image.js',
-    'core/pattern.js',
-    'core/evaluator.js',
-    'core/annotation.js',
-    'core/document.js',
-    'core/pdf_manager.js',
-    'core/worker.js'
+    SRC_DIR + 'core/worker.js'
   ];
 
-  if (!defines.SINGLE_FILE) {
-    // We want shared_src_files in both pdf.js and pdf.worker.js
-    // unless it's being built in singlefile mode.
-    WORKER_SRC_FILES = SHARED_SRC_FILES.concat(WORKER_SRC_FILES);
-  } else {
-    // In singlefile mode, all of the src files will be bundled into
-    // the main pdf.js outuput.
-    MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
+  // Extension does not need svg.js and network.js files.
+  if (!defines.FIREFOX && !defines.MOZCENTRAL) {
+    MAIN_SRC_FILES.push(SRC_DIR + 'display/svg.js');
+    WORKER_SRC_FILES.push(SRC_DIR + 'core/network.js');
   }
 
-  var EXT_SRC_FILES = [];
+  if (defines.SINGLE_FILE) {
+    // In singlefile mode, all of the src files will be bundled into
+    // the main pdf.js output.
+    MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
+    WORKER_SRC_FILES = null; // no need for worker file
+  }
+
+  // Reading UMD headers and building loading orders of modules. The
+  // readDependencies returns AMD module names: removing 'pdfjs' prefix and
+  // adding '.js' extensions to the name.
+  var mainFiles = umd.readDependencies(MAIN_SRC_FILES).loadOrder.map(
+    function (name) { return name.replace('pdfjs/', '') + '.js'; });
+
+  var workerFiles = WORKER_SRC_FILES &&
+                    umd.readDependencies(WORKER_SRC_FILES).loadOrder.map(
+    function (name) { return name.replace('pdfjs/', '') + '.js'; });
 
   cd(SRC_DIR);
 
-  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, MAIN_SRC_FILES, []);
-  var srcCopy = ROOT_DIR + BUILD_DIR + 'pdf.worker.js.temp';
-  cp('pdf.js', srcCopy);
-  bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, WORKER_SRC_FILES,
-         EXT_SRC_FILES);
-  rm(srcCopy);
+  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles);
+
+  if (workerFiles) {
+    var srcCopy = ROOT_DIR + BUILD_DIR + 'pdf.worker.js.temp';
+    cp('pdf.js', srcCopy);
+    bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, workerFiles);
+    rm(srcCopy);
+  }
 };
 
 //
@@ -825,7 +788,7 @@ target.firefox = function() {
       FIREFOX_AMO_EXTENSION_NAME = 'pdf.js.amo.xpi';
 
   target.locale();
-  target.bundle({ excludes: ['core/network.js'], defines: defines });
+  target.bundle({ defines: defines });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -952,7 +915,7 @@ target.mozcentral = function() {
         ['icon.png',
          'icon64.png'];
 
-  target.bundle({ excludes: ['core/network.js'], defines: defines });
+  target.bundle({ defines: defines });
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
