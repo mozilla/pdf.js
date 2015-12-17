@@ -311,6 +311,11 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
     }
 
+    // Strip referrer
+    if (item.url) {
+      link.rel = PDFJS.externalLinkRel;
+    }
+
     if (!item.url) {
       if (item.action) {
         bindNamedAction(link, item.action);

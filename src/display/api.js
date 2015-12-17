@@ -231,6 +231,14 @@ PDFJS.externalLinkTarget = (PDFJS.externalLinkTarget === undefined ?
                             PDFJS.LinkTarget.NONE : PDFJS.externalLinkTarget);
 
 /**
+ * Specifies the |rel| attribute for external links. Defaults to stripping
+ * the referrer.
+ * @var {string}
+ */
+PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
+                         'noreferrer' : PDFJS.externalLinkRel);
+
+/**
   * Determines if we can eval strings as JS. Primarily used to improve
   * performance for font rendering.
   * @var {boolean}
