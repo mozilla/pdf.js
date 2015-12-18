@@ -4,7 +4,7 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
-    <em:id>uriloader@pdf.js</em:id>
+    <em:id>viewer@pdf.js</em:id>
     <!-- PDFJS_LOCALIZED_METADATA -->
     <em:name>PDF Viewer</em:name>
     <em:version>PDFJSSCRIPT_VERSION</em:version>
@@ -14,7 +14,7 @@
       <Description>
        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
        <em:minVersion>10.0</em:minVersion>
-       <em:maxVersion>15.0a1</em:maxVersion>
+       <em:maxVersion>46.0a1</em:maxVersion>
      </Description>
     </em:targetApplication>
 
@@ -23,7 +23,7 @@
       <Description>
        <em:id>{92650c4d-4b8e-4d2a-b7eb-24ecf4f6b63a}</em:id>
        <em:minVersion>2.7</em:minVersion>
-       <em:maxVersion>2.12a1</em:maxVersion>
+       <em:maxVersion>2.39</em:maxVersion>
      </Description>
     </em:targetApplication>
 
@@ -32,7 +32,7 @@
       <Description>
        <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
        <em:minVersion>11.0</em:minVersion>
-       <em:maxVersion>16.0a1</em:maxVersion>
+       <em:maxVersion>46.0a1</em:maxVersion>
      </Description>
     </em:targetApplication>
 
