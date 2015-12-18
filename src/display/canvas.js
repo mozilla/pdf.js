@@ -2201,11 +2201,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return this.cachedGetSinglePixelWidth;
     },
     getCanvasPosition: function CanvasGraphics_getCanvasPosition(x, y) {
-        var transform = this.ctx.mozCurrentTransform;
-        return [
-          transform[0] * x + transform[2] * y + transform[4],
-          transform[1] * x + transform[3] * y + transform[5]
-        ];
+      var transform = this.ctx.mozCurrentTransform;
+      return [
+        transform[0] * x + transform[2] * y + transform[4],
+        transform[1] * x + transform[3] * y + transform[5]
+      ];
     }
   };
 

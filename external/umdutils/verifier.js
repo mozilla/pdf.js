@@ -418,7 +418,8 @@ function validateDependencies(context) {
     if (!(i in nonRoots)) {
       context.infoCallback('Root module: ' + i);
     }
-  }}
+  }
+}
 
 /**
  * Validates all modules/files in the specified path. The modules must be

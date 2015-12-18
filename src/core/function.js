@@ -987,7 +987,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
       var instructions = [];
       var inputSize = domain.length >> 1, outputSize = range.length >> 1;
       var lastRegister = 0;
-      var n, j, min, max;
+      var n, j;
       var num1, num2, ast1, ast2, tmpVar, item;
       for (i = 0; i < inputSize; i++) {
         stack.push(new AstArgument(i, domain[i * 2], domain[i * 2 + 1]));

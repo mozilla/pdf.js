@@ -889,7 +889,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           delete pageInfo.height;
         }
         var pageSegmentFlags = data[position + 16];
-        var pageStripingInformatiom = readUint16(data, position + 17);
+        var pageStripingInformation = readUint16(data, position + 17);
         pageInfo.lossless = !!(pageSegmentFlags & 1);
         pageInfo.refinement = !!(pageSegmentFlags & 2);
         pageInfo.defaultPixelValue = (pageSegmentFlags >> 2) & 1;

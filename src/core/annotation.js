@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
 
 'use strict';
 
@@ -46,7 +45,6 @@ var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
 var isDict = corePrimitives.isDict;
 var isName = corePrimitives.isName;
 var Stream = coreStream.Stream;
