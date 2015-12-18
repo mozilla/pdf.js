@@ -16,7 +16,7 @@
            SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
            DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
            PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue,
-           AnnotationsLayerBuilder, DEFAULT_SCALE_VALUE */
+           AnnotationLayerBuilder, DEFAULT_SCALE_VALUE */
 
 'use strict';
 
@@ -33,7 +33,7 @@ var DEFAULT_CACHE_SIZE = 10;
 //#include pdf_rendering_queue.js
 //#include pdf_page_view.js
 //#include text_layer_builder.js
-//#include annotations_layer_builder.js
+//#include annotation_layer_builder.js
 
 /**
  * @typedef {Object} PDFViewerOptions
@@ -294,7 +294,7 @@ var PDFViewer = (function pdfViewer() {
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
             textLayerFactory: textLayerFactory,
-            annotationsLayerFactory: this
+            annotationLayerFactory: this
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -751,10 +751,10 @@ var PDFViewer = (function pdfViewer() {
     /**
      * @param {HTMLDivElement} pageDiv
      * @param {PDFPage} pdfPage
-     * @returns {AnnotationsLayerBuilder}
+     * @returns {AnnotationLayerBuilder}
      */
-    createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
-      return new AnnotationsLayerBuilder({
+    createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+      return new AnnotationLayerBuilder({
         pageDiv: pageDiv,
         pdfPage: pdfPage,
         linkService: this.linkService
