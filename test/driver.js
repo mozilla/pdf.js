@@ -22,6 +22,29 @@ var PDF_TO_CSS_UNITS = 96.0 / 72.0;
 /**
  * @class
  */
+var LinkServiceMock = (function LinkServiceMockClosure() {
+  function LinkServiceMock() {}
+
+  LinkServiceMock.prototype = {
+    navigateTo: function (dest) {},
+
+    getDestinationHash: function (dest) {
+      return '#';
+    },
+
+    getAnchorUrl: function (hash) {
+      return '#';
+    },
+
+    executeNamedAction: function (action) {}
+  };
+
+  return LinkServiceMock;
+})();
+
+/**
+ * @class
+ */
 var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -90,6 +113,115 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
 })();
 
 /**
+ * @class
+ */
+var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var annotationLayerStylePromise = null;
+  function getAnnotationLayerStyle() {
+    if (annotationLayerStylePromise) {
+      return annotationLayerStylePromise;
+    }
+    annotationLayerStylePromise = new Promise(function (resolve) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', './annotation_layer_test.css');
+      xhr.onload = function () {
+        resolve(xhr.responseText);
+      };
+      xhr.send(null);
+    });
+    return annotationLayerStylePromise;
+  }
+
+  function inlineAnnotationImages(images) {
+    var imagePromises = [];
+    for (var i = 0, ii = images.length; i < ii; i++) {
+      var imagePromise = new Promise(function(resolve) {
+        var xhr = new XMLHttpRequest();
+        xhr.responseType = 'blob';
+        xhr.onload = function() {
+          var reader = new FileReader();
+          reader.onloadend = function() {
+            resolve(reader.result);
+          };
+          reader.readAsDataURL(xhr.response);
+        };
+        xhr.onerror = function() {
+          resolve('');
+        };
+        xhr.open('GET', images[i].src);
+        xhr.send();
+      });
+      imagePromises.push(imagePromise);
+    }
+    return imagePromises;
+  }
+
+  function rasterizeAnnotationLayer(ctx, viewport, annotations, page) {
+    return new Promise(function (resolve) {
+      // Building SVG with size of the viewport.
+      var svg = document.createElementNS(SVG_NS, 'svg:svg');
+      svg.setAttribute('width', viewport.width + 'px');
+      svg.setAttribute('height', viewport.height + 'px');
+
+      // Adding element to host our HTML (style + annotation layer div).
+      var foreignObject = document.createElementNS(SVG_NS, 'svg:foreignObject');
+      foreignObject.setAttribute('x', '0');
+      foreignObject.setAttribute('y', '0');
+      foreignObject.setAttribute('width', viewport.width + 'px');
+      foreignObject.setAttribute('height', viewport.height + 'px');
+      var style = document.createElement('style');
+      var stylePromise = getAnnotationLayerStyle();
+      foreignObject.appendChild(style);
+      var div = document.createElement('div');
+      div.className = 'annotationLayer';
+
+      // Rendering annotation layer as HTML.
+      stylePromise.then(function (styles) {
+        style.textContent = styles;
+
+        var annotation_viewport = viewport.clone({ dontFlip: true });
+        var parameters = {
+          viewport: annotation_viewport,
+          div: div,
+          annotations: annotations,
+          page: page,
+          linkService: new LinkServiceMock()
+        };
+        PDFJS.AnnotationLayer.render(parameters);
+
+        // Inline SVG images from text annotations.
+        var images = div.getElementsByTagName('img');
+        var imagePromises = inlineAnnotationImages(images);
+        var converted = Promise.all(imagePromises).then(function(data) {
+          for (var i = 0, ii = data.length; i < ii; i++) {
+            images[i].src = data[i];
+          }
+        });
+
+        foreignObject.appendChild(div);
+        svg.appendChild(foreignObject);
+
+        // We need to have UTF-8 encoded XML.
+        converted.then(function() {
+          var svg_xml = unescape(encodeURIComponent(
+            (new XMLSerializer()).serializeToString(svg)));
+          var img = new Image();
+          img.src = 'data:image/svg+xml;base64,' + btoa(svg_xml);
+          img.onload = function () {
+            ctx.drawImage(img, 0, 0);
+            resolve();
+          };
+        });
+      });
+    });
+  }
+
+  return rasterizeAnnotationLayer;
+})();
+
+/**
  * @typedef {Object} DriverOptions
  * @property {HTMLSpanElement} inflight - Field displaying the number of
  *   inflight requests.
@@ -113,6 +245,7 @@ var Driver = (function DriverClosure() {
     PDFJS.cMapPacked = true;
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.enableStats = true;
+    PDFJS.imageResourcesPath = '/web/images/';
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -320,7 +453,7 @@ var Driver = (function DriverClosure() {
             self.canvas.height = viewport.height;
             self._clearCanvas();
 
-            var textLayerCanvas;
+            var textLayerCanvas, annotationLayerCanvas;
             var initPromise;
             if (task.type === 'text') {
               // Using a dummy canvas for PDF context drawing operations
@@ -343,8 +476,36 @@ var Driver = (function DriverClosure() {
                 });
             } else {
               textLayerCanvas = null;
-              initPromise = Promise.resolve();
+
+              // Render the annotation layer if necessary.
+              if (task.annotations) {
+                // Create a dummy canvas for the drawing operations.
+                annotationLayerCanvas = self.annotationLayerCanvas;
+                if (!annotationLayerCanvas) {
+                  annotationLayerCanvas = document.createElement('canvas');
+                  self.annotationLayerCanvas = annotationLayerCanvas;
+                }
+                annotationLayerCanvas.width = viewport.width;
+                annotationLayerCanvas.height = viewport.height;
+                var annotationLayerContext =
+                  annotationLayerCanvas.getContext('2d');
+                annotationLayerContext.clearRect(0, 0,
+                  annotationLayerCanvas.width, annotationLayerCanvas.height);
+
+                // The annotation builder will draw its content on the canvas.
+                initPromise =
+                  page.getAnnotations({ intent: 'display' }).then(
+                    function(annotations) {
+                      return rasterizeAnnotationLayer(annotationLayerContext,
+                                                      viewport, annotations,
+                                                      page);
+                  });
+              } else {
+                annotationLayerCanvas = null;
+                initPromise = Promise.resolve();
+              }
             }
+
             var renderContext = {
               canvasContext: ctx,
               viewport: viewport
@@ -358,6 +519,10 @@ var Driver = (function DriverClosure() {
                 ctx.fillRect(0, 0, viewport.width, viewport.height);
                 ctx.restore();
                 ctx.drawImage(textLayerCanvas, 0, 0);
+              }
+              // If we have annotation layer, compose it on top of the page.
+              if (annotationLayerCanvas) {
+                ctx.drawImage(annotationLayerCanvas, 0, 0);
               }
               page.cleanup();
               task.stats = page.stats;

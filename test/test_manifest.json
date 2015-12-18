@@ -1600,7 +1600,8 @@
       "rounds": 1,
       "lastPage": 1,
       "link": true,
-      "type": "eq"
+      "type": "eq",
+      "annotations": true
     },
     {  "id": "issue1002",
       "file": "pdfs/issue1002.pdf",
@@ -2052,6 +2053,7 @@
       "md5": "56321ea830be9c4f8437ca17ac535b2d",
       "rounds": 1,
       "type": "eq",
+      "annotations": true,
       "about": "Text widget annotation witout appearance streams."
     },
     {  "id": "gesamt",
@@ -2585,7 +2587,8 @@
        "file": "pdfs/annotation-border-styles.pdf",
        "md5": "22930fc09c7386e1131b14d936e554af",
        "rounds": 1,
-       "type": "eq"
+       "type": "eq",
+       "annotations": true
     },
     {  "id": "issue5481.pdf",
        "file": "pdfs/issue5481.pdf",
