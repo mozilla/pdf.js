@@ -20,8 +20,8 @@ if (typeof PDFJS === 'undefined') {
   (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
-PDFJS.version = '1.3.100';
-PDFJS.build = 'a8d760d';
+PDFJS.version = '1.3.118';
+PDFJS.build = '9e27843';
 
 (function pdfjsWrapper() {
   // Use strict in our context only - users might not want it
@@ -6814,12 +6814,8 @@ var JpegImage = (function jpegImage() {
 
   function decodeScan(data, offset, frame, components, resetInterval,
                       spectralStart, spectralEnd, successivePrev, successive) {
-    var precision = frame.precision;
-    var samplesPerLine = frame.samplesPerLine;
-    var scanLines = frame.scanLines;
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
-    var maxH = frame.maxH, maxV = frame.maxV;
 
     var startOffset = offset, bitsData = 0, bitsCount = 0;
 
@@ -7327,10 +7323,9 @@ var JpegImage = (function jpegImage() {
         frame.mcusPerColumn = mcusPerColumn;
       }
 
-      var offset = 0, length = data.length;
+      var offset = 0;
       var jfif = null;
       var adobe = null;
-      var pixels = null;
       var frame, resetInterval;
       var quantizationTables = [];
       var huffmanTablesAC = [], huffmanTablesDC = [];
@@ -12537,7 +12532,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           delete pageInfo.height;
         }
         var pageSegmentFlags = data[position + 16];
-        var pageStripingInformatiom = readUint16(data, position + 17);
+        var pageStripingInformation = readUint16(data, position + 17);
         pageInfo.lossless = !!(pageSegmentFlags & 1);
         pageInfo.refinement = !!(pageSegmentFlags & 2);
         pageInfo.defaultPixelValue = (pageSegmentFlags >> 2) & 1;
@@ -12820,8 +12815,6 @@ var JpxImage = (function JpxImageClosure() {
           case 0x636F6C72: // 'colr'
             // Colorspaces are not used, the CS from the PDF is used.
             var method = data[position];
-            var precedence = data[position + 1];
-            var approximation = data[position + 2];
             if (method === 1) {
               // enumerated colorspace
               var colorspace = readUint32(data, position + 3);
@@ -32945,7 +32938,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
       var instructions = [];
       var inputSize = domain.length >> 1, outputSize = range.length >> 1;
       var lastRegister = 0;
-      var n, j, min, max;
+      var n, j;
       var num1, num2, ast1, ast2, tmpVar, item;
       for (i = 0; i < inputSize; i++) {
         stack.push(new AstArgument(i, domain[i * 2], domain[i * 2 + 1]));
@@ -38845,7 +38838,6 @@ var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
 var isDict = corePrimitives.isDict;
 var isName = corePrimitives.isName;
 var Stream = coreStream.Stream;
