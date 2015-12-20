@@ -17,7 +17,7 @@
 'use strict';
 
 /**
- * @typedef {Object} AnnotationsLayerBuilderOptions
+ * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
  * @property {IPDFLinkService} linkService
@@ -26,12 +26,12 @@
 /**
  * @class
  */
-var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
+var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
   /**
-   * @param {AnnotationsLayerBuilderOptions} options
-   * @constructs AnnotationsLayerBuilder
+   * @param {AnnotationLayerBuilderOptions} options
+   * @constructs AnnotationLayerBuilder
    */
-  function AnnotationsLayerBuilder(options) {
+  function AnnotationLayerBuilder(options) {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
     this.linkService = options.linkService;
@@ -39,14 +39,14 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
     this.div = null;
   }
 
-  AnnotationsLayerBuilder.prototype =
-      /** @lends AnnotationsLayerBuilder.prototype */ {
+  AnnotationLayerBuilder.prototype =
+      /** @lends AnnotationLayerBuilder.prototype */ {
 
     /**
      * @param {PageViewport} viewport
      * @param {string} intent (default value is 'display')
      */
-    render: function AnnotationsLayerBuilder_render(viewport, intent) {
+    render: function AnnotationLayerBuilder_render(viewport, intent) {
       var self = this;
       var parameters = {
         intent: (intent === undefined ? 'display' : intent),
@@ -54,11 +54,18 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
 
       this.pdfPage.getAnnotations(parameters).then(function (annotations) {
         viewport = viewport.clone({ dontFlip: true });
+        parameters = {
+          viewport: viewport,
+          div: self.div,
+          annotations: annotations,
+          page: self.pdfPage,
+          linkService: self.linkService
+        };
 
         if (self.div) {
           // If an annotationLayer already exists, refresh its children's
           // transformation matrices.
-          PDFJS.AnnotationLayer.update(viewport, self.div, annotations);
+          PDFJS.AnnotationLayer.update(parameters);
         } else {
           // Create an annotation layer div and render the annotations
           // if there is at least one annotation.
@@ -69,9 +76,9 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
           self.div = document.createElement('div');
           self.div.className = 'annotationLayer';
           self.pageDiv.appendChild(self.div);
+          parameters.div = self.div;
 
-          PDFJS.AnnotationLayer.render(viewport, self.div, annotations,
-                                       self.pdfPage, self.linkService);
+          PDFJS.AnnotationLayer.render(parameters);
           if (typeof mozL10n !== 'undefined') {
             mozL10n.translate(self.div);
           }
@@ -79,7 +86,7 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
       });
     },
 
-    hide: function AnnotationsLayerBuilder_hide() {
+    hide: function AnnotationLayerBuilder_hide() {
       if (!this.div) {
         return;
       }
@@ -87,22 +94,22 @@ var AnnotationsLayerBuilder = (function AnnotationsLayerBuilderClosure() {
     }
   };
 
-  return AnnotationsLayerBuilder;
+  return AnnotationLayerBuilder;
 })();
 
 /**
  * @constructor
- * @implements IPDFAnnotationsLayerFactory
+ * @implements IPDFAnnotationLayerFactory
  */
-function DefaultAnnotationsLayerFactory() {}
-DefaultAnnotationsLayerFactory.prototype = {
+function DefaultAnnotationLayerFactory() {}
+DefaultAnnotationLayerFactory.prototype = {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
-   * @returns {AnnotationsLayerBuilder}
+   * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationsLayerBuilder: function (pageDiv, pdfPage) {
-    return new AnnotationsLayerBuilder({
+  createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+    return new AnnotationLayerBuilder({
       pageDiv: pageDiv,
       pdfPage: pdfPage,
       linkService: new SimpleLinkService(),

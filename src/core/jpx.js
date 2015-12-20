@@ -85,8 +85,6 @@ var JpxImage = (function JpxImageClosure() {
           case 0x636F6C72: // 'colr'
             // Colorspaces are not used, the CS from the PDF is used.
             var method = data[position];
-            var precedence = data[position + 1];
-            var approximation = data[position + 2];
             if (method === 1) {
               // enumerated colorspace
               var colorspace = readUint32(data, position + 3);

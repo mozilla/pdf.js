@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Promise, mozL10n, getPDFFileNameFromURL, OverlayManager */
+/* globals mozL10n, getPDFFileNameFromURL, OverlayManager */
 
 'use strict';
 

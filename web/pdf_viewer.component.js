@@ -14,8 +14,8 @@
  */
 /*jshint globalstrict: false */
 /* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder, PDFLinkService,
-           DefaultTextLayerFactory, AnnotationsLayerBuilder, PDFHistory,
-           DefaultAnnotationsLayerFactory, getFileName, ProgressBar */
+           DefaultTextLayerFactory, AnnotationLayerBuilder, PDFHistory,
+           DefaultAnnotationLayerFactory, getFileName, ProgressBar */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
@@ -35,8 +35,8 @@ if (typeof PDFJS === 'undefined') {
   PDFJS.PDFLinkService = PDFLinkService;
   PDFJS.TextLayerBuilder = TextLayerBuilder;
   PDFJS.DefaultTextLayerFactory = DefaultTextLayerFactory;
-  PDFJS.AnnotationsLayerBuilder = AnnotationsLayerBuilder;
-  PDFJS.DefaultAnnotationsLayerFactory = DefaultAnnotationsLayerFactory;
+  PDFJS.AnnotationLayerBuilder = AnnotationLayerBuilder;
+  PDFJS.DefaultAnnotationLayerFactory = DefaultAnnotationLayerFactory;
   PDFJS.PDFHistory = PDFHistory;
 
   PDFJS.getFileName = getFileName;
