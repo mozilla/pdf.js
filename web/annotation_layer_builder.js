@@ -54,11 +54,18 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
 
       this.pdfPage.getAnnotations(parameters).then(function (annotations) {
         viewport = viewport.clone({ dontFlip: true });
+        parameters = {
+          viewport: viewport,
+          div: self.div,
+          annotations: annotations,
+          page: self.pdfPage,
+          linkService: self.linkService
+        };
 
         if (self.div) {
           // If an annotationLayer already exists, refresh its children's
           // transformation matrices.
-          PDFJS.AnnotationLayer.update(viewport, self.div, annotations);
+          PDFJS.AnnotationLayer.update(parameters);
         } else {
           // Create an annotation layer div and render the annotations
           // if there is at least one annotation.
@@ -69,9 +76,9 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           self.div = document.createElement('div');
           self.div.className = 'annotationLayer';
           self.pageDiv.appendChild(self.div);
+          parameters.div = self.div;
 
-          PDFJS.AnnotationLayer.render(viewport, self.div, annotations,
-                                       self.pdfPage, self.linkService);
+          PDFJS.AnnotationLayer.render(parameters);
           if (typeof mozL10n !== 'undefined') {
             mozL10n.translate(self.div);
           }
