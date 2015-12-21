@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, ColorSpace, DecodeStream, error, info, isArray, ImageKind,
-           isStream, JpegStream, JpxImage, Name, Promise, Stream, warn */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/image', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/colorspace', 'pdfjs/core/stream',
+      'pdfjs/core/jpx'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./colorspace.js'), require('./stream.js'),
+      require('./jpx.js'));
+  } else {
+    factory((root.pdfjsCoreImage = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreColorSpace, root.pdfjsCoreStream,
+      root.pdfjsCoreJpx);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreColorSpace,
+                  coreStream, coreJpx) {
+
+var ImageKind = sharedUtil.ImageKind;
+var assert = sharedUtil.assert;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var warn = sharedUtil.warn;
+var Name = corePrimitives.Name;
+var isStream = corePrimitives.isStream;
+var ColorSpace = coreColorSpace.ColorSpace;
+var DecodeStream = coreStream.DecodeStream;
+var Stream = coreStream.Stream;
+var JpegStream = coreStream.JpegStream;
+var JpxImage = coreJpx.JpxImage;
 
 var PDFImage = (function PDFImageClosure() {
   /**
@@ -140,7 +167,12 @@ var PDFImage = (function PDFImageClosure() {
       this.smask = new PDFImage(xref, res, smask, false);
     } else if (mask) {
       if (isStream(mask)) {
-        this.mask = new PDFImage(xref, res, mask, false, null, null, true);
+        var maskDict = mask.dict, imageMask = maskDict.get('ImageMask', 'IM');
+        if (!imageMask) {
+          warn('Ignoring /Mask in image without /ImageMask.');
+        } else {
+          this.mask = new PDFImage(xref, res, mask, false, null, null, true);
+        }
       } else {
         // Color key mask (just an array).
         this.mask = mask;
@@ -562,7 +594,10 @@ var PDFImage = (function PDFImageClosure() {
           }
           return imgData;
         }
-        if (this.image instanceof JpegStream && !this.smask && !this.mask) {
+        if (this.image instanceof JpegStream && !this.smask && !this.mask &&
+            (this.colorSpace.name === 'DeviceGray' ||
+             this.colorSpace.name === 'DeviceRGB' ||
+             this.colorSpace.name === 'DeviceCMYK')) {
           imgData.kind = ImageKind.RGB_24BPP;
           imgData.data = this.getImageBytes(originalHeight * rowBytes,
                                             drawWidth, drawHeight, true);
@@ -666,3 +701,9 @@ var PDFImage = (function PDFImageClosure() {
   };
   return PDFImage;
 })();
+
+exports.PDFImage = PDFImage;
+
+// TODO refactor to remove dependency on colorspace.js
+coreColorSpace._setCoreImage(exports);
+}));

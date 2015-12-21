@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals EOF, error, Lexer */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/ps_parser', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/parser'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./parser.js'));
+  } else {
+    factory((root.pdfjsCorePsParser = {}), root.pdfjsSharedUtil,
+      root.pdfjsCoreParser);
+  }
+}(this, function (exports, sharedUtil, coreParser) {
+
+var error = sharedUtil.error;
+var EOF = coreParser.EOF;
+var Lexer = coreParser.Lexer;
 
 var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {
@@ -220,3 +233,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
   };
   return PostScriptLexer;
 })();
+
+exports.PostScriptLexer = PostScriptLexer;
+exports.PostScriptParser = PostScriptParser;
+}));

@@ -14,8 +14,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Adobe CMap resources are covered by their own copyright and license:
-http://sourceforge.net/adobe/cmap/wiki/License/
+Adobe CMap resources are covered by their own copyright but the same license:
+
+    Copyright 1990-2015 Adobe Systems Incorporated.
+
+See https://github.com/adobe-type-tools/cmap-resources
 -->
 <html dir="ltr" mozdisallowselectionprint moznomarginboxes>
   <head>
@@ -23,6 +26,9 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <!--#if GENERIC || CHROME-->
     <meta name="google" content="notranslate">
+<!--#endif-->
+<!--#if GENERIC-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <!--#endif-->
     <title>PDF.js viewer</title>
 
@@ -47,14 +53,17 @@ http://sourceforge.net/adobe/cmap/wiki/License/
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
+    <script src="../src/shared/global.js"></script>
+    <script src="../src/display/dom_utils.js"></script>
     <script src="../src/shared/util.js"></script>
-    <script src="../src/display/api.js"></script>
+    <script src="../src/display/annotation_layer.js"></script>
+    <script src="../src/display/font_loader.js"></script>
     <script src="../src/display/metadata.js"></script>
-    <script src="../src/display/canvas.js"></script>
+    <script src="../src/display/text_layer.js"></script>
     <script src="../src/display/webgl.js"></script>
     <script src="../src/display/pattern_helper.js"></script>
-    <script src="../src/display/font_loader.js"></script>
-    <script src="../src/display/annotation_helper.js"></script>
+    <script src="../src/display/canvas.js"></script>
+    <script src="../src/display/api.js"></script>
     <script>PDFJS.workerSrc = '../src/worker_loader.js';</script>
 <!--#endif-->
 
@@ -68,10 +77,11 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     <script src="preferences.js"></script>
     <script src="download_manager.js"></script>
     <script src="view_history.js"></script>
+    <script src="pdf_link_service.js"></script>
     <script src="pdf_rendering_queue.js"></script>
     <script src="pdf_page_view.js"></script>
     <script src="text_layer_builder.js"></script>
-    <script src="annotations_layer_builder.js"></script>
+    <script src="annotation_layer_builder.js"></script>
     <script src="pdf_viewer.js"></script>
     <script src="pdf_thumbnail_view.js"></script>
     <script src="pdf_thumbnail_viewer.js"></script>
@@ -81,12 +91,12 @@ http://sourceforge.net/adobe/cmap/wiki/License/
     <script src="pdf_find_controller.js"></script>
     <script src="pdf_history.js"></script>
     <script src="secondary_toolbar.js"></script>
-    <script src="presentation_mode.js"></script>
+    <script src="pdf_presentation_mode.js"></script>
     <script src="grab_to_pan.js"></script>
     <script src="hand_tool.js"></script>
     <script src="overlay_manager.js"></script>
     <script src="password_prompt.js"></script>
-    <script src="document_properties.js"></script>
+    <script src="pdf_document_properties.js"></script>
 <!--#endif-->
 
 <!--#if !MINIFIED -->
@@ -138,10 +148,11 @@ http://sourceforge.net/adobe/cmap/wiki/License/
               <span data-l10n-id="find_next_label">Next</span>
             </button>
           </div>
-          <input type="checkbox" id="findHighlightAll" class="toolbarField">
-          <label for="findHighlightAll" class="toolbarLabel" tabindex="94" data-l10n-id="find_highlight">Highlight all</label>
-          <input type="checkbox" id="findMatchCase" class="toolbarField">
-          <label for="findMatchCase" class="toolbarLabel" tabindex="95" data-l10n-id="find_match_case_label">Match case</label>
+          <input type="checkbox" id="findHighlightAll" class="toolbarField" tabindex="94">
+          <label for="findHighlightAll" class="toolbarLabel" data-l10n-id="find_highlight">Highlight all</label>
+          <input type="checkbox" id="findMatchCase" class="toolbarField" tabindex="95">
+          <label for="findMatchCase" class="toolbarLabel" data-l10n-id="find_match_case_label">Match case</label>
+          <span id="findResultsCount" class="toolbarLabel hidden"></span>
           <span id="findMsg" class="toolbarLabel"></span>
         </div>  <!-- findbar -->
 
@@ -239,7 +250,6 @@ http://sourceforge.net/adobe/cmap/wiki/License/
                 <button id="download" class="toolbarButton download hiddenMediumView" title="Download" tabindex="34" data-l10n-id="download">
                   <span data-l10n-id="download_label">Download</span>
                 </button>
-                <!-- <div class="toolbarButtonSpacer"></div> -->
                 <a href="#" id="viewBookmark" class="toolbarButton bookmark hiddenSmallView" title="Current view (copy or open in new window)" tabindex="35" data-l10n-id="bookmark">
                   <span data-l10n-id="bookmark_label">Current View</span>
                 </a>
@@ -385,12 +395,15 @@ http://sourceforge.net/adobe/cmap/wiki/License/
             </div>
           </div>
         </div>
+<!--#if CHROME-->
+<!--#include viewer-snippet-chrome-overlays.html-->
+<!--#endif-->
       </div>  <!-- overlayContainer -->
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
 <!--#if !(FIREFOX || MOZCENTRAL)-->
 <!--#include viewer-snippet-mozPrintCallback-polyfill.html-->
-<!--#endif--->
+<!--#endif-->
   </body>
 </html>

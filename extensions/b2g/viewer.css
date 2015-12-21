@@ -14,7 +14,6 @@
  */
 
 * {
-  box-sizing: border-box;
   padding: 0;
   margin: 0;
 }
@@ -148,22 +147,7 @@ canvas {
   display: block;
 }
 
-.page {
-  direction: ltr;
-  width: 81.6rem;
-  height: 105.6rem;
-  margin: 1rem auto;
-  position: relative;
-  overflow: hidden;
-  background-color: white;
-}
-
-.page > a {
-  display: block;
-  position: absolute;
-}
-
-.loadingIcon {
+.pdfViewer .page .loadingIcon {
   width: 2.9rem;
   height: 2.9rem;
   background: url("images/spinner.png") no-repeat left top / 38rem ;

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +13,7 @@
  * limitations under the License.
  */
 /* jshint esnext:true */
-/* globals Components, Services, XPCOMUtils, PdfjsChromeUtils, PdfRedirector,
+/* globals Components, Services, XPCOMUtils, PdfjsChromeUtils,
            PdfjsContentUtils, DEFAULT_PREFERENCES, PdfStreamConverter */
 
 'use strict';
@@ -43,7 +41,7 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
-let Svc = {};
+var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
@@ -112,16 +110,25 @@ Factory.prototype = {
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.registerFactory(proto.classID, proto.classDescription,
                               proto.contractID, factory);
+
+    if (proto.classID2) {
+      this._classID2 = proto.classID2;
+      registrar.registerFactory(proto.classID2, proto.classDescription,
+                                proto.contractID2, factory);
+    }
   },
 
   unregister: function unregister() {
     var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.unregisterFactory(this._classID, this._factory);
+    if (this._classID2) {
+      registrar.unregisterFactory(this._classID2, this._factory);
+    }
     this._factory = null;
   }
 };
 
-let PdfJs = {
+var PdfJs = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
   _registered: false,
   _initialized: false,
@@ -305,13 +312,6 @@ let PdfJs = {
     Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
     this._pdfStreamConverterFactory.register(PdfStreamConverter);
 
-    this._pdfRedirectorFactory = new Factory();
-    Cu.import('resource://pdf.js/PdfRedirector.jsm');
-    this._pdfRedirectorFactory.register(PdfRedirector);
-
-    Svc.pluginHost.registerPlayPreviewMimeType(PDF_CONTENT_TYPE, true,
-      'data:application/x-moz-playpreview-pdfjs;,');
-
     this._registered = true;
   },
 
@@ -322,12 +322,6 @@ let PdfJs = {
     this._pdfStreamConverterFactory.unregister();
     Cu.unload('resource://pdf.js/PdfStreamConverter.jsm');
     delete this._pdfStreamConverterFactory;
-
-    this._pdfRedirectorFactory.unregister();
-    Cu.unload('resource://pdf.js/PdfRedirector.jsm');
-    delete this._pdfRedirectorFactory;
-
-    Svc.pluginHost.unregisterPlayPreviewMimeType(PDF_CONTENT_TYPE);
 
     this._registered = false;
   }

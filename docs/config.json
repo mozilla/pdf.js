@@ -5,8 +5,6 @@
     "description": ""
   },
   "require": {
-    "moment": "moment",
-    "_": "underscore",
     "typogr": "typogr"
   },
   "jade": {

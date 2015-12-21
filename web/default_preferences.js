@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2013 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,11 +29,7 @@ var DEFAULT_PREFERENCES = {
   disableStream: false,
   disableAutoFetch: false,
   disableFontFace: false,
-//#if B2G
-//disableTextLayer: true,
-//useOnlyCssZoom: true
-//#else
   disableTextLayer: false,
-  useOnlyCssZoom: false
-//#endif
+  useOnlyCssZoom: false,
+  externalLinkTarget: 0,
 };

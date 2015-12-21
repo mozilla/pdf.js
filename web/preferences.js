@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2013 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -160,24 +158,6 @@ var Preferences = {
   }
 };
 
-//#if B2G
-//Preferences._writeToStorage = function (prefObj) {
-//  return new Promise(function (resolve) {
-//    asyncStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj),
-//                         resolve);
-//  });
-//};
-//
-//Preferences._readFromStorage = function (prefObj) {
-//  return new Promise(function (resolve) {
-//    asyncStorage.getItem('pdfjs.preferences', function (prefStr) {
-//      var readPrefs = JSON.parse(prefStr);
-//      resolve(readPrefs);
-//    });
-//  });
-//};
-//#endif
-
 //#if CHROME
 //Preferences._writeToStorage = function (prefObj) {
 //  return new Promise(function (resolve) {
@@ -221,7 +201,7 @@ var Preferences = {
 //};
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
 Preferences._writeToStorage = function (prefObj) {
   return new Promise(function (resolve) {
     localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,11 +48,7 @@ var NetworkManager = (function NetworkManagerClosure() {
     this.withCredentials = args.withCredentials || false;
     this.getXhr = args.getXhr ||
       function NetworkManager_getXhr() {
-//#if B2G
-//      return new XMLHttpRequest({ mozSystem: true });
-//#else
         return new XMLHttpRequest();
-//#endif
       };
 
     this.currXhrId = 0;
@@ -74,6 +68,25 @@ var NetworkManager = (function NetworkManagerClosure() {
     }
     return array.buffer;
   }
+
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
+  var supportsMozChunked = (function supportsMozChunkedClosure() {
+    try {
+      var x = new XMLHttpRequest();
+      // Firefox 37- required .open() to be called before setting responseType.
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=707484
+      // Even though the URL is not visited, .open() could fail if the URL is
+      // blocked, e.g. via the connect-src CSP directive or the NoScript addon.
+      // When this error occurs, this feature detection method will mistakenly
+      // report that moz-chunked-arraybuffer is not supported in Firefox 37-.
+      x.open('GET', 'https://example.com');
+      x.responseType = 'moz-chunked-arraybuffer';
+      return x.responseType === 'moz-chunked-arraybuffer';
+    } catch (e) {
+      return false;
+    }
+  })();
+//#endif
 
   NetworkManager.prototype = {
     requestRange: function NetworkManager_requestRange(begin, end, listeners) {
@@ -115,17 +128,19 @@ var NetworkManager = (function NetworkManagerClosure() {
         pendingRequest.expectedStatus = 200;
       }
 
-      if (args.onProgressiveData) {
-        // Some legacy browsers might throw an exception.
-        try {
-          xhr.responseType = 'moz-chunked-arraybuffer';
-        } catch(e) {}
-        if (xhr.responseType === 'moz-chunked-arraybuffer') {
-          pendingRequest.onProgressiveData = args.onProgressiveData;
-          pendingRequest.mozChunked = true;
-        } else {
-          xhr.responseType = 'arraybuffer';
-        }
+//#if CHROME
+//    var useMozChunkedLoading = false;
+//#endif
+//#if (FIREFOX || MOZCENTRAL)
+//    var useMozChunkedLoading = !!args.onProgressiveData;
+//#endif
+//#if !(CHROME || FIREFOX || MOZCENTRAL)
+      var useMozChunkedLoading = supportsMozChunked && !!args.onProgressiveData;
+//#endif
+      if (useMozChunkedLoading) {
+        xhr.responseType = 'moz-chunked-arraybuffer';
+        pendingRequest.onProgressiveData = args.onProgressiveData;
+        pendingRequest.mozChunked = true;
       } else {
         xhr.responseType = 'arraybuffer';
       }
@@ -228,11 +243,13 @@ var NetworkManager = (function NetworkManagerClosure() {
         });
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
-      } else {
+      } else if (chunk) {
         pendingRequest.onDone({
           begin: 0,
           chunk: chunk
         });
+      } else if (pendingRequest.onError) {
+        pendingRequest.onError(xhr.status);
       }
     },
 

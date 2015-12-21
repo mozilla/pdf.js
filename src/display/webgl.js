@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, shadow */
+/* globals PDFJS */
 /* jshint -W043 */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/webgl', ['exports', 'pdfjs/shared/util'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'));
+  } else {
+    factory((root.pdfjsDisplayWebGL = {}), root.pdfjsSharedUtil);
+  }
+}(this, function (exports, sharedUtil) {
+
+var shadow = sharedUtil.shadow;
 
 var WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {
@@ -360,7 +370,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
           for (var j = 0, jj = ps.length; j < jj; j++) {
             coords[pIndex] = coordsMap[ps[j]];
             coords[pIndex + 1] = coordsMap[ps[j] + 1];
-            colors[cIndex] = colorsMap[cs[i]];
+            colors[cIndex] = colorsMap[cs[j]];
             colors[cIndex + 1] = colorsMap[cs[j] + 1];
             colors[cIndex + 2] = colorsMap[cs[j] + 2];
             pIndex += 2;
@@ -435,3 +445,6 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     clear: cleanup
   };
 })();
+
+exports.WebGLUtils = WebGLUtils;
+}));

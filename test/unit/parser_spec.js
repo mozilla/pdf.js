@@ -1,6 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, StringStream, Lexer */
+/* globals expect, it, describe, StringStream, Lexer, Name, Linearization */
 
 'use strict';
 
@@ -27,6 +25,13 @@ describe('parser', function() {
       }
     });
 
+    it('should ignore double negative before number', function() {
+      var input = new StringStream('--205.88');
+      var lexer = new Lexer(input);
+      var result = lexer.getNumber();
+
+      expect(result).toEqual(-205.88);
+    });
 
     it('should handle glued numbers and operators', function() {
       var input = new StringStream('123ET');
@@ -71,6 +76,190 @@ describe('parser', function() {
       var result = lexer.getString();
 
       expect(result).toEqual('ABCD');
+    });
+
+    it('should handle Names with invalid usage of NUMBER SIGN (#)', function() {
+      var inputNames = ['/# 680 0 R', '/#AQwerty', '/#A<</B'];
+      var expectedNames = ['#', '#AQwerty', '#A'];
+
+      for (var i = 0, ii = inputNames.length; i < ii; i++) {
+        var input = new StringStream(inputNames[i]);
+        var lexer = new Lexer(input);
+        var result = lexer.getName();
+
+        expect(result).toEqual(Name.get(expectedNames[i]));
+      }
+    });
+  });
+
+  describe('Linearization', function() {
+    it('should not find a linearization dictionary', function () {
+      // Not an actual linearization dictionary.
+      var stream1 = new StringStream(
+        '3 0 obj\n' +
+        '<<\n' +
+        '/Length 4622\n' +
+        '/Filter /FlateDecode\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(Linearization.create(stream1)).toEqual(null);
+
+      // Linearization dictionary with invalid version number.
+      var stream2 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 0\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(Linearization.create(stream2)).toEqual(null);
+    });
+
+    it('should accept a valid linearization dictionary', function () {
+      var stream = new StringStream(
+        '131 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O 133\n' +
+        '/H [ 1388 863 ]\n' +
+        '/L 90\n' +
+        '/E 43573\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      var expectedLinearizationDict = {
+        length: 90,
+        hints: [1388, 863],
+        objectNumberFirst: 133,
+        endFirst: 43573,
+        numPages: 18,
+        mainXRefEntriesOffset: 193883,
+        pageFirst: 0,
+      };
+      expect(Linearization.create(stream)).toEqual(expectedLinearizationDict);
+    });
+
+    it('should reject a linearization dictionary with invalid ' +
+       'integer parameters', function () {
+      // The /L parameter should be equal to the stream length.
+      var stream1 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O 133\n' +
+        '/H [ 1388 863 ]\n' +
+        '/L 196622\n' +
+        '/E 43573\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(function () {
+        return Linearization.create(stream1);
+      }).toThrow(new Error('The "L" parameter in the linearization ' +
+                           'dictionary does not equal the stream length.'));
+
+      // The /E parameter should not be zero.
+      var stream2 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O 133\n' +
+        '/H [ 1388 863 ]\n' +
+        '/L 84\n' +
+        '/E 0\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(function () {
+        return Linearization.create(stream2);
+      }).toThrow(new Error('The "E" parameter in the linearization ' +
+                           'dictionary is invalid.'));
+
+      // The /O parameter should be an integer.
+      var stream3 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O /abc\n' +
+        '/H [ 1388 863 ]\n' +
+        '/L 89\n' +
+        '/E 43573\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(function () {
+        return Linearization.create(stream3);
+      }).toThrow(new Error('The "O" parameter in the linearization ' +
+                           'dictionary is invalid.'));
+    });
+
+    it('should reject a linearization dictionary with invalid hint parameters',
+       function () {
+      // The /H parameter should be an array.
+      var stream1 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O 133\n' +
+        '/H 1388\n' +
+        '/L 80\n' +
+        '/E 43573\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(function () {
+        return Linearization.create(stream1);
+      }).toThrow(new Error('Hint array in the linearization dictionary ' +
+                           'is invalid.'));
+
+      // The hint array should contain two, or four, elements.
+      var stream2 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O 133\n' +
+        '/H [ 1388 ]\n' +
+        '/L 84\n' +
+        '/E 43573\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(function () {
+        return Linearization.create(stream2);
+      }).toThrow(new Error('Hint array in the linearization dictionary ' +
+                           'is invalid.'));
+
+      // The hint array should not contain zero.
+      var stream3 = new StringStream(
+        '1 0 obj\n' +
+        '<<\n' +
+        '/Linearized 1\n' +
+        '/O 133\n' +
+        '/H [ 1388 863 0 234]\n' +
+        '/L 93\n' +
+        '/E 43573\n' +
+        '/N 18\n' +
+        '/T 193883\n' +
+        '>>\n' +
+        'endobj'
+      );
+      expect(function () {
+        return Linearization.create(stream3);
+      }).toThrow(new Error('Hint (2) in the linearization dictionary ' +
+                           'is invalid.'));
     });
   });
 });

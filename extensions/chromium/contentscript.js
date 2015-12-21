@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /*
 Copyright 2014 Mozilla Foundation
 
@@ -72,6 +70,19 @@ function watchObjectOrEmbed(elem) {
   var srcAttribute = 'src' in elem ? 'src' : 'data';
   var path = elem[srcAttribute];
   if (!mimeType && !/\.pdf($|[?#])/i.test(path)) {
+    return;
+  }
+
+  if (elem.tagName === 'EMBED' && elem.name === 'plugin' &&
+      elem.parentNode === document.body &&
+      elem.parentNode.childElementCount === 1 && elem.src === location.href) {
+    // This page is most likely Chrome's default page that embeds a PDF file.
+    // The fact that the extension's background page did not intercept and
+    // redirect this PDF request means that this PDF cannot be opened by PDF.js,
+    // e.g. because it is a response to a POST request (as in #6174).
+    // A reduced test case to test PDF response to POST requests is available at
+    // https://robwu.nl/pdfjs/issue6174/.
+    // Until #4483 is fixed, POST requests should be ignored.
     return;
   }
 

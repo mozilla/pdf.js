@@ -51,8 +51,8 @@ Before downloading PDF.js please take a moment to understand the different layer
   <div class="col-md-6">
     <h3>Source</h3>
     To get a local copy of the current code, clone it using git:
-    <pre><code>$ git clone git://github.com/mozilla/pdf.js.git pdfjs
-$ cd pdfjs
+    <pre><code>$ git clone git://github.com/mozilla/pdf.js.git
+$ cd pdf.js
 </code></pre>
   </div>
 </div>

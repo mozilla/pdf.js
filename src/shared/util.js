@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL,
-           Promise */
+/* globals MozBlobBuilder, URL */
 
 'use strict';
 
-var globalScope = (typeof window === 'undefined') ? this : window;
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/shared/util', ['exports', 'pdfjs/shared/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./global.js'));
+  } else {
+    factory((root.pdfjsSharedUtil = {}), root.pdfjsSharedGlobal);
+  }
+}(this, function (exports, sharedGlobal) {
 
-var isWorker = (typeof window === 'undefined');
+var PDFJS = sharedGlobal.PDFJS;
+var globalScope = sharedGlobal.globalScope;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -45,9 +51,53 @@ var ImageKind = {
 };
 
 var AnnotationType = {
-  WIDGET: 1,
-  TEXT: 2,
-  LINK: 3
+  TEXT: 1,
+  LINK: 2,
+  FREETEXT: 3,
+  LINE: 4,
+  SQUARE: 5,
+  CIRCLE: 6,
+  POLYGON: 7,
+  POLYLINE: 8,
+  HIGHLIGHT: 9,
+  UNDERLINE: 10,
+  SQUIGGLY: 11,
+  STRIKEOUT: 12,
+  STAMP: 13,
+  CARET: 14,
+  INK: 15,
+  POPUP: 16,
+  FILEATTACHMENT: 17,
+  SOUND: 18,
+  MOVIE: 19,
+  WIDGET: 20,
+  SCREEN: 21,
+  PRINTERMARK: 22,
+  TRAPNET: 23,
+  WATERMARK: 24,
+  THREED: 25,
+  REDACT: 26
+};
+
+var AnnotationFlag = {
+  INVISIBLE: 0x01,
+  HIDDEN: 0x02,
+  PRINT: 0x04,
+  NOZOOM: 0x08,
+  NOROTATE: 0x10,
+  NOVIEW: 0x20,
+  READONLY: 0x40,
+  LOCKED: 0x80,
+  TOGGLENOVIEW: 0x100,
+  LOCKEDCONTENTS: 0x200
+};
+
+var AnnotationBorderStyleType = {
+  SOLID: 1,
+  DASHED: 2,
+  BEVELED: 3,
+  INSET: 4,
+  UNDERLINE: 5
 };
 
 var StreamType = {
@@ -76,15 +126,6 @@ var FontType = {
   TYPE0: 9,
   MMTYPE1: 10
 };
-
-// The global PDFJS object exposes the API
-// In production, it will be declared outside a global wrapper
-// In development, it will be declared here
-if (!globalScope.PDFJS) {
-  globalScope.PDFJS = {};
-}
-
-globalScope.PDFJS.pdfBug = false;
 
 PDFJS.VERBOSITY_LEVELS = {
   errors: 0,
@@ -205,6 +246,11 @@ function warn(msg) {
   }
 }
 
+// Deprecated API function -- treated as warnings.
+function deprecated(details) {
+  warn('Deprecated API usage: ' + details);
+}
+
 // Fatal errors that should trigger the fallback UI and halt execution by
 // throwing an exception.
 function error(msg) {
@@ -212,7 +258,6 @@ function error(msg) {
     console.log('Error: ' + msg);
     console.log(backtrace());
   }
-  UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
   throw new Error(msg);
 }
 
@@ -238,22 +283,6 @@ var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
   shadingPattern: 'shadingPattern',
   font: 'font'
 };
-
-var UnsupportedManager = PDFJS.UnsupportedManager =
-  (function UnsupportedManagerClosure() {
-  var listeners = [];
-  return {
-    listen: function (cb) {
-      listeners.push(cb);
-    },
-    notify: function (featureId) {
-      warn('Unsupported feature "' + featureId + '"');
-      for (var i = 0, ii = listeners.length; i < ii; i++) {
-        listeners[i](featureId);
-      }
-    }
-  };
-})();
 
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.
@@ -319,6 +348,49 @@ function shadow(obj, prop, value) {
   return value;
 }
 PDFJS.shadow = shadow;
+
+var LinkTarget = PDFJS.LinkTarget = {
+  NONE: 0, // Default value.
+  SELF: 1,
+  BLANK: 2,
+  PARENT: 3,
+  TOP: 4,
+};
+var LinkTargetStringMap = [
+  '',
+  '_self',
+  '_blank',
+  '_parent',
+  '_top'
+];
+
+function isExternalLinkTargetSet() {
+//#if !MOZCENTRAL
+  if (PDFJS.openExternalLinksInNewWindow) {
+    deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
+               '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');
+    if (PDFJS.externalLinkTarget === LinkTarget.NONE) {
+      PDFJS.externalLinkTarget = LinkTarget.BLANK;
+    }
+    // Reset the deprecated parameter, to suppress further warnings.
+    PDFJS.openExternalLinksInNewWindow = false;
+  }
+//#endif
+  switch (PDFJS.externalLinkTarget) {
+    case LinkTarget.NONE:
+      return false;
+    case LinkTarget.SELF:
+    case LinkTarget.BLANK:
+    case LinkTarget.PARENT:
+    case LinkTarget.TOP:
+      return true;
+  }
+  warn('PDFJS.externalLinkTarget is invalid: ' + PDFJS.externalLinkTarget);
+  // Reset the external link target, to suppress further warnings.
+  PDFJS.externalLinkTarget = LinkTarget.NONE;
+  return false;
+}
+PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
 
 var PasswordResponses = PDFJS.PasswordResponses = {
   NEED_PASSWORD: 1,
@@ -503,8 +575,8 @@ Object.defineProperty(PDFJS, 'isLittleEndian', {
   }
 });
 
-//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
-//// Lazy test if the userAgant support CanvasTypedArrays
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
+//// Lazy test if the userAgent support CanvasTypedArrays
 function hasCanvasTypedArrays() {
   var canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
@@ -559,6 +631,8 @@ var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   return Uint32ArrayView;
 })();
+
+exports.Uint32ArrayView = Uint32ArrayView;
 //#else
 //PDFJS.hasCanvasTypedArrays = true;
 //#endif
@@ -946,6 +1020,10 @@ function stringToUTF8String(str) {
   return decodeURIComponent(escape(str));
 }
 
+function utf8StringToString(str) {
+  return unescape(encodeURIComponent(str));
+}
+
 function isEmptyObj(obj) {
   for (var key in obj) {
     return false;
@@ -969,39 +1047,12 @@ function isString(v) {
   return typeof v === 'string';
 }
 
-function isName(v) {
-  return v instanceof Name;
-}
-
-function isCmd(v, cmd) {
-  return v instanceof Cmd && (cmd === undefined || v.cmd === cmd);
-}
-
-function isDict(v, type) {
-  if (!(v instanceof Dict)) {
-    return false;
-  }
-  if (!type) {
-    return true;
-  }
-  var dictType = v.get('Type');
-  return isName(dictType) && dictType.name === type;
-}
-
 function isArray(v) {
   return v instanceof Array;
 }
 
-function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
-}
-
 function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
-}
-
-function isRef(v) {
-  return v instanceof Ref;
 }
 
 /**
@@ -1447,26 +1498,20 @@ PDFJS.createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
-function MessageHandler(name, comObj) {
-  this.name = name;
+function MessageHandler(sourceName, targetName, comObj) {
+  this.sourceName = sourceName;
+  this.targetName = targetName;
   this.comObj = comObj;
   this.callbackIndex = 1;
   this.postMessageTransfers = true;
   var callbacksCapabilities = this.callbacksCapabilities = {};
   var ah = this.actionHandler = {};
 
-  ah['console_log'] = [function ahConsoleLog(data) {
-    console.log.apply(console, data);
-  }];
-  ah['console_error'] = [function ahConsoleError(data) {
-    console.error.apply(console, data);
-  }];
-  ah['_unsupported_feature'] = [function ah_unsupportedFeature(data) {
-    UnsupportedManager.notify(data);
-  }];
-
-  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
+  this._onComObjOnMessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
+    if (data.targetName !== this.sourceName) {
+      return;
+    }
     if (data.isReply) {
       var callbackId = data.callbackId;
       if (data.callbackId in callbacksCapabilities) {
@@ -1483,16 +1528,26 @@ function MessageHandler(name, comObj) {
     } else if (data.action in ah) {
       var action = ah[data.action];
       if (data.callbackId) {
+        var sourceName = this.sourceName;
+        var targetName = data.sourceName;
         Promise.resolve().then(function () {
           return action[0].call(action[1], data.data);
         }).then(function (result) {
           comObj.postMessage({
+            sourceName: sourceName,
+            targetName: targetName,
             isReply: true,
             callbackId: data.callbackId,
             data: result
           });
         }, function (reason) {
+          if (reason instanceof Error) {
+            // Serialize error to avoid "DataCloneError"
+            reason = reason + '';
+          }
           comObj.postMessage({
+            sourceName: sourceName,
+            targetName: targetName,
             isReply: true,
             callbackId: data.callbackId,
             error: reason
@@ -1504,7 +1559,8 @@ function MessageHandler(name, comObj) {
     } else {
       error('Unknown action from worker: ' + data.action);
     }
-  };
+  }.bind(this);
+  comObj.addEventListener('message', this._onComObjOnMessage);
 }
 
 MessageHandler.prototype = {
@@ -1523,6 +1579,8 @@ MessageHandler.prototype = {
    */
   send: function messageHandlerSend(actionName, data, transfers) {
     var message = {
+      sourceName: this.sourceName,
+      targetName: this.targetName,
       action: actionName,
       data: data
     };
@@ -1540,6 +1598,8 @@ MessageHandler.prototype = {
     function messageHandlerSendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackIndex++;
     var message = {
+      sourceName: this.sourceName,
+      targetName: this.targetName,
       action: actionName,
       data: data,
       callbackId: callbackId
@@ -1565,6 +1625,10 @@ MessageHandler.prototype = {
     } else {
       this.comObj.postMessage(message);
     }
+  },
+
+  destroy: function () {
+    this.comObj.removeEventListener('message', this._onComObjOnMessage);
   }
 };
 
@@ -1579,3 +1643,58 @@ function loadJpegStream(id, imageUrl, objs) {
   });
   img.src = imageUrl;
 }
+
+exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
+exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
+exports.OPS = OPS;
+exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
+exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
+exports.AnnotationFlag = AnnotationFlag;
+exports.AnnotationType = AnnotationType;
+exports.FontType = FontType;
+exports.ImageKind = ImageKind;
+exports.InvalidPDFException = InvalidPDFException;
+exports.LinkTarget = LinkTarget;
+exports.LinkTargetStringMap = LinkTargetStringMap;
+exports.MessageHandler = MessageHandler;
+exports.MissingDataException = MissingDataException;
+exports.MissingPDFException = MissingPDFException;
+exports.NotImplementedException = NotImplementedException;
+exports.PasswordException = PasswordException;
+exports.PasswordResponses = PasswordResponses;
+exports.StatTimer = StatTimer;
+exports.StreamType = StreamType;
+exports.TextRenderingMode = TextRenderingMode;
+exports.UnexpectedResponseException = UnexpectedResponseException;
+exports.UnknownErrorException = UnknownErrorException;
+exports.Util = Util;
+exports.XRefParseException = XRefParseException;
+exports.assert = assert;
+exports.bytesToString = bytesToString;
+exports.combineUrl = combineUrl;
+exports.createPromiseCapability = createPromiseCapability;
+exports.deprecated = deprecated;
+exports.error = error;
+exports.info = info;
+exports.isArray = isArray;
+exports.isArrayBuffer = isArrayBuffer;
+exports.isBool = isBool;
+exports.isEmptyObj = isEmptyObj;
+exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
+exports.isInt = isInt;
+exports.isNum = isNum;
+exports.isString = isString;
+exports.isValidUrl = isValidUrl;
+exports.loadJpegStream = loadJpegStream;
+exports.log2 = log2;
+exports.readInt8 = readInt8;
+exports.readUint16 = readUint16;
+exports.readUint32 = readUint32;
+exports.shadow = shadow;
+exports.string32 = string32;
+exports.stringToBytes = stringToBytes;
+exports.stringToPDFString = stringToPDFString;
+exports.stringToUTF8String = stringToUTF8String;
+exports.utf8StringToString = utf8StringToString;
+exports.warn = warn;
+}));

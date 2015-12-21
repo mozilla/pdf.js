@@ -1,0 +1,130 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Group 
+<<
+/CS /DeviceRGB
+/Type /Group
+/S /Transparency
+>>
+/Parent 2 0 R
+/Resources 
+<<
+/XObject 
+<<
+/Meta7 3 0 R
+>>
+/Font 
+<<
+/F1 4 0 R
+>>
+/ProcSet [/PDF /Text /Image]
+>>
+/MediaBox [0 0 200 50]
+/Type /Page
+/Contents 5 0 R
+>>
+endobj 
+4 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/Type /Font
+>>
+endobj 
+3 0 obj 
+<<
+/Matrix [0.091272 0 0 0.12069 0 0]
+/Subtype /Form
+/Length 52
+/Resources 
+<<
+/XObject 
+<<
+/Meta8 6 0 R
+>>
+>>
+/Type /XObject
+/BBox [0 0 788.85 596.59]
+>>
+stream
+q
+10.937 0 0 8.2812 0.062485 0.58765 cm
+/Meta8 Do
+Q
+
+endstream 
+endobj 
+2 0 obj 
+<<
+/Kids [1 0 R]
+/Type /Pages
+/Count 1
+>>
+endobj 
+5 0 obj 
+<<
+/Length 89
+>>
+stream
+q
+1.67 0 0 1.25 -20 -30 cm
+/Meta7 Do
+Q
+BT
+/F1 20 Tf
+1 0 0 1 20 20 Tm
+(Bug 1020858) Tj
+ET
+
+endstream 
+endobj 
+6 0 obj 
+<<
+/Matrix [0.8854 0 0 1.1746 0 0]
+/Subtype /Form
+/Length 43
+/Resources 
+<<
+/XObject 
+<<
+/Meta8 6 0 R
+>>
+>>
+/Type /XObject
+/BBox [0 0 81.319 61.297]
+>>
+stream
+0.2 w
+1 j 
+20.728 36.694 2.8153 2.836 re
+B
+
+endstream 
+endobj 
+7 0 obj 
+<<
+/Pages 2 0 R
+/Type /Catalog
+>>
+endobj xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000605 00000 n 
+0000000362 00000 n 
+0000000261 00000 n 
+0000000664 00000 n 
+0000000806 00000 n 
+0000001037 00000 n 
+trailer
+
+<<
+/Root 7 0 R
+/Size 8
+>>
+startxref
+1087
+%%EOF

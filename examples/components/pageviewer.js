@@ -20,11 +20,9 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
         '  `node make generic components`');
 }
 
-// In cases when the pdf.worker.js is located at the different folder than the
-// pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
-// shall be specified.
+// The workerSrc property shall be specified.
 //
-// PDFJS.workerSrc = '../../build/pdf.worker.js';
+PDFJS.workerSrc = '../../build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
 //
@@ -49,7 +47,7 @@ PDFJS.getDocument(DEFAULT_URL).then(function (pdfDocument) {
       defaultViewport: pdfPage.getViewport(SCALE),
       // We can enable text/annotations layers, if needed
       textLayerFactory: new PDFJS.DefaultTextLayerFactory(),
-      annotationsLayerFactory: new PDFJS.DefaultAnnotationsLayerFactory()
+      annotationLayerFactory: new PDFJS.DefaultAnnotationLayerFactory()
     });
     // Associates the actual page with the view, and drawing it
     pdfPageView.setPdfPage(pdfPage);

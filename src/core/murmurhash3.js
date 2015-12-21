@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 /* Copyright 2014 Opera Software ASA
  *
@@ -19,9 +17,20 @@
  * Based on https://code.google.com/p/smhasher/wiki/MurmurHash3.
  * Hashes roughly 100 KB per millisecond on i7 3.4 GHz.
  */
-/* globals Uint32ArrayView */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/murmurhash3', ['exports', 'pdfjs/shared/util'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'));
+  } else {
+    factory((root.pdfjsCoreMurmurHash3 = {}), root.pdfjsSharedUtil);
+  }
+}(this, function (exports, sharedUtil) {
+
+var Uint32ArrayView = sharedUtil.Uint32ArrayView;
 
 var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
   // Workaround for missing math precison in JS.
@@ -35,7 +44,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
   }
 
   var alwaysUseUint32ArrayView = false;
-//#if !(FIREFOX || MOZCENTRAL || B2G || CHROME)
+//#if !(FIREFOX || MOZCENTRAL || CHROME)
   // old webkits have issues with non-aligned arrays
   try {
     new Uint32Array(new Uint8Array(5).buffer, 0, 1);
@@ -164,3 +173,6 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
 
   return MurmurHash3_64;
 })();
+
+exports.MurmurHash3_64 = MurmurHash3_64;
+}));

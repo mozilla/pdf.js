@@ -1,8 +1,7 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, calculateMD5, ARCFourCipher, Name,
            CipherTransformFactory, calculateSHA256, calculateSHA384,
-           calculateSHA512, AES128Cipher, AES256Cipher, PDF17, PDF20*/
+           calculateSHA512, AES128Cipher, AES256Cipher, PDF17, PDF20,
+           PasswordException, PasswordResponses */
 
 'use strict';
 
@@ -288,7 +287,7 @@ describe('crypto', function() {
         var input, key, result, expected, iv, cipher;
         input = hex2binary('00112233445566778899aabbccddeeff');
         key = hex2binary('000102030405060708090a0b0c0d0e0f101112131415161718' +
-                          '191a1b1c1d1e1f');
+                         '191a1b1c1d1e1f');
         iv = hex2binary('00000000000000000000000000000000');
         cipher = new AES256Cipher(key);
         result = cipher.encrypt(input,iv);
@@ -302,7 +301,7 @@ describe('crypto', function() {
         var input, key, result, expected, cipher, iv;
         input = hex2binary('8ea2b7ca516745bfeafc49904b496089');
         key = hex2binary('000102030405060708090a0b0c0d0e0f101112131415161718' +
-                          '191a1b1c1d1e1f');
+                         '191a1b1c1d1e1f');
         iv = hex2binary('00000000000000000000000000000000');
         cipher = new AES256Cipher(key);
         result = cipher.decryptBlock(input,false,iv);
@@ -314,7 +313,7 @@ describe('crypto', function() {
         input = hex2binary('000000000000000000000000000000008ea2b7ca516745bf' +
                            'eafc49904b496089');
         key = hex2binary('000102030405060708090a0b0c0d0e0f101112131415161718' +
-                           '191a1b1c1d1e1f');
+                         '191a1b1c1d1e1f');
         cipher = new AES256Cipher(key);
         result = cipher.decryptBlock(input,false);
         expected = hex2binary('00112233445566778899aabbccddeeff');
@@ -343,17 +342,15 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerValidation = new Uint8Array([243, 118, 71, 153, 128, 17, 101, 62]);
-      ownerPassword = new Uint8Array([
-                                       60, 98, 137, 35, 51, 101, 200, 152, 210,
-                                       178, 226, 228, 134, 205, 163, 24, 204,
-                                       126, 177, 36, 106, 50, 36, 125, 210, 172,
-                                       171, 120, 222, 108, 139, 115]);
-      uBytes = new Uint8Array([
-                                131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
-                                189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
-                                249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
-                                221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
-                                94, 215, 192, 100, 38, 188, 40]);
+      ownerPassword = new Uint8Array([60, 98, 137, 35, 51, 101, 200, 152, 210,
+                                      178, 226, 228, 134, 205, 163, 24, 204,
+                                      126, 177, 36, 106, 50, 36, 125, 210, 172,
+                                      171, 120, 222, 108, 139, 115]);
+      uBytes = new Uint8Array([131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
+                               189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
+                               249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
+                               221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
+                               94, 215, 192, 100, 38, 188, 40]);
       result = alg.checkOwnerPassword(password, ownerValidation, uBytes,
                                       ownerPassword);
       expect(result).toEqual(true);
@@ -364,17 +361,15 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([117, 115, 101, 114]);
       userKeySalt = new Uint8Array([168, 94, 215, 192, 100, 38, 188, 40]);
-      userEncryption = new Uint8Array([
-                                        35, 150, 195, 169, 245, 51, 51, 255,
-                                        158, 158, 33, 242, 231, 75, 125, 190,
-                                        25, 126, 172, 114, 195, 244, 137, 245,
-                                        234, 165, 42, 74, 60, 38, 17, 17]);
+      userEncryption = new Uint8Array([35, 150, 195, 169, 245, 51, 51, 255,
+                                       158, 158, 33, 242, 231, 75, 125, 190,
+                                       25, 126, 172, 114, 195, 244, 137, 245,
+                                       234, 165, 42, 74, 60, 38, 17, 17]);
       result = alg.getUserKey(password, userKeySalt, userEncryption);
-      expected = new Uint8Array([
-                                  63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
-                                  186, 144, 254, 248, 163, 153, 151, 51, 133,
-                                  10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
-                                  239, 13, 213]);
+      expected = new Uint8Array([63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
+                                 186, 144, 254, 248, 163, 153, 151, 51, 133,
+                                 10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
+                                 239, 13, 213]);
       expect(result).toEqual(expected);
     });
 
@@ -384,23 +379,20 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerKeySalt = new Uint8Array([200, 245, 242, 12, 218, 123, 24, 120]);
-      ownerEncryption = new Uint8Array([
-                                         213, 202, 14, 189, 110, 76, 70, 191, 6,
-                                         195, 10, 190, 157, 100, 144, 85, 8, 62,
-                                         123, 178, 156, 229, 50, 40, 229, 216,
-                                         54, 222, 34, 38, 106, 223]);
-      uBytes = new Uint8Array([
-                                131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
-                                189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
-                                249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
-                                221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
-                                94, 215, 192, 100, 38, 188, 40]);
+      ownerEncryption = new Uint8Array([213, 202, 14, 189, 110, 76, 70, 191, 6,
+                                        195, 10, 190, 157, 100, 144, 85, 8, 62,
+                                        123, 178, 156, 229, 50, 40, 229, 216,
+                                        54, 222, 34, 38, 106, 223]);
+      uBytes = new Uint8Array([131, 242, 143, 160, 87, 2, 138, 134, 79, 253,
+                               189, 173, 224, 73, 144, 241, 190, 81, 197, 15,
+                               249, 105, 145, 151, 15, 194, 65, 3, 1, 126, 187,
+                               221, 117, 169, 4, 32, 159, 101, 22, 220, 168,
+                               94, 215, 192, 100, 38, 188, 40]);
       result = alg.getOwnerKey(password, ownerKeySalt, uBytes, ownerEncryption);
-      expected = new Uint8Array([
-                                  63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
-                                  186, 144, 254, 248, 163, 153, 151, 51, 133,
-                                  10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
-                                  239, 13, 213]);
+      expected = new Uint8Array([63, 114, 136, 209, 87, 61, 12, 30, 249, 1,
+                                 186, 144, 254, 248, 163, 153, 151, 51, 133,
+                                 10, 80, 152, 206, 15, 72, 187, 231, 33, 224,
+                                 239, 13, 213]);
       expect(result).toEqual(expected);
     });
   });
@@ -425,17 +417,15 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerValidation = new Uint8Array([142, 232, 169, 208, 202, 214, 5, 185]);
-      ownerPassword = new Uint8Array([
-                                       88, 232, 62, 54, 245, 26, 245, 209, 137,
-                                       123, 221, 72, 199, 49, 37, 217, 31, 74,
-                                       115, 167, 127, 158, 176, 77, 45, 163, 87,
-                                       47, 39, 90, 217, 141]);
-      uBytes = new Uint8Array([
-                                94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
-                                17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
-                                156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
-                                184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
-                                11, 16, 94, 237, 216, 20, 175]);
+      ownerPassword = new Uint8Array([88, 232, 62, 54, 245, 26, 245, 209, 137,
+                                      123, 221, 72, 199, 49, 37, 217, 31, 74,
+                                      115, 167, 127, 158, 176, 77, 45, 163, 87,
+                                      47, 39, 90, 217, 141]);
+      uBytes = new Uint8Array([94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
+                               17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
+                               156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
+                               184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
+                               11, 16, 94, 237, 216, 20, 175]);
       result = alg.checkOwnerPassword(password, ownerValidation, uBytes,
                                       ownerPassword);
       expect(result).toEqual(true);
@@ -446,17 +436,15 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([117, 115, 101, 114]);
       userKeySalt = new Uint8Array([191, 11, 16, 94, 237, 216, 20, 175]);
-      userEncryption = new Uint8Array([
-                                        121, 208, 2, 181, 230, 89, 156, 60, 253,
-                                        143, 212, 28, 84, 180, 196, 177, 173,
-                                        128, 221, 107, 46, 20, 94, 186, 135, 51,
-                                        95, 24, 20, 223, 254, 36]);
+      userEncryption = new Uint8Array([121, 208, 2, 181, 230, 89, 156, 60, 253,
+                                       143, 212, 28, 84, 180, 196, 177, 173,
+                                       128, 221, 107, 46, 20, 94, 186, 135, 51,
+                                       95, 24, 20, 223, 254, 36]);
       result = alg.getUserKey(password, userKeySalt, userEncryption);
-      expected = new Uint8Array([
-                                  42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
-                                  133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
-                                  181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
-                                  239]);
+      expected = new Uint8Array([42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
+                                 133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
+                                 181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
+                                 239]);
       expect(result).toEqual(expected);
     });
 
@@ -466,23 +454,20 @@ describe('crypto', function() {
       alg = new PDF20();
       password = new Uint8Array([111, 119, 110, 101, 114]);
       ownerKeySalt = new Uint8Array([29, 208, 185, 46, 11, 76, 135, 149]);
-      ownerEncryption = new Uint8Array([
-                                         209, 73, 224, 77, 103, 155, 201, 181,
-                                         190, 68, 223, 20, 62, 90, 56, 210, 5,
-                                         240, 178, 128, 238, 124, 68, 254, 253,
-                                         244, 62, 108, 208, 135, 10, 251]);
-      uBytes = new Uint8Array([
-                                94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
-                                17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
-                                156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
-                                184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
-                                11, 16, 94, 237, 216, 20, 175]);
+      ownerEncryption = new Uint8Array([209, 73, 224, 77, 103, 155, 201, 181,
+                                        190, 68, 223, 20, 62, 90, 56, 210, 5,
+                                        240, 178, 128, 238, 124, 68, 254, 253,
+                                        244, 62, 108, 208, 135, 10, 251]);
+      uBytes = new Uint8Array([94, 230, 205, 75, 166, 99, 250, 76, 219, 128,
+                               17, 85, 57, 17, 33, 164, 150, 46, 103, 176, 160,
+                               156, 187, 233, 166, 223, 163, 253, 147, 235, 95,
+                               184, 83, 245, 146, 101, 198, 247, 34, 198, 191,
+                               11, 16, 94, 237, 216, 20, 175]);
       result = alg.getOwnerKey(password, ownerKeySalt, uBytes, ownerEncryption);
-      expected = new Uint8Array([
-                                  42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
-                                  133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
-                                  181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
-                                  239]);
+      expected = new Uint8Array([42, 218, 213, 39, 73, 91, 72, 79, 67, 38, 248,
+                                 133, 18, 189, 61, 34, 107, 79, 29, 56, 59,
+                                 181, 213, 118, 113, 34, 65, 210, 87, 174, 22,
+                                 239]);
       expect(result).toEqual(expected);
     });
   });
@@ -499,6 +484,18 @@ describe('CipherTransformFactory', function() {
       return this.map[key];
     }
   };
+
+  function ensureCipherTransformFactoryPasswordIncorrect(
+      dict, fileId, password) {
+    var exception = null;
+    try {
+      new CipherTransformFactory(dict, fileId, password);
+    } catch (ex) {
+      exception = ex;
+    }
+    expect(exception instanceof PasswordException).toEqual(true);
+    expect(exception.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
+  }
 
   var map1 = {
     Filter: Name.get('Standard'),
@@ -607,14 +604,8 @@ describe('CipherTransformFactory', function() {
         new CipherTransformFactory(new DictMock(aes256Map), fileID1, 'owner');
       });
       it('should not accept wrong password', function () {
-        var thrown = false;
-        try {
-          new CipherTransformFactory(new DictMock(aes256Map), fileID1,
-                                     'wrong');
-        } catch (e) {
-          thrown = true;
-        }
-        expect(thrown).toEqual(true);
+        ensureCipherTransformFactoryPasswordIncorrect(
+          new DictMock(aes256Map), fileID1, 'wrong');
       });
       it('should accept blank password', function () {
         new CipherTransformFactory(new DictMock(aes256BlankMap), fileID1);
@@ -631,14 +622,8 @@ describe('CipherTransformFactory', function() {
                                    'owner');
       });
       it('should not accept wrong password', function () {
-        var thrown = false;
-        try {
-          new CipherTransformFactory(new DictMock(aes256IsoMap), fileID1,
-                                     'wrong');
-        } catch (e) {
-          thrown = true;
-        }
-        expect(thrown).toEqual(true);
+        ensureCipherTransformFactoryPasswordIncorrect(
+          new DictMock(aes256IsoMap), fileID1, 'wrong');
       });
       it('should accept blank password', function () {
         new CipherTransformFactory(new DictMock(aes256IBlankMap), fileID1);
@@ -653,13 +638,8 @@ describe('CipherTransformFactory', function() {
     });
 
     it('should not accept wrong password', function() {
-      var thrown = false;
-      try {
-        new CipherTransformFactory(new DictMock(map1), fileID1, 'wrong');
-      } catch (e) {
-        thrown = true;
-      }
-      expect(thrown).toEqual(true);
+      ensureCipherTransformFactoryPasswordIncorrect(
+        new DictMock(map1), fileID1, 'wrong');
     });
 
     it('should accept no password', function() {

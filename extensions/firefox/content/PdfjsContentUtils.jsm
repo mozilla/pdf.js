@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +27,7 @@ const Cu = Components.utils;
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
-let PdfjsContentUtils = {
+var PdfjsContentUtils = {
   _mm: null,
 
   /*
@@ -112,7 +110,7 @@ let PdfjsContentUtils = {
    * Request the display of a notification warning in the associated window
    * when the renderer isn't sure a pdf displayed correctly.
    */
-  displayWarning: function (aWindow, aMessage, aCallback, aLabel, accessKey) {
+  displayWarning: function (aWindow, aMessage, aLabel, accessKey) {
     // the child's dom frame mm associated with the window.
     let winmm = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell)
@@ -122,8 +120,6 @@ let PdfjsContentUtils = {
       message: aMessage,
       label: aLabel,
       accessKey: accessKey
-    }, {
-      callback: aCallback
     });
   },
 

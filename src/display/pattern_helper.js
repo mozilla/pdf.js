@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CanvasGraphics, CachedCanvases, ColorSpace, Util, error, info,
-           isArray, makeCssRgb, WebGLUtils */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/pattern_helper', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/webgl'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./webgl.js'));
+  } else {
+    factory((root.pdfjsDisplayPatternHelper = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayWebGL);
+  }
+}(this, function (exports, sharedUtil, displayWebGL) {
+
+var Util = sharedUtil.Util;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var error = sharedUtil.error;
+var WebGLUtils = displayWebGL.WebGLUtils;
 
 var ShadingIRs = {};
 
@@ -149,7 +163,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
   }
 
   function createMeshCanvas(bounds, combinesScale, coords, colors, figures,
-                            backgroundColor) {
+                            backgroundColor, cachedCanvases) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
     var EXPECTED_SCALE = 1.1;
@@ -183,11 +197,11 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
                                       figures, context);
 
       // https://bugzilla.mozilla.org/show_bug.cgi?id=972126
-      tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
+      tmpCanvas = cachedCanvases.getCanvas('mesh', width, height, false);
       tmpCanvas.context.drawImage(canvas, 0, 0);
       canvas = tmpCanvas.canvas;
     } else {
-      tmpCanvas = CachedCanvases.getCanvas('mesh', width, height, false);
+      tmpCanvas = cachedCanvases.getCanvas('mesh', width, height, false);
       var tmpCtx = tmpCanvas.context;
 
       var data = tmpCtx.createImageData(width, height);
@@ -243,7 +257,8 @@ ShadingIRs.Mesh = {
         // Rasterizing on the main thread since sending/queue large canvases
         // might cause OOM.
         var temporaryPatternCanvas = createMeshCanvas(bounds, scale, coords,
-          colors, figures, shadingFill ? null : background);
+          colors, figures, shadingFill ? null : background,
+          owner.cachedCanvases);
 
         if (!shadingFill) {
           ctx.setTransform.apply(ctx, owner.baseTransform);
@@ -290,7 +305,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
   var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
 
-  function TilingPattern(IR, color, ctx, objs, commonObjs, baseTransform) {
+  function TilingPattern(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
     this.bbox = IR[4];
@@ -299,8 +314,7 @@ var TilingPattern = (function TilingPatternClosure() {
     this.paintType = IR[7];
     this.tilingType = IR[8];
     this.color = color;
-    this.objs = objs;
-    this.commonObjs = commonObjs;
+    this.canvasGraphicsFactory = canvasGraphicsFactory;
     this.baseTransform = baseTransform;
     this.type = 'Pattern';
     this.ctx = ctx;
@@ -315,8 +329,7 @@ var TilingPattern = (function TilingPatternClosure() {
       var paintType = this.paintType;
       var tilingType = this.tilingType;
       var color = this.color;
-      var objs = this.objs;
-      var commonObjs = this.commonObjs;
+      var canvasGraphicsFactory = this.canvasGraphicsFactory;
 
       info('TilingType: ' + tilingType);
 
@@ -346,9 +359,10 @@ var TilingPattern = (function TilingPatternClosure() {
       height = Math.min(Math.ceil(Math.abs(height * combinedScale[1])),
         MAX_PATTERN_SIZE);
 
-      var tmpCanvas = CachedCanvases.getCanvas('pattern', width, height, true);
+      var tmpCanvas = owner.cachedCanvases.getCanvas('pattern',
+        width, height, true);
       var tmpCtx = tmpCanvas.context;
-      var graphics = new CanvasGraphics(tmpCtx, commonObjs, objs);
+      var graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx);
       graphics.groupLevel = owner.groupLevel;
 
       this.setFillAndStrokeStyleToContext(tmpCtx, paintType, color);
@@ -423,3 +437,7 @@ var TilingPattern = (function TilingPatternClosure() {
 
   return TilingPattern;
 })();
+
+exports.getShadingPatternFromIR = getShadingPatternFromIR;
+exports.TilingPattern = TilingPattern;
+}));

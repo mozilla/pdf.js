@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ArithmeticDecoder, globalScope, log2, readUint16, readUint32,
-           info, warn */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/jpx', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/arithmetic_decoder'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'),
+      require('./arithmetic_decoder.js'));
+  } else {
+    factory((root.pdfjsCoreJpx = {}), root.pdfjsSharedUtil,
+      root.pdfjsCoreArithmeticDecoder);
+  }
+}(this, function (exports, sharedUtil, coreArithmeticDecoder) {
+
+var info = sharedUtil.info;
+var log2 = sharedUtil.log2;
+var readUint16 = sharedUtil.readUint16;
+var readUint32 = sharedUtil.readUint32;
+var warn = sharedUtil.warn;
+var ArithmeticDecoder = coreArithmeticDecoder.ArithmeticDecoder;
 
 var JpxImage = (function JpxImageClosure() {
   // Table E.1
@@ -69,8 +85,6 @@ var JpxImage = (function JpxImageClosure() {
           case 0x636F6C72: // 'colr'
             // Colorspaces are not used, the CS from the PDF is used.
             var method = data[position];
-            var precedence = data[position + 1];
-            var approximation = data[position + 2];
             if (method === 1) {
               // enumerated colorspace
               var colorspace = readUint32(data, position + 3);
@@ -2213,3 +2227,6 @@ var JpxImage = (function JpxImageClosure() {
 
   return JpxImage;
 })();
+
+exports.JpxImage = JpxImage;
+}));

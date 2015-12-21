@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PostScriptLexer, PostScriptParser, error, info, isArray, isBool,
-           isDict, isStream */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/function', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/ps_parser'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./ps_parser.js'));
+  } else {
+    factory((root.pdfjsCoreFunction = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCorePsParser);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, corePsParser) {
+
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var isBool = sharedUtil.isBool;
+var isDict = corePrimitives.isDict;
+var isStream = corePrimitives.isStream;
+var PostScriptLexer = corePsParser.PostScriptLexer;
+var PostScriptParser = corePsParser.PostScriptParser;
 
 var PDFFunction = (function PDFFunctionClosure() {
   var CONSTRUCT_SAMPLED = 0;
@@ -364,7 +382,10 @@ var PDFFunction = (function PDFFunctionClosure() {
         var rmin = encode[2 * i];
         var rmax = encode[2 * i + 1];
 
-        tmpBuf[0] = rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
+        // Prevent the value from becoming NaN as a result
+        // of division by zero (fixes issue6113.pdf).
+        tmpBuf[0] = dmin === dmax ? rmin :
+                    rmin + (v - dmin) * (rmax - rmin) / (dmax - dmin);
 
         // call the appropriate function
         fns[i](tmpBuf, 0, dest, destOffset);
@@ -966,7 +987,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
       var instructions = [];
       var inputSize = domain.length >> 1, outputSize = range.length >> 1;
       var lastRegister = 0;
-      var n, j, min, max;
+      var n, j;
       var num1, num2, ast1, ast2, tmpVar, item;
       for (i = 0; i < inputSize; i++) {
         stack.push(new AstArgument(i, domain[i * 2], domain[i * 2 + 1]));
@@ -1130,3 +1151,9 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
 
   return PostScriptCompiler;
 })();
+
+exports.isPDFFunction = isPDFFunction;
+exports.PDFFunction = PDFFunction;
+exports.PostScriptEvaluator = PostScriptEvaluator;
+exports.PostScriptCompiler = PostScriptCompiler;
+}));

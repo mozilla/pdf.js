@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /*
 Copyright 2012 Mozilla Foundation
 
@@ -15,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-/* globals chrome, Features */
+/* globals chrome, Features, saveReferer */
 
 'use strict';
 
@@ -34,9 +32,15 @@ function isPdfDownloadable(details) {
   if (details.url.indexOf('pdfjs.action=download') >= 0) {
     return true;
   }
-  // Display the PDF viewer regardless of the Content-Disposition header
-  // if the file is displayed in the main frame.
-  if (details.type === 'main_frame') {
+  // Display the PDF viewer regardless of the Content-Disposition header if the
+  // file is displayed in the main frame, since most often users want to view
+  // a PDF, and servers are often misconfigured.
+  // If the query string contains "=download", do not unconditionally force the
+  // viewer to open the PDF, but first check whether the Content-Disposition
+  // header specifies an attachment. This allows sites like Google Drive to
+  // operate correctly (#6106).
+  if (details.type === 'main_frame' &&
+      details.url.indexOf('=download') === -1) {
     return false;
   }
   var cdHeader = (details.responseHeaders &&
@@ -112,6 +116,9 @@ chrome.webRequest.onHeadersReceived.addListener(
     }
 
     var viewerUrl = getViewerURL(details.url);
+
+    // Implemented in preserve-referer.js
+    saveReferer(details);
 
     // Replace frame with viewer
     if (Features.webRequestRedirectUrl) {
@@ -217,3 +224,51 @@ chrome.webRequest.onBeforeRequest.addListener(
     types: ['main_frame', 'sub_frame']
   },
   ['blocking']);
+
+chrome.extension.isAllowedFileSchemeAccess(function(isAllowedAccess) {
+  if (isAllowedAccess) {
+    return;
+  }
+  // If the user has not granted access to file:-URLs, then the webRequest API
+  // will not catch the request. It is still visible through the webNavigation
+  // API though, and we can replace the tab with the viewer.
+  // The viewer will detect that it has no access to file:-URLs, and prompt the
+  // user to activate file permissions.
+  chrome.webNavigation.onBeforeNavigate.addListener(function(details) {
+    if (details.frameId === 0 && !isPdfDownloadable(details)) {
+      chrome.tabs.update(details.tabId, {
+        url: getViewerURL(details.url)
+      });
+    }
+  }, {
+    url: [{
+      urlPrefix: 'file://',
+      pathSuffix: '.pdf'
+    }, {
+      urlPrefix: 'file://',
+      pathSuffix: '.PDF'
+    }]
+  });
+});
+
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message && message.action === 'isAllowedFileSchemeAccess') {
+    chrome.extension.isAllowedFileSchemeAccess(sendResponse);
+    return true;
+  }
+  if (message && message.action === 'openExtensionsPageForFileAccess') {
+    var url = 'chrome://extensions/?id=' + chrome.runtime.id;
+    if (message.data.newTab) {
+      chrome.tabs.create({
+        windowId: sender.tab.windowId,
+        index: sender.tab.index + 1,
+        url: url,
+        openerTabId: sender.tab.id
+      });
+    } else {
+      chrome.tabs.update(sender.tab.id, {
+        url: url
+      });
+    }
+  }
+});

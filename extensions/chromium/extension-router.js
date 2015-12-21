@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /*
 Copyright 2013 Mozilla Foundation
 
@@ -83,6 +81,7 @@ limitations under the License.
 
   // When session restore is used, viewer pages may be loaded before the
   // webRequest event listener is attached (= page not found).
+  // Or the extension could have been crashed (OOM), leaving a sad tab behind.
   // Reload these tabs.
   chrome.tabs.query({
     url: CRX_BASE_URL + '*:*'
@@ -92,4 +91,25 @@ limitations under the License.
     }
   });
   console.log('Set up extension URL router.');
+
+  Object.keys(localStorage).forEach(function(key) {
+    // The localStorage item is set upon unload by chromecom.js.
+    var parsedKey = /^unload-(\d+)-(true|false)-(.+)/.exec(key);
+    if (parsedKey) {
+      var timeStart = parseInt(parsedKey[1], 10);
+      var isHidden = parsedKey[2] === 'true';
+      var url = parsedKey[3];
+      if (Date.now() - timeStart < 3000) {
+        // Is it a new item (younger than 3 seconds)? Assume that the extension
+        // just reloaded, so restore the tab (work-around for crbug.com/511670).
+        chrome.tabs.create({
+          url: chrome.runtime.getURL('restoretab.html') +
+            '?' + encodeURIComponent(url) +
+            '#' + encodeURIComponent(localStorage.getItem(key)),
+          active: !isHidden
+        });
+      }
+      localStorage.removeItem(key);
+    }
+  });
 })();

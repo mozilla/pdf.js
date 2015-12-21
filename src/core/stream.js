@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals bytesToString, ColorSpace, Dict, EOF, error, info, isArray,
-           Jbig2Image, JpegImage, JpxImage, Lexer, PDFJS, shadow, Util, warn */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/stream', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/jbig2', 'pdfjs/core/jpg',
+      'pdfjs/core/jpx'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./jbig2.js'), require('./jpg.js'), require('./jpx.js'));
+  } else {
+    factory((root.pdfjsCoreStream = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreJbig2, root.pdfjsCoreJpg,
+      root.pdfjsCoreJpx);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreJbig2, coreJpg,
+                  coreJpx) {
+
+var Util = sharedUtil.Util;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var shadow = sharedUtil.shadow;
+var warn = sharedUtil.warn;
+var Dict = corePrimitives.Dict;
+var Jbig2Image = coreJbig2.Jbig2Image;
+var JpegImage = coreJpg.JpegImage;
+var JpxImage = coreJpx.JpxImage;
+
+var coreParser; // see _setCoreParser below
+var EOF; // = coreParser.EOF;
+var Lexer; // = coreParser.Lexer;
+
+var coreColorSpace; // see _setCoreColorSpace below
+var ColorSpace; // = coreColorSpace.ColorSpace;
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
@@ -292,25 +323,25 @@ var StreamsSequenceStream = (function StreamsSequenceStreamClosure() {
 })();
 
 var FlateStream = (function FlateStreamClosure() {
-  var codeLenCodeMap = new Uint32Array([
+  var codeLenCodeMap = new Int32Array([
     16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
   ]);
 
-  var lengthDecode = new Uint32Array([
+  var lengthDecode = new Int32Array([
     0x00003, 0x00004, 0x00005, 0x00006, 0x00007, 0x00008, 0x00009, 0x0000a,
     0x1000b, 0x1000d, 0x1000f, 0x10011, 0x20013, 0x20017, 0x2001b, 0x2001f,
     0x30023, 0x3002b, 0x30033, 0x3003b, 0x40043, 0x40053, 0x40063, 0x40073,
     0x50083, 0x500a3, 0x500c3, 0x500e3, 0x00102, 0x00102, 0x00102
   ]);
 
-  var distDecode = new Uint32Array([
+  var distDecode = new Int32Array([
     0x00001, 0x00002, 0x00003, 0x00004, 0x10005, 0x10007, 0x20009, 0x2000d,
     0x30011, 0x30019, 0x40021, 0x40031, 0x50041, 0x50061, 0x60081, 0x600c1,
     0x70101, 0x70181, 0x80201, 0x80301, 0x90401, 0x90601, 0xa0801, 0xa0c01,
     0xb1001, 0xb1801, 0xc2001, 0xc3001, 0xd4001, 0xd6001
   ]);
 
-  var fixedLitCodeTab = [new Uint32Array([
+  var fixedLitCodeTab = [new Int32Array([
     0x70100, 0x80050, 0x80010, 0x80118, 0x70110, 0x80070, 0x80030, 0x900c0,
     0x70108, 0x80060, 0x80020, 0x900a0, 0x80000, 0x80080, 0x80040, 0x900e0,
     0x70104, 0x80058, 0x80018, 0x90090, 0x70114, 0x80078, 0x80038, 0x900d0,
@@ -377,7 +408,7 @@ var FlateStream = (function FlateStreamClosure() {
     0x7010f, 0x8006f, 0x8002f, 0x900bf, 0x8000f, 0x8008f, 0x8004f, 0x900ff
   ]), 9];
 
-  var fixedDistCodeTab = [new Uint32Array([
+  var fixedDistCodeTab = [new Int32Array([
     0x50000, 0x50010, 0x50008, 0x50018, 0x50004, 0x50014, 0x5000c, 0x5001c,
     0x50002, 0x50012, 0x5000a, 0x5001a, 0x50006, 0x50016, 0x5000e, 0x00000,
     0x50001, 0x50011, 0x50009, 0x50019, 0x50005, 0x50015, 0x5000d, 0x5001d,
@@ -474,7 +505,7 @@ var FlateStream = (function FlateStreamClosure() {
 
     // build the table
     var size = 1 << maxLen;
-    var codes = new Uint32Array(size);
+    var codes = new Int32Array(size);
     for (var len = 1, code = 0, skip = 2;
          len <= maxLen;
          ++len, code <<= 1, skip <<= 1) {
@@ -942,7 +973,8 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.isNativelySupported =
       function JpegStream_isNativelySupported(xref, res) {
     var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
-    return cs.name === 'DeviceGray' || cs.name === 'DeviceRGB';
+    return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
+           cs.isDefaultDecode(this.dict.get('Decode', 'D'));
   };
   /**
    * Checks if the image can be decoded by the browser.
@@ -950,8 +982,8 @@ var JpegStream = (function JpegStreamClosure() {
   JpegStream.prototype.isNativelyDecodable =
       function JpegStream_isNativelyDecodable(xref, res) {
     var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
-    var numComps = cs.numComps;
-    return numComps === 1 || numComps === 3;
+    return (cs.numComps === 1 || cs.numComps === 3) &&
+           cs.isDefaultDecode(this.dict.get('Decode', 'D'));
   };
 
   return JpegStream;
@@ -2465,3 +2497,36 @@ var NullStream = (function NullStreamClosure() {
 
   return NullStream;
 })();
+
+// TODO refactor to remove dependency on parser.js
+function _setCoreParser(coreParser_) {
+  coreParser = coreParser_;
+  EOF = coreParser_.EOF;
+  Lexer = coreParser_.Lexer;
+}
+exports._setCoreParser = _setCoreParser;
+
+// TODO refactor to remove dependency on colorspace.js
+function _setCoreColorSpace(coreColorSpace_) {
+  coreColorSpace = coreColorSpace_;
+  ColorSpace = coreColorSpace_.ColorSpace;
+}
+exports._setCoreColorSpace = _setCoreColorSpace;
+
+exports.Ascii85Stream = Ascii85Stream;
+exports.AsciiHexStream = AsciiHexStream;
+exports.CCITTFaxStream = CCITTFaxStream;
+exports.DecryptStream = DecryptStream;
+exports.DecodeStream = DecodeStream;
+exports.FlateStream = FlateStream;
+exports.Jbig2Stream = Jbig2Stream;
+exports.JpegStream = JpegStream;
+exports.JpxStream = JpxStream;
+exports.NullStream = NullStream;
+exports.PredictorStream = PredictorStream;
+exports.RunLengthStream = RunLengthStream;
+exports.Stream = Stream;
+exports.StreamsSequenceStream = StreamsSequenceStream;
+exports.StringStream = StringStream;
+exports.LZWStream = LZWStream;
+}));

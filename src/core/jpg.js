@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 /* Copyright 2014 Mozilla Foundation
  *
@@ -16,6 +14,18 @@
  * limitations under the License.
  */
 
+'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/jpg', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreJpg = {}));
+  }
+}(this, function (exports) {
+
 /*
 This code was forked from https://github.com/notmasteryet/jpgjs. The original
 version was created by github user notmasteryet
@@ -28,8 +38,6 @@ version was created by github user notmasteryet
  in PostScript Level 2, Technical Note #5116
  (partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf)
 */
-
-'use strict';
 
 var JpegImage = (function jpegImage() {
   var dctZigZag = new Uint8Array([
@@ -101,12 +109,8 @@ var JpegImage = (function jpegImage() {
 
   function decodeScan(data, offset, frame, components, resetInterval,
                       spectralStart, spectralEnd, successivePrev, successive) {
-    var precision = frame.precision;
-    var samplesPerLine = frame.samplesPerLine;
-    var scanLines = frame.scanLines;
     var mcusPerLine = frame.mcusPerLine;
     var progressive = frame.progressive;
-    var maxH = frame.maxH, maxV = frame.maxV;
 
     var startOffset = offset, bitsData = 0, bitsCount = 0;
 
@@ -614,10 +618,9 @@ var JpegImage = (function jpegImage() {
         frame.mcusPerColumn = mcusPerColumn;
       }
 
-      var offset = 0, length = data.length;
+      var offset = 0;
       var jfif = null;
       var adobe = null;
-      var pixels = null;
       var frame, resetInterval;
       var quantizationTables = [];
       var huffmanTablesAC = [], huffmanTablesDC = [];
@@ -1035,3 +1038,6 @@ var JpegImage = (function jpegImage() {
 
   return constructor;
 })();
+
+exports.JpegImage = JpegImage;
+}));

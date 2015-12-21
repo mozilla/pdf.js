@@ -20,11 +20,9 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
         '  `node make generic components`');
 }
 
-// In cases when the pdf.worker.js is located at the different folder than the
-// pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
-// shall be specified.
+// The workerSrc property shall be specified.
 //
-// PDFJS.workerSrc = '../../build/pdf.worker.js';
+PDFJS.workerSrc = '../../build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
 //
@@ -34,17 +32,26 @@ if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
 
 var container = document.getElementById('viewerContainer');
+
+// (Optionally) enable hyperlinks within PDF files.
+var pdfLinkService = new PDFJS.PDFLinkService();
+
 var pdfViewer = new PDFJS.PDFViewer({
-  container: container
+  container: container,
+  linkService: pdfLinkService,
 });
+pdfLinkService.setViewer(pdfViewer);
 
 container.addEventListener('pagesinit', function () {
-  // we can use pdfViewer now, e.g. let's change default scale.
+  // We can use pdfViewer now, e.g. let's change default scale.
   pdfViewer.currentScaleValue = 'page-width';
 });
 
 // Loading document.
 PDFJS.getDocument(DEFAULT_URL).then(function (pdfDocument) {
-  // Document loaded, specifying document for the viewer.
+  // Document loaded, specifying document for the viewer and
+  // the (optional) linkService.
   pdfViewer.setDocument(pdfDocument);
+
+  pdfLinkService.setDocument(pdfDocument, null);
 });

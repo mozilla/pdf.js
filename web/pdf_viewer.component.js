@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2014 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +13,9 @@
  * limitations under the License.
  */
 /*jshint globalstrict: false */
-/* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder,
-           DefaultTextLayerFactory, AnnotationsLayerBuilder,
-           DefaultAnnotationsLayerFactory */
+/* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder, PDFLinkService,
+           DefaultTextLayerFactory, AnnotationLayerBuilder, PDFHistory,
+           DefaultAnnotationLayerFactory, getFileName, ProgressBar */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
@@ -28,12 +26,19 @@ if (typeof PDFJS === 'undefined') {
   'use strict';
 
 //#include ui_utils.js
+//#include pdf_link_service.js
 //#include pdf_viewer.js
+//#include pdf_history.js
 
   PDFJS.PDFViewer = PDFViewer;
   PDFJS.PDFPageView = PDFPageView;
+  PDFJS.PDFLinkService = PDFLinkService;
   PDFJS.TextLayerBuilder = TextLayerBuilder;
   PDFJS.DefaultTextLayerFactory = DefaultTextLayerFactory;
-  PDFJS.AnnotationsLayerBuilder = AnnotationsLayerBuilder;
-  PDFJS.DefaultAnnotationsLayerFactory = DefaultAnnotationsLayerFactory;
+  PDFJS.AnnotationLayerBuilder = AnnotationLayerBuilder;
+  PDFJS.DefaultAnnotationLayerFactory = DefaultAnnotationLayerFactory;
+  PDFJS.PDFHistory = PDFHistory;
+
+  PDFJS.getFileName = getFileName;
+  PDFJS.ProgressBar = ProgressBar;
 }).call((typeof window === 'undefined') ? this : window);

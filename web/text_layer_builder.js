@@ -1,4 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,17 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals CustomStyle, PDFJS */
+/* globals PDFJS */
 
 'use strict';
-
-var MAX_TEXT_DIVS_TO_RENDER = 100000;
-
-var NonWhitespaceRegexp = /\S/;
-
-function isAllWhitespace(str) {
-  return !NonWhitespaceRegexp.test(str);
-}
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -51,75 +42,23 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.viewport = options.viewport;
     this.textDivs = [];
     this.findController = options.findController || null;
+    this.textLayerRenderTask = null;
+    this._bindMouse();
   }
 
   TextLayerBuilder.prototype = {
     _finishRendering: function TextLayerBuilder_finishRendering() {
       this.renderingDone = true;
 
+      var endOfContent = document.createElement('div');
+      endOfContent.className = 'endOfContent';
+      this.textLayerDiv.appendChild(endOfContent);
+
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('textlayerrendered', true, true, {
         pageNumber: this.pageNumber
       });
       this.textLayerDiv.dispatchEvent(event);
-    },
-
-    renderLayer: function TextLayerBuilder_renderLayer() {
-      var textLayerFrag = document.createDocumentFragment();
-      var textDivs = this.textDivs;
-      var textDivsLength = textDivs.length;
-      var canvas = document.createElement('canvas');
-      var ctx = canvas.getContext('2d');
-
-      // No point in rendering many divs as it would make the browser
-      // unusable even after the divs are rendered.
-      if (textDivsLength > MAX_TEXT_DIVS_TO_RENDER) {
-        this._finishRendering();
-        return;
-      }
-
-      var lastFontSize;
-      var lastFontFamily;
-      for (var i = 0; i < textDivsLength; i++) {
-        var textDiv = textDivs[i];
-        if (textDiv.dataset.isWhitespace !== undefined) {
-          continue;
-        }
-
-        var fontSize = textDiv.style.fontSize;
-        var fontFamily = textDiv.style.fontFamily;
-
-        // Only build font string and set to context if different from last.
-        if (fontSize !== lastFontSize || fontFamily !== lastFontFamily) {
-          ctx.font = fontSize + ' ' + fontFamily;
-          lastFontSize = fontSize;
-          lastFontFamily = fontFamily;
-        }
-
-        var width = ctx.measureText(textDiv.textContent).width;
-        if (width > 0) {
-          textLayerFrag.appendChild(textDiv);
-          var transform;
-          if (textDiv.dataset.canvasWidth !== undefined) {
-            // Dataset values come of type string.
-            var textScale = textDiv.dataset.canvasWidth / width;
-            transform = 'scaleX(' + textScale + ')';
-          } else {
-            transform = '';
-          }
-          var rotation = textDiv.dataset.angle;
-          if (rotation) {
-            transform = 'rotate(' + rotation + 'deg) ' + transform;
-          }
-          if (transform) {
-            CustomStyle.setProp('transform' , textDiv, transform);
-          }
-        }
-      }
-
-      this.textLayerDiv.appendChild(textLayerFrag);
-      this._finishRendering();
-      this.updateMatches();
     },
 
     /**
@@ -132,87 +71,35 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         return;
       }
 
-      if (this.renderTimer) {
-        clearTimeout(this.renderTimer);
-        this.renderTimer = null;
+      if (this.textLayerRenderTask) {
+        this.textLayerRenderTask.cancel();
+        this.textLayerRenderTask = null;
       }
 
-      if (!timeout) { // Render right away
-        this.renderLayer();
-      } else { // Schedule
-        var self = this;
-        this.renderTimer = setTimeout(function() {
-          self.renderLayer();
-          self.renderTimer = null;
-        }, timeout);
-      }
-    },
-
-    appendText: function TextLayerBuilder_appendText(geom, styles) {
-      var style = styles[geom.fontName];
-      var textDiv = document.createElement('div');
-      this.textDivs.push(textDiv);
-      if (isAllWhitespace(geom.str)) {
-        textDiv.dataset.isWhitespace = true;
-        return;
-      }
-      var tx = PDFJS.Util.transform(this.viewport.transform, geom.transform);
-      var angle = Math.atan2(tx[1], tx[0]);
-      if (style.vertical) {
-        angle += Math.PI / 2;
-      }
-      var fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
-      var fontAscent = fontHeight;
-      if (style.ascent) {
-        fontAscent = style.ascent * fontAscent;
-      } else if (style.descent) {
-        fontAscent = (1 + style.descent) * fontAscent;
-      }
-
-      var left;
-      var top;
-      if (angle === 0) {
-        left = tx[4];
-        top = tx[5] - fontAscent;
-      } else {
-        left = tx[4] + (fontAscent * Math.sin(angle));
-        top = tx[5] - (fontAscent * Math.cos(angle));
-      }
-      textDiv.style.left = left + 'px';
-      textDiv.style.top = top + 'px';
-      textDiv.style.fontSize = fontHeight + 'px';
-      textDiv.style.fontFamily = style.fontFamily;
-
-      textDiv.textContent = geom.str;
-      // |fontName| is only used by the Font Inspector. This test will succeed
-      // when e.g. the Font Inspector is off but the Stepper is on, but it's
-      // not worth the effort to do a more accurate test.
-      if (PDFJS.pdfBug) {
-        textDiv.dataset.fontName = geom.fontName;
-      }
-      // Storing into dataset will convert number into string.
-      if (angle !== 0) {
-        textDiv.dataset.angle = angle * (180 / Math.PI);
-      }
-      // We don't bother scaling single-char text divs, because it has very
-      // little effect on text highlighting. This makes scrolling on docs with
-      // lots of such divs a lot faster.
-      if (textDiv.textContent.length > 1) {
-        if (style.vertical) {
-          textDiv.dataset.canvasWidth = geom.height * this.viewport.scale;
-        } else {
-          textDiv.dataset.canvasWidth = geom.width * this.viewport.scale;
-        }
-      }
+      this.textDivs = [];
+      var textLayerFrag = document.createDocumentFragment();
+      this.textLayerRenderTask = PDFJS.renderTextLayer({
+        textContent: this.textContent,
+        container: textLayerFrag,
+        viewport: this.viewport,
+        textDivs: this.textDivs,
+        timeout: timeout
+      });
+      this.textLayerRenderTask.promise.then(function () {
+        this.textLayerDiv.appendChild(textLayerFrag);
+        this._finishRendering();
+        this.updateMatches();
+      }.bind(this), function (reason) {
+        // canceled or failed to render text layer -- skipping errors
+      });
     },
 
     setTextContent: function TextLayerBuilder_setTextContent(textContent) {
-      this.textContent = textContent;
-
-      var textItems = textContent.items;
-      for (var i = 0, len = textItems.length; i < len; i++) {
-        this.appendText(textItems[i], textContent.styles);
+      if (this.textLayerRenderTask) {
+        this.textLayerRenderTask.cancel();
+        this.textLayerRenderTask = null;
       }
+      this.textContent = textContent;
       this.divContentDone = true;
     },
 
@@ -392,7 +279,49 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       this.matches = this.convertMatches(this.findController === null ?
         [] : (this.findController.pageMatches[this.pageIdx] || []));
       this.renderMatches(this.matches);
-    }
+    },
+
+    /**
+     * Fixes text selection: adds additional div where mouse was clicked.
+     * This reduces flickering of the content if mouse slowly dragged down/up.
+     * @private
+     */
+    _bindMouse: function TextLayerBuilder_bindMouse() {
+      var div = this.textLayerDiv;
+      div.addEventListener('mousedown', function (e) {
+        var end = div.querySelector('.endOfContent');
+        if (!end) {
+          return;
+        }
+//#if !(MOZCENTRAL || FIREFOX)
+        // On non-Firefox browsers, the selection will feel better if the height
+        // of the endOfContent div will be adjusted to start at mouse click
+        // location -- this will avoid flickering when selections moves up.
+        // However it does not work when selection started on empty space.
+        var adjustTop = e.target !== div;
+//#if GENERIC
+        adjustTop = adjustTop && window.getComputedStyle(end).
+          getPropertyValue('-moz-user-select') !== 'none';
+//#endif
+        if (adjustTop) {
+          var divBounds = div.getBoundingClientRect();
+          var r = Math.max(0, (e.pageY - divBounds.top) / divBounds.height);
+          end.style.top = (r * 100).toFixed(2) + '%';
+        }
+//#endif
+        end.classList.add('active');
+      });
+      div.addEventListener('mouseup', function (e) {
+        var end = div.querySelector('.endOfContent');
+        if (!end) {
+          return;
+        }
+//#if !(MOZCENTRAL || FIREFOX)
+        end.style.top = '';
+//#endif
+        end.classList.remove('active');
+      });
+    },
   };
   return TextLayerBuilder;
 })();

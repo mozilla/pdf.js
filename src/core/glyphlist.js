@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +14,16 @@
  */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/glyphlist', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreGlyphList = {}));
+  }
+}(this, function (exports) {
 
 var GlyphsUnicode = {
   A: 0x0041,
@@ -4429,3 +4437,7 @@ var DingbatsGlyphsUnicode = {
   a96: 0x2775, // 0xF8E4
   '.notdef': 0x0000
 };
+
+exports.GlyphsUnicode = GlyphsUnicode;
+exports.DingbatsGlyphsUnicode = DingbatsGlyphsUnicode;
+}));

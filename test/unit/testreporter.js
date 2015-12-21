@@ -1,6 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals SpecialPowers */
 
 'use strict';
 
@@ -42,11 +39,7 @@ var TestReporter = function(browser, appPath) {
   }
 
   function sendQuitRequest() {
-    send('/tellMeToQuit?path=' + escape(appPath), {}, function () {
-      if (window.SpecialPowers) {
-        SpecialPowers.quit();
-      }
-    });
+    send('/tellMeToQuit?path=' + escape(appPath), {});
   }
 
   this.now = function() {

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -183,27 +181,38 @@ function makeContentReadable(obj, window) {
 
 function createNewChannel(uri, node, principal) {
 //#if !MOZCENTRAL
-  if (!NetUtil.newChannel2) {
+  if (NetUtil.newChannel2) {
+    return NetUtil.newChannel2(uri,
+                               null,
+                               null,
+                               node, // aLoadingNode
+                               principal, // aLoadingPrincipal
+                               null, // aTriggeringPrincipal
+                               Ci.nsILoadInfo.SEC_NORMAL,
+                               Ci.nsIContentPolicy.TYPE_OTHER);
+  }
+  // The signature of `NetUtil.newChannel` changed in Firefox 38,
+  // see https://bugzilla.mozilla.org/show_bug.cgi?id=1125618.
+  var ffVersion = parseInt(Services.appinfo.platformVersion);
+  if (ffVersion < 38) {
     return NetUtil.newChannel(uri);
   }
 //#endif
-  return NetUtil.newChannel2(uri,
-                             null,
-                             null,
-                             node, // aLoadingNode
-                             principal, // aLoadingPrincipal
-                             null, // aTriggeringPrincipal
-                             Ci.nsILoadInfo.SEC_NORMAL,
-                             Ci.nsIContentPolicy.TYPE_OTHER);
+  return NetUtil.newChannel({
+    uri: uri,
+    loadingNode: node,
+    loadingPrincipal: principal,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+  });
 }
 
 function asyncFetchChannel(channel, callback) {
 //#if !MOZCENTRAL
-  if (!NetUtil.newChannel2) {
-    return NetUtil.asyncFetch(channel, callback);
+  if (NetUtil.asyncFetch2) {
+    return NetUtil.asyncFetch2(channel, callback);
   }
 //#endif
-  return NetUtil.asyncFetch2(channel, callback);
+  return NetUtil.asyncFetch(channel, callback);
 }
 
 // PDF data storage
@@ -412,6 +421,12 @@ ChromeActions.prototype = {
     }
     return true;
   },
+  supportedMouseWheelZoomModifierKeys: function() {
+    return {
+      ctrlKey: getIntPref('mousewheel.with_control.action', 3) === 3,
+      metaKey: getIntPref('mousewheel.with_meta.action', 1) === 3,
+    };
+  },
   reportTelemetry: function (data) {
     var probeInfo = JSON.parse(data);
     switch (probeInfo.type) {
@@ -482,9 +497,23 @@ ChromeActions.prototype = {
       message = getLocalizedString(strings, 'unsupported_feature');
     }
     PdfJsTelemetry.onFallback();
-    PdfjsContentUtils.displayWarning(domWindow, message, sendResponse,
+    PdfjsContentUtils.displayWarning(domWindow, message,
       getLocalizedString(strings, 'open_with_different_viewer'),
       getLocalizedString(strings, 'open_with_different_viewer', 'accessKey'));
+
+    let winmm = domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIDocShell)
+                         .QueryInterface(Ci.nsIInterfaceRequestor)
+                         .getInterface(Ci.nsIContentFrameMessageManager);
+
+    winmm.addMessageListener('PDFJS:Child:fallbackDownload',
+      function fallbackDownload(msg) {
+        let data = msg.data;
+        sendResponse(data.download);
+
+        winmm.removeMessageListener('PDFJS:Child:fallbackDownload',
+                                    fallbackDownload);
+      });
   },
   updateFindControlState: function(data) {
     if (!this.supportsIntegratedFind()) {
@@ -501,8 +530,6 @@ ChromeActions.prototype = {
 
     var winmm = this.domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIDocShell)
-                              .sameTypeRootTreeItem
-                              .QueryInterface(Ci.nsIDocShell)
                               .QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIContentFrameMessageManager);
 
@@ -639,8 +666,8 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     // If we are in range request mode, this means we manually issued xhr
     // requests, which we need to abort when we leave the page
     domWindow.addEventListener('unload', function unload(e) {
-      self.networkManager.abortAllRequests();
       domWindow.removeEventListener(e.type, unload);
+      self.abortLoading();
     });
   }
 
@@ -668,7 +695,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
         }, '*');
       };
       this.dataListener.oncomplete = function () {
-        delete self.dataListener;
+        self.dataListener = null;
       };
     }
 
@@ -712,6 +739,15 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     });
   };
 
+  proto.abortLoading = function RangedChromeActions_abortLoading() {
+    this.networkManager.abortAllRequests();
+    if (this.originalRequest) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+    }
+    this.dataListener = null;
+  };
+
   return RangedChromeActions;
 })();
 
@@ -721,9 +757,10 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
    * This is for a single network stream
    */
   function StandardChromeActions(domWindow, contentDispositionFilename,
-                                 dataListener) {
+                                 originalRequest, dataListener) {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
+    this.originalRequest = originalRequest;
     this.dataListener = dataListener;
   }
 
@@ -749,18 +786,27 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
       }, '*');
     };
 
-    this.dataListener.oncomplete = function ChromeActions_dataListenerComplete(
-                                      data, errorCode) {
+    this.dataListener.oncomplete =
+        function StandardChromeActions_dataListenerComplete(data, errorCode) {
       self.domWindow.postMessage({
         pdfjsLoadAction: 'complete',
         data: data,
         errorCode: errorCode
       }, '*');
 
-      delete self.dataListener;
+      self.dataListener = null;
+      self.originalRequest = null;
     };
 
     return true;
+  };
+
+  proto.abortLoading = function StandardChromeActions_abortLoading() {
+    if (this.originalRequest) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+    }
+    this.dataListener = null;
   };
 
   return StandardChromeActions;
@@ -785,7 +831,7 @@ RequestListener.prototype.receive = function(event) {
   var response;
   if (sync) {
     response = actions[action].call(this.actions, data);
-    event.detail.response = response;
+    event.detail.response = makeContentReadable(response, doc.defaultView);
   } else {
     if (!event.detail.responseExpected) {
       doc.documentElement.removeChild(message);
@@ -815,8 +861,6 @@ function FindEventManager(contentWindow) {
   this.contentWindow = contentWindow;
   this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIDocShell)
-                            .sameTypeRootTreeItem
-                            .QueryInterface(Ci.nsIDocShell)
                             .QueryInterface(Ci.nsIInterfaceRequestor)
                             .getInterface(Ci.nsIContentFrameMessageManager);
 }
@@ -860,6 +904,9 @@ PdfStreamConverter.prototype = {
   classID: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER_ID}'),
   classDescription: 'pdf.js Component',
   contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
+
+  classID2: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER2_ID}'),
+  contractID2: '@mozilla.org/streamconv;1?from=application/pdf&to=text/html',
 
   QueryInterface: XPCOMUtils.generateQI([
       Ci.nsISupports,
@@ -1005,7 +1052,7 @@ PdfStreamConverter.prototype = {
             rangeRequest, streamRequest, dataListener);
         } else {
           actions = new StandardChromeActions(
-            domWindow, contentDispositionFilename, dataListener);
+            domWindow, contentDispositionFilename, aRequest, dataListener);
         }
         var requestListener = new RequestListener(actions);
         domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
@@ -1031,14 +1078,25 @@ PdfStreamConverter.prototype = {
 
     // We can use resource principal when data is fetched by the chrome
     // e.g. useful for NoScript
-    var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
-                          .getService(Ci.nsIScriptSecurityManager);
+    var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
+                .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var resourcePrincipal;
+//#if MOZCENTRAL
+    resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+//#else
     // FF16 and below had getCodebasePrincipal, it was replaced by
     // getNoAppCodebasePrincipal (bug 758258).
-    var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
-                            securityManager.getNoAppCodebasePrincipal(uri) :
-                            securityManager.getCodebasePrincipal(uri);
+    // FF43 then replaced getNoAppCodebasePrincipal with
+    // createCodebasePrincipal (bug 1165272).
+    if ('createCodebasePrincipal' in ssm) {
+      resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+    } else if ('getNoAppCodebasePrincipal' in ssm) {
+      resourcePrincipal = ssm.getNoAppCodebasePrincipal(uri);
+    } else {
+      resourcePrincipal = ssm.getCodebasePrincipal(uri);
+    }
+//#endif
     aRequest.owner = resourcePrincipal;
     channel.asyncOpen(proxy, aContext);
   },

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,39 +18,41 @@
 
 // List of shared files to include;
 var sharedFiles = [
+  'shared/global.js',
   'shared/util.js'
 ];
 
 // List of other files to include;
 var otherFiles = [
   'core/network.js',
-  'core/chunked_stream.js',
-  'core/pdf_manager.js',
-  'core/core.js',
-  'core/obj.js',
+  'core/arithmetic_decoder.js',
   'core/charsets.js',
-  'core/annotation.js',
+  'core/glyphlist.js',
+  'core/jpg.js',
+  'core/metrics.js',
+  'core/bidi.js',
+  'core/chunked_stream.js',
+  'core/jbig2.js',
+  'core/jpx.js',
+  'core/murmurhash3.js',
+  'core/primitives.js',
+  'core/stream.js',
+  'core/crypto.js',
+  'core/font_renderer.js',
+  'core/parser.js',
+  'core/cmap.js',
+  'core/obj.js',
+  'core/ps_parser.js',
+  'core/fonts.js',
   'core/function.js',
   'core/colorspace.js',
-  'core/crypto.js',
+  'core/image.js',
   'core/pattern.js',
   'core/evaluator.js',
-  'core/cmap.js',
-  'core/fonts.js',
-  'core/font_renderer.js',
-  'core/glyphlist.js',
-  'core/image.js',
-  'core/metrics.js',
-  'core/parser.js',
-  'core/ps_parser.js',
-  'core/stream.js',
-  'core/worker.js',
-  'core/arithmetic_decoder.js',
-  'core/jpg.js',
-  'core/jpx.js',
-  'core/jbig2.js',
-  'core/bidi.js',
-  'core/murmurhash3.js'
+  'core/annotation.js',
+  'core/document.js',
+  'core/pdf_manager.js',
+  'core/worker.js'
 ];
 
 function loadInOrder(index, path, files) {

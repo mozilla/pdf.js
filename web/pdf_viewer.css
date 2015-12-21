@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 @import url(text_layer_builder.css);
+@import url(annotation_layer_builder.css);
 
 .pdfViewer .canvasWrapper {
   overflow: hidden;
@@ -51,73 +52,22 @@
   background: url('images/loading-icon.gif') center no-repeat;
 }
 
-.pdfViewer .page .annotLink > a:hover {
-  opacity: 0.2;
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
-}
-
-:-webkit-full-screen .pdfViewer .page {
+.pdfPresentationMode:-webkit-full-screen .pdfViewer .page {
   margin-bottom: 100%;
   border: 0;
 }
 
-:-moz-full-screen .pdfViewer .page {
+.pdfPresentationMode:-moz-full-screen .pdfViewer .page {
   margin-bottom: 100%;
   border: 0;
 }
 
-:-ms-fullscreen .pdfViewer .page {
+.pdfPresentationMode:-ms-fullscreen .pdfViewer .page {
   margin-bottom: 100% !important;
   border: 0;
 }
 
-:fullscreen .pdfViewer .page {
+.pdfPresentationMode:fullscreen .pdfViewer .page {
   margin-bottom: 100%;
   border: 0;
-}
-
-.pdfViewer .page .annotText > img {
-  position: absolute;
-  cursor: pointer;
-}
-
-.pdfViewer .page .annotTextContentWrapper {
-  position: absolute;
-  width: 20em;
-}
-
-.pdfViewer .page .annotTextContent {
-  z-index: 200;
-  float: left;
-  max-width: 20em;
-  background-color: #FFFF99;
-  box-shadow: 0px 2px 5px #333;
-  border-radius: 2px;
-  padding: 0.6em;
-  cursor: pointer;
-}
-
-.pdfViewer .page .annotTextContent > h1 {
-  font-size: 1em;
-  border-bottom: 1px solid #000000;
-  padding-bottom: 0.2em;
-}
-
-.pdfViewer .page .annotTextContent > p {
-  padding-top: 0.2em;
-}
-
-.pdfViewer .page .annotLink > a {
-  position: absolute;
-  font-size: 1em;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.pdfViewer .page .annotLink > a /* -ms-a */  {
-  background: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAA\
-                   LAAAAAABAAEAAAIBRAA7") 0 0 repeat;
 }

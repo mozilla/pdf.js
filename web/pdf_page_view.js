@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, CustomStyle, CSS_UNITS, getOutputScale,
-           TextLayerBuilder, AnnotationsLayerBuilder, Promise */
+/* globals RenderingStates, PDFJS, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
+           TextLayerBuilder, AnnotationLayerBuilder, Promise,
+           approximateFraction, roundToDivide */
 
 'use strict';
 
@@ -29,7 +28,7 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
- * @property {IPDFAnnotationsLayerFactory} annotationsLayerFactory
+ * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  */
 
 /**
@@ -37,6 +36,8 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @implements {IRenderableView}
  */
 var PDFPageView = (function PDFPageViewClosure() {
+  var CustomStyle = PDFJS.CustomStyle;
+
   /**
    * @constructs PDFPageView
    * @param {PDFPageViewOptions} options
@@ -48,20 +49,20 @@ var PDFPageView = (function PDFPageViewClosure() {
     var defaultViewport = options.defaultViewport;
     var renderingQueue = options.renderingQueue;
     var textLayerFactory = options.textLayerFactory;
-    var annotationsLayerFactory = options.annotationsLayerFactory;
+    var annotationLayerFactory = options.annotationLayerFactory;
 
     this.id = id;
     this.renderingId = 'page' + id;
 
     this.rotation = 0;
-    this.scale = scale || 1.0;
+    this.scale = scale || DEFAULT_SCALE;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
 
     this.renderingQueue = renderingQueue;
     this.textLayerFactory = textLayerFactory;
-    this.annotationsLayerFactory = annotationsLayerFactory;
+    this.annotationLayerFactory = annotationLayerFactory;
 
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
@@ -101,11 +102,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       this.zoomLayer = null;
       this.reset();
       if (this.pdfPage) {
-        this.pdfPage.destroy();
+        this.pdfPage.cleanup();
       }
     },
 
-    reset: function PDFPageView_reset(keepAnnotations) {
+    reset: function PDFPageView_reset(keepZoomLayer, keepAnnotations) {
       if (this.renderTask) {
         this.renderTask.cancel();
       }
@@ -117,12 +118,12 @@ var PDFPageView = (function PDFPageViewClosure() {
       div.style.height = Math.floor(this.viewport.height) + 'px';
 
       var childNodes = div.childNodes;
-      var currentZoomLayer = this.zoomLayer || null;
+      var currentZoomLayerNode = (keepZoomLayer && this.zoomLayer) || null;
       var currentAnnotationNode = (keepAnnotations && this.annotationLayer &&
                                    this.annotationLayer.div) || null;
       for (var i = childNodes.length - 1; i >= 0; i--) {
         var node = childNodes[i];
-        if (currentZoomLayer === node || currentAnnotationNode === node) {
+        if (currentZoomLayerNode === node || currentAnnotationNode === node) {
           continue;
         }
         div.removeChild(node);
@@ -136,17 +137,15 @@ var PDFPageView = (function PDFPageViewClosure() {
       });
       div.dispatchEvent(event);
 
-      if (keepAnnotations) {
-        if (this.annotationLayer) {
-          // Hide annotationLayer until all elements are resized
-          // so they are not displayed on the already-resized page
-          this.annotationLayer.hide();
-        }
+      if (currentAnnotationNode) {
+        // Hide annotationLayer until all elements are resized
+        // so they are not displayed on the already-resized page
+        this.annotationLayer.hide();
       } else {
         this.annotationLayer = null;
       }
 
-      if (this.canvas) {
+      if (this.canvas && !currentZoomLayerNode) {
         // Zeroing the width and height causes Firefox to release graphics
         // resources immediately, which can greatly reduce memory consumption.
         this.canvas.width = 0;
@@ -174,8 +173,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var isScalingRestricted = false;
       if (this.canvas && PDFJS.maxCanvasPixels > 0) {
-        var ctx = this.canvas.getContext('2d');
-        var outputScale = getOutputScale(ctx);
+        var outputScale = this.outputScale;
         var pixelsInViewport = this.viewport.width * this.viewport.height;
         var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
         if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
@@ -185,19 +183,29 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       }
 
-      if (this.canvas &&
-          (PDFJS.useOnlyCssZoom ||
-            (this.hasRestrictedScaling && isScalingRestricted))) {
-        this.cssTransform(this.canvas, true);
-        return;
-      } else if (this.canvas && !this.zoomLayer) {
-        this.zoomLayer = this.canvas.parentNode;
-        this.zoomLayer.style.position = 'absolute';
+      if (this.canvas) {
+        if (PDFJS.useOnlyCssZoom ||
+            (this.hasRestrictedScaling && isScalingRestricted)) {
+          this.cssTransform(this.canvas, true);
+
+          var event = document.createEvent('CustomEvent');
+          event.initCustomEvent('pagerendered', true, true, {
+            pageNumber: this.id,
+            cssTransform: true,
+          });
+          this.div.dispatchEvent(event);
+
+          return;
+        }
+        if (!this.zoomLayer) {
+          this.zoomLayer = this.canvas.parentNode;
+          this.zoomLayer.style.position = 'absolute';
+        }
       }
       if (this.zoomLayer) {
         this.cssTransform(this.zoomLayer.firstChild);
       }
-      this.reset(true);
+      this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
     },
 
     /**
@@ -274,7 +282,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
 
       if (redrawAnnotations && this.annotationLayer) {
-        this.annotationLayer.setupAnnotations(this.viewport);
+        this.annotationLayer.render(this.viewport, 'display');
       }
     },
 
@@ -309,8 +317,13 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;
+      // Keep the canvas hidden until the first draw callback, or until drawing
+      // is complete when `!this.renderingQueue`, to prevent black flickering.
+      canvas.setAttribute('hidden', 'hidden');
+      var isCanvasHidden = true;
+
       canvasWrapper.appendChild(canvas);
-      if (this.annotationLayer) {
+      if (this.annotationLayer && this.annotationLayer.div) {
         // annotationLayer needs to stay on top
         div.insertBefore(canvasWrapper, this.annotationLayer.div);
       } else {
@@ -318,11 +331,15 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.canvas = canvas;
 
-      var ctx = canvas.getContext('2d');
+//#if MOZCENTRAL || FIREFOX || GENERIC
+      canvas.mozOpaque = true;
+//#endif
+      var ctx = canvas.getContext('2d', {alpha: false});
       var outputScale = getOutputScale(ctx);
+      this.outputScale = outputScale;
 
       if (PDFJS.useOnlyCssZoom) {
-        var actualSizeViewport = viewport.clone({ scale: CSS_UNITS });
+        var actualSizeViewport = viewport.clone({scale: CSS_UNITS});
         // Use a scale that will make the canvas be the original intended size
         // of the page.
         outputScale.sx *= actualSizeViewport.width / viewport.width;
@@ -343,10 +360,12 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       }
 
-      canvas.width = (Math.floor(viewport.width) * outputScale.sx) | 0;
-      canvas.height = (Math.floor(viewport.height) * outputScale.sy) | 0;
-      canvas.style.width = Math.floor(viewport.width) + 'px';
-      canvas.style.height = Math.floor(viewport.height) + 'px';
+      var sfx = approximateFraction(outputScale.sx);
+      var sfy = approximateFraction(outputScale.sy);
+      canvas.width = roundToDivide(viewport.width * outputScale.sx, sfx[0]);
+      canvas.height = roundToDivide(viewport.height * outputScale.sy, sfy[0]);
+      canvas.style.width = roundToDivide(viewport.width, sfx[1]) + 'px';
+      canvas.style.height = roundToDivide(viewport.height, sfy[1]) + 'px';
       // Add the viewport so it's known what it was originally drawn with.
       canvas._viewport = viewport;
 
@@ -355,9 +374,9 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (this.textLayerFactory) {
         textLayerDiv = document.createElement('div');
         textLayerDiv.className = 'textLayer';
-        textLayerDiv.style.width = canvas.style.width;
-        textLayerDiv.style.height = canvas.style.height;
-        if (this.annotationLayer) {
+        textLayerDiv.style.width = canvasWrapper.style.width;
+        textLayerDiv.style.height = canvasWrapper.style.height;
+        if (this.annotationLayer && this.annotationLayer.div) {
           // annotationLayer needs to stay on top
           div.insertBefore(textLayerDiv, this.annotationLayer.div);
         } else {
@@ -369,13 +388,6 @@ var PDFPageView = (function PDFPageViewClosure() {
                                                                  this.viewport);
       }
       this.textLayer = textLayer;
-
-      // TODO(mack): use data attributes to store these
-      ctx._scaleX = outputScale.sx;
-      ctx._scaleY = outputScale.sy;
-      if (outputScale.scaled) {
-        ctx.scale(outputScale.sx, outputScale.sy);
-      }
 
       var resolveRenderPromise, rejectRenderPromise;
       var promise = new Promise(function (resolve, reject) {
@@ -401,12 +413,23 @@ var PDFPageView = (function PDFPageViewClosure() {
 
         self.renderingState = RenderingStates.FINISHED;
 
+        if (isCanvasHidden) {
+          self.canvas.removeAttribute('hidden');
+          isCanvasHidden = false;
+        }
+
         if (self.loadingIconDiv) {
           div.removeChild(self.loadingIconDiv);
           delete self.loadingIconDiv;
         }
 
         if (self.zoomLayer) {
+          // Zeroing the width and height causes Firefox to release graphics
+          // resources immediately, which can greatly reduce memory consumption.
+          var zoomLayerCanvas = self.zoomLayer.firstChild;
+          zoomLayerCanvas.width = 0;
+          zoomLayerCanvas.height = 0;
+
           div.removeChild(self.zoomLayer);
           self.zoomLayer = null;
         }
@@ -418,7 +441,8 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
         var event = document.createEvent('CustomEvent');
         event.initCustomEvent('pagerendered', true, true, {
-          pageNumber: self.id
+          pageNumber: self.id,
+          cssTransform: false,
         });
         div.dispatchEvent(event);
 //#if GENERIC
@@ -449,23 +473,30 @@ var PDFPageView = (function PDFPageViewClosure() {
             };
             return;
           }
+          if (isCanvasHidden) {
+            self.canvas.removeAttribute('hidden');
+            isCanvasHidden = false;
+          }
           cont();
         };
       }
 
+      var transform = !outputScale.scaled ? null :
+        [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
       var renderContext = {
         canvasContext: ctx,
+        transform: transform,
         viewport: this.viewport,
         // intent: 'default', // === 'display'
-        continueCallback: renderContinueCallback
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+      renderTask.onContinue = renderContinueCallback;
 
       this.renderTask.promise.then(
         function pdfPageRenderCallback() {
           pageViewDrawCallback(null);
           if (textLayer) {
-            self.pdfPage.getTextContent().then(
+            self.pdfPage.getTextContent({ normalizeWhitespace: true }).then(
               function textContentResolved(textContent) {
                 textLayer.setTextContent(textContent);
                 textLayer.render(TEXT_LAYER_RENDER_DELAY);
@@ -478,12 +509,12 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       );
 
-      if (this.annotationsLayerFactory) {
+      if (this.annotationLayerFactory) {
         if (!this.annotationLayer) {
-          this.annotationLayer = this.annotationsLayerFactory.
-            createAnnotationsLayerBuilder(div, this.pdfPage);
+          this.annotationLayer = this.annotationLayerFactory.
+            createAnnotationLayerBuilder(div, this.pdfPage);
         }
-        this.annotationLayer.setupAnnotations(this.viewport);
+        this.annotationLayer.render(this.viewport, 'display');
       }
       div.setAttribute('data-loaded', true);
 
@@ -501,10 +532,15 @@ var PDFPageView = (function PDFPageViewClosure() {
       // better output until bug 811002 is fixed in FF.
       var PRINT_OUTPUT_SCALE = 2;
       var canvas = document.createElement('canvas');
+
+      // The logical size of the canvas.
       canvas.width = Math.floor(viewport.width) * PRINT_OUTPUT_SCALE;
       canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
-      canvas.style.width = (PRINT_OUTPUT_SCALE * viewport.width) + 'pt';
-      canvas.style.height = (PRINT_OUTPUT_SCALE * viewport.height) + 'pt';
+
+      // The rendered size of the canvas, relative to the size of canvasWrapper.
+      canvas.style.width = (PRINT_OUTPUT_SCALE * 100) + '%';
+      canvas.style.height = (PRINT_OUTPUT_SCALE * 100) + '%';
+
       var cssScale = 'scale(' + (1 / PRINT_OUTPUT_SCALE) + ', ' +
                                 (1 / PRINT_OUTPUT_SCALE) + ')';
       CustomStyle.setProp('transform' , canvas, cssScale);
@@ -524,6 +560,11 @@ var PDFPageView = (function PDFPageViewClosure() {
         ctx.fillStyle = 'rgb(255, 255, 255)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
+//#if !(MOZCENTRAL || FIREFOX)
+        // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
+        ctx._transformMatrix =
+          [PRINT_OUTPUT_SCALE, 0, 0, PRINT_OUTPUT_SCALE, 0, 0];
+//#endif
         ctx.scale(PRINT_OUTPUT_SCALE, PRINT_OUTPUT_SCALE);
 
         var renderContext = {

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Util, isString, isInt, warn, error, isCmd, isEOF, isName, Lexer,
-           isStream, StringStream, PDFJS, assert */
+/* globals PDFJS */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/cmap', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'), require('./parser.js'));
+  } else {
+    factory((root.pdfjsCoreCMap = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser) {
+
+var Util = sharedUtil.Util;
+var assert = sharedUtil.assert;
+var error = sharedUtil.error;
+var isInt = sharedUtil.isInt;
+var isString = sharedUtil.isString;
+var warn = sharedUtil.warn;
+var isName = corePrimitives.isName;
+var isCmd = corePrimitives.isCmd;
+var isStream = corePrimitives.isStream;
+var StringStream = coreStream.StringStream;
+var Lexer = coreParser.Lexer;
+var isEOF = coreParser.isEOF;
 
 var BUILT_IN_CMAPS = [
 // << Start unicode maps.
@@ -204,6 +228,7 @@ var CMap = (function CMapClosure() {
     // - bf chars are variable-length byte sequences, stored as strings, with
     //   one byte per character.
     this._map = [];
+    this.name = '';
     this.vertical = false;
     this.useCMap = null;
     this.builtInCMap = builtInCMap;
@@ -303,13 +328,32 @@ var CMap = (function CMapClosure() {
       }
       out.charcode = 0;
       out.length = 1;
+    },
+
+    get length() {
+      return this._map.length;
+    },
+
+    get isIdentityCMap() {
+      if (!(this.name === 'Identity-H' || this.name === 'Identity-V')) {
+        return false;
+      }
+      if (this._map.length !== 0x10000) {
+        return false;
+      }
+      for (var i = 0; i < 0x10000; i++) {
+        if (this._map[i] !== i) {
+          return false;
+        }
+      }
+      return true;
     }
   };
   return CMap;
 })();
 
 // A special case of CMap, where the _map array implicitly has a length of
-// 65535 and each element is equal to its index.
+// 65536 and each element is equal to its index.
 var IdentityCMap = (function IdentityCMapClosure() {
   function IdentityCMap(vertical, n) {
     CMap.call(this);
@@ -364,7 +408,15 @@ var IdentityCMap = (function IdentityCMapClosure() {
       return map;
     },
 
-    readCharCode: CMap.prototype.readCharCode
+    readCharCode: CMap.prototype.readCharCode,
+
+    get length() {
+      return 0x10000;
+    },
+
+    get isIdentityCMap() {
+      error('should not access .isIdentityCMap');
+    }
   };
 
   return IdentityCMap;
@@ -829,6 +881,13 @@ var CMapFactory = (function CMapFactoryClosure() {
     }
   }
 
+  function parseCMapName(cMap, lexer) {
+    var obj = lexer.getObj();
+    if (isName(obj) && isString(obj.name)) {
+      cMap.name = obj.name;
+    }
+  }
+
   function parseCMap(cMap, lexer, builtInCMapParams, useCMap) {
     var previous;
     var embededUseCMap;
@@ -839,6 +898,8 @@ var CMapFactory = (function CMapFactoryClosure() {
       } else if (isName(obj)) {
         if (obj.name === 'WMode') {
           parseWMode(cMap, lexer);
+        } else if (obj.name === 'CMapName') {
+          parseCMapName(cMap, lexer);
         }
         previous = obj;
       } else if (isCmd(obj)) {
@@ -948,9 +1009,17 @@ var CMapFactory = (function CMapFactoryClosure() {
         } catch (e) {
           warn('Invalid CMap data. ' + e);
         }
+        if (cMap.isIdentityCMap) {
+          return createBuiltInCMap(cMap.name, builtInCMapParams);
+        }
         return cMap;
       }
       error('Encoding required.');
     }
   };
 })();
+
+exports.CMap = CMap;
+exports.CMapFactory = CMapFactory;
+exports.IdentityCMap = IdentityCMap;
+}));

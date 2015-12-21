@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,10 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, MissingDataException, isInt, NetworkManager, Promise,
-           isEmptyObj, createPromiseCapability */
+/* globals NetworkManager */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/chunked_stream', ['exports', 'pdfjs/shared/util'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'));
+  } else {
+    factory((root.pdfjsCoreChunkedStream = {}), root.pdfjsSharedUtil);
+  }
+}(this, function (exports, sharedUtil) {
+
+var MissingDataException = sharedUtil.MissingDataException;
+var assert = sharedUtil.assert;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var isInt = sharedUtil.isInt;
+var isEmptyObj = sharedUtil.isEmptyObj;
 
 var ChunkedStream = (function ChunkedStreamClosure() {
   function ChunkedStream(length, chunkSize, manager) {
@@ -131,14 +145,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     },
 
     nextEmptyChunk: function ChunkedStream_nextEmptyChunk(beginChunk) {
-      var chunk, n;
-      for (chunk = beginChunk, n = this.numChunks; chunk < n; ++chunk) {
-        if (!this.loadedChunks[chunk]) {
-          return chunk;
-        }
-      }
-      // Wrap around to beginning
-      for (chunk = 0; chunk < beginChunk; ++chunk) {
+      var chunk, numChunks = this.numChunks;
+      for (var i = 0; i < numChunks; ++i) {
+        chunk = (beginChunk + i) % numChunks; // Wrap around to beginning
         if (!this.loadedChunks[chunk]) {
           return chunk;
         }
@@ -287,11 +296,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     } else {
 
       var getXhr = function getXhr() {
-//#if B2G
-//      return new XMLHttpRequest({ mozSystem: true });
-//#else
         return new XMLHttpRequest();
-//#endif
       };
       this.networkManager = new NetworkManager(this.url, {
         getXhr: getXhr,
@@ -310,7 +315,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
     this.chunksNeededByRequest = {};
     this.requestsByChunk = {};
-    this.callbacksByRequest = {};
+    this.promisesByRequest = {};
     this.progressiveDataLength = 0;
 
     this._loadedStreamCapability = createPromiseCapability();
@@ -329,12 +334,11 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     // contiguous ranges to load in as few requests as possible
     requestAllChunks: function ChunkedStreamManager_requestAllChunks() {
       var missingChunks = this.stream.getMissingChunks();
-      this.requestChunks(missingChunks);
+      this._requestChunks(missingChunks);
       return this._loadedStreamCapability.promise;
     },
 
-    requestChunks: function ChunkedStreamManager_requestChunks(chunks,
-                                                               callback) {
+    _requestChunks: function ChunkedStreamManager_requestChunks(chunks) {
       var requestId = this.currRequestId++;
 
       var chunksNeeded;
@@ -347,13 +351,11 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       if (isEmptyObj(chunksNeeded)) {
-        if (callback) {
-          callback();
-        }
-        return;
+        return Promise.resolve();
       }
 
-      this.callbacksByRequest[requestId] = callback;
+      var capability = createPromiseCapability();
+      this.promisesByRequest[requestId] = capability;
 
       var chunksToRequest = [];
       for (var chunk in chunksNeeded) {
@@ -366,7 +368,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       if (!chunksToRequest.length) {
-        return;
+        return capability.promise;
       }
 
       var groupedChunksToRequest = this.groupChunks(chunksToRequest);
@@ -377,6 +379,8 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var end = Math.min(groupedChunk.endChunk * this.chunkSize, this.length);
         this.sendRequest(begin, end);
       }
+
+      return capability.promise;
     },
 
     getStream: function ChunkedStreamManager_getStream() {
@@ -384,8 +388,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     },
 
     // Loads any chunks in the requested range that are not yet loaded
-    requestRange: function ChunkedStreamManager_requestRange(
-                      begin, end, callback) {
+    requestRange: function ChunkedStreamManager_requestRange(begin, end) {
 
       end = Math.min(end, this.length);
 
@@ -397,11 +400,10 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         chunks.push(chunk);
       }
 
-      this.requestChunks(chunks, callback);
+      return this._requestChunks(chunks);
     },
 
-    requestRanges: function ChunkedStreamManager_requestRanges(ranges,
-                                                               callback) {
+    requestRanges: function ChunkedStreamManager_requestRanges(ranges) {
       ranges = ranges || [];
       var chunksToRequest = [];
 
@@ -416,10 +418,10 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       }
 
       chunksToRequest.sort(function(a, b) { return a - b; });
-      this.requestChunks(chunksToRequest, callback);
+      return this._requestChunks(chunksToRequest);
     },
 
-    // Groups a sorted array of chunks into as few continguous larger
+    // Groups a sorted array of chunks into as few contiguous larger
     // chunks as possible
     groupChunks: function ChunkedStreamManager_groupChunks(chunks) {
       var groupedChunks = [];
@@ -515,17 +517,15 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
           nextEmptyChunk = this.stream.nextEmptyChunk(endChunk);
         }
         if (isInt(nextEmptyChunk)) {
-          this.requestChunks([nextEmptyChunk]);
+          this._requestChunks([nextEmptyChunk]);
         }
       }
 
       for (i = 0; i < loadedRequests.length; ++i) {
         requestId = loadedRequests[i];
-        var callback = this.callbacksByRequest[requestId];
-        delete this.callbacksByRequest[requestId];
-        if (callback) {
-          callback();
-        }
+        var capability = this.promisesByRequest[requestId];
+        delete this.promisesByRequest[requestId];
+        capability.resolve();
       }
 
       this.msgHandler.send('DocProgress', {
@@ -544,19 +544,24 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     },
 
     getEndChunk: function ChunkedStreamManager_getEndChunk(end) {
-      if (end % this.chunkSize === 0) {
-        return end / this.chunkSize;
-      }
-
-      // 0 -> 0
-      // 1 -> 1
-      // 99 -> 1
-      // 100 -> 1
-      // 101 -> 2
       var chunk = Math.floor((end - 1) / this.chunkSize) + 1;
       return chunk;
+    },
+
+    abort: function ChunkedStreamManager_abort() {
+      if (this.networkManager) {
+        this.networkManager.abortAllRequests();
+      }
+      for(var requestId in this.promisesByRequest) {
+        var capability = this.promisesByRequest[requestId];
+        capability.reject(new Error('Request was aborted'));
+      }
     }
   };
 
   return ChunkedStreamManager;
 })();
+
+exports.ChunkedStream = ChunkedStream;
+exports.ChunkedStreamManager = ChunkedStreamManager;
+}));

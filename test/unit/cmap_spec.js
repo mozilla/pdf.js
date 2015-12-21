@@ -1,6 +1,5 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, StringStream, CMapFactory, Name */
+/* globals expect, it, describe, StringStream, CMapFactory, Name, CMap,
+           IdentityCMap */
 
 'use strict';
 
@@ -92,8 +91,17 @@ describe('cmap', function() {
     var stream = new StringStream(str);
     var cmap = CMapFactory.create(stream,
                                   { url: cMapUrl, packed: cMapPacked }, null);
+    expect(cmap instanceof CMap).toEqual(true);
     expect(cmap.useCMap).not.toBeNull();
-    expect(cmap.builtInCMap).toBeUndefined();
+    expect(cmap.builtInCMap).toBeFalsy();
+    expect(cmap.length).toEqual(0x20A7);
+    expect(cmap.isIdentityCMap).toEqual(false);
+  });
+  it('parses cmapname', function() {
+    var str = '/CMapName /Identity-H def\n';
+    var stream = new StringStream(str);
+    var cmap = CMapFactory.create(stream);
+    expect(cmap.name).toEqual('Identity-H');
   });
   it('parses wmode', function() {
     var str = '/WMode 1 def\n';
@@ -104,7 +112,19 @@ describe('cmap', function() {
   it('loads built in cmap', function() {
     var cmap = CMapFactory.create(new Name('Adobe-Japan1-1'),
                                   { url: cMapUrl, packed: cMapPacked }, null);
+    expect(cmap instanceof CMap).toEqual(true);
     expect(cmap.useCMap).toBeNull();
     expect(cmap.builtInCMap).toBeTruthy();
+    expect(cmap.length).toEqual(0x20A7);
+    expect(cmap.isIdentityCMap).toEqual(false);
+  });
+  it('loads built in identity cmap', function() {
+    var cmap = CMapFactory.create(new Name('Identity-H'),
+                                  { url: cMapUrl, packed: cMapPacked }, null);
+    expect(cmap instanceof IdentityCMap).toEqual(true);
+    expect(cmap.vertical).toEqual(false);
+    expect(cmap.length).toEqual(0x10000);
+    expect(function() { return cmap.isIdentityCMap; }).toThrow(
+      new Error('should not access .isIdentityCMap'));
   });
 });
