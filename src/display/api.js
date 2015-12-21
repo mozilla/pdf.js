@@ -58,6 +58,14 @@ var globalScope = sharedGlobal.globalScope;
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
+//#if PRODUCTION && !SINGLE_FILE
+//#if GENERIC
+//#include ../src/frameworks.js
+//#else
+//var fakeWorkerFilesLoader = null;
+//#endif
+//#endif
+
 /**
  * The maximum allowed image size in total pixels e.g. width * height. Images
  * above this value will not be drawn. Use -1 for no limit.
@@ -1192,7 +1200,10 @@ var PDFWorker = (function PDFWorkerClosure() {
 //    PDFJS.fakeWorkerFilesLoadedCapability.resolve();
 //#endif
 //#if PRODUCTION && !SINGLE_FILE
-//    Util.loadScript(PDFJS.workerSrc, function() {
+//    var loader = fakeWorkerFilesLoader || function (callback) {
+//      Util.loadScript(PDFJS.workerSrc, callback);
+//    };
+//    loader(function () {
 //      PDFJS.fakeWorkerFilesLoadedCapability.resolve();
 //    });
 //#endif
@@ -1295,8 +1306,10 @@ var PDFWorker = (function PDFWorkerClosure() {
     },
 
     _setupFakeWorker: function PDFWorker_setupFakeWorker() {
-      warn('Setting up fake worker.');
-      globalScope.PDFJS.disableWorker = true;
+      if (!globalScope.PDFJS.disableWorker) {
+        warn('Setting up fake worker.');
+        globalScope.PDFJS.disableWorker = true;
+      }
 
       setupFakeWorkerGlobal().then(function () {
         if (this.destroyed) {

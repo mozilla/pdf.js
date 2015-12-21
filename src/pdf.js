@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*jshint globalstrict: false */
-/* globals PDFJS */
+/* jshint globalstrict: false */
+/* globals PDFJS, global */
 
 // Initializing PDFJS global object (if still undefined)
 if (typeof PDFJS === 'undefined') {
-  (typeof window !== 'undefined' ? window : this).PDFJS = {};
+  (typeof window !== 'undefined' ? window :
+   typeof global !== 'undefined' ? global : this).PDFJS = {};
 }
 
 //#if BUNDLE_VERSION
