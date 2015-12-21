@@ -25,7 +25,7 @@
 
 'use strict';
 
-var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
+var DEFAULT_URL = null;
 var DEFAULT_SCALE_DELTA = 1.1;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 10.0;
@@ -35,7 +35,7 @@ var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
 PDFJS.imageResourcesPath = './images/';
-  PDFJS.workerSrc = '../build/pdf.worker.js';
+
   PDFJS.cMapUrl = '../web/cmaps/';
   PDFJS.cMapPacked = true;
 
@@ -7376,7 +7376,7 @@ function webViewerInitialized() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+//document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 
 document.addEventListener('pagerendered', function (e) {
   var pageNumber = e.detail.pageNumber;
@@ -7525,6 +7525,9 @@ window.addEventListener('resize', function webViewerResize(evt) {
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
+  if (PDFViewerApplication.initialized) {
+      return;
+  }
   if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
     var hash = document.location.hash.substring(1);
     if (!hash) {
@@ -7656,6 +7659,9 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 function handleMouseWheel(evt) {
+  if (!PDFViewerApplication.initialized) {
+      return;
+  }
   var MOUSE_WHEEL_DELTA_FACTOR = 40;
   var ticks = (evt.type === 'DOMMouseScroll') ? -evt.detail :
               evt.wheelDelta / MOUSE_WHEEL_DELTA_FACTOR;
