@@ -1,0 +1,9 @@
+{
+  "name": "webpack-pdf.js-example",
+  "version": "0.1.0",
+  "devDependencies": {
+    "webpack": "~1.12.9",
+    "entry-loader": "~0.1.0",
+    "pdfjs-dist": "../../build/dist"
+  }
+}

@@ -120,8 +120,16 @@ DOMElement.prototype = {
   },
 }
 
+global.window = global;
+
+global.navigator = { userAgent: 'node' };
+
 global.document = {
   childNodes : [],
+
+  get currentScript() {
+    return { src: '' };
+  },
 
   get documentElement() {
     return this;

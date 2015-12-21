@@ -5,6 +5,7 @@
     "jsdoc": "^3.3.0-alpha9",
     "jshint": "~2.8.0",
     "wintersmith": "^2.0.0",
+    "node-ensure": "^0.0.0",
     "rimraf": "^2.4.1",
     "shelljs": "~0.4.0",
     "typogr": "~0.6.5",

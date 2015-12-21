@@ -149,6 +149,7 @@ target.generic = function() {
   };
   builder.build(setup);
 
+  cleanupJSSource(GENERIC_DIR + '/build/pdf.js');
   cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
   cleanupCSSSource(GENERIC_DIR + '/web/viewer.css');
 };
@@ -325,6 +326,7 @@ target.dist = function() {
   var npmManifest = {
     name: DIST_NAME,
     version: VERSION,
+    main: 'build/pdf.js',
     description: DIST_DESCRIPTION,
     keywords: DIST_KEYWORDS,
     homepage: DIST_HOMEPAGE,

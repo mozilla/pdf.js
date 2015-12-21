@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals NetworkManager */
+/* globals NetworkManager, module */
 
 'use strict';
 
@@ -648,7 +648,8 @@ var workerConsole = {
 
 
 // Worker thread?
-if (typeof window === 'undefined' && typeof require === 'undefined') {
+if (typeof window === 'undefined' &&
+    !(typeof module !== 'undefined' && module.require)) {
   if (!('console' in globalScope)) {
     globalScope.console = workerConsole;
   }
