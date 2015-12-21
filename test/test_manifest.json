@@ -498,6 +498,7 @@
        "link": true,
        "lastPage": 1,
        "type": "eq",
+       "annotations": true,
        "about": "PDF with annotations, some of which have the Hidden flag set."
     },
     {  "id": "issue4665-text",
