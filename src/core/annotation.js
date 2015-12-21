@@ -607,7 +607,7 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     WidgetAnnotation.call(this, params);
 
     this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
-    this.data.hasHtml = !this.data.hasAppearance && !!this.data.fieldValue;
+    this.data.showable = !this.data.hasAppearance && !!this.data.fieldValue;
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
@@ -650,7 +650,6 @@ var TextAnnotation = (function TextAnnotationClosure() {
     data.annotationType = AnnotationType.TEXT;
     data.content = stringToPDFString(content || '');
     data.title = stringToPDFString(title || '');
-    data.hasHtml = true;
 
     if (data.hasAppearance) {
       data.name = 'NoIcon';
@@ -677,7 +676,6 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     var dict = params.dict;
     var data = this.data;
     data.annotationType = AnnotationType.LINK;
-    data.hasHtml = true;
 
     var action = dict.get('A');
     if (action && isDict(action)) {

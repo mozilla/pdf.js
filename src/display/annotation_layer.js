@@ -450,6 +450,10 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
      * @returns {HTMLSectionElement}
      */
     render: function WidgetAnnotationElement_render() {
+      if (!this.data.showable) {
+        return;
+      }
+
       var content = document.createElement('div');
       content.textContent = this.data.fieldValue;
       var textAlignment = this.data.textAlignment;
@@ -525,13 +529,8 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
       var annotationElementFactory = new AnnotationElementFactory();
 
       for (var i = 0, ii = parameters.annotations.length; i < ii; i++) {
-        var data = parameters.annotations[i];
-        if (!data || !data.hasHtml) {
-          continue;
-        }
-
         var properties = {
-          data: data,
+          data: parameters.annotations[i],
           page: parameters.page,
           viewport: parameters.viewport,
           linkService: parameters.linkService
