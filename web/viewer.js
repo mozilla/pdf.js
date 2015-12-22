@@ -169,6 +169,9 @@ var PDFViewerApplication = {
       findController: this.findController
     });
 
+    this.loadingBar = new ProgressBar('#loadingBar', {});
+    PDFJS.shadow(this, 'loadingBar', bar);
+
     this.findController.setFindBar(this.findBar);
 
     HandTool.initialize({
@@ -388,12 +391,6 @@ var PDFViewerApplication = {
 //#endif
 
     return PDFJS.shadow(this, 'supportsDocumentColors', support);
-  },
-
-  get loadingBar() {
-    var bar = new ProgressBar('#loadingBar', {});
-
-    return PDFJS.shadow(this, 'loadingBar', bar);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
