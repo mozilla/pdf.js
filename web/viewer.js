@@ -1783,7 +1783,7 @@ window.addEventListener('resize', function webViewerResize(evt) {
 });
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
-  if (PDFViewerApplication.initialized) {
+  if (!PDFViewerApplication.initialized) {
       return;
   }
   if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
