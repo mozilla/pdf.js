@@ -47,6 +47,7 @@ var shadow = sharedUtil.shadow;
 var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
+var isValidUrl = sharedUtil.isValidUrl;
 var Ref = corePrimitives.Ref;
 var RefSet = corePrimitives.RefSet;
 var RefSetCache = corePrimitives.RefSetCache;
@@ -146,9 +147,17 @@ var Catalog = (function CatalogClosure() {
             if (!outlineDict.has('Title')) {
               error('Invalid outline item');
             }
-            var dest = outlineDict.get('A');
-            if (dest) {
-              dest = dest.get('D');
+            var actionDict = outlineDict.get('A'), dest = null, url = null;
+            if (actionDict) {
+              var destEntry = actionDict.get('D');
+              if (destEntry) {
+                dest = destEntry;
+              } else {
+                var uriEntry = actionDict.get('URI');
+                if (isString(uriEntry) && isValidUrl(uriEntry, false)) {
+                  url = uriEntry;
+                }
+              }
             } else if (outlineDict.has('Dest')) {
               dest = outlineDict.getRaw('Dest');
               if (isName(dest)) {
@@ -158,6 +167,7 @@ var Catalog = (function CatalogClosure() {
             var title = outlineDict.get('Title');
             var outlineItem = {
               dest: dest,
+              url: url,
               title: stringToPDFString(title),
               color: outlineDict.get('C') || [0, 0, 0],
               count: outlineDict.get('Count'),

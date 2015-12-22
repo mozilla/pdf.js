@@ -371,11 +371,33 @@ describe('api', function() {
       var promise = doc.getOutline();
       waitsForPromiseResolved(promise, function(outline) {
         // Two top level entries.
+        expect(outline instanceof Array).toEqual(true);
         expect(outline.length).toEqual(2);
         // Make sure some basic attributes are set.
-        expect(outline[1].title).toEqual('Chapter 1');
-        expect(outline[1].items.length).toEqual(1);
-        expect(outline[1].items[0].title).toEqual('Paragraph 1.1');
+        var outlineItem = outline[1];
+        expect(outlineItem.title).toEqual('Chapter 1');
+        expect(outlineItem.dest instanceof Array).toEqual(true);
+        expect(outlineItem.url).toEqual(null);
+
+        expect(outlineItem.items.length).toEqual(1);
+        expect(outlineItem.items[0].title).toEqual('Paragraph 1.1');
+      });
+    });
+    it('gets outline containing a url', function() {
+      var pdfUrl = combineUrl(window.location.href, '../pdfs/issue3214.pdf');
+      var loadingTask = PDFJS.getDocument(pdfUrl);
+
+      loadingTask.promise.then(function (pdfDocument) {
+        pdfDocument.getOutline().then(function (outline) {
+          expect(outline instanceof Array).toEqual(true);
+          expect(outline.length).toEqual(5);
+
+          var outlineItem = outline[2];
+          expect(outlineItem.dest).toEqual(null);
+          expect(outlineItem.url).toEqual('http://google.com');
+
+          loadingTask.destroy(); // Cleanup the worker.
+        });
       });
     });
     it('gets metadata', function() {

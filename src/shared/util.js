@@ -318,6 +318,26 @@ function isValidUrl(url, allowRelative) {
 }
 PDFJS.isValidUrl = isValidUrl;
 
+/**
+ * Adds various attributes (href, title, target, rel) to hyperlinks.
+ * @param {HTMLLinkElement} link - The link element.
+ * @param {Object} params - An object with the properties:
+ * @param {string} params.url - An absolute URL.
+ */
+function addLinkAttributes(link, params) {
+  var url = params && params.url;
+  link.href = link.title = (url ? removeNullCharacters(url) : '');
+
+  if (url) {
+    if (isExternalLinkTargetSet()) {
+      link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
+    }
+    // Strip referrer from the URL.
+    link.rel = PDFJS.externalLinkRel;
+  }
+}
+PDFJS.addLinkAttributes = addLinkAttributes;
+
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
                                      enumerable: true,
@@ -2292,6 +2312,7 @@ exports.isInt = isInt;
 exports.isNum = isNum;
 exports.isString = isString;
 exports.isValidUrl = isValidUrl;
+exports.addLinkAttributes = addLinkAttributes;
 exports.loadJpegStream = loadJpegStream;
 exports.log2 = log2;
 exports.readInt8 = readInt8;

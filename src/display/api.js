@@ -714,6 +714,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      *   italic: boolean,
      *   color: rgb array,
      *   dest: dest obj,
+     *   url: string,
      *   items: array of more items like this
      *  },
      *  ...

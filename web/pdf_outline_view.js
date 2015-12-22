@@ -62,6 +62,10 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
      * @private
      */
     _bindLink: function PDFOutlineView_bindLink(element, item) {
+      if (item.url) {
+        PDFJS.addLinkAttributes(element, { url: item.url });
+        return;
+      }
       var linkService = this.linkService;
       element.href = linkService.getDestinationHash(item.dest);
       element.onclick = function goToDestination(e) {
