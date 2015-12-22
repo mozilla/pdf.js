@@ -113,6 +113,7 @@ var PDFViewerApplication = {
   preferenceDefaultZoomValue: '',
   isViewerEmbedded: (window.parent !== window),
   url: '',
+  loadingBar: null,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -122,6 +123,9 @@ var PDFViewerApplication = {
 
     var pdfLinkService = new PDFLinkService();
     this.pdfLinkService = pdfLinkService;
+
+    var bar = new ProgressBar('#loadingBar', {});
+    this.loadingBar = bar;
 
     var container = document.getElementById('viewerContainer');
     var viewer = document.getElementById('viewer');
@@ -168,9 +172,6 @@ var PDFViewerApplication = {
       findNextButton: document.getElementById('findNext'),
       findController: this.findController
     });
-
-    this.loadingBar = new ProgressBar('#loadingBar', {});
-    PDFJS.shadow(this, 'loadingBar', bar);
 
     this.findController.setFindBar(this.findBar);
 
