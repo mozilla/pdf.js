@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals global */
+/* globals global, pdfjsVersion, pdfjsBuild */
 
 'use strict';
 
@@ -37,6 +37,13 @@
   // In development, it will be declared here
   if (!globalScope.PDFJS) {
     globalScope.PDFJS = {};
+  }
+
+  if (typeof pdfjsVersion !== 'undefined') {
+    globalScope.PDFJS.version = pdfjsVersion;
+  }
+  if (typeof pdfjsVersion !== 'undefined') {
+    globalScope.PDFJS.build = pdfjsBuild;
   }
 
   globalScope.PDFJS.pdfBug = false;
