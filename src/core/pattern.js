@@ -80,7 +80,7 @@ var Shadings = {};
 // support extend.  Number.MIN_VALUE appears to be too small and breaks the
 // extend. 1e-7 works in FF but chrome seems to use an even smaller sized number
 // internally so we have to go bigger.
-Shadings.SMALL_NUMBER = 1e-2;
+Shadings.SMALL_NUMBER = 1e-6;
 
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
