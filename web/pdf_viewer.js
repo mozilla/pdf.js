@@ -137,8 +137,15 @@ var PDFViewer = (function pdfViewer() {
       event.updateInProgress = this.updateInProgress;
 
       if (!(0 < val && val <= this.pagesCount)) {
-        event.pageNumber = this._currentPageNumber;
-        event.previousPageNumber = val;
+        if (val <= 0) {
+          val = 1;
+        }
+        else if (val > this.pagesCount) {
+          val = this.pagesCount;
+        }
+        event.previousPageNumber = this._currentPageNumber;
+        this._currentPageNumber = val;
+        event.pageNumber = val;
         this.container.dispatchEvent(event);
         return;
       }
