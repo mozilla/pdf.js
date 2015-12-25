@@ -263,6 +263,96 @@ var Catalog = (function CatalogClosure() {
       }
       return dest;
     },
+
+    get pageLabels() {
+      var obj = null;
+      try {
+        obj = this.readPageLabels();
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn('Unable to read page labels.');
+      }
+      return shadow(this, 'pageLabels', obj);
+    },
+    readPageLabels: function Catalog_readPageLabels() {
+      var obj = this.catDict.getRaw('PageLabels');
+      if (!obj) {
+        return null;
+      }
+      var pageLabels = new Array(this.numPages);
+      var style = null;
+      var prefix = '';
+      var start = 1;
+
+      var numberTree = new NumberTree(obj, this.xref);
+      var nums = numberTree.getAll();
+      var currentLabel = '', currentIndex = 1;
+
+      for (var i = 0, ii = this.numPages; i < ii; i++) {
+        if (nums.hasOwnProperty(i)) {
+          var labelDict = nums[i];
+          assert(isDict(labelDict), 'The PageLabel is not a dictionary.');
+
+          var type = labelDict.get('Type');
+          assert(!type || (isName(type) && type.name === 'PageLabel'),
+                 'Invalid type in PageLabel dictionary.');
+
+          var s = labelDict.get('S');
+          assert(!s || isName(s), 'Invalid style in PageLabel dictionary.');
+          style = (s ? s.name : null);
+
+          prefix = labelDict.get('P') || '';
+          assert(isString(prefix), 'Invalid prefix in PageLabel dictionary.');
+
+          start = labelDict.get('St') || 1;
+          assert(isInt(start), 'Invalid start in PageLabel dictionary.');
+          currentIndex = start;
+        }
+
+        switch (style) {
+          case 'D':
+            currentLabel = currentIndex;
+            break;
+          case 'R':
+          case 'r':
+            currentLabel = Util.toRoman(currentIndex, style === 'r');
+            break;
+          case 'A':
+          case 'a':
+            var LIMIT = 26; // Use only the characters A--Z, or a--z.
+            var A_UPPER_CASE = 0x41, A_LOWER_CASE = 0x61;
+
+            var baseCharCode = (style === 'a' ? A_LOWER_CASE : A_UPPER_CASE);
+            var letterIndex = currentIndex - 1;
+            var character = String.fromCharCode(baseCharCode +
+                                                (letterIndex % LIMIT));
+            var charBuf = [];
+            for (var j = 0, jj = (letterIndex / LIMIT) | 0; j <= jj; j++) {
+              charBuf.push(character);
+            }
+            currentLabel = charBuf.join('');
+            break;
+          default:
+            assert(!style,
+                   'Invalid style "' + style + '" in PageLabel dictionary.');
+        }
+        pageLabels[i] = prefix + currentLabel;
+
+        currentLabel = '';
+        currentIndex++;
+      }
+
+      // Ignore PageLabels if they correspond to standard page numbering.
+      for (i = 0, ii = this.numPages; i < ii; i++) {
+        if (pageLabels[i] !== (i + 1).toString()) {
+          break;
+        }
+      }
+      return (i === ii ? [] : pageLabels);
+    },
+
     get attachments() {
       var xref = this.xref;
       var attachments = null, nameTreeRef;

@@ -329,6 +329,36 @@ describe('api', function() {
         expect(data).toEqual(null);
       });
     });
+    it('gets non-existent page labels', function () {
+      var promise = doc.getPageLabels();
+      waitsForPromiseResolved(promise, function (data) {
+        expect(data).toEqual(null);
+      });
+    });
+    it('gets page labels', function () {
+      // PageLabels with Roman/Arabic numerals.
+      var url0 = combineUrl(window.location.href, '../pdfs/bug793632.pdf');
+      var promise0 = PDFJS.getDocument(url0).promise.then(function (pdfDoc) {
+        return pdfDoc.getPageLabels();
+      });
+      // PageLabels with only a label prefix.
+      var url1 = combineUrl(window.location.href, '../pdfs/issue1453.pdf');
+      var promise1 = PDFJS.getDocument(url1).promise.then(function (pdfDoc) {
+        return pdfDoc.getPageLabels();
+      });
+      // PageLabels identical to standard page numbering.
+      var url2 = combineUrl(window.location.href, '../pdfs/rotation.pdf');
+      var promise2 = PDFJS.getDocument(url2).promise.then(function (pdfDoc) {
+        return pdfDoc.getPageLabels();
+      });
+
+      waitsForPromiseResolved(Promise.all([promise0, promise1, promise2]),
+          function (pageLabels) {
+        expect(pageLabels[0]).toEqual(['i', 'ii', 'iii', '1']);
+        expect(pageLabels[1]).toEqual(['Front Page1']);
+        expect(pageLabels[2]).toEqual([]);
+      });
+    });
     it('gets attachments', function() {
       var promise = doc.getAttachments();
       waitsForPromiseResolved(promise, function (data) {
