@@ -48,6 +48,7 @@ var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
 var isValidUrl = sharedUtil.isValidUrl;
+var Util = sharedUtil.Util;
 var Ref = corePrimitives.Ref;
 var RefSet = corePrimitives.RefSet;
 var RefSetCache = corePrimitives.RefSetCache;
@@ -1137,24 +1138,23 @@ var XRef = (function XRefClosure() {
 })();
 
 /**
- * A NameTree is like a Dict but has some advantageous properties, see the
- * spec (7.9.6) for more details.
- * TODO: implement all the Dict functions and make this more efficent.
+ * A NameTree/NumberTree is like a Dict but has some advantageous properties,
+ * see the specification (7.9.6 and 7.9.7) for additional details.
+ * TODO: implement all the Dict functions and make this more efficient.
  */
-var NameTree = (function NameTreeClosure() {
-  function NameTree(root, xref) {
-    this.root = root;
-    this.xref = xref;
+var NameOrNumberTree = (function NameOrNumberTreeClosure() {
+  function NameOrNumberTree(root, xref) {
+    throw new Error('Cannot initialize NameOrNumberTree.');
   }
 
-  NameTree.prototype = {
-    getAll: function NameTree_getAll() {
+  NameOrNumberTree.prototype = {
+    getAll: function NameOrNumberTree_getAll() {
       var dict = {};
       if (!this.root) {
         return dict;
       }
       var xref = this.xref;
-      // reading name tree
+      // Reading Name/Number tree.
       var processed = new RefSet();
       processed.put(this.root);
       var queue = [this.root];
@@ -1168,45 +1168,43 @@ var NameTree = (function NameTreeClosure() {
           var kids = obj.get('Kids');
           for (i = 0, n = kids.length; i < n; i++) {
             var kid = kids[i];
-            if (processed.has(kid)) {
-              error('invalid destinations');
-            }
+            assert(!processed.has(kid),
+                   'Duplicate entry in "' + this._type + '" tree.');
             queue.push(kid);
             processed.put(kid);
           }
           continue;
         }
-        var names = obj.get('Names');
-        if (names) {
-          for (i = 0, n = names.length; i < n; i += 2) {
-            dict[xref.fetchIfRef(names[i])] = xref.fetchIfRef(names[i + 1]);
+        var entries = obj.get(this._type);
+        if (isArray(entries)) {
+          for (i = 0, n = entries.length; i < n; i += 2) {
+            dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
           }
         }
       }
       return dict;
     },
 
-    get: function NameTree_get(destinationId) {
+    get: function NameOrNumberTree_get(key) {
       if (!this.root) {
         return null;
       }
 
       var xref = this.xref;
-      var kidsOrNames = xref.fetchIfRef(this.root);
+      var kidsOrEntries = xref.fetchIfRef(this.root);
       var loopCount = 0;
-      var MAX_NAMES_LEVELS = 10;
+      var MAX_LEVELS = 10;
       var l, r, m;
 
       // Perform a binary search to quickly find the entry that
-      // contains the named destination we are looking for.
-      while (kidsOrNames.has('Kids')) {
-        loopCount++;
-        if (loopCount > MAX_NAMES_LEVELS) {
-          warn('Search depth limit for named destionations has been reached.');
+      // contains the key we are looking for.
+      while (kidsOrEntries.has('Kids')) {
+        if (++loopCount > MAX_LEVELS) {
+          warn('Search depth limit reached for "' + this._type + '" tree.');
           return null;
         }
 
-        var kids = kidsOrNames.get('Kids');
+        var kids = kidsOrEntries.get('Kids');
         if (!isArray(kids)) {
           return null;
         }
@@ -1218,12 +1216,12 @@ var NameTree = (function NameTreeClosure() {
           var kid = xref.fetchIfRef(kids[m]);
           var limits = kid.get('Limits');
 
-          if (destinationId < xref.fetchIfRef(limits[0])) {
+          if (key < xref.fetchIfRef(limits[0])) {
             r = m - 1;
-          } else if (destinationId > xref.fetchIfRef(limits[1])) {
+          } else if (key > xref.fetchIfRef(limits[1])) {
             l = m + 1;
           } else {
-            kidsOrNames = xref.fetchIfRef(kids[m]);
+            kidsOrEntries = xref.fetchIfRef(kids[m]);
             break;
           }
         }
@@ -1232,31 +1230,55 @@ var NameTree = (function NameTreeClosure() {
         }
       }
 
-      // If we get here, then we have found the right entry. Now
-      // go through the named destinations in the Named dictionary
-      // until we find the exact destination we're looking for.
-      var names = kidsOrNames.get('Names');
-      if (isArray(names)) {
+      // If we get here, then we have found the right entry. Now go through the
+      // entries in the dictionary until we find the key we're looking for.
+      var entries = kidsOrEntries.get(this._type);
+      if (isArray(entries)) {
         // Perform a binary search to reduce the lookup time.
         l = 0;
-        r = names.length - 2;
+        r = entries.length - 2;
         while (l <= r) {
           // Check only even indices (0, 2, 4, ...) because the
-          // odd indices contain the actual D array.
+          // odd indices contain the actual data.
           m = (l + r) & ~1;
-          if (destinationId < xref.fetchIfRef(names[m])) {
+          var currentKey = xref.fetchIfRef(entries[m]);
+          if (key < currentKey) {
             r = m - 2;
-          } else if (destinationId > xref.fetchIfRef(names[m])) {
+          } else if (key > currentKey) {
             l = m + 2;
           } else {
-            return xref.fetchIfRef(names[m + 1]);
+            return xref.fetchIfRef(entries[m + 1]);
           }
         }
       }
       return null;
     }
   };
+  return NameOrNumberTree;
+})();
+
+var NameTree = (function NameTreeClosure() {
+  function NameTree(root, xref) {
+    this.root = root;
+    this.xref = xref;
+    this._type = 'Names';
+  }
+
+  Util.inherit(NameTree, NameOrNumberTree, {});
+
   return NameTree;
+})();
+
+var NumberTree = (function NumberTreeClosure() {
+  function NumberTree(root, xref) {
+    this.root = root;
+    this.xref = xref;
+    this._type = 'Nums';
+  }
+
+  Util.inherit(NumberTree, NameOrNumberTree, {});
+
+  return NumberTree;
 })();
 
 /**
