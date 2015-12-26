@@ -52,8 +52,6 @@ var ColorSpace = coreColorSpace.ColorSpace;
 var ObjectLoader = coreObj.ObjectLoader;
 var OperatorList = coreEvaluator.OperatorList;
 
-var DEFAULT_ICON_SIZE = 22; // px
-
 /**
  * @class
  * @alias AnnotationFactory
@@ -94,6 +92,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
           return new TextWidgetAnnotation(parameters);
         }
         return new WidgetAnnotation(parameters);
+
+      case 'Popup':
+        return new PopupAnnotation(parameters);
 
       default:
         warn('Unimplemented annotation type "' + subtype + '", ' +
@@ -160,7 +161,7 @@ var Annotation = (function AnnotationClosure() {
 
     // Expose public properties using a data object.
     this.data = {};
-    this.data.id = params.ref.num;
+    this.data.id = params.ref.toString();
     this.data.subtype = dict.get('Subtype').name;
     this.data.annotationFlags = this.flags;
     this.data.rect = this.rectangle;
@@ -639,29 +640,35 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 })();
 
 var TextAnnotation = (function TextAnnotationClosure() {
-  function TextAnnotation(params) {
-    Annotation.call(this, params);
+  var DEFAULT_ICON_SIZE = 22; // px
 
-    var dict = params.dict;
-    var data = this.data;
+  function TextAnnotation(parameters) {
+    Annotation.call(this, parameters);
 
-    var content = dict.get('Contents');
-    var title = dict.get('T');
-    data.annotationType = AnnotationType.TEXT;
-    data.content = stringToPDFString(content || '');
-    data.title = stringToPDFString(title || '');
-    data.hasHtml = true;
+    this.data.annotationType = AnnotationType.TEXT;
+    this.data.hasHtml = true;
 
-    if (data.hasAppearance) {
-      data.name = 'NoIcon';
+    var dict = parameters.dict;
+    if (this.data.hasAppearance) {
+      this.data.name = 'NoIcon';
     } else {
-      data.rect[1] = data.rect[3] - DEFAULT_ICON_SIZE;
-      data.rect[2] = data.rect[0] + DEFAULT_ICON_SIZE;
-      data.name = dict.has('Name') ? dict.get('Name').name : 'Note';
+      this.data.rect[1] = this.data.rect[3] - DEFAULT_ICON_SIZE;
+      this.data.rect[2] = this.data.rect[0] + DEFAULT_ICON_SIZE;
+      this.data.name = dict.has('Name') ? dict.get('Name').name : 'Note';
     }
 
-    if (dict.has('C')) {
-      data.hasBgColor = true;
+    if (!dict.has('C')) {
+      // Fall back to the default background color.
+      this.data.color = null;
+    }
+
+    this.data.hasPopup = dict.has('Popup');
+    if (!this.data.hasPopup) {
+      // There is no associated Popup annotation, so the Text annotation
+      // must create its own popup.
+      this.data.title = stringToPDFString(dict.get('T') || '');
+      this.data.contents = stringToPDFString(dict.get('Contents') || '');
+      this.data.hasHtml = (this.data.title || this.data.contents);
     }
   }
 
@@ -744,6 +751,39 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
   Util.inherit(LinkAnnotation, Annotation, {});
 
   return LinkAnnotation;
+})();
+
+var PopupAnnotation = (function PopupAnnotationClosure() {
+  function PopupAnnotation(parameters) {
+    Annotation.call(this, parameters);
+
+    this.data.annotationType = AnnotationType.POPUP;
+
+    var dict = parameters.dict;
+    var parentItem = dict.get('Parent');
+    if (!parentItem) {
+      warn('Popup annotation has a missing or invalid parent annotation.');
+      return;
+    }
+
+    this.data.parentId = dict.getRaw('Parent').toString();
+    this.data.title = stringToPDFString(parentItem.get('T') || '');
+    this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
+
+    if (!parentItem.has('C')) {
+      // Fall back to the default background color.
+      this.data.color = null;
+    } else {
+      this.setColor(parentItem.get('C'));
+      this.data.color = this.color;
+    }
+
+    this.data.hasHtml = (this.data.title || this.data.contents);
+  }
+
+  Util.inherit(PopupAnnotation, Annotation, {});
+
+  return PopupAnnotation;
 })();
 
 exports.Annotation = Annotation;

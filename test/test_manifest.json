@@ -2616,6 +2616,21 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "annotation-link-text-popup",
+       "file": "pdfs/annotation-link-text-popup.pdf",
+       "md5": "4bbf56e81d47232de5f305124ab0ba27",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "annotation-text-without-popup",
+       "file": "pdfs/annotation-text-without-popup.pdf",
+       "md5": "7c2d241babe00139e34b9f8369a909eb",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Text annotation without a separate Popup annotation"
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",

@@ -36,11 +36,10 @@ var LinkTargetStringMap = sharedUtil.LinkTargetStringMap;
 var warn = sharedUtil.warn;
 var CustomStyle = displayDOMUtils.CustomStyle;
 
-var ANNOT_MIN_SIZE = 10; // px
-
 /**
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
+ * @property {HTMLDivElement} layer
  * @property {PDFPage} page
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
@@ -70,6 +69,9 @@ AnnotationElementFactory.prototype =
       case AnnotationType.WIDGET:
         return new WidgetAnnotationElement(parameters);
 
+      case AnnotationType.POPUP:
+        return new PopupAnnotationElement(parameters);
+
       default:
         throw new Error('Unimplemented annotation type "' + subtype + '"');
     }
@@ -83,6 +85,7 @@ AnnotationElementFactory.prototype =
 var AnnotationElement = (function AnnotationElementClosure() {
   function AnnotationElement(parameters) {
     this.data = parameters.data;
+    this.layer = parameters.layer;
     this.page = parameters.page;
     this.viewport = parameters.viewport;
     this.linkService = parameters.linkService;
@@ -292,8 +295,6 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
 var TextAnnotationElement = (function TextAnnotationElementClosure() {
   function TextAnnotationElement(parameters) {
     AnnotationElement.call(this, parameters);
-
-    this.pinned = false;
   }
 
   Util.inherit(TextAnnotationElement, AnnotationElement, {
@@ -305,127 +306,35 @@ var TextAnnotationElement = (function TextAnnotationElementClosure() {
      * @returns {HTMLSectionElement}
      */
     render: function TextAnnotationElement_render() {
-      var rect = this.data.rect, container = this.container;
+      this.container.className = 'textAnnotation';
 
-      // Sanity check because of OOo-generated PDFs.
-      if ((rect[3] - rect[1]) < ANNOT_MIN_SIZE) {
-        rect[3] = rect[1] + ANNOT_MIN_SIZE;
-      }
-      if ((rect[2] - rect[0]) < ANNOT_MIN_SIZE) {
-        rect[2] = rect[0] + (rect[3] - rect[1]); // make it square
-      }
-
-      container.className = 'annotText';
-
-      var image  = document.createElement('img');
-      image.style.height = container.style.height;
-      image.style.width = container.style.width;
-      var iconName = this.data.name;
+      var image = document.createElement('img');
+      image.style.height = this.container.style.height;
+      image.style.width = this.container.style.width;
       image.src = PDFJS.imageResourcesPath + 'annotation-' +
-        iconName.toLowerCase() + '.svg';
+        this.data.name.toLowerCase() + '.svg';
       image.alt = '[{{type}} Annotation]';
       image.dataset.l10nId = 'text_annotation_type';
-      image.dataset.l10nArgs = JSON.stringify({type: iconName});
+      image.dataset.l10nArgs = JSON.stringify({type: this.data.name});
 
-      var contentWrapper = document.createElement('div');
-      contentWrapper.className = 'annotTextContentWrapper';
-      contentWrapper.style.left = Math.floor(rect[2] - rect[0] + 5) + 'px';
-      contentWrapper.style.top = '-10px';
+      if (!this.data.hasPopup) {
+        var popupElement = new PopupElement({
+          parentContainer: this.container,
+          parentTrigger: image,
+          color: this.data.color,
+          title: this.data.title,
+          contents: this.data.contents
+        });
+        var popup = popupElement.render();
 
-      var content = this.content = document.createElement('div');
-      content.className = 'annotTextContent';
-      content.setAttribute('hidden', true);
+        // Position the popup next to the Text annotation's container.
+        popup.style.left = image.style.width;
 
-      var i, ii;
-      if (this.data.hasBgColor && this.data.color) {
-        var color = this.data.color;
-
-        // Enlighten the color (70%).
-        var BACKGROUND_ENLIGHT = 0.7;
-        var r = BACKGROUND_ENLIGHT * (255 - color[0]) + color[0];
-        var g = BACKGROUND_ENLIGHT * (255 - color[1]) + color[1];
-        var b = BACKGROUND_ENLIGHT * (255 - color[2]) + color[2];
-        content.style.backgroundColor = Util.makeCssRgb(r | 0, g | 0, b | 0);
+        this.container.appendChild(popup);
       }
 
-      var title = document.createElement('h1');
-      var text = document.createElement('p');
-      title.textContent = this.data.title;
-
-      if (!this.data.content && !this.data.title) {
-        content.setAttribute('hidden', true);
-      } else {
-        var e = document.createElement('span');
-        var lines = this.data.content.split(/(?:\r\n?|\n)/);
-        for (i = 0, ii = lines.length; i < ii; ++i) {
-          var line = lines[i];
-          e.appendChild(document.createTextNode(line));
-          if (i < (ii - 1)) {
-            e.appendChild(document.createElement('br'));
-          }
-        }
-        text.appendChild(e);
-
-        image.addEventListener('click', this._toggle.bind(this));
-        image.addEventListener('mouseover', this._show.bind(this, false));
-        image.addEventListener('mouseout', this._hide.bind(this, false));
-        content.addEventListener('click', this._hide.bind(this, true));
-      }
-
-      content.appendChild(title);
-      content.appendChild(text);
-      contentWrapper.appendChild(content);
-      container.appendChild(image);
-      container.appendChild(contentWrapper);
-      return container;
-    },
-
-    /**
-     * Toggle the visibility of the content box.
-     *
-     * @private
-     * @memberof TextAnnotationElement
-     */
-    _toggle: function TextAnnotationElement_toggle() {
-      if (this.pinned) {
-        this._hide(true);
-      } else {
-        this._show(true);
-      }
-    },
-
-    /**
-     * Show the content box.
-     *
-     * @private
-     * @param {boolean} pin
-     * @memberof TextAnnotationElement
-     */
-    _show: function TextAnnotationElement_show(pin) {
-      if (pin) {
-        this.pinned = true;
-      }
-      if (this.content.hasAttribute('hidden')) {
-        this.container.style.zIndex += 1;
-        this.content.removeAttribute('hidden');
-      }
-    },
-
-    /**
-     * Hide the content box.
-     *
-     * @private
-     * @param {boolean} unpin
-     * @memberof TextAnnotationElement
-     */
-    _hide: function TextAnnotationElement_hide(unpin) {
-      if (unpin) {
-        this.pinned = false;
-      }
-      if (!this.content.hasAttribute('hidden') && !this.pinned) {
-        this.container.style.zIndex -= 1;
-        this.content.setAttribute('hidden', true);
-      }
+      this.container.appendChild(image);
+      return this.container;
     }
   });
 
@@ -500,6 +409,189 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
 })();
 
 /**
+ * @class
+ * @alias PopupAnnotationElement
+ */
+var PopupAnnotationElement = (function PopupAnnotationElementClosure() {
+  function PopupAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(PopupAnnotationElement, AnnotationElement, {
+    /**
+     * Render the popup annotation's HTML element in the empty container.
+     *
+     * @public
+     * @memberof PopupAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function PopupAnnotationElement_render() {
+      this.container.className = 'popupAnnotation';
+
+      var selector = '[data-annotation-id="' + this.data.parentId + '"]';
+      var parentElement = this.layer.querySelector(selector);
+      if (!parentElement) {
+        return this.container;
+      }
+
+      var popup = new PopupElement({
+        parentContainer: parentElement,
+        parentTrigger: parentElement,
+        color: this.data.color,
+        title: this.data.title,
+        contents: this.data.contents
+      });
+
+      // Position the popup next to the parent annotation's container.
+      // PDF viewers ignore a popup annotation's rectangle.
+      var parentLeft = parseFloat(parentElement.style.left);
+      var parentWidth = parseFloat(parentElement.style.width);
+      CustomStyle.setProp('transformOrigin', this.container,
+                          -(parentLeft + parentWidth) + 'px -' +
+                          parentElement.style.top);
+      this.container.style.left = (parentLeft + parentWidth) + 'px';
+
+      this.container.appendChild(popup.render());
+      return this.container;
+    }
+  });
+
+  return PopupAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias PopupElement 
+ */
+var PopupElement = (function PopupElementClosure() {
+  var BACKGROUND_ENLIGHT = 0.7;
+
+  function PopupElement(parameters) {
+    this.parentContainer = parameters.parentContainer;
+    this.parentTrigger = parameters.parentTrigger;
+    this.color = parameters.color;
+    this.title = parameters.title;
+    this.contents = parameters.contents;
+
+    this.pinned = false;
+  }
+
+  PopupElement.prototype = /** @lends PopupElement.prototype */ {
+    /**
+     * Render the popup's HTML element.
+     *
+     * @public
+     * @memberof PopupElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function PopupElement_render() {
+      var wrapper = document.createElement('div');
+      wrapper.className = 'popupWrapper';
+
+      var popup = this.popup = document.createElement('div');
+      popup.className = 'popup';
+      popup.setAttribute('hidden', true);
+
+      var color = this.color;
+      if (color) {
+        // Enlighten the color.
+        var r = BACKGROUND_ENLIGHT * (255 - color[0]) + color[0];
+        var g = BACKGROUND_ENLIGHT * (255 - color[1]) + color[1];
+        var b = BACKGROUND_ENLIGHT * (255 - color[2]) + color[2];
+        popup.style.backgroundColor = Util.makeCssRgb(r | 0, g | 0, b | 0);
+      }
+
+      var contents = this._formatContents(this.contents);
+      var title = document.createElement('h1');
+      title.textContent = this.title;
+
+      // Attach the event listeners to the trigger element.
+      var trigger = this.parentTrigger;
+      trigger.addEventListener('click', this._toggle.bind(this));
+      trigger.addEventListener('mouseover', this._show.bind(this, false));
+      trigger.addEventListener('mouseout', this._hide.bind(this, false));
+      popup.addEventListener('click', this._hide.bind(this, true));
+
+      popup.appendChild(title);
+      popup.appendChild(contents);
+      wrapper.appendChild(popup);
+      return wrapper;
+    },
+
+    /**
+     * Format the contents of the popup by adding newlines where necessary.
+     *
+     * @private
+     * @param {string} contents
+     * @memberof PopupElement
+     * @returns {HTMLParagraphElement}
+     */
+    _formatContents: function PopupElement_formatContents(contents) {
+      var p = document.createElement('p');
+      var lines = contents.split(/(?:\r\n?|\n)/);
+      for (var i = 0, ii = lines.length; i < ii; ++i) {
+        var line = lines[i];
+        p.appendChild(document.createTextNode(line));
+        if (i < (ii - 1)) {
+          p.appendChild(document.createElement('br'));
+        }
+      }
+      return p;
+    },
+
+    /**
+     * Toggle the visibility of the popup.
+     *
+     * @private
+     * @memberof PopupElement
+     */
+    _toggle: function PopupElement_toggle() {
+      if (this.pinned) {
+        this._hide(true);
+      } else {
+        this._show(true);
+      }
+    },
+
+    /**
+     * Show the popup.
+     *
+     * @private
+     * @param {boolean} pin
+     * @memberof PopupElement
+     */
+    _show: function PopupElement_show(pin) {
+      if (pin) {
+        this.pinned = true;
+      }
+      if (this.popup.hasAttribute('hidden')) {
+        this.popup.removeAttribute('hidden');
+        this.parentContainer.style.zIndex += 1;
+      }
+    },
+
+    /**
+     * Hide the popup.
+     *
+     * @private
+     * @param {boolean} unpin
+     * @memberof PopupElement
+     */
+    _hide: function PopupElement_hide(unpin) {
+      if (unpin) {
+        this.pinned = false;
+      }
+      if (!this.popup.hasAttribute('hidden') && !this.pinned) {
+        this.popup.setAttribute('hidden', true);
+        this.parentContainer.style.zIndex -= 1;
+      }
+    }
+  };
+
+  return PopupElement;
+})();
+
+/**
  * @typedef {Object} AnnotationLayerParameters
  * @property {PageViewport} viewport
  * @property {HTMLDivElement} div
@@ -532,6 +624,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
 
         var properties = {
           data: data,
+          layer: parameters.div,
           page: parameters.page,
           viewport: parameters.viewport,
           linkService: parameters.linkService
