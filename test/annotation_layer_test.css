@@ -27,7 +27,7 @@
   position: absolute;
 }
 
-.annotationLayer .annotLink > a {
+.annotationLayer .linkAnnotation > a {
   position: absolute;
   font-size: 1em;
   top: 0;

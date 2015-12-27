@@ -217,7 +217,7 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
      * @returns {HTMLSectionElement}
      */
     render: function LinkAnnotationElement_render() {
-      this.container.className = 'annotLink';
+      this.container.className = 'linkAnnotation';
 
       var link = document.createElement('a');
       link.href = link.title = this.data.url || '';
