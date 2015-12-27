@@ -2631,6 +2631,13 @@
        "annotations": true,
        "about": "Text annotation without a separate Popup annotation"
     },
+    {  "id": "annotation-underline",
+       "file": "pdfs/annotation-underline.pdf",
+       "md5": "c24b3aba771de52f9bac25e854c39458",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",
