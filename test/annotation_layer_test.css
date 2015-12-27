@@ -43,7 +43,12 @@
   position: absolute;
 }
 
+.annotationLayer .popupAnnotation {
+  display: block !important;
+}
+
 .annotationLayer .popupWrapper {
+  display: block !important;
   position: absolute;
   width: 20em;
 }
@@ -57,7 +62,6 @@
   border-radius: 2px;
   padding: 0.6em;
   margin-left: 5px;
-  display: block !important;
   font: message-box;
   word-wrap: break-word;
 }
