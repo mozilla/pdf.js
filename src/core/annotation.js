@@ -559,12 +559,6 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     data.fieldFlags = Util.getInheritableProperty(dict, 'Ff') || 0;
     this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
 
-    // Hide unsupported Widget signatures.
-    if (data.fieldType === 'Sig') {
-      warn('unimplemented annotation type: Widget signature');
-      this.setFlags(AnnotationFlag.HIDDEN);
-    }
-
     // Building the full field name by collecting the field and
     // its ancestors 'T' data and joining them using '.'.
     var fieldName = [];
