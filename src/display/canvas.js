@@ -1839,6 +1839,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     beginAnnotations: function CanvasGraphics_beginAnnotations() {
       this.save();
       this.current = new CanvasExtraState();
+
+      if (this.baseTransform) {
+        this.ctx.setTransform.apply(this.ctx, this.baseTransform);
+      }
     },
 
     endAnnotations: function CanvasGraphics_endAnnotations() {
