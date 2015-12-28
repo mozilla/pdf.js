@@ -321,11 +321,12 @@ var TextAnnotationElement = (function TextAnnotationElementClosure() {
 
       if (!this.data.hasPopup) {
         var popupElement = new PopupElement({
-          parentContainer: this.container,
-          parentTrigger: image,
+          container: this.container,
+          trigger: image,
           color: this.data.color,
           title: this.data.title,
-          contents: this.data.contents
+          contents: this.data.contents,
+          hideWrapper: true
         });
         var popup = popupElement.render();
 
@@ -437,8 +438,8 @@ var PopupAnnotationElement = (function PopupAnnotationElementClosure() {
       }
 
       var popup = new PopupElement({
-        parentContainer: parentElement,
-        parentTrigger: parentElement,
+        container: this.container,
+        trigger: parentElement,
         color: this.data.color,
         title: this.data.title,
         contents: this.data.contents
@@ -469,11 +470,12 @@ var PopupElement = (function PopupElementClosure() {
   var BACKGROUND_ENLIGHT = 0.7;
 
   function PopupElement(parameters) {
-    this.parentContainer = parameters.parentContainer;
-    this.parentTrigger = parameters.parentTrigger;
+    this.container = parameters.container;
+    this.trigger = parameters.trigger;
     this.color = parameters.color;
     this.title = parameters.title;
     this.contents = parameters.contents;
+    this.hideWrapper = parameters.hideWrapper || false;
 
     this.pinned = false;
   }
@@ -490,9 +492,15 @@ var PopupElement = (function PopupElementClosure() {
       var wrapper = document.createElement('div');
       wrapper.className = 'popupWrapper';
 
-      var popup = this.popup = document.createElement('div');
+      // For Popup annotations we hide the entire section because it contains
+      // only the popup. However, for Text annotations without a separate Popup
+      // annotation, we cannot hide the entire container as the image would
+      // disappear too. In that special case, hiding the wrapper suffices.
+      this.hideElement = (this.hideWrapper ? wrapper : this.container);
+      this.hideElement.setAttribute('hidden', true);
+
+      var popup = document.createElement('div');
       popup.className = 'popup';
-      popup.setAttribute('hidden', true);
 
       var color = this.color;
       if (color) {
@@ -508,10 +516,9 @@ var PopupElement = (function PopupElementClosure() {
       title.textContent = this.title;
 
       // Attach the event listeners to the trigger element.
-      var trigger = this.parentTrigger;
-      trigger.addEventListener('click', this._toggle.bind(this));
-      trigger.addEventListener('mouseover', this._show.bind(this, false));
-      trigger.addEventListener('mouseout', this._hide.bind(this, false));
+      this.trigger.addEventListener('click', this._toggle.bind(this));
+      this.trigger.addEventListener('mouseover', this._show.bind(this, false));
+      this.trigger.addEventListener('mouseout', this._hide.bind(this, false));
       popup.addEventListener('click', this._hide.bind(this, true));
 
       popup.appendChild(title);
@@ -566,9 +573,9 @@ var PopupElement = (function PopupElementClosure() {
       if (pin) {
         this.pinned = true;
       }
-      if (this.popup.hasAttribute('hidden')) {
-        this.popup.removeAttribute('hidden');
-        this.parentContainer.style.zIndex += 1;
+      if (this.hideElement.hasAttribute('hidden')) {
+        this.hideElement.removeAttribute('hidden');
+        this.container.style.zIndex += 1;
       }
     },
 
@@ -583,9 +590,9 @@ var PopupElement = (function PopupElementClosure() {
       if (unpin) {
         this.pinned = false;
       }
-      if (!this.popup.hasAttribute('hidden') && !this.pinned) {
-        this.popup.setAttribute('hidden', true);
-        this.parentContainer.style.zIndex -= 1;
+      if (!this.hideElement.hasAttribute('hidden') && !this.pinned) {
+        this.hideElement.setAttribute('hidden', true);
+        this.container.style.zIndex -= 1;
       }
     }
   };
