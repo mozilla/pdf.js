@@ -68,3 +68,7 @@
 .annotationLayer .popup p {
   padding-top: 0.2em;
 }
+
+.annotationLayer .underlineAnnotation {
+  cursor: pointer;
+}
