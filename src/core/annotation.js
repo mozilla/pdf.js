@@ -171,6 +171,7 @@ var Annotation = (function AnnotationClosure() {
     this.data.color = this.color;
     this.data.borderStyle = this.borderStyle;
     this.data.hasAppearance = !!this.appearance;
+    this.data.hasHtml = true;
   }
 
   Annotation.prototype = {
@@ -649,7 +650,6 @@ var TextAnnotation = (function TextAnnotationClosure() {
     Annotation.call(this, parameters);
 
     this.data.annotationType = AnnotationType.TEXT;
-    this.data.hasHtml = true;
 
     var dict = parameters.dict;
     if (this.data.hasAppearance) {
@@ -687,7 +687,6 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     var dict = params.dict;
     var data = this.data;
     data.annotationType = AnnotationType.LINK;
-    data.hasHtml = true;
 
     var action = dict.get('A');
     if (action && isDict(action)) {
@@ -794,7 +793,6 @@ var UnderlineAnnotation = (function UnderlineAnnotationClosure() {
     Annotation.call(this, parameters);
 
     this.data.annotationType = AnnotationType.UNDERLINE;
-    this.data.hasHtml = true;
 
     // PDF viewers completely ignore any border styles.
     this.data.borderStyle.setWidth(0);
