@@ -2000,6 +2000,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "bug951051",
+      "file": "pdfs/bug951051.pdf",
+      "md5": "05d325a5112bd3f6022367dab7bc07b9",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "issue3062",
       "file": "pdfs/issue3062.pdf",
       "md5": "206715f1258f0e117df4180d98dd4d68",
