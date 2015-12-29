@@ -75,6 +75,9 @@ AnnotationElementFactory.prototype =
       case AnnotationType.UNDERLINE:
         return new UnderlineAnnotationElement(parameters);
 
+      case AnnotationType.STRIKEOUT:
+        return new StrikeOutAnnotationElement(parameters);
+
       default:
         throw new Error('Unimplemented annotation type "' + subtype + '"');
     }
@@ -628,6 +631,33 @@ var UnderlineAnnotationElement = (
   });
 
   return UnderlineAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias StrikeOutAnnotationElement
+ */
+var StrikeOutAnnotationElement = (
+    function StrikeOutAnnotationElementClosure() {
+  function StrikeOutAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(StrikeOutAnnotationElement, AnnotationElement, {
+    /**
+     * Render the strikeout annotation's HTML element in the empty container.
+     *
+     * @public
+     * @memberof StrikeOutAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function StrikeOutAnnotationElement_render() {
+      this.container.className = 'strikeoutAnnotation';
+      return this.container;
+    }
+  });
+
+  return StrikeOutAnnotationElement;
 })();
 
 /**

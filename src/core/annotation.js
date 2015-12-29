@@ -99,6 +99,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       case 'Underline':
         return new UnderlineAnnotation(parameters);
 
+      case 'StrikeOut':
+        return new StrikeOutAnnotation(parameters);
+
       default:
         warn('Unimplemented annotation type "' + subtype + '", ' +
              'falling back to base annotation');
@@ -803,6 +806,22 @@ var UnderlineAnnotation = (function UnderlineAnnotationClosure() {
   Util.inherit(UnderlineAnnotation, Annotation, {});
 
   return UnderlineAnnotation;
+})();
+
+var StrikeOutAnnotation = (function StrikeOutAnnotationClosure() {
+  function StrikeOutAnnotation(parameters) {
+    Annotation.call(this, parameters);
+
+    this.data.annotationType = AnnotationType.STRIKEOUT;
+    this.data.hasHtml = true;
+
+    // PDF viewers completely ignore any border styles.
+    this.data.borderStyle.setWidth(0);
+  }
+
+  Util.inherit(StrikeOutAnnotation, Annotation, {});
+
+  return StrikeOutAnnotation;
 })();
 
 exports.Annotation = Annotation;
