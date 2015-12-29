@@ -1,8 +1,3 @@
-
-//
-// See README for overview
-//
-
 'use strict';
 
 // Parse query string to extract some parameters (it can fail for some input)
@@ -14,10 +9,7 @@ var queryParams = query ? JSON.parse('{' + query.split('&').map(function (a) {
 var url = queryParams.file || '../../test/pdfs/liveprogramming.pdf';
 var scale = +queryParams.scale || 1.5;
 
-//
-// Fetch the PDF document from the URL using promises
-//
-PDFJS.getDocument(url).then(function(pdf) {
+function renderDocument(pdf) {
   var numPages = pdf.numPages;
   // Using promise to fetch the page
 
@@ -53,4 +45,14 @@ PDFJS.getDocument(url).then(function(pdf) {
       });
     }.bind(null, i, anchor));
   }
+}
+
+// In production, the bundled pdf.js shall be used instead of RequireJS.
+require.config({paths: {'pdfjs': '../../src'}});
+require(['pdfjs/display/api', 'pdfjs/display/svg'], function (api, svg) {
+  // In production, change this to point to the built `pdf.worker.js` file.
+  PDFJS.workerSrc = '../../src/worker_loader.js';
+
+  // Fetch the PDF document from the URL using promises.
+  api.getDocument(url).then(renderDocument);
 });

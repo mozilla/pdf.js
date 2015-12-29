@@ -18,17 +18,7 @@ limitations under the License.
   <head>
     <title>PDF.js test slave</title>
     <meta charset="utf-8">
-    <script src="../src/shared/global.js"></script>
-    <script src="../src/display/dom_utils.js"></script>
-    <script src="../src/shared/util.js"></script>
-    <script src="../src/display/annotation_layer.js"></script>
-    <script src="../src/display/font_loader.js"></script>
-    <script src="../src/display/metadata.js"></script>
-    <script src="../src/display/text_layer.js"></script>
-    <script src="../src/display/webgl.js"></script>
-    <script src="../src/display/pattern_helper.js"></script>
-    <script src="../src/display/canvas.js"></script>
-    <script src="../src/display/api.js"></script>
+    <script src="../node_modules/requirejs/require.js"></script>
     <script src="driver.js"></script>
   </head>
   <body>
@@ -41,12 +31,19 @@ limitations under the License.
     <div id="end"></div>
   </body>
   <script>
-    var driver = new Driver({
-      disableScrolling: document.getElementById('disableScrolling'),
-      inflight: document.getElementById('inflight'),
-      output: document.getElementById('output'),
-      end: document.getElementById('end')
+    require.config({paths: {'pdfjs': '../src'}});
+    require(['pdfjs/display/api', 'pdfjs/display/text_layer',
+             'pdfjs/display/annotation_layer', 'pdfjs/shared/util'],
+        function (api, textLayer, annotationLayer, pdfjsSharedUtil) {
+      window.pdfjsSharedUtil = pdfjsSharedUtil;
+
+      var driver = new Driver({
+        disableScrolling: document.getElementById('disableScrolling'),
+        inflight: document.getElementById('inflight'),
+        output: document.getElementById('output'),
+        end: document.getElementById('end')
+      });
+      driver.run();
     });
-    driver.run();
   </script>
 </html>

@@ -414,7 +414,7 @@ PDFJS.getDocument = function getDocument(src,
       var transport = new WorkerTransport(messageHandler, task, rangeTransport);
       task._transport = transport;
     });
-  }, task._capability.reject);
+  }).catch(task._capability.reject);
 
   return task;
 };
@@ -1186,14 +1186,14 @@ var PDFWorker = (function PDFWorkerClosure() {
       // pdf.worker.js file is needed.
 //#if !PRODUCTION
       if (typeof amdRequire === 'function') {
-        amdRequire(['pdfjs/core/worker'], function () {
+        amdRequire(['pdfjs/core/network', 'pdfjs/core/worker'], function () {
           PDFJS.fakeWorkerFilesLoadedCapability.resolve();
         });
       } else if (typeof require === 'function') {
         require('../core/worker.js');
         PDFJS.fakeWorkerFilesLoadedCapability.resolve();
       } else {
-        Util.loadScript(PDFJS.workerSrc);
+        throw new Error('AMD or CommonJS must be used to load fake worker.');
       }
 //#endif
 //#if PRODUCTION && SINGLE_FILE
@@ -1253,8 +1253,16 @@ var PDFWorker = (function PDFWorkerClosure() {
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
           var worker = new Worker(workerSrc);
           var messageHandler = new MessageHandler('main', 'worker', worker);
-
+//#if !PRODUCTION
+          // Don't allow worker to be destroyed by Chrome, see:
+          // https://code.google.com/p/chromium/issues/detail?id=572225
+          var jsWorkerId = '_workerKungfuGrip_' + Math.random();
+          window[jsWorkerId] = worker;
+//#endif
           messageHandler.on('test', function PDFWorker_test(data) {
+//#if !PRODUCTION
+            delete window[jsWorkerId];
+//#endif
             if (this.destroyed) {
               this._readyCapability.reject(new Error('Worker was destroyed'));
               messageHandler.destroy();
@@ -1284,16 +1292,40 @@ var PDFWorker = (function PDFWorkerClosure() {
             console.error.apply(console, data);
           });
 
-          var testObj = new Uint8Array([PDFJS.postMessageTransfers ? 255 : 0]);
-          // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
-          // typed array. Also, checking if we can use transfers.
-          try {
-            messageHandler.send('test', testObj, [testObj.buffer]);
-          } catch (ex) {
-            info('Cannot use postMessage transfers');
-            testObj[0] = 0;
-            messageHandler.send('test', testObj);
-          }
+          messageHandler.on('ready', function (data) {
+            if (this.destroyed) {
+              this._readyCapability.reject(new Error('Worker was destroyed'));
+              messageHandler.destroy();
+              worker.terminate();
+              return; // worker was destroyed
+            }
+            try {
+              sendTest();
+            } catch (e)  {
+              // We need fallback to a faked worker.
+              this._setupFakeWorker();
+            }
+          }.bind(this));
+
+          var sendTest = function () {
+            var testObj = new Uint8Array(
+              [PDFJS.postMessageTransfers ? 255 : 0]);
+            // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
+            // typed array. Also, checking if we can use transfers.
+            try {
+              messageHandler.send('test', testObj, [testObj.buffer]);
+            } catch (ex) {
+              info('Cannot use postMessage transfers');
+              testObj[0] = 0;
+              messageHandler.send('test', testObj);
+            }
+          };
+
+          // It might take time for worker to initialize (especially when AMD
+          // loader is used). We will try to send test immediately, and then
+          // when 'ready' message will arrive. The worker shall process only
+          // first received 'test'.
+          sendTest();
           return;
         } catch (e) {
           info('The worker has been disabled.');

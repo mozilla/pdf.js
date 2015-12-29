@@ -1,5 +1,6 @@
 /* globals expect, it, describe, CFFCompiler, CFFParser, CFFIndex, CFFStrings,
-           SEAC_ANALYSIS_ENABLED:true, Type1Parser, StringStream */
+           SEAC_ANALYSIS_ENABLED, Type1Parser, StringStream,
+           _enableSeacAnalysis */
 
 'use strict';
 
@@ -109,7 +110,7 @@ describe('font', function() {
     it('parses a CharString endchar with 4 args w/seac enabled', function() {
       var seacAnalysisState = SEAC_ANALYSIS_ENABLED;
       try {
-        window.pdfjsCoreFonts._enableSeacAnalysis(true);
+        _enableSeacAnalysis(true);
         var bytes = new Uint8Array([0, 1, // count
                                     1,  // offsetSize
                                     0,  // offset[0]
@@ -125,14 +126,14 @@ describe('font', function() {
         expect(result.seacs[0][2]).toEqual(65);
         expect(result.seacs[0][3]).toEqual(194);
       } finally {
-        window.pdfjsCoreFonts._enableSeacAnalysis(seacAnalysisState);
+        _enableSeacAnalysis(seacAnalysisState);
       }
     });
 
     it('parses a CharString endchar with 4 args w/seac disabled', function() {
       var seacAnalysisState = SEAC_ANALYSIS_ENABLED;
       try {
-        window.pdfjsCoreFonts._enableSeacAnalysis(false);
+        _enableSeacAnalysis(false);
         var bytes = new Uint8Array([0, 1, // count
                                     1,  // offsetSize
                                     0,  // offset[0]
@@ -143,7 +144,7 @@ describe('font', function() {
         expect(result.charStrings.get(0).length).toEqual(9);
         expect(result.seacs.length).toEqual(0);
       } finally {
-        window.pdfjsCoreFonts._enableSeacAnalysis(seacAnalysisState);
+        _enableSeacAnalysis(seacAnalysisState);
       }
     });
 
