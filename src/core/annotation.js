@@ -99,6 +99,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       case 'Underline':
         return new UnderlineAnnotation(parameters);
 
+      case 'Squiggly':
+        return new SquigglyAnnotation(parameters);
+
       case 'StrikeOut':
         return new StrikeOutAnnotation(parameters);
 
@@ -806,6 +809,22 @@ var UnderlineAnnotation = (function UnderlineAnnotationClosure() {
   Util.inherit(UnderlineAnnotation, Annotation, {});
 
   return UnderlineAnnotation;
+})();
+
+var SquigglyAnnotation = (function SquigglyAnnotationClosure() {
+  function SquigglyAnnotation(parameters) {
+    Annotation.call(this, parameters);
+
+    this.data.annotationType = AnnotationType.SQUIGGLY;
+    this.data.hasHtml = true;
+
+    // PDF viewers completely ignore any border styles.
+    this.data.borderStyle.setWidth(0);
+  }
+
+  Util.inherit(SquigglyAnnotation, Annotation, {});
+
+  return SquigglyAnnotation;
 })();
 
 var StrikeOutAnnotation = (function StrikeOutAnnotationClosure() {

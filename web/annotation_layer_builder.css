@@ -69,10 +69,8 @@
   padding-top: 0.2em;
 }
 
-.annotationLayer .underlineAnnotation {
-  cursor: pointer;
-}
-
+.annotationLayer .underlineAnnotation,
+.annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation {
   cursor: pointer;
 }

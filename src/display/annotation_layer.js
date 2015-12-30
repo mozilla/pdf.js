@@ -75,6 +75,9 @@ AnnotationElementFactory.prototype =
       case AnnotationType.UNDERLINE:
         return new UnderlineAnnotationElement(parameters);
 
+      case AnnotationType.SQUIGGLY:
+        return new SquigglyAnnotationElement(parameters);
+
       case AnnotationType.STRIKEOUT:
         return new StrikeOutAnnotationElement(parameters);
 
@@ -631,6 +634,32 @@ var UnderlineAnnotationElement = (
   });
 
   return UnderlineAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias SquigglyAnnotationElement
+ */
+var SquigglyAnnotationElement = (function SquigglyAnnotationElementClosure() {
+  function SquigglyAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(SquigglyAnnotationElement, AnnotationElement, {
+    /**
+     * Render the squiggly annotation's HTML element in the empty container.
+     *
+     * @public
+     * @memberof SquigglyAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function SquigglyAnnotationElement_render() {
+      this.container.className = 'squigglyAnnotation';
+      return this.container;
+    }
+  });
+
+  return SquigglyAnnotationElement;
 })();
 
 /**
