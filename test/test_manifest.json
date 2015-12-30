@@ -2660,6 +2660,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-squiggly",
+       "file": "pdfs/annotation-squiggly.pdf",
+       "md5": "38661e731ac6c525af5894d2d20c6e71",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",
