@@ -20,17 +20,18 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/api', ['exports', 'pdfjs/shared/util',
       'pdfjs/display/font_loader', 'pdfjs/display/canvas',
-      'pdfjs/shared/global', 'require'], factory);
+      'pdfjs/display/metadata', 'pdfjs/shared/global', 'require'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./font_loader.js'),
-      require('./canvas.js'), require('../shared/global.js'));
+      require('./canvas.js'), require('./metadata.js'),
+      require('../shared/global.js'));
   } else {
     factory((root.pdfjsDisplayAPI = {}), root.pdfjsSharedUtil,
       root.pdfjsDisplayFontLoader, root.pdfjsDisplayCanvas,
-      root.pdfjsSharedGlobal);
+      root.pdfjsDisplayMetadata, root.pdfjsSharedGlobal);
   }
 }(this, function (exports, sharedUtil, displayFontLoader, displayCanvas,
-                  sharedGlobal, amdRequire) {
+                  displayMetadata, sharedGlobal, amdRequire) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MessageHandler = sharedUtil.MessageHandler;
@@ -54,6 +55,7 @@ var FontFaceObject = displayFontLoader.FontFaceObject;
 var FontLoader = displayFontLoader.FontLoader;
 var CanvasGraphics = displayCanvas.CanvasGraphics;
 var createScratchCanvas = displayCanvas.createScratchCanvas;
+var Metadata = displayMetadata.Metadata;
 var PDFJS = sharedGlobal.PDFJS;
 var globalScope = sharedGlobal.globalScope;
 
@@ -1818,7 +1820,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         then(function transportMetadata(results) {
         return {
           info: results[0],
-          metadata: (results[1] ? new PDFJS.Metadata(results[1]) : null)
+          metadata: (results[1] ? new Metadata(results[1]) : null)
         };
       });
     },

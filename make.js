@@ -484,7 +484,7 @@ target.bundle = function(args) {
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
 
-  function bundle(filename, outfilename, files, distname) {
+  function bundle(filename, outfilename, files, distname, isMainFile) {
     var bundleContent = cat(files),
         bundleVersion = VERSION,
         bundleBuild = exec('git log --format="%h" -n 1',
@@ -511,7 +511,8 @@ target.bundle = function(args) {
                             BUNDLE_VERSION: bundleVersion,
                             BUNDLE_BUILD: bundleBuild,
                             BUNDLE_AMD_NAME: amdName,
-                            BUNDLE_JS_NAME: jsName}));
+                            BUNDLE_JS_NAME: jsName,
+                            MAIN_FILE: isMainFile}));
   }
 
   if (!test('-d', BUILD_DIR)) {
@@ -521,7 +522,6 @@ target.bundle = function(args) {
   var umd = require('./external/umdutils/verifier.js');
   var MAIN_SRC_FILES = [
     SRC_DIR + 'display/annotation_layer.js',
-    SRC_DIR + 'display/metadata.js',
     SRC_DIR + 'display/text_layer.js',
     SRC_DIR + 'display/api.js'
   ];
@@ -560,13 +560,13 @@ target.bundle = function(args) {
 
   cd(SRC_DIR);
 
-  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles, mainFileName);
+  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles, mainFileName, true);
 
   if (workerFiles) {
     var srcCopy = ROOT_DIR + BUILD_DIR + 'pdf.worker.js.temp';
     cp('pdf.js', srcCopy);
     bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, workerFiles,
-           workerFileName);
+           workerFileName, false);
     rm(srcCopy);
   }
 };

@@ -1335,11 +1335,8 @@ window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 function webViewerLoad(evt) {
 //#if !PRODUCTION
   require.config({paths: {'pdfjs': '../src'}});
-  require(['pdfjs/display/api',
-           'pdfjs/display/annotation_layer',
-           'pdfjs/display/text_layer',
-           'pdfjs/display/metadata'],
-    function (api, annotationLayer, textLayer, metadata) {
+  require(['pdfjs/main_loader'],
+    function (loader) {
       configure(PDFJS);
       PDFViewerApplication.initialize().then(webViewerInitialized);
     });

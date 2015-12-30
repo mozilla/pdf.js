@@ -44,4 +44,19 @@
   }).call(pdfjsLibs);
 
   exports.PDFJS = pdfjsLibs.pdfjsSharedGlobal.PDFJS;
+
+//#if MAIN_FILE
+  exports.getDocument = pdfjsLibs.pdfjsDisplayAPI.getDocument;
+  exports.PDFDataRangeTransport =
+    pdfjsLibs.pdfjsDisplayAPI.PDFDataRangeTransport;
+  exports.renderTextLayer = pdfjsLibs.pdfjsDisplayTextLayer.renderTextLayer;
+  exports.AnnotationLayer =
+    pdfjsLibs.pdfjsDisplayAnnotationLayer.AnnotationLayer;
+  exports.CustomStyle = pdfjsLibs.pdfjsDisplayDOMUtils.CustomStyle;
+  exports.PasswordResponses = pdfjsLibs.pdfjsSharedUtil.PasswordResponses;
+  exports.InvalidPDFException = pdfjsLibs.pdfjsSharedUtil.InvalidPDFException;
+  exports.MissingPDFException = pdfjsLibs.pdfjsSharedUtil.MissingPDFException;
+  exports.UnexpectedResponseException =
+    pdfjsLibs.pdfjsSharedUtil.UnexpectedResponseException;
+//#endif
 }));
