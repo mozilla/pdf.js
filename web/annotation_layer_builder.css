@@ -69,6 +69,7 @@
   padding-top: 0.2em;
 }
 
+.annotationLayer .highlightAnnotation,
 .annotationLayer .underlineAnnotation,
 .annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation {

@@ -72,6 +72,9 @@ AnnotationElementFactory.prototype =
       case AnnotationType.POPUP:
         return new PopupAnnotationElement(parameters);
 
+      case AnnotationType.HIGHLIGHT:
+        return new HighlightAnnotationElement(parameters);
+
       case AnnotationType.UNDERLINE:
         return new UnderlineAnnotationElement(parameters);
 
@@ -607,6 +610,33 @@ var PopupElement = (function PopupElementClosure() {
   };
 
   return PopupElement;
+})();
+
+/**
+ * @class
+ * @alias HighlightAnnotationElement
+ */
+var HighlightAnnotationElement = (
+    function HighlightAnnotationElementClosure() {
+  function HighlightAnnotationElement(parameters) {
+    AnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(HighlightAnnotationElement, AnnotationElement, {
+    /**
+     * Render the highlight annotation's HTML element in the empty container.
+     *
+     * @public
+     * @memberof HighlightAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function HighlightAnnotationElement_render() {
+      this.container.className = 'highlightAnnotation';
+      return this.container;
+    }
+  });
+
+  return HighlightAnnotationElement;
 })();
 
 /**

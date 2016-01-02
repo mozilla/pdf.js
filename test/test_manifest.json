@@ -2667,6 +2667,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-highlight",
+       "file": "pdfs/annotation-highlight.pdf",
+       "md5": "e13e198e3a69c32dc9ebdc704d3105e1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",
