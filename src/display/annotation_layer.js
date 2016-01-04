@@ -234,12 +234,13 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
       var link = document.createElement('a');
       link.href = link.title = this.data.url || '';
 
-      if (this.data.url && isExternalLinkTargetSet()) {
-        link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
-      }
-
-      // Strip referrer from the URL.
       if (this.data.url) {
+        if (isExternalLinkTargetSet()) {
+          link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
+        } else if (this.data.newWindow) {
+          link.target = '_blank';
+        }
+        // Strip referrer from the URL.
         link.rel = PDFJS.externalLinkRel;
       }
 

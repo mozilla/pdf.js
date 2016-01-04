@@ -37,6 +37,7 @@ var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationType = sharedUtil.AnnotationType;
 var OPS = sharedUtil.OPS;
 var Util = sharedUtil.Util;
+var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
 var isValidUrl = sharedUtil.isValidUrl;
@@ -698,11 +699,11 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     data.annotationType = AnnotationType.LINK;
     data.hasHtml = true;
 
-    var action = dict.get('A');
+    var action = dict.get('A'), url;
     if (action && isDict(action)) {
       var linkType = action.get('S').name;
       if (linkType === 'URI') {
-        var url = action.get('URI');
+        url = action.get('URI');
         if (isName(url)) {
           // Some bad PDFs do not put parentheses around relative URLs.
           url = '/' + url.name;
@@ -731,15 +732,23 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
           // We assume that the 'url' is a Filspec dictionary
           // and fetch the url without checking any further
           url = urlDict.get('F') || '';
+        } else if (isString(urlDict)) {
+          url = urlDict;
         }
 
-        // TODO: pdf reference says that GoToR
-        // can also have 'NewWindow' attribute
+        // The `newWindow` property is equal to `target = "_blank";` for links.
+        data.newWindow = action.get('newWindow') || false;
+
+        // Note that the destination is relative to the *remote* document.
+        var remoteDest = action.get('D');
+        if (isString(remoteDest) && isString(url)) {
+          url = url.split('#')[0] + ('#' + remoteDest);
+        }
+
         if (!isValidUrl(url, false)) {
           url = '';
         }
         data.url = url;
-        data.dest = action.get('D');
       } else if (linkType === 'Named') {
         data.action = action.get('N').name;
       } else {
