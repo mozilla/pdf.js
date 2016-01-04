@@ -811,8 +811,12 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * @typedef {Object} GetAnnotationsParameters
  * @param {string} intent - Determines the annotations that will be fetched,
  *                 can be either 'display' (viewable annotations) or 'print'
- *                 (printable annotations).
- *                 If the parameter is omitted, all annotations are fetched.
+ *                 (printable annotations). If the parameter is omitted,
+ *                 or if it's `null`, all annotations are fetched.
+ * @param {string} baseUrl - (optional) The base URL that is used for resolving
+ *                 relative destinations.
+ *                 NOTE: This can be useful since some PDF generators only
+ *                       specify relative URLs, instead of absolute ones.
  */
 
 /**
@@ -909,11 +913,15 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      */
     getAnnotations: function PDFPageProxy_getAnnotations(params) {
       var intent = (params && params.intent) || null;
+      var baseUrl = (params && params.baseUrl) || null;
 
-      if (!this.annotationsPromise || this.annotationsIntent !== intent) {
+      if (!this.annotationsPromise || this.annotationsIntent !== intent ||
+          this.annotationsBaseUrl !== baseUrl) {
         this.annotationsPromise = this.transport.getAnnotations(this.pageIndex,
-                                                                intent);
+                                                                intent,
+                                                                baseUrl);
         this.annotationsIntent = intent;
+        this.annotationsBaseUrl = baseUrl;
       }
       return this.annotationsPromise;
     },
@@ -1776,10 +1784,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.messageHandler.sendWithPromise('GetPageIndex', { ref: ref });
     },
 
-    getAnnotations: function WorkerTransport_getAnnotations(pageIndex, intent) {
+    getAnnotations: function WorkerTransport_getAnnotations(pageIndex, intent,
+                                                            baseUrl) {
       return this.messageHandler.sendWithPromise('GetAnnotations', {
         pageIndex: pageIndex,
         intent: intent,
+        baseUrl: baseUrl,
       });
     },
 

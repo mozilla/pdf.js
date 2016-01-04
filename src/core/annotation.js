@@ -40,6 +40,7 @@ var Util = sharedUtil.Util;
 var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
+var combineUrl = sharedUtil.combineUrl;
 var isValidUrl = sharedUtil.isValidUrl;
 var stringToBytes = sharedUtil.stringToBytes;
 var stringToPDFString = sharedUtil.stringToPDFString;
@@ -710,11 +711,14 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         } else if (url) {
           url = addDefaultProtocolToUrl(url);
         }
+
         // TODO: pdf spec mentions urls can be relative to a Base
         // entry in the dictionary.
         if (!isValidUrl(url, false)) {
+          this.relativeUrl = url;
           url = '';
         }
+
         // According to ISO 32000-1:2008, section 12.6.4.7,
         // URI should to be encoded in 7-bit ASCII.
         // Some bad PDFs may have URIs in UTF-8 encoding, see Bugzilla 1122280.
@@ -746,6 +750,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         }
 
         if (!isValidUrl(url, false)) {
+          this.relativeUrl = url;
           url = '';
         }
         data.url = url;
@@ -769,7 +774,26 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     return url;
   }
 
-  Util.inherit(LinkAnnotation, Annotation, {});
+  Util.inherit(LinkAnnotation, Annotation, {
+    addBaseUrlToRelativeLink:
+        function LinkAnnotation_addBaseUrlToRelativeLink(baseUrl) {
+      if (this.data.url) { // An absolute URL already exists.
+        return;
+      }
+      if (!this.relativeUrl) { // No relative URL was found.
+        return;
+      }
+      if (!isString(baseUrl) || baseUrl.indexOf('#') !== -1 ||
+          !isValidUrl(baseUrl, false)) {
+        warn('The baseUrl "' + baseUrl + '" is invalid.');
+        return;
+      }
+      var absoluteUrl = combineUrl(baseUrl, this.relativeUrl);
+      if (isValidUrl(absoluteUrl, false)) {
+        this.data.url = absoluteUrl;
+      }
+    },
+  });
 
   return LinkAnnotation;
 })();

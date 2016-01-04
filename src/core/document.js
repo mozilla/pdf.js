@@ -35,6 +35,7 @@
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreObj,
                   coreParser, coreCrypto, coreEvaluator, coreAnnotation) {
 
+var AnnotationType = sharedUtil.AnnotationType;
 var MissingDataException = sharedUtil.MissingDataException;
 var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
@@ -299,7 +300,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    getAnnotationsData: function Page_getAnnotationsData(intent) {
+    getAnnotationsData: function Page_getAnnotationsData(intent, baseUrl) {
       var annotations = this.annotations;
       var annotationsData = [];
       for (var i = 0, n = annotations.length; i < n; ++i) {
@@ -309,6 +310,11 @@ var Page = (function PageClosure() {
             continue;
           }
         }
+        if (baseUrl &&
+            annotations[i].data.annotationType === AnnotationType.LINK) {
+          annotations[i].addBaseUrlToRelativeLink(baseUrl);
+        }
+
         annotationsData.push(annotations[i].data);
       }
       return annotationsData;

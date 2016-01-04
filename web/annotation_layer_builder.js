@@ -50,6 +50,7 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
       var self = this;
       var parameters = {
         intent: (intent === undefined ? 'display' : intent),
+        baseUrl: this.linkService.baseUrl,
       };
 
       this.pdfPage.getAnnotations(parameters).then(function (annotations) {

@@ -495,7 +495,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
     handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
-        return pdfManager.ensure(page, 'getAnnotationsData', [data.intent]);
+        return pdfManager.ensure(page, 'getAnnotationsData',
+                                 [data.intent, data.baseUrl]);
       });
     });
 
