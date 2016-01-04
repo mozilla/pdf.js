@@ -504,6 +504,16 @@ var XRefParseException = (function XRefParseExceptionClosure() {
   return XRefParseException;
 })();
 
+var NullCharactersRegExp = /\x00/g;
+
+function removeNullCharacters(str) {
+  if (typeof str !== 'string') {
+    warn('The argument for removeNullCharacters must be a string.');
+    return str;
+  }
+  return str.replace(NullCharactersRegExp, '');
+}
+PDFJS.removeNullCharacters = removeNullCharacters;
 
 function bytesToString(bytes) {
   assert(bytes !== null && typeof bytes === 'object' &&
@@ -1690,6 +1700,7 @@ exports.log2 = log2;
 exports.readInt8 = readInt8;
 exports.readUint16 = readUint16;
 exports.readUint32 = readUint32;
+exports.removeNullCharacters = removeNullCharacters;
 exports.shadow = shadow;
 exports.string32 = string32;
 exports.stringToBytes = stringToBytes;
