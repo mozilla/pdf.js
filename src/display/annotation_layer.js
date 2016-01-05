@@ -68,6 +68,13 @@ AnnotationElementFactory.prototype =
         return new TextAnnotationElement(parameters);
 
       case AnnotationType.WIDGET:
+        switch (parameters.data.fieldType) {
+          case 'Tx':
+            return new TextWidgetAnnotationElement(parameters);
+        }
+        warn('Unimplemented Widget annotation type: ' +
+              parameters.data.fieldType);
+        // Fallback to default one, which does not render anything.
         return new WidgetAnnotationElement(parameters);
 
       case AnnotationType.POPUP:
@@ -386,9 +393,7 @@ var TextAnnotationElement = (function TextAnnotationElementClosure() {
  * @alias WidgetAnnotationElement
  */
 var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
-  function WidgetAnnotationElement(parameters) {
-    var isRenderable = !parameters.data.hasAppearance &&
-                       !!parameters.data.fieldValue;
+  function WidgetAnnotationElement(parameters, isRenderable) {
     AnnotationElement.call(this, parameters, isRenderable);
   }
 
@@ -401,19 +406,87 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
      * @returns {HTMLSectionElement}
      */
     render: function WidgetAnnotationElement_render() {
-      var content = document.createElement('div');
-      content.textContent = this.data.fieldValue;
+      return this.container;
+    },
+
+    /**
+     * Check bit value for given position in fieldFlags.
+     * Note: position is 1 based index.
+     *
+     * @private
+     * @memberof WidgetAnnotationElement
+     * @returns {boolean}
+     */
+    _hasFlag: function WidgetAnnotationElement_hasFlag(position) {
+      return !!(this.data.fieldFlags & (1 << (position - 1)));
+    }
+  });
+
+  return WidgetAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias TextWidgetAnnotationElement
+ */
+var TextWidgetAnnotationElement =
+    (function TextWidgetAnnotationElementClosure() {
+
+  var READONLY_BIT = 1;
+  var MULTILINE_BIT = 13;
+
+  function TextWidgetAnnotationElement(parameters) {
+    WidgetAnnotationElement.call(this, parameters, true);
+  }
+
+  Util.inherit(TextWidgetAnnotationElement, WidgetAnnotationElement, {
+    /**
+     * Render the text widget annotation's HTML element.
+     *
+     * @public
+     * @memberof TextWidgetAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function TextWidgetAnnotationElement_render() {
+      var container = WidgetAnnotationElement.prototype.render.call(this);
+
+      var isReadonly = this._hasFlag(READONLY_BIT);
+      var isMultiline = this._hasFlag(MULTILINE_BIT);
+
+      var content;
+      if (isMultiline) {
+        content = document.createElement('textarea');
+      } else {
+        content = document.createElement('input');
+        content.type = 'text';
+      }
+
+      content.disabled = isReadonly;
+      content.value = this.data.fieldValue;
       var textAlignment = this.data.textAlignment;
       content.style.textAlign = ['left', 'center', 'right'][textAlignment];
-      content.style.verticalAlign = 'middle';
-      content.style.display = 'table-cell';
+      if (this.data.maxLen !== null) {
+        content.maxLength = this.data.maxLen;
+      }
 
       var font = (this.data.fontRefName ?
         this.page.commonObjs.getData(this.data.fontRefName) : null);
       this._setTextStyle(content, font);
 
-      this.container.appendChild(content);
-      return this.container;
+      if (!isMultiline && !('fontSize' in this.data)) {
+        // Hack to guess font size based on content height
+        // so small text fields are rendered correctly.
+        // TODO: remove this when we can apply the default appearance.
+        var height = this.data.rect[3] - this.data.rect[1];
+        if (height < 15) {
+          content.style.fontSize = (height - 1) + 'px';
+        }
+      }
+
+      container.appendChild(content);
+
+      container.className = 'widgetAnnotation';
+      return container;
     },
 
     /**
@@ -422,14 +495,18 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
      * @private
      * @param {HTMLDivElement} element
      * @param {Object} font
-     * @memberof WidgetAnnotationElement
+     * @memberof TextWidgetAnnotationElement
      */
     _setTextStyle:
-        function WidgetAnnotationElement_setTextStyle(element, font) {
+        function TextWidgetAnnotationElement_setTextStyle(element, font) {
       // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
       var style = element.style;
-      style.fontSize = this.data.fontSize + 'px';
-      style.direction = (this.data.fontDirection < 0 ? 'rtl': 'ltr');
+      if ('fontSize' in this.data) {
+        style.fontSize = this.data.fontSize + 'px';
+      }
+      if ('fontDirection' in this.data) {
+        style.direction = (this.data.fontDirection < 0 ? 'rtl': 'ltr');
+      }
 
       if (!font) {
         return;
@@ -447,7 +524,7 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
     }
   });
 
-  return WidgetAnnotationElement;
+  return TextWidgetAnnotationElement;
 })();
 
 /**

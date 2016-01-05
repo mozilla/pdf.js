@@ -76,3 +76,26 @@
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }
+
+.annotationLayer input[disabled], textarea[disabled] {
+  cursor: not-allowed;
+}
+
+.annotationLayer .widgetAnnotation > input[type='text'], textarea {
+  vertical-align: top;
+}
+
+.annotationLayer .widgetAnnotation textarea {
+  resize: none;
+  width: 100%;
+  height: 100%;
+  background: rgba(192, 192, 192, 0.2);
+  border: 0px none;
+}
+
+.annotationLayer .widgetAnnotation input[type='text'] {
+  width: 100%;
+  height: 100%;
+  background: rgba(192, 192, 192, 0.2);
+  border: 0px none;
+}
