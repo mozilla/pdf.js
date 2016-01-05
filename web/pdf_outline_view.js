@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals removeNullCharacters */
+/* globals PDFJS */
 
 'use strict';
 
@@ -137,7 +137,7 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
           div.className = 'outlineItem';
           var element = document.createElement('a');
           this._bindLink(element, item);
-          element.textContent = removeNullCharacters(item.title);
+          element.textContent = PDFJS.removeNullCharacters(item.title);
           div.appendChild(element);
 
           if (item.items.length > 0) {

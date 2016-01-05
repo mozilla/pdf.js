@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals getFileName, removeNullCharacters */
+/* globals getFileName, PDFJS */
 
 'use strict';
 
@@ -89,7 +89,7 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
         div.className = 'attachmentsItem';
         var button = document.createElement('button');
         this._bindLink(button, item.content, filename);
-        button.textContent = removeNullCharacters(filename);
+        button.textContent = PDFJS.removeNullCharacters(filename);
         div.appendChild(button);
         this.container.appendChild(div);
       }

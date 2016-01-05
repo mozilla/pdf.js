@@ -23,12 +23,6 @@ var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
 
-var NullCharactersRegExp = /\x00/g;
-
-function removeNullCharacters(str) {
-  return str.replace(NullCharactersRegExp, '');
-}
-
 function getFileName(url) {
   var anchor = url.indexOf('#');
   var query = url.indexOf('?');
