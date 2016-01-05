@@ -101,7 +101,8 @@ describe('font', function() {
                                   14  // endchar
                                 ]);
       parser.bytes = bytes;
-      var charStrings = parser.parseCharStrings(0).charStrings;
+      var charStringsIndex = parser.parseIndex(0).obj;
+      var charStrings = parser.parseCharStrings(charStringsIndex).charStrings;
       expect(charStrings.count).toEqual(1);
       // shoudn't be sanitized
       expect(charStrings.get(0).length).toEqual(38);
@@ -116,7 +117,8 @@ describe('font', function() {
                                     0,  // offset[0]
                                     237, 247, 22, 247, 72, 204, 247, 86, 14]);
         parser.bytes = bytes;
-        var result = parser.parseCharStrings(0);
+        var charStringsIndex = parser.parseIndex(0).obj;
+        var result = parser.parseCharStrings(charStringsIndex);
         expect(result.charStrings.count).toEqual(1);
         expect(result.charStrings.get(0).length).toEqual(1);
         expect(result.seacs.length).toEqual(1);
@@ -139,7 +141,8 @@ describe('font', function() {
                                     0,  // offset[0]
                                     237, 247, 22, 247, 72, 204, 247, 86, 14]);
         parser.bytes = bytes;
-        var result = parser.parseCharStrings(0);
+        var charStringsIndex = parser.parseIndex(0).obj;
+        var result = parser.parseCharStrings(charStringsIndex);
         expect(result.charStrings.count).toEqual(1);
         expect(result.charStrings.get(0).length).toEqual(9);
         expect(result.seacs.length).toEqual(0);
@@ -154,7 +157,8 @@ describe('font', function() {
                                   0,  // offset[0]
                                   14]);
       parser.bytes = bytes;
-      var result = parser.parseCharStrings(0);
+      var charStringsIndex = parser.parseIndex(0).obj;
+      var result = parser.parseCharStrings(charStringsIndex);
       expect(result.charStrings.count).toEqual(1);
       expect(result.charStrings.get(0)[0]).toEqual(14);
       expect(result.seacs.length).toEqual(0);
