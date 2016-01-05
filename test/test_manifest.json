@@ -376,6 +376,18 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue6286",
+       "file": "pdfs/issue6286.pdf",
+       "md5": "d13fd1b98fb1c9980356314fd1d3a91b",
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue3694_reduced",
+       "file": "pdfs/issue_3694_reduced.pdf",
+       "md5": "c1438c7bad12d70c4cd684f8ce04448f",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug847420",
        "file": "pdfs/bug847420.pdf",
        "md5": "0decd96fec4ef858c2c663a6de24e887",
