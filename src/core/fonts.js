@@ -2666,7 +2666,14 @@ var Font = (function FontClosure() {
     }
     // Some CIDFontType0C fonts by mistake claim CIDFontType0.
     if (type === 'CIDFontType0') {
-      subtype = isType1File(file) ? 'CIDFontType0' : 'CIDFontType0C';
+      if (isType1File(file)) {
+        subtype = 'CIDFontType0';
+      } else if (isOpenTypeFile(file)) {
+        // Sometimes the type/subtype can be a complete lie (see issue6782.pdf).
+        type = subtype = 'OpenType';
+      } else {
+        subtype = 'CIDFontType0C';
+      }
     }
 
     var data;
@@ -2748,6 +2755,11 @@ var Font = (function FontClosure() {
   function isTrueTypeFile(file) {
     var header = file.peekBytes(4);
     return readUint32(header, 0) === 0x00010000;
+  }
+
+  function isOpenTypeFile(file) {
+    var header = file.peekBytes(4);
+    return bytesToString(header) === 'OTTO';
   }
 
   function isType1File(file) {
