@@ -484,7 +484,7 @@ target.bundle = function(args) {
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
 
-  function bundle(filename, outfilename, files) {
+  function bundle(filename, outfilename, files, distname, isMainFile) {
     var bundleContent = cat(files),
         bundleVersion = VERSION,
         bundleBuild = exec('git log --format="%h" -n 1',
@@ -500,12 +500,19 @@ target.bundle = function(args) {
     // Removes AMD and CommonJS branches from UMD headers.
     bundleContent = stripUMDHeaders(bundleContent);
 
+    var amdName = 'pdfjs-dist/build/' + distname.replace(/\.js$/, '');
+    var jsName = amdName.replace(/[\-_\.\/]\w/g, function (all) {
+      return all[1].toUpperCase();
+    });
     // This just preprocesses the empty pdf.js file, we don't actually want to
     // preprocess everything yet since other build targets use this file.
     builder.preprocess(filename, outfilename, builder.merge(defines,
                            {BUNDLE: bundleContent,
                             BUNDLE_VERSION: bundleVersion,
-                            BUNDLE_BUILD: bundleBuild}));
+                            BUNDLE_BUILD: bundleBuild,
+                            BUNDLE_AMD_NAME: amdName,
+                            BUNDLE_JS_NAME: jsName,
+                            MAIN_FILE: isMainFile}));
   }
 
   if (!test('-d', BUILD_DIR)) {
@@ -515,7 +522,6 @@ target.bundle = function(args) {
   var umd = require('./external/umdutils/verifier.js');
   var MAIN_SRC_FILES = [
     SRC_DIR + 'display/annotation_layer.js',
-    SRC_DIR + 'display/metadata.js',
     SRC_DIR + 'display/text_layer.js',
     SRC_DIR + 'display/api.js'
   ];
@@ -523,6 +529,9 @@ target.bundle = function(args) {
   var WORKER_SRC_FILES = [
     SRC_DIR + 'core/worker.js'
   ];
+
+  var mainFileName = 'pdf.js';
+  var workerFileName = 'pdf.worker.js';
 
   // Extension does not need svg.js and network.js files.
   if (!defines.FIREFOX && !defines.MOZCENTRAL) {
@@ -535,6 +544,8 @@ target.bundle = function(args) {
     // the main pdf.js output.
     MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
     WORKER_SRC_FILES = null; // no need for worker file
+    mainFileName = 'pdf.combined.js';
+    workerFileName = null;
   }
 
   // Reading UMD headers and building loading orders of modules. The
@@ -549,12 +560,13 @@ target.bundle = function(args) {
 
   cd(SRC_DIR);
 
-  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles);
+  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles, mainFileName, true);
 
   if (workerFiles) {
     var srcCopy = ROOT_DIR + BUILD_DIR + 'pdf.worker.js.temp';
     cp('pdf.js', srcCopy);
-    bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, workerFiles);
+    bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, workerFiles,
+           workerFileName, false);
     rm(srcCopy);
   }
 };

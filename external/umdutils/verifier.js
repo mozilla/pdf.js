@@ -55,6 +55,9 @@ var path = require('path');
  */
 function parseUmd(filePath) {
   var jscode = fs.readFileSync(filePath).toString();
+  if (/\/\*\s*umdutils\s+ignore\s*\*\//.test(jscode)) {
+    throw new Error('UMD processing ignored');
+  }
   // Extracts header and body.
   var umdStart = '\\(function\\s\\(root,\\sfactory\\)\\s\\{';
   var umdImports = '\\}\\(this,\\sfunction\\s\\(exports\\b';
