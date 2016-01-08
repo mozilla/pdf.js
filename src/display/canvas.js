@@ -1421,6 +1421,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.translate(current.x, current.y + current.textRise);
 
+      if (current.patternFill) {
+        // TODO: Some shading patterns are not applied correctly to text,
+        //       e.g. issues 3988 and 5432, and ShowText-ShadingPattern.pdf.
+        ctx.fillStyle = current.fillColor.getPattern(ctx, this);
+      }
+
       if (fontDirection > 0) {
         ctx.scale(textHScale, -1);
       } else {

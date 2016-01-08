@@ -1013,6 +1013,21 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue5804",
+       "file": "pdfs/issue5804.pdf",
+       "md5": "442f27939edb6aaf173ceff38d69bb14",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "ShowText-ShadingPattern",
+       "file": "pdfs/ShowText-ShadingPattern.pdf",
+       "md5": "fe683725db037ffe19d390969610a652",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "about": "Please note that this file currently renders incorrectly."
+    },
     {  "id": "issue5644",
        "file": "pdfs/issue5644.pdf",
        "md5": "6f9313c5043b3ecb0ab2df321d3e1847",
