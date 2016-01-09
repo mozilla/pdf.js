@@ -1789,6 +1789,14 @@
       "type": "eq",
       "about": "Has a multi-byte char codes."
     },
+    {  "id": "issue4684-text",
+       "file": "pdfs/issue4684.pdf",
+       "md5": "af5056fcdfb08bd7adc1710d36e4b5b5",
+       "link": false,
+       "rounds": 1,
+       "type": "text",
+       "about": "Invisible (and broken) TrueType font used for text-selection."
+    },
     {  "id": "issue1912",
       "file": "pdfs/issue1912.pdf",
       "md5": "15305b7c2cba971e7423de3f6ad38fef",

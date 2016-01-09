@@ -4154,8 +4154,16 @@ var Font = (function FontClosure() {
         delete tables['cvt '];
         this.isOpenType = true;
       } else {
-        if (!tables.glyf || !tables.loca) {
-          error('Required "glyf" or "loca" tables are not found');
+        if (!tables.loca) {
+          error('Required "loca" table is not found');
+        }
+        if (!tables.glyf) {
+          warn('Required "glyf" table is not found -- trying to recover.');
+          // Note: We use `sanitizeGlyphLocations` to add dummy glyf data below.
+          tables.glyf = {
+            tag: 'glyf',
+            data: new Uint8Array(0),
+          };
         }
         this.isOpenType = false;
       }
