@@ -1326,7 +1326,12 @@ window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 //#endif
 
 function webViewerLoad(evt) {
+  addEventListeners();
   PDFViewerApplication.initialize().then(webViewerInitialized);
+}
+
+function webViewerUnload() {
+  removeEventListeners();
 }
 
 function webViewerInitialized() {
@@ -1761,7 +1766,7 @@ window.addEventListener('updateviewarea', function (evt) {
   }
 }, true);
 
-window.addEventListener('resize', function webViewerResize(evt) {
+function webViewerResize(evt) {
   if (PDFViewerApplication.initialized) {
     var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
     if (currentScaleValue === 'auto' ||
@@ -1780,9 +1785,9 @@ window.addEventListener('resize', function webViewerResize(evt) {
 
   // Set the 'max-height' CSS property of the secondary toolbar.
   SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
-});
+}
 
-window.addEventListener('hashchange', function webViewerHashchange(evt) {
+function webViewerHashchange(evt) {
   if (!PDFViewerApplication.initialized) {
       return;
   }
@@ -1797,10 +1802,10 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
       PDFViewerApplication.pdfLinkService.setHash(hash);
     }
   }
-});
+}
 
 //#if GENERIC
-window.addEventListener('change', function webViewerChange(evt) {
+function webViewerChange(evt) {
   var files = evt.target.files;
   if (!files || files.length === 0) {
     return;
@@ -1829,7 +1834,7 @@ window.addEventListener('change', function webViewerChange(evt) {
     setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
   document.getElementById('secondaryDownload').setAttribute('hidden', 'true');
-}, true);
+}
 //#endif
 
 function selectScaleOption(value) {
@@ -1847,7 +1852,7 @@ function selectScaleOption(value) {
   return predefinedValueFound;
 }
 
-window.addEventListener('localized', function localized(evt) {
+function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
   PDFViewerApplication.animationStartedPromise.then(function() {
@@ -1871,9 +1876,9 @@ window.addEventListener('localized', function localized(evt) {
     // Set the 'max-height' CSS property of the secondary toolbar.
     SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
   });
-}, true);
+}
 
-window.addEventListener('scalechange', function scalechange(evt) {
+function scalechange(evt) {
   document.getElementById('zoomOut').disabled = (evt.scale === MIN_SCALE);
   document.getElementById('zoomIn').disabled = (evt.scale === MAX_SCALE);
 
@@ -1891,7 +1896,7 @@ window.addEventListener('scalechange', function scalechange(evt) {
     return;
   }
   PDFViewerApplication.pdfViewer.update();
-}, true);
+}
 
 window.addEventListener('pagechange', function pagechange(evt) {
   var page = evt.pageNumber;
@@ -1960,9 +1965,6 @@ function handleMouseWheel(evt) {
   }
 }
 
-window.addEventListener('DOMMouseScroll', handleMouseWheel);
-window.addEventListener('mousewheel', handleMouseWheel);
-
 window.addEventListener('click', function click(evt) {
   if (SecondaryToolbar.opened &&
       PDFViewerApplication.pdfViewer.containsElement(evt.target)) {
@@ -1970,7 +1972,7 @@ window.addEventListener('click', function click(evt) {
   }
 }, false);
 
-window.addEventListener('keydown', function keydown(evt) {
+function keydown(evt) {
   if (OverlayManager.active) {
     return;
   }
@@ -2213,15 +2215,42 @@ window.addEventListener('keydown', function keydown(evt) {
   if (handled) {
     evt.preventDefault();
   }
-});
+}
 
-window.addEventListener('beforeprint', function beforePrint(evt) {
+
+function beforePrint(evt) {
   PDFViewerApplication.beforePrint();
-});
+}
 
-window.addEventListener('afterprint', function afterPrint(evt) {
+function afterPrint(evt) {
   PDFViewerApplication.afterPrint();
-});
+}
+
+function addEventListeners() {
+    window.addEventListener('resize', webViewerResize);
+    window.addEventListener('hashchange', webViewerHashchange);
+    window.addEventListener('change', webViewerChange, true);
+    window.addEventListener('localized', localized, true);
+    window.addEventListener('scalechange', scalechange, true);
+    window.addEventListener('DOMMouseScroll', handleMouseWheel);
+    window.addEventListener('mousewheel', handleMouseWheel);
+    window.addEventListener('keydown', keydown);
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint', afterPrint);
+}
+
+function removeEventListeners() {
+    window.removeEventListener('resize', webViewerResize);
+    window.removeEventListener('hashchange', webViewerHashchange);
+    window.removeEventListener('change', webViewerChange, true);
+    window.removeEventListener('localized', localized, true);
+    window.removeEventListener('scalechange', scalechange, true);
+    window.removeEventListener('DOMMouseScroll', handleMouseWheel);
+    window.removeEventListener('mousewheel', handleMouseWheel);
+    window.removeEventListener('keydown', keydown);
+    window.removeEventListener('beforeprint', beforePrint);
+    window.removeEventListener('afterprint', afterPrint);
+}
 
 (function animationStartedClosure() {
   // The offsetParent is not set until the pdf.js iframe or object is visible.
