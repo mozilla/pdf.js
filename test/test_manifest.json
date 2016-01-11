@@ -1487,6 +1487,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue6782",
+       "file": "pdfs/issue6782.pdf",
+       "md5": "b423f709600daa5745cc6d8234f7c608",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug867484",
       "file": "pdfs/bug867484.pdf",
       "md5": "347af7b0ef7279b1a7f43b03bfda4548",
