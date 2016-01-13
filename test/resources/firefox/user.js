@@ -38,3 +38,6 @@ user_pref('extensions.installDistroAddons', false); // prevent testpilot etc
 user_pref('browser.safebrowsing.enable', false); // prevent traffic to google servers
 user_pref('toolkit.telemetry.prompted', true); // prevent telemetry banner
 user_pref('toolkit.telemetry.enabled', false);
+user_pref('browser.tabs.remote.autostart', false);
+user_pref('browser.tabs.remote.autostart.1', false);
+user_pref('browser.tabs.remote.autostart.2', false);
