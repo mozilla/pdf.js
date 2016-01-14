@@ -1633,7 +1633,7 @@ function loadJpegStream(id, imageUrl, objs) {
 }
 
 //#if !(MOZCENTRAL)
-// Polyfill from https://github.com/Polymer/URL
+//// Polyfill from https://github.com/Polymer/URL
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 (function checkURLConstructor(scope) {
