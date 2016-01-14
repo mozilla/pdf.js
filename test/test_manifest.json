@@ -1941,7 +1941,7 @@
        "link": false,
        "type": "load",
        "password": "\u00E6\u00F8\u00E5",
-       "about": "The password (æøå) is UTF8 encoded."
+       "about": "The password (Ã¦Ã¸Ã¥) is UTF8 encoded."
     },
     {  "id": "High-Pressure-Measurement-WP-001287",
        "file": "pdfs/High-Pressure-Measurement-WP-001287.pdf",
