@@ -506,6 +506,12 @@ var PDFImage = (function PDFImageClosure() {
       }
     },
 
+    /**
+     * Check whether resize image data or not
+     * @param  {Number} comps
+     * @param  {Number} bpc
+     * @return {Boolean}
+     */
     shallResizeImage: function(comps, bpc) {
         return (comps === 1 && (bpc === 1 || bpc === 8));
     },
