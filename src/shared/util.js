@@ -293,6 +293,21 @@ function combineUrl(baseUrl, url) {
   return new URL(url, baseUrl).href;
 }
 
+// Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
+function isSameOrigin(baseUrl, otherUrl) {
+  try {
+    var base = new URL(baseUrl);
+    if (!base.origin || base.origin === 'null') {
+      return false; // non-HTTP url
+    }
+  } catch (e) {
+    return false;
+  }
+
+  var other = new URL(otherUrl, base);
+  return base.origin === other.origin;
+}
+
 // Validates if URL is safe and allowed, e.g. to avoid XSS.
 function isValidUrl(url, allowRelative) {
   if (!url) {
@@ -2291,6 +2306,7 @@ exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
 exports.isInt = isInt;
 exports.isNum = isNum;
 exports.isString = isString;
+exports.isSameOrigin = isSameOrigin;
 exports.isValidUrl = isValidUrl;
 exports.loadJpegStream = loadJpegStream;
 exports.log2 = log2;

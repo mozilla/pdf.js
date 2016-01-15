@@ -48,6 +48,7 @@ var error = sharedUtil.error;
 var deprecated = sharedUtil.deprecated;
 var info = sharedUtil.info;
 var isArrayBuffer = sharedUtil.isArrayBuffer;
+var isSameOrigin = sharedUtil.isSameOrigin;
 var loadJpegStream = sharedUtil.loadJpegStream;
 var stringToBytes = sharedUtil.stringToBytes;
 var warn = sharedUtil.warn;
@@ -1226,6 +1227,14 @@ var PDFWorker = (function PDFWorkerClosure() {
     return PDFJS.fakeWorkerFilesLoadedCapability.promise;
   }
 
+  function createCDNWrapper(url) {
+    // We will rely on blob URL's property to specify origin.
+    // We want this function to fail in case if createObjectURL or Blob do not
+    // exist or fail for some reason -- our Worker creation will fail anyway.
+    var wrapper = 'importScripts(\'' + url + '\');';
+    return URL.createObjectURL(new Blob([wrapper]));
+  }
+
   function PDFWorker(name) {
     this.name = name;
     this.destroyed = false;
@@ -1261,6 +1270,14 @@ var PDFWorker = (function PDFWorkerClosure() {
         var workerSrc = getWorkerSrc();
 
         try {
+//#if GENERIC
+//        // Wraps workerSrc path into blob URL, if the former does not belong
+//        // to the same origin.
+//        if (!isSameOrigin(window.location.href, workerSrc)) {
+//          workerSrc = createCDNWrapper(
+//            combineUrl(window.location.href, workerSrc));
+//        }
+//#endif
           // Some versions of FF can't create a worker on localhost, see:
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
           var worker = new Worker(workerSrc);
