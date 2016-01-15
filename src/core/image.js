@@ -514,6 +514,7 @@ var PDFImage = (function PDFImageClosure() {
      * Resize black white image data
      * @param  {Uint8Array} imgData
      * @param  {Number} scaleBits
+     * @author Ramsoft
      */
     resizeBWPixels: function(imgData, scaleBits) {
       var newWidth = imgData.width >> scaleBits;
