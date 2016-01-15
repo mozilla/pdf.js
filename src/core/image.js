@@ -595,7 +595,7 @@ var PDFImage = (function PDFImageClosure() {
       }
 
       if (scaleBits > 0) {
-        if (bpc == 1) {
+        if (bpc === 1) {
           this.resizeBWPixels(imgData, scaleBits);
         } else {
           var w2 = w1 >> scaleBits;
