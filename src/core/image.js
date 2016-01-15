@@ -545,10 +545,8 @@ var PDFImage = (function PDFImageClosure() {
             var originalColBitMask = 1 << (7 - (x2 & 7));
             // most signifcant bit is first pixel due to Little Endian
 
-            // fastmodule for power of 2 = dividend & (divisor - 1) = dividend % divisor
-            // https://www.chrisnewland.com/high-performance-modulo-operation-317
-
-            var originalColByte = imgData.data[originalRowStart + originalColByteStart];
+            var originalColByte =
+                imgData.data[originalRowStart + originalColByteStart];
             var pixelValue = originalColByte & originalColBitMask;
 
             if (pixelValue > 0) {
@@ -570,7 +568,13 @@ var PDFImage = (function PDFImageClosure() {
       imgData.height = newHeight;
     },
 
-    resizeGray: function PDFImage_resizeGray(imgData, comps, bpc) {
+    /**
+     * Resize large resolution PDFS as to improve rendering time
+     * @param  {Uint8Array} imgData image data.
+     * @param  {Number} comps Number of color components, 1 or 3 is supported.
+     * @param  {Number} bpc Number of bits per component.
+     */
+    resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
       var scaleBits;
       var h1 = imgData.height;
       var w1 = imgData.width;
@@ -678,7 +682,8 @@ var PDFImage = (function PDFImageClosure() {
 
           // Not resize data when rendering on web
           if (!this.print) {
-            if (kind === ImageKind.GRAYSCALE_1BPP && this.shallResizeImage(numComps, bpc)) {
+            if (kind === ImageKind.GRAYSCALE_1BPP && 
+              this.shallResizeImage(numComps, bpc)) {
               this.resizeGrayPixels(imgData, numComps, bpc);
             }
           }
@@ -709,7 +714,8 @@ var PDFImage = (function PDFImageClosure() {
           var needResize = this.shallResizeImage(numComps, bpc);
 
           if (needResize) {
-            this.resizeGrayPixels(resizedImgData, numComps, bpc);
+            this.resizeGrayPixels(resizedImgData,
+              numComps, bpc);
 
             imgArray = resizedImgData.data;
             originalHeight = resizedImgData.height;
