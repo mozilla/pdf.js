@@ -576,7 +576,8 @@ var PDFImage = (function PDFImageClosure() {
      * @param  {Number} comps Number of color components, 1 or 3 is supported.
      * @param  {Number} bpc Number of bits per component.
      */
-    resizeBWPixels: function PDFImage_resizeBWPixels(imgData, scaleBits) {
+    resizeGrayPixels: function PDFImage_resizeGrayPixels(
+                              imgData, comps, bpc) {
       var scaleBits;
       var h1 = imgData.height;
       var w1 = imgData.width;
