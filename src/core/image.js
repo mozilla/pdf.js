@@ -576,11 +576,12 @@ var PDFImage = (function PDFImageClosure() {
      * @param  {Number} comps Number of color components, 1 or 3 is supported.
      * @param  {Number} bpc Number of bits per component.
      */
-    resize: function PDFImage_resize(imgData, comps, bpc) {
+    resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
       var scaleBits;
       var h1 = imgData.height;
       var w1 = imgData.width;
 
+      // Reduce the pixel dimensions to around 2000.
       if ((h1 > 15000) || (w1 > 15000)) {
         scaleBits = 3;
       } else if ((h1 > 10000) || (w1 > 10000)) {
@@ -714,7 +715,7 @@ var PDFImage = (function PDFImageClosure() {
           var needResize = this.shallResizeImage(numComps, bpc);
 
           if (needResize) {
-            this.resize(resizedImgData, numComps, bpc);
+            this.resizeGrayPixels(resizedImgData, numComps, bpc);
 
             imgArray = resizedImgData.data;
             originalHeight = resizedImgData.height;
