@@ -535,14 +535,14 @@ var PDFImage = (function PDFImageClosure() {
       var newRowStart;
 
       for (var i = 0, y2 = 0; i < newHeight; i++, y2 += step,
-        originalRowStart = y2 * originalRowBytes, newRowStart = i * newRowBytes) {
-
+          originalRowStart = y2 * originalRowBytes,
+          newRowStart = i * newRowBytes) {
         for (var j = 0, x2 = 0; j < newWidth; j++, x2 += step) {
             // we want original value of pixel [x2, y2] value in original image
             // to populate pixel [i, j] in new image
 
             var originalColByteStart = x2 >> 3;
-            var originalColBitMask = 1 << (7 - (x2 & 7)); 
+            var originalColBitMask = 1 << (7 - (x2 & 7));
             // most signifcant bit is first pixel due to Little Endian
 
             // fastmodule for power of 2 = dividend & (divisor - 1) = dividend % divisor
@@ -558,9 +558,9 @@ var PDFImage = (function PDFImageClosure() {
 
               var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
 
-              newColByte = newColByte | newColBitMask; 
+              newColByte = newColByte | newColBitMask;
               // set pixel bit to 1
-              pixelArrayOutput[newRowStart + newColByteStart] = newColByte; 
+              pixelArrayOutput[newRowStart + newColByteStart] = newColByte;
             }
         }
       }
@@ -576,7 +576,6 @@ var PDFImage = (function PDFImageClosure() {
      * @param {Number} comps Number of color components, 1 or 3 is supported.
      * @param {Number} bpc Number of bits per component.
      * @return {TypedArray} Resized image data.
-     * @author RamSoft
      */
     resizeGrayPixels: function(imgData, comps, bpc) {
       var scaleBits;
@@ -608,11 +607,12 @@ var PDFImage = (function PDFImageClosure() {
           var newRowStart;
           var originalRowStart;
 
-          for (var i = 0, y2 = 0; i < h2; i++, y2 += step, newRowStart = i * newRowBytes, 
+          for (var i = 0, y2 = 0; i < h2; i++, y2 += step,
+            newRowStart = i * newRowBytes,
             originalRowStart = y2 * originalRowBytes) {
-
             for (var j = 0, x2 = 0; j < w2; j++, x2 += step) {
-                pixelArrayOutput[newRowStart + j] = imgData.data[originalRowStart + x2];
+                pixelArrayOutput[newRowStart + j] =
+                imgData.data[originalRowStart + x2];
             }
           }
 
@@ -685,7 +685,7 @@ var PDFImage = (function PDFImageClosure() {
 
           // Not resize data when rendering on web
           if (!this.print) {
-            if (kind == ImageKind.GRAYSCALE_1BPP && this.shallResizeImage(numComps, bpc)) {
+            if (kind === ImageKind.GRAYSCALE_1BPP && this.shallResizeImage(numComps, bpc)) {
               this.resizeGrayPixels(imgData, numComps, bpc);
             }
           }
