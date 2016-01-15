@@ -508,8 +508,8 @@ var PDFImage = (function PDFImageClosure() {
 
     /**
      * Check whether resize image data or not
-     * @param  {Number} comps
-     * @param  {Number} bpc
+     * @param {Number} comps Number of color components, 1 or 3 is supported.
+     * @param {Number} bpc Number of bits per component.
      * @return {Boolean}
      */
     shallResizeImage: function(comps, bpc) {
@@ -518,8 +518,8 @@ var PDFImage = (function PDFImageClosure() {
 
     /**
      * Resize black white image data
-     * @param  {Uint8Array} imgData
-     * @param  {Number} scaleBits
+     * @param {Uint8Array} imgData image data.
+     * @param {Number} scaleBits
      * @author Ramsoft
      */
     resizeBWPixels: function(imgData, scaleBits) {
@@ -531,21 +531,22 @@ var PDFImage = (function PDFImageClosure() {
       var step = 1 << scaleBits;
       var numBytes = newHeight * newRowBytes;
       var pixelArrayOutput = new Uint8Array(numBytes);
-      var originalRowStart, newRowStart;
+      var originalRowStart;
+      var newRowStart;
 
       for (var i = 0, y2 = 0; i < newHeight; i++, y2 += step,
         originalRowStart = y2 * originalRowBytes, newRowStart = i * newRowBytes) {
 
         for (var j = 0, x2 = 0; j < newWidth; j++, x2 += step) {
-            //we want original value of pixel [x2, y2] value in original image
-            //to populate pixel [i, j] in new image
+            // we want original value of pixel [x2, y2] value in original image
+            // to populate pixel [i, j] in new image
 
             var originalColByteStart = x2 >> 3;
             var originalColBitMask = 1 << (7 - (x2 & 7)); 
-            //most signifcant bit is first pixel due to Little Endian
+            // most signifcant bit is first pixel due to Little Endian
 
-            //fastmodule for power of 2 = dividend & (divisor - 1) = dividend % divisor
-            //https://www.chrisnewland.com/high-performance-modulo-operation-317
+            // fastmodule for power of 2 = dividend & (divisor - 1) = dividend % divisor
+            // https://www.chrisnewland.com/high-performance-modulo-operation-317
 
             var originalColByte = imgData.data[originalRowStart + originalColByteStart];
             var pixelValue = originalColByte & originalColBitMask;
@@ -553,12 +554,12 @@ var PDFImage = (function PDFImageClosure() {
             if (pixelValue > 0) {
               var newColByteStart = j >> 3;
               var newColBitMask = 1 << (7 - (j & 7));
-              //most signifcant bit is first pixel due to Little Endian
+              // most signifcant bit is first pixel due to Little Endian
 
               var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
 
               newColByte = newColByte | newColBitMask; 
-              //set pixel bit to 1
+              // set pixel bit to 1
               pixelArrayOutput[newRowStart + newColByteStart] = newColByte; 
             }
         }
@@ -571,9 +572,10 @@ var PDFImage = (function PDFImageClosure() {
 
     /**
      * Resize large resolution PDFS as to improve rendering time
-     * @param  {Uint8Array} imgData
-     * @param  {Number} comps
-     * @param  {Number} bpc
+     * @param {Uint8Array} imgData image data.
+     * @param {Number} comps Number of color components, 1 or 3 is supported.
+     * @param {Number} bpc Number of bits per component.
+     * @return {TypedArray} Resized image data.
      * @author RamSoft
      */
     resizeGrayPixels: function(imgData, comps, bpc) {
@@ -603,6 +605,8 @@ var PDFImage = (function PDFImageClosure() {
           var step = 1 << scaleBits;
           var numBytes = h2 * newRowBytes;
           var pixelArrayOutput = new Uint8Array(numBytes);
+          var newRowStart;
+          var originalRowStart;
 
           for (var i = 0, y2 = 0; i < h2; i++, y2 += step, newRowStart = i * newRowBytes, 
             originalRowStart = y2 * originalRowBytes) {
