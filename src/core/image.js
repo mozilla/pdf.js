@@ -512,7 +512,7 @@ var PDFImage = (function PDFImageClosure() {
      * @param {Number} bpc Number of bits per component.
      * @return {Boolean}
      */
-    shallResizeImage: function(comps, bpc) {
+    shallResizeImage: function PDFImage_shallResizeImage(comps, bpc) {
         return (comps === 1 && (bpc === 1 || bpc === 8));
     },
 
@@ -522,7 +522,7 @@ var PDFImage = (function PDFImageClosure() {
      * @param {Number} scaleBits
      * @author Ramsoft
      */
-    resizeBWPixels: function(imgData, scaleBits) {
+    resizeBWPixels: function PDFImage_resizeBWPixels(imgData, scaleBits) {
       var newWidth = imgData.width >> scaleBits;
       var newHeight = imgData.height >> scaleBits;
 
@@ -577,7 +577,7 @@ var PDFImage = (function PDFImageClosure() {
      * @param  {Number} bpc     Number of bits per component.
      * @return {TypedArray}         Resized image data.
      */
-    resizeGrayPixels: function(imgData, comps, bpc) {
+    resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
       var scaleBits;
       var h1 = imgData.height;
       var w1 = imgData.width;
