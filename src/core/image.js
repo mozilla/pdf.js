@@ -570,59 +570,8 @@ var PDFImage = (function PDFImageClosure() {
       imgData.height = newHeight;
     },
 
-    /**
-     * Resize large resolution PDFS as to improve rendering time
-     * @param  {Uint8Array} imgData image data.
-     * @param  {Number} comps Number of color components, 1 or 3 is supported.
-     * @param  {Number} bpc Number of bits per component.
-     */
-    resizeGrayPixels: function PDFImage_resizeGrayPixels(
-                              imgData, comps, bpc) {
-      var scaleBits;
-      var h1 = imgData.height;
-      var w1 = imgData.width;
-
-      // Reduce the pixel dimensions to around 2000.
-      if ((h1 > 15000) || (w1 > 15000)) {
-        scaleBits = 3;
-      } else if ((h1 > 10000) || (w1 > 10000)) {
-        scaleBits = 2;
-      } else if ((h1 > 5000) || (w1 > 5000)) {
-        scaleBits = 1; // 25% - 4
-      } else {
-        scaleBits = 0;
-      }
-
-      if (scaleBits > 0) {
-        if (bpc === 1) {
-          this.resizeBWPixels(imgData, scaleBits);
-        } else {
-          var w2 = w1 >> scaleBits;
-          var h2 = h1 >> scaleBits;
-          var newRowBytes = (w2 * comps * bpc + 7) >> 3;
-          var originalRowBytes = (w1 * comps * bpc + 7) >> 3;
-          var step = 1 << scaleBits;
-          var numBytes = h2 * newRowBytes;
-          var pixelArrayOutput = new Uint8Array(numBytes);
-          var newRowStart;
-          var originalRowStart;
-
-          for (var i = 0, y2 = 0; i < h2; i++, y2 += step,
-            newRowStart = i * newRowBytes,
-            originalRowStart = y2 * originalRowBytes) {
-            for (var j = 0, x2 = 0; j < w2; j++, x2 += step) {
-                pixelArrayOutput[newRowStart + j] =
-                imgData.data[originalRowStart + x2];
-            }
-          }
-
-          imgData.data = pixelArrayOutput;
-          imgData.width = w2;
-          imgData.height = h2;
-        }
-      }
-
-      return imgData;
+    resizeImage: function PDFImage_resizeImage(imgData,
+                                               comps, bpc) {
     },
 
     createImageData: function PDFImage_createImageData(forceRGBA) {
