@@ -570,14 +570,7 @@ var PDFImage = (function PDFImageClosure() {
       imgData.height = newHeight;
     },
 
-    /**
-     * Resize large resolution PDFS as to improve rendering time
-     * @param  {Uint8Array} imgData image data.
-     * @param  {Number} comps Number of color components, 1 or 3 is supported.
-     * @param  {Number} bpc Number of bits per component.
-     */
-    resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
-
+    resizeGray: function PDFImage_resizeGray(imgData, comps, bpc) {
       var scaleBits;
       var h1 = imgData.height;
       var w1 = imgData.width;
