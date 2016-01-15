@@ -573,9 +573,9 @@ var PDFImage = (function PDFImageClosure() {
     /**
      * Resize large resolution PDFS as to improve rendering time
      * @param  {Uint8Array} imgData image data.
-     * @param  {Number} comps   Number of color components, 1 or 3 is supported.
-     * @param  {Number} bpc     Number of bits per component.
-     * @return {TypedArray}         Resized image data.
+     * @param  {Number} comps Number of color components, 1 or 3 is supported.
+     * @param  {Number} bpc Number of bits per component.
+     * @return {TypedArray} Resized image data.
      */
     resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
       var scaleBits;
@@ -714,7 +714,9 @@ var PDFImage = (function PDFImageClosure() {
 
         // Not resize data when rendering on web
         if (!this.print) {
-          var needResize = this.shallResizeImage(numComps, bpc);
+          var needResize =
+          this.shallResizeImage(numComps, bpc);
+
           if (needResize) {
             this.resizeGrayPixels(resizedImgData, numComps, bpc)
 
@@ -734,7 +736,8 @@ var PDFImage = (function PDFImageClosure() {
 
       // If opacity data is present, use RGBA_32BPP form. Otherwise, use the
       // more compact RGB_24BPP form if allowable.
-      var alpha01, maybeUndoPreblend;
+      var alpha01;
+      var maybeUndoPreblend;
       if (!forceRGBA && !this.smask && !this.mask) {
         imgData.kind = ImageKind.RGB_24BPP;
         imgData.data = new Uint8Array(drawWidth * drawHeight * 3);
