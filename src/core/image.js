@@ -552,9 +552,9 @@ var PDFImage = (function PDFImageClosure() {
             var pixelValue = originalColByte & originalColBitMask;
 
             if (pixelValue > 0) {
+              // most signifcant bit is first pixel due to Little Endian
               var newColByteStart = j >> 3;
               var newColBitMask = 1 << (7 - (j & 7));
-              // most signifcant bit is first pixel due to Little Endian
 
               var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
 
@@ -574,7 +574,7 @@ var PDFImage = (function PDFImageClosure() {
      * Resize large resolution PDFS as to improve rendering time
      * @param {Uint8Array} imgData image data.
      * @param {Number} comps Number of color components, 1 or 3 is supported.
-     * @param {Number} bpc Number of bits per component.
+     * @param {Number} bpc
      * @return {TypedArray} Resized image data.
      */
     resizeGrayPixels: function(imgData, comps, bpc) {
@@ -714,7 +714,8 @@ var PDFImage = (function PDFImageClosure() {
 
         // Not resize data when rendering on web
         if (!this.print) {
-          if (this.shallResizeImage(numComps, bpc)) {
+          var needResize = this.shallResizeImage(numComps, bpc);
+          if (needResize) {
             this.resizeGrayPixels(resizedImgData, numComps, bpc)
 
             imgArray = resizedImgData.data;
