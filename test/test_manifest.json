@@ -1638,10 +1638,10 @@
       "type": "eq"
     },
     {  "id": "issue1155",
-      "file": "pdfs/issue1155.pdf",
-      "md5": "b732ef25c16c9c20a77e40edef5aa6fe",
+      "file": "pdfs/issue1155r.pdf",
+      "md5": "8d772a3c6109bda860b8d80d42d4c08c",
       "rounds": 1,
-      "link": true,
+      "link": false,
       "type": "eq"
     },
     {  "id": "link-annotation-border",
