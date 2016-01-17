@@ -4362,9 +4362,11 @@ var Font = (function FontClosure() {
               var glyphId = properties.glyphNames.indexOf(glyphName);
               if (glyphId > 0 && hasGlyph(glyphId, -1, -1)) {
                 charCodeToGlyphId[charCode] = glyphId;
-              } else {
-                charCodeToGlyphId[charCode] = 0; // notdef
+                found = true;
               }
+            }
+            if (!found) {
+              charCodeToGlyphId[charCode] = 0; // notdef
             }
           }
         } else if (cmapPlatformId === 0 && cmapEncodingId === 0) {
