@@ -31,9 +31,7 @@
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
 var Util = sharedUtil.Util;
-var isExternalLinkTargetSet = sharedUtil.isExternalLinkTargetSet;
-var LinkTargetStringMap = sharedUtil.LinkTargetStringMap;
-var removeNullCharacters = sharedUtil.removeNullCharacters;
+var addLinkAttributes = sharedUtil.addLinkAttributes;
 var warn = sharedUtil.warn;
 var CustomStyle = displayDOMUtils.CustomStyle;
 
@@ -233,17 +231,7 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
       this.container.className = 'linkAnnotation';
 
       var link = document.createElement('a');
-      link.href = link.title = (this.data.url ?
-                                removeNullCharacters(this.data.url) : '');
-
-      if (this.data.url && isExternalLinkTargetSet()) {
-        link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
-      }
-
-      // Strip referrer from the URL.
-      if (this.data.url) {
-        link.rel = PDFJS.externalLinkRel;
-      }
+      addLinkAttributes(link, { url: this.data.url });
 
       if (!this.data.url) {
         if (this.data.action) {
