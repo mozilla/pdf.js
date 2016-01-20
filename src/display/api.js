@@ -691,6 +691,16 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getDestination(id);
     },
     /**
+     * @return {Promise} A promise that is resolved with: an Array containing
+     *   the pageLabels that correspond to the pageIndexes; or null, when no
+     *   pageLabels are present in the PDF file.
+     *   NOTE: If the pageLabels are all identical to standard page numbering,
+     *         i.e. [1, 2, 3, ...], the promise is resolved with an empty Array.
+     */
+    getPageLabels: function PDFDocumentProxy_getPageLabels() {
+      return this.transport.getPageLabels();
+    },
+    /**
      * @return {Promise} A promise that is resolved with a lookup table for
      * mapping named attachments to their content.
      */
@@ -1802,6 +1812,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getDestination: function WorkerTransport_getDestination(id) {
       return this.messageHandler.sendWithPromise('GetDestination', { id: id });
+    },
+
+    getPageLabels: function WorkerTransport_getPageLabels() {
+      return this.messageHandler.sendWithPromise('GetPageLabels', null);
     },
 
     getAttachments: function WorkerTransport_getAttachments() {

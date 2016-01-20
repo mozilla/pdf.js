@@ -451,6 +451,12 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }
     );
 
+    handler.on('GetPageLabels',
+      function wphSetupGetPageLabels(data) {
+        return pdfManager.ensureCatalog('pageLabels');
+      }
+    );
+
     handler.on('GetAttachments',
       function wphSetupGetAttachments(data) {
         return pdfManager.ensureCatalog('attachments');
