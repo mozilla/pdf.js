@@ -89,7 +89,7 @@ var Pattern = corePattern.Pattern;
 var getTilingPatternIR = corePattern.getTilingPatternIR;
 var CMapFactory = coreCMap.CMapFactory;
 var IdentityCMap = coreCMap.IdentityCMap;
-var Metrics = coreMetrics.Metrics;
+var getMetrics = coreMetrics.getMetrics;
 var bidi = coreBidi.bidi;
 var WinAnsiEncoding = coreEncodings.WinAnsiEncoding;
 var StandardEncoding = coreEncodings.StandardEncoding;
@@ -1784,6 +1784,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var monospace = false;
       var stdFontMap = getStdFontMap();
       var lookupName = (stdFontMap[name] || name);
+      var Metrics = getMetrics();
 
       if (!(lookupName in Metrics)) {
         // Use default fonts for looking up font metrics if the passed
@@ -1800,7 +1801,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         defaultWidth = glyphWidths;
         monospace = true;
       } else {
-        widths = glyphWidths;
+        widths = glyphWidths(); // expand lazy widths array
       }
 
       return {
