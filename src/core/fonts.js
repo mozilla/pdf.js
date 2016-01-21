@@ -21,21 +21,24 @@
     define('pdfjs/core/fonts', ['exports', 'pdfjs/shared/util',
       'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
       'pdfjs/core/cmap', 'pdfjs/core/glyphlist', 'pdfjs/core/charsets',
-      'pdfjs/core/font_renderer', 'pdfjs/core/encodings'], factory);
+      'pdfjs/core/font_renderer', 'pdfjs/core/encodings',
+      'pdfjs/core/standard_fonts'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./stream.js'), require('./parser.js'), require('./cmap.js'),
       require('./glyphlist.js'), require('./charsets.js'),
-      require('./font_renderer.js'), require('./encodings.js'));
+      require('./font_renderer.js'), require('./encodings.js'),
+      require('./standard_fonts'));
   } else {
     factory((root.pdfjsCoreFonts = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
       root.pdfjsCoreCMap, root.pdfjsCoreGlyphList, root.pdfjsCoreCharsets,
-      root.pdfjsCoreFontRenderer, root.pdfjsCoreEncodings);
+      root.pdfjsCoreFontRenderer, root.pdfjsCoreEncodings,
+      root.pdfjsCoreStandardFonts);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
                   coreCMap, coreGlyphList, coreCharsets, coreFontRenderer,
-                  coreEncodings) {
+                  coreEncodings, coreStandardFonts) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var FontType = sharedUtil.FontType;
@@ -70,6 +73,11 @@ var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
 var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
 var ExpertEncoding = coreEncodings.ExpertEncoding;
 var getEncoding = coreEncodings.getEncoding;
+var getStdFontMap = coreStandardFonts.getStdFontMap;
+var getNonStdFontMap = coreStandardFonts.getNonStdFontMap;
+var getGlyphMapForStandardFonts = coreStandardFonts.getGlyphMapForStandardFonts;
+var getSupplementalGlyphMapForArialBlack =
+  coreStandardFonts.getSupplementalGlyphMapForArialBlack;
 
 // Unicode Private Use Area
 var PRIVATE_USE_OFFSET_START = 0xE000;
@@ -101,233 +109,6 @@ var FontFlags = {
   AllCap: 65536,
   SmallCap: 131072,
   ForceBold: 262144
-};
-
-/**
- * Hold a map of decoded fonts and of the standard fourteen Type1
- * fonts and their acronyms.
- */
-var stdFontMap = {
-  'ArialNarrow': 'Helvetica',
-  'ArialNarrow-Bold': 'Helvetica-Bold',
-  'ArialNarrow-BoldItalic': 'Helvetica-BoldOblique',
-  'ArialNarrow-Italic': 'Helvetica-Oblique',
-  'ArialBlack': 'Helvetica',
-  'ArialBlack-Bold': 'Helvetica-Bold',
-  'ArialBlack-BoldItalic': 'Helvetica-BoldOblique',
-  'ArialBlack-Italic': 'Helvetica-Oblique',
-  'Arial': 'Helvetica',
-  'Arial-Bold': 'Helvetica-Bold',
-  'Arial-BoldItalic': 'Helvetica-BoldOblique',
-  'Arial-Italic': 'Helvetica-Oblique',
-  'Arial-BoldItalicMT': 'Helvetica-BoldOblique',
-  'Arial-BoldMT': 'Helvetica-Bold',
-  'Arial-ItalicMT': 'Helvetica-Oblique',
-  'ArialMT': 'Helvetica',
-  'Courier-Bold': 'Courier-Bold',
-  'Courier-BoldItalic': 'Courier-BoldOblique',
-  'Courier-Italic': 'Courier-Oblique',
-  'CourierNew': 'Courier',
-  'CourierNew-Bold': 'Courier-Bold',
-  'CourierNew-BoldItalic': 'Courier-BoldOblique',
-  'CourierNew-Italic': 'Courier-Oblique',
-  'CourierNewPS-BoldItalicMT': 'Courier-BoldOblique',
-  'CourierNewPS-BoldMT': 'Courier-Bold',
-  'CourierNewPS-ItalicMT': 'Courier-Oblique',
-  'CourierNewPSMT': 'Courier',
-  'Helvetica': 'Helvetica',
-  'Helvetica-Bold': 'Helvetica-Bold',
-  'Helvetica-BoldItalic': 'Helvetica-BoldOblique',
-  'Helvetica-BoldOblique': 'Helvetica-BoldOblique',
-  'Helvetica-Italic': 'Helvetica-Oblique',
-  'Helvetica-Oblique':'Helvetica-Oblique',
-  'Symbol-Bold': 'Symbol',
-  'Symbol-BoldItalic': 'Symbol',
-  'Symbol-Italic': 'Symbol',
-  'TimesNewRoman': 'Times-Roman',
-  'TimesNewRoman-Bold': 'Times-Bold',
-  'TimesNewRoman-BoldItalic': 'Times-BoldItalic',
-  'TimesNewRoman-Italic': 'Times-Italic',
-  'TimesNewRomanPS': 'Times-Roman',
-  'TimesNewRomanPS-Bold': 'Times-Bold',
-  'TimesNewRomanPS-BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPS-BoldItalicMT': 'Times-BoldItalic',
-  'TimesNewRomanPS-BoldMT': 'Times-Bold',
-  'TimesNewRomanPS-Italic': 'Times-Italic',
-  'TimesNewRomanPS-ItalicMT': 'Times-Italic',
-  'TimesNewRomanPSMT': 'Times-Roman',
-  'TimesNewRomanPSMT-Bold': 'Times-Bold',
-  'TimesNewRomanPSMT-BoldItalic': 'Times-BoldItalic',
-  'TimesNewRomanPSMT-Italic': 'Times-Italic'
-};
-
-/**
- * Holds the map of the non-standard fonts that might be included as a standard
- * fonts without glyph data.
- */
-var nonStdFontMap = {
-  'CenturyGothic': 'Helvetica',
-  'CenturyGothic-Bold': 'Helvetica-Bold',
-  'CenturyGothic-BoldItalic': 'Helvetica-BoldOblique',
-  'CenturyGothic-Italic': 'Helvetica-Oblique',
-  'ComicSansMS': 'Comic Sans MS',
-  'ComicSansMS-Bold': 'Comic Sans MS-Bold',
-  'ComicSansMS-BoldItalic': 'Comic Sans MS-BoldItalic',
-  'ComicSansMS-Italic': 'Comic Sans MS-Italic',
-  'LucidaConsole': 'Courier',
-  'LucidaConsole-Bold': 'Courier-Bold',
-  'LucidaConsole-BoldItalic': 'Courier-BoldOblique',
-  'LucidaConsole-Italic': 'Courier-Oblique',
-  'MS-Gothic': 'MS Gothic',
-  'MS-Gothic-Bold': 'MS Gothic-Bold',
-  'MS-Gothic-BoldItalic': 'MS Gothic-BoldItalic',
-  'MS-Gothic-Italic': 'MS Gothic-Italic',
-  'MS-Mincho': 'MS Mincho',
-  'MS-Mincho-Bold': 'MS Mincho-Bold',
-  'MS-Mincho-BoldItalic': 'MS Mincho-BoldItalic',
-  'MS-Mincho-Italic': 'MS Mincho-Italic',
-  'MS-PGothic': 'MS PGothic',
-  'MS-PGothic-Bold': 'MS PGothic-Bold',
-  'MS-PGothic-BoldItalic': 'MS PGothic-BoldItalic',
-  'MS-PGothic-Italic': 'MS PGothic-Italic',
-  'MS-PMincho': 'MS PMincho',
-  'MS-PMincho-Bold': 'MS PMincho-Bold',
-  'MS-PMincho-BoldItalic': 'MS PMincho-BoldItalic',
-  'MS-PMincho-Italic': 'MS PMincho-Italic',
-  'Wingdings': 'ZapfDingbats'
-};
-
-var serifFonts = {
-  'Adobe Jenson': true, 'Adobe Text': true, 'Albertus': true,
-  'Aldus': true, 'Alexandria': true, 'Algerian': true,
-  'American Typewriter': true, 'Antiqua': true, 'Apex': true,
-  'Arno': true, 'Aster': true, 'Aurora': true,
-  'Baskerville': true, 'Bell': true, 'Bembo': true,
-  'Bembo Schoolbook': true, 'Benguiat': true, 'Berkeley Old Style': true,
-  'Bernhard Modern': true, 'Berthold City': true, 'Bodoni': true,
-  'Bauer Bodoni': true, 'Book Antiqua': true, 'Bookman': true,
-  'Bordeaux Roman': true, 'Californian FB': true, 'Calisto': true,
-  'Calvert': true, 'Capitals': true, 'Cambria': true,
-  'Cartier': true, 'Caslon': true, 'Catull': true,
-  'Centaur': true, 'Century Old Style': true, 'Century Schoolbook': true,
-  'Chaparral': true, 'Charis SIL': true, 'Cheltenham': true,
-  'Cholla Slab': true, 'Clarendon': true, 'Clearface': true,
-  'Cochin': true, 'Colonna': true, 'Computer Modern': true,
-  'Concrete Roman': true, 'Constantia': true, 'Cooper Black': true,
-  'Corona': true, 'Ecotype': true, 'Egyptienne': true,
-  'Elephant': true, 'Excelsior': true, 'Fairfield': true,
-  'FF Scala': true, 'Folkard': true, 'Footlight': true,
-  'FreeSerif': true, 'Friz Quadrata': true, 'Garamond': true,
-  'Gentium': true, 'Georgia': true, 'Gloucester': true,
-  'Goudy Old Style': true, 'Goudy Schoolbook': true, 'Goudy Pro Font': true,
-  'Granjon': true, 'Guardian Egyptian': true, 'Heather': true,
-  'Hercules': true, 'High Tower Text': true, 'Hiroshige': true,
-  'Hoefler Text': true, 'Humana Serif': true, 'Imprint': true,
-  'Ionic No. 5': true, 'Janson': true, 'Joanna': true,
-  'Korinna': true, 'Lexicon': true, 'Liberation Serif': true,
-  'Linux Libertine': true, 'Literaturnaya': true, 'Lucida': true,
-  'Lucida Bright': true, 'Melior': true, 'Memphis': true,
-  'Miller': true, 'Minion': true, 'Modern': true,
-  'Mona Lisa': true, 'Mrs Eaves': true, 'MS Serif': true,
-  'Museo Slab': true, 'New York': true, 'Nimbus Roman': true,
-  'NPS Rawlinson Roadway': true, 'Palatino': true, 'Perpetua': true,
-  'Plantin': true, 'Plantin Schoolbook': true, 'Playbill': true,
-  'Poor Richard': true, 'Rawlinson Roadway': true, 'Renault': true,
-  'Requiem': true, 'Rockwell': true, 'Roman': true,
-  'Rotis Serif': true, 'Sabon': true, 'Scala': true,
-  'Seagull': true, 'Sistina': true, 'Souvenir': true,
-  'STIX': true, 'Stone Informal': true, 'Stone Serif': true,
-  'Sylfaen': true, 'Times': true, 'Trajan': true,
-  'Trinité': true, 'Trump Mediaeval': true, 'Utopia': true,
-  'Vale Type': true, 'Bitstream Vera': true, 'Vera Serif': true,
-  'Versailles': true, 'Wanted': true, 'Weiss': true,
-  'Wide Latin': true, 'Windsor': true, 'XITS': true
-};
-
-var symbolsFonts = {
-  'Dingbats': true, 'Symbol': true, 'ZapfDingbats': true
-};
-
-// Glyph map for well-known standard fonts. Sometimes Ghostscript uses CID fonts
-// but does not embed the CID to GID mapping. The mapping is incomplete for all
-// glyphs, but common for some set of the standard fonts.
-var GlyphMapForStandardFonts = {
-  '2': 10, '3': 32, '4': 33, '5': 34, '6': 35, '7': 36, '8': 37, '9': 38,
-  '10': 39, '11': 40, '12': 41, '13': 42, '14': 43, '15': 44, '16': 45,
-  '17': 46, '18': 47, '19': 48, '20': 49, '21': 50, '22': 51, '23': 52,
-  '24': 53, '25': 54, '26': 55, '27': 56, '28': 57, '29': 58, '30': 894,
-  '31': 60, '32': 61, '33': 62, '34': 63, '35': 64, '36': 65, '37': 66,
-  '38': 67, '39': 68, '40': 69, '41': 70, '42': 71, '43': 72, '44': 73,
-  '45': 74, '46': 75, '47': 76, '48': 77, '49': 78, '50': 79, '51': 80,
-  '52': 81, '53': 82, '54': 83, '55': 84, '56': 85, '57': 86, '58': 87,
-  '59': 88, '60': 89, '61': 90, '62': 91, '63': 92, '64': 93, '65': 94,
-  '66': 95, '67': 96, '68': 97, '69': 98, '70': 99, '71': 100, '72': 101,
-  '73': 102, '74': 103, '75': 104, '76': 105, '77': 106, '78': 107, '79': 108,
-  '80': 109, '81': 110, '82': 111, '83': 112, '84': 113, '85': 114, '86': 115,
-  '87': 116, '88': 117, '89': 118, '90': 119, '91': 120, '92': 121, '93': 122,
-  '94': 123, '95': 124, '96': 125, '97': 126, '98': 196, '99': 197, '100': 199,
-  '101': 201, '102': 209, '103': 214, '104': 220, '105': 225, '106': 224,
-  '107': 226, '108': 228, '109': 227, '110': 229, '111': 231, '112': 233,
-  '113': 232, '114': 234, '115': 235, '116': 237, '117': 236, '118': 238,
-  '119': 239, '120': 241, '121': 243, '122': 242, '123': 244, '124': 246,
-  '125': 245, '126': 250, '127': 249, '128': 251, '129': 252, '130': 8224,
-  '131': 176, '132': 162, '133': 163, '134': 167, '135': 8226, '136': 182,
-  '137': 223, '138': 174, '139': 169, '140': 8482, '141': 180, '142': 168,
-  '143': 8800, '144': 198, '145': 216, '146': 8734, '147': 177, '148': 8804,
-  '149': 8805, '150': 165, '151': 181, '152': 8706, '153': 8721, '154': 8719,
-  '156': 8747, '157': 170, '158': 186, '159': 8486, '160': 230, '161': 248,
-  '162': 191, '163': 161, '164': 172, '165': 8730, '166': 402, '167': 8776,
-  '168': 8710, '169': 171, '170': 187, '171': 8230, '210': 218, '223': 711,
-  '224': 321, '225': 322, '227': 353, '229': 382, '234': 253, '252': 263,
-  '253': 268, '254': 269, '258': 258, '260': 260, '261': 261, '265': 280,
-  '266': 281, '268': 283, '269': 313, '275': 323, '276': 324, '278': 328,
-  '284': 345, '285': 346, '286': 347, '292': 367, '295': 377, '296': 378,
-  '298': 380, '305': 963,
-  '306': 964, '307': 966, '308': 8215, '309': 8252, '310': 8319, '311': 8359,
-  '312': 8592, '313': 8593, '337': 9552, '493': 1039, '494': 1040, '705': 1524,
-  '706': 8362, '710': 64288, '711': 64298, '759': 1617, '761': 1776,
-  '763': 1778, '775': 1652, '777': 1764, '778': 1780, '779': 1781, '780': 1782,
-  '782': 771, '783': 64726, '786': 8363, '788': 8532, '790': 768, '791': 769,
-  '792': 768, '795': 803, '797': 64336, '798': 64337, '799': 64342,
-  '800': 64343, '801': 64344, '802': 64345, '803': 64362, '804': 64363,
-  '805': 64364, '2424': 7821, '2425': 7822, '2426': 7823, '2427': 7824,
-  '2428': 7825, '2429': 7826, '2430': 7827, '2433': 7682, '2678': 8045,
-  '2679': 8046, '2830': 1552, '2838': 686, '2840': 751, '2842': 753,
-  '2843': 754, '2844': 755, '2846': 757, '2856': 767, '2857': 848, '2858': 849,
-  '2862': 853, '2863': 854, '2864': 855, '2865': 861, '2866': 862, '2906': 7460,
-  '2908': 7462, '2909': 7463, '2910': 7464, '2912': 7466, '2913': 7467,
-  '2914': 7468, '2916': 7470, '2917': 7471, '2918': 7472, '2920': 7474,
-  '2921': 7475, '2922': 7476, '2924': 7478, '2925': 7479, '2926': 7480,
-  '2928': 7482, '2929': 7483, '2930': 7484, '2932': 7486, '2933': 7487,
-  '2934': 7488, '2936': 7490, '2937': 7491, '2938': 7492, '2940': 7494,
-  '2941': 7495, '2942': 7496, '2944': 7498, '2946': 7500, '2948': 7502,
-  '2950': 7504, '2951': 7505, '2952': 7506, '2954': 7508, '2955': 7509,
-  '2956': 7510, '2958': 7512, '2959': 7513, '2960': 7514, '2962': 7516,
-  '2963': 7517, '2964': 7518, '2966': 7520, '2967': 7521, '2968': 7522,
-  '2970': 7524, '2971': 7525, '2972': 7526, '2974': 7528, '2975': 7529,
-  '2976': 7530, '2978': 1537, '2979': 1538, '2980': 1539, '2982': 1549,
-  '2983': 1551, '2984': 1552, '2986': 1554, '2987': 1555, '2988': 1556,
-  '2990': 1623, '2991': 1624, '2995': 1775, '2999': 1791, '3002': 64290,
-  '3003': 64291, '3004': 64292, '3006': 64294, '3007': 64295, '3008': 64296,
-  '3011': 1900, '3014': 8223, '3015': 8244, '3017': 7532, '3018': 7533,
-  '3019': 7534, '3075': 7590, '3076': 7591, '3079': 7594, '3080': 7595,
-  '3083': 7598, '3084': 7599, '3087': 7602, '3088': 7603, '3091': 7606,
-  '3092': 7607, '3095': 7610, '3096': 7611, '3099': 7614, '3100': 7615,
-  '3103': 7618, '3104': 7619, '3107': 8337, '3108': 8338, '3116': 1884,
-  '3119': 1885, '3120': 1885, '3123': 1886, '3124': 1886, '3127': 1887,
-  '3128': 1887, '3131': 1888, '3132': 1888, '3135': 1889, '3136': 1889,
-  '3139': 1890, '3140': 1890, '3143': 1891, '3144': 1891, '3147': 1892,
-  '3148': 1892, '3153': 580, '3154': 581, '3157': 584, '3158': 585, '3161': 588,
-  '3162': 589, '3165': 891, '3166': 892, '3169': 1274, '3170': 1275,
-  '3173': 1278, '3174': 1279, '3181': 7622, '3182': 7623, '3282': 11799,
-  '3316': 578, '3379': 42785, '3393': 1159, '3416': 8377
-};
-
-// The glyph map for ArialBlack differs slightly from the glyph map used for
-// other well-known standard fonts. Hence we use this (incomplete) CID to GID
-// mapping to adjust the glyph map for non-embedded ArialBlack fonts.
-var SupplementalGlyphMapForArialBlack = {
-  '227': 322, '264': 261, '291': 346,
 };
 
 // Some characters, e.g. copyrightserif, are mapped to the private use area and
@@ -2325,6 +2106,7 @@ var Font = (function FontClosure() {
       // The file data is not specified. Trying to fix the font name
       // to be used with the canvas.font.
       var fontName = name.replace(/[,_]/g, '-');
+      var stdFontMap = getStdFontMap(), nonStdFontMap = getNonStdFontMap();
       var isStandardFont = !!stdFontMap[fontName] ||
         !!(nonStdFontMap[fontName] && stdFontMap[nonStdFontMap[fontName]]);
       fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
@@ -2341,6 +2123,7 @@ var Font = (function FontClosure() {
       this.remeasure = Object.keys(this.widths).length > 0;
       if (isStandardFont && type === 'CIDFontType2' &&
           properties.cidEncoding.indexOf('Identity-') === 0) {
+        var GlyphMapForStandardFonts = getGlyphMapForStandardFonts();
         // Standard fonts might be embedded as CID font without glyph mapping.
         // Building one based on GlyphMapForStandardFonts.
         var map = [];
@@ -2348,6 +2131,8 @@ var Font = (function FontClosure() {
           map[+charCode] = GlyphMapForStandardFonts[charCode];
         }
         if (/ArialBlack/i.test(name)) {
+          var SupplementalGlyphMapForArialBlack =
+            getSupplementalGlyphMapForArialBlack();
           for (charCode in SupplementalGlyphMapForArialBlack) {
             map[+charCode] = SupplementalGlyphMapForArialBlack[charCode];
           }
@@ -7334,9 +7119,6 @@ exports.ToUnicodeMap = ToUnicodeMap;
 exports.Type1Parser = Type1Parser;
 exports.getFontType = getFontType;
 exports.reverseIfRtl = reverseIfRtl;
-exports.serifFonts = serifFonts;
-exports.symbolsFonts = symbolsFonts;
-exports.stdFontMap = stdFontMap;
 exports._enableSeacAnalysis = _enableSeacAnalysis;
 
 // TODO refactor to remove cyclic dependency on font_renderer.js

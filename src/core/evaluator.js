@@ -23,26 +23,26 @@
       'pdfjs/core/image', 'pdfjs/core/colorspace', 'pdfjs/core/murmurhash3',
       'pdfjs/core/fonts', 'pdfjs/core/function', 'pdfjs/core/pattern',
       'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi',
-      'pdfjs/core/encodings'], factory);
+      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./stream.js'), require('./parser.js'), require('./image.js'),
       require('./colorspace.js'), require('./murmurhash3.js'),
       require('./fonts.js'), require('./function.js'), require('./pattern.js'),
       require('./cmap.js'), require('./metrics.js'), require('./bidi.js'),
-      require('./encodings.js'));
+      require('./encodings.js'), require('./standard_fonts.js'));
   } else {
     factory((root.pdfjsCoreEvaluator = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
       root.pdfjsCoreImage, root.pdfjsCoreColorSpace, root.pdfjsCoreMurmurHash3,
       root.pdfjsCoreFonts, root.pdfjsCoreFunction, root.pdfjsCorePattern,
       root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi,
-      root.pdfjsCoreEncodings);
+      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
                   coreImage, coreColorSpace, coreMurmurHash3, coreFonts,
                   coreFunction, corePattern, coreCMap, coreMetrics, coreBidi,
-                  coreEncodings) {
+                  coreEncodings, coreStandardFonts) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
@@ -82,9 +82,6 @@ var NormalizedUnicodes = coreFonts.NormalizedUnicodes;
 var ToUnicodeMap = coreFonts.ToUnicodeMap;
 var getFontType = coreFonts.getFontType;
 var reverseIfRtl = coreFonts.reverseIfRtl;
-var serifFonts = coreFonts.serifFonts;
-var symbolsFonts = coreFonts.symbolsFonts;
-var stdFontMap = coreFonts.stdFontMap;
 var isPDFFunction = coreFunction.isPDFFunction;
 var PDFFunction = coreFunction.PDFFunction;
 var Pattern = corePattern.Pattern;
@@ -99,6 +96,9 @@ var MacRomanEncoding = coreEncodings.MacRomanEncoding;
 var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
 var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
 var getEncoding = coreEncodings.getEncoding;
+var getStdFontMap = coreStandardFonts.getStdFontMap;
+var getSerifFonts = coreStandardFonts.getSerifFonts;
+var getSymbolsFonts = coreStandardFonts.getSymbolsFonts;
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -1770,7 +1770,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isSerifFont: function PartialEvaluator_isSerifFont(baseFontName) {
       // Simulating descriptor flags attribute
       var fontNameWoStyle = baseFontName.split('-')[0];
-      return (fontNameWoStyle in serifFonts) ||
+      return (fontNameWoStyle in getSerifFonts()) ||
               (fontNameWoStyle.search(/serif/gi) !== -1);
     },
 
@@ -1778,6 +1778,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var defaultWidth = 0;
       var widths = [];
       var monospace = false;
+      var stdFontMap = getStdFontMap();
       var lookupName = (stdFontMap[name] || name);
 
       if (!(lookupName in Metrics)) {
@@ -1938,8 +1939,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var flags =
             (this.isSerifFont(fontNameWoStyle) ? FontFlags.Serif : 0) |
             (metrics.monospace ? FontFlags.FixedPitch : 0) |
-            (symbolsFonts[fontNameWoStyle] ? FontFlags.Symbolic :
-                                             FontFlags.Nonsymbolic);
+            (getSymbolsFonts()[fontNameWoStyle] ? FontFlags.Symbolic :
+                                                  FontFlags.Nonsymbolic);
 
           properties = {
             type: type,
