@@ -23,26 +23,29 @@
       'pdfjs/core/image', 'pdfjs/core/colorspace', 'pdfjs/core/murmurhash3',
       'pdfjs/core/fonts', 'pdfjs/core/function', 'pdfjs/core/pattern',
       'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi',
-      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts'], factory);
+      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts',
+      'pdfjs/core/unicode'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./stream.js'), require('./parser.js'), require('./image.js'),
       require('./colorspace.js'), require('./murmurhash3.js'),
       require('./fonts.js'), require('./function.js'), require('./pattern.js'),
       require('./cmap.js'), require('./metrics.js'), require('./bidi.js'),
-      require('./encodings.js'), require('./standard_fonts.js'));
+      require('./encodings.js'), require('./standard_fonts.js'),
+      require('./unicode.js'));
   } else {
     factory((root.pdfjsCoreEvaluator = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
       root.pdfjsCoreImage, root.pdfjsCoreColorSpace, root.pdfjsCoreMurmurHash3,
       root.pdfjsCoreFonts, root.pdfjsCoreFunction, root.pdfjsCorePattern,
       root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi,
-      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts);
+      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts,
+      root.pdfjsCoreUnicode);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
                   coreImage, coreColorSpace, coreMurmurHash3, coreFonts,
                   coreFunction, corePattern, coreCMap, coreMetrics, coreBidi,
-                  coreEncodings, coreStandardFonts) {
+                  coreEncodings, coreStandardFonts, coreUnicode) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
@@ -78,10 +81,8 @@ var ErrorFont = coreFonts.ErrorFont;
 var FontFlags = coreFonts.FontFlags;
 var Font = coreFonts.Font;
 var IdentityToUnicodeMap = coreFonts.IdentityToUnicodeMap;
-var NormalizedUnicodes = coreFonts.NormalizedUnicodes;
 var ToUnicodeMap = coreFonts.ToUnicodeMap;
 var getFontType = coreFonts.getFontType;
-var reverseIfRtl = coreFonts.reverseIfRtl;
 var isPDFFunction = coreFunction.isPDFFunction;
 var PDFFunction = coreFunction.PDFFunction;
 var Pattern = corePattern.Pattern;
@@ -99,6 +100,8 @@ var getEncoding = coreEncodings.getEncoding;
 var getStdFontMap = coreStandardFonts.getStdFontMap;
 var getSerifFonts = coreStandardFonts.getSerifFonts;
 var getSymbolsFonts = coreStandardFonts.getSymbolsFonts;
+var getNormalizedUnicodes = coreUnicode.getNormalizedUnicodes;
+var reverseIfRtl = coreUnicode.reverseIfRtl;
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -1192,6 +1195,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
 
           var glyphUnicode = glyph.unicode;
+          var NormalizedUnicodes = getNormalizedUnicodes();
           if (NormalizedUnicodes[glyphUnicode] !== undefined) {
             glyphUnicode = NormalizedUnicodes[glyphUnicode];
           }
