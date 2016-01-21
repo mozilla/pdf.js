@@ -17,25 +17,27 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/font_renderer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/stream', 'pdfjs/core/glyphlist'], factory);
+      'pdfjs/core/stream', 'pdfjs/core/glyphlist', 'pdfjs/core/encodings'],
+      factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./stream.js'),
-      require('./glyphlist.js'));
+      require('./glyphlist.js'), require('./encodings.js'));
   } else {
     factory((root.pdfjsCoreFontRenderer = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreStream, root.pdfjsCoreGlyphList);
+      root.pdfjsCoreStream, root.pdfjsCoreGlyphList, root.pdfjsCoreEncodings);
   }
-}(this, function (exports, sharedUtil, coreStream, coreGlyphList) {
+}(this, function (exports, sharedUtil, coreStream, coreGlyphList,
+                  coreEncodings) {
 
 var Util = sharedUtil.Util;
 var bytesToString = sharedUtil.bytesToString;
 var error = sharedUtil.error;
 var Stream = coreStream.Stream;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
+var StandardEncoding = coreEncodings.StandardEncoding;
 
 var coreFonts; // see _setCoreFonts below
 var CFFParser; // = coreFonts.CFFParser;
-var Encodings; // = coreFonts.Encodings;
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
@@ -450,12 +452,12 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               cmds.push({cmd: 'save'});
               cmds.push({cmd: 'translate', args: [x, y]});
               var gid = lookupCmap(font.cmap, String.fromCharCode(
-                font.glyphNameMap[Encodings.StandardEncoding[achar]]));
+                font.glyphNameMap[StandardEncoding[achar]]));
               compileCharString(font.glyphs[gid], cmds, font);
               cmds.push({cmd: 'restore'});
 
               gid = lookupCmap(font.cmap, String.fromCharCode(
-                font.glyphNameMap[Encodings.StandardEncoding[bchar]]));
+                font.glyphNameMap[StandardEncoding[bchar]]));
               compileCharString(font.glyphs[gid], cmds, font);
             }
             return;
@@ -731,7 +733,6 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 // TODO refactor to remove cyclic dependency on fonts.js
 function _setCoreFonts(coreFonts_) {
   coreFonts = coreFonts_;
-  Encodings = coreFonts_.Encodings;
   CFFParser = coreFonts_.CFFParser;
 }
 exports._setCoreFonts = _setCoreFonts;

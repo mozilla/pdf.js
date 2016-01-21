@@ -22,23 +22,27 @@
       'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
       'pdfjs/core/image', 'pdfjs/core/colorspace', 'pdfjs/core/murmurhash3',
       'pdfjs/core/fonts', 'pdfjs/core/function', 'pdfjs/core/pattern',
-      'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi'], factory);
+      'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi',
+      'pdfjs/core/encodings'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./stream.js'), require('./parser.js'), require('./image.js'),
       require('./colorspace.js'), require('./murmurhash3.js'),
       require('./fonts.js'), require('./function.js'), require('./pattern.js'),
-      require('./cmap.js'), require('./metrics.js'), require('./bidi.js'));
+      require('./cmap.js'), require('./metrics.js'), require('./bidi.js'),
+      require('./encodings.js'));
   } else {
     factory((root.pdfjsCoreEvaluator = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
       root.pdfjsCoreImage, root.pdfjsCoreColorSpace, root.pdfjsCoreMurmurHash3,
       root.pdfjsCoreFonts, root.pdfjsCoreFunction, root.pdfjsCorePattern,
-      root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi);
+      root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi,
+      root.pdfjsCoreEncodings);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
                   coreImage, coreColorSpace, coreMurmurHash3, coreFonts,
-                  coreFunction, corePattern, coreCMap, coreMetrics, coreBidi) {
+                  coreFunction, corePattern, coreCMap, coreMetrics, coreBidi,
+                  coreEncodings) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
@@ -70,7 +74,6 @@ var isEOF = coreParser.isEOF;
 var PDFImage = coreImage.PDFImage;
 var ColorSpace = coreColorSpace.ColorSpace;
 var MurmurHash3_64 = coreMurmurHash3.MurmurHash3_64;
-var Encodings = coreFonts.Encodings;
 var ErrorFont = coreFonts.ErrorFont;
 var FontFlags = coreFonts.FontFlags;
 var Font = coreFonts.Font;
@@ -90,6 +93,12 @@ var CMapFactory = coreCMap.CMapFactory;
 var IdentityCMap = coreCMap.IdentityCMap;
 var Metrics = coreMetrics.Metrics;
 var bidi = coreBidi.bidi;
+var WinAnsiEncoding = coreEncodings.WinAnsiEncoding;
+var StandardEncoding = coreEncodings.StandardEncoding;
+var MacRomanEncoding = coreEncodings.MacRomanEncoding;
+var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
+var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
+var getEncoding = coreEncodings.getEncoding;
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -1580,19 +1589,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       if (baseEncodingName) {
-        properties.defaultEncoding = Encodings[baseEncodingName].slice();
+        properties.defaultEncoding = getEncoding(baseEncodingName).slice();
       } else {
         encoding = (properties.type === 'TrueType' ?
-                    Encodings.WinAnsiEncoding : Encodings.StandardEncoding);
+                    WinAnsiEncoding : StandardEncoding);
         // The Symbolic attribute can be misused for regular fonts
         // Heuristic: we have to check if the font is a standard one also
         if (!!(properties.flags & FontFlags.Symbolic)) {
-          encoding = Encodings.MacRomanEncoding;
+          encoding = MacRomanEncoding;
           if (!properties.file) {
             if (/Symbol/i.test(properties.name)) {
-              encoding = Encodings.SymbolSetEncoding;
+              encoding = SymbolSetEncoding;
             } else if (/Dingbats/i.test(properties.name)) {
-              encoding = Encodings.ZapfDingbatsEncoding;
+              encoding = ZapfDingbatsEncoding;
             }
           }
         }
