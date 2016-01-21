@@ -347,6 +347,18 @@ function shadow(obj, prop, value) {
 }
 PDFJS.shadow = shadow;
 
+function getLookupTableFactory(initializer) {
+  var lookup;
+  return function () {
+    if (initializer) {
+      lookup = Object.create(null);
+      initializer(lookup);
+      initializer = null;
+    }
+    return lookup;
+  };
+}
+
 var LinkTarget = PDFJS.LinkTarget = {
   NONE: 0, // Default value.
   SELF: 1,
@@ -2338,6 +2350,7 @@ exports.combineUrl = combineUrl;
 exports.createPromiseCapability = createPromiseCapability;
 exports.deprecated = deprecated;
 exports.error = error;
+exports.getLookupTableFactory = getLookupTableFactory;
 exports.info = info;
 exports.isArray = isArray;
 exports.isArrayBuffer = isArrayBuffer;

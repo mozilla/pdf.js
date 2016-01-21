@@ -56,8 +56,8 @@ var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 var CMapFactory = coreCMap.CMapFactory;
 var IdentityCMap = coreCMap.IdentityCMap;
-var GlyphsUnicode = coreGlyphList.GlyphsUnicode;
-var DingbatsGlyphsUnicode = coreGlyphList.DingbatsGlyphsUnicode;
+var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
+var getDingbatsGlyphsUnicode = coreGlyphList.getDingbatsGlyphsUnicode;
 var ISOAdobeCharset = coreCharsets.ISOAdobeCharset;
 var ExpertCharset = coreCharsets.ExpertCharset;
 var ExpertSubsetCharset = coreCharsets.ExpertSubsetCharset;
@@ -2542,7 +2542,7 @@ var Font = (function FontClosure() {
       this.vmetrics = properties.vmetrics;
       this.defaultVMetrics = properties.defaultVMetrics;
     }
-
+    var glyphsUnicodeMap;
     if (!file || file.isEmpty) {
       if (file) {
         // Some bad PDF generators will include empty font files,
@@ -2591,35 +2591,37 @@ var Font = (function FontClosure() {
         this.toUnicode = new ToUnicodeMap(map);
       } else if (/Symbol/i.test(fontName)) {
         var symbols = Encodings.SymbolSetEncoding;
+        glyphsUnicodeMap = getGlyphsUnicode();
         for (charCode in symbols) {
-          fontChar = GlyphsUnicode[symbols[charCode]];
+          fontChar = glyphsUnicodeMap[symbols[charCode]];
           if (!fontChar) {
             continue;
           }
           this.toFontChar[charCode] = fontChar;
         }
         for (charCode in properties.differences) {
-          fontChar = GlyphsUnicode[properties.differences[charCode]];
+          fontChar = glyphsUnicodeMap[properties.differences[charCode]];
           if (!fontChar) {
             continue;
           }
           this.toFontChar[charCode] = fontChar;
         }
       } else if (/Dingbats/i.test(fontName)) {
+        glyphsUnicodeMap = getDingbatsGlyphsUnicode();
         if (/Wingdings/i.test(name)) {
           warn('Wingdings font without embedded font file, ' +
                'falling back to the ZapfDingbats encoding.');
         }
         var dingbats = Encodings.ZapfDingbatsEncoding;
         for (charCode in dingbats) {
-          fontChar = DingbatsGlyphsUnicode[dingbats[charCode]];
+          fontChar = glyphsUnicodeMap[dingbats[charCode]];
           if (!fontChar) {
             continue;
           }
           this.toFontChar[charCode] = fontChar;
         }
         for (charCode in properties.differences) {
-          fontChar = DingbatsGlyphsUnicode[properties.differences[charCode]];
+          fontChar = glyphsUnicodeMap[properties.differences[charCode]];
           if (!fontChar) {
             continue;
           }
@@ -2627,18 +2629,20 @@ var Font = (function FontClosure() {
         }
       } else if (isStandardFont) {
         this.toFontChar = [];
+        glyphsUnicodeMap = getGlyphsUnicode();
         for (charCode in properties.defaultEncoding) {
           glyphName = (properties.differences[charCode] ||
                        properties.defaultEncoding[charCode]);
-          this.toFontChar[charCode] = GlyphsUnicode[glyphName];
+          this.toFontChar[charCode] = glyphsUnicodeMap[glyphName];
         }
       } else {
         var unicodeCharCode, notCidFont = (type.indexOf('CIDFontType') === -1);
+        glyphsUnicodeMap = getGlyphsUnicode();
         this.toUnicode.forEach(function(charCode, unicodeCharCode) {
           if (notCidFont) {
             glyphName = (properties.differences[charCode] ||
                          properties.defaultEncoding[charCode]);
-            unicodeCharCode = (GlyphsUnicode[glyphName] || unicodeCharCode);
+            unicodeCharCode = (glyphsUnicodeMap[glyphName] || unicodeCharCode);
           }
           this.toFontChar[charCode] = unicodeCharCode;
         }.bind(this));
@@ -4331,6 +4335,7 @@ var Font = (function FontClosure() {
               properties.baseEncodingName === 'WinAnsiEncoding') {
             baseEncoding = Encodings[properties.baseEncodingName];
           }
+          var glyphsUnicodeMap = getGlyphsUnicode();
           for (charCode = 0; charCode < 256; charCode++) {
             var glyphName;
             if (this.differences && charCode in this.differences) {
@@ -4346,7 +4351,7 @@ var Font = (function FontClosure() {
             }
             var unicodeOrCharCode, isUnicode = false;
             if (cmapPlatformId === 3 && cmapEncodingId === 1) {
-              unicodeOrCharCode = GlyphsUnicode[glyphName];
+              unicodeOrCharCode = glyphsUnicodeMap[glyphName];
               isUnicode = true;
             } else if (cmapPlatformId === 1 && cmapEncodingId === 0) {
               // TODO: the encoding needs to be updated with mac os table.
@@ -4652,6 +4657,7 @@ var Font = (function FontClosure() {
         for (charcode in differences) {
           encoding[charcode] = differences[charcode];
         }
+        var glyphsUnicodeMap = getGlyphsUnicode();
         for (charcode in encoding) {
           // a) Map the character code to a character name.
           var glyphName = encoding[charcode];
@@ -4659,7 +4665,7 @@ var Font = (function FontClosure() {
           //    Bibliography) to obtain the corresponding Unicode value.
           if (glyphName === '') {
             continue;
-          } else if (GlyphsUnicode[glyphName] === undefined) {
+          } else if (glyphsUnicodeMap[glyphName] === undefined) {
             // (undocumented) c) Few heuristics to recognize unknown glyphs
             // NOTE: Adobe Reader does not do this step, but OSX Preview does
             var code = 0;
@@ -4690,7 +4696,7 @@ var Font = (function FontClosure() {
                 var baseEncoding = Encodings[baseEncodingName];
                 if (baseEncoding && (glyphName = baseEncoding[charcode])) {
                   toUnicode[charcode] =
-                    String.fromCharCode(GlyphsUnicode[glyphName]);
+                    String.fromCharCode(glyphsUnicodeMap[glyphName]);
                   continue;
                 }
               }
@@ -4698,7 +4704,8 @@ var Font = (function FontClosure() {
             }
             continue;
           }
-          toUnicode[charcode] = String.fromCharCode(GlyphsUnicode[glyphName]);
+          toUnicode[charcode] =
+            String.fromCharCode(glyphsUnicodeMap[glyphName]);
         }
         return new ToUnicodeMap(toUnicode);
       }
@@ -4766,7 +4773,8 @@ var Font = (function FontClosure() {
           width = this.widths[glyphName];
           break;
         }
-        var glyphUnicode = GlyphsUnicode[glyphName];
+        var glyphsUnicodeMap = getGlyphsUnicode();
+        var glyphUnicode = glyphsUnicodeMap[glyphName];
         // finding the charcode via unicodeToCID map
         var charcode = 0;
         if (this.composite) {

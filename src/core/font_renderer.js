@@ -31,7 +31,7 @@ var Util = sharedUtil.Util;
 var bytesToString = sharedUtil.bytesToString;
 var error = sharedUtil.error;
 var Stream = coreStream.Stream;
-var GlyphsUnicode = coreGlyphList.GlyphsUnicode;
+var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
 
 var coreFonts; // see _setCoreFonts below
 var CFFParser; // = coreFonts.CFFParser;
@@ -670,7 +670,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     this.gsubrs = cffInfo.gsubrs || [];
     this.subrs = cffInfo.subrs || [];
     this.cmap = cmap;
-    this.glyphNameMap = glyphNameMap || GlyphsUnicode;
+    this.glyphNameMap = glyphNameMap || getGlyphsUnicode();
 
     this.compiledGlyphs = [];
     this.gsubrsBias = (this.gsubrs.length < 1240 ?
