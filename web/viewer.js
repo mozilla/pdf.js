@@ -297,6 +297,12 @@ var PDFViewerApplication = {
         }
         PDFJS.externalLinkTarget = value;
       }),
+      Preferences.get('withCredentials').then(function resolved(value) {
+        if (PDFJS.withCredentials === true) {
+          return;
+        }
+        PDFJS.withCredentials = value;
+      }),
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
@@ -1454,6 +1460,9 @@ function webViewerInitialized() {
       IGNORE_CURRENT_POSITION_ON_ZOOM =
         (hashParams['ignorecurrentpositiononzoom'] === 'true');
     }
+    if ('withcredentials' in hashParams) {
+      PDFJS.withCredentials = (hashParams['withcredentials'] === 'true');
+    }
 //#if !PRODUCTION
     if ('disablebcmaps' in hashParams && hashParams['disablebcmaps']) {
       PDFJS.cMapUrl = '../external/cmaps/';
@@ -1640,7 +1649,9 @@ function webViewerInitialized() {
   }
 
   if (file) {
-    PDFViewerApplication.open(file);
+    var args = {};
+    args.withCredentials = PDFJS.withCredentials;
+    PDFViewerApplication.open(file, args);
   }
 //#endif
 //#if CHROME
