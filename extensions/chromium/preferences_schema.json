@@ -75,6 +75,12 @@
     "useOnlyCssZoom": {
       "type": "boolean",
       "default": false
+    },
+    "withCredentials": {
+      "title": "Enable the withCredentials property for XMLHttpRequest requests",
+      "description": "Property indicates whether or not cross-site Access-Control requests should be made using credentials such as cookies, authorization headers or TLS client certificates. Setting withCredentials has no effect on same-site requests",
+      "type": "boolean",
+      "default": false
     }
   }
 }
