@@ -1276,16 +1276,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
           var worker = new Worker(workerSrc);
           var messageHandler = new MessageHandler('main', 'worker', worker);
-//#if !PRODUCTION
-          // Don't allow worker to be destroyed by Chrome, see:
-          // https://code.google.com/p/chromium/issues/detail?id=572225
-          var jsWorkerId = '_workerKungfuGrip_' + Math.random();
-          window[jsWorkerId] = worker;
-//#endif
           messageHandler.on('test', function PDFWorker_test(data) {
-//#if !PRODUCTION
-            delete window[jsWorkerId];
-//#endif
             if (this.destroyed) {
               this._readyCapability.reject(new Error('Worker was destroyed'));
               messageHandler.destroy();
