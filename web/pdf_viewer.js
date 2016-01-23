@@ -211,6 +211,7 @@ var PDFViewer = (function pdfViewer() {
       var arg = {
         source: this,
         pageNumber: val,
+        pageLabel: this._pageLabels && this._pageLabels[val - 1],
       };
       this._currentPageNumber = val;
       this.eventBus.dispatch('pagechanging', arg);
@@ -219,6 +220,28 @@ var PDFViewer = (function pdfViewer() {
       if (resetCurrentPageView) {
         this._resetCurrentPageView();
       }
+    },
+
+    /**
+     * @returns {string|null} Returns the current page label,
+     *                        or `null` if no page labels exist.
+     */
+    get currentPageLabel() {
+      return this._pageLabels && this._pageLabels[this._currentPageNumber - 1];
+    },
+
+    /**
+     * @param {string} val - The page label.
+     */
+    set currentPageLabel(val) {
+      var pageNumber = val | 0; // Fallback page number.
+      if (this._pageLabels) {
+        var i = this._pageLabels.indexOf(val);
+        if (i >= 0) {
+          pageNumber = i + 1;
+        }
+      }
+      this.currentPageNumber = pageNumber;
     },
 
     /**
@@ -414,11 +437,30 @@ var PDFViewer = (function pdfViewer() {
       }.bind(this));
     },
 
+    /**
+     * @param {Array|null} labels
+     */
+    setPageLabels: function PDFViewer_setPageLabels(labels) {
+      if (!this.pdfDocument) {
+        return;
+      }
+      if (!labels) {
+        this._pageLabels = null;
+      } else if (!(labels instanceof Array &&
+                   this.pdfDocument.numPages === labels.length)) {
+        this._pageLabels = null;
+        console.error('PDFViewer_setPageLabels: Invalid page labels.');
+      } else {
+        this._pageLabels = labels;
+      }
+    },
+
     _resetView: function () {
       this._pages = [];
       this._currentPageNumber = 1;
       this._currentScale = UNKNOWN_SCALE;
       this._currentScaleValue = null;
+      this._pageLabels = null;
       this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
       this._location = null;
       this._pagesRotation = 0;
