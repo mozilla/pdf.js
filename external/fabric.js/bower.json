@@ -1,0 +1,32 @@
+{
+  "name": "fabric.js",
+  "version": "1.4.13",
+  "homepage": "http://fabricjs.com",
+  "authors": [
+    "kangax", "Kienz", "asturur"
+  ],
+  "description": "Object model for HTML5 canvas, and SVG-to-canvas parser. Backed by jsdom and node-canvas.",
+  "main": "./dist/fabric.min.js",
+  "ignore": [
+    "lib",
+    "src",
+    "test",
+    "build_all",
+    "build.js",
+    "build.sh",
+    "create_build_script.js",
+    "test.js",
+    "HEADER.js"
+  ],
+  "keywords": [
+    "canvas",
+    "graphic",
+    "graphics",
+    "SVG",
+    "node-canvas",
+    "parser",
+    "HTML5",
+    "object model"
+  ],
+  "license": "MIT"
+}

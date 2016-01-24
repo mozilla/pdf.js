@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+  - "0.10"
+script: 'npm run-script build && npm test && jscs src'
+before_install:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq libgif-dev libpng-dev libjpeg8-dev libpango1.0-dev libcairo2-dev
+ - '[ "${TRAVIS_NODE_VERSION}" = "0.6" ] && npm conf set strict-ssl false || true'
+ - "IOJS_VERSION=v1.0.1; wget https://iojs.org/dist/${IOJS_VERSION}/iojs-${IOJS_VERSION}-linux-x64.tar.xz && tar xvfJ iojs-${IOJS_VERSION}-linux-x64.tar.xz && sudo mv iojs-${IOJS_VERSION}-linux-x64/bin/iojs /usr/local/bin"
+

@@ -1,0 +1,40 @@
+{
+  "globals": {
+    "ActiveXObject":      true,
+    "define":             true,
+    "eventjs":            true,
+    "exports":            true,
+    "fabric":             true,
+    "G_vmlCanvasManager": true
+  },
+
+  "browser":    true,
+  "eqeqeq":     true,
+  "eqnull":     true,
+  "evil":       true,
+  "expr":       true,
+  "forin":      false,
+  "immed":      true,
+  "lastsemic":  true,
+  "laxbreak":   true,
+  "loopfunc":   true,
+  "multistr":   true,
+  "newcap":     true,
+  "noarg":      true,
+  "node":       true,
+  "noempty":    false,
+  "nomen":      false,
+  "nonew":      false,
+  "onevar":     false,
+  "plusplus":   false,
+  "strict":     false,
+  "sub":        true,
+  "undef":      true,
+  "unused":     true,
+
+  "maxdepth":       4,
+  "maxstatements":  45
+
+  // "maxparams":      4,
+  // "maxcomplexity":  7
+}
