@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* 
  *
@@ -97,3 +97,63 @@ var PDFCustomFabricSetUp = function customFabricSetUp(){
     }
   });
 };
+
+function pdfViewSaveTemplate(){
+    //NOTE: FabricJS apparently used to get top and left from the center of
+    //a given object, but it looks like orignX and originY are already set to
+    //left and top respectively.  It's possible this has just been changed but
+    //it might be a good idea to explicity set them in case it changes again
+    var params = [];
+    for(var i = 0; i < PDFView.canvases.length; i++){
+      var groups = PDFView.canvases[i].getObjects('group');
+
+      //params.push(PDFView.canvases[i].toJSON());
+      params.push({'objects' : []});
+      for(var j = 0; j < groups.length; j++){
+        var field = groups[j].getObjects('rect')[0];
+        var data = field['fieldData'];
+        params[i]['objects'].push(field.toJSON());
+        var obj = params[i]['objects'][j];
+        obj['left'] = groups[j]['left'];
+        obj['top'] = groups[j]['top'];
+        var scale = PDFView.currentScale * 96;
+        var pHeight = PDFView.canvases[i].height;
+        obj['height'] = Math.abs(obj['height']/(scale));
+        obj['leftInches'] = Math.abs(obj['left']/(scale));
+        obj['topInches'] = (pHeight - (obj['top']))/(scale);
+        for (var k in data){
+          obj[k] = data[k];
+        }
+        /*obj['fieldType'] = data['fieldType'];
+        obj['fieldTitle'] = data['fieldTitle'];
+        if(obj['fieldType'] == 'sig') obj['fieldTypeSigUser'] = data*/
+
+
+      }
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'hr-custom-form.html/generate', true);
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.onload = (function(d){
+        return;
+      });
+    xhr.send('params=' + JSON.stringify(params) + '&template_id=' + PDFView.template_id);
+};
+
+function fabricPageViewDraw(pageView) {
+  page = document.getElementById('page' + pageView.id);
+  // Set up canvas that will become fabric canvas
+  fc = document.createElement('canvas');
+  fc.id = 'page' + pageView.id + '-highlight';
+  fc.globalAlpha = '1';
+  fc.className = 'highlight';
+  addContextCurrentTransform(fc);
+  fc.style.opacity = '.5';
+  fc.width = parseInt(page.style.width);
+  fc.height = parseInt(page.style.height);
+  page.parentNode.insertBefore(fc, page);
+  var fCanvas = new fabric.pageCanvas(fc.id);
+  fCanvas.state = {};
+  fCanvas.lastObj = null;
+}
