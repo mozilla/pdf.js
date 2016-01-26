@@ -683,7 +683,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getDestinations();
     },
     /**
-     * @param {string} id The named destination to get.
+     * @param {string} id - The named destination to get.
      * @return {Promise} A promise that is resolved with all information
      * of the given named destination.
      */
@@ -691,14 +691,17 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getDestination(id);
     },
     /**
-     * @return {Promise} A promise that is resolved with: an Array containing
-     *   the pageLabels that correspond to the pageIndexes; or null, when no
-     *   pageLabels are present in the PDF file.
-     *   NOTE: If the pageLabels are all identical to standard page numbering,
-     *         i.e. [1, 2, 3, ...], the promise is resolved with an empty Array.
+     * @param {boolean} ignoreStandardNumbering - Ignore pageLabels if they are
+     *   all identical to standard page numbering, i.e. [1, 2, 3, ...].
+     *   The default value is `false`.
+     * @return {Promise} A promise that is resolved with either:
+     *   an Array containing the pageLabels that correspond to the pageIndexes;
+     *   or null, when no pageLabels are present in the PDF file.
      */
-    getPageLabels: function PDFDocumentProxy_getPageLabels() {
-      return this.transport.getPageLabels();
+    getPageLabels:
+        function PDFDocumentProxy_getPageLabels(ignoreStandardNumbering) {
+      var param = ignoreStandardNumbering || false;
+      return this.transport.getPageLabels(param);
     },
     /**
      * @return {Promise} A promise that is resolved with a lookup table for
@@ -1814,8 +1817,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.messageHandler.sendWithPromise('GetDestination', { id: id });
     },
 
-    getPageLabels: function WorkerTransport_getPageLabels() {
-      return this.messageHandler.sendWithPromise('GetPageLabels', null);
+    getPageLabels:
+        function WorkerTransport_getPageLabels(ignoreStandardNumbering) {
+      return this.messageHandler.sendWithPromise('GetPageLabels', {
+        ignoreStandardNumbering: ignoreStandardNumbering,
+      });
     },
 
     getAttachments: function WorkerTransport_getAttachments() {

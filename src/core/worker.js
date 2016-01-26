@@ -451,11 +451,10 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       }
     );
 
-    handler.on('GetPageLabels',
-      function wphSetupGetPageLabels(data) {
-        return pdfManager.ensureCatalog('pageLabels');
-      }
-    );
+    handler.on('GetPageLabels', function wphSetupGetPageLabels(data) {
+      return pdfManager.ensureCatalog('getPageLabels',
+                                      [data.ignoreStandardNumbering]);
+    });
 
     handler.on('GetAttachments',
       function wphSetupGetAttachments(data) {

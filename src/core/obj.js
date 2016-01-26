@@ -264,17 +264,30 @@ var Catalog = (function CatalogClosure() {
       return dest;
     },
 
-    get pageLabels() {
-      var obj = null;
-      try {
-        obj = this.readPageLabels();
-      } catch (ex) {
-        if (ex instanceof MissingDataException) {
-          throw ex;
+    getPageLabels: function Catalog_getPageLabels(ignoreStandardNumbering) {
+      if (!this._pageLabels) {
+        var obj = null;
+        try {
+          obj = this.readPageLabels();
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+          warn('Unable to read page labels.');
         }
-        warn('Unable to read page labels.');
+        this._pageLabels = obj;
       }
-      return shadow(this, 'pageLabels', obj);
+
+      if (this._pageLabels !== null && ignoreStandardNumbering) {
+        var i = 0, ii = this.numPages;
+        while (i < ii && this._pageLabels[i] === (i + 1).toString()) {
+          i++;
+        }
+        if (i === ii) {
+          return null;
+        }
+      }
+      return this._pageLabels;
     },
     readPageLabels: function Catalog_readPageLabels() {
       var obj = this.catDict.getRaw('PageLabels');
@@ -343,14 +356,7 @@ var Catalog = (function CatalogClosure() {
         currentLabel = '';
         currentIndex++;
       }
-
-      // Ignore PageLabels if they correspond to standard page numbering.
-      for (i = 0, ii = this.numPages; i < ii; i++) {
-        if (pageLabels[i] !== (i + 1).toString()) {
-          break;
-        }
-      }
-      return (i === ii ? [] : pageLabels);
+      return pageLabels;
     },
 
     get attachments() {
