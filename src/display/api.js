@@ -691,11 +691,9 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getDestination(id);
     },
     /**
-     * @return {Promise} A promise that is resolved with: an Array containing
-     *   the pageLabels that correspond to the pageIndexes; or null, when no
-     *   pageLabels are present in the PDF file.
-     *   NOTE: If the pageLabels are all identical to standard page numbering,
-     *         i.e. [1, 2, 3, ...], the promise is resolved with an empty Array.
+     * @return {Promise} A promise that is resolved with:
+     *   an Array containing the pageLabels that correspond to the pageIndexes,
+     *   or `null` when no pageLabels are present in the PDF file.
      */
     getPageLabels: function PDFDocumentProxy_getPageLabels() {
       return this.transport.getPageLabels();
