@@ -385,7 +385,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     this.pendingEOFill = false;
 
     this.embedFonts = false;
-    this.embeddedFonts = {};
+    this.embeddedFonts = Object.create(null);
     this.cssStyle = null;
   }
 

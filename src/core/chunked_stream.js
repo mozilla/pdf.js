@@ -313,9 +313,9 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
     this.currRequestId = 0;
 
-    this.chunksNeededByRequest = {};
-    this.requestsByChunk = {};
-    this.promisesByRequest = {};
+    this.chunksNeededByRequest = Object.create(null);
+    this.requestsByChunk = Object.create(null);
+    this.promisesByRequest = Object.create(null);
     this.progressiveDataLength = 0;
 
     this._loadedStreamCapability = createPromiseCapability();
@@ -341,9 +341,9 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
     _requestChunks: function ChunkedStreamManager_requestChunks(chunks) {
       var requestId = this.currRequestId++;
 
-      var chunksNeeded;
       var i, ii;
-      this.chunksNeededByRequest[requestId] = chunksNeeded = {};
+      var chunksNeeded = Object.create(null);
+      this.chunksNeededByRequest[requestId] = chunksNeeded;
       for (i = 0, ii = chunks.length; i < ii; i++) {
         if (!this.stream.hasChunk(chunks[i])) {
           chunksNeeded[chunks[i]] = true;

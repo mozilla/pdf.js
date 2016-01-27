@@ -35,7 +35,7 @@ var Name = (function NameClosure() {
 
   Name.prototype = {};
 
-  var nameCache = {};
+  var nameCache = Object.create(null);
 
   Name.get = function Name_get(name) {
     var nameValue = nameCache[name];
@@ -52,7 +52,7 @@ var Cmd = (function CmdClosure() {
 
   Cmd.prototype = {};
 
-  var cmdCache = {};
+  var cmdCache = Object.create(null);
 
   Cmd.get = function Cmd_get(cmd) {
     var cmdValue = cmdCache[cmd];
@@ -281,7 +281,7 @@ var Ref = (function RefClosure() {
 // This structure stores only one instance of the reference.
 var RefSet = (function RefSetClosure() {
   function RefSet() {
-    this.dict = {};
+    this.dict = Object.create(null);
   }
 
   RefSet.prototype = {

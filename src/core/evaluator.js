@@ -731,7 +731,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
-      var imageCache = {};
+      var imageCache = Object.create(null);
 
       assert(operatorList);
 
@@ -1054,7 +1054,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
-      var xobjsCache = {};
+      var xobjsCache = Object.create(null);
 
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -2093,7 +2093,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
       var charProcs = this.dict.get('CharProcs').getAll();
       var fontResources = this.dict.get('Resources') || resources;
       var charProcKeys = Object.keys(charProcs);
-      var charProcOperatorList = {};
+      var charProcOperatorList = Object.create(null);
       for (var i = 0, n = charProcKeys.length; i < n; ++i) {
         loadCharProcsPromise = loadCharProcsPromise.then(function (key) {
           var glyphStream = charProcs[key];
@@ -2147,7 +2147,7 @@ var OperatorList = (function OperatorListClosure() {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
-    this.dependencies = {};
+    this.dependencies = Object.create(null);
     this._totalLength = 0;
     this.pageIndex = pageIndex;
     this.intent = intent;
@@ -2227,7 +2227,7 @@ var OperatorList = (function OperatorListClosure() {
         pageIndex: this.pageIndex,
         intent: this.intent
       }, transfers);
-      this.dependencies = {};
+      this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;
     }

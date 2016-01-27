@@ -469,7 +469,7 @@ var Font = (function FontClosure() {
     this.isType3Font = properties.isType3Font;
     this.sizes = [];
 
-    this.glyphCache = {};
+    this.glyphCache = Object.create(null);
 
     var names = name.split('+');
     names = names.length > 1 ? names[1] : names[0];
@@ -1218,6 +1218,7 @@ var Font = (function FontClosure() {
     },
 
     exportData: function Font_exportData() {
+      // TODO remove enumerating of the properties, e.g. hardcode exact names.
       var data = {};
       for (var i in this) {
         if (this.hasOwnProperty(i)) {
@@ -1668,7 +1669,7 @@ var Font = (function FontClosure() {
         var newGlyfData = new Uint8Array(oldGlyfDataLength);
         var startOffset = itemDecode(locaData, 0);
         var writeOffset = 0;
-        var missingGlyphData = {};
+        var missingGlyphData = Object.create(null);
         itemEncode(locaData, 0, writeOffset);
         var i, j;
         for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
@@ -2100,8 +2101,16 @@ var Font = (function FontClosure() {
       var numTables = header.numTables;
       var cff, cffFile;
 
-      var tables = { 'OS/2': null, cmap: null, head: null, hhea: null,
-                     hmtx: null, maxp: null, name: null, post: null };
+      var tables = Object.create(null);
+      tables['OS/2'] = null;
+      tables['cmap'] = null;
+      tables['head'] = null;
+      tables['hhea'] = null;
+      tables['hmtx'] = null;
+      tables['maxp'] = null;
+      tables['name'] = null;
+      tables['post'] = null;
+
       var table;
       for (var i = 0; i < numTables; i++) {
         table = readTableEntry(font);
@@ -2118,7 +2127,8 @@ var Font = (function FontClosure() {
       if (!isTrueType) {
         // OpenType font
         if ((header.version === 'OTTO' && properties.type !== 'CIDFontType2') ||
-            !tables.head || !tables.hhea || !tables.maxp || !tables.post) {
+            !tables['head'] || !tables['hhea'] || !tables['maxp'] ||
+            !tables['post']) {
           // no major tables: throwing everything at CFFFont
           cffFile = new Stream(tables['CFF '].data);
           cff = new CFFFont(cffFile, properties);
@@ -2128,20 +2138,20 @@ var Font = (function FontClosure() {
           return this.convert(name, cff, properties);
         }
 
-        delete tables.glyf;
-        delete tables.loca;
-        delete tables.fpgm;
-        delete tables.prep;
+        delete tables['glyf'];
+        delete tables['loca'];
+        delete tables['fpgm'];
+        delete tables['prep'];
         delete tables['cvt '];
         this.isOpenType = true;
       } else {
-        if (!tables.loca) {
+        if (!tables['loca']) {
           error('Required "loca" table is not found');
         }
-        if (!tables.glyf) {
+        if (!tables['glyf']) {
           warn('Required "glyf" table is not found -- trying to recover.');
           // Note: We use `sanitizeGlyphLocations` to add dummy glyf data below.
-          tables.glyf = {
+          tables['glyf'] = {
             tag: 'glyf',
             data: new Uint8Array(0),
           };
@@ -2149,21 +2159,21 @@ var Font = (function FontClosure() {
         this.isOpenType = false;
       }
 
-      if (!tables.maxp) {
+      if (!tables['maxp']) {
         error('Required "maxp" table is not found');
       }
 
-      font.pos = (font.start || 0) + tables.maxp.offset;
+      font.pos = (font.start || 0) + tables['maxp'].offset;
       var version = font.getInt32();
       var numGlyphs = font.getUint16();
       var maxFunctionDefs = 0;
-      if (version >= 0x00010000 && tables.maxp.length >= 22) {
+      if (version >= 0x00010000 && tables['maxp'].length >= 22) {
         // maxZones can be invalid
         font.pos += 8;
         var maxZones = font.getUint16();
         if (maxZones > 2) { // reset to 2 if font has invalid maxZones
-          tables.maxp.data[14] = 0;
-          tables.maxp.data[15] = 2;
+          tables['maxp'].data[14] = 0;
+          tables['maxp'].data[15] = 2;
         }
         font.pos += 4;
         maxFunctionDefs = font.getUint16();
@@ -2175,56 +2185,57 @@ var Font = (function FontClosure() {
         // oracle's defect (see 3427), duplicating first entry
         dupFirstEntry = true;
         numGlyphs++;
-        tables.maxp.data[4] = numGlyphs >> 8;
-        tables.maxp.data[5] = numGlyphs & 255;
+        tables['maxp'].data[4] = numGlyphs >> 8;
+        tables['maxp'].data[5] = numGlyphs & 255;
       }
 
-      var hintsValid = sanitizeTTPrograms(tables.fpgm, tables.prep,
+      var hintsValid = sanitizeTTPrograms(tables['fpgm'], tables['prep'],
                                           tables['cvt '], maxFunctionDefs);
       if (!hintsValid) {
-        delete tables.fpgm;
-        delete tables.prep;
+        delete tables['fpgm'];
+        delete tables['prep'];
         delete tables['cvt '];
       }
 
       // Ensure the hmtx table contains the advance width and
       // sidebearings information for numGlyphs in the maxp table
-      sanitizeMetrics(font, tables.hhea, tables.hmtx, numGlyphs);
+      sanitizeMetrics(font, tables['hhea'], tables['hmtx'], numGlyphs);
 
-      if (!tables.head) {
+      if (!tables['head']) {
         error('Required "head" table is not found');
       }
 
-      sanitizeHead(tables.head, numGlyphs, isTrueType ? tables.loca.length : 0);
+      sanitizeHead(tables['head'], numGlyphs,
+                   isTrueType ? tables['loca'].length : 0);
 
-      var missingGlyphs = {};
+      var missingGlyphs = Object.create(null);
       if (isTrueType) {
-        var isGlyphLocationsLong = int16(tables.head.data[50],
-                                         tables.head.data[51]);
-        missingGlyphs = sanitizeGlyphLocations(tables.loca, tables.glyf,
+        var isGlyphLocationsLong = int16(tables['head'].data[50],
+                                         tables['head'].data[51]);
+        missingGlyphs = sanitizeGlyphLocations(tables['loca'], tables['glyf'],
                                                numGlyphs, isGlyphLocationsLong,
                                                hintsValid, dupFirstEntry);
       }
 
-      if (!tables.hhea) {
+      if (!tables['hhea']) {
         error('Required "hhea" table is not found');
       }
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth
       // Sometimes it's 0. That needs to be fixed
-      if (tables.hhea.data[10] === 0 && tables.hhea.data[11] === 0) {
-        tables.hhea.data[10] = 0xFF;
-        tables.hhea.data[11] = 0xFF;
+      if (tables['hhea'].data[10] === 0 && tables['hhea'].data[11] === 0) {
+        tables['hhea'].data[10] = 0xFF;
+        tables['hhea'].data[11] = 0xFF;
       }
 
       // Extract some more font properties from the OpenType head and
       // hhea tables; yMin and descent value are always negative.
       var metricsOverride = {
-        unitsPerEm: int16(tables.head.data[18], tables.head.data[19]),
-        yMax: int16(tables.head.data[42], tables.head.data[43]),
-        yMin: int16(tables.head.data[38], tables.head.data[39]) - 0x10000,
-        ascent: int16(tables.hhea.data[4], tables.hhea.data[5]),
-        descent: int16(tables.hhea.data[6], tables.hhea.data[7]) - 0x10000
+        unitsPerEm: int16(tables['head'].data[18], tables['head'].data[19]),
+        yMax: int16(tables['head'].data[42], tables['head'].data[43]),
+        yMin: int16(tables['head'].data[38], tables['head'].data[39]) - 0x10000,
+        ascent: int16(tables['hhea'].data[4], tables['hhea'].data[5]),
+        descent: int16(tables['hhea'].data[6], tables['hhea'].data[7]) - 0x10000
       };
 
       // PDF FontDescriptor metrics lie -- using data from actual font.
@@ -2232,10 +2243,10 @@ var Font = (function FontClosure() {
       this.descent = metricsOverride.descent / metricsOverride.unitsPerEm;
 
       // The 'post' table has glyphs names.
-      if (tables.post) {
-        var valid = readPostScriptTable(tables.post, properties, numGlyphs);
+      if (tables['post']) {
+        var valid = readPostScriptTable(tables['post'], properties, numGlyphs);
         if (!valid) {
-          tables.post = null;
+          tables['post'] = null;
         }
       }
 
@@ -2287,7 +2298,7 @@ var Font = (function FontClosure() {
         var hasEncoding =
           properties.differences.length > 0 || !!properties.baseEncodingName;
         var cmapTable =
-          readCmapTable(tables.cmap, font, this.isSymbolicFont, hasEncoding);
+          readCmapTable(tables['cmap'], font, this.isSymbolicFont, hasEncoding);
         var cmapPlatformId = cmapTable.platformId;
         var cmapEncodingId = cmapTable.encodingId;
         var cmapMappings = cmapTable.mappings;
@@ -2394,7 +2405,7 @@ var Font = (function FontClosure() {
       // Converting glyphs and ids into font's cmap table
       var newMapping = adjustMapping(charCodeToGlyphId, properties);
       this.toFontChar = newMapping.toFontChar;
-      tables.cmap = {
+      tables['cmap'] = {
         tag: 'cmap',
         data: createCmapTable(newMapping.charCodeToGlyphId, numGlyphs)
       };
@@ -2408,8 +2419,8 @@ var Font = (function FontClosure() {
       }
 
       // Rewrite the 'post' table if needed
-      if (!tables.post) {
-        tables.post = {
+      if (!tables['post']) {
+        tables['post'] = {
           tag: 'post',
           data: createPostTable(properties)
         };
@@ -2429,15 +2440,15 @@ var Font = (function FontClosure() {
       }
 
       // Re-creating 'name' table
-      if (!tables.name) {
-        tables.name = {
+      if (!tables['name']) {
+        tables['name'] = {
           tag: 'name',
           data: createNameTable(this.name)
         };
       } else {
         // ... using existing 'name' table as prototype
-        var namePrototype = readNameTable(tables.name);
-        tables.name.data = createNameTable(name, namePrototype);
+        var namePrototype = readNameTable(tables['name']);
+        tables['name'].data = createNameTable(name, namePrototype);
       }
 
       var builder = new OpenTypeFileBuilder(header.version);
@@ -2855,7 +2866,7 @@ var Font = (function FontClosure() {
       if (this.cMap) {
         // composite fonts have multi-byte strings convert the string from
         // single-byte to multi-byte
-        var c = {};
+        var c = Object.create(null);
         while (i < chars.length) {
           this.cMap.readCharCode(chars, i, c);
           charcode = c.charcode;
@@ -3442,13 +3453,13 @@ var Type1Parser = (function Type1ParserClosure() {
       var stream = this.stream;
 
       var subrs = [], charstrings = [];
+      var privateData = Object.create(null);
+      privateData['lenIV'] = 4;
       var program = {
         subrs: [],
         charstrings: [],
         properties: {
-          'privateData': {
-            'lenIV': 4
-          }
+          'privateData': privateData
         }
       };
       var token, length, data, lenIV, encoded;
@@ -3770,7 +3781,7 @@ Type1Font.prototype = {
     }
     var encoding = properties.builtInEncoding;
     if (encoding) {
-      var builtInEncoding = {};
+      var builtInEncoding = Object.create(null);
       for (var charCode in encoding) {
         glyphId = glyphNames.indexOf(encoding[charCode]);
         if (glyphId >= 0) {
@@ -3904,7 +3915,7 @@ Type1Font.prototype = {
     ];
     for (i = 0, ii = fields.length; i < ii; i++) {
       var field = fields[i];
-      if (!properties.privateData.hasOwnProperty(field)) {
+      if (!(field in properties.privateData)) {
         continue;
       }
       var value = properties.privateData[field];
@@ -4655,7 +4666,7 @@ var CFFParser = (function CFFParserClosure() {
                                                     properties,
                                                     strings,
                                                     charset) {
-      var encoding = {};
+      var encoding = Object.create(null);
       var bytes = this.bytes;
       var predefined = false;
       var hasSupplement = false;
@@ -4851,7 +4862,7 @@ var CFFDict = (function CFFDictClosure() {
     this.opcodes = tables.opcodes;
     this.order = tables.order;
     this.strings = strings;
-    this.values = {};
+    this.values = Object.create(null);
   }
   CFFDict.prototype = {
     // value should always be an array
@@ -5048,7 +5059,7 @@ var CFFFDSelect = (function CFFFDSelectClosure() {
 // filling in that offset once it's known.
 var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
   function CFFOffsetTracker() {
-    this.offsets = {};
+    this.offsets = Object.create(null);
   }
   CFFOffsetTracker.prototype = {
     isTracking: function CFFOffsetTracker_isTracking(key) {

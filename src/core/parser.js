@@ -70,7 +70,7 @@ var Parser = (function ParserClosure() {
     this.lexer = lexer;
     this.allowStreams = allowStreams;
     this.xref = xref;
-    this.imageCache = {};
+    this.imageCache = Object.create(null);
     this.refill();
   }
 

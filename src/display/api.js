@@ -873,7 +873,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     this.objs = new PDFObjects();
     this.cleanupAfterRender = false;
     this.pendingCleanup = false;
-    this.intentStates = {};
+    this.intentStates = Object.create(null);
     this.destroyed = false;
   }
   PDFPageProxy.prototype = /** @lends PDFPageProxy.prototype */ {
@@ -948,7 +948,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
 
       if (!this.intentStates[renderingIntent]) {
-        this.intentStates[renderingIntent] = {};
+        this.intentStates[renderingIntent] = Object.create(null);
       }
       var intentState = this.intentStates[renderingIntent];
 
@@ -1040,7 +1040,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
       var renderingIntent = 'oplist';
       if (!this.intentStates[renderingIntent]) {
-        this.intentStates[renderingIntent] = {};
+        this.intentStates[renderingIntent] = Object.create(null);
       }
       var intentState = this.intentStates[renderingIntent];
 
@@ -1871,7 +1871,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
  */
 var PDFObjects = (function PDFObjectsClosure() {
   function PDFObjects() {
-    this.objs = {};
+    this.objs = Object.create(null);
   }
 
   PDFObjects.prototype = {
@@ -1962,7 +1962,7 @@ var PDFObjects = (function PDFObjectsClosure() {
     },
 
     clear: function PDFObjects_clear() {
-      this.objs = {};
+      this.objs = Object.create(null);
     }
   };
   return PDFObjects;

@@ -229,9 +229,6 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(nameTreeRef, xref);
         var names = nameTree.getAll();
         for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
           dests[name] = fetchDestination(names[name]);
         }
       }
@@ -291,7 +288,7 @@ var Catalog = (function CatalogClosure() {
       var currentLabel = '', currentIndex = 1;
 
       for (var i = 0, ii = this.numPages; i < ii; i++) {
-        if (nums.hasOwnProperty(i)) {
+        if (i in nums) {
           var labelDict = nums[i];
           assert(isDict(labelDict), 'The PageLabel is not a dictionary.');
 
@@ -365,12 +362,9 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(nameTreeRef, xref);
         var names = nameTree.getAll();
         for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
           var fs = new FileSpec(names[name], xref);
           if (!attachments) {
-            attachments = {};
+            attachments = Object.create(null);
           }
           attachments[stringToPDFString(name)] = fs.serializable;
         }
@@ -399,9 +393,6 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(obj.getRaw('JavaScript'), xref);
         var names = nameTree.getAll();
         for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
           // We don't really use the JavaScript right now. This code is
           // defensive so we don't cause errors on document load.
           var jsDict = names[name];
@@ -602,7 +593,7 @@ var XRef = (function XRefClosure() {
   function XRef(stream, password) {
     this.stream = stream;
     this.entries = [];
-    this.xrefstms = {};
+    this.xrefstms = Object.create(null);
     // prepare the XRef cache
     this.cache = [];
     this.password = password;
@@ -1239,7 +1230,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
 
   NameOrNumberTree.prototype = {
     getAll: function NameOrNumberTree_getAll() {
-      var dict = {};
+      var dict = Object.create(null);
       if (!this.root) {
         return dict;
       }

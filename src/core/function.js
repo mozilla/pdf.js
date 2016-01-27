@@ -434,7 +434,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var evaluator = new PostScriptEvaluator(code);
       // Cache the values for a big speed up, the cache size is limited though
       // since the number of possible values can be huge from a PS function.
-      var cache = {};
+      var cache = Object.create(null);
       // The MAX_CACHE_SIZE is set to ~4x the maximum number of distinct values
       // seen in our tests.
       var MAX_CACHE_SIZE = 2048 * 4;

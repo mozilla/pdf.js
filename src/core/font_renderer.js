@@ -609,7 +609,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   var noop = '';
 
   function CompiledFont(fontMatrix) {
-    this.compiledGlyphs = {};
+    this.compiledGlyphs = Object.create(null);
     this.fontMatrix = fontMatrix;
   }
   CompiledFont.prototype = {

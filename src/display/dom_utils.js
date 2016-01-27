@@ -39,7 +39,7 @@ var CustomStyle = (function CustomStyleClosure() {
   // in some versions of IE9 it is critical that ms appear in this list
   // before Moz
   var prefixes = ['ms', 'Moz', 'Webkit', 'O'];
-  var _cache = {};
+  var _cache = Object.create(null);
 
   function CustomStyle() {}
 

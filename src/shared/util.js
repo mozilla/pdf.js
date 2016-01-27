@@ -1466,7 +1466,7 @@ var StatTimer = (function StatTimerClosure() {
     return str;
   }
   function StatTimer() {
-    this.started = {};
+    this.started = Object.create(null);
     this.times = [];
     this.enabled = true;
   }
@@ -1560,8 +1560,8 @@ function MessageHandler(sourceName, targetName, comObj) {
   this.comObj = comObj;
   this.callbackIndex = 1;
   this.postMessageTransfers = true;
-  var callbacksCapabilities = this.callbacksCapabilities = {};
-  var ah = this.actionHandler = {};
+  var callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
+  var ah = this.actionHandler = Object.create(null);
 
   this._onComObjOnMessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;

@@ -340,7 +340,7 @@ Object.defineProperty(FontLoader, 'isSyncFontLoadingSupported', {
 
 var FontFaceObject = (function FontFaceObjectClosure() {
   function FontFaceObject(translatedData) {
-    this.compiledGlyphs = {};
+    this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (var i in translatedData) {
       this[i] = translatedData[i];
