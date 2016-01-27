@@ -338,17 +338,22 @@ describe('api', function() {
     it('gets page labels', function () {
       // PageLabels with Roman/Arabic numerals.
       var url0 = combineUrl(window.location.href, '../pdfs/bug793632.pdf');
-      var promise0 = PDFJS.getDocument(url0).promise.then(function (pdfDoc) {
+      var loadingTask0 = PDFJS.getDocument(url0);
+      var promise0 = loadingTask0.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });
+
       // PageLabels with only a label prefix.
       var url1 = combineUrl(window.location.href, '../pdfs/issue1453.pdf');
-      var promise1 = PDFJS.getDocument(url1).promise.then(function (pdfDoc) {
+      var loadingTask1 = PDFJS.getDocument(url1);
+      var promise1 = loadingTask1.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });
+
       // PageLabels identical to standard page numbering.
       var url2 = combineUrl(window.location.href, '../pdfs/rotation.pdf');
-      var promise2 = PDFJS.getDocument(url2).promise.then(function (pdfDoc) {
+      var loadingTask2 = PDFJS.getDocument(url2);
+      var promise2 = loadingTask2.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });
 
@@ -356,7 +361,11 @@ describe('api', function() {
           function (pageLabels) {
         expect(pageLabels[0]).toEqual(['i', 'ii', 'iii', '1']);
         expect(pageLabels[1]).toEqual(['Front Page1']);
-        expect(pageLabels[2]).toEqual([]);
+        expect(pageLabels[2]).toEqual(['1', '2']);
+
+        loadingTask0.destroy();
+        loadingTask1.destroy();
+        loadingTask2.destroy();
       });
     });
     it('gets attachments', function() {

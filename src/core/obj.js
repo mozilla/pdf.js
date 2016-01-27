@@ -343,14 +343,7 @@ var Catalog = (function CatalogClosure() {
         currentLabel = '';
         currentIndex++;
       }
-
-      // Ignore PageLabels if they correspond to standard page numbering.
-      for (i = 0, ii = this.numPages; i < ii; i++) {
-        if (pageLabels[i] !== (i + 1).toString()) {
-          break;
-        }
-      }
-      return (i === ii ? [] : pageLabels);
+      return pageLabels;
     },
 
     get attachments() {
