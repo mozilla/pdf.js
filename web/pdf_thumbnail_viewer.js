@@ -196,6 +196,12 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       } else {
         this._pageLabels = labels;
       }
+      // Update all the `PDFThumbnailView` instances.
+      for (var i = 0, ii = this.thumbnails.length; i < ii; i++) {
+        var thumbnailView = this.thumbnails[i];
+        var label = this._pageLabels && this._pageLabels[i];
+        thumbnailView.setPageLabel(label);
+      }
     },
 
     /**

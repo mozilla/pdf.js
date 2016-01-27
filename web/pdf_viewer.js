@@ -453,6 +453,12 @@ var PDFViewer = (function pdfViewer() {
       } else {
         this._pageLabels = labels;
       }
+      // Update all the `PDFPageView` instances.
+      for (var i = 0, ii = this._pages.length; i < ii; i++) {
+        var pageView = this._pages[i];
+        var label = this._pageLabels && this._pageLabels[i];
+        pageView.setPageLabel(label);
+      }
     },
 
     _resetView: function () {
