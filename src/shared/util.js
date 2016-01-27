@@ -1697,13 +1697,15 @@ function loadJpegStream(id, imageUrl, objs) {
 
   // feature detect for URL constructor
   var hasWorkingUrl = false;
-  if (typeof URL === 'function' && ('origin' in URL.prototype)) {
-    try {
+  try {
+    if (typeof URL === 'function' &&
+        typeof URL.prototype === 'object' &&
+        ('origin' in URL.prototype)) {
       var u = new URL('b', 'http://a');
       u.pathname = 'c%20d';
       hasWorkingUrl = u.href === 'http://a/c%20d';
-    } catch(e) {}
-  }
+    }
+  } catch(e) { }
 
   if (hasWorkingUrl)
     return;
