@@ -513,7 +513,7 @@ var PDFImage = (function PDFImageClosure() {
      * @return {Boolean}
      */
     shallResizeImage: function PDFImage_shallResizeImage(comps, bpc) {
-        return (comps === 1 && (bpc === 1 || bpc === 8));
+      return (comps === 1 && (bpc === 1 || bpc === 8));
     },
 
     /**
@@ -526,40 +526,40 @@ var PDFImage = (function PDFImageClosure() {
       var newWidth = imgData.width >> scaleBits;
       var newHeight = imgData.height >> scaleBits;
 
+      //we want to output 1 byte per pixel
       var newRowBytes = (newWidth + 7) >> 3;
       var originalRowBytes = (imgData.width + 7) >> 3;
       var step = 1 << scaleBits;
       var numBytes = newHeight * newRowBytes;
       var pixelArrayOutput = new Uint8Array(numBytes);
-      var originalRowStart;
-      var newRowStart;
 
-      for (var i = 0, y2 = 0; i < newHeight; i++, y2 += step,
-          originalRowStart = y2 * originalRowBytes,
-          newRowStart = i * newRowBytes) {
+      for (var i = 0, y2 = 0; i < newHeight; i++, y2 += step) {
+        var originalRowStart = y2 * originalRowBytes;
+        var newRowStart = i * newRowBytes;
+
         for (var j = 0, x2 = 0; j < newWidth; j++, x2 += step) {
-            // we want original value of pixel [x2, y2] value in original image
-            // to populate pixel [i, j] in new image
+          // we want original value of pixel [x2, y2] value in original image
+          // to populate pixel [i, j] in new image
 
-            var originalColByteStart = x2 >> 3;
-            var originalColBitMask = 1 << (7 - (x2 & 7));
+          var originalColByteStart = x2 >> 3;
+          var originalColBitMask = 1 << (7 - (x2 & 7));
+          // most signifcant bit is first pixel due to Little Endian
+
+          var originalColByte =
+            imgData.data[originalRowStart + originalColByteStart];
+          var pixelValue = originalColByte & originalColBitMask;
+
+          if (pixelValue > 0) {
             // most signifcant bit is first pixel due to Little Endian
+            var newColByteStart = j >> 3;
+            var newColBitMask = 1 << (7 - (j & 7));
 
-            var originalColByte =
-                imgData.data[originalRowStart + originalColByteStart];
-            var pixelValue = originalColByte & originalColBitMask;
+            var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
 
-            if (pixelValue > 0) {
-              // most signifcant bit is first pixel due to Little Endian
-              var newColByteStart = j >> 3;
-              var newColBitMask = 1 << (7 - (j & 7));
-
-              var newColByte = pixelArrayOutput[newRowStart + newColByteStart];
-
-              newColByte = newColByte | newColBitMask;
-              // set pixel bit to 1
-              pixelArrayOutput[newRowStart + newColByteStart] = newColByte;
-            }
+            newColByte = newColByte | newColBitMask;
+            // set pixel bit to 1
+            pixelArrayOutput[newRowStart + newColByteStart] = newColByte;
+          }
         }
       }
 
@@ -571,7 +571,7 @@ var PDFImage = (function PDFImageClosure() {
     /**
      * Resize large resolution PDFS as to improve rendering time
      * @param  {Uint8Array} imgData image data.
-     * @param  {Number} comps Number of color components, 1 or 3 is supported.
+     * @param  {Number} comps Number of color components.
      * @param  {Number} bpc Number of bits per component.
      */
     resizeGrayPixels: function PDFImage_resizeGrayPixels(imgData, comps, bpc) {
@@ -580,6 +580,12 @@ var PDFImage = (function PDFImageClosure() {
       var w1 = imgData.width;
 
       // Reduce the pixel dimensions to around 2000.
+      // to improve performance for large grayscale bitmaps > 10K width 
+      // or height
+      // If Width or Height > 15K, scale down the size to 10% of original size.
+      // If Width or Height > 10K, scale down the size to 15% of original size.
+      // If Width or Height > 5K, scale down the size to 25% of original size.
+      // Otherwise, use the original size.
       if ((h1 > 15000) || (w1 > 15000)) {
         scaleBits = 3;
       } else if ((h1 > 10000) || (w1 > 10000)) {
@@ -596,19 +602,19 @@ var PDFImage = (function PDFImageClosure() {
         } else {
           var w2 = w1 >> scaleBits;
           var h2 = h1 >> scaleBits;
+          // we want to output 1 byte per pixel
           var newRowBytes = (w2 * comps * bpc + 7) >> 3;
           var originalRowBytes = (w1 * comps * bpc + 7) >> 3;
           var step = 1 << scaleBits;
           var numBytes = h2 * newRowBytes;
           var pixelArrayOutput = new Uint8Array(numBytes);
-          var newRowStart;
-          var originalRowStart;
 
-          for (var i = 0, y2 = 0; i < h2; i++, y2 += step,
-            newRowStart = i * newRowBytes,
-            originalRowStart = y2 * originalRowBytes) {
+          for (var i = 0, y2 = 0; i < h2; i++, y2 += step) {
+            var newRowStart = i * newRowBytes;
+            var originalRowStart = y2 * originalRowBytes;
+
             for (var j = 0, x2 = 0; j < w2; j++, x2 += step) {
-                pixelArrayOutput[newRowStart + j] =
+              pixelArrayOutput[newRowStart + j] =
                 imgData.data[originalRowStart + x2];
             }
           }
@@ -762,7 +768,6 @@ var PDFImage = (function PDFImageClosure() {
 
       return imgData;
     },
-
 
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
