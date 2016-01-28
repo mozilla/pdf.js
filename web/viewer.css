@@ -1939,7 +1939,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 @media all and (max-width: 510px) {
-  #scaleSelectContainer, #pageNumberLabel {
+  #scaleSelectContainer {
     display: none;
   }
 }
