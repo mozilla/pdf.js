@@ -17,2955 +17,2956 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/metrics', ['exports'], factory);
+    define('pdfjs/core/metrics', ['exports', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports);
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsCoreMetrics = {}));
+    factory((root.pdfjsCoreMetrics = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports) {
+}(this, function (exports, sharedUtil) {
+var getLookupTableFactory = sharedUtil.getLookupTableFactory;
 
 // The Metrics object contains glyph widths (in glyph space units).
 // As per PDF spec, for most fonts (Type 3 being an exception) a glyph
 // space unit corresponds to 1/1000th of text space unit.
-var Metrics = {
-  'Courier': 600,
-  'Courier-Bold': 600,
-  'Courier-BoldOblique': 600,
-  'Courier-Oblique': 600,
-  'Helvetica' : {
-    'space': 278,
-    'exclam': 278,
-    'quotedbl': 355,
-    'numbersign': 556,
-    'dollar': 556,
-    'percent': 889,
-    'ampersand': 667,
-    'quoteright': 222,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 389,
-    'plus': 584,
-    'comma': 278,
-    'hyphen': 333,
-    'period': 278,
-    'slash': 278,
-    'zero': 556,
-    'one': 556,
-    'two': 556,
-    'three': 556,
-    'four': 556,
-    'five': 556,
-    'six': 556,
-    'seven': 556,
-    'eight': 556,
-    'nine': 556,
-    'colon': 278,
-    'semicolon': 278,
-    'less': 584,
-    'equal': 584,
-    'greater': 584,
-    'question': 556,
-    'at': 1015,
-    'A': 667,
-    'B': 667,
-    'C': 722,
-    'D': 722,
-    'E': 667,
-    'F': 611,
-    'G': 778,
-    'H': 722,
-    'I': 278,
-    'J': 500,
-    'K': 667,
-    'L': 556,
-    'M': 833,
-    'N': 722,
-    'O': 778,
-    'P': 667,
-    'Q': 778,
-    'R': 722,
-    'S': 667,
-    'T': 611,
-    'U': 722,
-    'V': 667,
-    'W': 944,
-    'X': 667,
-    'Y': 667,
-    'Z': 611,
-    'bracketleft': 278,
-    'backslash': 278,
-    'bracketright': 278,
-    'asciicircum': 469,
-    'underscore': 556,
-    'quoteleft': 222,
-    'a': 556,
-    'b': 556,
-    'c': 500,
-    'd': 556,
-    'e': 556,
-    'f': 278,
-    'g': 556,
-    'h': 556,
-    'i': 222,
-    'j': 222,
-    'k': 500,
-    'l': 222,
-    'm': 833,
-    'n': 556,
-    'o': 556,
-    'p': 556,
-    'q': 556,
-    'r': 333,
-    's': 500,
-    't': 278,
-    'u': 556,
-    'v': 500,
-    'w': 722,
-    'x': 500,
-    'y': 500,
-    'z': 500,
-    'braceleft': 334,
-    'bar': 260,
-    'braceright': 334,
-    'asciitilde': 584,
-    'exclamdown': 333,
-    'cent': 556,
-    'sterling': 556,
-    'fraction': 167,
-    'yen': 556,
-    'florin': 556,
-    'section': 556,
-    'currency': 556,
-    'quotesingle': 191,
-    'quotedblleft': 333,
-    'guillemotleft': 556,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 500,
-    'fl': 500,
-    'endash': 556,
-    'dagger': 556,
-    'daggerdbl': 556,
-    'periodcentered': 278,
-    'paragraph': 537,
-    'bullet': 350,
-    'quotesinglbase': 222,
-    'quotedblbase': 333,
-    'quotedblright': 333,
-    'guillemotright': 556,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 611,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 1000,
-    'ordfeminine': 370,
-    'Lslash': 556,
-    'Oslash': 778,
-    'OE': 1000,
-    'ordmasculine': 365,
-    'ae': 889,
-    'dotlessi': 278,
-    'lslash': 222,
-    'oslash': 611,
-    'oe': 944,
-    'germandbls': 611,
-    'Idieresis': 278,
-    'eacute': 556,
-    'abreve': 556,
-    'uhungarumlaut': 556,
-    'ecaron': 556,
-    'Ydieresis': 667,
-    'divide': 584,
-    'Yacute': 667,
-    'Acircumflex': 667,
-    'aacute': 556,
-    'Ucircumflex': 722,
-    'yacute': 500,
-    'scommaaccent': 500,
-    'ecircumflex': 556,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 556,
-    'Uacute': 722,
-    'uogonek': 556,
-    'Edieresis': 667,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 737,
-    'Emacron': 667,
-    'ccaron': 500,
-    'aring': 556,
-    'Ncommaaccent': 722,
-    'lacute': 222,
-    'agrave': 556,
-    'Tcommaaccent': 611,
-    'Cacute': 722,
-    'atilde': 556,
-    'Edotaccent': 667,
-    'scaron': 500,
-    'scedilla': 500,
-    'iacute': 278,
-    'lozenge': 471,
-    'Rcaron': 722,
-    'Gcommaaccent': 778,
-    'ucircumflex': 556,
-    'acircumflex': 556,
-    'Amacron': 667,
-    'rcaron': 333,
-    'ccedilla': 500,
-    'Zdotaccent': 611,
-    'Thorn': 667,
-    'Omacron': 778,
-    'Racute': 722,
-    'Sacute': 667,
-    'dcaron': 643,
-    'Umacron': 722,
-    'uring': 556,
-    'threesuperior': 333,
-    'Ograve': 778,
-    'Agrave': 667,
-    'Abreve': 667,
-    'multiply': 584,
-    'uacute': 556,
-    'Tcaron': 611,
-    'partialdiff': 476,
-    'ydieresis': 500,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 667,
-    'adieresis': 556,
-    'edieresis': 556,
-    'cacute': 500,
-    'nacute': 556,
-    'umacron': 556,
-    'Ncaron': 722,
-    'Iacute': 278,
-    'plusminus': 584,
-    'brokenbar': 260,
-    'registered': 737,
-    'Gbreve': 778,
-    'Idotaccent': 278,
-    'summation': 600,
-    'Egrave': 667,
-    'racute': 333,
-    'omacron': 556,
-    'Zacute': 611,
-    'Zcaron': 611,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 722,
-    'lcommaaccent': 222,
-    'tcaron': 317,
-    'eogonek': 556,
-    'Uogonek': 722,
-    'Aacute': 667,
-    'Adieresis': 667,
-    'egrave': 556,
-    'zacute': 500,
-    'iogonek': 222,
-    'Oacute': 778,
-    'oacute': 556,
-    'amacron': 556,
-    'sacute': 500,
-    'idieresis': 278,
-    'Ocircumflex': 778,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 556,
-    'twosuperior': 333,
-    'Odieresis': 778,
-    'mu': 556,
-    'igrave': 278,
-    'ohungarumlaut': 556,
-    'Eogonek': 667,
-    'dcroat': 556,
-    'threequarters': 834,
-    'Scedilla': 667,
-    'lcaron': 299,
-    'Kcommaaccent': 667,
-    'Lacute': 556,
-    'trademark': 1000,
-    'edotaccent': 556,
-    'Igrave': 278,
-    'Imacron': 278,
-    'Lcaron': 556,
-    'onehalf': 834,
-    'lessequal': 549,
-    'ocircumflex': 556,
-    'ntilde': 556,
-    'Uhungarumlaut': 722,
-    'Eacute': 667,
-    'emacron': 556,
-    'gbreve': 556,
-    'onequarter': 834,
-    'Scaron': 667,
-    'Scommaaccent': 667,
-    'Ohungarumlaut': 778,
-    'degree': 400,
-    'ograve': 556,
-    'Ccaron': 722,
-    'ugrave': 556,
-    'radical': 453,
-    'Dcaron': 722,
-    'rcommaaccent': 333,
-    'Ntilde': 722,
-    'otilde': 556,
-    'Rcommaaccent': 722,
-    'Lcommaaccent': 556,
-    'Atilde': 667,
-    'Aogonek': 667,
-    'Aring': 667,
-    'Otilde': 778,
-    'zdotaccent': 500,
-    'Ecaron': 667,
-    'Iogonek': 278,
-    'kcommaaccent': 500,
-    'minus': 584,
-    'Icircumflex': 278,
-    'ncaron': 556,
-    'tcommaaccent': 278,
-    'logicalnot': 584,
-    'odieresis': 556,
-    'udieresis': 556,
-    'notequal': 549,
-    'gcommaaccent': 556,
-    'eth': 556,
-    'zcaron': 500,
-    'ncommaaccent': 556,
-    'onesuperior': 333,
-    'imacron': 278,
-    'Euro': 556
-  },
-  'Helvetica-Bold': {
-    'space': 278,
-    'exclam': 333,
-    'quotedbl': 474,
-    'numbersign': 556,
-    'dollar': 556,
-    'percent': 889,
-    'ampersand': 722,
-    'quoteright': 278,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 389,
-    'plus': 584,
-    'comma': 278,
-    'hyphen': 333,
-    'period': 278,
-    'slash': 278,
-    'zero': 556,
-    'one': 556,
-    'two': 556,
-    'three': 556,
-    'four': 556,
-    'five': 556,
-    'six': 556,
-    'seven': 556,
-    'eight': 556,
-    'nine': 556,
-    'colon': 333,
-    'semicolon': 333,
-    'less': 584,
-    'equal': 584,
-    'greater': 584,
-    'question': 611,
-    'at': 975,
-    'A': 722,
-    'B': 722,
-    'C': 722,
-    'D': 722,
-    'E': 667,
-    'F': 611,
-    'G': 778,
-    'H': 722,
-    'I': 278,
-    'J': 556,
-    'K': 722,
-    'L': 611,
-    'M': 833,
-    'N': 722,
-    'O': 778,
-    'P': 667,
-    'Q': 778,
-    'R': 722,
-    'S': 667,
-    'T': 611,
-    'U': 722,
-    'V': 667,
-    'W': 944,
-    'X': 667,
-    'Y': 667,
-    'Z': 611,
-    'bracketleft': 333,
-    'backslash': 278,
-    'bracketright': 333,
-    'asciicircum': 584,
-    'underscore': 556,
-    'quoteleft': 278,
-    'a': 556,
-    'b': 611,
-    'c': 556,
-    'd': 611,
-    'e': 556,
-    'f': 333,
-    'g': 611,
-    'h': 611,
-    'i': 278,
-    'j': 278,
-    'k': 556,
-    'l': 278,
-    'm': 889,
-    'n': 611,
-    'o': 611,
-    'p': 611,
-    'q': 611,
-    'r': 389,
-    's': 556,
-    't': 333,
-    'u': 611,
-    'v': 556,
-    'w': 778,
-    'x': 556,
-    'y': 556,
-    'z': 500,
-    'braceleft': 389,
-    'bar': 280,
-    'braceright': 389,
-    'asciitilde': 584,
-    'exclamdown': 333,
-    'cent': 556,
-    'sterling': 556,
-    'fraction': 167,
-    'yen': 556,
-    'florin': 556,
-    'section': 556,
-    'currency': 556,
-    'quotesingle': 238,
-    'quotedblleft': 500,
-    'guillemotleft': 556,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 611,
-    'fl': 611,
-    'endash': 556,
-    'dagger': 556,
-    'daggerdbl': 556,
-    'periodcentered': 278,
-    'paragraph': 556,
-    'bullet': 350,
-    'quotesinglbase': 278,
-    'quotedblbase': 500,
-    'quotedblright': 500,
-    'guillemotright': 556,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 611,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 1000,
-    'ordfeminine': 370,
-    'Lslash': 611,
-    'Oslash': 778,
-    'OE': 1000,
-    'ordmasculine': 365,
-    'ae': 889,
-    'dotlessi': 278,
-    'lslash': 278,
-    'oslash': 611,
-    'oe': 944,
-    'germandbls': 611,
-    'Idieresis': 278,
-    'eacute': 556,
-    'abreve': 556,
-    'uhungarumlaut': 611,
-    'ecaron': 556,
-    'Ydieresis': 667,
-    'divide': 584,
-    'Yacute': 667,
-    'Acircumflex': 722,
-    'aacute': 556,
-    'Ucircumflex': 722,
-    'yacute': 556,
-    'scommaaccent': 556,
-    'ecircumflex': 556,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 556,
-    'Uacute': 722,
-    'uogonek': 611,
-    'Edieresis': 667,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 737,
-    'Emacron': 667,
-    'ccaron': 556,
-    'aring': 556,
-    'Ncommaaccent': 722,
-    'lacute': 278,
-    'agrave': 556,
-    'Tcommaaccent': 611,
-    'Cacute': 722,
-    'atilde': 556,
-    'Edotaccent': 667,
-    'scaron': 556,
-    'scedilla': 556,
-    'iacute': 278,
-    'lozenge': 494,
-    'Rcaron': 722,
-    'Gcommaaccent': 778,
-    'ucircumflex': 611,
-    'acircumflex': 556,
-    'Amacron': 722,
-    'rcaron': 389,
-    'ccedilla': 556,
-    'Zdotaccent': 611,
-    'Thorn': 667,
-    'Omacron': 778,
-    'Racute': 722,
-    'Sacute': 667,
-    'dcaron': 743,
-    'Umacron': 722,
-    'uring': 611,
-    'threesuperior': 333,
-    'Ograve': 778,
-    'Agrave': 722,
-    'Abreve': 722,
-    'multiply': 584,
-    'uacute': 611,
-    'Tcaron': 611,
-    'partialdiff': 494,
-    'ydieresis': 556,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 667,
-    'adieresis': 556,
-    'edieresis': 556,
-    'cacute': 556,
-    'nacute': 611,
-    'umacron': 611,
-    'Ncaron': 722,
-    'Iacute': 278,
-    'plusminus': 584,
-    'brokenbar': 280,
-    'registered': 737,
-    'Gbreve': 778,
-    'Idotaccent': 278,
-    'summation': 600,
-    'Egrave': 667,
-    'racute': 389,
-    'omacron': 611,
-    'Zacute': 611,
-    'Zcaron': 611,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 722,
-    'lcommaaccent': 278,
-    'tcaron': 389,
-    'eogonek': 556,
-    'Uogonek': 722,
-    'Aacute': 722,
-    'Adieresis': 722,
-    'egrave': 556,
-    'zacute': 500,
-    'iogonek': 278,
-    'Oacute': 778,
-    'oacute': 611,
-    'amacron': 556,
-    'sacute': 556,
-    'idieresis': 278,
-    'Ocircumflex': 778,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 611,
-    'twosuperior': 333,
-    'Odieresis': 778,
-    'mu': 611,
-    'igrave': 278,
-    'ohungarumlaut': 611,
-    'Eogonek': 667,
-    'dcroat': 611,
-    'threequarters': 834,
-    'Scedilla': 667,
-    'lcaron': 400,
-    'Kcommaaccent': 722,
-    'Lacute': 611,
-    'trademark': 1000,
-    'edotaccent': 556,
-    'Igrave': 278,
-    'Imacron': 278,
-    'Lcaron': 611,
-    'onehalf': 834,
-    'lessequal': 549,
-    'ocircumflex': 611,
-    'ntilde': 611,
-    'Uhungarumlaut': 722,
-    'Eacute': 667,
-    'emacron': 556,
-    'gbreve': 611,
-    'onequarter': 834,
-    'Scaron': 667,
-    'Scommaaccent': 667,
-    'Ohungarumlaut': 778,
-    'degree': 400,
-    'ograve': 611,
-    'Ccaron': 722,
-    'ugrave': 611,
-    'radical': 549,
-    'Dcaron': 722,
-    'rcommaaccent': 389,
-    'Ntilde': 722,
-    'otilde': 611,
-    'Rcommaaccent': 722,
-    'Lcommaaccent': 611,
-    'Atilde': 722,
-    'Aogonek': 722,
-    'Aring': 722,
-    'Otilde': 778,
-    'zdotaccent': 500,
-    'Ecaron': 667,
-    'Iogonek': 278,
-    'kcommaaccent': 556,
-    'minus': 584,
-    'Icircumflex': 278,
-    'ncaron': 611,
-    'tcommaaccent': 333,
-    'logicalnot': 584,
-    'odieresis': 611,
-    'udieresis': 611,
-    'notequal': 549,
-    'gcommaaccent': 611,
-    'eth': 611,
-    'zcaron': 500,
-    'ncommaaccent': 611,
-    'onesuperior': 333,
-    'imacron': 278,
-    'Euro': 556
-  },
-  'Helvetica-BoldOblique': {
-    'space': 278,
-    'exclam': 333,
-    'quotedbl': 474,
-    'numbersign': 556,
-    'dollar': 556,
-    'percent': 889,
-    'ampersand': 722,
-    'quoteright': 278,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 389,
-    'plus': 584,
-    'comma': 278,
-    'hyphen': 333,
-    'period': 278,
-    'slash': 278,
-    'zero': 556,
-    'one': 556,
-    'two': 556,
-    'three': 556,
-    'four': 556,
-    'five': 556,
-    'six': 556,
-    'seven': 556,
-    'eight': 556,
-    'nine': 556,
-    'colon': 333,
-    'semicolon': 333,
-    'less': 584,
-    'equal': 584,
-    'greater': 584,
-    'question': 611,
-    'at': 975,
-    'A': 722,
-    'B': 722,
-    'C': 722,
-    'D': 722,
-    'E': 667,
-    'F': 611,
-    'G': 778,
-    'H': 722,
-    'I': 278,
-    'J': 556,
-    'K': 722,
-    'L': 611,
-    'M': 833,
-    'N': 722,
-    'O': 778,
-    'P': 667,
-    'Q': 778,
-    'R': 722,
-    'S': 667,
-    'T': 611,
-    'U': 722,
-    'V': 667,
-    'W': 944,
-    'X': 667,
-    'Y': 667,
-    'Z': 611,
-    'bracketleft': 333,
-    'backslash': 278,
-    'bracketright': 333,
-    'asciicircum': 584,
-    'underscore': 556,
-    'quoteleft': 278,
-    'a': 556,
-    'b': 611,
-    'c': 556,
-    'd': 611,
-    'e': 556,
-    'f': 333,
-    'g': 611,
-    'h': 611,
-    'i': 278,
-    'j': 278,
-    'k': 556,
-    'l': 278,
-    'm': 889,
-    'n': 611,
-    'o': 611,
-    'p': 611,
-    'q': 611,
-    'r': 389,
-    's': 556,
-    't': 333,
-    'u': 611,
-    'v': 556,
-    'w': 778,
-    'x': 556,
-    'y': 556,
-    'z': 500,
-    'braceleft': 389,
-    'bar': 280,
-    'braceright': 389,
-    'asciitilde': 584,
-    'exclamdown': 333,
-    'cent': 556,
-    'sterling': 556,
-    'fraction': 167,
-    'yen': 556,
-    'florin': 556,
-    'section': 556,
-    'currency': 556,
-    'quotesingle': 238,
-    'quotedblleft': 500,
-    'guillemotleft': 556,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 611,
-    'fl': 611,
-    'endash': 556,
-    'dagger': 556,
-    'daggerdbl': 556,
-    'periodcentered': 278,
-    'paragraph': 556,
-    'bullet': 350,
-    'quotesinglbase': 278,
-    'quotedblbase': 500,
-    'quotedblright': 500,
-    'guillemotright': 556,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 611,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 1000,
-    'ordfeminine': 370,
-    'Lslash': 611,
-    'Oslash': 778,
-    'OE': 1000,
-    'ordmasculine': 365,
-    'ae': 889,
-    'dotlessi': 278,
-    'lslash': 278,
-    'oslash': 611,
-    'oe': 944,
-    'germandbls': 611,
-    'Idieresis': 278,
-    'eacute': 556,
-    'abreve': 556,
-    'uhungarumlaut': 611,
-    'ecaron': 556,
-    'Ydieresis': 667,
-    'divide': 584,
-    'Yacute': 667,
-    'Acircumflex': 722,
-    'aacute': 556,
-    'Ucircumflex': 722,
-    'yacute': 556,
-    'scommaaccent': 556,
-    'ecircumflex': 556,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 556,
-    'Uacute': 722,
-    'uogonek': 611,
-    'Edieresis': 667,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 737,
-    'Emacron': 667,
-    'ccaron': 556,
-    'aring': 556,
-    'Ncommaaccent': 722,
-    'lacute': 278,
-    'agrave': 556,
-    'Tcommaaccent': 611,
-    'Cacute': 722,
-    'atilde': 556,
-    'Edotaccent': 667,
-    'scaron': 556,
-    'scedilla': 556,
-    'iacute': 278,
-    'lozenge': 494,
-    'Rcaron': 722,
-    'Gcommaaccent': 778,
-    'ucircumflex': 611,
-    'acircumflex': 556,
-    'Amacron': 722,
-    'rcaron': 389,
-    'ccedilla': 556,
-    'Zdotaccent': 611,
-    'Thorn': 667,
-    'Omacron': 778,
-    'Racute': 722,
-    'Sacute': 667,
-    'dcaron': 743,
-    'Umacron': 722,
-    'uring': 611,
-    'threesuperior': 333,
-    'Ograve': 778,
-    'Agrave': 722,
-    'Abreve': 722,
-    'multiply': 584,
-    'uacute': 611,
-    'Tcaron': 611,
-    'partialdiff': 494,
-    'ydieresis': 556,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 667,
-    'adieresis': 556,
-    'edieresis': 556,
-    'cacute': 556,
-    'nacute': 611,
-    'umacron': 611,
-    'Ncaron': 722,
-    'Iacute': 278,
-    'plusminus': 584,
-    'brokenbar': 280,
-    'registered': 737,
-    'Gbreve': 778,
-    'Idotaccent': 278,
-    'summation': 600,
-    'Egrave': 667,
-    'racute': 389,
-    'omacron': 611,
-    'Zacute': 611,
-    'Zcaron': 611,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 722,
-    'lcommaaccent': 278,
-    'tcaron': 389,
-    'eogonek': 556,
-    'Uogonek': 722,
-    'Aacute': 722,
-    'Adieresis': 722,
-    'egrave': 556,
-    'zacute': 500,
-    'iogonek': 278,
-    'Oacute': 778,
-    'oacute': 611,
-    'amacron': 556,
-    'sacute': 556,
-    'idieresis': 278,
-    'Ocircumflex': 778,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 611,
-    'twosuperior': 333,
-    'Odieresis': 778,
-    'mu': 611,
-    'igrave': 278,
-    'ohungarumlaut': 611,
-    'Eogonek': 667,
-    'dcroat': 611,
-    'threequarters': 834,
-    'Scedilla': 667,
-    'lcaron': 400,
-    'Kcommaaccent': 722,
-    'Lacute': 611,
-    'trademark': 1000,
-    'edotaccent': 556,
-    'Igrave': 278,
-    'Imacron': 278,
-    'Lcaron': 611,
-    'onehalf': 834,
-    'lessequal': 549,
-    'ocircumflex': 611,
-    'ntilde': 611,
-    'Uhungarumlaut': 722,
-    'Eacute': 667,
-    'emacron': 556,
-    'gbreve': 611,
-    'onequarter': 834,
-    'Scaron': 667,
-    'Scommaaccent': 667,
-    'Ohungarumlaut': 778,
-    'degree': 400,
-    'ograve': 611,
-    'Ccaron': 722,
-    'ugrave': 611,
-    'radical': 549,
-    'Dcaron': 722,
-    'rcommaaccent': 389,
-    'Ntilde': 722,
-    'otilde': 611,
-    'Rcommaaccent': 722,
-    'Lcommaaccent': 611,
-    'Atilde': 722,
-    'Aogonek': 722,
-    'Aring': 722,
-    'Otilde': 778,
-    'zdotaccent': 500,
-    'Ecaron': 667,
-    'Iogonek': 278,
-    'kcommaaccent': 556,
-    'minus': 584,
-    'Icircumflex': 278,
-    'ncaron': 611,
-    'tcommaaccent': 333,
-    'logicalnot': 584,
-    'odieresis': 611,
-    'udieresis': 611,
-    'notequal': 549,
-    'gcommaaccent': 611,
-    'eth': 611,
-    'zcaron': 500,
-    'ncommaaccent': 611,
-    'onesuperior': 333,
-    'imacron': 278,
-    'Euro': 556
-  },
-  'Helvetica-Oblique' : {
-    'space': 278,
-    'exclam': 278,
-    'quotedbl': 355,
-    'numbersign': 556,
-    'dollar': 556,
-    'percent': 889,
-    'ampersand': 667,
-    'quoteright': 222,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 389,
-    'plus': 584,
-    'comma': 278,
-    'hyphen': 333,
-    'period': 278,
-    'slash': 278,
-    'zero': 556,
-    'one': 556,
-    'two': 556,
-    'three': 556,
-    'four': 556,
-    'five': 556,
-    'six': 556,
-    'seven': 556,
-    'eight': 556,
-    'nine': 556,
-    'colon': 278,
-    'semicolon': 278,
-    'less': 584,
-    'equal': 584,
-    'greater': 584,
-    'question': 556,
-    'at': 1015,
-    'A': 667,
-    'B': 667,
-    'C': 722,
-    'D': 722,
-    'E': 667,
-    'F': 611,
-    'G': 778,
-    'H': 722,
-    'I': 278,
-    'J': 500,
-    'K': 667,
-    'L': 556,
-    'M': 833,
-    'N': 722,
-    'O': 778,
-    'P': 667,
-    'Q': 778,
-    'R': 722,
-    'S': 667,
-    'T': 611,
-    'U': 722,
-    'V': 667,
-    'W': 944,
-    'X': 667,
-    'Y': 667,
-    'Z': 611,
-    'bracketleft': 278,
-    'backslash': 278,
-    'bracketright': 278,
-    'asciicircum': 469,
-    'underscore': 556,
-    'quoteleft': 222,
-    'a': 556,
-    'b': 556,
-    'c': 500,
-    'd': 556,
-    'e': 556,
-    'f': 278,
-    'g': 556,
-    'h': 556,
-    'i': 222,
-    'j': 222,
-    'k': 500,
-    'l': 222,
-    'm': 833,
-    'n': 556,
-    'o': 556,
-    'p': 556,
-    'q': 556,
-    'r': 333,
-    's': 500,
-    't': 278,
-    'u': 556,
-    'v': 500,
-    'w': 722,
-    'x': 500,
-    'y': 500,
-    'z': 500,
-    'braceleft': 334,
-    'bar': 260,
-    'braceright': 334,
-    'asciitilde': 584,
-    'exclamdown': 333,
-    'cent': 556,
-    'sterling': 556,
-    'fraction': 167,
-    'yen': 556,
-    'florin': 556,
-    'section': 556,
-    'currency': 556,
-    'quotesingle': 191,
-    'quotedblleft': 333,
-    'guillemotleft': 556,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 500,
-    'fl': 500,
-    'endash': 556,
-    'dagger': 556,
-    'daggerdbl': 556,
-    'periodcentered': 278,
-    'paragraph': 537,
-    'bullet': 350,
-    'quotesinglbase': 222,
-    'quotedblbase': 333,
-    'quotedblright': 333,
-    'guillemotright': 556,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 611,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 1000,
-    'ordfeminine': 370,
-    'Lslash': 556,
-    'Oslash': 778,
-    'OE': 1000,
-    'ordmasculine': 365,
-    'ae': 889,
-    'dotlessi': 278,
-    'lslash': 222,
-    'oslash': 611,
-    'oe': 944,
-    'germandbls': 611,
-    'Idieresis': 278,
-    'eacute': 556,
-    'abreve': 556,
-    'uhungarumlaut': 556,
-    'ecaron': 556,
-    'Ydieresis': 667,
-    'divide': 584,
-    'Yacute': 667,
-    'Acircumflex': 667,
-    'aacute': 556,
-    'Ucircumflex': 722,
-    'yacute': 500,
-    'scommaaccent': 500,
-    'ecircumflex': 556,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 556,
-    'Uacute': 722,
-    'uogonek': 556,
-    'Edieresis': 667,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 737,
-    'Emacron': 667,
-    'ccaron': 500,
-    'aring': 556,
-    'Ncommaaccent': 722,
-    'lacute': 222,
-    'agrave': 556,
-    'Tcommaaccent': 611,
-    'Cacute': 722,
-    'atilde': 556,
-    'Edotaccent': 667,
-    'scaron': 500,
-    'scedilla': 500,
-    'iacute': 278,
-    'lozenge': 471,
-    'Rcaron': 722,
-    'Gcommaaccent': 778,
-    'ucircumflex': 556,
-    'acircumflex': 556,
-    'Amacron': 667,
-    'rcaron': 333,
-    'ccedilla': 500,
-    'Zdotaccent': 611,
-    'Thorn': 667,
-    'Omacron': 778,
-    'Racute': 722,
-    'Sacute': 667,
-    'dcaron': 643,
-    'Umacron': 722,
-    'uring': 556,
-    'threesuperior': 333,
-    'Ograve': 778,
-    'Agrave': 667,
-    'Abreve': 667,
-    'multiply': 584,
-    'uacute': 556,
-    'Tcaron': 611,
-    'partialdiff': 476,
-    'ydieresis': 500,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 667,
-    'adieresis': 556,
-    'edieresis': 556,
-    'cacute': 500,
-    'nacute': 556,
-    'umacron': 556,
-    'Ncaron': 722,
-    'Iacute': 278,
-    'plusminus': 584,
-    'brokenbar': 260,
-    'registered': 737,
-    'Gbreve': 778,
-    'Idotaccent': 278,
-    'summation': 600,
-    'Egrave': 667,
-    'racute': 333,
-    'omacron': 556,
-    'Zacute': 611,
-    'Zcaron': 611,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 722,
-    'lcommaaccent': 222,
-    'tcaron': 317,
-    'eogonek': 556,
-    'Uogonek': 722,
-    'Aacute': 667,
-    'Adieresis': 667,
-    'egrave': 556,
-    'zacute': 500,
-    'iogonek': 222,
-    'Oacute': 778,
-    'oacute': 556,
-    'amacron': 556,
-    'sacute': 500,
-    'idieresis': 278,
-    'Ocircumflex': 778,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 556,
-    'twosuperior': 333,
-    'Odieresis': 778,
-    'mu': 556,
-    'igrave': 278,
-    'ohungarumlaut': 556,
-    'Eogonek': 667,
-    'dcroat': 556,
-    'threequarters': 834,
-    'Scedilla': 667,
-    'lcaron': 299,
-    'Kcommaaccent': 667,
-    'Lacute': 556,
-    'trademark': 1000,
-    'edotaccent': 556,
-    'Igrave': 278,
-    'Imacron': 278,
-    'Lcaron': 556,
-    'onehalf': 834,
-    'lessequal': 549,
-    'ocircumflex': 556,
-    'ntilde': 556,
-    'Uhungarumlaut': 722,
-    'Eacute': 667,
-    'emacron': 556,
-    'gbreve': 556,
-    'onequarter': 834,
-    'Scaron': 667,
-    'Scommaaccent': 667,
-    'Ohungarumlaut': 778,
-    'degree': 400,
-    'ograve': 556,
-    'Ccaron': 722,
-    'ugrave': 556,
-    'radical': 453,
-    'Dcaron': 722,
-    'rcommaaccent': 333,
-    'Ntilde': 722,
-    'otilde': 556,
-    'Rcommaaccent': 722,
-    'Lcommaaccent': 556,
-    'Atilde': 667,
-    'Aogonek': 667,
-    'Aring': 667,
-    'Otilde': 778,
-    'zdotaccent': 500,
-    'Ecaron': 667,
-    'Iogonek': 278,
-    'kcommaaccent': 500,
-    'minus': 584,
-    'Icircumflex': 278,
-    'ncaron': 556,
-    'tcommaaccent': 278,
-    'logicalnot': 584,
-    'odieresis': 556,
-    'udieresis': 556,
-    'notequal': 549,
-    'gcommaaccent': 556,
-    'eth': 556,
-    'zcaron': 500,
-    'ncommaaccent': 556,
-    'onesuperior': 333,
-    'imacron': 278,
-    'Euro': 556
-  },
-  'Symbol': {
-    'space': 250,
-    'exclam': 333,
-    'universal': 713,
-    'numbersign': 500,
-    'existential': 549,
-    'percent': 833,
-    'ampersand': 778,
-    'suchthat': 439,
-    'parenleft': 333,
-    'parenright': 333,
-    'asteriskmath': 500,
-    'plus': 549,
-    'comma': 250,
-    'minus': 549,
-    'period': 250,
-    'slash': 278,
-    'zero': 500,
-    'one': 500,
-    'two': 500,
-    'three': 500,
-    'four': 500,
-    'five': 500,
-    'six': 500,
-    'seven': 500,
-    'eight': 500,
-    'nine': 500,
-    'colon': 278,
-    'semicolon': 278,
-    'less': 549,
-    'equal': 549,
-    'greater': 549,
-    'question': 444,
-    'congruent': 549,
-    'Alpha': 722,
-    'Beta': 667,
-    'Chi': 722,
-    'Delta': 612,
-    'Epsilon': 611,
-    'Phi': 763,
-    'Gamma': 603,
-    'Eta': 722,
-    'Iota': 333,
-    'theta1': 631,
-    'Kappa': 722,
-    'Lambda': 686,
-    'Mu': 889,
-    'Nu': 722,
-    'Omicron': 722,
-    'Pi': 768,
-    'Theta': 741,
-    'Rho': 556,
-    'Sigma': 592,
-    'Tau': 611,
-    'Upsilon': 690,
-    'sigma1': 439,
-    'Omega': 768,
-    'Xi': 645,
-    'Psi': 795,
-    'Zeta': 611,
-    'bracketleft': 333,
-    'therefore': 863,
-    'bracketright': 333,
-    'perpendicular': 658,
-    'underscore': 500,
-    'radicalex': 500,
-    'alpha': 631,
-    'beta': 549,
-    'chi': 549,
-    'delta': 494,
-    'epsilon': 439,
-    'phi': 521,
-    'gamma': 411,
-    'eta': 603,
-    'iota': 329,
-    'phi1': 603,
-    'kappa': 549,
-    'lambda': 549,
-    'mu': 576,
-    'nu': 521,
-    'omicron': 549,
-    'pi': 549,
-    'theta': 521,
-    'rho': 549,
-    'sigma': 603,
-    'tau': 439,
-    'upsilon': 576,
-    'omega1': 713,
-    'omega': 686,
-    'xi': 493,
-    'psi': 686,
-    'zeta': 494,
-    'braceleft': 480,
-    'bar': 200,
-    'braceright': 480,
-    'similar': 549,
-    'Euro': 750,
-    'Upsilon1': 620,
-    'minute': 247,
-    'lessequal': 549,
-    'fraction': 167,
-    'infinity': 713,
-    'florin': 500,
-    'club': 753,
-    'diamond': 753,
-    'heart': 753,
-    'spade': 753,
-    'arrowboth': 1042,
-    'arrowleft': 987,
-    'arrowup': 603,
-    'arrowright': 987,
-    'arrowdown': 603,
-    'degree': 400,
-    'plusminus': 549,
-    'second': 411,
-    'greaterequal': 549,
-    'multiply': 549,
-    'proportional': 713,
-    'partialdiff': 494,
-    'bullet': 460,
-    'divide': 549,
-    'notequal': 549,
-    'equivalence': 549,
-    'approxequal': 549,
-    'ellipsis': 1000,
-    'arrowvertex': 603,
-    'arrowhorizex': 1000,
-    'carriagereturn': 658,
-    'aleph': 823,
-    'Ifraktur': 686,
-    'Rfraktur': 795,
-    'weierstrass': 987,
-    'circlemultiply': 768,
-    'circleplus': 768,
-    'emptyset': 823,
-    'intersection': 768,
-    'union': 768,
-    'propersuperset': 713,
-    'reflexsuperset': 713,
-    'notsubset': 713,
-    'propersubset': 713,
-    'reflexsubset': 713,
-    'element': 713,
-    'notelement': 713,
-    'angle': 768,
-    'gradient': 713,
-    'registerserif': 790,
-    'copyrightserif': 790,
-    'trademarkserif': 890,
-    'product': 823,
-    'radical': 549,
-    'dotmath': 250,
-    'logicalnot': 713,
-    'logicaland': 603,
-    'logicalor': 603,
-    'arrowdblboth': 1042,
-    'arrowdblleft': 987,
-    'arrowdblup': 603,
-    'arrowdblright': 987,
-    'arrowdbldown': 603,
-    'lozenge': 494,
-    'angleleft': 329,
-    'registersans': 790,
-    'copyrightsans': 790,
-    'trademarksans': 786,
-    'summation': 713,
-    'parenlefttp': 384,
-    'parenleftex': 384,
-    'parenleftbt': 384,
-    'bracketlefttp': 384,
-    'bracketleftex': 384,
-    'bracketleftbt': 384,
-    'bracelefttp': 494,
-    'braceleftmid': 494,
-    'braceleftbt': 494,
-    'braceex': 494,
-    'angleright': 329,
-    'integral': 274,
-    'integraltp': 686,
-    'integralex': 686,
-    'integralbt': 686,
-    'parenrighttp': 384,
-    'parenrightex': 384,
-    'parenrightbt': 384,
-    'bracketrighttp': 384,
-    'bracketrightex': 384,
-    'bracketrightbt': 384,
-    'bracerighttp': 494,
-    'bracerightmid': 494,
-    'bracerightbt': 494,
-    'apple': 790
-  },
-  'Times-Roman': {
-    'space': 250,
-    'exclam': 333,
-    'quotedbl': 408,
-    'numbersign': 500,
-    'dollar': 500,
-    'percent': 833,
-    'ampersand': 778,
-    'quoteright': 333,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 500,
-    'plus': 564,
-    'comma': 250,
-    'hyphen': 333,
-    'period': 250,
-    'slash': 278,
-    'zero': 500,
-    'one': 500,
-    'two': 500,
-    'three': 500,
-    'four': 500,
-    'five': 500,
-    'six': 500,
-    'seven': 500,
-    'eight': 500,
-    'nine': 500,
-    'colon': 278,
-    'semicolon': 278,
-    'less': 564,
-    'equal': 564,
-    'greater': 564,
-    'question': 444,
-    'at': 921,
-    'A': 722,
-    'B': 667,
-    'C': 667,
-    'D': 722,
-    'E': 611,
-    'F': 556,
-    'G': 722,
-    'H': 722,
-    'I': 333,
-    'J': 389,
-    'K': 722,
-    'L': 611,
-    'M': 889,
-    'N': 722,
-    'O': 722,
-    'P': 556,
-    'Q': 722,
-    'R': 667,
-    'S': 556,
-    'T': 611,
-    'U': 722,
-    'V': 722,
-    'W': 944,
-    'X': 722,
-    'Y': 722,
-    'Z': 611,
-    'bracketleft': 333,
-    'backslash': 278,
-    'bracketright': 333,
-    'asciicircum': 469,
-    'underscore': 500,
-    'quoteleft': 333,
-    'a': 444,
-    'b': 500,
-    'c': 444,
-    'd': 500,
-    'e': 444,
-    'f': 333,
-    'g': 500,
-    'h': 500,
-    'i': 278,
-    'j': 278,
-    'k': 500,
-    'l': 278,
-    'm': 778,
-    'n': 500,
-    'o': 500,
-    'p': 500,
-    'q': 500,
-    'r': 333,
-    's': 389,
-    't': 278,
-    'u': 500,
-    'v': 500,
-    'w': 722,
-    'x': 500,
-    'y': 500,
-    'z': 444,
-    'braceleft': 480,
-    'bar': 200,
-    'braceright': 480,
-    'asciitilde': 541,
-    'exclamdown': 333,
-    'cent': 500,
-    'sterling': 500,
-    'fraction': 167,
-    'yen': 500,
-    'florin': 500,
-    'section': 500,
-    'currency': 500,
-    'quotesingle': 180,
-    'quotedblleft': 444,
-    'guillemotleft': 500,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 556,
-    'fl': 556,
-    'endash': 500,
-    'dagger': 500,
-    'daggerdbl': 500,
-    'periodcentered': 250,
-    'paragraph': 453,
-    'bullet': 350,
-    'quotesinglbase': 333,
-    'quotedblbase': 444,
-    'quotedblright': 444,
-    'guillemotright': 500,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 444,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 889,
-    'ordfeminine': 276,
-    'Lslash': 611,
-    'Oslash': 722,
-    'OE': 889,
-    'ordmasculine': 310,
-    'ae': 667,
-    'dotlessi': 278,
-    'lslash': 278,
-    'oslash': 500,
-    'oe': 722,
-    'germandbls': 500,
-    'Idieresis': 333,
-    'eacute': 444,
-    'abreve': 444,
-    'uhungarumlaut': 500,
-    'ecaron': 444,
-    'Ydieresis': 722,
-    'divide': 564,
-    'Yacute': 722,
-    'Acircumflex': 722,
-    'aacute': 444,
-    'Ucircumflex': 722,
-    'yacute': 500,
-    'scommaaccent': 389,
-    'ecircumflex': 444,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 444,
-    'Uacute': 722,
-    'uogonek': 500,
-    'Edieresis': 611,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 760,
-    'Emacron': 611,
-    'ccaron': 444,
-    'aring': 444,
-    'Ncommaaccent': 722,
-    'lacute': 278,
-    'agrave': 444,
-    'Tcommaaccent': 611,
-    'Cacute': 667,
-    'atilde': 444,
-    'Edotaccent': 611,
-    'scaron': 389,
-    'scedilla': 389,
-    'iacute': 278,
-    'lozenge': 471,
-    'Rcaron': 667,
-    'Gcommaaccent': 722,
-    'ucircumflex': 500,
-    'acircumflex': 444,
-    'Amacron': 722,
-    'rcaron': 333,
-    'ccedilla': 444,
-    'Zdotaccent': 611,
-    'Thorn': 556,
-    'Omacron': 722,
-    'Racute': 667,
-    'Sacute': 556,
-    'dcaron': 588,
-    'Umacron': 722,
-    'uring': 500,
-    'threesuperior': 300,
-    'Ograve': 722,
-    'Agrave': 722,
-    'Abreve': 722,
-    'multiply': 564,
-    'uacute': 500,
-    'Tcaron': 611,
-    'partialdiff': 476,
-    'ydieresis': 500,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 611,
-    'adieresis': 444,
-    'edieresis': 444,
-    'cacute': 444,
-    'nacute': 500,
-    'umacron': 500,
-    'Ncaron': 722,
-    'Iacute': 333,
-    'plusminus': 564,
-    'brokenbar': 200,
-    'registered': 760,
-    'Gbreve': 722,
-    'Idotaccent': 333,
-    'summation': 600,
-    'Egrave': 611,
-    'racute': 333,
-    'omacron': 500,
-    'Zacute': 611,
-    'Zcaron': 611,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 667,
-    'lcommaaccent': 278,
-    'tcaron': 326,
-    'eogonek': 444,
-    'Uogonek': 722,
-    'Aacute': 722,
-    'Adieresis': 722,
-    'egrave': 444,
-    'zacute': 444,
-    'iogonek': 278,
-    'Oacute': 722,
-    'oacute': 500,
-    'amacron': 444,
-    'sacute': 389,
-    'idieresis': 278,
-    'Ocircumflex': 722,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 500,
-    'twosuperior': 300,
-    'Odieresis': 722,
-    'mu': 500,
-    'igrave': 278,
-    'ohungarumlaut': 500,
-    'Eogonek': 611,
-    'dcroat': 500,
-    'threequarters': 750,
-    'Scedilla': 556,
-    'lcaron': 344,
-    'Kcommaaccent': 722,
-    'Lacute': 611,
-    'trademark': 980,
-    'edotaccent': 444,
-    'Igrave': 333,
-    'Imacron': 333,
-    'Lcaron': 611,
-    'onehalf': 750,
-    'lessequal': 549,
-    'ocircumflex': 500,
-    'ntilde': 500,
-    'Uhungarumlaut': 722,
-    'Eacute': 611,
-    'emacron': 444,
-    'gbreve': 500,
-    'onequarter': 750,
-    'Scaron': 556,
-    'Scommaaccent': 556,
-    'Ohungarumlaut': 722,
-    'degree': 400,
-    'ograve': 500,
-    'Ccaron': 667,
-    'ugrave': 500,
-    'radical': 453,
-    'Dcaron': 722,
-    'rcommaaccent': 333,
-    'Ntilde': 722,
-    'otilde': 500,
-    'Rcommaaccent': 667,
-    'Lcommaaccent': 611,
-    'Atilde': 722,
-    'Aogonek': 722,
-    'Aring': 722,
-    'Otilde': 722,
-    'zdotaccent': 444,
-    'Ecaron': 611,
-    'Iogonek': 333,
-    'kcommaaccent': 500,
-    'minus': 564,
-    'Icircumflex': 333,
-    'ncaron': 500,
-    'tcommaaccent': 278,
-    'logicalnot': 564,
-    'odieresis': 500,
-    'udieresis': 500,
-    'notequal': 549,
-    'gcommaaccent': 500,
-    'eth': 500,
-    'zcaron': 444,
-    'ncommaaccent': 500,
-    'onesuperior': 300,
-    'imacron': 278,
-    'Euro': 500
-  },
-  'Times-Bold': {
-    'space': 250,
-    'exclam': 333,
-    'quotedbl': 555,
-    'numbersign': 500,
-    'dollar': 500,
-    'percent': 1000,
-    'ampersand': 833,
-    'quoteright': 333,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 500,
-    'plus': 570,
-    'comma': 250,
-    'hyphen': 333,
-    'period': 250,
-    'slash': 278,
-    'zero': 500,
-    'one': 500,
-    'two': 500,
-    'three': 500,
-    'four': 500,
-    'five': 500,
-    'six': 500,
-    'seven': 500,
-    'eight': 500,
-    'nine': 500,
-    'colon': 333,
-    'semicolon': 333,
-    'less': 570,
-    'equal': 570,
-    'greater': 570,
-    'question': 500,
-    'at': 930,
-    'A': 722,
-    'B': 667,
-    'C': 722,
-    'D': 722,
-    'E': 667,
-    'F': 611,
-    'G': 778,
-    'H': 778,
-    'I': 389,
-    'J': 500,
-    'K': 778,
-    'L': 667,
-    'M': 944,
-    'N': 722,
-    'O': 778,
-    'P': 611,
-    'Q': 778,
-    'R': 722,
-    'S': 556,
-    'T': 667,
-    'U': 722,
-    'V': 722,
-    'W': 1000,
-    'X': 722,
-    'Y': 722,
-    'Z': 667,
-    'bracketleft': 333,
-    'backslash': 278,
-    'bracketright': 333,
-    'asciicircum': 581,
-    'underscore': 500,
-    'quoteleft': 333,
-    'a': 500,
-    'b': 556,
-    'c': 444,
-    'd': 556,
-    'e': 444,
-    'f': 333,
-    'g': 500,
-    'h': 556,
-    'i': 278,
-    'j': 333,
-    'k': 556,
-    'l': 278,
-    'm': 833,
-    'n': 556,
-    'o': 500,
-    'p': 556,
-    'q': 556,
-    'r': 444,
-    's': 389,
-    't': 333,
-    'u': 556,
-    'v': 500,
-    'w': 722,
-    'x': 500,
-    'y': 500,
-    'z': 444,
-    'braceleft': 394,
-    'bar': 220,
-    'braceright': 394,
-    'asciitilde': 520,
-    'exclamdown': 333,
-    'cent': 500,
-    'sterling': 500,
-    'fraction': 167,
-    'yen': 500,
-    'florin': 500,
-    'section': 500,
-    'currency': 500,
-    'quotesingle': 278,
-    'quotedblleft': 500,
-    'guillemotleft': 500,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 556,
-    'fl': 556,
-    'endash': 500,
-    'dagger': 500,
-    'daggerdbl': 500,
-    'periodcentered': 250,
-    'paragraph': 540,
-    'bullet': 350,
-    'quotesinglbase': 333,
-    'quotedblbase': 500,
-    'quotedblright': 500,
-    'guillemotright': 500,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 500,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 1000,
-    'ordfeminine': 300,
-    'Lslash': 667,
-    'Oslash': 778,
-    'OE': 1000,
-    'ordmasculine': 330,
-    'ae': 722,
-    'dotlessi': 278,
-    'lslash': 278,
-    'oslash': 500,
-    'oe': 722,
-    'germandbls': 556,
-    'Idieresis': 389,
-    'eacute': 444,
-    'abreve': 500,
-    'uhungarumlaut': 556,
-    'ecaron': 444,
-    'Ydieresis': 722,
-    'divide': 570,
-    'Yacute': 722,
-    'Acircumflex': 722,
-    'aacute': 500,
-    'Ucircumflex': 722,
-    'yacute': 500,
-    'scommaaccent': 389,
-    'ecircumflex': 444,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 500,
-    'Uacute': 722,
-    'uogonek': 556,
-    'Edieresis': 667,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 747,
-    'Emacron': 667,
-    'ccaron': 444,
-    'aring': 500,
-    'Ncommaaccent': 722,
-    'lacute': 278,
-    'agrave': 500,
-    'Tcommaaccent': 667,
-    'Cacute': 722,
-    'atilde': 500,
-    'Edotaccent': 667,
-    'scaron': 389,
-    'scedilla': 389,
-    'iacute': 278,
-    'lozenge': 494,
-    'Rcaron': 722,
-    'Gcommaaccent': 778,
-    'ucircumflex': 556,
-    'acircumflex': 500,
-    'Amacron': 722,
-    'rcaron': 444,
-    'ccedilla': 444,
-    'Zdotaccent': 667,
-    'Thorn': 611,
-    'Omacron': 778,
-    'Racute': 722,
-    'Sacute': 556,
-    'dcaron': 672,
-    'Umacron': 722,
-    'uring': 556,
-    'threesuperior': 300,
-    'Ograve': 778,
-    'Agrave': 722,
-    'Abreve': 722,
-    'multiply': 570,
-    'uacute': 556,
-    'Tcaron': 667,
-    'partialdiff': 494,
-    'ydieresis': 500,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 667,
-    'adieresis': 500,
-    'edieresis': 444,
-    'cacute': 444,
-    'nacute': 556,
-    'umacron': 556,
-    'Ncaron': 722,
-    'Iacute': 389,
-    'plusminus': 570,
-    'brokenbar': 220,
-    'registered': 747,
-    'Gbreve': 778,
-    'Idotaccent': 389,
-    'summation': 600,
-    'Egrave': 667,
-    'racute': 444,
-    'omacron': 500,
-    'Zacute': 667,
-    'Zcaron': 667,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 722,
-    'lcommaaccent': 278,
-    'tcaron': 416,
-    'eogonek': 444,
-    'Uogonek': 722,
-    'Aacute': 722,
-    'Adieresis': 722,
-    'egrave': 444,
-    'zacute': 444,
-    'iogonek': 278,
-    'Oacute': 778,
-    'oacute': 500,
-    'amacron': 500,
-    'sacute': 389,
-    'idieresis': 278,
-    'Ocircumflex': 778,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 556,
-    'twosuperior': 300,
-    'Odieresis': 778,
-    'mu': 556,
-    'igrave': 278,
-    'ohungarumlaut': 500,
-    'Eogonek': 667,
-    'dcroat': 556,
-    'threequarters': 750,
-    'Scedilla': 556,
-    'lcaron': 394,
-    'Kcommaaccent': 778,
-    'Lacute': 667,
-    'trademark': 1000,
-    'edotaccent': 444,
-    'Igrave': 389,
-    'Imacron': 389,
-    'Lcaron': 667,
-    'onehalf': 750,
-    'lessequal': 549,
-    'ocircumflex': 500,
-    'ntilde': 556,
-    'Uhungarumlaut': 722,
-    'Eacute': 667,
-    'emacron': 444,
-    'gbreve': 500,
-    'onequarter': 750,
-    'Scaron': 556,
-    'Scommaaccent': 556,
-    'Ohungarumlaut': 778,
-    'degree': 400,
-    'ograve': 500,
-    'Ccaron': 722,
-    'ugrave': 556,
-    'radical': 549,
-    'Dcaron': 722,
-    'rcommaaccent': 444,
-    'Ntilde': 722,
-    'otilde': 500,
-    'Rcommaaccent': 722,
-    'Lcommaaccent': 667,
-    'Atilde': 722,
-    'Aogonek': 722,
-    'Aring': 722,
-    'Otilde': 778,
-    'zdotaccent': 444,
-    'Ecaron': 667,
-    'Iogonek': 389,
-    'kcommaaccent': 556,
-    'minus': 570,
-    'Icircumflex': 389,
-    'ncaron': 556,
-    'tcommaaccent': 333,
-    'logicalnot': 570,
-    'odieresis': 500,
-    'udieresis': 556,
-    'notequal': 549,
-    'gcommaaccent': 500,
-    'eth': 500,
-    'zcaron': 444,
-    'ncommaaccent': 556,
-    'onesuperior': 300,
-    'imacron': 278,
-    'Euro': 500
-  },
-  'Times-BoldItalic': {
-    'space': 250,
-    'exclam': 389,
-    'quotedbl': 555,
-    'numbersign': 500,
-    'dollar': 500,
-    'percent': 833,
-    'ampersand': 778,
-    'quoteright': 333,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 500,
-    'plus': 570,
-    'comma': 250,
-    'hyphen': 333,
-    'period': 250,
-    'slash': 278,
-    'zero': 500,
-    'one': 500,
-    'two': 500,
-    'three': 500,
-    'four': 500,
-    'five': 500,
-    'six': 500,
-    'seven': 500,
-    'eight': 500,
-    'nine': 500,
-    'colon': 333,
-    'semicolon': 333,
-    'less': 570,
-    'equal': 570,
-    'greater': 570,
-    'question': 500,
-    'at': 832,
-    'A': 667,
-    'B': 667,
-    'C': 667,
-    'D': 722,
-    'E': 667,
-    'F': 667,
-    'G': 722,
-    'H': 778,
-    'I': 389,
-    'J': 500,
-    'K': 667,
-    'L': 611,
-    'M': 889,
-    'N': 722,
-    'O': 722,
-    'P': 611,
-    'Q': 722,
-    'R': 667,
-    'S': 556,
-    'T': 611,
-    'U': 722,
-    'V': 667,
-    'W': 889,
-    'X': 667,
-    'Y': 611,
-    'Z': 611,
-    'bracketleft': 333,
-    'backslash': 278,
-    'bracketright': 333,
-    'asciicircum': 570,
-    'underscore': 500,
-    'quoteleft': 333,
-    'a': 500,
-    'b': 500,
-    'c': 444,
-    'd': 500,
-    'e': 444,
-    'f': 333,
-    'g': 500,
-    'h': 556,
-    'i': 278,
-    'j': 278,
-    'k': 500,
-    'l': 278,
-    'm': 778,
-    'n': 556,
-    'o': 500,
-    'p': 500,
-    'q': 500,
-    'r': 389,
-    's': 389,
-    't': 278,
-    'u': 556,
-    'v': 444,
-    'w': 667,
-    'x': 500,
-    'y': 444,
-    'z': 389,
-    'braceleft': 348,
-    'bar': 220,
-    'braceright': 348,
-    'asciitilde': 570,
-    'exclamdown': 389,
-    'cent': 500,
-    'sterling': 500,
-    'fraction': 167,
-    'yen': 500,
-    'florin': 500,
-    'section': 500,
-    'currency': 500,
-    'quotesingle': 278,
-    'quotedblleft': 500,
-    'guillemotleft': 500,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 556,
-    'fl': 556,
-    'endash': 500,
-    'dagger': 500,
-    'daggerdbl': 500,
-    'periodcentered': 250,
-    'paragraph': 500,
-    'bullet': 350,
-    'quotesinglbase': 333,
-    'quotedblbase': 500,
-    'quotedblright': 500,
-    'guillemotright': 500,
-    'ellipsis': 1000,
-    'perthousand': 1000,
-    'questiondown': 500,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 1000,
-    'AE': 944,
-    'ordfeminine': 266,
-    'Lslash': 611,
-    'Oslash': 722,
-    'OE': 944,
-    'ordmasculine': 300,
-    'ae': 722,
-    'dotlessi': 278,
-    'lslash': 278,
-    'oslash': 500,
-    'oe': 722,
-    'germandbls': 500,
-    'Idieresis': 389,
-    'eacute': 444,
-    'abreve': 500,
-    'uhungarumlaut': 556,
-    'ecaron': 444,
-    'Ydieresis': 611,
-    'divide': 570,
-    'Yacute': 611,
-    'Acircumflex': 667,
-    'aacute': 500,
-    'Ucircumflex': 722,
-    'yacute': 444,
-    'scommaaccent': 389,
-    'ecircumflex': 444,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 500,
-    'Uacute': 722,
-    'uogonek': 556,
-    'Edieresis': 667,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 747,
-    'Emacron': 667,
-    'ccaron': 444,
-    'aring': 500,
-    'Ncommaaccent': 722,
-    'lacute': 278,
-    'agrave': 500,
-    'Tcommaaccent': 611,
-    'Cacute': 667,
-    'atilde': 500,
-    'Edotaccent': 667,
-    'scaron': 389,
-    'scedilla': 389,
-    'iacute': 278,
-    'lozenge': 494,
-    'Rcaron': 667,
-    'Gcommaaccent': 722,
-    'ucircumflex': 556,
-    'acircumflex': 500,
-    'Amacron': 667,
-    'rcaron': 389,
-    'ccedilla': 444,
-    'Zdotaccent': 611,
-    'Thorn': 611,
-    'Omacron': 722,
-    'Racute': 667,
-    'Sacute': 556,
-    'dcaron': 608,
-    'Umacron': 722,
-    'uring': 556,
-    'threesuperior': 300,
-    'Ograve': 722,
-    'Agrave': 667,
-    'Abreve': 667,
-    'multiply': 570,
-    'uacute': 556,
-    'Tcaron': 611,
-    'partialdiff': 494,
-    'ydieresis': 444,
-    'Nacute': 722,
-    'icircumflex': 278,
-    'Ecircumflex': 667,
-    'adieresis': 500,
-    'edieresis': 444,
-    'cacute': 444,
-    'nacute': 556,
-    'umacron': 556,
-    'Ncaron': 722,
-    'Iacute': 389,
-    'plusminus': 570,
-    'brokenbar': 220,
-    'registered': 747,
-    'Gbreve': 722,
-    'Idotaccent': 389,
-    'summation': 600,
-    'Egrave': 667,
-    'racute': 389,
-    'omacron': 500,
-    'Zacute': 611,
-    'Zcaron': 611,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 667,
-    'lcommaaccent': 278,
-    'tcaron': 366,
-    'eogonek': 444,
-    'Uogonek': 722,
-    'Aacute': 667,
-    'Adieresis': 667,
-    'egrave': 444,
-    'zacute': 389,
-    'iogonek': 278,
-    'Oacute': 722,
-    'oacute': 500,
-    'amacron': 500,
-    'sacute': 389,
-    'idieresis': 278,
-    'Ocircumflex': 722,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 500,
-    'twosuperior': 300,
-    'Odieresis': 722,
-    'mu': 576,
-    'igrave': 278,
-    'ohungarumlaut': 500,
-    'Eogonek': 667,
-    'dcroat': 500,
-    'threequarters': 750,
-    'Scedilla': 556,
-    'lcaron': 382,
-    'Kcommaaccent': 667,
-    'Lacute': 611,
-    'trademark': 1000,
-    'edotaccent': 444,
-    'Igrave': 389,
-    'Imacron': 389,
-    'Lcaron': 611,
-    'onehalf': 750,
-    'lessequal': 549,
-    'ocircumflex': 500,
-    'ntilde': 556,
-    'Uhungarumlaut': 722,
-    'Eacute': 667,
-    'emacron': 444,
-    'gbreve': 500,
-    'onequarter': 750,
-    'Scaron': 556,
-    'Scommaaccent': 556,
-    'Ohungarumlaut': 722,
-    'degree': 400,
-    'ograve': 500,
-    'Ccaron': 667,
-    'ugrave': 556,
-    'radical': 549,
-    'Dcaron': 722,
-    'rcommaaccent': 389,
-    'Ntilde': 722,
-    'otilde': 500,
-    'Rcommaaccent': 667,
-    'Lcommaaccent': 611,
-    'Atilde': 667,
-    'Aogonek': 667,
-    'Aring': 667,
-    'Otilde': 722,
-    'zdotaccent': 389,
-    'Ecaron': 667,
-    'Iogonek': 389,
-    'kcommaaccent': 500,
-    'minus': 606,
-    'Icircumflex': 389,
-    'ncaron': 556,
-    'tcommaaccent': 278,
-    'logicalnot': 606,
-    'odieresis': 500,
-    'udieresis': 556,
-    'notequal': 549,
-    'gcommaaccent': 500,
-    'eth': 500,
-    'zcaron': 389,
-    'ncommaaccent': 556,
-    'onesuperior': 300,
-    'imacron': 278,
-    'Euro': 500
-  },
-  'Times-Italic': {
-    'space': 250,
-    'exclam': 333,
-    'quotedbl': 420,
-    'numbersign': 500,
-    'dollar': 500,
-    'percent': 833,
-    'ampersand': 778,
-    'quoteright': 333,
-    'parenleft': 333,
-    'parenright': 333,
-    'asterisk': 500,
-    'plus': 675,
-    'comma': 250,
-    'hyphen': 333,
-    'period': 250,
-    'slash': 278,
-    'zero': 500,
-    'one': 500,
-    'two': 500,
-    'three': 500,
-    'four': 500,
-    'five': 500,
-    'six': 500,
-    'seven': 500,
-    'eight': 500,
-    'nine': 500,
-    'colon': 333,
-    'semicolon': 333,
-    'less': 675,
-    'equal': 675,
-    'greater': 675,
-    'question': 500,
-    'at': 920,
-    'A': 611,
-    'B': 611,
-    'C': 667,
-    'D': 722,
-    'E': 611,
-    'F': 611,
-    'G': 722,
-    'H': 722,
-    'I': 333,
-    'J': 444,
-    'K': 667,
-    'L': 556,
-    'M': 833,
-    'N': 667,
-    'O': 722,
-    'P': 611,
-    'Q': 722,
-    'R': 611,
-    'S': 500,
-    'T': 556,
-    'U': 722,
-    'V': 611,
-    'W': 833,
-    'X': 611,
-    'Y': 556,
-    'Z': 556,
-    'bracketleft': 389,
-    'backslash': 278,
-    'bracketright': 389,
-    'asciicircum': 422,
-    'underscore': 500,
-    'quoteleft': 333,
-    'a': 500,
-    'b': 500,
-    'c': 444,
-    'd': 500,
-    'e': 444,
-    'f': 278,
-    'g': 500,
-    'h': 500,
-    'i': 278,
-    'j': 278,
-    'k': 444,
-    'l': 278,
-    'm': 722,
-    'n': 500,
-    'o': 500,
-    'p': 500,
-    'q': 500,
-    'r': 389,
-    's': 389,
-    't': 278,
-    'u': 500,
-    'v': 444,
-    'w': 667,
-    'x': 444,
-    'y': 444,
-    'z': 389,
-    'braceleft': 400,
-    'bar': 275,
-    'braceright': 400,
-    'asciitilde': 541,
-    'exclamdown': 389,
-    'cent': 500,
-    'sterling': 500,
-    'fraction': 167,
-    'yen': 500,
-    'florin': 500,
-    'section': 500,
-    'currency': 500,
-    'quotesingle': 214,
-    'quotedblleft': 556,
-    'guillemotleft': 500,
-    'guilsinglleft': 333,
-    'guilsinglright': 333,
-    'fi': 500,
-    'fl': 500,
-    'endash': 500,
-    'dagger': 500,
-    'daggerdbl': 500,
-    'periodcentered': 250,
-    'paragraph': 523,
-    'bullet': 350,
-    'quotesinglbase': 333,
-    'quotedblbase': 556,
-    'quotedblright': 556,
-    'guillemotright': 500,
-    'ellipsis': 889,
-    'perthousand': 1000,
-    'questiondown': 500,
-    'grave': 333,
-    'acute': 333,
-    'circumflex': 333,
-    'tilde': 333,
-    'macron': 333,
-    'breve': 333,
-    'dotaccent': 333,
-    'dieresis': 333,
-    'ring': 333,
-    'cedilla': 333,
-    'hungarumlaut': 333,
-    'ogonek': 333,
-    'caron': 333,
-    'emdash': 889,
-    'AE': 889,
-    'ordfeminine': 276,
-    'Lslash': 556,
-    'Oslash': 722,
-    'OE': 944,
-    'ordmasculine': 310,
-    'ae': 667,
-    'dotlessi': 278,
-    'lslash': 278,
-    'oslash': 500,
-    'oe': 667,
-    'germandbls': 500,
-    'Idieresis': 333,
-    'eacute': 444,
-    'abreve': 500,
-    'uhungarumlaut': 500,
-    'ecaron': 444,
-    'Ydieresis': 556,
-    'divide': 675,
-    'Yacute': 556,
-    'Acircumflex': 611,
-    'aacute': 500,
-    'Ucircumflex': 722,
-    'yacute': 444,
-    'scommaaccent': 389,
-    'ecircumflex': 444,
-    'Uring': 722,
-    'Udieresis': 722,
-    'aogonek': 500,
-    'Uacute': 722,
-    'uogonek': 500,
-    'Edieresis': 611,
-    'Dcroat': 722,
-    'commaaccent': 250,
-    'copyright': 760,
-    'Emacron': 611,
-    'ccaron': 444,
-    'aring': 500,
-    'Ncommaaccent': 667,
-    'lacute': 278,
-    'agrave': 500,
-    'Tcommaaccent': 556,
-    'Cacute': 667,
-    'atilde': 500,
-    'Edotaccent': 611,
-    'scaron': 389,
-    'scedilla': 389,
-    'iacute': 278,
-    'lozenge': 471,
-    'Rcaron': 611,
-    'Gcommaaccent': 722,
-    'ucircumflex': 500,
-    'acircumflex': 500,
-    'Amacron': 611,
-    'rcaron': 389,
-    'ccedilla': 444,
-    'Zdotaccent': 556,
-    'Thorn': 611,
-    'Omacron': 722,
-    'Racute': 611,
-    'Sacute': 500,
-    'dcaron': 544,
-    'Umacron': 722,
-    'uring': 500,
-    'threesuperior': 300,
-    'Ograve': 722,
-    'Agrave': 611,
-    'Abreve': 611,
-    'multiply': 675,
-    'uacute': 500,
-    'Tcaron': 556,
-    'partialdiff': 476,
-    'ydieresis': 444,
-    'Nacute': 667,
-    'icircumflex': 278,
-    'Ecircumflex': 611,
-    'adieresis': 500,
-    'edieresis': 444,
-    'cacute': 444,
-    'nacute': 500,
-    'umacron': 500,
-    'Ncaron': 667,
-    'Iacute': 333,
-    'plusminus': 675,
-    'brokenbar': 275,
-    'registered': 760,
-    'Gbreve': 722,
-    'Idotaccent': 333,
-    'summation': 600,
-    'Egrave': 611,
-    'racute': 389,
-    'omacron': 500,
-    'Zacute': 556,
-    'Zcaron': 556,
-    'greaterequal': 549,
-    'Eth': 722,
-    'Ccedilla': 667,
-    'lcommaaccent': 278,
-    'tcaron': 300,
-    'eogonek': 444,
-    'Uogonek': 722,
-    'Aacute': 611,
-    'Adieresis': 611,
-    'egrave': 444,
-    'zacute': 389,
-    'iogonek': 278,
-    'Oacute': 722,
-    'oacute': 500,
-    'amacron': 500,
-    'sacute': 389,
-    'idieresis': 278,
-    'Ocircumflex': 722,
-    'Ugrave': 722,
-    'Delta': 612,
-    'thorn': 500,
-    'twosuperior': 300,
-    'Odieresis': 722,
-    'mu': 500,
-    'igrave': 278,
-    'ohungarumlaut': 500,
-    'Eogonek': 611,
-    'dcroat': 500,
-    'threequarters': 750,
-    'Scedilla': 500,
-    'lcaron': 300,
-    'Kcommaaccent': 667,
-    'Lacute': 556,
-    'trademark': 980,
-    'edotaccent': 444,
-    'Igrave': 333,
-    'Imacron': 333,
-    'Lcaron': 611,
-    'onehalf': 750,
-    'lessequal': 549,
-    'ocircumflex': 500,
-    'ntilde': 500,
-    'Uhungarumlaut': 722,
-    'Eacute': 611,
-    'emacron': 444,
-    'gbreve': 500,
-    'onequarter': 750,
-    'Scaron': 500,
-    'Scommaaccent': 500,
-    'Ohungarumlaut': 722,
-    'degree': 400,
-    'ograve': 500,
-    'Ccaron': 667,
-    'ugrave': 500,
-    'radical': 453,
-    'Dcaron': 722,
-    'rcommaaccent': 389,
-    'Ntilde': 667,
-    'otilde': 500,
-    'Rcommaaccent': 611,
-    'Lcommaaccent': 556,
-    'Atilde': 611,
-    'Aogonek': 611,
-    'Aring': 611,
-    'Otilde': 722,
-    'zdotaccent': 389,
-    'Ecaron': 611,
-    'Iogonek': 333,
-    'kcommaaccent': 444,
-    'minus': 675,
-    'Icircumflex': 333,
-    'ncaron': 500,
-    'tcommaaccent': 278,
-    'logicalnot': 675,
-    'odieresis': 500,
-    'udieresis': 500,
-    'notequal': 549,
-    'gcommaaccent': 500,
-    'eth': 500,
-    'zcaron': 389,
-    'ncommaaccent': 500,
-    'onesuperior': 300,
-    'imacron': 278,
-    'Euro': 500
-  },
-  'ZapfDingbats': {
-    'space': 278,
-    'a1': 974,
-    'a2': 961,
-    'a202': 974,
-    'a3': 980,
-    'a4': 719,
-    'a5': 789,
-    'a119': 790,
-    'a118': 791,
-    'a117': 690,
-    'a11': 960,
-    'a12': 939,
-    'a13': 549,
-    'a14': 855,
-    'a15': 911,
-    'a16': 933,
-    'a105': 911,
-    'a17': 945,
-    'a18': 974,
-    'a19': 755,
-    'a20': 846,
-    'a21': 762,
-    'a22': 761,
-    'a23': 571,
-    'a24': 677,
-    'a25': 763,
-    'a26': 760,
-    'a27': 759,
-    'a28': 754,
-    'a6': 494,
-    'a7': 552,
-    'a8': 537,
-    'a9': 577,
-    'a10': 692,
-    'a29': 786,
-    'a30': 788,
-    'a31': 788,
-    'a32': 790,
-    'a33': 793,
-    'a34': 794,
-    'a35': 816,
-    'a36': 823,
-    'a37': 789,
-    'a38': 841,
-    'a39': 823,
-    'a40': 833,
-    'a41': 816,
-    'a42': 831,
-    'a43': 923,
-    'a44': 744,
-    'a45': 723,
-    'a46': 749,
-    'a47': 790,
-    'a48': 792,
-    'a49': 695,
-    'a50': 776,
-    'a51': 768,
-    'a52': 792,
-    'a53': 759,
-    'a54': 707,
-    'a55': 708,
-    'a56': 682,
-    'a57': 701,
-    'a58': 826,
-    'a59': 815,
-    'a60': 789,
-    'a61': 789,
-    'a62': 707,
-    'a63': 687,
-    'a64': 696,
-    'a65': 689,
-    'a66': 786,
-    'a67': 787,
-    'a68': 713,
-    'a69': 791,
-    'a70': 785,
-    'a71': 791,
-    'a72': 873,
-    'a73': 761,
-    'a74': 762,
-    'a203': 762,
-    'a75': 759,
-    'a204': 759,
-    'a76': 892,
-    'a77': 892,
-    'a78': 788,
-    'a79': 784,
-    'a81': 438,
-    'a82': 138,
-    'a83': 277,
-    'a84': 415,
-    'a97': 392,
-    'a98': 392,
-    'a99': 668,
-    'a100': 668,
-    'a89': 390,
-    'a90': 390,
-    'a93': 317,
-    'a94': 317,
-    'a91': 276,
-    'a92': 276,
-    'a205': 509,
-    'a85': 509,
-    'a206': 410,
-    'a86': 410,
-    'a87': 234,
-    'a88': 234,
-    'a95': 334,
-    'a96': 334,
-    'a101': 732,
-    'a102': 544,
-    'a103': 544,
-    'a104': 910,
-    'a106': 667,
-    'a107': 760,
-    'a108': 760,
-    'a112': 776,
-    'a111': 595,
-    'a110': 694,
-    'a109': 626,
-    'a120': 788,
-    'a121': 788,
-    'a122': 788,
-    'a123': 788,
-    'a124': 788,
-    'a125': 788,
-    'a126': 788,
-    'a127': 788,
-    'a128': 788,
-    'a129': 788,
-    'a130': 788,
-    'a131': 788,
-    'a132': 788,
-    'a133': 788,
-    'a134': 788,
-    'a135': 788,
-    'a136': 788,
-    'a137': 788,
-    'a138': 788,
-    'a139': 788,
-    'a140': 788,
-    'a141': 788,
-    'a142': 788,
-    'a143': 788,
-    'a144': 788,
-    'a145': 788,
-    'a146': 788,
-    'a147': 788,
-    'a148': 788,
-    'a149': 788,
-    'a150': 788,
-    'a151': 788,
-    'a152': 788,
-    'a153': 788,
-    'a154': 788,
-    'a155': 788,
-    'a156': 788,
-    'a157': 788,
-    'a158': 788,
-    'a159': 788,
-    'a160': 894,
-    'a161': 838,
-    'a163': 1016,
-    'a164': 458,
-    'a196': 748,
-    'a165': 924,
-    'a192': 748,
-    'a166': 918,
-    'a167': 927,
-    'a168': 928,
-    'a169': 928,
-    'a170': 834,
-    'a171': 873,
-    'a172': 828,
-    'a173': 924,
-    'a162': 924,
-    'a174': 917,
-    'a175': 930,
-    'a176': 931,
-    'a177': 463,
-    'a178': 883,
-    'a179': 836,
-    'a193': 836,
-    'a180': 867,
-    'a199': 867,
-    'a181': 696,
-    'a200': 696,
-    'a182': 874,
-    'a201': 874,
-    'a183': 760,
-    'a184': 946,
-    'a197': 771,
-    'a185': 865,
-    'a194': 771,
-    'a198': 888,
-    'a186': 967,
-    'a195': 888,
-    'a187': 831,
-    'a188': 873,
-    'a189': 927,
-    'a190': 970,
-    'a191': 918
-  }
-};
+var getMetrics = getLookupTableFactory(function (t) {
+  t['Courier'] = 600;
+  t['Courier-Bold'] = 600;
+  t['Courier-BoldOblique'] = 600;
+  t['Courier-Oblique'] = 600;
+  t['Helvetica'] = getLookupTableFactory(function (t) {
+    t['space'] = 278;
+    t['exclam'] = 278;
+    t['quotedbl'] = 355;
+    t['numbersign'] = 556;
+    t['dollar'] = 556;
+    t['percent'] = 889;
+    t['ampersand'] = 667;
+    t['quoteright'] = 222;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 389;
+    t['plus'] = 584;
+    t['comma'] = 278;
+    t['hyphen'] = 333;
+    t['period'] = 278;
+    t['slash'] = 278;
+    t['zero'] = 556;
+    t['one'] = 556;
+    t['two'] = 556;
+    t['three'] = 556;
+    t['four'] = 556;
+    t['five'] = 556;
+    t['six'] = 556;
+    t['seven'] = 556;
+    t['eight'] = 556;
+    t['nine'] = 556;
+    t['colon'] = 278;
+    t['semicolon'] = 278;
+    t['less'] = 584;
+    t['equal'] = 584;
+    t['greater'] = 584;
+    t['question'] = 556;
+    t['at'] = 1015;
+    t['A'] = 667;
+    t['B'] = 667;
+    t['C'] = 722;
+    t['D'] = 722;
+    t['E'] = 667;
+    t['F'] = 611;
+    t['G'] = 778;
+    t['H'] = 722;
+    t['I'] = 278;
+    t['J'] = 500;
+    t['K'] = 667;
+    t['L'] = 556;
+    t['M'] = 833;
+    t['N'] = 722;
+    t['O'] = 778;
+    t['P'] = 667;
+    t['Q'] = 778;
+    t['R'] = 722;
+    t['S'] = 667;
+    t['T'] = 611;
+    t['U'] = 722;
+    t['V'] = 667;
+    t['W'] = 944;
+    t['X'] = 667;
+    t['Y'] = 667;
+    t['Z'] = 611;
+    t['bracketleft'] = 278;
+    t['backslash'] = 278;
+    t['bracketright'] = 278;
+    t['asciicircum'] = 469;
+    t['underscore'] = 556;
+    t['quoteleft'] = 222;
+    t['a'] = 556;
+    t['b'] = 556;
+    t['c'] = 500;
+    t['d'] = 556;
+    t['e'] = 556;
+    t['f'] = 278;
+    t['g'] = 556;
+    t['h'] = 556;
+    t['i'] = 222;
+    t['j'] = 222;
+    t['k'] = 500;
+    t['l'] = 222;
+    t['m'] = 833;
+    t['n'] = 556;
+    t['o'] = 556;
+    t['p'] = 556;
+    t['q'] = 556;
+    t['r'] = 333;
+    t['s'] = 500;
+    t['t'] = 278;
+    t['u'] = 556;
+    t['v'] = 500;
+    t['w'] = 722;
+    t['x'] = 500;
+    t['y'] = 500;
+    t['z'] = 500;
+    t['braceleft'] = 334;
+    t['bar'] = 260;
+    t['braceright'] = 334;
+    t['asciitilde'] = 584;
+    t['exclamdown'] = 333;
+    t['cent'] = 556;
+    t['sterling'] = 556;
+    t['fraction'] = 167;
+    t['yen'] = 556;
+    t['florin'] = 556;
+    t['section'] = 556;
+    t['currency'] = 556;
+    t['quotesingle'] = 191;
+    t['quotedblleft'] = 333;
+    t['guillemotleft'] = 556;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 500;
+    t['fl'] = 500;
+    t['endash'] = 556;
+    t['dagger'] = 556;
+    t['daggerdbl'] = 556;
+    t['periodcentered'] = 278;
+    t['paragraph'] = 537;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 222;
+    t['quotedblbase'] = 333;
+    t['quotedblright'] = 333;
+    t['guillemotright'] = 556;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 611;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 1000;
+    t['ordfeminine'] = 370;
+    t['Lslash'] = 556;
+    t['Oslash'] = 778;
+    t['OE'] = 1000;
+    t['ordmasculine'] = 365;
+    t['ae'] = 889;
+    t['dotlessi'] = 278;
+    t['lslash'] = 222;
+    t['oslash'] = 611;
+    t['oe'] = 944;
+    t['germandbls'] = 611;
+    t['Idieresis'] = 278;
+    t['eacute'] = 556;
+    t['abreve'] = 556;
+    t['uhungarumlaut'] = 556;
+    t['ecaron'] = 556;
+    t['Ydieresis'] = 667;
+    t['divide'] = 584;
+    t['Yacute'] = 667;
+    t['Acircumflex'] = 667;
+    t['aacute'] = 556;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 500;
+    t['scommaaccent'] = 500;
+    t['ecircumflex'] = 556;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 556;
+    t['Uacute'] = 722;
+    t['uogonek'] = 556;
+    t['Edieresis'] = 667;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 737;
+    t['Emacron'] = 667;
+    t['ccaron'] = 500;
+    t['aring'] = 556;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 222;
+    t['agrave'] = 556;
+    t['Tcommaaccent'] = 611;
+    t['Cacute'] = 722;
+    t['atilde'] = 556;
+    t['Edotaccent'] = 667;
+    t['scaron'] = 500;
+    t['scedilla'] = 500;
+    t['iacute'] = 278;
+    t['lozenge'] = 471;
+    t['Rcaron'] = 722;
+    t['Gcommaaccent'] = 778;
+    t['ucircumflex'] = 556;
+    t['acircumflex'] = 556;
+    t['Amacron'] = 667;
+    t['rcaron'] = 333;
+    t['ccedilla'] = 500;
+    t['Zdotaccent'] = 611;
+    t['Thorn'] = 667;
+    t['Omacron'] = 778;
+    t['Racute'] = 722;
+    t['Sacute'] = 667;
+    t['dcaron'] = 643;
+    t['Umacron'] = 722;
+    t['uring'] = 556;
+    t['threesuperior'] = 333;
+    t['Ograve'] = 778;
+    t['Agrave'] = 667;
+    t['Abreve'] = 667;
+    t['multiply'] = 584;
+    t['uacute'] = 556;
+    t['Tcaron'] = 611;
+    t['partialdiff'] = 476;
+    t['ydieresis'] = 500;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 667;
+    t['adieresis'] = 556;
+    t['edieresis'] = 556;
+    t['cacute'] = 500;
+    t['nacute'] = 556;
+    t['umacron'] = 556;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 278;
+    t['plusminus'] = 584;
+    t['brokenbar'] = 260;
+    t['registered'] = 737;
+    t['Gbreve'] = 778;
+    t['Idotaccent'] = 278;
+    t['summation'] = 600;
+    t['Egrave'] = 667;
+    t['racute'] = 333;
+    t['omacron'] = 556;
+    t['Zacute'] = 611;
+    t['Zcaron'] = 611;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 722;
+    t['lcommaaccent'] = 222;
+    t['tcaron'] = 317;
+    t['eogonek'] = 556;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 667;
+    t['Adieresis'] = 667;
+    t['egrave'] = 556;
+    t['zacute'] = 500;
+    t['iogonek'] = 222;
+    t['Oacute'] = 778;
+    t['oacute'] = 556;
+    t['amacron'] = 556;
+    t['sacute'] = 500;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 778;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 556;
+    t['twosuperior'] = 333;
+    t['Odieresis'] = 778;
+    t['mu'] = 556;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 556;
+    t['Eogonek'] = 667;
+    t['dcroat'] = 556;
+    t['threequarters'] = 834;
+    t['Scedilla'] = 667;
+    t['lcaron'] = 299;
+    t['Kcommaaccent'] = 667;
+    t['Lacute'] = 556;
+    t['trademark'] = 1000;
+    t['edotaccent'] = 556;
+    t['Igrave'] = 278;
+    t['Imacron'] = 278;
+    t['Lcaron'] = 556;
+    t['onehalf'] = 834;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 556;
+    t['ntilde'] = 556;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 667;
+    t['emacron'] = 556;
+    t['gbreve'] = 556;
+    t['onequarter'] = 834;
+    t['Scaron'] = 667;
+    t['Scommaaccent'] = 667;
+    t['Ohungarumlaut'] = 778;
+    t['degree'] = 400;
+    t['ograve'] = 556;
+    t['Ccaron'] = 722;
+    t['ugrave'] = 556;
+    t['radical'] = 453;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 333;
+    t['Ntilde'] = 722;
+    t['otilde'] = 556;
+    t['Rcommaaccent'] = 722;
+    t['Lcommaaccent'] = 556;
+    t['Atilde'] = 667;
+    t['Aogonek'] = 667;
+    t['Aring'] = 667;
+    t['Otilde'] = 778;
+    t['zdotaccent'] = 500;
+    t['Ecaron'] = 667;
+    t['Iogonek'] = 278;
+    t['kcommaaccent'] = 500;
+    t['minus'] = 584;
+    t['Icircumflex'] = 278;
+    t['ncaron'] = 556;
+    t['tcommaaccent'] = 278;
+    t['logicalnot'] = 584;
+    t['odieresis'] = 556;
+    t['udieresis'] = 556;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 556;
+    t['eth'] = 556;
+    t['zcaron'] = 500;
+    t['ncommaaccent'] = 556;
+    t['onesuperior'] = 333;
+    t['imacron'] = 278;
+    t['Euro'] = 556;
+  });
+  t['Helvetica-Bold'] = getLookupTableFactory(function (t) {
+    t['space'] = 278;
+    t['exclam'] = 333;
+    t['quotedbl'] = 474;
+    t['numbersign'] = 556;
+    t['dollar'] = 556;
+    t['percent'] = 889;
+    t['ampersand'] = 722;
+    t['quoteright'] = 278;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 389;
+    t['plus'] = 584;
+    t['comma'] = 278;
+    t['hyphen'] = 333;
+    t['period'] = 278;
+    t['slash'] = 278;
+    t['zero'] = 556;
+    t['one'] = 556;
+    t['two'] = 556;
+    t['three'] = 556;
+    t['four'] = 556;
+    t['five'] = 556;
+    t['six'] = 556;
+    t['seven'] = 556;
+    t['eight'] = 556;
+    t['nine'] = 556;
+    t['colon'] = 333;
+    t['semicolon'] = 333;
+    t['less'] = 584;
+    t['equal'] = 584;
+    t['greater'] = 584;
+    t['question'] = 611;
+    t['at'] = 975;
+    t['A'] = 722;
+    t['B'] = 722;
+    t['C'] = 722;
+    t['D'] = 722;
+    t['E'] = 667;
+    t['F'] = 611;
+    t['G'] = 778;
+    t['H'] = 722;
+    t['I'] = 278;
+    t['J'] = 556;
+    t['K'] = 722;
+    t['L'] = 611;
+    t['M'] = 833;
+    t['N'] = 722;
+    t['O'] = 778;
+    t['P'] = 667;
+    t['Q'] = 778;
+    t['R'] = 722;
+    t['S'] = 667;
+    t['T'] = 611;
+    t['U'] = 722;
+    t['V'] = 667;
+    t['W'] = 944;
+    t['X'] = 667;
+    t['Y'] = 667;
+    t['Z'] = 611;
+    t['bracketleft'] = 333;
+    t['backslash'] = 278;
+    t['bracketright'] = 333;
+    t['asciicircum'] = 584;
+    t['underscore'] = 556;
+    t['quoteleft'] = 278;
+    t['a'] = 556;
+    t['b'] = 611;
+    t['c'] = 556;
+    t['d'] = 611;
+    t['e'] = 556;
+    t['f'] = 333;
+    t['g'] = 611;
+    t['h'] = 611;
+    t['i'] = 278;
+    t['j'] = 278;
+    t['k'] = 556;
+    t['l'] = 278;
+    t['m'] = 889;
+    t['n'] = 611;
+    t['o'] = 611;
+    t['p'] = 611;
+    t['q'] = 611;
+    t['r'] = 389;
+    t['s'] = 556;
+    t['t'] = 333;
+    t['u'] = 611;
+    t['v'] = 556;
+    t['w'] = 778;
+    t['x'] = 556;
+    t['y'] = 556;
+    t['z'] = 500;
+    t['braceleft'] = 389;
+    t['bar'] = 280;
+    t['braceright'] = 389;
+    t['asciitilde'] = 584;
+    t['exclamdown'] = 333;
+    t['cent'] = 556;
+    t['sterling'] = 556;
+    t['fraction'] = 167;
+    t['yen'] = 556;
+    t['florin'] = 556;
+    t['section'] = 556;
+    t['currency'] = 556;
+    t['quotesingle'] = 238;
+    t['quotedblleft'] = 500;
+    t['guillemotleft'] = 556;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 611;
+    t['fl'] = 611;
+    t['endash'] = 556;
+    t['dagger'] = 556;
+    t['daggerdbl'] = 556;
+    t['periodcentered'] = 278;
+    t['paragraph'] = 556;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 278;
+    t['quotedblbase'] = 500;
+    t['quotedblright'] = 500;
+    t['guillemotright'] = 556;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 611;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 1000;
+    t['ordfeminine'] = 370;
+    t['Lslash'] = 611;
+    t['Oslash'] = 778;
+    t['OE'] = 1000;
+    t['ordmasculine'] = 365;
+    t['ae'] = 889;
+    t['dotlessi'] = 278;
+    t['lslash'] = 278;
+    t['oslash'] = 611;
+    t['oe'] = 944;
+    t['germandbls'] = 611;
+    t['Idieresis'] = 278;
+    t['eacute'] = 556;
+    t['abreve'] = 556;
+    t['uhungarumlaut'] = 611;
+    t['ecaron'] = 556;
+    t['Ydieresis'] = 667;
+    t['divide'] = 584;
+    t['Yacute'] = 667;
+    t['Acircumflex'] = 722;
+    t['aacute'] = 556;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 556;
+    t['scommaaccent'] = 556;
+    t['ecircumflex'] = 556;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 556;
+    t['Uacute'] = 722;
+    t['uogonek'] = 611;
+    t['Edieresis'] = 667;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 737;
+    t['Emacron'] = 667;
+    t['ccaron'] = 556;
+    t['aring'] = 556;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 278;
+    t['agrave'] = 556;
+    t['Tcommaaccent'] = 611;
+    t['Cacute'] = 722;
+    t['atilde'] = 556;
+    t['Edotaccent'] = 667;
+    t['scaron'] = 556;
+    t['scedilla'] = 556;
+    t['iacute'] = 278;
+    t['lozenge'] = 494;
+    t['Rcaron'] = 722;
+    t['Gcommaaccent'] = 778;
+    t['ucircumflex'] = 611;
+    t['acircumflex'] = 556;
+    t['Amacron'] = 722;
+    t['rcaron'] = 389;
+    t['ccedilla'] = 556;
+    t['Zdotaccent'] = 611;
+    t['Thorn'] = 667;
+    t['Omacron'] = 778;
+    t['Racute'] = 722;
+    t['Sacute'] = 667;
+    t['dcaron'] = 743;
+    t['Umacron'] = 722;
+    t['uring'] = 611;
+    t['threesuperior'] = 333;
+    t['Ograve'] = 778;
+    t['Agrave'] = 722;
+    t['Abreve'] = 722;
+    t['multiply'] = 584;
+    t['uacute'] = 611;
+    t['Tcaron'] = 611;
+    t['partialdiff'] = 494;
+    t['ydieresis'] = 556;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 667;
+    t['adieresis'] = 556;
+    t['edieresis'] = 556;
+    t['cacute'] = 556;
+    t['nacute'] = 611;
+    t['umacron'] = 611;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 278;
+    t['plusminus'] = 584;
+    t['brokenbar'] = 280;
+    t['registered'] = 737;
+    t['Gbreve'] = 778;
+    t['Idotaccent'] = 278;
+    t['summation'] = 600;
+    t['Egrave'] = 667;
+    t['racute'] = 389;
+    t['omacron'] = 611;
+    t['Zacute'] = 611;
+    t['Zcaron'] = 611;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 722;
+    t['lcommaaccent'] = 278;
+    t['tcaron'] = 389;
+    t['eogonek'] = 556;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 722;
+    t['Adieresis'] = 722;
+    t['egrave'] = 556;
+    t['zacute'] = 500;
+    t['iogonek'] = 278;
+    t['Oacute'] = 778;
+    t['oacute'] = 611;
+    t['amacron'] = 556;
+    t['sacute'] = 556;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 778;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 611;
+    t['twosuperior'] = 333;
+    t['Odieresis'] = 778;
+    t['mu'] = 611;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 611;
+    t['Eogonek'] = 667;
+    t['dcroat'] = 611;
+    t['threequarters'] = 834;
+    t['Scedilla'] = 667;
+    t['lcaron'] = 400;
+    t['Kcommaaccent'] = 722;
+    t['Lacute'] = 611;
+    t['trademark'] = 1000;
+    t['edotaccent'] = 556;
+    t['Igrave'] = 278;
+    t['Imacron'] = 278;
+    t['Lcaron'] = 611;
+    t['onehalf'] = 834;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 611;
+    t['ntilde'] = 611;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 667;
+    t['emacron'] = 556;
+    t['gbreve'] = 611;
+    t['onequarter'] = 834;
+    t['Scaron'] = 667;
+    t['Scommaaccent'] = 667;
+    t['Ohungarumlaut'] = 778;
+    t['degree'] = 400;
+    t['ograve'] = 611;
+    t['Ccaron'] = 722;
+    t['ugrave'] = 611;
+    t['radical'] = 549;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 389;
+    t['Ntilde'] = 722;
+    t['otilde'] = 611;
+    t['Rcommaaccent'] = 722;
+    t['Lcommaaccent'] = 611;
+    t['Atilde'] = 722;
+    t['Aogonek'] = 722;
+    t['Aring'] = 722;
+    t['Otilde'] = 778;
+    t['zdotaccent'] = 500;
+    t['Ecaron'] = 667;
+    t['Iogonek'] = 278;
+    t['kcommaaccent'] = 556;
+    t['minus'] = 584;
+    t['Icircumflex'] = 278;
+    t['ncaron'] = 611;
+    t['tcommaaccent'] = 333;
+    t['logicalnot'] = 584;
+    t['odieresis'] = 611;
+    t['udieresis'] = 611;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 611;
+    t['eth'] = 611;
+    t['zcaron'] = 500;
+    t['ncommaaccent'] = 611;
+    t['onesuperior'] = 333;
+    t['imacron'] = 278;
+    t['Euro'] = 556;
+  });
+  t['Helvetica-BoldOblique'] = getLookupTableFactory(function (t) {
+    t['space'] = 278;
+    t['exclam'] = 333;
+    t['quotedbl'] = 474;
+    t['numbersign'] = 556;
+    t['dollar'] = 556;
+    t['percent'] = 889;
+    t['ampersand'] = 722;
+    t['quoteright'] = 278;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 389;
+    t['plus'] = 584;
+    t['comma'] = 278;
+    t['hyphen'] = 333;
+    t['period'] = 278;
+    t['slash'] = 278;
+    t['zero'] = 556;
+    t['one'] = 556;
+    t['two'] = 556;
+    t['three'] = 556;
+    t['four'] = 556;
+    t['five'] = 556;
+    t['six'] = 556;
+    t['seven'] = 556;
+    t['eight'] = 556;
+    t['nine'] = 556;
+    t['colon'] = 333;
+    t['semicolon'] = 333;
+    t['less'] = 584;
+    t['equal'] = 584;
+    t['greater'] = 584;
+    t['question'] = 611;
+    t['at'] = 975;
+    t['A'] = 722;
+    t['B'] = 722;
+    t['C'] = 722;
+    t['D'] = 722;
+    t['E'] = 667;
+    t['F'] = 611;
+    t['G'] = 778;
+    t['H'] = 722;
+    t['I'] = 278;
+    t['J'] = 556;
+    t['K'] = 722;
+    t['L'] = 611;
+    t['M'] = 833;
+    t['N'] = 722;
+    t['O'] = 778;
+    t['P'] = 667;
+    t['Q'] = 778;
+    t['R'] = 722;
+    t['S'] = 667;
+    t['T'] = 611;
+    t['U'] = 722;
+    t['V'] = 667;
+    t['W'] = 944;
+    t['X'] = 667;
+    t['Y'] = 667;
+    t['Z'] = 611;
+    t['bracketleft'] = 333;
+    t['backslash'] = 278;
+    t['bracketright'] = 333;
+    t['asciicircum'] = 584;
+    t['underscore'] = 556;
+    t['quoteleft'] = 278;
+    t['a'] = 556;
+    t['b'] = 611;
+    t['c'] = 556;
+    t['d'] = 611;
+    t['e'] = 556;
+    t['f'] = 333;
+    t['g'] = 611;
+    t['h'] = 611;
+    t['i'] = 278;
+    t['j'] = 278;
+    t['k'] = 556;
+    t['l'] = 278;
+    t['m'] = 889;
+    t['n'] = 611;
+    t['o'] = 611;
+    t['p'] = 611;
+    t['q'] = 611;
+    t['r'] = 389;
+    t['s'] = 556;
+    t['t'] = 333;
+    t['u'] = 611;
+    t['v'] = 556;
+    t['w'] = 778;
+    t['x'] = 556;
+    t['y'] = 556;
+    t['z'] = 500;
+    t['braceleft'] = 389;
+    t['bar'] = 280;
+    t['braceright'] = 389;
+    t['asciitilde'] = 584;
+    t['exclamdown'] = 333;
+    t['cent'] = 556;
+    t['sterling'] = 556;
+    t['fraction'] = 167;
+    t['yen'] = 556;
+    t['florin'] = 556;
+    t['section'] = 556;
+    t['currency'] = 556;
+    t['quotesingle'] = 238;
+    t['quotedblleft'] = 500;
+    t['guillemotleft'] = 556;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 611;
+    t['fl'] = 611;
+    t['endash'] = 556;
+    t['dagger'] = 556;
+    t['daggerdbl'] = 556;
+    t['periodcentered'] = 278;
+    t['paragraph'] = 556;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 278;
+    t['quotedblbase'] = 500;
+    t['quotedblright'] = 500;
+    t['guillemotright'] = 556;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 611;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 1000;
+    t['ordfeminine'] = 370;
+    t['Lslash'] = 611;
+    t['Oslash'] = 778;
+    t['OE'] = 1000;
+    t['ordmasculine'] = 365;
+    t['ae'] = 889;
+    t['dotlessi'] = 278;
+    t['lslash'] = 278;
+    t['oslash'] = 611;
+    t['oe'] = 944;
+    t['germandbls'] = 611;
+    t['Idieresis'] = 278;
+    t['eacute'] = 556;
+    t['abreve'] = 556;
+    t['uhungarumlaut'] = 611;
+    t['ecaron'] = 556;
+    t['Ydieresis'] = 667;
+    t['divide'] = 584;
+    t['Yacute'] = 667;
+    t['Acircumflex'] = 722;
+    t['aacute'] = 556;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 556;
+    t['scommaaccent'] = 556;
+    t['ecircumflex'] = 556;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 556;
+    t['Uacute'] = 722;
+    t['uogonek'] = 611;
+    t['Edieresis'] = 667;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 737;
+    t['Emacron'] = 667;
+    t['ccaron'] = 556;
+    t['aring'] = 556;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 278;
+    t['agrave'] = 556;
+    t['Tcommaaccent'] = 611;
+    t['Cacute'] = 722;
+    t['atilde'] = 556;
+    t['Edotaccent'] = 667;
+    t['scaron'] = 556;
+    t['scedilla'] = 556;
+    t['iacute'] = 278;
+    t['lozenge'] = 494;
+    t['Rcaron'] = 722;
+    t['Gcommaaccent'] = 778;
+    t['ucircumflex'] = 611;
+    t['acircumflex'] = 556;
+    t['Amacron'] = 722;
+    t['rcaron'] = 389;
+    t['ccedilla'] = 556;
+    t['Zdotaccent'] = 611;
+    t['Thorn'] = 667;
+    t['Omacron'] = 778;
+    t['Racute'] = 722;
+    t['Sacute'] = 667;
+    t['dcaron'] = 743;
+    t['Umacron'] = 722;
+    t['uring'] = 611;
+    t['threesuperior'] = 333;
+    t['Ograve'] = 778;
+    t['Agrave'] = 722;
+    t['Abreve'] = 722;
+    t['multiply'] = 584;
+    t['uacute'] = 611;
+    t['Tcaron'] = 611;
+    t['partialdiff'] = 494;
+    t['ydieresis'] = 556;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 667;
+    t['adieresis'] = 556;
+    t['edieresis'] = 556;
+    t['cacute'] = 556;
+    t['nacute'] = 611;
+    t['umacron'] = 611;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 278;
+    t['plusminus'] = 584;
+    t['brokenbar'] = 280;
+    t['registered'] = 737;
+    t['Gbreve'] = 778;
+    t['Idotaccent'] = 278;
+    t['summation'] = 600;
+    t['Egrave'] = 667;
+    t['racute'] = 389;
+    t['omacron'] = 611;
+    t['Zacute'] = 611;
+    t['Zcaron'] = 611;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 722;
+    t['lcommaaccent'] = 278;
+    t['tcaron'] = 389;
+    t['eogonek'] = 556;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 722;
+    t['Adieresis'] = 722;
+    t['egrave'] = 556;
+    t['zacute'] = 500;
+    t['iogonek'] = 278;
+    t['Oacute'] = 778;
+    t['oacute'] = 611;
+    t['amacron'] = 556;
+    t['sacute'] = 556;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 778;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 611;
+    t['twosuperior'] = 333;
+    t['Odieresis'] = 778;
+    t['mu'] = 611;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 611;
+    t['Eogonek'] = 667;
+    t['dcroat'] = 611;
+    t['threequarters'] = 834;
+    t['Scedilla'] = 667;
+    t['lcaron'] = 400;
+    t['Kcommaaccent'] = 722;
+    t['Lacute'] = 611;
+    t['trademark'] = 1000;
+    t['edotaccent'] = 556;
+    t['Igrave'] = 278;
+    t['Imacron'] = 278;
+    t['Lcaron'] = 611;
+    t['onehalf'] = 834;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 611;
+    t['ntilde'] = 611;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 667;
+    t['emacron'] = 556;
+    t['gbreve'] = 611;
+    t['onequarter'] = 834;
+    t['Scaron'] = 667;
+    t['Scommaaccent'] = 667;
+    t['Ohungarumlaut'] = 778;
+    t['degree'] = 400;
+    t['ograve'] = 611;
+    t['Ccaron'] = 722;
+    t['ugrave'] = 611;
+    t['radical'] = 549;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 389;
+    t['Ntilde'] = 722;
+    t['otilde'] = 611;
+    t['Rcommaaccent'] = 722;
+    t['Lcommaaccent'] = 611;
+    t['Atilde'] = 722;
+    t['Aogonek'] = 722;
+    t['Aring'] = 722;
+    t['Otilde'] = 778;
+    t['zdotaccent'] = 500;
+    t['Ecaron'] = 667;
+    t['Iogonek'] = 278;
+    t['kcommaaccent'] = 556;
+    t['minus'] = 584;
+    t['Icircumflex'] = 278;
+    t['ncaron'] = 611;
+    t['tcommaaccent'] = 333;
+    t['logicalnot'] = 584;
+    t['odieresis'] = 611;
+    t['udieresis'] = 611;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 611;
+    t['eth'] = 611;
+    t['zcaron'] = 500;
+    t['ncommaaccent'] = 611;
+    t['onesuperior'] = 333;
+    t['imacron'] = 278;
+    t['Euro'] = 556;
+  });
+  t['Helvetica-Oblique'] = getLookupTableFactory(function (t) {
+    t['space'] = 278;
+    t['exclam'] = 278;
+    t['quotedbl'] = 355;
+    t['numbersign'] = 556;
+    t['dollar'] = 556;
+    t['percent'] = 889;
+    t['ampersand'] = 667;
+    t['quoteright'] = 222;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 389;
+    t['plus'] = 584;
+    t['comma'] = 278;
+    t['hyphen'] = 333;
+    t['period'] = 278;
+    t['slash'] = 278;
+    t['zero'] = 556;
+    t['one'] = 556;
+    t['two'] = 556;
+    t['three'] = 556;
+    t['four'] = 556;
+    t['five'] = 556;
+    t['six'] = 556;
+    t['seven'] = 556;
+    t['eight'] = 556;
+    t['nine'] = 556;
+    t['colon'] = 278;
+    t['semicolon'] = 278;
+    t['less'] = 584;
+    t['equal'] = 584;
+    t['greater'] = 584;
+    t['question'] = 556;
+    t['at'] = 1015;
+    t['A'] = 667;
+    t['B'] = 667;
+    t['C'] = 722;
+    t['D'] = 722;
+    t['E'] = 667;
+    t['F'] = 611;
+    t['G'] = 778;
+    t['H'] = 722;
+    t['I'] = 278;
+    t['J'] = 500;
+    t['K'] = 667;
+    t['L'] = 556;
+    t['M'] = 833;
+    t['N'] = 722;
+    t['O'] = 778;
+    t['P'] = 667;
+    t['Q'] = 778;
+    t['R'] = 722;
+    t['S'] = 667;
+    t['T'] = 611;
+    t['U'] = 722;
+    t['V'] = 667;
+    t['W'] = 944;
+    t['X'] = 667;
+    t['Y'] = 667;
+    t['Z'] = 611;
+    t['bracketleft'] = 278;
+    t['backslash'] = 278;
+    t['bracketright'] = 278;
+    t['asciicircum'] = 469;
+    t['underscore'] = 556;
+    t['quoteleft'] = 222;
+    t['a'] = 556;
+    t['b'] = 556;
+    t['c'] = 500;
+    t['d'] = 556;
+    t['e'] = 556;
+    t['f'] = 278;
+    t['g'] = 556;
+    t['h'] = 556;
+    t['i'] = 222;
+    t['j'] = 222;
+    t['k'] = 500;
+    t['l'] = 222;
+    t['m'] = 833;
+    t['n'] = 556;
+    t['o'] = 556;
+    t['p'] = 556;
+    t['q'] = 556;
+    t['r'] = 333;
+    t['s'] = 500;
+    t['t'] = 278;
+    t['u'] = 556;
+    t['v'] = 500;
+    t['w'] = 722;
+    t['x'] = 500;
+    t['y'] = 500;
+    t['z'] = 500;
+    t['braceleft'] = 334;
+    t['bar'] = 260;
+    t['braceright'] = 334;
+    t['asciitilde'] = 584;
+    t['exclamdown'] = 333;
+    t['cent'] = 556;
+    t['sterling'] = 556;
+    t['fraction'] = 167;
+    t['yen'] = 556;
+    t['florin'] = 556;
+    t['section'] = 556;
+    t['currency'] = 556;
+    t['quotesingle'] = 191;
+    t['quotedblleft'] = 333;
+    t['guillemotleft'] = 556;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 500;
+    t['fl'] = 500;
+    t['endash'] = 556;
+    t['dagger'] = 556;
+    t['daggerdbl'] = 556;
+    t['periodcentered'] = 278;
+    t['paragraph'] = 537;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 222;
+    t['quotedblbase'] = 333;
+    t['quotedblright'] = 333;
+    t['guillemotright'] = 556;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 611;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 1000;
+    t['ordfeminine'] = 370;
+    t['Lslash'] = 556;
+    t['Oslash'] = 778;
+    t['OE'] = 1000;
+    t['ordmasculine'] = 365;
+    t['ae'] = 889;
+    t['dotlessi'] = 278;
+    t['lslash'] = 222;
+    t['oslash'] = 611;
+    t['oe'] = 944;
+    t['germandbls'] = 611;
+    t['Idieresis'] = 278;
+    t['eacute'] = 556;
+    t['abreve'] = 556;
+    t['uhungarumlaut'] = 556;
+    t['ecaron'] = 556;
+    t['Ydieresis'] = 667;
+    t['divide'] = 584;
+    t['Yacute'] = 667;
+    t['Acircumflex'] = 667;
+    t['aacute'] = 556;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 500;
+    t['scommaaccent'] = 500;
+    t['ecircumflex'] = 556;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 556;
+    t['Uacute'] = 722;
+    t['uogonek'] = 556;
+    t['Edieresis'] = 667;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 737;
+    t['Emacron'] = 667;
+    t['ccaron'] = 500;
+    t['aring'] = 556;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 222;
+    t['agrave'] = 556;
+    t['Tcommaaccent'] = 611;
+    t['Cacute'] = 722;
+    t['atilde'] = 556;
+    t['Edotaccent'] = 667;
+    t['scaron'] = 500;
+    t['scedilla'] = 500;
+    t['iacute'] = 278;
+    t['lozenge'] = 471;
+    t['Rcaron'] = 722;
+    t['Gcommaaccent'] = 778;
+    t['ucircumflex'] = 556;
+    t['acircumflex'] = 556;
+    t['Amacron'] = 667;
+    t['rcaron'] = 333;
+    t['ccedilla'] = 500;
+    t['Zdotaccent'] = 611;
+    t['Thorn'] = 667;
+    t['Omacron'] = 778;
+    t['Racute'] = 722;
+    t['Sacute'] = 667;
+    t['dcaron'] = 643;
+    t['Umacron'] = 722;
+    t['uring'] = 556;
+    t['threesuperior'] = 333;
+    t['Ograve'] = 778;
+    t['Agrave'] = 667;
+    t['Abreve'] = 667;
+    t['multiply'] = 584;
+    t['uacute'] = 556;
+    t['Tcaron'] = 611;
+    t['partialdiff'] = 476;
+    t['ydieresis'] = 500;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 667;
+    t['adieresis'] = 556;
+    t['edieresis'] = 556;
+    t['cacute'] = 500;
+    t['nacute'] = 556;
+    t['umacron'] = 556;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 278;
+    t['plusminus'] = 584;
+    t['brokenbar'] = 260;
+    t['registered'] = 737;
+    t['Gbreve'] = 778;
+    t['Idotaccent'] = 278;
+    t['summation'] = 600;
+    t['Egrave'] = 667;
+    t['racute'] = 333;
+    t['omacron'] = 556;
+    t['Zacute'] = 611;
+    t['Zcaron'] = 611;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 722;
+    t['lcommaaccent'] = 222;
+    t['tcaron'] = 317;
+    t['eogonek'] = 556;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 667;
+    t['Adieresis'] = 667;
+    t['egrave'] = 556;
+    t['zacute'] = 500;
+    t['iogonek'] = 222;
+    t['Oacute'] = 778;
+    t['oacute'] = 556;
+    t['amacron'] = 556;
+    t['sacute'] = 500;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 778;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 556;
+    t['twosuperior'] = 333;
+    t['Odieresis'] = 778;
+    t['mu'] = 556;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 556;
+    t['Eogonek'] = 667;
+    t['dcroat'] = 556;
+    t['threequarters'] = 834;
+    t['Scedilla'] = 667;
+    t['lcaron'] = 299;
+    t['Kcommaaccent'] = 667;
+    t['Lacute'] = 556;
+    t['trademark'] = 1000;
+    t['edotaccent'] = 556;
+    t['Igrave'] = 278;
+    t['Imacron'] = 278;
+    t['Lcaron'] = 556;
+    t['onehalf'] = 834;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 556;
+    t['ntilde'] = 556;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 667;
+    t['emacron'] = 556;
+    t['gbreve'] = 556;
+    t['onequarter'] = 834;
+    t['Scaron'] = 667;
+    t['Scommaaccent'] = 667;
+    t['Ohungarumlaut'] = 778;
+    t['degree'] = 400;
+    t['ograve'] = 556;
+    t['Ccaron'] = 722;
+    t['ugrave'] = 556;
+    t['radical'] = 453;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 333;
+    t['Ntilde'] = 722;
+    t['otilde'] = 556;
+    t['Rcommaaccent'] = 722;
+    t['Lcommaaccent'] = 556;
+    t['Atilde'] = 667;
+    t['Aogonek'] = 667;
+    t['Aring'] = 667;
+    t['Otilde'] = 778;
+    t['zdotaccent'] = 500;
+    t['Ecaron'] = 667;
+    t['Iogonek'] = 278;
+    t['kcommaaccent'] = 500;
+    t['minus'] = 584;
+    t['Icircumflex'] = 278;
+    t['ncaron'] = 556;
+    t['tcommaaccent'] = 278;
+    t['logicalnot'] = 584;
+    t['odieresis'] = 556;
+    t['udieresis'] = 556;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 556;
+    t['eth'] = 556;
+    t['zcaron'] = 500;
+    t['ncommaaccent'] = 556;
+    t['onesuperior'] = 333;
+    t['imacron'] = 278;
+    t['Euro'] = 556;
+  });
+  t['Symbol'] = getLookupTableFactory(function (t) {
+    t['space'] = 250;
+    t['exclam'] = 333;
+    t['universal'] = 713;
+    t['numbersign'] = 500;
+    t['existential'] = 549;
+    t['percent'] = 833;
+    t['ampersand'] = 778;
+    t['suchthat'] = 439;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asteriskmath'] = 500;
+    t['plus'] = 549;
+    t['comma'] = 250;
+    t['minus'] = 549;
+    t['period'] = 250;
+    t['slash'] = 278;
+    t['zero'] = 500;
+    t['one'] = 500;
+    t['two'] = 500;
+    t['three'] = 500;
+    t['four'] = 500;
+    t['five'] = 500;
+    t['six'] = 500;
+    t['seven'] = 500;
+    t['eight'] = 500;
+    t['nine'] = 500;
+    t['colon'] = 278;
+    t['semicolon'] = 278;
+    t['less'] = 549;
+    t['equal'] = 549;
+    t['greater'] = 549;
+    t['question'] = 444;
+    t['congruent'] = 549;
+    t['Alpha'] = 722;
+    t['Beta'] = 667;
+    t['Chi'] = 722;
+    t['Delta'] = 612;
+    t['Epsilon'] = 611;
+    t['Phi'] = 763;
+    t['Gamma'] = 603;
+    t['Eta'] = 722;
+    t['Iota'] = 333;
+    t['theta1'] = 631;
+    t['Kappa'] = 722;
+    t['Lambda'] = 686;
+    t['Mu'] = 889;
+    t['Nu'] = 722;
+    t['Omicron'] = 722;
+    t['Pi'] = 768;
+    t['Theta'] = 741;
+    t['Rho'] = 556;
+    t['Sigma'] = 592;
+    t['Tau'] = 611;
+    t['Upsilon'] = 690;
+    t['sigma1'] = 439;
+    t['Omega'] = 768;
+    t['Xi'] = 645;
+    t['Psi'] = 795;
+    t['Zeta'] = 611;
+    t['bracketleft'] = 333;
+    t['therefore'] = 863;
+    t['bracketright'] = 333;
+    t['perpendicular'] = 658;
+    t['underscore'] = 500;
+    t['radicalex'] = 500;
+    t['alpha'] = 631;
+    t['beta'] = 549;
+    t['chi'] = 549;
+    t['delta'] = 494;
+    t['epsilon'] = 439;
+    t['phi'] = 521;
+    t['gamma'] = 411;
+    t['eta'] = 603;
+    t['iota'] = 329;
+    t['phi1'] = 603;
+    t['kappa'] = 549;
+    t['lambda'] = 549;
+    t['mu'] = 576;
+    t['nu'] = 521;
+    t['omicron'] = 549;
+    t['pi'] = 549;
+    t['theta'] = 521;
+    t['rho'] = 549;
+    t['sigma'] = 603;
+    t['tau'] = 439;
+    t['upsilon'] = 576;
+    t['omega1'] = 713;
+    t['omega'] = 686;
+    t['xi'] = 493;
+    t['psi'] = 686;
+    t['zeta'] = 494;
+    t['braceleft'] = 480;
+    t['bar'] = 200;
+    t['braceright'] = 480;
+    t['similar'] = 549;
+    t['Euro'] = 750;
+    t['Upsilon1'] = 620;
+    t['minute'] = 247;
+    t['lessequal'] = 549;
+    t['fraction'] = 167;
+    t['infinity'] = 713;
+    t['florin'] = 500;
+    t['club'] = 753;
+    t['diamond'] = 753;
+    t['heart'] = 753;
+    t['spade'] = 753;
+    t['arrowboth'] = 1042;
+    t['arrowleft'] = 987;
+    t['arrowup'] = 603;
+    t['arrowright'] = 987;
+    t['arrowdown'] = 603;
+    t['degree'] = 400;
+    t['plusminus'] = 549;
+    t['second'] = 411;
+    t['greaterequal'] = 549;
+    t['multiply'] = 549;
+    t['proportional'] = 713;
+    t['partialdiff'] = 494;
+    t['bullet'] = 460;
+    t['divide'] = 549;
+    t['notequal'] = 549;
+    t['equivalence'] = 549;
+    t['approxequal'] = 549;
+    t['ellipsis'] = 1000;
+    t['arrowvertex'] = 603;
+    t['arrowhorizex'] = 1000;
+    t['carriagereturn'] = 658;
+    t['aleph'] = 823;
+    t['Ifraktur'] = 686;
+    t['Rfraktur'] = 795;
+    t['weierstrass'] = 987;
+    t['circlemultiply'] = 768;
+    t['circleplus'] = 768;
+    t['emptyset'] = 823;
+    t['intersection'] = 768;
+    t['union'] = 768;
+    t['propersuperset'] = 713;
+    t['reflexsuperset'] = 713;
+    t['notsubset'] = 713;
+    t['propersubset'] = 713;
+    t['reflexsubset'] = 713;
+    t['element'] = 713;
+    t['notelement'] = 713;
+    t['angle'] = 768;
+    t['gradient'] = 713;
+    t['registerserif'] = 790;
+    t['copyrightserif'] = 790;
+    t['trademarkserif'] = 890;
+    t['product'] = 823;
+    t['radical'] = 549;
+    t['dotmath'] = 250;
+    t['logicalnot'] = 713;
+    t['logicaland'] = 603;
+    t['logicalor'] = 603;
+    t['arrowdblboth'] = 1042;
+    t['arrowdblleft'] = 987;
+    t['arrowdblup'] = 603;
+    t['arrowdblright'] = 987;
+    t['arrowdbldown'] = 603;
+    t['lozenge'] = 494;
+    t['angleleft'] = 329;
+    t['registersans'] = 790;
+    t['copyrightsans'] = 790;
+    t['trademarksans'] = 786;
+    t['summation'] = 713;
+    t['parenlefttp'] = 384;
+    t['parenleftex'] = 384;
+    t['parenleftbt'] = 384;
+    t['bracketlefttp'] = 384;
+    t['bracketleftex'] = 384;
+    t['bracketleftbt'] = 384;
+    t['bracelefttp'] = 494;
+    t['braceleftmid'] = 494;
+    t['braceleftbt'] = 494;
+    t['braceex'] = 494;
+    t['angleright'] = 329;
+    t['integral'] = 274;
+    t['integraltp'] = 686;
+    t['integralex'] = 686;
+    t['integralbt'] = 686;
+    t['parenrighttp'] = 384;
+    t['parenrightex'] = 384;
+    t['parenrightbt'] = 384;
+    t['bracketrighttp'] = 384;
+    t['bracketrightex'] = 384;
+    t['bracketrightbt'] = 384;
+    t['bracerighttp'] = 494;
+    t['bracerightmid'] = 494;
+    t['bracerightbt'] = 494;
+    t['apple'] = 790;
+  });
+  t['Times-Roman'] = getLookupTableFactory(function (t) {
+    t['space'] = 250;
+    t['exclam'] = 333;
+    t['quotedbl'] = 408;
+    t['numbersign'] = 500;
+    t['dollar'] = 500;
+    t['percent'] = 833;
+    t['ampersand'] = 778;
+    t['quoteright'] = 333;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 500;
+    t['plus'] = 564;
+    t['comma'] = 250;
+    t['hyphen'] = 333;
+    t['period'] = 250;
+    t['slash'] = 278;
+    t['zero'] = 500;
+    t['one'] = 500;
+    t['two'] = 500;
+    t['three'] = 500;
+    t['four'] = 500;
+    t['five'] = 500;
+    t['six'] = 500;
+    t['seven'] = 500;
+    t['eight'] = 500;
+    t['nine'] = 500;
+    t['colon'] = 278;
+    t['semicolon'] = 278;
+    t['less'] = 564;
+    t['equal'] = 564;
+    t['greater'] = 564;
+    t['question'] = 444;
+    t['at'] = 921;
+    t['A'] = 722;
+    t['B'] = 667;
+    t['C'] = 667;
+    t['D'] = 722;
+    t['E'] = 611;
+    t['F'] = 556;
+    t['G'] = 722;
+    t['H'] = 722;
+    t['I'] = 333;
+    t['J'] = 389;
+    t['K'] = 722;
+    t['L'] = 611;
+    t['M'] = 889;
+    t['N'] = 722;
+    t['O'] = 722;
+    t['P'] = 556;
+    t['Q'] = 722;
+    t['R'] = 667;
+    t['S'] = 556;
+    t['T'] = 611;
+    t['U'] = 722;
+    t['V'] = 722;
+    t['W'] = 944;
+    t['X'] = 722;
+    t['Y'] = 722;
+    t['Z'] = 611;
+    t['bracketleft'] = 333;
+    t['backslash'] = 278;
+    t['bracketright'] = 333;
+    t['asciicircum'] = 469;
+    t['underscore'] = 500;
+    t['quoteleft'] = 333;
+    t['a'] = 444;
+    t['b'] = 500;
+    t['c'] = 444;
+    t['d'] = 500;
+    t['e'] = 444;
+    t['f'] = 333;
+    t['g'] = 500;
+    t['h'] = 500;
+    t['i'] = 278;
+    t['j'] = 278;
+    t['k'] = 500;
+    t['l'] = 278;
+    t['m'] = 778;
+    t['n'] = 500;
+    t['o'] = 500;
+    t['p'] = 500;
+    t['q'] = 500;
+    t['r'] = 333;
+    t['s'] = 389;
+    t['t'] = 278;
+    t['u'] = 500;
+    t['v'] = 500;
+    t['w'] = 722;
+    t['x'] = 500;
+    t['y'] = 500;
+    t['z'] = 444;
+    t['braceleft'] = 480;
+    t['bar'] = 200;
+    t['braceright'] = 480;
+    t['asciitilde'] = 541;
+    t['exclamdown'] = 333;
+    t['cent'] = 500;
+    t['sterling'] = 500;
+    t['fraction'] = 167;
+    t['yen'] = 500;
+    t['florin'] = 500;
+    t['section'] = 500;
+    t['currency'] = 500;
+    t['quotesingle'] = 180;
+    t['quotedblleft'] = 444;
+    t['guillemotleft'] = 500;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 556;
+    t['fl'] = 556;
+    t['endash'] = 500;
+    t['dagger'] = 500;
+    t['daggerdbl'] = 500;
+    t['periodcentered'] = 250;
+    t['paragraph'] = 453;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 333;
+    t['quotedblbase'] = 444;
+    t['quotedblright'] = 444;
+    t['guillemotright'] = 500;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 444;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 889;
+    t['ordfeminine'] = 276;
+    t['Lslash'] = 611;
+    t['Oslash'] = 722;
+    t['OE'] = 889;
+    t['ordmasculine'] = 310;
+    t['ae'] = 667;
+    t['dotlessi'] = 278;
+    t['lslash'] = 278;
+    t['oslash'] = 500;
+    t['oe'] = 722;
+    t['germandbls'] = 500;
+    t['Idieresis'] = 333;
+    t['eacute'] = 444;
+    t['abreve'] = 444;
+    t['uhungarumlaut'] = 500;
+    t['ecaron'] = 444;
+    t['Ydieresis'] = 722;
+    t['divide'] = 564;
+    t['Yacute'] = 722;
+    t['Acircumflex'] = 722;
+    t['aacute'] = 444;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 500;
+    t['scommaaccent'] = 389;
+    t['ecircumflex'] = 444;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 444;
+    t['Uacute'] = 722;
+    t['uogonek'] = 500;
+    t['Edieresis'] = 611;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 760;
+    t['Emacron'] = 611;
+    t['ccaron'] = 444;
+    t['aring'] = 444;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 278;
+    t['agrave'] = 444;
+    t['Tcommaaccent'] = 611;
+    t['Cacute'] = 667;
+    t['atilde'] = 444;
+    t['Edotaccent'] = 611;
+    t['scaron'] = 389;
+    t['scedilla'] = 389;
+    t['iacute'] = 278;
+    t['lozenge'] = 471;
+    t['Rcaron'] = 667;
+    t['Gcommaaccent'] = 722;
+    t['ucircumflex'] = 500;
+    t['acircumflex'] = 444;
+    t['Amacron'] = 722;
+    t['rcaron'] = 333;
+    t['ccedilla'] = 444;
+    t['Zdotaccent'] = 611;
+    t['Thorn'] = 556;
+    t['Omacron'] = 722;
+    t['Racute'] = 667;
+    t['Sacute'] = 556;
+    t['dcaron'] = 588;
+    t['Umacron'] = 722;
+    t['uring'] = 500;
+    t['threesuperior'] = 300;
+    t['Ograve'] = 722;
+    t['Agrave'] = 722;
+    t['Abreve'] = 722;
+    t['multiply'] = 564;
+    t['uacute'] = 500;
+    t['Tcaron'] = 611;
+    t['partialdiff'] = 476;
+    t['ydieresis'] = 500;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 611;
+    t['adieresis'] = 444;
+    t['edieresis'] = 444;
+    t['cacute'] = 444;
+    t['nacute'] = 500;
+    t['umacron'] = 500;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 333;
+    t['plusminus'] = 564;
+    t['brokenbar'] = 200;
+    t['registered'] = 760;
+    t['Gbreve'] = 722;
+    t['Idotaccent'] = 333;
+    t['summation'] = 600;
+    t['Egrave'] = 611;
+    t['racute'] = 333;
+    t['omacron'] = 500;
+    t['Zacute'] = 611;
+    t['Zcaron'] = 611;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 667;
+    t['lcommaaccent'] = 278;
+    t['tcaron'] = 326;
+    t['eogonek'] = 444;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 722;
+    t['Adieresis'] = 722;
+    t['egrave'] = 444;
+    t['zacute'] = 444;
+    t['iogonek'] = 278;
+    t['Oacute'] = 722;
+    t['oacute'] = 500;
+    t['amacron'] = 444;
+    t['sacute'] = 389;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 722;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 500;
+    t['twosuperior'] = 300;
+    t['Odieresis'] = 722;
+    t['mu'] = 500;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 500;
+    t['Eogonek'] = 611;
+    t['dcroat'] = 500;
+    t['threequarters'] = 750;
+    t['Scedilla'] = 556;
+    t['lcaron'] = 344;
+    t['Kcommaaccent'] = 722;
+    t['Lacute'] = 611;
+    t['trademark'] = 980;
+    t['edotaccent'] = 444;
+    t['Igrave'] = 333;
+    t['Imacron'] = 333;
+    t['Lcaron'] = 611;
+    t['onehalf'] = 750;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 500;
+    t['ntilde'] = 500;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 611;
+    t['emacron'] = 444;
+    t['gbreve'] = 500;
+    t['onequarter'] = 750;
+    t['Scaron'] = 556;
+    t['Scommaaccent'] = 556;
+    t['Ohungarumlaut'] = 722;
+    t['degree'] = 400;
+    t['ograve'] = 500;
+    t['Ccaron'] = 667;
+    t['ugrave'] = 500;
+    t['radical'] = 453;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 333;
+    t['Ntilde'] = 722;
+    t['otilde'] = 500;
+    t['Rcommaaccent'] = 667;
+    t['Lcommaaccent'] = 611;
+    t['Atilde'] = 722;
+    t['Aogonek'] = 722;
+    t['Aring'] = 722;
+    t['Otilde'] = 722;
+    t['zdotaccent'] = 444;
+    t['Ecaron'] = 611;
+    t['Iogonek'] = 333;
+    t['kcommaaccent'] = 500;
+    t['minus'] = 564;
+    t['Icircumflex'] = 333;
+    t['ncaron'] = 500;
+    t['tcommaaccent'] = 278;
+    t['logicalnot'] = 564;
+    t['odieresis'] = 500;
+    t['udieresis'] = 500;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 500;
+    t['eth'] = 500;
+    t['zcaron'] = 444;
+    t['ncommaaccent'] = 500;
+    t['onesuperior'] = 300;
+    t['imacron'] = 278;
+    t['Euro'] = 500;
+  });
+  t['Times-Bold'] = getLookupTableFactory(function (t) {
+    t['space'] = 250;
+    t['exclam'] = 333;
+    t['quotedbl'] = 555;
+    t['numbersign'] = 500;
+    t['dollar'] = 500;
+    t['percent'] = 1000;
+    t['ampersand'] = 833;
+    t['quoteright'] = 333;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 500;
+    t['plus'] = 570;
+    t['comma'] = 250;
+    t['hyphen'] = 333;
+    t['period'] = 250;
+    t['slash'] = 278;
+    t['zero'] = 500;
+    t['one'] = 500;
+    t['two'] = 500;
+    t['three'] = 500;
+    t['four'] = 500;
+    t['five'] = 500;
+    t['six'] = 500;
+    t['seven'] = 500;
+    t['eight'] = 500;
+    t['nine'] = 500;
+    t['colon'] = 333;
+    t['semicolon'] = 333;
+    t['less'] = 570;
+    t['equal'] = 570;
+    t['greater'] = 570;
+    t['question'] = 500;
+    t['at'] = 930;
+    t['A'] = 722;
+    t['B'] = 667;
+    t['C'] = 722;
+    t['D'] = 722;
+    t['E'] = 667;
+    t['F'] = 611;
+    t['G'] = 778;
+    t['H'] = 778;
+    t['I'] = 389;
+    t['J'] = 500;
+    t['K'] = 778;
+    t['L'] = 667;
+    t['M'] = 944;
+    t['N'] = 722;
+    t['O'] = 778;
+    t['P'] = 611;
+    t['Q'] = 778;
+    t['R'] = 722;
+    t['S'] = 556;
+    t['T'] = 667;
+    t['U'] = 722;
+    t['V'] = 722;
+    t['W'] = 1000;
+    t['X'] = 722;
+    t['Y'] = 722;
+    t['Z'] = 667;
+    t['bracketleft'] = 333;
+    t['backslash'] = 278;
+    t['bracketright'] = 333;
+    t['asciicircum'] = 581;
+    t['underscore'] = 500;
+    t['quoteleft'] = 333;
+    t['a'] = 500;
+    t['b'] = 556;
+    t['c'] = 444;
+    t['d'] = 556;
+    t['e'] = 444;
+    t['f'] = 333;
+    t['g'] = 500;
+    t['h'] = 556;
+    t['i'] = 278;
+    t['j'] = 333;
+    t['k'] = 556;
+    t['l'] = 278;
+    t['m'] = 833;
+    t['n'] = 556;
+    t['o'] = 500;
+    t['p'] = 556;
+    t['q'] = 556;
+    t['r'] = 444;
+    t['s'] = 389;
+    t['t'] = 333;
+    t['u'] = 556;
+    t['v'] = 500;
+    t['w'] = 722;
+    t['x'] = 500;
+    t['y'] = 500;
+    t['z'] = 444;
+    t['braceleft'] = 394;
+    t['bar'] = 220;
+    t['braceright'] = 394;
+    t['asciitilde'] = 520;
+    t['exclamdown'] = 333;
+    t['cent'] = 500;
+    t['sterling'] = 500;
+    t['fraction'] = 167;
+    t['yen'] = 500;
+    t['florin'] = 500;
+    t['section'] = 500;
+    t['currency'] = 500;
+    t['quotesingle'] = 278;
+    t['quotedblleft'] = 500;
+    t['guillemotleft'] = 500;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 556;
+    t['fl'] = 556;
+    t['endash'] = 500;
+    t['dagger'] = 500;
+    t['daggerdbl'] = 500;
+    t['periodcentered'] = 250;
+    t['paragraph'] = 540;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 333;
+    t['quotedblbase'] = 500;
+    t['quotedblright'] = 500;
+    t['guillemotright'] = 500;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 500;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 1000;
+    t['ordfeminine'] = 300;
+    t['Lslash'] = 667;
+    t['Oslash'] = 778;
+    t['OE'] = 1000;
+    t['ordmasculine'] = 330;
+    t['ae'] = 722;
+    t['dotlessi'] = 278;
+    t['lslash'] = 278;
+    t['oslash'] = 500;
+    t['oe'] = 722;
+    t['germandbls'] = 556;
+    t['Idieresis'] = 389;
+    t['eacute'] = 444;
+    t['abreve'] = 500;
+    t['uhungarumlaut'] = 556;
+    t['ecaron'] = 444;
+    t['Ydieresis'] = 722;
+    t['divide'] = 570;
+    t['Yacute'] = 722;
+    t['Acircumflex'] = 722;
+    t['aacute'] = 500;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 500;
+    t['scommaaccent'] = 389;
+    t['ecircumflex'] = 444;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 500;
+    t['Uacute'] = 722;
+    t['uogonek'] = 556;
+    t['Edieresis'] = 667;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 747;
+    t['Emacron'] = 667;
+    t['ccaron'] = 444;
+    t['aring'] = 500;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 278;
+    t['agrave'] = 500;
+    t['Tcommaaccent'] = 667;
+    t['Cacute'] = 722;
+    t['atilde'] = 500;
+    t['Edotaccent'] = 667;
+    t['scaron'] = 389;
+    t['scedilla'] = 389;
+    t['iacute'] = 278;
+    t['lozenge'] = 494;
+    t['Rcaron'] = 722;
+    t['Gcommaaccent'] = 778;
+    t['ucircumflex'] = 556;
+    t['acircumflex'] = 500;
+    t['Amacron'] = 722;
+    t['rcaron'] = 444;
+    t['ccedilla'] = 444;
+    t['Zdotaccent'] = 667;
+    t['Thorn'] = 611;
+    t['Omacron'] = 778;
+    t['Racute'] = 722;
+    t['Sacute'] = 556;
+    t['dcaron'] = 672;
+    t['Umacron'] = 722;
+    t['uring'] = 556;
+    t['threesuperior'] = 300;
+    t['Ograve'] = 778;
+    t['Agrave'] = 722;
+    t['Abreve'] = 722;
+    t['multiply'] = 570;
+    t['uacute'] = 556;
+    t['Tcaron'] = 667;
+    t['partialdiff'] = 494;
+    t['ydieresis'] = 500;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 667;
+    t['adieresis'] = 500;
+    t['edieresis'] = 444;
+    t['cacute'] = 444;
+    t['nacute'] = 556;
+    t['umacron'] = 556;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 389;
+    t['plusminus'] = 570;
+    t['brokenbar'] = 220;
+    t['registered'] = 747;
+    t['Gbreve'] = 778;
+    t['Idotaccent'] = 389;
+    t['summation'] = 600;
+    t['Egrave'] = 667;
+    t['racute'] = 444;
+    t['omacron'] = 500;
+    t['Zacute'] = 667;
+    t['Zcaron'] = 667;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 722;
+    t['lcommaaccent'] = 278;
+    t['tcaron'] = 416;
+    t['eogonek'] = 444;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 722;
+    t['Adieresis'] = 722;
+    t['egrave'] = 444;
+    t['zacute'] = 444;
+    t['iogonek'] = 278;
+    t['Oacute'] = 778;
+    t['oacute'] = 500;
+    t['amacron'] = 500;
+    t['sacute'] = 389;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 778;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 556;
+    t['twosuperior'] = 300;
+    t['Odieresis'] = 778;
+    t['mu'] = 556;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 500;
+    t['Eogonek'] = 667;
+    t['dcroat'] = 556;
+    t['threequarters'] = 750;
+    t['Scedilla'] = 556;
+    t['lcaron'] = 394;
+    t['Kcommaaccent'] = 778;
+    t['Lacute'] = 667;
+    t['trademark'] = 1000;
+    t['edotaccent'] = 444;
+    t['Igrave'] = 389;
+    t['Imacron'] = 389;
+    t['Lcaron'] = 667;
+    t['onehalf'] = 750;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 500;
+    t['ntilde'] = 556;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 667;
+    t['emacron'] = 444;
+    t['gbreve'] = 500;
+    t['onequarter'] = 750;
+    t['Scaron'] = 556;
+    t['Scommaaccent'] = 556;
+    t['Ohungarumlaut'] = 778;
+    t['degree'] = 400;
+    t['ograve'] = 500;
+    t['Ccaron'] = 722;
+    t['ugrave'] = 556;
+    t['radical'] = 549;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 444;
+    t['Ntilde'] = 722;
+    t['otilde'] = 500;
+    t['Rcommaaccent'] = 722;
+    t['Lcommaaccent'] = 667;
+    t['Atilde'] = 722;
+    t['Aogonek'] = 722;
+    t['Aring'] = 722;
+    t['Otilde'] = 778;
+    t['zdotaccent'] = 444;
+    t['Ecaron'] = 667;
+    t['Iogonek'] = 389;
+    t['kcommaaccent'] = 556;
+    t['minus'] = 570;
+    t['Icircumflex'] = 389;
+    t['ncaron'] = 556;
+    t['tcommaaccent'] = 333;
+    t['logicalnot'] = 570;
+    t['odieresis'] = 500;
+    t['udieresis'] = 556;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 500;
+    t['eth'] = 500;
+    t['zcaron'] = 444;
+    t['ncommaaccent'] = 556;
+    t['onesuperior'] = 300;
+    t['imacron'] = 278;
+    t['Euro'] = 500;
+  });
+  t['Times-BoldItalic'] = getLookupTableFactory(function (t) {
+    t['space'] = 250;
+    t['exclam'] = 389;
+    t['quotedbl'] = 555;
+    t['numbersign'] = 500;
+    t['dollar'] = 500;
+    t['percent'] = 833;
+    t['ampersand'] = 778;
+    t['quoteright'] = 333;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 500;
+    t['plus'] = 570;
+    t['comma'] = 250;
+    t['hyphen'] = 333;
+    t['period'] = 250;
+    t['slash'] = 278;
+    t['zero'] = 500;
+    t['one'] = 500;
+    t['two'] = 500;
+    t['three'] = 500;
+    t['four'] = 500;
+    t['five'] = 500;
+    t['six'] = 500;
+    t['seven'] = 500;
+    t['eight'] = 500;
+    t['nine'] = 500;
+    t['colon'] = 333;
+    t['semicolon'] = 333;
+    t['less'] = 570;
+    t['equal'] = 570;
+    t['greater'] = 570;
+    t['question'] = 500;
+    t['at'] = 832;
+    t['A'] = 667;
+    t['B'] = 667;
+    t['C'] = 667;
+    t['D'] = 722;
+    t['E'] = 667;
+    t['F'] = 667;
+    t['G'] = 722;
+    t['H'] = 778;
+    t['I'] = 389;
+    t['J'] = 500;
+    t['K'] = 667;
+    t['L'] = 611;
+    t['M'] = 889;
+    t['N'] = 722;
+    t['O'] = 722;
+    t['P'] = 611;
+    t['Q'] = 722;
+    t['R'] = 667;
+    t['S'] = 556;
+    t['T'] = 611;
+    t['U'] = 722;
+    t['V'] = 667;
+    t['W'] = 889;
+    t['X'] = 667;
+    t['Y'] = 611;
+    t['Z'] = 611;
+    t['bracketleft'] = 333;
+    t['backslash'] = 278;
+    t['bracketright'] = 333;
+    t['asciicircum'] = 570;
+    t['underscore'] = 500;
+    t['quoteleft'] = 333;
+    t['a'] = 500;
+    t['b'] = 500;
+    t['c'] = 444;
+    t['d'] = 500;
+    t['e'] = 444;
+    t['f'] = 333;
+    t['g'] = 500;
+    t['h'] = 556;
+    t['i'] = 278;
+    t['j'] = 278;
+    t['k'] = 500;
+    t['l'] = 278;
+    t['m'] = 778;
+    t['n'] = 556;
+    t['o'] = 500;
+    t['p'] = 500;
+    t['q'] = 500;
+    t['r'] = 389;
+    t['s'] = 389;
+    t['t'] = 278;
+    t['u'] = 556;
+    t['v'] = 444;
+    t['w'] = 667;
+    t['x'] = 500;
+    t['y'] = 444;
+    t['z'] = 389;
+    t['braceleft'] = 348;
+    t['bar'] = 220;
+    t['braceright'] = 348;
+    t['asciitilde'] = 570;
+    t['exclamdown'] = 389;
+    t['cent'] = 500;
+    t['sterling'] = 500;
+    t['fraction'] = 167;
+    t['yen'] = 500;
+    t['florin'] = 500;
+    t['section'] = 500;
+    t['currency'] = 500;
+    t['quotesingle'] = 278;
+    t['quotedblleft'] = 500;
+    t['guillemotleft'] = 500;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 556;
+    t['fl'] = 556;
+    t['endash'] = 500;
+    t['dagger'] = 500;
+    t['daggerdbl'] = 500;
+    t['periodcentered'] = 250;
+    t['paragraph'] = 500;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 333;
+    t['quotedblbase'] = 500;
+    t['quotedblright'] = 500;
+    t['guillemotright'] = 500;
+    t['ellipsis'] = 1000;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 500;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 1000;
+    t['AE'] = 944;
+    t['ordfeminine'] = 266;
+    t['Lslash'] = 611;
+    t['Oslash'] = 722;
+    t['OE'] = 944;
+    t['ordmasculine'] = 300;
+    t['ae'] = 722;
+    t['dotlessi'] = 278;
+    t['lslash'] = 278;
+    t['oslash'] = 500;
+    t['oe'] = 722;
+    t['germandbls'] = 500;
+    t['Idieresis'] = 389;
+    t['eacute'] = 444;
+    t['abreve'] = 500;
+    t['uhungarumlaut'] = 556;
+    t['ecaron'] = 444;
+    t['Ydieresis'] = 611;
+    t['divide'] = 570;
+    t['Yacute'] = 611;
+    t['Acircumflex'] = 667;
+    t['aacute'] = 500;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 444;
+    t['scommaaccent'] = 389;
+    t['ecircumflex'] = 444;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 500;
+    t['Uacute'] = 722;
+    t['uogonek'] = 556;
+    t['Edieresis'] = 667;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 747;
+    t['Emacron'] = 667;
+    t['ccaron'] = 444;
+    t['aring'] = 500;
+    t['Ncommaaccent'] = 722;
+    t['lacute'] = 278;
+    t['agrave'] = 500;
+    t['Tcommaaccent'] = 611;
+    t['Cacute'] = 667;
+    t['atilde'] = 500;
+    t['Edotaccent'] = 667;
+    t['scaron'] = 389;
+    t['scedilla'] = 389;
+    t['iacute'] = 278;
+    t['lozenge'] = 494;
+    t['Rcaron'] = 667;
+    t['Gcommaaccent'] = 722;
+    t['ucircumflex'] = 556;
+    t['acircumflex'] = 500;
+    t['Amacron'] = 667;
+    t['rcaron'] = 389;
+    t['ccedilla'] = 444;
+    t['Zdotaccent'] = 611;
+    t['Thorn'] = 611;
+    t['Omacron'] = 722;
+    t['Racute'] = 667;
+    t['Sacute'] = 556;
+    t['dcaron'] = 608;
+    t['Umacron'] = 722;
+    t['uring'] = 556;
+    t['threesuperior'] = 300;
+    t['Ograve'] = 722;
+    t['Agrave'] = 667;
+    t['Abreve'] = 667;
+    t['multiply'] = 570;
+    t['uacute'] = 556;
+    t['Tcaron'] = 611;
+    t['partialdiff'] = 494;
+    t['ydieresis'] = 444;
+    t['Nacute'] = 722;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 667;
+    t['adieresis'] = 500;
+    t['edieresis'] = 444;
+    t['cacute'] = 444;
+    t['nacute'] = 556;
+    t['umacron'] = 556;
+    t['Ncaron'] = 722;
+    t['Iacute'] = 389;
+    t['plusminus'] = 570;
+    t['brokenbar'] = 220;
+    t['registered'] = 747;
+    t['Gbreve'] = 722;
+    t['Idotaccent'] = 389;
+    t['summation'] = 600;
+    t['Egrave'] = 667;
+    t['racute'] = 389;
+    t['omacron'] = 500;
+    t['Zacute'] = 611;
+    t['Zcaron'] = 611;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 667;
+    t['lcommaaccent'] = 278;
+    t['tcaron'] = 366;
+    t['eogonek'] = 444;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 667;
+    t['Adieresis'] = 667;
+    t['egrave'] = 444;
+    t['zacute'] = 389;
+    t['iogonek'] = 278;
+    t['Oacute'] = 722;
+    t['oacute'] = 500;
+    t['amacron'] = 500;
+    t['sacute'] = 389;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 722;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 500;
+    t['twosuperior'] = 300;
+    t['Odieresis'] = 722;
+    t['mu'] = 576;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 500;
+    t['Eogonek'] = 667;
+    t['dcroat'] = 500;
+    t['threequarters'] = 750;
+    t['Scedilla'] = 556;
+    t['lcaron'] = 382;
+    t['Kcommaaccent'] = 667;
+    t['Lacute'] = 611;
+    t['trademark'] = 1000;
+    t['edotaccent'] = 444;
+    t['Igrave'] = 389;
+    t['Imacron'] = 389;
+    t['Lcaron'] = 611;
+    t['onehalf'] = 750;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 500;
+    t['ntilde'] = 556;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 667;
+    t['emacron'] = 444;
+    t['gbreve'] = 500;
+    t['onequarter'] = 750;
+    t['Scaron'] = 556;
+    t['Scommaaccent'] = 556;
+    t['Ohungarumlaut'] = 722;
+    t['degree'] = 400;
+    t['ograve'] = 500;
+    t['Ccaron'] = 667;
+    t['ugrave'] = 556;
+    t['radical'] = 549;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 389;
+    t['Ntilde'] = 722;
+    t['otilde'] = 500;
+    t['Rcommaaccent'] = 667;
+    t['Lcommaaccent'] = 611;
+    t['Atilde'] = 667;
+    t['Aogonek'] = 667;
+    t['Aring'] = 667;
+    t['Otilde'] = 722;
+    t['zdotaccent'] = 389;
+    t['Ecaron'] = 667;
+    t['Iogonek'] = 389;
+    t['kcommaaccent'] = 500;
+    t['minus'] = 606;
+    t['Icircumflex'] = 389;
+    t['ncaron'] = 556;
+    t['tcommaaccent'] = 278;
+    t['logicalnot'] = 606;
+    t['odieresis'] = 500;
+    t['udieresis'] = 556;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 500;
+    t['eth'] = 500;
+    t['zcaron'] = 389;
+    t['ncommaaccent'] = 556;
+    t['onesuperior'] = 300;
+    t['imacron'] = 278;
+    t['Euro'] = 500;
+  });
+  t['Times-Italic'] = getLookupTableFactory(function (t) {
+    t['space'] = 250;
+    t['exclam'] = 333;
+    t['quotedbl'] = 420;
+    t['numbersign'] = 500;
+    t['dollar'] = 500;
+    t['percent'] = 833;
+    t['ampersand'] = 778;
+    t['quoteright'] = 333;
+    t['parenleft'] = 333;
+    t['parenright'] = 333;
+    t['asterisk'] = 500;
+    t['plus'] = 675;
+    t['comma'] = 250;
+    t['hyphen'] = 333;
+    t['period'] = 250;
+    t['slash'] = 278;
+    t['zero'] = 500;
+    t['one'] = 500;
+    t['two'] = 500;
+    t['three'] = 500;
+    t['four'] = 500;
+    t['five'] = 500;
+    t['six'] = 500;
+    t['seven'] = 500;
+    t['eight'] = 500;
+    t['nine'] = 500;
+    t['colon'] = 333;
+    t['semicolon'] = 333;
+    t['less'] = 675;
+    t['equal'] = 675;
+    t['greater'] = 675;
+    t['question'] = 500;
+    t['at'] = 920;
+    t['A'] = 611;
+    t['B'] = 611;
+    t['C'] = 667;
+    t['D'] = 722;
+    t['E'] = 611;
+    t['F'] = 611;
+    t['G'] = 722;
+    t['H'] = 722;
+    t['I'] = 333;
+    t['J'] = 444;
+    t['K'] = 667;
+    t['L'] = 556;
+    t['M'] = 833;
+    t['N'] = 667;
+    t['O'] = 722;
+    t['P'] = 611;
+    t['Q'] = 722;
+    t['R'] = 611;
+    t['S'] = 500;
+    t['T'] = 556;
+    t['U'] = 722;
+    t['V'] = 611;
+    t['W'] = 833;
+    t['X'] = 611;
+    t['Y'] = 556;
+    t['Z'] = 556;
+    t['bracketleft'] = 389;
+    t['backslash'] = 278;
+    t['bracketright'] = 389;
+    t['asciicircum'] = 422;
+    t['underscore'] = 500;
+    t['quoteleft'] = 333;
+    t['a'] = 500;
+    t['b'] = 500;
+    t['c'] = 444;
+    t['d'] = 500;
+    t['e'] = 444;
+    t['f'] = 278;
+    t['g'] = 500;
+    t['h'] = 500;
+    t['i'] = 278;
+    t['j'] = 278;
+    t['k'] = 444;
+    t['l'] = 278;
+    t['m'] = 722;
+    t['n'] = 500;
+    t['o'] = 500;
+    t['p'] = 500;
+    t['q'] = 500;
+    t['r'] = 389;
+    t['s'] = 389;
+    t['t'] = 278;
+    t['u'] = 500;
+    t['v'] = 444;
+    t['w'] = 667;
+    t['x'] = 444;
+    t['y'] = 444;
+    t['z'] = 389;
+    t['braceleft'] = 400;
+    t['bar'] = 275;
+    t['braceright'] = 400;
+    t['asciitilde'] = 541;
+    t['exclamdown'] = 389;
+    t['cent'] = 500;
+    t['sterling'] = 500;
+    t['fraction'] = 167;
+    t['yen'] = 500;
+    t['florin'] = 500;
+    t['section'] = 500;
+    t['currency'] = 500;
+    t['quotesingle'] = 214;
+    t['quotedblleft'] = 556;
+    t['guillemotleft'] = 500;
+    t['guilsinglleft'] = 333;
+    t['guilsinglright'] = 333;
+    t['fi'] = 500;
+    t['fl'] = 500;
+    t['endash'] = 500;
+    t['dagger'] = 500;
+    t['daggerdbl'] = 500;
+    t['periodcentered'] = 250;
+    t['paragraph'] = 523;
+    t['bullet'] = 350;
+    t['quotesinglbase'] = 333;
+    t['quotedblbase'] = 556;
+    t['quotedblright'] = 556;
+    t['guillemotright'] = 500;
+    t['ellipsis'] = 889;
+    t['perthousand'] = 1000;
+    t['questiondown'] = 500;
+    t['grave'] = 333;
+    t['acute'] = 333;
+    t['circumflex'] = 333;
+    t['tilde'] = 333;
+    t['macron'] = 333;
+    t['breve'] = 333;
+    t['dotaccent'] = 333;
+    t['dieresis'] = 333;
+    t['ring'] = 333;
+    t['cedilla'] = 333;
+    t['hungarumlaut'] = 333;
+    t['ogonek'] = 333;
+    t['caron'] = 333;
+    t['emdash'] = 889;
+    t['AE'] = 889;
+    t['ordfeminine'] = 276;
+    t['Lslash'] = 556;
+    t['Oslash'] = 722;
+    t['OE'] = 944;
+    t['ordmasculine'] = 310;
+    t['ae'] = 667;
+    t['dotlessi'] = 278;
+    t['lslash'] = 278;
+    t['oslash'] = 500;
+    t['oe'] = 667;
+    t['germandbls'] = 500;
+    t['Idieresis'] = 333;
+    t['eacute'] = 444;
+    t['abreve'] = 500;
+    t['uhungarumlaut'] = 500;
+    t['ecaron'] = 444;
+    t['Ydieresis'] = 556;
+    t['divide'] = 675;
+    t['Yacute'] = 556;
+    t['Acircumflex'] = 611;
+    t['aacute'] = 500;
+    t['Ucircumflex'] = 722;
+    t['yacute'] = 444;
+    t['scommaaccent'] = 389;
+    t['ecircumflex'] = 444;
+    t['Uring'] = 722;
+    t['Udieresis'] = 722;
+    t['aogonek'] = 500;
+    t['Uacute'] = 722;
+    t['uogonek'] = 500;
+    t['Edieresis'] = 611;
+    t['Dcroat'] = 722;
+    t['commaaccent'] = 250;
+    t['copyright'] = 760;
+    t['Emacron'] = 611;
+    t['ccaron'] = 444;
+    t['aring'] = 500;
+    t['Ncommaaccent'] = 667;
+    t['lacute'] = 278;
+    t['agrave'] = 500;
+    t['Tcommaaccent'] = 556;
+    t['Cacute'] = 667;
+    t['atilde'] = 500;
+    t['Edotaccent'] = 611;
+    t['scaron'] = 389;
+    t['scedilla'] = 389;
+    t['iacute'] = 278;
+    t['lozenge'] = 471;
+    t['Rcaron'] = 611;
+    t['Gcommaaccent'] = 722;
+    t['ucircumflex'] = 500;
+    t['acircumflex'] = 500;
+    t['Amacron'] = 611;
+    t['rcaron'] = 389;
+    t['ccedilla'] = 444;
+    t['Zdotaccent'] = 556;
+    t['Thorn'] = 611;
+    t['Omacron'] = 722;
+    t['Racute'] = 611;
+    t['Sacute'] = 500;
+    t['dcaron'] = 544;
+    t['Umacron'] = 722;
+    t['uring'] = 500;
+    t['threesuperior'] = 300;
+    t['Ograve'] = 722;
+    t['Agrave'] = 611;
+    t['Abreve'] = 611;
+    t['multiply'] = 675;
+    t['uacute'] = 500;
+    t['Tcaron'] = 556;
+    t['partialdiff'] = 476;
+    t['ydieresis'] = 444;
+    t['Nacute'] = 667;
+    t['icircumflex'] = 278;
+    t['Ecircumflex'] = 611;
+    t['adieresis'] = 500;
+    t['edieresis'] = 444;
+    t['cacute'] = 444;
+    t['nacute'] = 500;
+    t['umacron'] = 500;
+    t['Ncaron'] = 667;
+    t['Iacute'] = 333;
+    t['plusminus'] = 675;
+    t['brokenbar'] = 275;
+    t['registered'] = 760;
+    t['Gbreve'] = 722;
+    t['Idotaccent'] = 333;
+    t['summation'] = 600;
+    t['Egrave'] = 611;
+    t['racute'] = 389;
+    t['omacron'] = 500;
+    t['Zacute'] = 556;
+    t['Zcaron'] = 556;
+    t['greaterequal'] = 549;
+    t['Eth'] = 722;
+    t['Ccedilla'] = 667;
+    t['lcommaaccent'] = 278;
+    t['tcaron'] = 300;
+    t['eogonek'] = 444;
+    t['Uogonek'] = 722;
+    t['Aacute'] = 611;
+    t['Adieresis'] = 611;
+    t['egrave'] = 444;
+    t['zacute'] = 389;
+    t['iogonek'] = 278;
+    t['Oacute'] = 722;
+    t['oacute'] = 500;
+    t['amacron'] = 500;
+    t['sacute'] = 389;
+    t['idieresis'] = 278;
+    t['Ocircumflex'] = 722;
+    t['Ugrave'] = 722;
+    t['Delta'] = 612;
+    t['thorn'] = 500;
+    t['twosuperior'] = 300;
+    t['Odieresis'] = 722;
+    t['mu'] = 500;
+    t['igrave'] = 278;
+    t['ohungarumlaut'] = 500;
+    t['Eogonek'] = 611;
+    t['dcroat'] = 500;
+    t['threequarters'] = 750;
+    t['Scedilla'] = 500;
+    t['lcaron'] = 300;
+    t['Kcommaaccent'] = 667;
+    t['Lacute'] = 556;
+    t['trademark'] = 980;
+    t['edotaccent'] = 444;
+    t['Igrave'] = 333;
+    t['Imacron'] = 333;
+    t['Lcaron'] = 611;
+    t['onehalf'] = 750;
+    t['lessequal'] = 549;
+    t['ocircumflex'] = 500;
+    t['ntilde'] = 500;
+    t['Uhungarumlaut'] = 722;
+    t['Eacute'] = 611;
+    t['emacron'] = 444;
+    t['gbreve'] = 500;
+    t['onequarter'] = 750;
+    t['Scaron'] = 500;
+    t['Scommaaccent'] = 500;
+    t['Ohungarumlaut'] = 722;
+    t['degree'] = 400;
+    t['ograve'] = 500;
+    t['Ccaron'] = 667;
+    t['ugrave'] = 500;
+    t['radical'] = 453;
+    t['Dcaron'] = 722;
+    t['rcommaaccent'] = 389;
+    t['Ntilde'] = 667;
+    t['otilde'] = 500;
+    t['Rcommaaccent'] = 611;
+    t['Lcommaaccent'] = 556;
+    t['Atilde'] = 611;
+    t['Aogonek'] = 611;
+    t['Aring'] = 611;
+    t['Otilde'] = 722;
+    t['zdotaccent'] = 389;
+    t['Ecaron'] = 611;
+    t['Iogonek'] = 333;
+    t['kcommaaccent'] = 444;
+    t['minus'] = 675;
+    t['Icircumflex'] = 333;
+    t['ncaron'] = 500;
+    t['tcommaaccent'] = 278;
+    t['logicalnot'] = 675;
+    t['odieresis'] = 500;
+    t['udieresis'] = 500;
+    t['notequal'] = 549;
+    t['gcommaaccent'] = 500;
+    t['eth'] = 500;
+    t['zcaron'] = 389;
+    t['ncommaaccent'] = 500;
+    t['onesuperior'] = 300;
+    t['imacron'] = 278;
+    t['Euro'] = 500;
+  });
+  t['ZapfDingbats'] = getLookupTableFactory(function (t) {
+    t['space'] = 278;
+    t['a1'] = 974;
+    t['a2'] = 961;
+    t['a202'] = 974;
+    t['a3'] = 980;
+    t['a4'] = 719;
+    t['a5'] = 789;
+    t['a119'] = 790;
+    t['a118'] = 791;
+    t['a117'] = 690;
+    t['a11'] = 960;
+    t['a12'] = 939;
+    t['a13'] = 549;
+    t['a14'] = 855;
+    t['a15'] = 911;
+    t['a16'] = 933;
+    t['a105'] = 911;
+    t['a17'] = 945;
+    t['a18'] = 974;
+    t['a19'] = 755;
+    t['a20'] = 846;
+    t['a21'] = 762;
+    t['a22'] = 761;
+    t['a23'] = 571;
+    t['a24'] = 677;
+    t['a25'] = 763;
+    t['a26'] = 760;
+    t['a27'] = 759;
+    t['a28'] = 754;
+    t['a6'] = 494;
+    t['a7'] = 552;
+    t['a8'] = 537;
+    t['a9'] = 577;
+    t['a10'] = 692;
+    t['a29'] = 786;
+    t['a30'] = 788;
+    t['a31'] = 788;
+    t['a32'] = 790;
+    t['a33'] = 793;
+    t['a34'] = 794;
+    t['a35'] = 816;
+    t['a36'] = 823;
+    t['a37'] = 789;
+    t['a38'] = 841;
+    t['a39'] = 823;
+    t['a40'] = 833;
+    t['a41'] = 816;
+    t['a42'] = 831;
+    t['a43'] = 923;
+    t['a44'] = 744;
+    t['a45'] = 723;
+    t['a46'] = 749;
+    t['a47'] = 790;
+    t['a48'] = 792;
+    t['a49'] = 695;
+    t['a50'] = 776;
+    t['a51'] = 768;
+    t['a52'] = 792;
+    t['a53'] = 759;
+    t['a54'] = 707;
+    t['a55'] = 708;
+    t['a56'] = 682;
+    t['a57'] = 701;
+    t['a58'] = 826;
+    t['a59'] = 815;
+    t['a60'] = 789;
+    t['a61'] = 789;
+    t['a62'] = 707;
+    t['a63'] = 687;
+    t['a64'] = 696;
+    t['a65'] = 689;
+    t['a66'] = 786;
+    t['a67'] = 787;
+    t['a68'] = 713;
+    t['a69'] = 791;
+    t['a70'] = 785;
+    t['a71'] = 791;
+    t['a72'] = 873;
+    t['a73'] = 761;
+    t['a74'] = 762;
+    t['a203'] = 762;
+    t['a75'] = 759;
+    t['a204'] = 759;
+    t['a76'] = 892;
+    t['a77'] = 892;
+    t['a78'] = 788;
+    t['a79'] = 784;
+    t['a81'] = 438;
+    t['a82'] = 138;
+    t['a83'] = 277;
+    t['a84'] = 415;
+    t['a97'] = 392;
+    t['a98'] = 392;
+    t['a99'] = 668;
+    t['a100'] = 668;
+    t['a89'] = 390;
+    t['a90'] = 390;
+    t['a93'] = 317;
+    t['a94'] = 317;
+    t['a91'] = 276;
+    t['a92'] = 276;
+    t['a205'] = 509;
+    t['a85'] = 509;
+    t['a206'] = 410;
+    t['a86'] = 410;
+    t['a87'] = 234;
+    t['a88'] = 234;
+    t['a95'] = 334;
+    t['a96'] = 334;
+    t['a101'] = 732;
+    t['a102'] = 544;
+    t['a103'] = 544;
+    t['a104'] = 910;
+    t['a106'] = 667;
+    t['a107'] = 760;
+    t['a108'] = 760;
+    t['a112'] = 776;
+    t['a111'] = 595;
+    t['a110'] = 694;
+    t['a109'] = 626;
+    t['a120'] = 788;
+    t['a121'] = 788;
+    t['a122'] = 788;
+    t['a123'] = 788;
+    t['a124'] = 788;
+    t['a125'] = 788;
+    t['a126'] = 788;
+    t['a127'] = 788;
+    t['a128'] = 788;
+    t['a129'] = 788;
+    t['a130'] = 788;
+    t['a131'] = 788;
+    t['a132'] = 788;
+    t['a133'] = 788;
+    t['a134'] = 788;
+    t['a135'] = 788;
+    t['a136'] = 788;
+    t['a137'] = 788;
+    t['a138'] = 788;
+    t['a139'] = 788;
+    t['a140'] = 788;
+    t['a141'] = 788;
+    t['a142'] = 788;
+    t['a143'] = 788;
+    t['a144'] = 788;
+    t['a145'] = 788;
+    t['a146'] = 788;
+    t['a147'] = 788;
+    t['a148'] = 788;
+    t['a149'] = 788;
+    t['a150'] = 788;
+    t['a151'] = 788;
+    t['a152'] = 788;
+    t['a153'] = 788;
+    t['a154'] = 788;
+    t['a155'] = 788;
+    t['a156'] = 788;
+    t['a157'] = 788;
+    t['a158'] = 788;
+    t['a159'] = 788;
+    t['a160'] = 894;
+    t['a161'] = 838;
+    t['a163'] = 1016;
+    t['a164'] = 458;
+    t['a196'] = 748;
+    t['a165'] = 924;
+    t['a192'] = 748;
+    t['a166'] = 918;
+    t['a167'] = 927;
+    t['a168'] = 928;
+    t['a169'] = 928;
+    t['a170'] = 834;
+    t['a171'] = 873;
+    t['a172'] = 828;
+    t['a173'] = 924;
+    t['a162'] = 924;
+    t['a174'] = 917;
+    t['a175'] = 930;
+    t['a176'] = 931;
+    t['a177'] = 463;
+    t['a178'] = 883;
+    t['a179'] = 836;
+    t['a193'] = 836;
+    t['a180'] = 867;
+    t['a199'] = 867;
+    t['a181'] = 696;
+    t['a200'] = 696;
+    t['a182'] = 874;
+    t['a201'] = 874;
+    t['a183'] = 760;
+    t['a184'] = 946;
+    t['a197'] = 771;
+    t['a185'] = 865;
+    t['a194'] = 771;
+    t['a198'] = 888;
+    t['a186'] = 967;
+    t['a195'] = 888;
+    t['a187'] = 831;
+    t['a188'] = 873;
+    t['a189'] = 927;
+    t['a190'] = 970;
+    t['a191'] = 918;
+  });
+});
 
-exports.Metrics = Metrics;
+exports.getMetrics = getMetrics;
 }));

@@ -22,23 +22,30 @@
       'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
       'pdfjs/core/image', 'pdfjs/core/colorspace', 'pdfjs/core/murmurhash3',
       'pdfjs/core/fonts', 'pdfjs/core/function', 'pdfjs/core/pattern',
-      'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi'], factory);
+      'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi',
+      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts',
+      'pdfjs/core/unicode'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./stream.js'), require('./parser.js'), require('./image.js'),
       require('./colorspace.js'), require('./murmurhash3.js'),
       require('./fonts.js'), require('./function.js'), require('./pattern.js'),
-      require('./cmap.js'), require('./metrics.js'), require('./bidi.js'));
+      require('./cmap.js'), require('./metrics.js'), require('./bidi.js'),
+      require('./encodings.js'), require('./standard_fonts.js'),
+      require('./unicode.js'));
   } else {
     factory((root.pdfjsCoreEvaluator = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
       root.pdfjsCoreImage, root.pdfjsCoreColorSpace, root.pdfjsCoreMurmurHash3,
       root.pdfjsCoreFonts, root.pdfjsCoreFunction, root.pdfjsCorePattern,
-      root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi);
+      root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi,
+      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts,
+      root.pdfjsCoreUnicode);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
                   coreImage, coreColorSpace, coreMurmurHash3, coreFonts,
-                  coreFunction, corePattern, coreCMap, coreMetrics, coreBidi) {
+                  coreFunction, corePattern, coreCMap, coreMetrics, coreBidi,
+                  coreEncodings, coreStandardFonts, coreUnicode) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
@@ -54,6 +61,7 @@ var info = sharedUtil.info;
 var isArray = sharedUtil.isArray;
 var isNum = sharedUtil.isNum;
 var isString = sharedUtil.isString;
+var getLookupTableFactory = sharedUtil.getLookupTableFactory;
 var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
 var Name = corePrimitives.Name;
@@ -70,26 +78,31 @@ var isEOF = coreParser.isEOF;
 var PDFImage = coreImage.PDFImage;
 var ColorSpace = coreColorSpace.ColorSpace;
 var MurmurHash3_64 = coreMurmurHash3.MurmurHash3_64;
-var Encodings = coreFonts.Encodings;
 var ErrorFont = coreFonts.ErrorFont;
 var FontFlags = coreFonts.FontFlags;
 var Font = coreFonts.Font;
 var IdentityToUnicodeMap = coreFonts.IdentityToUnicodeMap;
-var NormalizedUnicodes = coreFonts.NormalizedUnicodes;
 var ToUnicodeMap = coreFonts.ToUnicodeMap;
 var getFontType = coreFonts.getFontType;
-var reverseIfRtl = coreFonts.reverseIfRtl;
-var serifFonts = coreFonts.serifFonts;
-var symbolsFonts = coreFonts.symbolsFonts;
-var stdFontMap = coreFonts.stdFontMap;
 var isPDFFunction = coreFunction.isPDFFunction;
 var PDFFunction = coreFunction.PDFFunction;
 var Pattern = corePattern.Pattern;
 var getTilingPatternIR = corePattern.getTilingPatternIR;
 var CMapFactory = coreCMap.CMapFactory;
 var IdentityCMap = coreCMap.IdentityCMap;
-var Metrics = coreMetrics.Metrics;
+var getMetrics = coreMetrics.getMetrics;
 var bidi = coreBidi.bidi;
+var WinAnsiEncoding = coreEncodings.WinAnsiEncoding;
+var StandardEncoding = coreEncodings.StandardEncoding;
+var MacRomanEncoding = coreEncodings.MacRomanEncoding;
+var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
+var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
+var getEncoding = coreEncodings.getEncoding;
+var getStdFontMap = coreStandardFonts.getStdFontMap;
+var getSerifFonts = coreStandardFonts.getSerifFonts;
+var getSymbolsFonts = coreStandardFonts.getSymbolsFonts;
+var getNormalizedUnicodes = coreUnicode.getNormalizedUnicodes;
+var reverseIfRtl = coreUnicode.reverseIfRtl;
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -718,7 +731,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
-      var imageCache = {};
+      var imageCache = Object.create(null);
 
       assert(operatorList);
 
@@ -1041,7 +1054,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
-      var xobjsCache = {};
+      var xobjsCache = Object.create(null);
 
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -1183,6 +1196,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
 
           var glyphUnicode = glyph.unicode;
+          var NormalizedUnicodes = getNormalizedUnicodes();
           if (NormalizedUnicodes[glyphUnicode] !== undefined) {
             glyphUnicode = NormalizedUnicodes[glyphUnicode];
           }
@@ -1580,19 +1594,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       if (baseEncodingName) {
-        properties.defaultEncoding = Encodings[baseEncodingName].slice();
+        properties.defaultEncoding = getEncoding(baseEncodingName).slice();
       } else {
         encoding = (properties.type === 'TrueType' ?
-                    Encodings.WinAnsiEncoding : Encodings.StandardEncoding);
+                    WinAnsiEncoding : StandardEncoding);
         // The Symbolic attribute can be misused for regular fonts
         // Heuristic: we have to check if the font is a standard one also
         if (!!(properties.flags & FontFlags.Symbolic)) {
-          encoding = Encodings.MacRomanEncoding;
+          encoding = MacRomanEncoding;
           if (!properties.file) {
             if (/Symbol/i.test(properties.name)) {
-              encoding = Encodings.SymbolSetEncoding;
+              encoding = SymbolSetEncoding;
             } else if (/Dingbats/i.test(properties.name)) {
-              encoding = Encodings.ZapfDingbatsEncoding;
+              encoding = ZapfDingbatsEncoding;
             }
           }
         }
@@ -1761,7 +1775,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isSerifFont: function PartialEvaluator_isSerifFont(baseFontName) {
       // Simulating descriptor flags attribute
       var fontNameWoStyle = baseFontName.split('-')[0];
-      return (fontNameWoStyle in serifFonts) ||
+      return (fontNameWoStyle in getSerifFonts()) ||
               (fontNameWoStyle.search(/serif/gi) !== -1);
     },
 
@@ -1769,7 +1783,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var defaultWidth = 0;
       var widths = [];
       var monospace = false;
+      var stdFontMap = getStdFontMap();
       var lookupName = (stdFontMap[name] || name);
+      var Metrics = getMetrics();
 
       if (!(lookupName in Metrics)) {
         // Use default fonts for looking up font metrics if the passed
@@ -1786,7 +1802,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         defaultWidth = glyphWidths;
         monospace = true;
       } else {
-        widths = glyphWidths;
+        widths = glyphWidths(); // expand lazy widths array
       }
 
       return {
@@ -1929,8 +1945,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var flags =
             (this.isSerifFont(fontNameWoStyle) ? FontFlags.Serif : 0) |
             (metrics.monospace ? FontFlags.FixedPitch : 0) |
-            (symbolsFonts[fontNameWoStyle] ? FontFlags.Symbolic :
-                                             FontFlags.Nonsymbolic);
+            (getSymbolsFonts()[fontNameWoStyle] ? FontFlags.Symbolic :
+                                                  FontFlags.Nonsymbolic);
 
           properties = {
             type: type,
@@ -2077,7 +2093,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
       var charProcs = this.dict.get('CharProcs').getAll();
       var fontResources = this.dict.get('Resources') || resources;
       var charProcKeys = Object.keys(charProcs);
-      var charProcOperatorList = {};
+      var charProcOperatorList = Object.create(null);
       for (var i = 0, n = charProcKeys.length; i < n; ++i) {
         loadCharProcsPromise = loadCharProcsPromise.then(function (key) {
           var glyphStream = charProcs[key];
@@ -2131,7 +2147,7 @@ var OperatorList = (function OperatorListClosure() {
     this.messageHandler = messageHandler;
     this.fnArray = [];
     this.argsArray = [];
-    this.dependencies = {};
+    this.dependencies = Object.create(null);
     this._totalLength = 0;
     this.pageIndex = pageIndex;
     this.intent = intent;
@@ -2211,7 +2227,7 @@ var OperatorList = (function OperatorListClosure() {
         pageIndex: this.pageIndex,
         intent: this.intent
       }, transfers);
-      this.dependencies = {};
+      this.dependencies = Object.create(null);
       this.fnArray.length = 0;
       this.argsArray.length = 0;
     }
@@ -2321,119 +2337,121 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
   //
   // If variableArgs === true: [0, `numArgs`] expected
   // If variableArgs === false: exactly `numArgs` expected
-  var OP_MAP = {
+  var getOPMap = getLookupTableFactory(function (t) {
     // Graphic state
-    w: { id: OPS.setLineWidth, numArgs: 1, variableArgs: false },
-    J: { id: OPS.setLineCap, numArgs: 1, variableArgs: false },
-    j: { id: OPS.setLineJoin, numArgs: 1, variableArgs: false },
-    M: { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false },
-    d: { id: OPS.setDash, numArgs: 2, variableArgs: false },
-    ri: { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false },
-    i: { id: OPS.setFlatness, numArgs: 1, variableArgs: false },
-    gs: { id: OPS.setGState, numArgs: 1, variableArgs: false },
-    q: { id: OPS.save, numArgs: 0, variableArgs: false },
-    Q: { id: OPS.restore, numArgs: 0, variableArgs: false },
-    cm: { id: OPS.transform, numArgs: 6, variableArgs: false },
+    t['w'] = { id: OPS.setLineWidth, numArgs: 1, variableArgs: false };
+    t['J'] = { id: OPS.setLineCap, numArgs: 1, variableArgs: false };
+    t['j'] = { id: OPS.setLineJoin, numArgs: 1, variableArgs: false };
+    t['M'] = { id: OPS.setMiterLimit, numArgs: 1, variableArgs: false };
+    t['d'] = { id: OPS.setDash, numArgs: 2, variableArgs: false };
+    t['ri'] = { id: OPS.setRenderingIntent, numArgs: 1, variableArgs: false };
+    t['i'] = { id: OPS.setFlatness, numArgs: 1, variableArgs: false };
+    t['gs'] = { id: OPS.setGState, numArgs: 1, variableArgs: false };
+    t['q'] = { id: OPS.save, numArgs: 0, variableArgs: false };
+    t['Q'] = { id: OPS.restore, numArgs: 0, variableArgs: false };
+    t['cm'] = { id: OPS.transform, numArgs: 6, variableArgs: false };
 
     // Path
-    m: { id: OPS.moveTo, numArgs: 2, variableArgs: false },
-    l: { id: OPS.lineTo, numArgs: 2, variableArgs: false },
-    c: { id: OPS.curveTo, numArgs: 6, variableArgs: false },
-    v: { id: OPS.curveTo2, numArgs: 4, variableArgs: false },
-    y: { id: OPS.curveTo3, numArgs: 4, variableArgs: false },
-    h: { id: OPS.closePath, numArgs: 0, variableArgs: false },
-    re: { id: OPS.rectangle, numArgs: 4, variableArgs: false },
-    S: { id: OPS.stroke, numArgs: 0, variableArgs: false },
-    s: { id: OPS.closeStroke, numArgs: 0, variableArgs: false },
-    f: { id: OPS.fill, numArgs: 0, variableArgs: false },
-    F: { id: OPS.fill, numArgs: 0, variableArgs: false },
-    'f*': { id: OPS.eoFill, numArgs: 0, variableArgs: false },
-    B: { id: OPS.fillStroke, numArgs: 0, variableArgs: false },
-    'B*': { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false },
-    b: { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false },
-    'b*': { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false },
-    n: { id: OPS.endPath, numArgs: 0, variableArgs: false },
+    t['m'] = { id: OPS.moveTo, numArgs: 2, variableArgs: false };
+    t['l'] = { id: OPS.lineTo, numArgs: 2, variableArgs: false };
+    t['c'] = { id: OPS.curveTo, numArgs: 6, variableArgs: false };
+    t['v'] = { id: OPS.curveTo2, numArgs: 4, variableArgs: false };
+    t['y'] = { id: OPS.curveTo3, numArgs: 4, variableArgs: false };
+    t['h'] = { id: OPS.closePath, numArgs: 0, variableArgs: false };
+    t['re'] = { id: OPS.rectangle, numArgs: 4, variableArgs: false };
+    t['S'] = { id: OPS.stroke, numArgs: 0, variableArgs: false };
+    t['s'] = { id: OPS.closeStroke, numArgs: 0, variableArgs: false };
+    t['f'] = { id: OPS.fill, numArgs: 0, variableArgs: false };
+    t['F'] = { id: OPS.fill, numArgs: 0, variableArgs: false };
+    t['f*'] = { id: OPS.eoFill, numArgs: 0, variableArgs: false };
+    t['B'] = { id: OPS.fillStroke, numArgs: 0, variableArgs: false };
+    t['B*'] = { id: OPS.eoFillStroke, numArgs: 0, variableArgs: false };
+    t['b'] = { id: OPS.closeFillStroke, numArgs: 0, variableArgs: false };
+    t['b*'] = { id: OPS.closeEOFillStroke, numArgs: 0, variableArgs: false };
+    t['n'] = { id: OPS.endPath, numArgs: 0, variableArgs: false };
 
     // Clipping
-    W: { id: OPS.clip, numArgs: 0, variableArgs: false },
-    'W*': { id: OPS.eoClip, numArgs: 0, variableArgs: false },
+    t['W'] = { id: OPS.clip, numArgs: 0, variableArgs: false };
+    t['W*'] = { id: OPS.eoClip, numArgs: 0, variableArgs: false };
 
     // Text
-    BT: { id: OPS.beginText, numArgs: 0, variableArgs: false },
-    ET: { id: OPS.endText, numArgs: 0, variableArgs: false },
-    Tc: { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false },
-    Tw: { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false },
-    Tz: { id: OPS.setHScale, numArgs: 1, variableArgs: false },
-    TL: { id: OPS.setLeading, numArgs: 1, variableArgs: false },
-    Tf: { id: OPS.setFont, numArgs: 2, variableArgs: false },
-    Tr: { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false },
-    Ts: { id: OPS.setTextRise, numArgs: 1, variableArgs: false },
-    Td: { id: OPS.moveText, numArgs: 2, variableArgs: false },
-    TD: { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false },
-    Tm: { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false },
-    'T*': { id: OPS.nextLine, numArgs: 0, variableArgs: false },
-    Tj: { id: OPS.showText, numArgs: 1, variableArgs: false },
-    TJ: { id: OPS.showSpacedText, numArgs: 1, variableArgs: false },
-    '\'': { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false },
-    '"': { id: OPS.nextLineSetSpacingShowText, numArgs: 3,
-           variableArgs: false },
+    t['BT'] = { id: OPS.beginText, numArgs: 0, variableArgs: false };
+    t['ET'] = { id: OPS.endText, numArgs: 0, variableArgs: false };
+    t['Tc'] = { id: OPS.setCharSpacing, numArgs: 1, variableArgs: false };
+    t['Tw'] = { id: OPS.setWordSpacing, numArgs: 1, variableArgs: false };
+    t['Tz'] = { id: OPS.setHScale, numArgs: 1, variableArgs: false };
+    t['TL'] = { id: OPS.setLeading, numArgs: 1, variableArgs: false };
+    t['Tf'] = { id: OPS.setFont, numArgs: 2, variableArgs: false };
+    t['Tr'] = { id: OPS.setTextRenderingMode, numArgs: 1, variableArgs: false };
+    t['Ts'] = { id: OPS.setTextRise, numArgs: 1, variableArgs: false };
+    t['Td'] = { id: OPS.moveText, numArgs: 2, variableArgs: false };
+    t['TD'] = { id: OPS.setLeadingMoveText, numArgs: 2, variableArgs: false };
+    t['Tm'] = { id: OPS.setTextMatrix, numArgs: 6, variableArgs: false };
+    t['T*'] = { id: OPS.nextLine, numArgs: 0, variableArgs: false };
+    t['Tj'] = { id: OPS.showText, numArgs: 1, variableArgs: false };
+    t['TJ'] = { id: OPS.showSpacedText, numArgs: 1, variableArgs: false };
+    t['\''] = { id: OPS.nextLineShowText, numArgs: 1, variableArgs: false };
+    t['"'] = { id: OPS.nextLineSetSpacingShowText, numArgs: 3,
+               variableArgs: false };
 
     // Type3 fonts
-    d0: { id: OPS.setCharWidth, numArgs: 2, variableArgs: false },
-    d1: { id: OPS.setCharWidthAndBounds, numArgs: 6, variableArgs: false },
+    t['d0'] = { id: OPS.setCharWidth, numArgs: 2, variableArgs: false };
+    t['d1'] = { id: OPS.setCharWidthAndBounds, numArgs: 6,
+                variableArgs: false };
 
     // Color
-    CS: { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false },
-    cs: { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false },
-    SC: { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true },
-    SCN: { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true },
-    sc: { id: OPS.setFillColor, numArgs: 4, variableArgs: true },
-    scn: { id: OPS.setFillColorN, numArgs: 33, variableArgs: true },
-    G: { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false },
-    g: { id: OPS.setFillGray, numArgs: 1, variableArgs: false },
-    RG: { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false },
-    rg: { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false },
-    K: { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false },
-    k: { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false },
+    t['CS'] = { id: OPS.setStrokeColorSpace, numArgs: 1, variableArgs: false };
+    t['cs'] = { id: OPS.setFillColorSpace, numArgs: 1, variableArgs: false };
+    t['SC'] = { id: OPS.setStrokeColor, numArgs: 4, variableArgs: true };
+    t['SCN'] = { id: OPS.setStrokeColorN, numArgs: 33, variableArgs: true };
+    t['sc'] = { id: OPS.setFillColor, numArgs: 4, variableArgs: true };
+    t['scn'] = { id: OPS.setFillColorN, numArgs: 33, variableArgs: true };
+    t['G'] = { id: OPS.setStrokeGray, numArgs: 1, variableArgs: false };
+    t['g'] = { id: OPS.setFillGray, numArgs: 1, variableArgs: false };
+    t['RG'] = { id: OPS.setStrokeRGBColor, numArgs: 3, variableArgs: false };
+    t['rg'] = { id: OPS.setFillRGBColor, numArgs: 3, variableArgs: false };
+    t['K'] = { id: OPS.setStrokeCMYKColor, numArgs: 4, variableArgs: false };
+    t['k'] = { id: OPS.setFillCMYKColor, numArgs: 4, variableArgs: false };
 
     // Shading
-    sh: { id: OPS.shadingFill, numArgs: 1, variableArgs: false },
+    t['sh'] = { id: OPS.shadingFill, numArgs: 1, variableArgs: false };
 
     // Images
-    BI: { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false },
-    ID: { id: OPS.beginImageData, numArgs: 0, variableArgs: false },
-    EI: { id: OPS.endInlineImage, numArgs: 1, variableArgs: false },
+    t['BI'] = { id: OPS.beginInlineImage, numArgs: 0, variableArgs: false };
+    t['ID'] = { id: OPS.beginImageData, numArgs: 0, variableArgs: false };
+    t['EI'] = { id: OPS.endInlineImage, numArgs: 1, variableArgs: false };
 
     // XObjects
-    Do: { id: OPS.paintXObject, numArgs: 1, variableArgs: false },
-    MP: { id: OPS.markPoint, numArgs: 1, variableArgs: false },
-    DP: { id: OPS.markPointProps, numArgs: 2, variableArgs: false },
-    BMC: { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false },
-    BDC: { id: OPS.beginMarkedContentProps, numArgs: 2,
-           variableArgs: false },
-    EMC: { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false },
+    t['Do'] = { id: OPS.paintXObject, numArgs: 1, variableArgs: false };
+    t['MP'] = { id: OPS.markPoint, numArgs: 1, variableArgs: false };
+    t['DP'] = { id: OPS.markPointProps, numArgs: 2, variableArgs: false };
+    t['BMC'] = { id: OPS.beginMarkedContent, numArgs: 1, variableArgs: false };
+    t['BDC'] = { id: OPS.beginMarkedContentProps, numArgs: 2,
+                 variableArgs: false };
+    t['EMC'] = { id: OPS.endMarkedContent, numArgs: 0, variableArgs: false };
 
     // Compatibility
-    BX: { id: OPS.beginCompat, numArgs: 0, variableArgs: false },
-    EX: { id: OPS.endCompat, numArgs: 0, variableArgs: false },
+    t['BX'] = { id: OPS.beginCompat, numArgs: 0, variableArgs: false };
+    t['EX'] = { id: OPS.endCompat, numArgs: 0, variableArgs: false };
 
     // (reserved partial commands for the lexer)
-    BM: null,
-    BD: null,
-    'true': null,
-    fa: null,
-    fal: null,
-    fals: null,
-    'false': null,
-    nu: null,
-    nul: null,
-    'null': null
-  };
+    t['BM'] = null;
+    t['BD'] = null;
+    t['true'] = null;
+    t['fa'] = null;
+    t['fal'] = null;
+    t['fals'] = null;
+    t['false'] = null;
+    t['nu'] = null;
+    t['nul'] = null;
+    t['null'] = null;
+  });
 
   function EvaluatorPreprocessor(stream, xref, stateManager) {
-    // TODO(mduan): pass array of knownCommands rather than OP_MAP
+    this.opMap = getOPMap();
+    // TODO(mduan): pass array of knownCommands rather than this.opMap
     // dictionary
-    this.parser = new Parser(new Lexer(stream, OP_MAP), false, xref);
+    this.parser = new Parser(new Lexer(stream, this.opMap), false, xref);
     this.stateManager = stateManager;
     this.nonProcessedArgs = [];
   }
@@ -2471,7 +2489,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
         if (isCmd(obj)) {
           var cmd = obj.cmd;
           // Check that the command is valid
-          var opSpec = OP_MAP[cmd];
+          var opSpec = this.opMap[cmd];
           if (!opSpec) {
             warn('Unknown command "' + cmd + '"');
             continue;
