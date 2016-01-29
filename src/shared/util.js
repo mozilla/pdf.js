@@ -246,9 +246,9 @@ function warn(msg) {
   }
 }
 
-// Deprecated API function -- treated as warnings.
+// Deprecated API function -- display regardless of the PDFJS.verbosity setting.
 function deprecated(details) {
-  warn('Deprecated API usage: ' + details);
+  console.log('Deprecated API usage: ' + details);
 }
 
 // Fatal errors that should trigger the fallback UI and halt execution by
