@@ -249,7 +249,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     buildPaintImageXObject:
         function PartialEvaluator_buildPaintImageXObject(resources, image,
                                                          inline, operatorList,
-                                                         cacheKey, imageCache) {
+                                                         cacheKey, imageCache,
+                                                         state) {
       var self = this;
       var dict = image.dict;
       var w = dict.get('Width', 'W');
@@ -306,7 +307,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                     inline, null, null);
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
-        imgData = imageObj.createImageData(/* forceRGBA = */ true);
+        imgData = imageObj.createImageData(/* forceRGBA = */ true,
+                                           state.transferFnsIR);
         operatorList.addOp(OPS.paintInlineImageXObject, [imgData]);
         return;
       }
@@ -318,7 +320,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addDependency(objId);
       args = [objId, w, h];
 
-      if (!softMask && !mask && image instanceof JpegStream &&
+      if (!softMask && !mask && !state.transferFnsIR &&
+          image instanceof JpegStream &&
           image.isNativelySupported(this.xref, resources)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
@@ -329,7 +332,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       PDFImage.buildImage(self.handler, self.xref, resources, image, inline).
         then(function(imageObj) {
-          var imgData = imageObj.createImageData(/* forceRGBA = */ false);
+          var imgData = imageObj.createImageData(/* forceRGBA = */ false,
+                                                 state.transferFnsIR);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
             [imgData.data.buffer]);
         }).then(undefined, function (reason) {
@@ -517,6 +521,34 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             }
 
             break;
+          case 'TR':
+            var transferArr;
+            if (isArray(value)) {
+              transferArr = value;
+            } else if (isPDFFunction(value)) {
+              transferArr = [value];
+            }
+            if (transferArr) {
+              var transferFnsIR = [], isValidFns = true;
+              for (var i = 0, ii = transferArr.length; i < ii; i++) {
+                var transferFn = xref.fetchIfRef(transferArr[i]);
+
+                if (isName(transferFn) && transferFn.name === 'Identity') {
+                  transferFnsIR.push(null);
+                  continue;
+                } else if (!isPDFFunction(transferFn)) {
+                  info('Ignoring transfer functions.');
+                  isValidFns = false;
+                  break;
+                }
+                var transferFnIR = PDFFunction.getIR(xref, transferFn);
+                transferFnsIR.push(transferFnIR);
+              }
+              if (isValidFns) {
+                stateManager.state.transferFnsIR = transferFnsIR;
+              }
+            }
+            break;
           // Only generate info log messages for the following since
           // they are unlikely to have a big impact on the rendering.
           case 'OP':
@@ -526,7 +558,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           case 'BG2':
           case 'UCR':
           case 'UCR2':
-          case 'TR':
           case 'TR2':
           case 'HT':
           case 'SM':
@@ -794,7 +825,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     }, reject);
                 } else if (type.name === 'Image') {
                   self.buildPaintImageXObject(resources, xobj, false,
-                    operatorList, name, imageCache);
+                    operatorList, name, imageCache, stateManager.state);
                   args = null;
                   continue;
                 } else if (type.name === 'PS') {
@@ -828,7 +859,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 }
               }
               self.buildPaintImageXObject(resources, args[0], true,
-                operatorList, cacheKey, imageCache);
+                operatorList, cacheKey, imageCache, stateManager.state);
               args = null;
               continue;
             case OPS.showText:
@@ -2320,6 +2351,7 @@ var EvalState = (function EvalStateClosure() {
     this.textRenderingMode = TextRenderingMode.FILL;
     this.fillColorSpace = ColorSpace.singletons.gray;
     this.strokeColorSpace = ColorSpace.singletons.gray;
+    this.transferFnsIR = null;
   }
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {

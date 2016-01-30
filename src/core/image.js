@@ -19,18 +19,18 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/image', ['exports', 'pdfjs/shared/util',
       'pdfjs/core/primitives', 'pdfjs/core/colorspace', 'pdfjs/core/stream',
-      'pdfjs/core/jpx'], factory);
+      'pdfjs/core/jpx', 'pdfjs/core/function'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./colorspace.js'), require('./stream.js'),
-      require('./jpx.js'));
+      require('./jpx.js'), require('./function.js'));
   } else {
     factory((root.pdfjsCoreImage = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreColorSpace, root.pdfjsCoreStream,
-      root.pdfjsCoreJpx);
+      root.pdfjsCoreJpx, root.pdfjsCoreFunction);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreColorSpace,
-                  coreStream, coreJpx) {
+                  coreStream, coreJpx, coreFunction) {
 
 var ImageKind = sharedUtil.ImageKind;
 var assert = sharedUtil.assert;
@@ -45,6 +45,7 @@ var DecodeStream = coreStream.DecodeStream;
 var Stream = coreStream.Stream;
 var JpegStream = coreStream.JpegStream;
 var JpxImage = coreJpx.JpxImage;
+var PDFFunction = coreFunction.PDFFunction;
 
 var PDFImage = (function PDFImageClosure() {
   /**
@@ -535,7 +536,8 @@ var PDFImage = (function PDFImageClosure() {
       }
     },
 
-    createImageData: function PDFImage_createImageData(forceRGBA) {
+    createImageData:
+        function PDFImage_createImageData(forceRGBA, transferFnsIR) {
       var drawWidth = this.drawWidth;
       var drawHeight = this.drawHeight;
       var imgData = { // other fields are filled in below
@@ -550,9 +552,9 @@ var PDFImage = (function PDFImageClosure() {
 
       // Rows start at byte boundary.
       var rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
-      var imgArray;
+      var imgArray, i, ii;
 
-      if (!forceRGBA) {
+      if (!forceRGBA && !transferFnsIR) {
         // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
         // without any complications, we pass a same-sized copy to the main
         // thread rather than expanding by 32x to RGBA form. This saves *lots*
@@ -588,7 +590,7 @@ var PDFImage = (function PDFImageClosure() {
             // Invert the buffer (which must be grayscale if we reached here).
             assert(kind === ImageKind.GRAYSCALE_1BPP);
             var buffer = imgData.data;
-            for (var i = 0, ii = buffer.length; i < ii; i++) {
+            for (i = 0, ii = buffer.length; i < ii; i++) {
               buffer[i] ^= 0xff;
             }
           }
@@ -639,6 +641,35 @@ var PDFImage = (function PDFImageClosure() {
                               alpha01);
       if (maybeUndoPreblend) {
         this.undoPreblend(imgData.data, drawWidth, actualHeight);
+      }
+
+      if (transferFnsIR) {
+        var numTransferFnsIR = transferFnsIR.length;
+        var numChannels = alpha01 === 0 ? 3 : 4;
+
+        if (numTransferFnsIR < numChannels) {
+          warn('Too few transfer functions.');
+          return imgData;
+        }
+        var transferFnIR, transferFn, j, jj;
+        var transferMap = new Uint8Array(256), tmp = new Float32Array(1);
+
+        for (i = 0; i < numChannels; i++) {
+          transferFnIR = transferFnsIR[i];
+          if (!transferFnIR) { // 'Identity' transfer function.
+            continue;
+          }
+          transferFn = PDFFunction.fromIR(transferFnIR);
+
+          for (j = 0; j < 256; j++) { // Build a transfer map.
+            tmp[0] = j / 255;
+            transferFn(tmp, 0, tmp, 0);
+            transferMap[j] = (tmp[0] * 255) | 0;
+          }
+          for (j = 0, jj = imgData.data.length; j < jj; j += numChannels) {
+            imgData.data[i + j] = transferMap[imgData.data[i + j]];
+          }
+        }
       }
 
       return imgData;
