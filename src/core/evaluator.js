@@ -1566,14 +1566,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             var diffEncoding = encoding.get('Differences');
             var index = 0;
             for (var j = 0, jj = diffEncoding.length; j < jj; j++) {
-              var data = diffEncoding[j];
+              var data = xref.fetchIfRef(diffEncoding[j]);
               if (isNum(data)) {
                 index = data;
               } else if (isName(data)) {
                 differences[index++] = data.name;
-              } else if (isRef(data)) {
-                diffEncoding[j--] = xref.fetch(data);
-                continue;
               } else {
                 error('Invalid entry in \'Differences\' array: ' + data);
               }
