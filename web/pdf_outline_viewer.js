@@ -83,6 +83,23 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
     },
 
     /**
+     * @private
+     */
+    _setStyles: function PDFOutlineView_setStyles(element, item) {
+      var styleStr = '';
+      if (item.bold) {
+        styleStr += 'font-weight: bold;';
+      }
+      if (item.italic) {
+        styleStr += 'font-style: italic;';
+      }
+
+      if (styleStr) {
+        element.setAttribute('style', styleStr);
+      }
+    },
+
+    /**
      * Prepend a button before an outline item which allows the user to toggle
      * the visibility of all outline items at that level.
      *
@@ -161,6 +178,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
 
           var element = document.createElement('a');
           this._bindLink(element, item);
+          this._setStyles(element, item);
           element.textContent =
             PDFJS.removeNullCharacters(item.title) || DEFAULT_TITLE;
 
