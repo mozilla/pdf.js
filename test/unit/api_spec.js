@@ -455,6 +455,10 @@ describe('api', function() {
         expect(outlineItem.dest instanceof Array).toEqual(true);
         expect(outlineItem.url).toEqual(null);
 
+        expect(outlineItem.bold).toEqual(true);
+        expect(outlineItem.italic).toEqual(false);
+        expect(outlineItem.color).toEqual(new Uint8Array([0, 64, 128]));
+
         expect(outlineItem.items.length).toEqual(1);
         expect(outlineItem.items[0].title).toEqual('Paragraph 1.1');
       });
@@ -468,9 +472,15 @@ describe('api', function() {
           expect(outline instanceof Array).toEqual(true);
           expect(outline.length).toEqual(5);
 
-          var outlineItem = outline[2];
-          expect(outlineItem.dest).toEqual(null);
-          expect(outlineItem.url).toEqual('http://google.com');
+          var outlineItemTwo = outline[2];
+          expect(typeof outlineItemTwo.title).toEqual('string');
+          expect(outlineItemTwo.dest).toEqual(null);
+          expect(outlineItemTwo.url).toEqual('http://google.com');
+
+          var outlineItemOne = outline[1];
+          expect(outlineItemOne.bold).toEqual(false);
+          expect(outlineItemOne.italic).toEqual(true);
+          expect(outlineItemOne.color).toEqual(new Uint8Array([0, 0, 0]));
 
           loadingTask.destroy(); // Cleanup the worker.
         });

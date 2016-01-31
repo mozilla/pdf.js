@@ -19,18 +19,18 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/obj', ['exports', 'pdfjs/shared/util',
       'pdfjs/core/primitives', 'pdfjs/core/crypto', 'pdfjs/core/parser',
-      'pdfjs/core/chunked_stream'], factory);
+      'pdfjs/core/chunked_stream', 'pdfjs/core/colorspace'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./crypto.js'), require('./parser.js'),
-      require('./chunked_stream.js'));
+      require('./chunked_stream.js'), require('./colorspace.js'));
   } else {
     factory((root.pdfjsCoreObj = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreCrypto, root.pdfjsCoreParser,
-      root.pdfjsCoreChunkedStream);
+      root.pdfjsCoreChunkedStream, root.pdfjsCoreColorSpace);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreCrypto, coreParser,
-                  coreChunkedStream) {
+                  coreChunkedStream, coreColorSpace) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MissingDataException = sharedUtil.MissingDataException;
@@ -61,6 +61,7 @@ var CipherTransformFactory = coreCrypto.CipherTransformFactory;
 var Lexer = coreParser.Lexer;
 var Parser = coreParser.Parser;
 var ChunkedStream = coreChunkedStream.ChunkedStream;
+var ColorSpace = coreColorSpace.ColorSpace;
 
 var Catalog = (function CatalogClosure() {
   function Catalog(pdfManager, xref, pageFactory) {
@@ -141,7 +142,7 @@ var Catalog = (function CatalogClosure() {
       // To avoid recursion, keep track of the already processed items.
       var processed = new RefSet();
       processed.put(obj);
-      var xref = this.xref;
+      var xref = this.xref, blackColor = new Uint8Array(3);
 
       while (queue.length > 0) {
         var i = queue.shift();
@@ -169,14 +170,22 @@ var Catalog = (function CatalogClosure() {
           }
         }
         var title = outlineDict.get('Title');
+        var flags = outlineDict.get('F') || 0;
+
+        var color = outlineDict.get('C'), rgbColor = blackColor;
+        // We only need to parse the color when it's valid, and non-default.
+        if (isArray(color) && color.length === 3 &&
+            (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {
+          rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
+        }
         var outlineItem = {
           dest: dest,
           url: url,
           title: stringToPDFString(title),
-          color: outlineDict.get('C') || [0, 0, 0],
+          color: rgbColor,
           count: outlineDict.get('Count'),
-          bold: !!(outlineDict.get('F') & 2),
-          italic: !!(outlineDict.get('F') & 1),
+          bold: !!(flags & 2),
+          italic: !!(flags & 1),
           items: []
         };
         i.parent.items.push(outlineItem);
