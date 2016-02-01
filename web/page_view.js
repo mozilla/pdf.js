@@ -519,7 +519,6 @@ var PageView = function pageView(container, id, scale,
       // The renderTask may have been replaced by a new one, so only remove the
       // reference to the renderTask if it matches the one that is triggering
       // this callback.
-      debugger;
       if (renderTask === self.renderTask) {
         self.renderTask = null;
       }

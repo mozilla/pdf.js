@@ -142,18 +142,33 @@ function pdfViewSaveTemplate(){
 };
 
 function fabricPageViewDraw(pageView) {
-  page = document.getElementById('page' + pageView.id);
+  var page = document.getElementById('page' + pageView.pageNumber),
+      imgData = page.getContext('2d').getImageData(0, 0, page.width, page.height),
+      cloned = page.cloneNode();
+  cloned.getContext('2d').putImageData(imgData, 0, 0);
   // Set up canvas that will become fabric canvas
-  fc = document.createElement('canvas');
-  fc.id = 'page' + pageView.id + '-highlight';
-  fc.globalAlpha = '1';
-  fc.className = 'highlight';
-  addContextCurrentTransform(fc);
-  fc.style.opacity = '.5';
-  fc.width = parseInt(page.style.width);
-  fc.height = parseInt(page.style.height);
-  page.parentNode.insertBefore(fc, page);
-  var fCanvas = new fabric.pageCanvas(fc.id);
+  // debugger
+  // fc.id = 'page' + pageView.pageNumber + '-highlight';
+  // fc.globalAlpha = '1';
+  // fc.className = 'highlight';
+  // addContextCurerentTransform(fc);
+  // fc.style.opacity = '.5';
+  // fc.width = parseInt(page.style.width);
+  // fc.height = parseInt(page.style.height);
+  // debugger;
+  // // page.parentNode.insertBefore(fc, page);
+  addContextCurrentTransform(cloned);
+  var background = new fabric.Image(cloned, {
+    dx: 0,
+    dy: 0,
+    width: page.width,
+    height: page.height,
+    lockMovementX: true,
+    lockMovementY: true,
+    lockRotation: true
+  }),
+      fCanvas = new fabric.Canvas(page.id);
+  fCanvas.add(background);
   fCanvas.state = {};
   fCanvas.lastObj = null;
 }
