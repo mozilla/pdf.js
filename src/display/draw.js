@@ -143,32 +143,28 @@ function pdfViewSaveTemplate(){
 
 function fabricPageViewDraw(pageView) {
   var page = document.getElementById('page' + pageView.pageNumber),
-      imgData = page.getContext('2d').getImageData(0, 0, page.width, page.height),
-      cloned = page.cloneNode();
-  cloned.getContext('2d').putImageData(imgData, 0, 0);
-  // Set up canvas that will become fabric canvas
-  // debugger
-  // fc.id = 'page' + pageView.pageNumber + '-highlight';
-  // fc.globalAlpha = '1';
-  // fc.className = 'highlight';
-  // addContextCurerentTransform(fc);
-  // fc.style.opacity = '.5';
-  // fc.width = parseInt(page.style.width);
-  // fc.height = parseInt(page.style.height);
-  // debugger;
-  // // page.parentNode.insertBefore(fc, page);
-  addContextCurrentTransform(cloned);
+      pageCtx = page.getContext('2d'),
+      container = document.getElementById('pageContainer' + pageView.pageNumber),
+      imgData = pageCtx.getImageData(0, 0, page.width, page.height),
+      cloned = page.cloneNode(),
+      clCtx = cloned.getContext('2d');
+  clCtx.putImageData(imgData, 0, 0);
+  addContextCurrentTransform(cloned.getContext('2d'));
   var background = new fabric.Image(cloned, {
     dx: 0,
     dy: 0,
-    width: page.width,
-    height: page.height,
+    width: container.clientWidth,
+    height: container.clientHeight,
+    //scaleX: pageCtx._scaleX,
+    //scaleY: pageCtx._scaleY,
     lockMovementX: true,
     lockMovementY: true,
     lockRotation: true
   }),
       fCanvas = new fabric.Canvas(page.id);
+  PDFView.pages[pageView.pageNumber].setContainer(fCanvas.wrapperEl);
   fCanvas.add(background);
   fCanvas.state = {};
   fCanvas.lastObj = null;
+  
 }
