@@ -1,4 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
@@ -51,6 +51,10 @@ var PageView = function pageView(container, id, scale,
   container.appendChild(anchor);
   container.appendChild(div);
 
+  this.setContainer = function pdfViewSetContainer(el) {
+    div = el;
+  };
+  
   this.setPdfPage = function pageViewSetPdfPage(pdfPage) {
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
@@ -109,7 +113,7 @@ var PageView = function pageView(container, id, scale,
       scale: this.scale * CSS_UNITS,
       rotation: totalRotation
     });
-
+    // Start fixing this for fabric
     if (USE_ONLY_CSS_ZOOM && this.canvas) {
       this.cssTransform(this.canvas);
       return;
@@ -555,7 +559,6 @@ var PageView = function pageView(container, id, scale,
         PDFView.error(mozL10n.get('rendering_error', null,
           'An error occurred while rendering the page.'), error);
       }
-      fabricPageViewDraw(pdfPage);
       self.stats = pdfPage.stats;
       self.updateStats();
       if (self.onAfterDraw) {
@@ -576,6 +579,7 @@ var PageView = function pageView(container, id, scale,
 //    }));
 //    // TODO add stream types report here
 //#endif
+      fabricPageViewDraw(pdfPage);
       callback();
     }
 
