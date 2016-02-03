@@ -542,7 +542,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
       }
       return promise.then(function () {
-        if (gStateObj.length >= 0) {
+        if (gStateObj.length > 0) {
           operatorList.addOp(OPS.setGState, [gStateObj]);
         }
       });
