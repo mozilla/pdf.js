@@ -2760,5 +2760,13 @@
        "md5": "8961cb55149495989a80bf0487e0f076",
        "rounds": 1,
        "type": "load"
+    },
+    {  "id": "issue6961",
+       "file": "pdfs/issue6961.pdf",
+       "md5": "a80e4357a8fda758d96c2c76f2980b03",
+       "link": false,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "load"
     }
 ]

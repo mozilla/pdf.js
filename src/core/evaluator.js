@@ -151,17 +151,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         processed[resources.objId] = true;
       }
 
-      var nodes = [resources];
+      var nodes = [resources], xref = this.xref;
       while (nodes.length) {
-        var key;
+        var key, i, ii;
         var node = nodes.shift();
         // First check the current resources for blend modes.
         var graphicStates = node.get('ExtGState');
         if (isDict(graphicStates)) {
-          graphicStates = graphicStates.getAll();
-          for (key in graphicStates) {
-            var graphicState = graphicStates[key];
-            var bm = graphicState['BM'];
+          var graphicStatesKeys = graphicStates.getKeys();
+          for (i = 0, ii = graphicStatesKeys.length; i < ii; i++) {
+            key = graphicStatesKeys[i];
+
+            var graphicState = graphicStates.get(key);
+            var bm = graphicState.get('BM');
             if (isName(bm) && bm.name !== 'Normal') {
               return true;
             }
@@ -172,9 +174,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!isDict(xObjects)) {
           continue;
         }
-        xObjects = xObjects.getAll();
-        for (key in xObjects) {
-          var xObject = xObjects[key];
+        var xObjectsKeys = xObjects.getKeys();
+        for (i = 0, ii = xObjectsKeys.length; i < ii; i++) {
+          key = xObjectsKeys[i];
+
+          var xObject = xObjects.getRaw(key);
+          if (isRef(xObject)) {
+            if (processed[xObject.toString()]) {
+              // The XObject has already been processed, and by avoiding a
+              // redundant `xref.fetch` we can *significantly* reduce the load
+              // time for badly generated PDF files (fixes issue6961.pdf).
+              continue;
+            }
+            xObject = xref.fetch(xObject);
+          }
           if (!isStream(xObject)) {
             continue;
           }
