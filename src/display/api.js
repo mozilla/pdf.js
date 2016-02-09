@@ -414,9 +414,9 @@ PDFJS.getDocument = function getDocument(src,
         throw new Error('Loading aborted');
       }
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
-      messageHandler.send('Ready', null);
       var transport = new WorkerTransport(messageHandler, task, rangeTransport);
       task._transport = transport;
+      messageHandler.send('Ready', null);
     });
   }).catch(task._capability.reject);
 
