@@ -579,7 +579,7 @@ var PageView = function pageView(container, id, scale,
 //    }));
 //    // TODO add stream types report here
 //#endif
-      fabricPageViewDraw(pdfPage);
+      canvas = fabricPageViewDraw(pdfPage);
       callback();
     }
 

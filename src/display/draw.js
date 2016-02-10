@@ -163,8 +163,9 @@ function fabricPageViewDraw(pageView) {
   }),
       fCanvas = new fabric.Canvas(page.id);
   PDFView.pages[pageView.pageNumber].setContainer(fCanvas.wrapperEl);
+  PDFView.pages[pageView.pageNumber].canvas = fCanvas;
   fCanvas.add(background);
   fCanvas.state = {};
   fCanvas.lastObj = null;
-  
+  return fCanvas;
 }
