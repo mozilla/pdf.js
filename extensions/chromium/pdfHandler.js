@@ -252,6 +252,32 @@ chrome.extension.isAllowedFileSchemeAccess(function(isAllowedAccess) {
 });
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message && message.action === 'getParentOrigin') {
+    // getParentOrigin is used to determine whether it is safe to embed a
+    // sensitive (local) file in a frame.
+    if (!sender.tab) {
+      sendResponse('');
+      return;
+    }
+    // TODO: This should be the URL of the parent frame, not the tab. But
+    // chrome-extension:-URLs are not visible in the webNavigation API
+    // (https://crbug.com/326768), so the next best thing is using the tab's URL
+    // for making security decisions.
+    var parentUrl = sender.tab.url;
+    if (!parentUrl) {
+      sendResponse('');
+      return;
+    }
+    if (parentUrl.lastIndexOf('file:', 0) === 0) {
+      sendResponse('file://');
+      return;
+    }
+    // The regexp should always match for valid URLs, but in case it doesn't,
+    // just give the full URL (e.g. data URLs).
+    var origin = /^[^:]+:\/\/[^/]+/.exec(parentUrl);
+    sendResponse(origin ? origin[1] : parentUrl);
+    return true;
+  }
   if (message && message.action === 'isAllowedFileSchemeAccess') {
     chrome.extension.isAllowedFileSchemeAccess(sendResponse);
     return true;

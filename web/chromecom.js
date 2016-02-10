@@ -113,24 +113,45 @@ var ChromeCom = (function ChromeComClosure() {
         return;
       }
       if (/^file?:/.test(file)) {
-        if (top !== window && !/^file:/i.test(location.ancestorOrigins[0])) {
-          PDFViewerApplication.error('Blocked ' + location.ancestorOrigins[0] +
-              ' from loading ' + file + '. Refused to load a local file in a ' +
-              ' non-local page for security reasons.');
-          return;
-        }
-        isAllowedFileSchemeAccess(function(isAllowedAccess) {
-          if (isAllowedAccess) {
-            PDFViewerApplication.open(file);
-          } else {
-            requestAccessToLocalFile(file);
+        getEmbedderOrigin(function(origin) {
+          // If the origin cannot be determined, let Chrome decide whether to
+          // allow embedding files. Otherwise, only allow local files to be
+          // embedded from local files or Chrome extensions.
+          // Even without this check, the file load in frames is still blocked,
+          // but this may change in the future (https://crbug.com/550151).
+          if (origin && !/^file:|^chrome-extension:/.test(origin)) {
+            PDFViewerApplication.error('Blocked ' + origin + ' from loading ' +
+                file + '. Refused to load a local file in a non-local page ' +
+                'for security reasons.');
+            return;
           }
+          isAllowedFileSchemeAccess(function(isAllowedAccess) {
+            if (isAllowedAccess) {
+              PDFViewerApplication.open(file);
+            } else {
+              requestAccessToLocalFile(file);
+            }
+          });
         });
         return;
       }
       PDFViewerApplication.open(file);
     });
   };
+
+  function getEmbedderOrigin(callback) {
+    var origin = window === top ? location.origin : location.ancestorOrigins[0];
+    if (origin === 'null') {
+      // file:-URLs, data-URLs, sandboxed frames, etc.
+      getParentOrigin(callback);
+    } else {
+      callback(origin);
+    }
+  }
+
+  function getParentOrigin(callback) {
+    ChromeCom.request('getParentOrigin', null, callback);
+  }
 
   function isAllowedFileSchemeAccess(callback) {
     ChromeCom.request('isAllowedFileSchemeAccess', null, callback);
