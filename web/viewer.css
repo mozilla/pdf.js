@@ -22,12 +22,14 @@
 
 html {
   height: 100%;
+  width: 100%;
   /* Font size is needed to make the activity bar the correct size. */
   font-size: 10px;
 }
 
 body {
   height: 100%;
+  width: 100%;
   background-color: #404040;
   background-image: url(images/texture.png);
 }
@@ -1800,11 +1802,15 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   body[data-mozPrintCallback] #printContainer {
     display: block;
   }
+  #printContainer {
+    height: 100%;
+  }
   /* wrapper around (scaled) print canvas elements */
   #printContainer > div {
     position: relative;
     top: 0;
     left: 0;
+    height: 100%;
     overflow: hidden;
   }
   #printContainer canvas {
