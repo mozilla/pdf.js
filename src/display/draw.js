@@ -162,8 +162,7 @@ function fabricPageViewDraw(pageView) {
     lockRotation: true
   }),
       fCanvas = new fabric.Canvas(page.id);
-  PDFView.pages[pageView.pageNumber].setContainer(fCanvas.wrapperEl);
-  PDFView.pages[pageView.pageNumber].canvas = fCanvas;
+  PDFView.pages[pageView.pageNumber - 1].canvas = fCanvas;
   fCanvas.add(background);
   fCanvas.state = {};
   fCanvas.lastObj = null;
