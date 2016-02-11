@@ -161,10 +161,13 @@ function fabricPageViewDraw(pageView) {
     lockMovementY: true,
     lockRotation: true
   }),
-      fCanvas = new fabric.Canvas(page.id);
-  PDFView.pages[pageView.pageNumber - 1].canvas = fCanvas;
+      fCanvas = new fabric.Canvas(page.id),
+      pdfPage = PDFView.pages[pageView.pageNumber - 1];
+  pdfPage.el = document.getElementById('pageContainer' + pageView.pageNumber);
+  pdfPage.zoomLayer = fCanvas.wrapperEl;
+  pdfPage.canvas = fCanvas;
   fCanvas.add(background);
   fCanvas.state = {};
   fCanvas.lastObj = null;
-  return fCanvas;
+  return pdfPage;
 }
