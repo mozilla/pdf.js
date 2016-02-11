@@ -36,6 +36,7 @@
   <script src="util_spec.js"></script>
   <script src="cmap_spec.js"></script>
   <script src="annotation_layer_spec.js"></script>
+  <script src="network_spec.js"></script>
 
   <script>
     'use strict';
@@ -48,11 +49,12 @@
           'pdfjs/core/annotation', 'pdfjs/core/crypto', 'pdfjs/core/stream',
           'pdfjs/core/fonts', 'pdfjs/core/ps_parser', 'pdfjs/core/function',
           'pdfjs/core/parser', 'pdfjs/core/evaluator', 'pdfjs/core/cmap',
-          'pdfjs/core/worker', 'pdfjs/display/api', 'pdfjs/display/metadata'],
+          'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/display/api',
+          'pdfjs/display/metadata'],
           function (sharedUtil, sharedGlobal, corePrimitives, coreAnnotation,
                     coreCrypto, coreStream, coreFonts, corePsParser, coreFunction,
-                    coreParser, coreEvaluator, coreCMap, coreWorker, displayAPI,
-                    displayMetadata) {
+                    coreParser, coreEvaluator, coreCMap, coreWorker,
+                    coreNetwork, displayAPI, displayMetadata) {
 
         pdfjsLibs = {
           sharedUtil: sharedUtil,
@@ -68,6 +70,7 @@
           coreEvaluator: coreEvaluator,
           coreCMap: coreCMap,
           coreWorker: coreWorker,
+          coreNetwork: coreNetwork,
           displayAPI: displayAPI,
           displayMetadata: displayMetadata
         };
