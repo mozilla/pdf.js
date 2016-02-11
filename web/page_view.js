@@ -118,7 +118,7 @@ var PageView = function pageView(container, id, scale,
       this.cssTransform(this.canvas);
       return;
     } else if (this.canvas && !this.zoomLayer) {
-      this.zoomLayer = this.canvas.parentNode;
+      this.zoomLayer = this.canvas.wrapperEl;
       this.zoomLayer.style.position = 'absolute';
     }
     if (this.zoomLayer) {
@@ -243,7 +243,7 @@ var PageView = function pageView(container, id, scale,
             break;
 
           case 'Find':
-            if (!PDFView.supportsIntegratedFind) {
+          if (!PDFView.supportsIntegratedFind) {
               PDFFindBar.toggle();
             }
             break;
@@ -579,7 +579,7 @@ var PageView = function pageView(container, id, scale,
 //    }));
 //    // TODO add stream types report here
 //#endif
-      canvas = fabricPageViewDraw(pdfPage);
+      self.canvas = fabricPageViewDraw(pdfPage);
       callback();
     }
 
