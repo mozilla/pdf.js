@@ -594,7 +594,8 @@ var PDFViewer = (function pdfViewer() {
         scale: normalizedScaleValue,
         top: intTop,
         left: intLeft,
-        pdfOpenParams: pdfOpenParams
+        pdfOpenParams: pdfOpenParams,
+        rotation: this.pagesRotation
       };
     },
 
