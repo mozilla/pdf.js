@@ -884,13 +884,14 @@ var PDFViewerApplication = {
                      store.get('zoom', DEFAULT_SCALE_VALUE);
           var left = store.get('scrollLeft', '0');
           var top = store.get('scrollTop', '0');
+          var rotation = store.get('rotation', '0') | 0;
 
           storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
                        left + ',' + top;
         } else if (self.preferenceDefaultZoomValue) {
           storedHash = 'page=1&zoom=' + self.preferenceDefaultZoomValue;
         }
-        self.setInitialView(storedHash, scale);
+        self.setInitialView(storedHash, scale, rotation);
 
         initialParams.hash = storedHash;
 
@@ -1061,8 +1062,12 @@ var PDFViewerApplication = {
     });
   },
 
-  setInitialView: function pdfViewSetInitialView(storedHash, scale) {
+  setInitialView: function pdfViewSetInitialView(storedHash, scale, rotation) {
     this.isInitialViewSet = true;
+
+    if (rotation && rotation !== this.pageRotation) {
+      this.rotatePages(rotation);
+    }
 
     // When opening a new file, when one is already loaded in the viewer,
     // ensure that the 'pageNumber' element displays the correct value.
@@ -1784,7 +1789,8 @@ window.addEventListener('updateviewarea', function (evt) {
       'page': location.pageNumber,
       'zoom': location.scale,
       'scrollLeft': location.left,
-      'scrollTop': location.top
+      'scrollTop': location.top,
+      'rotation': location.rotation
     }).catch(function() {
       // unable to write to storage
     });
