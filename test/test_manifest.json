@@ -781,6 +781,15 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue6549",
+       "file": "pdfs/issue6549.pdf",
+       "md5": "699aeea73a6f45375022ffc6cc80f12a",
+       "link": true,
+       "rounds": 1,
+       "firstPage": 2,
+       "lastPage": 3,
+       "type": "load"
+    },
     {  "id": "ibwa-bad",
        "file": "pdfs/ibwa-bad.pdf",
        "md5": "6ca059d32b74ac2688ae06f727fee755",
