@@ -1005,9 +1005,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // but doing so is meaningless without knowing the semantics.
               continue;
             default:
-              // Note: Let's hope that the ignored operator does not have any
-              // non-serializable arguments, otherwise postMessage will throw
+              // Note: Ignore the operator if it has `Dict` arguments, since
+              // those are non-serializable, otherwise postMessage will throw
               // "An object could not be cloned.".
+              if (args !== null) {
+                for (i = 0, ii = args.length; i < ii; i++) {
+                  if (args[i] instanceof Dict) {
+                    break;
+                  }
+                }
+                if (i < ii) {
+                  warn('getOperatorList - ignoring operator: ' + fn);
+                  continue;
+                }
+              }
           }
           operatorList.addOp(fn, args);
         }
@@ -2555,7 +2566,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
             if (!args) {
               args = [];
             }
-            args.push((obj instanceof Dict ? obj.getAll() : obj));
+            args.push(obj);
             assert(args.length <= 33, 'Too many arguments');
           }
         }

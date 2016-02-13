@@ -67,24 +67,6 @@ var Dict = (function DictClosure() {
     return nonSerializable; // creating closure on some variable
   };
 
-  var GETALL_DICTIONARY_TYPES_WHITELIST = {
-    'Background': true,
-    'ExtGState': true,
-    'Halftone': true,
-    'Layout': true,
-    'Mask': true,
-    'Pagination': true,
-    'Printing': true
-  };
-
-  function isRecursionAllowedFor(dict) {
-    if (!isName(dict.Type)) {
-      return true;
-    }
-    var dictType = dict.Type.name;
-    return GETALL_DICTIONARY_TYPES_WHITELIST[dictType] === true;
-  }
-
   // xref is optional
   function Dict(xref) {
     // Map should only be used internally, use functions below to access.
@@ -160,58 +142,6 @@ var Dict = (function DictClosure() {
     // no dereferencing
     getRaw: function Dict_getRaw(key) {
       return this.map[key];
-    },
-
-    // creates new map and dereferences all Refs
-    getAll: function Dict_getAll() {
-      var all = Object.create(null);
-      var queue = null;
-      var key, obj;
-      for (key in this.map) {
-        obj = this.get(key);
-        if (obj instanceof Dict) {
-          if (isRecursionAllowedFor(obj)) {
-            (queue || (queue = [])).push({target: all, key: key, obj: obj});
-          } else {
-            all[key] = this.getRaw(key);
-          }
-        } else {
-          all[key] = obj;
-        }
-      }
-      if (!queue) {
-        return all;
-      }
-
-      // trying to take cyclic references into the account
-      var processed = Object.create(null);
-      while (queue.length > 0) {
-        var item = queue.shift();
-        var itemObj = item.obj;
-        var objId = itemObj.objId;
-        if (objId && objId in processed) {
-          item.target[item.key] = processed[objId];
-          continue;
-        }
-        var dereferenced = Object.create(null);
-        for (key in itemObj.map) {
-          obj = itemObj.get(key);
-          if (obj instanceof Dict) {
-            if (isRecursionAllowedFor(obj)) {
-              queue.push({target: dereferenced, key: key, obj: obj});
-            } else {
-              dereferenced[key] = itemObj.getRaw(key);
-            }
-          } else {
-            dereferenced[key] = obj;
-          }
-        }
-        if (objId) {
-          processed[objId] = dereferenced;
-        }
-        item.target[item.key] = dereferenced;
-      }
-      return all;
     },
 
     getKeys: function Dict_getKeys() {
