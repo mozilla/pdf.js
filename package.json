@@ -9,6 +9,7 @@
     "rimraf": "^2.4.1",
     "shelljs": "~0.4.0",
     "typogr": "~0.6.5",
+    "uglify-js": "^2.6.1",
     "wintersmith": "^2.0.0",
     "yargs": "^3.14.0"
   },
