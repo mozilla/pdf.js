@@ -430,6 +430,19 @@ describe('api', function() {
         loadingTask.destroy();
       });
     });
+    it('gets non-existent outline', function() {
+      var url = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+      var loadingTask = PDFJS.getDocument(url);
+
+      var promise = loadingTask.promise.then(function (pdfDocument) {
+        return pdfDocument.getOutline();
+      });
+      waitsForPromiseResolved(promise, function (outline) {
+        expect(outline).toEqual(null);
+
+        loadingTask.destroy();
+      });
+    });
     it('gets outline', function() {
       var promise = doc.getOutline();
       waitsForPromiseResolved(promise, function(outline) {

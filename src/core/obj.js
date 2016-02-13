@@ -128,66 +128,67 @@ var Catalog = (function CatalogClosure() {
       return shadow(this, 'documentOutline', obj);
     },
     readDocumentOutline: function Catalog_readDocumentOutline() {
-      var xref = this.xref;
       var obj = this.catDict.get('Outlines');
+      if (!isDict(obj)) {
+        return null;
+      }
+      obj = obj.getRaw('First');
+      if (!isRef(obj)) {
+        return null;
+      }
       var root = { items: [] };
-      if (isDict(obj)) {
-        obj = obj.getRaw('First');
-        var processed = new RefSet();
-        if (isRef(obj)) {
-          var queue = [{obj: obj, parent: root}];
-          // to avoid recursion keeping track of the items
-          // in the processed dictionary
-          processed.put(obj);
-          while (queue.length > 0) {
-            var i = queue.shift();
-            var outlineDict = xref.fetchIfRef(i.obj);
-            if (outlineDict === null) {
-              continue;
-            }
-            if (!outlineDict.has('Title')) {
-              error('Invalid outline item');
-            }
-            var actionDict = outlineDict.get('A'), dest = null, url = null;
-            if (actionDict) {
-              var destEntry = actionDict.get('D');
-              if (destEntry) {
-                dest = destEntry;
-              } else {
-                var uriEntry = actionDict.get('URI');
-                if (isString(uriEntry) && isValidUrl(uriEntry, false)) {
-                  url = uriEntry;
-                }
-              }
-            } else if (outlineDict.has('Dest')) {
-              dest = outlineDict.getRaw('Dest');
-              if (isName(dest)) {
-                dest = dest.name;
-              }
-            }
-            var title = outlineDict.get('Title');
-            var outlineItem = {
-              dest: dest,
-              url: url,
-              title: stringToPDFString(title),
-              color: outlineDict.get('C') || [0, 0, 0],
-              count: outlineDict.get('Count'),
-              bold: !!(outlineDict.get('F') & 2),
-              italic: !!(outlineDict.get('F') & 1),
-              items: []
-            };
-            i.parent.items.push(outlineItem);
-            obj = outlineDict.getRaw('First');
-            if (isRef(obj) && !processed.has(obj)) {
-              queue.push({obj: obj, parent: outlineItem});
-              processed.put(obj);
-            }
-            obj = outlineDict.getRaw('Next');
-            if (isRef(obj) && !processed.has(obj)) {
-              queue.push({obj: obj, parent: i.parent});
-              processed.put(obj);
+      var queue = [{obj: obj, parent: root}];
+      // To avoid recursion, keep track of the already processed items.
+      var processed = new RefSet();
+      processed.put(obj);
+      var xref = this.xref;
+
+      while (queue.length > 0) {
+        var i = queue.shift();
+        var outlineDict = xref.fetchIfRef(i.obj);
+        if (outlineDict === null) {
+          continue;
+        }
+        assert(outlineDict.has('Title'), 'Invalid outline item');
+
+        var actionDict = outlineDict.get('A'), dest = null, url = null;
+        if (actionDict) {
+          var destEntry = actionDict.get('D');
+          if (destEntry) {
+            dest = destEntry;
+          } else {
+            var uriEntry = actionDict.get('URI');
+            if (isString(uriEntry) && isValidUrl(uriEntry, false)) {
+              url = uriEntry;
             }
           }
+        } else if (outlineDict.has('Dest')) {
+          dest = outlineDict.getRaw('Dest');
+          if (isName(dest)) {
+            dest = dest.name;
+          }
+        }
+        var title = outlineDict.get('Title');
+        var outlineItem = {
+          dest: dest,
+          url: url,
+          title: stringToPDFString(title),
+          color: outlineDict.get('C') || [0, 0, 0],
+          count: outlineDict.get('Count'),
+          bold: !!(outlineDict.get('F') & 2),
+          italic: !!(outlineDict.get('F') & 1),
+          items: []
+        };
+        i.parent.items.push(outlineItem);
+        obj = outlineDict.getRaw('First');
+        if (isRef(obj) && !processed.has(obj)) {
+          queue.push({obj: obj, parent: outlineItem});
+          processed.put(obj);
+        }
+        obj = outlineDict.getRaw('Next');
+        if (isRef(obj) && !processed.has(obj)) {
+          queue.push({obj: obj, parent: i.parent});
+          processed.put(obj);
         }
       }
       return (root.items.length > 0 ? root.items : null);
