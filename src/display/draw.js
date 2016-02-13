@@ -98,6 +98,61 @@ var PDFCustomFabricSetUp = function customFabricSetUp(){
   });
 };
 
+function pdfViewFabricMouseMove(options) {
+  self = this;
+  if(this.lastObj != null) this.remove(this.lastObj);
+  var e = options.e,
+      rect = this._offset;
+  this.state.lastMoveX = e.clientX - rect.left;
+  this.state.lastMoveY = e.clientY - rect.top;
+  var width = this.state.lastMoveX - this.state.lastClickX,
+      length = this.state.lastMoveY - this.state.lastClickY,
+      rectX =  this.state.LastMoveX < this.state.LastClickX ? this.state.lastMoveX : this.state.lastClickX,
+      rectY =  this.state.LastMoveY < this.state.LastClickY ? this.state.lastMoveY : this.state.lastClickY,
+      deleteObj = function(e){
+        var key = e.which || e.keyCode || e.charCode;
+        if(key === 46){
+          self.remove(this);
+        }
+      };
+  rect = new fabric.TitledRect({
+    left: rectX,
+    top: rectY + window.scrollY,
+    width: width,
+    height: length,
+    stroke : 'red',
+    strokeWidth: 3,
+    fill : 'transparent',
+  });
+  this.lastObj = rect;
+  this.add(rect);
+  this.state.rectX = rectX;
+  this.state.rectY = rectY;
+  this.state.rectW = width;
+  this.state.rectL = length;
+  this.state.page = PDFView.page;
+};
+
+function pdfViewFabricMouseDown(options){
+  if(!options.target){
+    self = this;
+    var e = options.e;
+    var rect = this._offset;
+    this.state.lastClickX = e.clientX - rect.left;
+    this.state.lastClickY = e.clientY - rect.top;
+    this.on('mouse:move', PDFView.fabricMouseMove);
+    this.on('mouse:up', PDFView.fabricMouseUp);
+  }
+};
+
+function pdfViewFabricStringifyParams(){
+  var pages = {};
+  PDFView.pages.forEach(function(page){
+    pages[page.canvas.page] = page.canvas.toObject;
+  });
+  return pages;
+};
+
 function pdfViewSaveTemplate(){
     //NOTE: FabricJS apparently used to get top and left from the center of
     //a given object, but it looks like orignX and originY are already set to
