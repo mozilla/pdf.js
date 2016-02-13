@@ -539,10 +539,11 @@ var PageView = function pageView(container, id, scale,
         delete self.loadingIconDiv;
       }
 
-      if (self.zoomLayer) {
+      //XXX I'm sure at some point it will be clear why this has to be there
+      /*if (self.zoomLayer) {
         div.removeChild(self.zoomLayer);
         self.zoomLayer = null;
-      }
+      }*/
 
 //#if (FIREFOX || MOZCENTRAL)
 //    if (self.textLayer && self.textLayer.textDivs &&
