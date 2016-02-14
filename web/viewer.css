@@ -96,34 +96,16 @@ select {
   -ms-user-select: none;
 }
 
-.pdfPresentationMode:-webkit-full-screen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-moz-full-screen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-ms-fullscreen a:not(.internalLink) {
+.pdfPresentationMode:-webkit-full-screen a:not(.internalLink),
+.pdfPresentationMode:-moz-full-screen a:not(.internalLink),
+.pdfPresentationMode:-ms-fullscreen a:not(.internalLink),
+.pdfPresentationMode:fullscreen a:not(.internalLink) {
   display: none !important;
 }
 
-.pdfPresentationMode:fullscreen a:not(.internalLink) {
-  display: none;
-}
-
-.pdfPresentationMode:-webkit-full-screen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:-moz-full-screen .textLayer > div {
-  cursor: none;
-}
-
-.pdfPresentationMode:-ms-fullscreen .textLayer > div {
-  cursor: none;
-}
-
+.pdfPresentationMode:-webkit-full-screen .textLayer > div,
+.pdfPresentationMode:-moz-full-screen .textLayer > div,
+.pdfPresentationMode:-ms-fullscreen .textLayer > div,
 .pdfPresentationMode:fullscreen .textLayer > div {
   cursor: none;
 }
@@ -335,11 +317,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   transition: width 200ms;
 }
 
-@-webkit-keyframes progressIndeterminate {
-  0% { left: -142px; }
-  100% { left: 0; }
-}
-
+@-webkit-keyframes progressIndeterminate,
 @keyframes progressIndeterminate {
   0% { left: -142px; }
   100% { left: 0; }
