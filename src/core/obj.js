@@ -1591,4 +1591,5 @@ var ObjectLoader = (function() {
 exports.Catalog = Catalog;
 exports.ObjectLoader = ObjectLoader;
 exports.XRef = XRef;
+exports.FileSpec = FileSpec;
 }));

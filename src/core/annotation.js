@@ -50,6 +50,7 @@ var isName = corePrimitives.isName;
 var Stream = coreStream.Stream;
 var ColorSpace = coreColorSpace.ColorSpace;
 var ObjectLoader = coreObj.ObjectLoader;
+var FileSpec = coreObj.FileSpec;
 var OperatorList = coreEvaluator.OperatorList;
 
 /**
@@ -75,6 +76,7 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
 
     // Return the right annotation object based on the subtype and field type.
     var parameters = {
+      xref: xref,
       dict: dict,
       ref: ref
     };
@@ -107,6 +109,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
 
       case 'StrikeOut':
         return new StrikeOutAnnotation(parameters);
+
+      case 'FileAttachment':
+        return new FileAttachmentAnnotation(parameters);
 
       default:
         warn('Unimplemented annotation type "' + subtype + '", ' +
@@ -850,6 +855,31 @@ var StrikeOutAnnotation = (function StrikeOutAnnotationClosure() {
   Util.inherit(StrikeOutAnnotation, Annotation, {});
 
   return StrikeOutAnnotation;
+})();
+
+var FileAttachmentAnnotation = (function FileAttachmentAnnotationClosure() {
+  function FileAttachmentAnnotation(parameters) {
+    Annotation.call(this, parameters);
+
+    var dict = parameters.dict;
+    var file = new FileSpec(dict.get('FS'), parameters.xref);
+
+    this.data.annotationType = AnnotationType.FILEATTACHMENT;
+    this.data.file = file.serializable;
+
+    if (!dict.has('C')) {
+      // Fall back to the default background color.
+      this.data.color = null;
+    }
+
+    this.data.hasPopup = dict.has('Popup');
+    this.data.title = stringToPDFString(dict.get('T') || '');
+    this.data.contents = stringToPDFString(dict.get('Contents') || '');
+  }
+
+  Util.inherit(FileAttachmentAnnotation, Annotation, {});
+
+  return FileAttachmentAnnotation;
 })();
 
 exports.Annotation = Annotation;

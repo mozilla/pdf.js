@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFJS, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
-           TextLayerBuilder, AnnotationLayerBuilder, Promise,
-           approximateFraction, roundToDivide */
+           TextLayerBuilder, Promise, approximateFraction, roundToDivide */
 
 'use strict';
 
