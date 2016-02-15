@@ -225,6 +225,7 @@ target.web = function() {
   target.extension();
   target.b2g();
   target.jsdoc();
+  target.minified();
 
   echo();
   echo('### Creating web site');
@@ -282,6 +283,7 @@ target.dist = function() {
   target.generic();
   target.singlefile();
   target.components();
+  target.minified();
 
   var DIST_DIR = BUILD_DIR + 'dist/';
   var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
@@ -307,11 +309,17 @@ target.dist = function() {
     GENERIC_DIR + 'build/pdf.js',
     GENERIC_DIR + 'build/pdf.worker.js',
     SINGLE_FILE_DIR + 'build/pdf.combined.js',
+    MINIFIED_DIR + 'build/pdf.min.js',
+    MINIFIED_DIR + 'build/pdf.worker.min.js',
+    MINIFIED_DIR + 'build/pdf.combined.min.js'
   ], DIST_DIR + 'build/');
 
   mkdir('-p', DIST_DIR + 'web/');
   cp('-R', [
     COMPONENTS_DIR + '*',
+    MINIFIED_DIR + 'web/pdf_viewer.min.js',
+    MINIFIED_DIR + 'web/pdf_viewer.min.css',
+    MINIFIED_DIR + 'web/compatibility.min.js',
   ], DIST_DIR + 'web/');
 
   echo();
@@ -655,74 +663,143 @@ function cleanupCSSSource(file) {
 // modern HTML5 browsers.
 //
 target.minified = function() {
+  try {
+    var CleanCSS = require('clean-css');
+  } catch (e) {
+    echo('clean-css is not installed. Run "npm install" ' +
+      'to install all dependencies.');
+    exit(1);
+  }
+
+  try {
+    var UglifyJS = require('uglify-js');
+  } catch (e) {
+    echo('uglify-js is not installed. Run "npm install" ' +
+      'to install all dependencies.');
+    exit(1);
+  }
+
+  target.generic();
+  target.singlefile();
+  target.components();
+
+
+  // clean up after singlefile
+  cd(ROOT_DIR);
+  rm(BUILD_DIR + '/pdf.js');
+  rm(BUILD_DIR + '/pdf.worker.js');
+
+  // build bundle again (this time not singlefile)
   target.bundle({});
+
+  // build locale
   target.locale();
 
   cd(ROOT_DIR);
   echo();
+
   echo('### Creating minified viewer');
 
   rm('-rf', MINIFIED_DIR);
   mkdir('-p', MINIFIED_DIR);
   mkdir('-p', MINIFIED_DIR + BUILD_DIR);
-  mkdir('-p', MINIFIED_DIR + '/web');
-  mkdir('-p', MINIFIED_DIR + '/web/cmaps');
+  mkdir('-p', MINIFIED_DIR + 'web');
+  mkdir('-p', MINIFIED_DIR + 'web/cmaps');
 
   var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
 
+  // similar setup to target.generic(),
+  // but using MINIFIED_DIR and including pdf.combined.js
   var setup = {
     defines: defines,
     copy: [
-      [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
-      ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
-      ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
-      ['web/locale', MINIFIED_DIR + '/web']
+      [COMMON_WEB_FILES, MINIFIED_DIR + 'web'],
+      ['LICENSE', MINIFIED_DIR],
+      ['external/webL10n/l10n.js', MINIFIED_DIR + 'web'],
+      ['web/compatibility.js', MINIFIED_DIR + 'web'],
+      ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + 'web'],
+      ['external/bcmaps/*', MINIFIED_DIR + 'web/cmaps/'],
+      ['web/locale', MINIFIED_DIR + 'web'],
+      [SINGLE_FILE_DIR + '/build/pdf.combined.js', MINIFIED_DIR + 'build']
     ],
     preprocess: [
       [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
-      [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + '/web']
+      [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + 'web']
     ],
     preprocessCSS: [
       ['minified', 'web/viewer.css',
-       MINIFIED_DIR + '/web/viewer.css']
+       MINIFIED_DIR + 'web/viewer.css']
     ]
   };
+
   builder.build(setup);
 
-  cleanupCSSSource(MINIFIED_DIR + '/web/viewer.css');
+  var uglifyJSConfigs = [
+    {
+      src: [
+        'web/compatibility.js',
+        'external/webL10n/l10n.js',
+        MINIFIED_DIR + BUILD_DIR + 'pdf.js',
+        MINIFIED_DIR + 'web/viewer.js'
+      ],
+      out: 'web/pdf.viewer.js'
+    },
+    {
+      src: COMPONENTS_DIR + 'pdf_viewer.js',
+      out: 'web/pdf_viewer.min.js'
+    },
+    {
+      src: MINIFIED_DIR + 'web/compatibility.js',
+      out: 'web/compatibility.min.js'
+    },
+    {
+      src: MINIFIED_DIR + 'build/pdf.js',
+      out: 'build/pdf.min.js'
+    },
+    {
+      src: MINIFIED_DIR + 'build/pdf.worker.js',
+      out: 'build/pdf.worker.min.js',
+      opts:  {compress: {sequences: false}}   // V8 chokes on very long sequences. Works around that.
+    },
+    {
+      src: MINIFIED_DIR + 'build/pdf.combined.js',
+      out: 'build/pdf.combined.min.js',
+      opts: {compress: {sequences: false}}
+    }
+  ];
 
-  var viewerFiles = [
-    'web/compatibility.js',
-    'external/webL10n/l10n.js',
-    MINIFIED_DIR + BUILD_DIR + 'pdf.js',
-    MINIFIED_DIR + '/web/viewer.js'
+  var cleanCSSConfigs = [
+    {
+      src: [COMPONENTS_DIR + 'pdf_viewer.css'],
+      out: 'web/pdf_viewer.min.css'
+    }
   ];
 
   echo();
   echo('### Minifying js files');
 
-  var UglifyJS = require('uglify-js');
-  // V8 chokes on very long sequences. Works around that.
-  var optsForHugeFile = {compress: {sequences: false}};
-
-  UglifyJS.minify(viewerFiles).code
-    .to(MINIFIED_DIR + '/web/pdf.viewer.js');
-  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code
-    .to(MINIFIED_DIR + '/build/pdf.min.js');
-  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.worker.js', optsForHugeFile).code
-    .to(MINIFIED_DIR + '/build/pdf.worker.min.js');
+  uglifyJSConfigs.forEach(function(config){
+    UglifyJS.minify(config.src, config.opts).code.to(MINIFIED_DIR + config.out);
+  });
 
   echo();
-  echo('### Cleaning js files');
 
-  rm(MINIFIED_DIR + '/web/viewer.js');
-  rm(MINIFIED_DIR + '/web/debugger.js');
-  rm(MINIFIED_DIR + '/build/pdf.js');
-  rm(MINIFIED_DIR + '/build/pdf.worker.js');
-  mv(MINIFIED_DIR + '/build/pdf.min.js',
-     MINIFIED_DIR + '/build/pdf.js');
-  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
-     MINIFIED_DIR + '/build/pdf.worker.js');
+  echo('### Minifying CSS Files');
+  cd(ROOT_DIR);
+  echo();
+
+  cleanCSSConfigs.forEach(function (cssMinifyConfig) {
+    var inputCSSString = '', minifiedCSS;
+
+    cssMinifyConfig.src.forEach(function (srcFile) {
+      inputCSSString += fs.readFileSync(srcFile, 'utf8');
+    });
+
+    minifiedCSS = new CleanCSS().minify(inputCSSString).styles;
+    fs.writeFileSync(MINIFIED_DIR + cssMinifyConfig.out, minifiedCSS, 'utf8');
+  });
+
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////
