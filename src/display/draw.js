@@ -18,6 +18,10 @@
 
 'use strict';
 
+function pdfViewGetCanvas() {
+  return this.pages[this.page].canvas;
+};
+
 var PDFCustomFabricSetUp = function customFabricSetUp(){
   fabric.Object.prototype.hasRotatingPoint = false;
   fabric.Object.prototype.orignX = 'left';
@@ -60,7 +64,7 @@ var PDFCustomFabricSetUp = function customFabricSetUp(){
       options || (options = { });
       
       this.callSuper('initialize', options);
-      var canvas = PDFView.findPage(PDFView.page);
+      var canvas = PDFView.getCanvas(PDFView.page);
       var pdfScale = PDFView.currentScale * 96;
       self = this;
       this.extraFields.forEach(function(field){
@@ -68,7 +72,7 @@ var PDFCustomFabricSetUp = function customFabricSetUp(){
       });
     },
     calculateSBTPos: function() {
-      var canvas = PDFView.findPage(PDFView.page);
+      var canvas = PDFView.getCanvas(PDFView.page);
       var pdfScale = PDFView.currentScale * 96;
       this.sbt_height = Math.abs(canvas.height/pdfScale);
       this.left_inches = Math.abs(this.left/pdfScale);
@@ -97,6 +101,8 @@ var PDFCustomFabricSetUp = function customFabricSetUp(){
     }
   });
 };
+
+PDFCustomFabricSetUp();
 
 function pdfViewFabricMouseMove(options) {
   self = this;
@@ -131,10 +137,10 @@ function pdfViewFabricMouseMove(options) {
   this.state.rectW = width;
   this.state.rectL = length;
   this.state.page = PDFView.page;
+  //ADD CALLBACK FOR EXTERNAL API
 };
 
 function pdfViewFabricMouseDown(options){
-  if(!options.target){
     self = this;
     var e = options.e;
     var rect = this._offset;
@@ -142,8 +148,18 @@ function pdfViewFabricMouseDown(options){
     this.state.lastClickY = e.clientY - rect.top;
     this.on('mouse:move', PDFView.fabricMouseMove);
     this.on('mouse:up', PDFView.fabricMouseUp);
-  }
+    //ADD CALLBACK FOR EXTERNAL API
 };
+
+function pdfViewFabricMouseUp(options){
+  this.off('mouse:move', PDFView.fabricMouseMove);
+  this.off('mouse:up', PDFView.fabricMouseUp);
+  if(PDFView.lastSelectedObj &&
+     PDFView.lastSelectedObj['type'] == 'TitledRect'){
+    this.lastObj = null;
+  }
+  //ADD CALLBACK FOR EXTERNAL API
+}
 
 function pdfViewFabricStringifyParams(){
   var pages = {};
@@ -196,6 +212,22 @@ function pdfViewSaveTemplate(){
     xhr.send('params=' + JSON.stringify(params) + '&template_id=' + PDFView.template_id);
 };
 
+function fabricCanvasSelected(options) {
+  PDFView.lastSelectedObj = options.target;
+  var otherCanvases = PDFView.pages.filter(function(el){
+    return el.canvas != options.target.canvas &&
+      typeof el.canvas === 'object' && 
+      el.canvas.toString().indexOf('fabric.Canvas') > -1;
+  });
+  otherCanvases.forEach(function(page) {
+    page.canvas.deactivateAll().renderAll();
+  });
+};
+
+function fabricCanvasSelectionCleared(options) {
+  PDFView.lastSelectedObj = null;
+};
+
 function fabricPageViewDraw(pageView) {
   var page = document.getElementById('page' + pageView.pageNumber),
       pageCtx = page.getContext('2d'),
@@ -216,7 +248,7 @@ function fabricPageViewDraw(pageView) {
     lockMovementY: true,
     lockRotation: true
   }),
-      fCanvas = new fabric.Canvas(page.id),
+      fCanvas = new fabric.pageCanvas(page.id),
       pdfPage = PDFView.pages[pageView.pageNumber - 1];
   pdfPage.el = document.getElementById('pageContainer' + pageView.pageNumber);
   pdfPage.zoomLayer = fCanvas.wrapperEl;
@@ -224,5 +256,8 @@ function fabricPageViewDraw(pageView) {
   fCanvas.add(background);
   fCanvas.state = {};
   fCanvas.lastObj = null;
+  fCanvas.on('mouse:down', PDFView.fabricMouseDown);
+  fCanvas.on('object:selected', fabricCanvasSelected);
+  fCanvas.on('selection:cleared', fabricCanvasSelectionCleared);
   return pdfPage;
 }
