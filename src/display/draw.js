@@ -141,6 +141,7 @@ function pdfViewFabricMouseMove(options) {
 };
 
 function pdfViewFabricMouseDown(options){
+  if (options.target.type === 'image'){
     self = this;
     var e = options.e;
     var rect = this._offset;
@@ -149,6 +150,7 @@ function pdfViewFabricMouseDown(options){
     this.on('mouse:move', PDFView.fabricMouseMove);
     this.on('mouse:up', PDFView.fabricMouseUp);
     //ADD CALLBACK FOR EXTERNAL API
+  }
 };
 
 function pdfViewFabricMouseUp(options){
