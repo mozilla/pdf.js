@@ -1065,8 +1065,9 @@ var PDFViewerApplication = {
   setInitialView: function pdfViewSetInitialView(storedHash, scale, rotation) {
     this.isInitialViewSet = true;
 
-    if (rotation && rotation !== this.pageRotation) {
-      this.rotatePages(rotation);
+    if ((rotation | 0) === rotation &&
+        rotation !== this.pageRotation) {
+      this.setRotation(rotation - this.pageRotation);
     }
 
     // When opening a new file, when one is already loaded in the viewer,
@@ -1288,11 +1289,16 @@ var PDFViewerApplication = {
     this.forceRendering();
   },
 
-  rotatePages: function pdfViewRotatePages(delta) {
-    var pageNumber = this.page;
+  setRotation: function pdfViewSetRotation(delta) {
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
     this.pdfThumbnailViewer.pagesRotation = this.pageRotation;
+  },
+
+  rotatePages: function pdfViewRotatePages(delta) {
+    var pageNumber = this.page;
+
+    this.setRotation(delta);
 
     this.forceRendering();
 
