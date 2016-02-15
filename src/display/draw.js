@@ -156,10 +156,7 @@ function pdfViewFabricMouseDown(options){
 function pdfViewFabricMouseUp(options){
   this.off('mouse:move', PDFView.fabricMouseMove);
   this.off('mouse:up', PDFView.fabricMouseUp);
-  if(PDFView.lastSelectedObj &&
-     PDFView.lastSelectedObj['type'] == 'TitledRect'){
-    this.lastObj = null;
-  }
+  this.lastObj = null;
   //ADD CALLBACK FOR EXTERNAL API
 }
 
