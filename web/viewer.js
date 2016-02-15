@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, PDFBug, FirefoxCom, Stats, ProgressBar,
-           DownloadManager, getFileName, getPDFFileNameFromURL,
-           PDFHistory, Preferences, SidebarView, ViewHistory, Stats,
-           PDFThumbnailViewer, URL, noContextMenuHandler, SecondaryToolbar,
-           PasswordPrompt, PDFPresentationMode, PDFDocumentProperties, HandTool,
-           Promise, PDFLinkService, PDFOutlineView, PDFAttachmentView,
-           OverlayManager, PDFFindController, PDFFindBar, PDFViewer,
-           PDFRenderingQueue, PresentationModeState, parseQueryString,
-           RenderingStates, UNKNOWN_SCALE, DEFAULT_SCALE_VALUE,
+/* globals PDFJS, PDFBug, FirefoxCom, Stats, ProgressBar, DownloadManager,
+           getPDFFileNameFromURL, PDFHistory, Preferences, SidebarView,
+           ViewHistory, Stats, PDFThumbnailViewer, URL, noContextMenuHandler,
+           SecondaryToolbar, PasswordPrompt, PDFPresentationMode,
+           PDFDocumentProperties, HandTool, Promise, PDFLinkService,
+           PDFOutlineView, PDFAttachmentView, OverlayManager,
+           PDFFindController, PDFFindBar, PDFViewer, PDFRenderingQueue,
+           PresentationModeState, parseQueryString, RenderingStates,
+           UNKNOWN_SCALE, DEFAULT_SCALE_VALUE,
            IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
@@ -486,7 +486,7 @@ var PDFViewerApplication = {
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
     try {
-      this.setTitle(decodeURIComponent(getFileName(url)) || url);
+      this.setTitle(decodeURIComponent(PDFJS.getFilenameFromUrl(url)) || url);
     } catch (e) {
       // decodeURIComponent may throw URIError,
       // fall back to using the unprocessed url in that case

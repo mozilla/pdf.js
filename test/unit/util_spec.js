@@ -1,10 +1,25 @@
 /* globals expect, it, describe, combineUrl, Dict, isDict, Name, PDFJS,
            stringToPDFString, isExternalLinkTargetSet, LinkTarget,
-           removeNullCharacters */
+           removeNullCharacters, getFilenameFromUrl */
 
 'use strict';
 
 describe('util', function() {
+  describe('getFilenameFromUrl', function() {
+    it('should get the filename from an absolute URL', function() {
+      var url = 'http://server.org/filename.pdf';
+      var result = getFilenameFromUrl(url);
+      var expected = 'filename.pdf';
+      expect(result).toEqual(expected);
+    });
+
+    it('should get the filename from a relative URL', function() {
+      var url = '../../filename.pdf';
+      var result = getFilenameFromUrl(url);
+      var expected = 'filename.pdf';
+      expect(result).toEqual(expected);
+    });
+  });
 
   describe('combineUrl', function() {
     it('absolute url with protocol stays as is', function() {

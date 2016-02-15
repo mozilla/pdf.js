@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals getFileName, PDFJS */
+/* globals PDFJS */
 
 'use strict';
 
@@ -84,7 +84,7 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
 
       for (var i = 0; i < attachmentsCount; i++) {
         var item = attachments[names[i]];
-        var filename = getFileName(item.filename);
+        var filename = PDFJS.getFilenameFromUrl(item.filename);
         var div = document.createElement('div');
         div.className = 'attachmentsItem';
         var button = document.createElement('button');

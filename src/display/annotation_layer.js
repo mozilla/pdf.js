@@ -32,6 +32,7 @@ var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
 var Util = sharedUtil.Util;
 var addLinkAttributes = sharedUtil.addLinkAttributes;
+var getFilenameFromUrl = sharedUtil.getFilenameFromUrl;
 var warn = sharedUtil.warn;
 var CustomStyle = displayDOMUtils.CustomStyle;
 
@@ -731,7 +732,7 @@ var FileAttachmentAnnotationElement = (
   function FileAttachmentAnnotationElement(parameters) {
     AnnotationElement.call(this, parameters, true);
 
-    this.filename = parameters.data.file.filename;
+    this.filename = getFilenameFromUrl(parameters.data.file.filename);
     this.content = parameters.data.file.content;
   }
 
