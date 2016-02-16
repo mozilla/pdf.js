@@ -115,3 +115,14 @@ IPDFAnnotationLayerFactory.prototype = {
    */
   createAnnotationLayerBuilder: function (pageDiv, pdfPage) {}
 };
+
+/**
+ * @interface
+ */
+function IPDFStorageService() {}
+IPDFStorageService.prototype = {
+  get: function (key) {},
+  set: function (key, value) {},
+  remove: function (key) {},
+  removeAll: function () {},
+};

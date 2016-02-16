@@ -44,6 +44,7 @@ var CustomStyle = displayDOMUtils.CustomStyle;
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
+ * @property {IPDFStorageService} storageService
  */
 
 /**
@@ -114,6 +115,7 @@ var AnnotationElement = (function AnnotationElementClosure() {
     this.viewport = parameters.viewport;
     this.linkService = parameters.linkService;
     this.downloadManager = parameters.downloadManager;
+    this.storageService = parameters.storageService;
 
     if (isRenderable) {
       this.container = this._createContainer();
@@ -462,7 +464,8 @@ var TextWidgetAnnotationElement =
       }
 
       content.disabled = isReadonly;
-      content.value = this.data.fieldValue;
+      content.value = this.storageService.get(this.data.fullName) ||
+                      this.data.fieldValue;
       var textAlignment = this.data.textAlignment;
       content.style.textAlign = ['left', 'center', 'right'][textAlignment];
       if (this.data.maxLen !== null) {
@@ -483,10 +486,16 @@ var TextWidgetAnnotationElement =
         }
       }
 
+      content.onchange = this._onchange.bind(this);
+
       container.appendChild(content);
 
       container.className = 'widgetAnnotation';
       return container;
+    },
+
+    _onchange: function(evt) {
+      this.storageService.set(this.data.fullName, evt.target.value);
     },
 
     /**
@@ -945,7 +954,8 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
           page: parameters.page,
           viewport: parameters.viewport,
           linkService: parameters.linkService,
-          downloadManager: parameters.downloadManager
+          downloadManager: parameters.downloadManager,
+          storageService: parameters.storageService
         };
         var element = annotationElementFactory.create(properties);
         if (element.isRenderable) {

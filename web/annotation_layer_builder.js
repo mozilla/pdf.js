@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals PDFJS, mozL10n, SimpleLinkService */
+/*globals PDFJS, mozL10n, SimpleLinkService, SimpleStorageService */
 
 'use strict';
 
@@ -22,6 +22,7 @@
  * @property {PDFPage} pdfPage
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
+ * @property {IPDFStorageService} storageService
  */
 
 /**
@@ -37,6 +38,7 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
     this.pdfPage = options.pdfPage;
     this.linkService = options.linkService;
     this.downloadManager = options.downloadManager;
+    this.storageService = options.storageService;
 
     this.div = null;
   }
@@ -62,7 +64,8 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           annotations: annotations,
           page: self.pdfPage,
           linkService: self.linkService,
-          downloadManager: self.downloadManager
+          downloadManager: self.downloadManager,
+          storageService: self.storageService
         };
 
         if (self.div) {
@@ -116,6 +119,7 @@ DefaultAnnotationLayerFactory.prototype = {
       pageDiv: pageDiv,
       pdfPage: pdfPage,
       linkService: new SimpleLinkService(),
+      storageService: new SimpleStorageService(),
     });
   }
 };

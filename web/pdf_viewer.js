@@ -42,6 +42,7 @@ var DEFAULT_CACHE_SIZE = 10;
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {DownloadManager} downloadManager - (optional) The download
  *   manager component.
+ * @property {IPDFStorageService} storageService - The storage service.
  * @property {PDFRenderingQueue} renderingQueue - (optional) The rendering
  *   queue object.
  * @property {boolean} removePageBorders - (optional) Removes the border shadow
@@ -95,6 +96,7 @@ var PDFViewer = (function pdfViewer() {
     this.viewer = options.viewer || options.container.firstElementChild;
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
+    this.storageService = options.storageService || new SimpleStorageService();
     this.removePageBorders = options.removePageBorders || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
@@ -691,6 +693,7 @@ var PDFViewer = (function pdfViewer() {
           this._pages[i].reset();
         }
       }
+      this.storageService.removeAll();
     },
 
     /**
@@ -761,7 +764,8 @@ var PDFViewer = (function pdfViewer() {
         pageDiv: pageDiv,
         pdfPage: pdfPage,
         linkService: this.linkService,
-        downloadManager: this.downloadManager
+        downloadManager: this.downloadManager,
+        storageService: this.storageService
       });
     },
 
@@ -820,4 +824,26 @@ var SimpleLinkService = (function SimpleLinkServiceClosure() {
     cachePageRef: function (pageNum, pageRef) {}
   };
   return SimpleLinkService;
+})();
+
+var SimpleStorageService = (function SimpleStorageServiceClosure() {
+  function SimpleStorageService() {
+    this._storage = Object.create(null);
+  }
+
+  SimpleStorageService.prototype = {
+    set: function(key, value) {
+      this._storage[key] = value;
+    },
+    get: function(key) {
+      return this._storage[name];
+    },
+    remove: function(key) {
+      delete this._storage[name];
+    },
+    removeAll: function(key) {
+      this._storage = Object.create(null);
+    }
+  };
+  return SimpleStorageService;
 })();
