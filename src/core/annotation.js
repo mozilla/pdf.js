@@ -421,8 +421,17 @@ var Annotation = (function AnnotationClosure() {
       annotations, opList, partialEvaluator, task, intent) {
     var annotationPromises = [];
     for (var i = 0, n = annotations.length; i < n; ++i) {
-      if ((intent === 'display' && annotations[i].viewable) ||
-          (intent === 'print' && annotations[i].printable)) {
+      // Always include for printing
+      var include = intent === 'print' && annotations[i].printable;
+      if (!include && intent === 'display' && annotations[i].viewable) {
+        var data = annotations[i].data;
+        // Don't render text widget annotation
+        // becuase they will be rendered by annotation layer.
+        if (annotations[i] instanceof TextWidgetAnnotation) {
+          include = false;
+        }
+      }
+      if (include) {
         annotationPromises.push(
           annotations[i].getOperatorList(partialEvaluator, task));
       }
