@@ -1,3 +1,4 @@
+/* -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,26 +18,27 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/main_loader', ['exports', 'pdfjs/display/api',
+    define('pdfjs/main_loader', [
+      'exports', 'pdfjs/display/api',
       'pdfjs/display/annotation_layer', 'pdfjs/display/text_layer',
       'pdfjs/display/dom_utils', 'pdfjs/shared/util', 'pdfjs/display/svg',
-      'pdfjs/display/global'],
+      'pdfjs/display/global', 'pdfjs/display/draw'],
       factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./display/api.js'),
       require('./display/annotation_layer.js'),
       require('./display/text_layer.js'), require('./display/dom_utils.js'),
       require('./shared/util.js'), require('./display/svg.js'),
-      require('./display/global.js'));
+            require('./display/global.js'), require('./display/draw.js'));
   } else {
     factory((root.pdfjsMainLoader = {}), root.pdfjsDisplayAPI,
       root.pdfjsDisplayAnnotationLayer, root.pdfjsDisplayTextLayer,
       root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil, root.pdfjsDisplaySVG,
-      root.pdfjsDisplayGlobal);
+      root.pdfjsDisplayGlobal, root.pdfjsDraw);
   }
 }(this, function (exports, displayAPI, displayAnnotationLayer,
                   displayTextLayer, displayDOMUtils, sharedUtil,
-                  displaySVG, displayGlobal) {
+                  displaySVG, displayGlobal, draw) {
 
   // Sync the exports below with ./pdf.js file/template.
   exports.PDFJS = displayGlobal.PDFJS;
@@ -66,4 +68,5 @@
     displayDOMUtils.RenderingCancelledException;
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
+  exports.PDFViewerFabricMethods = draw.fabricMethods;
 }));
