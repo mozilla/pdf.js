@@ -184,6 +184,9 @@ function webViewerLoad() {
       var app = modules[0];
       window.PDFViewerApplication = app.PDFViewerApplication;
       app.PDFViewerApplication.run(config);
+      if (app.PDFViewerFabricMethods.hasOwnProperty(method)){
+		    PDFViewerApplication.pdfViewer[method] = web.PDFViewerFabricMethods[method];
+	    }
     });
   } else {
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
