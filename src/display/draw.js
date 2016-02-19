@@ -70,16 +70,16 @@
         options || (options = { });
         
         this.callSuper('initialize', options);
-        var canvas = PDFView.getCanvas(PDFView.page);
-        var pdfScale = PDFView.currentScale * 96;
+        var canvas = PDFViewerApplication.pdfViewer.getCanvas(PDFViewerApplication.pdfViewer.page);
+        var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
         self = this;
         this.extraFields.forEach(function(field){
           self.set(field, options[field] || '');
         });
       },
       calculateSBTPos: function() {
-        var canvas = PDFView.getCanvas(PDFView.page);
-        var pdfScale = PDFView.currentScale * 96;
+        var canvas = PDFViewerApplication.pdfViewer.getCanvas(PDFViewerApplication.pdfViewer.page);
+        var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
         this.sbt_height = Math.abs(canvas.height/pdfScale);
         this.left_inches = Math.abs(this.left/pdfScale);
         this.top_inches = Math.abs((canvas.height - this.top)/pdfScale);
@@ -111,8 +111,9 @@
   PDFCustomFabricSetUp();
   
   var fabricMethods = {
-    getCanvas: function pdfViewGetCanvas() {
-      return this.pages[this.page].canvas;
+    getCanvas: function pdfViewGetCanvas(page) {
+      console.log(this);
+      return this._pages[page].canvas;
     },
     fabricMouseMove: function pdfViewFabricMouseMove(options) {
       self = this;
@@ -146,7 +147,7 @@
       this.state.rectY = rectY;
       this.state.rectW = width;
       this.state.rectL = length;
-      this.state.page = PDFView.page;
+      this.state.page = PDFViewerApplication.pdfViewer.page;
       //ADD CALLBACK FOR EXTERNAL API
     },
     fabricMouseDown: function pdfViewFabricMouseDown(options){
@@ -156,20 +157,20 @@
         var rect = this._offset;
         this.state.lastClickX = e.clientX - rect.left;
         this.state.lastClickY = e.clientY - rect.top;
-        this.on('mouse:move', PDFView.fabricMouseMove);
-        this.on('mouse:up', PDFView.fabricMouseUp);
+        this.on('mouse:move', PDFViewerApplication.pdfViewer.fabricMouseMove);
+        this.on('mouse:up', PDFViewerApplication.pdfViewer.fabricMouseUp);
         //ADD CALLBACK FOR EXTERNAL API
       }
     },
     fabricMouseUp: function pdfViewFabricMouseUp(options){
-      this.off('mouse:move', PDFView.fabricMouseMove);
-      this.off('mouse:up', PDFView.fabricMouseUp);
+      this.off('mouse:move', PDFViewerApplication.pdfViewer.fabricMouseMove);
+      this.off('mouse:up', PDFViewerApplication.pdfViewer.fabricMouseUp);
       this.lastObj = null;
       //ADD CALLBACK FOR EXTERNAL API
     },
     fabricStringifyParams: function pdfViewFabricStringifyParams(){
       var pages = {};
-      PDFView.pages.forEach(function(page){
+      PDFViewerApplication.pdfViewer._pages.forEach(function(page){
         pages[page.canvas.page] = page.canvas.toObject;
       });
       return pages;
@@ -180,10 +181,10 @@
       //left and top respectively.  It's possible this has just been changed but
       //it might be a good idea to explicity set them in case it changes again
       var params = [];
-      for(var i = 0; i < PDFView.canvases.length; i++){
-        var groups = PDFView.canvases[i].getObjects('group');
+      for(var i = 0; i < PDFViewerApplication.pdfViewer.canvases.length; i++){
+        var groups = PDFViewerApplication.pdfViewer.canvases[i].getObjects('group');
         
-        //params.push(PDFView.canvases[i].toJSON());
+        //params.push(PDFViewerApplication.pdfViewer.canvases[i].toJSON());
         params.push({'objects' : []});
         for(var j = 0; j < groups.length; j++){
           var field = groups[j].getObjects('rect')[0];
@@ -192,8 +193,8 @@
           var obj = params[i]['objects'][j];
           obj['left'] = groups[j]['left'];
           obj['top'] = groups[j]['top'];
-          var scale = PDFView.currentScale * 96;
-          var pHeight = PDFView.canvases[i].height;
+          var scale = PDFViewerApplication.pdfViewer.currentScale * 96;
+          var pHeight = PDFViewerApplication.pdfViewer.canvases[i].height;
           obj['height'] = Math.abs(obj['height']/(scale));
           obj['leftInches'] = Math.abs(obj['left']/(scale));
           obj['topInches'] = (pHeight - (obj['top']))/(scale);
@@ -211,12 +212,12 @@
       xhr.onload = (function(d){
         return;
       });
-      xhr.send('params=' + JSON.stringify(params) + '&template_id=' + PDFView.template_id);
+      xhr.send('params=' + JSON.stringify(params) + '&template_id=' + PDFViewerApplication.pdfViewer.template_id);
     }
   };
   function fabricCanvasSelected(options) {
-    PDFView.lastSelectedObj = options.target;
-    var otherCanvases = PDFView.pages.filter(function(el){
+    PDFViewerApplication.pdfViewer.lastSelectedObj = options.target;
+    var otherCanvases = PDFViewerApplication.pdfViewer.pages.filter(function(el){
       return el.canvas != options.target.canvas &&
         typeof el.canvas === 'object' && 
         el.canvas.toString().indexOf('fabric.Canvas') > -1;
@@ -227,7 +228,7 @@
   };
   
   function fabricCanvasSelectionCleared(options) {
-    PDFView.lastSelectedObj = null;
+    PDFViewerApplication.pdfViewer.lastSelectedObj = null;
   };
   
   function fabricPageViewDraw(pageView) {
@@ -251,14 +252,14 @@
       lockRotation: true
     }),
         fCanvas = new fabric.pageCanvas(page.id),
-        pdfPage = PDFView.pages[pageView.pageNumber - 1];
+        pdfPage = PDFViewerApplication.pdfViewer._pages[pageView.pageNumber - 1];
     pdfPage.el = document.getElementById('pageContainer' + pageView.pageNumber);
     pdfPage.zoomLayer = fCanvas.wrapperEl;
     pdfPage.canvas = fCanvas;
     fCanvas.add(background);
     fCanvas.state = {};
     fCanvas.lastObj = null;
-    fCanvas.on('mouse:down', PDFView.fabricMouseDown);
+    fCanvas.on('mouse:down', PDFViewerApplication.pdfViewer.fabricMouseDown);
     fCanvas.on('object:selected', fabricCanvasSelected);
     fCanvas.on('selection:cleared', fabricCanvasSelectionCleared);
     return pdfPage;
