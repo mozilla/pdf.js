@@ -673,12 +673,8 @@ var TextAnnotation = (function TextAnnotationClosure() {
     }
 
     this.data.hasPopup = dict.has('Popup');
-    if (!this.data.hasPopup) {
-      // There is no associated Popup annotation, so the Text annotation
-      // must create its own popup.
-      this.data.title = stringToPDFString(dict.get('T') || '');
-      this.data.contents = stringToPDFString(dict.get('Contents') || '');
-    }
+    this.data.title = stringToPDFString(dict.get('T') || '');
+    this.data.contents = stringToPDFString(dict.get('Contents') || '');
   }
 
   Util.inherit(TextAnnotation, Annotation, {});
