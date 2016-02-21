@@ -18,13 +18,6 @@
 
 //#include default_preferences.js
 
-var SidebarView = {
-  NONE: 0,
-  THUMBS: 1,
-  OUTLINE: 2,
-  ATTACHMENTS: 3
-};
-
 /**
  * Preferences - Utility for storing persistent settings.
  *   Used for settings that should be applied to all opened documents,
