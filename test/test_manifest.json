@@ -2730,6 +2730,13 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "issue7014",
+       "file": "pdfs/issue7014.pdf",
+       "md5": "b410891d7a01af791364e9c530d61b17",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "annotation-link-text-popup",
        "file": "pdfs/annotation-link-text-popup.pdf",
        "md5": "4bbf56e81d47232de5f305124ab0ba27",
