@@ -70,7 +70,7 @@
         options || (options = { });
         
         this.callSuper('initialize', options);
-        var canvas = PDFViewerApplication.pdfViewer.getCanvas(PDFViewerApplication.pdfViewer.page);
+        var canvas = PDFViewerApplication.pdfViewer.getCanvas(PDFViewerApplication.page);
         var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
         self = this;
         this.extraFields.forEach(function(field){
@@ -78,7 +78,7 @@
         });
       },
       calculateSBTPos: function() {
-        var canvas = PDFViewerApplication.pdfViewer.getCanvas(PDFViewerApplication.pdfViewer.page);
+        var canvas = PDFViewerApplication.pdfViewer.getCanvas(PDFViewerApplication.page);
         var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
         this.sbt_height = Math.abs(canvas.height/pdfScale);
         this.left_inches = Math.abs(this.left/pdfScale);
@@ -107,9 +107,7 @@
       }
     });
   };
-  
-  PDFCustomFabricSetUp();
-  
+
   var fabricMethods = {
     getCanvas: function pdfViewGetCanvas(page) {
       console.log(this);
@@ -217,7 +215,7 @@
   };
   function fabricCanvasSelected(options) {
     PDFViewerApplication.pdfViewer.lastSelectedObj = options.target;
-    var otherCanvases = PDFViewerApplication.pdfViewer.pages.filter(function(el){
+    var otherCanvases = PDFViewerApplication.pdfViewer._pages.filter(function(el){
       return el.canvas != options.target.canvas &&
         typeof el.canvas === 'object' && 
         el.canvas.toString().indexOf('fabric.Canvas') > -1;
@@ -239,7 +237,6 @@
         cloned = page.cloneNode(),
         clCtx = cloned.getContext('2d');
     clCtx.putImageData(imgData, 0, 0);
-    addContextCurrentTransform(cloned.getContext('2d'));
     var background = new fabric.Image(cloned, {
       dx: 0,
       dy: 0,
@@ -264,5 +261,7 @@
     fCanvas.on('selection:cleared', fabricCanvasSelectionCleared);
     return pdfPage;
   }
+  PDFCustomFabricSetUp();
   exports.fabricMethods = fabricMethods;
+  exports.fabricPageViewDraw = fabricPageViewDraw;
 }));
