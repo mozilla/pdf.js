@@ -66,10 +66,11 @@ function isEOF(v) {
 var MAX_LENGTH_TO_CACHE = 1000;
 
 var Parser = (function ParserClosure() {
-  function Parser(lexer, allowStreams, xref) {
+  function Parser(lexer, allowStreams, xref, recoveryMode) {
     this.lexer = lexer;
     this.allowStreams = allowStreams;
     this.xref = xref;
+    this.recoveryMode = recoveryMode || false;
     this.imageCache = Object.create(null);
     this.refill();
   }
@@ -115,7 +116,10 @@ var Parser = (function ParserClosure() {
               array.push(this.getObj(cipherTransform));
             }
             if (isEOF(this.buf1)) {
-              error('End of file inside array');
+              if (!this.recoveryMode) {
+                error('End of file inside array');
+              }
+              return array;
             }
             this.shift();
             return array;
@@ -136,7 +140,10 @@ var Parser = (function ParserClosure() {
               dict.set(key, this.getObj(cipherTransform));
             }
             if (isEOF(this.buf1)) {
-              error('End of file inside dictionary');
+              if (!this.recoveryMode) {
+                error('End of file inside dictionary');
+              }
+              return dict;
             }
 
             // Stream objects are not allowed inside content streams or

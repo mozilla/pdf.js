@@ -730,6 +730,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1250079",
+       "file": "pdfs/bug1250079.pdf",
+       "md5": "a1dd21a70ae7097d96273e85a80b26ef",
+       "rounds": 1,
+       "link": false,
+       "type": "load"
+    },
     {  "id": "hudsonsurvey",
        "file": "pdfs/hudsonsurvey.pdf",
        "md5": "bf0e6576a7b6c2fe7485bce1b78e006f",

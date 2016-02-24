@@ -970,13 +970,15 @@ var XRef = (function XRefClosure() {
       var dict;
       for (i = 0, ii = trailers.length; i < ii; ++i) {
         stream.pos = trailers[i];
-        var parser = new Parser(new Lexer(stream), true, this);
+        var parser = new Parser(new Lexer(stream), /* allowStreams = */ true,
+                                /* xref = */ this, /* recoveryMode = */ true);
         var obj = parser.getObj();
         if (!isCmd(obj, 'trailer')) {
           continue;
         }
         // read the trailer dictionary
-        if (!isDict(dict = parser.getObj())) {
+        dict = parser.getObj();
+        if (!isDict(dict)) {
           continue;
         }
         // taking the first one with 'ID'
