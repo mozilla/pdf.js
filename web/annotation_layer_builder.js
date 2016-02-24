@@ -21,6 +21,7 @@
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
  * @property {IPDFLinkService} linkService
+ * @property {DownloadManager} downloadManager
  */
 
 /**
@@ -35,6 +36,7 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
     this.linkService = options.linkService;
+    this.downloadManager = options.downloadManager;
 
     this.div = null;
   }
@@ -59,7 +61,8 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           div: self.div,
           annotations: annotations,
           page: self.pdfPage,
-          linkService: self.linkService
+          linkService: self.linkService,
+          downloadManager: self.downloadManager
         };
 
         if (self.div) {

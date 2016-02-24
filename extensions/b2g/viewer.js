@@ -88,7 +88,7 @@ var PDFViewerApplication = {
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
-    var title = PDFJS.getFileName(url) || url;
+    var title = PDFJS.getFilenameFromUrl(url) || url;
     try {
       title = decodeURIComponent(title);
     } catch (e) {

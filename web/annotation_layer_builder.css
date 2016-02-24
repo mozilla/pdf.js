@@ -72,6 +72,7 @@
 .annotationLayer .highlightAnnotation,
 .annotationLayer .underlineAnnotation,
 .annotationLayer .squigglyAnnotation,
-.annotationLayer .strikeoutAnnotation {
+.annotationLayer .strikeoutAnnotation,
+.annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }
