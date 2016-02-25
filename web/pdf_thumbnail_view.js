@@ -77,7 +77,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
 
-    this.hasImage = false;
     this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
 
@@ -133,7 +132,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (this.renderTask) {
         this.renderTask.cancel();
       }
-      this.hasImage = false;
       this.resume = null;
       this.renderingState = RenderingStates.INITIAL;
 
@@ -238,11 +236,9 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     draw: function PDFThumbnailView_draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
-      }
-      if (this.hasImage) {
         return Promise.resolve(undefined);
       }
-      this.hasImage = true;
+
       this.renderingState = RenderingStates.RUNNING;
 
       var resolveRenderPromise, rejectRenderPromise;
@@ -263,6 +259,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
           rejectRenderPromise(error);
           return;
         }
+
         self.renderingState = RenderingStates.FINISHED;
         self._convertCanvasToImage();
 
@@ -306,14 +303,17 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     },
 
     setImage: function PDFThumbnailView_setImage(pageView) {
+      if (this.renderingState !== RenderingStates.INITIAL) {
+        return;
+      }
       var img = pageView.canvas;
-      if (this.hasImage || !img) {
+      if (!img) {
         return;
       }
       if (!this.pdfPage) {
         this.setPdfPage(pageView.pdfPage);
       }
-      this.hasImage = true;
+
       this.renderingState = RenderingStates.FINISHED;
 
       var ctx = this._getPageDrawContext(true);
