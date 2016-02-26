@@ -33,30 +33,42 @@
     fabric.Object.prototype.orignX = 'left';
     fabric.Object.prototype.originY = 'top';
     fabric.pageCanvas = fabric.util.createClass(fabric.Canvas, {
-    type: 'page-canvas',
-      initialize: function(element, options) {
-        this.callSuper('initialize', element, options);
+      type: 'page-canvas',
+      initialize: function(elements, options) {
+        this.callSuper('initialize', elements, options);
         options && this.set('page', options.page);
-      },
-      toObject: function() {
-      return fabric.util.object.extend(
-	      this.callSuper('toObject'),
-	      {page: this.page});
       },
       toJSON: function() {
         return fabric.util.object.extend(
-	        this.callSuper('toJSON'),
+          this.callSuper('toJSON'),
 	        {page: this.page});
-      },
-      fromObject: function(object, callback) {
-        callback && callback(new fabric.pageCanvas());
       }
     });
+    
+    fabric.pageCanvas.toObject = function() {
+      debugger;
+      return fabric.util.object.extend(
+	      this.callSuper('toObject'),
+	      {page: this.page});
+    };
+    
+    fabric.pageCanvas.fromObject = function(object, callback) {
+      /* var objs;
+       fabric.util.enlivenObjects(object.objects, function (fabricObjs) {
+       delete object.objects;
+       objs = fabricObjs;
+       });
+       return new fabric.pageCanvas(objs);*/
+      debugger;
+      
+      return fabric.util.object.extend(
+	      this.callSuper('fromObject'),
+	      {object: object, callback:callback});
+    };
     // Box renders field title when available and calculates
     // Height + the RML/SBT inches conversion based on pdf
     // scale factor
     fabric.TitledRect = fabric.util.createClass(fabric.Rect, {
-      
       type: 'TitledRect',
       extraFields: [
         'title',
@@ -94,9 +106,6 @@
         return fabric.util.object.extend(this.callSuper('toObject'),
 				                                 extraFieldDict);
       },
-      fromObject: function(object, callback) {
-        callback && callback(new fabricTitledRect());
-      },
       _render: function(ctx) {
         this.callSuper('_render', ctx);
         ctx.font = '20px Helvetica';
@@ -106,11 +115,23 @@
         ctx.fillText(this.title, left/2, top/2);
       }
     });
+    fabric.TitledRect.fromObject = function(object, callback) {
+      var objs;
+      fabric.util.enlivenObjects(object.objects, function (enlivenedObjects) {
+        delete object.objects;
+        objs = enlivenedObjects;
+      });
+      return new fabric.TitledRect(objs);
+    };
   };
 
+/*  fabric.backgroundImage = fabric.util.createClass(
+    fabric.Image, {
+      type: 'backgroundIam
+    }
+  */
   var fabricMethods = {
     getCanvas: function pdfViewGetCanvas(page) {
-      console.log(this);
       return this._pages[page].canvas;
     },
     fabricMouseMove: function pdfViewFabricMouseMove(options) {
@@ -149,7 +170,7 @@
       //ADD CALLBACK FOR EXTERNAL API
     },
     fabricMouseDown: function pdfViewFabricMouseDown(options){
-      if (options.target.type === 'image'){
+      //if (options.target.type === 'image'){
         self = this;
         var e = options.e;
         var rect = this._offset;
@@ -158,7 +179,7 @@
         this.on('mouse:move', PDFViewerApplication.pdfViewer.fabricMouseMove);
         this.on('mouse:up', PDFViewerApplication.pdfViewer.fabricMouseUp);
         //ADD CALLBACK FOR EXTERNAL API
-      }
+      //}
     },
     fabricMouseUp: function pdfViewFabricMouseUp(options){
       this.off('mouse:move', PDFViewerApplication.pdfViewer.fabricMouseMove);
@@ -229,7 +250,8 @@
     PDFViewerApplication.pdfViewer.lastSelectedObj = null;
   };
   
-  function fabricPageViewDraw(pageView) {
+  function fabricPageViewDraw (pageView) {
+    var pdfPage = PDFViewerApplication.pdfViewer._pages[pageView.pageNumber - 1];
     var page = document.getElementById('page' + pageView.pageNumber),
         pageCtx = page.getContext('2d'),
         container = document.getElementById('pageContainer' + pageView.pageNumber),
@@ -237,6 +259,7 @@
         cloned = page.cloneNode(),
         clCtx = cloned.getContext('2d');
     clCtx.putImageData(imgData, 0, 0);
+    
     var background = new fabric.Image(cloned, {
       dx: 0,
       dy: 0,
@@ -248,17 +271,27 @@
       lockMovementY: true,
       lockRotation: true
     }),
-        fCanvas = new fabric.pageCanvas(page.id),
-        pdfPage = PDFViewerApplication.pdfViewer._pages[pageView.pageNumber - 1];
-    pdfPage.el = document.getElementById('pageContainer' + pageView.pageNumber);
+        fCanvas = new fabric.pageCanvas(page.id); 
+    
+    pdfPage.el = container;
     pdfPage.zoomLayer = fCanvas.wrapperEl;
-    pdfPage.canvas = fCanvas;
-    fCanvas.add(background);
     fCanvas.state = {};
     fCanvas.lastObj = null;
+    
+    if (!pdfPage.fabricState) pdfPage.fabricState = fCanvas.toJSON();
+    else{
+      fCanvas.backgroundImage = null;
+      fCanvas.loadFromJSON(pdfPage.fabricState, fCanvas.renderAll.bind(fCanvas));
+    }
     fCanvas.on('mouse:down', PDFViewerApplication.pdfViewer.fabricMouseDown);
     fCanvas.on('object:selected', fabricCanvasSelected);
     fCanvas.on('selection:cleared', fabricCanvasSelectionCleared);
+    fCanvas.on('after:render', function(options){
+      pdfPage.fabricState = fCanvas.toJSON();
+    });
+    fCanvas.setBackgroundImage(background);
+    pdfPage.canvas = fCanvas;
+    fCanvas.renderAll();
     return pdfPage;
   }
   PDFCustomFabricSetUp();
