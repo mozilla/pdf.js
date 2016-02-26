@@ -16,6 +16,8 @@
 
 'use strict';
 
+var DEFAULT_TITLE = '\u2013';
+
 /**
  * @typedef {Object} PDFOutlineViewOptions
  * @property {HTMLDivElement} container - The viewer element.
@@ -137,11 +139,15 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
         var levelData = queue.shift();
         for (var i = 0, len = levelData.items.length; i < len; i++) {
           var item = levelData.items[i];
+
           var div = document.createElement('div');
           div.className = 'outlineItem';
+
           var element = document.createElement('a');
           this._bindLink(element, item);
-          element.textContent = PDFJS.removeNullCharacters(item.title);
+          element.textContent =
+            PDFJS.removeNullCharacters(item.title) || DEFAULT_TITLE;
+
           div.appendChild(element);
 
           if (item.items.length > 0) {
