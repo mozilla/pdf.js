@@ -527,6 +527,7 @@ var PDFViewerApplication = {
     }
 
     this.findController.reset();
+    this.findBar.reset();
 
     if (typeof PDFBug !== 'undefined') {
       PDFBug.cleanup();
