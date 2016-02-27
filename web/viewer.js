@@ -526,6 +526,9 @@ var PDFViewerApplication = {
       this.pdfLinkService.setDocument(null, null);
     }
 
+    this.findController.reset();
+    this.findBar.reset();
+
     if (typeof PDFBug !== 'undefined') {
       PDFBug.cleanup();
     }
@@ -803,8 +806,6 @@ var PDFViewerApplication = {
   load: function pdfViewLoad(pdfDocument, scale) {
     var self = this;
     scale = scale || UNKNOWN_SCALE;
-
-    this.findController.reset();
 
     this.pdfDocument = pdfDocument;
 
