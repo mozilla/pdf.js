@@ -53,6 +53,10 @@ require(['pdfjs/display/api', 'pdfjs/display/svg'], function (api, svg) {
   // In production, change this to point to the built `pdf.worker.js` file.
   PDFJS.workerSrc = '../../src/worker_loader.js';
 
+  // In production, change this to point to where the cMaps are placed.
+  PDFJS.cMapUrl = '../../external/bcmaps/';
+  PDFJS.cMapPacked = true;
+
   // Fetch the PDF document from the URL using promises.
   api.getDocument(url).then(renderDocument);
 });
