@@ -229,7 +229,6 @@ var PDFViewerApplication = {
         container: container,
         viewer: viewer,
         pdfViewer: this.pdfViewer,
-        pdfThumbnailViewer: this.pdfThumbnailViewer,
         contextMenuItems: [
           { element: document.getElementById('contextFirstPage'),
             handler: toolbar.firstPageClick.bind(toolbar) },

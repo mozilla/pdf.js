@@ -178,13 +178,6 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       return promise;
     },
 
-    ensureThumbnailVisible:
-        function PDFThumbnailViewer_ensureThumbnailVisible(page) {
-      // Ensure that the thumbnail of the current page is visible
-      // when switching from another view.
-      scrollIntoView(document.getElementById('thumbnailContainer' + page));
-    },
-
     forceRendering: function () {
       var visibleThumbs = this._getVisibleThumbs();
       var thumbView = this.renderingQueue.getHighestPriority(visibleThumbs,

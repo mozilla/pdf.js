@@ -317,6 +317,14 @@ var PDFSidebar = (function PDFSidebarClosure() {
           self.switchView(SidebarView.THUMBS);
         }
       });
+
+      // Update the thumbnailViewer, if visible, when exiting presentation mode.
+      window.addEventListener('presentationmodechanged', function(evt) {
+        if (!evt.detail.active && !evt.detail.switchInProgress &&
+            self.isThumbnailViewVisible) {
+          self._updateThumbnailViewer();
+        }
+      });
     },
   };
 
