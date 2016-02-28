@@ -19,40 +19,46 @@
 var DEFAULT_TITLE = '\u2013';
 
 /**
- * @typedef {Object} PDFOutlineViewOptions
+ * @typedef {Object} PDFOutlineViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
- * @property {Array} outline - An array of outline objects.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
+ */
+
+/**
+ * @typedef {Object} PDFOutlineViewerRenderParameters
+ * @property {Array|null} outline - An array of outline objects.
  */
 
 /**
  * @class
  */
-var PDFOutlineView = (function PDFOutlineViewClosure() {
+var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
   /**
-   * @constructs PDFOutlineView
-   * @param {PDFOutlineViewOptions} options
+   * @constructs PDFOutlineViewer
+   * @param {PDFOutlineViewerOptions} options
    */
-  function PDFOutlineView(options) {
-    this.container = options.container;
-    this.outline = options.outline;
-    this.linkService = options.linkService;
+  function PDFOutlineViewer(options) {
+    this.outline = null;
     this.lastToggleIsShow = true;
+    this.container = options.container;
+    this.linkService = options.linkService;
   }
 
-  PDFOutlineView.prototype = {
-    reset: function PDFOutlineView_reset() {
+  PDFOutlineViewer.prototype = {
+    reset: function PDFOutlineViewer_reset() {
+      this.outline = null;
+      this.lastToggleIsShow = true;
+
       var container = this.container;
       while (container.firstChild) {
         container.removeChild(container.firstChild);
       }
-      this.lastToggleIsShow = true;
     },
 
     /**
      * @private
      */
-    _dispatchEvent: function PDFOutlineView_dispatchEvent(outlineCount) {
+    _dispatchEvent: function PDFOutlineViewer_dispatchEvent(outlineCount) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('outlineloaded', true, true, {
         outlineCount: outlineCount
@@ -63,7 +69,7 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
     /**
      * @private
      */
-    _bindLink: function PDFOutlineView_bindLink(element, item) {
+    _bindLink: function PDFOutlineViewer_bindLink(element, item) {
       if (item.url) {
         PDFJS.addLinkAttributes(element, { url: item.url });
         return;
@@ -82,7 +88,7 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
      *
      * @private
      */
-    _addToggleButton: function PDFOutlineView_addToggleButton(div) {
+    _addToggleButton: function PDFOutlineViewer_addToggleButton(div) {
       var toggler = document.createElement('div');
       toggler.className = 'outlineItemToggler';
       toggler.onclick = function(event) {
@@ -106,7 +112,8 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
      *
      * @private
      */
-    _toggleOutlineItem: function PDFOutlineView_toggleOutlineItem(root, show) {
+    _toggleOutlineItem:
+        function PDFOutlineViewer_toggleOutlineItem(root, show) {
       this.lastToggleIsShow = show;
       var togglers = root.querySelectorAll('.outlineItemToggler');
       for (var i = 0, ii = togglers.length; i < ii; ++i) {
@@ -117,15 +124,24 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
     /**
      * Collapse or expand all subtrees of the outline.
      */
-    toggleOutlineTree: function PDFOutlineView_toggleOutlineTree() {
+    toggleOutlineTree: function PDFOutlineViewer_toggleOutlineTree() {
+      if (!this.outline) {
+        return;
+      }
       this._toggleOutlineItem(this.container, !this.lastToggleIsShow);
     },
 
-    render: function PDFOutlineView_render() {
-      var outline = this.outline;
+    /**
+     * @param {PDFOutlineViewerRenderParameters} params
+     */
+    render: function PDFOutlineViewer_render(params) {
+      var outline = (params && params.outline) || null;
       var outlineCount = 0;
 
-      this.reset();
+      if (this.outline) {
+        this.reset();
+      }
+      this.outline = outline;
 
       if (!outline) {
         this._dispatchEvent(outlineCount);
@@ -174,5 +190,5 @@ var PDFOutlineView = (function PDFOutlineViewClosure() {
     }
   };
 
-  return PDFOutlineView;
+  return PDFOutlineViewer;
 })();
