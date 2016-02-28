@@ -2723,22 +2723,24 @@ var Font = (function FontClosure() {
         var ucs2CMapName = new Name(registry + '-' + ordering + '-UCS2');
         // d) Obtain the CMap with the name constructed in step (c) (available
         // from the ASN Web site; see the Bibliography).
-        var ucs2CMap = CMapFactory.create(ucs2CMapName,
-          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null);
-        var cMap = properties.cMap;
-        toUnicode = [];
-        cMap.forEach(function(charcode, cid) {
-          assert(cid <= 0xffff, 'Max size of CID is 65,535');
-          // e) Map the CID obtained in step (a) according to the CMap obtained
-          // in step (d), producing a Unicode value.
-          var ucs2 = ucs2CMap.lookup(cid);
-          if (ucs2) {
-            toUnicode[charcode] =
-              String.fromCharCode((ucs2.charCodeAt(0) << 8) +
-                                  ucs2.charCodeAt(1));
-          }
+        CMapFactory.create(ucs2CMapName,
+          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null)
+        .then(function (ucs2CMap) {
+          var cMap = properties.cMap;
+          toUnicode = [];
+          cMap.forEach(function(charcode, cid) {
+            assert(cid <= 0xffff, 'Max size of CID is 65,535');
+            // e) Map the CID obtained in step (a) according to the CMap
+            // obtained in step (d), producing a Unicode value.
+            var ucs2 = ucs2CMap.lookup(cid);
+            if (ucs2) {
+              toUnicode[charcode] =
+                String.fromCharCode((ucs2.charCodeAt(0) << 8) +
+                                    ucs2.charCodeAt(1));
+            }
+          });
+          return new ToUnicodeMap(toUnicode);
         });
-        return new ToUnicodeMap(toUnicode);
       }
 
       // The viewer's choice, just use an identity map.
