@@ -970,31 +970,38 @@ var CMapFactory = (function CMapFactoryClosure() {
   }
 
   function createBuiltInCMap(name, builtInCMapParams) {
-    if (name === 'Identity-H') {
-      return new IdentityCMap(false, 2);
-    } else if (name === 'Identity-V') {
-      return new IdentityCMap(true, 2);
-    }
-    if (BUILT_IN_CMAPS.indexOf(name) === -1) {
-      error('Unknown cMap name: ' + name);
-    }
-    assert(builtInCMapParams, 'built-in cMap parameters are not provided');
+    return new Promise(function (resolve, reject) {
+      if (name === 'Identity-H') {
+        resolve(new IdentityCMap(false, 2));
+      } else if (name === 'Identity-V') {
+        resolve(new IdentityCMap(true, 2));
+      }
+      if (BUILT_IN_CMAPS.indexOf(name) === -1) {
+        reject(new Error('Unknown cMap name: ' + name));
+      }
+      assert(builtInCMapParams, 'built-in cMap parameters are not provided');
 
-    if (builtInCMapParams.packed) {
-      return parseBinaryCMap(name, builtInCMapParams);
-    }
+      if (builtInCMapParams.packed) {
+        resolve(parseBinaryCMap(name, builtInCMapParams));
+      }
 
-    var request = new XMLHttpRequest();
-    var url = builtInCMapParams.url + name;
-    request.open('GET', url, false);
-    request.send(null);
-    if (!request.responseText) {
-      error('Unable to get cMap at: ' + url);
-    }
-    var cMap = new CMap(true);
-    var lexer = new Lexer(new StringStream(request.responseText));
-    parseCMap(cMap, lexer, builtInCMapParams, null);
-    return cMap;
+      var url = builtInCMapParams.url + name;
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function () {
+        if (request.readyState === XMLHttpRequest.DONE) {
+          if (request.status === 200) {
+            var cMap = new CMap(true);
+            var lexer = new Lexer(new StringStream(request.responseText));
+            parseCMap(cMap, lexer, builtInCMapParams, null);
+            resolve(cMap);
+          } else {
+            reject(new Error('Unable to get cMap at: ' + url));
+          }
+        }
+      };
+      request.open('GET', url, true);
+      request.send(null);
+    });
   }
 
   return {
@@ -1012,9 +1019,9 @@ var CMapFactory = (function CMapFactoryClosure() {
         if (cMap.isIdentityCMap) {
           return createBuiltInCMap(cMap.name, builtInCMapParams);
         }
-        return cMap;
+        return Promise.resolve(cMap);
       }
-      error('Encoding required.');
+      return Promise.reject('Encoding required.');
     }
   };
 })();
