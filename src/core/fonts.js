@@ -501,7 +501,7 @@ var Font = (function FontClosure() {
     this.fontMatrix = properties.fontMatrix;
     this.bbox = properties.bbox;
 
-    this.toUnicode = properties.toUnicode = this.buildToUnicode(properties);
+    this.toUnicode = properties.toUnicode;
 
     this.toFontChar = [];
 
@@ -2663,138 +2663,6 @@ var Font = (function FontClosure() {
       builder.addTable('post', createPostTable(properties));
 
       return builder.toArray();
-    },
-
-    /**
-     * Builds a char code to unicode map based on section 9.10 of the spec.
-     * @param {Object} properties Font properties object.
-     * @return {Object} A ToUnicodeMap object.
-     */
-    buildToUnicode: function Font_buildToUnicode(properties) {
-      // Section 9.10.2 Mapping Character Codes to Unicode Values
-      if (properties.toUnicode && properties.toUnicode.length !== 0) {
-        return properties.toUnicode;
-      }
-      // According to the spec if the font is a simple font we should only map
-      // to unicode if the base encoding is MacRoman, MacExpert, or WinAnsi or
-      // the differences array only contains adobe standard or symbol set names,
-      // in pratice it seems better to always try to create a toUnicode
-      // map based of the default encoding.
-      var toUnicode, charcode;
-      if (!properties.composite /* is simple font */) {
-        toUnicode = [];
-        var encoding = properties.defaultEncoding.slice();
-        var baseEncodingName = properties.baseEncodingName;
-        // Merge in the differences array.
-        var differences = properties.differences;
-        for (charcode in differences) {
-          encoding[charcode] = differences[charcode];
-        }
-        var glyphsUnicodeMap = getGlyphsUnicode();
-        for (charcode in encoding) {
-          // a) Map the character code to a character name.
-          var glyphName = encoding[charcode];
-          // b) Look up the character name in the Adobe Glyph List (see the
-          //    Bibliography) to obtain the corresponding Unicode value.
-          if (glyphName === '') {
-            continue;
-          } else if (glyphsUnicodeMap[glyphName] === undefined) {
-            // (undocumented) c) Few heuristics to recognize unknown glyphs
-            // NOTE: Adobe Reader does not do this step, but OSX Preview does
-            var code = 0;
-            switch (glyphName[0]) {
-              case 'G': // Gxx glyph
-                if (glyphName.length === 3) {
-                  code = parseInt(glyphName.substr(1), 16);
-                }
-                break;
-              case 'g': // g00xx glyph
-                if (glyphName.length === 5) {
-                  code = parseInt(glyphName.substr(1), 16);
-                }
-                break;
-              case 'C': // Cddd glyph
-              case 'c': // cddd glyph
-                if (glyphName.length >= 3) {
-                  code = +glyphName.substr(1);
-                }
-                break;
-              default:
-                // 'uniXXXX'/'uXXXX{XX}' glyphs
-                var unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
-                if (unicode !== -1) {
-                  code = unicode;
-                }
-            }
-            if (code) {
-              // If |baseEncodingName| is one the predefined encodings,
-              // and |code| equals |charcode|, using the glyph defined in the
-              // baseEncoding seems to yield a better |toUnicode| mapping
-              // (fixes issue 5070).
-              if (baseEncodingName && code === +charcode) {
-                var baseEncoding = getEncoding(baseEncodingName);
-                if (baseEncoding && (glyphName = baseEncoding[charcode])) {
-                  toUnicode[charcode] =
-                    String.fromCharCode(glyphsUnicodeMap[glyphName]);
-                  continue;
-                }
-              }
-              toUnicode[charcode] = String.fromCharCode(code);
-            }
-            continue;
-          }
-          toUnicode[charcode] =
-            String.fromCharCode(glyphsUnicodeMap[glyphName]);
-        }
-        return new ToUnicodeMap(toUnicode);
-      }
-      // If the font is a composite font that uses one of the predefined CMaps
-      // listed in Table 118 (except Identity–H and Identity–V) or whose
-      // descendant CIDFont uses the Adobe-GB1, Adobe-CNS1, Adobe-Japan1, or
-      // Adobe-Korea1 character collection:
-      if (properties.composite && (
-           (properties.cMap.builtInCMap &&
-            !(properties.cMap instanceof IdentityCMap)) ||
-           (properties.cidSystemInfo.registry === 'Adobe' &&
-             (properties.cidSystemInfo.ordering === 'GB1' ||
-              properties.cidSystemInfo.ordering === 'CNS1' ||
-              properties.cidSystemInfo.ordering === 'Japan1' ||
-              properties.cidSystemInfo.ordering === 'Korea1')))) {
-        // Then:
-        // a) Map the character code to a character identifier (CID) according
-        // to the font’s CMap.
-        // b) Obtain the registry and ordering of the character collection used
-        // by the font’s CMap (for example, Adobe and Japan1) from its
-        // CIDSystemInfo dictionary.
-        var registry = properties.cidSystemInfo.registry;
-        var ordering = properties.cidSystemInfo.ordering;
-        // c) Construct a second CMap name by concatenating the registry and
-        // ordering obtained in step (b) in the format registry–ordering–UCS2
-        // (for example, Adobe–Japan1–UCS2).
-        var ucs2CMapName = new Name(registry + '-' + ordering + '-UCS2');
-        // d) Obtain the CMap with the name constructed in step (c) (available
-        // from the ASN Web site; see the Bibliography).
-        var ucs2CMap = CMapFactory.create(ucs2CMapName,
-          { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null);
-        var cMap = properties.cMap;
-        toUnicode = [];
-        cMap.forEach(function(charcode, cid) {
-          assert(cid <= 0xffff, 'Max size of CID is 65,535');
-          // e) Map the CID obtained in step (a) according to the CMap obtained
-          // in step (d), producing a Unicode value.
-          var ucs2 = ucs2CMap.lookup(cid);
-          if (ucs2) {
-            toUnicode[charcode] =
-              String.fromCharCode((ucs2.charCodeAt(0) << 8) +
-                                  ucs2.charCodeAt(1));
-          }
-        });
-        return new ToUnicodeMap(toUnicode);
-      }
-
-      // The viewer's choice, just use an identity map.
-      return new IdentityToUnicodeMap(properties.firstChar,
-                                      properties.lastChar);
     },
 
     get spaceWidth() {
