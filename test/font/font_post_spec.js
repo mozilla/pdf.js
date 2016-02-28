@@ -8,17 +8,19 @@ describe('font_post', function() {
     it('has invalid version number', function() {
       var output;
       waitsFor(function() { return output; }, 10000);
-      var font = new Font("font", new Stream(font2109), {
-        loadedName: 'font',
-        type: 'CIDFontType2',
-        differences: [],
-        defaultEncoding: [],
-        cMap: CMapFactory.create(new Name('Identity-H'))
-      });
-      ttx(font.data, function(result) { output = result; });
-      runs(function() {
-        verifyTtxOutput(output);
-        expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(true);
+      CMapFactory.create(new Name('Identity-H')).then(function (cMap) {
+        var font = new Font("font", new Stream(font2109), {
+          loadedName: 'font',
+          type: 'CIDFontType2',
+          differences: [],
+          defaultEncoding: [],
+          cMap: cMap
+        });
+        ttx(font.data, function(result) { output = result; });
+        runs(function() {
+          verifyTtxOutput(output);
+          expect(/<post>\s*<formatType value="3\.0"\/>/.test(output)).toEqual(true);
+        });
       });
     });
 

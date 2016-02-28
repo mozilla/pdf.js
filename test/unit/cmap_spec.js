@@ -7,16 +7,34 @@ var cMapUrl = '../../external/bcmaps/';
 var cMapPacked = true;
 
 describe('cmap', function() {
+  var TEST_TIMEOUT = 20000;
+  function waitsForPromiseResolved(promise, successCallback) {
+    var resolved = false;
+    promise.then(function(val) {
+        resolved = true;
+        successCallback(val);
+      },
+      function(error) {
+        // Shouldn't get here.
+        expect(error).toEqual('the promise should not have been rejected');
+      });
+    waitsFor(function() {
+      return resolved;
+    }, TEST_TIMEOUT);
+  }
+
   it('parses beginbfchar', function() {
     var str = '2 beginbfchar\n' +
               '<03> <00>\n' +
               '<04> <01>\n' +
               'endbfchar\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x03)).toEqual(String.fromCharCode(0x00));
-    expect(cmap.lookup(0x04)).toEqual(String.fromCharCode(0x01));
-    expect(cmap.lookup(0x05)).toBeUndefined();
+    var cmapPromise = CMapFactory.create(stream);
+    waitsForPromiseResolved(cmapPromise, function (cmap) {
+      expect(cmap.lookup(0x03)).toEqual(String.fromCharCode(0x00));
+      expect(cmap.lookup(0x04)).toEqual(String.fromCharCode(0x01));
+      expect(cmap.lookup(0x05)).toBeUndefined();
+    });
   });
   it('parses beginbfrange with range', function() {
     var str = '1 beginbfrange\n' +
