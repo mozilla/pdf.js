@@ -424,31 +424,22 @@ var IdentityCMap = (function IdentityCMapClosure() {
 
 var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   function fetchBinaryData(url) {
-    var nonBinaryRequest = PDFJS.disableWorker;
-    var request = new XMLHttpRequest();
-    request.open('GET', url, false);
-    if (!nonBinaryRequest) {
-      try {
-        request.responseType = 'arraybuffer';
-        nonBinaryRequest = request.responseType !== 'arraybuffer';
-      } catch (e) {
-        nonBinaryRequest = true;
-      }
-    }
-    if (nonBinaryRequest && request.overrideMimeType) {
-      request.overrideMimeType('text/plain; charset=x-user-defined');
-    }
-    request.send(null);
-    if (nonBinaryRequest ? !request.responseText : !request.response) {
-      error('Unable to get binary cMap at: ' + url);
-    }
-    if (nonBinaryRequest) {
-      var data = Array.prototype.map.call(request.responseText, function (ch) {
-        return ch.charCodeAt(0) & 255;
-      });
-      return new Uint8Array(data);
-    }
-    return new Uint8Array(request.response);
+    return new Promise(function (resolve, reject) {
+      var request = new XMLHttpRequest();
+      request.open('GET', url, true);
+      request.responseType = 'arraybuffer';
+      request.onreadystatechange = function () {
+        var expectedStatus = /^https?:/i.test(url) ? 200 : 0;
+        if (request.readyState === XMLHttpRequest.DONE) {
+          if (!request.response || request.status !== expectedStatus) {
+            reject(new Error('Unable to get binary cMap at: ' + url));
+          } else {
+            resolve(new Uint8Array(request.response));
+          }
+        }
+      };
+      request.send(null);
+    });
   }
 
   function hexToInt(a, size) {
@@ -571,43 +562,42 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   };
 
   function processBinaryCMap(url, cMap, extend) {
-    var data = fetchBinaryData(url);
-    var stream = new BinaryCMapStream(data);
+    return fetchBinaryData(url).then(function (data) {
+      var stream = new BinaryCMapStream(data);
+      var header = stream.readByte();
+      cMap.vertical = !!(header & 1);
 
-    var header = stream.readByte();
-    cMap.vertical = !!(header & 1);
+      var useCMap = null;
+      var start = new Uint8Array(MAX_NUM_SIZE);
+      var end = new Uint8Array(MAX_NUM_SIZE);
+      var char = new Uint8Array(MAX_NUM_SIZE);
+      var charCode = new Uint8Array(MAX_NUM_SIZE);
+      var tmp = new Uint8Array(MAX_NUM_SIZE);
+      var code;
 
-    var useCMap = null;
-    var start = new Uint8Array(MAX_NUM_SIZE);
-    var end = new Uint8Array(MAX_NUM_SIZE);
-    var char = new Uint8Array(MAX_NUM_SIZE);
-    var charCode = new Uint8Array(MAX_NUM_SIZE);
-    var tmp = new Uint8Array(MAX_NUM_SIZE);
-    var code;
-
-    var b;
-    while ((b = stream.readByte()) >= 0) {
-      var type = b >> 5;
-      if (type === 7) { // metadata, e.g. comment or usecmap
-        switch (b & 0x1F) {
+      var b;
+      while ((b = stream.readByte()) >= 0) {
+        var type = b >> 5;
+        if (type === 7) { // metadata, e.g. comment or usecmap
+          switch (b & 0x1F) {
           case 0:
             stream.readString(); // skipping comment
             break;
           case 1:
             useCMap = stream.readString();
             break;
+          }
+          continue;
         }
-        continue;
-      }
-      var sequence = !!(b & 0x10);
-      var dataSize = b & 15;
+        var sequence = !!(b & 0x10);
+        var dataSize = b & 15;
 
-      assert(dataSize + 1 <= MAX_NUM_SIZE);
+        assert(dataSize + 1 <= MAX_NUM_SIZE);
 
-      var ucs2DataSize = 1;
-      var subitemsCount = stream.readNumber();
-      var i;
-      switch (type) {
+        var ucs2DataSize = 1;
+        var subitemsCount = stream.readNumber();
+        var i;
+        switch (type) {
         case 0: // codespacerange
           stream.readHex(start, dataSize);
           stream.readHexNumber(end, dataSize);
@@ -721,13 +711,14 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
         default:
           error('Unknown type: ' + type);
           break;
+        }
       }
-    }
 
-    if (useCMap) {
-      extend(useCMap);
-    }
-    return cMap;
+      if (useCMap) {
+        return extend(useCMap);
+      }
+      return cMap;
+    });
   }
 
   function BinaryCMapReader() {}
@@ -936,47 +927,52 @@ var CMapFactory = (function CMapFactoryClosure() {
       useCMap = embededUseCMap;
     }
     if (useCMap) {
-      extendCMap(cMap, builtInCMapParams, useCMap);
+      return extendCMap(cMap, builtInCMapParams, useCMap);
+    } else {
+      Promise.resolve(cMap);
     }
   }
 
   function extendCMap(cMap, builtInCMapParams, useCMap) {
-    cMap.useCMap = createBuiltInCMap(useCMap, builtInCMapParams);
-    // If there aren't any code space ranges defined clone all the parent ones
-    // into this cMap.
-    if (cMap.numCodespaceRanges === 0) {
-      var useCodespaceRanges = cMap.useCMap.codespaceRanges;
-      for (var i = 0; i < useCodespaceRanges.length; i++) {
-        cMap.codespaceRanges[i] = useCodespaceRanges[i].slice();
+    return createBuiltInCMap(useCMap, builtInCMapParams).then(function(newCMap) {
+      cMap.useCMap = newCMap;
+      // If there aren't any code space ranges defined clone all the parent ones
+      // into this cMap.
+      if (cMap.numCodespaceRanges === 0) {
+        var useCodespaceRanges = cMap.useCMap.codespaceRanges;
+        for (var i = 0; i < useCodespaceRanges.length; i++) {
+          cMap.codespaceRanges[i] = useCodespaceRanges[i].slice();
+        }
+        cMap.numCodespaceRanges = cMap.useCMap.numCodespaceRanges;
       }
-      cMap.numCodespaceRanges = cMap.useCMap.numCodespaceRanges;
-    }
-    // Merge the map into the current one, making sure not to override
-    // any previously defined entries.
-    cMap.useCMap.forEach(function(key, value) {
-      if (!cMap.contains(key)) {
-        cMap.mapOne(key, cMap.useCMap.lookup(key));
-      }
+      // Merge the map into the current one, making sure not to override
+      // any previously defined entries.
+      cMap.useCMap.forEach(function(key, value) {
+        if (!cMap.contains(key)) {
+          cMap.mapOne(key, cMap.useCMap.lookup(key));
+        }
+      });
+
+      return cMap;
     });
   }
 
   function parseBinaryCMap(name, builtInCMapParams) {
     var url = builtInCMapParams.url + name + '.bcmap';
     var cMap = new CMap(true);
-    new BinaryCMapReader().read(url, cMap, function (useCMap) {
-      extendCMap(cMap, builtInCMapParams, useCMap);
+    return new BinaryCMapReader().read(url, cMap, function (useCMap) {
+      return extendCMap(cMap, builtInCMapParams, useCMap);
     });
-    return cMap;
   }
 
   function createBuiltInCMap(name, builtInCMapParams) {
     if (name === 'Identity-H') {
-      return new IdentityCMap(false, 2);
+      return Promise.resolve(new IdentityCMap(false, 2));
     } else if (name === 'Identity-V') {
-      return new IdentityCMap(true, 2);
+      return Promise.resolve(new IdentityCMap(true, 2));
     }
     if (BUILT_IN_CMAPS.indexOf(name) === -1) {
-      error('Unknown cMap name: ' + name);
+      return Promise.reject(new Error('Unknown cMap name: ' + name));
     }
     assert(builtInCMapParams, 'built-in cMap parameters are not provided');
 
@@ -984,17 +980,25 @@ var CMapFactory = (function CMapFactoryClosure() {
       return parseBinaryCMap(name, builtInCMapParams);
     }
 
-    var request = new XMLHttpRequest();
-    var url = builtInCMapParams.url + name;
-    request.open('GET', url, false);
-    request.send(null);
-    if (!request.responseText) {
-      error('Unable to get cMap at: ' + url);
-    }
-    var cMap = new CMap(true);
-    var lexer = new Lexer(new StringStream(request.responseText));
-    parseCMap(cMap, lexer, builtInCMapParams, null);
-    return cMap;
+    return new Promise(function (resolve, reject) {
+      var url = builtInCMapParams.url + name;
+      var request = new XMLHttpRequest();
+      request.onreadystatechange = function () {
+        if (request.readyState === XMLHttpRequest.DONE) {
+          var expectedStatus = /^https?:/i.test(url) ? 200 : 0;
+          if (request.status === expectedStatus) {
+            var cMap = new CMap(true);
+            var lexer = new Lexer(new StringStream(request.responseText));
+            parseCMap(cMap, lexer, builtInCMapParams, null);
+            resolve(cMap);
+          } else {
+            reject(new Error('Unable to get cMap at: ' + url));
+          }
+        }
+      };
+      request.open('GET', url, true);
+      request.send(null);
+    });
   }
 
   return {
@@ -1012,9 +1016,9 @@ var CMapFactory = (function CMapFactoryClosure() {
         if (cMap.isIdentityCMap) {
           return createBuiltInCMap(cMap.name, builtInCMapParams);
         }
-        return cMap;
+        return Promise.resolve(cMap);
       }
-      error('Encoding required.');
+      return Promise.reject('Encoding required.');
     }
   };
 })();
