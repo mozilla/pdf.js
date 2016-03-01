@@ -342,6 +342,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       PDFImage.buildImage(self.handler, self.xref, resources, image, inline).
         then(function(imageObj) {
+          imageObj.print = operatorList.intent === 'print' ? true : false;
           var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
             [imgData.data.buffer]);
