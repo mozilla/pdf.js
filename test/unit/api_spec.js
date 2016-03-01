@@ -8,6 +8,7 @@
 describe('api', function() {
   var basicApiUrl = combineUrl(window.location.href, '../pdfs/basicapi.pdf');
   var basicApiFileLength = 105779; // bytes
+  var TEST_TIMEOUT = 20000;
   function waitsForPromiseResolved(promise, successCallback) {
     var resolved = false;
     promise.then(function(val) {
@@ -20,7 +21,7 @@ describe('api', function() {
     });
     waitsFor(function() {
       return resolved;
-    }, 20000);
+    }, TEST_TIMEOUT);
   }
   function waitsForPromiseRejected(promise, failureCallback) {
     var rejected = false;
@@ -34,7 +35,13 @@ describe('api', function() {
     });
     waitsFor(function() {
       return rejected;
-    }, 20000);
+    }, TEST_TIMEOUT);
+  }
+  function waitSome(callback) {
+    var WAIT_TIMEOUT = 10;
+    setTimeout(function () {
+      callback();
+    }, WAIT_TIMEOUT);
   }
 
   describe('PDFJS', function() {
@@ -708,6 +715,88 @@ describe('api', function() {
         return true;
       });
       waitsForPromiseResolved(promiseDone, function() {});
+    });
+  });
+  describe('PDFDataRangeTransport', function () {
+    var pdfPath = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+    var loadPromise;
+    function getDocumentData() {
+      if (loadPromise) {
+        return loadPromise;
+      }
+      loadPromise = new Promise(function (resolve, reject) {
+        var xhr = new XMLHttpRequest(pdfPath);
+        xhr.open('GET', pdfPath);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function () { resolve(new Uint8Array(xhr.response)); };
+        xhr.onerror = function () { reject(new Error('PDF is not loaded')); };
+        xhr.send();
+      });
+      return loadPromise;
+    }
+    it('should fetch document info and page using ranges', function () {
+      var transport;
+      var initialDataLength = 4000;
+      var fetches = 0;
+      var getDocumentPromise = getDocumentData().then(function (data) {
+        var initialData = data.subarray(0, initialDataLength);
+        transport = new PDFJS.PDFDataRangeTransport(data.length, initialData);
+        transport.requestDataRange = function (begin, end) {
+          fetches++;
+          waitSome(function () {
+            transport.onDataProgress(4000);
+            transport.onDataRange(begin, data.subarray(begin, end));
+          });
+        };
+        var loadingTask = PDFJS.getDocument(transport);
+        return loadingTask.promise;
+      });
+      var pdfDocument;
+      var getPagePromise = getDocumentPromise.then(function (pdfDocument_) {
+        pdfDocument = pdfDocument_;
+        var pagePromise = pdfDocument.getPage(10);
+        return pagePromise;
+      });
+
+      waitsForPromiseResolved(getPagePromise, function (page) {
+        expect(pdfDocument.numPages).toEqual(14);
+        expect(page.rotate).toEqual(0);
+        expect(fetches).toBeGreaterThan(2);
+      });
+    });
+    it('should fetch document info and page using range and streaming',
+        function () {
+      var transport;
+      var initialDataLength = 4000;
+      var fetches = 0;
+      var getDocumentPromise = getDocumentData().then(function (data) {
+        var initialData = data.subarray(0, initialDataLength);
+        transport = new PDFJS.PDFDataRangeTransport(data.length, initialData);
+        transport.requestDataRange = function (begin, end) {
+          fetches++;
+          if (fetches === 1) {
+            // send rest of the data on first range request.
+            transport.onDataProgressiveRead(data.subarray(initialDataLength));
+          }
+          waitSome(function () {
+            transport.onDataRange(begin, data.subarray(begin, end));
+          });
+        };
+        var loadingTask = PDFJS.getDocument(transport);
+        return loadingTask.promise;
+      });
+      var pdfDocument;
+      var getPagePromise = getDocumentPromise.then(function (pdfDocument_) {
+        pdfDocument = pdfDocument_;
+        var pagePromise = pdfDocument.getPage(10);
+        return pagePromise;
+      });
+
+      waitsForPromiseResolved(getPagePromise, function (page) {
+        expect(pdfDocument.numPages).toEqual(14);
+        expect(page.rotate).toEqual(0);
+        expect(fetches).toEqual(1);
+      });
     });
   });
 });
