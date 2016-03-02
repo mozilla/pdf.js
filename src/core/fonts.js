@@ -2286,7 +2286,7 @@ var Font = (function FontClosure() {
           assert(cid <= 0xffff, 'Max size of CID is 65,535');
           var glyphId = -1;
           if (isCidToGidMapEmpty) {
-            glyphId = charCode;
+            glyphId = cid;
           } else if (cidToGidMap[cid] !== undefined) {
             glyphId = cidToGidMap[cid];
           }
