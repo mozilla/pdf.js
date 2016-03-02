@@ -1501,15 +1501,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        if (simpleFillText && !accent) {
-          // common case
-          ctx.fillText(character, scaledX, scaledY);
-        } else {
-          this.paintChar(character, scaledX, scaledY);
-          if (accent) {
-            scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-            scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-            this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+        // Only attempt to draw the glyph if it is actually in the embedded font
+        // file or if there isn't a font file so the fallback font is shown.
+        if (glyph.isInFont || font.missingFile) {
+          if (simpleFillText && !accent) {
+            // common case
+            ctx.fillText(character, scaledX, scaledY);
+          } else {
+            this.paintChar(character, scaledX, scaledY);
+            if (accent) {
+              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
+              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+            }
           }
         }
 

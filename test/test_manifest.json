@@ -543,6 +543,15 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "issue6721_reduced",
+       "file": "pdfs/issue6721_reduced.pdf",
+       "md5": "719aa66d8081a15e3ba6032ed4279237",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5010",
        "file": "pdfs/issue5010.pdf",
        "md5": "419f4b13403a0871c463ec69d96e342c",
