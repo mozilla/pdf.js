@@ -1217,6 +1217,13 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue7020",
+       "file": "pdfs/issue7020.pdf",
+       "md5": "93b464e21c649e64ae92eeafe99fc31b",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "pr4606",
        "file": "pdfs/pr4606.pdf",
        "md5": "6574fde2314648600056bd0e229df98c",
