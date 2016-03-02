@@ -85,7 +85,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
     /**
      * @private
      */
-    _setStyles: function PDFOutlineView_setStyles(element, item) {
+    _setStyles: function PDFOutlineViewer_setStyles(element, item) {
       var styleStr = '';
       if (item.bold) {
         styleStr += 'font-weight: bold;';
