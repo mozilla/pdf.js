@@ -541,6 +541,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         } catch (ex) {
           pdfManagerCapability.reject(ex);
         }
+        return pdfManagerCapability.promise;
       }
 
       var pdfStream;
