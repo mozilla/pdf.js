@@ -50,6 +50,13 @@
   if (PDFJS.verbosity !== undefined) {
     sharedUtil.setVerbosityLevel(PDFJS.verbosity);
   }
+  delete PDFJS.verbosity;
+  Object.defineProperty(PDFJS, 'verbosity', {
+    get: function () { return sharedUtil.getVerbosityLevel(); },
+    set: function (level) { sharedUtil.setVerbosityLevel(level); },
+    enumerable: true,
+    configurable: true
+  });
 
   PDFJS.VERBOSITY_LEVELS = sharedUtil.VERBOSITY_LEVELS;
   PDFJS.OPS = sharedUtil.OPS;

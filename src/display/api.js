@@ -48,6 +48,7 @@ var createPromiseCapability = sharedUtil.createPromiseCapability;
 var combineUrl = sharedUtil.combineUrl;
 var error = sharedUtil.error;
 var deprecated = sharedUtil.deprecated;
+var getVerbosityLevel = sharedUtil.getVerbosityLevel;
 var info = sharedUtil.info;
 var isArrayBuffer = sharedUtil.isArrayBuffer;
 var isSameOrigin = sharedUtil.isSameOrigin;
@@ -199,17 +200,6 @@ PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
  */
 PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
                         false : PDFJS.useOnlyCssZoom);
-
-/**
- * Controls the logging level.
- * The constants from PDFJS.VERBOSITY_LEVELS should be used:
- * - errors
- * - warnings [default]
- * - infos
- * @var {number}
- */
-PDFJS.verbosity = (PDFJS.verbosity === undefined ?
-                   PDFJS.VERBOSITY_LEVELS.warnings : PDFJS.verbosity);
 
 /**
  * The maximum supported canvas size in total pixels e.g. width * height.
@@ -456,7 +446,6 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     cMapPacked: PDFJS.cMapPacked,
     disableFontFace: PDFJS.disableFontFace,
     disableCreateObjectURL: PDFJS.disableCreateObjectURL,
-    verbosity: PDFJS.verbosity,
     postMessageTransfers: PDFJS.postMessageTransfers,
   }).then(function (workerId) {
     if (worker.destroyed) {
@@ -1327,6 +1316,10 @@ var PDFWorker = (function PDFWorkerClosure() {
                 PDFJS.postMessageTransfers = false;
               }
               this._readyCapability.resolve();
+              // Send global PDFJS setting, e.g. verbosity level.
+              messageHandler.send('configure', {
+                verbosity: getVerbosityLevel()
+              });
             } else {
               this._setupFakeWorker();
               messageHandler.destroy();

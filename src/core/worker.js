@@ -462,6 +462,10 @@ var WorkerMessageHandler = {
       });
     });
 
+    handler.on('configure', function wphConfigure(data) {
+      setVerbosityLevel(data.verbosity);
+    });
+
     handler.on('GetDocRequest', function wphSetupDoc(data) {
       return WorkerMessageHandler.createDocumentHandler(data, port);
     });
@@ -695,9 +699,6 @@ var WorkerMessageHandler = {
         disableFontFace: data.disableFontFace,
         cMapOptions: cMapOptions
       };
-
-      // TODO move it to the worker options synchronization place (vs document).
-      setVerbosityLevel(data.verbosity);
 
       getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {
         if (terminated) {
