@@ -1,10 +1,20 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType, AnnotationFlag, PDFJS, combineUrl,
-           waitsFor, beforeEach, afterEach, stringToBytes */
+           AnnotationBorderStyleType, AnnotationFlag, PDFJS, combineUrl, Ref,
+           waitsFor, beforeEach, afterEach, stringToBytes, AnnotationFactory,
+           AnnotationType */
 
 'use strict';
 
 describe('Annotation layer', function() {
+  function XrefMock(queue) {
+    this.queue = queue || [];
+  }
+  XrefMock.prototype = {
+    fetchIfRef: function() {
+      return this.queue.shift();
+    }
+  };
+
   function waitsForPromiseResolved(promise, successCallback) {
     var resolved = false;
     promise.then(function(val) {
@@ -186,6 +196,34 @@ describe('Annotation layer', function() {
       borderStyle.setVerticalCornerRadius('three');
 
       expect(borderStyle.verticalCornerRadius).toEqual(0);
+    });
+  });
+
+  describe('LinkAnnotation', function() {
+    it('should parse a GoToR destination with a relative URL', function() {
+      var actionDict = new Dict();
+      actionDict.set('D', '15');
+      actionDict.set('F', '../../0021/002156/215675E.pdf');
+      actionDict.set('S', Name.get('GoToR'));
+
+      var annotationDict = new Dict();
+      annotationDict.set('A', actionDict);
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('Type', Name.get('Annot'));
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(489, 0);
+
+      var annotationFactory = new AnnotationFactory();
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toBeUndefined();
+      expect(data.relativeUrl).toEqual('../../0021/002156/215675E.pdf#15');
+      expect(data.dest).toBeUndefined();
+      expect(data.newWindow).toBeFalsy();
     });
   });
 

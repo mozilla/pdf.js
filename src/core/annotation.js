@@ -761,6 +761,8 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     if (url) {
       if (isValidUrl(url, /* allowRelative = */ false)) {
         data.url = tryConvertUrlEncoding(url);
+      } else if (isValidUrl(url, /* allowRelative = */ true)) {
+        data.relativeUrl = tryConvertUrlEncoding(url);
       }
     }
     if (dest) {

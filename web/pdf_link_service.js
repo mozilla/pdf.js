@@ -28,6 +28,7 @@ var PDFLinkService = (function () {
    */
   function PDFLinkService() {
     this.baseUrl = null;
+    this.relativeLinkAnnotationBaseUrl = null;
     this.pdfDocument = null;
     this.pdfViewer = null;
     this.pdfHistory = null;
@@ -36,9 +37,13 @@ var PDFLinkService = (function () {
   }
 
   PDFLinkService.prototype = {
-    setDocument: function PDFLinkService_setDocument(pdfDocument, baseUrl) {
-      this.baseUrl = baseUrl;
+    setDocument:
+        function PDFLinkService_setDocument(pdfDocument, baseUrl,
+                                            relativeLinkAnnotationBaseUrl) {
       this.pdfDocument = pdfDocument;
+      this.baseUrl = baseUrl;
+      this.relativeLinkAnnotationBaseUrl =
+        relativeLinkAnnotationBaseUrl || null;
       this._pagesRefCache = Object.create(null);
     },
 

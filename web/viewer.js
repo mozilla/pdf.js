@@ -864,14 +864,18 @@ var PDFViewerApplication = {
 
 //#if GENERIC
     var baseDocumentUrl = null;
+    var relativeLinkAnnotationBaseUrl = null;
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
 //  var baseDocumentUrl = this.url.split('#')[0];
+//  var relativeLinkAnnotationBaseUrl = baseDocumentUrl;
 //#endif
 //#if CHROME
 //  var baseDocumentUrl = location.href.split('#')[0];
+//  var relativeLinkAnnotationBaseUrl = this.url.split('#')[0];
 //#endif
-    this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl);
+    this.pdfLinkService.setDocument(pdfDocument, baseDocumentUrl,
+                                    relativeLinkAnnotationBaseUrl);
 
     var pdfViewer = this.pdfViewer;
     pdfViewer.currentScale = scale;

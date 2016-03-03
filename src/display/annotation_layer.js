@@ -31,6 +31,8 @@
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
 var Util = sharedUtil.Util;
+var isValidUrl = sharedUtil.isValidUrl;
+var combineUrl = sharedUtil.combineUrl;
 var addLinkAttributes = sharedUtil.addLinkAttributes;
 var getFilenameFromUrl = sharedUtil.getFilenameFromUrl;
 var warn = sharedUtil.warn;
@@ -276,11 +278,26 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
     render: function LinkAnnotationElement_render() {
       this.container.className = 'linkAnnotation';
 
+      var linkUrl = this.data.url;
       var link = document.createElement('a');
-      addLinkAttributes(link, { url: this.data.url,
+
+      // If the `linkUrl` is undefined, check if a relative URL exists.
+      if (!linkUrl && this.data.relativeUrl) {
+        var baseUrl = this.linkService.relativeLinkAnnotationBaseUrl;
+
+        // Ensure that the `baseUrl` is absolute.
+        if (isValidUrl(baseUrl, false)) {
+          var combinedUrl = combineUrl(baseUrl, this.data.relativeUrl);
+          // Ensure that the final URL is absolute.
+          if (isValidUrl(combinedUrl, false)) {
+            linkUrl = combinedUrl;
+          }
+        }
+      }
+      addLinkAttributes(link, { url: linkUrl,
                                 newWindow: this.data.newWindow });
 
-      if (!this.data.url) {
+      if (!linkUrl) {
         if (this.data.action) {
           this._bindNamedAction(link, this.data.action);
         } else {
