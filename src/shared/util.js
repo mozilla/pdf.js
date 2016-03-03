@@ -349,14 +349,20 @@ PDFJS.isValidUrl = isValidUrl;
  * @param {HTMLLinkElement} link - The link element.
  * @param {Object} params - An object with the properties:
  * @param {string} params.url - An absolute URL.
+ * @param {boolean} params.newWindow - (optional) The 'NewWindow' property of
+ *   e.g. 'GoToR' destinations.
  */
 function addLinkAttributes(link, params) {
-  var url = params && params.url;
+  var url = (params && params.url) || null;
+  var newWindow = (params && params.newWindow) || false;
+
   link.href = link.title = (url ? removeNullCharacters(url) : '');
 
   if (url) {
     if (isExternalLinkTargetSet()) {
       link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
+    } else if (newWindow) {
+      link.target = LinkTarget.BLANK;
     }
     // Strip referrer from the URL.
     link.rel = PDFJS.externalLinkRel;

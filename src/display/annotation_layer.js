@@ -277,7 +277,8 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
       this.container.className = 'linkAnnotation';
 
       var link = document.createElement('a');
-      addLinkAttributes(link, { url: this.data.url });
+      addLinkAttributes(link, { url: this.data.url,
+                                newWindow: this.data.newWindow });
 
       if (!this.data.url) {
         if (this.data.action) {
