@@ -37,6 +37,7 @@ var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationType = sharedUtil.AnnotationType;
 var OPS = sharedUtil.OPS;
 var Util = sharedUtil.Util;
+var isBool = sharedUtil.isBool;
 var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
@@ -729,14 +730,29 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
         case 'GoToR':
           var urlDict = action.get('F');
           if (isDict(urlDict)) {
-            // We assume that the 'url' is a Filspec dictionary
-            // and fetch the url without checking any further
-            url = urlDict.get('F') || '';
+            // We assume that we found a FileSpec dictionary
+            // and fetch the URL without checking any further.
+            url = urlDict.get('F') || null;
+          } else if (isString(urlDict)) {
+            url = urlDict;
           }
 
-          // TODO: pdf reference says that GoToR
-          // can also have 'NewWindow' attribute
-          dest = action.get('D');
+          // NOTE: the destination is relative to the *remote* document.
+          var remoteDest = action.get('D');
+          if (remoteDest) {
+            if (isName(remoteDest)) {
+              remoteDest = remoteDest.name;
+            }
+            if (isString(remoteDest) && isString(url)) {
+              var baseUrl = url.split('#')[0];
+              url = baseUrl + '#' + remoteDest;
+            }
+          }
+          // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
+          var newWindow = action.get('NewWindow');
+          if (isBool(newWindow)) {
+            data.newWindow = newWindow;
+          }
           break;
 
         case 'Named':
