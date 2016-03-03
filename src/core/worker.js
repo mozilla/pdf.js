@@ -994,11 +994,6 @@ function initializeWorker() {
   handler.send('ready', null);
 }
 
-if (globalScope.PDFJS) {
-  // TODO properly handle WorkerMessageHandler as a module export at api.js.
-  globalScope.PDFJS.WorkerMessageHandler = WorkerMessageHandler;
-}
-
 // Worker thread (and not node.js)?
 if (typeof window === 'undefined' &&
     !(typeof module !== 'undefined' && module.require)) {

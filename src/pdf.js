@@ -57,5 +57,7 @@
   exports.MissingPDFException = pdfjsLibs.pdfjsSharedUtil.MissingPDFException;
   exports.UnexpectedResponseException =
     pdfjsLibs.pdfjsSharedUtil.UnexpectedResponseException;
+//#else
+  exports.WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
 //#endif
 }));

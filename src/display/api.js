@@ -1215,38 +1215,45 @@ var PDFWorker = (function PDFWorkerClosure() {
     error('No PDFJS.workerSrc specified');
   }
 
+  var fakeWorkerFilesLoadedCapability;
+
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
-    if (!PDFJS.fakeWorkerFilesLoadedCapability) {
-      PDFJS.fakeWorkerFilesLoadedCapability = createPromiseCapability();
+    var WorkerMessageHandler;
+    if (!fakeWorkerFilesLoadedCapability) {
+      fakeWorkerFilesLoadedCapability = createPromiseCapability();
       // In the developer build load worker_loader which in turn loads all the
       // other files and resolves the promise. In production only the
       // pdf.worker.js file is needed.
 //#if !PRODUCTION
       if (typeof amdRequire === 'function') {
-        amdRequire(['pdfjs/core/network', 'pdfjs/core/worker'], function () {
-          PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+        amdRequire(['pdfjs/core/network', 'pdfjs/core/worker'],
+            function (network, worker) {
+          WorkerMessageHandler = worker.WorkerMessageHandler;
+          fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
         });
       } else if (typeof require === 'function') {
-        require('../core/worker.js');
-        PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+        var worker = require('../core/worker.js');
+        WorkerMessageHandler = worker.WorkerMessageHandler;
+        fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
       } else {
         throw new Error('AMD or CommonJS must be used to load fake worker.');
       }
 //#endif
 //#if PRODUCTION && SINGLE_FILE
-//    PDFJS.fakeWorkerFilesLoadedCapability.resolve();
+//    WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
+//    fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
 //#endif
 //#if PRODUCTION && !SINGLE_FILE
 //    var loader = fakeWorkerFilesLoader || function (callback) {
-//      Util.loadScript(getWorkerSrc(), callback);
+//      Util.loadScript(getWorkerSrc(), function () {
+//        callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+//      });
 //    };
-//    loader(function () {
-//      PDFJS.fakeWorkerFilesLoadedCapability.resolve();
-//    });
+//    loader(fakeWorkerFilesLoadedCapability.resolve);
 //#endif
     }
-    return PDFJS.fakeWorkerFilesLoadedCapability.promise;
+    return fakeWorkerFilesLoadedCapability.promise;
   }
 
   function createCDNWrapper(url) {
@@ -1385,7 +1392,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         globalScope.PDFJS.disableWorker = true;
       }
 
-      setupFakeWorkerGlobal().then(function () {
+      setupFakeWorkerGlobal().then(function (WorkerMessageHandler) {
         if (this.destroyed) {
           this._readyCapability.reject(new Error('Worker was destroyed'));
           return;
@@ -1417,7 +1424,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         // If the main thread is our worker, setup the handling for the
         // messages -- the main thread sends to it self.
         var workerHandler = new MessageHandler(id + '_worker', id, port);
-        PDFJS.WorkerMessageHandler.setup(workerHandler, port);
+        WorkerMessageHandler.setup(workerHandler, port);
 
         var messageHandler = new MessageHandler(id, id + '_worker', port);
         this._messageHandler = messageHandler;
