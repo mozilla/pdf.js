@@ -19,15 +19,14 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/font_loader', ['exports', 'pdfjs/shared/util',
-      'pdfjs/shared/global'], factory);
+      'pdfjs/display/global'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'),
-      require('../shared/global.js'));
+    factory(exports, require('../shared/util.js'), require('./global.js'));
   } else {
     factory((root.pdfjsDisplayFontLoader = {}), root.pdfjsSharedUtil,
-      root.pdfjsSharedGlobal);
+      root.pdfjsDisplayGlobal);
   }
-}(this, function (exports, sharedUtil, sharedGlobal) {
+}(this, function (exports, sharedUtil, displayGlobal) {
 
 var assert = sharedUtil.assert;
 var bytesToString = sharedUtil.bytesToString;
@@ -35,9 +34,9 @@ var string32 = sharedUtil.string32;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
 
-var PDFJS = sharedGlobal.PDFJS;
-var globalScope = sharedGlobal.globalScope;
-var isWorker = sharedGlobal.isWorker;
+var PDFJS = displayGlobal.PDFJS;
+var globalScope = displayGlobal.globalScope;
+var isWorker = displayGlobal.isWorker;
 
 function FontLoader(docId) {
   this.docId = docId;

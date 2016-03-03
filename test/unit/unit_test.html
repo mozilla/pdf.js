@@ -46,20 +46,20 @@
 
     function initializePDFJS(callback) {
       require.config({paths: {'pdfjs': '../../src'}});
-      require(['pdfjs/shared/util', 'pdfjs/shared/global', 'pdfjs/core/primitives',
+      require(['pdfjs/shared/util', 'pdfjs/display/global', 'pdfjs/core/primitives',
           'pdfjs/core/annotation', 'pdfjs/core/crypto', 'pdfjs/core/stream',
           'pdfjs/core/fonts', 'pdfjs/core/ps_parser', 'pdfjs/core/function',
           'pdfjs/core/parser', 'pdfjs/core/evaluator', 'pdfjs/core/cmap',
           'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/display/api',
           'pdfjs/display/metadata', 'pdfjs/display/dom_utils'],
-          function (sharedUtil, sharedGlobal, corePrimitives, coreAnnotation,
+          function (sharedUtil, displayGlobal, corePrimitives, coreAnnotation,
                     coreCrypto, coreStream, coreFonts, corePsParser, coreFunction,
                     coreParser, coreEvaluator, coreCMap, coreWorker, coreNetwork,
                     displayAPI, displayMetadata, displayDOMUtils) {
 
         pdfjsLibs = {
           sharedUtil: sharedUtil,
-          sharedGlobal: sharedGlobal,
+          displayGlobal: displayGlobal,
           corePrimitives: corePrimitives,
           coreAnnotation: coreAnnotation,
           coreCrypto: coreCrypto,

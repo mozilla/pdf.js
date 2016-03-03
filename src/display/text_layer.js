@@ -18,20 +18,20 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/text_layer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/dom_utils', 'pdfjs/shared/global'], factory);
+      'pdfjs/display/dom_utils', 'pdfjs/display/global'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./dom_utils.js'),
-      require('../shared/global.js'));
+      require('./global.js'));
   } else {
     factory((root.pdfjsDisplayTextLayer = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayDOMUtils, root.pdfjsSharedGlobal);
+      root.pdfjsDisplayDOMUtils, root.pdfjsDisplayGlobal);
   }
-}(this, function (exports, sharedUtil, displayDOMUtils, sharedGlobal) {
+}(this, function (exports, sharedUtil, displayDOMUtils, displayGlobal) {
 
 var Util = sharedUtil.Util;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
 var CustomStyle = displayDOMUtils.CustomStyle;
-var PDFJS = sharedGlobal.PDFJS;
+var PDFJS = displayGlobal.PDFJS;
 
 /**
  * Text layer render parameters.

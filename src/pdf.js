@@ -44,7 +44,7 @@
   }).call(pdfjsLibs);
 
 //#if MAIN_FILE
-  exports.PDFJS = pdfjsLibs.pdfjsSharedGlobal.PDFJS;
+  exports.PDFJS = pdfjsLibs.pdfjsDisplayGlobal.PDFJS;
   exports.getDocument = pdfjsLibs.pdfjsDisplayAPI.getDocument;
   exports.PDFDataRangeTransport =
     pdfjsLibs.pdfjsDisplayAPI.PDFDataRangeTransport;

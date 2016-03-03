@@ -21,19 +21,19 @@
     define('pdfjs/display/api', ['exports', 'pdfjs/shared/util',
       'pdfjs/display/font_loader', 'pdfjs/display/canvas',
       'pdfjs/display/metadata', 'pdfjs/display/dom_utils',
-      'pdfjs/shared/global', 'require'], factory);
+      'pdfjs/display/global', 'require'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./font_loader.js'),
       require('./canvas.js'), require('./metadata.js'),
-      require('./dom_utils.js'), require('../shared/global.js'));
+      require('./dom_utils.js'), require('./global.js'));
   } else {
     factory((root.pdfjsDisplayAPI = {}), root.pdfjsSharedUtil,
       root.pdfjsDisplayFontLoader, root.pdfjsDisplayCanvas,
       root.pdfjsDisplayMetadata, root.pdfjsDisplayDOMUtils,
-      root.pdfjsSharedGlobal);
+      root.pdfjsDisplayGlobal);
   }
 }(this, function (exports, sharedUtil, displayFontLoader, displayCanvas,
-                  displayMetadata, displayDOMUtils, sharedGlobal, amdRequire) {
+                  displayMetadata, displayDOMUtils, displayGlobal, amdRequire) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MessageHandler = sharedUtil.MessageHandler;
@@ -59,8 +59,8 @@ var FontLoader = displayFontLoader.FontLoader;
 var CanvasGraphics = displayCanvas.CanvasGraphics;
 var createScratchCanvas = displayCanvas.createScratchCanvas;
 var Metadata = displayMetadata.Metadata;
-var PDFJS = sharedGlobal.PDFJS;
-var globalScope = sharedGlobal.globalScope;
+var PDFJS = displayGlobal.PDFJS;
+var globalScope = displayGlobal.globalScope;
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 

@@ -18,21 +18,20 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/dom_utils', ['exports', 'pdfjs/shared/util',
-      'pdfjs/shared/global'], factory);
+      'pdfjs/display/global'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'),
-      require('../shared/global.js'));
+    factory(exports, require('../shared/util.js'), require('./global.js'));
   } else {
     factory((root.pdfjsDisplayDOMUtils = {}), root.pdfjsSharedUtil,
-      root.pdfjsSharedGlobal);
+      root.pdfjsDisplayGlobal);
   }
-}(this, function (exports, sharedUtil, sharedGlobal) {
+}(this, function (exports, sharedUtil, displayGlobal) {
 
 var deprecated = sharedUtil.deprecated;
 var removeNullCharacters = sharedUtil.removeNullCharacters;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
-var PDFJS = sharedGlobal.PDFJS;
+var PDFJS = displayGlobal.PDFJS;
 
 /**
  * Optimised CSS custom property getter/setter.

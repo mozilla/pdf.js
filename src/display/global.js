@@ -18,11 +18,11 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/shared/global', ['exports', 'pdfjs/shared/util'], factory);
+    define('pdfjs/display/global', ['exports', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./util.js'));
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsSharedGlobal = {}), root.pdfjsSharedUtil);
+    factory((root.pdfjsDisplayGlobal = {}), root.pdfjsSharedUtil);
   }
 }(this, function (exports, sharedUtil) {
 
