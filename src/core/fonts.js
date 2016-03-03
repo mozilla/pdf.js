@@ -722,6 +722,11 @@ var Font = (function FontClosure() {
   function int16(b0, b1) {
     return (b0 << 8) + b1;
   }
+ 
+  function signedInt16(b0, b1) {
+    var value = (b0 << 8) + b1;
+    return value & (1 << 15) ? value - 0x10000 : value;
+  }
 
   function int32(b0, b1, b2, b3) {
     return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
@@ -2240,9 +2245,9 @@ var Font = (function FontClosure() {
       var metricsOverride = {
         unitsPerEm: int16(tables['head'].data[18], tables['head'].data[19]),
         yMax: int16(tables['head'].data[42], tables['head'].data[43]),
-        yMin: int16(tables['head'].data[38], tables['head'].data[39]) - 0x10000,
+        yMin: signedInt16(tables['head'].data[38], tables['head'].data[39]),
         ascent: int16(tables['hhea'].data[4], tables['hhea'].data[5]),
-        descent: int16(tables['hhea'].data[6], tables['hhea'].data[7]) - 0x10000
+        descent: signedInt16(tables['hhea'].data[6], tables['hhea'].data[7])
       };
 
       // PDF FontDescriptor metrics lie -- using data from actual font.
