@@ -284,7 +284,7 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
         if (this.data.action) {
           this._bindNamedAction(link, this.data.action);
         } else {
-          this._bindLink(link, ('dest' in this.data) ? this.data.dest : null);
+          this._bindLink(link, (this.data.dest || null));
         }
       }
 
