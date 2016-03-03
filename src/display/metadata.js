@@ -12,21 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, Document */
+/* globals Document */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/metadata', ['exports', 'pdfjs/shared/util'], factory);
+    define('pdfjs/display/metadata', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/global'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
+    factory(exports, require('../shared/util.js'), require('./global.js'));
   } else {
-    factory((root.pdfjsDisplayMetadata = {}), root.pdfjsSharedUtil);
+    factory((root.pdfjsDisplayMetadata = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayGlobal);
   }
-}(this, function (exports, sharedUtil) {
+}(this, function (exports, sharedUtil, displayGlobal) {
 
 var error = sharedUtil.error;
+var PDFJS = displayGlobal.PDFJS;
 
 var Metadata = PDFJS.Metadata = (function MetadataClosure() {
   function fixMetadata(meta) {

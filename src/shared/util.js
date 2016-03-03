@@ -12,22 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals MozBlobBuilder, URL */
+/* globals MozBlobBuilder, URL, global */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/shared/util', ['exports', 'pdfjs/shared/global'], factory);
+    define('pdfjs/shared/util', ['exports'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./global.js'));
+    factory(exports);
   } else {
-    factory((root.pdfjsSharedUtil = {}), root.pdfjsSharedGlobal);
+    factory((root.pdfjsSharedUtil = {}));
   }
-}(this, function (exports, sharedGlobal) {
+}(this, function (exports) {
 
-var PDFJS = sharedGlobal.PDFJS;
-var globalScope = sharedGlobal.globalScope;
+var globalScope = (typeof window !== 'undefined') ? window :
+                  (typeof global !== 'undefined') ? global :
+                  (typeof self !== 'undefined') ? self : this;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -127,14 +128,14 @@ var FontType = {
   MMTYPE1: 10
 };
 
-PDFJS.VERBOSITY_LEVELS = {
+var VERBOSITY_LEVELS = {
   errors: 0,
   warnings: 1,
   infos: 5
 };
 
 // All the possible operations for an operator list.
-var OPS = PDFJS.OPS = {
+var OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
   // 0's.
   dependency: 1,
@@ -230,18 +231,28 @@ var OPS = PDFJS.OPS = {
   constructPath: 91
 };
 
+var verbosity = VERBOSITY_LEVELS.warnings;
+
+function setVerbosityLevel(level) {
+  verbosity = level;
+}
+
+function getVerbosityLevel() {
+  return verbosity;
+}
+
 // A notice for devs. These are good for things that are helpful to devs, such
 // as warning that Workers were disabled, which is important to devs but not
 // end users.
 function info(msg) {
-  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.infos) {
+  if (verbosity >= VERBOSITY_LEVELS.infos) {
     console.log('Info: ' + msg);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
-  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.warnings) {
+  if (verbosity >= VERBOSITY_LEVELS.warnings) {
     console.log('Warning: ' + msg);
   }
 }
@@ -254,7 +265,7 @@ function deprecated(details) {
 // Fatal errors that should trigger the fallback UI and halt execution by
 // throwing an exception.
 function error(msg) {
-  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.errors) {
+  if (verbosity >= VERBOSITY_LEVELS.errors) {
     console.log('Error: ' + msg);
     console.log(backtrace());
   }
@@ -275,7 +286,7 @@ function assert(cond, msg) {
   }
 }
 
-var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
+var UNSUPPORTED_FEATURES = {
   unknown: 'unknown',
   forms: 'forms',
   javaScript: 'javaScript',
@@ -283,17 +294,6 @@ var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
   shadingPattern: 'shadingPattern',
   font: 'font'
 };
-
-// Gets the file name from a given URL.
-function getFilenameFromUrl(url) {
-  var anchor = url.indexOf('#');
-  var query = url.indexOf('?');
-  var end = Math.min(
-    anchor > 0 ? anchor : url.length,
-    query > 0 ? query : url.length);
-  return url.substring(url.lastIndexOf('/', end) + 1, end);
-}
-PDFJS.getFilenameFromUrl = getFilenameFromUrl;
 
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.
@@ -342,27 +342,6 @@ function isValidUrl(url, allowRelative) {
       return false;
   }
 }
-PDFJS.isValidUrl = isValidUrl;
-
-/**
- * Adds various attributes (href, title, target, rel) to hyperlinks.
- * @param {HTMLLinkElement} link - The link element.
- * @param {Object} params - An object with the properties:
- * @param {string} params.url - An absolute URL.
- */
-function addLinkAttributes(link, params) {
-  var url = params && params.url;
-  link.href = link.title = (url ? removeNullCharacters(url) : '');
-
-  if (url) {
-    if (isExternalLinkTargetSet()) {
-      link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
-    }
-    // Strip referrer from the URL.
-    link.rel = PDFJS.externalLinkRel;
-  }
-}
-PDFJS.addLinkAttributes = addLinkAttributes;
 
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
@@ -371,7 +350,6 @@ function shadow(obj, prop, value) {
                                      writable: false });
   return value;
 }
-PDFJS.shadow = shadow;
 
 function getLookupTableFactory(initializer) {
   var lookup;
@@ -385,50 +363,7 @@ function getLookupTableFactory(initializer) {
   };
 }
 
-var LinkTarget = PDFJS.LinkTarget = {
-  NONE: 0, // Default value.
-  SELF: 1,
-  BLANK: 2,
-  PARENT: 3,
-  TOP: 4,
-};
-var LinkTargetStringMap = [
-  '',
-  '_self',
-  '_blank',
-  '_parent',
-  '_top'
-];
-
-function isExternalLinkTargetSet() {
-//#if !MOZCENTRAL
-  if (PDFJS.openExternalLinksInNewWindow) {
-    deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
-               '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');
-    if (PDFJS.externalLinkTarget === LinkTarget.NONE) {
-      PDFJS.externalLinkTarget = LinkTarget.BLANK;
-    }
-    // Reset the deprecated parameter, to suppress further warnings.
-    PDFJS.openExternalLinksInNewWindow = false;
-  }
-//#endif
-  switch (PDFJS.externalLinkTarget) {
-    case LinkTarget.NONE:
-      return false;
-    case LinkTarget.SELF:
-    case LinkTarget.BLANK:
-    case LinkTarget.PARENT:
-    case LinkTarget.TOP:
-      return true;
-  }
-  warn('PDFJS.externalLinkTarget is invalid: ' + PDFJS.externalLinkTarget);
-  // Reset the external link target, to suppress further warnings.
-  PDFJS.externalLinkTarget = LinkTarget.NONE;
-  return false;
-}
-PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
-
-var PasswordResponses = PDFJS.PasswordResponses = {
+var PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2
 };
@@ -445,7 +380,6 @@ var PasswordException = (function PasswordExceptionClosure() {
 
   return PasswordException;
 })();
-PDFJS.PasswordException = PasswordException;
 
 var UnknownErrorException = (function UnknownErrorExceptionClosure() {
   function UnknownErrorException(msg, details) {
@@ -459,7 +393,6 @@ var UnknownErrorException = (function UnknownErrorExceptionClosure() {
 
   return UnknownErrorException;
 })();
-PDFJS.UnknownErrorException = UnknownErrorException;
 
 var InvalidPDFException = (function InvalidPDFExceptionClosure() {
   function InvalidPDFException(msg) {
@@ -472,7 +405,6 @@ var InvalidPDFException = (function InvalidPDFExceptionClosure() {
 
   return InvalidPDFException;
 })();
-PDFJS.InvalidPDFException = InvalidPDFException;
 
 var MissingPDFException = (function MissingPDFExceptionClosure() {
   function MissingPDFException(msg) {
@@ -485,7 +417,6 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
 
   return MissingPDFException;
 })();
-PDFJS.MissingPDFException = MissingPDFException;
 
 var UnexpectedResponseException =
     (function UnexpectedResponseExceptionClosure() {
@@ -500,7 +431,6 @@ var UnexpectedResponseException =
 
   return UnexpectedResponseException;
 })();
-PDFJS.UnexpectedResponseException = UnexpectedResponseException;
 
 var NotImplementedException = (function NotImplementedExceptionClosure() {
   function NotImplementedException(msg) {
@@ -549,7 +479,6 @@ function removeNullCharacters(str) {
   }
   return str.replace(NullCharactersRegExp, '');
 }
-PDFJS.removeNullCharacters = removeNullCharacters;
 
 function bytesToString(bytes) {
   assert(bytes !== null && typeof bytes === 'object' &&
@@ -663,30 +592,7 @@ function isLittleEndian() {
   return (buffer16[0] === 1);
 }
 
-Object.defineProperty(PDFJS, 'isLittleEndian', {
-  configurable: true,
-  get: function PDFJS_isLittleEndian() {
-    return shadow(PDFJS, 'isLittleEndian', isLittleEndian());
-  }
-});
-
 //#if !(FIREFOX || MOZCENTRAL || CHROME)
-//// Lazy test if the userAgent support CanvasTypedArrays
-function hasCanvasTypedArrays() {
-  var canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 1;
-  var ctx = canvas.getContext('2d');
-  var imageData = ctx.createImageData(1, 1);
-  return (typeof imageData.data.buffer !== 'undefined');
-}
-
-Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
-  configurable: true,
-  get: function PDFJS_hasCanvasTypedArrays() {
-    return shadow(PDFJS, 'hasCanvasTypedArrays', hasCanvasTypedArrays());
-  }
-});
-
 var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   function Uint32ArrayView(buffer, length) {
@@ -728,13 +634,11 @@ var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 })();
 
 exports.Uint32ArrayView = Uint32ArrayView;
-//#else
-//PDFJS.hasCanvasTypedArrays = true;
 //#endif
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
-var Util = PDFJS.Util = (function UtilClosure() {
+var Util = (function UtilClosure() {
   function Util() {}
 
   var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
@@ -987,7 +891,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
  * @class
  * @alias PDFJS.PageViewport
  */
-var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
+var PageViewport = (function PageViewportClosure() {
   /**
    * @constructor
    * @private
@@ -1210,8 +1114,6 @@ function createPromiseCapability() {
   });
   return capability;
 }
-
-PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
  * Polyfill for Promises:
@@ -1593,7 +1495,7 @@ var StatTimer = (function StatTimerClosure() {
   return StatTimer;
 })();
 
-PDFJS.createBlob = function createBlob(data, contentType) {
+var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
   }
@@ -1603,15 +1505,15 @@ PDFJS.createBlob = function createBlob(data, contentType) {
   return bb.getBlob(contentType);
 };
 
-PDFJS.createObjectURL = (function createObjectURLClosure() {
+var createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-  return function createObjectURL(data, contentType) {
-    if (!PDFJS.disableCreateObjectURL &&
+  return function createObjectURL(data, contentType, forceDataSchema) {
+    if (!forceDataSchema &&
         typeof URL !== 'undefined' && URL.createObjectURL) {
-      var blob = PDFJS.createBlob(data, contentType);
+      var blob = createBlob(data, contentType);
       return URL.createObjectURL(blob);
     }
 
@@ -2399,6 +2301,7 @@ function loadJpegStream(id, imageUrl, objs) {
 exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
 exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
 exports.OPS = OPS;
+exports.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
 exports.AnnotationFlag = AnnotationFlag;
@@ -2406,12 +2309,11 @@ exports.AnnotationType = AnnotationType;
 exports.FontType = FontType;
 exports.ImageKind = ImageKind;
 exports.InvalidPDFException = InvalidPDFException;
-exports.LinkTarget = LinkTarget;
-exports.LinkTargetStringMap = LinkTargetStringMap;
 exports.MessageHandler = MessageHandler;
 exports.MissingDataException = MissingDataException;
 exports.MissingPDFException = MissingPDFException;
 exports.NotImplementedException = NotImplementedException;
+exports.PageViewport = PageViewport;
 exports.PasswordException = PasswordException;
 exports.PasswordResponses = PasswordResponses;
 exports.StatTimer = StatTimer;
@@ -2426,29 +2328,32 @@ exports.arraysToBytes = arraysToBytes;
 exports.assert = assert;
 exports.bytesToString = bytesToString;
 exports.combineUrl = combineUrl;
+exports.createBlob = createBlob;
 exports.createPromiseCapability = createPromiseCapability;
+exports.createObjectURL = createObjectURL;
 exports.deprecated = deprecated;
 exports.error = error;
-exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.getLookupTableFactory = getLookupTableFactory;
+exports.getVerbosityLevel = getVerbosityLevel;
+exports.globalScope = globalScope;
 exports.info = info;
 exports.isArray = isArray;
 exports.isArrayBuffer = isArrayBuffer;
 exports.isBool = isBool;
 exports.isEmptyObj = isEmptyObj;
-exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
 exports.isInt = isInt;
 exports.isNum = isNum;
 exports.isString = isString;
 exports.isSameOrigin = isSameOrigin;
 exports.isValidUrl = isValidUrl;
-exports.addLinkAttributes = addLinkAttributes;
+exports.isLittleEndian = isLittleEndian;
 exports.loadJpegStream = loadJpegStream;
 exports.log2 = log2;
 exports.readInt8 = readInt8;
 exports.readUint16 = readUint16;
 exports.readUint32 = readUint32;
 exports.removeNullCharacters = removeNullCharacters;
+exports.setVerbosityLevel = setVerbosityLevel;
 exports.shadow = shadow;
 exports.string32 = string32;
 exports.stringToBytes = stringToBytes;

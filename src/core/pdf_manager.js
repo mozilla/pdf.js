@@ -110,8 +110,9 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 })();
 
 var LocalPdfManager = (function LocalPdfManagerClosure() {
-  function LocalPdfManager(docId, data, password) {
+  function LocalPdfManager(docId, data, password, evaluatorOptions) {
     this._docId = docId;
+    this.evaluatorOptions = evaluatorOptions;
     var stream = new Stream(data);
     this.pdfDocument = new PDFDocument(this, stream, password);
     this._loadedStreamCapability = createPromiseCapability();
@@ -157,9 +158,10 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 })();
 
 var NetworkPdfManager = (function NetworkPdfManagerClosure() {
-  function NetworkPdfManager(docId, pdfNetworkStream, args) {
+  function NetworkPdfManager(docId, pdfNetworkStream, args, evaluatorOptions) {
     this._docId = docId;
     this.msgHandler = args.msgHandler;
+    this.evaluatorOptions = evaluatorOptions;
 
     var params = {
       msgHandler: args.msgHandler,

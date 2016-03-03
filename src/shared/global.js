@@ -12,23 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals global, pdfjsVersion, pdfjsBuild */
+/* globals pdfjsVersion, pdfjsBuild */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/shared/global', ['exports'], factory);
+    define('pdfjs/shared/global', ['exports', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports);
+    factory(exports, require('./util.js'));
   } else {
-    factory((root.pdfjsSharedGlobal = {}));
+    factory((root.pdfjsSharedGlobal = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports) {
+}(this, function (exports, sharedUtil) {
 
-  var globalScope = (typeof window !== 'undefined') ? window :
-                    (typeof global !== 'undefined') ? global :
-                    (typeof self !== 'undefined') ? self : this;
+  var globalScope = sharedUtil.globalScope;
 
   var isWorker = (typeof window === 'undefined');
 
@@ -38,15 +36,48 @@
   if (!globalScope.PDFJS) {
     globalScope.PDFJS = {};
   }
+  var PDFJS = globalScope.PDFJS;
 
   if (typeof pdfjsVersion !== 'undefined') {
-    globalScope.PDFJS.version = pdfjsVersion;
+    PDFJS.version = pdfjsVersion;
   }
-  if (typeof pdfjsVersion !== 'undefined') {
-    globalScope.PDFJS.build = pdfjsBuild;
+  if (typeof pdfjsBuild !== 'undefined') {
+    PDFJS.build = pdfjsBuild;
   }
 
-  globalScope.PDFJS.pdfBug = false;
+  PDFJS.pdfBug = false;
+
+  if (PDFJS.verbosity !== undefined) {
+    sharedUtil.setVerbosityLevel(PDFJS.verbosity);
+  }
+
+  PDFJS.VERBOSITY_LEVELS = sharedUtil.VERBOSITY_LEVELS;
+  PDFJS.OPS = sharedUtil.OPS;
+  PDFJS.UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
+  PDFJS.isValidUrl = sharedUtil.isValidUrl;
+  PDFJS.shadow = sharedUtil.shadow;
+  PDFJS.createBlob = sharedUtil.createBlob;
+  PDFJS.createObjectURL = function PDFJS_createObjectURL(data, contentType) {
+    return sharedUtil.createObjectURL(data, contentType,
+                                      PDFJS.disableCreateObjectURL);
+  };
+  Object.defineProperty(PDFJS, 'isLittleEndian', {
+    configurable: true,
+    get: function PDFJS_isLittleEndian() {
+      var value = sharedUtil.isLittleEndian();
+      return sharedUtil.shadow(PDFJS, 'isLittleEndian', value);
+    }
+  });
+  PDFJS.removeNullCharacters = sharedUtil.removeNullCharacters;
+  PDFJS.PasswordResponses = sharedUtil.PasswordResponses;
+  PDFJS.PasswordException = sharedUtil.PasswordException;
+  PDFJS.UnknownErrorException = sharedUtil.UnknownErrorException;
+  PDFJS.InvalidPDFException = sharedUtil.InvalidPDFException;
+  PDFJS.MissingPDFException = sharedUtil.MissingPDFException;
+  PDFJS.UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
+  PDFJS.Util = sharedUtil.Util;
+  PDFJS.PageViewport = sharedUtil.PageViewport;
+  PDFJS.createPromiseCapability = sharedUtil.createPromiseCapability;
 
   exports.globalScope = globalScope;
   exports.isWorker = isWorker;

@@ -20,18 +20,20 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/api', ['exports', 'pdfjs/shared/util',
       'pdfjs/display/font_loader', 'pdfjs/display/canvas',
-      'pdfjs/display/metadata', 'pdfjs/shared/global', 'require'], factory);
+      'pdfjs/display/metadata', 'pdfjs/display/dom_utils',
+      'pdfjs/shared/global', 'require'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./font_loader.js'),
       require('./canvas.js'), require('./metadata.js'),
-      require('../shared/global.js'));
+      require('./dom_utils.js'), require('../shared/global.js'));
   } else {
     factory((root.pdfjsDisplayAPI = {}), root.pdfjsSharedUtil,
       root.pdfjsDisplayFontLoader, root.pdfjsDisplayCanvas,
-      root.pdfjsDisplayMetadata, root.pdfjsSharedGlobal);
+      root.pdfjsDisplayMetadata, root.pdfjsDisplayDOMUtils,
+      root.pdfjsSharedGlobal);
   }
 }(this, function (exports, sharedUtil, displayFontLoader, displayCanvas,
-                  displayMetadata, sharedGlobal, amdRequire) {
+                  displayMetadata, displayDOMUtils, sharedGlobal, amdRequire) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MessageHandler = sharedUtil.MessageHandler;

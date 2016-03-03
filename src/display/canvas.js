@@ -19,15 +19,18 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/canvas', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/pattern_helper', 'pdfjs/display/webgl'], factory);
+      'pdfjs/display/dom_utils', 'pdfjs/display/pattern_helper',
+      'pdfjs/display/webgl'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'),
+    factory(exports, require('../shared/util.js'), require('./dom_utils.js'),
       require('./pattern_helper.js'), require('./webgl.js'));
   } else {
     factory((root.pdfjsDisplayCanvas = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayPatternHelper, root.pdfjsDisplayWebGL);
+      root.pdfjsDisplayDOMUtils, root.pdfjsDisplayPatternHelper,
+      root.pdfjsDisplayWebGL);
   }
-}(this, function (exports, sharedUtil, displayPatternHelper, displayWebGL) {
+}(this, function (exports, sharedUtil, displayDOMUtils, displayPatternHelper,
+                  displayWebGL) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;

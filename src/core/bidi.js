@@ -17,17 +17,14 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/bidi', ['exports', 'pdfjs/shared/global'], factory);
+    define('pdfjs/core/bidi', ['exports'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/global.js'));
+    factory(exports);
   } else {
-    factory((root.pdfjsCoreBidi = {}), root.pdfjsSharedGlobal);
+    factory((root.pdfjsCoreBidi = {}));
   }
-}(this, function (exports, sharedGlobal) {
+}(this, function (exports) {
 
-var PDFJS = sharedGlobal.PDFJS;
-
-var bidi = PDFJS.bidi = (function bidiClosure() {
   // Character types for symbols from 0000 to 00FF.
   var baseTypes = [
     'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'S', 'B', 'S', 'WS',
@@ -429,9 +426,6 @@ var bidi = PDFJS.bidi = (function bidiClosure() {
     }
     return createBidiText(chars.join(''), isLTR);
   }
-
-  return bidi;
-})();
 
 exports.bidi = bidi;
 }));

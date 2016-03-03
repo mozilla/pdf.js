@@ -12,20 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
 
 'use strict';
 
 //#if (GENERIC || SINGLE_FILE)
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util'], factory);
+    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/global'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
+    factory(exports, require('../shared/util.js'), require('./global.js'));
   } else {
-    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil);
+    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayGlobal);
   }
-}(this, function (exports, sharedUtil) {
+}(this, function (exports, sharedUtil, displayGlobal) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
@@ -35,6 +36,7 @@ var Util = sharedUtil.Util;
 var isNum = sharedUtil.isNum;
 var isArray = sharedUtil.isArray;
 var warn = sharedUtil.warn;
+var PDFJS = displayGlobal.PDFJS;
 
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
