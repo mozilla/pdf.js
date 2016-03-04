@@ -1357,7 +1357,7 @@ target.mozcentralbaseline = function() {
   if (test('-d', 'build')) {
     rm('-rf', 'build');
   }
-  exec('node make mozcentral');
+  exec('gulp mozcentral');
 
   cd(ROOT_DIR);
   mkdir(MOZCENTRAL_BASELINE_DIR);
@@ -1391,7 +1391,7 @@ target.mozcentraldiff = function() {
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
   if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
     echo('mozcentral baseline was not found');
-    echo('Please build one using "node make mozcentralbaseline"');
+    echo('Please build one using "gulp mozcentralbaseline"');
     exit(1);
   }
   cd(MOZCENTRAL_BASELINE_DIR);
@@ -1432,7 +1432,7 @@ target.mozcentralcheck = function() {
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
   if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
     echo('mozcentral baseline was not found');
-    echo('Please build one using "node make mozcentralbaseline"');
+    echo('Please build one using "gulp mozcentralbaseline"');
     exit(1);
   }
   cd(MOZCENTRAL_BASELINE_DIR);

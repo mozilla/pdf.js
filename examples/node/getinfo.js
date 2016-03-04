@@ -4,7 +4,7 @@
 //
 // Basic node example that prints document metadata and text content.
 // Requires single file built version of PDF.js -- please run
-// `node make singlefile` before running the example.
+// `gulp singlefile` before running the example.
 //
 
 var fs = require('fs');
@@ -12,7 +12,7 @@ var fs = require('fs');
 // HACK adding DOMParser to read XMP metadata.
 global.DOMParser = require('./domparsermock.js').DOMParserMock;
 
-// Run `node make dist` to generate 'pdfjs-dist' npm package files.
+// Run `gulp dist` to generate 'pdfjs-dist' npm package files.
 require('../../build/dist');
 
 // Loading file from file system into typed array
