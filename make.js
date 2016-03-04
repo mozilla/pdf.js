@@ -1477,15 +1477,8 @@ target.mozcentralcheck = function() {
 //
 // make server
 //
-target.server = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Starting local server');
-
-  var WebServer = require('./test/webserver.js').WebServer;
-  var server = new WebServer();
-  server.port = 8888;
-  server.start();
+target.server = function () {
+  exit(exec('gulp server'));
 };
 
 //
@@ -1529,15 +1522,8 @@ target.clean = function() {
 //
 // make makefile
 //
-target.makefile = function() {
-  var makefileContent = 'help:\n\tnode make\n\n';
-  var targetsNames = [];
-  for (var i in target) {
-    makefileContent += i + ':\n\tnode make ' + i + '\n\n';
-    targetsNames.push(i);
-  }
-  makefileContent += '.PHONY: ' + targetsNames.join(' ') + '\n';
-  makefileContent.to('Makefile');
+target.makefile = function () {
+  exit(exec('gulp makefile'));
 };
 
 //
