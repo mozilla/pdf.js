@@ -36,8 +36,10 @@ var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
 function configure(PDFJS) {
   PDFJS.imageResourcesPath = './images/';
-//#if (FIREFOX || MOZCENTRAL || GENERIC || CHROME)
+//#if (FIREFOX || MOZCENTRAL || GENERIC || CHROME) && !(MINIFIED)
 //PDFJS.workerSrc = '../build/pdf.worker.js';
+//#elif (FIREFOX || MOZCENTRAL || GENERIC || CHROME) && (MINIFIED)
+//PDFJS.workerSrc = '../build/pdf.worker.min.js';
 //#endif
 //#if !PRODUCTION
   PDFJS.cMapUrl = '../external/bcmaps/';
