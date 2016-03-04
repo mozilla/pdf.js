@@ -2,6 +2,8 @@
   "name": "pdf.js",
   "version": "0.8.0",
   "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-util": "^3.0.7",
     "jsdoc": "^3.3.0-alpha9",
     "jshint": "~2.8.0",
     "node-ensure": "^0.0.0",
@@ -14,7 +16,7 @@
     "yargs": "^3.14.0"
   },
   "scripts": {
-    "test": "node make lint"
+    "test": "gulp lint"
   },
   "repository": {
     "type": "git",
