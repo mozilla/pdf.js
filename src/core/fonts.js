@@ -3637,231 +3637,236 @@ var CFFStandardStrings = [
 ];
 
 // Type1Font is also a CIDFontType0.
-var Type1Font = function Type1Font(name, file, properties) {
-  // Some bad generators embed pfb file as is, we have to strip 6-byte headers.
-  // Also, length1 and length2 might be off by 6 bytes as well.
-  // http://www.math.ubc.ca/~cass/piscript/type1.pdf
-  var PFB_HEADER_SIZE = 6;
-  var headerBlockLength = properties.length1;
-  var eexecBlockLength = properties.length2;
-  var pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
-  var pfbHeaderPresent = pfbHeader[0] === 0x80 && pfbHeader[1] === 0x01;
-  if (pfbHeaderPresent) {
-    file.skip(PFB_HEADER_SIZE);
-    headerBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
-                        (pfbHeader[3] << 8) | pfbHeader[2];
-  }
-
-  // Get the data block containing glyphs and subrs informations
-  var headerBlock = new Stream(file.getBytes(headerBlockLength));
-  var headerBlockParser = new Type1Parser(headerBlock);
-  headerBlockParser.extractFontHeader(properties);
-
-  if (pfbHeaderPresent) {
-    pfbHeader = file.getBytes(PFB_HEADER_SIZE);
-    eexecBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
-                       (pfbHeader[3] << 8) | pfbHeader[2];
-  }
-
-  // Decrypt the data blocks and retrieve it's content
-  var eexecBlock = new Stream(file.getBytes(eexecBlockLength));
-  var eexecBlockParser = new Type1Parser(eexecBlock, true);
-  var data = eexecBlockParser.extractFontProgram();
-  for (var info in data.properties) {
-    properties[info] = data.properties[info];
-  }
-
-  var charstrings = data.charstrings;
-  var type2Charstrings = this.getType2Charstrings(charstrings);
-  var subrs = this.getType2Subrs(data.subrs);
-
-  this.charstrings = charstrings;
-  this.data = this.wrap(name, type2Charstrings, this.charstrings,
-                        subrs, properties);
-  this.seacs = this.getSeacs(data.charstrings);
-};
-
-Type1Font.prototype = {
-  get numGlyphs() {
-    return this.charstrings.length + 1;
-  },
-
-  getCharset: function Type1Font_getCharset() {
-    var charset = ['.notdef'];
-    var charstrings = this.charstrings;
-    for (var glyphId = 0; glyphId < charstrings.length; glyphId++) {
-      charset.push(charstrings[glyphId].glyphName);
+var Type1Font = (function Type1FontClosure() {
+  function Type1Font(name, file, properties) {
+    // Some bad generators embed pfb file as is, we have to strip 6-byte header.
+    // Also, length1 and length2 might be off by 6 bytes as well.
+    // http://www.math.ubc.ca/~cass/piscript/type1.pdf
+    var PFB_HEADER_SIZE = 6;
+    var headerBlockLength = properties.length1;
+    var eexecBlockLength = properties.length2;
+    var pfbHeader = file.peekBytes(PFB_HEADER_SIZE);
+    var pfbHeaderPresent = pfbHeader[0] === 0x80 && pfbHeader[1] === 0x01;
+    if (pfbHeaderPresent) {
+      file.skip(PFB_HEADER_SIZE);
+      headerBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
+                          (pfbHeader[3] << 8) | pfbHeader[2];
     }
-    return charset;
-  },
 
-  getGlyphMapping: function Type1Font_getGlyphMapping(properties) {
-    var charstrings = this.charstrings;
-    var glyphNames = ['.notdef'], glyphId;
-    for (glyphId = 0; glyphId < charstrings.length; glyphId++) {
-      glyphNames.push(charstrings[glyphId].glyphName);
+    // Get the data block containing glyphs and subrs informations
+    var headerBlock = new Stream(file.getBytes(headerBlockLength));
+    var headerBlockParser = new Type1Parser(headerBlock);
+    headerBlockParser.extractFontHeader(properties);
+
+    if (pfbHeaderPresent) {
+      pfbHeader = file.getBytes(PFB_HEADER_SIZE);
+      eexecBlockLength = (pfbHeader[5] << 24) | (pfbHeader[4] << 16) |
+                         (pfbHeader[3] << 8) | pfbHeader[2];
     }
-    var encoding = properties.builtInEncoding;
-    if (encoding) {
-      var builtInEncoding = Object.create(null);
-      for (var charCode in encoding) {
-        glyphId = glyphNames.indexOf(encoding[charCode]);
-        if (glyphId >= 0) {
-          builtInEncoding[charCode] = glyphId;
+
+    // Decrypt the data blocks and retrieve it's content
+    var eexecBlock = new Stream(file.getBytes(eexecBlockLength));
+    var eexecBlockParser = new Type1Parser(eexecBlock, true);
+    var data = eexecBlockParser.extractFontProgram();
+    for (var info in data.properties) {
+      properties[info] = data.properties[info];
+    }
+
+    var charstrings = data.charstrings;
+    var type2Charstrings = this.getType2Charstrings(charstrings);
+    var subrs = this.getType2Subrs(data.subrs);
+
+    this.charstrings = charstrings;
+    this.data = this.wrap(name, type2Charstrings, this.charstrings,
+                          subrs, properties);
+    this.seacs = this.getSeacs(data.charstrings);
+  }
+
+  Type1Font.prototype = {
+    get numGlyphs() {
+      return this.charstrings.length + 1;
+    },
+
+    getCharset: function Type1Font_getCharset() {
+      var charset = ['.notdef'];
+      var charstrings = this.charstrings;
+      for (var glyphId = 0; glyphId < charstrings.length; glyphId++) {
+        charset.push(charstrings[glyphId].glyphName);
+      }
+      return charset;
+    },
+
+    getGlyphMapping: function Type1Font_getGlyphMapping(properties) {
+      var charstrings = this.charstrings;
+      var glyphNames = ['.notdef'], glyphId;
+      for (glyphId = 0; glyphId < charstrings.length; glyphId++) {
+        glyphNames.push(charstrings[glyphId].glyphName);
+      }
+      var encoding = properties.builtInEncoding;
+      if (encoding) {
+        var builtInEncoding = Object.create(null);
+        for (var charCode in encoding) {
+          glyphId = glyphNames.indexOf(encoding[charCode]);
+          if (glyphId >= 0) {
+            builtInEncoding[charCode] = glyphId;
+          }
         }
       }
-    }
 
-    return type1FontGlyphMapping(properties, builtInEncoding, glyphNames);
-  },
+      return type1FontGlyphMapping(properties, builtInEncoding, glyphNames);
+    },
 
-  getSeacs: function Type1Font_getSeacs(charstrings) {
-    var i, ii;
-    var seacMap = [];
-    for (i = 0, ii = charstrings.length; i < ii; i++) {
-      var charstring = charstrings[i];
-      if (charstring.seac) {
-        // Offset by 1 for .notdef
-        seacMap[i + 1] = charstring.seac;
-      }
-    }
-    return seacMap;
-  },
-
-  getType2Charstrings: function Type1Font_getType2Charstrings(
-                                  type1Charstrings) {
-    var type2Charstrings = [];
-    for (var i = 0, ii = type1Charstrings.length; i < ii; i++) {
-      type2Charstrings.push(type1Charstrings[i].charstring);
-    }
-    return type2Charstrings;
-  },
-
-  getType2Subrs: function Type1Font_getType2Subrs(type1Subrs) {
-    var bias = 0;
-    var count = type1Subrs.length;
-    if (count < 1133) {
-      bias = 107;
-    } else if (count < 33769) {
-      bias = 1131;
-    } else {
-      bias = 32768;
-    }
-
-    // Add a bunch of empty subrs to deal with the Type2 bias
-    var type2Subrs = [];
-    var i;
-    for (i = 0; i < bias; i++) {
-      type2Subrs.push([0x0B]);
-    }
-
-    for (i = 0; i < count; i++) {
-      type2Subrs.push(type1Subrs[i]);
-    }
-
-    return type2Subrs;
-  },
-
-  wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs, properties) {
-    var cff = new CFF();
-    cff.header = new CFFHeader(1, 0, 4, 4);
-
-    cff.names = [name];
-
-    var topDict = new CFFTopDict();
-    // CFF strings IDs 0...390 are predefined names, so refering
-    // to entries in our own String INDEX starts at SID 391.
-    topDict.setByName('version', 391);
-    topDict.setByName('Notice', 392);
-    topDict.setByName('FullName', 393);
-    topDict.setByName('FamilyName', 394);
-    topDict.setByName('Weight', 395);
-    topDict.setByName('Encoding', null); // placeholder
-    topDict.setByName('FontMatrix', properties.fontMatrix);
-    topDict.setByName('FontBBox', properties.bbox);
-    topDict.setByName('charset', null); // placeholder
-    topDict.setByName('CharStrings', null); // placeholder
-    topDict.setByName('Private', null); // placeholder
-    cff.topDict = topDict;
-
-    var strings = new CFFStrings();
-    strings.add('Version 0.11'); // Version
-    strings.add('See original notice'); // Notice
-    strings.add(name); // FullName
-    strings.add(name); // FamilyName
-    strings.add('Medium'); // Weight
-    cff.strings = strings;
-
-    cff.globalSubrIndex = new CFFIndex();
-
-    var count = glyphs.length;
-    var charsetArray = [0];
-    var i, ii;
-    for (i = 0; i < count; i++) {
-      var index = CFFStandardStrings.indexOf(charstrings[i].glyphName);
-      // TODO: Insert the string and correctly map it.  Previously it was
-      // thought mapping names that aren't in the standard strings to .notdef
-      // was fine, however in issue818 when mapping them all to .notdef the
-      // adieresis glyph no longer worked.
-      if (index === -1) {
-        index = 0;
-      }
-      charsetArray.push((index >> 8) & 0xff, index & 0xff);
-    }
-    cff.charset = new CFFCharset(false, 0, [], charsetArray);
-
-    var charStringsIndex = new CFFIndex();
-    charStringsIndex.add([0x8B, 0x0E]); // .notdef
-    for (i = 0; i < count; i++) {
-      charStringsIndex.add(glyphs[i]);
-    }
-    cff.charStrings = charStringsIndex;
-
-    var privateDict = new CFFPrivateDict();
-    privateDict.setByName('Subrs', null); // placeholder
-    var fields = [
-      'BlueValues',
-      'OtherBlues',
-      'FamilyBlues',
-      'FamilyOtherBlues',
-      'StemSnapH',
-      'StemSnapV',
-      'BlueShift',
-      'BlueFuzz',
-      'BlueScale',
-      'LanguageGroup',
-      'ExpansionFactor',
-      'ForceBold',
-      'StdHW',
-      'StdVW'
-    ];
-    for (i = 0, ii = fields.length; i < ii; i++) {
-      var field = fields[i];
-      if (!(field in properties.privateData)) {
-        continue;
-      }
-      var value = properties.privateData[field];
-      if (isArray(value)) {
-        // All of the private dictionary array data in CFF must be stored as
-        // "delta-encoded" numbers.
-        for (var j = value.length - 1; j > 0; j--) {
-          value[j] -= value[j - 1]; // ... difference from previous value
+    getSeacs: function Type1Font_getSeacs(charstrings) {
+      var i, ii;
+      var seacMap = [];
+      for (i = 0, ii = charstrings.length; i < ii; i++) {
+        var charstring = charstrings[i];
+        if (charstring.seac) {
+          // Offset by 1 for .notdef
+          seacMap[i + 1] = charstring.seac;
         }
       }
-      privateDict.setByName(field, value);
-    }
-    cff.topDict.privateDict = privateDict;
+      return seacMap;
+    },
 
-    var subrIndex = new CFFIndex();
-    for (i = 0, ii = subrs.length; i < ii; i++) {
-      subrIndex.add(subrs[i]);
-    }
-    privateDict.subrsIndex = subrIndex;
+    getType2Charstrings: function Type1Font_getType2Charstrings(
+                                    type1Charstrings) {
+      var type2Charstrings = [];
+      for (var i = 0, ii = type1Charstrings.length; i < ii; i++) {
+        type2Charstrings.push(type1Charstrings[i].charstring);
+      }
+      return type2Charstrings;
+    },
 
-    var compiler = new CFFCompiler(cff);
-    return compiler.compile();
-  }
-};
+    getType2Subrs: function Type1Font_getType2Subrs(type1Subrs) {
+      var bias = 0;
+      var count = type1Subrs.length;
+      if (count < 1133) {
+        bias = 107;
+      } else if (count < 33769) {
+        bias = 1131;
+      } else {
+        bias = 32768;
+      }
+
+      // Add a bunch of empty subrs to deal with the Type2 bias
+      var type2Subrs = [];
+      var i;
+      for (i = 0; i < bias; i++) {
+        type2Subrs.push([0x0B]);
+      }
+
+      for (i = 0; i < count; i++) {
+        type2Subrs.push(type1Subrs[i]);
+      }
+
+      return type2Subrs;
+    },
+
+    wrap: function Type1Font_wrap(name, glyphs, charstrings, subrs,
+                                  properties) {
+      var cff = new CFF();
+      cff.header = new CFFHeader(1, 0, 4, 4);
+
+      cff.names = [name];
+
+      var topDict = new CFFTopDict();
+      // CFF strings IDs 0...390 are predefined names, so refering
+      // to entries in our own String INDEX starts at SID 391.
+      topDict.setByName('version', 391);
+      topDict.setByName('Notice', 392);
+      topDict.setByName('FullName', 393);
+      topDict.setByName('FamilyName', 394);
+      topDict.setByName('Weight', 395);
+      topDict.setByName('Encoding', null); // placeholder
+      topDict.setByName('FontMatrix', properties.fontMatrix);
+      topDict.setByName('FontBBox', properties.bbox);
+      topDict.setByName('charset', null); // placeholder
+      topDict.setByName('CharStrings', null); // placeholder
+      topDict.setByName('Private', null); // placeholder
+      cff.topDict = topDict;
+
+      var strings = new CFFStrings();
+      strings.add('Version 0.11'); // Version
+      strings.add('See original notice'); // Notice
+      strings.add(name); // FullName
+      strings.add(name); // FamilyName
+      strings.add('Medium'); // Weight
+      cff.strings = strings;
+
+      cff.globalSubrIndex = new CFFIndex();
+
+      var count = glyphs.length;
+      var charsetArray = [0];
+      var i, ii;
+      for (i = 0; i < count; i++) {
+        var index = CFFStandardStrings.indexOf(charstrings[i].glyphName);
+        // TODO: Insert the string and correctly map it.  Previously it was
+        // thought mapping names that aren't in the standard strings to .notdef
+        // was fine, however in issue818 when mapping them all to .notdef the
+        // adieresis glyph no longer worked.
+        if (index === -1) {
+          index = 0;
+        }
+        charsetArray.push((index >> 8) & 0xff, index & 0xff);
+      }
+      cff.charset = new CFFCharset(false, 0, [], charsetArray);
+
+      var charStringsIndex = new CFFIndex();
+      charStringsIndex.add([0x8B, 0x0E]); // .notdef
+      for (i = 0; i < count; i++) {
+        charStringsIndex.add(glyphs[i]);
+      }
+      cff.charStrings = charStringsIndex;
+
+      var privateDict = new CFFPrivateDict();
+      privateDict.setByName('Subrs', null); // placeholder
+      var fields = [
+        'BlueValues',
+        'OtherBlues',
+        'FamilyBlues',
+        'FamilyOtherBlues',
+        'StemSnapH',
+        'StemSnapV',
+        'BlueShift',
+        'BlueFuzz',
+        'BlueScale',
+        'LanguageGroup',
+        'ExpansionFactor',
+        'ForceBold',
+        'StdHW',
+        'StdVW'
+      ];
+      for (i = 0, ii = fields.length; i < ii; i++) {
+        var field = fields[i];
+        if (!(field in properties.privateData)) {
+          continue;
+        }
+        var value = properties.privateData[field];
+        if (isArray(value)) {
+          // All of the private dictionary array data in CFF must be stored as
+          // "delta-encoded" numbers.
+          for (var j = value.length - 1; j > 0; j--) {
+            value[j] -= value[j - 1]; // ... difference from previous value
+          }
+        }
+        privateDict.setByName(field, value);
+      }
+      cff.topDict.privateDict = privateDict;
+
+      var subrIndex = new CFFIndex();
+      for (i = 0, ii = subrs.length; i < ii; i++) {
+        subrIndex.add(subrs[i]);
+      }
+      privateDict.subrsIndex = subrIndex;
+
+      var compiler = new CFFCompiler(cff);
+      return compiler.compile();
+    }
+  };
+
+  return Type1Font;
+})();
 
 var CFFFont = (function CFFFontClosure() {
   function CFFFont(file, properties) {
