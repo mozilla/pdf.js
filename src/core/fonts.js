@@ -54,6 +54,7 @@ var shadow = sharedUtil.shadow;
 var stringToBytes = sharedUtil.stringToBytes;
 var string32 = sharedUtil.string32;
 var warn = sharedUtil.warn;
+var MissingDataException = sharedUtil.MissingDataException;
 var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
@@ -3638,6 +3639,120 @@ var CFFStandardStrings = [
 
 // Type1Font is also a CIDFontType0.
 var Type1Font = (function Type1FontClosure() {
+  function findBlock(streamBytes, signature, startIndex) {
+    var streamBytesLength = streamBytes.length;
+    var signatureLength = signature.length;
+    var scanLength = streamBytesLength - signatureLength;
+
+    var i = startIndex, j, found = false;
+    while (i < scanLength) {
+      j = 0;
+      while (j < signatureLength && streamBytes[i + j] === signature[j]) {
+        j++;
+      }
+      if (j >= signatureLength) { // `signature` found, skip over whitespace.
+        i += j;
+        while (i < streamBytesLength && Lexer.isSpace(streamBytes[i])) {
+          i++;
+        }
+        found = true;
+        break;
+      }
+      i++;
+    }
+    return {
+      found: found,
+      length: i,
+    };
+  }
+
+  function getHeaderBlock(stream, suggestedLength) {
+    var EEXEC_SIGNATURE = [0x65, 0x65, 0x78, 0x65, 0x63];
+
+    var streamStartPos = stream.pos; // Save the initial stream position.
+    var headerBytes, headerBytesLength, block;
+    try {
+      headerBytes = stream.getBytes(suggestedLength);
+      headerBytesLength = headerBytes.length;
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      // Ignore errors if the `suggestedLength` is huge enough that a Uint8Array
+      // cannot hold the result of `getBytes`, and fallback to simply checking
+      // the entire stream (fixes issue3928.pdf).
+    }
+
+    if (headerBytesLength === suggestedLength) {
+      // Most of the time `suggestedLength` is correct, so to speed things up we
+      // initially only check the last few bytes to see if the header was found.
+      // Otherwise we (potentially) check the entire stream to prevent errors in
+      // `Type1Parser` (fixes issue5686.pdf).
+      block = findBlock(headerBytes, EEXEC_SIGNATURE,
+                        suggestedLength - 2 * EEXEC_SIGNATURE.length);
+
+      if (block.found && block.length === suggestedLength) {
+        return {
+          stream: new Stream(headerBytes),
+          length: suggestedLength,
+        };
+      }
+    }
+    warn('Invalid "Length1" property in Type1 font -- trying to recover.');
+    stream.pos = streamStartPos; // Reset the stream position.
+
+    var SCAN_BLOCK_LENGTH = 2048;
+    var actualLength;
+    while (true) {
+      var scanBytes = stream.peekBytes(SCAN_BLOCK_LENGTH);
+      block = findBlock(scanBytes, EEXEC_SIGNATURE, 0);
+
+      if (block.length === 0) {
+        break;
+      }
+      stream.pos += block.length; // Update the stream position.
+
+      if (block.found) {
+        actualLength = stream.pos - streamStartPos;
+        break;
+      }
+    }
+    stream.pos = streamStartPos; // Reset the stream position.
+
+    if (actualLength) {
+      return {
+        stream: new Stream(stream.getBytes(actualLength)),
+        length: actualLength,
+      };
+    }
+    warn('Unable to recover "Length1" property in Type1 font -- using as is.');
+    return {
+      stream: new Stream(stream.getBytes(suggestedLength)),
+      length: suggestedLength,
+    };
+  }
+
+  function getEexecBlock(stream, suggestedLength) {
+    // We should ideally parse the eexec block to ensure that `suggestedLength`
+    // is correct, so we don't truncate the block data if it's too small.
+    // However, this would also require checking if the fixed-content portion
+    // exists (using the 'Length3' property), and ensuring that it's valid.
+    //
+    // Given that `suggestedLength` almost always is correct, all the validation
+    // would require a great deal of unnecessary parsing for most fonts.
+    // To save time, we always fetch the entire stream instead, which also avoid
+    // issues if `suggestedLength` is huge (see comment in `getHeaderBlock`).
+    //
+    // NOTE: This means that the function can include the fixed-content portion
+    // in the returned eexec block. In practice this does *not* seem to matter,
+    // since `Type1Parser_extractFontProgram` will skip over any non-commands.
+    var eexecBytes = stream.getBytes();
+    return {
+      stream: new Stream(eexecBytes),
+      length: eexecBytes.length,
+    };
+  }
+
   function Type1Font(name, file, properties) {
     // Some bad generators embed pfb file as is, we have to strip 6-byte header.
     // Also, length1 and length2 might be off by 6 bytes as well.
@@ -3654,8 +3769,9 @@ var Type1Font = (function Type1FontClosure() {
     }
 
     // Get the data block containing glyphs and subrs informations
-    var headerBlock = new Stream(file.getBytes(headerBlockLength));
-    var headerBlockParser = new Type1Parser(headerBlock);
+    var headerBlock = getHeaderBlock(file, headerBlockLength);
+    headerBlockLength = headerBlock.length;
+    var headerBlockParser = new Type1Parser(headerBlock.stream);
     headerBlockParser.extractFontHeader(properties);
 
     if (pfbHeaderPresent) {
@@ -3665,8 +3781,9 @@ var Type1Font = (function Type1FontClosure() {
     }
 
     // Decrypt the data blocks and retrieve it's content
-    var eexecBlock = new Stream(file.getBytes(eexecBlockLength));
-    var eexecBlockParser = new Type1Parser(eexecBlock, true);
+    var eexecBlock = getEexecBlock(file, eexecBlockLength);
+    eexecBlockLength = eexecBlock.length;
+    var eexecBlockParser = new Type1Parser(eexecBlock.stream, true);
     var data = eexecBlockParser.extractFontProgram();
     for (var info in data.properties) {
       properties[info] = data.properties[info];

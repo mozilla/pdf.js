@@ -1443,6 +1443,22 @@
       "link": false,
       "type": "eq"
     },
+    {  "id": "issue5686",
+       "file": "pdfs/issue5686.pdf",
+       "md5": "78d16b9df07a355ad00d70504a9194f8",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "about": "Type1 font where Length1/Length2 are slightly incorrect."
+    },
+    {  "id": "issue3928",
+       "file": "pdfs/issue3928.pdf",
+       "md5": "1963493f843e981cbe768b707ef7f08a",
+       "rounds": 1,
+       "link": false,
+       "type": "eq",
+       "about": "Type1 font where Length1/Length2 are several orders of magnitude too large."
+    },
     {  "id": "html5checker",
       "file": "pdfs/html5checker.pdf",
       "md5": "74bbd80d1e7eb5f2951582233ef9ebab",

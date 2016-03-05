@@ -2197,6 +2197,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           }
           var length1 = fontFile.dict.get('Length1');
           var length2 = fontFile.dict.get('Length2');
+          var length3 = fontFile.dict.get('Length3');
         }
       }
 
@@ -2207,6 +2208,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         file: fontFile,
         length1: length1,
         length2: length2,
+        length3: length3,
         loadedName: baseDict.loadedName,
         composite: composite,
         wideChars: composite,
