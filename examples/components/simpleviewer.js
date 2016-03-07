@@ -17,7 +17,7 @@
 
 if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
   alert('Please build the library and components using\n' +
-        '  `node make generic components`');
+        '  `gulp generic components`');
 }
 
 // The workerSrc property shall be specified.

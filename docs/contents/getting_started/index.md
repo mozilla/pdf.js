@@ -107,7 +107,7 @@ $ cd pdf.js
 
 ## Trying the Viewer
 
-With the prebuilt or source version open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `node make server`.
+With the prebuilt or source version open `web/viewer.html` in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you're using the source build and have node, you can run `gulp server`.
 
 ## More Information
 

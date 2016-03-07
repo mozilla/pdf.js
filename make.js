@@ -1357,7 +1357,7 @@ target.mozcentralbaseline = function() {
   if (test('-d', 'build')) {
     rm('-rf', 'build');
   }
-  exec('node make mozcentral');
+  exec('gulp mozcentral');
 
   cd(ROOT_DIR);
   mkdir(MOZCENTRAL_BASELINE_DIR);
@@ -1391,7 +1391,7 @@ target.mozcentraldiff = function() {
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
   if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
     echo('mozcentral baseline was not found');
-    echo('Please build one using "node make mozcentralbaseline"');
+    echo('Please build one using "gulp mozcentralbaseline"');
     exit(1);
   }
   cd(MOZCENTRAL_BASELINE_DIR);
@@ -1432,7 +1432,7 @@ target.mozcentralcheck = function() {
   var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
   if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
     echo('mozcentral baseline was not found');
-    echo('Please build one using "node make mozcentralbaseline"');
+    echo('Please build one using "gulp mozcentralbaseline"');
     exit(1);
   }
   cd(MOZCENTRAL_BASELINE_DIR);
@@ -1512,11 +1512,7 @@ target.lint = function() {
 // make clean
 //
 target.clean = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Cleaning up project builds');
-
-  rm('-rf', BUILD_DIR);
+  exit(exec('gulp clean'));
 };
 
 //
@@ -1530,17 +1526,5 @@ target.makefile = function () {
 //make importl10n
 //
 target.importl10n = function() {
-  var locales = require('./external/importL10n/locales.js');
-  var LOCAL_L10N_DIR = 'l10n';
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Importing translations from mozilla-aurora');
-
-  if (!test('-d', LOCAL_L10N_DIR)) {
-    mkdir(LOCAL_L10N_DIR);
-  }
-  cd(LOCAL_L10N_DIR);
-
-  locales.downloadL10n();
+  exit(exec('gulp importl10n'));
 };

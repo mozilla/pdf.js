@@ -17,9 +17,14 @@
 
 'use strict';
 
+var fs = require('fs');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var rimraf = require('rimraf');
 var stream = require('stream');
+
+var BUILD_DIR = 'build/';
+var L10N_DIR = 'l10n/';
 
 require('./make.js');
 
@@ -56,6 +61,13 @@ gulp.task('server', function () {
   server.start();
 });
 
+gulp.task('clean', function(callback) {
+  console.log();
+  console.log('### Cleaning up project builds');
+
+  rimraf(BUILD_DIR, callback);
+});
+
 gulp.task('makefile', function () {
   var makefileContent = 'help:\n\tgulp\n\n';
   var targetsNames = [];
@@ -66,6 +78,18 @@ gulp.task('makefile', function () {
   makefileContent += '.PHONY: ' + targetsNames.join(' ') + '\n';
   return createStringSource('Makefile', makefileContent)
     .pipe(gulp.dest('.'));
+});
+
+gulp.task('importl10n', function() {
+  var locales = require('./external/importL10n/locales.js');
+
+  console.log();
+  console.log('### Importing translations from mozilla-aurora');
+
+  if (!fs.existsSync(L10N_DIR)) {
+    fs.mkdirSync(L10N_DIR);
+  }
+  locales.downloadL10n(L10N_DIR);
 });
 
 // Getting all shelljs registered tasks and register them with gulp

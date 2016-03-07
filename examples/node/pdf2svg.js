@@ -10,7 +10,7 @@ var fs = require('fs');
 // HACK few hacks to let PDF.js be loaded not as a module in global space.
 require('./domstubs.js');
 
-// Run `node make dist` to generate 'pdfjs-dist' npm package files.
+// Run `gulp dist` to generate 'pdfjs-dist' npm package files.
 require('../../build/dist');
 
 // Loading file from file system into typed array
