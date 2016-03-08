@@ -1000,7 +1000,7 @@ var CMapFactory = (function CMapFactoryClosure() {
       var request = new XMLHttpRequest();
       request.onreadystatechange = function () {
         if (request.readyState === XMLHttpRequest.DONE) {
-          if (request.status === 200) {
+          if (/^https?:/i.test(url) && request.status !== 0) {
             var cMap = new CMap(true);
             var lexer = new Lexer(new StringStream(request.responseText));
             parseCMap(cMap, lexer, builtInCMapParams, null);
