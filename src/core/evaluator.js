@@ -249,8 +249,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
       return this.getOperatorList(xobj, task,
-        (xobj.dict.get('Resources') || resources),
-        operatorList, initialState).then(function () {
+        (xobj.dict.get('Resources') || resources), operatorList, initialState).
+        then(function () {
           operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
           if (group) {
@@ -341,7 +341,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       PDFImage.buildImage(self.handler, self.xref,
-      resources, image, inline).then(function(imageObj) {
+      resources, image, inline).
+      then(function(imageObj) {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
         self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
@@ -426,8 +427,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!translated.font.isType3Font) {
           return translated;
         }
-        return translated.loadType3Data(self, resources,
-                                        operatorList, task).then(function () {
+        return translated.loadType3Data(self, resources, operatorList, task).
+          then(function () {
           return translated;
         }, function (reason) {
           // Error in the font data -- sending unsupported feature notification.
@@ -504,8 +505,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           case 'Font':
             promise = promise.then(function () {
               return self.handleSetFont(resources, null, value[0], operatorList,
-                                        task, stateManager.state).then(
-                    function (loadedName) {
+                                        task, stateManager.state).
+                then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   gStateObj.push([key, [loadedName, value[1]]]);
                 });
@@ -799,8 +800,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   stateManager.save();
                   return self.buildFormXObject(resources, xobj, null,
                                                operatorList, task,
-                                               stateManager.state.clone()).then(
-                        function () {
+                                               stateManager.state.clone()).
+                    then(function () {
                       stateManager.restore();
                       next(resolve, reject);
                     }, reject);
@@ -823,8 +824,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var fontSize = args[1];
               // eagerly collect all fonts
               return self.handleSetFont(resources, args, null, operatorList,
-                                        task, stateManager.state).then(
-                    function (loadedName) {
+                                        task, stateManager.state).
+                 then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
                   next(resolve, reject);
@@ -1184,8 +1185,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       function handleSetFont(fontName, fontRef) {
-        return self.loadFont(fontName, fontRef, xref, resources).then(
-          function (translated) {
+        return self.loadFont(fontName, fontRef, xref, resources).
+          then(function (translated) {
             textState.font = translated.font;
             textState.fontMatrix = translated.font.fontMatrix ||
               FONT_IDENTITY_MATRIX;
@@ -1650,7 +1651,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           { url: PDFJS.cMapUrl, packed: PDFJS.cMapPacked }, null).then(
             function (cmap) {
           if (cmap instanceof IdentityCMap) {
-            return Promise.resove(new IdentityToUnicodeMap(0, 0xFFFF));
+            return new IdentityToUnicodeMap(0, 0xFFFF);
           }
         return new ToUnicodeMap(cmap.getMap());
         });
