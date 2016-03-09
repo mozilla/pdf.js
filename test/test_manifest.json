@@ -2823,5 +2823,13 @@
        "rounds": 1,
        "lastPage": 1,
        "type": "load"
+    },
+    {  "id": "zero_descent",
+       "file": "pdfs/zero_descent.pdf",
+       "md5": "32805ab28be1d0e91d27d9742c66eccf",
+       "link": false,
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "text"
     }
 ]
