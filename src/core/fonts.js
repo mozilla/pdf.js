@@ -466,7 +466,7 @@ var ProblematicCharRanges = new Int32Array([
  */
 var Font = (function FontClosure() {
   function Font(name, file, properties) {
-    var charCode, glyphName, unicode, fontChar;
+    var charCode, glyphName, unicode;
 
     this.name = name;
     this.loadedName = properties.loadedName;
@@ -572,53 +572,19 @@ var Font = (function FontClosure() {
         this.toFontChar = map;
         this.toUnicode = new ToUnicodeMap(map);
       } else if (/Symbol/i.test(fontName)) {
-        var symbols = SymbolSetEncoding;
-        glyphsUnicodeMap = getGlyphsUnicode();
-        for (charCode in symbols) {
-          fontChar = glyphsUnicodeMap[symbols[charCode]];
-          if (!fontChar) {
-            continue;
-          }
-          this.toFontChar[charCode] = fontChar;
-        }
-        for (charCode in properties.differences) {
-          fontChar = glyphsUnicodeMap[properties.differences[charCode]];
-          if (!fontChar) {
-            continue;
-          }
-          this.toFontChar[charCode] = fontChar;
-        }
+        this.toFontChar = buildToFontChar(SymbolSetEncoding, getGlyphsUnicode(),
+                                          properties.differences);
       } else if (/Dingbats/i.test(fontName)) {
-        glyphsUnicodeMap = getDingbatsGlyphsUnicode();
         if (/Wingdings/i.test(name)) {
-          warn('Wingdings font without embedded font file, ' +
-               'falling back to the ZapfDingbats encoding.');
+          warn('Non-embedded Wingdings font, falling back to ZapfDingbats.');
         }
-        var dingbats = ZapfDingbatsEncoding;
-        for (charCode in dingbats) {
-          fontChar = glyphsUnicodeMap[dingbats[charCode]];
-          if (!fontChar) {
-            continue;
-          }
-          this.toFontChar[charCode] = fontChar;
-        }
-        for (charCode in properties.differences) {
-          fontChar = glyphsUnicodeMap[properties.differences[charCode]];
-          if (!fontChar) {
-            continue;
-          }
-          this.toFontChar[charCode] = fontChar;
-        }
+        this.toFontChar = buildToFontChar(ZapfDingbatsEncoding,
+                                          getDingbatsGlyphsUnicode(),
+                                          properties.differences);
       } else if (isStandardFont) {
-        glyphsUnicodeMap = getGlyphsUnicode();
-        for (charCode in properties.defaultEncoding) {
-          glyphName = (properties.differences[charCode] ||
-                       properties.defaultEncoding[charCode]);
-          unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
-          if (unicode !== -1) {
-            this.toFontChar[charCode] = unicode;
-          }
-        }
+        this.toFontChar = buildToFontChar(properties.defaultEncoding,
+                                          getGlyphsUnicode(),
+                                          properties.differences);
       } else {
         glyphsUnicodeMap = getGlyphsUnicode();
         this.toUnicode.forEach(function(charCode, unicodeCharCode) {
@@ -769,6 +735,23 @@ var Font = (function FontClosure() {
       return true;
     }
     return false;
+  }
+
+  function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
+    var toFontChar = [], unicode;
+    for (var i = 0, ii = encoding.length; i < ii; i++) {
+      unicode = getUnicodeForGlyph(encoding[i], glyphsUnicodeMap);
+      if (unicode !== -1) {
+        toFontChar[i] = unicode;
+      }
+    }
+    for (var charCode in differences) {
+      unicode = getUnicodeForGlyph(differences[charCode], glyphsUnicodeMap);
+      if (unicode !== -1) {
+        toFontChar[+charCode] = unicode;
+      }
+    }
+    return toFontChar;
   }
 
   /**
