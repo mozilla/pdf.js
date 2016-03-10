@@ -65,6 +65,36 @@
     return code;
   }
 
+  function getUnicodeForGlyph(name, glyphsUnicodeMap) {
+    var unicode = glyphsUnicodeMap[name];
+    if (unicode !== undefined) {
+      return unicode;
+    }
+    if (!name) {
+      return -1;
+    }
+    // Try to recover valid Unicode values from 'uniXXXX'/'uXXXX{XX}' glyphs.
+    if (name[0] === 'u') {
+      var nameLen = name.length, hexStr;
+
+      if (nameLen === 7 && name[1] === 'n' && name[2] === 'i') { // 'uniXXXX'
+        hexStr = name.substr(3);
+      } else if (nameLen >= 5 && nameLen <= 7) { // 'uXXXX{XX}'
+        hexStr = name.substr(1);
+      } else {
+        return -1;
+      }
+      // Check for upper-case hexadecimal characters, to avoid false positives.
+      if (hexStr === hexStr.toUpperCase()) {
+        unicode = parseInt(hexStr, 16);
+        if (unicode >= 0) {
+          return unicode;
+        }
+      }
+    }
+    return -1;
+  }
+
   var UnicodeRanges = [
     { 'begin': 0x0000, 'end': 0x007F }, // Basic Latin
     { 'begin': 0x0080, 'end': 0x00FF }, // Latin-1 Supplement
@@ -1612,4 +1642,5 @@
   exports.reverseIfRtl = reverseIfRtl;
   exports.getUnicodeRangeFor = getUnicodeRangeFor;
   exports.getNormalizedUnicodes = getNormalizedUnicodes;
+  exports.getUnicodeForGlyph = getUnicodeForGlyph;
 }));

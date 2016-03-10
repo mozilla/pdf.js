@@ -728,6 +728,20 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug1132849",
+       "file": "pdfs/bug1132849.pdf",
+       "md5": "aedfbead1f8feb35cf2e38b279133b47",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue6894",
+       "file": "pdfs/issue6894.pdf",
+       "md5": "bb84f2025c11f23cf436170049f81215",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "personwithdog",
        "file": "pdfs/personwithdog.pdf",
        "md5": "cd68fb2ce00dab97801b3e51495b99e3",
