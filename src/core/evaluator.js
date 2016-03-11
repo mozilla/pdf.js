@@ -1778,8 +1778,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       // The viewer's choice, just use an identity map.
-      return Promise.resolve(
-        new IdentityToUnicodeMap(properties.firstChar, properties.lastChar));
+      return Promise.resolve(new IdentityToUnicodeMap(properties.firstChar,
+                                                      properties.lastChar));
     },
 
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode) {
