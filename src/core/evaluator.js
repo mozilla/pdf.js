@@ -827,7 +827,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // eagerly collect all fonts
               return self.handleSetFont(resources, args, null, operatorList,
                                         task, stateManager.state).
-                 then(function (loadedName) {
+                then(function (loadedName) {
                   operatorList.addDependency(loadedName);
                   operatorList.addOp(OPS.setFont, [loadedName, fontSize]);
                   next(resolve, reject);
