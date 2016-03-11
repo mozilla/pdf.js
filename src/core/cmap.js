@@ -1019,7 +1019,7 @@ var CMapFactory = (function CMapFactoryClosure() {
         }
         return Promise.resolve(cMap);
       }
-      return Promise.reject('Encoding required.');
+      return Promise.reject(new Error('Encoding required.'));
     }
   };
 })();
