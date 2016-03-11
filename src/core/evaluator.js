@@ -1653,7 +1653,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
      * @param {Object} properties Font properties object.
      * @return {Promise} A Promise resolving to ToUnicodeMap object.
      */
-    buildToUnicode: function Font_buildToUnicode(properties) {
+    buildToUnicode: function partialEvaluator_buildToUnicode(properties) {
       // Section 9.10.2 Mapping Character Codes to Unicode Values
       if (properties.toUnicode && properties.toUnicode.length !== 0) {
         return Promise.resolve(properties.toUnicode);
