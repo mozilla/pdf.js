@@ -1639,7 +1639,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.differences = differences;
       properties.baseEncodingName = baseEncodingName;
       properties.dict = dict;
-      return toUnicodePromise(toUnicode).then(function(toUnicode) {
+      return toUnicodePromise.then(function(toUnicode) {
         properties.toUnicode = toUnicode;
         return this.buildToUnicode(properties);
       }.bind(this)).then(function (toUnicode) {
