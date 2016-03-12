@@ -96,6 +96,15 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     this.annotationLayer = null;
 
+    this.fabricState = {
+      /* We keep track of canvas scale separately because we load the canvas background into
+       * a fabric class after it has been scaled and we need to know how to scale the other objects as well.
+       */
+      canvasScale: this.scale,
+      objs: null,
+      rotation: this.rotation,
+    };
+
     var div = document.createElement('div');
     div.className = 'page';
     div.style.width = Math.floor(this.viewport.width) + 'px';
