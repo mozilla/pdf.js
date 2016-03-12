@@ -150,6 +150,8 @@ var PDFViewerApplication = {
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
   pdfAttachmentViewer: null,
+  /** @type {ViewHistory} */
+  store: null,
   pageRotation: 0,
   isInitialViewSet: false,
   animationStartedPromise: null,
@@ -603,6 +605,8 @@ var PDFViewerApplication = {
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null, null);
     }
+    this.store = null;
+    this.isInitialViewSet = false;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -925,7 +929,6 @@ var PDFViewerApplication = {
     var onePageRendered = pdfViewer.onePageRendered;
 
     this.pageRotation = 0;
-    this.isInitialViewSet = false;
 
     this.pdfThumbnailViewer.setDocument(pdfDocument);
 
@@ -1002,7 +1005,7 @@ var PDFViewerApplication = {
         self.initialBookmark = initialParams.bookmark;
 
         self.pdfViewer.currentScaleValue = self.pdfViewer.currentScaleValue;
-        self.setInitialView(initialParams.hash, scale);
+        self.setInitialView(initialParams.hash);
       });
     });
 
@@ -1682,23 +1685,37 @@ window.addEventListener('presentationmodechanged', function (e) {
     active ? PresentationModeState.FULLSCREEN : PresentationModeState.NORMAL;
 });
 
+window.addEventListener('sidebarviewchanged', function (evt) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
+  PDFViewerApplication.pdfRenderingQueue.isThumbnailViewEnabled =
+    PDFViewerApplication.pdfSidebar.isThumbnailViewVisible;
+
+  var store = PDFViewerApplication.store;
+  if (!store || !PDFViewerApplication.isInitialViewSet) {
+    // Only update the storage when the document has been loaded *and* rendered.
+    return;
+  }
+}, true);
+
 window.addEventListener('updateviewarea', function (evt) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
-  var location = evt.location;
+  var location = evt.location, store = PDFViewerApplication.store;
 
-  PDFViewerApplication.store.initializedPromise.then(function() {
-    PDFViewerApplication.store.setMultiple({
-      'exists': true,
-      'page': location.pageNumber,
-      'zoom': location.scale,
-      'scrollLeft': location.left,
-      'scrollTop': location.top
-    }).catch(function() {
-      // unable to write to storage
+  if (store) {
+    store.initializedPromise.then(function() {
+      store.setMultiple({
+        'exists': true,
+        'page': location.pageNumber,
+        'zoom': location.scale,
+        'scrollLeft': location.left,
+        'scrollTop': location.top,
+      }).catch(function() { /* unable to write to storage */ });
     });
-  });
+  }
   var href =
     PDFViewerApplication.pdfLinkService.getAnchorUrl(location.pdfOpenParams);
   document.getElementById('viewBookmark').href = href;
