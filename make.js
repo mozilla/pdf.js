@@ -1357,7 +1357,7 @@ target.mozcentralbaseline = function() {
   if (test('-d', 'build')) {
     rm('-rf', 'build');
   }
-  exec('gulp mozcentral');
+  exec('node make mozcentral');
 
   cd(ROOT_DIR);
   mkdir(MOZCENTRAL_BASELINE_DIR);

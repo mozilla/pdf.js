@@ -117,11 +117,11 @@ Object.keys(gulp.tasks).forEach(function (taskName) {
     gulp.run(taskName);
   };
 
-  global.target[taskName] = function () {
+  global.target[taskName] = function (args) {
     // The require('shelljs/make') import in make.js will try to execute tasks
     // listed in arguments, guarding with gulpContext
     if (gulpContext) {
-      oldTask.call(global.target);
+      oldTask.call(global.target, args);
     }
   };
 });
