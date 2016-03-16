@@ -480,6 +480,10 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
+    // Ensure that postMessage transfers are correctly enabled/disabled,
+    // to prevent "DataCloneError" in older versions of IE (see issue 6957).
+    handler.postMessageTransfers = docParams.postMessageTransfers;
+
     function ensureNotTerminated() {
       if (terminated) {
         throw new Error('Worker was terminated');

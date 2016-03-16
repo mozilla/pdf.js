@@ -454,7 +454,8 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     cMapPacked: PDFJS.cMapPacked,
     disableFontFace: PDFJS.disableFontFace,
     disableCreateObjectURL: PDFJS.disableCreateObjectURL,
-    verbosity: PDFJS.verbosity
+    verbosity: PDFJS.verbosity,
+    postMessageTransfers: PDFJS.postMessageTransfers,
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
