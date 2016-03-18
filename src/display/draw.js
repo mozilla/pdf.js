@@ -115,106 +115,20 @@
       /* takes a PDFPageView object because there is a bunch of info stored on the page
        * which the canvas object doesn't have, like rotation
        */
-      fromObject: function (pdfPage, callback) {
-        var klass = this;
-        fabric.util.enlivenObjects(pdfPage.fabricState.objs.objects, function (enlivened) {
-          // delete pdfPage.fabricState.objects;
-          var canvasScale = (pdfPage.scale / pdfPage.fabricState.canvasScale).toFixed(20),
-              rotation = pdfPage.rotation - pdfPage.fabricState.rotation,
-              rotationChanged = pdfPage.rotation != pdfPage.fabricState.rotation,
-              anchors = [ //mark all 4 corners of the group
-                new fabric.AnchorRect({
-                  left: 0,
-                  top: 0,
-                  height: 0,
-                  width: 0,
-                }),
-                new fabric.AnchorRect({
-                  left: pdfPage.width,
-                  top: 0,
-                  height: 0,
-                  width: 0,
-                }),
-                new fabric.AnchorRect({
-                  left: 0,
-                  top: pdfPage.height,
-                  height: 0,
-                  width: 0,
-                }),
-                new fabric.AnchorRect({
-                  left: pdfPage.width,
-                  top: pdfPage.height,
-                  height: 0,
-                  width: 0,
-                }),
-              ],
-              transformGroup = new fabric.Group(enlivened.concat(anchors), {
-                left: 0,
-                top: 0,
-                width: rotationChanged ? pdfPage.height: pdfPage.width,
-                height: rotationChanged ? pdfPage.width: pdfPage.height,
-                originX: 'left',
-                originY: 'top',
-                centeredScaling: true,
-                centeredRotation: true,
-              });
-           klass.add(transformGroup);
-          /*transform stuff*/
-          // XXX a litte bit of a hack. if abs val of rotation is > 90 (it's 270), figure out which
-          // way we want to rotate to get to or from 0
-          if(Math.abs(rotation) > 90) rotation = (rotation/Math.abs(rotation)) * - 90;
-          transformGroup.scale(canvasScale);
-          transformGroup.rotate(rotation);
-          /*transform stuff*/
-          var transformedObjs = [];
-          transformGroup._restoreObjectsState();
-
-          transformGroup._objects.forEach(function(obj, i) {
-            if(obj.type != 'anchor') transformedObjs.push(obj);
-           });
-         klass.remove(transformGroup);
-          transformedObjs.forEach(function(transformed) {
-            klass.add(transformed);
+      fromObject: function(pdfPage, callback) {
+        var self = this,
+            enl = [];
+        fabric.util.enlivenObjects(
+          pdfPage.fabricState.objs.objects, function (enlivened) {
+            enl = enlivened;
           });
+        enl.forEach(function(obj) {
+          self.add(obj);
         });
         return this;
       }
     });
-
-
-    /*enlivened.forEach(function(enl) {
-            var rotation = enl.defaultObjRotation + pdfPage.rotation,
-                TBCondition,
-                LRCondition,
-                HWCondition,
-                top,
-                left,
-                /* The angle property allows us to not worry about setting the objects width and height,
-                 * but for rotated position calculation we need to switch width and height
-                 
-                rotatedHeight,
-                rotatedWidth,
-                canvasScale = pdfPage.scale / pdfPage.fabricState.canvasScale,
-                rotationChanged = false;//pdfPage.rotation != pdfPage.fabricState.rotation;
-            enl.angle = rotation < 360 ? rotation : rotation - 360,
-            TBCondition = enl.angle < 180;
-            LRCondition = enl.angle < 90 || enl.angle > 180;
-            HWCondition = enl.angle % 180 === 0;
-            //enl.originY = TBCondition ? "top" : "bottom";
-            //enl.originX = LRCondition ? "left" : "right";
-            enl.height = enl.height * canvasScale;
-            enl.width = enl.width * canvasScale;
-            top = canvasScale * (rotationChanged ? enl.left : enl.top);
-            left = canvasScale * (rotationChanged ? enl.top : enl.left);
-            rotatedHeight = HWCondition ? enl.height : enl.width;
-            rotatedWidth = HWCondition ? enl.width : enl.height;
-            //enl.left = LRCondition && rotationChanged ? left : pdfPage.width - (left);
-            //enl.top = TBCondition && rotationChanged ? top : pdfPage.height - (top);
-            enl.left = left;
-            enl.top = top;
-             klass.add(enl);            
-          });*/
-
+                                                
     // Box renders field title when available and calculates
     // Height + the RML/SBT inches conversion based on pdf
     // scale factor
@@ -224,7 +138,79 @@
 
   var fabricMethods = {
     getCanvas: function pdfViewGetCanvas(page) {
-      return this._pages[page].canvas;
+      return this._pages[page - 1].canvas;
+    },
+    fabricTransformCanvas: function (pageNumber, pageRotation, scale) {
+      var klass = this.getCanvas(pageNumber),
+          pdfPage = this._pages[pageNumber - 1],
+          objs = klass._objects,
+          canvasScale = (scale / pdfPage.fabricState.canvasScale).toFixed(20),
+          rotation = pageRotation - pdfPage.fabricState.rotation,
+          rotationChanged = pageRotation != pdfPage.fabricState.rotation,
+          anchors = [ //mark all 4 corners of the group
+            new fabric.AnchorRect({
+              left: 0,
+              top: 0,
+              height: 0,
+              width: 0,
+            }),
+              new fabric.AnchorRect({
+                left: pdfPage.width,
+                top: 0,
+                height: 0,
+                width: 0,
+              }),
+            new fabric.AnchorRect({
+              left: 0,
+              top: pdfPage.height,
+              height: 0,
+              width: 0,
+            }),
+            new fabric.AnchorRect({
+              left: pdfPage.width,
+              top: pdfPage.height,
+              height: 0,
+              width: 0,
+            }),
+          ],
+          transformGroup = new fabric.Group(objs.concat(anchors), {
+            left: 0,
+            top: 0,
+            width: rotationChanged ? pdfPage.height: pdfPage.width,
+            height: rotationChanged ? pdfPage.width: pdfPage.height,
+            originX: 'left',
+            originY: 'top',
+            centeredScaling: true,
+            centeredRotation: true,
+          });
+      klass._objects = [];
+      klass.add(transformGroup);
+      /*transform stuff*/
+      // XXX a litte bit of a hack. if abs val of rotation is > 90 (it's 270), figure out which
+      // way we want to rotate to get to or from 0
+      if(Math.abs(rotation) > 90) rotation = (rotation/Math.abs(rotation)) * - 90;
+      transformGroup.scale(canvasScale);
+      transformGroup.setCoords();
+      transformGroup.rotate(rotation);
+      transformGroup.setCoords();
+      var tl = transformGroup.translateToOriginPoint(
+        transformGroup.oCoords.tl, 'left', 'top');
+      //transformGroup.setTop(0);
+      //transformGroup.setLeft(0);
+      // transformGroup.setCoords();
+      /*transform stuff*/
+      var transformedObjs = [];
+      transformGroup._restoreObjectsState();
+      
+      transformGroup._objects.forEach(function(obj, i) {
+        if(obj.type != 'anchor') transformedObjs.push(obj);
+      });
+      klass.remove(transformGroup);
+      transformedObjs.forEach(function(transformed) {
+        klass.add(transformed);
+      });
+      // });
+      pdfPage.fabricState.objs = klass.toObject();
     },
     fabricMouseMove: function pdfViewFabricMouseMove(options) {
       self = this;
@@ -265,7 +251,9 @@
       //ADD CALLBACK FOR EXTERNAL API
     },
     fabricMouseDown: function pdfViewFabricMouseDown(options){
-      //if (options.target.type === 'image'){
+      if (!options.target ||
+          options.target.type != 'TitledRect' &&
+           options.target.type != 'group'){
         self = this;
         var e = options.e;
         var rect = this._offset;
@@ -274,7 +262,7 @@
         this.on('mouse:move', PDFViewerApplication.pdfViewer.fabricMouseMove);
         this.on('mouse:up', PDFViewerApplication.pdfViewer.fabricMouseUp);
         //ADD CALLBACK FOR EXTERNAL API
-      //}
+      }
     },
     fabricMouseUp: function pdfViewFabricMouseUp(options){
       this.off('mouse:move', PDFViewerApplication.pdfViewer.fabricMouseMove);
