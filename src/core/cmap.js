@@ -500,6 +500,14 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
   }
 
   BinaryCMapStream.prototype = {
+    readArray: function(len) {
+      if (this.pos + len > this.end) {
+        error('unexpected EOF while reading bcmap');
+      }
+      var start = this.pos;
+      this.pos += len;
+      return this.buffer.subarray(start, start + len);
+    },
     readByte: function () {
       if (this.pos >= this.end) {
         return -1;
@@ -570,8 +578,53 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
     }
   };
 
-  function processBinaryCMap(url, cMap, extend) {
-    var data = fetchBinaryData(url);
+  function decodeDifferenceData(diffData, path) {
+    var diffStream = new BinaryCMapStream(diffData);
+
+    var baseFileName = diffStream.readString();
+    if (baseFileName === '') { // no dependency
+      return diffData.subarray(diffStream.pos, diffData.length);
+    }
+    var baseDiffData = fetchBinaryData(path + baseFileName + '.bcmap');
+    var baseData = decodeDifferenceData(baseDiffData, path);
+    var decoded = applyPatch(baseData, diffStream);
+
+    return decoded;
+  }
+
+  function applyPatch(base, diffStream) {
+    var dataChunks = [];
+    var copyCommand = true;
+    var start, startOffset, length, end;
+    var previousEnd = 0, totalLength = 0;
+    while (diffStream.pos + 1 < diffStream.end) {
+      if (copyCommand) {
+        startOffset = diffStream.readNumber();
+        start = previousEnd + startOffset;
+        length = diffStream.readNumber();
+        end = start + length;
+        dataChunks.push(base.subarray(start, end));
+        previousEnd = end;
+      } else { // insert
+        length = diffStream.readNumber();
+        dataChunks.push(diffStream.readArray(length));
+      }
+      totalLength += length;
+      copyCommand = !copyCommand; // switch between copy and insert
+    }
+    // Concatenate chunks to single array
+    var dataArray = new Uint8Array(totalLength);
+    for (var i = 0, pos = 0; i < dataChunks.length; i++) {
+      dataArray.set(dataChunks[i], pos);
+      pos += dataChunks[i].length;
+    }
+    return dataArray;
+  }
+  
+
+  function processBinaryCMap(url, name, cMap, extend) {
+    var diffData = fetchBinaryData(url + name + '.bcmap');
+    var data = decodeDifferenceData(diffData, url);
     var stream = new BinaryCMapStream(data);
 
     var header = stream.readByte();
@@ -961,9 +1014,9 @@ var CMapFactory = (function CMapFactoryClosure() {
   }
 
   function parseBinaryCMap(name, builtInCMapParams) {
-    var url = builtInCMapParams.url + name + '.bcmap';
+    var url = builtInCMapParams.url;
     var cMap = new CMap(true);
-    new BinaryCMapReader().read(url, cMap, function (useCMap) {
+    new BinaryCMapReader().read(url, name, cMap, function (useCMap) {
       extendCMap(cMap, builtInCMapParams, useCMap);
     });
     return cMap;

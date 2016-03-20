@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+'use strict';
+
 var fs = require('fs');
 var path = require('path');
 var parseAdobeCMap = require('./parse.js').parseAdobeCMap;
@@ -112,8 +114,8 @@ function compressCmap(srcPath, destPath, verify) {
   fs.writeFileSync(destPath, new Buffer(out, 'hex'));
 
   if (verify) {
-    var result2 = parseCMap(out);
-    var isGood = JSON.stringify(inputData) == JSON.stringify(result2);
+    var result2 = new BinaryCMapReader(out).parse();
+    var isGood = JSON.stringify(inputData) === JSON.stringify(result2);
     if (!isGood) {
       throw new Error('Extracted data does not match the expected result');
     }
@@ -125,193 +127,195 @@ function compressCmap(srcPath, destPath, verify) {
   };
 }
 
-function parseCMap(binaryData) {
-  var reader = {
-    buffer: binaryData,
-    pos: 0,
-    end: binaryData.length,
-    readByte: function () {
-      if (this.pos >= this.end) {
-        return -1;
-      }
-      var d1 = fromHexDigit(this.buffer[this.pos]);
-      var d2 = fromHexDigit(this.buffer[this.pos + 1]);
-      this.pos += 2;
-      return (d1 << 4) | d2;
-    },
-    readNumber: function () {
-      var n = 0;
-      var last;
-      do {
-        var b = this.readByte();
-        last = !(b & 0x80);
-        n = (n << 7) | (b & 0x7F);
-      } while (!last);
-      return n;
-    },
-    readSigned: function () {
-      var n = this.readNumber();
-      return (n & 1) ? -(n >>> 1) - 1 : n >>> 1;
-    },
-    readHex: function (size) {
-      var lengthInChars = (size + 1) << 1;
-      var s = this.buffer.substr(this.pos, lengthInChars);
-      this.pos += lengthInChars;
-      return s;
-    },
-    readHexNumber: function (size) {
-      var lengthInChars = (size + 1) << 1;
-      var stack = [];
-      do {
-        var b = this.readByte();
-        last = !(b & 0x80);
-        stack.push(b & 0x7F);
-      } while (!last);
-      var s = '', buffer = 0, bufferSize = 0;
-      while (s.length < lengthInChars) {
-        while (bufferSize < 4 && stack.length > 0) {
-          buffer = (stack.pop() << bufferSize) | buffer;
-          bufferSize += 7;
-        }
-        s = toHexDigit(buffer & 15) + s;
-        buffer >>= 4;
-        bufferSize -= 4;
-      }
-      return s;
-    },
-    readHexSigned: function (size) {
-      var num = this.readHexNumber(size);
-      var sign = fromHexDigit(num[num.length - 1]) & 1 ? 15 : 0;
-      var c = 0;
-      var result = '';
-      for (var i = 0; i < num.length; i++) {
-        c = (c << 4) | fromHexDigit(num[i]);
-        result += toHexDigit(sign ? (c >> 1) ^ sign : (c >> 1));
-        c &= 1;
-      }
-      return result;
-    },
-    readString: function () {
-      var len = this.readNumber();
-      var s = '';
-      for (var i = 0; i < len; i++) {
-        s += String.fromCharCode(this.readNumber());
-      }
-      return s;
+function BinaryCMapReader(binaryData) {
+  this.buffer = binaryData;
+  this.pos = 0;
+  this.end = binaryData.length;
+}
+
+BinaryCMapReader.prototype = {
+  readByte: function () {
+    if (this.pos >= this.end) {
+      return -1;
     }
-  };
-
-  var header = reader.readByte();
-  var result = {
-    type: header >> 1,
-    wmode: header & 1,
-    comment: null,
-    usecmap: null,
-    body: []
-  };
-
-  var b;
-  while ((b = reader.readByte()) >= 0) {
-    var type = b >> 5;
-    if (type === 7) {
-      switch (b & 0x1F) {
+    var d1 = fromHexDigit(this.buffer[this.pos]);
+    var d2 = fromHexDigit(this.buffer[this.pos + 1]);
+    this.pos += 2;
+    return (d1 << 4) | d2;
+  },
+  readNumber: function () {
+    var n = 0;
+    var last;
+    do {
+      var b = this.readByte();
+      last = !(b & 0x80);
+      n = (n << 7) | (b & 0x7F);
+    } while (!last);
+    return n;
+  },
+  readSigned: function () {
+    var n = this.readNumber();
+    return (n & 1) ? -(n >>> 1) - 1 : n >>> 1;
+  },
+  readHex: function (size) {
+    var lengthInChars = (size + 1) << 1;
+    var s = this.buffer.substr(this.pos, lengthInChars);
+    this.pos += lengthInChars;
+    return s;
+  },
+  readHexNumber: function (size) {
+    var lengthInChars = (size + 1) << 1;
+    var stack = [];
+    do {
+      var b = this.readByte();
+      var last = !(b & 0x80);
+      stack.push(b & 0x7F);
+    } while (!last);
+    var s = '', buffer = 0, bufferSize = 0;
+    while (s.length < lengthInChars) {
+      while (bufferSize < 4 && stack.length > 0) {
+        buffer = (stack.pop() << bufferSize) | buffer;
+        bufferSize += 7;
+      }
+      s = toHexDigit(buffer & 15) + s;
+      buffer >>= 4;
+      bufferSize -= 4;
+    }
+    return s;
+  },
+  readHexSigned: function (size) {
+    var num = this.readHexNumber(size);
+    var sign = fromHexDigit(num[num.length - 1]) & 1 ? 15 : 0;
+    var c = 0;
+    var result = '';
+    for (var i = 0; i < num.length; i++) {
+      c = (c << 4) | fromHexDigit(num[i]);
+      result += toHexDigit(sign ? (c >> 1) ^ sign : (c >> 1));
+      c &= 1;
+    }
+    return result;
+  },
+  readString: function () {
+    var len = this.readNumber();
+    var s = '';
+    for (var i = 0; i < len; i++) {
+      s += String.fromCharCode(this.readNumber());
+    }
+    return s;
+  },
+  parse: function() {
+    var header = this.readByte();
+    var result = {
+      type: header >> 1,
+      wmode: header & 1,
+      comment: null,
+      usecmap: null,
+      body: []
+    };
+  
+    var b;
+    while ((b = this.readByte()) >= 0) {
+      var type = b >> 5;
+      if (type === 7) {
+        switch (b & 0x1F) {
+          case 0:
+            result.comment = this.readString();
+            break;
+          case 1:
+            result.usecmap = this.readString();
+            break;
+        }
+        continue;
+      }
+      var sequence = !!(b & 0x10);
+      var dataSize = b & 15;
+      var subitems = [];
+      var item = {
+        type: type,
+        items: subitems
+      };
+      if (sequence) {
+        item.sequence = true;
+      }
+      var ucs2DataSize = 1;
+      var subitemsCount = this.readNumber();
+      var start, end, code, char;
+      switch (type) {
         case 0:
-          result.comment = reader.readString();
+          start = this.readHex(dataSize);
+          end = addHex(this.readHexNumber(dataSize), start);
+          subitems.push({start: start, end: end});
+          for (var i = 1; i < subitemsCount; i++) {
+            start = addHex(this.readHexNumber(dataSize), incHex(end));
+            end = addHex(this.readHexNumber(dataSize), start);
+            subitems.push({start: start, end: end});
+          }
           break;
         case 1:
-          result.usecmap = reader.readString();
+          start = this.readHex(dataSize);
+          end = addHex(this.readHexNumber(dataSize), start);
+          code = this.readNumber();
+          subitems.push({start: start, end: end, code: code});
+          for (var i = 1; i < subitemsCount; i++) {
+            start = addHex(this.readHexNumber(dataSize), incHex(end));
+            end = addHex(this.readHexNumber(dataSize), start);
+            code = this.readNumber();
+            subitems.push({start: start, end: end, code: code});
+          }
           break;
+        case 2:
+          char = this.readHex(dataSize);
+          code = this.readNumber();
+          subitems.push({char: char, code: code});
+          for (var i = 1; i < subitemsCount; i++) {
+            char = sequence ? incHex(char) : addHex(this.readHexNumber(dataSize), incHex(char));
+            code = this.readSigned() + (code + 1);
+            subitems.push({char: char, code: code});
+          }
+          break;
+        case 3:
+          start = this.readHex(dataSize);
+          end = addHex(this.readHexNumber(dataSize), start);
+          code = this.readNumber();
+          subitems.push({start: start, end: end, code: code});
+          for (var i = 1; i < subitemsCount; i++) {
+            start = sequence ? incHex(end) : addHex(this.readHexNumber(dataSize), incHex(end));
+            end = addHex(this.readHexNumber(dataSize), start);
+            code = this.readNumber();
+            subitems.push({start: start, end: end, code: code});
+          }
+          break;
+        case 4:
+          char = this.readHex(ucs2DataSize);
+          code = this.readHex(dataSize);
+          subitems.push({char: char, code: code});
+          for (var i = 1; i < subitemsCount; i++) {
+            char = sequence ? incHex(char) : addHex(this.readHexNumber(ucs2DataSize), incHex(char));
+            code = addHex(this.readHexSigned(dataSize), incHex(code));
+            subitems.push({char: char, code: code});
+          }
+          break;
+        case 5:
+          start = this.readHex(ucs2DataSize);
+          end = addHex(this.readHexNumber(ucs2DataSize), start);
+          code = this.readHex(dataSize);
+          subitems.push({start: start, end: end, code: code});
+          for (var i = 1; i < subitemsCount; i++) {
+            start = sequence ? incHex(end) : addHex(this.readHexNumber(ucs2DataSize), incHex(end));
+            end = addHex(this.readHexNumber(ucs2DataSize), start);
+            code = this.readHex(dataSize);
+            subitems.push({start: start, end: end, code: code});
+          }
+          break;
+        default:
+          throw new Error('Unknown type: ' + type);
       }
-      continue;
+      result.body.push(item);
     }
-    var sequence = !!(b & 0x10);
-    var dataSize = b & 15;
-    var subitems = [];
-    var item = {
-      type: type,
-      items: subitems
-    };
-    if (sequence) {
-      item.sequence = true;
-    }
-    var ucs2DataSize = 1;
-    var subitemsCount = reader.readNumber();
-    var start, end, code, char;
-    switch (type) {
-      case 0:
-        start = reader.readHex(dataSize);
-        end = addHex(reader.readHexNumber(dataSize), start);
-        subitems.push({start: start, end: end});
-        for (var i = 1; i < subitemsCount; i++) {
-          start = addHex(reader.readHexNumber(dataSize), incHex(end));
-          end = addHex(reader.readHexNumber(dataSize), start);
-          subitems.push({start: start, end: end});
-        }
-        break;
-      case 1:
-        start = reader.readHex(dataSize);
-        end = addHex(reader.readHexNumber(dataSize), start);
-        code = reader.readNumber();
-        subitems.push({start: start, end: end, code: code});
-        for (var i = 1; i < subitemsCount; i++) {
-          start = addHex(reader.readHexNumber(dataSize), incHex(end));
-          end = addHex(reader.readHexNumber(dataSize), start);
-          code = reader.readNumber();
-          subitems.push({start: start, end: end, code: code});
-        }
-        break;
-      case 2:
-        char = reader.readHex(dataSize);
-        code = reader.readNumber();
-        subitems.push({char: char, code: code});
-        for (var i = 1; i < subitemsCount; i++) {
-          char = sequence ? incHex(char) : addHex(reader.readHexNumber(dataSize), incHex(char));
-          code = reader.readSigned() + (code + 1);
-          subitems.push({char: char, code: code});
-        }
-        break;
-      case 3:
-        start = reader.readHex(dataSize);
-        end = addHex(reader.readHexNumber(dataSize), start);
-        code = reader.readNumber();
-        subitems.push({start: start, end: end, code: code});
-        for (var i = 1; i < subitemsCount; i++) {
-          start = sequence ? incHex(end) : addHex(reader.readHexNumber(dataSize), incHex(end));
-          end = addHex(reader.readHexNumber(dataSize), start);
-          code = reader.readNumber();
-          subitems.push({start: start, end: end, code: code});
-        }
-        break;
-      case 4:
-        char = reader.readHex(ucs2DataSize);
-        code = reader.readHex(dataSize);
-        subitems.push({char: char, code: code});
-        for (var i = 1; i < subitemsCount; i++) {
-          char = sequence ? incHex(char) : addHex(reader.readHexNumber(ucs2DataSize), incHex(char));
-          code = addHex(reader.readHexSigned(dataSize), incHex(code));
-          subitems.push({char: char, code: code});
-        }
-        break;
-      case 5:
-        start = reader.readHex(ucs2DataSize);
-        end = addHex(reader.readHexNumber(ucs2DataSize), start);
-        code = reader.readHex(dataSize);
-        subitems.push({start: start, end: end, code: code});
-        for (var i = 1; i < subitemsCount; i++) {
-          start = sequence ? incHex(end) : addHex(reader.readHexNumber(ucs2DataSize), incHex(end));
-          end = addHex(reader.readHexNumber(ucs2DataSize), start);
-          code = reader.readHex(dataSize);
-          subitems.push({start: start, end: end, code: code});
-        }
-        break;
-      default:
-        throw new Error('Unknown type: ' + type)
-    }
-    result.body.push(item);
+  
+    return result;
   }
-
-  return result;
-}
+};
 
 function toHexDigit(n) {
   return n.toString(16);
@@ -423,15 +427,41 @@ function incHex(a) {
   return s;
 }
 
+function padRight(s, length) {
+  s = '' + s;
+  return s + new Array(Math.max(0, length - s.length + 1)).join(' ');
+}
+
+function padLeft(s, length) {
+  s = '' + s;
+  return new Array(Math.max(0, length - s.length + 1)).join(' ') + s;
+}
+
 exports.compressCmaps = function (src, dest, verify) {
   var files = fs.readdirSync(src).filter(function (fn) {
     return fn.indexOf('.') < 0; // skipping files with the extension
   });
+  
+  var sumPacked = 0;
+  var sumOrig = 0;
   files.forEach(function (fn) {
     var srcPath = path.join(src, fn);
     var destPath = path.join(dest, fn + '.bcmap');
     var stats = compressCmap(srcPath, destPath, verify);
-    console.log('Compressing ' + fn + ': ' + stats.orig + ' vs ' + stats.packed +
-      ' ' + (stats.packed / stats.orig * 100).toFixed(1) + '%');
+    sumOrig += stats.orig;
+    sumPacked += stats.packed;
+//    console.log(padRight(fn, 25) + 
+//                padLeft(stats.packed, 7) + '/' + padLeft(stats.orig, 7) + ',' +
+//                padLeft((stats.packed / stats.orig * 100).toFixed(1) + '%', 7));
   });
+  console.log('-------------------------------------------------------');
+  console.log(padRight('TOTAL', 25) +
+              padLeft(sumPacked, 7) + '/' + padLeft(sumOrig, 7) + ',' +
+              padLeft((sumPacked / sumOrig * 100).toFixed(1) + '%', 7));
 };
+
+exports.writeNumber = writeNumber;
+exports.writeString = writeString;
+exports.padLeft = padLeft;
+exports.padRight = padRight;
+exports.BinaryCMapReader = BinaryCMapReader;

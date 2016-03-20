@@ -451,6 +451,7 @@ target.locale = function() {
 target.cmaps = function () {
   var CMAP_INPUT = 'external/cmaps';
   var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
+  var VIEWER_CMAP_TEMP = 'external/bcmaps_temp';
 
   cd(ROOT_DIR);
   echo();
@@ -462,12 +463,22 @@ target.cmaps = function () {
     echo('  https://github.com/adobe-type-tools/cmap-resources');
     exit(1);
   }
+  
 
-  rm(VIEWER_CMAP_OUTPUT + '*.bcmap');
+  rm(VIEWER_CMAP_OUTPUT + '/*.bcmap');
+  if (fs.existsSync(VIEWER_CMAP_TEMP)) {
+    rm(VIEWER_CMAP_TEMP + '/*.bcmap');
+  } else {
+    mkdir(VIEWER_CMAP_TEMP);
+  }
 
-  var compressCmaps =
-    require('./external/cmapscompress/compress.js').compressCmaps;
-  compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
+  var srcPath = './external/cmapscompress/';
+  var compressCmaps = require(srcPath + 'compress.js').compressCmaps;
+  compressCmaps(CMAP_INPUT, VIEWER_CMAP_TEMP, true);
+
+  var generateDifferences =
+    require(srcPath + 'differentialStorage.js').generateDifferences;
+  generateDifferences(VIEWER_CMAP_TEMP, VIEWER_CMAP_OUTPUT, true);
 };
 
 //
