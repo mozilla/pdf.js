@@ -55,13 +55,14 @@ function downloadLanguageFiles(root, langCode, callback) {
   var files = ['chrome.properties', 'viewer.properties'];
   var downloadsLeft = files.length;
 
-  if (!fs.existsSync(langCode)) {
-    fs.mkdirSync(path.join(root, langCode));
+  var outputDir = path.join(root, langCode);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir);
   }
 
   // Download the necessary files for this language.
   files.forEach(function(fileName) {
-    var outputPath = path.join(root, langCode, fileName);
+    var outputPath = path.join(outputDir, fileName);
     var url = MOZCENTRAL_ROOT + langCode + MOZCENTRAL_PDFJS_DIR +
               fileName + MOZCENTRAL_RAW_FLAG;
     var request = http.get(url, function(response) {
