@@ -11,7 +11,8 @@ describe('font_post', function() {
         loadedName: 'font',
         type: 'TrueType',
         differences: [],
-        defaultEncoding: []
+        defaultEncoding: [],
+        toUnicode: new ToUnicodeMap([])
       });
       ttx(font.data, function(result) { output = result; });
       runs(function() {
@@ -23,17 +24,20 @@ describe('font_post', function() {
     it('has invalid selection attributes presence', function() {
       var output;
       waitsFor(function() { return output; }, 10000);
-      var font = new Font("font", new Stream(font1282), {
-        loadedName: 'font',
-        type: 'CIDFontType2',
-        differences: [],
-        defaultEncoding: [],
-        cMap: CMapFactory.create(new Name('Identity-H'))
-      });
-      ttx(font.data, function(result) { output = result; });
-      runs(function() {
-        verifyTtxOutput(output);
-        expect(/<OS_2>\s*<version value="3"\/>/.test(output)).toEqual(true);
+      CMapFactory.create(new Name('Identity-H')).then(function (cMap) {
+        var font = new Font("font", new Stream(font1282), {
+          loadedName: 'font',
+          type: 'CIDFontType2',
+          differences: [],
+          defaultEncoding: [],
+          cMap: cMap,
+          toUnicode: new ToUnicodeMap([])
+        });
+        ttx(font.data, function(result) { output = result; });
+        runs(function() {
+          verifyTtxOutput(output);
+          expect(/<OS_2>\s*<version value="3"\/>/.test(output)).toEqual(true);
+        });
       });
     });
   });

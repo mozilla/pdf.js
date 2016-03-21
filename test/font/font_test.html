@@ -27,6 +27,7 @@
           'pdfjs/core/cmap'], function (fonts, stream, primitives, cmap) {
         // Expose some of the PDFJS members to global scope for tests.
         window.Font = fonts.Font;
+        window.ToUnicodeMap = fonts.ToUnicodeMap;
         window.Stream = stream.Stream;
         window.Name = primitives.Name;
         window.CMapFactory = cmap.CMapFactory;

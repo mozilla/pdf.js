@@ -6,17 +6,20 @@ describe('font_fpgm', function() {
     it('table was truncated in the middle of functions', function() {
       var output;
       waitsFor(function() { return output; }, 10000);
-      var font = new Font("font", new Stream(font2324), {
-        loadedName: 'font',
-        type: 'CIDFontType2',
-        differences: [],
-        defaultEncoding: [],
-        cMap: CMapFactory.create(new Name('Identity-H'))
-      });
-      ttx(font.data, function(result) { output = result; });
-      runs(function() {
-        verifyTtxOutput(output);
-        expect(/(ENDF\[ \]|SVTCA\[0\])\s*<\/assembly>\s*<\/fpgm>/.test(output)).toEqual(true);
+      CMapFactory.create(new Name('Identity-H')).then(function (cMap) {
+        var font = new Font("font", new Stream(font2324), {
+          loadedName: 'font',
+          type: 'CIDFontType2',
+          differences: [],
+          defaultEncoding: [],
+          cMap: cMap,
+          toUnicode: new ToUnicodeMap([])
+        });
+        ttx(font.data, function(result) { output = result; });
+        runs(function() {
+          verifyTtxOutput(output);
+          expect(/(ENDF\[ \]|SVTCA\[0\])\s*<\/assembly>\s*<\/fpgm>/.test(output)).toEqual(true);
+        });
       });
     });
   });
