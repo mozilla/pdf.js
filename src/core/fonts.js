@@ -403,9 +403,8 @@ var OpenTypeFileBuilder = (function OpenTypeFileBuilderClosure() {
         // checksum
         var checksum = 0;
         for (j = tableOffsets[i], jj = tableOffsets[i + 1]; j < jj; j += 4) {
-          var quad = (file[j] << 24) + (file[j + 1] << 16) +
-                     (file[j + 2] << 8) + file[j + 3];
-          checksum = (checksum + quad) | 0;
+          var quad = readUint32(file, j);
+          checksum = (checksum + quad) >>> 0;
         }
         writeInt32(file, offset + 4, checksum);
 
@@ -1246,7 +1245,7 @@ var Font = (function FontClosure() {
       function readTableEntry(file) {
         var tag = bytesToString(file.getBytes(4));
 
-        var checksum = file.getInt32();
+        var checksum = file.getInt32() >>> 0;
         var offset = file.getInt32() >>> 0;
         var length = file.getInt32() >>> 0;
 
