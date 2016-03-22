@@ -1116,7 +1116,4 @@ exports.Lexer = Lexer;
 exports.Linearization = Linearization;
 exports.Parser = Parser;
 exports.isEOF = isEOF;
-
-// TODO refactor to remove dependency on stream.js
-coreStream._setCoreParser(exports);
 }));
