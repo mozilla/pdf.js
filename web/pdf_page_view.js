@@ -516,19 +516,32 @@ var PDFPageView = (function PDFPageViewClosure() {
       return promise;
     },
 
-    beforePrint: function PDFPageView_beforePrint() {
+    beforePrint: function PDFPageView_beforePrint(isFirstPagePortrait) {
       var CustomStyle = PDFJS.CustomStyle;
       var pdfPage = this.pdfPage;
 
       var viewport = pdfPage.getViewport(1);
+
+      var pageWidth = viewport.width;
+      var pageHeight = viewport.height;
+
+      var isPortrait = pageHeight > pageWidth;
+      if (!PDFJS.disablePrintAutoRotate && isFirstPagePortrait !== isPortrait) {
+        // Rotate page by 90deg to make all pages same orientation
+        var rotate = (pdfPage.rotate + 90) % 360;
+        pageWidth = viewport.height;
+        pageHeight = viewport.width;
+        viewport = pdfPage.getViewport(1, rotate);
+      }
+
       // Use the same hack we use for high dpi displays for printing to get
       // better output until bug 811002 is fixed in FF.
       var PRINT_OUTPUT_SCALE = 2;
       var canvas = document.createElement('canvas');
 
       // The logical size of the canvas.
-      canvas.width = Math.floor(viewport.width) * PRINT_OUTPUT_SCALE;
-      canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
+      canvas.width = Math.floor(pageWidth) * PRINT_OUTPUT_SCALE;
+      canvas.height = Math.floor(pageHeight) * PRINT_OUTPUT_SCALE;
 
       // The rendered size of the canvas, relative to the size of canvasWrapper.
       canvas.style.width = (PRINT_OUTPUT_SCALE * 100) + '%';
@@ -541,8 +554,8 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var printContainer = document.getElementById('printContainer');
       var canvasWrapper = document.createElement('div');
-      canvasWrapper.style.width = viewport.width + 'pt';
-      canvasWrapper.style.height = viewport.height + 'pt';
+      canvasWrapper.style.width = pageWidth + 'pt';
+      canvasWrapper.style.height = pageHeight + 'pt';
       canvasWrapper.appendChild(canvas);
       printContainer.appendChild(canvasWrapper);
 
