@@ -16,6 +16,7 @@
 
 'use strict';
 
+//#if (GENERIC || SINGLE_FILE)
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util'], factory);
@@ -25,7 +26,6 @@
     factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil);
   }
 }(this, function (exports, sharedUtil) {
-//#if (GENERIC || SINGLE_FILE)
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
@@ -385,7 +385,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     this.pendingEOFill = false;
 
     this.embedFonts = false;
-    this.embeddedFonts = {};
+    this.embeddedFonts = Object.create(null);
     this.cssStyle = null;
   }
 
@@ -1209,5 +1209,5 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 PDFJS.SVGGraphics = SVGGraphics;
 
 exports.SVGGraphics = SVGGraphics;
-//#endif
 }));
+//#endif

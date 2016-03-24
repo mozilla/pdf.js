@@ -1,9 +1,25 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType, AnnotationFlag */
+           AnnotationBorderStyleType, AnnotationFlag, PDFJS, combineUrl,
+           waitsFor, beforeEach, afterEach, stringToBytes */
 
 'use strict';
 
 describe('Annotation layer', function() {
+  function waitsForPromiseResolved(promise, successCallback) {
+    var resolved = false;
+    promise.then(function(val) {
+      resolved = true;
+      successCallback(val);
+    },
+    function(error) {
+      // Shouldn't get here.
+      expect(error).toEqual('the promise should not have been rejected');
+    });
+    waitsFor(function() {
+      return resolved;
+    }, 20000);
+  }
+
   describe('Annotation', function() {
     it('should set and get flags', function() {
       var dict = new Dict();
@@ -170,6 +186,35 @@ describe('Annotation layer', function() {
       borderStyle.setVerticalCornerRadius('three');
 
       expect(borderStyle.verticalCornerRadius).toEqual(0);
+    });
+  });
+
+  describe('FileAttachmentAnnotation', function() {
+    var loadingTask;
+    var annotations;
+
+    beforeEach(function() {
+      var pdfUrl = combineUrl(window.location.href,
+                              '../pdfs/annotation-fileattachment.pdf');
+      loadingTask = PDFJS.getDocument(pdfUrl);
+      waitsForPromiseResolved(loadingTask.promise, function(pdfDocument) {
+        waitsForPromiseResolved(pdfDocument.getPage(1), function(pdfPage) {
+          waitsForPromiseResolved(pdfPage.getAnnotations(),
+              function (pdfAnnotations) {
+            annotations = pdfAnnotations;
+          });
+        });
+      });
+    });
+
+    afterEach(function() {
+      loadingTask.destroy();
+    });
+
+    it('should correctly parse a file attachment', function() {
+      var annotation = annotations[0];
+      expect(annotation.file.filename).toEqual('Test.txt');
+      expect(annotation.file.content).toEqual(stringToBytes('Test attachment'));
     });
   });
 });

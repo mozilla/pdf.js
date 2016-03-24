@@ -83,6 +83,10 @@ var PDFFindBar = (function PDFFindBarClosure() {
   }
 
   PDFFindBar.prototype = {
+    reset: function PDFFindBar_reset() {
+      this.updateUIState();
+    },
+
     dispatchEvent: function PDFFindBar_dispatchEvent(type, findPrev) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('find' + type, true, true, {

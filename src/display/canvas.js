@@ -856,7 +856,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
       if (this.transparentCanvas) {
         this.ctx = this.compositeCtx;
+        this.ctx.save();
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Avoid apply transform twice
         this.ctx.drawImage(this.transparentCanvas, 0, 0);
+        this.ctx.restore();
         this.transparentCanvas = null;
       }
 
@@ -1421,6 +1424,12 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       ctx.transform.apply(ctx, current.textMatrix);
       ctx.translate(current.x, current.y + current.textRise);
 
+      if (current.patternFill) {
+        // TODO: Some shading patterns are not applied correctly to text,
+        //       e.g. issues 3988 and 5432, and ShowText-ShadingPattern.pdf.
+        ctx.fillStyle = current.fillColor.getPattern(ctx, this);
+      }
+
       if (fontDirection > 0) {
         ctx.scale(textHScale, -1);
       } else {
@@ -1495,15 +1504,19 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           }
         }
 
-        if (simpleFillText && !accent) {
-          // common case
-          ctx.fillText(character, scaledX, scaledY);
-        } else {
-          this.paintChar(character, scaledX, scaledY);
-          if (accent) {
-            scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
-            scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
-            this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+        // Only attempt to draw the glyph if it is actually in the embedded font
+        // file or if there isn't a font file so the fallback font is shown.
+        if (glyph.isInFont || font.missingFile) {
+          if (simpleFillText && !accent) {
+            // common case
+            ctx.fillText(character, scaledX, scaledY);
+          } else {
+            this.paintChar(character, scaledX, scaledY);
+            if (accent) {
+              scaledAccentX = scaledX + accent.offset.x / fontSizeScale;
+              scaledAccentY = scaledY - accent.offset.y / fontSizeScale;
+              this.paintChar(accent.fontChar, scaledAccentX, scaledAccentY);
+            }
           }
         }
 
@@ -1839,6 +1852,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     beginAnnotations: function CanvasGraphics_beginAnnotations() {
       this.save();
       this.current = new CanvasExtraState();
+
+      if (this.baseTransform) {
+        this.ctx.setTransform.apply(this.ctx, this.baseTransform);
+      }
     },
 
     endAnnotations: function CanvasGraphics_endAnnotations() {

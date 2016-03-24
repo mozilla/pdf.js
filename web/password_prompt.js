@@ -49,6 +49,7 @@ var PasswordPrompt = {
 
   open: function passwordPromptOpen() {
     OverlayManager.open(this.overlayName).then(function () {
+      this.passwordField.type = 'password';
       this.passwordField.focus();
 
       var promptString = mozL10n.get('password_label', null,
@@ -66,6 +67,7 @@ var PasswordPrompt = {
   close: function passwordPromptClose() {
     OverlayManager.close(this.overlayName).then(function () {
       this.passwordField.value = '';
+      this.passwordField.type = '';
     }.bind(this));
   },
 

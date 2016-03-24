@@ -147,7 +147,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
             id: pageNum,
             defaultViewport: viewport.clone(),
             linkService: this.linkService,
-            renderingQueue: this.renderingQueue
+            renderingQueue: this.renderingQueue,
+            disableCanvasToImageConversion: false,
           });
           this.thumbnails.push(thumbnail);
         }
@@ -176,13 +177,6 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         }.bind(this));
       this._pagesRequests[pageNumber] = promise;
       return promise;
-    },
-
-    ensureThumbnailVisible:
-        function PDFThumbnailViewer_ensureThumbnailVisible(page) {
-      // Ensure that the thumbnail of the current page is visible
-      // when switching from another view.
-      scrollIntoView(document.getElementById('thumbnailContainer' + page));
     },
 
     forceRendering: function () {

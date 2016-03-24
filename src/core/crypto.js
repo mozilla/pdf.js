@@ -38,6 +38,7 @@ var utf8StringToString = sharedUtil.utf8StringToString;
 var warn = sharedUtil.warn;
 var Name = corePrimitives.Name;
 var isName = corePrimitives.isName;
+var isDict = corePrimitives.isDict;
 var DecryptStream = coreStream.DecryptStream;
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
@@ -1921,7 +1922,27 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       error('unsupported encryption algorithm');
     }
     this.algorithm = algorithm;
-    var keyLength = dict.get('Length') || 40;
+    var keyLength = dict.get('Length');
+    if (!keyLength) {
+      // Spec asks to rely on encryption dictionary's Length entry, however
+      // some PDFs don't have it. Trying to recover.
+      if (algorithm <= 3) {
+        // For 1 and 2 it's fixed to 40-bit, for 3 40-bit is a minimal value.
+        keyLength = 40;
+      } else {
+        // Trying to find default handler -- it usually has Length.
+        var cfDict = dict.get('CF');
+        var streamCryptoName = dict.get('StmF');
+        if (isDict(cfDict) && isName(streamCryptoName)) {
+          var handlerDict = cfDict.get(streamCryptoName.name);
+          keyLength = (handlerDict && handlerDict.get('Length')) || 128;
+          if (keyLength < 40) {
+            // Sometimes it's incorrect value of bits, generators specify bytes.
+            keyLength <<= 3;
+          }
+        }
+      }
+    }
     if (!isInt(keyLength) ||
         keyLength < 40 || (keyLength % 8) !== 0) {
       error('invalid key length');

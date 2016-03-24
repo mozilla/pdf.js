@@ -126,7 +126,7 @@ var PostScriptToken = (function PostScriptTokenClosure() {
     this.value = value;
   }
 
-  var opCache = {};
+  var opCache = Object.create(null);
 
   PostScriptToken.getOperator = function PostScriptToken_getOperator(op) {
     var opValue = opCache[op];

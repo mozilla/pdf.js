@@ -12,33 +12,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals getFileName, removeNullCharacters */
+/* globals PDFJS */
 
 'use strict';
 
 /**
- * @typedef {Object} PDFAttachmentViewOptions
+ * @typedef {Object} PDFAttachmentViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
- * @property {Array} attachments - An array of attachment objects.
  * @property {DownloadManager} downloadManager - The download manager.
+ */
+
+/**
+ * @typedef {Object} PDFAttachmentViewerRenderParameters
+ * @property {Array|null} attachments - An array of attachment objects.
  */
 
 /**
  * @class
  */
-var PDFAttachmentView = (function PDFAttachmentViewClosure() {
+var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
   /**
-   * @constructs PDFAttachmentView
-   * @param {PDFAttachmentViewOptions} options
+   * @constructs PDFAttachmentViewer
+   * @param {PDFAttachmentViewerOptions} options
    */
-  function PDFAttachmentView(options) {
+  function PDFAttachmentViewer(options) {
+    this.attachments = null;
     this.container = options.container;
-    this.attachments = options.attachments;
     this.downloadManager = options.downloadManager;
   }
 
-  PDFAttachmentView.prototype = {
-    reset: function PDFAttachmentView_reset() {
+  PDFAttachmentViewer.prototype = {
+    reset: function PDFAttachmentViewer_reset() {
+      this.attachments = null;
+
       var container = this.container;
       while (container.firstChild) {
         container.removeChild(container.firstChild);
@@ -48,7 +54,8 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
     /**
      * @private
      */
-    _dispatchEvent: function PDFAttachmentView_dispatchEvent(attachmentsCount) {
+    _dispatchEvent:
+        function PDFAttachmentViewer_dispatchEvent(attachmentsCount) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('attachmentsloaded', true, true, {
         attachmentsCount: attachmentsCount
@@ -59,18 +66,25 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
     /**
      * @private
      */
-    _bindLink: function PDFAttachmentView_bindLink(button, content, filename) {
+    _bindLink:
+        function PDFAttachmentViewer_bindLink(button, content, filename) {
       button.onclick = function downloadFile(e) {
         this.downloadManager.downloadData(content, filename, '');
         return false;
       }.bind(this);
     },
 
-    render: function PDFAttachmentView_render() {
-      var attachments = this.attachments;
+    /**
+     * @param {PDFAttachmentViewerRenderParameters} params
+     */
+    render: function PDFAttachmentViewer_render(params) {
+      var attachments = (params && params.attachments) || null;
       var attachmentsCount = 0;
 
-      this.reset();
+      if (this.attachments) {
+        this.reset();
+      }
+      this.attachments = attachments;
 
       if (!attachments) {
         this._dispatchEvent(attachmentsCount);
@@ -84,12 +98,12 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
 
       for (var i = 0; i < attachmentsCount; i++) {
         var item = attachments[names[i]];
-        var filename = getFileName(item.filename);
+        var filename = PDFJS.getFilenameFromUrl(item.filename);
         var div = document.createElement('div');
         div.className = 'attachmentsItem';
         var button = document.createElement('button');
         this._bindLink(button, item.content, filename);
-        button.textContent = removeNullCharacters(filename);
+        button.textContent = PDFJS.removeNullCharacters(filename);
         div.appendChild(button);
         this.container.appendChild(div);
       }
@@ -98,5 +112,5 @@ var PDFAttachmentView = (function PDFAttachmentViewClosure() {
     }
   };
 
-  return PDFAttachmentView;
+  return PDFAttachmentViewer;
 })();

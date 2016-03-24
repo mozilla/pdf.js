@@ -23,21 +23,6 @@ var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
 
-var NullCharactersRegExp = /\x00/g;
-
-function removeNullCharacters(str) {
-  return str.replace(NullCharactersRegExp, '');
-}
-
-function getFileName(url) {
-  var anchor = url.indexOf('#');
-  var query = url.indexOf('?');
-  var end = Math.min(
-    anchor > 0 ? anchor : url.length,
-    query > 0 ? query : url.length);
-  return url.substring(url.lastIndexOf('/', end) + 1, end);
-}
-
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.
  * @return {Object} The object with horizontal (sx) and vertical (sy)

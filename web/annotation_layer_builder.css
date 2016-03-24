@@ -17,44 +17,7 @@
   position: absolute;
 }
 
-.annotationLayer .annotLink > a:hover {
-  opacity: 0.2;
-  background: #ff0;
-  box-shadow: 0px 2px 10px #ff0;
-}
-
-.annotationLayer .annotText > img {
-  position: absolute;
-  cursor: pointer;
-}
-
-.annotationLayer .annotTextContentWrapper {
-  position: absolute;
-  width: 20em;
-}
-
-.annotationLayer .annotTextContent {
-  z-index: 200;
-  float: left;
-  max-width: 20em;
-  background-color: #FFFF99;
-  box-shadow: 0px 2px 5px #333;
-  border-radius: 2px;
-  padding: 0.6em;
-  cursor: pointer;
-}
-
-.annotationLayer .annotTextContent > h1 {
-  font-size: 1em;
-  border-bottom: 1px solid #000000;
-  padding-bottom: 0.2em;
-}
-
-.annotationLayer .annotTextContent > p {
-  padding-top: 0.2em;
-}
-
-.annotationLayer .annotLink > a {
+.annotationLayer .linkAnnotation > a {
   position: absolute;
   font-size: 1em;
   top: 0;
@@ -63,6 +26,53 @@
   height: 100%;
 }
 
-.annotationLayer .annotLink > a /* -ms-a */  {
+.annotationLayer .linkAnnotation > a /* -ms-a */  {
   background: url("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7") 0 0 repeat;
+}
+
+.annotationLayer .linkAnnotation > a:hover {
+  opacity: 0.2;
+  background: #ff0;
+  box-shadow: 0px 2px 10px #ff0;
+}
+
+.annotationLayer .textAnnotation img {
+  position: absolute;
+  cursor: pointer;
+}
+
+.annotationLayer .popupWrapper {
+  position: absolute;
+  width: 20em;
+}
+
+.annotationLayer .popup {
+  position: absolute;
+  z-index: 200;
+  max-width: 20em;
+  background-color: #FFFF99;
+  box-shadow: 0px 2px 5px #333;
+  border-radius: 2px;
+  padding: 0.6em;
+  margin-left: 5px;
+  cursor: pointer;
+  word-wrap: break-word;
+}
+
+.annotationLayer .popup h1 {
+  font-size: 1em;
+  border-bottom: 1px solid #000000;
+  padding-bottom: 0.2em;
+}
+
+.annotationLayer .popup p {
+  padding-top: 0.2em;
+}
+
+.annotationLayer .highlightAnnotation,
+.annotationLayer .underlineAnnotation,
+.annotationLayer .squigglyAnnotation,
+.annotationLayer .strikeoutAnnotation,
+.annotationLayer .fileAttachmentAnnotation {
+  cursor: pointer;
 }

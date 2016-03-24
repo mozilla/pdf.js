@@ -82,9 +82,15 @@ function getFindBar(domWindow) {
 //#endif
     return tabbrowser.getFindBar(tab);
   } catch (e) {
-    // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
-    var chromeWindow = browser.ownerDocument.defaultView;
-    return chromeWindow.gFindBar;
+    try {
+      // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
+      var chromeWindow = browser.ownerDocument.defaultView;
+      return chromeWindow.gFindBar;
+    } catch (ex) {
+      // Suppress errors for PDF files opened in the bookmark sidebar, see
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1248959.
+      return null;
+    }
   }
 }
 
@@ -337,7 +343,7 @@ ChromeActions.prototype = {
       try {
         // contentDisposition/contentDispositionFilename is readonly before FF18
         channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
-        if (self.contentDispositionFilename) {
+        if (self.contentDispositionFilename && !data.isAttachment) {
           channel.contentDispositionFilename = self.contentDispositionFilename;
         } else {
           channel.contentDispositionFilename = filename;
@@ -407,7 +413,7 @@ ChromeActions.prototype = {
 
     // ... or when the new find events code exists.
     var findBar = getFindBar(this.domWindow);
-    return findBar && ('updateControlState' in findBar);
+    return !!findBar && ('updateControlState' in findBar);
   },
   supportsDocumentFonts: function() {
     var prefBrowser = getIntPref('browser.display.use_document_fonts', 1);

@@ -19,18 +19,18 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/obj', ['exports', 'pdfjs/shared/util',
       'pdfjs/core/primitives', 'pdfjs/core/crypto', 'pdfjs/core/parser',
-      'pdfjs/core/chunked_stream'], factory);
+      'pdfjs/core/chunked_stream', 'pdfjs/core/colorspace'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
       require('./crypto.js'), require('./parser.js'),
-      require('./chunked_stream.js'));
+      require('./chunked_stream.js'), require('./colorspace.js'));
   } else {
     factory((root.pdfjsCoreObj = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreCrypto, root.pdfjsCoreParser,
-      root.pdfjsCoreChunkedStream);
+      root.pdfjsCoreChunkedStream, root.pdfjsCoreColorSpace);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreCrypto, coreParser,
-                  coreChunkedStream) {
+                  coreChunkedStream, coreColorSpace) {
 
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MissingDataException = sharedUtil.MissingDataException;
@@ -47,6 +47,8 @@ var shadow = sharedUtil.shadow;
 var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
+var isValidUrl = sharedUtil.isValidUrl;
+var Util = sharedUtil.Util;
 var Ref = corePrimitives.Ref;
 var RefSet = corePrimitives.RefSet;
 var RefSetCache = corePrimitives.RefSetCache;
@@ -59,6 +61,7 @@ var CipherTransformFactory = coreCrypto.CipherTransformFactory;
 var Lexer = coreParser.Lexer;
 var Parser = coreParser.Parser;
 var ChunkedStream = coreChunkedStream.ChunkedStream;
+var ColorSpace = coreColorSpace.ColorSpace;
 
 var Catalog = (function CatalogClosure() {
   function Catalog(pdfManager, xref, pageFactory) {
@@ -126,57 +129,75 @@ var Catalog = (function CatalogClosure() {
       return shadow(this, 'documentOutline', obj);
     },
     readDocumentOutline: function Catalog_readDocumentOutline() {
-      var xref = this.xref;
       var obj = this.catDict.get('Outlines');
+      if (!isDict(obj)) {
+        return null;
+      }
+      obj = obj.getRaw('First');
+      if (!isRef(obj)) {
+        return null;
+      }
       var root = { items: [] };
-      if (isDict(obj)) {
-        obj = obj.getRaw('First');
-        var processed = new RefSet();
-        if (isRef(obj)) {
-          var queue = [{obj: obj, parent: root}];
-          // to avoid recursion keeping track of the items
-          // in the processed dictionary
-          processed.put(obj);
-          while (queue.length > 0) {
-            var i = queue.shift();
-            var outlineDict = xref.fetchIfRef(i.obj);
-            if (outlineDict === null) {
-              continue;
-            }
-            if (!outlineDict.has('Title')) {
-              error('Invalid outline item');
-            }
-            var dest = outlineDict.get('A');
-            if (dest) {
-              dest = dest.get('D');
-            } else if (outlineDict.has('Dest')) {
-              dest = outlineDict.getRaw('Dest');
-              if (isName(dest)) {
-                dest = dest.name;
-              }
-            }
-            var title = outlineDict.get('Title');
-            var outlineItem = {
-              dest: dest,
-              title: stringToPDFString(title),
-              color: outlineDict.get('C') || [0, 0, 0],
-              count: outlineDict.get('Count'),
-              bold: !!(outlineDict.get('F') & 2),
-              italic: !!(outlineDict.get('F') & 1),
-              items: []
-            };
-            i.parent.items.push(outlineItem);
-            obj = outlineDict.getRaw('First');
-            if (isRef(obj) && !processed.has(obj)) {
-              queue.push({obj: obj, parent: outlineItem});
-              processed.put(obj);
-            }
-            obj = outlineDict.getRaw('Next');
-            if (isRef(obj) && !processed.has(obj)) {
-              queue.push({obj: obj, parent: i.parent});
-              processed.put(obj);
+      var queue = [{obj: obj, parent: root}];
+      // To avoid recursion, keep track of the already processed items.
+      var processed = new RefSet();
+      processed.put(obj);
+      var xref = this.xref, blackColor = new Uint8Array(3);
+
+      while (queue.length > 0) {
+        var i = queue.shift();
+        var outlineDict = xref.fetchIfRef(i.obj);
+        if (outlineDict === null) {
+          continue;
+        }
+        assert(outlineDict.has('Title'), 'Invalid outline item');
+
+        var actionDict = outlineDict.get('A'), dest = null, url = null;
+        if (actionDict) {
+          var destEntry = actionDict.get('D');
+          if (destEntry) {
+            dest = destEntry;
+          } else {
+            var uriEntry = actionDict.get('URI');
+            if (isString(uriEntry) && isValidUrl(uriEntry, false)) {
+              url = uriEntry;
             }
           }
+        } else if (outlineDict.has('Dest')) {
+          dest = outlineDict.getRaw('Dest');
+          if (isName(dest)) {
+            dest = dest.name;
+          }
+        }
+        var title = outlineDict.get('Title');
+        var flags = outlineDict.get('F') || 0;
+
+        var color = outlineDict.get('C'), rgbColor = blackColor;
+        // We only need to parse the color when it's valid, and non-default.
+        if (isArray(color) && color.length === 3 &&
+            (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {
+          rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
+        }
+        var outlineItem = {
+          dest: dest,
+          url: url,
+          title: stringToPDFString(title),
+          color: rgbColor,
+          count: outlineDict.get('Count'),
+          bold: !!(flags & 2),
+          italic: !!(flags & 1),
+          items: []
+        };
+        i.parent.items.push(outlineItem);
+        obj = outlineDict.getRaw('First');
+        if (isRef(obj) && !processed.has(obj)) {
+          queue.push({obj: obj, parent: outlineItem});
+          processed.put(obj);
+        }
+        obj = outlineDict.getRaw('Next');
+        if (isRef(obj) && !processed.has(obj)) {
+          queue.push({obj: obj, parent: i.parent});
+          processed.put(obj);
         }
       }
       return (root.items.length > 0 ? root.items : null);
@@ -218,9 +239,6 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(nameTreeRef, xref);
         var names = nameTree.getAll();
         for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
           dests[name] = fetchDestination(names[name]);
         }
       }
@@ -252,6 +270,89 @@ var Catalog = (function CatalogClosure() {
       }
       return dest;
     },
+
+    get pageLabels() {
+      var obj = null;
+      try {
+        obj = this.readPageLabels();
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn('Unable to read page labels.');
+      }
+      return shadow(this, 'pageLabels', obj);
+    },
+    readPageLabels: function Catalog_readPageLabels() {
+      var obj = this.catDict.getRaw('PageLabels');
+      if (!obj) {
+        return null;
+      }
+      var pageLabels = new Array(this.numPages);
+      var style = null;
+      var prefix = '';
+      var start = 1;
+
+      var numberTree = new NumberTree(obj, this.xref);
+      var nums = numberTree.getAll();
+      var currentLabel = '', currentIndex = 1;
+
+      for (var i = 0, ii = this.numPages; i < ii; i++) {
+        if (i in nums) {
+          var labelDict = nums[i];
+          assert(isDict(labelDict), 'The PageLabel is not a dictionary.');
+
+          var type = labelDict.get('Type');
+          assert(!type || (isName(type) && type.name === 'PageLabel'),
+                 'Invalid type in PageLabel dictionary.');
+
+          var s = labelDict.get('S');
+          assert(!s || isName(s), 'Invalid style in PageLabel dictionary.');
+          style = (s ? s.name : null);
+
+          prefix = labelDict.get('P') || '';
+          assert(isString(prefix), 'Invalid prefix in PageLabel dictionary.');
+
+          start = labelDict.get('St') || 1;
+          assert(isInt(start), 'Invalid start in PageLabel dictionary.');
+          currentIndex = start;
+        }
+
+        switch (style) {
+          case 'D':
+            currentLabel = currentIndex;
+            break;
+          case 'R':
+          case 'r':
+            currentLabel = Util.toRoman(currentIndex, style === 'r');
+            break;
+          case 'A':
+          case 'a':
+            var LIMIT = 26; // Use only the characters A--Z, or a--z.
+            var A_UPPER_CASE = 0x41, A_LOWER_CASE = 0x61;
+
+            var baseCharCode = (style === 'a' ? A_LOWER_CASE : A_UPPER_CASE);
+            var letterIndex = currentIndex - 1;
+            var character = String.fromCharCode(baseCharCode +
+                                                (letterIndex % LIMIT));
+            var charBuf = [];
+            for (var j = 0, jj = (letterIndex / LIMIT) | 0; j <= jj; j++) {
+              charBuf.push(character);
+            }
+            currentLabel = charBuf.join('');
+            break;
+          default:
+            assert(!style,
+                   'Invalid style "' + style + '" in PageLabel dictionary.');
+        }
+        pageLabels[i] = prefix + currentLabel;
+
+        currentLabel = '';
+        currentIndex++;
+      }
+      return pageLabels;
+    },
+
     get attachments() {
       var xref = this.xref;
       var attachments = null, nameTreeRef;
@@ -264,12 +365,9 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(nameTreeRef, xref);
         var names = nameTree.getAll();
         for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
           var fs = new FileSpec(names[name], xref);
           if (!attachments) {
-            attachments = {};
+            attachments = Object.create(null);
           }
           attachments[stringToPDFString(name)] = fs.serializable;
         }
@@ -298,9 +396,6 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(obj.getRaw('JavaScript'), xref);
         var names = nameTree.getAll();
         for (var name in names) {
-          if (!names.hasOwnProperty(name)) {
-            continue;
-          }
           // We don't really use the JavaScript right now. This code is
           // defensive so we don't cause errors on document load.
           var jsDict = names[name];
@@ -501,7 +596,7 @@ var XRef = (function XRefClosure() {
   function XRef(stream, password) {
     this.stream = stream;
     this.entries = [];
-    this.xrefstms = {};
+    this.xrefstms = Object.create(null);
     // prepare the XRef cache
     this.cache = [];
     this.password = password;
@@ -1127,24 +1222,23 @@ var XRef = (function XRefClosure() {
 })();
 
 /**
- * A NameTree is like a Dict but has some advantageous properties, see the
- * spec (7.9.6) for more details.
- * TODO: implement all the Dict functions and make this more efficent.
+ * A NameTree/NumberTree is like a Dict but has some advantageous properties,
+ * see the specification (7.9.6 and 7.9.7) for additional details.
+ * TODO: implement all the Dict functions and make this more efficient.
  */
-var NameTree = (function NameTreeClosure() {
-  function NameTree(root, xref) {
-    this.root = root;
-    this.xref = xref;
+var NameOrNumberTree = (function NameOrNumberTreeClosure() {
+  function NameOrNumberTree(root, xref) {
+    throw new Error('Cannot initialize NameOrNumberTree.');
   }
 
-  NameTree.prototype = {
-    getAll: function NameTree_getAll() {
-      var dict = {};
+  NameOrNumberTree.prototype = {
+    getAll: function NameOrNumberTree_getAll() {
+      var dict = Object.create(null);
       if (!this.root) {
         return dict;
       }
       var xref = this.xref;
-      // reading name tree
+      // Reading Name/Number tree.
       var processed = new RefSet();
       processed.put(this.root);
       var queue = [this.root];
@@ -1158,45 +1252,43 @@ var NameTree = (function NameTreeClosure() {
           var kids = obj.get('Kids');
           for (i = 0, n = kids.length; i < n; i++) {
             var kid = kids[i];
-            if (processed.has(kid)) {
-              error('invalid destinations');
-            }
+            assert(!processed.has(kid),
+                   'Duplicate entry in "' + this._type + '" tree.');
             queue.push(kid);
             processed.put(kid);
           }
           continue;
         }
-        var names = obj.get('Names');
-        if (names) {
-          for (i = 0, n = names.length; i < n; i += 2) {
-            dict[xref.fetchIfRef(names[i])] = xref.fetchIfRef(names[i + 1]);
+        var entries = obj.get(this._type);
+        if (isArray(entries)) {
+          for (i = 0, n = entries.length; i < n; i += 2) {
+            dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
           }
         }
       }
       return dict;
     },
 
-    get: function NameTree_get(destinationId) {
+    get: function NameOrNumberTree_get(key) {
       if (!this.root) {
         return null;
       }
 
       var xref = this.xref;
-      var kidsOrNames = xref.fetchIfRef(this.root);
+      var kidsOrEntries = xref.fetchIfRef(this.root);
       var loopCount = 0;
-      var MAX_NAMES_LEVELS = 10;
+      var MAX_LEVELS = 10;
       var l, r, m;
 
       // Perform a binary search to quickly find the entry that
-      // contains the named destination we are looking for.
-      while (kidsOrNames.has('Kids')) {
-        loopCount++;
-        if (loopCount > MAX_NAMES_LEVELS) {
-          warn('Search depth limit for named destionations has been reached.');
+      // contains the key we are looking for.
+      while (kidsOrEntries.has('Kids')) {
+        if (++loopCount > MAX_LEVELS) {
+          warn('Search depth limit reached for "' + this._type + '" tree.');
           return null;
         }
 
-        var kids = kidsOrNames.get('Kids');
+        var kids = kidsOrEntries.get('Kids');
         if (!isArray(kids)) {
           return null;
         }
@@ -1208,12 +1300,12 @@ var NameTree = (function NameTreeClosure() {
           var kid = xref.fetchIfRef(kids[m]);
           var limits = kid.get('Limits');
 
-          if (destinationId < xref.fetchIfRef(limits[0])) {
+          if (key < xref.fetchIfRef(limits[0])) {
             r = m - 1;
-          } else if (destinationId > xref.fetchIfRef(limits[1])) {
+          } else if (key > xref.fetchIfRef(limits[1])) {
             l = m + 1;
           } else {
-            kidsOrNames = xref.fetchIfRef(kids[m]);
+            kidsOrEntries = xref.fetchIfRef(kids[m]);
             break;
           }
         }
@@ -1222,31 +1314,55 @@ var NameTree = (function NameTreeClosure() {
         }
       }
 
-      // If we get here, then we have found the right entry. Now
-      // go through the named destinations in the Named dictionary
-      // until we find the exact destination we're looking for.
-      var names = kidsOrNames.get('Names');
-      if (isArray(names)) {
+      // If we get here, then we have found the right entry. Now go through the
+      // entries in the dictionary until we find the key we're looking for.
+      var entries = kidsOrEntries.get(this._type);
+      if (isArray(entries)) {
         // Perform a binary search to reduce the lookup time.
         l = 0;
-        r = names.length - 2;
+        r = entries.length - 2;
         while (l <= r) {
           // Check only even indices (0, 2, 4, ...) because the
-          // odd indices contain the actual D array.
+          // odd indices contain the actual data.
           m = (l + r) & ~1;
-          if (destinationId < xref.fetchIfRef(names[m])) {
+          var currentKey = xref.fetchIfRef(entries[m]);
+          if (key < currentKey) {
             r = m - 2;
-          } else if (destinationId > xref.fetchIfRef(names[m])) {
+          } else if (key > currentKey) {
             l = m + 2;
           } else {
-            return xref.fetchIfRef(names[m + 1]);
+            return xref.fetchIfRef(entries[m + 1]);
           }
         }
       }
       return null;
     }
   };
+  return NameOrNumberTree;
+})();
+
+var NameTree = (function NameTreeClosure() {
+  function NameTree(root, xref) {
+    this.root = root;
+    this.xref = xref;
+    this._type = 'Names';
+  }
+
+  Util.inherit(NameTree, NameOrNumberTree, {});
+
   return NameTree;
+})();
+
+var NumberTree = (function NumberTreeClosure() {
+  function NumberTree(root, xref) {
+    this.root = root;
+    this.xref = xref;
+    this._type = 'Nums';
+  }
+
+  Util.inherit(NumberTree, NameOrNumberTree, {});
+
+  return NumberTree;
 })();
 
 /**
@@ -1485,4 +1601,5 @@ var ObjectLoader = (function() {
 exports.Catalog = Catalog;
 exports.ObjectLoader = ObjectLoader;
 exports.XRef = XRef;
+exports.FileSpec = FileSpec;
 }));

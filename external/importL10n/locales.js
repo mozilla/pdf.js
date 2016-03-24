@@ -41,7 +41,7 @@ function normalizeText(s) {
   return s.replace(/\r\n?/g, '\n').replace(/\uFEFF/g, '');
 }
 
-function downloadLanguageFiles(langCode, callback) {
+function downloadLanguageFiles(root, langCode, callback) {
   console.log('Downloading ' + langCode + '...');
 
   // Constants for constructing the URLs. Translations are taken from the
@@ -55,13 +55,14 @@ function downloadLanguageFiles(langCode, callback) {
   var files = ['chrome.properties', 'viewer.properties'];
   var downloadsLeft = files.length;
 
-  if (!fs.existsSync(langCode)) {
-    fs.mkdirSync(langCode);
+  var outputDir = path.join(root, langCode);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir);
   }
 
   // Download the necessary files for this language.
   files.forEach(function(fileName) {
-    var outputPath = path.join(langCode, fileName);
+    var outputPath = path.join(outputDir, fileName);
     var url = MOZCENTRAL_ROOT + langCode + MOZCENTRAL_PDFJS_DIR +
               fileName + MOZCENTRAL_RAW_FLAG;
     var request = http.get(url, function(response) {
@@ -81,13 +82,13 @@ function downloadLanguageFiles(langCode, callback) {
   });
 }
 
-function downloadL10n() {
+function downloadL10n(root) {
   var i = 0;
   (function next() {
     if (i >= langCodes.length) {
       return;
     }
-    downloadLanguageFiles(langCodes[i++], next);
+    downloadLanguageFiles(root, langCodes[i++], next);
   })();
 }
 

@@ -1,0 +1,70 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj 
+<<
+/Pages 2 0 R
+/Type /Catalog
+>>
+endobj 
+2 0 obj 
+<<
+/Kids [3 0 R]
+/Count 1
+/Type /Pages
+>>
+endobj 
+3 0 obj 
+<<
+/CropBox [0 0 1687.41 2386.46]
+/Parent 2 0 R
+/TrimBox [0 0 4783.2 6764.77]
+/MediaBox [0 0 595.28 841.890]
+/Resources 
+<<
+/Font 
+<<
+/F1 4 0 R
+>>
+>>
+/BleedBox [0 0 4783.2 6764.77]
+/Contents 5 0 R
+/Type /Page
+>>
+endobj 
+4 0 obj 
+<<
+/BaseFont /Times-Roman
+/Subtype /Type1
+/Encoding /WinAnsiEncoding
+/Type /Font
+>>
+endobj 
+5 0 obj 
+<<
+/Length 85
+>>
+stream
+BT
+1 0 0 1 50 600 Tm
+/F1 20 Tf
+(Issue 1155 - Intersect /CropBox and /MediaBox) Tj
+ET
+
+endstream 
+endobj xref
+0 6
+0000000000 65535 f 
+0000000015 00000 n 
+0000000066 00000 n 
+0000000125 00000 n 
+0000000354 00000 n 
+0000000455 00000 n 
+trailer
+
+<<
+/Root 1 0 R
+/Size 6
+>>
+startxref
+592
+%%EOF

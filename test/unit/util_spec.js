@@ -1,9 +1,25 @@
 /* globals expect, it, describe, combineUrl, Dict, isDict, Name, PDFJS,
-           stringToPDFString, isExternalLinkTargetSet, LinkTarget */
+           stringToPDFString, isExternalLinkTargetSet, LinkTarget,
+           removeNullCharacters, getFilenameFromUrl */
 
 'use strict';
 
 describe('util', function() {
+  describe('getFilenameFromUrl', function() {
+    it('should get the filename from an absolute URL', function() {
+      var url = 'http://server.org/filename.pdf';
+      var result = getFilenameFromUrl(url);
+      var expected = 'filename.pdf';
+      expect(result).toEqual(expected);
+    });
+
+    it('should get the filename from a relative URL', function() {
+      var url = '../../filename.pdf';
+      var result = getFilenameFromUrl(url);
+      var expected = 'filename.pdf';
+      expect(result).toEqual(expected);
+    });
+  });
 
   describe('combineUrl', function() {
     it('absolute url with protocol stays as is', function() {
@@ -124,5 +140,17 @@ describe('util', function() {
 
     // Reset the state.
     PDFJS.externalLinkTarget = previousExternalLinkTarget;
+  });
+
+  describe('removeNullCharacters', function() {
+    it('should not modify string without null characters', function() {
+      var str = 'string without null chars';
+      expect(removeNullCharacters(str)).toEqual('string without null chars');
+    });
+
+    it('should modify string with null characters', function() {
+      var str = 'string\x00With\x00Null\x00Chars';
+      expect(removeNullCharacters(str)).toEqual('stringWithNullChars');
+    });
   });
 });

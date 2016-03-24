@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, require, module */
+/* globals PDFJS, require, module, requirejs */
 
 // included from api.js for GENERIC build
 
@@ -32,9 +32,16 @@ if (typeof __webpack_require__ !== 'undefined') {
   PDFJS.workerSrc = require('entry?name=[hash]-worker.js!./pdf.worker.js');
   useRequireEnsure = true;
 }
-var fakeWorkerFilesLoader = useRequireEnsure && function (callback) {
+if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
+  PDFJS.workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
+}
+var fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
   require.ensure([], function () {
     require('./pdf.worker.js');
     callback();
   });
-};
+}) : (typeof requirejs !== 'undefined') ? (function (callback) {
+  requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
+    callback();
+  });
+}) : null;

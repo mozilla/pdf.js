@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 /* globals RenderingStates, PDFJS, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
-           TextLayerBuilder, AnnotationLayerBuilder, Promise,
-           approximateFraction, roundToDivide */
+           TextLayerBuilder, Promise, approximateFraction, roundToDivide */
 
 'use strict';
 
@@ -36,8 +35,6 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @implements {IRenderableView}
  */
 var PDFPageView = (function PDFPageViewClosure() {
-  var CustomStyle = PDFJS.CustomStyle;
-
   /**
    * @constructs PDFPageView
    * @param {PDFPageViewOptions} options
@@ -211,6 +208,8 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     cssTransform: function PDFPageView_transform(canvas, redrawAnnotations) {
+      var CustomStyle = PDFJS.CustomStyle;
+
       // Scale canvas, canvas wrapper, and page container.
       var width = this.viewport.width;
       var height = this.viewport.height;
@@ -518,6 +517,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     beforePrint: function PDFPageView_beforePrint() {
+      var CustomStyle = PDFJS.CustomStyle;
       var pdfPage = this.pdfPage;
 
       var viewport = pdfPage.getViewport(1);
@@ -532,7 +532,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       // The rendered size of the canvas, relative to the size of canvasWrapper.
       canvas.style.width = (PRINT_OUTPUT_SCALE * 100) + '%';
-      canvas.style.height = (PRINT_OUTPUT_SCALE * 100) + '%';
 
       var cssScale = 'scale(' + (1 / PRINT_OUTPUT_SCALE) + ', ' +
                                 (1 / PRINT_OUTPUT_SCALE) + ')';
@@ -541,8 +540,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var printContainer = document.getElementById('printContainer');
       var canvasWrapper = document.createElement('div');
-      canvasWrapper.style.width = viewport.width + 'pt';
-      canvasWrapper.style.height = viewport.height + 'pt';
       canvasWrapper.appendChild(canvas);
       printContainer.appendChild(canvasWrapper);
 

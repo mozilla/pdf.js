@@ -39,9 +39,9 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#include viewer-snippet-chrome-extension.html-->
 <!--#endif-->
 
-    <link rel="stylesheet" href="viewer.css"/>
+    <link rel="stylesheet" href="viewer.css">
 <!--#if !PRODUCTION-->
-    <link rel="resource" type="application/l10n" href="locale/locale.properties"/>
+    <link rel="resource" type="application/l10n" href="locale/locale.properties">
 <!--#endif-->
 
 <!--#if !(MOZCENTRAL || CHROME || MINIFIED)-->
@@ -53,18 +53,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
-    <script src="../src/shared/global.js"></script>
-    <script src="../src/display/dom_utils.js"></script>
-    <script src="../src/shared/util.js"></script>
-    <script src="../src/display/annotation_layer.js"></script>
-    <script src="../src/display/font_loader.js"></script>
-    <script src="../src/display/metadata.js"></script>
-    <script src="../src/display/text_layer.js"></script>
-    <script src="../src/display/webgl.js"></script>
-    <script src="../src/display/pattern_helper.js"></script>
-    <script src="../src/display/canvas.js"></script>
-    <script src="../src/display/api.js"></script>
-    <script>PDFJS.workerSrc = '../src/worker_loader.js';</script>
+    <script src="../node_modules/requirejs/require.js"></script>
 <!--#endif-->
 
 <!--#if (GENERIC && !MINIFIED) -->
@@ -85,8 +74,9 @@ See https://github.com/adobe-type-tools/cmap-resources
     <script src="pdf_viewer.js"></script>
     <script src="pdf_thumbnail_view.js"></script>
     <script src="pdf_thumbnail_viewer.js"></script>
-    <script src="pdf_outline_view.js"></script>
-    <script src="pdf_attachment_view.js"></script>
+    <script src="pdf_sidebar.js"></script>
+    <script src="pdf_outline_viewer.js"></script>
+    <script src="pdf_attachment_viewer.js"></script>
     <script src="pdf_find_bar.js"></script>
     <script src="pdf_find_controller.js"></script>
     <script src="pdf_history.js"></script>
@@ -342,7 +332,8 @@ See https://github.com/adobe-type-tools/cmap-resources
               <p id="passwordText" data-l10n-id="password_label">Enter the password to open this PDF file:</p>
             </div>
             <div class="row">
-              <input type="password" id="password" class="toolbarField" />
+              <!-- The type="password" attribute is set via script, to prevent warnings in Firefox for all http:// documents. -->
+              <input id="password" class="toolbarField">
             </div>
             <div class="buttonRow">
               <button id="passwordCancel" class="overlayButton"><span data-l10n-id="password_cancel">Cancel</span></button>

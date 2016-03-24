@@ -63,7 +63,7 @@ function pageLoaded() {
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof PDFJS === 'undefined') {
     alert('Built version of PDF.js was not found.\n' +
-          'Please run `node make generic`.');
+          'Please run `gulp generic`.');
     return;
   }
   pageLoaded();

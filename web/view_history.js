@@ -22,7 +22,7 @@ var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
  *                recently opened files.
  *
  * The way that the view parameters are stored depends on how PDF.js is built,
- * for 'node make <flag>' the following cases exist:
+ * for 'gulp <flag>' the following cases exist:
  *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
