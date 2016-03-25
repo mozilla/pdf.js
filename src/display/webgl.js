@@ -12,22 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
 /* jshint -W043 */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/webgl', ['exports', 'pdfjs/shared/util'], factory);
+    define('pdfjs/display/webgl', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/global'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
+    factory(exports, require('../shared/util.js'), require('./global.js'));
   } else {
-    factory((root.pdfjsDisplayWebGL = {}), root.pdfjsSharedUtil);
+    factory((root.pdfjsDisplayWebGL = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayGlobal);
   }
-}(this, function (exports, sharedUtil) {
+}(this, function (exports, sharedUtil, displayGlobal) {
 
 var shadow = sharedUtil.shadow;
+var PDFJS = displayGlobal.PDFJS;
 
 var WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {

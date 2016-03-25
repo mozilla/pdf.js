@@ -79,6 +79,7 @@ var Page = (function PageClosure() {
     this.idCounters = {
       obj: 0
     };
+    this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
   }
 
@@ -224,7 +225,8 @@ var Page = (function PageClosure() {
                                                   handler, this.pageIndex,
                                                   'p' + this.pageIndex + '_',
                                                   this.idCounters,
-                                                  this.fontCache);
+                                                  this.fontCache,
+                                                  this.evaluatorOptions);
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
       var pageListPromise = dataPromises.then(function(data) {
@@ -289,7 +291,8 @@ var Page = (function PageClosure() {
                                                     handler, self.pageIndex,
                                                     'p' + self.pageIndex + '_',
                                                     self.idCounters,
-                                                    self.fontCache);
+                                                    self.fontCache,
+                                                    self.evaluatorOptions);
 
         return partialEvaluator.getTextContent(contentStream,
                                                task,

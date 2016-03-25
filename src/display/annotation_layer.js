@@ -31,8 +31,8 @@
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
 var Util = sharedUtil.Util;
-var addLinkAttributes = sharedUtil.addLinkAttributes;
-var getFilenameFromUrl = sharedUtil.getFilenameFromUrl;
+var addLinkAttributes = displayDOMUtils.addLinkAttributes;
+var getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
 var warn = sharedUtil.warn;
 var CustomStyle = displayDOMUtils.CustomStyle;
 

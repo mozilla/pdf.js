@@ -43,9 +43,8 @@
 
   }).call(pdfjsLibs);
 
-  exports.PDFJS = pdfjsLibs.pdfjsSharedGlobal.PDFJS;
-
 //#if MAIN_FILE
+  exports.PDFJS = pdfjsLibs.pdfjsDisplayGlobal.PDFJS;
   exports.getDocument = pdfjsLibs.pdfjsDisplayAPI.getDocument;
   exports.PDFDataRangeTransport =
     pdfjsLibs.pdfjsDisplayAPI.PDFDataRangeTransport;
@@ -58,5 +57,7 @@
   exports.MissingPDFException = pdfjsLibs.pdfjsSharedUtil.MissingPDFException;
   exports.UnexpectedResponseException =
     pdfjsLibs.pdfjsSharedUtil.UnexpectedResponseException;
+//#else
+  exports.WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
 //#endif
 }));

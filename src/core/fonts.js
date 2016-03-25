@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
 
 'use strict';
 
@@ -20,24 +19,24 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/fonts', ['exports', 'pdfjs/shared/util',
       'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
-      'pdfjs/core/cmap', 'pdfjs/core/glyphlist', 'pdfjs/core/charsets',
+      'pdfjs/core/glyphlist', 'pdfjs/core/charsets',
       'pdfjs/core/font_renderer', 'pdfjs/core/encodings',
       'pdfjs/core/standard_fonts', 'pdfjs/core/unicode'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./parser.js'), require('./cmap.js'),
+      require('./stream.js'), require('./parser.js'),
       require('./glyphlist.js'), require('./charsets.js'),
       require('./font_renderer.js'), require('./encodings.js'),
       require('./standard_fonts'), require('./unicode.js'));
   } else {
     factory((root.pdfjsCoreFonts = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
-      root.pdfjsCoreCMap, root.pdfjsCoreGlyphList, root.pdfjsCoreCharsets,
+      root.pdfjsCoreGlyphList, root.pdfjsCoreCharsets,
       root.pdfjsCoreFontRenderer, root.pdfjsCoreEncodings,
       root.pdfjsCoreStandardFonts, root.pdfjsCoreUnicode);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
-                  coreCMap, coreGlyphList, coreCharsets, coreFontRenderer,
+                  coreGlyphList, coreCharsets, coreFontRenderer,
                   coreEncodings, coreStandardFonts, coreUnicode) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
@@ -55,11 +54,8 @@ var shadow = sharedUtil.shadow;
 var stringToBytes = sharedUtil.stringToBytes;
 var string32 = sharedUtil.string32;
 var warn = sharedUtil.warn;
-var Name = corePrimitives.Name;
 var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
-var CMapFactory = coreCMap.CMapFactory;
-var IdentityCMap = coreCMap.IdentityCMap;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
 var getDingbatsGlyphsUnicode = coreGlyphList.getDingbatsGlyphsUnicode;
 var ISOAdobeCharset = coreCharsets.ISOAdobeCharset;

@@ -19,23 +19,24 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/main_loader', ['exports', 'pdfjs/display/api',
       'pdfjs/display/annotation_layer', 'pdfjs/display/text_layer',
-      'pdfjs/display/dom_utils', 'pdfjs/shared/util', 'pdfjs/shared/global'],
+      'pdfjs/display/dom_utils', 'pdfjs/shared/util', 'pdfjs/display/global'],
       factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./display/api.js'),
       require('./display/annotation_layer.js'),
       require('./display/text_layer.js'), require('./display/dom_utils.js'),
-      require('./shared/util.js'), require('./shared/global.js'));
+      require('./shared/util.js'), require('./display/global.js'));
   } else {
     factory((root.pdfjsMainLoader = {}), root.pdfjsDisplayAPI,
       root.pdfjsDisplayAnnotationLayer, root.pdfjsDisplayTextLayer,
-      root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil, root.pdfjsSharedGlobal);
+      root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil, root.pdfjsDisplayGlobal);
   }
 }(this, function (exports, displayAPI, displayAnnotationLayer,
-                  displayTextLayer, displayDOMUtils, sharedUtil, sharedGlobal) {
+                  displayTextLayer, displayDOMUtils, sharedUtil,
+                  displayGlobal) {
 
   // Sync the exports below with ./pdf.js file/template.
-  exports.PDFJS = sharedGlobal.PDFJS;
+  exports.PDFJS = displayGlobal.PDFJS;
 
   exports.getDocument = displayAPI.getDocument;
   exports.PDFDataRangeTransport = displayAPI.PDFDataRangeTransport;

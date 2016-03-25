@@ -37,11 +37,11 @@ if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
 }
 var fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
   require.ensure([], function () {
-    require('./pdf.worker.js');
-    callback();
+    var worker = require('./pdf.worker.js');
+    callback(worker.WorkerMessageHandler);
   });
 }) : (typeof requirejs !== 'undefined') ? (function (callback) {
   requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
-    callback();
+    callback(worker.WorkerMessageHandler);
   });
 }) : null;

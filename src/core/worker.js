@@ -19,18 +19,16 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/worker', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/pdf_manager', 'pdfjs/shared/global'],
+      'pdfjs/core/primitives', 'pdfjs/core/pdf_manager'],
       factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./pdf_manager.js'), require('../shared/global.js'));
+      require('./pdf_manager.js'));
   } else {
     factory((root.pdfjsCoreWorker = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCorePdfManager,
-      root.pdfjsSharedGlobal);
+      root.pdfjsCorePrimitives, root.pdfjsCorePdfManager);
   }
-}(this, function (exports, sharedUtil, corePrimitives, corePdfManager,
-                  sharedGlobal) {
+}(this, function (exports, sharedUtil, corePrimitives, corePdfManager) {
 
 var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
 var InvalidPDFException = sharedUtil.InvalidPDFException;
@@ -48,11 +46,11 @@ var createPromiseCapability = sharedUtil.createPromiseCapability;
 var error = sharedUtil.error;
 var info = sharedUtil.info;
 var warn = sharedUtil.warn;
+var setVerbosityLevel = sharedUtil.setVerbosityLevel;
 var Ref = corePrimitives.Ref;
 var LocalPdfManager = corePdfManager.LocalPdfManager;
 var NetworkPdfManager = corePdfManager.NetworkPdfManager;
-var globalScope = sharedGlobal.globalScope;
-var PDFJS = sharedGlobal.PDFJS;
+var globalScope = sharedUtil.globalScope;
 
 var WorkerTask = (function WorkerTaskClosure() {
   function WorkerTask(name) {
@@ -428,7 +426,7 @@ function setPDFNetworkStreamClass(cls) {
   PDFNetworkStream = cls;
 }
 
-var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
+var WorkerMessageHandler = {
   setup: function wphSetup(handler, port) {
     var testMessageProcessed = false;
     handler.on('test', function wphSetupTest(data) {
@@ -462,6 +460,10 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         supportTypedArray: true,
         supportTransfers: supportTransfers
       });
+    });
+
+    handler.on('configure', function wphConfigure(data) {
+      setVerbosityLevel(data.verbosity);
     });
 
     handler.on('GetDocRequest', function wphSetupDoc(data) {
@@ -533,14 +535,15 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
       return loadDocumentCapability.promise;
     }
 
-    function getPdfManager(data) {
+    function getPdfManager(data, evaluatorOptions) {
       var pdfManagerCapability = createPromiseCapability();
       var pdfManager;
 
       var source = data.source;
       if (source.data) {
         try {
-          pdfManager = new LocalPdfManager(docId, source.data, source.password);
+          pdfManager = new LocalPdfManager(docId, source.data, source.password,
+                                           evaluatorOptions);
           pdfManagerCapability.resolve(pdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -589,7 +592,7 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
           length: fullRequest.contentLength,
           disableAutoFetch: disableAutoFetch,
           rangeChunkSize: source.rangeChunkSize
-        });
+        }, evaluatorOptions);
         pdfManagerCapability.resolve(pdfManager);
         cancelXHRs = null;
       }).catch(function (reason) {
@@ -605,7 +608,8 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
         }
         // the data is array, instantiating directly from it
         try {
-          pdfManager = new LocalPdfManager(docId, pdfFile, source.password);
+          pdfManager = new LocalPdfManager(docId, pdfFile, source.password,
+                                           evaluatorOptions);
           pdfManagerCapability.resolve(pdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -685,16 +689,18 @@ var WorkerMessageHandler = PDFJS.WorkerMessageHandler = {
 
       ensureNotTerminated();
 
-      PDFJS.maxImageSize = data.maxImageSize === undefined ?
-                           -1 : data.maxImageSize;
-      PDFJS.disableFontFace = data.disableFontFace;
-      PDFJS.disableCreateObjectURL = data.disableCreateObjectURL;
-      PDFJS.verbosity = data.verbosity;
-      PDFJS.cMapUrl = data.cMapUrl === undefined ?
-                           null : data.cMapUrl;
-      PDFJS.cMapPacked = data.cMapPacked === true;
+      var cMapOptions = {
+        url: data.cMapUrl === undefined ? null : data.cMapUrl,
+        packed: data.cMapPacked === true
+      };
+      var evaluatorOptions = {
+        forceDataSchema: data.disableCreateObjectURL,
+        maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
+        disableFontFace: data.disableFontFace,
+        cMapOptions: cMapOptions
+      };
 
-      getPdfManager(data).then(function (newPdfManager) {
+      getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {
         if (terminated) {
           // We were in a process of setting up the manager, but it got
           // terminated in the middle.
