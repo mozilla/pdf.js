@@ -402,6 +402,8 @@ var Driver = (function DriverClosure() {
       var failure = loadError || '';
       var ctx;
 
+      task.time = 0;
+
       if (!task.pdfDoc) {
         var dataUrl = this.canvas.toDataURL('image/png');
         this._sendResult(dataUrl, task, failure, function () {
@@ -443,6 +445,7 @@ var Driver = (function DriverClosure() {
 
       if (!failure) {
         try {
+          var startTime = Date.now();
           this._log(' Loading page ' + task.pageNum + '/' +
             task.pdfDoc.numPages + '... ');
           this.canvas.mozOpaque = true;
@@ -525,6 +528,7 @@ var Driver = (function DriverClosure() {
                 ctx.drawImage(annotationLayerCanvas, 0, 0);
               }
               page.cleanup();
+              task.time = Date.now() - startTime;
               task.stats = page.stats;
               page.stats = new pdfjsSharedUtil.StatTimer();
               self._snapshot(task, error);
@@ -561,7 +565,7 @@ var Driver = (function DriverClosure() {
       var dataUrl = this.canvas.toDataURL('image/png');
       this._sendResult(dataUrl, task, failure, function () {
         self._log('done' + (failure ? ' (failed !: ' + failure + ')' : '') +
-          '\n');
+          ' (' + task.time + 'ms)\n');
         task.pageNum++;
         self._nextPage(task);
       });
@@ -625,6 +629,7 @@ var Driver = (function DriverClosure() {
         file: task.file,
         round: task.round,
         page: task.pageNum,
+        time: task.time,
         snapshot: snapshot,
         stats: task.stats.times
       });
