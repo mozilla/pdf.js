@@ -1083,22 +1083,26 @@ PdfStreamConverter.prototype = {
     // Keep the URL the same so the browser sees it as the same.
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
+    channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
 
     // We can use resource principal when data is fetched by the chrome
+    // make sure we reuse the origin attributes from the request channel to keep
+    // isolation consistent.
     // e.g. useful for NoScript
     var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var attrs = aRequest.loadInfo.originAttributes;
     var resourcePrincipal;
 //#if MOZCENTRAL
-    resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+    resourcePrincipal = ssm.createCodebasePrincipal(uri, attrs);
 //#else
     // FF16 and below had getCodebasePrincipal, it was replaced by
     // getNoAppCodebasePrincipal (bug 758258).
     // FF43 then replaced getNoAppCodebasePrincipal with
     // createCodebasePrincipal (bug 1165272).
     if ('createCodebasePrincipal' in ssm) {
-      resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+      resourcePrincipal = ssm.createCodebasePrincipal(uri, attrs);
     } else if ('getNoAppCodebasePrincipal' in ssm) {
       resourcePrincipal = ssm.getNoAppCodebasePrincipal(uri);
     } else {
