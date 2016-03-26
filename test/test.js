@@ -730,7 +730,9 @@ function main() {
   } else if (!options.browser && !options.browserManifestFile) {
     startServer();
   } else if (options.unitTest) {
-    startUnitTest('/test/unit/unit_test.html', 'unit');
+    ensurePDFsDownloaded(function() { // Allows linked PDF files in unit-tests.
+      startUnitTest('/test/unit/unit_test.html', 'unit');
+    });
   } else if (options.fontTest) {
     startUnitTest('/test/font/font_test.html', 'font');
   } else {
