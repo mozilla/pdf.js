@@ -1,10 +1,20 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType, AnnotationFlag, PDFJS, 
-           beforeEach, afterEach, stringToBytes */
+           AnnotationBorderStyleType, AnnotationType, AnnotationFlag, PDFJS,
+           beforeEach, afterEach, stringToBytes, AnnotationFactory, Ref,
+           beforeAll, afterAll */
 
 'use strict';
 
 describe('Annotation layer', function() {
+  function XrefMock(queue) {
+    this.queue = queue || [];
+  }
+  XrefMock.prototype = {
+    fetchIfRef: function() {
+      return this.queue.shift();
+    }
+  };
+
   describe('Annotation', function() {
     it('should set and get flags', function() {
       var dict = new Dict();
@@ -174,12 +184,156 @@ describe('Annotation layer', function() {
     });
   });
 
+  describe('LinkAnnotation', function() {
+    var annotationFactory;
+
+    beforeAll(function (done) {
+      annotationFactory = new AnnotationFactory();
+      done();
+    });
+
+    afterAll(function () {
+      annotationFactory = null;
+    });
+
+    it('should correctly parse a URI action', function() {
+      var actionDict = new Dict();
+      actionDict.set('Type', Name.get('Action'));
+      actionDict.set('S', Name.get('URI'));
+      actionDict.set('URI', 'http://www.ctan.org/tex-archive/info/lshort');
+
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('A', actionDict);
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(820, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toEqual('http://www.ctan.org/tex-archive/info/lshort');
+      expect(data.dest).toBeUndefined();
+    });
+
+    it('should correctly parse a URI action, where the URI entry ' +
+       'is missing a protocol', function() {
+      var actionDict = new Dict();
+      actionDict.set('Type', Name.get('Action'));
+      actionDict.set('S', Name.get('URI'));
+      actionDict.set('URI', 'www.hmrc.gov.uk');
+
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('A', actionDict);
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(353, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toEqual('http://www.hmrc.gov.uk');
+      expect(data.dest).toBeUndefined();
+    });
+
+    it('should correctly parse a GoTo action', function() {
+      var actionDict = new Dict();
+      actionDict.set('Type', Name.get('Action'));
+      actionDict.set('S', Name.get('GoTo'));
+      actionDict.set('D', 'page.157');
+
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('A', actionDict);
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(798, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toBeUndefined();
+      expect(data.dest).toEqual('page.157');
+    });
+
+    it('should correctly parse a GoToR action, where the FileSpec entry ' +
+       'is a string containing a relative URL', function() {
+      var actionDict = new Dict();
+      actionDict.set('Type', Name.get('Action'));
+      actionDict.set('S', Name.get('GoToR'));
+      actionDict.set('F', '../../0021/002156/215675E.pdf');
+      actionDict.set('D', '15');
+
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('A', actionDict);
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(489, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toBeUndefined();
+      expect(data.dest).toBeUndefined();
+      expect(data.newWindow).toBeFalsy();
+    });
+
+    it('should correctly parse a Named action', function() {
+      var actionDict = new Dict();
+      actionDict.set('Type', Name.get('Action'));
+      actionDict.set('S', Name.get('Named'));
+      actionDict.set('N', Name.get('GoToPage'));
+
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('A', actionDict);
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(12, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toBeUndefined();
+      expect(data.action).toEqual('GoToPage');
+    });
+
+    it('should correctly parse a simple Dest', function() {
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('Dest', Name.get('LI0'));
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(583, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toBeUndefined();
+      expect(data.dest).toEqual('LI0');
+    });
+  });
+
   describe('FileAttachmentAnnotation', function() {
     var loadingTask;
     var annotations;
 
     beforeEach(function(done) {
-      var pdfUrl = new URL('../pdfs/annotation-fileattachment.pdf', 
+      var pdfUrl = new URL('../pdfs/annotation-fileattachment.pdf',
                            window.location).href;
       loadingTask = PDFJS.getDocument(pdfUrl);
       loadingTask.promise.then(function(pdfDocument) {
