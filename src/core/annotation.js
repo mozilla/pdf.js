@@ -171,7 +171,7 @@ var Annotation = (function AnnotationClosure() {
     var dict = params.dict;
 
     this.setFlags(dict.get('F'));
-    this.setRectangle(dict.get('Rect'));
+    this.setRectangle(dict.getArray('Rect'));
     this.setColor(dict.get('C'));
     this.setBorderStyle(dict);
     this.appearance = getDefaultAppearance(dict);

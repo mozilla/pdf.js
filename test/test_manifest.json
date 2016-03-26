@@ -577,6 +577,15 @@
        "type": "eq",
        "about": "XObject with BBox array containing indirect object."
     },
+    {  "id": "issue7115",
+       "file": "pdfs/issue7115.pdf",
+       "md5": "63c78e25a0433dd5a01ddff6ec720f29",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Annotation with Rect array containing indirect objects."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
