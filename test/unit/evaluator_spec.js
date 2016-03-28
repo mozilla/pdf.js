@@ -272,7 +272,7 @@ describe('evaluator', function() {
         var result = new OperatorList();
         var task = new WorkerTask('OperatorListAbort');
         task.terminate();
-        evaluator.getOperatorList(stream, task, resources, result).catch(
+        evaluator.getOperatorList(stream, task, resources, result)['catch'](
           function () {
             done = true;
             expect(!!result.fnArray && !!result.argsArray).toEqual(true);
@@ -293,7 +293,7 @@ describe('evaluator', function() {
       runs(function () {
         var task = new WorkerTask('TextContentAbort');
         task.terminate();
-        evaluator.getTextContent(stream, task, resources).catch(
+        evaluator.getTextContent(stream, task, resources)['catch'](
           function () {
             done = true;
           });

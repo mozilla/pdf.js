@@ -333,7 +333,7 @@ var PDFViewerApplication = {
         PDFJS.externalLinkTarget = value;
       }),
       // TODO move more preferences and other async stuff here
-    ]).catch(function (reason) { });
+    ])['catch'](function (reason) { });
 
     return initializedPromise.then(function () {
       if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
@@ -1689,7 +1689,7 @@ window.addEventListener('updateviewarea', function (evt) {
       'zoom': location.scale,
       'scrollLeft': location.left,
       'scrollTop': location.top
-    }).catch(function() {
+    })['catch'](function() {
       // unable to write to storage
     });
   });

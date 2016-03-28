@@ -410,7 +410,7 @@ PDFJS.getDocument = function getDocument(src,
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
-  }).catch(task._capability.reject);
+  })['catch'](task._capability.reject);
 
   return task;
 };
