@@ -568,7 +568,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
       var useCMap = null;
       var start = new Uint8Array(MAX_NUM_SIZE);
       var end = new Uint8Array(MAX_NUM_SIZE);
-      var char = new Uint8Array(MAX_NUM_SIZE);
+      var character = new Uint8Array(MAX_NUM_SIZE);
       var charCode = new Uint8Array(MAX_NUM_SIZE);
       var tmp = new Uint8Array(MAX_NUM_SIZE);
       var code;
@@ -629,17 +629,17 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             }
             break;
           case 2: // cidchar
-            stream.readHex(char, dataSize);
+            stream.readHex(character, dataSize);
             code = stream.readNumber();
-            cMap.mapOne(hexToInt(char, dataSize), code);
+            cMap.mapOne(hexToInt(character, dataSize), code);
             for (i = 1; i < subitemsCount; i++) {
-              incHex(char, dataSize);
+              incHex(character, dataSize);
               if (!sequence) {
                 stream.readHexNumber(tmp, dataSize);
-                addHex(char, tmp, dataSize);
+                addHex(character, tmp, dataSize);
               }
               code = stream.readSigned() + (code + 1);
-              cMap.mapOne(hexToInt(char, dataSize), code);
+              cMap.mapOne(hexToInt(character, dataSize), code);
             }
             break;
           case 3: // cidrange
@@ -665,20 +665,20 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             }
             break;
           case 4: // bfchar
-            stream.readHex(char, ucs2DataSize);
+            stream.readHex(character, ucs2DataSize);
             stream.readHex(charCode, dataSize);
-            cMap.mapOne(hexToInt(char, ucs2DataSize),
+            cMap.mapOne(hexToInt(character, ucs2DataSize),
                         hexToStr(charCode, dataSize));
             for (i = 1; i < subitemsCount; i++) {
-              incHex(char, ucs2DataSize);
+              incHex(character, ucs2DataSize);
               if (!sequence) {
                 stream.readHexNumber(tmp, ucs2DataSize);
-                addHex(char, tmp, ucs2DataSize);
+                addHex(character, tmp, ucs2DataSize);
               }
               incHex(charCode, dataSize);
               stream.readHexSigned(tmp, dataSize);
               addHex(charCode, tmp, dataSize);
-              cMap.mapOne(hexToInt(char, ucs2DataSize),
+              cMap.mapOne(hexToInt(character, ucs2DataSize),
                           hexToStr(charCode, dataSize));
             }
             break;
@@ -990,7 +990,7 @@ var CMapFactory = (function CMapFactoryClosure() {
             parseCMap(cMap, lexer, builtInCMapParams, null).then(
                 function (parsedCMap) {
               resolve(parsedCMap);
-            }).catch(function (e) {
+            })['catch'](function (e) {
               reject(new Error({ message: 'Invalid CMap data', error: e }));
             });
           } else {

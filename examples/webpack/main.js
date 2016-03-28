@@ -27,6 +27,6 @@ loadingTask.promise.then(function (pdfDocument) {
     });
     return renderTask.promise;
   });
-}).catch(function (reason) {
+})['catch'](function (reason) {
   console.error('Error: ' + reason);
 });

@@ -1163,8 +1163,8 @@ function createPromiseCapability() {
         });
       };
     }
-    if (typeof globalScope.Promise.prototype.catch !== 'function') {
-      globalScope.Promise.prototype.catch = function (onReject) {
+    if (typeof globalScope.Promise.prototype['catch'] !== 'function') {
+      globalScope.Promise.prototype['catch'] = function (onReject) {
         return globalScope.Promise.prototype.then(undefined, onReject);
       };
     }
@@ -1424,7 +1424,7 @@ function createPromiseCapability() {
       return nextPromise;
     },
 
-    catch: function Promise_catch(onReject) {
+    'catch': function Promise_catch(onReject) {
       return this.then(undefined, onReject);
     }
   };
