@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ /* global PDFJS */
 
 'use strict';
 
@@ -24,6 +25,33 @@ var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
 
 var mozL10n = document.mozL10n || document.webL10n;
+
+if (typeof PDFJS === 'undefined') {
+  window.PDFJS = {};
+}
+
+/**
+ * Disables fullscreen support, and by extension Presentation Mode,
+ * in browsers which support the fullscreen API.
+ * @var {boolean}
+ */
+PDFJS.disableFullscreen = (PDFJS.disableFullscreen === undefined ?
+                           false : PDFJS.disableFullscreen);
+
+/**
+ * Enables CSS only zooming.
+ * @var {boolean}
+ */
+PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
+                        false : PDFJS.useOnlyCssZoom);
+
+/**
+ * The maximum supported canvas size in total pixels e.g. width * height.
+ * The default value is 4096 * 4096. Use -1 for no limit.
+ * @var {number}
+ */
+PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
+                         16777216 : PDFJS.maxCanvasPixels);
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.

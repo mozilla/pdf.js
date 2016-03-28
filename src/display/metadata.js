@@ -18,20 +18,16 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/metadata', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/global'], factory);
+    define('pdfjs/display/metadata', ['exports', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./global.js'));
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsDisplayMetadata = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayGlobal);
+    factory((root.pdfjsDisplayMetadata = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports, sharedUtil, displayGlobal) {
+}(this, function (exports, sharedUtil) {
 
 var error = sharedUtil.error;
-var PDFJS = displayGlobal.PDFJS;
 
-var Metadata = PDFJS.Metadata = (function MetadataClosure() {
   function fixMetadata(meta) {
     return meta.replace(/>\\376\\377([^<]+)/g, function(all, codes) {
       var bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
@@ -107,9 +103,6 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
       return typeof this.metadata[name] !== 'undefined';
     }
   };
-
-  return Metadata;
-})();
 
 exports.Metadata = Metadata;
 }));

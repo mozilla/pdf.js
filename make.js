@@ -198,6 +198,7 @@ target.jsdoc = function() {
   var JSDOC_FILES = [
     'src/doc_helper.js',
     'src/display/api.js',
+    'src/display/global.js',
     'src/shared/util.js',
     'src/core/annotation.js'
   ];
@@ -526,9 +527,7 @@ target.bundle = function(args) {
 
   var umd = require('./external/umdutils/verifier.js');
   var MAIN_SRC_FILES = [
-    SRC_DIR + 'display/annotation_layer.js',
-    SRC_DIR + 'display/text_layer.js',
-    SRC_DIR + 'display/api.js'
+    SRC_DIR + 'display/global.js'
   ];
 
   var WORKER_SRC_FILES = [
@@ -538,9 +537,8 @@ target.bundle = function(args) {
   var mainFileName = 'pdf.js';
   var workerFileName = 'pdf.worker.js';
 
-  // Extension does not need svg.js and network.js files.
+  // Extension does not need network.js file.
   if (!defines.FIREFOX && !defines.MOZCENTRAL) {
-    MAIN_SRC_FILES.push(SRC_DIR + 'display/svg.js');
     WORKER_SRC_FILES.push(SRC_DIR + 'core/network.js');
   }
 

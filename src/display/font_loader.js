@@ -18,25 +18,20 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/font_loader', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/global'], factory);
+    define('pdfjs/display/font_loader', ['exports', 'pdfjs/shared/util'],
+      factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./global.js'));
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsDisplayFontLoader = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayGlobal);
+    factory((root.pdfjsDisplayFontLoader = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports, sharedUtil, displayGlobal) {
+}(this, function (exports, sharedUtil) {
 
 var assert = sharedUtil.assert;
 var bytesToString = sharedUtil.bytesToString;
 var string32 = sharedUtil.string32;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
-
-var PDFJS = displayGlobal.PDFJS;
-var globalScope = displayGlobal.globalScope;
-var isWorker = displayGlobal.isWorker;
 
 function FontLoader(docId) {
   this.docId = docId;
@@ -113,8 +108,6 @@ FontLoader.prototype = {
   },
 
   bind: function fontLoaderBind(fonts, callback) {
-    assert(!isWorker, 'bind() shall be called from main thread');
-
     var rules = [];
     var fontsToLoad = [];
     var fontLoadPromises = [];
@@ -291,8 +284,6 @@ FontLoader.prototype = {
   }
 //#else
 //bind: function fontLoaderBind(fonts, callback) {
-//  assert(!isWorker, 'bind() shall be called from main thread');
-//
 //  for (var i = 0, ii = fonts.length; i < ii; i++) {
 //    var font = fonts[i];
 //    if (font.attached) {
@@ -311,8 +302,8 @@ FontLoader.prototype = {
 //#endif
 };
 //#if !(MOZCENTRAL)
-FontLoader.isFontLoadingAPISupported = (!isWorker &&
-  typeof document !== 'undefined' && !!document.fonts);
+FontLoader.isFontLoadingAPISupported = typeof document !== 'undefined' &&
+                                       !!document.fonts;
 //#endif
 //#if !(MOZCENTRAL || CHROME)
 Object.defineProperty(FontLoader, 'isSyncFontLoadingSupported', {
@@ -337,29 +328,21 @@ Object.defineProperty(FontLoader, 'isSyncFontLoadingSupported', {
 });
 //#endif
 
+var IsEvalSupportedCached = {
+  get value() {
+    return shadow(this, 'value', sharedUtil.isEvalSupported());
+  }
+};
+
 var FontFaceObject = (function FontFaceObjectClosure() {
-  function FontFaceObject(translatedData) {
+  function FontFaceObject(translatedData, options) {
     this.compiledGlyphs = Object.create(null);
     // importing translated data
     for (var i in translatedData) {
       this[i] = translatedData[i];
     }
+    this.options = options;
   }
-  Object.defineProperty(FontFaceObject, 'isEvalSupported', {
-    get: function () {
-      var evalSupport = false;
-      if (PDFJS.isEvalSupported) {
-        try {
-          /* jshint evil: true */
-          new Function('');
-          evalSupport = true;
-        } catch (e) {}
-      }
-      return shadow(this, 'isEvalSupported', evalSupport);
-    },
-    enumerable: true,
-    configurable: true
-  });
   FontFaceObject.prototype = {
 //#if !(MOZCENTRAL)
     createNativeFontFace: function FontFaceObject_createNativeFontFace() {
@@ -367,16 +350,15 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         return null;
       }
 
-      if (PDFJS.disableFontFace) {
+      if (this.options.disableFontFace) {
         this.disableFontFace = true;
         return null;
       }
 
       var nativeFontFace = new FontFace(this.loadedName, this.data, {});
 
-      if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
-          globalScope['FontInspector'].enabled) {
-        globalScope['FontInspector'].fontAdded(this);
+      if (this.options.fontRegistry) {
+        this.options.fontRegistry.registerFont(this);
       }
       return nativeFontFace;
     },
@@ -387,7 +369,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         return null;
       }
 
-      if (PDFJS.disableFontFace) {
+      if (this.options.disableFontFace) {
         this.disableFontFace = true;
         return null;
       }
@@ -400,9 +382,8 @@ var FontFaceObject = (function FontFaceObjectClosure() {
                  window.btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
 
-      if (PDFJS.pdfBug && 'FontInspector' in globalScope &&
-          globalScope['FontInspector'].enabled) {
-        globalScope['FontInspector'].fontAdded(this, url);
+      if (this.options.fontRegistry) {
+        this.options.fontRegistry.registerFont(this, url);
       }
 
       return rule;
@@ -415,7 +396,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         var current, i, len;
 
         // If we can, compile cmds into JS for MAXIMUM SPEED
-        if (FontFaceObject.isEvalSupported) {
+        if (this.options.isEvalSupported && IsEvalSupportedCached.value) {
           var args, js = '';
           for (i = 0, len = cmds.length; i < len; i++) {
             current = cmds[i];

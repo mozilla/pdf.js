@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, require, module, requirejs */
+/* globals require, module, requirejs,
+           workerSrc: true, isWorkerDisabled: true */
 
 // included from api.js for GENERIC build
 
@@ -21,7 +22,7 @@
 var useRequireEnsure = false;
 if (typeof module !== 'undefined' && module.require) {
   // node.js - disable worker and set require.ensure.
-  PDFJS.disableWorker = true;
+  isWorkerDisabled = true;
   if (typeof require.ensure === 'undefined') {
     require.ensure = require('node-ensure');
   }
@@ -29,11 +30,11 @@ if (typeof module !== 'undefined' && module.require) {
 }
 if (typeof __webpack_require__ !== 'undefined') {
   // Webpack - get/bundle pdf.worker.js as additional file.
-  PDFJS.workerSrc = require('entry?name=[hash]-worker.js!./pdf.worker.js');
+  workerSrc = require('entry?name=[hash]-worker.js!./pdf.worker.js');
   useRequireEnsure = true;
 }
 if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
-  PDFJS.workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
+  workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
 }
 var fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
   require.ensure([], function () {
