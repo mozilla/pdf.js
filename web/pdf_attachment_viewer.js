@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
+/* globals pdfjsLib */
 
 'use strict';
 
@@ -98,12 +98,12 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
 
       for (var i = 0; i < attachmentsCount; i++) {
         var item = attachments[names[i]];
-        var filename = PDFJS.getFilenameFromUrl(item.filename);
+        var filename = pdfjsLib.getFilenameFromUrl(item.filename);
         var div = document.createElement('div');
         div.className = 'attachmentsItem';
         var button = document.createElement('button');
         this._bindLink(button, item.content, filename);
-        button.textContent = PDFJS.removeNullCharacters(filename);
+        button.textContent = pdfjsLib.removeNullCharacters(filename);
         div.appendChild(button);
         this.container.appendChild(div);
       }

@@ -27,7 +27,7 @@ var VERTICAL_PADDING = 5;
 var mozL10n = document.mozL10n || document.webL10n;
 
 if (typeof PDFJS === 'undefined') {
-  window.PDFJS = {};
+  (typeof window !== 'undefined' ? window : this).PDFJS = {};
 }
 
 /**
@@ -52,6 +52,34 @@ PDFJS.useOnlyCssZoom = (PDFJS.useOnlyCssZoom === undefined ?
  */
 PDFJS.maxCanvasPixels = (PDFJS.maxCanvasPixels === undefined ?
                          16777216 : PDFJS.maxCanvasPixels);
+
+/**
+ * Disables saving of the last position of the viewed PDF.
+ * @var {boolean}
+ */
+PDFJS.disableHistory = (PDFJS.disableHistory === undefined ?
+                        false : PDFJS.disableHistory);
+
+/**
+ * Disables creation of the text layer that used for text selection and search.
+ * @var {boolean}
+ */
+PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
+                          false : PDFJS.disableTextLayer);
+
+/**
+ * Disables maintaining the current position in the document when zooming.
+ */
+PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===
+  undefined ? false : PDFJS.ignoreCurrentPositionOnZoom);
+
+//#if !(FIREFOX || MOZCENTRAL)
+/**
+ * Interface locale settings.
+ * @var {string}
+ */
+PDFJS.locale = (PDFJS.locale === undefined ? navigator.language : PDFJS.locale);
+//#endif
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.

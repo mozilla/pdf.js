@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, mozL10n, OverlayManager */
+/* globals pdfjsLib, mozL10n, OverlayManager */
 
 'use strict';
 
@@ -55,7 +55,7 @@ var PasswordPrompt = {
       var promptString = mozL10n.get('password_label', null,
         'Enter the password to open this PDF file.');
 
-      if (this.reason === PDFJS.PasswordResponses.INCORRECT_PASSWORD) {
+      if (this.reason === pdfjsLib.PasswordResponses.INCORRECT_PASSWORD) {
         promptString = mozL10n.get('password_invalid', null,
           'Invalid password. Please try again.');
       }

@@ -17,13 +17,20 @@
            DefaultTextLayerFactory, AnnotationLayerBuilder, PDFHistory,
            DefaultAnnotationLayerFactory, DownloadManager, ProgressBar */
 
-// Initializing PDFJS global object (if still undefined)
-if (typeof PDFJS === 'undefined') {
-  (typeof window !== 'undefined' ? window : this).PDFJS = {};
-}
-
 (function pdfViewerWrapper() {
   'use strict';
+
+  var root = this;
+  if (!root.pdfjsLib) {
+    Object.defineProperty(root, 'pdfjsLib', {
+      get: function () {
+        return root.pdfjsDistBuildPdf || root.pdfjsDistBuildPdfCombined ||
+               root.pdfjsMainLoader;
+      },
+      enumerable: true,
+      configurable: true
+    });
+  }
 
 //#include ui_utils.js
 //#include pdf_link_service.js

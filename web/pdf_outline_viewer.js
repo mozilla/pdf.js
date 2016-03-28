@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
+/* globals pdfjsLib */
 
 'use strict';
 
@@ -71,7 +71,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      */
     _bindLink: function PDFOutlineViewer_bindLink(element, item) {
       if (item.url) {
-        PDFJS.addLinkAttributes(element, { url: item.url });
+        pdfjsLib.addLinkAttributes(element, { url: item.url });
         return;
       }
       var linkService = this.linkService;
@@ -180,7 +180,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
           this._bindLink(element, item);
           this._setStyles(element, item);
           element.textContent =
-            PDFJS.removeNullCharacters(item.title) || DEFAULT_TITLE;
+            pdfjsLib.removeNullCharacters(item.title) || DEFAULT_TITLE;
 
           div.appendChild(element);
 

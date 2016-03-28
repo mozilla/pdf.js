@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Preferences, PDFJS, Promise */
+/* globals Preferences, pdfjsLib, Promise */
 
 'use strict';
 
@@ -87,7 +87,7 @@ var DownloadManager = (function DownloadManagerClosure() {
 
     downloadData: function DownloadManager_downloadData(data, filename,
                                                         contentType) {
-      var blobUrl = PDFJS.createObjectURL(data, contentType);
+      var blobUrl = pdfjsLib.createObjectURL(data, contentType, false);
 
       FirefoxCom.request('download', {
         blobUrl: blobUrl,

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsFilePath */
+/* globals pdfjsFilePath, pdfjsVersion, pdfjsBuild */
 
 'use strict';
 
@@ -2050,6 +2050,13 @@ var _UnsupportedManager = (function UnsupportedManagerClosure() {
     }
   };
 })();
+
+if (typeof pdfjsVersion !== 'undefined') {
+  exports.version = pdfjsVersion;
+}
+if (typeof pdfjsBuild !== 'undefined') {
+  exports.build = pdfjsBuild;
+}
 
 exports.getDocument = getDocument;
 exports.PDFDataRangeTransport = PDFDataRangeTransport;

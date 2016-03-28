@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, PDFBug, FirefoxCom, Stats, ProgressBar, DownloadManager,
+/* globals pdfjsLib, PDFBug, FirefoxCom, Stats, ProgressBar, DownloadManager,
            getPDFFileNameFromURL, PDFHistory, Preferences, SidebarView,
            ViewHistory, Stats, PDFThumbnailViewer, URL, noContextMenuHandler,
            SecondaryToolbar, PasswordPrompt, PDFPresentationMode, PDFSidebar,
@@ -20,8 +20,7 @@
            PDFOutlineViewer, PDFAttachmentViewer, OverlayManager,
            PDFFindController, PDFFindBar, PDFViewer, PDFRenderingQueue,
            PresentationModeState, parseQueryString, RenderingStates,
-           UNKNOWN_SCALE, DEFAULT_SCALE_VALUE, DEFAULT_URL, mozL10n,
-           IGNORE_CURRENT_POSITION_ON_ZOOM: true */
+           UNKNOWN_SCALE, DEFAULT_SCALE_VALUE, DEFAULT_URL, mozL10n */
 
 'use strict';
 
@@ -108,7 +107,7 @@ var PDFViewerApplication = {
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
-    configure(PDFJS);
+    configure(pdfjsLib.PDFJS);
 
     var pdfRenderingQueue = new PDFRenderingQueue();
     pdfRenderingQueue.onIdle = this.cleanup.bind(this);
@@ -263,6 +262,7 @@ var PDFViewerApplication = {
     this.pdfSidebar.onToggled = this.forceRendering.bind(this);
 
     var self = this;
+    var PDFJS = pdfjsLib.PDFJS;
     var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
@@ -369,7 +369,7 @@ var PDFViewerApplication = {
     var canvas = document.createElement('canvas');
     var value = 'mozPrintCallback' in canvas;
 
-    return PDFJS.shadow(this, 'supportsPrinting', value);
+    return pdfjsLib.shadow(this, 'supportsPrinting', value);
   },
 
   get supportsFullscreen() {
@@ -383,11 +383,11 @@ var PDFViewerApplication = {
         document.msFullscreenEnabled === false) {
       support = false;
     }
-    if (support && PDFJS.disableFullscreen === true) {
+    if (support && pdfjsLib.PDFJS.disableFullscreen === true) {
       support = false;
     }
 
-    return PDFJS.shadow(this, 'supportsFullscreen', support);
+    return pdfjsLib.shadow(this, 'supportsFullscreen', support);
   },
 
   get supportsIntegratedFind() {
@@ -396,7 +396,7 @@ var PDFViewerApplication = {
 //  support = FirefoxCom.requestSync('supportsIntegratedFind');
 //#endif
 
-    return PDFJS.shadow(this, 'supportsIntegratedFind', support);
+    return pdfjsLib.shadow(this, 'supportsIntegratedFind', support);
   },
 
   get supportsDocumentFonts() {
@@ -405,7 +405,7 @@ var PDFViewerApplication = {
 //  support = FirefoxCom.requestSync('supportsDocumentFonts');
 //#endif
 
-    return PDFJS.shadow(this, 'supportsDocumentFonts', support);
+    return pdfjsLib.shadow(this, 'supportsDocumentFonts', support);
   },
 
   get supportsDocumentColors() {
@@ -414,13 +414,13 @@ var PDFViewerApplication = {
 //  support = FirefoxCom.requestSync('supportsDocumentColors');
 //#endif
 
-    return PDFJS.shadow(this, 'supportsDocumentColors', support);
+    return pdfjsLib.shadow(this, 'supportsDocumentColors', support);
   },
 
   get loadingBar() {
     var bar = new ProgressBar('#loadingBar', {});
 
-    return PDFJS.shadow(this, 'loadingBar', bar);
+    return pdfjsLib.shadow(this, 'loadingBar', bar);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
@@ -432,16 +432,17 @@ var PDFViewerApplication = {
 //  support = FirefoxCom.requestSync('supportedMouseWheelZoomModifierKeys');
 //#endif
 
-    return PDFJS.shadow(this, 'supportedMouseWheelZoomModifierKeys', support);
+    return pdfjsLib.shadow(this, 'supportedMouseWheelZoomModifierKeys',
+                           support);
   },
 
 //#if (FIREFOX || MOZCENTRAL)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     function FirefoxComDataRangeTransport(length, initialData) {
-      PDFJS.PDFDataRangeTransport.call(this, length, initialData);
+      pdfjsLib.PDFDataRangeTransport.call(this, length, initialData);
     }
     FirefoxComDataRangeTransport.prototype =
-      Object.create(PDFJS.PDFDataRangeTransport.prototype);
+      Object.create(pdfjsLib.PDFDataRangeTransport.prototype);
     FirefoxComDataRangeTransport.prototype.requestDataRange =
         function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
       FirefoxCom.request('requestDataRange', { begin: begin, end: end });
@@ -507,7 +508,8 @@ var PDFViewerApplication = {
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
     try {
-      this.setTitle(decodeURIComponent(PDFJS.getFilenameFromUrl(url)) || url);
+      this.setTitle(decodeURIComponent(
+        pdfjsLib.getFilenameFromUrl(url)) || url);
     } catch (e) {
       // decodeURIComponent may throw URIError,
       // fall back to using the unprocessed url in that case
@@ -618,7 +620,7 @@ var PDFViewerApplication = {
     var self = this;
     self.downloadComplete = false;
 
-    var loadingTask = PDFJS.getDocument(parameters);
+    var loadingTask = pdfjsLib.getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = function passwordNeeded(updatePassword, reason) {
@@ -643,15 +645,15 @@ var PDFViewerApplication = {
         var loadingErrorMessage = mozL10n.get('loading_error', null,
           'An error occurred while loading the PDF.');
 
-        if (exception instanceof PDFJS.InvalidPDFException) {
+        if (exception instanceof pdfjsLib.InvalidPDFException) {
           // change error message also for other builds
           loadingErrorMessage = mozL10n.get('invalid_file_error', null,
                                             'Invalid or corrupted PDF file.');
-        } else if (exception instanceof PDFJS.MissingPDFException) {
+        } else if (exception instanceof pdfjsLib.MissingPDFException) {
           // special message for missing PDF's
           loadingErrorMessage = mozL10n.get('missing_file_error', null,
                                             'Missing PDF file.');
-        } else if (exception instanceof PDFJS.UnexpectedResponseException) {
+        } else if (exception instanceof pdfjsLib.UnexpectedResponseException) {
           loadingErrorMessage = mozL10n.get('unexpected_response_error', null,
                                             'Unexpected server response.');
         }
@@ -697,7 +699,7 @@ var PDFViewerApplication = {
 
     this.pdfDocument.getData().then(
       function getDataSuccess(data) {
-        var blob = PDFJS.createBlob(data, 'application/pdf');
+        var blob = pdfjsLib.createBlob(data, 'application/pdf');
         downloadManager.download(blob, url, filename);
       },
       downloadByUrl // Error occurred try downloading with just the url.
@@ -737,7 +739,7 @@ var PDFViewerApplication = {
    */
   error: function pdfViewError(message, moreInfo) {
     var moreInfoText = mozL10n.get('error_version_info',
-      {version: PDFJS.version || '?', build: PDFJS.build || '?'},
+      {version: pdfjsLib.version || '?', build: pdfjsLib.build || '?'},
       'PDF.js v{{version}} (build: {{build}})') + '\n';
     if (moreInfo) {
       moreInfoText +=
@@ -813,7 +815,7 @@ var PDFViewerApplication = {
       // the loading bar will not be completely filled, nor will it be hidden.
       // To prevent displaying a partially filled loading bar permanently, we
       // hide it when no data has been loaded during a certain amount of time.
-      if (PDFJS.disableAutoFetch && percent) {
+      if (pdfjsLib.PDFJS.disableAutoFetch && percent) {
         if (this.disableAutoFetchLoadingBarTimeout) {
           clearTimeout(this.disableAutoFetchLoadingBarTimeout);
           this.disableAutoFetchLoadingBarTimeout = null;
@@ -881,7 +883,7 @@ var PDFViewerApplication = {
 
       self.loadingBar.setWidth(document.getElementById('viewer'));
 
-      if (!PDFJS.disableHistory && !self.isViewerEmbedded) {
+      if (!pdfjsLib.PDFJS.disableHistory && !self.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
         if (!self.preferenceShowPreviousViewOnLoad) {
@@ -954,7 +956,7 @@ var PDFViewerApplication = {
         pdfDocument.getJavaScript().then(function(javaScript) {
           if (javaScript.length) {
             console.warn('Warning: JavaScript is not supported');
-            self.fallback(PDFJS.UNSUPPORTED_FEATURES.javaScript);
+            self.fallback(pdfjsLib.UNSUPPORTED_FEATURES.javaScript);
           }
           // Hack to support auto printing.
           var regex = /\bprint\s*\(/;
@@ -991,8 +993,8 @@ var PDFViewerApplication = {
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
-                  ' (PDF.js: ' + (PDFJS.version || '-') +
-                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  ' (PDF.js: ' + (pdfjsLib.version || '-') +
+                  (!pdfjsLib.PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
 
       var pdfTitle;
       if (metadata && metadata.has('dc:title')) {
@@ -1013,7 +1015,7 @@ var PDFViewerApplication = {
 
       if (info.IsAcroFormPresent) {
         console.warn('Warning: AcroForm/XFA is not supported');
-        self.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
+        self.fallback(pdfjsLib.UNSUPPORTED_FEATURES.forms);
       }
 
 //#if !PRODUCTION
@@ -1296,9 +1298,7 @@ function webViewerInitialized() {
 //document.getElementById('secondaryOpenFile').setAttribute('hidden', 'true');
 //#endif
 
-//#if !(FIREFOX || MOZCENTRAL)
-  var locale = PDFJS.locale || navigator.language;
-//#endif
+  var PDFJS = pdfjsLib.PDFJS;
 
 //#if !PRODUCTION
   if (true) {
@@ -1337,7 +1337,7 @@ function webViewerInitialized() {
       PDFJS.verbosity = hashParams['verbosity'] | 0;
     }
     if ('ignorecurrentpositiononzoom' in hashParams) {
-      IGNORE_CURRENT_POSITION_ON_ZOOM =
+      PDFJS.ignoreCurrentPositionOnZoom =
         (hashParams['ignorecurrentpositiononzoom'] === 'true');
     }
 //#if !PRODUCTION
@@ -1348,7 +1348,7 @@ function webViewerInitialized() {
 //#endif
 //#if !(FIREFOX || MOZCENTRAL)
     if ('locale' in hashParams) {
-      locale = hashParams['locale'];
+      PDFJS.locale = hashParams['locale'];
     }
 //#endif
     if ('textlayer' in hashParams) {
@@ -1374,7 +1374,7 @@ function webViewerInitialized() {
   }
 
 //#if !(FIREFOX || MOZCENTRAL)
-  mozL10n.setLanguage(locale);
+  mozL10n.setLanguage(PDFJS.locale);
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
   if (!PDFViewerApplication.supportsDocumentFonts) {
@@ -1518,7 +1518,7 @@ document.addEventListener('pagerendered', function (e) {
     thumbnailView.setImage(pageView);
   }
 
-  if (PDFJS.pdfBug && Stats.enabled && pageView.stats) {
+  if (pdfjsLib.PDFJS.pdfBug && Stats.enabled && pageView.stats) {
     Stats.add(pageNumber, pageView.stats);
   }
 
@@ -1711,7 +1711,7 @@ window.addEventListener('change', function webViewerChange(evt) {
   }
   var file = files[0];
 
-  if (!PDFJS.disableCreateObjectURL &&
+  if (!pdfjsLib.PDFJS.disableCreateObjectURL &&
       typeof URL !== 'undefined' && URL.createObjectURL) {
     PDFViewerApplication.open(URL.createObjectURL(file));
   } else {
@@ -1815,7 +1815,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
   document.getElementById('lastPage').disabled = (page >= numPages);
 
   // we need to update stats
-  if (PDFJS.pdfBug && Stats.enabled) {
+  if (pdfjsLib.PDFJS.pdfBug && Stats.enabled) {
     var pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
     if (pageView.stats) {
       Stats.add(page, pageView.stats);
