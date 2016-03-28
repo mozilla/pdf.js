@@ -1249,6 +1249,7 @@ target.unittest = function(options, callback) {
   echo();
   echo('### Running unit tests');
 
+  var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json';
   var PDF_BROWSERS = env['PDF_BROWSERS'] ||
                      'resources/browser_manifests/browser_manifest.json';
 
@@ -1260,7 +1261,7 @@ target.unittest = function(options, callback) {
   callback = callback || function() {};
   cd('test');
   exec('node test.js --unitTest --browserManifestFile=' +
-       PDF_BROWSERS, {async: true}, callback);
+       PDF_BROWSERS + ' --manifestFile=' + PDF_TEST, {async: true}, callback);
 };
 
 //
