@@ -29,6 +29,14 @@ describe('font', function() {
     }
   };
 
+  function createWithNullProto(obj) {
+    var result = Object.create(null);
+    for (var i in obj) {
+      result[i] = obj[i];
+    }
+    return result;
+  }
+
   describe('CFFParser', function() {
     var parser = new CFFParser(fontData, {});
     var cff = parser.parse();
@@ -226,7 +234,7 @@ describe('font', function() {
                                 ]);
       parser.bytes = bytes;
       var encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
-      expect(encoding.encoding).toEqual({0x8: 1});
+      expect(encoding.encoding).toEqual(createWithNullProto({0x8: 1}));
     });
 
     it('parses encoding format 1', function() {
@@ -239,7 +247,8 @@ describe('font', function() {
                                 ]);
       parser.bytes = bytes;
       var encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
-      expect(encoding.encoding).toEqual({0x7: 0x01, 0x08: 0x02});
+      expect(encoding.encoding).toEqual(
+        createWithNullProto({0x7: 0x01, 0x08: 0x02}));
     });
 
     it('parses fdselect format 0', function() {

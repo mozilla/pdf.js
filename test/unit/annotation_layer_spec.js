@@ -1,25 +1,10 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
            AnnotationBorderStyleType, AnnotationFlag, PDFJS, combineUrl,
-           waitsFor, beforeEach, afterEach, stringToBytes */
+           beforeEach, afterEach, stringToBytes */
 
 'use strict';
 
 describe('Annotation layer', function() {
-  function waitsForPromiseResolved(promise, successCallback) {
-    var resolved = false;
-    promise.then(function(val) {
-      resolved = true;
-      successCallback(val);
-    },
-    function(error) {
-      // Shouldn't get here.
-      expect(error).toEqual('the promise should not have been rejected');
-    });
-    waitsFor(function() {
-      return resolved;
-    }, 20000);
-  }
-
   describe('Annotation', function() {
     it('should set and get flags', function() {
       var dict = new Dict();
@@ -66,7 +51,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor('red');
 
-      expect(annotation.color).toEqual([0, 0, 0]);
+      expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
 
     it('should set and get a transparent color', function() {
@@ -84,7 +69,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0.4]);
 
-      expect(annotation.color).toEqual([102, 102, 102]);
+      expect(annotation.color).toEqual(new Uint8Array([102, 102, 102]));
     });
 
     it('should set and get an RGB color', function() {
@@ -93,7 +78,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0, 0, 1]);
 
-      expect(annotation.color).toEqual([0, 0, 255]);
+      expect(annotation.color).toEqual(new Uint8Array([0, 0, 255]));
     });
 
     it('should set and get a CMYK color', function() {
@@ -102,7 +87,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
-      expect(annotation.color).toEqual([233, 59, 47]);
+      expect(annotation.color).toEqual(new Uint8Array([233, 59, 47]));
     });
 
     it('should not set and get an invalid color', function() {
@@ -111,7 +96,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0.4, 0.6]);
 
-      expect(annotation.color).toEqual([0, 0, 0]);
+      expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
   });
 
@@ -193,17 +178,19 @@ describe('Annotation layer', function() {
     var loadingTask;
     var annotations;
 
-    beforeEach(function() {
+    beforeEach(function(done) {
       var pdfUrl = combineUrl(window.location.href,
                               '../pdfs/annotation-fileattachment.pdf');
       loadingTask = PDFJS.getDocument(pdfUrl);
-      waitsForPromiseResolved(loadingTask.promise, function(pdfDocument) {
-        waitsForPromiseResolved(pdfDocument.getPage(1), function(pdfPage) {
-          waitsForPromiseResolved(pdfPage.getAnnotations(),
-              function (pdfAnnotations) {
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getPage(1).then(function(pdfPage) {
+          return pdfPage.getAnnotations().then(function (pdfAnnotations) {
             annotations = pdfAnnotations;
+            done();
           });
         });
+      }).catch(function (reason) {
+        done.fail(reason);
       });
     });
 

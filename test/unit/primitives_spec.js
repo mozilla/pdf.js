@@ -110,11 +110,12 @@ describe('primitives', function() {
 
       dictWithManyKeys.forEach(callbackSpy);
 
-      expect(callbackSpy).wasCalled();
-      expect(callbackSpy.argsForCall[0]).toEqual(['FontFile', testFontFile]);
-      expect(callbackSpy.argsForCall[1]).toEqual(['FontFile2', testFontFile2]);
-      expect(callbackSpy.argsForCall[2]).toEqual(['FontFile3', testFontFile3]);
-      expect(callbackSpy.callCount).toEqual(3);
+      expect(callbackSpy).toHaveBeenCalled();
+      var callbackSpyCalls = callbackSpy.calls;
+      expect(callbackSpyCalls.argsFor(0)).toEqual(['FontFile', testFontFile]);
+      expect(callbackSpyCalls.argsFor(1)).toEqual(['FontFile2', testFontFile2]);
+      expect(callbackSpyCalls.argsFor(2)).toEqual(['FontFile3', testFontFile3]);
+      expect(callbackSpyCalls.count()).toEqual(3);
     });
   });
 
