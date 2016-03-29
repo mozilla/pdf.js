@@ -1,4 +1,4 @@
-/* globals expect, it, describe, waitsFor, combineUrl, PDFNetworkStream */
+/* globals expect, it, describe, combineUrl, PDFNetworkStream */
 
 'use strict';
 
@@ -8,23 +8,7 @@ describe('network', function() {
   var pdf2 = combineUrl(window.location.href, '../pdfs/pdf.pdf');
   var pdf2Length = 32472771;
 
-  function waitsForPromiseResolved(promise, successCallback) {
-    var TEST_TIMEOUT = 20000;
-    var resolved = false;
-    promise.then(function(val) {
-        resolved = true;
-        successCallback(val);
-      },
-      function(error) {
-        // Shouldn't get here.
-        expect(error).toEqual('the promise should not have been rejected');
-      });
-    waitsFor(function() {
-      return resolved;
-    }, TEST_TIMEOUT);
-  }
-
-  it('read without stream and range', function() {
+  it('read without stream and range', function(done) {
     var stream = new PDFNetworkStream({
       source: {
         url: pdf1,
@@ -56,21 +40,26 @@ describe('network', function() {
 
     var readPromise = read();
 
-    waitsForPromiseResolved(readPromise, function (page) {
+    readPromise.then(function (page) {
       expect(len).toEqual(pdf1Length);
       expect(count).toEqual(1);
       expect(isStreamingSupported).toEqual(false);
       expect(isRangeSupported).toEqual(false);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
     });
   });
 
-  it('read with streaming', function() {
+  it('read with streaming', function(done) {
     var userAgent = window.navigator.userAgent;
     // The test is valid for FF only: the XHR has support of the
     // 'moz-chunked-array' response type.
     // TODO enable for other browsers, e.g. when fetch/streams API is supported.
     var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
     if (!m || m[1] < 9) {
+      expect(true).toEqual(true);
+      done();
       return;
     }
 
@@ -105,14 +94,17 @@ describe('network', function() {
 
     var readPromise = read();
 
-    waitsForPromiseResolved(readPromise, function (page) {
+    readPromise.then(function () {
       expect(len).toEqual(pdf2Length);
       expect(count).toBeGreaterThan(1);
       expect(isStreamingSupported).toEqual(true);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
     });
   });
 
-  it('read custom ranges', function () {
+  it('read custom ranges', function (done) {
     // We don't test on browsers that don't support range request, so
     // requiring this test to pass.
     var rangeSize = 32768;
@@ -159,11 +151,14 @@ describe('network', function() {
                                     read(range2Reader, result2),
                                     promise]);
 
-    waitsForPromiseResolved(readPromises, function (page) {
+    readPromises.then(function () {
       expect(result1.value).toEqual(rangeSize);
       expect(result2.value).toEqual(tailSize);
       expect(isRangeSupported).toEqual(true);
       expect(fullReaderCancelled).toEqual(true);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
     });
   });
 });

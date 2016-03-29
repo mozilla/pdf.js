@@ -3,24 +3,15 @@
 <head>
   <title>pdf.js unit test</title>
 
-  <link rel="shortcut icon" type="image/png" href="../../external/jasmine/jasmine_favicon.png">
-  <link rel="stylesheet" type="text/css" href="../../external/jasmine/jasmine.css">
+  <link rel="stylesheet" type="text/css" href="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.css">
 
   <script src="../../node_modules/requirejs/require.js"></script>
-  <script src="../../external/jasmine/jasmine.js"></script>
-  <script src="../../external/jasmine/jasmine-html.js"></script>
+  <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
+  <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
   <script src="testreporter.js"></script>
+  <script src="jasmine-boot.js"></script>
 
   <script src="../../web/ui_utils.js"></script>
-
-  <script>
-    // Hacking describe() to wait for PDFJS to be loaded, since Jasmine executes
-    // it without waiting for libs to be loaded and fails to use PDFJS members.
-    var oldDescribe = window.describe, describeQueue = [];
-    window.describe = function () {
-      describeQueue.push(Array.prototype.slice.call(arguments, 0));
-    };
-  </script>
 
   <!-- include spec files here... -->
   <script src="primitives_spec.js"></script>
@@ -38,112 +29,6 @@
   <script src="annotation_layer_spec.js"></script>
   <script src="network_spec.js"></script>
   <script src="dom_utils_spec.js"></script>
-
-  <script>
-    'use strict';
-
-    var pdfjsLibs;
-
-    function initializePDFJS(callback) {
-      require.config({paths: {'pdfjs': '../../src'}});
-      require(['pdfjs/shared/util', 'pdfjs/display/global', 'pdfjs/core/primitives',
-          'pdfjs/core/annotation', 'pdfjs/core/crypto', 'pdfjs/core/stream',
-          'pdfjs/core/fonts', 'pdfjs/core/ps_parser', 'pdfjs/core/function',
-          'pdfjs/core/parser', 'pdfjs/core/evaluator', 'pdfjs/core/cmap',
-          'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/display/api',
-          'pdfjs/display/metadata', 'pdfjs/display/dom_utils'],
-          function (sharedUtil, displayGlobal, corePrimitives, coreAnnotation,
-                    coreCrypto, coreStream, coreFonts, corePsParser, coreFunction,
-                    coreParser, coreEvaluator, coreCMap, coreWorker, coreNetwork,
-                    displayAPI, displayMetadata, displayDOMUtils) {
-
-        pdfjsLibs = {
-          sharedUtil: sharedUtil,
-          displayGlobal: displayGlobal,
-          corePrimitives: corePrimitives,
-          coreAnnotation: coreAnnotation,
-          coreCrypto: coreCrypto,
-          coreStream: coreStream,
-          coreFonts: coreFonts,
-          corePsParser: corePsParser,
-          coreFunction: coreFunction,
-          coreParser: coreParser,
-          coreEvaluator: coreEvaluator,
-          coreCMap: coreCMap,
-          coreWorker: coreWorker,
-          coreNetwork: coreNetwork,
-          displayAPI: displayAPI,
-          displayMetadata: displayMetadata,
-          displayDOMUtils: displayDOMUtils
-        };
-
-        // Expose all loaded internal exported members to global scope.
-        Object.keys(pdfjsLibs).forEach(function (libName) {
-          var lib = pdfjsLibs[libName];
-          Object.keys(lib).forEach(function (name) {
-            if (Object.getOwnPropertyDescriptor(window, name)) {
-              return; // ignoring if already set
-            }
-            window[name] = lib[name];
-          });
-        });
-
-        // Configure the worker.
-        PDFJS.workerSrc = '../../src/worker_loader.js';
-
-        // Release describe() calls.
-        window.describe = oldDescribe;
-        describeQueue.forEach(function (args) {
-          oldDescribe.apply(window, args);
-        });
-
-        callback();
-      });
-    }
-
-    (function pdfJsUnitTest() {
-      function queryParams() {
-        var qs = window.location.search.substring(1);
-        var kvs = qs.split('&');
-        var params = { };
-        for (var i = 0; i < kvs.length; ++i) {
-          var kv = kvs[i].split('=');
-          params[unescape(kv[0])] = unescape(kv[1]);
-        }
-        return params;
-      }
-
-      var jasmineEnv = jasmine.getEnv();
-      jasmineEnv.updateInterval = 1000;
-
-      var trivialReporter = new jasmine.TrivialReporter();
-
-      jasmineEnv.addReporter(trivialReporter);
-
-      var params = queryParams();
-      if (params['browser']) {
-        var testReporter = new TestReporter(params['browser'], params['path']);
-        jasmineEnv.addReporter(testReporter);
-      }
-
-      jasmineEnv.specFilter = function pdfJsUnitTestSpecFilter(spec) {
-        return trivialReporter.specFilter(spec);
-      };
-
-      var currentWindowOnload = window.onload;
-
-      window.onload = function pdfJsUnitTestOnload() {
-        if (currentWindowOnload) {
-          currentWindowOnload();
-        }
-        initializePDFJS(execJasmine);
-      };
-
-      function execJasmine() {
-        jasmineEnv.execute();
-      }
-    })();
-  </script>
 </head>
 <body>
 </body>

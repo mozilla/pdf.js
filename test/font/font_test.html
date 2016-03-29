@@ -3,13 +3,14 @@
 <head>
   <title>pdf.js unit test</title>
 
-  <link rel="shortcut icon" type="image/png" href="../../external/jasmine/jasmine_favicon.png">
-  <link rel="stylesheet" type="text/css" href="../../external/jasmine/jasmine.css">
+  <link rel="stylesheet" type="text/css" href="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.css">
 
   <script src="../../node_modules/requirejs/require.js"></script>
-  <script src="../../external/jasmine/jasmine.js"></script>
-  <script src="../../external/jasmine/jasmine-html.js"></script>
+  <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
+  <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
   <script src="../unit/testreporter.js"></script>
+  <script src="jasmine-boot.js"></script>
+
   <script src="fontutils.js"></script>
 
   <!-- include spec files here... -->
@@ -17,68 +18,6 @@
   <script src="font_os2_spec.js"></script>
   <script src="font_post_spec.js"></script>
   <script src="font_fpgm_spec.js"></script>
-
-  <script>
-    'use strict';
-
-    function initializePDFJS(callback) {
-      require.config({paths: {'pdfjs': '../../src'}});
-      require(['pdfjs/core/fonts', 'pdfjs/core/stream', 'pdfjs/core/primitives',
-          'pdfjs/core/cmap'], function (fonts, stream, primitives, cmap) {
-        // Expose some of the PDFJS members to global scope for tests.
-        window.Font = fonts.Font;
-        window.ToUnicodeMap = fonts.ToUnicodeMap;
-        window.Stream = stream.Stream;
-        window.Name = primitives.Name;
-        window.CMapFactory = cmap.CMapFactory;
-
-        callback();
-      });
-    }
-
-    (function pdfJsUnitTest() {
-      function queryParams() {
-        var qs = window.location.search.substring(1);
-        var kvs = qs.split('&');
-        var params = { };
-        for (var i = 0; i < kvs.length; ++i) {
-          var kv = kvs[i].split('=');
-          params[unescape(kv[0])] = unescape(kv[1]);
-        }
-        return params;
-      }
-
-      var jasmineEnv = jasmine.getEnv();
-      jasmineEnv.updateInterval = 1000;
-
-      var trivialReporter = new jasmine.TrivialReporter();
-
-      jasmineEnv.addReporter(trivialReporter);
-
-      var params = queryParams();
-      if (params['browser']) {
-        var testReporter = new TestReporter(params['browser'], params['path']);
-        jasmineEnv.addReporter(testReporter);
-      }
-
-      jasmineEnv.specFilter = function pdfJsUnitTestSpecFilter(spec) {
-        return trivialReporter.specFilter(spec);
-      };
-
-      var currentWindowOnload = window.onload;
-
-      window.onload = function pdfJsUnitTestOnload() {
-        if (currentWindowOnload) {
-          currentWindowOnload();
-        }
-        initializePDFJS(execJasmine);
-      };
-
-      function execJasmine() {
-        jasmineEnv.execute();
-      }
-    })();
-  </script>
 </head>
 <body>
 </body>

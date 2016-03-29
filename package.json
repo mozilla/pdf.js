@@ -4,6 +4,7 @@
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-util": "^3.0.7",
+    "jasmine-core": "^2.4.1",
     "jsdoc": "^3.3.0-alpha9",
     "jshint": "~2.8.0",
     "node-ensure": "^0.0.0",
