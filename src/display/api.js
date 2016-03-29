@@ -1719,10 +1719,19 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
         var page = this.pageCache[data.pageNum - 1];
         var intentState = page.intentStates[data.intent];
+
         if (intentState.displayReadyCapability) {
           intentState.displayReadyCapability.reject(data.error);
         } else {
           error(data.error);
+        }
+
+        if (intentState.operatorList) {
+          // Mark operator list as complete.
+          intentState.operatorList.lastChunk = true;
+          for (var i = 0; i < intentState.renderTasks.length; i++) {
+            intentState.renderTasks[i].operatorListChanged();
+          }
         }
       }, this);
 
