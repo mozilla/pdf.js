@@ -360,7 +360,8 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets destinations', function(done) {
+
+    it('gets destinations, from /Dests dictionary', function(done) {
       var promise = doc.getDestinations();
       promise.then(function(data) {
         expect(data).toEqual({ chapter1: [{ gen: 0, num: 17 }, { name: 'XYZ' },
@@ -370,7 +371,7 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets a destination', function(done) {
+    it('gets a destination, from /Dests dictionary', function(done) {
       var promise = doc.getDestination('chapter1');
       promise.then(function(data) {
         expect(data).toEqual([{ gen: 0, num: 17 }, { name: 'XYZ' },
@@ -380,7 +381,8 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets a non-existent destination', function(done) {
+    it('gets a non-existent destination, from /Dests dictionary',
+        function(done) {
       var promise = doc.getDestination('non-existent-named-destination');
       promise.then(function(data) {
         expect(data).toEqual(null);
@@ -389,6 +391,58 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+
+    it('gets destinations, from /Names (NameTree) dictionary', function(done) {
+      var url = combineUrl(window.location.href, '../pdfs/issue6204.pdf');
+      var loadingTask = PDFJS.getDocument(url);
+      var promise = loadingTask.promise.then(function (pdfDocument) {
+        return pdfDocument.getDestinations();
+      });
+      promise.then(function (destinations) {
+        expect(destinations).toEqual({
+          'Page.1': [{ num: 1, gen: 0}, { name: 'XYZ' }, 0, 375, null],
+          'Page.2': [{ num: 6, gen: 0}, { name: 'XYZ' }, 0, 375, null],
+        });
+
+        loadingTask.destroy();
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+    it('gets a destination, from /Names (NameTree) dictionary', function(done) {
+      var url = combineUrl(window.location.href, '../pdfs/issue6204.pdf');
+      var loadingTask = PDFJS.getDocument(url);
+      var promise = loadingTask.promise.then(function (pdfDocument) {
+        return pdfDocument.getDestination('Page.1');
+      });
+      promise.then(function (destination) {
+        expect(destination).toEqual([{ num: 1, gen: 0}, { name: 'XYZ' },
+                                     0, 375, null]);
+
+        loadingTask.destroy();
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+    it('gets a non-existent destination, from /Names (NameTree) dictionary',
+        function(done) {
+      var url = combineUrl(window.location.href, '../pdfs/issue6204.pdf');
+      var loadingTask = PDFJS.getDocument(url);
+      var promise = loadingTask.promise.then(function (pdfDocument) {
+        return pdfDocument.getDestination('non-existent-named-destination');
+      });
+      promise.then(function (destination) {
+        expect(destination).toEqual(null);
+
+        loadingTask.destroy();
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+
     it('gets non-existent page labels', function (done) {
       var promise = doc.getPageLabels();
       promise.then(function (data) {
