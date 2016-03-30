@@ -1,6 +1,6 @@
-/* globals PDFJS, expect, it, describe, Promise, combineUrl,
+/* globals PDFJS, expect, it, describe, Promise, combineUrl, beforeAll,
            InvalidPDFException, MissingPDFException, StreamType, FontType,
-           PDFDocumentProxy, PasswordException, PasswordResponses,
+           PDFDocumentProxy, PasswordException, PasswordResponses, afterAll,
            PDFPageProxy, createPromiseCapability, beforeEach, afterEach */
 
 'use strict';
@@ -310,7 +310,7 @@ describe('api', function() {
     var loadingTask;
     var doc;
 
-    beforeEach(function(done) {
+    beforeAll(function(done) {
       loadingTask = PDFJS.getDocument(basicApiUrl);
       loadingTask.promise.then(function(data) {
         doc = data;
@@ -318,7 +318,7 @@ describe('api', function() {
       });
     });
 
-    afterEach(function() {
+    afterAll(function() {
       loadingTask.destroy();
     });
 
@@ -680,7 +680,7 @@ describe('api', function() {
     var loadingTask;
     var pdfDocument, page;
 
-    beforeEach(function(done) {
+    beforeAll(function(done) {
       loadingTask = PDFJS.getDocument(basicApiUrl);
       loadingTask.promise.then(function(doc) {
         pdfDocument = doc;
@@ -693,7 +693,7 @@ describe('api', function() {
       });
     });
 
-    afterEach(function() {
+    afterAll(function() {
       loadingTask.destroy();
     });
 
