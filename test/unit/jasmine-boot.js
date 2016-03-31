@@ -48,12 +48,12 @@ function initializePDFJS(callback) {
       'pdfjs/core/annotation', 'pdfjs/core/crypto', 'pdfjs/core/stream',
       'pdfjs/core/fonts', 'pdfjs/core/ps_parser', 'pdfjs/core/function',
       'pdfjs/core/parser', 'pdfjs/core/evaluator', 'pdfjs/core/cmap',
-      'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/display/api',
-      'pdfjs/display/metadata', 'pdfjs/display/dom_utils'],
+      'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/core/cff_parser',
+      'pdfjs/display/api', 'pdfjs/display/metadata', 'pdfjs/display/dom_utils'],
     function (sharedUtil, displayGlobal, corePrimitives, coreAnnotation,
               coreCrypto, coreStream, coreFonts, corePsParser, coreFunction,
               coreParser, coreEvaluator, coreCMap, coreWorker, coreNetwork,
-              displayAPI, displayMetadata, displayDOMUtils) {
+              coreCFFParser, displayAPI, displayMetadata, displayDOMUtils) {
 
       pdfjsLibs = {
         sharedUtil: sharedUtil,
@@ -70,6 +70,7 @@ function initializePDFJS(callback) {
         coreCMap: coreCMap,
         coreWorker: coreWorker,
         coreNetwork: coreNetwork,
+        coreCFFParser: coreCFFParser,
         displayAPI: displayAPI,
         displayMetadata: displayMetadata,
         displayDOMUtils: displayDOMUtils

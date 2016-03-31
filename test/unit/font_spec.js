@@ -1,6 +1,5 @@
 /* globals expect, it, describe, CFFCompiler, CFFParser, CFFIndex, CFFStrings,
-           SEAC_ANALYSIS_ENABLED, Type1Parser, StringStream,
-           _enableSeacAnalysis */
+           Type1Parser, StringStream, SEAC_ANALYSIS_ENABLED */
 
 'use strict';
 
@@ -38,7 +37,7 @@ describe('font', function() {
   }
 
   describe('CFFParser', function() {
-    var parser = new CFFParser(fontData, {});
+    var parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
     var cff = parser.parse();
 
     it('parses header', function() {
@@ -117,46 +116,42 @@ describe('font', function() {
     });
 
     it('parses a CharString endchar with 4 args w/seac enabled', function() {
-      var seacAnalysisState = SEAC_ANALYSIS_ENABLED;
-      try {
-        _enableSeacAnalysis(true);
-        var bytes = new Uint8Array([0, 1, // count
-                                    1,  // offsetSize
-                                    0,  // offset[0]
-                                    237, 247, 22, 247, 72, 204, 247, 86, 14]);
-        parser.bytes = bytes;
-        var charStringsIndex = parser.parseIndex(0).obj;
-        var result = parser.parseCharStrings(charStringsIndex);
-        expect(result.charStrings.count).toEqual(1);
-        expect(result.charStrings.get(0).length).toEqual(1);
-        expect(result.seacs.length).toEqual(1);
-        expect(result.seacs[0].length).toEqual(4);
-        expect(result.seacs[0][0]).toEqual(130);
-        expect(result.seacs[0][1]).toEqual(180);
-        expect(result.seacs[0][2]).toEqual(65);
-        expect(result.seacs[0][3]).toEqual(194);
-      } finally {
-        _enableSeacAnalysis(seacAnalysisState);
-      }
+      var parser = new CFFParser(fontData, {},
+                                 /* seacAnalysisEnabled = */ true);
+      var cff = parser.parse();
+
+      var bytes = new Uint8Array([0, 1, // count
+                                  1,  // offsetSize
+                                  0,  // offset[0]
+                                  237, 247, 22, 247, 72, 204, 247, 86, 14]);
+      parser.bytes = bytes;
+      var charStringsIndex = parser.parseIndex(0).obj;
+      var result = parser.parseCharStrings(charStringsIndex);
+      expect(result.charStrings.count).toEqual(1);
+      expect(result.charStrings.get(0).length).toEqual(1);
+      expect(result.seacs.length).toEqual(1);
+      expect(result.seacs[0].length).toEqual(4);
+      expect(result.seacs[0][0]).toEqual(130);
+      expect(result.seacs[0][1]).toEqual(180);
+      expect(result.seacs[0][2]).toEqual(65);
+      expect(result.seacs[0][3]).toEqual(194);
     });
 
     it('parses a CharString endchar with 4 args w/seac disabled', function() {
-      var seacAnalysisState = SEAC_ANALYSIS_ENABLED;
-      try {
-        _enableSeacAnalysis(false);
-        var bytes = new Uint8Array([0, 1, // count
-                                    1,  // offsetSize
-                                    0,  // offset[0]
-                                    237, 247, 22, 247, 72, 204, 247, 86, 14]);
-        parser.bytes = bytes;
-        var charStringsIndex = parser.parseIndex(0).obj;
-        var result = parser.parseCharStrings(charStringsIndex);
-        expect(result.charStrings.count).toEqual(1);
-        expect(result.charStrings.get(0).length).toEqual(9);
-        expect(result.seacs.length).toEqual(0);
-      } finally {
-        _enableSeacAnalysis(seacAnalysisState);
-      }
+      var parser = new CFFParser(fontData, {},
+                                 /* seacAnalysisEnabled = */ false);
+      var cff = parser.parse();
+
+      var bytes = new Uint8Array([0, 1, // count
+                                  1,  // offsetSize
+                                  0,  // offset[0]
+                                  237, 247, 22, 247, 72, 204, 247, 86, 14]);
+      parser.bytes = bytes;
+      var charStringsIndex = parser.parseIndex(0).obj;
+      var result = parser.parseCharStrings(charStringsIndex);
+      expect(result.charStrings.count).toEqual(1);
+      expect(result.charStrings.get(0).length).toEqual(9);
+      expect(result.seacs.length).toEqual(0);
     });
 
     it('parses a CharString endchar no args', function() {

@@ -17,17 +17,19 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/font_renderer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/stream', 'pdfjs/core/glyphlist', 'pdfjs/core/encodings'],
-      factory);
+      'pdfjs/core/stream', 'pdfjs/core/glyphlist', 'pdfjs/core/encodings',
+      'pdfjs/core/cff_parser'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./stream.js'),
-      require('./glyphlist.js'), require('./encodings.js'));
+      require('./glyphlist.js'), require('./encodings.js'),
+      require('./cff_parser.js'));
   } else {
     factory((root.pdfjsCoreFontRenderer = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreStream, root.pdfjsCoreGlyphList, root.pdfjsCoreEncodings);
+      root.pdfjsCoreStream, root.pdfjsCoreGlyphList, root.pdfjsCoreEncodings,
+      root.pdfjsCoreCFFParser);
   }
 }(this, function (exports, sharedUtil, coreStream, coreGlyphList,
-                  coreEncodings) {
+                  coreEncodings, coreCFFParser) {
 
 var Util = sharedUtil.Util;
 var bytesToString = sharedUtil.bytesToString;
@@ -35,9 +37,7 @@ var error = sharedUtil.error;
 var Stream = coreStream.Stream;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
 var StandardEncoding = coreEncodings.StandardEncoding;
-
-var coreFonts; // see _setCoreFonts below
-var CFFParser; // = coreFonts.CFFParser;
+var CFFParser = coreCFFParser.CFFParser;
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
@@ -99,10 +99,10 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     error('not supported cmap: ' + format);
   }
 
-  function parseCff(data, start, end) {
+  function parseCff(data, start, end, seacAnalysisEnabled) {
     var properties = {};
     var parser = new CFFParser(new Stream(data, start, end - start),
-                               properties);
+                               properties, seacAnalysisEnabled);
     var cff = parser.parse();
     return {
       glyphs: cff.charStrings.objects,
@@ -696,7 +696,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
 
   return {
-    create: function FontRendererFactory_create(font) {
+    create: function FontRendererFactory_create(font, seacAnalysisEnabled) {
       var data = new Uint8Array(font.data);
       var cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
       var numTables = getUshort(data, 4);
@@ -719,7 +719,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             indexToLocFormat = getUshort(data, offset + 50);
             break;
           case 'CFF ':
-            cff = parseCff(data, offset, offset + length);
+            cff = parseCff(data, offset, offset + length, seacAnalysisEnabled);
             break;
         }
       }
@@ -735,14 +735,6 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     }
   };
 })();
-
-
-// TODO refactor to remove cyclic dependency on fonts.js
-function _setCoreFonts(coreFonts_) {
-  coreFonts = coreFonts_;
-  CFFParser = coreFonts_.CFFParser;
-}
-exports._setCoreFonts = _setCoreFonts;
 
 exports.FontRendererFactory = FontRendererFactory;
 }));
