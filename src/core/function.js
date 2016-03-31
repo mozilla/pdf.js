@@ -111,7 +111,7 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     parse: function PDFFunction_parse(xref, fn) {
-      var IR = this.getIR(xref, fn);
+      var IR = this.getIR(xref, xref.fetchIfRef(fn));
       return this.fromIR(IR);
     },
 
@@ -123,8 +123,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
       var fnArray = [];
       for (var j = 0, jj = fnObj.length; j < jj; j++) {
-        var obj = xref.fetchIfRef(fnObj[j]);
-        fnArray.push(PDFFunction.parse(xref, obj));
+        fnArray.push(PDFFunction.parse(xref, fnObj[j]));
       }
       return function (src, srcOffset, dest, destOffset) {
         for (var i = 0, ii = fnArray.length; i < ii; i++) {
