@@ -217,6 +217,7 @@ var CFFParser = (function CFFParserClosure() {
   function CFFParser(file, properties, seacAnalysisEnabled) {
     this.bytes = file.getBytes();
     this.properties = properties;
+    assert(seacAnalysisEnabled !== undefined);
     this.seacAnalysisEnabled = !!seacAnalysisEnabled;
   }
   CFFParser.prototype = {

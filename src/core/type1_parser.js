@@ -30,6 +30,7 @@
 }(this, function (exports, sharedUtil, coreStream, coreParser, coreEncodings) {
 
 var warn = sharedUtil.warn;
+var assert = sharedUtil.assert;
 var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 var getEncoding = coreEncodings.getEncoding;
@@ -106,6 +107,7 @@ var Type1CharString = (function Type1CharStringClosure() {
   Type1CharString.prototype = {
     convert: function Type1CharString_convert(encoded, subrs,
                                               seacAnalysisEnabled) {
+      assert(seacAnalysisEnabled !== undefined);
       var count = encoded.length;
       var error = false;
       var wx, sbx, subrNumber;
@@ -445,6 +447,7 @@ var Type1Parser = (function Type1ParserClosure() {
       stream = new Stream(isBinary ? decrypt(data, EEXEC_ENCRYPT_KEY, 4) :
                           decryptAscii(data, EEXEC_ENCRYPT_KEY, 4));
     }
+    assert(seacAnalysisEnabled !== undefined);
     this.seacAnalysisEnabled = !!seacAnalysisEnabled;
 
     this.stream = stream;
