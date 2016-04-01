@@ -185,12 +185,13 @@ function webViewerLoad() {
       window.PDFViewerApplication = app.PDFViewerApplication;
       app.PDFViewerApplication.run(config);
       if (app.PDFViewerFabricMethods.hasOwnProperty(method)){
-		    PDFViewerApplication.pdfViewer[method] = web.PDFViewerFabricMethods[method];
+		    pdfjsWebApp.PDFViewerApplication.pdfViewer[method] = app.PDFViewerFabricMethods[method];
 	    }
     });
   } else {
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     pdfjsWebApp.PDFViewerApplication.run(config);
+    pdfjsWebApp.PDFViewerApplication.pdfViewer[method] = window.PDFViewerFabricMethods[method];
   }
 }
 

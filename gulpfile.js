@@ -689,6 +689,7 @@ gulp.task('minified-pre', ['buildnumber', 'locale'], function () {
 gulp.task('minified-post', ['minified-pre'], function () {
   var viewerFiles = [
     'external/webL10n/l10n.js',
+    'external/fabric.js/dist/fabric.js',
     MINIFIED_DIR + BUILD_DIR + 'pdf.js',
     MINIFIED_DIR + '/web/viewer.js'
   ];

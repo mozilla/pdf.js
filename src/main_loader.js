@@ -29,7 +29,7 @@
       require('./display/annotation_layer.js'),
       require('./display/text_layer.js'), require('./display/dom_utils.js'),
       require('./shared/util.js'), require('./display/svg.js'),
-            require('./display/global.js'), require('./display/draw.js'));
+      require('./display/global.js'), require('./display/draw.js'));
   } else {
     factory((root.pdfjsMainLoader = {}), root.pdfjsDisplayAPI,
       root.pdfjsDisplayAnnotationLayer, root.pdfjsDisplayTextLayer,
@@ -69,4 +69,5 @@
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
   exports.PDFViewerFabricMethods = draw.fabricMethods;
+  exports.FabricViewerMethods = draw.fabricViewerMethods;
 }));

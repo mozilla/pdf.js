@@ -209,6 +209,8 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (typeof rotation !== 'undefined') {
         this.rotation = rotation;
       }
+      if(this.canvas && this.canvas.toString().indexOf('fabric.Canvas') >= 0)
+	PDFJS.fabricGlobals.fabricTransformCanvas(this.id, this.rotation, this.scale);
 
       var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
       this.viewport = this.viewport.clone({
@@ -602,7 +604,6 @@ var PDFPageView = (function PDFPageViewClosure() {
           renderCapability.reject(error);
         }
       );
-
       return result;
     },
 
