@@ -137,7 +137,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   function lookupCmap(ranges, unicode) {
-    var code = unicode.charCodeAt(0);
+    var code = unicode.charCodeAt(0), gid = 0;
     var l = 0, r = ranges.length - 1;
     while (l < r) {
       var c = (l + r + 1) >> 1;
@@ -148,10 +148,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
     }
     if (ranges[l].start <= code && code <= ranges[l].end) {
-      return (ranges[l].idDelta + (ranges[l].ids ?
-        ranges[l].ids[code - ranges[l].start] : code)) & 0xFFFF;
+      gid = (ranges[l].idDelta + (ranges[l].ids ?
+             ranges[l].ids[code - ranges[l].start] : code)) & 0xFFFF;
     }
-    return 0;
+    return {
+      charCode: code,
+      glyphId: gid,
+    };
   }
 
   function compileGlyf(code, cmds, font) {
@@ -451,14 +454,14 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               x = stack.pop();
               cmds.push({cmd: 'save'});
               cmds.push({cmd: 'translate', args: [x, y]});
-              var gid = lookupCmap(font.cmap, String.fromCharCode(
+              var cmap = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[StandardEncoding[achar]]));
-              compileCharString(font.glyphs[gid], cmds, font);
+              compileCharString(font.glyphs[cmap.glyphId], cmds, font);
               cmds.push({cmd: 'restore'});
 
-              gid = lookupCmap(font.cmap, String.fromCharCode(
+              cmap = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[StandardEncoding[bchar]]));
-              compileCharString(font.glyphs[gid], cmds, font);
+              compileCharString(font.glyphs[cmap.glyphId], cmds, font);
             }
             return;
           case 18: // hstemhm
@@ -610,14 +613,19 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
   function CompiledFont(fontMatrix) {
     this.compiledGlyphs = Object.create(null);
+    this.compiledCharCodeToGlyphId = Object.create(null);
     this.fontMatrix = fontMatrix;
   }
   CompiledFont.prototype = {
     getPathJs: function (unicode) {
-      var gid = lookupCmap(this.cmap, unicode);
-      var fn = this.compiledGlyphs[gid];
+      var cmap = lookupCmap(this.cmap, unicode);
+      var fn = this.compiledGlyphs[cmap.glyphId];
       if (!fn) {
-        this.compiledGlyphs[gid] = fn = this.compileGlyph(this.glyphs[gid]);
+        fn = this.compileGlyph(this.glyphs[cmap.glyphId]);
+        this.compiledGlyphs[cmap.glyphId] = fn;
+      }
+      if (this.compiledCharCodeToGlyphId[cmap.charCode] === undefined) {
+        this.compiledCharCodeToGlyphId[cmap.charCode] = cmap.glyphId;
       }
       return fn;
     },
@@ -644,8 +652,9 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     },
 
     hasBuiltPath: function (unicode) {
-      var gid = lookupCmap(this.cmap, unicode);
-      return gid in this.compiledGlyphs;
+      var cmap = lookupCmap(this.cmap, unicode);
+      return (this.compiledGlyphs[cmap.glyphId] !== undefined &&
+              this.compiledCharCodeToGlyphId[cmap.charCode] !== undefined);
     }
   };
 
@@ -655,8 +664,6 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
     this.glyphs = glyphs;
     this.cmap = cmap;
-
-    this.compiledGlyphs = [];
   }
 
   Util.inherit(TrueTypeCompiled, CompiledFont, {
@@ -668,13 +675,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   function Type2Compiled(cffInfo, cmap, fontMatrix, glyphNameMap) {
     fontMatrix = fontMatrix || [0.001, 0, 0, 0.001, 0, 0];
     CompiledFont.call(this, fontMatrix);
+
     this.glyphs = cffInfo.glyphs;
     this.gsubrs = cffInfo.gsubrs || [];
     this.subrs = cffInfo.subrs || [];
     this.cmap = cmap;
     this.glyphNameMap = glyphNameMap || getGlyphsUnicode();
 
-    this.compiledGlyphs = [];
     this.gsubrsBias = (this.gsubrs.length < 1240 ?
                        107 : (this.gsubrs.length < 33900 ? 1131 : 32768));
     this.subrsBias = (this.subrs.length < 1240 ?
