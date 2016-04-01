@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,9 +82,15 @@ function getFindBar(domWindow) {
 //#endif
     return tabbrowser.getFindBar(tab);
   } catch (e) {
-    // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
-    var chromeWindow = browser.ownerDocument.defaultView;
-    return chromeWindow.gFindBar;
+    try {
+      // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
+      var chromeWindow = browser.ownerDocument.defaultView;
+      return chromeWindow.gFindBar;
+    } catch (ex) {
+      // Suppress errors for PDF files opened in the bookmark sidebar, see
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1248959.
+      return null;
+    }
   }
 }
 
@@ -315,11 +319,9 @@ ChromeActions.prototype = {
     var extHelperAppSvc =
           Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
              getService(Ci.nsIExternalHelperAppService);
-    var frontWindow = Cc['@mozilla.org/embedcomp/window-watcher;1'].
-                         getService(Ci.nsIWindowWatcher).activeWindow;
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = createNewChannel(blobUri, frontWindow.document, null);
+    var netChannel = createNewChannel(blobUri, this.domWindow.document, null);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
@@ -339,7 +341,7 @@ ChromeActions.prototype = {
       try {
         // contentDisposition/contentDispositionFilename is readonly before FF18
         channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
-        if (self.contentDispositionFilename) {
+        if (self.contentDispositionFilename && !data.isAttachment) {
           channel.contentDispositionFilename = self.contentDispositionFilename;
         } else {
           channel.contentDispositionFilename = filename;
@@ -355,10 +357,14 @@ ChromeActions.prototype = {
       var listener = {
         extListener: null,
         onStartRequest: function(aRequest, aContext) {
+          var loadContext = self.domWindow
+                                .QueryInterface(Ci.nsIInterfaceRequestor)
+                                .getInterface(Ci.nsIWebNavigation)
+                                .QueryInterface(Ci.nsILoadContext);
           this.extListener = extHelperAppSvc.doContent(
             (data.isAttachment ? 'application/octet-stream' :
                                  'application/pdf'),
-            aRequest, frontWindow, false);
+            aRequest, loadContext, false);
           this.extListener.onStartRequest(aRequest, aContext);
         },
         onStopRequest: function(aRequest, aContext, aStatusCode) {
@@ -409,7 +415,7 @@ ChromeActions.prototype = {
 
     // ... or when the new find events code exists.
     var findBar = getFindBar(this.domWindow);
-    return findBar && ('updateControlState' in findBar);
+    return !!findBar && ('updateControlState' in findBar);
   },
   supportsDocumentFonts: function() {
     var prefBrowser = getIntPref('browser.display.use_document_fonts', 1);
@@ -422,6 +428,12 @@ ChromeActions.prototype = {
       return false;
     }
     return true;
+  },
+  supportedMouseWheelZoomModifierKeys: function() {
+    return {
+      ctrlKey: getIntPref('mousewheel.with_control.action', 3) === 3,
+      metaKey: getIntPref('mousewheel.with_meta.action', 1) === 3,
+    };
   },
   reportTelemetry: function (data) {
     var probeInfo = JSON.parse(data);
@@ -662,8 +674,8 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     // If we are in range request mode, this means we manually issued xhr
     // requests, which we need to abort when we leave the page
     domWindow.addEventListener('unload', function unload(e) {
-      self.networkManager.abortAllRequests();
       domWindow.removeEventListener(e.type, unload);
+      self.abortLoading();
     });
   }
 
@@ -691,7 +703,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
         }, '*');
       };
       this.dataListener.oncomplete = function () {
-        delete self.dataListener;
+        self.dataListener = null;
       };
     }
 
@@ -735,6 +747,15 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     });
   };
 
+  proto.abortLoading = function RangedChromeActions_abortLoading() {
+    this.networkManager.abortAllRequests();
+    if (this.originalRequest) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+    }
+    this.dataListener = null;
+  };
+
   return RangedChromeActions;
 })();
 
@@ -744,9 +765,10 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
    * This is for a single network stream
    */
   function StandardChromeActions(domWindow, contentDispositionFilename,
-                                 dataListener) {
+                                 originalRequest, dataListener) {
 
     ChromeActions.call(this, domWindow, contentDispositionFilename);
+    this.originalRequest = originalRequest;
     this.dataListener = dataListener;
   }
 
@@ -772,18 +794,27 @@ var StandardChromeActions = (function StandardChromeActionsClosure() {
       }, '*');
     };
 
-    this.dataListener.oncomplete = function ChromeActions_dataListenerComplete(
-                                      data, errorCode) {
+    this.dataListener.oncomplete =
+        function StandardChromeActions_dataListenerComplete(data, errorCode) {
       self.domWindow.postMessage({
         pdfjsLoadAction: 'complete',
         data: data,
         errorCode: errorCode
       }, '*');
 
-      delete self.dataListener;
+      self.dataListener = null;
+      self.originalRequest = null;
     };
 
     return true;
+  };
+
+  proto.abortLoading = function StandardChromeActions_abortLoading() {
+    if (this.originalRequest) {
+      this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
+      this.originalRequest = null;
+    }
+    this.dataListener = null;
   };
 
   return StandardChromeActions;
@@ -808,7 +839,7 @@ RequestListener.prototype.receive = function(event) {
   var response;
   if (sync) {
     response = actions[action].call(this.actions, data);
-    event.detail.response = response;
+    event.detail.response = makeContentReadable(response, doc.defaultView);
   } else {
     if (!event.detail.responseExpected) {
       doc.documentElement.removeChild(message);
@@ -1029,7 +1060,7 @@ PdfStreamConverter.prototype = {
             rangeRequest, streamRequest, dataListener);
         } else {
           actions = new StandardChromeActions(
-            domWindow, contentDispositionFilename, dataListener);
+            domWindow, contentDispositionFilename, aRequest, dataListener);
         }
         var requestListener = new RequestListener(actions);
         domWindow.addEventListener(PDFJS_EVENT_ID, function(event) {
@@ -1055,14 +1086,25 @@ PdfStreamConverter.prototype = {
 
     // We can use resource principal when data is fetched by the chrome
     // e.g. useful for NoScript
-    var securityManager = Cc['@mozilla.org/scriptsecuritymanager;1']
-                          .getService(Ci.nsIScriptSecurityManager);
+    var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
+                .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
+    var resourcePrincipal;
+//#if MOZCENTRAL
+    resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+//#else
     // FF16 and below had getCodebasePrincipal, it was replaced by
     // getNoAppCodebasePrincipal (bug 758258).
-    var resourcePrincipal = 'getNoAppCodebasePrincipal' in securityManager ?
-                            securityManager.getNoAppCodebasePrincipal(uri) :
-                            securityManager.getCodebasePrincipal(uri);
+    // FF43 then replaced getNoAppCodebasePrincipal with
+    // createCodebasePrincipal (bug 1165272).
+    if ('createCodebasePrincipal' in ssm) {
+      resourcePrincipal = ssm.createCodebasePrincipal(uri, {});
+    } else if ('getNoAppCodebasePrincipal' in ssm) {
+      resourcePrincipal = ssm.getNoAppCodebasePrincipal(uri);
+    } else {
+      resourcePrincipal = ssm.getCodebasePrincipal(uri);
+    }
+//#endif
     aRequest.owner = resourcePrincipal;
     channel.asyncOpen(proxy, aContext);
   },

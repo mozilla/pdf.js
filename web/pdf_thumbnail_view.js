@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +26,9 @@ var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {boolean} disableCanvasToImageConversion - (optional) Don't convert
+ *   the canvas thumbnails to images. This prevents `toDataURL` calls,
+ *   but increases the overall memory usage. The default value is false.
  */
 
 /**
@@ -45,8 +46,11 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     tempCanvas.height = height;
 
     // Since this is a temporary canvas, we need to fill the canvas with a white
-    // background ourselves. |_getPageDrawContext| uses CSS rules for this.
-    var ctx = tempCanvas.getContext('2d');
+    // background ourselves. `_getPageDrawContext` uses CSS rules for this.
+//#if MOZCENTRAL || FIREFOX || GENERIC
+    tempCanvas.mozOpaque = true;
+//#endif
+    var ctx = tempCanvas.getContext('2d', {alpha: false});
     ctx.save();
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, width, height);
@@ -64,6 +68,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     var defaultViewport = options.defaultViewport;
     var linkService = options.linkService;
     var renderingQueue = options.renderingQueue;
+    var disableCanvasToImageConversion =
+      options.disableCanvasToImageConversion || false;
 
     this.id = id;
     this.renderingId = 'thumbnail' + id;
@@ -76,9 +82,9 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
 
-    this.hasImage = false;
     this.resume = null;
     this.renderingState = RenderingStates.INITIAL;
+    this.disableCanvasToImageConversion = disableCanvasToImageConversion;
 
     this.pageWidth = this.viewport.width;
     this.pageHeight = this.viewport.height;
@@ -132,7 +138,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (this.renderTask) {
         this.renderTask.cancel();
       }
-      this.hasImage = false;
       this.resume = null;
       this.renderingState = RenderingStates.INITIAL;
 
@@ -160,6 +165,10 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         this.canvas.height = 0;
         delete this.canvas;
       }
+      if (this.image) {
+        this.image.removeAttribute('src');
+        delete this.image;
+      }
     },
 
     update: function PDFThumbnailView_update(rotation) {
@@ -180,36 +189,78 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     _getPageDrawContext:
         function PDFThumbnailView_getPageDrawContext(noCtxScale) {
       var canvas = document.createElement('canvas');
-      canvas.id = this.renderingId;
-
-      canvas.className = 'thumbnailImage';
-      canvas.setAttribute('aria-label', mozL10n.get('thumb_page_canvas',
-        {page: this.id}, 'Thumbnail of Page {{page}}'));
-
+      // Keep the no-thumbnail outline visible, i.e. `data-loaded === false`,
+      // until rendering/image conversion is complete, to avoid display issues.
       this.canvas = canvas;
-      this.div.setAttribute('data-loaded', true);
-      this.ring.appendChild(canvas);
 
-      var ctx = canvas.getContext('2d');
+//#if MOZCENTRAL || FIREFOX || GENERIC
+      canvas.mozOpaque = true;
+//#endif
+      var ctx = canvas.getContext('2d', {alpha: false});
       var outputScale = getOutputScale(ctx);
+
       canvas.width = (this.canvasWidth * outputScale.sx) | 0;
       canvas.height = (this.canvasHeight * outputScale.sy) | 0;
       canvas.style.width = this.canvasWidth + 'px';
       canvas.style.height = this.canvasHeight + 'px';
+
       if (!noCtxScale && outputScale.scaled) {
         ctx.scale(outputScale.sx, outputScale.sy);
       }
       return ctx;
     },
 
+    /**
+     * @private
+     */
+    _convertCanvasToImage: function PDFThumbnailView_convertCanvasToImage() {
+      if (!this.canvas) {
+        return;
+      }
+      if (this.renderingState !== RenderingStates.FINISHED) {
+        return;
+      }
+      var id = this.renderingId;
+      var className = 'thumbnailImage';
+      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.id },
+                                  'Thumbnail of Page {{page}}');
+
+      if (this.disableCanvasToImageConversion) {
+        this.canvas.id = id;
+        this.canvas.className = className;
+        this.canvas.setAttribute('aria-label', ariaLabel);
+
+        this.div.setAttribute('data-loaded', true);
+        this.ring.appendChild(this.canvas);
+        return;
+      }
+      var image = document.createElement('img');
+      image.id = id;
+      image.className = className;
+      image.setAttribute('aria-label', ariaLabel);
+
+      image.style.width = this.canvasWidth + 'px';
+      image.style.height = this.canvasHeight + 'px';
+
+      image.src = this.canvas.toDataURL();
+      this.image = image;
+
+      this.div.setAttribute('data-loaded', true);
+      this.ring.appendChild(image);
+
+      // Zeroing the width and height causes Firefox to release graphics
+      // resources immediately, which can greatly reduce memory consumption.
+      this.canvas.width = 0;
+      this.canvas.height = 0;
+      delete this.canvas;
+    },
+
     draw: function PDFThumbnailView_draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
-      }
-      if (this.hasImage) {
         return Promise.resolve(undefined);
       }
-      this.hasImage = true;
+
       this.renderingState = RenderingStates.RUNNING;
 
       var resolveRenderPromise, rejectRenderPromise;
@@ -230,7 +281,9 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
           rejectRenderPromise(error);
           return;
         }
+
         self.renderingState = RenderingStates.FINISHED;
+        self._convertCanvasToImage();
 
         if (!error) {
           resolveRenderPromise(undefined);
@@ -255,10 +308,10 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
       var renderContext = {
         canvasContext: ctx,
-        viewport: drawViewport,
-        continueCallback: renderContinueCallback
+        viewport: drawViewport
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+      renderTask.onContinue = renderContinueCallback;
 
       renderTask.promise.then(
         function pdfPageRenderCallback() {
@@ -272,14 +325,17 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     },
 
     setImage: function PDFThumbnailView_setImage(pageView) {
+      if (this.renderingState !== RenderingStates.INITIAL) {
+        return;
+      }
       var img = pageView.canvas;
-      if (this.hasImage || !img) {
+      if (!img) {
         return;
       }
       if (!this.pdfPage) {
         this.setPdfPage(pageView.pdfPage);
       }
-      this.hasImage = true;
+
       this.renderingState = RenderingStates.FINISHED;
 
       var ctx = this._getPageDrawContext(true);
@@ -288,6 +344,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (img.width <= 2 * canvas.width) {
         ctx.drawImage(img, 0, 0, img.width, img.height,
                       0, 0, canvas.width, canvas.height);
+        this._convertCanvasToImage();
         return;
       }
       // drawImage does an awful job of rescaling the image, doing it gradually.
@@ -312,6 +369,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       }
       ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
                     0, 0, canvas.width, canvas.height);
+      this._convertCanvasToImage();
     }
   };
 

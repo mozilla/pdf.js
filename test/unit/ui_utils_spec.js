@@ -1,11 +1,8 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, binarySearchFirstItem */
 
 'use strict';
 
 describe('ui_utils', function() {
-
   describe('binary search', function() {
     function isTrue(boolean) {
       return boolean;

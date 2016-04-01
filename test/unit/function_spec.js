@@ -1,6 +1,4 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, beforeEach, isArray, StringStream,
+/* globals jasmine, expect, it, describe, beforeEach, isArray, StringStream,
            PostScriptParser, PostScriptLexer, PostScriptEvaluator,
            PostScriptCompiler*/
 
@@ -8,31 +6,42 @@
 
 describe('function', function() {
   beforeEach(function() {
-    this.addMatchers({
-      toMatchArray: function(expected) {
-        var actual = this.actual;
-        if (actual.length !== expected.length) {
-          return false;
-        }
-        for (var i = 0; i < expected.length; i++) {
-          var a = actual[i], b = expected[i];
-          if (isArray(b)) {
-            if (a.length !== b.length) {
-              return false;
+    jasmine.addMatchers({
+      toMatchArray: function(util, customEqualityTesters) {
+        return {
+          compare: function (actual, expected) {
+            var result = {};
+            if (actual.length !== expected.length) {
+              result.pass = false;
+              result.message = 'Array length: ' + actual.length +
+                               ', expected: ' + expected.length;
+              return result;
             }
-            for (var j = 0; j < a.length; j++) {
-              var suba = a[j], subb = b[j];
-              if (suba !== subb) {
-                return false;
+            result.pass = true;
+            for (var i = 0; i < expected.length; i++) {
+              var a = actual[i], b = expected[i];
+              if (isArray(b)) {
+                if (a.length !== b.length) {
+                  result.pass = false;
+                  break;
+                }
+                for (var j = 0; j < a.length; j++) {
+                  var suba = a[j], subb = b[j];
+                  if (suba !== subb) {
+                    result.pass = false;
+                    break;
+                  }
+                }
+              } else {
+                if (a !== b) {
+                  result.pass = false;
+                  break;
+                }
               }
             }
-          } else {
-            if (a !== b) {
-              return false;
-            }
+            return result;
           }
-        }
-        return true;
+        };
       }
     });
   });

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 'use strict';
 
@@ -48,34 +46,31 @@ var TestReporter = function(browser, appPath) {
     return new Date().getTime();
   };
 
-  this.reportRunnerStarting = function() {
+  this.jasmineStarted = function(suiteInfo) {
     this.runnerStartTime = this.now();
     sendInfo('Started unit tests for ' + browser + '.');
   };
 
-  this.reportSpecStarting = function() { };
+  this.suiteStarted = function(result) { };
 
-  this.reportSpecResults = function(spec) {
-    var results = spec.results();
-    if (results.skipped) {
-      sendResult('TEST-SKIPPED', results.description);
-    } else if (results.passed()) {
-      sendResult('TEST-PASSED', results.description);
+  this.specStarted = function(result) { };
+
+  this.specDone = function(result) {
+    if (result.failedExpectations.length === 0) {
+      sendResult('TEST-PASSED', result.description);
     } else {
       var failedMessages = '';
-      var items = results.getItems();
+      var items = result.failedExpectations;
       for (var i = 0, ii = items.length; i < ii; i++) {
-        if (!items[i].passed()) {
-          failedMessages += items[i].message + ' ';
-        }
+        failedMessages += items[i].message + ' ';
       }
-      sendResult('TEST-UNEXPECTED-FAIL', results.description, failedMessages);
+      sendResult('TEST-UNEXPECTED-FAIL', result.description, failedMessages);
     }
   };
 
-  this.reportSuiteResults = function(suite) { };
+  this.suiteDone = function(result) { };
 
-  this.reportRunnerResults = function(runner) {
+  this.jasmineDone = function() {
     // Give the test.py some time process any queued up requests
     setTimeout(sendQuitRequest, 500);
   };

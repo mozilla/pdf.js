@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -149,7 +147,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
             id: pageNum,
             defaultViewport: viewport.clone(),
             linkService: this.linkService,
-            renderingQueue: this.renderingQueue
+            renderingQueue: this.renderingQueue,
+            disableCanvasToImageConversion: false,
           });
           this.thumbnails.push(thumbnail);
         }
@@ -178,13 +177,6 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         }.bind(this));
       this._pagesRequests[pageNumber] = promise;
       return promise;
-    },
-
-    ensureThumbnailVisible:
-        function PDFThumbnailViewer_ensureThumbnailVisible(page) {
-      // Ensure that the thumbnail of the current page is visible
-      // when switching from another view.
-      scrollIntoView(document.getElementById('thumbnailContainer' + page));
     },
 
     forceRendering: function () {

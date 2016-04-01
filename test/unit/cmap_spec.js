@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, StringStream, CMapFactory, Name, CMap,
            IdentityCMap */
 
@@ -9,121 +7,184 @@ var cMapUrl = '../../external/bcmaps/';
 var cMapPacked = true;
 
 describe('cmap', function() {
-  it('parses beginbfchar', function() {
+  it('parses beginbfchar', function(done) {
     var str = '2 beginbfchar\n' +
               '<03> <00>\n' +
               '<04> <01>\n' +
               'endbfchar\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x03)).toEqual(String.fromCharCode(0x00));
-    expect(cmap.lookup(0x04)).toEqual(String.fromCharCode(0x01));
-    expect(cmap.lookup(0x05)).toBeUndefined();
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.lookup(0x03)).toEqual(String.fromCharCode(0x00));
+      expect(cmap.lookup(0x04)).toEqual(String.fromCharCode(0x01));
+      expect(cmap.lookup(0x05)).toBeUndefined();
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('parses beginbfrange with range', function() {
+  it('parses beginbfrange with range', function(done) {
     var str = '1 beginbfrange\n' +
               '<06> <0B> 0\n' +
               'endbfrange\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x05)).toBeUndefined();
-    expect(cmap.lookup(0x06)).toEqual(String.fromCharCode(0x00));
-    expect(cmap.lookup(0x0B)).toEqual(String.fromCharCode(0x05));
-    expect(cmap.lookup(0x0C)).toBeUndefined();
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.lookup(0x05)).toBeUndefined();
+      expect(cmap.lookup(0x06)).toEqual(String.fromCharCode(0x00));
+      expect(cmap.lookup(0x0B)).toEqual(String.fromCharCode(0x05));
+      expect(cmap.lookup(0x0C)).toBeUndefined();
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('parses beginbfrange with array', function() {
+  it('parses beginbfrange with array', function(done) {
     var str = '1 beginbfrange\n' +
               '<0D> <12> [ 0 1 2 3 4 5 ]\n' +
               'endbfrange\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x0C)).toBeUndefined();
-    expect(cmap.lookup(0x0D)).toEqual(0x00);
-    expect(cmap.lookup(0x12)).toEqual(0x05);
-    expect(cmap.lookup(0x13)).toBeUndefined();
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.lookup(0x0C)).toBeUndefined();
+      expect(cmap.lookup(0x0D)).toEqual(0x00);
+      expect(cmap.lookup(0x12)).toEqual(0x05);
+      expect(cmap.lookup(0x13)).toBeUndefined();
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('parses begincidchar', function() {
+  it('parses begincidchar', function(done) {
     var str = '1 begincidchar\n' +
               '<14> 0\n' +
               'endcidchar\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x14)).toEqual(0x00);
-    expect(cmap.lookup(0x15)).toBeUndefined();
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.lookup(0x14)).toEqual(0x00);
+      expect(cmap.lookup(0x15)).toBeUndefined();
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('parses begincidrange', function() {
+  it('parses begincidrange', function(done) {
     var str = '1 begincidrange\n' +
               '<0016> <001B>   0\n' +
               'endcidrange\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.lookup(0x15)).toBeUndefined();
-    expect(cmap.lookup(0x16)).toEqual(0x00);
-    expect(cmap.lookup(0x1B)).toEqual(0x05);
-    expect(cmap.lookup(0x1C)).toBeUndefined();
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.lookup(0x15)).toBeUndefined();
+      expect(cmap.lookup(0x16)).toEqual(0x00);
+      expect(cmap.lookup(0x1B)).toEqual(0x05);
+      expect(cmap.lookup(0x1C)).toBeUndefined();
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('decodes codespace ranges', function() {
+  it('decodes codespace ranges', function(done) {
     var str = '1 begincodespacerange\n' +
               '<01> <02>\n' +
               '<00000003> <00000004>\n' +
               'endcodespacerange\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    var c = {};
-    cmap.readCharCode(String.fromCharCode(1), 0, c);
-    expect(c.charcode).toEqual(1);
-    expect(c.length).toEqual(1);
-    cmap.readCharCode(String.fromCharCode(0, 0, 0, 3), 0, c);
-    expect(c.charcode).toEqual(3);
-    expect(c.length).toEqual(4);
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      var c = {};
+      cmap.readCharCode(String.fromCharCode(1), 0, c);
+      expect(c.charcode).toEqual(1);
+      expect(c.length).toEqual(1);
+      cmap.readCharCode(String.fromCharCode(0, 0, 0, 3), 0, c);
+      expect(c.charcode).toEqual(3);
+      expect(c.length).toEqual(4);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('decodes 4 byte codespace ranges', function() {
+  it('decodes 4 byte codespace ranges', function(done) {
     var str = '1 begincodespacerange\n' +
               '<8EA1A1A1> <8EA1FEFE>\n' +
               'endcodespacerange\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    var c = {};
-    cmap.readCharCode(String.fromCharCode(0x8E, 0xA1, 0xA1, 0xA1), 0, c);
-    expect(c.charcode).toEqual(0x8EA1A1A1);
-    expect(c.length).toEqual(4);
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      var c = {};
+      cmap.readCharCode(String.fromCharCode(0x8E, 0xA1, 0xA1, 0xA1), 0, c);
+      expect(c.charcode).toEqual(0x8EA1A1A1);
+      expect(c.length).toEqual(4);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('read usecmap', function() {
+  it('read usecmap', function(done) {
     var str = '/Adobe-Japan1-1 usecmap\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream,
+    var cmapPromise = CMapFactory.create(stream,
                                   { url: cMapUrl, packed: cMapPacked }, null);
-    expect(cmap instanceof CMap).toEqual(true);
-    expect(cmap.useCMap).not.toBeNull();
-    expect(cmap.builtInCMap).toBeFalsy();
-    expect(cmap.isIdentityCMap).toEqual(false);
+    cmapPromise.then(function (cmap) {
+      expect(cmap instanceof CMap).toEqual(true);
+      expect(cmap.useCMap).not.toBeNull();
+      expect(cmap.builtInCMap).toBeFalsy();
+      expect(cmap.length).toEqual(0x20A7);
+      expect(cmap.isIdentityCMap).toEqual(false);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('parses cmapname', function() {
+  it('parses cmapname', function(done) {
     var str = '/CMapName /Identity-H def\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.name).toEqual('Identity-H');
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.name).toEqual('Identity-H');
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('parses wmode', function() {
+  it('parses wmode', function(done) {
     var str = '/WMode 1 def\n';
     var stream = new StringStream(str);
-    var cmap = CMapFactory.create(stream);
-    expect(cmap.vertical).toEqual(true);
+    var cmapPromise = CMapFactory.create(stream);
+    cmapPromise.then(function (cmap) {
+      expect(cmap.vertical).toEqual(true);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('loads built in cmap', function() {
-    var cmap = CMapFactory.create(new Name('Adobe-Japan1-1'),
+  it('loads built in cmap', function(done) {
+    var cmapPromise = CMapFactory.create(new Name('Adobe-Japan1-1'),
                                   { url: cMapUrl, packed: cMapPacked }, null);
-    expect(cmap instanceof CMap).toEqual(true);
-    expect(cmap.useCMap).toBeNull();
-    expect(cmap.builtInCMap).toBeTruthy();
-    expect(cmap.isIdentityCMap).toEqual(false);
+    cmapPromise.then(function (cmap) {
+      expect(cmap instanceof CMap).toEqual(true);
+      expect(cmap.useCMap).toBeNull();
+      expect(cmap.builtInCMap).toBeTruthy();
+      expect(cmap.length).toEqual(0x20A7);
+      expect(cmap.isIdentityCMap).toEqual(false);
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
-  it('loads built in identity cmap', function() {
-    var cmap = CMapFactory.create(new Name('Identity-H'),
+  it('loads built in identity cmap', function(done) {
+    var cmapPromise = CMapFactory.create(new Name('Identity-H'),
                                   { url: cMapUrl, packed: cMapPacked }, null);
-    expect(cmap instanceof IdentityCMap).toEqual(true);
-    expect(cmap.vertical).toEqual(false);
-    expect(function() { return cmap.isIdentityCMap; }).toThrow(
-      new Error('should not access .isIdentityCMap'));
+    cmapPromise.then(function (cmap) {
+      expect(cmap instanceof IdentityCMap).toEqual(true);
+      expect(cmap.vertical).toEqual(false);
+      expect(cmap.length).toEqual(0x10000);
+      expect(function() { return cmap.isIdentityCMap; }).toThrow(
+        new Error('should not access .isIdentityCMap'));
+      done();
+    }).catch(function (reason) {
+      done.fail(reason);
+    });
   });
 });

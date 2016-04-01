@@ -3,98 +3,21 @@
 <head>
   <title>pdf.js unit test</title>
 
-  <link rel="shortcut icon" type="image/png" href="../../external/jasmine/jasmine_favicon.png">
-  <link rel="stylesheet" type="text/css" href="../../external/jasmine/jasmine.css">
+  <link rel="stylesheet" type="text/css" href="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.css">
 
-  <script src="../../external/jasmine/jasmine.js"></script>
-  <script src="../../external/jasmine/jasmine-html.js"></script>
+  <script src="../../node_modules/requirejs/require.js"></script>
+  <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
+  <script src="../../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
   <script src="../unit/testreporter.js"></script>
-  <script src="fontutils.js"></script>
+  <script src="jasmine-boot.js"></script>
 
-  <!-- include source files here... -->
-  <script src="../../src/core/network.js"></script>
-  <script src="../../src/core/chunked_stream.js"></script>
-  <script src="../../src/core/pdf_manager.js"></script>
-  <script src="../../src/core/core.js"></script>
-  <script src="../../src/shared/util.js"></script>
-  <script src="../../src/display/api.js"></script>
-  <script src="../../src/display/canvas.js"></script>
-  <script src="../../src/display/webgl.js"></script>
-  <script src="../../src/core/obj.js"></script>
-  <script src="../../src/core/annotation.js"></script>
-  <script src="../../src/core/function.js"></script>
-  <script src="../../src/core/charsets.js"></script>
-  <script src="../../src/core/colorspace.js"></script>
-  <script src="../../src/core/crypto.js"></script>
-  <script src="../../src/core/pattern.js"></script>
-  <script src="../../src/core/evaluator.js"></script>
-  <script src="../../src/core/cmap.js"></script>
-  <script src="../../src/core/fonts.js"></script>
-  <script src="../../src/core/glyphlist.js"></script>
-  <script src="../../src/core/image.js"></script>
-  <script src="../../src/core/metrics.js"></script>
-  <script src="../../src/core/parser.js"></script>
-  <script src="../../src/core/ps_parser.js"></script>
-  <script src="../../src/display/pattern_helper.js"></script>
-  <script src="../../src/display/annotation_helper.js"></script>
-  <script src="../../src/core/stream.js"></script>
-  <script src="../../src/core/worker.js"></script>
-  <script src="../../src/display/metadata.js"></script>
-  <script src="../../src/core/jpg.js"></script>
-  <script>PDFJS.workerSrc = '../../src/worker_loader.js';</script>
+  <script src="fontutils.js"></script>
 
   <!-- include spec files here... -->
   <script src="font_core_spec.js"></script>
   <script src="font_os2_spec.js"></script>
   <script src="font_post_spec.js"></script>
   <script src="font_fpgm_spec.js"></script>
-
-  <script>
-    'use strict';
-
-    (function pdfJsUnitTest() {
-      function queryParams() {
-        var qs = window.location.search.substring(1);
-        var kvs = qs.split('&');
-        var params = { };
-        for (var i = 0; i < kvs.length; ++i) {
-          var kv = kvs[i].split('=');
-          params[unescape(kv[0])] = unescape(kv[1]);
-        }
-        return params;
-      }
-
-      var jasmineEnv = jasmine.getEnv();
-      jasmineEnv.updateInterval = 1000;
-
-      var trivialReporter = new jasmine.TrivialReporter();
-
-      jasmineEnv.addReporter(trivialReporter);
-
-      var params = queryParams();
-      if (params['browser']) {
-        var testReporter = new TestReporter(params['browser'], params['path']);
-        jasmineEnv.addReporter(testReporter);
-      }
-
-      jasmineEnv.specFilter = function pdfJsUnitTestSpecFilter(spec) {
-        return trivialReporter.specFilter(spec);
-      };
-
-      var currentWindowOnload = window.onload;
-
-      window.onload = function pdfJsUnitTestOnload() {
-        if (currentWindowOnload) {
-          currentWindowOnload();
-        }
-        execJasmine();
-      };
-
-      function execJasmine() {
-        jasmineEnv.execute();
-      }
-    })();
-  </script>
 </head>
 <body>
 </body>

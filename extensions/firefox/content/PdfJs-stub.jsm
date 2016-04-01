@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +20,6 @@
 // See https://mxr.mozilla.org/mozilla-central/source/browser/components/nsBrowserGlue.js
 var EXPORTED_SYMBOLS = ['PdfJs'];
 
-let PdfJs = {
+var PdfJs = {
   init: function PdfJs_init() {}
 };

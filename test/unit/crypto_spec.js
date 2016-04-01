@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, calculateMD5, ARCFourCipher, Name,
            CipherTransformFactory, calculateSHA256, calculateSHA384,
            calculateSHA512, AES128Cipher, AES256Cipher, PDF17, PDF20,
@@ -601,16 +599,20 @@ describe('CipherTransformFactory', function() {
     describe('AES256 Revision 5', function () {
       it('should accept user password', function () {
         new CipherTransformFactory(new DictMock(aes256Map), fileID1, 'user');
+        expect(true).toEqual(true);
       });
       it('should accept owner password', function () {
         new CipherTransformFactory(new DictMock(aes256Map), fileID1, 'owner');
+        expect(true).toEqual(true);
       });
       it('should not accept wrong password', function () {
         ensureCipherTransformFactoryPasswordIncorrect(
           new DictMock(aes256Map), fileID1, 'wrong');
+        expect(true).toEqual(true);
       });
       it('should accept blank password', function () {
         new CipherTransformFactory(new DictMock(aes256BlankMap), fileID1);
+        expect(true).toEqual(true);
       });
     });
 
@@ -618,34 +620,42 @@ describe('CipherTransformFactory', function() {
       it('should accept user password', function () {
         new CipherTransformFactory(new DictMock(aes256IsoMap), fileID1,
                                    'user');
+        expect(true).toEqual(true);
       });
       it('should accept owner password', function () {
         new CipherTransformFactory(new DictMock(aes256IsoMap), fileID1,
                                    'owner');
+        expect(true).toEqual(true);
       });
       it('should not accept wrong password', function () {
         ensureCipherTransformFactoryPasswordIncorrect(
           new DictMock(aes256IsoMap), fileID1, 'wrong');
+        expect(true).toEqual(true);
       });
       it('should accept blank password', function () {
         new CipherTransformFactory(new DictMock(aes256IBlankMap), fileID1);
+        expect(true).toEqual(true);
       });
     });
     it('should accept user password', function() {
       new CipherTransformFactory(new DictMock(map1), fileID1, '123456');
+      expect(true).toEqual(true);
     });
 
     it('should accept owner password', function() {
       new CipherTransformFactory(new DictMock(map1), fileID1, '654321');
+      expect(true).toEqual(true);
     });
 
     it('should not accept wrong password', function() {
       ensureCipherTransformFactoryPasswordIncorrect(
         new DictMock(map1), fileID1, 'wrong');
+      expect(true).toEqual(true);
     });
 
     it('should accept no password', function() {
       new CipherTransformFactory(new DictMock(map2), fileID2);
+      expect(true).toEqual(true);
     });
   });
 });

@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,7 +41,7 @@ const PDF_CONTENT_TYPE = 'application/pdf';
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import('resource://gre/modules/Services.jsm');
 
-let Svc = {};
+var Svc = {};
 XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
@@ -130,7 +128,7 @@ Factory.prototype = {
   }
 };
 
-let PdfJs = {
+var PdfJs = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver]),
   _registered: false,
   _initialized: false,

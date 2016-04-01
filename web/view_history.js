@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,22 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, VIEW_HISTORY_MEMORY, Promise */
 
 'use strict';
+
+var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
 
 /**
  * View History - This is a utility for saving various view parameters for
  *                recently opened files.
  *
  * The way that the view parameters are stored depends on how PDF.js is built,
- * for 'node make <flag>' the following cases exist:
+ * for 'gulp <flag>' the following cases exist:
  *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
 var ViewHistory = (function ViewHistoryClosure() {
-  function ViewHistory(fingerprint) {
+  function ViewHistory(fingerprint, cacheSize) {
     this.fingerprint = fingerprint;
+    this.cacheSize = cacheSize || DEFAULT_VIEW_HISTORY_CACHE_SIZE;
     this.isInitializedPromiseResolved = false;
     this.initializedPromise =
         this._readFromStorage().then(function (databaseStr) {
@@ -39,7 +39,7 @@ var ViewHistory = (function ViewHistoryClosure() {
       if (!('files' in database)) {
         database.files = [];
       }
-      if (database.files.length >= VIEW_HISTORY_MEMORY) {
+      if (database.files.length >= this.cacheSize) {
         database.files.shift();
       }
       var index;

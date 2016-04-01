@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Cmd, ColorSpace, Dict, MozBlobBuilder, Name, PDFJS, Ref, URL,
-           Promise */
+/* globals MozBlobBuilder, URL, global */
 
 'use strict';
 
-var globalScope = (typeof window === 'undefined') ? this : window;
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/shared/util', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsSharedUtil = {}));
+  }
+}(this, function (exports) {
 
-var isWorker = (typeof window === 'undefined');
+var globalScope = (typeof window !== 'undefined') ? window :
+                  (typeof global !== 'undefined') ? global :
+                  (typeof self !== 'undefined') ? self : this;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
@@ -45,9 +52,45 @@ var ImageKind = {
 };
 
 var AnnotationType = {
-  WIDGET: 1,
-  TEXT: 2,
-  LINK: 3
+  TEXT: 1,
+  LINK: 2,
+  FREETEXT: 3,
+  LINE: 4,
+  SQUARE: 5,
+  CIRCLE: 6,
+  POLYGON: 7,
+  POLYLINE: 8,
+  HIGHLIGHT: 9,
+  UNDERLINE: 10,
+  SQUIGGLY: 11,
+  STRIKEOUT: 12,
+  STAMP: 13,
+  CARET: 14,
+  INK: 15,
+  POPUP: 16,
+  FILEATTACHMENT: 17,
+  SOUND: 18,
+  MOVIE: 19,
+  WIDGET: 20,
+  SCREEN: 21,
+  PRINTERMARK: 22,
+  TRAPNET: 23,
+  WATERMARK: 24,
+  THREED: 25,
+  REDACT: 26
+};
+
+var AnnotationFlag = {
+  INVISIBLE: 0x01,
+  HIDDEN: 0x02,
+  PRINT: 0x04,
+  NOZOOM: 0x08,
+  NOROTATE: 0x10,
+  NOVIEW: 0x20,
+  READONLY: 0x40,
+  LOCKED: 0x80,
+  TOGGLENOVIEW: 0x100,
+  LOCKEDCONTENTS: 0x200
 };
 
 var AnnotationBorderStyleType = {
@@ -85,23 +128,14 @@ var FontType = {
   MMTYPE1: 10
 };
 
-// The global PDFJS object exposes the API
-// In production, it will be declared outside a global wrapper
-// In development, it will be declared here
-if (!globalScope.PDFJS) {
-  globalScope.PDFJS = {};
-}
-
-globalScope.PDFJS.pdfBug = false;
-
-PDFJS.VERBOSITY_LEVELS = {
+var VERBOSITY_LEVELS = {
   errors: 0,
   warnings: 1,
   infos: 5
 };
 
 // All the possible operations for an operator list.
-var OPS = PDFJS.OPS = {
+var OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
   // 0's.
   dependency: 1,
@@ -197,30 +231,44 @@ var OPS = PDFJS.OPS = {
   constructPath: 91
 };
 
+var verbosity = VERBOSITY_LEVELS.warnings;
+
+function setVerbosityLevel(level) {
+  verbosity = level;
+}
+
+function getVerbosityLevel() {
+  return verbosity;
+}
+
 // A notice for devs. These are good for things that are helpful to devs, such
 // as warning that Workers were disabled, which is important to devs but not
 // end users.
 function info(msg) {
-  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.infos) {
+  if (verbosity >= VERBOSITY_LEVELS.infos) {
     console.log('Info: ' + msg);
   }
 }
 
 // Non-fatal warnings.
 function warn(msg) {
-  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.warnings) {
+  if (verbosity >= VERBOSITY_LEVELS.warnings) {
     console.log('Warning: ' + msg);
   }
+}
+
+// Deprecated API function -- display regardless of the PDFJS.verbosity setting.
+function deprecated(details) {
+  console.log('Deprecated API usage: ' + details);
 }
 
 // Fatal errors that should trigger the fallback UI and halt execution by
 // throwing an exception.
 function error(msg) {
-  if (PDFJS.verbosity >= PDFJS.VERBOSITY_LEVELS.errors) {
+  if (verbosity >= VERBOSITY_LEVELS.errors) {
     console.log('Error: ' + msg);
     console.log(backtrace());
   }
-  UnsupportedManager.notify(UNSUPPORTED_FEATURES.unknown);
   throw new Error(msg);
 }
 
@@ -238,7 +286,7 @@ function assert(cond, msg) {
   }
 }
 
-var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
+var UNSUPPORTED_FEATURES = {
   unknown: 'unknown',
   forms: 'forms',
   javaScript: 'javaScript',
@@ -247,51 +295,28 @@ var UNSUPPORTED_FEATURES = PDFJS.UNSUPPORTED_FEATURES = {
   font: 'font'
 };
 
-var UnsupportedManager = PDFJS.UnsupportedManager =
-  (function UnsupportedManagerClosure() {
-  var listeners = [];
-  return {
-    listen: function (cb) {
-      listeners.push(cb);
-    },
-    notify: function (featureId) {
-      warn('Unsupported feature "' + featureId + '"');
-      for (var i = 0, ii = listeners.length; i < ii; i++) {
-        listeners[i](featureId);
-      }
-    }
-  };
-})();
-
 // Combines two URLs. The baseUrl shall be absolute URL. If the url is an
 // absolute URL, it will be returned as is.
 function combineUrl(baseUrl, url) {
   if (!url) {
     return baseUrl;
   }
-  if (/^[a-z][a-z0-9+\-.]*:/i.test(url)) {
-    return url;
-  }
-  var i;
-  if (url.charAt(0) === '/') {
-    // absolute path
-    i = baseUrl.indexOf('://');
-    if (url.charAt(1) === '/') {
-      ++i;
-    } else {
-      i = baseUrl.indexOf('/', i + 3);
+  return new URL(url, baseUrl).href;
+}
+
+// Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
+function isSameOrigin(baseUrl, otherUrl) {
+  try {
+    var base = new URL(baseUrl);
+    if (!base.origin || base.origin === 'null') {
+      return false; // non-HTTP url
     }
-    return baseUrl.substring(0, i) + url;
-  } else {
-    // relative path
-    var pathLength = baseUrl.length;
-    i = baseUrl.lastIndexOf('#');
-    pathLength = i >= 0 ? i : pathLength;
-    i = baseUrl.lastIndexOf('?', pathLength);
-    pathLength = i >= 0 ? i : pathLength;
-    var prefixLength = baseUrl.lastIndexOf('/', pathLength);
-    return baseUrl.substring(0, prefixLength + 1) + url;
+  } catch (e) {
+    return false;
   }
+
+  var other = new URL(otherUrl, base);
+  return base.origin === other.origin;
 }
 
 // Validates if URL is safe and allowed, e.g. to avoid XSS.
@@ -317,7 +342,6 @@ function isValidUrl(url, allowRelative) {
       return false;
   }
 }
-PDFJS.isValidUrl = isValidUrl;
 
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
@@ -326,9 +350,20 @@ function shadow(obj, prop, value) {
                                      writable: false });
   return value;
 }
-PDFJS.shadow = shadow;
 
-var PasswordResponses = PDFJS.PasswordResponses = {
+function getLookupTableFactory(initializer) {
+  var lookup;
+  return function () {
+    if (initializer) {
+      lookup = Object.create(null);
+      initializer(lookup);
+      initializer = null;
+    }
+    return lookup;
+  };
+}
+
+var PasswordResponses = {
   NEED_PASSWORD: 1,
   INCORRECT_PASSWORD: 2
 };
@@ -345,7 +380,6 @@ var PasswordException = (function PasswordExceptionClosure() {
 
   return PasswordException;
 })();
-PDFJS.PasswordException = PasswordException;
 
 var UnknownErrorException = (function UnknownErrorExceptionClosure() {
   function UnknownErrorException(msg, details) {
@@ -359,7 +393,6 @@ var UnknownErrorException = (function UnknownErrorExceptionClosure() {
 
   return UnknownErrorException;
 })();
-PDFJS.UnknownErrorException = UnknownErrorException;
 
 var InvalidPDFException = (function InvalidPDFExceptionClosure() {
   function InvalidPDFException(msg) {
@@ -372,7 +405,6 @@ var InvalidPDFException = (function InvalidPDFExceptionClosure() {
 
   return InvalidPDFException;
 })();
-PDFJS.InvalidPDFException = InvalidPDFException;
 
 var MissingPDFException = (function MissingPDFExceptionClosure() {
   function MissingPDFException(msg) {
@@ -385,7 +417,6 @@ var MissingPDFException = (function MissingPDFExceptionClosure() {
 
   return MissingPDFException;
 })();
-PDFJS.MissingPDFException = MissingPDFException;
 
 var UnexpectedResponseException =
     (function UnexpectedResponseExceptionClosure() {
@@ -400,7 +431,6 @@ var UnexpectedResponseException =
 
   return UnexpectedResponseException;
 })();
-PDFJS.UnexpectedResponseException = UnexpectedResponseException;
 
 var NotImplementedException = (function NotImplementedExceptionClosure() {
   function NotImplementedException(msg) {
@@ -440,6 +470,15 @@ var XRefParseException = (function XRefParseExceptionClosure() {
   return XRefParseException;
 })();
 
+var NullCharactersRegExp = /\x00/g;
+
+function removeNullCharacters(str) {
+  if (typeof str !== 'string') {
+    warn('The argument for removeNullCharacters must be a string.');
+    return str;
+  }
+  return str.replace(NullCharactersRegExp, '');
+}
 
 function bytesToString(bytes) {
   assert(bytes !== null && typeof bytes === 'object' &&
@@ -466,6 +505,55 @@ function stringToBytes(str) {
     bytes[i] = str.charCodeAt(i) & 0xFF;
   }
   return bytes;
+}
+
+/**
+ * Gets length of the array (Array, Uint8Array, or string) in bytes.
+ * @param {Array|Uint8Array|string} arr
+ * @returns {number}
+ */
+function arrayByteLength(arr) {
+  if (arr.length !== undefined) {
+    return arr.length;
+  }
+  assert(arr.byteLength !== undefined);
+  return arr.byteLength;
+}
+
+/**
+ * Combines array items (arrays) into single Uint8Array object.
+ * @param {Array} arr - the array of the arrays (Array, Uint8Array, or string).
+ * @returns {Uint8Array}
+ */
+function arraysToBytes(arr) {
+  // Shortcut: if first and only item is Uint8Array, return it.
+  if (arr.length === 1 && (arr[0] instanceof Uint8Array)) {
+    return arr[0];
+  }
+  var resultLength = 0;
+  var i, ii = arr.length;
+  var item, itemLength ;
+  for (i = 0; i < ii; i++) {
+    item = arr[i];
+    itemLength = arrayByteLength(item);
+    resultLength += itemLength;
+  }
+  var pos = 0;
+  var data = new Uint8Array(resultLength);
+  for (i = 0; i < ii; i++) {
+    item = arr[i];
+    if (!(item instanceof Uint8Array)) {
+      if (typeof item === 'string') {
+        item = stringToBytes(item);
+      } else {
+        item = new Uint8Array(item);
+      }
+    }
+    itemLength = item.byteLength;
+    data.set(item, pos);
+    pos += itemLength;
+  }
+  return data;
 }
 
 function string32(value) {
@@ -504,30 +592,7 @@ function isLittleEndian() {
   return (buffer16[0] === 1);
 }
 
-Object.defineProperty(PDFJS, 'isLittleEndian', {
-  configurable: true,
-  get: function PDFJS_isLittleEndian() {
-    return shadow(PDFJS, 'isLittleEndian', isLittleEndian());
-  }
-});
-
 //#if !(FIREFOX || MOZCENTRAL || CHROME)
-//// Lazy test if the userAgent support CanvasTypedArrays
-function hasCanvasTypedArrays() {
-  var canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 1;
-  var ctx = canvas.getContext('2d');
-  var imageData = ctx.createImageData(1, 1);
-  return (typeof imageData.data.buffer !== 'undefined');
-}
-
-Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
-  configurable: true,
-  get: function PDFJS_hasCanvasTypedArrays() {
-    return shadow(PDFJS, 'hasCanvasTypedArrays', hasCanvasTypedArrays());
-  }
-});
-
 var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   function Uint32ArrayView(buffer, length) {
@@ -567,13 +632,13 @@ var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
   return Uint32ArrayView;
 })();
-//#else
-//PDFJS.hasCanvasTypedArrays = true;
+
+exports.Uint32ArrayView = Uint32ArrayView;
 //#endif
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
 
-var Util = PDFJS.Util = (function UtilClosure() {
+var Util = (function UtilClosure() {
   function Util() {}
 
   var rgbBuf = ['rgb(', 0, ',', 0, ',', 0, ')'];
@@ -734,6 +799,42 @@ var Util = PDFJS.Util = (function UtilClosure() {
     return num < 0 ? -1 : 1;
   };
 
+  var ROMAN_NUMBER_MAP = [
+    '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
+    '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
+    '', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'
+  ];
+  /**
+   * Converts positive integers to (upper case) Roman numerals.
+   * @param {integer} number - The number that should be converted.
+   * @param {boolean} lowerCase - Indicates if the result should be converted
+   *   to lower case letters. The default is false.
+   * @return {string} The resulting Roman number.
+   */
+  Util.toRoman = function Util_toRoman(number, lowerCase) {
+    assert(isInt(number) && number > 0,
+           'The number should be a positive integer.');
+    var pos, romanBuf = [];
+    // Thousands
+    while (number >= 1000) {
+      number -= 1000;
+      romanBuf.push('M');
+    }
+    // Hundreds
+    pos = (number / 100) | 0;
+    number %= 100;
+    romanBuf.push(ROMAN_NUMBER_MAP[pos]);
+    // Tens
+    pos = (number / 10) | 0;
+    number %= 10;
+    romanBuf.push(ROMAN_NUMBER_MAP[10 + pos]);
+    // Ones
+    romanBuf.push(ROMAN_NUMBER_MAP[20 + number]);
+
+    var romanStr = romanBuf.join('');
+    return (lowerCase ? romanStr.toLowerCase() : romanStr);
+  };
+
   Util.appendToArray = function Util_appendToArray(arr1, arr2) {
     Array.prototype.push.apply(arr1, arr2);
   };
@@ -790,7 +891,7 @@ var Util = PDFJS.Util = (function UtilClosure() {
  * @class
  * @alias PDFJS.PageViewport
  */
-var PageViewport = PDFJS.PageViewport = (function PageViewportClosure() {
+var PageViewport = (function PageViewportClosure() {
   /**
    * @constructor
    * @private
@@ -981,39 +1082,12 @@ function isString(v) {
   return typeof v === 'string';
 }
 
-function isName(v) {
-  return v instanceof Name;
-}
-
-function isCmd(v, cmd) {
-  return v instanceof Cmd && (cmd === undefined || v.cmd === cmd);
-}
-
-function isDict(v, type) {
-  if (!(v instanceof Dict)) {
-    return false;
-  }
-  if (!type) {
-    return true;
-  }
-  var dictType = v.get('Type');
-  return isName(dictType) && dictType.name === type;
-}
-
 function isArray(v) {
   return v instanceof Array;
 }
 
-function isStream(v) {
-  return typeof v === 'object' && v !== null && v.getBytes !== undefined;
-}
-
 function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
-}
-
-function isRef(v) {
-  return v instanceof Ref;
 }
 
 /**
@@ -1040,8 +1114,6 @@ function createPromiseCapability() {
   });
   return capability;
 }
-
-PDFJS.createPromiseCapability = createPromiseCapability;
 
 /**
  * Polyfill for Promises:
@@ -1371,7 +1443,7 @@ var StatTimer = (function StatTimerClosure() {
     return str;
   }
   function StatTimer() {
-    this.started = {};
+    this.started = Object.create(null);
     this.times = [];
     this.enabled = true;
   }
@@ -1423,7 +1495,7 @@ var StatTimer = (function StatTimerClosure() {
   return StatTimer;
 })();
 
-PDFJS.createBlob = function createBlob(data, contentType) {
+var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
   }
@@ -1433,15 +1505,15 @@ PDFJS.createBlob = function createBlob(data, contentType) {
   return bb.getBlob(contentType);
 };
 
-PDFJS.createObjectURL = (function createObjectURLClosure() {
+var createObjectURL = (function createObjectURLClosure() {
   // Blob/createObjectURL is not available, falling back to data schema.
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-  return function createObjectURL(data, contentType) {
-    if (!PDFJS.disableCreateObjectURL &&
+  return function createObjectURL(data, contentType, forceDataSchema) {
+    if (!forceDataSchema &&
         typeof URL !== 'undefined' && URL.createObjectURL) {
-      var blob = PDFJS.createBlob(data, contentType);
+      var blob = createBlob(data, contentType);
       return URL.createObjectURL(blob);
     }
 
@@ -1459,26 +1531,20 @@ PDFJS.createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
-function MessageHandler(name, comObj) {
-  this.name = name;
+function MessageHandler(sourceName, targetName, comObj) {
+  this.sourceName = sourceName;
+  this.targetName = targetName;
   this.comObj = comObj;
   this.callbackIndex = 1;
   this.postMessageTransfers = true;
-  var callbacksCapabilities = this.callbacksCapabilities = {};
-  var ah = this.actionHandler = {};
+  var callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
+  var ah = this.actionHandler = Object.create(null);
 
-  ah['console_log'] = [function ahConsoleLog(data) {
-    console.log.apply(console, data);
-  }];
-  ah['console_error'] = [function ahConsoleError(data) {
-    console.error.apply(console, data);
-  }];
-  ah['_unsupported_feature'] = [function ah_unsupportedFeature(data) {
-    UnsupportedManager.notify(data);
-  }];
-
-  comObj.onmessage = function messageHandlerComObjOnMessage(event) {
+  this._onComObjOnMessage = function messageHandlerComObjOnMessage(event) {
     var data = event.data;
+    if (data.targetName !== this.sourceName) {
+      return;
+    }
     if (data.isReply) {
       var callbackId = data.callbackId;
       if (data.callbackId in callbacksCapabilities) {
@@ -1495,16 +1561,26 @@ function MessageHandler(name, comObj) {
     } else if (data.action in ah) {
       var action = ah[data.action];
       if (data.callbackId) {
+        var sourceName = this.sourceName;
+        var targetName = data.sourceName;
         Promise.resolve().then(function () {
           return action[0].call(action[1], data.data);
         }).then(function (result) {
           comObj.postMessage({
+            sourceName: sourceName,
+            targetName: targetName,
             isReply: true,
             callbackId: data.callbackId,
             data: result
           });
         }, function (reason) {
+          if (reason instanceof Error) {
+            // Serialize error to avoid "DataCloneError"
+            reason = reason + '';
+          }
           comObj.postMessage({
+            sourceName: sourceName,
+            targetName: targetName,
             isReply: true,
             callbackId: data.callbackId,
             error: reason
@@ -1516,7 +1592,8 @@ function MessageHandler(name, comObj) {
     } else {
       error('Unknown action from worker: ' + data.action);
     }
-  };
+  }.bind(this);
+  comObj.addEventListener('message', this._onComObjOnMessage);
 }
 
 MessageHandler.prototype = {
@@ -1535,6 +1612,8 @@ MessageHandler.prototype = {
    */
   send: function messageHandlerSend(actionName, data, transfers) {
     var message = {
+      sourceName: this.sourceName,
+      targetName: this.targetName,
       action: actionName,
       data: data
     };
@@ -1552,6 +1631,8 @@ MessageHandler.prototype = {
     function messageHandlerSendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackIndex++;
     var message = {
+      sourceName: this.sourceName,
+      targetName: this.targetName,
       action: actionName,
       data: data,
       callbackId: callbackId
@@ -1577,6 +1658,10 @@ MessageHandler.prototype = {
     } else {
       this.comObj.postMessage(message);
     }
+  },
+
+  destroy: function () {
+    this.comObj.removeEventListener('message', this._onComObjOnMessage);
   }
 };
 
@@ -1591,3 +1676,689 @@ function loadJpegStream(id, imageUrl, objs) {
   });
   img.src = imageUrl;
 }
+
+//#if !(MOZCENTRAL)
+//// Polyfill from https://github.com/Polymer/URL
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
+(function checkURLConstructor(scope) {
+  /* jshint ignore:start */
+
+  // feature detect for URL constructor
+  var hasWorkingUrl = false;
+  try {
+    if (typeof URL === 'function' &&
+        typeof URL.prototype === 'object' &&
+        ('origin' in URL.prototype)) {
+      var u = new URL('b', 'http://a');
+      u.pathname = 'c%20d';
+      hasWorkingUrl = u.href === 'http://a/c%20d';
+    }
+  } catch(e) { }
+
+  if (hasWorkingUrl)
+    return;
+
+  var relative = Object.create(null);
+  relative['ftp'] = 21;
+  relative['file'] = 0;
+  relative['gopher'] = 70;
+  relative['http'] = 80;
+  relative['https'] = 443;
+  relative['ws'] = 80;
+  relative['wss'] = 443;
+
+  var relativePathDotMapping = Object.create(null);
+  relativePathDotMapping['%2e'] = '.';
+  relativePathDotMapping['.%2e'] = '..';
+  relativePathDotMapping['%2e.'] = '..';
+  relativePathDotMapping['%2e%2e'] = '..';
+
+  function isRelativeScheme(scheme) {
+    return relative[scheme] !== undefined;
+  }
+
+  function invalid() {
+    clear.call(this);
+    this._isInvalid = true;
+  }
+
+  function IDNAToASCII(h) {
+    if ('' == h) {
+      invalid.call(this)
+    }
+    // XXX
+    return h.toLowerCase()
+  }
+
+  function percentEscape(c) {
+    var unicode = c.charCodeAt(0);
+    if (unicode > 0x20 &&
+       unicode < 0x7F &&
+       // " # < > ? `
+       [0x22, 0x23, 0x3C, 0x3E, 0x3F, 0x60].indexOf(unicode) == -1
+      ) {
+      return c;
+    }
+    return encodeURIComponent(c);
+  }
+
+  function percentEscapeQuery(c) {
+    // XXX This actually needs to encode c using encoding and then
+    // convert the bytes one-by-one.
+
+    var unicode = c.charCodeAt(0);
+    if (unicode > 0x20 &&
+       unicode < 0x7F &&
+       // " # < > ` (do not escape '?')
+       [0x22, 0x23, 0x3C, 0x3E, 0x60].indexOf(unicode) == -1
+      ) {
+      return c;
+    }
+    return encodeURIComponent(c);
+  }
+
+  var EOF = undefined,
+      ALPHA = /[a-zA-Z]/,
+      ALPHANUMERIC = /[a-zA-Z0-9\+\-\.]/;
+
+  function parse(input, stateOverride, base) {
+    function err(message) {
+      errors.push(message)
+    }
+
+    var state = stateOverride || 'scheme start',
+        cursor = 0,
+        buffer = '',
+        seenAt = false,
+        seenBracket = false,
+        errors = [];
+
+    loop: while ((input[cursor - 1] != EOF || cursor == 0) && !this._isInvalid) {
+      var c = input[cursor];
+      switch (state) {
+        case 'scheme start':
+          if (c && ALPHA.test(c)) {
+            buffer += c.toLowerCase(); // ASCII-safe
+            state = 'scheme';
+          } else if (!stateOverride) {
+            buffer = '';
+            state = 'no scheme';
+            continue;
+          } else {
+            err('Invalid scheme.');
+            break loop;
+          }
+          break;
+
+        case 'scheme':
+          if (c && ALPHANUMERIC.test(c)) {
+            buffer += c.toLowerCase(); // ASCII-safe
+          } else if (':' == c) {
+            this._scheme = buffer;
+            buffer = '';
+            if (stateOverride) {
+              break loop;
+            }
+            if (isRelativeScheme(this._scheme)) {
+              this._isRelative = true;
+            }
+            if ('file' == this._scheme) {
+              state = 'relative';
+            } else if (this._isRelative && base && base._scheme == this._scheme) {
+              state = 'relative or authority';
+            } else if (this._isRelative) {
+              state = 'authority first slash';
+            } else {
+              state = 'scheme data';
+            }
+          } else if (!stateOverride) {
+            buffer = '';
+            cursor = 0;
+            state = 'no scheme';
+            continue;
+          } else if (EOF == c) {
+            break loop;
+          } else {
+            err('Code point not allowed in scheme: ' + c)
+            break loop;
+          }
+          break;
+
+        case 'scheme data':
+          if ('?' == c) {
+            this._query = '?';
+            state = 'query';
+          } else if ('#' == c) {
+            this._fragment = '#';
+            state = 'fragment';
+          } else {
+            // XXX error handling
+            if (EOF != c && '\t' != c && '\n' != c && '\r' != c) {
+              this._schemeData += percentEscape(c);
+            }
+          }
+          break;
+
+        case 'no scheme':
+          if (!base || !(isRelativeScheme(base._scheme))) {
+            err('Missing scheme.');
+            invalid.call(this);
+          } else {
+            state = 'relative';
+            continue;
+          }
+          break;
+
+        case 'relative or authority':
+          if ('/' == c && '/' == input[cursor+1]) {
+            state = 'authority ignore slashes';
+          } else {
+            err('Expected /, got: ' + c);
+            state = 'relative';
+            continue
+          }
+          break;
+
+        case 'relative':
+          this._isRelative = true;
+          if ('file' != this._scheme)
+            this._scheme = base._scheme;
+          if (EOF == c) {
+            this._host = base._host;
+            this._port = base._port;
+            this._path = base._path.slice();
+            this._query = base._query;
+            this._username = base._username;
+            this._password = base._password;
+            break loop;
+          } else if ('/' == c || '\\' == c) {
+            if ('\\' == c)
+              err('\\ is an invalid code point.');
+            state = 'relative slash';
+          } else if ('?' == c) {
+            this._host = base._host;
+            this._port = base._port;
+            this._path = base._path.slice();
+            this._query = '?';
+            this._username = base._username;
+            this._password = base._password;
+            state = 'query';
+          } else if ('#' == c) {
+            this._host = base._host;
+            this._port = base._port;
+            this._path = base._path.slice();
+            this._query = base._query;
+            this._fragment = '#';
+            this._username = base._username;
+            this._password = base._password;
+            state = 'fragment';
+          } else {
+            var nextC = input[cursor+1]
+            var nextNextC = input[cursor+2]
+            if (
+              'file' != this._scheme || !ALPHA.test(c) ||
+              (nextC != ':' && nextC != '|') ||
+              (EOF != nextNextC && '/' != nextNextC && '\\' != nextNextC && '?' != nextNextC && '#' != nextNextC)) {
+              this._host = base._host;
+              this._port = base._port;
+              this._username = base._username;
+              this._password = base._password;
+              this._path = base._path.slice();
+              this._path.pop();
+            }
+            state = 'relative path';
+            continue;
+          }
+          break;
+
+        case 'relative slash':
+          if ('/' == c || '\\' == c) {
+            if ('\\' == c) {
+              err('\\ is an invalid code point.');
+            }
+            if ('file' == this._scheme) {
+              state = 'file host';
+            } else {
+              state = 'authority ignore slashes';
+            }
+          } else {
+            if ('file' != this._scheme) {
+              this._host = base._host;
+              this._port = base._port;
+              this._username = base._username;
+              this._password = base._password;
+            }
+            state = 'relative path';
+            continue;
+          }
+          break;
+
+        case 'authority first slash':
+          if ('/' == c) {
+            state = 'authority second slash';
+          } else {
+            err("Expected '/', got: " + c);
+            state = 'authority ignore slashes';
+            continue;
+          }
+          break;
+
+        case 'authority second slash':
+          state = 'authority ignore slashes';
+          if ('/' != c) {
+            err("Expected '/', got: " + c);
+            continue;
+          }
+          break;
+
+        case 'authority ignore slashes':
+          if ('/' != c && '\\' != c) {
+            state = 'authority';
+            continue;
+          } else {
+            err('Expected authority, got: ' + c);
+          }
+          break;
+
+        case 'authority':
+          if ('@' == c) {
+            if (seenAt) {
+              err('@ already seen.');
+              buffer += '%40';
+            }
+            seenAt = true;
+            for (var i = 0; i < buffer.length; i++) {
+              var cp = buffer[i];
+              if ('\t' == cp || '\n' == cp || '\r' == cp) {
+                err('Invalid whitespace in authority.');
+                continue;
+              }
+              // XXX check URL code points
+              if (':' == cp && null === this._password) {
+                this._password = '';
+                continue;
+              }
+              var tempC = percentEscape(cp);
+              (null !== this._password) ? this._password += tempC : this._username += tempC;
+            }
+            buffer = '';
+          } else if (EOF == c || '/' == c || '\\' == c || '?' == c || '#' == c) {
+            cursor -= buffer.length;
+            buffer = '';
+            state = 'host';
+            continue;
+          } else {
+            buffer += c;
+          }
+          break;
+
+        case 'file host':
+          if (EOF == c || '/' == c || '\\' == c || '?' == c || '#' == c) {
+            if (buffer.length == 2 && ALPHA.test(buffer[0]) && (buffer[1] == ':' || buffer[1] == '|')) {
+              state = 'relative path';
+            } else if (buffer.length == 0) {
+              state = 'relative path start';
+            } else {
+              this._host = IDNAToASCII.call(this, buffer);
+              buffer = '';
+              state = 'relative path start';
+            }
+            continue;
+          } else if ('\t' == c || '\n' == c || '\r' == c) {
+            err('Invalid whitespace in file host.');
+          } else {
+            buffer += c;
+          }
+          break;
+
+        case 'host':
+        case 'hostname':
+          if (':' == c && !seenBracket) {
+            // XXX host parsing
+            this._host = IDNAToASCII.call(this, buffer);
+            buffer = '';
+            state = 'port';
+            if ('hostname' == stateOverride) {
+              break loop;
+            }
+          } else if (EOF == c || '/' == c || '\\' == c || '?' == c || '#' == c) {
+            this._host = IDNAToASCII.call(this, buffer);
+            buffer = '';
+            state = 'relative path start';
+            if (stateOverride) {
+              break loop;
+            }
+            continue;
+          } else if ('\t' != c && '\n' != c && '\r' != c) {
+            if ('[' == c) {
+              seenBracket = true;
+            } else if (']' == c) {
+              seenBracket = false;
+            }
+            buffer += c;
+          } else {
+            err('Invalid code point in host/hostname: ' + c);
+          }
+          break;
+
+        case 'port':
+          if (/[0-9]/.test(c)) {
+            buffer += c;
+          } else if (EOF == c || '/' == c || '\\' == c || '?' == c || '#' == c || stateOverride) {
+            if ('' != buffer) {
+              var temp = parseInt(buffer, 10);
+              if (temp != relative[this._scheme]) {
+                this._port = temp + '';
+              }
+              buffer = '';
+            }
+            if (stateOverride) {
+              break loop;
+            }
+            state = 'relative path start';
+            continue;
+          } else if ('\t' == c || '\n' == c || '\r' == c) {
+            err('Invalid code point in port: ' + c);
+          } else {
+            invalid.call(this);
+          }
+          break;
+
+        case 'relative path start':
+          if ('\\' == c)
+            err("'\\' not allowed in path.");
+          state = 'relative path';
+          if ('/' != c && '\\' != c) {
+            continue;
+          }
+          break;
+
+        case 'relative path':
+          if (EOF == c || '/' == c || '\\' == c || (!stateOverride && ('?' == c || '#' == c))) {
+            if ('\\' == c) {
+              err('\\ not allowed in relative path.');
+            }
+            var tmp;
+            if (tmp = relativePathDotMapping[buffer.toLowerCase()]) {
+              buffer = tmp;
+            }
+            if ('..' == buffer) {
+              this._path.pop();
+              if ('/' != c && '\\' != c) {
+                this._path.push('');
+              }
+            } else if ('.' == buffer && '/' != c && '\\' != c) {
+              this._path.push('');
+            } else if ('.' != buffer) {
+              if ('file' == this._scheme && this._path.length == 0 && buffer.length == 2 && ALPHA.test(buffer[0]) && buffer[1] == '|') {
+                buffer = buffer[0] + ':';
+              }
+              this._path.push(buffer);
+            }
+            buffer = '';
+            if ('?' == c) {
+              this._query = '?';
+              state = 'query';
+            } else if ('#' == c) {
+              this._fragment = '#';
+              state = 'fragment';
+            }
+          } else if ('\t' != c && '\n' != c && '\r' != c) {
+            buffer += percentEscape(c);
+          }
+          break;
+
+        case 'query':
+          if (!stateOverride && '#' == c) {
+            this._fragment = '#';
+            state = 'fragment';
+          } else if (EOF != c && '\t' != c && '\n' != c && '\r' != c) {
+            this._query += percentEscapeQuery(c);
+          }
+          break;
+
+        case 'fragment':
+          if (EOF != c && '\t' != c && '\n' != c && '\r' != c) {
+            this._fragment += c;
+          }
+          break;
+      }
+
+      cursor++;
+    }
+  }
+
+  function clear() {
+    this._scheme = '';
+    this._schemeData = '';
+    this._username = '';
+    this._password = null;
+    this._host = '';
+    this._port = '';
+    this._path = [];
+    this._query = '';
+    this._fragment = '';
+    this._isInvalid = false;
+    this._isRelative = false;
+  }
+
+  // Does not process domain names or IP addresses.
+  // Does not handle encoding for the query parameter.
+  function jURL(url, base /* , encoding */) {
+    if (base !== undefined && !(base instanceof jURL))
+      base = new jURL(String(base));
+
+    this._url = url;
+    clear.call(this);
+
+    var input = url.replace(/^[ \t\r\n\f]+|[ \t\r\n\f]+$/g, '');
+    // encoding = encoding || 'utf-8'
+
+    parse.call(this, input, null, base);
+  }
+
+  jURL.prototype = {
+    toString: function() {
+      return this.href;
+    },
+    get href() {
+      if (this._isInvalid)
+        return this._url;
+
+      var authority = '';
+      if ('' != this._username || null != this._password) {
+        authority = this._username +
+            (null != this._password ? ':' + this._password : '') + '@';
+      }
+
+      return this.protocol +
+          (this._isRelative ? '//' + authority + this.host : '') +
+          this.pathname + this._query + this._fragment;
+    },
+    set href(href) {
+      clear.call(this);
+      parse.call(this, href);
+    },
+
+    get protocol() {
+      return this._scheme + ':';
+    },
+    set protocol(protocol) {
+      if (this._isInvalid)
+        return;
+      parse.call(this, protocol + ':', 'scheme start');
+    },
+
+    get host() {
+      return this._isInvalid ? '' : this._port ?
+          this._host + ':' + this._port : this._host;
+    },
+    set host(host) {
+      if (this._isInvalid || !this._isRelative)
+        return;
+      parse.call(this, host, 'host');
+    },
+
+    get hostname() {
+      return this._host;
+    },
+    set hostname(hostname) {
+      if (this._isInvalid || !this._isRelative)
+        return;
+      parse.call(this, hostname, 'hostname');
+    },
+
+    get port() {
+      return this._port;
+    },
+    set port(port) {
+      if (this._isInvalid || !this._isRelative)
+        return;
+      parse.call(this, port, 'port');
+    },
+
+    get pathname() {
+      return this._isInvalid ? '' : this._isRelative ?
+          '/' + this._path.join('/') : this._schemeData;
+    },
+    set pathname(pathname) {
+      if (this._isInvalid || !this._isRelative)
+        return;
+      this._path = [];
+      parse.call(this, pathname, 'relative path start');
+    },
+
+    get search() {
+      return this._isInvalid || !this._query || '?' == this._query ?
+          '' : this._query;
+    },
+    set search(search) {
+      if (this._isInvalid || !this._isRelative)
+        return;
+      this._query = '?';
+      if ('?' == search[0])
+        search = search.slice(1);
+      parse.call(this, search, 'query');
+    },
+
+    get hash() {
+      return this._isInvalid || !this._fragment || '#' == this._fragment ?
+          '' : this._fragment;
+    },
+    set hash(hash) {
+      if (this._isInvalid)
+        return;
+      this._fragment = '#';
+      if ('#' == hash[0])
+        hash = hash.slice(1);
+      parse.call(this, hash, 'fragment');
+    },
+
+    get origin() {
+      var host;
+      if (this._isInvalid || !this._scheme) {
+        return '';
+      }
+      // javascript: Gecko returns String(""), WebKit/Blink String("null")
+      // Gecko throws error for "data://"
+      // data: Gecko returns "", Blink returns "data://", WebKit returns "null"
+      // Gecko returns String("") for file: mailto:
+      // WebKit/Blink returns String("SCHEME://") for file: mailto:
+      switch (this._scheme) {
+        case 'data':
+        case 'file':
+        case 'javascript':
+        case 'mailto':
+          return 'null';
+      }
+      host = this.host;
+      if (!host) {
+        return '';
+      }
+      return this._scheme + '://' + host;
+    }
+  };
+
+  // Copy over the static methods
+  var OriginalURL = scope.URL;
+  if (OriginalURL) {
+    jURL.createObjectURL = function(blob) {
+      // IE extension allows a second optional options argument.
+      // http://msdn.microsoft.com/en-us/library/ie/hh772302(v=vs.85).aspx
+      return OriginalURL.createObjectURL.apply(OriginalURL, arguments);
+    };
+    jURL.revokeObjectURL = function(url) {
+      OriginalURL.revokeObjectURL(url);
+    };
+  }
+
+  scope.URL = jURL;
+  /* jshint ignore:end */
+})(globalScope);
+//#endif
+
+exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
+exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
+exports.OPS = OPS;
+exports.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
+exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
+exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
+exports.AnnotationFlag = AnnotationFlag;
+exports.AnnotationType = AnnotationType;
+exports.FontType = FontType;
+exports.ImageKind = ImageKind;
+exports.InvalidPDFException = InvalidPDFException;
+exports.MessageHandler = MessageHandler;
+exports.MissingDataException = MissingDataException;
+exports.MissingPDFException = MissingPDFException;
+exports.NotImplementedException = NotImplementedException;
+exports.PageViewport = PageViewport;
+exports.PasswordException = PasswordException;
+exports.PasswordResponses = PasswordResponses;
+exports.StatTimer = StatTimer;
+exports.StreamType = StreamType;
+exports.TextRenderingMode = TextRenderingMode;
+exports.UnexpectedResponseException = UnexpectedResponseException;
+exports.UnknownErrorException = UnknownErrorException;
+exports.Util = Util;
+exports.XRefParseException = XRefParseException;
+exports.arrayByteLength = arrayByteLength;
+exports.arraysToBytes = arraysToBytes;
+exports.assert = assert;
+exports.bytesToString = bytesToString;
+exports.combineUrl = combineUrl;
+exports.createBlob = createBlob;
+exports.createPromiseCapability = createPromiseCapability;
+exports.createObjectURL = createObjectURL;
+exports.deprecated = deprecated;
+exports.error = error;
+exports.getLookupTableFactory = getLookupTableFactory;
+exports.getVerbosityLevel = getVerbosityLevel;
+exports.globalScope = globalScope;
+exports.info = info;
+exports.isArray = isArray;
+exports.isArrayBuffer = isArrayBuffer;
+exports.isBool = isBool;
+exports.isEmptyObj = isEmptyObj;
+exports.isInt = isInt;
+exports.isNum = isNum;
+exports.isString = isString;
+exports.isSameOrigin = isSameOrigin;
+exports.isValidUrl = isValidUrl;
+exports.isLittleEndian = isLittleEndian;
+exports.loadJpegStream = loadJpegStream;
+exports.log2 = log2;
+exports.readInt8 = readInt8;
+exports.readUint16 = readUint16;
+exports.readUint32 = readUint32;
+exports.removeNullCharacters = removeNullCharacters;
+exports.setVerbosityLevel = setVerbosityLevel;
+exports.shadow = shadow;
+exports.string32 = string32;
+exports.stringToBytes = stringToBytes;
+exports.stringToPDFString = stringToPDFString;
+exports.stringToUTF8String = stringToUTF8String;
+exports.utf8StringToString = utf8StringToString;
+exports.warn = warn;
+}));

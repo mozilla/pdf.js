@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, isArray,
-           isNum, OPS, Promise, Util, warn, ImageKind, PDFJS */
 
 'use strict';
 
 //#if (GENERIC || SINGLE_FILE)
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./global.js'));
+  } else {
+    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayGlobal);
+  }
+}(this, function (exports, sharedUtil, displayGlobal) {
+
+var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
+var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
+var ImageKind = sharedUtil.ImageKind;
+var OPS = sharedUtil.OPS;
+var Util = sharedUtil.Util;
+var isNum = sharedUtil.isNum;
+var isArray = sharedUtil.isArray;
+var warn = sharedUtil.warn;
+var PDFJS = displayGlobal.PDFJS;
+
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
   fontWeight: 'normal',
@@ -369,7 +387,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     this.pendingEOFill = false;
 
     this.embedFonts = false;
-    this.embeddedFonts = {};
+    this.embeddedFonts = Object.create(null);
     this.cssStyle = null;
   }
 
@@ -1191,4 +1209,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 })();
 
 PDFJS.SVGGraphics = SVGGraphics;
+
+exports.SVGGraphics = SVGGraphics;
+}));
 //#endif

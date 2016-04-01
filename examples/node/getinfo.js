@@ -1,23 +1,19 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 //
 // Basic node example that prints document metadata and text content.
 // Requires single file built version of PDF.js -- please run
-// `node make singlefile` before running the example.
+// `gulp singlefile` before running the example.
 //
 
 var fs = require('fs');
 
-// HACK few hacks to let PDF.js be loaded not as a module in global space.
-global.window = global;
-global.navigator = { userAgent: "node" };
-global.PDFJS = {};
+// HACK adding DOMParser to read XMP metadata.
 global.DOMParser = require('./domparsermock.js').DOMParserMock;
 
-require('../../build/singlefile/build/pdf.combined.js');
+// Run `gulp dist` to generate 'pdfjs-dist' npm package files.
+require('../../build/dist');
 
 // Loading file from file system into typed array
 var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';

@@ -28,6 +28,16 @@ function PDFJS() {
 }
 
 /**
+ * Controls the logging level.
+ * The constants from PDFJS.VERBOSITY_LEVELS should be used:
+ * - errors
+ * - warnings [default]
+ * - infos
+ * @var {number}
+ */
+PDFJS.verbosity = PDFJS.VERBOSITY_LEVELS.warnings;
+
+/**
  * Represents the eventual result of an asynchronous operation.
  * @external Promise
  * @see {@link http://promisesaplus.com/ Promise/A+}

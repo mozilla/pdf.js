@@ -1,4 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* Copyright 2013 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -64,7 +63,7 @@ var ChromeCom = (function ChromeComClosure() {
         var streamUrl = response.streamUrl;
         if (streamUrl) {
           console.log('Found data stream for ' + file);
-          PDFViewerApplication.open(streamUrl, 0, undefined, undefined, {
+          PDFViewerApplication.open(streamUrl, {
             length: response.contentLength
           });
           PDFViewerApplication.setTitleUsingUrl(file);
@@ -91,7 +90,7 @@ var ChromeCom = (function ChromeComClosure() {
         resolveLocalFileSystemURL(file, function onResolvedFSURL(fileEntry) {
           fileEntry.file(function(fileObject) {
             var blobUrl = URL.createObjectURL(fileObject);
-            PDFViewerApplication.open(blobUrl, 0, undefined, undefined, {
+            PDFViewerApplication.open(blobUrl, {
               length: fileObject.size
             });
           });
@@ -100,7 +99,7 @@ var ChromeCom = (function ChromeComClosure() {
           // usual way of getting the File's data (via the Web worker).
           console.warn('Cannot resolve file ' + file + ', ' + error.name + ' ' +
                        error.message);
-          PDFViewerApplication.open(file, 0);
+          PDFViewerApplication.open(file);
         });
         return;
       }
@@ -109,29 +108,50 @@ var ChromeCom = (function ChromeComClosure() {
         // There is no UI to input a different URL, so this assumption will hold
         // for now.
         setReferer(file, function() {
-          PDFViewerApplication.open(file, 0);
+          PDFViewerApplication.open(file);
         });
         return;
       }
       if (/^file?:/.test(file)) {
-        if (top !== window && !/^file:/i.test(location.ancestorOrigins[0])) {
-          PDFViewerApplication.error('Blocked ' + location.ancestorOrigins[0] +
-              ' from loading ' + file + '. Refused to load a local file in a ' +
-              ' non-local page for security reasons.');
-          return;
-        }
-        isAllowedFileSchemeAccess(function(isAllowedAccess) {
-          if (isAllowedAccess) {
-            PDFViewerApplication.open(file, 0);
-          } else {
-            requestAccessToLocalFile(file);
+        getEmbedderOrigin(function(origin) {
+          // If the origin cannot be determined, let Chrome decide whether to
+          // allow embedding files. Otherwise, only allow local files to be
+          // embedded from local files or Chrome extensions.
+          // Even without this check, the file load in frames is still blocked,
+          // but this may change in the future (https://crbug.com/550151).
+          if (origin && !/^file:|^chrome-extension:/.test(origin)) {
+            PDFViewerApplication.error('Blocked ' + origin + ' from loading ' +
+                file + '. Refused to load a local file in a non-local page ' +
+                'for security reasons.');
+            return;
           }
+          isAllowedFileSchemeAccess(function(isAllowedAccess) {
+            if (isAllowedAccess) {
+              PDFViewerApplication.open(file);
+            } else {
+              requestAccessToLocalFile(file);
+            }
+          });
         });
         return;
       }
-      PDFViewerApplication.open(file, 0);
+      PDFViewerApplication.open(file);
     });
   };
+
+  function getEmbedderOrigin(callback) {
+    var origin = window === top ? location.origin : location.ancestorOrigins[0];
+    if (origin === 'null') {
+      // file:-URLs, data-URLs, sandboxed frames, etc.
+      getParentOrigin(callback);
+    } else {
+      callback(origin);
+    }
+  }
+
+  function getParentOrigin(callback) {
+    ChromeCom.request('getParentOrigin', null, callback);
+  }
 
   function isAllowedFileSchemeAccess(callback) {
     ChromeCom.request('isAllowedFileSchemeAccess', null, callback);
@@ -275,7 +295,7 @@ var ChromeCom = (function ChromeComClosure() {
     function onDisconnect() {
       // When the connection fails, ignore the error and call the callback.
       port = null;
-      onCompleted();
+      callback();
     }
     function onCompleted() {
       port.onDisconnect.removeListener(onDisconnect);

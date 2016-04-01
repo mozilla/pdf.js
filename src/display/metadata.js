@@ -1,6 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals Document, error, PDFJS */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals Document */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/display/metadata', ['exports', 'pdfjs/shared/util',
+      'pdfjs/display/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./global.js'));
+  } else {
+    factory((root.pdfjsDisplayMetadata = {}), root.pdfjsSharedUtil,
+      root.pdfjsDisplayGlobal);
+  }
+}(this, function (exports, sharedUtil, displayGlobal) {
+
+var error = sharedUtil.error;
+var PDFJS = displayGlobal.PDFJS;
 
 var Metadata = PDFJS.Metadata = (function MetadataClosure() {
   function fixMetadata(meta) {
@@ -48,7 +61,7 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
     }
 
     this.metaDocument = meta;
-    this.metadata = {};
+    this.metadata = Object.create(null);
     this.parse();
   }
 
@@ -97,3 +110,6 @@ var Metadata = PDFJS.Metadata = (function MetadataClosure() {
 
   return Metadata;
 })();
+
+exports.Metadata = Metadata;
+}));

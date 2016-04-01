@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,17 +12,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals assert, ColorSpace, DecodeStream, error, info, isArray, ImageKind,
-           isStream, JpegStream, JpxImage, Name, Promise, Stream, warn */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/image', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/colorspace', 'pdfjs/core/stream',
+      'pdfjs/core/jpx'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./colorspace.js'), require('./stream.js'),
+      require('./jpx.js'));
+  } else {
+    factory((root.pdfjsCoreImage = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreColorSpace, root.pdfjsCoreStream,
+      root.pdfjsCoreJpx);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreColorSpace,
+                  coreStream, coreJpx) {
+
+var ImageKind = sharedUtil.ImageKind;
+var assert = sharedUtil.assert;
+var error = sharedUtil.error;
+var info = sharedUtil.info;
+var isArray = sharedUtil.isArray;
+var warn = sharedUtil.warn;
+var Name = corePrimitives.Name;
+var isStream = corePrimitives.isStream;
+var ColorSpace = coreColorSpace.ColorSpace;
+var DecodeStream = coreStream.DecodeStream;
+var Stream = coreStream.Stream;
+var JpegStream = coreStream.JpegStream;
+var JpxImage = coreJpx.JpxImage;
 
 var PDFImage = (function PDFImageClosure() {
   /**
    * Decode the image in the main thread if it supported. Resovles the promise
    * when the image data is ready.
    */
-  function handleImageData(handler, xref, res, image) {
+  function handleImageData(handler, xref, res, image, forceDataSchema) {
     if (image instanceof JpegStream && image.isNativelyDecodable(xref, res)) {
       // For natively supported jpegs send them to the main thread for decoding.
       var dict = image.dict;
@@ -32,7 +59,8 @@ var PDFImage = (function PDFImageClosure() {
       colorSpace = ColorSpace.parse(colorSpace, xref, res);
       var numComps = colorSpace.numComps;
       var decodePromise = handler.sendWithPromise('JpegDecode',
-                                                  [image.getIR(), numComps]);
+                                                  [image.getIR(forceDataSchema),
+                                                   numComps]);
       return decodePromise.then(function (message) {
         var data = message.data;
         return new Stream(data, 0, data.length, image.dict);
@@ -140,7 +168,12 @@ var PDFImage = (function PDFImageClosure() {
       this.smask = new PDFImage(xref, res, smask, false);
     } else if (mask) {
       if (isStream(mask)) {
-        this.mask = new PDFImage(xref, res, mask, false, null, null, true);
+        var maskDict = mask.dict, imageMask = maskDict.get('ImageMask', 'IM');
+        if (!imageMask) {
+          warn('Ignoring /Mask in image without /ImageMask.');
+        } else {
+          this.mask = new PDFImage(xref, res, mask, false, null, null, true);
+        }
       } else {
         // Color key mask (just an array).
         this.mask = mask;
@@ -152,8 +185,10 @@ var PDFImage = (function PDFImageClosure() {
    * with a PDFImage when the image is ready to be used.
    */
   PDFImage.buildImage = function PDFImage_buildImage(handler, xref,
-                                                     res, image, inline) {
-    var imagePromise = handleImageData(handler, xref, res, image);
+                                                     res, image, inline,
+                                                     forceDataSchema) {
+    var imagePromise = handleImageData(handler, xref, res, image,
+                                       forceDataSchema);
     var smaskPromise;
     var maskPromise;
 
@@ -161,13 +196,15 @@ var PDFImage = (function PDFImageClosure() {
     var mask = image.dict.get('Mask');
 
     if (smask) {
-      smaskPromise = handleImageData(handler, xref, res, smask);
+      smaskPromise = handleImageData(handler, xref, res, smask,
+                                     forceDataSchema);
       maskPromise = Promise.resolve(null);
     } else {
       smaskPromise = Promise.resolve(null);
       if (mask) {
         if (isStream(mask)) {
-          maskPromise = handleImageData(handler, xref, res, mask);
+          maskPromise = handleImageData(handler, xref, res, mask,
+                                        forceDataSchema);
         } else if (isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {
@@ -541,10 +578,10 @@ var PDFImage = (function PDFImageClosure() {
 
           imgArray = this.getImageBytes(originalHeight * rowBytes);
           // If imgArray came from a DecodeStream, we're safe to transfer it
-          // (and thus neuter it) because it will constitute the entire
-          // DecodeStream's data.  But if it came from a Stream, we need to
-          // copy it because it'll only be a portion of the Stream's data, and
-          // the rest will be read later on.
+          // (and thus detach its underlying buffer) because it will constitute
+          // the entire DecodeStream's data.  But if it came from a Stream, we
+          // need to copy it because it'll only be a portion of the Stream's
+          // data, and the rest will be read later on.
           if (this.image instanceof DecodeStream) {
             imgData.data = imgArray;
           } else {
@@ -669,3 +706,9 @@ var PDFImage = (function PDFImageClosure() {
   };
   return PDFImage;
 })();
+
+exports.PDFImage = PDFImage;
+
+// TODO refactor to remove dependency on colorspace.js
+coreColorSpace._setCoreImage(exports);
+}));

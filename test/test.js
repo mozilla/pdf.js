@@ -1,5 +1,3 @@
-/* -*- Mode: js; js-indent-level: 2; indent-tabs-mode: nil; tab-width: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /*
  * Copyright 2014 Mozilla Foundation
  *
@@ -60,7 +58,7 @@ function parseOptions() {
     .example('$0 --b=firefox -t=issue5567 -t=issue5909',
       'Run the reftest identified by issue5567 and issue5909 in Firefox.')
     .describe('port', 'The port the HTTP server should listen on.')
-    .default('port', 8000)
+    .default('port', 0)
     .describe('unitTest', 'Run the unit tests.')
     .describe('fontTest', 'Run the font tests.')
     .describe('noDownload', 'Skips test PDFs downloading.')
@@ -732,7 +730,9 @@ function main() {
   } else if (!options.browser && !options.browserManifestFile) {
     startServer();
   } else if (options.unitTest) {
-    startUnitTest('/test/unit/unit_test.html', 'unit');
+    ensurePDFsDownloaded(function() { // Allows linked PDF files in unit-tests.
+      startUnitTest('/test/unit/unit_test.html', 'unit');
+    });
   } else if (options.fontTest) {
     startUnitTest('/test/font/font_test.html', 'font');
   } else {

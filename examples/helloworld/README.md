@@ -8,7 +8,7 @@ simple and human-readable PDF.
 
 Instead of simply opening `index.html` in a browser, you must serve the page
 using a web server. This can be done on your local machine without an internet
-connection. In the root directory of PDF.js, run `node make server` in a
+connection. In the root directory of PDF.js, run `gulp server` in a
 terminal. The example can then be viewed using the following URL:
 
 `http://localhost:8888/examples/helloworld/index.html`

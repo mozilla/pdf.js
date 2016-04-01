@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +12,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals bytesToString, DecryptStream, error, isInt, isName, Name,
-           PasswordException, PasswordResponses, stringToBytes, warn,
-           utf8StringToString */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/crypto', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./primitives.js'),
+      require('./stream.js'));
+  } else {
+    factory((root.pdfjsCoreCrypto = {}), root.pdfjsSharedUtil,
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream);
+  }
+}(this, function (exports, sharedUtil, corePrimitives, coreStream) {
+
+var PasswordException = sharedUtil.PasswordException;
+var PasswordResponses = sharedUtil.PasswordResponses;
+var bytesToString = sharedUtil.bytesToString;
+var error = sharedUtil.error;
+var isInt = sharedUtil.isInt;
+var stringToBytes = sharedUtil.stringToBytes;
+var utf8StringToString = sharedUtil.utf8StringToString;
+var warn = sharedUtil.warn;
+var Name = corePrimitives.Name;
+var isName = corePrimitives.isName;
+var isDict = corePrimitives.isDict;
+var DecryptStream = coreStream.DecryptStream;
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
   function ARCFourCipher(key) {
@@ -1762,9 +1783,10 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       if (pdfAlgorithm.checkUserPassword(password, userValidationSalt,
                                          userPassword)) {
         return pdfAlgorithm.getUserKey(password, userKeySalt, userEncryption);
-      } else if (pdfAlgorithm.checkOwnerPassword(password, ownerValidationSalt,
-                                                 uBytes,
-                                                 ownerPassword)) {
+      } else if (password.length && pdfAlgorithm.checkOwnerPassword(password,
+                                                   ownerValidationSalt,
+                                                   uBytes,
+                                                   ownerPassword)) {
         return pdfAlgorithm.getOwnerKey(password, ownerKeySalt, uBytes,
                                         ownerEncryption);
       }
@@ -1900,7 +1922,27 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       error('unsupported encryption algorithm');
     }
     this.algorithm = algorithm;
-    var keyLength = dict.get('Length') || 40;
+    var keyLength = dict.get('Length');
+    if (!keyLength) {
+      // Spec asks to rely on encryption dictionary's Length entry, however
+      // some PDFs don't have it. Trying to recover.
+      if (algorithm <= 3) {
+        // For 1 and 2 it's fixed to 40-bit, for 3 40-bit is a minimal value.
+        keyLength = 40;
+      } else {
+        // Trying to find default handler -- it usually has Length.
+        var cfDict = dict.get('CF');
+        var streamCryptoName = dict.get('StmF');
+        if (isDict(cfDict) && isName(streamCryptoName)) {
+          var handlerDict = cfDict.get(streamCryptoName.name);
+          keyLength = (handlerDict && handlerDict.get('Length')) || 128;
+          if (keyLength < 40) {
+            // Sometimes it's incorrect value of bits, generators specify bytes.
+            keyLength <<= 3;
+          }
+        }
+      }
+    }
     if (!isInt(keyLength) ||
         keyLength < 40 || (keyLength % 8) !== 0) {
       error('invalid key length');
@@ -2050,3 +2092,15 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   return CipherTransformFactory;
 })();
+
+exports.AES128Cipher = AES128Cipher;
+exports.AES256Cipher = AES256Cipher;
+exports.ARCFourCipher = ARCFourCipher;
+exports.CipherTransformFactory = CipherTransformFactory;
+exports.PDF17 = PDF17;
+exports.PDF20 = PDF20;
+exports.calculateMD5 = calculateMD5;
+exports.calculateSHA256 = calculateSHA256;
+exports.calculateSHA384 = calculateSHA384;
+exports.calculateSHA512 = calculateSHA512;
+}));

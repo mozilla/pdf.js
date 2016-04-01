@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -156,7 +154,7 @@ var PDFLinkService = (function () {
           return pdfOpenParams;
         }
       }
-      return '';
+      return this.getAnchorUrl('');
     },
 
     /**

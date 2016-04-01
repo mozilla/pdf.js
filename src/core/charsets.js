@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2012 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +14,16 @@
  */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/charsets', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsCoreCharsets = {}));
+  }
+}(this, function (exports) {
 
 var ISOAdobeCharset = [
   '.notdef', 'space', 'exclam', 'quotedbl', 'numbersign', 'dollar',
@@ -116,3 +124,8 @@ var ExpertSubsetCharset = [
   'eightinferior', 'nineinferior', 'centinferior', 'dollarinferior',
   'periodinferior', 'commainferior'
 ];
+
+exports.ISOAdobeCharset = ISOAdobeCharset;
+exports.ExpertCharset = ExpertCharset;
+exports.ExpertSubsetCharset = ExpertSubsetCharset;
+}));

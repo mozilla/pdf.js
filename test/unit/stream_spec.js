@@ -1,24 +1,32 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* globals expect, it, describe, beforeEach, Stream, PredictorStream, Dict */
+/* globals jasmine, expect, it, describe, beforeEach, Stream, PredictorStream,
+           Dict */
 
 'use strict';
 
 describe('stream', function() {
   beforeEach(function() {
-    this.addMatchers({
-      toMatchTypedArray: function(expected) {
-        var actual = this.actual;
-        if (actual.length !== expected.length) {
-          return false;
-        }
-        for (var i = 0, ii = expected.length; i < ii; i++) {
-          var a = actual[i], b = expected[i];
-          if (a !== b) {
-            return false;
+    jasmine.addMatchers({
+      toMatchTypedArray: function(util, customEqualityTesters) {
+        return {
+          compare: function (actual, expected) {
+            var result = {};
+            if (actual.length !== expected.length) {
+              result.pass = false;
+              result.message = 'Array length: ' + actual.length +
+                ', expected: ' + expected.length;
+              return result;
+            }
+            result.pass = true;
+            for (var i = 0, ii = expected.length; i < ii; i++) {
+              var a = actual[i], b = expected[i];
+              if (a !== b) {
+                result.pass = false;
+                break;
+              }
+            }
+            return result;
           }
-        }
-        return true;
+        };
       }
     });
   });

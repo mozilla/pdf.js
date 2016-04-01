@@ -1,12 +1,32 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType */
+           AnnotationBorderStyleType, AnnotationFlag, PDFJS, combineUrl,
+           beforeEach, afterEach, stringToBytes */
 
 'use strict';
 
 describe('Annotation layer', function() {
   describe('Annotation', function() {
+    it('should set and get flags', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+      annotation.setFlags(13);
+
+      expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.NOZOOM)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.PRINT)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.READONLY)).toEqual(false);
+    });
+
+    it('should be viewable and not printable by default', function() {
+      var dict = new Dict();
+      dict.set('Subtype', '');
+      var annotation = new Annotation({ dict: dict, ref: 0 });
+
+      expect(annotation.viewable).toEqual(true);
+      expect(annotation.printable).toEqual(false);
+    });
+
     it('should set and get a valid rectangle', function() {
       var dict = new Dict();
       dict.set('Subtype', '');
@@ -31,7 +51,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor('red');
 
-      expect(annotation.color).toEqual([0, 0, 0]);
+      expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
 
     it('should set and get a transparent color', function() {
@@ -49,7 +69,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0.4]);
 
-      expect(annotation.color).toEqual([102, 102, 102]);
+      expect(annotation.color).toEqual(new Uint8Array([102, 102, 102]));
     });
 
     it('should set and get an RGB color', function() {
@@ -58,7 +78,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0, 0, 1]);
 
-      expect(annotation.color).toEqual([0, 0, 255]);
+      expect(annotation.color).toEqual(new Uint8Array([0, 0, 255]));
     });
 
     it('should set and get a CMYK color', function() {
@@ -67,7 +87,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
-      expect(annotation.color).toEqual([233, 59, 47]);
+      expect(annotation.color).toEqual(new Uint8Array([233, 59, 47]));
     });
 
     it('should not set and get an invalid color', function() {
@@ -76,7 +96,7 @@ describe('Annotation layer', function() {
       var annotation = new Annotation({ dict: dict, ref: 0 });
       annotation.setColor([0.4, 0.6]);
 
-      expect(annotation.color).toEqual([0, 0, 0]);
+      expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
   });
 
@@ -151,6 +171,37 @@ describe('Annotation layer', function() {
       borderStyle.setVerticalCornerRadius('three');
 
       expect(borderStyle.verticalCornerRadius).toEqual(0);
+    });
+  });
+
+  describe('FileAttachmentAnnotation', function() {
+    var loadingTask;
+    var annotations;
+
+    beforeEach(function(done) {
+      var pdfUrl = combineUrl(window.location.href,
+                              '../pdfs/annotation-fileattachment.pdf');
+      loadingTask = PDFJS.getDocument(pdfUrl);
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getPage(1).then(function(pdfPage) {
+          return pdfPage.getAnnotations().then(function (pdfAnnotations) {
+            annotations = pdfAnnotations;
+            done();
+          });
+        });
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+
+    afterEach(function() {
+      loadingTask.destroy();
+    });
+
+    it('should correctly parse a file attachment', function() {
+      var annotation = annotations[0];
+      expect(annotation.file.filename).toEqual('Test.txt');
+      expect(annotation.file.content).toEqual(stringToBytes('Test attachment'));
     });
   });
 });
