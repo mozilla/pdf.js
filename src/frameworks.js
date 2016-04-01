@@ -12,25 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, require, module, requirejs */
+/* globals PDFJS, require, module, requirejs, __dirname */
 
 // included from api.js for GENERIC build
 
 'use strict';
 
 var useRequireEnsure = false;
-if (typeof module !== 'undefined' && module.require) {
-  // node.js - disable worker and set require.ensure.
-  PDFJS.disableWorker = true;
-  if (typeof require.ensure === 'undefined') {
-    require.ensure = require('node-ensure');
+if (typeof module !== 'undefined') {
+  if (module.require) {
+    // node.js - disable worker and set require.ensure.
+    PDFJS.disableWorker = true;
+    if (typeof require.ensure === 'undefined') {
+      require.ensure = require('node-ensure');
+    }
+    useRequireEnsure = true;
+  } else if (typeof __webpack_require__ !== 'undefined') {
+    // Webpack - get/bundle pdf.worker.js as additional file.
+    PDFJS.workerSrc = require('entry?name=[hash]-worker.js!./pdf.worker.js');
+    useRequireEnsure = true;
+  } else {
+    var fs = require('fs');
+    var workerContents = fs.readFileSync(__dirname + '/pdf.worker.js', 'utf8');
+    PDFJS.workerSrc = PDFJS.createObjectURL(workerContents);
   }
-  useRequireEnsure = true;
-}
-if (typeof __webpack_require__ !== 'undefined') {
-  // Webpack - get/bundle pdf.worker.js as additional file.
-  PDFJS.workerSrc = require('entry?name=[hash]-worker.js!./pdf.worker.js');
-  useRequireEnsure = true;
 }
 if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
   PDFJS.workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');

@@ -23,5 +23,17 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "browser": {
+    "entry?name=[hash]-worker.js!./pdf.worker.js": false,
+    "node-ensure": false
+  },
+  "browserify": {
+    "transform": [
+      "brfs"
+    ]
+  },
+  "dependencies": {
+    "brfs": "^1.4.3"
+  }
 }
