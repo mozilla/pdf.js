@@ -43,9 +43,6 @@ var Jbig2Image = coreJbig2.Jbig2Image;
 var JpegImage = coreJpg.JpegImage;
 var JpxImage = coreJpx.JpxImage;
 
-var coreColorSpace; // see _setCoreColorSpace below
-var ColorSpace; // = coreColorSpace.ColorSpace;
-
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
     this.bytes = (arrayBuffer instanceof Uint8Array ?
@@ -961,25 +958,6 @@ var JpegStream = (function JpegStreamClosure() {
 
   JpegStream.prototype.getIR = function JpegStream_getIR(forceDataSchema) {
     return createObjectURL(this.bytes, 'image/jpeg', forceDataSchema);
-  };
-  /**
-   * Checks if the image can be decoded and displayed by the browser without any
-   * further processing such as color space conversions.
-   */
-  JpegStream.prototype.isNativelySupported =
-      function JpegStream_isNativelySupported(xref, res) {
-    var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
-    return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
-           cs.isDefaultDecode(this.dict.get('Decode', 'D'));
-  };
-  /**
-   * Checks if the image can be decoded by the browser.
-   */
-  JpegStream.prototype.isNativelyDecodable =
-      function JpegStream_isNativelyDecodable(xref, res) {
-    var cs = ColorSpace.parse(this.dict.get('ColorSpace', 'CS'), xref, res);
-    return (cs.numComps === 1 || cs.numComps === 3) &&
-           cs.isDefaultDecode(this.dict.get('Decode', 'D'));
   };
 
   return JpegStream;
@@ -2499,13 +2477,6 @@ var NullStream = (function NullStreamClosure() {
 
   return NullStream;
 })();
-
-// TODO refactor to remove dependency on colorspace.js
-function _setCoreColorSpace(coreColorSpace_) {
-  coreColorSpace = coreColorSpace_;
-  ColorSpace = coreColorSpace_.ColorSpace;
-}
-exports._setCoreColorSpace = _setCoreColorSpace;
 
 exports.Ascii85Stream = Ascii85Stream;
 exports.AsciiHexStream = AsciiHexStream;

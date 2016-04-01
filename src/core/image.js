@@ -42,29 +42,17 @@ var Name = corePrimitives.Name;
 var isStream = corePrimitives.isStream;
 var ColorSpace = coreColorSpace.ColorSpace;
 var DecodeStream = coreStream.DecodeStream;
-var Stream = coreStream.Stream;
 var JpegStream = coreStream.JpegStream;
 var JpxImage = coreJpx.JpxImage;
 
 var PDFImage = (function PDFImageClosure() {
   /**
-   * Decode the image in the main thread if it supported. Resovles the promise
+   * Decodes the image using native decoder if possible. Resolves the promise
    * when the image data is ready.
    */
-  function handleImageData(handler, xref, res, image, forceDataSchema) {
-    if (image instanceof JpegStream && image.isNativelyDecodable(xref, res)) {
-      // For natively supported jpegs send them to the main thread for decoding.
-      var dict = image.dict;
-      var colorSpace = dict.get('ColorSpace', 'CS');
-      colorSpace = ColorSpace.parse(colorSpace, xref, res);
-      var numComps = colorSpace.numComps;
-      var decodePromise = handler.sendWithPromise('JpegDecode',
-                                                  [image.getIR(forceDataSchema),
-                                                   numComps]);
-      return decodePromise.then(function (message) {
-        var data = message.data;
-        return new Stream(data, 0, data.length, image.dict);
-      });
+  function handleImageData(image, nativeDecoder) {
+    if (nativeDecoder && nativeDecoder.canDecode(image)) {
+      return nativeDecoder.decode(image);
     } else {
       return Promise.resolve(image);
     }
@@ -186,9 +174,8 @@ var PDFImage = (function PDFImageClosure() {
    */
   PDFImage.buildImage = function PDFImage_buildImage(handler, xref,
                                                      res, image, inline,
-                                                     forceDataSchema) {
-    var imagePromise = handleImageData(handler, xref, res, image,
-                                       forceDataSchema);
+                                                     nativeDecoder) {
+    var imagePromise = handleImageData(image, nativeDecoder);
     var smaskPromise;
     var maskPromise;
 
@@ -196,15 +183,13 @@ var PDFImage = (function PDFImageClosure() {
     var mask = image.dict.get('Mask');
 
     if (smask) {
-      smaskPromise = handleImageData(handler, xref, res, smask,
-                                     forceDataSchema);
+      smaskPromise = handleImageData(smask, nativeDecoder);
       maskPromise = Promise.resolve(null);
     } else {
       smaskPromise = Promise.resolve(null);
       if (mask) {
         if (isStream(mask)) {
-          maskPromise = handleImageData(handler, xref, res, mask,
-                                        forceDataSchema);
+          maskPromise = handleImageData(mask, nativeDecoder);
         } else if (isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {

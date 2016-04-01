@@ -72,6 +72,7 @@ var isRef = corePrimitives.isRef;
 var isStream = corePrimitives.isStream;
 var DecodeStream = coreStream.DecodeStream;
 var JpegStream = coreStream.JpegStream;
+var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 var Parser = coreParser.Parser;
 var isEOF = coreParser.isEOF;
@@ -112,6 +113,51 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     maxImageSize: -1,
     disableFontFace: false,
     cMapOptions: { url: null, packed: false }
+  };
+
+  function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
+    this.xref = xref;
+    this.resources = resources;
+    this.handler = handler;
+    this.forceDataSchema = forceDataSchema;
+  }
+  NativeImageDecoder.prototype = {
+    canDecode: function (image) {
+      return image instanceof JpegStream &&
+             NativeImageDecoder.isDecodable(image, this.xref, this.resources);
+    },
+    decode: function (image) {
+      // For natively supported JPEGs send them to the main thread for decoding.
+      var dict = image.dict;
+      var colorSpace = dict.get('ColorSpace', 'CS');
+      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources);
+      var numComps = colorSpace.numComps;
+      var decodePromise = this.handler.sendWithPromise('JpegDecode',
+        [image.getIR(this.forceDataSchema), numComps]);
+      return decodePromise.then(function (message) {
+        var data = message.data;
+        return new Stream(data, 0, data.length, image.dict);
+      });
+    }
+  };
+  /**
+   * Checks if the image can be decoded and displayed by the browser without any
+   * further processing such as color space conversions.
+   */
+  NativeImageDecoder.isSupported =
+      function NativeImageDecoder_isSupported(image, xref, res) {
+    var cs = ColorSpace.parse(image.dict.get('ColorSpace', 'CS'), xref, res);
+    return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
+           cs.isDefaultDecode(image.dict.get('Decode', 'D'));
+  };
+  /**
+   * Checks if the image can be decoded by the browser.
+   */
+  NativeImageDecoder.isDecodable =
+      function NativeImageDecoder_isDecodable(image, xref, res) {
+    var cs = ColorSpace.parse(image.dict.get('ColorSpace', 'CS'), xref, res);
+    return (cs.numComps === 1 || cs.numComps === 3) &&
+           cs.isDefaultDecode(image.dict.get('Decode', 'D'));
   };
 
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -343,7 +389,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       args = [objId, w, h];
 
       if (!softMask && !mask && image instanceof JpegStream &&
-          image.isNativelySupported(this.xref, resources)) {
+          NativeImageDecoder.isSupported(image, this.xref, resources)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
         this.handler.send('obj',
@@ -352,8 +398,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return;
       }
 
+      // Creates native image decoder only if a JPEG image or mask is present.
+      var nativeImageDecoder = null;
+      if (image instanceof JpegStream || mask instanceof JpegStream ||
+          softMask instanceof JpegStream) {
+        nativeImageDecoder = new NativeImageDecoder(self.xref, resources,
+          self.handler, self.options.forceDataSchema);
+      }
+
       PDFImage.buildImage(self.handler, self.xref, resources, image, inline,
-                          this.options.forceDataSchema).
+                          nativeImageDecoder).
         then(function(imageObj) {
           var imgData = imageObj.createImageData(/* forceRGBA = */ false);
           self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],

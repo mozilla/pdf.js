@@ -18,17 +18,16 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/colorspace', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/function', 'pdfjs/core/stream'],
+      'pdfjs/core/primitives', 'pdfjs/core/function'],
       factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./function.js'), require('./stream.js'));
+      require('./function.js'));
   } else {
     factory((root.pdfjsCoreColorSpace = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreFunction, root.pdfjsCoreStream);
+      root.pdfjsCorePrimitives, root.pdfjsCoreFunction);
   }
-}(this, function (exports, sharedUtil, corePrimitives, coreFunction,
-                  coreStream) {
+}(this, function (exports, sharedUtil, corePrimitives, coreFunction) {
 
 var error = sharedUtil.error;
 var info = sharedUtil.info;
@@ -1299,7 +1298,4 @@ function _setCoreImage(coreImage_) {
 exports._setCoreImage = _setCoreImage;
 
 exports.ColorSpace = ColorSpace;
-
-// TODO refactor to remove dependency on colorspace.js
-coreStream._setCoreColorSpace(exports);
 }));
