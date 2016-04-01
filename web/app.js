@@ -20,12 +20,11 @@
            PDFOutlineViewer, PDFAttachmentViewer, OverlayManager,
            PDFFindController, PDFFindBar, PDFViewer, PDFRenderingQueue,
            PresentationModeState, parseQueryString, RenderingStates,
-           UNKNOWN_SCALE, DEFAULT_SCALE_VALUE,
+           UNKNOWN_SCALE, DEFAULT_SCALE_VALUE, DEFAULT_URL, mozL10n,
            IGNORE_CURRENT_POSITION_ON_ZOOM: true */
 
 'use strict';
 
-var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 var DEFAULT_SCALE_DELTA = 1.1;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 10.0;
@@ -49,27 +48,9 @@ function configure(PDFJS) {
 //#endif
 }
 
-var mozL10n = document.mozL10n || document.webL10n;
-
 //#include ui_utils.js
 //#include preferences.js
-
-//#if !(FIREFOX || MOZCENTRAL)
-//#include mozPrintCallback_polyfill.js
-//#endif
-
-//#if GENERIC || CHROME
-//#include download_manager.js
-//#endif
-
-//#if FIREFOX || MOZCENTRAL
-//#include firefoxcom.js
-//#endif
-
-//#if CHROME
-//#include chromecom.js
-//#endif
-
+//#include platform_integration.js
 //#include view_history.js
 //#include pdf_find_bar.js
 //#include pdf_find_controller.js
@@ -127,6 +108,8 @@ var PDFViewerApplication = {
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
+    configure(PDFJS);
+
     var pdfRenderingQueue = new PDFRenderingQueue();
     pdfRenderingQueue.onIdle = this.cleanup.bind(this);
     this.pdfRenderingQueue = pdfRenderingQueue;
@@ -344,6 +327,10 @@ var PDFViewerApplication = {
 
       self.initialized = true;
     });
+  },
+
+  run: function pdfViewRun() {
+    this.initialize().then(webViewerInitialized);
   },
 
   zoomIn: function pdfViewZoomIn(ticks) {
@@ -1245,23 +1232,6 @@ var PDFViewerApplication = {
 window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 //#endif
 
-//#if CHROME
-//(function rewriteUrlClosure() {
-//  // Run this code outside DOMContentLoaded to make sure that the URL
-//  // is rewritten as soon as possible.
-//  var queryString = document.location.search.slice(1);
-//  var params = parseQueryString(queryString);
-//  DEFAULT_URL = params.file || '';
-//
-//  // Example: chrome-extension://.../http://example.com/file.pdf
-//  var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
-//  history.replaceState(history.state, '', humanReadableUrl);
-//  if (top === window) {
-//    chrome.runtime.sendMessage('showPageAction');
-//  }
-//})();
-//#endif
-
 //#if GENERIC
 var HOSTED_VIEWER_ORIGINS = ['null',
   'http://mozilla.github.io', 'https://mozilla.github.io'];
@@ -1292,20 +1262,6 @@ function validateFileURL(file) {
   }
 }
 //#endif
-
-function webViewerLoad(evt) {
-//#if !PRODUCTION
-  require.config({paths: {'pdfjs': '../src'}});
-  require(['pdfjs/main_loader'],
-    function (loader) {
-      configure(PDFJS);
-      PDFViewerApplication.initialize().then(webViewerInitialized);
-    });
-//#else
-//  configure(PDFJS);
-//  PDFViewerApplication.initialize().then(webViewerInitialized);
-//#endif
-}
 
 function webViewerInitialized() {
 //#if GENERIC
@@ -1549,8 +1505,6 @@ function webViewerInitialized() {
 //}
 //#endif
 }
-
-document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 
 document.addEventListener('pagerendered', function (e) {
   var pageNumber = e.detail.pageNumber;
