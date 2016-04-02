@@ -1870,16 +1870,27 @@ window.addEventListener('pagechange', function pagechange(evt) {
 }, true);
 
 function handleMouseWheel(evt) {
-  var MOUSE_WHEEL_DELTA_FACTOR = 40;
-  var ticks = (evt.type === 'DOMMouseScroll') ? -evt.detail :
-              evt.wheelDelta / MOUSE_WHEEL_DELTA_FACTOR;
-  var direction = (ticks < 0) ? 'zoomOut' : 'zoomIn';
+  var WHEEL_DELTA_FACTOR = 40;
+
+  var delta = evt.deltaY;
+  if (delta !== undefined) {
+    // evt.deltaMode === 0 means pixels => no change
+    if (evt.deltaMode === 1) {
+      // lines
+      delta /= parseInt(getComputedStyle(evt.target).fontSize, 10);
+    } else if (evt.deltaMode === 2) {
+      // pages
+      delta /= document.documentElement.clientHeight;
+    }
+  } else {
+    delta = -evt.wheelDeltaY / 3;
+  }
+  var direction = (delta > 0) ? 'zoomOut' : 'zoomIn';
 
   var pdfViewer = PDFViewerApplication.pdfViewer;
   if (pdfViewer.isInPresentationMode) {
     evt.preventDefault();
-    PDFViewerApplication.scrollPresentationMode(ticks *
-                                                MOUSE_WHEEL_DELTA_FACTOR);
+    PDFViewerApplication.scrollPresentationMode(-delta);
   } else if (evt.ctrlKey || evt.metaKey) {
     var support = PDFViewerApplication.supportedMouseWheelZoomModifierKeys;
     if ((evt.ctrlKey && !support.ctrlKey) ||
@@ -1891,7 +1902,7 @@ function handleMouseWheel(evt) {
 
     var previousScale = pdfViewer.currentScale;
 
-    PDFViewerApplication[direction](Math.abs(ticks));
+    PDFViewerApplication[direction](Math.abs(delta) / WHEEL_DELTA_FACTOR);
 
     var currentScale = pdfViewer.currentScale;
     if (previousScale !== currentScale) {
@@ -1908,7 +1919,7 @@ function handleMouseWheel(evt) {
   }
 }
 
-window.addEventListener('DOMMouseScroll', handleMouseWheel);
+window.addEventListener('wheel', handleMouseWheel);
 window.addEventListener('mousewheel', handleMouseWheel);
 
 window.addEventListener('click', function click(evt) {
