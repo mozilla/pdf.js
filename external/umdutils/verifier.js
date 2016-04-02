@@ -294,7 +294,7 @@ function validateFile(path, name, context) {
       }
       var noExtension = i.replace(/\.js$/, '');
       if (noExtension === i || i[0] !== '.') {
-        warn('CommonJS shall have relative path and extension: ' + i);
+        error('CommonJS shall have relative path and extension: ' + i);
         return;
       }
       var base = name.split('/');

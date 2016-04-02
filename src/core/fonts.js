@@ -28,8 +28,8 @@
       require('./stream.js'), require('./parser.js'),
       require('./glyphlist.js'), require('./charsets.js'),
       require('./font_renderer.js'), require('./encodings.js'),
-      require('./standard_fonts'), require('./unicode.js'),
-      require('./type1_parser'), require('./cff_parser'));
+      require('./standard_fonts.js'), require('./unicode.js'),
+      require('./type1_parser.js'), require('./cff_parser.js'));
   } else {
     factory((root.pdfjsCoreFonts = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
