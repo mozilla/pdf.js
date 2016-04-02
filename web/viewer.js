@@ -909,6 +909,12 @@ var PDFViewerApplication = {
         }
       }
 
+      var docLoadedEvent = new CustomEvent('documentloaded', {
+        bubbles: true,
+        cancelable: true
+      });
+      window.dispatchEvent(docLoadedEvent);
+
       var initialParams = {
         destination: self.initialDestination,
         bookmark: self.initialBookmark,
@@ -1029,11 +1035,18 @@ var PDFViewerApplication = {
         self.fallback(PDFJS.UNSUPPORTED_FEATURES.forms);
       }
 
+      var metaLoadedEvent = new CustomEvent('metadataloaded', {
+        bubbles: true,
+        cancelable: true
+      });
+      window.dispatchEvent(metaLoadedEvent);
+
 //#if !PRODUCTION
       if (true) {
         return;
       }
 //#endif
+
 //#if (FIREFOX || MOZCENTRAL)
       var versionId = String(info.PDFFormatVersion).slice(-1) | 0;
       var generatorId = 0;

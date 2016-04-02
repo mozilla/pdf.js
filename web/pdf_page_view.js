@@ -127,6 +127,13 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       div.removeAttribute('data-loaded');
 
+      var event = new CustomEvent('pageremoved', {
+        detail: { pageNumber: this.id },
+        bubbles: true,
+        cancelable: true
+      });
+      div.dispatchEvent(event);
+
       if (currentAnnotationNode) {
         // Hide annotationLayer until all elements are resized
         // so they are not displayed on the already-resized page
