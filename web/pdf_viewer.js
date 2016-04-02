@@ -218,6 +218,12 @@ var PDFViewer = (function pdfViewer() {
         pageView.update(pageView.scale, rotation);
       }
 
+      if (!this._currentScaleValue) {
+        // If the rotation is changed before the the scale has been set,
+        // don't try and update it since doing so results in an error.
+        return;
+      }
+
       this._setScale(this._currentScaleValue, true);
 
       if (this.defaultRenderingQueue) {
@@ -597,7 +603,8 @@ var PDFViewer = (function pdfViewer() {
         scale: normalizedScaleValue,
         top: intTop,
         left: intLeft,
-        pdfOpenParams: pdfOpenParams
+        pdfOpenParams: pdfOpenParams,
+        rotation: this._pagesRotation
       };
     },
 

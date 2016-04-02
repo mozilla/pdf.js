@@ -924,13 +924,14 @@ var PDFViewerApplication = {
                      store.get('zoom', DEFAULT_SCALE_VALUE);
           var left = store.get('scrollLeft', '0');
           var top = store.get('scrollTop', '0');
+          var rotation = store.get('rotation', '0') | 0;
 
           storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
                        left + ',' + top;
         } else if (self.preferenceDefaultZoomValue) {
           storedHash = 'page=1&zoom=' + self.preferenceDefaultZoomValue;
         }
-        self.setInitialView(storedHash, scale);
+        self.setInitialView(storedHash, scale, rotation);
 
         initialParams.hash = storedHash;
 
@@ -1065,8 +1066,13 @@ var PDFViewerApplication = {
     });
   },
 
-  setInitialView: function pdfViewSetInitialView(storedHash, scale) {
+  setInitialView: function pdfViewSetInitialView(storedHash, scale, rotation) {
     this.isInitialViewSet = true;
+
+    if ((rotation | 0) === rotation &&
+        rotation !== this.pageRotation) {
+      this.setRotation(rotation - this.pageRotation);
+    }
 
     // When opening a new file, when one is already loaded in the viewer,
     // ensure that the 'pageNumber' element displays the correct value.
@@ -1213,11 +1219,16 @@ var PDFViewerApplication = {
     this.forceRendering();
   },
 
-  rotatePages: function pdfViewRotatePages(delta) {
-    var pageNumber = this.page;
+  setRotation: function pdfViewSetRotation(delta) {
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
     this.pdfThumbnailViewer.pagesRotation = this.pageRotation;
+  },
+
+  rotatePages: function pdfViewRotatePages(delta) {
+    var pageNumber = this.page;
+
+    this.setRotation(delta);
 
     this.forceRendering();
 
@@ -1688,7 +1699,8 @@ window.addEventListener('updateviewarea', function (evt) {
       'page': location.pageNumber,
       'zoom': location.scale,
       'scrollLeft': location.left,
-      'scrollTop': location.top
+      'scrollTop': location.top,
+      'rotation': location.rotation
     }).catch(function() {
       // unable to write to storage
     });
