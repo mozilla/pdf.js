@@ -1629,6 +1629,14 @@
       "lastPage": 1,
       "type": "eq"
     },
+    {  "id": "bug1199237",
+       "file": "pdfs/bug1199237.pdf",
+       "md5": "e9a63d3207ccc65a4955d5723546e962",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "IdentityToUnicodeMap_charCodeOf",
        "file": "pdfs/IdentityToUnicodeMap_charCodeOf.pdf",
        "md5": "da030686418c5e37d889127a05dafb83",
