@@ -332,6 +332,11 @@ target.dist = function() {
     homepage: DIST_HOMEPAGE,
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
+    browser: { // used by browserify and ignores following files during bundle
+      'entry?name=[hash]-worker.js!./pdf.worker.js': false,
+      './build/pdf.worker.js': false,
+      'node-ensure': false
+    },
     repository: {
       type: 'git',
       url: DIST_REPO_URL
