@@ -2002,7 +2002,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     },
 
     _scheduleNext: function InternalRenderTask__scheduleNext() {
-      if (this.useRequestAnimationFrame) {
+      if (this.useRequestAnimationFrame && typeof window !== 'undefined') {
         window.requestAnimationFrame(this._nextBound);
       } else {
         Promise.resolve(undefined).then(this._nextBound);

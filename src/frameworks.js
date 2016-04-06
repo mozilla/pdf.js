@@ -20,7 +20,7 @@
 'use strict';
 
 var useRequireEnsure = false;
-if (typeof module !== 'undefined' && module.require) {
+if (typeof window === 'undefined') {
   // node.js - disable worker and set require.ensure.
   isWorkerDisabled = true;
   if (typeof require.ensure === 'undefined') {

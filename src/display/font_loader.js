@@ -308,19 +308,20 @@ FontLoader.isFontLoadingAPISupported = typeof document !== 'undefined' &&
 //#if !(MOZCENTRAL || CHROME)
 Object.defineProperty(FontLoader, 'isSyncFontLoadingSupported', {
   get: function () {
+    if (typeof navigator === 'undefined') {
+      // node.js - we can pretend sync font loading is supported.
+      return shadow(FontLoader, 'isSyncFontLoadingSupported', true);
+    }
+
     var supported = false;
 
     // User agent string sniffing is bad, but there is no reliable way to tell
     // if font is fully loaded and ready to be used with canvas.
-    var userAgent = window.navigator.userAgent;
-    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
+    var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(navigator.userAgent);
     if (m && m[1] >= 14) {
       supported = true;
     }
     // TODO other browsers
-    if (userAgent === 'node') {
-      supported = true;
-    }
     return shadow(FontLoader, 'isSyncFontLoadingSupported', supported);
   },
   enumerable: true,
@@ -378,8 +379,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
       var fontName = this.loadedName;
 
       // Add the font-face rule to the document
-      var url = ('url(data:' + this.mimetype + ';base64,' +
-                 window.btoa(data) + ');');
+      var url = ('url(data:' + this.mimetype + ';base64,' + btoa(data) + ');');
       var rule = '@font-face { font-family:"' + fontName + '";src:' + url + '}';
 
       if (this.options.fontRegistry) {
