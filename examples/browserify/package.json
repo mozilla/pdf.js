@@ -1,0 +1,16 @@
+{
+  "name": "browserify-pdf.js-example",
+  "version": "0.1.0",
+  "devDependencies": {
+    "browserify": "^13.0.0",
+    "gulp": "^3.9.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-streamify": "^1.0.2",
+    "gulp-uglify": "^1.5.3",
+    "pdfjs-dist": "../../build/dist",
+    "vinyl-source-stream": "^1.1.0"
+  },
+  "scripts": {
+    "build": "gulp build"
+  }
+}
