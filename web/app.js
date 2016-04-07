@@ -1838,12 +1838,15 @@ function handleMouseWheel(evt) {
   } else if (evt.ctrlKey || evt.metaKey) {
     var support = PDFViewerApplication.supportedMouseWheelZoomModifierKeys;
     if ((evt.ctrlKey && !support.ctrlKey) ||
-        (evt.metaKey && !support.metaKey) ||
-        zoomDisabled) {
+        (evt.metaKey && !support.metaKey)) {
       return;
     }
     // Only zoom the pages, not the entire viewer.
     evt.preventDefault();
+    // NOTE: this check must be placed *after* preventDefault.
+    if (zoomDisabled) {
+      return;
+    }
 
     var previousScale = pdfViewer.currentScale;
 
