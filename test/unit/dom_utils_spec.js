@@ -1,5 +1,5 @@
 /* globals expect, it, describe, PDFJS, isExternalLinkTargetSet, LinkTarget,
-           getFilenameFromUrl */
+           getFilenameFromUrl, beforeAll, afterAll */
 
 'use strict';
 
@@ -21,8 +21,16 @@ describe('dom_utils', function() {
   });
 
   describe('isExternalLinkTargetSet', function() {
-    // Save the current state, to avoid interfering with other tests.
-    var previousExternalLinkTarget = PDFJS.externalLinkTarget;
+    var savedExternalLinkTarget;
+
+    beforeAll(function (done) {
+      savedExternalLinkTarget = PDFJS.externalLinkTarget;
+      done();
+    });
+
+    afterAll(function () {
+      PDFJS.externalLinkTarget = savedExternalLinkTarget;
+    });
 
     it('handles the predefined LinkTargets', function() {
       for (var key in LinkTarget) {
@@ -43,8 +51,5 @@ describe('dom_utils', function() {
         expect(isExternalLinkTargetSet()).toEqual(false);
       }
     });
-
-    // Reset the state.
-    PDFJS.externalLinkTarget = previousExternalLinkTarget;
   });
 });
