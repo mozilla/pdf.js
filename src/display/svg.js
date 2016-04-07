@@ -15,19 +15,16 @@
 
 'use strict';
 
-//#if (GENERIC || SINGLE_FILE)
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/global'], factory);
+    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./global.js'));
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayGlobal);
+    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports, sharedUtil, displayGlobal) {
-
+}(this, function (exports, sharedUtil) {
+//#if (GENERIC || SINGLE_FILE)
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
 var ImageKind = sharedUtil.ImageKind;
@@ -36,7 +33,7 @@ var Util = sharedUtil.Util;
 var isNum = sharedUtil.isNum;
 var isArray = sharedUtil.isArray;
 var warn = sharedUtil.warn;
-var PDFJS = displayGlobal.PDFJS;
+var createObjectURL = sharedUtil.createObjectURL;
 
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
@@ -110,7 +107,7 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     return (b << 16) | a;
   }
 
-  function encode(imgData, kind) {
+  function encode(imgData, kind, forceDataSchema) {
     var width = imgData.width;
     var height = imgData.height;
     var bitDepth, colorType, lineSize;
@@ -226,13 +223,13 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     offset += CHUNK_WRAPPER_SIZE + idat.length;
     writePngChunk('IEND', new Uint8Array(0), data, offset);
 
-    return PDFJS.createObjectURL(data, 'image/png');
+    return createObjectURL(data, 'image/png', forceDataSchema);
   }
 
-  return function convertImgDataToPng(imgData) {
+  return function convertImgDataToPng(imgData, forceDataSchema) {
     var kind = (imgData.kind === undefined ?
                 ImageKind.GRAYSCALE_1BPP : imgData.kind);
-    return encode(imgData, kind);
+    return encode(imgData, kind, forceDataSchema);
   };
 })();
 
@@ -377,7 +374,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       pf(m[3]) + ' ' + pf(m[4]) + ' ' + pf(m[5]) + ')';
   }
 
-  function SVGGraphics(commonObjs, objs) {
+  function SVGGraphics(commonObjs, objs, forceDataSchema) {
     this.current = new SVGExtraState();
     this.transformMatrix = IDENTITY_MATRIX; // Graphics state matrix
     this.transformStack = [];
@@ -389,6 +386,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     this.embedFonts = false;
     this.embeddedFonts = Object.create(null);
     this.cssStyle = null;
+    this.forceDataSchema = !!forceDataSchema;
   }
 
   var NS = 'http://www.w3.org/2000/svg';
@@ -453,8 +451,8 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 
     transform: function SVGGraphics_transform(a, b, c, d, e, f) {
       var transformMatrix = [a, b, c, d, e, f];
-      this.transformMatrix = PDFJS.Util.transform(this.transformMatrix,
-                                                  transformMatrix);
+      this.transformMatrix = Util.transform(this.transformMatrix,
+                                            transformMatrix);
 
       this.tgrp = document.createElementNS(NS, 'svg:g');
       this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
@@ -777,7 +775,8 @@ var SVGGraphics = (function SVGGraphicsClosure() {
         this.defs.appendChild(this.cssStyle);
       }
 
-      var url = PDFJS.createObjectURL(fontObj.data, fontObj.mimetype);
+      var url = createObjectURL(fontObj.data, fontObj.mimetype,
+                                this.forceDataSchema);
       this.cssStyle.textContent +=
         '@font-face { font-family: "' + fontObj.loadedName + '";' +
         ' src: url(' + url + '); }\n';
@@ -1122,7 +1121,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       var width = imgData.width;
       var height = imgData.height;
 
-      var imgSrc = convertImgDataToPng(imgData);
+      var imgSrc = convertImgDataToPng(imgData, this.forceDataSchema);
       var cliprect = document.createElementNS(NS, 'svg:rect');
       cliprect.setAttributeNS(null, 'x', '0');
       cliprect.setAttributeNS(null, 'y', '0');
@@ -1208,8 +1207,6 @@ var SVGGraphics = (function SVGGraphicsClosure() {
   return SVGGraphics;
 })();
 
-PDFJS.SVGGraphics = SVGGraphics;
-
 exports.SVGGraphics = SVGGraphics;
-}));
 //#endif
+}));

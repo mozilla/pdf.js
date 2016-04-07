@@ -140,9 +140,9 @@ function renderPage(div, pdf, pageNumber, callback) {
 
 // In production, the bundled pdf.js shall be used instead of RequireJS.
 require.config({paths: {'pdfjs': '../../src'}});
-require(['pdfjs/display/api'], function (api) {
+require(['pdfjs/display/api', 'pdfjs/display/global'], function (api, global) {
   // In production, change this to point to the built `pdf.worker.js` file.
-  PDFJS.workerSrc = '../../src/worker_loader.js';
+  global.PDFJS.workerSrc = '../../src/worker_loader.js';
 
   // Fetch the PDF document from the URL using promises.
   api.getDocument(pdfWithFormsPath).then(function getPdfForm(pdf) {

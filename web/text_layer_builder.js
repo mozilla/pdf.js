@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS */
+/* globals pdfjsLib */
 
 'use strict';
 
@@ -78,7 +78,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       this.textDivs = [];
       var textLayerFrag = document.createDocumentFragment();
-      this.textLayerRenderTask = PDFJS.renderTextLayer({
+      this.textLayerRenderTask = pdfjsLib.renderTextLayer({
         textContent: this.textContent,
         container: textLayerFrag,
         viewport: this.viewport,

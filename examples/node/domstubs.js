@@ -120,10 +120,6 @@ DOMElement.prototype = {
   },
 }
 
-global.window = global;
-
-global.navigator = { userAgent: 'node' };
-
 global.document = {
   childNodes : [],
 

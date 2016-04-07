@@ -45,9 +45,12 @@
 
 //#if MAIN_FILE
   exports.PDFJS = pdfjsLibs.pdfjsDisplayGlobal.PDFJS;
+  exports.build = pdfjsLibs.pdfjsDisplayAPI.build;
+  exports.version = pdfjsLibs.pdfjsDisplayAPI.version;
   exports.getDocument = pdfjsLibs.pdfjsDisplayAPI.getDocument;
   exports.PDFDataRangeTransport =
     pdfjsLibs.pdfjsDisplayAPI.PDFDataRangeTransport;
+  exports.PDFWorker = pdfjsLibs.pdfjsDisplayAPI.PDFWorker;
   exports.renderTextLayer = pdfjsLibs.pdfjsDisplayTextLayer.renderTextLayer;
   exports.AnnotationLayer =
     pdfjsLibs.pdfjsDisplayAnnotationLayer.AnnotationLayer;
@@ -55,8 +58,19 @@
   exports.PasswordResponses = pdfjsLibs.pdfjsSharedUtil.PasswordResponses;
   exports.InvalidPDFException = pdfjsLibs.pdfjsSharedUtil.InvalidPDFException;
   exports.MissingPDFException = pdfjsLibs.pdfjsSharedUtil.MissingPDFException;
+  exports.SVGGraphics = pdfjsLibs.pdfjsDisplaySVG.SVGGraphics;
   exports.UnexpectedResponseException =
     pdfjsLibs.pdfjsSharedUtil.UnexpectedResponseException;
+  exports.OPS = pdfjsLibs.pdfjsSharedUtil.OPS;
+  exports.UNSUPPORTED_FEATURES = pdfjsLibs.pdfjsSharedUtil.UNSUPPORTED_FEATURES;
+  exports.isValidUrl = pdfjsLibs.pdfjsSharedUtil.isValidUrl;
+  exports.createObjectURL = pdfjsLibs.pdfjsSharedUtil.createObjectURL;
+  exports.removeNullCharacters = pdfjsLibs.pdfjsSharedUtil.removeNullCharacters;
+  exports.shadow = pdfjsLibs.pdfjsSharedUtil.shadow;
+  exports.createBlob = pdfjsLibs.pdfjsSharedUtil.createBlob;
+  exports.getFilenameFromUrl =
+    pdfjsLibs.pdfjsDisplayDOMUtils.getFilenameFromUrl;
+  exports.addLinkAttributes = pdfjsLibs.pdfjsDisplayDOMUtils.addLinkAttributes;
 //#else
   exports.WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
 //#endif

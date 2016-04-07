@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, PDFJS, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
+/* globals RenderingStates, pdfjsLib, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
            TextLayerBuilder, Promise, approximateFraction, roundToDivide */
 
 'use strict';
@@ -162,19 +162,18 @@ var PDFPageView = (function PDFPageViewClosure() {
       });
 
       var isScalingRestricted = false;
-      if (this.canvas && PDFJS.maxCanvasPixels > 0) {
+      if (this.canvas && pdfjsLib.PDFJS.maxCanvasPixels > 0) {
         var outputScale = this.outputScale;
         var pixelsInViewport = this.viewport.width * this.viewport.height;
-        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
         if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
             ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
-            PDFJS.maxCanvasPixels) {
+            pdfjsLib.PDFJS.maxCanvasPixels) {
           isScalingRestricted = true;
         }
       }
 
       if (this.canvas) {
-        if (PDFJS.useOnlyCssZoom ||
+        if (pdfjsLib.PDFJS.useOnlyCssZoom ||
             (this.hasRestrictedScaling && isScalingRestricted)) {
           this.cssTransform(this.canvas, true);
 
@@ -208,7 +207,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     cssTransform: function PDFPageView_transform(canvas, redrawAnnotations) {
-      var CustomStyle = PDFJS.CustomStyle;
+      var CustomStyle = pdfjsLib.CustomStyle;
 
       // Scale canvas, canvas wrapper, and page container.
       var width = this.viewport.width;
@@ -330,7 +329,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       var outputScale = getOutputScale(ctx);
       this.outputScale = outputScale;
 
-      if (PDFJS.useOnlyCssZoom) {
+      if (pdfjsLib.PDFJS.useOnlyCssZoom) {
         var actualSizeViewport = viewport.clone({scale: CSS_UNITS});
         // Use a scale that will make the canvas be the original intended size
         // of the page.
@@ -339,9 +338,10 @@ var PDFPageView = (function PDFPageViewClosure() {
         outputScale.scaled = true;
       }
 
-      if (PDFJS.maxCanvasPixels > 0) {
+      if (pdfjsLib.PDFJS.maxCanvasPixels > 0) {
         var pixelsInViewport = viewport.width * viewport.height;
-        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
+        var maxScale =
+          Math.sqrt(pdfjsLib.PDFJS.maxCanvasPixels / pixelsInViewport);
         if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
           outputScale.sx = maxScale;
           outputScale.sy = maxScale;
@@ -517,7 +517,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     beforePrint: function PDFPageView_beforePrint() {
-      var CustomStyle = PDFJS.CustomStyle;
+      var CustomStyle = pdfjsLib.CustomStyle;
       var pdfPage = this.pdfPage;
 
       var viewport = pdfPage.getViewport(1);

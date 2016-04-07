@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-/* globals chrome, PDFJS, PDFViewerApplication, OverlayManager */
+/* globals chrome, pdfjsLib, PDFViewerApplication, OverlayManager */
 'use strict';
 
 var ChromeCom = (function ChromeComClosure() {
@@ -81,7 +81,7 @@ var ChromeCom = (function ChromeComClosure() {
           return;
         }
       }
-      if (/^filesystem:/.test(file) && !PDFJS.disableWorker) {
+      if (/^filesystem:/.test(file) && !pdfjsLib.PDFJS.disableWorker) {
         // The security origin of filesystem:-URLs are not preserved when the
         // URL is passed to a Web worker, (http://crbug.com/362061), so we have
         // to create an intermediate blob:-URL as a work-around.

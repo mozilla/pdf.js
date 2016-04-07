@@ -3,7 +3,7 @@
 
 // Hello world example for webpack.
 
-require('pdfjs-dist');
+var pdfjsLib = require('pdfjs-dist');
 
 var pdfPath = '../helloworld/helloworld.pdf';
 
@@ -11,7 +11,7 @@ var pdfPath = '../helloworld/helloworld.pdf';
 // however that might degrade the UI performance in web browsers.
 
 // Loading a document.
-var loadingTask = PDFJS.getDocument(pdfPath);
+var loadingTask = pdfjsLib.getDocument(pdfPath);
 loadingTask.promise.then(function (pdfDocument) {
   // Request a first page
   return pdfDocument.getPage(1).then(function (pdfPage) {

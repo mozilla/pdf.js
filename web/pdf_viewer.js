@@ -15,7 +15,7 @@
  /*globals watchScroll, PDFPageView, UNKNOWN_SCALE,
            SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
            DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
-           PDFJS, Promise, TextLayerBuilder, PDFRenderingQueue,
+           pdfjsLib, Promise, TextLayerBuilder, PDFRenderingQueue,
            AnnotationLayerBuilder, DEFAULT_SCALE_VALUE */
 
 'use strict';
@@ -27,7 +27,6 @@ var PresentationModeState = {
   FULLSCREEN: 3,
 };
 
-var IGNORE_CURRENT_POSITION_ON_ZOOM = false;
 var DEFAULT_CACHE_SIZE = 10;
 
 //#include pdf_rendering_queue.js
@@ -287,7 +286,7 @@ var PDFViewer = (function pdfViewer() {
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
-          if (!PDFJS.disableTextLayer) {
+          if (!pdfjsLib.PDFJS.disableTextLayer) {
             textLayerFactory = this;
           }
           var pageView = new PDFPageView({
@@ -309,7 +308,7 @@ var PDFViewer = (function pdfViewer() {
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
         onePageRendered.then(function () {
-          if (!PDFJS.disableAutoFetch) {
+          if (!pdfjsLib.PDFJS.disableAutoFetch) {
             var getPagesLeft = pagesCount;
             for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
               pdfDocument.getPage(pageNum).then(function (pageNum, pdfPage) {
@@ -399,7 +398,7 @@ var PDFViewer = (function pdfViewer() {
 
       if (!noScroll) {
         var page = this._currentPageNumber, dest;
-        if (this._location && !IGNORE_CURRENT_POSITION_ON_ZOOM &&
+        if (this._location && !pdfjsLib.PDFJS.ignoreCurrentPositionOnZoom &&
             !(this.isInPresentationMode || this.isChangingPresentationMode)) {
           page = this._location.pageNumber;
           dest = [null, { name: 'XYZ' }, this._location.left,

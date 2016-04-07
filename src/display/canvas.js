@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, ImageData */
+/* globals ImageData */
 
 'use strict';
 
@@ -43,12 +43,14 @@ var assert = sharedUtil.assert;
 var info = sharedUtil.info;
 var isNum = sharedUtil.isNum;
 var isArray = sharedUtil.isArray;
+var isLittleEndian = sharedUtil.isLittleEndian;
 var error = sharedUtil.error;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
 var TilingPattern = displayPatternHelper.TilingPattern;
 var getShadingPatternFromIR = displayPatternHelper.getShadingPatternFromIR;
 var WebGLUtils = displayWebGL.WebGLUtils;
+var hasCanvasTypedArrays = displayDOMUtils.hasCanvasTypedArrays;
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -66,6 +68,18 @@ var COMPILE_TYPE3_GLYPHS = true;
 var MAX_SIZE_TO_COMPILE = 1000;
 
 var FULL_CHUNK_HEIGHT = 16;
+
+var HasCanvasTypedArraysCached = {
+  get value() {
+    return shadow(HasCanvasTypedArraysCached, 'value', hasCanvasTypedArrays());
+  }
+};
+
+var IsLittleEndianCached = {
+  get value() {
+    return shadow(IsLittleEndianCached, 'value', isLittleEndian());
+  }
+};
 
 function createScratchCanvas(width, height) {
   var canvas = document.createElement('canvas');
@@ -505,13 +519,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var srcLength = src.byteLength;
-      var dest32 = PDFJS.hasCanvasTypedArrays ? new Uint32Array(dest.buffer) :
-        new Uint32ArrayView(dest);
+      var dest32 = HasCanvasTypedArraysCached.value ?
+        new Uint32Array(dest.buffer) : new Uint32ArrayView(dest);
       var dest32DataLength = dest32.length;
       var fullSrcDiff = (width + 7) >> 3;
       var white = 0xFFFFFFFF;
-      var black = (PDFJS.isLittleEndian || !PDFJS.hasCanvasTypedArrays) ?
-        0xFF000000 : 0x000000FF;
+      var black = (IsLittleEndianCached.value ||
+                   !HasCanvasTypedArraysCached.value) ? 0xFF000000 : 0x000000FF;
       for (i = 0; i < totalChunks; i++) {
         thisChunkHeight =
           (i < fullChunks) ? FULL_CHUNK_HEIGHT : partialChunkHeight;

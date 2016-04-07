@@ -19,17 +19,17 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/display/webgl', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/global'], factory);
+      'pdfjs/display/dom_utils'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./global.js'));
+    factory(exports, require('../shared/util.js'), require('./dom_utils.js'));
   } else {
     factory((root.pdfjsDisplayWebGL = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayGlobal);
+      root.pdfjsDisplayDOMUtils);
   }
-}(this, function (exports, sharedUtil, displayGlobal) {
+}(this, function (exports, sharedUtil, displayDOMUtils) {
 
 var shadow = sharedUtil.shadow;
-var PDFJS = displayGlobal.PDFJS;
+var getDefaultSetting = displayDOMUtils.getDefaultSetting;
 
 var WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {
@@ -432,7 +432,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
 
   return {
     get isEnabled() {
-      if (PDFJS.disableWebGL) {
+      if (getDefaultSetting('disableWebGL')) {
         return false;
       }
       var enabled = false;

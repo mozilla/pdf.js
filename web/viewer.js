@@ -41,9 +41,11 @@ function webViewerLoad() {
 //#if !PRODUCTION
   require.config({paths: {'pdfjs': '../src'}});
   require(['pdfjs/main_loader'], function (loader) {
+    window.pdfjsLib = loader;
     PDFViewerApplication.run();
   });
 //#else
+//window.pdfjsLib = window.pdfjsDistBuildPdf;
 //PDFViewerApplication.run();
 //#endif
 }

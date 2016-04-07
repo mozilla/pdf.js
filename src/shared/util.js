@@ -592,6 +592,17 @@ function isLittleEndian() {
   return (buffer16[0] === 1);
 }
 
+// Checks if it's possible to eval JS expressions.
+function isEvalSupported() {
+  try {
+    /* jshint evil: true */
+    new Function('');
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 //#if !(FIREFOX || MOZCENTRAL || CHROME)
 var Uint32ArrayView = (function Uint32ArrayViewClosure() {
 
@@ -889,7 +900,7 @@ var Util = (function UtilClosure() {
 /**
  * PDF page viewport created based on scale, rotation and offset.
  * @class
- * @alias PDFJS.PageViewport
+ * @alias PageViewport
  */
 var PageViewport = (function PageViewportClosure() {
   /**
@@ -965,13 +976,13 @@ var PageViewport = (function PageViewportClosure() {
     this.height = height;
     this.fontScale = scale;
   }
-  PageViewport.prototype = /** @lends PDFJS.PageViewport.prototype */ {
+  PageViewport.prototype = /** @lends PageViewport.prototype */ {
     /**
      * Clones viewport with additional properties.
      * @param args {Object} (optional) If specified, may contain the 'scale' or
      * 'rotation' properties to override the corresponding properties in
      * the cloned viewport.
-     * @returns {PDFJS.PageViewport} Cloned viewport.
+     * @returns {PageViewport} Cloned viewport.
      */
     clone: function PageViewPort_clone(args) {
       args = args || {};
@@ -1101,7 +1112,7 @@ function isArrayBuffer(v) {
 
 /**
  * Creates a promise capability object.
- * @alias PDFJS.createPromiseCapability
+ * @alias createPromiseCapability
  *
  * @return {PromiseCapability} A capability object contains:
  * - a Promise, resolve and reject methods.
@@ -2347,6 +2358,7 @@ exports.isString = isString;
 exports.isSameOrigin = isSameOrigin;
 exports.isValidUrl = isValidUrl;
 exports.isLittleEndian = isLittleEndian;
+exports.isEvalSupported = isEvalSupported;
 exports.loadJpegStream = loadJpegStream;
 exports.log2 = log2;
 exports.readInt8 = readInt8;

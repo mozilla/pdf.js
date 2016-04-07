@@ -33,8 +33,9 @@ limitations under the License.
   <script>
     require.config({paths: {'pdfjs': '../src'}});
     require(['pdfjs/display/api', 'pdfjs/display/text_layer',
-             'pdfjs/display/annotation_layer', 'pdfjs/shared/util'],
-        function (api, textLayer, annotationLayer, pdfjsSharedUtil) {
+             'pdfjs/display/annotation_layer', 'pdfjs/display/global',
+             'pdfjs/shared/util'],
+        function (api, textLayer, annotationLayer, global, pdfjsSharedUtil) {
       window.pdfjsSharedUtil = pdfjsSharedUtil;
 
       var driver = new Driver({

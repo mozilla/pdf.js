@@ -17,21 +17,17 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/dom_utils', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/global'], factory);
+    define('pdfjs/display/dom_utils', ['exports', 'pdfjs/shared/util'],
+      factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./global.js'));
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsDisplayDOMUtils = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayGlobal);
+    factory((root.pdfjsDisplayDOMUtils = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports, sharedUtil, displayGlobal) {
+}(this, function (exports, sharedUtil) {
 
-var deprecated = sharedUtil.deprecated;
 var removeNullCharacters = sharedUtil.removeNullCharacters;
-var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
-var PDFJS = displayGlobal.PDFJS;
 
 /**
  * Optimised CSS custom property getter/setter.
@@ -87,10 +83,7 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-PDFJS.CustomStyle = CustomStyle;
-
 //#if !(FIREFOX || MOZCENTRAL || CHROME)
-//// Lazy test if the userAgent support CanvasTypedArrays
 function hasCanvasTypedArrays() {
   var canvas = document.createElement('canvas');
   canvas.width = canvas.height = 1;
@@ -98,15 +91,8 @@ function hasCanvasTypedArrays() {
   var imageData = ctx.createImageData(1, 1);
   return (typeof imageData.data.buffer !== 'undefined');
 }
-
-Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
-  configurable: true,
-  get: function PDFJS_hasCanvasTypedArrays() {
-    return shadow(PDFJS, 'hasCanvasTypedArrays', hasCanvasTypedArrays());
-  }
-});
 //#else
-//PDFJS.hasCanvasTypedArrays = true;
+//function hasCanvasTypedArrays() { return true; }
 //#endif
 
 var LinkTarget = {
@@ -117,8 +103,6 @@ var LinkTarget = {
   TOP: 4,
 };
 
-PDFJS.LinkTarget = LinkTarget;
-
 var LinkTargetStringMap = [
   '',
   '_self',
@@ -127,53 +111,37 @@ var LinkTargetStringMap = [
   '_top'
 ];
 
-function isExternalLinkTargetSet() {
-//#if !MOZCENTRAL
-  if (PDFJS.openExternalLinksInNewWindow) {
-    deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
-      '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');
-    if (PDFJS.externalLinkTarget === LinkTarget.NONE) {
-      PDFJS.externalLinkTarget = LinkTarget.BLANK;
-    }
-    // Reset the deprecated parameter, to suppress further warnings.
-    PDFJS.openExternalLinksInNewWindow = false;
-  }
-//#endif
-  switch (PDFJS.externalLinkTarget) {
-    case LinkTarget.NONE:
-      return false;
-    case LinkTarget.SELF:
-    case LinkTarget.BLANK:
-    case LinkTarget.PARENT:
-    case LinkTarget.TOP:
-      return true;
-  }
-  warn('PDFJS.externalLinkTarget is invalid: ' + PDFJS.externalLinkTarget);
-  // Reset the external link target, to suppress further warnings.
-  PDFJS.externalLinkTarget = LinkTarget.NONE;
-  return false;
-}
-PDFJS.isExternalLinkTargetSet = isExternalLinkTargetSet;
+/**
+ * @typedef ExternalLinkParameters
+ * @typedef {Object} ExternalLinkParameters
+ * @property {string} url
+ * @property {LinkTarget} target
+ * @property {string} rel
+ */
 
 /**
  * Adds various attributes (href, title, target, rel) to hyperlinks.
  * @param {HTMLLinkElement} link - The link element.
- * @param {Object} params - An object with the properties:
- * @param {string} params.url - An absolute URL.
+ * @param {ExternalLinkParameters} params - An object with the properties.
  */
 function addLinkAttributes(link, params) {
   var url = params && params.url;
   link.href = link.title = (url ? removeNullCharacters(url) : '');
 
   if (url) {
-    if (isExternalLinkTargetSet()) {
-      link.target = LinkTargetStringMap[PDFJS.externalLinkTarget];
+    var target = params.target;
+    if (typeof target === 'undefined') {
+      target = getDefaultSetting('externalLinkTarget');
     }
+    link.target = LinkTargetStringMap[target];
     // Strip referrer from the URL.
-    link.rel = PDFJS.externalLinkRel;
+    var rel = params.rel;
+    if (typeof rel === 'undefined') {
+      rel = getDefaultSetting('externalLinkRel');
+    }
+    link.rel = rel;
   }
 }
-PDFJS.addLinkAttributes = addLinkAttributes;
 
 // Gets the file name from a given URL.
 function getFilenameFromUrl(url) {
@@ -184,11 +152,86 @@ function getFilenameFromUrl(url) {
     query > 0 ? query : url.length);
   return url.substring(url.lastIndexOf('/', end) + 1, end);
 }
-PDFJS.getFilenameFromUrl = getFilenameFromUrl;
+
+function getDefaultSetting(id) {
+  // The list of the settings and their default is maintained for backward
+  // compatibility and shall not be extended or modified. See also global.js.
+  var globalSettings = sharedUtil.globalScope.PDFJS;
+  switch (id) {
+    case 'pdfBug':
+      return globalSettings ? globalSettings.pdfBug : false;
+    case 'disableAutoFetch':
+      return globalSettings ? globalSettings.disableAutoFetch : false;
+    case 'disableStream':
+      return globalSettings ? globalSettings.disableStream : false;
+    case 'disableRange':
+      return globalSettings ? globalSettings.disableRange : false;
+    case 'disableFontFace':
+      return globalSettings ? globalSettings.disableFontFace : false;
+    case 'disableCreateObjectURL':
+      return globalSettings ? globalSettings.disableCreateObjectURL : false;
+    case 'disableWebGL':
+      return globalSettings ? globalSettings.disableWebGL : true;
+    case 'cMapUrl':
+      return globalSettings ? globalSettings.cMapUrl : null;
+    case 'cMapPacked':
+      return globalSettings ? globalSettings.cMapPacked : false;
+    case 'postMessageTransfers':
+      return globalSettings ? globalSettings.postMessageTransfers : true;
+    case 'workerSrc':
+      return globalSettings ? globalSettings.workerSrc : null;
+    case 'disableWorker':
+      return globalSettings ? globalSettings.disableWorker : false;
+    case 'maxImageSize':
+      return globalSettings ? globalSettings.maxImageSize : -1;
+    case 'imageResourcesPath':
+      return globalSettings ? globalSettings.imageResourcesPath : '';
+    case 'isEvalSupported':
+      return globalSettings ? globalSettings.isEvalSupported : true;
+    case 'externalLinkTarget':
+      if (!globalSettings) {
+        return LinkTarget.NONE;
+      }
+      switch (globalSettings.externalLinkTarget) {
+        case LinkTarget.NONE:
+        case LinkTarget.SELF:
+        case LinkTarget.BLANK:
+        case LinkTarget.PARENT:
+        case LinkTarget.TOP:
+          return globalSettings.externalLinkTarget;
+      }
+      warn('PDFJS.externalLinkTarget is invalid: ' +
+           globalSettings.externalLinkTarget);
+      // Reset the external link target, to suppress further warnings.
+      globalSettings.externalLinkTarget = LinkTarget.NONE;
+      return LinkTarget.NONE;
+    case 'externalLinkRel':
+      return globalSettings ? globalSettings.externalLinkRel : 'noreferrer';
+    case 'enableStats':
+      return !!(globalSettings && globalSettings.enableStats);
+    default:
+      throw new Error('Unknown default setting: ' + id);
+  }
+}
+
+function isExternalLinkTargetSet() {
+  var externalLinkTarget = getDefaultSetting('externalLinkTarget');
+  switch (externalLinkTarget) {
+    case LinkTarget.NONE:
+      return false;
+    case LinkTarget.SELF:
+    case LinkTarget.BLANK:
+    case LinkTarget.PARENT:
+    case LinkTarget.TOP:
+      return true;
+  }
+}
 
 exports.CustomStyle = CustomStyle;
 exports.addLinkAttributes = addLinkAttributes;
 exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
 exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.LinkTarget = LinkTarget;
+exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
+exports.getDefaultSetting = getDefaultSetting;
 }));
