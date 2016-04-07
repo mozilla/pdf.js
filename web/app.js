@@ -1823,6 +1823,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
   }
 }, true);
 
+var zoomDisabled = false, zoomDisabledTimeout;
 function handleMouseWheel(evt) {
   var MOUSE_WHEEL_DELTA_FACTOR = 40;
   var ticks = (evt.type === 'DOMMouseScroll') ? -evt.detail :
@@ -1837,7 +1838,8 @@ function handleMouseWheel(evt) {
   } else if (evt.ctrlKey || evt.metaKey) {
     var support = PDFViewerApplication.supportedMouseWheelZoomModifierKeys;
     if ((evt.ctrlKey && !support.ctrlKey) ||
-        (evt.metaKey && !support.metaKey)) {
+        (evt.metaKey && !support.metaKey) ||
+        zoomDisabled) {
       return;
     }
     // Only zoom the pages, not the entire viewer.
@@ -1859,6 +1861,12 @@ function handleMouseWheel(evt) {
       pdfViewer.container.scrollLeft += dx * scaleCorrectionFactor;
       pdfViewer.container.scrollTop += dy * scaleCorrectionFactor;
     }
+  } else {
+    zoomDisabled = true;
+    clearTimeout(zoomDisabledTimeout);
+    zoomDisabledTimeout = setTimeout(function () {
+      zoomDisabled = false;
+    }, 1000);
   }
 }
 
