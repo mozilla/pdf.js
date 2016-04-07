@@ -337,6 +337,7 @@ target.dist = function() {
       './build/pdf.worker.js': false,
       'node-ensure': false
     },
+    format: 'amd', // to not allow system.js to choose 'cjs'
     repository: {
       type: 'git',
       url: DIST_REPO_URL
