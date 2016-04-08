@@ -12,22 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/pdf_page_view', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue'], factory);
+      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue',
+      'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./ui_utils.js'),
-      require('./pdf_rendering_queue.js'));
+      require('./pdf_rendering_queue.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebPDFPageView = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFRenderingQueue);
+      root.pdfjsWebPDFRenderingQueue, root.pdfjsWebPDFJS);
   }
-}(this, function (exports, uiUtils, pdfRenderingQueue) {
+}(this, function (exports, uiUtils, pdfRenderingQueue, pdfjsLib) {
 
 var CSS_UNITS = uiUtils.CSS_UNITS;
 var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;

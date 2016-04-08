@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_URL, pdfjsLib, PDFBug, Stats */
+/* globals DEFAULT_URL, PDFBug, Stats */
 
 'use strict';
 
@@ -28,7 +28,8 @@
       'pdfjs-web/pdf_rendering_queue', 'pdfjs-web/pdf_link_service',
       'pdfjs-web/pdf_outline_viewer', 'pdfjs-web/overlay_manager',
       'pdfjs-web/pdf_attachment_viewer', 'pdfjs-web/pdf_find_controller',
-      'pdfjs-web/pdf_find_bar', 'pdfjs-web/mozPrintCallback_polyfill'],
+      'pdfjs-web/pdf_find_bar', 'pdfjs-web/mozPrintCallback_polyfill',
+      'pdfjs-web/pdfjs'],
       factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./ui_utils.js'), require('./firefoxcom.js'),
@@ -42,7 +43,7 @@
       require('./pdf_link_service.js'), require('./pdf_outline_viewer.js'),
       require('./overlay_manager.js'), require('./pdf_attachment_viewer.js'),
       require('./pdf_find_controller.js'), require('./pdf_find_bar.js'),
-      require('./mozPrintCallback_polyfill.js'));
+      require('./mozPrintCallback_polyfill.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebApp = {}), root.pdfjsWebUIUtils,
       root.pdfjsWebFirefoxCom, root.pdfjsWebDownloadManager,
@@ -55,7 +56,7 @@
       root.pdfjsWebPDFLinkService, root.pdfjsWebPDFOutlineViewer,
       root.pdfjsWebOverlayManager, root.pdfjsWebPDFAttachmentViewer,
       root.pdfjsWebPDFFindController, root.pdfjsWebPDFFindBar,
-      root.pdfjsWebMozPrintCallbackPolyfill);
+      root.pdfjsWebMozPrintCallbackPolyfill, root.pdfjsWebPDFJS);
   }
 }(this, function (exports, uiUtilsLib, firefoxComLib, downloadManagerLib,
                   pdfHistoryLib, preferencesLib, pdfSidebarLib, viewHistoryLib,
@@ -64,7 +65,7 @@
                   pdfViewerLib, pdfRenderingQueueLib, pdfLinkServiceLib,
                   pdfOutlineViewerLib, overlayManagerLib,
                   pdfAttachmentViewerLib, pdfFindControllerLib, pdfFindBarLib,
-                  mozPrintCallbackPolyfillLib) {
+                  mozPrintCallbackPolyfillLib, pdfjsLib) {
 
 var FirefoxCom = firefoxComLib.FirefoxCom;
 var UNKNOWN_SCALE = uiUtilsLib.UNKNOWN_SCALE;
@@ -1423,7 +1424,7 @@ function webViewerInitialized() {
       var pdfBug = hashParams['pdfbug'];
       var enabled = pdfBug.split(',');
       PDFBug.enable(enabled);
-      PDFBug.init();
+      PDFBug.init(pdfjsLib);
     }
   }
 

@@ -18,10 +18,15 @@
 
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
-var pdfjsWebLibs = {};
-(function () {
+//#if PRODUCTION
+//var pdfjsWebLibs = {
+//  pdfjsWebPDFJS: window.pdfjsDistBuildPdf
+//};
+//
+//(function () {
 //#expand __BUNDLE__
-}).call(pdfjsWebLibs);
+//}).call(pdfjsWebLibs);
+//#endif
 
 //#if FIREFOX || MOZCENTRAL
 //// FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
@@ -48,13 +53,11 @@ var pdfjsWebLibs = {};
 function webViewerLoad() {
 //#if !PRODUCTION
   require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
-  require(['pdfjs/main_loader', 'pdfjs-web/app'], function (loader, web) {
-    window.pdfjsLib = loader;
+  require(['pdfjs-web/app'], function (web) {
     window.PDFViewerApplication = web.PDFViewerApplication;
     web.PDFViewerApplication.run();
   });
 //#else
-//window.pdfjsLib = window.pdfjsDistBuildPdf;
 //window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
 //pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication.run();
 //#endif

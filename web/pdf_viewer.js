@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib */
 
 'use strict';
 
@@ -21,20 +20,21 @@
     define('pdfjs-web/pdf_viewer', ['exports', 'pdfjs-web/ui_utils',
       'pdfjs-web/pdf_page_view', 'pdfjs-web/pdf_rendering_queue',
       'pdfjs-web/text_layer_builder', 'pdfjs-web/annotation_layer_builder',
-      'pdfjs-web/pdf_link_service'], factory);
+      'pdfjs-web/pdf_link_service', 'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./ui_utils.js'), require('./pdf_page_view.js'),
       require('./pdf_rendering_queue.js'), require('./text_layer_builder.js'),
       require('./annotation_layer_builder.js'),
-      require('./pdf_link_service.js'));
+      require('./pdf_link_service.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebPDFViewer = {}), root.pdfjsWebUIUtils,
       root.pdfjsWebPDFPageView, root.pdfjsWebPDFRenderingQueue,
       root.pdfjsWebTextLayerBuilder, root.pdfjsWebAnnotationLayerBuilder,
-      root.pdfjsWebPDFLinkService);
+      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFJS);
   }
 }(this, function (exports, uiUtils, pdfPageView, pdfRenderingQueue,
-                  textLayerBuilder, annotationLayerBuilder, pdfLinkService) {
+                  textLayerBuilder, annotationLayerBuilder, pdfLinkService,
+                  pdfjsLib) {
 
 var UNKNOWN_SCALE = uiUtils.UNKNOWN_SCALE;
 var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;

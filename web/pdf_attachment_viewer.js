@@ -12,19 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_attachment_viewer', ['exports'], factory);
+    define('pdfjs-web/pdf_attachment_viewer', ['exports', 'pdfjs-web/pdfjs'],
+      factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports);
+    factory(exports, require('./pdfjs.js'));
   } else {
-    factory((root.pdfjsWebPDFAttachmentViewer = {}));
+    factory((root.pdfjsWebPDFAttachmentViewer = {}), root.pdfjsWebPDFJS);
   }
-}(this, function (exports) {
+}(this, function (exports, pdfjsLib) {
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions

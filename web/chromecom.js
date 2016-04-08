@@ -13,20 +13,21 @@
  * limitations under the License.
  */
 
-/* globals chrome, pdfjsLib */
+/* globals chrome */
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/chromecom', ['exports', 'pdfjs-web/app',
-      'pdfjs-web/overlay_manager'], factory);
+      'pdfjs-web/overlay_manager', 'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./app.js'), require('./overlay_manager.js'));
+    factory(exports, require('./app.js'), require('./overlay_manager.js'),
+      require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebChromeCom = {}), root.pdfjsWebApp,
-      root.pdfjsWebOverlayManager);
+      root.pdfjsWebOverlayManager, root.pdfjsWebPDFJS);
   }
-}(this, function (exports, app, overlayManager) {
+}(this, function (exports, app, overlayManager, pdfjsLib) {
 //#if CHROME
 //#if !CHROME
   if (true) { return; } // TODO ensure nothing depends on this module.

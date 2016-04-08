@@ -12,29 +12,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*jshint globalstrict: false */
+/* jshint globalstrict: false */
+/* umdutils ignore */
 
-(function pdfViewerWrapper() {
+(function (root, factory) {
+  'use strict';
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-dist/web/pdf.components', ['exports', 'pdfjs-dist/build/pdf'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../build/pdf.js'));
+  } else {
+    factory((root.pdfjsDistWebPDFComponents = {}), root.pdfjsDistBuildPdf);
+  }
+}(this, function (exports, pdfjsLib) {
   'use strict';
 
-  var root = this;
-  if (!root.pdfjsLib) {
-    Object.defineProperty(root, 'pdfjsLib', {
-      get: function () {
-        return root.pdfjsDistBuildPdf || root.pdfjsDistBuildPdfCombined ||
-               root.pdfjsMainLoader;
-      },
-      enumerable: true,
-      configurable: true
-    });
-  }
+  var pdfViewerLibs = {
+    pdfjsWebPDFJS: pdfjsLib
+  };
 
-  var pdfViewerLibs = {};
   (function () {
 //#expand __BUNDLE__
   }).call(pdfViewerLibs);
 
-  var PDFJS = window.PDFJS || (window.PDFJS = {});
+  var PDFJS = pdfjsLib.PDFJS;
 
   PDFJS.PDFViewer = pdfViewerLibs.pdfjsWebPDFViewer.PDFViewer;
   PDFJS.PDFPageView = pdfViewerLibs.pdfjsWebPDFPageView.PDFPageView;
@@ -51,4 +53,6 @@
 
   PDFJS.DownloadManager = pdfViewerLibs.pdfjsWebDownloadManager.DownloadManager;
   PDFJS.ProgressBar = pdfViewerLibs.pdfjsWebUIUtils.ProgressBar;
-}).call((typeof window === 'undefined') ? this : window);
+
+  exports.PDFJS = PDFJS;
+}));

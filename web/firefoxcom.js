@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib */
 
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/firefoxcom', ['exports', 'pdfjs-web/preferences'],
-      factory);
+    define('pdfjs-web/firefoxcom', ['exports', 'pdfjs-web/preferences',
+      'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./preferences.js'));
+    factory(exports, require('./preferences.js'), require('./pdfjs.js'));
   } else {
-    factory((root.pdfjsWebFirefoxCom = {}), root.pdfjsWebPreferences);
+    factory((root.pdfjsWebFirefoxCom = {}), root.pdfjsWebPreferences,
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, preferences) {
+}(this, function (exports, preferences, pdfjsLib) {
 //#if FIREFOX || MOZCENTRAL
 //#if !(FIREFOX || MOZCENTRAL)
   if (true) { return; }  // TODO ensure nothing depends on this module.
