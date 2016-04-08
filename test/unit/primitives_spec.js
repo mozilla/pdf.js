@@ -16,7 +16,7 @@ describe('primitives', function() {
   describe('Cmd', function() {
     it('should retain the given cmd name', function() {
       var givenCmd = 'BT';
-      var cmd = new Cmd(givenCmd);
+      var cmd = Cmd.get(givenCmd);
       expect(cmd.cmd).toEqual(givenCmd);
     });
 
