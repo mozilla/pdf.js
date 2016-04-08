@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 /*jshint globalstrict: false */
-/* globals PDFJS, PDFViewer, PDFPageView, TextLayerBuilder, PDFLinkService,
-           DefaultTextLayerFactory, AnnotationLayerBuilder, PDFHistory,
-           DefaultAnnotationLayerFactory, DownloadManager, ProgressBar */
 
 (function pdfViewerWrapper() {
   'use strict';
@@ -32,21 +29,26 @@
     });
   }
 
-//#include ui_utils.js
-//#include pdf_link_service.js
-//#include pdf_viewer.js
-//#include pdf_history.js
-//#include download_manager.js
+  var pdfViewerLibs = {};
+  (function () {
+//#expand __BUNDLE__
+  }).call(pdfViewerLibs);
 
-  PDFJS.PDFViewer = PDFViewer;
-  PDFJS.PDFPageView = PDFPageView;
-  PDFJS.PDFLinkService = PDFLinkService;
-  PDFJS.TextLayerBuilder = TextLayerBuilder;
-  PDFJS.DefaultTextLayerFactory = DefaultTextLayerFactory;
-  PDFJS.AnnotationLayerBuilder = AnnotationLayerBuilder;
-  PDFJS.DefaultAnnotationLayerFactory = DefaultAnnotationLayerFactory;
-  PDFJS.PDFHistory = PDFHistory;
+  var PDFJS = window.PDFJS || (window.PDFJS = {});
 
-  PDFJS.DownloadManager = DownloadManager;
-  PDFJS.ProgressBar = ProgressBar;
+  PDFJS.PDFViewer = pdfViewerLibs.pdfjsWebPDFViewer.PDFViewer;
+  PDFJS.PDFPageView = pdfViewerLibs.pdfjsWebPDFPageView.PDFPageView;
+  PDFJS.PDFLinkService = pdfViewerLibs.pdfjsWebPDFLinkService.PDFLinkService;
+  PDFJS.TextLayerBuilder =
+    pdfViewerLibs.pdfjsWebTextLayerBuilder.TextLayerBuilder;
+  PDFJS.DefaultTextLayerFactory =
+    pdfViewerLibs.pdfjsWebTextLayerBuilder.DefaultTextLayerFactory;
+  PDFJS.AnnotationLayerBuilder =
+    pdfViewerLibs.pdfjsWebAnnotationLayerBuilder.AnnotationLayerBuilder;
+  PDFJS.DefaultAnnotationLayerFactory =
+    pdfViewerLibs.pdfjsWebAnnotationLayerBuilder.DefaultAnnotationLayerFactory;
+  PDFJS.PDFHistory = pdfViewerLibs.pdfjsWebPDFHistory.PDFHistory;
+
+  PDFJS.DownloadManager = pdfViewerLibs.pdfjsWebDownloadManager.DownloadManager;
+  PDFJS.ProgressBar = pdfViewerLibs.pdfjsWebUIUtils.ProgressBar;
 }).call((typeof window === 'undefined') ? this : window);

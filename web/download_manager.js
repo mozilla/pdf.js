@@ -12,12 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals URL, pdfjsLib */
+/* globals pdfjsLib */
 
 'use strict';
 
-var DownloadManager = (function DownloadManagerClosure() {
-
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/download_manager', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebDownloadManager = {}));
+  }
+}(this, function (exports) {
+//#if GENERIC || CHROME
   function download(blobUrl, filename) {
     var a = document.createElement('a');
     if (a.click) {
@@ -97,5 +105,6 @@ var DownloadManager = (function DownloadManagerClosure() {
     }
   };
 
-  return DownloadManager;
-})();
+  exports.DownloadManager = DownloadManager;
+//#endif
+}));

@@ -71,7 +71,7 @@ var isPostMessageTransfersDisabled = false;
 
 //#if PRODUCTION && !SINGLE_FILE
 //#if GENERIC
-//#include ../src/frameworks.js
+//#include $ROOT/src/frameworks.js
 //#else
 //var fakeWorkerFilesLoader = null;
 //#endif

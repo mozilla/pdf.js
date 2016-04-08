@@ -12,17 +12,91 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib, PDFBug, FirefoxCom, Stats, ProgressBar, DownloadManager,
-           getPDFFileNameFromURL, PDFHistory, Preferences, SidebarView,
-           ViewHistory, Stats, PDFThumbnailViewer, URL, noContextMenuHandler,
-           SecondaryToolbar, PasswordPrompt, PDFPresentationMode, PDFSidebar,
-           PDFDocumentProperties, HandTool, Promise, PDFLinkService,
-           PDFOutlineViewer, PDFAttachmentViewer, OverlayManager,
-           PDFFindController, PDFFindBar, PDFViewer, PDFRenderingQueue,
-           PresentationModeState, parseQueryString, RenderingStates,
-           UNKNOWN_SCALE, DEFAULT_SCALE_VALUE, DEFAULT_URL, mozL10n */
+/* globals DEFAULT_URL, pdfjsLib, PDFBug, Stats */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/app', ['exports', 'pdfjs-web/ui_utils',
+      'pdfjs-web/firefoxcom', 'pdfjs-web/download_manager',
+      'pdfjs-web/pdf_history', 'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
+      'pdfjs-web/view_history', 'pdfjs-web/pdf_thumbnail_viewer',
+      'pdfjs-web/secondary_toolbar', 'pdfjs-web/password_prompt',
+      'pdfjs-web/pdf_presentation_mode', 'pdfjs-web/pdf_document_properties',
+      'pdfjs-web/hand_tool', 'pdfjs-web/pdf_viewer',
+      'pdfjs-web/pdf_rendering_queue', 'pdfjs-web/pdf_link_service',
+      'pdfjs-web/pdf_outline_viewer', 'pdfjs-web/overlay_manager',
+      'pdfjs-web/pdf_attachment_viewer', 'pdfjs-web/pdf_find_controller',
+      'pdfjs-web/pdf_find_bar', 'pdfjs-web/mozPrintCallback_polyfill'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'), require('./firefoxcom.js'),
+      require('./download_manager.js'), require('./pdf_history.js'),
+      require('./preferences.js'), require('./pdf_sidebar.js'),
+      require('./view_history.js'), require('./pdf_thumbnail_viewer.js'),
+      require('./secondary_toolbar.js'), require('./password_prompt.js'),
+      require('./pdf_presentation_mode.js'),
+      require('./pdf_document_properties.js'), require('./hand_tool.js'),
+      require('./pdf_viewer.js'), require('./pdf_rendering_queue.js'),
+      require('./pdf_link_service.js'), require('./pdf_outline_viewer.js'),
+      require('./overlay_manager.js'), require('./pdf_attachment_viewer.js'),
+      require('./pdf_find_controller.js'), require('./pdf_find_bar.js'),
+      require('./mozPrintCallback_polyfill.js'));
+  } else {
+    factory((root.pdfjsWebApp = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebFirefoxCom, root.pdfjsWebDownloadManager,
+      root.pdfjsWebPDFHistory, root.pdfjsWebPreferences,
+      root.pdfjsWebPDFSidebar, root.pdfjsWebViewHistory,
+      root.pdfjsWebPDFThumbnailViewer, root.pdfjsWebSecondaryToolbar,
+      root.pdfjsWebPasswordPrompt, root.pdfjsWebPDFPresentationMode,
+      root.pdfjsWebPDFDocumentProperties, root.pdfjsWebHandTool,
+      root.pdfjsWebPDFViewer, root.pdfjsWebPDFRenderingQueue,
+      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFOutlineViewer,
+      root.pdfjsWebOverlayManager, root.pdfjsWebPDFAttachmentViewer,
+      root.pdfjsWebPDFFindController, root.pdfjsWebPDFFindBar,
+      root.pdfjsWebMozPrintCallbackPolyfill);
+  }
+}(this, function (exports, uiUtilsLib, firefoxComLib, downloadManagerLib,
+                  pdfHistoryLib, preferencesLib, pdfSidebarLib, viewHistoryLib,
+                  pdfThumbnailViewerLib, secondaryToolbarLib, passwordPromptLib,
+                  pdfPresentationModeLib, pdfDocumentPropertiesLib, handToolLib,
+                  pdfViewerLib, pdfRenderingQueueLib, pdfLinkServiceLib,
+                  pdfOutlineViewerLib, overlayManagerLib,
+                  pdfAttachmentViewerLib, pdfFindControllerLib, pdfFindBarLib,
+                  mozPrintCallbackPolyfillLib) {
+
+var FirefoxCom = firefoxComLib.FirefoxCom;
+var UNKNOWN_SCALE = uiUtilsLib.UNKNOWN_SCALE;
+var DEFAULT_SCALE_VALUE = uiUtilsLib.DEFAULT_SCALE_VALUE;
+var ProgressBar = uiUtilsLib.ProgressBar;
+var getPDFFileNameFromURL = uiUtilsLib.getPDFFileNameFromURL;
+var noContextMenuHandler = uiUtilsLib.noContextMenuHandler;
+var mozL10n = uiUtilsLib.mozL10n;
+var parseQueryString = uiUtilsLib.parseQueryString;
+var DownloadManager = downloadManagerLib.DownloadManager ||
+                      firefoxComLib.DownloadManager;
+var PDFHistory = pdfHistoryLib.PDFHistory;
+var Preferences = preferencesLib.Preferences;
+var SidebarView = pdfSidebarLib.SidebarView;
+var PDFSidebar = pdfSidebarLib.PDFSidebar;
+var ViewHistory = viewHistoryLib.ViewHistory;
+var PDFThumbnailViewer = pdfThumbnailViewerLib.PDFThumbnailViewer;
+var SecondaryToolbar = secondaryToolbarLib.SecondaryToolbar;
+var PasswordPrompt = passwordPromptLib.PasswordPrompt;
+var PDFPresentationMode = pdfPresentationModeLib.PDFPresentationMode;
+var PDFDocumentProperties = pdfDocumentPropertiesLib.PDFDocumentProperties;
+var HandTool = handToolLib.HandTool;
+var PresentationModeState = pdfViewerLib.PresentationModeState;
+var PDFViewer = pdfViewerLib.PDFViewer;
+var RenderingStates = pdfRenderingQueueLib.RenderingStates;
+var PDFRenderingQueue = pdfRenderingQueueLib.PDFRenderingQueue;
+var PDFLinkService = pdfLinkServiceLib.PDFLinkService;
+var PDFOutlineViewer = pdfOutlineViewerLib.PDFOutlineViewer;
+var OverlayManager = overlayManagerLib.OverlayManager;
+var PDFAttachmentViewer = pdfAttachmentViewerLib.PDFAttachmentViewer;
+var PDFFindController = pdfFindControllerLib.PDFFindController;
+var PDFFindBar = pdfFindBarLib.PDFFindBar;
 
 var DEFAULT_SCALE_DELTA = 1.1;
 var MIN_SCALE = 0.25;
@@ -46,26 +120,6 @@ function configure(PDFJS) {
 //PDFJS.cMapPacked = true;
 //#endif
 }
-
-//#include ui_utils.js
-//#include preferences.js
-//#include platform_integration.js
-//#include view_history.js
-//#include pdf_find_bar.js
-//#include pdf_find_controller.js
-//#include pdf_link_service.js
-//#include pdf_history.js
-//#include secondary_toolbar.js
-//#include pdf_presentation_mode.js
-//#include hand_tool.js
-//#include overlay_manager.js
-//#include password_prompt.js
-//#include pdf_document_properties.js
-//#include pdf_viewer.js
-//#include pdf_thumbnail_viewer.js
-//#include pdf_sidebar.js
-//#include pdf_outline_viewer.js
-//#include pdf_attachment_viewer.js
 
 var PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
@@ -2144,3 +2198,10 @@ window.addEventListener('afterprint', function afterPrint(evt) {
     window.requestAnimationFrame(resolve);
   });
 })();
+
+exports.PDFViewerApplication = PDFViewerApplication;
+
+// TODO remove circular reference of pdfjs-web/secondary_toolbar on app.
+secondaryToolbarLib._setApp(exports);
+
+}));

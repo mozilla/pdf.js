@@ -16,7 +16,15 @@
 
 'use strict';
 
-var GrabToPan = (function GrabToPanClosure() {
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/grab_to_pan', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebGrabToPan = {}));
+  }
+}(this, function (exports) {
   /**
    * Construct a GrabToPan instance for a given HTML element.
    * @param options.element {Element}
@@ -217,5 +225,5 @@ var GrabToPan = (function GrabToPanClosure() {
     }
   }
 
-  return GrabToPan;
-})();
+  exports.GrabToPan = GrabToPan;
+}));

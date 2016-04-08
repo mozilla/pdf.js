@@ -36,6 +36,7 @@ var config = JSON.parse(fs.readFileSync(CONFIG_FILE));
 
 // Defined by buildnumber target.
 var BUILD_NUMBER,
+    BUILD_COMMIT,
     VERSION;
 
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
@@ -100,8 +101,7 @@ var COMMON_WEB_FILES =
       ['web/images',
        'web/debugger.js'],
     COMMON_WEB_FILES_PREPROCESS =
-      ['web/viewer.js',
-       'web/viewer.html'],
+      ['web/viewer.html'],
     COMMON_FIREFOX_FILES_PREPROCESS =
       [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
        FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm',
@@ -127,6 +127,13 @@ target.generic = function() {
 
   var defines = builder.merge(DEFINES, {GENERIC: true});
 
+  var TMP_VIEWER = GENERIC_DIR + '/web/viewer.js.tmp';
+  cd('web/');
+  var viewerBundleFiles = ['app.js'];
+  bundle('viewer.js', ROOT_DIR + TMP_VIEWER,  viewerBundleFiles,
+    'pdfjs-dist/web/viewer', defines, true);
+  cd(ROOT_DIR);
+
   var setup = {
     defines: defines,
     copy: [
@@ -140,6 +147,7 @@ target.generic = function() {
     ],
     preprocess: [
       [BUILD_TARGETS, GENERIC_DIR + BUILD_DIR],
+      [TMP_VIEWER, GENERIC_DIR + '/web/viewer.js'],
       [COMMON_WEB_FILES_PREPROCESS, GENERIC_DIR + '/web']
     ],
     preprocessCSS: [
@@ -152,6 +160,7 @@ target.generic = function() {
   cleanupJSSource(GENERIC_DIR + '/build/pdf.js');
   cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
   cleanupCSSSource(GENERIC_DIR + '/web/viewer.css');
+  rm(TMP_VIEWER);
 };
 
 target.components = function() {
@@ -163,7 +172,18 @@ target.components = function() {
   mkdir('-p', COMPONENTS_DIR);
   mkdir('-p', COMPONENTS_DIR + 'images');
 
-  var defines = builder.merge(DEFINES, {COMPONENTS: true});
+  var defines = builder.merge(DEFINES, {COMPONENTS: true, GENERIC: true});
+
+  var TMP_PDF_VIEWER = COMPONENTS_DIR + 'pdf_viewer.js.tmp';
+  cd('web/');
+  var bundleFiles = [
+    'pdf_viewer.js',
+    'pdf_history.js',
+    'download_manager.js'
+  ];
+  bundle('pdf_viewer.component.js', ROOT_DIR + TMP_PDF_VIEWER, bundleFiles,
+    'pdfjs-dist/web/pdf_viewer', defines, true);
+  cd(ROOT_DIR);
 
   var COMPONENTS_IMAGES = [
     'web/images/annotation-*.svg',
@@ -179,7 +199,7 @@ target.components = function() {
       ['web/compatibility.js', COMPONENTS_DIR],
     ],
     preprocess: [
-      ['web/pdf_viewer.component.js', COMPONENTS_DIR + 'pdf_viewer.js'],
+      [TMP_PDF_VIEWER, COMPONENTS_DIR + 'pdf_viewer.js'],
     ],
     preprocessCSS: [
       ['components', 'web/pdf_viewer.css', COMPONENTS_DIR + 'pdf_viewer.css'],
@@ -189,6 +209,7 @@ target.components = function() {
 
   cleanupJSSource(COMPONENTS_DIR + 'pdf_viewer.js');
   cleanupCSSSource(COMPONENTS_DIR + 'pdf_viewer.css');
+  rm(TMP_PDF_VIEWER);
 };
 
 target.jsdoc = function() {
@@ -477,6 +498,46 @@ target.cmaps = function () {
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
 };
 
+function bundle(filename, outfilename, initFiles, amdName, defines,
+                isMainFile) {
+  // Reading UMD headers and building loading orders of modules. The
+  // readDependencies returns AMD module names: removing 'pdfjs' prefix and
+  // adding '.js' extensions to the name.
+  var umd = require('./external/umdutils/verifier.js');
+  var files = umd.readDependencies(initFiles).loadOrder.map(
+    function (name) { return name.replace(/^[\w\-]+\//, '') + '.js'; });
+
+  crlfchecker.checkIfCrlfIsPresent(files);
+
+  var bundleContent = cat(files),
+      bundleVersion = VERSION,
+      bundleBuild = BUILD_COMMIT;
+
+  // Prepend a newline because stripCommentHeaders only strips comments that
+  // follow a line feed. The file where bundleContent is inserted already
+  // contains a license header, so the header of bundleContent can be removed.
+  bundleContent = stripCommentHeaders('\n' + bundleContent);
+
+  // Removes AMD and CommonJS branches from UMD headers.
+  bundleContent = stripUMDHeaders(bundleContent);
+
+  var jsName = amdName.replace(/[\-_\.\/]\w/g, function (all) {
+    return all[1].toUpperCase();
+  });
+
+  // This just preprocesses the empty pdf.js file, we don't actually want to
+  // preprocess everything yet since other build targets use this file.
+  builder.preprocess(filename, outfilename,
+    builder.merge(defines, {
+      BUNDLE: bundleContent,
+      BUNDLE_VERSION: bundleVersion,
+      BUNDLE_BUILD: bundleBuild,
+      BUNDLE_AMD_NAME: amdName,
+      BUNDLE_JS_NAME: jsName,
+      MAIN_FILE: isMainFile
+    }));
+}
+
 //
 // make bundle
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
@@ -491,86 +552,45 @@ target.bundle = function(args) {
   echo();
   echo('### Bundling files into ' + BUILD_TARGET);
 
-  function bundle(filename, outfilename, files, distname, isMainFile) {
-    var bundleContent = cat(files),
-        bundleVersion = VERSION,
-        bundleBuild = exec('git log --format="%h" -n 1',
-          {silent: true}).output.replace('\n', '');
-
-    crlfchecker.checkIfCrlfIsPresent(files);
-
-    // Prepend a newline because stripCommentHeaders only strips comments that
-    // follow a line feed. The file where bundleContent is inserted already
-    // contains a license header, so the header of bundleContent can be removed.
-    bundleContent = stripCommentHeaders('\n' + bundleContent);
-
-    // Removes AMD and CommonJS branches from UMD headers.
-    bundleContent = stripUMDHeaders(bundleContent);
-
-    var amdName = 'pdfjs-dist/build/' + distname.replace(/\.js$/, '');
-    var jsName = amdName.replace(/[\-_\.\/]\w/g, function (all) {
-      return all[1].toUpperCase();
-    });
-    // This just preprocesses the empty pdf.js file, we don't actually want to
-    // preprocess everything yet since other build targets use this file.
-    builder.preprocess(filename, outfilename, builder.merge(defines,
-                           {BUNDLE: bundleContent,
-                            BUNDLE_VERSION: bundleVersion,
-                            BUNDLE_BUILD: bundleBuild,
-                            BUNDLE_AMD_NAME: amdName,
-                            BUNDLE_JS_NAME: jsName,
-                            MAIN_FILE: isMainFile}));
-  }
-
   if (!test('-d', BUILD_DIR)) {
     mkdir(BUILD_DIR);
   }
 
-  var umd = require('./external/umdutils/verifier.js');
-  var MAIN_SRC_FILES = [
-    SRC_DIR + 'display/global.js'
+  var mainFiles = [
+    'display/global.js'
   ];
 
-  var WORKER_SRC_FILES = [
-    SRC_DIR + 'core/worker.js'
+  var workerFiles = [
+    'core/worker.js'
   ];
 
-  var mainFileName = 'pdf.js';
-  var workerFileName = 'pdf.worker.js';
+  var mainAMDName = 'pdfjs-dist/build/pdf';
+  var workerAMDName = 'pdfjs-dist/build/pdf.worker';
 
   // Extension does not need network.js file.
   if (!defines.FIREFOX && !defines.MOZCENTRAL) {
-    WORKER_SRC_FILES.push(SRC_DIR + 'core/network.js');
+    workerFiles.push('core/network.js');
   }
 
   if (defines.SINGLE_FILE) {
     // In singlefile mode, all of the src files will be bundled into
     // the main pdf.js output.
-    MAIN_SRC_FILES = MAIN_SRC_FILES.concat(WORKER_SRC_FILES);
-    WORKER_SRC_FILES = null; // no need for worker file
-    mainFileName = 'pdf.combined.js';
-    workerFileName = null;
+    mainFiles = mainFiles.concat(workerFiles);
+    workerFiles = null; // no need for worker file
+    mainAMDName = 'pdfjs-dist/build/pdf.combined';
+    workerAMDName = null;
   }
-
-  // Reading UMD headers and building loading orders of modules. The
-  // readDependencies returns AMD module names: removing 'pdfjs' prefix and
-  // adding '.js' extensions to the name.
-  var mainFiles = umd.readDependencies(MAIN_SRC_FILES).loadOrder.map(
-    function (name) { return name.replace('pdfjs/', '') + '.js'; });
-
-  var workerFiles = WORKER_SRC_FILES &&
-                    umd.readDependencies(WORKER_SRC_FILES).loadOrder.map(
-    function (name) { return name.replace('pdfjs/', '') + '.js'; });
 
   cd(SRC_DIR);
 
-  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles, mainFileName, true);
+  bundle('pdf.js', ROOT_DIR + BUILD_TARGET, mainFiles, mainAMDName, defines,
+         true);
 
   if (workerFiles) {
     var srcCopy = ROOT_DIR + BUILD_DIR + 'pdf.worker.js.temp';
     cp('pdf.js', srcCopy);
-    bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, workerFiles,
-           workerFileName, false);
+    bundle(srcCopy, ROOT_DIR + BUILD_WORKER_TARGET, workerFiles, workerAMDName,
+           defines, false);
     rm(srcCopy);
   }
 };
@@ -674,6 +694,13 @@ target.minified = function() {
 
   var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
 
+  var TMP_VIEWER = MINIFIED_DIR + '/web/viewer.js.tmp';
+  cd('web/');
+  var viewerBundleFiles = ['app.js'];
+  bundle('viewer.js', ROOT_DIR + TMP_VIEWER, viewerBundleFiles,
+    'pdfjs-dist/web/viewer', defines, true);
+  cd(ROOT_DIR);
+
   var setup = {
     defines: defines,
     copy: [
@@ -684,6 +711,7 @@ target.minified = function() {
     ],
     preprocess: [
       [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
+      [TMP_VIEWER, MINIFIED_DIR + '/web/viewer.js'],
       [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + '/web']
     ],
     preprocessCSS: [
@@ -694,6 +722,7 @@ target.minified = function() {
   builder.build(setup);
 
   cleanupCSSSource(MINIFIED_DIR + '/web/viewer.css');
+  rm(TMP_VIEWER);
 
   var viewerFiles = [
     'web/compatibility.js',
@@ -760,6 +789,9 @@ target.buildnumber = function() {
   echo('Extension build number: ' + BUILD_NUMBER);
 
   VERSION = config.versionPrefix + BUILD_NUMBER;
+
+  BUILD_COMMIT = exec('git log --format="%h" -n 1',  {silent: true}).
+    output.replace('\n', '');
 };
 
 //
@@ -817,6 +849,14 @@ target.firefox = function() {
   cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + FIREFOX_BUILD_DIR);
   cd(ROOT_DIR);
 
+  var TMP_VIEWER = FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js.tmp';
+  cd('web/');
+  var viewerBundleFiles = ['app.js', 'firefoxcom.js'];
+  bundle('viewer.js', ROOT_DIR + TMP_VIEWER, viewerBundleFiles,
+    'pdfjs-dist/web/viewer', defines, true);
+  cd(ROOT_DIR);
+
+
   var setup = {
     defines: defines,
     copy: [
@@ -827,6 +867,7 @@ target.firefox = function() {
        FIREFOX_BUILD_CONTENT_DIR + '/web']
     ],
     preprocess: [
+      [TMP_VIEWER, FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js'],
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       [BUILD_TARGETS, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR],
       [COMMON_FIREFOX_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR],
@@ -844,6 +885,7 @@ target.firefox = function() {
   cleanupJSSource(FIREFOX_BUILD_DIR + 'bootstrap.js');
   cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
   cleanupCSSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.css');
+  rm(TMP_VIEWER);
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -944,6 +986,13 @@ target.mozcentral = function() {
            ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest');
   cd(ROOT_DIR);
 
+  var TMP_VIEWER = MOZCENTRAL_CONTENT_DIR + '/web/viewer.js.tmp';
+  cd('web/');
+  var viewerBundleFiles = ['app.js', 'firefoxcom.js'];
+  bundle('viewer.js', ROOT_DIR + TMP_VIEWER, viewerBundleFiles,
+    'pdfjs-dist/web/viewer', defines, true);
+  cd(ROOT_DIR);
+
   var setup = {
     defines: defines,
     copy: [
@@ -952,6 +1001,7 @@ target.mozcentral = function() {
       ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web']
     ],
     preprocess: [
+      [TMP_VIEWER, MOZCENTRAL_CONTENT_DIR + '/web/viewer.js'],
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
       [FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap.js', MOZCENTRAL_CONTENT_DIR],
       [BUILD_TARGETS, MOZCENTRAL_CONTENT_DIR + BUILD_DIR],
@@ -971,6 +1021,7 @@ target.mozcentral = function() {
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfJs.jsm');
   cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfjsChromeUtils.jsm');
   cleanupCSSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.css');
+  rm(TMP_VIEWER);
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
@@ -1076,6 +1127,13 @@ target.chromium = function() {
   mkdir('-p', CHROME_BUILD_CONTENT_DIR + BUILD_DIR);
   mkdir('-p', CHROME_BUILD_CONTENT_DIR + '/web');
 
+  var TMP_VIEWER = CHROME_BUILD_CONTENT_DIR + '/web/viewer.js.tmp';
+  cd('web/');
+  var viewerBundleFiles = ['app.js', 'chromecom.js'];
+  bundle('viewer.js', ROOT_DIR + TMP_VIEWER, viewerBundleFiles,
+    'pdfjs-dist/web/viewer', defines, true);
+  cd(ROOT_DIR);
+
   var setup = {
     defines: defines,
     copy: [
@@ -1094,6 +1152,7 @@ target.chromium = function() {
     ],
     preprocess: [
       [BUILD_TARGETS, CHROME_BUILD_CONTENT_DIR + BUILD_DIR],
+      [TMP_VIEWER, CHROME_BUILD_CONTENT_DIR + '/web/viewer.js'],
       [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
     ],
     preprocessCSS: [
@@ -1105,6 +1164,7 @@ target.chromium = function() {
 
   cleanupJSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.js');
   cleanupCSSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.css');
+  rm(TMP_VIEWER);
 
   // Update the build version number
   sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
@@ -1506,7 +1566,7 @@ target.lint = function() {
   echo();
   echo('### Checking UMD dependencies');
   var umd = require('./external/umdutils/verifier.js');
-  if (!umd.validateFiles({'pdfjs': './src'})) {
+  if (!umd.validateFiles({'pdfjs': './src', 'pdfjs-web': './web'})) {
     exit(1);
   }
 

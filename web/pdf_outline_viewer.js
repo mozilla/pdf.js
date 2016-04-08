@@ -16,6 +16,16 @@
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_outline_viewer', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebPDFOutlineViewer = {}));
+  }
+}(this, function (exports) {
+
 var DEFAULT_TITLE = '\u2013';
 
 /**
@@ -210,3 +220,6 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
 
   return PDFOutlineViewer;
 })();
+
+exports.PDFOutlineViewer = PDFOutlineViewer;
+}));

@@ -15,6 +15,16 @@
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_presentation_mode', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebPDFPresentationMode = {}));
+  }
+}(this, function (exports) {
+
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
 var ACTIVE_SELECTOR = 'pdfPresentationMode';
@@ -389,3 +399,6 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
 
   return PDFPresentationMode;
 })();
+
+exports.PDFPresentationMode = PDFPresentationMode;
+}));

@@ -12,21 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals require, parseQueryString, chrome, PDFViewerApplication */
+/*globals require, chrome */
 
 'use strict';
 
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
-//#include app.js
+var pdfjsWebLibs = {};
+(function () {
+//#expand __BUNDLE__
+}).call(pdfjsWebLibs);
+
+//#if FIREFOX || MOZCENTRAL
+//// FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
+//window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
+//#endif
 
 //#if CHROME
 //(function rewriteUrlClosure() {
 //  // Run this code outside DOMContentLoaded to make sure that the URL
 //  // is rewritten as soon as possible.
 //  var queryString = document.location.search.slice(1);
-//  var params = parseQueryString(queryString);
-//  DEFAULT_URL = params.file || '';
+//  var m = /(^|&)file=([^&]*)/.exec(queryString);
+//  DEFAULT_URL = m ? decodeURIComponent(m[2]) : '';
 //
 //  // Example: chrome-extension://.../http://example.com/file.pdf
 //  var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
@@ -39,14 +47,16 @@ var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
 function webViewerLoad() {
 //#if !PRODUCTION
-  require.config({paths: {'pdfjs': '../src'}});
-  require(['pdfjs/main_loader'], function (loader) {
+  require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
+  require(['pdfjs/main_loader', 'pdfjs-web/app'], function (loader, web) {
     window.pdfjsLib = loader;
-    PDFViewerApplication.run();
+    window.PDFViewerApplication = web.PDFViewerApplication;
+    web.PDFViewerApplication.run();
   });
 //#else
 //window.pdfjsLib = window.pdfjsDistBuildPdf;
-//PDFViewerApplication.run();
+//window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
+//pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication.run();
 //#endif
 }
 

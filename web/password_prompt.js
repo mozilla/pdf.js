@@ -12,9 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib, mozL10n, OverlayManager */
+/* globals pdfjsLib */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/password_prompt', ['exports',
+      'pdfjs-web/ui_utils', 'pdfjs-web/overlay_manager'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'), require('./overlay_manager.js'));
+  } else {
+    factory((root.pdfjsWebPasswordPrompt = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebOverlayManager);
+  }
+}(this, function (exports, uiUtils, overlayManager) {
+
+var mozL10n = uiUtils.mozL10n;
+var OverlayManager = overlayManager.OverlayManager;
 
 var PasswordPrompt = {
   overlayName: null,
@@ -79,3 +94,6 @@ var PasswordPrompt = {
     }
   }
 };
+
+exports.PasswordPrompt = PasswordPrompt;
+}));

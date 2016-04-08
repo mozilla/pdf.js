@@ -16,6 +16,16 @@
 
 'use strict';
 
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_attachment_viewer', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebPDFAttachmentViewer = {}));
+  }
+}(this, function (exports) {
+
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
@@ -114,3 +124,6 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
 
   return PDFAttachmentViewer;
 })();
+
+exports.PDFAttachmentViewer = PDFAttachmentViewer;
+}));

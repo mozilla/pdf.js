@@ -12,14 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals watchScroll, getVisibleElements, scrollIntoView, PDFThumbnailView,
-           Promise */
 
 'use strict';
 
-var THUMBNAIL_SCROLL_MARGIN = -19;
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_thumbnail_viewer', ['exports',
+      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_thumbnail_view'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'),
+      require('./pdf_thumbnail_view.js'));
+  } else {
+    factory((root.pdfjsWebPDFThumbnailViewer = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebPDFThumbnailView);
+  }
+}(this, function (exports, uiUtils, pdfThumbnailView) {
 
-//#include pdf_thumbnail_view.js
+var watchScroll = uiUtils.watchScroll;
+var getVisibleElements = uiUtils.getVisibleElements;
+var scrollIntoView = uiUtils.scrollIntoView;
+var PDFThumbnailView = pdfThumbnailView.PDFThumbnailView;
+
+var THUMBNAIL_SCROLL_MARGIN = -19;
 
 /**
  * @typedef {Object} PDFThumbnailViewerOptions
@@ -196,3 +210,6 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
 
   return PDFThumbnailViewer;
 })();
+
+exports.PDFThumbnailViewer = PDFThumbnailViewer;
+}));

@@ -12,9 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Preferences, pdfjsLib, Promise */
+/* globals pdfjsLib */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/firefoxcom', ['exports', 'pdfjs-web/preferences'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./preferences.js'));
+  } else {
+    factory((root.pdfjsWebFirefoxCom = {}), root.pdfjsWebPreferences);
+  }
+}(this, function (exports, preferences) {
+//#if FIREFOX || MOZCENTRAL
+//#if !(FIREFOX || MOZCENTRAL)
+  if (true) { return; }  // TODO ensure nothing depends on this module.
+//#endif
+var Preferences = preferences.Preferences;
 
 var FirefoxCom = (function FirefoxComClosure() {
   return {
@@ -132,3 +148,8 @@ Preferences._readFromStorage = function (prefObj) {
     });
   });
 };
+
+exports.DownloadManager = DownloadManager;
+exports.FirefoxCom = FirefoxCom;
+//#endif
+}));
