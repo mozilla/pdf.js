@@ -456,15 +456,6 @@ var PDFPageView = (function PDFPageViewClosure() {
           cssTransform: false,
         });
         div.dispatchEvent(event);
-//#if GENERIC
-        // This custom event is deprecated, and will be removed in the future,
-        // please use the |pagerendered| event instead.
-        var deprecatedEvent = document.createEvent('CustomEvent');
-        deprecatedEvent.initCustomEvent('pagerender', true, true, {
-          pageNumber: pdfPage.pageNumber
-        });
-        div.dispatchEvent(deprecatedEvent);
-//#endif
 
         if (!error) {
           resolveRenderPromise(undefined);

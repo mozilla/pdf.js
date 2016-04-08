@@ -1285,9 +1285,6 @@ var PDFViewerApplication = {
     this.pdfPresentationMode.mouseScroll(delta);
   }
 };
-//#if GENERIC
-window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
-//#endif
 
 //#if GENERIC
 var HOSTED_VIEWER_ORIGINS = ['null',
