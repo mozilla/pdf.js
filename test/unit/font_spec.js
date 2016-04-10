@@ -1,33 +1,10 @@
 /* globals expect, it, describe, CFFCompiler, CFFParser, CFFIndex, CFFStrings,
-           Type1Parser, StringStream, SEAC_ANALYSIS_ENABLED */
+           Type1Parser, StringStream, SEAC_ANALYSIS_ENABLED, Stream, beforeAll,
+           afterAll */
 
 'use strict';
 
 describe('font', function() {
-  // This example font comes from the CFF spec:
-  // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
-  var exampleFont = '0100040100010101134142434445462b' +
-                    '54696d65732d526f6d616e000101011f' +
-                    'f81b00f81c02f81d03f819041c6f000d' +
-                    'fb3cfb6efa7cfa1605e911b8f1120003' +
-                    '01010813183030312e30303754696d65' +
-                    '7320526f6d616e54696d657300000002' +
-                    '010102030e0e7d99f92a99fb7695f773' +
-                    '8b06f79a93fc7c8c077d99f85695f75e' +
-                    '9908fb6e8cf87393f7108b09a70adf0b' +
-                    'f78e14';
-  var fontData = [];
-  for (var i = 0; i < exampleFont.length; i += 2) {
-    var hex = exampleFont.substr(i, 2);
-    fontData.push(parseInt(hex, 16));
-  }
-  var bytes = new Uint8Array(fontData);
-  fontData = {
-    getBytes: function() {
-      return bytes;
-    }
-  };
-
   function createWithNullProto(obj) {
     var result = Object.create(null);
     for (var i in obj) {
@@ -36,9 +13,46 @@ describe('font', function() {
     return result;
   }
 
+  var fontData;
+
+  beforeAll(function (done) {
+    // This example font comes from the CFF spec:
+    // http://www.adobe.com/content/dam/Adobe/en/devnet/font/pdfs/5176.CFF.pdf
+    var exampleFont = '0100040100010101134142434445462b' +
+                      '54696d65732d526f6d616e000101011f' +
+                      'f81b00f81c02f81d03f819041c6f000d' +
+                      'fb3cfb6efa7cfa1605e911b8f1120003' +
+                      '01010813183030312e30303754696d65' +
+                      '7320526f6d616e54696d657300000002' +
+                      '010102030e0e7d99f92a99fb7695f773' +
+                      '8b06f79a93fc7c8c077d99f85695f75e' +
+                      '9908fb6e8cf87393f7108b09a70adf0b' +
+                      'f78e14';
+    var fontArr = [];
+    for (var i = 0, ii = exampleFont.length; i < ii; i += 2) {
+      var hex = exampleFont.substr(i, 2);
+      fontArr.push(parseInt(hex, 16));
+    }
+    fontData = new Stream(fontArr);
+    done();
+  });
+
+  afterAll(function () {
+    fontData = null;
+  });
+
   describe('CFFParser', function() {
-    var parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
-    var cff = parser.parse();
+    var parser, cff;
+
+    beforeAll(function (done) {
+      parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
+      cff = parser.parse();
+      done();
+    });
+
+    afterAll(function () {
+      parser = cff = null;
+    });
 
     it('parses header', function() {
       var header = cff.header;
