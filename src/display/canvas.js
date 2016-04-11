@@ -432,7 +432,8 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.fillAlpha = 1;
     this.strokeAlpha = 1;
     this.lineWidth = 1;
-    this.activeSMask = null; // nonclonable field (see the save method below)
+    this.activeSMask = null;
+    this.resumeSMaskCtx = null; // nonclonable field (see the save method below)
 
     this.old = old;
   }
@@ -869,6 +870,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
 
     endDrawing: function CanvasGraphics_endDrawing() {
+      // Finishing all opened operations such as SMask group painting.
+      if (this.current.activeSMask !== null) {
+        this.endSMaskGroup();
+      }
+
       this.ctx.restore();
 
       if (this.transparentCanvas) {
@@ -977,7 +983,16 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             break;
           case 'SMask':
             if (this.current.activeSMask) {
-              this.endSMaskGroup();
+              // If SMask is currrenly used, it needs to be suspended or
+              // finished. Suspend only makes sense when at least one save()
+              // was performed and state needs to be reverted on restore().
+              if (this.stateStack.length > 0 &&
+                  (this.stateStack[this.stateStack.length - 1].activeSMask ===
+                   this.current.activeSMask)) {
+                this.suspendSMaskGroup();
+              } else {
+                this.endSMaskGroup();
+              }
             }
             this.current.activeSMask = value ? this.tempSMask : null;
             if (this.current.activeSMask) {
@@ -1006,6 +1021,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       groupCtx.translate(-activeSMask.offsetX, -activeSMask.offsetY);
       groupCtx.transform.apply(groupCtx, currentTransform);
 
+      activeSMask.startTransformInverse = groupCtx.mozCurrentTransformInverse;
+
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
@@ -1013,6 +1030,43 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ['ca', 1],
         ['CA', 1]
       ]);
+      this.groupStack.push(currentCtx);
+      this.groupLevel++;
+    },
+    suspendSMaskGroup: function CanvasGraphics_endSMaskGroup() {
+      // Similar to endSMaskGroup, the intermediate canvas has to be composed
+      // and future ctx state restored.
+      var groupCtx = this.ctx;
+      this.groupLevel--;
+      this.ctx = this.groupStack.pop();
+
+      composeSMask(this.ctx, this.current.activeSMask, groupCtx);
+      this.ctx.restore();
+      this.ctx.save(); // save is needed since SMask will be resumed.
+      copyCtxState(groupCtx, this.ctx);
+
+      // Saving state for resuming.
+      this.current.resumeSMaskCtx = groupCtx;
+      // Transform was changed in the SMask canvas, reflecting this change on
+      // this.ctx.
+      var deltaTransform = Util.transform(
+        this.current.activeSMask.startTransformInverse,
+        groupCtx.mozCurrentTransform);
+      this.ctx.transform.apply(this.ctx, deltaTransform);
+
+      // SMask was composed, the results at the groupCtx can be cleared.
+      groupCtx.save();
+      groupCtx.setTransform(1, 0, 0, 1, 0, 0);
+      groupCtx.clearRect(0, 0, groupCtx.canvas.width, groupCtx.canvas.height);
+      groupCtx.restore();
+    },
+    resumeSMaskGroup: function CanvasGraphics_endSMaskGroup() {
+      // Resuming state saved by suspendSMaskGroup. We don't need to restore
+      // any groupCtx state since restore() command (the only caller) will do
+      // that for us. See also beginSMaskGroup.
+      var groupCtx = this.current.resumeSMaskCtx;
+      var currentCtx = this.ctx;
+      this.ctx = groupCtx;
       this.groupStack.push(currentCtx);
       this.groupLevel++;
     },
@@ -1024,20 +1078,34 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       composeSMask(this.ctx, this.current.activeSMask, groupCtx);
       this.ctx.restore();
       copyCtxState(groupCtx, this.ctx);
+      // Transform was changed in the SMask canvas, reflecting this change on
+      // this.ctx.
+      var deltaTransform = Util.transform(
+        this.current.activeSMask.startTransformInverse,
+        groupCtx.mozCurrentTransform);
+      this.ctx.transform.apply(this.ctx, deltaTransform);
     },
     save: function CanvasGraphics_save() {
       this.ctx.save();
       var old = this.current;
       this.stateStack.push(old);
       this.current = old.clone();
-      this.current.activeSMask = null;
+      this.current.resumeSMaskCtx = null;
     },
     restore: function CanvasGraphics_restore() {
-      if (this.stateStack.length !== 0) {
-        if (this.current.activeSMask !== null) {
-          this.endSMaskGroup();
-        }
+      // SMask was suspended, we just need to resume it.
+      if (this.current.resumeSMaskCtx) {
+        this.resumeSMaskGroup();
+      }
+      // SMask has to be finished once there is no states that are using the
+      // same SMask.
+      if (this.current.activeSMask !== null && (this.stateStack.length === 0 ||
+          this.stateStack[this.stateStack.length - 1].activeSMask !==
+          this.current.activeSMask)) {
+        this.endSMaskGroup();
+      }
 
+      if (this.stateStack.length !== 0) {
         this.current = this.stateStack.pop();
         this.ctx.restore();
 
@@ -1825,7 +1893,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           scaleY: scaleY,
           subtype: group.smask.subtype,
           backdrop: group.smask.backdrop,
-          transferMap: group.smask.transferMap || null
+          transferMap: group.smask.transferMap || null,
+          startTransformInverse: null, // used during suspend operation
         });
       } else {
         // Setup the current ctx so when the group is popped we draw it at the
@@ -1845,6 +1914,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       ]);
       this.groupStack.push(currentCtx);
       this.groupLevel++;
+
+      // Reseting mask state, masks will be applied on restore of the group.
+      this.current.activeSMask = null;
     },
 
     endGroup: function CanvasGraphics_endGroup(group) {
