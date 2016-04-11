@@ -1,11 +1,11 @@
-/* globals expect, it, describe, combineUrl, PDFNetworkStream */
+/* globals expect, it, describe, PDFNetworkStream */
 
 'use strict';
 
 describe('network', function() {
-  var pdf1 = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+  var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
   var pdf1Length = 1016315;
-  var pdf2 = combineUrl(window.location.href, '../pdfs/pdf.pdf');
+  var pdf2 = new URL('../pdfs/pdf.pdf', window.location).href;
   var pdf2Length = 32472771;
 
   it('read without stream and range', function(done) {

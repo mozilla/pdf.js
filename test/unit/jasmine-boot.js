@@ -93,12 +93,6 @@ function initializePDFJS(callback) {
       // Configure the worker.
       displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
 
-      // Release describe() calls.
-      window.describe = oldDescribe;
-      describeQueue.forEach(function (args) {
-        oldDescribe.apply(window, args);
-      });
-
       callback();
     });
 }
@@ -204,9 +198,3 @@ function initializePDFJS(callback) {
   }
 }());
 
-// Hacking describe() to wait for PDFJS to be loaded, since Jasmine executes
-// it without waiting for libs to be loaded and fails to use PDFJS members.
-var oldDescribe = window.describe, describeQueue = [];
-window.describe = function () {
-  describeQueue.push(Array.prototype.slice.call(arguments, 0));
-};

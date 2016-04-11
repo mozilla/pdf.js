@@ -1,4 +1,4 @@
-/* globals PDFJS, expect, it, describe, Promise, combineUrl, beforeAll,
+/* globals PDFJS, expect, it, describe, Promise, beforeAll,
            InvalidPDFException, MissingPDFException, StreamType, FontType,
            PDFDocumentProxy, PasswordException, PasswordResponses, afterAll,
            PDFPageProxy, createPromiseCapability, beforeEach, afterEach */
@@ -6,7 +6,7 @@
 'use strict';
 
 describe('api', function() {
-  var basicApiUrl = combineUrl(window.location.href, '../pdfs/basicapi.pdf');
+  var basicApiUrl = new URL('../pdfs/basicapi.pdf', window.location).href;
   var basicApiFileLength = 105779; // bytes
 
   function waitSome(callback) {
@@ -114,7 +114,7 @@ describe('api', function() {
       });
       it('creates pdf doc from invalid PDF file', function(done) {
         // A severely corrupt PDF file (even Adobe Reader fails to open it).
-        var url = combineUrl(window.location.href, '../pdfs/bug1020226.pdf');
+        var url = new URL('../pdfs/bug1020226.pdf', window.location).href;
 
         var loadingTask = PDFJS.getDocument(url);
         loadingTask.promise.then(function () {
@@ -126,8 +126,8 @@ describe('api', function() {
         });
       });
       it('creates pdf doc from non-existent URL', function(done) {
-        var nonExistentUrl = combineUrl(window.location.href,
-                                        '../pdfs/non-existent.pdf');
+        var nonExistentUrl = new URL('../pdfs/non-existent.pdf',
+                                     window.location).href;
         var loadingTask = PDFJS.getDocument(nonExistentUrl);
         loadingTask.promise.then(function(error) {
           done.fail('shall fail loading');
@@ -139,7 +139,7 @@ describe('api', function() {
       });
       it('creates pdf doc from PDF file protected with user and owner password',
          function (done) {
-        var url = combineUrl(window.location.href, '../pdfs/pr6531_1.pdf');
+        var url = new URL('../pdfs/pr6531_1.pdf', window.location).href;
         var loadingTask = PDFJS.getDocument(url);
 
         var isPasswordNeededResolved = false;
@@ -185,7 +185,7 @@ describe('api', function() {
       });
       it('creates pdf doc from PDF file protected with only a user password',
          function (done) {
-        var url = combineUrl(window.location.href, '../pdfs/pr6531_2.pdf');
+        var url = new URL('../pdfs/pr6531_2.pdf', window.location).href;
 
         var passwordNeededLoadingTask = PDFJS.getDocument({
           url: url, password: '',
@@ -393,7 +393,7 @@ describe('api', function() {
     });
 
     it('gets destinations, from /Names (NameTree) dictionary', function(done) {
-      var url = combineUrl(window.location.href, '../pdfs/issue6204.pdf');
+      var url = new URL('../pdfs/issue6204.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(url);
       var promise = loadingTask.promise.then(function (pdfDocument) {
         return pdfDocument.getDestinations();
@@ -411,7 +411,7 @@ describe('api', function() {
       });
     });
     it('gets a destination, from /Names (NameTree) dictionary', function(done) {
-      var url = combineUrl(window.location.href, '../pdfs/issue6204.pdf');
+      var url = new URL('../pdfs/issue6204.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(url);
       var promise = loadingTask.promise.then(function (pdfDocument) {
         return pdfDocument.getDestination('Page.1');
@@ -428,7 +428,7 @@ describe('api', function() {
     });
     it('gets a non-existent destination, from /Names (NameTree) dictionary',
         function(done) {
-      var url = combineUrl(window.location.href, '../pdfs/issue6204.pdf');
+      var url = new URL('../pdfs/issue6204.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(url);
       var promise = loadingTask.promise.then(function (pdfDocument) {
         return pdfDocument.getDestination('non-existent-named-destination');
@@ -454,21 +454,21 @@ describe('api', function() {
     });
     it('gets page labels', function (done) {
       // PageLabels with Roman/Arabic numerals.
-      var url0 = combineUrl(window.location.href, '../pdfs/bug793632.pdf');
+      var url0 = new URL('../pdfs/bug793632.pdf', window.location).href;
       var loadingTask0 = PDFJS.getDocument(url0);
       var promise0 = loadingTask0.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });
 
       // PageLabels with only a label prefix.
-      var url1 = combineUrl(window.location.href, '../pdfs/issue1453.pdf');
+      var url1 = new URL('../pdfs/issue1453.pdf', window.location).href;
       var loadingTask1 = PDFJS.getDocument(url1);
       var promise1 = loadingTask1.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });
 
       // PageLabels identical to standard page numbering.
-      var url2 = combineUrl(window.location.href, '../pdfs/rotation.pdf');
+      var url2 = new URL('../pdfs/rotation.pdf', window.location).href;
       var loadingTask2 = PDFJS.getDocument(url2);
       var promise2 = loadingTask2.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
@@ -511,7 +511,7 @@ describe('api', function() {
     it('gets javascript with printing instructions (Print action)',
         function(done) {
       // PDF document with "Print" Named action in OpenAction
-      var pdfUrl = combineUrl(window.location.href, '../pdfs/bug1001080.pdf');
+      var pdfUrl = new URL('../pdfs/bug1001080.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(pdfUrl);
       var promise = loadingTask.promise.then(function(doc) {
         return doc.getJavaScript();
@@ -528,7 +528,7 @@ describe('api', function() {
     it('gets javascript with printing instructions (JS action)',
         function(done) {
       // PDF document with "JavaScript" action in OpenAction
-      var pdfUrl = combineUrl(window.location.href, '../pdfs/issue6106.pdf');
+      var pdfUrl = new URL('../pdfs/issue6106.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(pdfUrl);
       var promise = loadingTask.promise.then(function(doc) {
         return doc.getJavaScript();
@@ -544,7 +544,7 @@ describe('api', function() {
       });
     });
     it('gets non-existent outline', function(done) {
-      var url = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+      var url = new URL('../pdfs/tracemonkey.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(url);
 
       var promise = loadingTask.promise.then(function (pdfDocument) {
@@ -583,7 +583,7 @@ describe('api', function() {
       });
     });
     it('gets outline containing a url', function(done) {
-      var pdfUrl = combineUrl(window.location.href, '../pdfs/issue3214.pdf');
+      var pdfUrl = new URL('../pdfs/issue3214.pdf', window.location).href;
       var loadingTask = PDFJS.getDocument(pdfUrl);
 
       loadingTask.promise.then(function (pdfDocument) {
@@ -649,10 +649,10 @@ describe('api', function() {
     });
 
     it('checks that fingerprints are unique', function(done) {
-      var url1 = combineUrl(window.location.href, '../pdfs/issue4436r.pdf');
+      var url1 = new URL('../pdfs/issue4436r.pdf', window.location).href;
       var loadingTask1 = PDFJS.getDocument(url1);
 
-      var url2 = combineUrl(window.location.href, '../pdfs/issue4575.pdf');
+      var url2 = new URL('../pdfs/issue4575.pdf', window.location).href;
       var loadingTask2 = PDFJS.getDocument(url2);
 
       var promises = [loadingTask1.promise,
@@ -793,11 +793,11 @@ describe('api', function() {
   describe('Multiple PDFJS instances', function() {
     // Regression test for https://github.com/mozilla/pdf.js/issues/6205
     // A PDF using the Helvetica font.
-    var pdf1 = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+    var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
     // A PDF using the Times font.
-    var pdf2 = combineUrl(window.location.href, '../pdfs/TAMReview.pdf');
+    var pdf2 = new URL('../pdfs/TAMReview.pdf', window.location).href;
     // A PDF using the Arial font.
-    var pdf3 = combineUrl(window.location.href, '../pdfs/issue6068.pdf');
+    var pdf3 = new URL('../pdfs/issue6068.pdf', window.location).href;
     var loadingTasks = [];
     var pdfDocuments = [];
 
@@ -871,7 +871,7 @@ describe('api', function() {
     });
   });
   describe('PDFDataRangeTransport', function () {
-    var pdfPath = combineUrl(window.location.href, '../pdfs/tracemonkey.pdf');
+    var pdfPath = new URL('../pdfs/tracemonkey.pdf', window.location).href;
     var loadPromise;
     function getDocumentData() {
       if (loadPromise) {
