@@ -160,7 +160,7 @@ describe('cmap', function() {
     });
   });
   it('loads built in cmap', function(done) {
-    var cmapPromise = CMapFactory.create(new Name('Adobe-Japan1-1'),
+    var cmapPromise = CMapFactory.create(Name.get('Adobe-Japan1-1'),
                                   { url: cMapUrl, packed: cMapPacked }, null);
     cmapPromise.then(function (cmap) {
       expect(cmap instanceof CMap).toEqual(true);
@@ -174,7 +174,7 @@ describe('cmap', function() {
     });
   });
   it('loads built in identity cmap', function(done) {
-    var cmapPromise = CMapFactory.create(new Name('Identity-H'),
+    var cmapPromise = CMapFactory.create(Name.get('Identity-H'),
                                   { url: cMapUrl, packed: cMapPacked }, null);
     cmapPromise.then(function (cmap) {
       expect(cmap instanceof IdentityCMap).toEqual(true);
