@@ -2204,6 +2204,14 @@
       "link": true,
       "type": "load"
     },
+    {  "id": "bug1260585",
+      "file": "pdfs/bug1260585.pdf",
+      "md5": "9415b1eb00a43c97c15328cd4c8d136a",
+      "rounds": 1,
+      "lastPage": 1,
+      "link": true,
+      "type": "load"
+    },
     {  "id": "issue3062",
       "file": "pdfs/issue3062.pdf",
       "md5": "206715f1258f0e117df4180d98dd4d68",
