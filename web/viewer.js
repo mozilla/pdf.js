@@ -1608,7 +1608,7 @@ function webViewerInitialized() {
 
 //document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 
-document.addEventListener('pagerendered', function (e) {
+function pagerendered(e) {
   var pageNumber = e.detail.pageNumber;
   var pageIndex = pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
@@ -1652,9 +1652,9 @@ document.addEventListener('pagerendered', function (e) {
     }));
   });
 //#endif
-}, true);
+}
 
-document.addEventListener('textlayerrendered', function (e) {
+function textlayerrendered(e) {
   var pageIndex = e.detail.pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
@@ -1674,9 +1674,9 @@ document.addEventListener('textlayerrendered', function (e) {
     PDFViewerApplication.fallback();
   }
 //#endif
-}, true);
+}
 
-document.addEventListener('pagemode', function (evt) {
+function pagemode(evt) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
@@ -1698,9 +1698,9 @@ document.addEventListener('pagemode', function (evt) {
       }
       break;
   }
-}, true);
+}
 
-document.addEventListener('namedaction', function (e) {
+function namedaction(e) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
@@ -1718,17 +1718,17 @@ document.addEventListener('namedaction', function (e) {
       }
       break;
   }
-}, true);
+}
 
-window.addEventListener('presentationmodechanged', function (e) {
+function presentationmodechanged(e) {
   var active = e.detail.active;
   var switchInProgress = e.detail.switchInProgress;
   PDFViewerApplication.pdfViewer.presentationModeState =
     switchInProgress ? PresentationModeState.CHANGING :
     active ? PresentationModeState.FULLSCREEN : PresentationModeState.NORMAL;
-});
+};
 
-window.addEventListener('updateviewarea', function (evt) {
+function updateviewarea(evt) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
@@ -1764,7 +1764,7 @@ window.addEventListener('updateviewarea', function (evt) {
   } else {
     pageNumberInput.classList.add(PAGE_NUMBER_LOADING_INDICATOR);
   }
-}, true);
+}
 
 function webViewerResize(evt) {
   if (PDFViewerApplication.initialized) {
@@ -1898,7 +1898,7 @@ function scalechange(evt) {
   PDFViewerApplication.pdfViewer.update();
 }
 
-window.addEventListener('pagechange', function pagechange(evt) {
+function pagechange(evt) {
   var page = evt.pageNumber;
   if (evt.previousPageNumber !== page) {
     document.getElementById('pageNumber').value = page;
@@ -1921,7 +1921,7 @@ window.addEventListener('pagechange', function pagechange(evt) {
       Stats.add(page, pageView.stats);
     }
   }
-}, true);
+}
 
 function handleMouseWheel(evt) {
   if (!PDFViewerApplication.initialized) {
@@ -1965,12 +1965,12 @@ function handleMouseWheel(evt) {
   }
 }
 
-window.addEventListener('click', function click(evt) {
+function click(evt) {
   if (SecondaryToolbar.opened &&
       PDFViewerApplication.pdfViewer.containsElement(evt.target)) {
     SecondaryToolbar.close();
   }
-}, false);
+}
 
 function keydown(evt) {
   if (OverlayManager.active) {
@@ -2227,6 +2227,7 @@ function afterPrint(evt) {
 }
 
 function addEventListeners() {
+    window.addEventListener('click', click, false);
     window.addEventListener('resize', webViewerResize);
     window.addEventListener('hashchange', webViewerHashchange);
     window.addEventListener('change', webViewerChange, true);
@@ -2237,9 +2238,17 @@ function addEventListeners() {
     window.addEventListener('keydown', keydown);
     window.addEventListener('beforeprint', beforePrint);
     window.addEventListener('afterprint', afterPrint);
+    window.addEventListener('pagechange', pagechange, true);
+    document.addEventListener('pagerendered', pagerendered, true);
+    window.addEventListener('presentationmodechanged', presentationmodechanged);
+    window.addEventListener('updateviewarea', updateviewarea, true);
+    document.addEventListener('pagemode', pagemode, true);
+    document.addEventListener('textlayerrendered', textlayerrendered, true);
+    document.addEventListener('namedaction', namedaction, true);
 }
 
 function removeEventListeners() {
+    window.removeEventListener('click', click, false);
     window.removeEventListener('resize', webViewerResize);
     window.removeEventListener('hashchange', webViewerHashchange);
     window.removeEventListener('change', webViewerChange, true);
@@ -2250,6 +2259,13 @@ function removeEventListeners() {
     window.removeEventListener('keydown', keydown);
     window.removeEventListener('beforeprint', beforePrint);
     window.removeEventListener('afterprint', afterPrint);
+    window.removeEventListener('pagechange', pagechange, true);
+    document.removeEventListener('pagerendered', pagerendered, true);
+    window.removeEventListener('presentationmodechanged', presentationmodechanged);
+    window.removeEventListener('updateviewarea', updateviewarea, true);
+    document.removeEventListener('pagemode', pagemode, true);
+    document.removeEventListener('textlayerrendered', textlayerrendered, true);
+    document.removeEventListener('namedaction', namedaction, true);
 }
 
 (function animationStartedClosure() {
