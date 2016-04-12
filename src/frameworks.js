@@ -36,12 +36,13 @@ if (typeof __webpack_require__ !== 'undefined') {
 if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
   workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
 }
+var dynamicLoaderSupported = typeof requirejs !== 'undefined' && requirejs.load;
 var fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
   require.ensure([], function () {
     var worker = require('./pdf.worker.js');
     callback(worker.WorkerMessageHandler);
   });
-}) : (typeof requirejs !== 'undefined') ? (function (callback) {
+}) : dynamicLoaderSupported ? (function (callback) {
   requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
     callback(worker.WorkerMessageHandler);
   });
