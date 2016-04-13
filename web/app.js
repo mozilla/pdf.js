@@ -963,7 +963,7 @@ var PDFViewerApplication = {
       };
 
       store.initializedPromise.then(function resolved() {
-        var storedHash = null;
+        var storedHash = null, sidebarView = null;
         if (self.preferenceShowPreviousViewOnLoad &&
             store.get('exists', false)) {
           var pageNum = store.get('page', '1');
@@ -974,10 +974,13 @@ var PDFViewerApplication = {
 
           storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
                        left + ',' + top;
+
+          sidebarView = store.get('sidebarView', SidebarView.NONE);
         } else if (self.preferenceDefaultZoomValue) {
           storedHash = 'page=1&zoom=' + self.preferenceDefaultZoomValue;
         }
-        self.setInitialView(storedHash, scale);
+        self.setInitialView(storedHash,
+          { scale: scale, sidebarView: sidebarView });
 
         initialParams.hash = storedHash;
 
@@ -988,7 +991,7 @@ var PDFViewerApplication = {
         }
       }, function rejected(reason) {
         console.error(reason);
-        self.setInitialView(null, scale);
+        self.setInitialView(null, { scale: scale });
       });
 
       // For documents with different page sizes,
@@ -1112,7 +1115,10 @@ var PDFViewerApplication = {
     });
   },
 
-  setInitialView: function pdfViewSetInitialView(storedHash, scale) {
+  setInitialView: function pdfViewSetInitialView(storedHash, options) {
+    var scale = options && options.scale;
+    var sidebarView = options && options.sidebarView;
+
     this.isInitialViewSet = true;
 
     // When opening a new file, when one is already loaded in the viewer,
@@ -1120,7 +1126,8 @@ var PDFViewerApplication = {
     document.getElementById('pageNumber').value =
       this.pdfViewer.currentPageNumber;
 
-    this.pdfSidebar.setInitialView(this.preferenceSidebarViewOnLoad);
+    this.pdfSidebar.setInitialView(this.preferenceSidebarViewOnLoad ||
+                                   (sidebarView | 0));
 
     if (this.initialDestination) {
       this.pdfLinkService.navigateTo(this.initialDestination);
@@ -1697,6 +1704,9 @@ window.addEventListener('sidebarviewchanged', function (evt) {
     // Only update the storage when the document has been loaded *and* rendered.
     return;
   }
+  store.initializedPromise.then(function() {
+    store.set('sidebarView', evt.detail.view).catch(function() {});
+  });
 }, true);
 
 window.addEventListener('updateviewarea', function (evt) {
