@@ -7,7 +7,7 @@ require('pdfjs-dist');
 
 var pdfPath = '../helloworld/helloworld.pdf';
 
-// Setting worker path to worker bundle
+// Setting worker path to worker bundle.
 PDFJS.workerSrc = '../../build/browserify/pdf.worker.bundle.js';
 
 // It is also possible to disable workers via `PDFJS.disableWorker = true`,

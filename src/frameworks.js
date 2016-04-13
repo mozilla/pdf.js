@@ -29,8 +29,6 @@ if (typeof window === 'undefined') {
   useRequireEnsure = true;
 }
 if (typeof __webpack_require__ !== 'undefined') {
-  // Webpack - get/bundle pdf.worker.js as additional file.
-  workerSrc = require('entry?name=[hash]-worker.js!./pdf.worker.js');
   useRequireEnsure = true;
 }
 if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
