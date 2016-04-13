@@ -19,8 +19,8 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/app', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/firefoxcom', 'pdfjs-web/download_manager',
-      'pdfjs-web/pdf_history', 'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
+      'pdfjs-web/download_manager', 'pdfjs-web/pdf_history',
+      'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
       'pdfjs-web/view_history', 'pdfjs-web/pdf_thumbnail_viewer',
       'pdfjs-web/secondary_toolbar', 'pdfjs-web/password_prompt',
       'pdfjs-web/pdf_presentation_mode', 'pdfjs-web/pdf_document_properties',
@@ -32,12 +32,11 @@
       'pdfjs-web/pdfjs'],
       factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./firefoxcom.js'),
-      require('./download_manager.js'), require('./pdf_history.js'),
-      require('./preferences.js'), require('./pdf_sidebar.js'),
-      require('./view_history.js'), require('./pdf_thumbnail_viewer.js'),
-      require('./secondary_toolbar.js'), require('./password_prompt.js'),
-      require('./pdf_presentation_mode.js'),
+    factory(exports, require('./ui_utils.js'), require('./download_manager.js'),
+      require('./pdf_history.js'), require('./preferences.js'),
+      require('./pdf_sidebar.js'), require('./view_history.js'),
+      require('./pdf_thumbnail_viewer.js'), require('./secondary_toolbar.js'),
+      require('./password_prompt.js'), require('./pdf_presentation_mode.js'),
       require('./pdf_document_properties.js'), require('./hand_tool.js'),
       require('./pdf_viewer.js'), require('./pdf_rendering_queue.js'),
       require('./pdf_link_service.js'), require('./pdf_outline_viewer.js'),
@@ -46,20 +45,20 @@
       require('./mozPrintCallback_polyfill.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebApp = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebFirefoxCom, root.pdfjsWebDownloadManager,
-      root.pdfjsWebPDFHistory, root.pdfjsWebPreferences,
-      root.pdfjsWebPDFSidebar, root.pdfjsWebViewHistory,
-      root.pdfjsWebPDFThumbnailViewer, root.pdfjsWebSecondaryToolbar,
-      root.pdfjsWebPasswordPrompt, root.pdfjsWebPDFPresentationMode,
-      root.pdfjsWebPDFDocumentProperties, root.pdfjsWebHandTool,
-      root.pdfjsWebPDFViewer, root.pdfjsWebPDFRenderingQueue,
-      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFOutlineViewer,
-      root.pdfjsWebOverlayManager, root.pdfjsWebPDFAttachmentViewer,
-      root.pdfjsWebPDFFindController, root.pdfjsWebPDFFindBar,
-      root.pdfjsWebMozPrintCallbackPolyfill, root.pdfjsWebPDFJS);
+      root.pdfjsWebDownloadManager, root.pdfjsWebPDFHistory,
+      root.pdfjsWebPreferences, root.pdfjsWebPDFSidebar,
+      root.pdfjsWebViewHistory, root.pdfjsWebPDFThumbnailViewer,
+      root.pdfjsWebSecondaryToolbar, root.pdfjsWebPasswordPrompt,
+      root.pdfjsWebPDFPresentationMode, root.pdfjsWebPDFDocumentProperties,
+      root.pdfjsWebHandTool, root.pdfjsWebPDFViewer,
+      root.pdfjsWebPDFRenderingQueue, root.pdfjsWebPDFLinkService,
+      root.pdfjsWebPDFOutlineViewer, root.pdfjsWebOverlayManager,
+      root.pdfjsWebPDFAttachmentViewer, root.pdfjsWebPDFFindController,
+      root.pdfjsWebPDFFindBar, root.pdfjsWebMozPrintCallbackPolyfill,
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, uiUtilsLib, firefoxComLib, downloadManagerLib,
-                  pdfHistoryLib, preferencesLib, pdfSidebarLib, viewHistoryLib,
+}(this, function (exports, uiUtilsLib, downloadManagerLib, pdfHistoryLib,
+                  preferencesLib, pdfSidebarLib, viewHistoryLib,
                   pdfThumbnailViewerLib, secondaryToolbarLib, passwordPromptLib,
                   pdfPresentationModeLib, pdfDocumentPropertiesLib, handToolLib,
                   pdfViewerLib, pdfRenderingQueueLib, pdfLinkServiceLib,
@@ -67,7 +66,6 @@
                   pdfAttachmentViewerLib, pdfFindControllerLib, pdfFindBarLib,
                   mozPrintCallbackPolyfillLib, pdfjsLib) {
 
-var FirefoxCom = firefoxComLib.FirefoxCom;
 var UNKNOWN_SCALE = uiUtilsLib.UNKNOWN_SCALE;
 var DEFAULT_SCALE_VALUE = uiUtilsLib.DEFAULT_SCALE_VALUE;
 var ProgressBar = uiUtilsLib.ProgressBar;
@@ -75,8 +73,6 @@ var getPDFFileNameFromURL = uiUtilsLib.getPDFFileNameFromURL;
 var noContextMenuHandler = uiUtilsLib.noContextMenuHandler;
 var mozL10n = uiUtilsLib.mozL10n;
 var parseQueryString = uiUtilsLib.parseQueryString;
-var DownloadManager = downloadManagerLib.DownloadManager ||
-                      firefoxComLib.DownloadManager;
 var PDFHistory = pdfHistoryLib.PDFHistory;
 var Preferences = preferencesLib.Preferences;
 var SidebarView = pdfSidebarLib.SidebarView;
@@ -122,6 +118,23 @@ function configure(PDFJS) {
 //#endif
 }
 
+var DefaultExernalServices = {
+  updateFindControlState: function (data) {},
+  initPassiveLoading: function (callbacks) {},
+  fallback: function (data, callback) {},
+  reportTelemetry: function (data) {},
+  createDownloadManager: function () {
+    return new downloadManagerLib.DownloadManager();
+  },
+  supportsIntegratedFind: false,
+  supportsDocumentFonts: true,
+  supportsDocumentColors: true,
+  supportedMouseWheelZoomModifierKeys: {
+    ctrlKey: true,
+    metaKey: true,
+  }
+};
+
 var PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   initialDestination: null,
@@ -153,6 +166,8 @@ var PDFViewerApplication = {
   pdfAttachmentViewer: null,
   /** @type {ViewHistory} */
   store: null,
+  /** @type {DownloadManager} */
+  downloadManager: null,
   pageRotation: 0,
   isInitialViewSet: false,
   animationStartedPromise: null,
@@ -162,6 +177,7 @@ var PDFViewerApplication = {
   preferenceDefaultZoomValue: '',
   isViewerEmbedded: (window.parent !== window),
   url: '',
+  externalServices: DefaultExernalServices,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
@@ -175,6 +191,9 @@ var PDFViewerApplication = {
     var pdfLinkService = new PDFLinkService();
     this.pdfLinkService = pdfLinkService;
 
+    var downloadManager = this.externalServices.createDownloadManager();
+    this.downloadManager = downloadManager;
+
     var container = appConfig.mainContainer;
     var viewer = appConfig.viewerContainer;
     this.pdfViewer = new PDFViewer({
@@ -182,7 +201,7 @@ var PDFViewerApplication = {
       viewer: viewer,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
-      downloadManager: new DownloadManager()
+      downloadManager: downloadManager
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -214,8 +233,8 @@ var PDFViewerApplication = {
     }.bind(this);
     this.findController.onUpdateState = function (state, previous, matchCount) {
       if (this.supportsIntegratedFind) {
-        FirefoxCom.request('updateFindControlState',
-                           {result: state, findPrevious: previous});
+        this.externalServices.updateFindControlState(
+          {result: state, findPrevious: previous});
       } else {
         this.findBar.updateUIState(state, previous, matchCount);
       }
@@ -270,7 +289,7 @@ var PDFViewerApplication = {
 
     this.pdfAttachmentViewer = new PDFAttachmentViewer({
       container: appConfig.sidebar.attachmentsView,
-      downloadManager: new DownloadManager(),
+      downloadManager: downloadManager
     });
 
     // FIXME better PDFSidebar constructor parameters
@@ -411,30 +430,15 @@ var PDFViewerApplication = {
   },
 
   get supportsIntegratedFind() {
-    var support = false;
-//#if (FIREFOX || MOZCENTRAL)
-//  support = FirefoxCom.requestSync('supportsIntegratedFind');
-//#endif
-
-    return pdfjsLib.shadow(this, 'supportsIntegratedFind', support);
+    return this.externalServices.supportsIntegratedFind;
   },
 
   get supportsDocumentFonts() {
-    var support = true;
-//#if (FIREFOX || MOZCENTRAL)
-//  support = FirefoxCom.requestSync('supportsDocumentFonts');
-//#endif
-
-    return pdfjsLib.shadow(this, 'supportsDocumentFonts', support);
+    return this.externalServices.supportsDocumentFonts;
   },
 
   get supportsDocumentColors() {
-    var support = true;
-//#if (FIREFOX || MOZCENTRAL)
-//  support = FirefoxCom.requestSync('supportsDocumentColors');
-//#endif
-
-    return pdfjsLib.shadow(this, 'supportsDocumentColors', support);
+    return this.externalServices.supportsDocumentColors;
   },
 
   get loadingBar() {
@@ -444,84 +448,30 @@ var PDFViewerApplication = {
   },
 
   get supportedMouseWheelZoomModifierKeys() {
-    var support = {
-      ctrlKey: true,
-      metaKey: true,
-    };
-//#if (FIREFOX || MOZCENTRAL)
-//  support = FirefoxCom.requestSync('supportedMouseWheelZoomModifierKeys');
-//#endif
-
-    return pdfjsLib.shadow(this, 'supportedMouseWheelZoomModifierKeys',
-                           support);
+    return this.externalServices.supportedMouseWheelZoomModifierKeys;
   },
 
 //#if (FIREFOX || MOZCENTRAL)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
-    function FirefoxComDataRangeTransport(length, initialData) {
-      pdfjsLib.PDFDataRangeTransport.call(this, length, initialData);
-    }
-    FirefoxComDataRangeTransport.prototype =
-      Object.create(pdfjsLib.PDFDataRangeTransport.prototype);
-    FirefoxComDataRangeTransport.prototype.requestDataRange =
-        function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
-      FirefoxCom.request('requestDataRange', { begin: begin, end: end });
-    };
-    FirefoxComDataRangeTransport.prototype.abort =
-        function FirefoxComDataRangeTransport_abort() {
-      // Sync call to ensure abort is really started.
-      FirefoxCom.requestSync('abortLoading', null);
-    };
+    this.externalServices.initPassiveLoading({
+      onOpenWithTransport: function (url, length, transport) {
+        PDFViewerApplication.open(url, {range: transport});
 
-    var pdfDataRangeTransport;
-
-    window.addEventListener('message', function windowMessage(e) {
-      if (e.source !== null) {
-        // The message MUST originate from Chrome code.
-        console.warn('Rejected untrusted message from ' + e.origin);
-        return;
-      }
-      var args = e.data;
-
-      if (typeof args !== 'object' || !('pdfjsLoadAction' in args)) {
-        return;
-      }
-      switch (args.pdfjsLoadAction) {
-        case 'supportsRangedLoading':
-          pdfDataRangeTransport =
-            new FirefoxComDataRangeTransport(args.length, args.data);
-
-          PDFViewerApplication.open(args.pdfUrl,
-                                    {range: pdfDataRangeTransport});
-
-          if (args.length) {
-            PDFViewerApplication.pdfDocumentProperties
-                                .setFileSize(args.length);
-          }
-          break;
-        case 'range':
-          pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
-          break;
-        case 'rangeProgress':
-          pdfDataRangeTransport.onDataProgress(args.loaded);
-          break;
-        case 'progressiveRead':
-          pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
-          break;
-        case 'progress':
-          PDFViewerApplication.progress(args.loaded / args.total);
-          break;
-        case 'complete':
-          if (!args.data) {
-            PDFViewerApplication.error(mozL10n.get('loading_error', null,
-              'An error occurred while loading the PDF.'), e);
-            break;
-          }
-          PDFViewerApplication.open(args.data);
-          break;
+        if (length) {
+          PDFViewerApplication.pdfDocumentProperties.setFileSize(length);
+        }
+      },
+      onOpenWithData: function (data) {
+        PDFViewerApplication.open(data);
+      },
+      onError: function (e) {
+        PDFViewerApplication.error(mozL10n.get('loading_error', null,
+          'An error occurred while loading the PDF.'), e);
+      },
+      onProgress: function (loaded, total) {
+        PDFViewerApplication.progress(loaded / total);
       }
     });
-    FirefoxCom.requestSync('initPassiveLoading', null);
   },
 //#endif
 
@@ -701,7 +651,7 @@ var PDFViewerApplication = {
 
     var url = this.url.split('#')[0];
     var filename = getPDFFileNameFromURL(url);
-    var downloadManager = new DownloadManager();
+    var downloadManager = this.downloadManager;
     downloadManager.onerror = function (err) {
       // This error won't really be helpful because it's likely the
       // fallback won't work either (or is already open).
@@ -741,7 +691,7 @@ var PDFViewerApplication = {
     }
     this.fellback = true;
     var url = this.url.split('#')[0];
-    FirefoxCom.request('fallback', { featureId: featureId, url: url },
+    this.externalServices.fallback({ featureId: featureId, url: url },
       function response(download) {
         if (!download) {
           return;
@@ -1069,12 +1019,12 @@ var PDFViewerApplication = {
       }
       var formType = !info.IsAcroFormPresent ? null : info.IsXFAPresent ?
                      'xfa' : 'acroform';
-      FirefoxCom.request('reportTelemetry', JSON.stringify({
+      self.externalServices.reportTelemetry({
         type: 'documentInfo',
         version: versionId,
         generator: generatorId,
         formType: formType
-      }));
+      });
 //#endif
     });
   },
@@ -1197,9 +1147,9 @@ var PDFViewerApplication = {
     }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
-    FirefoxCom.request('reportTelemetry', JSON.stringify({
+    this.externalServices.reportTelemetry({
       type: 'print'
-    }));
+    });
 //#endif
   },
 
@@ -1567,15 +1517,15 @@ document.addEventListener('pagerendered', function (e) {
   }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
-  FirefoxCom.request('reportTelemetry', JSON.stringify({
+  PDFViewerApplication.externalServices.reportTelemetry({
     type: 'pageInfo'
-  }));
+  });
   // It is a good time to report stream and font types.
   PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
-    FirefoxCom.request('reportTelemetry', JSON.stringify({
+    PDFViewerApplication.externalServices.reportTelemetry({
       type: 'documentStats',
       stats: stats
-    }));
+    });
   });
 //#endif
 }, true);
