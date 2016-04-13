@@ -17,18 +17,16 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_find_controller', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/firefoxcom'], factory);
+    define('pdfjs-web/pdf_find_controller', ['exports', 'pdfjs-web/ui_utils'],
+      factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./firefoxcom.js'));
+    factory(exports, require('./ui_utils.js'));
   } else {
-    factory((root.pdfjsWebPDFFindController = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebFirefoxCom);
+    factory((root.pdfjsWebPDFFindController = {}), root.pdfjsWebUIUtils);
   }
 }(this, function (exports, uiUtils, firefoxCom) {
 
 var scrollIntoView = uiUtils.scrollIntoView;
-var FirefoxCom = firefoxCom.FirefoxCom;
 
 var FindStates = {
   FIND_FOUND: 0,
@@ -61,31 +59,32 @@ var CHARACTERS_TO_NORMALIZE = {
 var PDFFindController = (function PDFFindControllerClosure() {
   function PDFFindController(options) {
     this.pdfViewer = options.pdfViewer || null;
-    this.integratedFind = options.integratedFind || false;
-    this.findBar = options.findBar || null;
+
+    this.onUpdateResultsCount = null;
+    this.onUpdateState = null;
 
     this.reset();
 
     // Compile the regular expression for text normalization once.
     var replace = Object.keys(CHARACTERS_TO_NORMALIZE).join('');
     this.normalizationRegex = new RegExp('[' + replace + ']', 'g');
-
-    var events = [
-      'find',
-      'findagain',
-      'findhighlightallchange',
-      'findcasesensitivitychange'
-    ];
-    this.handleEvent = this.handleEvent.bind(this);
-
-    for (var i = 0, len = events.length; i < len; i++) {
-      window.addEventListener(events[i], this.handleEvent);
-    }
   }
 
   PDFFindController.prototype = {
-    setFindBar: function PDFFindController_setFindBar(findBar) {
-      this.findBar = findBar;
+    listenWindowEvents: function PDFFindController_listenWindowEvents() {
+      var events = [
+        'find',
+        'findagain',
+        'findhighlightallchange',
+        'findcasesensitivitychange'
+      ];
+      var handleEvent = function (e) {
+        this.executeCommand(e.type, e.detail);
+      }.bind(this);
+
+      for (var i = 0, len = events.length; i < len; i++) {
+        window.addEventListener(events[i], handleEvent);
+      }
     },
 
     reset: function PDFFindController_reset() {
@@ -199,18 +198,18 @@ var PDFFindController = (function PDFFindControllerClosure() {
       extractPageText(0);
     },
 
-    handleEvent: function PDFFindController_handleEvent(e) {
-      if (this.state === null || e.type !== 'findagain') {
+    executeCommand: function PDFFindController_executeCommand(cmd, state) {
+      if (this.state === null || cmd !== 'findagain') {
         this.dirtyMatch = true;
       }
-      this.state = e.detail;
+      this.state = state;
       this.updateUIState(FindStates.FIND_PENDING);
 
       this.firstPagePromise.then(function() {
         this.extractText();
 
         clearTimeout(this.findTimeout);
-        if (e.type === 'find') {
+        if (cmd === 'find') {
           // Only trigger the find action after 250ms of silence.
           this.findTimeout = setTimeout(this.nextMatch.bind(this), 250);
         } else {
@@ -408,24 +407,15 @@ var PDFFindController = (function PDFFindControllerClosure() {
 
     updateUIResultsCount:
         function PDFFindController_updateUIResultsCount() {
-      if (this.findBar === null) {
-        throw new Error('PDFFindController is not initialized with a ' +
-          'PDFFindBar instance.');
+      if (this.onUpdateResultsCount) {
+        this.onUpdateResultsCount(this.matchCount);
       }
-      this.findBar.updateResultsCount(this.matchCount);
     },
 
     updateUIState: function PDFFindController_updateUIState(state, previous) {
-      if (this.integratedFind) {
-        FirefoxCom.request('updateFindControlState',
-                           { result: state, findPrevious: previous });
-        return;
+      if (this.onUpdateState) {
+        this.onUpdateState(state, previous, this.matchCount);
       }
-      if (this.findBar === null) {
-        throw new Error('PDFFindController is not initialized with a ' +
-                        'PDFFindBar instance.');
-      }
-      this.findBar.updateUIState(state, previous, this.matchCount);
     }
   };
   return PDFFindController;

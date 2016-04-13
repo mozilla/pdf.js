@@ -179,6 +179,7 @@ target.components = function() {
   var bundleFiles = [
     'pdf_viewer.js',
     'pdf_history.js',
+    'pdf_find_controller.js',
     'download_manager.js'
   ];
   bundle('pdf_viewer.component.js', ROOT_DIR + TMP_PDF_VIEWER, bundleFiles,

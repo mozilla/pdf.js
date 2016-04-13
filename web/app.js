@@ -204,17 +204,30 @@ var PDFViewerApplication = {
     pdfLinkService.setHistory(this.pdfHistory);
 
     this.findController = new PDFFindController({
-      pdfViewer: this.pdfViewer,
-      integratedFind: this.supportsIntegratedFind
+      pdfViewer: this.pdfViewer
     });
+    this.findController.onUpdateResultsCount = function (matchCount) {
+      if (this.supportsIntegratedFind) {
+        return;
+      }
+      this.findBar.updateResultsCount(matchCount);
+    }.bind(this);
+    this.findController.onUpdateState = function (state, previous, matchCount) {
+      if (this.supportsIntegratedFind) {
+        FirefoxCom.request('updateFindControlState',
+                           {result: state, findPrevious: previous});
+      } else {
+        this.findBar.updateUIState(state, previous, matchCount);
+      }
+    }.bind(this);
+    this.findController.listenWindowEvents();
+
     this.pdfViewer.setFindController(this.findController);
 
     // FIXME better PDFFindBar constructor parameters
     var findBarConfig = Object.create(appConfig.findBar);
     findBarConfig.findController = this.findController;
     this.findBar = new PDFFindBar(findBarConfig);
-
-    this.findController.setFindBar(this.findBar);
 
     this.overlayManager = OverlayManager;
 
