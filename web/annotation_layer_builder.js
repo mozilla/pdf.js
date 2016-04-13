@@ -12,9 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals pdfjsLib, mozL10n, SimpleLinkService */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/annotation_layer_builder', ['exports',
+      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_link_service',
+      'pdfjs-web/pdfjs'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'),
+      require('./pdf_link_service.js'), require('./pdfjs.js'));
+  } else {
+    factory((root.pdfjsWebAnnotationLayerBuilder = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFJS);
+  }
+}(this, function (exports, uiUtils, pdfLinkService, pdfjsLib) {
+
+var mozL10n = uiUtils.mozL10n;
+var SimpleLinkService = pdfLinkService.SimpleLinkService;
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions
@@ -119,3 +135,6 @@ DefaultAnnotationLayerFactory.prototype = {
     });
   }
 };
+
+exports.AnnotationLayerBuilder = AnnotationLayerBuilder;
+}));

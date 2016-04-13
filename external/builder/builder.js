@@ -66,7 +66,14 @@ function preprocess(inFilename, outFilename, defines) {
     var realPath = fs.realpathSync(inFilename);
     var dir = path.dirname(realPath);
     try {
-      preprocess(path.join(dir, file), writeLine, defines);
+      var fullpath;
+      if (file.indexOf('$ROOT/') === 0) {
+        fullpath = path.join(__dirname, '../..',
+          file.substring('$ROOT/'.length));
+      } else {
+        fullpath = path.join(dir, file);
+      }
+      preprocess(fullpath, writeLine, defines);
     } catch (e) {
       if (e.code === 'ENOENT') {
         throw new Error('Failed to include "' + file + '" at ' + loc());

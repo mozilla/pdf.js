@@ -12,9 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsLib */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/text_layer_builder', ['exports', 'pdfjs-web/pdfjs'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./pdfjs.js'));
+  } else {
+    factory((root.pdfjsWebTextLayerBuilder = {}), root.pdfjsWebPDFJS);
+  }
+}(this, function (exports, pdfjsLib) {
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -346,3 +356,7 @@ DefaultTextLayerFactory.prototype = {
     });
   }
 };
+
+exports.TextLayerBuilder = TextLayerBuilder;
+exports.DefaultTextLayerFactory = DefaultTextLayerFactory;
+}));

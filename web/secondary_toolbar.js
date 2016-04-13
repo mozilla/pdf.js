@@ -12,9 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFViewerApplication, SCROLLBAR_PADDING */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/secondary_toolbar', ['exports', 'pdfjs-web/ui_utils'],
+      factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'));
+  } else {
+    factory((root.pdfjsWebSecondaryToolbar = {}), root.pdfjsWebUIUtils);
+  }
+}(this, function (exports, uiUtils) {
+
+var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
+
+var app; // Avoiding circular reference, see _setApp function below.
+var PDFViewerApplication = null; // = app.PDFViewerApplication;
 
 var SecondaryToolbar = {
   opened: false,
@@ -158,3 +173,12 @@ var SecondaryToolbar = {
     }
   }
 };
+
+function _setApp(app_) {
+  app = app_;
+  PDFViewerApplication = app.PDFViewerApplication;
+}
+
+exports.SecondaryToolbar = SecondaryToolbar;
+exports._setApp = _setApp;
+}));

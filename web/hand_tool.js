@@ -12,11 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals mozL10n, GrabToPan, Preferences, SecondaryToolbar */
 
 'use strict';
 
-//#include grab_to_pan.js
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/hand_tool', ['exports', 'pdfjs-web/ui_utils',
+      'pdfjs-web/grab_to_pan', 'pdfjs-web/preferences',
+      'pdfjs-web/secondary_toolbar'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'), require('./grab_to_pan.js'),
+      require('./preferences.js'), require('./secondary_toolbar.js'));
+  } else {
+    factory((root.pdfjsWebHandTool = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebGrabToPan, root.pdfjsWebPreferences,
+      root.pdfjsWebSecondaryToolbar);
+  }
+}(this, function (exports, uiUtils, grabToPan, preferences, secondaryToolbar) {
+
+var mozL10n = uiUtils.mozL10n;
+var GrabToPan = grabToPan.GrabToPan;
+var Preferences = preferences.Preferences;
+var SecondaryToolbar = secondaryToolbar.SecondaryToolbar;
+
 var HandTool = {
   initialize: function handToolInitialize(options) {
     var toggleHandTool = options.toggleHandTool;
@@ -82,3 +100,6 @@ var HandTool = {
     }
   }
 };
+
+exports.HandTool = HandTool;
+}));

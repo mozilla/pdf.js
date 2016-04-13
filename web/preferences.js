@@ -12,11 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_PREFERENCES, Promise */
+/* globals DEFAULT_PREFERENCES, chrome */
 
 'use strict';
 
-//#include default_preferences.js
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/preferences', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebPreferences = {}));
+  }
+}(this, function (exports) {
+
+//#include $ROOT/web/default_preferences.js
 
 /**
  * Preferences - Utility for storing persistent settings.
@@ -209,3 +219,6 @@ Preferences._readFromStorage = function (prefObj) {
   });
 };
 //#endif
+
+exports.Preferences = Preferences;
+}));

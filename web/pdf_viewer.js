@@ -12,13 +12,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- /*globals watchScroll, PDFPageView, UNKNOWN_SCALE,
-           SCROLLBAR_PADDING, VERTICAL_PADDING, MAX_AUTO_SCALE, CSS_UNITS,
-           DEFAULT_SCALE, scrollIntoView, getVisibleElements, RenderingStates,
-           pdfjsLib, Promise, TextLayerBuilder, PDFRenderingQueue,
-           AnnotationLayerBuilder, DEFAULT_SCALE_VALUE */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_viewer', ['exports', 'pdfjs-web/ui_utils',
+      'pdfjs-web/pdf_page_view', 'pdfjs-web/pdf_rendering_queue',
+      'pdfjs-web/text_layer_builder', 'pdfjs-web/annotation_layer_builder',
+      'pdfjs-web/pdf_link_service', 'pdfjs-web/pdfjs'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'), require('./pdf_page_view.js'),
+      require('./pdf_rendering_queue.js'), require('./text_layer_builder.js'),
+      require('./annotation_layer_builder.js'),
+      require('./pdf_link_service.js'), require('./pdfjs.js'));
+  } else {
+    factory((root.pdfjsWebPDFViewer = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebPDFPageView, root.pdfjsWebPDFRenderingQueue,
+      root.pdfjsWebTextLayerBuilder, root.pdfjsWebAnnotationLayerBuilder,
+      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFJS);
+  }
+}(this, function (exports, uiUtils, pdfPageView, pdfRenderingQueue,
+                  textLayerBuilder, annotationLayerBuilder, pdfLinkService,
+                  pdfjsLib) {
+
+var UNKNOWN_SCALE = uiUtils.UNKNOWN_SCALE;
+var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
+var VERTICAL_PADDING = uiUtils.VERTICAL_PADDING;
+var MAX_AUTO_SCALE = uiUtils.MAX_AUTO_SCALE;
+var CSS_UNITS = uiUtils.CSS_UNITS;
+var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
+var DEFAULT_SCALE_VALUE = uiUtils.DEFAULT_SCALE_VALUE;
+var scrollIntoView = uiUtils.scrollIntoView;
+var watchScroll = uiUtils.watchScroll;
+var getVisibleElements = uiUtils.getVisibleElements;
+var PDFPageView = pdfPageView.PDFPageView;
+var RenderingStates = pdfRenderingQueue.RenderingStates;
+var PDFRenderingQueue = pdfRenderingQueue.PDFRenderingQueue;
+var TextLayerBuilder = textLayerBuilder.TextLayerBuilder;
+var AnnotationLayerBuilder = annotationLayerBuilder.AnnotationLayerBuilder;
+var SimpleLinkService = pdfLinkService.SimpleLinkService;
 
 var PresentationModeState = {
   UNKNOWN: 0,
@@ -28,11 +61,6 @@ var PresentationModeState = {
 };
 
 var DEFAULT_CACHE_SIZE = 10;
-
-//#include pdf_rendering_queue.js
-//#include pdf_page_view.js
-//#include text_layer_builder.js
-//#include annotation_layer_builder.js
 
 /**
  * @typedef {Object} PDFViewerOptions
@@ -772,51 +800,6 @@ var PDFViewer = (function pdfViewer() {
   return PDFViewer;
 })();
 
-var SimpleLinkService = (function SimpleLinkServiceClosure() {
-  function SimpleLinkService() {}
-
-  SimpleLinkService.prototype = {
-    /**
-     * @returns {number}
-     */
-    get page() {
-      return 0;
-    },
-    /**
-     * @param {number} value
-     */
-    set page(value) {},
-    /**
-     * @param dest - The PDF destination object.
-     */
-    navigateTo: function (dest) {},
-    /**
-     * @param dest - The PDF destination object.
-     * @returns {string} The hyperlink to the PDF object.
-     */
-    getDestinationHash: function (dest) {
-      return '#';
-    },
-    /**
-     * @param hash - The PDF parameters/hash.
-     * @returns {string} The hyperlink to the PDF object.
-     */
-    getAnchorUrl: function (hash) {
-      return '#';
-    },
-    /**
-     * @param {string} hash
-     */
-    setHash: function (hash) {},
-    /**
-     * @param {string} action
-     */
-    executeNamedAction: function (action) {},
-    /**
-     * @param {number} pageNum - page number.
-     * @param {Object} pageRef - reference to the page.
-     */
-    cachePageRef: function (pageNum, pageRef) {}
-  };
-  return SimpleLinkService;
-})();
+exports.PresentationModeState = PresentationModeState;
+exports.PDFViewer = PDFViewer;
+}));

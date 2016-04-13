@@ -12,9 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- /* globals RenderingStates */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_sidebar', ['exports',
+      'pdfjs-web/pdf_rendering_queue'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./pdf_rendering_queue.js'));
+  } else {
+    factory((root.pdfjsWebPDFSidebar = {}), root.pdfjsWebPDFRenderingQueue);
+  }
+}(this, function (exports, pdfRenderingQueue) {
+
+var RenderingStates = pdfRenderingQueue.RenderingStates;
 
 var SidebarView = {
   NONE: 0,
@@ -330,3 +342,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
 
   return PDFSidebar;
 })();
+
+exports.SidebarView = SidebarView;
+exports.PDFSidebar = PDFSidebar;
+}));

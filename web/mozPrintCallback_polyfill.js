@@ -15,10 +15,21 @@
 /* globals HTMLCanvasElement */
 
 'use strict';
-(function mozPrintCallbackPolyfillClosure() {
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/mozPrintCallback_polyfill', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebMozPrintCallbackPolyfill = {}));
+  }
+}(this, function (exports) {
+//#if !(FIREFOX || MOZCENTRAL)
   if ('mozPrintCallback' in document.createElement('canvas')) {
     return;
   }
+
   // Cause positive result on feature-detection:
   HTMLCanvasElement.prototype.mozPrintCallback = undefined;
 
@@ -139,4 +150,5 @@
     window.addEventListener('beforeprint', stopPropagationIfNeeded, false);
     window.addEventListener('afterprint', stopPropagationIfNeeded, false);
   }
-})();
+//#endif
+}));

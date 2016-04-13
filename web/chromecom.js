@@ -13,10 +13,28 @@
  * limitations under the License.
  */
 
-/* globals chrome, pdfjsLib, PDFViewerApplication, OverlayManager */
+/* globals chrome */
 'use strict';
 
-var ChromeCom = (function ChromeComClosure() {
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/chromecom', ['exports', 'pdfjs-web/app',
+      'pdfjs-web/overlay_manager', 'pdfjs-web/pdfjs'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./app.js'), require('./overlay_manager.js'),
+      require('./pdfjs.js'));
+  } else {
+    factory((root.pdfjsWebChromeCom = {}), root.pdfjsWebApp,
+      root.pdfjsWebOverlayManager, root.pdfjsWebPDFJS);
+  }
+}(this, function (exports, app, overlayManager, pdfjsLib) {
+//#if CHROME
+//#if !CHROME
+  if (true) { return; } // TODO ensure nothing depends on this module.
+//#endif
+  var PDFViewerApplication = app.PDFViewerApplication;
+  var OverlayManager = overlayManager.OverlayManager;
+
   var ChromeCom = {};
   /**
    * Creates an event that the extension is listening for and will
@@ -205,7 +223,7 @@ var ChromeCom = (function ChromeComClosure() {
       // because the shown string should match the UI at chrome://extensions.
       // These strings are from chrome/app/resources/generated_resources_*.xtb.
       var i18nFileAccessLabel =
-//#include chrome-i18n-allow-access-to-file-urls.json
+//#include $ROOT/web/chrome-i18n-allow-access-to-file-urls.json
         [chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
 
       if (i18nFileAccessLabel) {
@@ -304,5 +322,6 @@ var ChromeCom = (function ChromeComClosure() {
     }
   }
 
-  return ChromeCom;
-})();
+  exports.ChromeCom = ChromeCom;
+//#endif
+}));

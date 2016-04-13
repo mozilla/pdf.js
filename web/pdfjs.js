@@ -12,19 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* umdutils ignore */
 
-//#if !(FIREFOX || MOZCENTRAL)
-//#include mozPrintCallback_polyfill.js
-//#endif
+'use strict';
 
-//#if GENERIC || CHROME
-//#include download_manager.js
-//#endif
-
-//#if FIREFOX || MOZCENTRAL
-//#include firefoxcom.js
-//#endif
-
-//#if CHROME
-//#include chromecom.js
-//#endif
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdfjs', ['exports', 'pdfjs/main_loader'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../src/main_loader.js'));
+  } else {
+    factory((root.pdfjsWebPDFJS = {}), root.pdfjsMainLoader);
+  }
+}(this, function (exports, mainLoader) {
+  // Re-export all mainLoader members.
+  for (var i in mainLoader) {
+    if (Object.prototype.hasOwnProperty.call(mainLoader, i)) {
+      exports[i] = mainLoader[i];
+    }
+  }
+}));

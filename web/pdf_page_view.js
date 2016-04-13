@@ -12,10 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals RenderingStates, pdfjsLib, DEFAULT_SCALE, CSS_UNITS, getOutputScale,
-           TextLayerBuilder, Promise, approximateFraction, roundToDivide */
 
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/pdf_page_view', ['exports',
+      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue',
+      'pdfjs-web/pdfjs'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('./ui_utils.js'),
+      require('./pdf_rendering_queue.js'), require('./pdfjs.js'));
+  } else {
+    factory((root.pdfjsWebPDFPageView = {}), root.pdfjsWebUIUtils,
+      root.pdfjsWebPDFRenderingQueue, root.pdfjsWebPDFJS);
+  }
+}(this, function (exports, uiUtils, pdfRenderingQueue, pdfjsLib) {
+
+var CSS_UNITS = uiUtils.CSS_UNITS;
+var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
+var getOutputScale = uiUtils.getOutputScale;
+var approximateFraction = uiUtils.approximateFraction;
+var roundToDivide = uiUtils.roundToDivide;
+var RenderingStates = pdfRenderingQueue.RenderingStates;
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
 
@@ -437,15 +456,6 @@ var PDFPageView = (function PDFPageViewClosure() {
           cssTransform: false,
         });
         div.dispatchEvent(event);
-//#if GENERIC
-        // This custom event is deprecated, and will be removed in the future,
-        // please use the |pagerendered| event instead.
-        var deprecatedEvent = document.createEvent('CustomEvent');
-        deprecatedEvent.initCustomEvent('pagerender', true, true, {
-          pageNumber: pdfPage.pageNumber
-        });
-        div.dispatchEvent(deprecatedEvent);
-//#endif
 
         if (!error) {
           resolveRenderPromise(undefined);
@@ -582,3 +592,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
   return PDFPageView;
 })();
+
+exports.PDFPageView = PDFPageView;
+}));
