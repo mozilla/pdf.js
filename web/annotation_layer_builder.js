@@ -137,4 +137,5 @@ DefaultAnnotationLayerFactory.prototype = {
 };
 
 exports.AnnotationLayerBuilder = AnnotationLayerBuilder;
+exports.DefaultAnnotationLayerFactory = DefaultAnnotationLayerFactory;
 }));
