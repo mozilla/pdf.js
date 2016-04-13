@@ -10,15 +10,18 @@ var TMP_FILE_PREFIX = '../../build/browserify_';
 
 gulp.task('build-bundle', function() {
   return browserify('main.js', {output: TMP_FILE_PREFIX + 'main.tmp'})
+    .ignore(require.resolve('pdfjs-dist/build/pdf.worker')) // Reducing size
     .bundle()
     .pipe(source(TMP_FILE_PREFIX + 'main.tmp'))
     .pipe(streamify(uglify()))
-    .pipe(rename('bundle.js'))
+    .pipe(rename('main.bundle.js'))
     .pipe(gulp.dest(OUTPUT_PATH));
 });
 
 gulp.task('build-worker', function() {
-  return browserify('worker.js', {output: TMP_FILE_PREFIX + 'worker.tmp'})
+  // We can create our own viewer (see worker.js) or use already defined one.
+  var workerSrc = require.resolve('pdfjs-dist/build/pdf.worker.entry');
+  return browserify(workerSrc, {output: TMP_FILE_PREFIX + 'worker.tmp'})
     .bundle()
     .pipe(source(TMP_FILE_PREFIX + 'worker.tmp'))
     .pipe(streamify(uglify({compress:{

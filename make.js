@@ -308,6 +308,7 @@ target.dist = function() {
     GENERIC_DIR + 'build/pdf.js',
     GENERIC_DIR + 'build/pdf.worker.js',
     SINGLE_FILE_DIR + 'build/pdf.combined.js',
+    SRC_DIR + 'pdf.worker.entry.js',
   ], DIST_DIR + 'build/');
 
   mkdir('-p', DIST_DIR + 'web/');
@@ -333,9 +334,10 @@ target.dist = function() {
     homepage: DIST_HOMEPAGE,
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
-    browser: { // used by browserify and ignores following files during bundle
-      'entry?name=[hash]-worker.js!./pdf.worker.js': false,
-      './build/pdf.worker.js': false,
+    dependencies: {
+      'node-ensure': '^0.0.0' // shim for node for require.ensure
+    },
+    browser: {
       'node-ensure': false
     },
     format: 'amd', // to not allow system.js to choose 'cjs'
