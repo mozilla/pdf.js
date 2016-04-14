@@ -41,7 +41,6 @@ var isBool = sharedUtil.isBool;
 var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
-var isValidUrl = sharedUtil.isValidUrl;
 var stringToBytes = sharedUtil.stringToBytes;
 var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
@@ -767,7 +766,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     }
 
     if (url) {
-      if (isValidUrl(url, /* allowRelative = */ false)) {
+      if (isString(url)) {
         data.url = tryConvertUrlEncoding(url);
       }
     }

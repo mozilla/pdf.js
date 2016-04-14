@@ -1,9 +1,42 @@
 /* globals expect, it, describe, PDFJS, isExternalLinkTargetSet, LinkTarget,
-           getFilenameFromUrl, beforeAll, afterAll */
+           getAbsoluteUrl, getFilenameFromUrl, beforeAll, afterAll */
 
 'use strict';
 
 describe('dom_utils', function() {
+  describe('getAbsoluteUrl', function () {
+    it('should accept an absolute URL', function () {
+      var url = 'http://www.example.com';
+      var baseUrl = null;
+      expect(getAbsoluteUrl(url, baseUrl)).toEqual('http://www.example.com');
+    });
+
+    it('should reject a non-URL', function () {
+      var url = 'An arbitrary string.';
+      var baseUrl = null;
+      expect(getAbsoluteUrl(url, baseUrl)).toEqual(null);
+    });
+
+    it('should accept a relative URL, with a valid baseURL', function () {
+      var url = '../../file.pdf#hash';
+      var baseUrl = 'http://www.example.com/some/path/';
+      expect(getAbsoluteUrl(url, baseUrl)).
+        toEqual('http://www.example.com/file.pdf#hash');
+    });
+
+    it('should reject a relative URL, without a baseURL', function () {
+      var url = '../../file.pdf';
+      var baseUrl = null;
+      expect(getAbsoluteUrl(url, baseUrl)).toEqual(null);
+    });
+
+    it('should reject a relative URL, with an invalid baseURL', function () {
+      var url = '../../file.pdf';
+      var baseUrl = '/some/relative/path/';
+      expect(getAbsoluteUrl(url, baseUrl)).toEqual(null);
+    });
+  });
+
   describe('getFilenameFromUrl', function() {
     it('should get the filename from an absolute URL', function() {
       var url = 'http://server.org/filename.pdf';

@@ -47,7 +47,6 @@ var shadow = sharedUtil.shadow;
 var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
-var isValidUrl = sharedUtil.isValidUrl;
 var Util = sharedUtil.Util;
 var Ref = corePrimitives.Ref;
 var RefSet = corePrimitives.RefSet;
@@ -159,7 +158,7 @@ var Catalog = (function CatalogClosure() {
             dest = destEntry;
           } else {
             var uriEntry = actionDict.get('URI');
-            if (isString(uriEntry) && isValidUrl(uriEntry, false)) {
+            if (isString(uriEntry)) {
               url = uriEntry;
             }
           }

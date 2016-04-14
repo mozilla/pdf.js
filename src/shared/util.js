@@ -310,30 +310,6 @@ function isSameOrigin(baseUrl, otherUrl) {
   return base.origin === other.origin;
 }
 
-// Validates if URL is safe and allowed, e.g. to avoid XSS.
-function isValidUrl(url, allowRelative) {
-  if (!url || typeof url !== 'string') {
-    return false;
-  }
-  // RFC 3986 (http://tools.ietf.org/html/rfc3986#section-3.1)
-  // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-  var protocol = /^[a-z][a-z0-9+\-.]*(?=:)/i.exec(url);
-  if (!protocol) {
-    return allowRelative;
-  }
-  protocol = protocol[0].toLowerCase();
-  switch (protocol) {
-    case 'http':
-    case 'https':
-    case 'ftp':
-    case 'mailto':
-    case 'tel':
-      return true;
-    default:
-      return false;
-  }
-}
-
 function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value: value,
                                      enumerable: true,
@@ -2346,7 +2322,6 @@ exports.isInt = isInt;
 exports.isNum = isNum;
 exports.isString = isString;
 exports.isSameOrigin = isSameOrigin;
-exports.isValidUrl = isValidUrl;
 exports.isLittleEndian = isLittleEndian;
 exports.isEvalSupported = isEvalSupported;
 exports.loadJpegStream = loadJpegStream;

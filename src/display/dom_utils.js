@@ -111,6 +111,56 @@ var LinkTargetStringMap = [
   '_top'
 ];
 
+// Validates if URL is safe and allowed, e.g. to avoid XSS.
+function isValidUrl(url, allowRelative) {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+  // RFC 3986 (http://tools.ietf.org/html/rfc3986#section-3.1)
+  // scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+  var protocol = /^[a-z][a-z0-9+\-.]*(?=:)/i.exec(url);
+  if (!protocol) {
+    return allowRelative;
+  }
+  protocol = protocol[0].toLowerCase();
+  switch (protocol) {
+    case 'http':
+    case 'https':
+    case 'ftp':
+    case 'mailto':
+    case 'tel':
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Recovers valid absolute URLs from relative URLs, by utilizing a baseURL.
+ * @param {string} url - An absolute, or relative, URL.
+ * @param {string} baseUrl - An absolute baseURL.
+ * @returns {string|null} An absolute URL, or null if the URL is invalid.
+ */
+function getAbsoluteUrl(url, baseUrl) {
+  if (!url) {
+    return null;
+  }
+  if (isValidUrl(url, /* allowRelative = */ false)) {
+    return url; // Valid absolute URL, return as is.
+  }
+  if (!isValidUrl(url, /* allowRelative = */ true)) {
+    return null; // Invalid relative URL.
+  }
+  if (!isValidUrl(baseUrl, /* allowRelative = */ false)) {
+    return null; // Invalid absolute baseURL.
+  }
+  var combinedUrl = new URL(url, baseUrl).href;
+  if (isValidUrl(combinedUrl, /* allowRelative = */ false)) {
+    return combinedUrl; // Valid absolute URL, return the combined URL.
+  }
+  return null;
+}
+
 /**
  * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
@@ -228,6 +278,8 @@ function isExternalLinkTargetSet() {
 }
 
 exports.CustomStyle = CustomStyle;
+exports.isValidUrl = isValidUrl;
+exports.getAbsoluteUrl = getAbsoluteUrl;
 exports.addLinkAttributes = addLinkAttributes;
 exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
 exports.getFilenameFromUrl = getFilenameFromUrl;

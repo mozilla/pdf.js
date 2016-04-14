@@ -81,11 +81,14 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      * @private
      */
     _bindLink: function PDFOutlineViewer_bindLink(element, item) {
-      if (item.url) {
-        pdfjsLib.addLinkAttributes(element, { url: item.url });
+      var linkService = this.linkService;
+      var absoluteUrl = pdfjsLib.getAbsoluteUrl(item.url,
+        linkService.relativeLinkAnnotBaseUrl);
+
+      if (absoluteUrl) {
+        pdfjsLib.addLinkAttributes(element, { url: absoluteUrl });
         return;
       }
-      var linkService = this.linkService;
       element.href = linkService.getDestinationHash(item.dest);
       element.onclick = function goToDestination(e) {
         linkService.navigateTo(item.dest);

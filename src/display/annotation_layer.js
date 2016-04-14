@@ -30,6 +30,7 @@
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
 var Util = sharedUtil.Util;
+var getAbsoluteUrl = displayDOMUtils.getAbsoluteUrl;
 var addLinkAttributes = displayDOMUtils.addLinkAttributes;
 var LinkTarget = displayDOMUtils.LinkTarget;
 var getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
@@ -279,12 +280,15 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
       this.container.className = 'linkAnnotation';
 
       var link = document.createElement('a');
+      var absoluteUrl = getAbsoluteUrl(this.data.url,
+        this.linkService.relativeLinkAnnotBaseUrl);
+
       addLinkAttributes(link, {
-        url: this.data.url,
+        url: absoluteUrl,
         target: (this.data.newWindow ? LinkTarget.BLANK : undefined),
       });
 
-      if (!this.data.url) {
+      if (!absoluteUrl) {
         if (this.data.action) {
           this._bindNamedAction(link, this.data.action);
         } else {

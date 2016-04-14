@@ -270,6 +270,7 @@ describe('Annotation layer', function() {
       actionDict.set('S', Name.get('GoToR'));
       actionDict.set('F', '../../0021/002156/215675E.pdf');
       actionDict.set('D', '15');
+      actionDict.set('NewWindow', true);
 
       var annotationDict = new Dict();
       annotationDict.set('Type', Name.get('Annot'));
@@ -283,9 +284,9 @@ describe('Annotation layer', function() {
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toBeUndefined();
+      expect(data.url).toEqual('../../0021/002156/215675E.pdf#15');
       expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toBeFalsy();
+      expect(data.newWindow).toEqual(true);
     });
 
     it('should correctly parse a Named action', function() {

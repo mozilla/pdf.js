@@ -48,8 +48,9 @@ var PDFLinkService = (function () {
   function PDFLinkService(options) {
     options = options || {};
     this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
-    this.baseUrl = null;
     this.pdfDocument = null;
+    this.baseUrl = null;
+    this.relativeLinkAnnotBaseUrl = null;
     this.pdfViewer = null;
     this.pdfHistory = null;
 
@@ -57,9 +58,11 @@ var PDFLinkService = (function () {
   }
 
   PDFLinkService.prototype = {
-    setDocument: function PDFLinkService_setDocument(pdfDocument, baseUrl) {
-      this.baseUrl = baseUrl;
+    setDocument: function PDFLinkService_setDocument(pdfDocument, baseUrl,
+                                                     relativeLinkAnnotBaseUrl) {
       this.pdfDocument = pdfDocument;
+      this.baseUrl = baseUrl;
+      this.relativeLinkAnnotBaseUrl = relativeLinkAnnotBaseUrl || null;
       this._pagesRefCache = Object.create(null);
     },
 

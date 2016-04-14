@@ -55,12 +55,13 @@
   exports.UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
   exports.OPS = sharedUtil.OPS;
   exports.UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
-  exports.isValidUrl = sharedUtil.isValidUrl;
+  exports.isValidUrl = displayDOMUtils.isValidUrl;
   exports.createObjectURL = sharedUtil.createObjectURL;
   exports.removeNullCharacters = sharedUtil.removeNullCharacters;
   exports.shadow = sharedUtil.shadow;
   exports.createBlob = sharedUtil.createBlob;
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
+  exports.getAbsoluteUrl = displayDOMUtils.getAbsoluteUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
 
 }));

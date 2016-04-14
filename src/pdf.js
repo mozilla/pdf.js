@@ -63,13 +63,14 @@
     pdfjsLibs.pdfjsSharedUtil.UnexpectedResponseException;
   exports.OPS = pdfjsLibs.pdfjsSharedUtil.OPS;
   exports.UNSUPPORTED_FEATURES = pdfjsLibs.pdfjsSharedUtil.UNSUPPORTED_FEATURES;
-  exports.isValidUrl = pdfjsLibs.pdfjsSharedUtil.isValidUrl;
+  exports.isValidUrl = pdfjsLibs.pdfjsDisplayDOMUtils.isValidUrl;
   exports.createObjectURL = pdfjsLibs.pdfjsSharedUtil.createObjectURL;
   exports.removeNullCharacters = pdfjsLibs.pdfjsSharedUtil.removeNullCharacters;
   exports.shadow = pdfjsLibs.pdfjsSharedUtil.shadow;
   exports.createBlob = pdfjsLibs.pdfjsSharedUtil.createBlob;
   exports.getFilenameFromUrl =
     pdfjsLibs.pdfjsDisplayDOMUtils.getFilenameFromUrl;
+  exports.getAbsoluteUrl = pdfjsLibs.pdfjsDisplayDOMUtils.getAbsoluteUrl;
   exports.addLinkAttributes = pdfjsLibs.pdfjsDisplayDOMUtils.addLinkAttributes;
 //#else
   exports.WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
