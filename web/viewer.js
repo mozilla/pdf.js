@@ -166,7 +166,7 @@ function webViewerLoad() {
   var config = getViewerConfiguration();
 //#if !PRODUCTION
   require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
-  require(['pdfjs-web/app'], function (web) {
+  require(['pdfjs-web/app', 'mozPrintCallback_polyfill.js'], function (web) {
     window.PDFViewerApplication = web.PDFViewerApplication;
     web.PDFViewerApplication.run(config);
   });
