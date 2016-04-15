@@ -451,7 +451,7 @@ var PDFViewerApplication = {
     return this.externalServices.supportedMouseWheelZoomModifierKeys;
   },
 
-//#if (FIREFOX || MOZCENTRAL)
+//#if (FIREFOX || MOZCENTRAL || CHROME)
   initPassiveLoading: function pdfViewInitPassiveLoading() {
     this.externalServices.initPassiveLoading({
       onOpenWithTransport: function (url, length, transport) {
@@ -463,6 +463,16 @@ var PDFViewerApplication = {
       },
       onOpenWithData: function (data) {
         PDFViewerApplication.open(data);
+      },
+      onOpenWithURL: function (url, length, originalURL) {
+        var file = url, args = null;
+        if (length !== undefined) {
+          args = {length: length};
+        }
+        if (originalURL !== undefined) {
+          file = {file: url, originalURL: originalURL};
+        }
+        PDFViewerApplication.open(file, args);
       },
       onError: function (e) {
         PDFViewerApplication.error(mozL10n.get('loading_error', null,
@@ -1445,7 +1455,7 @@ function webViewerInitialized() {
   appConfig.toolbar.download.addEventListener('click',
     SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
 
-//#if (FIREFOX || MOZCENTRAL)
+//#if (FIREFOX || MOZCENTRAL || CHROME)
 //PDFViewerApplication.setTitleUsingUrl(file);
 //PDFViewerApplication.initPassiveLoading();
 //return;
@@ -1475,11 +1485,6 @@ function webViewerInitialized() {
   if (file) {
     PDFViewerApplication.open(file);
   }
-//#endif
-//#if CHROME
-//if (file) {
-//  ChromeCom.openPDFFile(file);
-//}
 //#endif
 }
 
@@ -2141,6 +2146,7 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 })();
 
 exports.PDFViewerApplication = PDFViewerApplication;
+exports.DefaultExernalServices = DefaultExernalServices;
 
 // TODO remove circular reference of pdfjs-web/secondary_toolbar on app.
 secondaryToolbarLib._setApp(exports);

@@ -13,27 +13,28 @@
  * limitations under the License.
  */
 
-/* globals chrome */
+/* globals chrome, DEFAULT_PREFERENCES, DEFAULT_URL */
 'use strict';
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/chromecom', ['exports', 'pdfjs-web/app',
-      'pdfjs-web/overlay_manager', 'pdfjs-web/pdfjs'], factory);
+      'pdfjs-web/overlay_manager', 'pdfjs-web/preferences', 'pdfjs-web/pdfjs'],
+      factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./app.js'), require('./overlay_manager.js'),
-      require('./pdfjs.js'));
+      require('./preferences.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebChromeCom = {}), root.pdfjsWebApp,
-      root.pdfjsWebOverlayManager, root.pdfjsWebPDFJS);
+      root.pdfjsWebOverlayManager, root.pdfjsWebPreferences,
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, app, overlayManager, pdfjsLib) {
+}(this, function (exports, app, overlayManager, preferences, pdfjsLib) {
 //#if CHROME
-//#if !CHROME
-  if (true) { return; } // TODO ensure nothing depends on this module.
-//#endif
   var PDFViewerApplication = app.PDFViewerApplication;
+  var DefaultExernalServices = app.DefaultExernalServices;
   var OverlayManager = overlayManager.OverlayManager;
+  var Preferences = preferences.Preferences;
 
   var ChromeCom = {};
   /**
@@ -64,11 +65,12 @@
   };
 
   /**
-   * Opens a PDF file with the PDF viewer.
+   * Resolves a PDF file path and attempts to detects length.
    *
    * @param {String} file Absolute URL of PDF file.
+   * @param {Function} callback A callback with resolved URL and file length.
    */
-  ChromeCom.openPDFFile = function ChromeCom_openPDFFile(file) {
+  ChromeCom.resolvePDFFile = function ChromeCom_resolvePDFFile(file, callback) {
     // Expand drive:-URLs to filesystem URLs (Chrome OS)
     file = file.replace(/^drive:/i,
         'filesystem:' + location.origin + '/external/');
@@ -81,10 +83,7 @@
         var streamUrl = response.streamUrl;
         if (streamUrl) {
           console.log('Found data stream for ' + file);
-          PDFViewerApplication.open(streamUrl, {
-            length: response.contentLength
-          });
-          PDFViewerApplication.setTitleUsingUrl(file);
+          callback(streamUrl, response.contentLength, file);
           return;
         }
         if (isFTPFile && !response.extensionSupportsFTP) {
@@ -108,16 +107,14 @@
         resolveLocalFileSystemURL(file, function onResolvedFSURL(fileEntry) {
           fileEntry.file(function(fileObject) {
             var blobUrl = URL.createObjectURL(fileObject);
-            PDFViewerApplication.open(blobUrl, {
-              length: fileObject.size
-            });
+            callback(blobUrl, fileObject.size);
           });
         }, function onFileSystemError(error) {
           // This should not happen. When it happens, just fall back to the
           // usual way of getting the File's data (via the Web worker).
           console.warn('Cannot resolve file ' + file + ', ' + error.name + ' ' +
                        error.message);
-          PDFViewerApplication.open(file);
+          callback(file);
         });
         return;
       }
@@ -126,7 +123,7 @@
         // There is no UI to input a different URL, so this assumption will hold
         // for now.
         setReferer(file, function() {
-          PDFViewerApplication.open(file);
+          callback(file);
         });
         return;
       }
@@ -145,7 +142,7 @@
           }
           isAllowedFileSchemeAccess(function(isAllowedAccess) {
             if (isAllowedAccess) {
-              PDFViewerApplication.open(file);
+              callback(file);
             } else {
               requestAccessToLocalFile(file);
             }
@@ -153,7 +150,7 @@
         });
         return;
       }
-      PDFViewerApplication.open(file);
+      callback(file);
     });
   };
 
@@ -323,6 +320,55 @@
       callback();
     }
   }
+
+  Preferences._writeToStorage = function (prefObj) {
+    return new Promise(function (resolve) {
+      if (prefObj === DEFAULT_PREFERENCES) {
+        var keysToRemove = Object.keys(DEFAULT_PREFERENCES);
+        // If the storage is reset, remove the keys so that the values from
+        // managed storage are applied again.
+        chrome.storage.local.remove(keysToRemove, function() {
+          resolve();
+        });
+      } else {
+        chrome.storage.local.set(prefObj, function() {
+          resolve();
+        });
+      }
+    });
+  };
+
+  Preferences._readFromStorage = function (prefObj) {
+    return new Promise(function (resolve) {
+      if (chrome.storage.managed) {
+        // Get preferences as set by the system administrator.
+        // See extensions/chromium/preferences_schema.json for more information.
+        // These preferences can be overridden by the user.
+        chrome.storage.managed.get(DEFAULT_PREFERENCES, getPreferences);
+      } else {
+        // Managed storage not supported, e.g. in old Chromium versions.
+        getPreferences(DEFAULT_PREFERENCES);
+      }
+
+      function getPreferences(defaultPrefs) {
+        if (chrome.runtime.lastError) {
+          // Managed storage not supported, e.g. in Opera.
+          defaultPrefs = DEFAULT_PREFERENCES;
+        }
+        chrome.storage.local.get(defaultPrefs, function(readPrefs) {
+          resolve(readPrefs);
+        });
+      }
+    });
+  };
+
+  var ChromeExternalServices = Object.create(DefaultExernalServices);
+  ChromeExternalServices.initPassiveLoading = function (callbacks) {
+    ChromeCom.resolvePDFFile(DEFAULT_URL, function (url, length, originalURL) {
+      callbacks.onOpenWithURL(url, length, originalURL);
+    });
+  };
+  PDFViewerApplication.externalServices = ChromeExternalServices;
 
   exports.ChromeCom = ChromeCom;
 //#endif
