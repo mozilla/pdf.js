@@ -1270,6 +1270,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue7200",
+       "file": "pdfs/issue7200.pdf",
+       "md5": "ddae17424ea23930eecf8b612a66ed0f",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "pr4606",
        "file": "pdfs/pr4606.pdf",
        "md5": "6574fde2314648600056bd0e229df98c",

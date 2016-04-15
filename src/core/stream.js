@@ -39,6 +39,7 @@ var createObjectURL = sharedUtil.createObjectURL;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
+var isDict = corePrimitives.isDict;
 var Jbig2Image = coreJbig2.Jbig2Image;
 var JpegImage = coreJpg.JpegImage;
 var JpxImage = coreJpx.JpxImage;
@@ -680,6 +681,9 @@ var FlateStream = (function FlateStreamClosure() {
 
 var PredictorStream = (function PredictorStreamClosure() {
   function PredictorStream(str, maybeLength, params) {
+    if (!isDict(params)) {
+      return str; // no prediction
+    }
     var predictor = this.predictor = params.get('Predictor') || 1;
 
     if (predictor <= 1) {
