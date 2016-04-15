@@ -45,7 +45,6 @@ var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
 var UnknownErrorException = sharedUtil.UnknownErrorException;
 var Util = sharedUtil.Util;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
-var combineUrl = sharedUtil.combineUrl;
 var error = sharedUtil.error;
 var deprecated = sharedUtil.deprecated;
 var getVerbosityLevel = sharedUtil.getVerbosityLevel;
@@ -186,7 +185,7 @@ function getDocument(src, pdfDataRangeTransport,
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
       // The full path is required in the 'url' field.
-      params[key] = combineUrl(window.location.href, source[key]);
+      params[key] = new URL(source[key], window.location).href;
       continue;
     } else if (key === 'range') {
       rangeTransport = source[key];
@@ -1121,7 +1120,7 @@ var PDFWorker = (function PDFWorkerClosure() {
 //        // to the same origin.
 //        if (!isSameOrigin(window.location.href, workerSrc)) {
 //          workerSrc = createCDNWrapper(
-//            combineUrl(window.location.href, workerSrc));
+//            new URL(workerSrc, window.location).href);
 //        }
 //#endif
           // Some versions of FF can't create a worker on localhost, see:

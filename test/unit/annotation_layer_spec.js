@@ -1,5 +1,5 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType, AnnotationFlag, PDFJS, combineUrl,
+           AnnotationBorderStyleType, AnnotationFlag, PDFJS, 
            beforeEach, afterEach, stringToBytes */
 
 'use strict';
@@ -179,8 +179,8 @@ describe('Annotation layer', function() {
     var annotations;
 
     beforeEach(function(done) {
-      var pdfUrl = combineUrl(window.location.href,
-                              '../pdfs/annotation-fileattachment.pdf');
+      var pdfUrl = new URL('../pdfs/annotation-fileattachment.pdf', 
+                           window.location).href;
       loadingTask = PDFJS.getDocument(pdfUrl);
       loadingTask.promise.then(function(pdfDocument) {
         return pdfDocument.getPage(1).then(function(pdfPage) {
