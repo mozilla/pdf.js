@@ -332,9 +332,7 @@ var Driver = (function DriverClosure() {
 
       this._log('Loading file "' + task.file + '"\n');
 
-      var absoluteUrl = pdfjsSharedUtil.combineUrl(window.location.href,
-                                                   task.file);
-
+      var absoluteUrl = new URL(task.file, window.location).href; 
       PDFJS.disableRange = task.disableRange;
       PDFJS.disableAutoFetch = !task.enableAutoFetch;
       try {
