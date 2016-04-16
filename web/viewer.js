@@ -1494,25 +1494,49 @@ function webViewerInitialized() {
   });
     
   document.getElementById('colorSelect').addEventListener('change', function() {
-    var element = document.getElementById('toolbarViewer');
-    if(this.value === '0'){
-        element.style.backgroundColor = "#484848";
-    }
-    if (this.value === '1') {
-        element.style.backgroundColor = "#972727";
-    }   
-    if (this.value === '2') {
-        element.style.backgroundColor = "#276597";
-    }   
-    if (this.value === '3') {
-        element.style.backgroundColor = "#13634C";
-    }   
-    if (this.value === '4') {
-        element.style.backgroundColor = "#6F5280";
-    }    
-    if (this.value === '5') {
-        element.style.backgroundColor = "#797979";
-    }
+        var toolbarViewer = document.getElementById('toolbarViewer');
+        var viewer = document.getElementById('viewer');
+        var color = ""
+        if(this.value === '0'){
+            color = "#484848";
+        }
+        if (this.value === '1') {
+            color = "#972727";
+        }   
+        if (this.value === '2') {
+            color = "#276597";
+        }   
+        if (this.value === '3') {
+            color = "#13634C";
+        }   
+        if (this.value === '4') {
+            color = "#6F5280";
+        }    
+        if (this.value === '5') {
+            color = "#797979";
+        }
+        toolbarViewer.style.backgroundColor = viewer.style.backgroundColor = color
+  });
+    
+    document.getElementById('textSizeSelect').addEventListener('change', function() {
+        var toolbarLabel = document.getElementsByClassName('toolbarLabel');
+        var fontSize ="";
+        if(this.value === '0'){
+           fontSize = "12px";
+        }
+        if (this.value === '1') {
+            fontSize = "14px"
+        }   
+        if (this.value === '2') {
+            fontSize = "18px"
+        }   
+        if (this.value === '3') {
+            fontSize = "22px"
+        }   
+        for (var i = 0; i < toolbarLabel.length; i++) {
+            var element = toolbarLabel[i];
+            element.style.fontSize = fontSize;
+        }
   });
 
   document.getElementById('scaleSelect').addEventListener('change', function() {
