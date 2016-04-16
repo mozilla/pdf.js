@@ -114,15 +114,15 @@ var LinkTargetStringMap = [
 /**
  * @typedef ExternalLinkParameters
  * @typedef {Object} ExternalLinkParameters
- * @property {string} url
- * @property {LinkTarget} target
- * @property {string} rel
+ * @property {string} url - An absolute URL.
+ * @property {LinkTarget} target - The link target.
+ * @property {string} rel - The link relationship.
  */
 
 /**
  * Adds various attributes (href, title, target, rel) to hyperlinks.
  * @param {HTMLLinkElement} link - The link element.
- * @param {ExternalLinkParameters} params - An object with the properties.
+ * @param {ExternalLinkParameters} params
  */
 function addLinkAttributes(link, params) {
   var url = params && params.url;
@@ -134,7 +134,7 @@ function addLinkAttributes(link, params) {
       target = getDefaultSetting('externalLinkTarget');
     }
     link.target = LinkTargetStringMap[target];
-    // Strip referrer from the URL.
+
     var rel = params.rel;
     if (typeof rel === 'undefined') {
       rel = getDefaultSetting('externalLinkRel');
