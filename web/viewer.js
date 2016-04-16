@@ -1520,22 +1520,37 @@ function webViewerInitialized() {
     
     document.getElementById('textSizeSelect').addEventListener('change', function() {
         var toolbarLabel = document.getElementsByClassName('toolbarLabel');
-        var fontSize ="";
+        var toolbarButton = document.getElementsByClassName('secondaryToolbarButton');
+        var dialog = document.getElementsByClassName('dialog');
+        var fontSizeToolBar ="";
+        var fontSizeButtons = "";
         if(this.value === '0'){
-           fontSize = "12px";
+           fontSizeToolBar = "12px";
+           fontSizeButtons = "12px";
         }
         if (this.value === '1') {
-            fontSize = "14px"
+            fontSizeToolBar = "14px"
+            fontSizeButtons = "14px"
         }   
         if (this.value === '2') {
-            fontSize = "18px"
+            fontSizeToolBar = "18px"
+            fontSizeButtons = "16px"
         }   
         if (this.value === '3') {
-            fontSize = "22px"
+            fontSizeToolBar = "22px"
+            fontSizeButtons = "18px"
         }   
         for (var i = 0; i < toolbarLabel.length; i++) {
             var element = toolbarLabel[i];
-            element.style.fontSize = fontSize;
+            element.style.fontSize = fontSizeToolBar;
+        }
+        for (var i = 0; i < toolbarButton.length; i++) {
+            var element = toolbarButton[i];
+            element.style.fontSize = fontSizeButtons;
+        }
+        for (var i = 0; i < dialog.length; i++) {
+            var element = dialog[i];
+            element.style.fontSize = fontSizeButtons;
         }
   });
 
