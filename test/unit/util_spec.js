@@ -1,22 +1,8 @@
-/* globals expect, it, describe, Dict, isDict, Name, PDFJS,
-           stringToPDFString, removeNullCharacters */
+/* globals describe, it, expect, stringToPDFString, removeNullCharacters */
 
 'use strict';
 
 describe('util', function() {
-  describe('isDict', function() {
-    it('handles empty dictionaries with type check', function() {
-      var dict = new Dict();
-      expect(isDict(dict, 'Page')).toEqual(false);
-    });
-
-    it('handles dictionaries with type check', function() {
-      var dict = new Dict();
-      dict.set('Type', Name.get('Page'));
-      expect(isDict(dict, 'Page')).toEqual(true);
-    });
-  });
-
   describe('stringToPDFString', function() {
     it('handles ISO Latin 1 strings', function() {
       var str = '\x8Dstring\x8E';
