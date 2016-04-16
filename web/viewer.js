@@ -1492,6 +1492,28 @@ function webViewerInitialized() {
       this.value = PDFViewerApplication.page;
     }
   });
+    
+  document.getElementById('colorSelect').addEventListener('change', function() {
+    var element = document.getElementById('toolbarViewer');
+    if(this.value === '0'){
+        element.style.backgroundColor = "#484848";
+    }
+    if (this.value === '1') {
+        element.style.backgroundColor = "#972727";
+    }   
+    if (this.value === '2') {
+        element.style.backgroundColor = "#276597";
+    }   
+    if (this.value === '3') {
+        element.style.backgroundColor = "#13634C";
+    }   
+    if (this.value === '4') {
+        element.style.backgroundColor = "#6F5280";
+    }    
+    if (this.value === '5') {
+        element.style.backgroundColor = "#797979";
+    }
+  });
 
   document.getElementById('scaleSelect').addEventListener('change', function() {
     if (this.value === 'custom') {

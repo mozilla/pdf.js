@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!--
 Copyright 2012 Mozilla Foundation
 
@@ -223,6 +223,18 @@ See https://github.com/adobe-type-tools/cmap-resources
                 <label id="pageNumberLabel" class="toolbarLabel" for="pageNumber" data-l10n-id="page_label">Page: </label>
                 <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1" tabindex="15">
                 <span id="numPages" class="toolbarLabel"></span>
+
+                <label id="colorSelectorLabel" class="toolbarLabel" for="colorSelectContainer" data-l10n-id="color_label">ToolBar Color: </label>
+                  <span id="colorSelectContainer" class="dropdownToolbarButton" style="min-width: 122px; max-width: 122px;">
+                     <select id="colorSelect" title="Color" tabindex="23" data-l10n-id="color" style="min-width: 144px;">
+                            <option value="0" selected>Select Color</option>
+                            <option value="1">Red</option>
+                            <option value="2">Blue</option>
+                            <option value="3">Green</option>
+                            <option value="4">Purple</option>
+                            <option value="5">Grey</option>
+                    </select>
+                  </span>          
               </div>
               <div id="toolbarViewerRight">
                 <button id="presentationMode" class="toolbarButton presentationMode hiddenLargeView" title="Switch to Presentation Mode" tabindex="31" data-l10n-id="presentation_mode">
