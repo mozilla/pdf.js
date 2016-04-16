@@ -281,7 +281,10 @@ var Driver = (function DriverClosure() {
 
     run: function Driver_run() {
       var self = this;
-
+      window.onerror = function(message, source, line, column, error) {
+        self._info('Error: ' + message + ' Script: ' + source + ' Line: ' +
+                  line + ' Column: ' + column + ' StackTrace: ' +  error);
+      };
       this._info('User agent: ' + navigator.userAgent);
       this._log('Harness thinks this browser is "' + this.browser +
         '" with path "' + this.appPath + '"\n');
