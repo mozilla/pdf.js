@@ -192,6 +192,7 @@ var PDFViewerApplication = {
     pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
     Preferences.initialize();
+    this.preferences = Preferences;
 
     this.pdfHistory = new PDFHistory({
       linkService: pdfLinkService
@@ -220,10 +221,13 @@ var PDFViewerApplication = {
 
     this.findController.setFindBar(this.findBar);
 
+    this.overlayManager = OverlayManager;
+
     HandTool.initialize({
       container: container,
       toggleHandTool: document.getElementById('toggleHandTool')
     });
+    this.handTool = HandTool;
 
     this.pdfDocumentProperties = new PDFDocumentProperties({
       overlayName: 'documentPropertiesOverlay',
@@ -259,6 +263,7 @@ var PDFViewerApplication = {
       pageRotateCcw: document.getElementById('pageRotateCcw'),
       documentPropertiesButton: document.getElementById('documentProperties')
     });
+    this.secondaryToolbar = SecondaryToolbar;
 
     if (this.supportsFullscreen) {
       var toolbar = SecondaryToolbar;
@@ -286,6 +291,7 @@ var PDFViewerApplication = {
       passwordSubmit: document.getElementById('passwordSubmit'),
       passwordCancel: document.getElementById('passwordCancel')
     });
+    this.passwordPrompt = PasswordPrompt;
 
     this.pdfOutlineViewer = new PDFOutlineViewer({
       container: document.getElementById('outlineView'),
