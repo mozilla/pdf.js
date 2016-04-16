@@ -481,6 +481,19 @@ describe('CipherTransformFactory', function() {
     done();
   }
 
+  function ensurePasswordNeeded(done, dict, fileId, password) {
+    try {
+      new CipherTransformFactory(dict, fileId, password);
+    } catch (ex) {
+      expect(ex instanceof PasswordException).toEqual(true);
+      expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
+
+      done();
+      return;
+    }
+    done.fail('Password should be rejected.');
+  }
+
   function ensurePasswordIncorrect(done, dict, fileId, password) {
     try {
       new CipherTransformFactory(dict, fileId, password);
@@ -609,6 +622,9 @@ describe('CipherTransformFactory', function() {
       it('should accept owner password', function (done) {
         ensurePasswordCorrect(done, aes256Dict, fileId1, 'owner');
       });
+      it('should not accept blank password', function (done) {
+        ensurePasswordNeeded(done, aes256Dict, fileId1);
+      });
       it('should not accept wrong password', function (done) {
         ensurePasswordIncorrect(done, aes256Dict, fileId1, 'wrong');
       });
@@ -624,6 +640,9 @@ describe('CipherTransformFactory', function() {
       it('should accept owner password', function (done) {
         ensurePasswordCorrect(done, aes256IsoDict, fileId1, 'owner');
       });
+      it('should not accept blank password', function (done) {
+        ensurePasswordNeeded(done, aes256IsoDict, fileId1);
+      });
       it('should not accept wrong password', function (done) {
         ensurePasswordIncorrect(done, aes256IsoDict, fileId1, 'wrong');
       });
@@ -638,10 +657,13 @@ describe('CipherTransformFactory', function() {
     it('should accept owner password', function (done) {
       ensurePasswordCorrect(done, dict1, fileId1, '654321');
     });
+    it('should not accept blank password', function (done) {
+      ensurePasswordNeeded(done, dict1, fileId1);
+    });
     it('should not accept wrong password', function (done) {
       ensurePasswordIncorrect(done, dict1, fileId1, 'wrong');
     });
-    it('should accept no password', function (done) {
+    it('should accept blank password', function (done) {
       ensurePasswordCorrect(done, dict2, fileId2);
     });
   });
