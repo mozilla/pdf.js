@@ -225,11 +225,10 @@ var PDFViewerApplication = {
 
     this.overlayManager = OverlayManager;
 
-    HandTool.initialize({
+    this.handTool = new HandTool({
       container: container,
       toggleHandTool: document.getElementById('toggleHandTool')
     });
-    this.handTool = HandTool;
 
     this.pdfDocumentProperties = new PDFDocumentProperties({
       overlayName: 'documentPropertiesOverlay',
@@ -2148,7 +2147,7 @@ window.addEventListener('keydown', function keydown(evt) {
 
       case 72: // 'h'
         if (!isViewerInPresentationMode) {
-          HandTool.toggle();
+          PDFViewerApplication.handTool.toggle();
         }
         break;
       case 82: // 'r'
