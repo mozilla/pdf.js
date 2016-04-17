@@ -1239,7 +1239,39 @@ var PDFViewerApplication = {
       return;
     }
     this.pdfPresentationMode.mouseScroll(delta);
-  }
+  },     
+  
+   changeViewerColor: function(color){
+    document.getElementById('viewer').style.backgroundColor = color;
+   },
+    
+   changeToolbarViewerColor: function(color){
+    document.getElementById('toolbarViewer').style.backgroundColor = color;
+   },
+    
+   changeToolBarLabelFontSize : function(size){
+    var elements = document.getElementsByClassName('toolbarLabel');
+    for(var i=0; i < elements.length; i++){
+        var element = elements[i];
+        element.style.fontSize = size;
+    }
+   },   
+    
+   changeSecondaryToolbarButtonFontSize : function(size){
+    var elements = document.getElementsByClassName('secondaryToolbarButton');
+    for(var i=0; i < elements.length; i++){
+        var element = elements[i];        
+        element.style.fontSize = size;
+    }
+   },   
+    
+   changeDialogFontSize : function(size){
+    var elements = document.getElementsByClassName('dialog');
+    for(var i=0; i < elements.length; i++){
+        var element = elements[i];        
+        element.style.fontSize = size;
+    }
+   }
 };
 //#if GENERIC
 window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
@@ -1494,8 +1526,6 @@ function webViewerInitialized() {
   });
     
   document.getElementById('colorSelect').addEventListener('change', function() {
-        var toolbarViewer = document.getElementById('toolbarViewer');
-        var viewer = document.getElementById('viewer');
         var color = ""
         if(this.value === '0'){
             color = "#484848";
@@ -1515,7 +1545,8 @@ function webViewerInitialized() {
         if (this.value === '5') {
             color = "#797979";
         }
-        toolbarViewer.style.backgroundColor = viewer.style.backgroundColor = color
+      PDFViewerApplication.changeViewerColor(color);
+      PDFViewerApplication.changeToolbarViewerColor(color);
   });
     
     document.getElementById('textSizeSelect').addEventListener('change', function() {
@@ -1540,18 +1571,9 @@ function webViewerInitialized() {
             fontSizeToolBar = "22px"
             fontSizeButtons = "18px"
         }   
-        for (var i = 0; i < toolbarLabel.length; i++) {
-            var element = toolbarLabel[i];
-            element.style.fontSize = fontSizeToolBar;
-        }
-        for (var i = 0; i < toolbarButton.length; i++) {
-            var element = toolbarButton[i];
-            element.style.fontSize = fontSizeButtons;
-        }
-        for (var i = 0; i < dialog.length; i++) {
-            var element = dialog[i];
-            element.style.fontSize = fontSizeButtons;
-        }
+        PDFViewerApplication.changeToolBarLabelFontSize(fontSizeToolBar);
+        PDFViewerApplication.changeSecondaryToolbarButtonFontSize(fontSizeButtons);
+        PDFViewerApplication.changeDialogFontSize(fontSizeButtons);
   });
 
   document.getElementById('scaleSelect').addEventListener('change', function() {
