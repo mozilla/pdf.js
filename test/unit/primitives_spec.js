@@ -1,10 +1,9 @@
 /* globals expect, it, describe, beforeEach, Name, Dict, Ref, RefSet, Cmd,
-           jasmine */
+           jasmine, isDict */
 
 'use strict';
 
 describe('primitives', function() {
-
   describe('Name', function() {
     it('should retain the given name', function() {
       var givenName = 'Font';
@@ -144,6 +143,19 @@ describe('primitives', function() {
       refset.put(ref);
       var anotherRef = new Ref(2, 4);
       expect(refset.has(anotherRef)).toBeFalsy();
+    });
+  });
+
+  describe('isDict', function() {
+    it('handles empty dictionaries with type check', function() {
+      var dict = new Dict();
+      expect(isDict(dict, 'Page')).toEqual(false);
+    });
+
+    it('handles dictionaries with type check', function() {
+      var dict = new Dict();
+      dict.set('Type', Name.get('Page'));
+      expect(isDict(dict, 'Page')).toEqual(true);
     });
   });
 });
