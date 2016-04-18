@@ -285,14 +285,13 @@ var PDFViewerApplication = {
       });
     }
 
-    PasswordPrompt.initialize({
+    this.passwordPrompt = new PasswordPrompt({
       overlayName: 'passwordOverlay',
-      passwordField: document.getElementById('password'),
-      passwordText: document.getElementById('passwordText'),
-      passwordSubmit: document.getElementById('passwordSubmit'),
-      passwordCancel: document.getElementById('passwordCancel')
+      label: document.getElementById('passwordText'),
+      input: document.getElementById('password'),
+      submitButton: document.getElementById('passwordSubmit'),
+      cancelButton: document.getElementById('passwordCancel')
     });
-    this.passwordPrompt = PasswordPrompt;
 
     this.pdfOutlineViewer = new PDFOutlineViewer({
       container: document.getElementById('outlineView'),
@@ -687,10 +686,9 @@ var PDFViewerApplication = {
     var loadingTask = pdfjsLib.getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
-    loadingTask.onPassword = function passwordNeeded(updatePassword, reason) {
-      PasswordPrompt.updatePassword = updatePassword;
-      PasswordPrompt.reason = reason;
-      PasswordPrompt.open();
+    loadingTask.onPassword = function passwordNeeded(updateCallback, reason) {
+      self.passwordPrompt.setUpdateCallback(updateCallback, reason);
+      self.passwordPrompt.open();
     };
 
     loadingTask.onProgress = function getDocumentProgress(progressData) {
