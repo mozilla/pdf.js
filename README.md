@@ -43,6 +43,12 @@ PDF.js is built into version 19+ of Firefox, however the extension is still avai
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
 directory `build/chromium`.
 
+## Using Core Library in a Web Application
+
+The package may be installed via npm:
+
+	$ npm install pdfjs-dist
+
 ## Getting the Code
 
 To get a local copy of the current code, clone it using git:
