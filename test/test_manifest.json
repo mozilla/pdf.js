@@ -1240,6 +1240,14 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue3248",
+       "file": "pdfs/issue3248.pdf",
+       "md5": "970767ed68de46c316d74de67965999b",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "load"
+    },
     {  "id": "pr4897",
        "file": "pdfs/pr4897.pdf",
        "md5": "26897633eea5e6d10345a130b1c1777c",
