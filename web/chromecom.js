@@ -212,7 +212,9 @@
     }
     if (!chromeFileAccessOverlayPromise) {
       chromeFileAccessOverlayPromise = OverlayManager.register(
-          'chromeFileAccessOverlay', onCloseOverlay, true);
+        'chromeFileAccessOverlay',
+        document.getElementById('chromeFileAccessOverlay'),
+        onCloseOverlay, true);
     }
     chromeFileAccessOverlayPromise.then(function() {
       var iconPath = chrome.runtime.getManifest().icons[48];

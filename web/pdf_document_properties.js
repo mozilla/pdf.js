@@ -49,6 +49,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
   function PDFDocumentProperties(options) {
     this.fields = options.fields;
     this.overlayName = options.overlayName;
+    this.container = options.container;
 
     this.rawFileSize = 0;
     this.url = null;
@@ -63,7 +64,8 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
       this.resolveDataAvailable = resolve;
     }.bind(this));
 
-    OverlayManager.register(this.overlayName, this.close.bind(this));
+    OverlayManager.register(this.overlayName, this.container,
+                            this.close.bind(this));
   }
 
   PDFDocumentProperties.prototype = {

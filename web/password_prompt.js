@@ -35,6 +35,7 @@ var OverlayManager = overlayManager.OverlayManager;
 /**
  * @typedef {Object} PasswordPromptOptions
  * @property {string} overlayName - Name of the overlay for the overlay manager.
+ * @property {HTMLDivElement} container - Div container for the overlay.
  * @property {HTMLParagraphElement} label - Label containing instructions for
  *                                          entering the password.
  * @property {HTMLInputElement} input - Input field for entering the password.
@@ -54,6 +55,7 @@ var PasswordPrompt = (function PasswordPromptClosure() {
    */
   function PasswordPrompt(options) {
     this.overlayName = options.overlayName;
+    this.container = options.container;
     this.label = options.label;
     this.input = options.input;
     this.submitButton = options.submitButton;
@@ -71,7 +73,8 @@ var PasswordPrompt = (function PasswordPromptClosure() {
       }
     }.bind(this));
 
-    OverlayManager.register(this.overlayName, this.close.bind(this), true);
+    OverlayManager.register(this.overlayName, this.container,
+                            this.close.bind(this), true);
   }
 
   PasswordPrompt.prototype = {

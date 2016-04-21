@@ -88,7 +88,8 @@ var SecondaryToolbar = {
   },
 
   openFileClick: function secondaryToolbarOpenFileClick(evt) {
-    document.getElementById('fileInput').click();
+    var openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
+    document.getElementById(openFileInputName).click();
     this.close();
   },
 
