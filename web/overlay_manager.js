@@ -30,8 +30,8 @@ var OverlayManager = {
   active: null,
 
   /**
-   * @param {string} name The name of the overlay that is registered. This must
-   *                 be equal to the ID of the overlay's DOM element.
+   * @param {string} name The name of the overlay that is registered.
+   * @param {HTMLDivElement} element The overlay's DOM element.
    * @param {function} callerCloseMethod (optional) The method that, if present,
    *                   will call OverlayManager.close from the Object
    *                   registering the overlay. Access to this method is
@@ -42,12 +42,11 @@ var OverlayManager = {
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    registered.
    */
-  register: function overlayManagerRegister(name,
+  register: function overlayManagerRegister(name, element,
                                             callerCloseMethod, canForceClose) {
     return new Promise(function (resolve) {
-      var element, container;
-      if (!name || !(element = document.getElementById(name)) ||
-          !(container = element.parentNode)) {
+      var container;
+      if (!name || !element || !(container = element.parentNode)) {
         throw new Error('Not enough parameters.');
       } else if (this.overlays[name]) {
         throw new Error('The overlay is already registered.');
