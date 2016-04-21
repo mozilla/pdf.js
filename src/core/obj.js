@@ -736,6 +736,20 @@ var XRef = (function XRefClosure() {
             error('Invalid entry in XRef subsection: ' + first + ', ' + count);
           }
 
+          // Some PDFs have a nested xref which looks like:
+          // xref
+          // 1 7                    // incorrect: should be 0 7
+          // 0000000000 65535 f
+          // 0000000009 0     n     // where '1 0 obj.<<...' begins at offset 9
+          // ...
+          // This was found in a 1.3 PDF with unspecified /Creator 
+          // and /Producer.  
+          // In this case, just adjust first keep going.
+          if(i===0 && first===1 && entry.offset===0 && 
+            entry.gen===65535 && entry.free) {
+               first=0;
+          }
+          
           if (!this.entries[i + first]) {
             this.entries[i + first] = entry;
           }
