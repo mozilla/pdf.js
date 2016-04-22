@@ -82,10 +82,13 @@ function downloadLanguageFiles(root, langCode, callback) {
   });
 }
 
-function downloadL10n(root) {
+function downloadL10n(root, callback) {
   var i = 0;
   (function next() {
     if (i >= langCodes.length) {
+      if (callback) {
+        callback();
+      }
       return;
     }
     downloadLanguageFiles(root, langCodes[i++], next);

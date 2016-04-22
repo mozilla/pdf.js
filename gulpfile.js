@@ -51,7 +51,7 @@ gulp.task('default', function() {
   });
 });
 
-gulp.task('server', function () {
+gulp.task('server', function (done) {
   console.log();
   console.log('### Starting local server');
 
@@ -80,7 +80,7 @@ gulp.task('makefile', function () {
     .pipe(gulp.dest('.'));
 });
 
-gulp.task('importl10n', function() {
+gulp.task('importl10n', function(done) {
   var locales = require('./external/importL10n/locales.js');
 
   console.log();
@@ -89,7 +89,7 @@ gulp.task('importl10n', function() {
   if (!fs.existsSync(L10N_DIR)) {
     fs.mkdirSync(L10N_DIR);
   }
-  locales.downloadL10n(L10N_DIR);
+  locales.downloadL10n(L10N_DIR, done);
 });
 
 // Getting all shelljs registered tasks and register them with gulp
