@@ -1486,28 +1486,26 @@ var WorkerTransport = (function WorkerTransportClosure() {
           case 'Font':
             var exportedData = data[2];
 
-            var font;
             if ('error' in exportedData) {
-              var error = exportedData.error;
-              warn('Error during font loading: ' + error);
-              this.commonObjs.resolve(id, error);
+              var exportedError = exportedData.error;
+              warn('Error during font loading: ' + exportedError);
+              this.commonObjs.resolve(id, exportedError);
               break;
-            } else {
-              var fontRegistry = null;
-              if (getDefaultSetting('pdfBug') && globalScope.FontInspector &&
-                  globalScope['FontInspector'].enabled) {
-                fontRegistry = {
-                  registerFont: function (font, url) {
-                    globalScope['FontInspector'].fontAdded(font, url);
-                  }
-                };
-              }
-              font = new FontFaceObject(exportedData, {
-                isEvalSuported: getDefaultSetting('isEvalSupported'),
-                disableFontFace: getDefaultSetting('disableFontFace'),
-                fontRegistry: fontRegistry
-              });
             }
+            var fontRegistry = null;
+            if (getDefaultSetting('pdfBug') && globalScope.FontInspector &&
+                globalScope['FontInspector'].enabled) {
+              fontRegistry = {
+                registerFont: function (font, url) {
+                  globalScope['FontInspector'].fontAdded(font, url);
+                }
+              };
+            }
+            var font = new FontFaceObject(exportedData, {
+              isEvalSuported: getDefaultSetting('isEvalSupported'),
+              disableFontFace: getDefaultSetting('disableFontFace'),
+              fontRegistry: fontRegistry
+            });
 
             this.fontLoader.bind(
               [font],
