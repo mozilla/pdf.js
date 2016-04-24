@@ -161,49 +161,6 @@ var Preferences = {
   }
 };
 
-//#if CHROME
-//Preferences._writeToStorage = function (prefObj) {
-//  return new Promise(function (resolve) {
-//    if (prefObj == DEFAULT_PREFERENCES) {
-//      var keysToRemove = Object.keys(DEFAULT_PREFERENCES);
-//      // If the storage is reset, remove the keys so that the values from
-//      // managed storage are applied again.
-//      chrome.storage.local.remove(keysToRemove, function() {
-//        resolve();
-//      });
-//    } else {
-//      chrome.storage.local.set(prefObj, function() {
-//        resolve();
-//      });
-//    }
-//  });
-//};
-//
-//Preferences._readFromStorage = function (prefObj) {
-//  return new Promise(function (resolve) {
-//    if (chrome.storage.managed) {
-//      // Get preferences as set by the system administrator.
-//      // See extensions/chromium/preferences_schema.json for more information.
-//      // These preferences can be overridden by the user.
-//      chrome.storage.managed.get(DEFAULT_PREFERENCES, getPreferences);
-//    } else {
-//      // Managed storage not supported, e.g. in old Chromium versions.
-//      getPreferences(DEFAULT_PREFERENCES);
-//    }
-//
-//    function getPreferences(defaultPrefs) {
-//      if (chrome.runtime.lastError) {
-//        // Managed storage not supported, e.g. in Opera.
-//        defaultPrefs = DEFAULT_PREFERENCES;
-//      }
-//      chrome.storage.local.get(defaultPrefs, function(readPrefs) {
-//        resolve(readPrefs);
-//      });
-//    }
-//  });
-//};
-//#endif
-
 //#if !(FIREFOX || MOZCENTRAL || CHROME)
 Preferences._writeToStorage = function (prefObj) {
   return new Promise(function (resolve) {

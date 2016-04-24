@@ -18,19 +18,18 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/firefoxcom', ['exports', 'pdfjs-web/preferences',
-      'pdfjs-web/pdfjs'], factory);
+      'pdfjs-web/app', 'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./preferences.js'), require('./pdfjs.js'));
+    factory(exports, require('./preferences.js'), require('./app.js'),
+      require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebFirefoxCom = {}), root.pdfjsWebPreferences,
-      root.pdfjsWebPDFJS);
+      root.pdfjsWebApp, root.pdfjsWebPDFJS);
   }
-}(this, function (exports, preferences, pdfjsLib) {
+}(this, function (exports, preferences, app, pdfjsLib) {
 //#if FIREFOX || MOZCENTRAL
-//#if !(FIREFOX || MOZCENTRAL)
-  if (true) { return; }  // TODO ensure nothing depends on this module.
-//#endif
 var Preferences = preferences.Preferences;
+var PDFViewerApplication = app.PDFViewerApplication;
 
 var FirefoxCom = (function FirefoxComClosure() {
   return {
@@ -148,6 +147,117 @@ Preferences._readFromStorage = function (prefObj) {
     });
   });
 };
+
+function FirefoxComDataRangeTransport(length, initialData) {
+  pdfjsLib.PDFDataRangeTransport.call(this, length, initialData);
+}
+FirefoxComDataRangeTransport.prototype =
+  Object.create(pdfjsLib.PDFDataRangeTransport.prototype);
+FirefoxComDataRangeTransport.prototype.requestDataRange =
+    function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
+  FirefoxCom.request('requestDataRange', { begin: begin, end: end });
+};
+FirefoxComDataRangeTransport.prototype.abort =
+    function FirefoxComDataRangeTransport_abort() {
+  // Sync call to ensure abort is really started.
+  FirefoxCom.requestSync('abortLoading', null);
+};
+
+PDFViewerApplication.externalServices = {
+  updateFindControlState: function (data) {
+    FirefoxCom.request('updateFindControlState', data);
+  },
+
+  initPassiveLoading: function (callbacks) {
+    var pdfDataRangeTransport;
+
+    window.addEventListener('message', function windowMessage(e) {
+      if (e.source !== null) {
+        // The message MUST originate from Chrome code.
+        console.warn('Rejected untrusted message from ' + e.origin);
+        return;
+      }
+      var args = e.data;
+
+      if (typeof args !== 'object' || !('pdfjsLoadAction' in args)) {
+        return;
+      }
+      switch (args.pdfjsLoadAction) {
+        case 'supportsRangedLoading':
+          pdfDataRangeTransport =
+            new FirefoxComDataRangeTransport(args.length, args.data);
+
+          callbacks.onOpenWithTransport(args.pdfUrl, args.length,
+                                        pdfDataRangeTransport);
+          break;
+        case 'range':
+          pdfDataRangeTransport.onDataRange(args.begin, args.chunk);
+          break;
+        case 'rangeProgress':
+          pdfDataRangeTransport.onDataProgress(args.loaded);
+          break;
+        case 'progressiveRead':
+          pdfDataRangeTransport.onDataProgressiveRead(args.chunk);
+          break;
+        case 'progress':
+          callbacks.onProgress(args.loaded, args.total);
+          break;
+        case 'complete':
+          if (!args.data) {
+            callbacks.onError(args.errorCode);
+            break;
+          }
+          callbacks.onOpenWithData(args.data);
+          break;
+      }
+    });
+    FirefoxCom.requestSync('initPassiveLoading', null);
+  },
+
+  fallback: function (data, callback) {
+    FirefoxCom.request('fallback', data, callback);
+  },
+
+  reportTelemetry: function (data) {
+    FirefoxCom.request('reportTelemetry', JSON.stringify(data));
+  },
+
+  createDownloadManager: function () {
+    return new DownloadManager();
+  },
+
+  get supportsIntegratedFind() {
+    var support = FirefoxCom.requestSync('supportsIntegratedFind');
+    return pdfjsLib.shadow(this, 'supportsIntegratedFind', support);
+  },
+
+  get supportsDocumentFonts() {
+    var support = FirefoxCom.requestSync('supportsDocumentFonts');
+    return pdfjsLib.shadow(this, 'supportsDocumentFonts', support);
+  },
+
+  get supportsDocumentColors() {
+    var support = FirefoxCom.requestSync('supportsDocumentColors');
+    return pdfjsLib.shadow(this, 'supportsDocumentColors', support);
+  },
+
+  get supportedMouseWheelZoomModifierKeys() {
+    var support = FirefoxCom.requestSync('supportedMouseWheelZoomModifierKeys');
+    return pdfjsLib.shadow(this, 'supportedMouseWheelZoomModifierKeys',
+      support);
+  },
+};
+
+//// l10n.js for Firefox extension expects services to be set.
+document.mozL10n.setExternalLocalizerServices({
+  getLocale: function () {
+    return FirefoxCom.requestSync('getLocale', null);
+  },
+
+  getStrings: function (key) {
+    return FirefoxCom.requestSync('getStrings', key);
+  }
+});
 
 exports.DownloadManager = DownloadManager;
 exports.FirefoxCom = FirefoxCom;

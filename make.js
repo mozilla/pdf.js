@@ -129,7 +129,7 @@ target.generic = function() {
 
   var TMP_VIEWER = GENERIC_DIR + '/web/viewer.js.tmp';
   cd('web/');
-  var viewerBundleFiles = ['app.js'];
+  var viewerBundleFiles = ['app.js', 'mozPrintCallback_polyfill.js'];
   bundle('viewer.js', ROOT_DIR + TMP_VIEWER,  viewerBundleFiles,
     'pdfjs-dist/web/viewer', defines, true);
   cd(ROOT_DIR);
@@ -179,6 +179,7 @@ target.components = function() {
   var bundleFiles = [
     'pdf_viewer.js',
     'pdf_history.js',
+    'pdf_find_controller.js',
     'download_manager.js'
   ];
   bundle('pdf_viewer.component.js', ROOT_DIR + TMP_PDF_VIEWER, bundleFiles,
@@ -1131,7 +1132,8 @@ target.chromium = function() {
 
   var TMP_VIEWER = CHROME_BUILD_CONTENT_DIR + '/web/viewer.js.tmp';
   cd('web/');
-  var viewerBundleFiles = ['app.js', 'chromecom.js'];
+  var viewerBundleFiles = ['app.js', 'chromecom.js',
+                           'mozPrintCallback_polyfill.js'];
   bundle('viewer.js', ROOT_DIR + TMP_VIEWER, viewerBundleFiles,
     'pdfjs-dist/web/viewer', defines, true);
   cd(ROOT_DIR);

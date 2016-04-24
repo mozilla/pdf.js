@@ -50,6 +50,8 @@
   PDFJS.DefaultAnnotationLayerFactory =
     pdfViewerLibs.pdfjsWebAnnotationLayerBuilder.DefaultAnnotationLayerFactory;
   PDFJS.PDFHistory = pdfViewerLibs.pdfjsWebPDFHistory.PDFHistory;
+  PDFJS.PDFFindController =
+    pdfViewerLibs.pdfjsWebPDFFindController.PDFFindController;
 
   PDFJS.DownloadManager = pdfViewerLibs.pdfjsWebDownloadManager.DownloadManager;
   PDFJS.ProgressBar = pdfViewerLibs.pdfjsWebUIUtils.ProgressBar;
