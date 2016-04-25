@@ -32,6 +32,7 @@ var DEFAULT_TITLE = '\u2013';
  * @typedef {Object} PDFOutlineViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {EventBus} eventBus - The application event bus.
  */
 
 /**
@@ -52,6 +53,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
     this.lastToggleIsShow = true;
     this.container = options.container;
     this.linkService = options.linkService;
+    this.eventBus = options.eventBus;
   }
 
   PDFOutlineViewer.prototype = {
@@ -69,11 +71,10 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      * @private
      */
     _dispatchEvent: function PDFOutlineViewer_dispatchEvent(outlineCount) {
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('outlineloaded', true, true, {
+      this.eventBus.dispatch('outlineloaded', {
+        source: this,
         outlineCount: outlineCount
       });
-      this.container.dispatchEvent(event);
     },
 
     /**

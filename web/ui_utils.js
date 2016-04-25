@@ -384,6 +384,49 @@ function getPDFFileNameFromURL(url) {
   return suggestedFilename || 'document.pdf';
 }
 
+/**
+ * Simple event bus for an application. Listeners are attached using the
+ * `on` and `off` methods. To raise an event, the `dispatch` method shall be
+ * used.
+ */
+var EventBus = (function EventBusClosure() {
+  function EventBus() {
+    this._listeners = Object.create(null);
+  }
+  EventBus.prototype = {
+    on: function EventBus_on(eventName, listener) {
+      var eventListeners = this._listeners[eventName];
+      if (!eventListeners) {
+        eventListeners = [];
+        this._listeners[eventName] = eventListeners;
+      }
+      eventListeners.push(listener);
+    },
+    off: function EventBus_on(eventName, listener) {
+      var eventListeners = this._listeners[eventName];
+      var i;
+      if (!eventListeners || ((i = eventListeners.indexOf(listener)) < 0)) {
+        return;
+      }
+      eventListeners.splice(i, 1);
+    },
+    dispatch: function EventBus_dispath(eventName) {
+      var eventListeners = this._listeners[eventName];
+      if (!eventListeners || eventListeners.length === 0) {
+        return;
+      }
+      // Passing all arguments after the eventName to the listeners.
+      var args = Array.prototype.slice.call(arguments, 1);
+      // Making copy of the listeners array in case if it will be modified
+      // during dispatch.
+      eventListeners.slice(0).forEach(function (listener) {
+        listener.apply(null, args);
+      });
+    }
+  };
+  return EventBus;
+})();
+
 var ProgressBar = (function ProgressBarClosure() {
 
   function clamp(v, min, max) {
@@ -474,6 +517,7 @@ exports.MAX_AUTO_SCALE = MAX_AUTO_SCALE;
 exports.SCROLLBAR_PADDING = SCROLLBAR_PADDING;
 exports.VERTICAL_PADDING = VERTICAL_PADDING;
 exports.mozL10n = mozL10n;
+exports.EventBus = EventBus;
 exports.ProgressBar = ProgressBar;
 exports.getPDFFileNameFromURL = getPDFFileNameFromURL;
 exports.noContextMenuHandler = noContextMenuHandler;

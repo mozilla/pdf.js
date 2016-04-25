@@ -17,18 +17,21 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/text_layer_builder', ['exports', 'pdfjs-web/pdfjs'],
+    define('pdfjs-web/text_layer_builder', ['exports', 'pdfjs-web/dom_events',
+        'pdfjs-web/pdfjs'],
       factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
+    factory(exports, require('./dom_events.js'), require('./pdfjs.js'));
   } else {
-    factory((root.pdfjsWebTextLayerBuilder = {}), root.pdfjsWebPDFJS);
+    factory((root.pdfjsWebTextLayerBuilder = {}), root.pdfjsWebDOMEvents,
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, pdfjsLib) {
+}(this, function (exports, domEvents, pdfjsLib) {
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
  * @property {HTMLDivElement} textLayerDiv - The text layer container.
+ * @property {EventBus} eventBus - The application event bus.
  * @property {number} pageIndex - The page index.
  * @property {PageViewport} viewport - The viewport of the text layer.
  * @property {PDFFindController} findController
@@ -44,6 +47,7 @@
 var TextLayerBuilder = (function TextLayerBuilderClosure() {
   function TextLayerBuilder(options) {
     this.textLayerDiv = options.textLayerDiv;
+    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
     this.renderingDone = false;
     this.divContentDone = false;
     this.pageIdx = options.pageIndex;
@@ -64,11 +68,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       endOfContent.className = 'endOfContent';
       this.textLayerDiv.appendChild(endOfContent);
 
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('textlayerrendered', true, true, {
+      this.eventBus.dispatch('textlayerrendered', {
+        source: this,
         pageNumber: this.pageNumber
       });
-      this.textLayerDiv.dispatchEvent(event);
     },
 
     /**

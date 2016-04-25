@@ -19,15 +19,17 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/pdf_page_view', ['exports',
       'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue',
-      'pdfjs-web/pdfjs'], factory);
+      'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./ui_utils.js'),
-      require('./pdf_rendering_queue.js'), require('./pdfjs.js'));
+      require('./pdf_rendering_queue.js'), require('./dom_events.js'),
+      require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebPDFPageView = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFRenderingQueue, root.pdfjsWebPDFJS);
+      root.pdfjsWebPDFRenderingQueue, root.pdfjsWebDOMEvents,
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, uiUtils, pdfRenderingQueue, pdfjsLib) {
+}(this, function (exports, uiUtils, pdfRenderingQueue, domEvents, pdfjsLib) {
 
 var CSS_UNITS = uiUtils.CSS_UNITS;
 var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
@@ -41,6 +43,7 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
 /**
  * @typedef {Object} PDFPageViewOptions
  * @property {HTMLDivElement} container - The viewer element.
+ * @property {EventBus} eventBus - The application event bus.
  * @property {number} id - The page unique ID (normally its number).
  * @property {number} scale - The page scale display.
  * @property {PageViewport} defaultViewport - The page viewport.
@@ -76,6 +79,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
 
+    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
     this.renderingQueue = renderingQueue;
     this.textLayerFactory = textLayerFactory;
     this.annotationLayerFactory = annotationLayerFactory;
@@ -196,13 +200,11 @@ var PDFPageView = (function PDFPageViewClosure() {
             (this.hasRestrictedScaling && isScalingRestricted)) {
           this.cssTransform(this.canvas, true);
 
-          var event = document.createEvent('CustomEvent');
-          event.initCustomEvent('pagerendered', true, true, {
+          this.eventBus.dispatch('pagerendered', {
+            source: this,
             pageNumber: this.id,
             cssTransform: true,
           });
-          this.div.dispatchEvent(event);
-
           return;
         }
         if (!this.zoomLayer) {
@@ -450,12 +452,11 @@ var PDFPageView = (function PDFPageViewClosure() {
         if (self.onAfterDraw) {
           self.onAfterDraw();
         }
-        var event = document.createEvent('CustomEvent');
-        event.initCustomEvent('pagerendered', true, true, {
+        self.eventBus.dispatch('pagerendered', {
+          source: self,
           pageNumber: self.id,
           cssTransform: false,
         });
-        div.dispatchEvent(event);
 
         if (!error) {
           resolveRenderPromise(undefined);
