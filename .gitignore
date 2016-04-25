@@ -1,8 +1,8 @@
 *~
 local.mk
-build/
 tags
 .DS_Store
 Makefile
 node_modules/
 examples/node/svgdump/
+.idea
