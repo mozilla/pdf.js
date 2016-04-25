@@ -542,12 +542,6 @@ if (typeof PDFJS === 'undefined') {
     window.setTimeout(callback, 20);
   }
 
-  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
-  if (isIOS) {
-    // requestAnimationFrame on iOS is broken, replacing with fake one.
-    window.requestAnimationFrame = fakeRequestAnimationFrame;
-    return;
-  }
   if ('requestAnimationFrame' in window) {
     return;
   }
