@@ -2146,7 +2146,7 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 exports.PDFViewerApplication = PDFViewerApplication;
 exports.DefaultExernalServices = DefaultExernalServices;
 
-// TODO remove circular reference of pdfjs-web/secondary_toolbar on app.
+//// TODO remove circular reference of pdfjs-web/secondary_toolbar on app.
 secondaryToolbarLib._setApp(exports);
 
 }));
