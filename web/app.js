@@ -1444,14 +1444,18 @@ function webViewerInitialized() {
   appConfig.toolbar.presentationModeButton.addEventListener('click',
     SecondaryToolbar.presentationModeClick.bind(SecondaryToolbar));
 
+  /*
   appConfig.toolbar.openFile.addEventListener('click',
     SecondaryToolbar.openFileClick.bind(SecondaryToolbar));
+  */
 
   appConfig.toolbar.print.addEventListener('click',
     SecondaryToolbar.printClick.bind(SecondaryToolbar));
 
+  /*
   appConfig.toolbar.download.addEventListener('click',
     SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
+  */
 
 //#if (FIREFOX || MOZCENTRAL || CHROME)
 //PDFViewerApplication.setTitleUsingUrl(file);
