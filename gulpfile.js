@@ -24,6 +24,7 @@ var rimraf = require('rimraf');
 var stream = require('stream');
 var exec = require('child_process').exec;
 var streamqueue = require('streamqueue');
+var zip = require('gulp-zip');
 
 var BUILD_DIR = 'build/';
 var L10N_DIR = 'l10n/';
@@ -335,6 +336,27 @@ gulp.task('bundle-components', ['buildnumber'], function () {
 
 gulp.task('bundle', ['buildnumber'], function () {
   return createBundle(DEFINES).pipe(gulp.dest(BUILD_DIR));
+});
+
+gulp.task('publish', ['generic'], function (done) {
+  var version = JSON.parse(
+    fs.readFileSync(BUILD_DIR + 'version.json').toString()).version;
+
+  config.stableVersion = config.betaVersion;
+  config.betaVersion = version;
+
+  createStringSource(CONFIG_FILE, JSON.stringify(config, null, 2))
+    .pipe(gulp.dest('.'))
+    .on('end', function () {
+      var targetName = 'pdfjs-' + version + '-dist.zip';
+      gulp.src(BUILD_DIR + 'generic/**')
+        .pipe(zip(targetName))
+        .pipe(gulp.dest(BUILD_DIR))
+        .on('end', function () {
+          console.log('Built distribution file: ' + targetName);
+          done();
+        });
+    });
 });
 
 gulp.task('server', function (done) {
