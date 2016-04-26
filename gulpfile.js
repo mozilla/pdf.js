@@ -123,8 +123,6 @@ function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
 }
 
 function createBundle(defines) {
-  defines = defines || DEFINES;
-
   var versionJSON = JSON.parse(
     fs.readFileSync(BUILD_DIR + 'version.json').toString());
 
@@ -319,14 +317,14 @@ gulp.task('bundle-singlefile', ['buildnumber'], function () {
 gulp.task('bundle-generic', ['buildnumber'], function () {
   var defines = builder.merge(DEFINES, {GENERIC: true});
   return streamqueue({ objectMode: true },
-    createBundle(), createWebBundle(defines))
+    createBundle(defines), createWebBundle(defines))
     .pipe(gulp.dest(BUILD_DIR));
 });
 
 gulp.task('bundle-minified', ['buildnumber'], function () {
   var defines = builder.merge(DEFINES, {MINIFIED: true, GENERIC: true});
   return streamqueue({ objectMode: true },
-    createBundle(), createWebBundle(defines))
+    createBundle(defines), createWebBundle(defines))
     .pipe(gulp.dest(BUILD_DIR));
 });
 
@@ -336,7 +334,7 @@ gulp.task('bundle-components', ['buildnumber'], function () {
 });
 
 gulp.task('bundle', ['buildnumber'], function () {
-  return createBundle().pipe(gulp.dest(BUILD_DIR));
+  return createBundle(DEFINES).pipe(gulp.dest(BUILD_DIR));
 });
 
 gulp.task('server', function (done) {
