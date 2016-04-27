@@ -385,16 +385,7 @@ target.dist = function() {
 };
 
 target.publish = function() {
-  target.generic();
-  var VERSION = getCurrentVersion();
-  config.stableVersion = config.betaVersion;
-  config.betaVersion = VERSION;
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-  cd(GENERIC_DIR);
-  var distFilename = 'pdfjs-' + VERSION + '-dist.zip';
-  exec('zip -r ' + ROOT_DIR + BUILD_DIR + distFilename + ' *');
-  echo('Built distribution file: ' + distFilename);
-  cd(ROOT_DIR);
+  exec('gulp publish');
 };
 
 //
