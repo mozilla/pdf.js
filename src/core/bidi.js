@@ -252,7 +252,7 @@
           types[j] = 'EN';
         }
         // do after
-        for (j = i + 1; j < strLength; --j) {
+        for (j = i + 1; j < strLength; ++j) {
           if (types[j] !== 'ET') {
             break;
           }
