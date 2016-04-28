@@ -262,32 +262,21 @@ var PDFViewerApplication = {
     this.handTool = new HandTool({
       container: container,
       eventBus: this.eventBus,
-      toggleHandTool: appConfig.secondaryToolbar.toggleHandTool
     });
 
     this.pdfDocumentProperties =
       new PDFDocumentProperties(appConfig.documentProperties);
 
-    SecondaryToolbar.initialize(appConfig.secondaryToolbar);
+    SecondaryToolbar.initialize(appConfig.secondaryToolbar, eventBus);
     this.secondaryToolbar = SecondaryToolbar;
 
     if (this.supportsFullscreen) {
-      var toolbar = SecondaryToolbar;
       this.pdfPresentationMode = new PDFPresentationMode({
         container: container,
         viewer: viewer,
         pdfViewer: this.pdfViewer,
         eventBus: this.eventBus,
-        contextMenuItems: [
-          { element: appConfig.fullscreen.contextFirstPage,
-            handler: toolbar.firstPageClick.bind(toolbar) },
-          { element: appConfig.fullscreen.contextLastPage,
-            handler: toolbar.lastPageClick.bind(toolbar) },
-          { element: appConfig.fullscreen.contextPageRotateCw,
-            handler: toolbar.pageRotateCwClick.bind(toolbar) },
-          { element: appConfig.fullscreen.contextPageRotateCcw,
-            handler: toolbar.pageRotateCcwClick.bind(toolbar) }
-        ]
+        contextMenuItems: appConfig.fullscreen
       });
     }
 
@@ -1248,6 +1237,15 @@ var PDFViewerApplication = {
     eventBus.on('pagemode', webViewerPageMode);
     eventBus.on('namedaction', webViewerNamedAction);
     eventBus.on('presentationmodechanged', webViewerPresentationModeChanged);
+    eventBus.on('presentationmode', webViewerPresentationMode);
+    eventBus.on('openfile', webViewerOpenFile);
+    eventBus.on('print', webViewerPrint);
+    eventBus.on('download', webViewerDownload);
+    eventBus.on('firstpage', webViewerFirstPage);
+    eventBus.on('lastpage', webViewerLastPage);
+    eventBus.on('rotatecw', webViewerRotateCw);
+    eventBus.on('rotateccw', webViewerRotateCcw);
+    eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
 //#if GENERIC
     eventBus.on('fileinputchange', webViewerFileInputChange);
@@ -1477,16 +1475,22 @@ function webViewerInitialized() {
   });
 
   appConfig.toolbar.presentationModeButton.addEventListener('click',
-    SecondaryToolbar.presentationModeClick.bind(SecondaryToolbar));
+      function (e) {
+    PDFViewerApplication.eventBus.dispatch('presentationmode');
 
-  appConfig.toolbar.openFile.addEventListener('click',
-    SecondaryToolbar.openFileClick.bind(SecondaryToolbar));
+  });
 
-  appConfig.toolbar.print.addEventListener('click',
-    SecondaryToolbar.printClick.bind(SecondaryToolbar));
+  appConfig.toolbar.openFile.addEventListener('click', function (e) {
+    PDFViewerApplication.eventBus.dispatch('openfile');
+  });
 
-  appConfig.toolbar.download.addEventListener('click',
-    SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
+  appConfig.toolbar.print.addEventListener('click', function (e) {
+    PDFViewerApplication.eventBus.dispatch('print');
+  });
+
+  appConfig.toolbar.download.addEventListener('click', function (e) {
+    PDFViewerApplication.eventBus.dispatch('download');
+  });
 
 //#if (FIREFOX || MOZCENTRAL || CHROME)
 //PDFViewerApplication.setTitleUsingUrl(file);
@@ -1827,6 +1831,39 @@ function webViewerLocalized() {
   });
 }
 
+function webViewerPresentationMode() {
+  PDFViewerApplication.requestPresentationMode();
+}
+function webViewerOpenFile() {
+  var openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
+  document.getElementById(openFileInputName).click();
+}
+function webViewerPrint() {
+  window.print();
+}
+function webViewerDownload() {
+  PDFViewerApplication.download();
+}
+function webViewerFirstPage() {
+  if (PDFViewerApplication.pdfDocument) {
+    PDFViewerApplication.page = 1;
+  }
+}
+function webViewerLastPage() {
+  if (PDFViewerApplication.pdfDocument) {
+    PDFViewerApplication.page = PDFViewerApplication.pagesCount;
+  }
+}
+function webViewerRotateCw() {
+  PDFViewerApplication.rotatePages(90);
+}
+function webViewerRotateCcw() {
+  PDFViewerApplication.rotatePages(-90);
+}
+function webViewerDocumentProperties() {
+  PDFViewerApplication.pdfDocumentProperties.open();
+}
+
 function webViewerFind(e) {
   PDFViewerApplication.findController.executeCommand('find' + e.type, {
     query: e.query,
@@ -1937,11 +1974,16 @@ window.addEventListener('DOMMouseScroll', handleMouseWheel);
 window.addEventListener('mousewheel', handleMouseWheel);
 
 window.addEventListener('click', function click(evt) {
-  if (SecondaryToolbar.opened &&
-      PDFViewerApplication.pdfViewer.containsElement(evt.target)) {
+  if (!SecondaryToolbar.opened) {
+    return;
+  }
+  var appConfig = PDFViewerApplication.appConfig;
+  if (PDFViewerApplication.pdfViewer.containsElement(evt.target) ||
+      (appConfig.toolbar.container.contains(evt.target) &&
+       evt.target !== appConfig.secondaryToolbar.toggleButton)) {
     SecondaryToolbar.close();
   }
-}, false);
+}, true);
 
 window.addEventListener('keydown', function keydown(evt) {
   if (OverlayManager.active) {
@@ -2214,8 +2256,4 @@ window.addEventListener('afterprint', function afterPrint(evt) {
 
 exports.PDFViewerApplication = PDFViewerApplication;
 exports.DefaultExernalServices = DefaultExernalServices;
-
-//// TODO remove circular reference of pdfjs-web/secondary_toolbar on app.
-secondaryToolbarLib._setApp(exports);
-
 }));

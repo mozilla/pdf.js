@@ -62,13 +62,26 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
     this.mouseScrollDelta = 0;
 
     if (contextMenuItems) {
-      for (var i = 0, ii = contextMenuItems.length; i < ii; i++) {
-        var item = contextMenuItems[i];
-        item.element.addEventListener('click', function (handler) {
-          this.contextMenuOpen = false;
-          handler();
-        }.bind(this, item.handler));
-      }
+      contextMenuItems.contextFirstPage.addEventListener('click',
+          function PDFPresentationMode_contextFirstPageClick(e) {
+        this.contextMenuOpen = false;
+        this.eventBus.dispatch('firstpage');
+      }.bind(this));
+      contextMenuItems.contextLastPage.addEventListener('click',
+          function PDFPresentationMode_contextLastPageClick(e) {
+        this.contextMenuOpen = false;
+        this.eventBus.dispatch('lastpage');
+      }.bind(this));
+      contextMenuItems.contextPageRotateCw.addEventListener('click',
+          function PDFPresentationMode_contextPageRotateCwClick(e) {
+        this.contextMenuOpen = false;
+        this.eventBus.dispatch('rotatecw');
+      }.bind(this));
+      contextMenuItems.contextPageRotateCcw.addEventListener('click',
+          function PDFPresentationMode_contextPageRotateCcwClick(e) {
+        this.contextMenuOpen = false;
+        this.eventBus.dispatch('rotateccw');
+      }.bind(this));
     }
   }
 
