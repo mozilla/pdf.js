@@ -420,8 +420,8 @@ html[dir='rtl'] .secondaryToolbar {
 }
 
 #secondaryToolbarButtonContainer {
-  max-width: 200px;
-  max-height: 400px;
+  max-width: 250px;
+  max-height: 450px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   margin-bottom: -4px;
@@ -666,8 +666,8 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
   border: 1px solid transparent;
   border-radius: 2px;
   color: hsla(0,0%,100%,.8);
-  font-size: 12px;
-  line-height: 14px;
+  font-size: 14px;
+  line-height: 16px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
