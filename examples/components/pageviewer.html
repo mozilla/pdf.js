@@ -29,16 +29,17 @@ limitations under the License.
     }
   </style>
 
-  <link rel="stylesheet" href="../../build/components/pdf_viewer.css">
+  <link rel="stylesheet" href="../../build/dist/web/pdf_viewer.css">
 
   <!-- for legacy browsers -->
-  <script src="../../build/components/compatibility.js"></script>
-  <script src="../../build/pdf.js"></script>
-  <script src="../../build/components/pdf_viewer.js"></script>
+  <script src="../../build/dist/web/compatibility.js"></script>
+
+  <script src="../../build/dist/build/pdf.js"></script>
+  <script src="../../build/dist/web/pdf_viewer.js"></script>
 </head>
 
 <body tabindex="1">
-  <div id="pageContainer" class="pdfPage"></div>
+  <div id="pageContainer" class="pdfViewer singlePageView"></div>
 
   <script src="pageviewer.js"></script>
 </body>
