@@ -148,6 +148,32 @@ Preferences._readFromStorage = function (prefObj) {
   });
 };
 
+(function listenFindEvents() {
+  var events = [
+    'find',
+    'findagain',
+    'findhighlightallchange',
+    'findcasesensitivitychange'
+  ];
+  var handleEvent = function (evt) {
+    if (!PDFViewerApplication.initialized) {
+      return;
+    }
+    PDFViewerApplication.eventBus.dispatch('find', {
+      source: window,
+      type: evt.type.substring('find'.length),
+      query: evt.detail.query,
+      caseSensitive: !!evt.detail.caseSensitive,
+      highlightAll: !!evt.detail.highlightAll,
+      findPrevious: !!evt.detail.findPrevious
+    });
+  }.bind(this);
+
+  for (var i = 0, len = events.length; i < len; i++) {
+    window.addEventListener(events[i], handleEvent);
+  }
+})();
+
 function FirefoxComDataRangeTransport(length, initialData) {
   pdfjsLib.PDFDataRangeTransport.call(this, length, initialData);
 }

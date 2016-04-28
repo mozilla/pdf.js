@@ -44,6 +44,7 @@ var SidebarView = {
  *   (in which the viewer element is placed).
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
+ * @property {EventBus} eventBus - The application event bus.
  * @property {HTMLButtonElement} toggleButton - The button used for
  *   opening/closing the sidebar.
  * @property {HTMLButtonElement} thumbnailButton - The button used to show
@@ -85,6 +86,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
 
     this.mainContainer = options.mainContainer;
     this.outerContainer = options.outerContainer;
+    this.eventBus = options.eventBus;
     this.toggleButton = options.toggleButton;
 
     this.thumbnailButton = options.thumbnailButton;
@@ -272,11 +274,10 @@ var PDFSidebar = (function PDFSidebarClosure() {
      * @private
      */
     _dispatchEvent: function PDFSidebar_dispatchEvent() {
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('sidebarviewchanged', true, true, {
-        view: this.visibleView,
+      this.eventBus.dispatch('sidebarviewchanged', {
+        source: this,
+        view: this.visibleView
       });
-      this.outerContainer.dispatchEvent(event);
     },
 
     /**
@@ -339,8 +340,8 @@ var PDFSidebar = (function PDFSidebarClosure() {
       });
 
       // Disable/enable views.
-      self.outlineView.addEventListener('outlineloaded', function(evt) {
-        var outlineCount = evt.detail.outlineCount;
+      self.eventBus.on('outlineloaded', function(e) {
+        var outlineCount = e.outlineCount;
 
         self.outlineButton.disabled = !outlineCount;
         if (!outlineCount && self.active === SidebarView.OUTLINE) {
@@ -348,8 +349,8 @@ var PDFSidebar = (function PDFSidebarClosure() {
         }
       });
 
-      self.attachmentsView.addEventListener('attachmentsloaded', function(evt) {
-        var attachmentsCount = evt.detail.attachmentsCount;
+      self.eventBus.on('attachmentsloaded', function(e) {
+        var attachmentsCount = e.attachmentsCount;
 
         self.attachmentsButton.disabled = !attachmentsCount;
         if (!attachmentsCount && self.active === SidebarView.ATTACHMENTS) {
@@ -358,9 +359,8 @@ var PDFSidebar = (function PDFSidebarClosure() {
       });
 
       // Update the thumbnailViewer, if visible, when exiting presentation mode.
-      window.addEventListener('presentationmodechanged', function(evt) {
-        if (!evt.detail.active && !evt.detail.switchInProgress &&
-            self.isThumbnailViewVisible) {
+      self.eventBus.on('presentationmodechanged', function(e) {
+        if (!e.active && !e.switchInProgress && self.isThumbnailViewVisible) {
           self._updateThumbnailViewer();
         }
       });

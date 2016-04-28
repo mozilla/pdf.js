@@ -17,16 +17,18 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_history', ['exports'], factory);
+    define('pdfjs-web/pdf_history', ['exports', 'pdfjs-web/dom_events'],
+      factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports);
+    factory(exports, require('./dom_events.js'));
   } else {
-    factory((root.pdfjsWebPDFHistory = {}));
+    factory((root.pdfjsWebPDFHistory = {}), root.pdfjsWebDOMEvents);
   }
-}(this, function (exports) {
+}(this, function (exports, domEvents) {
 
   function PDFHistory(options) {
     this.linkService = options.linkService;
+    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
 
     this.initialized = false;
     this.initialDestination = null;
@@ -173,8 +175,8 @@
         window.addEventListener('beforeunload', pdfHistoryBeforeUnload, false);
       }, false);
 
-      window.addEventListener('presentationmodechanged', function(e) {
-        self.isViewerInPresentationMode = !!e.detail.active;
+      self.eventBus.on('presentationmodechanged', function(e) {
+        self.isViewerInPresentationMode = e.active;
       });
     },
 

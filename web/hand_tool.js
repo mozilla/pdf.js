@@ -40,6 +40,7 @@ var SecondaryToolbar = secondaryToolbar.SecondaryToolbar;
  * @property {HTMLDivElement} container - The document container.
  * @property {HTMLButtonElement} toggleHandTool - The button element for
  *                                                toggling the hand tool.
+ * @property {EventBus} eventBus - The application event bus.
  */
 
 /**
@@ -52,6 +53,7 @@ var HandTool = (function HandToolClosure() {
    */
   function HandTool(options) {
     this.container = options.container;
+    this.eventBus = options.eventBus;
     this.toggleHandTool = options.toggleHandTool;
 
     this.wasActive = false;
@@ -79,7 +81,7 @@ var HandTool = (function HandToolClosure() {
     if (this.toggleHandTool) {
       this.toggleHandTool.addEventListener('click', this.toggle.bind(this));
 
-      window.addEventListener('localized', function (evt) {
+      this.eventBus.on('localized', function (e) {
         Preferences.get('enableHandToolOnLoad').then(function resolved(value) {
           if (value) {
             this.handTool.activate();
@@ -87,11 +89,11 @@ var HandTool = (function HandToolClosure() {
         }.bind(this), function rejected(reason) {});
       }.bind(this));
 
-      window.addEventListener('presentationmodechanged', function (evt) {
-        if (evt.detail.switchInProgress) {
+      this.eventBus.on('presentationmodechanged', function (e) {
+        if (e.switchInProgress) {
           return;
         }
-        if (evt.detail.active) {
+        if (e.active) {
           this.enterPresentationMode();
         } else {
           this.exitPresentationMode();

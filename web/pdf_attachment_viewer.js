@@ -29,6 +29,7 @@
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
+ * @property {EventBus} eventBus - The application event bus.
  * @property {DownloadManager} downloadManager - The download manager.
  */
 
@@ -48,6 +49,7 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
   function PDFAttachmentViewer(options) {
     this.attachments = null;
     this.container = options.container;
+    this.eventBus = options.eventBus;
     this.downloadManager = options.downloadManager;
   }
 
@@ -66,11 +68,10 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
      */
     _dispatchEvent:
         function PDFAttachmentViewer_dispatchEvent(attachmentsCount) {
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('attachmentsloaded', true, true, {
+      this.eventBus.dispatch('attachmentsloaded', {
+        source: this,
         attachmentsCount: attachmentsCount
       });
-      this.container.dispatchEvent(event);
     },
 
     /**

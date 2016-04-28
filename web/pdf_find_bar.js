@@ -51,6 +51,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
     this.findPreviousButton = options.findPreviousButton || null;
     this.findNextButton = options.findNextButton || null;
     this.findController = options.findController || null;
+    this.eventBus = options.eventBus;
 
     if (this.findController === null) {
       throw new Error('PDFFindBar cannot be used without a ' +
@@ -103,14 +104,14 @@ var PDFFindBar = (function PDFFindBarClosure() {
     },
 
     dispatchEvent: function PDFFindBar_dispatchEvent(type, findPrev) {
-      var event = document.createEvent('CustomEvent');
-      event.initCustomEvent('find' + type, true, true, {
+      this.eventBus.dispatch('find', {
+        source: this,
+        type: type,
         query: this.findField.value,
         caseSensitive: this.caseSensitive.checked,
         highlightAll: this.highlightAll.checked,
         findPrevious: findPrev
       });
-      return window.dispatchEvent(event);
     },
 
     updateUIState:

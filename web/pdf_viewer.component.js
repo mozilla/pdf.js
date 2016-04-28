@@ -52,6 +52,7 @@
   PDFJS.PDFHistory = pdfViewerLibs.pdfjsWebPDFHistory.PDFHistory;
   PDFJS.PDFFindController =
     pdfViewerLibs.pdfjsWebPDFFindController.PDFFindController;
+  PDFJS.EventBus = pdfViewerLibs.pdfjsWebUIUtils.EventBus;
 
   PDFJS.DownloadManager = pdfViewerLibs.pdfjsWebDownloadManager.DownloadManager;
   PDFJS.ProgressBar = pdfViewerLibs.pdfjsWebUIUtils.ProgressBar;

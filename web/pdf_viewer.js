@@ -20,21 +20,23 @@
     define('pdfjs-web/pdf_viewer', ['exports', 'pdfjs-web/ui_utils',
       'pdfjs-web/pdf_page_view', 'pdfjs-web/pdf_rendering_queue',
       'pdfjs-web/text_layer_builder', 'pdfjs-web/annotation_layer_builder',
-      'pdfjs-web/pdf_link_service', 'pdfjs-web/pdfjs'], factory);
+      'pdfjs-web/pdf_link_service', 'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'],
+      factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./ui_utils.js'), require('./pdf_page_view.js'),
       require('./pdf_rendering_queue.js'), require('./text_layer_builder.js'),
       require('./annotation_layer_builder.js'),
-      require('./pdf_link_service.js'), require('./pdfjs.js'));
+      require('./pdf_link_service.js'), require('./dom_events.js'),
+      require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebPDFViewer = {}), root.pdfjsWebUIUtils,
       root.pdfjsWebPDFPageView, root.pdfjsWebPDFRenderingQueue,
       root.pdfjsWebTextLayerBuilder, root.pdfjsWebAnnotationLayerBuilder,
-      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFJS);
+      root.pdfjsWebPDFLinkService, root.pdfjsWebDOMEvents, root.pdfjsWebPDFJS);
   }
 }(this, function (exports, uiUtils, pdfPageView, pdfRenderingQueue,
                   textLayerBuilder, annotationLayerBuilder, pdfLinkService,
-                  pdfjsLib) {
+                  domEvents, pdfjsLib) {
 
 var UNKNOWN_SCALE = uiUtils.UNKNOWN_SCALE;
 var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
@@ -66,6 +68,7 @@ var DEFAULT_CACHE_SIZE = 10;
  * @typedef {Object} PDFViewerOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} viewer - (optional) The viewer element.
+ * @property {EventBus} eventBus - The application event bus.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {DownloadManager} downloadManager - (optional) The download
  *   manager component.
@@ -120,6 +123,7 @@ var PDFViewer = (function pdfViewer() {
   function PDFViewer(options) {
     this.container = options.container;
     this.viewer = options.viewer || options.container.firstElementChild;
+    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
     this.linkService = options.linkService || new SimpleLinkService();
     this.downloadManager = options.downloadManager || null;
     this.removePageBorders = options.removePageBorders || false;
@@ -162,21 +166,23 @@ var PDFViewer = (function pdfViewer() {
         return;
       }
 
-      var event = document.createEvent('UIEvents');
-      event.initUIEvent('pagechange', true, true, window, 0);
-      event.updateInProgress = this.updateInProgress;
-
       if (!(0 < val && val <= this.pagesCount)) {
-        event.pageNumber = this._currentPageNumber;
-        event.previousPageNumber = val;
-        this.container.dispatchEvent(event);
+        this.eventBus.dispatch('pagechange', {
+          source: this,
+          updateInProgress: this.updateInProgress,
+          pageNumber: this._currentPageNumber,
+          previousPageNumber: val
+        });
         return;
       }
 
-      event.previousPageNumber = this._currentPageNumber;
+      this.eventBus.dispatch('pagechange', {
+        source: this,
+        updateInProgress: this.updateInProgress,
+        pageNumber: val,
+        previousPageNumber: this._currentPageNumber
+      });
       this._currentPageNumber = val;
-      event.pageNumber = val;
-      this.container.dispatchEvent(event);
 
       // Check if the caller is `PDFViewer_update`, to avoid breaking scrolling.
       if (this.updateInProgress) {
@@ -274,11 +280,10 @@ var PDFViewer = (function pdfViewer() {
       });
       this.pagesPromise = pagesPromise;
       pagesPromise.then(function () {
-        var event = document.createEvent('CustomEvent');
-        event.initCustomEvent('pagesloaded', true, true, {
+        self.eventBus.dispatch('pagesloaded', {
+          source: self,
           pagesCount: pagesCount
         });
-        self.container.dispatchEvent(event);
       });
 
       var isOnePageRenderedResolved = false;
@@ -319,6 +324,7 @@ var PDFViewer = (function pdfViewer() {
           }
           var pageView = new PDFPageView({
             container: this.viewer,
+            eventBus: this.eventBus,
             id: pageNum,
             scale: scale,
             defaultViewport: viewport.clone(),
@@ -357,9 +363,7 @@ var PDFViewer = (function pdfViewer() {
           }
         });
 
-        var event = document.createEvent('CustomEvent');
-        event.initCustomEvent('pagesinit', true, true, null);
-        self.container.dispatchEvent(event);
+        self.eventBus.dispatch('pagesinit', {source: self});
 
         if (this.defaultRenderingQueue) {
           this.update();
@@ -399,13 +403,11 @@ var PDFViewer = (function pdfViewer() {
 
     _setScaleDispatchEvent: function pdfViewer_setScaleDispatchEvent(
         newScale, newValue, preset) {
-      var event = document.createEvent('UIEvents');
-      event.initUIEvent('scalechange', true, true, window, 0);
-      event.scale = newScale;
-      if (preset) {
-        event.presetValue = newValue;
-      }
-      this.container.dispatchEvent(event);
+      this.eventBus.dispatch('scalechange', {
+        source: this,
+        scale: newScale,
+        presetValue: preset ? newValue : undefined
+      });
     },
 
     _setScaleUpdatePages: function pdfViewer_setScaleUpdatePages(
@@ -671,10 +673,10 @@ var PDFViewer = (function pdfViewer() {
 
       this.updateInProgress = false;
 
-      var event = document.createEvent('UIEvents');
-      event.initUIEvent('updateviewarea', true, true, window, 0);
-      event.location = this._location;
-      this.container.dispatchEvent(event);
+      this.eventBus.dispatch('updateviewarea', {
+        source: this,
+        location: this._location
+      });
     },
 
     containsElement: function (element) {
@@ -772,6 +774,7 @@ var PDFViewer = (function pdfViewer() {
     createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
       return new TextLayerBuilder({
         textLayerDiv: textLayerDiv,
+        eventBus: this.eventBus,
         pageIndex: pageIndex,
         viewport: viewport,
         findController: this.isInPresentationMode ? null : this.findController
