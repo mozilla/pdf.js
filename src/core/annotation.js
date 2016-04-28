@@ -616,6 +616,14 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
       this.setFlags(AnnotationFlag.HIDDEN);
     }
 
+    // Support ResetForm Action Widget
+    if (data.fieldType === 'Btn' && dict.get('A') !== undefined) {
+      var actionRef = dict.map.A.num;
+      var xrefObject = dict.xref.fetchIfRef(dict.map.A);
+      data.formAction = {};
+      data.formAction.S = xrefObject.map.S.name;
+    }
+
     // Building the full field name by collecting the field and
     // its ancestors 'T' data and joining them using '.'.
     var fieldName = [];
