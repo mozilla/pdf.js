@@ -83,6 +83,9 @@
       e.source.container.dispatchEvent(event);
     });
     eventBus.on('find', function (e) {
+      if (e.source === window) {
+        return; // event comes from FirefoxCom, no need to replicate
+      }
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('find' + e.type, true, true, {
         query: e.query,

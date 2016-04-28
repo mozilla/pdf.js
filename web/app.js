@@ -248,7 +248,6 @@ var PDFViewerApplication = {
         this.findBar.updateUIState(state, previous, matchCount);
       }
     }.bind(this);
-    this.findController.listenWindowEvents();
 
     this.pdfViewer.setFindController(this.findController);
 
@@ -1249,6 +1248,7 @@ var PDFViewerApplication = {
     eventBus.on('pagemode', webViewerPageMode);
     eventBus.on('namedaction', webViewerNamedAction);
     eventBus.on('presentationmodechanged', webViewerPresentationModeChanged);
+    eventBus.on('find', webViewerFind);
 //#if GENERIC
     eventBus.on('fileinputchange', webViewerFileInputChange);
 //#endif
@@ -1827,6 +1827,15 @@ function webViewerLocalized() {
   });
 }
 
+function webViewerFind(e) {
+  PDFViewerApplication.findController.executeCommand('find' + e.type, {
+    query: e.query,
+    caseSensitive: e.caseSensitive,
+    highlightAll: e.highlightAll,
+    findPrevious: e.findPrevious
+  });
+}
+
 function webViewerScaleChange(e) {
   var appConfig = PDFViewerApplication.appConfig;
   appConfig.toolbar.zoomOut.disabled = (e.scale === MIN_SCALE);
@@ -1961,8 +1970,15 @@ window.addEventListener('keydown', function keydown(evt) {
         break;
       case 71: // g
         if (!PDFViewerApplication.supportsIntegratedFind) {
-          PDFViewerApplication.eventBus.dispatch('findagain',
-                                                 cmd === 5 || cmd === 12);
+          var findState = PDFViewerApplication.findController.state;
+          if (findState) {
+            PDFViewerApplication.findController.executeCommand('findagain', {
+              query: findState.query,
+              caseSensitive: findState.caseSensitive,
+              highlightAll: findState.highlightAll,
+              findPrevious: cmd === 5 || cmd === 12
+            });
+          }
           handled = true;
         }
         break;

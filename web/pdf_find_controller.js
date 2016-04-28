@@ -71,22 +71,6 @@ var PDFFindController = (function PDFFindControllerClosure() {
   }
 
   PDFFindController.prototype = {
-    listenWindowEvents: function PDFFindController_listenWindowEvents() {
-      var events = [
-        'find',
-        'findagain',
-        'findhighlightallchange',
-        'findcasesensitivitychange'
-      ];
-      var handleEvent = function (e) {
-        this.executeCommand(e.type, e.detail);
-      }.bind(this);
-
-      for (var i = 0, len = events.length; i < len; i++) {
-        window.addEventListener(events[i], handleEvent);
-      }
-    },
-
     reset: function PDFFindController_reset() {
       this.startedTextExtraction = false;
       this.extractTextPromises = [];
