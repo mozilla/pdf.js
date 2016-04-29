@@ -1231,8 +1231,8 @@ var PDFViewerApplication = {
     eventBus.on('pagerendered', webViewerPageRendered);
     eventBus.on('textlayerrendered', webViewerTextLayerRendered);
     eventBus.on('updateviewarea', webViewerUpdateViewarea);
-    eventBus.on('pagechange', webViewerPageChange);
-    eventBus.on('scalechange', webViewerScaleChange);
+    eventBus.on('pagechanging', webViewerPageChanging);
+    eventBus.on('scalechanging', webViewerScaleChanging);
     eventBus.on('sidebarviewchanged', webViewerSidebarViewChanged);
     eventBus.on('pagemode', webViewerPageMode);
     eventBus.on('namedaction', webViewerNamedAction);
@@ -1873,7 +1873,7 @@ function webViewerFind(e) {
   });
 }
 
-function webViewerScaleChange(e) {
+function webViewerScaleChanging(e) {
   var appConfig = PDFViewerApplication.appConfig;
   appConfig.toolbar.zoomOut.disabled = (e.scale === MIN_SCALE);
   appConfig.toolbar.zoomIn.disabled = (e.scale === MAX_SCALE);
@@ -1894,7 +1894,7 @@ function webViewerScaleChange(e) {
   PDFViewerApplication.pdfViewer.update();
 }
 
-function webViewerPageChange(e) {
+function webViewerPageChanging(e) {
   var page = e.pageNumber;
   if (e.previousPageNumber !== page) {
     PDFViewerApplication.appConfig.toolbar.pageNumber.value = page;
