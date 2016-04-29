@@ -415,6 +415,9 @@ var PDFViewerApplication = {
   },
 
   get supportsFullscreen() {
+//#if MOZCENTRAL
+//  var support = document.fullscreenEnabled === true;
+//#else
     var doc = document.documentElement;
     var support = !!(doc.requestFullscreen || doc.mozRequestFullScreen ||
                      doc.webkitRequestFullScreen || doc.msRequestFullscreen);
@@ -425,6 +428,7 @@ var PDFViewerApplication = {
         document.msFullscreenEnabled === false) {
       support = false;
     }
+//#endif
     if (support && pdfjsLib.PDFJS.disableFullscreen === true) {
       support = false;
     }
