@@ -57,6 +57,7 @@ function getViewerConfiguration() {
     viewerContainer:  document.getElementById('viewer'),
     eventBus: null, // using global event bus with DOM events
     toolbar: {
+      container: document.getElementById('toolbarViewer'),
       numPages: document.getElementById('numPages'),
       pageNumber: document.getElementById('pageNumber'),
       scaleSelectContainer: document.getElementById('scaleSelectContainer'),

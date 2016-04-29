@@ -27,16 +27,15 @@
 }(this, function (exports, uiUtils) {
 
 var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
-
-var app; // Avoiding circular reference, see _setApp function below.
-var PDFViewerApplication = null; // = app.PDFViewerApplication;
+var mozL10n = uiUtils.mozL10n;
 
 var SecondaryToolbar = {
   opened: false,
   previousContainerHeight: null,
   newContainerHeight: null,
 
-  initialize: function secondaryToolbarInitialize(options) {
+  initialize: function secondaryToolbarInitialize(options, eventBus) {
+    this.eventBus = eventBus;
     this.toolbar = options.toolbar;
     this.buttonContainer = this.toolbar.firstElementChild;
 
@@ -51,6 +50,7 @@ var SecondaryToolbar = {
     this.lastPage = options.lastPage;
     this.pageRotateCw = options.pageRotateCw;
     this.pageRotateCcw = options.pageRotateCcw;
+    this.toggleHandTool = options.toggleHandTool;
     this.documentPropertiesButton = options.documentPropertiesButton;
 
     // Attach the event listeners.
@@ -58,7 +58,6 @@ var SecondaryToolbar = {
       // Button to toggle the visibility of the secondary toolbar:
       { element: this.toggleButton, handler: this.toggle },
       // All items within the secondary toolbar
-      // (except for toggleHandTool, hand_tool.js is responsible for it):
       { element: this.presentationModeButton,
         handler: this.presentationModeClick },
       { element: this.openFile, handler: this.openFileClick },
@@ -69,6 +68,7 @@ var SecondaryToolbar = {
       { element: this.lastPage, handler: this.lastPageClick },
       { element: this.pageRotateCw, handler: this.pageRotateCwClick },
       { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
+      { element: this.toggleHandTool, handler: this.toggleHandToolClick },
       { element: this.documentPropertiesButton,
         handler: this.documentPropertiesClick }
     ];
@@ -79,27 +79,46 @@ var SecondaryToolbar = {
         element.addEventListener('click', elements[item].handler.bind(this));
       }
     }
+
+    // Tracking hand tool menu item changes.
+    var isHandToolActive = false;
+    this.eventBus.on('handtoolchanged', function (e) {
+      if (isHandToolActive === e.isActive) {
+        return;
+      }
+      isHandToolActive = e.isActive;
+      if (isHandToolActive) {
+        this.toggleHandTool.title =
+          mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
+        this.toggleHandTool.firstElementChild.textContent =
+          mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
+      } else {
+        this.toggleHandTool.title =
+          mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
+        this.toggleHandTool.firstElementChild.textContent =
+          mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+      }
+    }.bind(this));
   },
 
   // Event handling functions.
   presentationModeClick: function secondaryToolbarPresentationModeClick(evt) {
-    PDFViewerApplication.requestPresentationMode();
+    this.eventBus.dispatch('presentationmode');
     this.close();
   },
 
   openFileClick: function secondaryToolbarOpenFileClick(evt) {
-    var openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
-    document.getElementById(openFileInputName).click();
+    this.eventBus.dispatch('openfile');
     this.close();
   },
 
   printClick: function secondaryToolbarPrintClick(evt) {
-    window.print();
+    this.eventBus.dispatch('print');
     this.close();
   },
 
   downloadClick: function secondaryToolbarDownloadClick(evt) {
-    PDFViewerApplication.download();
+    this.eventBus.dispatch('download');
     this.close();
   },
 
@@ -108,27 +127,30 @@ var SecondaryToolbar = {
   },
 
   firstPageClick: function secondaryToolbarFirstPageClick(evt) {
-    PDFViewerApplication.page = 1;
+    this.eventBus.dispatch('firstpage');
     this.close();
   },
 
   lastPageClick: function secondaryToolbarLastPageClick(evt) {
-    if (PDFViewerApplication.pdfDocument) {
-      PDFViewerApplication.page = PDFViewerApplication.pagesCount;
-    }
+    this.eventBus.dispatch('lastpage');
     this.close();
   },
 
   pageRotateCwClick: function secondaryToolbarPageRotateCwClick(evt) {
-    PDFViewerApplication.rotatePages(90);
+    this.eventBus.dispatch('rotatecw');
   },
 
   pageRotateCcwClick: function secondaryToolbarPageRotateCcwClick(evt) {
-    PDFViewerApplication.rotatePages(-90);
+    this.eventBus.dispatch('rotateccw');
+  },
+
+  toggleHandToolClick: function secondaryToolbarToggleHandToolClick(evt) {
+    this.eventBus.dispatch('togglehandtool');
+    this.close();
   },
 
   documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {
-    PDFViewerApplication.pdfDocumentProperties.open();
+    this.eventBus.dispatch('documentproperties');
     this.close();
   },
 
@@ -175,11 +197,5 @@ var SecondaryToolbar = {
   }
 };
 
-function _setApp(app_) {
-  app = app_;
-  PDFViewerApplication = app.PDFViewerApplication;
-}
-
 exports.SecondaryToolbar = SecondaryToolbar;
-exports._setApp = _setApp;
 }));
