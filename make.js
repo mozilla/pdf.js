@@ -1080,9 +1080,7 @@ target.chromium = function() {
 // make test
 //
 target.test = function() {
-  target.unittest({}, function() {
-    target.browsertest();
-  });
+  exec('gulp test');
 };
 
 //
@@ -1090,103 +1088,39 @@ target.test = function() {
 // (Special tests for the Github bot)
 //
 target.bottest = function() {
-  target.unittest({}, function() {
-    target.fonttest({}, function() {
-      target.browsertest({noreftest: true});
-    });
-  });
+  exec('gulp bottest');
 };
 
 //
 // make browsertest
 //
 target.browsertest = function(options) {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Running browser tests');
-
-  var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json',
-      PDF_BROWSERS = env['PDF_BROWSERS'] ||
-                     'resources/browser_manifests/browser_manifest.json';
-
-  if (!test('-f', 'test/' + PDF_BROWSERS)) {
-    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy and adjust the example in test/resources/browser_manifests.');
-    exit(1);
+  if (options && options.noreftest) {
+    exec('gulp browsertest-noreftest');
+  } else {
+    exec('gulp browsertest');
   }
-
-  var reftest = (options && options.noreftest) ? '' : '--reftest';
-
-  cd('test');
-  exec('node test.js ' + reftest + ' --browserManifestFile=' +
-       PDF_BROWSERS + ' --manifestFile=' + PDF_TEST, {async: true});
 };
 
 //
 // make unittest
 //
 target.unittest = function(options, callback) {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Running unit tests');
-
-  var PDF_TEST = env['PDF_TEST'] || 'test_manifest.json';
-  var PDF_BROWSERS = env['PDF_BROWSERS'] ||
-                     'resources/browser_manifests/browser_manifest.json';
-
-  if (!test('-f', 'test/' + PDF_BROWSERS)) {
-    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy and adjust the example in test/resources/browser_manifests.');
-    exit(1);
-  }
-  callback = callback || function() {};
-  cd('test');
-  exec('node test.js --unitTest --browserManifestFile=' +
-       PDF_BROWSERS + ' --manifestFile=' + PDF_TEST, {async: true}, callback);
+  exec('gulp unittest');
 };
 
 //
 // make fonttest
 //
 target.fonttest = function(options, callback) {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Running font tests');
-
-  var PDF_BROWSERS = env['PDF_BROWSERS'] ||
-                     'resources/browser_manifests/browser_manifest.json';
-
-  if (!test('-f', 'test/' + PDF_BROWSERS)) {
-    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy and adjust the example in test/resources/browser_manifests.');
-    exit(1);
-  }
-  callback = callback || function() {};
-  cd('test');
-  exec('node test.js --fontTest --browserManifestFile=' +
-       PDF_BROWSERS, {async: true}, callback);
+  exec('gulp fonttest');
 };
 
 //
 // make botmakeref
 //
 target.botmakeref = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating reference images');
-
-  var PDF_BROWSERS = env['PDF_BROWSERS'] ||
-                     'resources/browser_manifests/browser_manifest.json';
-
-  if (!test('-f', 'test/' + PDF_BROWSERS)) {
-    echo('Browser manifest file test/' + PDF_BROWSERS + ' does not exist.');
-    echo('Copy and adjust the example in test/resources/browser_manifests.');
-    exit(1);
-  }
-
-  cd('test');
-  exec('node test.js --masterMode --noPrompts ' +
-       '--browserManifestFile=' + PDF_BROWSERS, {async: true});
+  exec('gulp botmakeref');
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1367,27 +1301,7 @@ target.server = function () {
 // make lint
 //
 target.lint = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Linting JS files');
-
-  var jshintPath = path.normalize('./node_modules/.bin/jshint');
-  // Lint the Firefox specific *.jsm files.
-  var options = '--extra-ext .jsm';
-
-  var exitCode = exec('"' + jshintPath + '" ' + options + ' .').code;
-  if (exitCode !== 0) {
-    exit(1);
-  }
-
-  echo();
-  echo('### Checking UMD dependencies');
-  var umd = require('./external/umdutils/verifier.js');
-  if (!umd.validateFiles({'pdfjs': './src', 'pdfjs-web': './web'})) {
-    exit(1);
-  }
-
-  echo('files checked, no errors found');
+  exit(exec('gulp lint'));
 };
 
 //
