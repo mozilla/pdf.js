@@ -170,7 +170,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
     },
 
     /**
-     * @param {PDFPageView} pageView
+     * @param {PDFThumbnailView} thumbView
      * @returns {PDFPage}
      * @private
      */

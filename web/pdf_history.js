@@ -38,7 +38,6 @@
   PDFHistory.prototype = {
     /**
      * @param {string} fingerprint
-     * @param {IPDFLinkService} linkService
      */
     initialize: function pdfHistoryInitialize(fingerprint) {
       this.initialized = true;

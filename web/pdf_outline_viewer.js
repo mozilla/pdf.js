@@ -135,7 +135,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      * Toggle the visibility of the subtree of an outline item.
      *
      * @param {Element} root - the root of the outline (sub)tree.
-     * @param {boolean} state - whether to show the outline (sub)tree. If false,
+     * @param {boolean} show - whether to show the outline (sub)tree. If false,
      *   the outline subtree rooted at |root| will be collapsed.
      *
      * @private
