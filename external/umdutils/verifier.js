@@ -455,13 +455,13 @@ function validateFiles(paths, options) {
   };
 
   // Finds all files.
+  var foundFiles = [];
   for (var name in paths) {
     if (!paths.hasOwnProperty(name)) {
       continue;
     }
     var path = paths[name];
     var stats = fs.statSync(path);
-    var foundFiles = [];
     if (stats.isFile()) {
       foundFiles.push({path: path, name: name});
     } else if (stats.isDirectory()) {

@@ -23,11 +23,13 @@ var gutil = require('gulp-util');
 var rimraf = require('rimraf');
 var stream = require('stream');
 var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 var streamqueue = require('streamqueue');
 var zip = require('gulp-zip');
 
 var BUILD_DIR = 'build/';
 var L10N_DIR = 'l10n/';
+var TEST_DIR = 'test/';
 
 var makeFile = require('./make.js');
 var stripCommentHeaders = makeFile.stripCommentHeaders;
@@ -247,6 +249,62 @@ function createWebBundle(defines) {
   return source;
 }
 
+function checkFile(path) {
+  try {
+    var stat = fs.lstatSync(path);
+    return stat.isFile();
+  } catch (e) {
+    return false;
+  }
+}
+
+function createTestSource(testsName) {
+  var source = stream.Readable({ objectMode: true });
+  source._read = function () {
+    console.log();
+    console.log('### Running ' + testsName + ' tests');
+
+    var PDF_TEST = process.env['PDF_TEST'] || 'test_manifest.json';
+    var PDF_BROWSERS = process.env['PDF_BROWSERS'] ||
+      'resources/browser_manifests/browser_manifest.json';
+
+    if (!checkFile('test/' + PDF_BROWSERS)) {
+      console.log('Browser manifest file test/' + PDF_BROWSERS +
+                  ' does not exist.');
+      console.log('Copy and adjust the example in ' +
+                  'test/resources/browser_manifests.');
+      this.emit('error', new Error('Missing manifest file'));
+      return null;
+    }
+
+    var args = ['test.js'];
+    switch (testsName) {
+      case 'browser':
+        args.push('--reftest', '--manifestFile=' + PDF_TEST);
+        break;
+      case 'browser (no reftest)':
+        args.push('--manifestFile=' + PDF_TEST);
+        break;
+      case 'unit':
+        args.push('--unitTest');
+        break;
+      case 'font':
+        args.push('--fontTest');
+        break;
+      default:
+        this.emit('error', new Error('Unknown name: ' + testsName));
+        return null;
+    }
+    args.push('--browserManifestFile=' + PDF_BROWSERS);
+
+    var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
+    testProcess.on('close', function (code) {
+      source.push(null);
+    });
+  };
+  return source;
+}
+
 gulp.task('default', function() {
   console.log('Available tasks:');
   var tasks = Object.keys(gulp.tasks);
@@ -357,6 +415,83 @@ gulp.task('publish', ['generic'], function (done) {
           done();
         });
     });
+});
+
+gulp.task('test', function () {
+  return streamqueue({ objectMode: true },
+    createTestSource('unit'), createTestSource('browser'));
+});
+
+gulp.task('bottest', function () {
+  return streamqueue({ objectMode: true },
+    createTestSource('unit'), createTestSource('font'),
+    createTestSource('browser (no reftest)'));
+});
+
+gulp.task('browsertest', function () {
+  return createTestSource('browser');
+});
+
+gulp.task('browsertest-noreftest', function () {
+  return createTestSource('browser (no reftest)');
+});
+
+gulp.task('unittest', function () {
+  return createTestSource('unit');
+});
+
+gulp.task('fonttest', function () {
+  return createTestSource('font');
+});
+
+gulp.task('botmakeref', function (done) {
+  console.log();
+  console.log('### Creating reference images');
+
+  var PDF_BROWSERS = process.env['PDF_BROWSERS'] ||
+    'resources/browser_manifests/browser_manifest.json';
+
+  if (!checkFile('test/' + PDF_BROWSERS)) {
+    console.log('Browser manifest file test/' + PDF_BROWSERS +
+      ' does not exist.');
+    console.log('Copy and adjust the example in ' +
+      'test/resources/browser_manifests.');
+    done(new Error('Missing manifest file'));
+    return;
+  }
+
+  var args = ['test.js', '--masterMode', '--noPrompts',
+              '--browserManifestFile=' + PDF_BROWSERS];
+  var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
+  testProcess.on('close', function (code) {
+    done();
+  });
+});
+
+gulp.task('lint', function (done) {
+  console.log();
+  console.log('### Linting JS files');
+
+  // Lint the Firefox specific *.jsm files.
+  var options = ['node_modules/jshint/bin/jshint', '--extra-ext', '.jsm', '.'];
+  var jshintProcess = spawn('node', options, {stdio: 'inherit'});
+  jshintProcess.on('close', function (code) {
+    if (code !== 0) {
+      done(new Error('jshint failed.'));
+      return;
+    }
+
+    console.log();
+    console.log('### Checking UMD dependencies');
+    var umd = require('./external/umdutils/verifier.js');
+    if (!umd.validateFiles({'pdfjs': './src', 'pdfjs-web': './web'})) {
+      done(new Error('UMD check failed.'));
+      return;
+    }
+
+    console.log('files checked, no errors found');
+    done();
+  });
 });
 
 gulp.task('server', function (done) {
