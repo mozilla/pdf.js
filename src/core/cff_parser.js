@@ -1382,7 +1382,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       if (value >= -107 && value <= 107) {
         code = [value + 139];
       } else if (value >= 108 && value <= 1131) {
-        value = [value - 108];
+        value = value - 108;
         code = [(value >> 8) + 247, value & 0xFF];
       } else if (value >= -1131 && value <= -108) {
         value = -value - 108;
