@@ -331,7 +331,7 @@ var CFFParser = (function CFFParserClosure() {
       function parseOperand() {
         var value = dict[pos++];
         if (value === 30) {
-          return parseFloatOperand(pos);
+          return parseFloatOperand();
         } else if (value === 28) {
           value = dict[pos++];
           value = ((value << 24) | (dict[pos++] << 16)) >> 16;

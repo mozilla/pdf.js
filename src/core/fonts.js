@@ -19,33 +19,30 @@
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/fonts', ['exports', 'pdfjs/shared/util',
       'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
-      'pdfjs/core/glyphlist', 'pdfjs/core/charsets',
-      'pdfjs/core/font_renderer', 'pdfjs/core/encodings',
-      'pdfjs/core/standard_fonts', 'pdfjs/core/unicode',
+      'pdfjs/core/glyphlist', 'pdfjs/core/font_renderer',
+      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts', 'pdfjs/core/unicode',
       'pdfjs/core/type1_parser', 'pdfjs/core/cff_parser'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./parser.js'),
-      require('./glyphlist.js'), require('./charsets.js'),
+      require('./stream.js'), require('./parser.js'), require('./glyphlist.js'),
       require('./font_renderer.js'), require('./encodings.js'),
       require('./standard_fonts.js'), require('./unicode.js'),
       require('./type1_parser.js'), require('./cff_parser.js'));
   } else {
     factory((root.pdfjsCoreFonts = {}), root.pdfjsSharedUtil,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
-      root.pdfjsCoreGlyphList, root.pdfjsCoreCharsets,
-      root.pdfjsCoreFontRenderer, root.pdfjsCoreEncodings,
-      root.pdfjsCoreStandardFonts, root.pdfjsCoreUnicode,
-      root.pdfjsCoreType1Parser, root.pdfjsCoreCFFParser);
+      root.pdfjsCoreGlyphList, root.pdfjsCoreFontRenderer,
+      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts,
+      root.pdfjsCoreUnicode, root.pdfjsCoreType1Parser,
+      root.pdfjsCoreCFFParser);
   }
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
-                  coreGlyphList, coreCharsets, coreFontRenderer,
-                  coreEncodings, coreStandardFonts, coreUnicode,
-                  coreType1Parser, coreCFFParser) {
+                  coreGlyphList, coreFontRenderer, coreEncodings,
+                  coreStandardFonts, coreUnicode, coreType1Parser,
+                  coreCFFParser) {
 
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var FontType = sharedUtil.FontType;
-var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
 var bytesToString = sharedUtil.bytesToString;
 var error = sharedUtil.error;
@@ -55,7 +52,6 @@ var isInt = sharedUtil.isInt;
 var isNum = sharedUtil.isNum;
 var readUint32 = sharedUtil.readUint32;
 var shadow = sharedUtil.shadow;
-var stringToBytes = sharedUtil.stringToBytes;
 var string32 = sharedUtil.string32;
 var warn = sharedUtil.warn;
 var MissingDataException = sharedUtil.MissingDataException;
@@ -63,16 +59,11 @@ var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
 var getDingbatsGlyphsUnicode = coreGlyphList.getDingbatsGlyphsUnicode;
-var ISOAdobeCharset = coreCharsets.ISOAdobeCharset;
-var ExpertCharset = coreCharsets.ExpertCharset;
-var ExpertSubsetCharset = coreCharsets.ExpertSubsetCharset;
 var FontRendererFactory = coreFontRenderer.FontRendererFactory;
-var WinAnsiEncoding = coreEncodings.WinAnsiEncoding;
 var StandardEncoding = coreEncodings.StandardEncoding;
 var MacRomanEncoding = coreEncodings.MacRomanEncoding;
 var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
 var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
-var ExpertEncoding = coreEncodings.ExpertEncoding;
 var getEncoding = coreEncodings.getEncoding;
 var getStdFontMap = coreStandardFonts.getStdFontMap;
 var getNonStdFontMap = coreStandardFonts.getNonStdFontMap;
@@ -2070,7 +2061,7 @@ var Font = (function FontClosure() {
         }
       }
 
-      function sanitizeTTPrograms(fpgm, prep, cvt) {
+      function sanitizeTTPrograms(fpgm, prep, cvt, maxFunctionDefs) {
         var ttContext = {
           functionsDefined: [],
           functionsUsed: [],
@@ -2827,7 +2818,8 @@ var ErrorFont = (function ErrorFontClosure() {
  * @param {Object} properties Font properties object.
  * @param {Object} builtInEncoding The encoding contained within the actual font
  * data.
- * @param {Array} Array of glyph names where the index is the glyph ID.
+ * @param {Array} glyphNames Array of glyph names where the index is the
+ * glyph ID.
  * @returns {Object} A char code to glyph ID map.
  */
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
