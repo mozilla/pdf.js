@@ -6107,7 +6107,7 @@ var PDFViewerApplication = {
   preferencePdfBugEnabled: false,
   preferenceShowPreviousViewOnLoad: true,
   preferenceDefaultZoomValue: '',
-  isViewerEmbedded: (window.parent !== window),
+  isViewerEmbedded: true, // for showpad, the viewer is always embedded!
   url: '',
   loadingBar: null,
 

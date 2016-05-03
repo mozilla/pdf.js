@@ -1268,7 +1268,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   -webkit-overflow-scrolling: touch;
 }
 
-.thumbnail {
+.pdfjs-viewer-body .thumbnail {
   float: left;
   margin-bottom: 5px;
 }
@@ -1281,7 +1281,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   margin-bottom: 9px;
 }
 
-.thumbnail:not([data-loaded]) {
+.pdfjs-viewer-body .thumbnail:not([data-loaded]) {
   border: 1px dashed rgba(255, 255, 255, 0.5);
   margin: -1px -1px 4px -1px;
 }
