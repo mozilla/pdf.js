@@ -172,7 +172,7 @@ var Catalog = (function CatalogClosure() {
         var title = outlineDict.get('Title');
         var flags = outlineDict.get('F') || 0;
 
-        var color = outlineDict.get('C'), rgbColor = blackColor;
+        var color = outlineDict.getArray('C'), rgbColor = blackColor;
         // We only need to parse the color when it's valid, and non-default.
         if (isArray(color) && color.length === 3 &&
             (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {

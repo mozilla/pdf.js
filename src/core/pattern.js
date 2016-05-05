@@ -110,7 +110,7 @@ Shadings.SMALL_NUMBER = 1e-6;
 Shadings.RadialAxial = (function RadialAxialClosure() {
   function RadialAxial(dict, matrix, xref, res) {
     this.matrix = matrix;
-    this.coordsArr = dict.get('Coords');
+    this.coordsArr = dict.getArray('Coords');
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
     var cs = dict.get('ColorSpace', 'CS');
@@ -119,14 +119,14 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
 
     var t0 = 0.0, t1 = 1.0;
     if (dict.has('Domain')) {
-      var domainArr = dict.get('Domain');
+      var domainArr = dict.getArray('Domain');
       t0 = domainArr[0];
       t1 = domainArr[1];
     }
 
     var extendStart = false, extendEnd = false;
     if (dict.has('Extend')) {
-      var extendArr = dict.get('Extend');
+      var extendArr = dict.getArray('Extend');
       extendStart = extendArr[0];
       extendEnd = extendArr[1];
     }
@@ -731,7 +731,7 @@ Shadings.Mesh = (function MeshClosure() {
     this.matrix = matrix;
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
-    this.bbox = dict.get('BBox');
+    this.bbox = dict.getArray('BBox');
     var cs = dict.get('ColorSpace', 'CS');
     cs = ColorSpace.parse(cs, xref, res);
     this.cs = cs;
@@ -749,7 +749,7 @@ Shadings.Mesh = (function MeshClosure() {
       bitsPerCoordinate: dict.get('BitsPerCoordinate'),
       bitsPerComponent: dict.get('BitsPerComponent'),
       bitsPerFlag: dict.get('BitsPerFlag'),
-      decode: dict.get('Decode'),
+      decode: dict.getArray('Decode'),
       colorFn: fn,
       colorSpace: cs,
       numComps: fn ? 1 : cs.numComps
@@ -816,8 +816,8 @@ Shadings.Dummy = (function DummyClosure() {
 })();
 
 function getTilingPatternIR(operatorList, dict, args) {
-  var matrix = dict.get('Matrix');
-  var bbox = dict.get('BBox');
+  var matrix = dict.getArray('Matrix');
+  var bbox = dict.getArray('BBox');
   var xstep = dict.get('XStep');
   var ystep = dict.get('YStep');
   var paintType = dict.get('PaintType');

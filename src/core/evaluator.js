@@ -148,7 +148,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       function NativeImageDecoder_isSupported(image, xref, res) {
     var cs = ColorSpace.parse(image.dict.get('ColorSpace', 'CS'), xref, res);
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
-           cs.isDefaultDecode(image.dict.get('Decode', 'D'));
+           cs.isDefaultDecode(image.dict.getArray('Decode', 'D'));
   };
   /**
    * Checks if the image can be decoded by the browser.
@@ -157,7 +157,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       function NativeImageDecoder_isDecodable(image, xref, res) {
     var cs = ColorSpace.parse(image.dict.get('ColorSpace', 'CS'), xref, res);
     return (cs.numComps === 1 || cs.numComps === 3) &&
-           cs.isDefaultDecode(image.dict.get('Decode', 'D'));
+           cs.isDefaultDecode(image.dict.getArray('Decode', 'D'));
   };
 
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
@@ -347,7 +347,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var height = dict.get('Height', 'H');
         var bitStrideLength = (width + 7) >> 3;
         var imgArray = image.getBytes(bitStrideLength * height);
-        var decode = dict.get('Decode', 'D');
+        var decode = dict.getArray('Decode', 'D');
         var inverseDecode = (!!decode && decode[0] > 0);
 
         imgData = PDFImage.createMask(imgArray, width, height,
@@ -788,7 +788,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                        dict, operatorList, task);
         } else if (typeNum === SHADING_PATTERN) {
           var shading = dict.get('Shading');
-          var matrix = dict.get('Matrix');
+          var matrix = dict.getArray('Matrix');
           pattern = Pattern.parseShading(shading, matrix, xref, resources,
                                          this.handler);
           operatorList.addOp(fn, pattern.getIR());
@@ -1569,7 +1569,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               stateManager.save();
-              var matrix = xobj.dict.get('Matrix');
+              var matrix = xobj.dict.getArray('Matrix');
               if (isArray(matrix) && matrix.length === 6) {
                 stateManager.transform(matrix);
               }
@@ -2166,7 +2166,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // is a tagged pdf. Create a barbebones one to get by.
           descriptor = new Dict(null);
           descriptor.set('FontName', Name.get(type));
-          descriptor.set('FontBBox', dict.get('FontBBox'));
+          descriptor.set('FontBBox', dict.getArray('FontBBox'));
         } else {
           // Before PDF 1.5 if the font was one of the base 14 fonts, having a
           // FontDescriptor was not required.
@@ -2268,10 +2268,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         composite: composite,
         wideChars: composite,
         fixedPitch: false,
-        fontMatrix: (dict.get('FontMatrix') || FONT_IDENTITY_MATRIX),
+        fontMatrix: (dict.getArray('FontMatrix') || FONT_IDENTITY_MATRIX),
         firstChar: firstChar || 0,
         lastChar: (lastChar || maxCharIndex),
-        bbox: descriptor.get('FontBBox'),
+        bbox: descriptor.getArray('FontBBox'),
         ascent: descriptor.get('Ascent'),
         descent: descriptor.get('Descent'),
         xHeight: descriptor.get('XHeight'),

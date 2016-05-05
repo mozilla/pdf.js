@@ -167,7 +167,7 @@ var PDFImage = (function PDFImageClosure() {
       this.numComps = this.colorSpace.numComps;
     }
 
-    this.decode = dict.get('Decode', 'D');
+    this.decode = dict.getArray('Decode', 'D');
     this.needsDecode = false;
     if (this.decode &&
         ((this.colorSpace && !this.colorSpace.isDefaultDecode(this.decode)) ||
