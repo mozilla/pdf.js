@@ -58,17 +58,23 @@ var PDFFindBar = (function PDFFindBarClosure() {
                       'PDFFindController instance.');
     }
 
+    function addListenerSafely(object, event, func) {
+      if (object) {
+        return object.addEventListener(event, func);
+      }
+    }
+    
     // Add event listeners to the DOM elements.
     var self = this;
-    this.toggleButton.addEventListener('click', function() {
+    addListenerSafely(this.toggleButton, 'click', function() {
       self.toggle();
     });
 
-    this.findField.addEventListener('input', function() {
+    addListenerSafely(this.findField, 'input', function() {
       self.dispatchEvent('');
     });
 
-    this.bar.addEventListener('keydown', function(evt) {
+    addListenerSafely(this.bar, 'keydown', function(evt) {
       switch (evt.keyCode) {
         case 13: // Enter
           if (evt.target === self.findField) {
@@ -81,19 +87,19 @@ var PDFFindBar = (function PDFFindBarClosure() {
       }
     });
 
-    this.findPreviousButton.addEventListener('click', function() {
+    addListenerSafely(this.findPreviousButton, 'click', function() {
       self.dispatchEvent('again', true);
     });
 
-    this.findNextButton.addEventListener('click', function() {
+    addListenerSafely(this.findNextButton, 'click', function() {
       self.dispatchEvent('again', false);
     });
 
-    this.highlightAll.addEventListener('click', function() {
+    addListenerSafely(this.highlightAll, 'click', function() {
       self.dispatchEvent('highlightallchange');
     });
 
-    this.caseSensitive.addEventListener('click', function() {
+    addListenerSafely(this.caseSensitive, 'click', function() {
       self.dispatchEvent('casesensitivitychange');
     });
   }
@@ -108,8 +114,8 @@ var PDFFindBar = (function PDFFindBarClosure() {
         source: this,
         type: type,
         query: this.findField.value,
-        caseSensitive: this.caseSensitive.checked,
-        highlightAll: this.highlightAll.checked,
+        caseSensitive: this.caseSensitive ? this.caseSensitive.checked : false,
+        highlightAll: this.highlightAll ? this.highlightAll.checked : false,
         findPrevious: findPrev
       });
     },
