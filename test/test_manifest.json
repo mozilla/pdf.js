@@ -203,6 +203,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "bug1068432",
+       "file": "pdfs/bug1068432.pdf",
+       "md5": "b76ac8d7d0ef471f28535c881f421e33",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue1512",
        "file": "pdfs/issue1512r.pdf",
        "md5": "af48ede2658d99cca423147085c6609b",
