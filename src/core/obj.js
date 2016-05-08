@@ -1175,6 +1175,11 @@ var XRef = (function XRefClosure() {
       // read stream objects for cache
       for (i = 0; i < n; ++i) {
         entries.push(parser.getObj());
+        // The ObjStm should not contain 'endobj'. If it's present, skip over it
+        // to support corrupt PDFs (fixes issue 5241, bug 898610, bug 1037816).
+        if (isCmd(parser.buf1, 'endobj')) {
+          parser.shift();
+        }
         num = nums[i];
         var entry = this.entries[num];
         if (entry && entry.offset === tableOffset && entry.gen === i) {
