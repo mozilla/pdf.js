@@ -1128,6 +1128,15 @@
        "type": "eq",
        "about": "Font with an empty font file."
     },
+    {  "id": "bug1037816",
+       "file": "pdfs/bug1037816.pdf",
+       "md5": "8a45299d7b102a9c1cadb8883b8debc9",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "load",
+       "about": "ObjStm stream containing 'endobj' commands."
+    },
     {  "id": "ocs",
       "file": "pdfs/ocs.pdf",
       "md5": "2ade57e954ae7632749cf328daeaa7a8",
