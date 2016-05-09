@@ -443,7 +443,12 @@ var PDFPageView = (function PDFPageViewClosure() {
           zoomLayerCanvas.width = 0;
           zoomLayerCanvas.height = 0;
 
-          div.removeChild(self.zoomLayer);
+          if (div.contains(self.zoomLayer)) {
+            // Prevent "Node was not found" errors if the `zoomLayer` was
+            // already removed. This may occur intermittently if the scale
+            // changes many times in very quick succession.
+            div.removeChild(self.zoomLayer);
+          }
           self.zoomLayer = null;
         }
 
