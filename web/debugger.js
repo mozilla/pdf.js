@@ -158,6 +158,8 @@ var FontInspector = (function FontInspectorClosure() {
   };
 })();
 
+var opMap;
+
 // Manages all the page steppers.
 var StepperManager = (function StepperManagerClosure() {
   var steppers = [];
@@ -171,7 +173,7 @@ var StepperManager = (function StepperManagerClosure() {
     name: 'Stepper',
     panel: null,
     manager: null,
-    init: function init() {
+    init: function init(pdfjsLib) {
       var self = this;
       this.panel.setAttribute('style', 'padding: 5px;');
       stepperControls = document.createElement('div');
@@ -185,6 +187,11 @@ var StepperManager = (function StepperManagerClosure() {
       this.panel.appendChild(stepperDiv);
       if (sessionStorage.getItem('pdfjsBreakPoints')) {
         breakPoints = JSON.parse(sessionStorage.getItem('pdfjsBreakPoints'));
+      }
+
+      opMap = Object.create(null);
+      for (var key in pdfjsLib.OPS) {
+        opMap[pdfjsLib.OPS[key]] = key;
       }
     },
     cleanup: function cleanup() {
@@ -251,8 +258,6 @@ var Stepper = (function StepperClosure() {
     return d;
   }
 
-  var opMap = null;
-
   function simplifyArgs(args) {
     if (typeof args === 'string') {
       var MAX_STRING_LENGTH = 75;
@@ -290,7 +295,7 @@ var Stepper = (function StepperClosure() {
     this.operatorListIdx = 0;
   }
   Stepper.prototype = {
-    init: function init(pdfjsLib) {
+    init: function init(operatorList) {
       var panel = this.panel;
       var content = c('div', 'c=continue, s=step');
       var table = c('table');
@@ -304,12 +309,7 @@ var Stepper = (function StepperClosure() {
       headerRow.appendChild(c('th', 'args'));
       panel.appendChild(content);
       this.table = table;
-      if (!opMap) {
-        opMap = Object.create(null);
-        for (var key in pdfjsLib.OPS) {
-          opMap[pdfjsLib.OPS[key]] = key;
-        }
-      }
+      this.updateOperatorList(operatorList);
     },
     updateOperatorList: function updateOperatorList(operatorList) {
       var self = this;

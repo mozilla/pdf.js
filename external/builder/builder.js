@@ -100,7 +100,8 @@ function preprocess(inFilename, outFilename, defines) {
   var STATE_ELSE_TRUE = 2;
   // inside if, condition true (process lines until #else or #endif)
   var STATE_IF_TRUE = 3;
-  // inside else, #if was true, so #else is false (ignore lines until #endif)
+  // inside else or elif, #if/#elif was true, so following #else or #elif is
+  // false (ignore lines until #endif)
   var STATE_ELSE_FALSE = 4;
 
   var line;
@@ -124,18 +125,18 @@ function preprocess(inFilename, outFilename, defines) {
           state = evaluateCondition(m[2]) ? STATE_IF_TRUE : STATE_IF_FALSE;
           break;
         case 'elif':
-          if (state === STATE_IF_TRUE) {
+          if (state === STATE_IF_TRUE || state === STATE_ELSE_FALSE) {
             state = STATE_ELSE_FALSE;
           } else if (state === STATE_IF_FALSE) {
             state = evaluateCondition(m[2]) ? STATE_IF_TRUE : STATE_IF_FALSE;
-          } else if (state === STATE_ELSE_TRUE || state === STATE_ELSE_FALSE) {
+          } else if (state === STATE_ELSE_TRUE) {
             throw new Error('Found #elif after #else at ' + loc());
           } else {
             throw new Error('Found #elif without matching #if at ' + loc());
           }
           break;
         case 'else':
-          if (state === STATE_IF_TRUE) {
+          if (state === STATE_IF_TRUE || state === STATE_ELSE_FALSE) {
             state = STATE_ELSE_FALSE;
           } else if (state === STATE_IF_FALSE) {
             state = STATE_ELSE_TRUE;

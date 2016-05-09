@@ -1288,6 +1288,24 @@ function validateFileURL(file) {
 }
 //#endif
 
+function loadAndEnablePDFBug(enabledTabs) {
+  return new Promise(function (resolve, reject) {
+    var appConfig = PDFViewerApplication.appConfig;
+    var script = document.createElement('script');
+    script.src = appConfig.debuggerScriptPath;
+    script.onload = function () {
+      PDFBug.enable(enabledTabs);
+      PDFBug.init(pdfjsLib, appConfig.mainContainer);
+      resolve();
+    };
+    script.onerror = function () {
+      reject(new Error('Cannot load debugger at ' + script.src));
+    };
+    (document.getElementsByTagName('head')[0] || document.body).
+      appendChild(script);
+  });
+}
+
 function webViewerInitialized() {
 //#if GENERIC
   var queryString = document.location.search.substring(1);
@@ -1302,6 +1320,7 @@ function webViewerInitialized() {
 //var file = DEFAULT_URL;
 //#endif
 
+  var waitForBeforeOpening = [];
   var appConfig = PDFViewerApplication.appConfig;
 //#if GENERIC
   var fileInput = document.createElement('input');
@@ -1393,8 +1412,7 @@ function webViewerInitialized() {
       PDFJS.pdfBug = true;
       var pdfBug = hashParams['pdfbug'];
       var enabled = pdfBug.split(',');
-      PDFBug.enable(enabled);
-      PDFBug.init(pdfjsLib, appConfig.mainContainer);
+      waitForBeforeOpening.push(loadAndEnablePDFBug(enabled));
     }
   }
 
@@ -1496,13 +1514,16 @@ function webViewerInitialized() {
     PDFViewerApplication.eventBus.dispatch('download');
   });
 
-//#if (FIREFOX || MOZCENTRAL || CHROME)
-//PDFViewerApplication.setTitleUsingUrl(file);
-//PDFViewerApplication.initPassiveLoading();
-//return;
-//#endif
+  Promise.all(waitForBeforeOpening).then(function () {
+    webViewerOpenFileViaURL(file);
+  }).catch(function (reason) {
+    PDFViewerApplication.error(mozL10n.get('loading_error', null,
+      'An error occurred while opening.'), reason);
+  });
+}
 
 //#if GENERIC
+function webViewerOpenFileViaURL(file) {
   if (file && file.lastIndexOf('file:', 0) === 0) {
     // file:-scheme. Load the contents in the main thread because QtWebKit
     // cannot load file:-URLs in a Web Worker. file:-URLs are usually loaded
@@ -1526,8 +1547,19 @@ function webViewerInitialized() {
   if (file) {
     PDFViewerApplication.open(file);
   }
-//#endif
 }
+//#elif (FIREFOX || MOZCENTRAL || CHROME)
+//function webViewerOpenFileViaURL(file) {
+//  PDFViewerApplication.setTitleUsingUrl(file);
+//  PDFViewerApplication.initPassiveLoading();
+//}
+//#else
+//function webViewerOpenFileURL(file) {
+//  if (file) {
+//    throw new Error('Not implemented: webViewerOpenFileURL');
+//  }
+//}
+//#endif
 
 function webViewerPageRendered(e) {
   var pageNumber = e.pageNumber;
