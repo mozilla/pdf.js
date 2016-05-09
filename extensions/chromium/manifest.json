@@ -14,8 +14,7 @@
     "<all_urls>",
     "tabs",
     "webNavigation",
-    "storage",
-    "streamsPrivate"
+    "storage"
   ],
   "content_scripts": [{
     "matches": [
@@ -37,9 +36,6 @@
       "filesystem:*.pdf"
     ]
   }],
-  "mime_types": [
-    "application/pdf"
-  ],
   "storage": {
     "managed_schema": "preferences_schema.json"
   },
