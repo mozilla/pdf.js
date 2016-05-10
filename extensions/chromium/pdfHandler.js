@@ -134,45 +134,8 @@ chrome.webRequest.onHeadersReceived.addListener(
       });
       return { cancel: true };
     } else {
-      // Sub frame. Requires some more work...
-      // The navigation will be cancelled at the end of the webRequest cycle.
-      chrome.webNavigation.onErrorOccurred.addListener(function listener(nav) {
-        if (nav.tabId !== details.tabId || nav.frameId !== details.frameId) {
-          return;
-        }
-        chrome.webNavigation.onErrorOccurred.removeListener(listener);
-
-        // Locate frame and insert viewer
-        chrome.tabs.executeScriptInFrame(details.tabId, {
-          frameId: details.frameId,
-          code: 'location.href = ' + JSON.stringify(viewerUrl) + ';'
-        }, function(result) {
-          if (!result) {
-            console.warn('Frame not found! Opening viewer in new tab...');
-            chrome.tabs.create({
-              url: viewerUrl
-            });
-          }
-        });
-      }, {
-        url: [{ urlEquals: details.url.split('#', 1)[0] }]
-      });
-      // Prevent frame from rendering by using X-Frame-Options.
-      // Do not use { cancel: true }, because that makes the frame inaccessible
-      // to the content script that has to replace the frame's URL.
-      return {
-        responseHeaders: [{
-          name: 'X-Content-Type-Options',
-          value: 'nosniff'
-        }, {
-          name: 'X-Frame-Options',
-          value: 'deny'
-        }]
-      };
+      console.warn('Child frames are not supported in ancient Chrome builds!');
     }
-
-    // Immediately abort the request, because the frame that initiated the
-    // request will be replaced with the PDF Viewer (within a split second).
   },
   {
     urls: [
