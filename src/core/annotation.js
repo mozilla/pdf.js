@@ -174,7 +174,7 @@ var Annotation = (function AnnotationClosure() {
 
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
-    this.setColor(dict.get('C'));
+    this.setColor(dict.getArray('C'));
     this.setBorderStyle(dict);
     this.appearance = getDefaultAppearance(dict);
 
@@ -325,10 +325,10 @@ var Annotation = (function AnnotationClosure() {
                                   dictType.name === 'Border')) {
           this.borderStyle.setWidth(dict.get('W'));
           this.borderStyle.setStyle(dict.get('S'));
-          this.borderStyle.setDashArray(dict.get('D'));
+          this.borderStyle.setDashArray(dict.getArray('D'));
         }
       } else if (borderStyle.has('Border')) {
-        var array = borderStyle.get('Border');
+        var array = borderStyle.getArray('Border');
         if (isArray(array) && array.length >= 3) {
           this.borderStyle.setHorizontalCornerRadius(array[0]);
           this.borderStyle.setVerticalCornerRadius(array[1]);
@@ -400,8 +400,8 @@ var Annotation = (function AnnotationClosure() {
         // ProcSet
         // Properties
       ]);
-      var bbox = appearanceDict.get('BBox') || [0, 0, 1, 1];
-      var matrix = appearanceDict.get('Matrix') || [1, 0, 0, 1, 0 ,0];
+      var bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
+      var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0 ,0];
       var transform = getTransformMatrix(data.rect, bbox, matrix);
       var self = this;
 
@@ -820,7 +820,7 @@ var PopupAnnotation = (function PopupAnnotationClosure() {
       // Fall back to the default background color.
       this.data.color = null;
     } else {
-      this.setColor(parentItem.get('C'));
+      this.setColor(parentItem.getArray('C'));
       this.data.color = this.color;
     }
   }

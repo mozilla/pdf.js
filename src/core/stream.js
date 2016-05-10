@@ -926,7 +926,7 @@ var JpegStream = (function JpegStreamClosure() {
 
       // checking if values needs to be transformed before conversion
       if (this.forceRGB && this.dict && isArray(this.dict.get('Decode'))) {
-        var decodeArr = this.dict.get('Decode');
+        var decodeArr = this.dict.getArray('Decode');
         var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
         var decodeArrLength = decodeArr.length;
         var transform = new Int32Array(decodeArrLength);
@@ -1066,8 +1066,8 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
 
     var jbig2Image = new Jbig2Image();
 
-    var chunks = [], xref = this.dict.xref;
-    var decodeParams = xref.fetchIfRef(this.dict.get('DecodeParms'));
+    var chunks = [];
+    var decodeParams = this.dict.getArray('DecodeParms');
 
     // According to the PDF specification, DecodeParms can be either
     // a dictionary, or an array whose elements are dictionaries.
@@ -1076,7 +1076,7 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
         warn('JBIG2 - \'DecodeParms\' array with multiple elements ' +
              'not supported.');
       }
-      decodeParams = xref.fetchIfRef(decodeParams[0]);
+      decodeParams = decodeParams[0];
     }
     if (decodeParams && decodeParams.has('JBIG2Globals')) {
       var globalsStream = decodeParams.get('JBIG2Globals');

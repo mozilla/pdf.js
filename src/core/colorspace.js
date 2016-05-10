@@ -332,16 +332,16 @@ var ColorSpace = (function ColorSpaceClosure() {
           return 'DeviceCmykCS';
         case 'CalGray':
           params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.get('WhitePoint');
-          blackPoint = params.get('BlackPoint');
+          whitePoint = params.getArray('WhitePoint');
+          blackPoint = params.getArray('BlackPoint');
           gamma = params.get('Gamma');
           return ['CalGrayCS', whitePoint, blackPoint, gamma];
         case 'CalRGB':
           params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.get('WhitePoint');
-          blackPoint = params.get('BlackPoint');
-          gamma = params.get('Gamma');
-          var matrix = params.get('Matrix');
+          whitePoint = params.getArray('WhitePoint');
+          blackPoint = params.getArray('BlackPoint');
+          gamma = params.getArray('Gamma');
+          var matrix = params.getArray('Matrix');
           return ['CalRGBCS', whitePoint, blackPoint, gamma, matrix];
         case 'ICCBased':
           var stream = xref.fetchIfRef(cs[1]);
@@ -395,9 +395,9 @@ var ColorSpace = (function ColorSpaceClosure() {
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
           params = xref.fetchIfRef(cs[1]);
-          whitePoint = params.get('WhitePoint');
-          blackPoint = params.get('BlackPoint');
-          var range = params.get('Range');
+          whitePoint = params.getArray('WhitePoint');
+          blackPoint = params.getArray('BlackPoint');
+          var range = params.getArray('Range');
           return ['LabCS', whitePoint, blackPoint, range];
         default:
           error('unimplemented color space object "' + mode + '"');
