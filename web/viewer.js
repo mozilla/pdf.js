@@ -161,6 +161,7 @@ function getViewerConfiguration() {
     },
     printContainer: document.getElementById('printContainer'),
     openFileInputName: 'fileInput',
+    debuggerScriptPath: './debugger.js',
   };
 }
 
