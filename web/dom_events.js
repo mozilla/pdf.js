@@ -52,7 +52,6 @@
     eventBus.on('pagechange', function (e) {
       var event = document.createEvent('UIEvents');
       event.initUIEvent('pagechange', true, true, window, 0);
-      event.updateInProgress = e.updateInProgress;
       event.pageNumber = e.pageNumber;
       event.previousPageNumber = e.previousPageNumber;
       e.source.container.dispatchEvent(event);
