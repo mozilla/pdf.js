@@ -29,173 +29,170 @@
 var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
 var mozL10n = uiUtils.mozL10n;
 
-var SecondaryToolbar = {
-  opened: false,
-  previousContainerHeight: null,
-  newContainerHeight: null,
+/**
+ * @typedef {Object} SecondaryToolbarOptions
+ * @property {HTMLDivElement} toolbar - Container for the secondary toolbar.
+ * @property {HTMLButtonElement} toggleButton - Button to toggle the visibility
+ *   of the secondary toolbar.
+ * @property {HTMLButtonElement} presentationModeButton - Button for entering
+ *   presentation mode.
+ * @property {HTMLButtonElement} openFileButton - Button to open a file.
+ * @property {HTMLButtonElement} printButton - Button to print the document.
+ * @property {HTMLButtonElement} downloadButton - Button to download the
+ *   document.
+ * @property {HTMLLinkElement} viewBookmarkButton - Button to obtain a bookmark
+ *   link to the current location in the document.
+ * @property {HTMLButtonElement} firstPageButton - Button to go to the first
+ *   page in the document.
+ * @property {HTMLButtonElement} lastPageButton - Button to go to the last page
+ *   in the document.
+ * @property {HTMLButtonElement} pageRotateCwButton - Button to rotate the pages
+ *   clockwise.
+ * @property {HTMLButtonElement} pageRotateCcwButton - Button to rotate the
+ *   pages counterclockwise.
+ * @property {HTMLButtonElement} toggleHandToolButton - Button to toggle the
+ *   hand tool.
+ * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
+ *   the document properties dialog.
+ */
 
-  initialize: function secondaryToolbarInitialize(options, eventBus) {
-    this.eventBus = eventBus;
+/**
+ * @class
+ */
+var SecondaryToolbar = (function SecondaryToolbarClosure() {
+  /**
+   * @constructs SecondaryToolbar
+   * @param {SecondaryToolbarOptions} options
+   * @param {EventBus} eventBus
+   */
+  function SecondaryToolbar(options, eventBus) {
     this.toolbar = options.toolbar;
-    this.buttonContainer = this.toolbar.firstElementChild;
-
-    // Define the toolbar buttons.
     this.toggleButton = options.toggleButton;
-    this.presentationModeButton = options.presentationModeButton;
-    this.openFile = options.openFile;
-    this.print = options.print;
-    this.download = options.download;
-    this.viewBookmark = options.viewBookmark;
-    this.firstPage = options.firstPage;
-    this.lastPage = options.lastPage;
-    this.pageRotateCw = options.pageRotateCw;
-    this.pageRotateCcw = options.pageRotateCcw;
-    this.toggleHandTool = options.toggleHandTool;
-    this.documentPropertiesButton = options.documentPropertiesButton;
-
-    // Attach the event listeners.
-    var elements = [
-      // Button to toggle the visibility of the secondary toolbar:
-      { element: this.toggleButton, handler: this.toggle },
-      // All items within the secondary toolbar
-      { element: this.presentationModeButton,
-        handler: this.presentationModeClick },
-      { element: this.openFile, handler: this.openFileClick },
-      { element: this.print, handler: this.printClick },
-      { element: this.download, handler: this.downloadClick },
-      { element: this.viewBookmark, handler: this.viewBookmarkClick },
-      { element: this.firstPage, handler: this.firstPageClick },
-      { element: this.lastPage, handler: this.lastPageClick },
-      { element: this.pageRotateCw, handler: this.pageRotateCwClick },
-      { element: this.pageRotateCcw, handler: this.pageRotateCcwClick },
-      { element: this.toggleHandTool, handler: this.toggleHandToolClick },
-      { element: this.documentPropertiesButton,
-        handler: this.documentPropertiesClick }
+    this.buttons = [
+      { element: options.presentationModeButton, eventName: 'presentationmode',
+        close: true },
+      { element: options.openFileButton, eventName: 'openfile', close: true },
+      { element: options.printButton, eventName: 'print', close: true },
+      { element: options.downloadButton, eventName: 'download', close: true },
+      { element: options.viewBookmarkButton, eventName: null, close: true },
+      { element: options.firstPageButton, eventName: 'firstpage', close: true },
+      { element: options.lastPageButton, eventName: 'lastpage', close: true },
+      { element: options.pageRotateCwButton, eventName: 'rotatecw',
+        close: false },
+      { element: options.pageRotateCcwButton, eventName: 'rotateccw',
+        close: false },
+      { element: options.toggleHandToolButton, eventName: 'togglehandtool',
+        close: true },
+      { element: options.documentPropertiesButton,
+        eventName: 'documentproperties', close: true }
     ];
 
-    for (var item in elements) {
-      var element = elements[item].element;
-      if (element) {
-        element.addEventListener('click', elements[item].handler.bind(this));
-      }
-    }
+    this.eventBus = eventBus;
 
-    // Tracking hand tool menu item changes.
-    var isHandToolActive = false;
-    this.eventBus.on('handtoolchanged', function (e) {
-      if (isHandToolActive === e.isActive) {
+    this.opened = false;
+    this.previousContainerHeight = null;
+    this.newContainerHeight = null;
+    this.buttonContainer = this.toolbar.firstElementChild;
+
+    // Bind the event listeners for click and hand tool actions.
+    this._bindClickListeners();
+    this._bindHandToolListener(options.toggleHandToolButton);
+  }
+
+  SecondaryToolbar.prototype = {
+    /**
+     * @return {boolean}
+     */
+    get isOpen() {
+      return this.opened;
+    },
+
+    _bindClickListeners: function SecondaryToolbar_bindClickListeners() {
+      // Button to toggle the visibility of the secondary toolbar.
+      this.toggleButton.addEventListener('click', this.toggle.bind(this));
+
+      // All items within the secondary toolbar.
+      for (var button in this.buttons) {
+        var element = this.buttons[button].element;
+        var eventName = this.buttons[button].eventName;
+        var close = this.buttons[button].close;
+
+        element.addEventListener('click', function (eventName, close) {
+          if (eventName !== null) {
+            this.eventBus.dispatch(eventName);
+          }
+          if (close) {
+            this.close();
+          }
+        }.bind(this, eventName, close));
+      }
+    },
+
+    _bindHandToolListener:
+        function SecondaryToolbar_bindHandToolListener(toggleHandToolButton) {
+      var isHandToolActive = false;
+      this.eventBus.on('handtoolchanged', function (e) {
+        if (isHandToolActive === e.isActive) {
+          return;
+        }
+        isHandToolActive = e.isActive;
+        if (isHandToolActive) {
+          toggleHandToolButton.title =
+            mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
+          toggleHandToolButton.firstElementChild.textContent =
+            mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
+        } else {
+          toggleHandToolButton.title =
+            mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
+          toggleHandToolButton.firstElementChild.textContent =
+            mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+        }
+      }.bind(this));
+    },
+
+    open: function SecondaryToolbar_open() {
+      if (this.opened) {
         return;
       }
-      isHandToolActive = e.isActive;
-      if (isHandToolActive) {
-        this.toggleHandTool.title =
-          mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
-        this.toggleHandTool.firstElementChild.textContent =
-          mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
-      } else {
-        this.toggleHandTool.title =
-          mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
-        this.toggleHandTool.firstElementChild.textContent =
-          mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+      this.opened = true;
+      this.toggleButton.classList.add('toggled');
+      this.toolbar.classList.remove('hidden');
+    },
+
+    close: function SecondaryToolbar_close() {
+      if (!this.opened) {
+        return;
       }
-    }.bind(this));
-  },
+      this.opened = false;
+      this.toolbar.classList.add('hidden');
+      this.toggleButton.classList.remove('toggled');
+    },
 
-  // Event handling functions.
-  presentationModeClick: function secondaryToolbarPresentationModeClick(evt) {
-    this.eventBus.dispatch('presentationmode');
-    this.close();
-  },
+    toggle: function SecondaryToolbar_toggle() {
+      if (this.opened) {
+        this.close();
+      } else {
+        this.open();
+      }
+    },
 
-  openFileClick: function secondaryToolbarOpenFileClick(evt) {
-    this.eventBus.dispatch('openfile');
-    this.close();
-  },
-
-  printClick: function secondaryToolbarPrintClick(evt) {
-    this.eventBus.dispatch('print');
-    this.close();
-  },
-
-  downloadClick: function secondaryToolbarDownloadClick(evt) {
-    this.eventBus.dispatch('download');
-    this.close();
-  },
-
-  viewBookmarkClick: function secondaryToolbarViewBookmarkClick(evt) {
-    this.close();
-  },
-
-  firstPageClick: function secondaryToolbarFirstPageClick(evt) {
-    this.eventBus.dispatch('firstpage');
-    this.close();
-  },
-
-  lastPageClick: function secondaryToolbarLastPageClick(evt) {
-    this.eventBus.dispatch('lastpage');
-    this.close();
-  },
-
-  pageRotateCwClick: function secondaryToolbarPageRotateCwClick(evt) {
-    this.eventBus.dispatch('rotatecw');
-  },
-
-  pageRotateCcwClick: function secondaryToolbarPageRotateCcwClick(evt) {
-    this.eventBus.dispatch('rotateccw');
-  },
-
-  toggleHandToolClick: function secondaryToolbarToggleHandToolClick(evt) {
-    this.eventBus.dispatch('togglehandtool');
-    this.close();
-  },
-
-  documentPropertiesClick: function secondaryToolbarDocumentPropsClick(evt) {
-    this.eventBus.dispatch('documentproperties');
-    this.close();
-  },
-
-  // Misc. functions for interacting with the toolbar.
-  setMaxHeight: function secondaryToolbarSetMaxHeight(container) {
-    if (!container || !this.buttonContainer) {
-      return;
+    setMaxHeight: function SecondaryToolbar_setMaxHeight(container) {
+      if (!container || !this.buttonContainer) {
+        return;
+      }
+      this.newContainerHeight = container.clientHeight;
+      if (this.previousContainerHeight === this.newContainerHeight) {
+        return;
+      }
+      var maxHeight = this.newContainerHeight - SCROLLBAR_PADDING;
+      this.buttonContainer.setAttribute('style',
+        'max-height: ' + maxHeight + 'px;');
+      this.previousContainerHeight = this.newContainerHeight;
     }
-    this.newContainerHeight = container.clientHeight;
-    if (this.previousContainerHeight === this.newContainerHeight) {
-      return;
-    }
-    this.buttonContainer.setAttribute('style',
-      'max-height: ' + (this.newContainerHeight - SCROLLBAR_PADDING) + 'px;');
-    this.previousContainerHeight = this.newContainerHeight;
-  },
+  };
 
-  open: function secondaryToolbarOpen() {
-    if (this.opened) {
-      return;
-    }
-    this.opened = true;
-    this.toggleButton.classList.add('toggled');
-    this.toolbar.classList.remove('hidden');
-  },
-
-  close: function secondaryToolbarClose(target) {
-    if (!this.opened) {
-      return;
-    } else if (target && !this.toolbar.contains(target)) {
-      return;
-    }
-    this.opened = false;
-    this.toolbar.classList.add('hidden');
-    this.toggleButton.classList.remove('toggled');
-  },
-
-  toggle: function secondaryToolbarToggle() {
-    if (this.opened) {
-      this.close();
-    } else {
-      this.open();
-    }
-  }
-};
+  return SecondaryToolbar;
+})();
 
 exports.SecondaryToolbar = SecondaryToolbar;
 }));
