@@ -2,6 +2,8 @@
   "name": "pdf.js",
   "version": "0.8.0",
   "devDependencies": {
+    "escodegen": "^1.8.0",
+    "esprima": "^2.7.2",
     "gulp": "^3.9.1",
     "gulp-util": "^3.0.7",
     "gulp-zip": "^3.2.0",
