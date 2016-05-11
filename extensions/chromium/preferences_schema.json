@@ -75,6 +75,19 @@
     "useOnlyCssZoom": {
       "type": "boolean",
       "default": false
+    },
+    "externalLinkTarget": {
+      "title": "External links target window",
+      "description": "Controls how external links will be opened.\n 0 = default.\n 1 = replaces current window.\n 2 = new window/tab.\n 3 = parent.\n 4 = in top window.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "default": 0
     }
   }
 }

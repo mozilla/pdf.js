@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* jshint esnext:true */
-/* globals Components, Services, XPCOMUtils, DEFAULT_PREFERENCES */
+/* globals Components, Services, XPCOMUtils */
 
 'use strict';
 
@@ -35,7 +35,11 @@ XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
                                    '@mozilla.org/mime;1',
                                    'nsIMIMEService');
 
-//#include ../../../web/default_preferences.js
+var DEFAULT_PREFERENCES =
+//#include ../../../web/default_preferences.json
+//#if false
+  'end of DEFAULT_PREFERENCES';
+//#endif
 
 var PdfjsChromeUtils = {
   // For security purposes when running remote, we restrict preferences
