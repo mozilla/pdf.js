@@ -15,21 +15,22 @@
 
 'use strict';
 
-//#if CHROME
-////Note: Keep in sync with extensions/chromium/preferences_schema.json !
-//#endif
-var DEFAULT_PREFERENCES = {
-  showPreviousViewOnLoad: true,
-  defaultZoomValue: '',
-  sidebarViewOnLoad: 0,
-  enableHandToolOnLoad: false,
-  enableWebGL: false,
-  pdfBugEnabled: false,
-  disableRange: false,
-  disableStream: false,
-  disableAutoFetch: false,
-  disableFontFace: false,
-  disableTextLayer: false,
-  useOnlyCssZoom: false,
-  externalLinkTarget: 0,
-};
+var DEFAULT_PREFERENCES;
+
+(function defaultPreferencesLoaderWrapper() {
+  function loaded() {
+    try {
+      DEFAULT_PREFERENCES = JSON.parse(xhr.responseText);
+    } catch (e) {
+      console.error('Unable to load DEFAULT_PREFERENCES: ' + e);
+      DEFAULT_PREFERENCES = {};
+    }
+    var event = document.createEvent('CustomEvent');
+    event.initCustomEvent('defaultpreferencesloaded', true, true, null);
+    document.dispatchEvent(event);
+  }
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'default_preferences.json');
+  xhr.onload = xhr.onerror = loaded;
+  xhr.send();
+})();

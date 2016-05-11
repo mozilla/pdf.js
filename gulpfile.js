@@ -72,6 +72,22 @@ function stripUMDHeaders(content) {
   return content.replace(reg, '');
 }
 
+function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
+  var chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
+  var chromePrefsKeys = Object.keys(chromePrefs.properties);
+  chromePrefsKeys.sort();
+  var webPrefs = JSON.parse(fs.readFileSync(webPrefsPath).toString());
+  var webPrefsKeys = Object.keys(webPrefs);
+  webPrefsKeys.sort();
+  if (webPrefsKeys.length !== chromePrefsKeys.length) {
+    return false;
+  }
+  return webPrefsKeys.every(function (value, index) {
+    return chromePrefsKeys[index] === value &&
+           chromePrefs.properties[value].default === webPrefs[value];
+  });
+}
+
 function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
                 isMainFile, versionInfo) {
   // Reading UMD headers and building loading orders of modules. The
@@ -486,6 +502,16 @@ gulp.task('lint', function (done) {
     var umd = require('./external/umdutils/verifier.js');
     if (!umd.validateFiles({'pdfjs': './src', 'pdfjs-web': './web'})) {
       done(new Error('UMD check failed.'));
+      return;
+    }
+
+    console.log();
+    console.log('### Checking supplemental files');
+
+    if (!checkChromePreferencesFile(
+          'extensions/chromium/preferences_schema.json',
+          'web/default_preferences.json')) {
+      done(new Error('chromium/preferences_schema is not in sync.'));
       return;
     }
 

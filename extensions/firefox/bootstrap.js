@@ -14,8 +14,7 @@
  */
 /* jshint esnext:true */
 /* globals Components, Services, dump, XPCOMUtils, PdfStreamConverter,
-           APP_SHUTDOWN, PdfjsChromeUtils, PdfjsContentUtils,
-           DEFAULT_PREFERENCES */
+           APP_SHUTDOWN, PdfjsChromeUtils, PdfjsContentUtils */
 
 'use strict';
 
@@ -47,7 +46,11 @@ function log(str) {
 }
 
 function initializeDefaultPreferences() {
-//#include ../../web/default_preferences.js
+  var DEFAULT_PREFERENCES =
+//#include ../../web/default_preferences.json
+//#if false
+    'end of DEFAULT_PREFERENCES';
+//#endif
 
   var defaultBranch = Services.prefs.getDefaultBranch(EXT_PREFIX + '.');
   var defaultValue;

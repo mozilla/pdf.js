@@ -26,7 +26,32 @@
   }
 }(this, function (exports) {
 
-//#include $ROOT/web/default_preferences.js
+//#if PRODUCTION
+//var defaultPreferences = Promise.resolve(
+//#include $ROOT/web/default_preferences.json
+//);
+//#else
+  var defaultPreferences = new Promise(function (resolve) {
+    if (DEFAULT_PREFERENCES) {
+      resolve(DEFAULT_PREFERENCES);
+      return;
+    }
+    document.addEventListener('defaultpreferencesloaded', function loaded() {
+      resolve(DEFAULT_PREFERENCES);
+      document.removeEventListener('defaultpreferencesloaded', loaded);
+    });
+  });
+//#endif
+
+function cloneObj(obj) {
+  var result = {};
+  for (var i in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, i)) {
+      result[i] = obj[i];
+    }
+  }
+  return result;
+}
 
 /**
  * Preferences - Utility for storing persistent settings.
@@ -34,7 +59,7 @@
  *   or every time the viewer is loaded.
  */
 var Preferences = {
-  prefs: Object.create(DEFAULT_PREFERENCES),
+  prefs: null,
   isInitializedPromiseResolved: false,
   initializedPromise: null,
 
@@ -44,8 +69,19 @@ var Preferences = {
    *                   have been initialized.
    */
   initialize: function preferencesInitialize() {
-    return this.initializedPromise =
-        this._readFromStorage(DEFAULT_PREFERENCES).then(function(prefObj) {
+    return this.initializedPromise = defaultPreferences.then(
+        function (defaults) {
+
+      Object.defineProperty(this, 'defaults', {
+        value: Object.freeze(defaults),
+        writable: false,
+        enumerable: true,
+        configurable: false
+      });
+
+      this.prefs = cloneObj(defaults);
+      return this._readFromStorage(defaults);
+    }.bind(this)).then(function(prefObj) {
       this.isInitializedPromiseResolved = true;
       if (prefObj) {
         this.prefs = prefObj;
@@ -82,8 +118,8 @@ var Preferences = {
    */
   reset: function preferencesReset() {
     return this.initializedPromise.then(function() {
-      this.prefs = Object.create(DEFAULT_PREFERENCES);
-      return this._writeToStorage(DEFAULT_PREFERENCES);
+      this.prefs = cloneObj(this.defaults);
+      return this._writeToStorage(this.defaults);
     }.bind(this));
   },
 
@@ -94,7 +130,7 @@ var Preferences = {
    */
   reload: function preferencesReload() {
     return this.initializedPromise.then(function () {
-      this._readFromStorage(DEFAULT_PREFERENCES).then(function(prefObj) {
+      this._readFromStorage(this.defaults).then(function(prefObj) {
         if (prefObj) {
           this.prefs = prefObj;
         }
@@ -111,13 +147,13 @@ var Preferences = {
    */
   set: function preferencesSet(name, value) {
     return this.initializedPromise.then(function () {
-      if (DEFAULT_PREFERENCES[name] === undefined) {
+      if (this.defaults[name] === undefined) {
         throw new Error('preferencesSet: \'' + name + '\' is undefined.');
       } else if (value === undefined) {
         throw new Error('preferencesSet: no value is specified.');
       }
       var valueType = typeof value;
-      var defaultType = typeof DEFAULT_PREFERENCES[name];
+      var defaultType = typeof this.defaults[name];
 
       if (valueType !== defaultType) {
         if (valueType === 'number' && defaultType === 'string') {
@@ -145,7 +181,7 @@ var Preferences = {
    */
   get: function preferencesGet(name) {
     return this.initializedPromise.then(function () {
-      var defaultValue = DEFAULT_PREFERENCES[name];
+      var defaultValue = this.defaults[name];
 
       if (defaultValue === undefined) {
         throw new Error('preferencesGet: \'' + name + '\' is undefined.');
