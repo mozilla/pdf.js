@@ -857,7 +857,6 @@ var PDFViewerApplication = {
     pdfViewer.setDocument(pdfDocument);
     var firstPagePromise = pdfViewer.firstPagePromise;
     var pagesPromise = pdfViewer.pagesPromise;
-    var onePageRendered = pdfViewer.onePageRendered;
 
     this.pageRotation = 0;
 

@@ -225,7 +225,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
         if (this.findController) {
           this.findController.updateMatchPosition(pageIdx, i, textDivs,
-                                                  begin.divIdx, end.divIdx);
+                                                  begin.divIdx);
         }
 
         // Match inside new div.

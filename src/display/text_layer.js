@@ -31,7 +31,6 @@ var Util = sharedUtil.Util;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
 var CustomStyle = displayDOMUtils.CustomStyle;
 var getDefaultSetting = displayDOMUtils.getDefaultSetting;
-var PageViewport = sharedUtil.PageViewport;
 
 /**
  * Text layer render parameters.

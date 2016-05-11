@@ -27,7 +27,6 @@ try {
 }
 
 var builder = require('./external/builder/builder.js');
-var path = require('path');
 var fs = require('fs');
 
 var CONFIG_FILE = 'pdfjs.config';
