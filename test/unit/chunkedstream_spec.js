@@ -370,6 +370,77 @@ describe('stream', function () {
         expect(stream.buffer.start).toBe(0);
         expect(stream.buffer.end).toBe(10);
       });
+
+      it('mixed progressive and range requests', function () {
+        var stream = new ChunkedStreamContinuous(100, 10, null);
+
+        stream.onReceiveProgressiveData(makeRange(5));
+        stream.onReceiveData(0, makeRange(10));
+        expect(stream.hasChunk(0)).toBe(true);
+        stream.onReceiveProgressiveData(makeRange(5, 5));
+        expect(stream.initialChunk).toBeNull();
+
+
+        stream.onReceiveProgressiveData(makeRange(23, 10));
+        expect(stream.hasChunk(1)).toBe(true);
+        expect(stream.hasChunk(2)).toBe(true);
+
+        stream.onReceiveData(20, makeRange(10,20));
+        stream.onReceiveData(30, makeRange(40,30));
+        for(var j = 3; j<=6; j++) {
+          expect(stream.hasChunk(j)).toBe(true);
+        }
+
+        expect(stream.hasChunk(7)).toBe(false);
+        expect(stream.hasChunk(8)).toBe(false);
+        expect(stream.hasChunk(9)).toBe(false);
+
+        stream.onReceiveData(90, makeRange(10,90));
+        stream.onReceiveProgressiveData(makeRange(50, 50));
+        stream.onReceiveProgressiveData(makeRange(100 - 83, 100 - 83));
+
+        expect(stream.allChunksLoaded()).toBe(true);
+        expect(stream.length).toBe(100);
+
+        expect(stream.buffer.buffer.byteLength).toBe(100);
+        // Test if chunks were properly merged
+        expect(stream.buffer.start).toBe(0);
+        expect(stream.buffer.end).toBe(100);
+
+        for (var i = 0; i < 10; i++) {
+          expect(stream.loadedChunks[i].start).toBe(0);
+          expect(stream.loadedChunks[i].end).toBe(100);
+        }
+      });
+
+      it('progressive and range requests, test middle merge', function () {
+        var stream = new ChunkedStreamContinuous(100, 10, null);
+
+        stream.onReceiveData(30, makeRange(20));
+        expect(stream.hasChunk(3)).toBe(true);
+        expect(stream.hasChunk(4)).toBe(true);
+
+        stream.onReceiveProgressiveData(makeRange(100));
+
+        // Test if chunks were properly merged
+        expect(stream.buffer.buffer.byteLength).toBe(100);
+        for (var i = 0; i < 10; i++) {
+          expect(stream.loadedChunks[i].start).toBe(0);
+          expect(stream.loadedChunks[i].end).toBe(100);
+        }
+
+        expect(stream.buffer.start).toBe(0);
+        expect(stream.buffer.end).toBe(100);
+      });
+
+      it('getBytes read past the end of the stream', function () {
+        var stream = new ChunkedStreamContinuous(3, 1, null);
+        stream.onReceiveData(0, new Uint8Array([1,2,3]));
+
+        expect(stream.allChunksLoaded()).toBe(true);
+        var bytes = stream.getBytes(5);
+        expect(bytes).toEqual([1, 2, 3]);
+      });
     });
 
     describe('receiving chunks out of order continuous', function () {
@@ -438,6 +509,39 @@ describe('stream', function () {
         stream.reset(); // resets back  to moveStart pos
         expect(stream.getBytes()).toEqual([6, 7, 8, 9, 10]);
         expect(stream.length).toBe(5);
+      });
+    });
+
+    describe('Mixed progressive and range data, fragmented', function () {
+      it('progressive and range mix', function () {
+        var stream = new ChunkedStreamFragmented(33, 11, null);
+        expect(stream instanceof ChunkedStreamContinuous).toBe(false);
+        stream.onReceiveProgressiveData(makeRange(11));
+        stream.onReceiveData(0, makeRange(11));
+        expect(stream.hasChunk(0)).toBe(true);
+        expect(stream.initialChunk).toBeNull();
+
+        stream.onReceiveProgressiveData(makeRange(11, 11));
+        expect(stream.hasChunk(1)).toBe(true);
+        stream.onReceiveData(11, makeRange(11, 11));
+        expect(stream.hasChunk(1)).toBe(true);
+
+        stream.onReceiveProgressiveData(makeRange(5, 22));
+        expect(stream.hasChunk(2)).toBe(false);
+        stream.onReceiveData(22, makeRange(22, 11));
+        expect(stream.hasChunk(2)).toBe(true);
+      });
+
+      it('progressive and range mix, initial data not full', function () {
+        var stream = new ChunkedStreamFragmented(33, 11, null);
+        expect(stream instanceof ChunkedStreamContinuous).toBe(false);
+        stream.onReceiveProgressiveData(makeRange(5));
+        expect(stream.hasChunk(0)).toBe(false);
+        stream.onReceiveData(0, makeRange(11));
+        expect(stream.hasChunk(0)).toBe(true);
+        expect(stream.initialChunk).toBeTruthy();
+        stream.onReceiveProgressiveData(makeRange(6, 5));
+        expect(stream.initialChunk).toBeNull();
       });
     });
 
