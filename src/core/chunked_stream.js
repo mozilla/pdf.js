@@ -35,12 +35,14 @@ var createPromiseCapability = sharedUtil.createPromiseCapability;
 var isInt = sharedUtil.isInt;
 var isEmptyObj = sharedUtil.isEmptyObj;
 
-/* If the length of stream is less than ALLOCATE_NO_CHUNKS_SIZE then use
-ChunkedStreamContinuous which works with single block of memory */
+// If the length of stream is less than ALLOCATE_NO_CHUNKS_SIZE then use
+// ChunkedStreamContinuous which works with single block of memory.
 var ALLOCATE_NO_CHUNKS_SIZE = 4 * 1024 * 1024;
 
-/* Base abstract class for Continuous and Fragmented versions
-of chunked stream. Loads PDF data in chunks or by progressive downloads */
+/**
+ * Base abstract class for Continuous and Fragmented versions
+ * of chunked stream. Loads PDF data in chunks or by progressive downloads
+ */
 var ChunkedStreamBase = (function ChunkedStreamBaseClosure() {
   function ChunkedStreamBase(length, chunkSize, manager) {
     this.initialChunk = null;
@@ -54,9 +56,7 @@ var ChunkedStreamBase = (function ChunkedStreamBaseClosure() {
     this.numChunks = Math.ceil(length / chunkSize);
     this.manager = manager;
     this.progressiveDataLength = 0;
-    this.progressiveData = null;
-    this.progressiveDataChunkPosition = 0;
-    this.bufferCache = [];
+    this.buffer = null;
   }
 
   // required methods for a stream. if a particular stream does not
@@ -88,7 +88,18 @@ var ChunkedStreamBase = (function ChunkedStreamBaseClosure() {
 
     onReceiveProgressiveData: function
         ChunkedStreamBase_onReceiveProgressiveData(data) {
-      throw new Error('ChunkedStreamBase.onReceiveProgressiveData');
+      throw new Error('Abstract method ChunkedStreamBase.' +
+        'onReceiveProgressiveData');
+    },
+
+    prepareBuffer: function
+        ChunkedStreamBase_prepareBuffer(start, end) {
+      throw new Error('Abstract method ChunkedStreamBase.prepareBuffer');
+    },
+
+    createGetByteFast: function
+        ChunkedStreamBase_createGetByteFast(buffer, end) {
+      throw new Error('Abstract method ChunkedStreamBase.createGetByteFast');
     },
 
     ensureByte: function ChunkedStreamBase_ensureByte(pos) {
@@ -273,10 +284,11 @@ var ChunkedStreamBase = (function ChunkedStreamBaseClosure() {
   return ChunkedStreamBase;
 })();
 
-/* Chunked stream implementation that allocates all memory required for PDF in
- single continuous array. Better performing than its Fragmented version but
- not suitable for larger PDFs  as it will run out of memory. E.g. PDF size
- of 200MB will allocate 200MB even if no page  has been loaded yet.
+/**
+ * Chunked stream implementation that allocates all memory required for PDF in
+ * single continuous array. Better performing than its Fragmented version but
+ * not suitable for larger PDFs  as it will run out of memory. E.g. PDF size
+ * of 200MB will allocate 200MB even if no page has been loaded yet.
  */
 
 var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
@@ -294,23 +306,18 @@ var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
       ChunkedStreamBase.prototype);
 
   ChunkedStreamContinuous.prototype.createGetByteFast =
-    function ChunkedStreamFragmented_createGetByteFast(buffer, end) {
-      return this.getByteFastContinuous(buffer, end);
+    function ChunkedStreamContinuous_createGetByteFast(buffer, end) {
+      var closureBuffer = buffer;
+      var closureEnd = end;
+      return function() {
+        var pos = this.pos;
+        if (pos >= closureEnd) {
+          return -1;
+        }
+        this.pos++;
+        return closureBuffer[pos];
+      };
     };
-
-  ChunkedStreamContinuous.prototype.getByteFastContinuous = function
-      ChunkedStreamContinuous_getByteFast(buffer, end) {
-    var closureBuffer = buffer;
-    var closureEnd = end;
-    return function() {
-      var pos = this.pos;
-      if (pos >= closureEnd) {
-        return -1;
-      }
-      this.pos++;
-      return closureBuffer[pos];
-    };
-  };
 
   ChunkedStreamContinuous.prototype.onReceiveProgressiveData = function
       ChunkedStreamContinuous_onReceiveProgressiveDataContinuous(data) {
@@ -322,9 +329,9 @@ var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
     this.buffer.buffer.set(new Uint8Array(data), position);
     position += data.byteLength;
     this.progressiveDataLength = position;
+    var chunkEnd = position;
     var endChunk = position >= this.end ? this.numChunks :
         Math.floor(position / this.chunkSize);
-    var chunkEnd = chunkSize * beginChunk + data.byteLength;
 
     for (var curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
       if (!(curChunk in this.loadedChunks)) {
@@ -336,6 +343,8 @@ var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
           data: this.buffer.buffer
         };
         ++this.numChunksLoaded;
+      } else {
+        this.loadedChunks[curChunk].end = chunkEnd;
       }
     }
     // Merge chunks to the left.
@@ -350,7 +359,7 @@ var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
       this.buffer.startOffset = 0;
       this.buffer.end = this.buffer.buffer.byteLength;
       this.prepareBuffer = this.prepareBufferNop;
-      this.getByte = this.getByteFastContinuous(this.buffer.buffer, this.end);
+      this.getByte = this.createGetByteFast(this.buffer.buffer, this.end);
     }
   };
 
@@ -455,7 +464,7 @@ var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
       this.buffer.start = 0;
       this.buffer.startOffset = 0;
       this.buffer.end = this.buffer.buffer.byteLength;
-      this.getByte = this.getByteFastContinuous(this.buffer.buffer, this.end);
+      this.getByte = this.createGetByteFast(this.buffer.buffer, this.end);
       this.prepareBuffer = this.prepareBufferNop;
     }
   };
@@ -463,14 +472,18 @@ var ChunkedStreamContinuous = (function ChunkedStreamContinuousClosure() {
   return ChunkedStreamContinuous;
 })();
 
-/* Fragmented version of ChunkedStream. Will allocate memory as needed.
- Much more memory efficient for large PDF especially if not all pages need
- to be loaded.
+/**
+ * Fragmented version of ChunkedStream. Will allocate memory as needed.
+ * Much more memory efficient for large PDF especially if not all pages need
+ * to be loaded.
  */
 var ChunkedStreamFragmented = (function ChunkedStreamFragmentedClosure() {
 
   function ChunkedStreamFragmented(length, chunkSize, manager) {
     ChunkedStreamBase.call(this, length, chunkSize, manager);
+    this.progressiveData = null;
+    this.progressiveDataChunkPosition = 0;
+
     this.buffer = {
       startOffset: -1,
       start: -1,
@@ -690,15 +703,6 @@ var ChunkedStreamFragmented = (function ChunkedStreamFragmentedClosure() {
       return;
     }
     var bufferSize = (endChunk - beginChunk + 1) * chunkSize;
-    var bufferCacheLength = this.bufferCache.length;
-    for (var i = 0;  i < bufferCacheLength; i++) {
-      var cachedBuffer = this.bufferCache[i];
-      if (cachedBuffer.start <= begin && end <= cachedBuffer.end) {
-        this.buffer = cachedBuffer;
-        return;
-      }
-    }
-
     this.buffer = {
       startOffset: beginChunk * chunkSize,
       start: beginChunk * chunkSize,
@@ -718,7 +722,6 @@ var ChunkedStreamFragmented = (function ChunkedStreamFragmentedClosure() {
       this.buffer.end += part.byteLength;
       this.buffer.buffer.set(part, srcOffset);
     }
-    this.bufferCache.push(this.buffer);
   };
 
   return ChunkedStreamFragmented;
