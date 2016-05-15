@@ -743,9 +743,17 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
             if (isName(remoteDest)) {
               remoteDest = remoteDest.name;
             }
-            if (isString(remoteDest) && isString(url)) {
+            if (isString(url)) {
               var baseUrl = url.split('#')[0];
-              url = baseUrl + '#' + remoteDest;
+              if (isString(remoteDest)) {
+                // In practice, a named destination may contain only a number.
+                // If that happens, use the '#nameddest=' form to avoid the link
+                // redirecting to a page, instead of the correct destination.
+                url = baseUrl + '#' +
+                  (/^\d+$/.test(remoteDest) ? 'nameddest=' : '') + remoteDest;
+              } else if (isArray(remoteDest)) {
+                url = baseUrl + '#' + JSON.stringify(remoteDest);
+              }
             }
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
