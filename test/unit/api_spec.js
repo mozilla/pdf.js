@@ -360,6 +360,16 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+    it('gets invalid page index', function (done) {
+      var ref = { num: 3, gen: 0 }; // Reference to a font dictionary.
+      var promise = doc.getPageIndex(ref);
+      promise.then(function () {
+        done.fail('shall fail for invalid page reference.');
+      }, function (data) {
+        expect(data instanceof Error).toEqual(true);
+        done();
+      });
+    });
 
     it('gets destinations, from /Dests dictionary', function(done) {
       var promise = doc.getDestinations();

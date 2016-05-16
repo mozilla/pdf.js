@@ -290,6 +290,10 @@ function isRef(v) {
   return v instanceof Ref;
 }
 
+function isRefsEqual(v1, v2) {
+  return v1.num === v2.num && v1.gen === v2.gen;
+}
+
 function isStream(v) {
   return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
@@ -304,5 +308,6 @@ exports.isCmd = isCmd;
 exports.isDict = isDict;
 exports.isName = isName;
 exports.isRef = isRef;
+exports.isRefsEqual = isRefsEqual;
 exports.isStream = isStream;
 }));

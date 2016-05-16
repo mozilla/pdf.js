@@ -1683,7 +1683,12 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
-      return this.messageHandler.sendWithPromise('GetPageIndex', { ref: ref });
+      return this.messageHandler.sendWithPromise('GetPageIndex', { ref: ref }).
+        then(function (pageIndex) {
+          return pageIndex;
+        }, function (reason) {
+          return Promise.reject(new Error(reason));
+        });
     },
 
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex, intent) {
