@@ -25,7 +25,7 @@
 
 'use strict';
 
-var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
+var DEFAULT_URL = null;
 var DEFAULT_SCALE_DELTA = 1.1;
 var MIN_SCALE = 0.25;
 var MAX_SCALE = 10.0;
@@ -35,7 +35,7 @@ var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
 
 PDFJS.imageResourcesPath = './images/';
-  PDFJS.workerSrc = '../build/pdf.worker.js';
+
   PDFJS.cMapUrl = '../web/cmaps/';
   PDFJS.cMapPacked = true;
 
@@ -6107,8 +6107,9 @@ var PDFViewerApplication = {
   preferencePdfBugEnabled: false,
   preferenceShowPreviousViewOnLoad: true,
   preferenceDefaultZoomValue: '',
-  isViewerEmbedded: (window.parent !== window),
+  isViewerEmbedded: true, // for showpad, the viewer is always embedded!
   url: '',
+  loadingBar: null,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize() {
@@ -6118,6 +6119,9 @@ var PDFViewerApplication = {
 
     var pdfLinkService = new PDFLinkService();
     this.pdfLinkService = pdfLinkService;
+
+    var bar = new ProgressBar('#loadingBar', {});
+    this.loadingBar = bar;
 
     var container = document.getElementById('viewerContainer');
     var viewer = document.getElementById('viewer');
@@ -6375,12 +6379,6 @@ var PDFViewerApplication = {
     var support = true;
 
     return PDFJS.shadow(this, 'supportsDocumentColors', support);
-  },
-
-  get loadingBar() {
-    var bar = new ProgressBar('#loadingBar', {});
-
-    return PDFJS.shadow(this, 'loadingBar', bar);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
@@ -7149,7 +7147,12 @@ window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
 
 
 function webViewerLoad(evt) {
+  addEventListeners();
   PDFViewerApplication.initialize().then(webViewerInitialized);
+}
+
+function webViewerUnload() {
+  removeEventListeners();
 }
 
 function webViewerInitialized() {
@@ -7376,9 +7379,9 @@ function webViewerInitialized() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+//document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 
-document.addEventListener('pagerendered', function (e) {
+function pagerendered(e) {
   var pageNumber = e.detail.pageNumber;
   var pageIndex = pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
@@ -7405,15 +7408,15 @@ document.addEventListener('pagerendered', function (e) {
     pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
   }
 
-}, true);
+}
 
-document.addEventListener('textlayerrendered', function (e) {
+function textlayerrendered(e) {
   var pageIndex = e.detail.pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
-}, true);
+}
 
-document.addEventListener('pagemode', function (evt) {
+function pagemode(evt) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
@@ -7435,9 +7438,9 @@ document.addEventListener('pagemode', function (evt) {
       }
       break;
   }
-}, true);
+}
 
-document.addEventListener('namedaction', function (e) {
+function namedaction(e) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
@@ -7455,17 +7458,17 @@ document.addEventListener('namedaction', function (e) {
       }
       break;
   }
-}, true);
+}
 
-window.addEventListener('presentationmodechanged', function (e) {
+function presentationmodechanged(e) {
   var active = e.detail.active;
   var switchInProgress = e.detail.switchInProgress;
   PDFViewerApplication.pdfViewer.presentationModeState =
     switchInProgress ? PresentationModeState.CHANGING :
     active ? PresentationModeState.FULLSCREEN : PresentationModeState.NORMAL;
-});
+};
 
-window.addEventListener('updateviewarea', function (evt) {
+function updateviewarea(evt) {
   if (!PDFViewerApplication.initialized) {
     return;
   }
@@ -7501,9 +7504,9 @@ window.addEventListener('updateviewarea', function (evt) {
   } else {
     pageNumberInput.classList.add(PAGE_NUMBER_LOADING_INDICATOR);
   }
-}, true);
+}
 
-window.addEventListener('resize', function webViewerResize(evt) {
+function webViewerResize(evt) {
   if (PDFViewerApplication.initialized) {
     var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
     if (currentScaleValue === 'auto' ||
@@ -7522,9 +7525,12 @@ window.addEventListener('resize', function webViewerResize(evt) {
 
   // Set the 'max-height' CSS property of the secondary toolbar.
   SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
-});
+}
 
-window.addEventListener('hashchange', function webViewerHashchange(evt) {
+function webViewerHashchange(evt) {
+  if (!PDFViewerApplication.initialized) {
+      return;
+  }
   if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
     var hash = document.location.hash.substring(1);
     if (!hash) {
@@ -7536,9 +7542,9 @@ window.addEventListener('hashchange', function webViewerHashchange(evt) {
       PDFViewerApplication.pdfLinkService.setHash(hash);
     }
   }
-});
+}
 
-window.addEventListener('change', function webViewerChange(evt) {
+function webViewerChange(evt) {
   var files = evt.target.files;
   if (!files || files.length === 0) {
     return;
@@ -7567,7 +7573,7 @@ window.addEventListener('change', function webViewerChange(evt) {
     setAttribute('hidden', 'true');
   document.getElementById('download').setAttribute('hidden', 'true');
   document.getElementById('secondaryDownload').setAttribute('hidden', 'true');
-}, true);
+}
 
 function selectScaleOption(value) {
   var options = document.getElementById('scaleSelect').options;
@@ -7584,7 +7590,7 @@ function selectScaleOption(value) {
   return predefinedValueFound;
 }
 
-window.addEventListener('localized', function localized(evt) {
+function localized(evt) {
   document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
 
   PDFViewerApplication.animationStartedPromise.then(function() {
@@ -7608,9 +7614,9 @@ window.addEventListener('localized', function localized(evt) {
     // Set the 'max-height' CSS property of the secondary toolbar.
     SecondaryToolbar.setMaxHeight(document.getElementById('viewerContainer'));
   });
-}, true);
+}
 
-window.addEventListener('scalechange', function scalechange(evt) {
+function scalechange(evt) {
   document.getElementById('zoomOut').disabled = (evt.scale === MIN_SCALE);
   document.getElementById('zoomIn').disabled = (evt.scale === MAX_SCALE);
 
@@ -7628,9 +7634,9 @@ window.addEventListener('scalechange', function scalechange(evt) {
     return;
   }
   PDFViewerApplication.pdfViewer.update();
-}, true);
+}
 
-window.addEventListener('pagechange', function pagechange(evt) {
+function pagechange(evt) {
   var page = evt.pageNumber;
   if (evt.previousPageNumber !== page) {
     document.getElementById('pageNumber').value = page;
@@ -7653,9 +7659,12 @@ window.addEventListener('pagechange', function pagechange(evt) {
       Stats.add(page, pageView.stats);
     }
   }
-}, true);
+}
 
 function handleMouseWheel(evt) {
+  if (!PDFViewerApplication.initialized) {
+      return;
+  }
   var MOUSE_WHEEL_DELTA_FACTOR = 40;
   var ticks = (evt.type === 'DOMMouseScroll') ? -evt.detail :
               evt.wheelDelta / MOUSE_WHEEL_DELTA_FACTOR;
@@ -7694,17 +7703,14 @@ function handleMouseWheel(evt) {
   }
 }
 
-window.addEventListener('DOMMouseScroll', handleMouseWheel);
-window.addEventListener('mousewheel', handleMouseWheel);
-
-window.addEventListener('click', function click(evt) {
+function click(evt) {
   if (SecondaryToolbar.opened &&
       PDFViewerApplication.pdfViewer.containsElement(evt.target)) {
     SecondaryToolbar.close();
   }
-}, false);
+}
 
-window.addEventListener('keydown', function keydown(evt) {
+function keydown(evt) {
   if (OverlayManager.active) {
     return;
   }
@@ -7945,15 +7951,58 @@ window.addEventListener('keydown', function keydown(evt) {
   if (handled) {
     evt.preventDefault();
   }
-});
+}
 
-window.addEventListener('beforeprint', function beforePrint(evt) {
+
+function beforePrint(evt) {
   PDFViewerApplication.beforePrint();
-});
+}
 
-window.addEventListener('afterprint', function afterPrint(evt) {
+function afterPrint(evt) {
   PDFViewerApplication.afterPrint();
-});
+}
+
+function addEventListeners() {
+    window.addEventListener('click', click, false);
+    window.addEventListener('resize', webViewerResize);
+    window.addEventListener('hashchange', webViewerHashchange);
+    window.addEventListener('change', webViewerChange, true);
+    window.addEventListener('localized', localized, true);
+    window.addEventListener('scalechange', scalechange, true);
+    window.addEventListener('DOMMouseScroll', handleMouseWheel);
+    window.addEventListener('mousewheel', handleMouseWheel);
+    window.addEventListener('keydown', keydown);
+    window.addEventListener('beforeprint', beforePrint);
+    window.addEventListener('afterprint', afterPrint);
+    window.addEventListener('pagechange', pagechange, true);
+    document.addEventListener('pagerendered', pagerendered, true);
+    window.addEventListener('presentationmodechanged', presentationmodechanged);
+    window.addEventListener('updateviewarea', updateviewarea, true);
+    document.addEventListener('pagemode', pagemode, true);
+    document.addEventListener('textlayerrendered', textlayerrendered, true);
+    document.addEventListener('namedaction', namedaction, true);
+}
+
+function removeEventListeners() {
+    window.removeEventListener('click', click, false);
+    window.removeEventListener('resize', webViewerResize);
+    window.removeEventListener('hashchange', webViewerHashchange);
+    window.removeEventListener('change', webViewerChange, true);
+    window.removeEventListener('localized', localized, true);
+    window.removeEventListener('scalechange', scalechange, true);
+    window.removeEventListener('DOMMouseScroll', handleMouseWheel);
+    window.removeEventListener('mousewheel', handleMouseWheel);
+    window.removeEventListener('keydown', keydown);
+    window.removeEventListener('beforeprint', beforePrint);
+    window.removeEventListener('afterprint', afterPrint);
+    window.removeEventListener('pagechange', pagechange, true);
+    document.removeEventListener('pagerendered', pagerendered, true);
+    window.removeEventListener('presentationmodechanged', presentationmodechanged);
+    window.removeEventListener('updateviewarea', updateviewarea, true);
+    document.removeEventListener('pagemode', pagemode, true);
+    document.removeEventListener('textlayerrendered', textlayerrendered, true);
+    document.removeEventListener('namedaction', namedaction, true);
+}
 
 (function animationStartedClosure() {
   // The offsetParent is not set until the pdf.js iframe or object is visible.

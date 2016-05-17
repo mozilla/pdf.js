@@ -15,31 +15,6 @@
 
 @import url(pdf_viewer.css);
 
-* {
-  padding: 0;
-  margin: 0;
-}
-
-html {
-  height: 100%;
-  /* Font size is needed to make the activity bar the correct size. */
-  font-size: 10px;
-}
-
-body {
-  height: 100%;
-  background-color: #404040;
-  background-image: url(images/texture.png);
-}
-
-body,
-input,
-button,
-select {
-  font: message-box;
-  outline: none;
-}
-
 .hidden {
   display: none !important;
 }
@@ -1115,7 +1090,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   -webkit-overflow-scrolling: touch;
 }
 
-.thumbnail {
+.pdfjs-viewer-body .thumbnail {
   float: left;
   margin-bottom: 5px;
 }
@@ -1128,7 +1103,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
   margin-bottom: 9px;
 }
 
-.thumbnail:not([data-loaded]) {
+.pdfjs-viewer-body .thumbnail:not([data-loaded]) {
   border: 1px dashed rgba(255, 255, 255, 0.5);
   margin: -1px -1px 4px -1px;
 }
@@ -1315,8 +1290,8 @@ html[dir='rtl'] .outlineItemToggler::before {
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
    so we can override the opaque grey background when the window is inactive;
    see https://bugzilla.mozilla.org/show_bug.cgi?id=706209 */
-::selection { background: rgba(0,0,255,0.3); }
-::-moz-selection { background: rgba(0,0,255,0.3); }
+/*::selection { background: rgba(0,0,255,0.3); }
+::-moz-selection { background: rgba(0,0,255,0.3); }*/
 
 #errorWrapper {
   background: none repeat scroll 0 0 #FF5555;
