@@ -46,6 +46,41 @@ PDFJS.cMapPacked = true;
 
 var mozL10n = document.mozL10n || document.webL10n;
 
+//#include ui_utils.js
+//#include preferences.js
+
+//#if !(FIREFOX || MOZCENTRAL)
+//#include mozPrintCallback_polyfill.js
+//#endif
+
+//#if GENERIC || CHROME
+//#include download_manager.js
+//#endif
+
+//#if FIREFOX || MOZCENTRAL
+//#include firefoxcom.js
+//#endif
+
+//#if CHROME
+//#include chromecom.js
+//#endif
+
+//#include view_history.js
+//#include pdf_find_bar.js
+//#include pdf_find_controller.js
+//#include pdf_link_service.js
+//#include pdf_history.js
+//#include secondary_toolbar.js
+//#include pdf_presentation_mode.js
+//#include hand_tool.js
+//#include overlay_manager.js
+//#include password_prompt.js
+//#include pdf_document_properties.js
+//#include pdf_viewer.js
+//#include pdf_thumbnail_viewer.js
+//#include pdf_outline_view.js
+//#include pdf_attachment_view.js
+
 var PDFViewerApplication = (function(){
 
   /**
