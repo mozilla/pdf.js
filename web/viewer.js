@@ -137,7 +137,9 @@ var PDFViewerApplication = (function(){
       var pdfLinkService = new PDFLinkService();
       this.pdfLinkService = pdfLinkService;
 
-      var bar = new ProgressBar('#loadingBar', {});
+      console.log('SUPER PROGRESS BAR NAME:',this.container.getElementsByClassName('viewerContainer')[0].className+' #loadingBar');
+      
+      var bar = new ProgressBar(this.container ? this.container.getElementsByClassName('viewerContainer')[0].className+' #loadingBar' : '#loadingBar', {});
       this.loadingBar = bar;
 
       var container = this.container;
