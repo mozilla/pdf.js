@@ -138,7 +138,7 @@ var PDFViewerApplication = (function(){
       this.pdfLinkService = pdfLinkService;
 
       console.log('SUPER PROGRESS BAR NAME:',this.container.getElementsByClassName('viewerContainer')[0].className+' #loadingBar');
-      
+
       var bar = new ProgressBar(this.container ? this.container.getElementsByClassName('viewerContainer')[0].className+' #loadingBar' : '#loadingBar', {});
       this.loadingBar = bar;
 
@@ -1608,9 +1608,10 @@ var PDFViewerApplication = (function(){
 
       var pageView = this.pdfViewer.getPageView(pageIndex);
 
+      console.log('PAGE RENDERED:',this,this.pdfViewer,this.pdfViewer.getPageView(pageIndex));
+
       if (this.sidebarOpen) {
-        var thumbnailView = this.pdfThumbnailViewer.
-                            getThumbnail(pageIndex);
+        var thumbnailView = this.pdfThumbnailViewer.getThumbnail(pageIndex);
         thumbnailView.setImage(pageView);
       }
 
