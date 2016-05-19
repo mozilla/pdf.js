@@ -119,11 +119,16 @@ var PDFViewerApplication = (function(){
     this.isViewerEmbedded = true; // for showpad, the viewer is always embedded!
     this.url = '';
     this.loadingBar = null;
-    this.container = container ? container.getElementsByClassName('viewerContainer')[0] : document.getElementById('viewerContainer');
+    this.container = container ? container : null;
     this.animationStartedClosure();
   }
 
   PDFViewerApplication.prototype = {
+
+    getInstanceElement: function getInstanceElement(selector) {
+      return this.container ? this.container.querySelector(selector) : document.querySelector(selector)
+    },
+
     // called once when the document is loaded
     initialize: function pdfViewInitialize() {
       var pdfRenderingQueue = new PDFRenderingQueue();
@@ -133,11 +138,11 @@ var PDFViewerApplication = (function(){
       var pdfLinkService = new PDFLinkService();
       this.pdfLinkService = pdfLinkService;
 
-      var bar = new ProgressBar('#loadingBar', {});
+      var bar = new ProgressBar(this.getInstanceElement('#loadingBar .progress'), {});
       this.loadingBar = bar;
 
-      var container = this.container;
-      var viewer = this.container.getElementsByClassName('pdfViewer')[0];
+      var container = this.getInstanceElement('#viewerContainer');
+      var viewer = this.getInstanceElement('#viewer');
 
       this.pdfViewer = new PDFViewer({
         container: container,
