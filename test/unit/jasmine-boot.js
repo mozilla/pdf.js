@@ -50,12 +50,13 @@ function initializePDFJS(callback) {
       'pdfjs/core/parser', 'pdfjs/core/evaluator', 'pdfjs/core/cmap',
       'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/core/type1_parser',
       'pdfjs/core/cff_parser', 'pdfjs/display/api', 'pdfjs/display/metadata',
-      'pdfjs/display/dom_utils', 'pdfjs-web/ui_utils'],
+      'pdfjs/display/dom_utils', 'pdfjs-web/ui_utils', 'pdfjs/core/unicode',
+      'pdfjs/core/glyphlist'],
     function (sharedUtil, displayGlobal, corePrimitives, coreAnnotation,
               coreCrypto, coreStream, coreFonts, corePsParser, coreFunction,
               coreParser, coreEvaluator, coreCMap, coreWorker, coreNetwork,
               coreType1Parser, coreCFFParser, displayAPI, displayMetadata,
-              displayDOMUtils, webUIUtils) {
+              displayDOMUtils, webUIUtils, coreUnicode, coreGlyphList) {
 
       pdfjsLibs = {
         sharedUtil: sharedUtil,
@@ -77,7 +78,9 @@ function initializePDFJS(callback) {
         displayAPI: displayAPI,
         displayMetadata: displayMetadata,
         displayDOMUtils: displayDOMUtils,
-        webUIUtils: webUIUtils
+        webUIUtils: webUIUtils,
+        coreUnicode: coreUnicode,
+        coreGlyphList: coreGlyphList,
       };
 
       // Expose all loaded internal exported members to global scope.
