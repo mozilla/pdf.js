@@ -194,6 +194,15 @@ var PDFLinkService = (function () {
     setHash: function PDFLinkService_setHash(hash) {
       if (hash.indexOf('=') >= 0) {
         var params = parseQueryString(hash);
+        if (!this.pdfViewer.findController.integratedFind) {
+          if ('search' in params) {
+            this.eventBus.dispatch('findFromUrlHash', {
+              source: this,
+              query: params['search'],
+              phraseSearch: (params['phrase'] === 'true')
+            });
+          }
+        }
         // borrowing syntax from "Parameters for Opening PDF Files"
         if ('nameddest' in params) {
           if (this.pdfHistory) {
