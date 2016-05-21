@@ -24,7 +24,7 @@
   } else {
     factory((root.pdfjsWebPDFFindController = {}), root.pdfjsWebUIUtils);
   }
-}(this, function (exports, uiUtils, firefoxCom) {
+}(this, function (exports, uiUtils) {
 
 var scrollIntoView = uiUtils.scrollIntoView;
 
@@ -322,10 +322,9 @@ var PDFFindController = (function PDFFindControllerClosure() {
      * @param {number} index - match index.
      * @param {Array} elements - text layer div elements array.
      * @param {number} beginIdx - start index of the div array for the match.
-     * @param {number} endIdx - end index of the div array for the match.
      */
     updateMatchPosition: function PDFFindController_updateMatchPosition(
-        pageIndex, index, elements, beginIdx, endIdx) {
+        pageIndex, index, elements, beginIdx) {
       if (this.selected.matchIdx === index &&
           this.selected.pageIdx === pageIndex) {
         var spot = {

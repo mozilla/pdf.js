@@ -187,7 +187,6 @@ var PDFPageView = (function PDFPageViewClosure() {
       var isScalingRestricted = false;
       if (this.canvas && pdfjsLib.PDFJS.maxCanvasPixels > 0) {
         var outputScale = this.outputScale;
-        var pixelsInViewport = this.viewport.width * this.viewport.height;
         if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
             ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
             pdfjsLib.PDFJS.maxCanvasPixels) {

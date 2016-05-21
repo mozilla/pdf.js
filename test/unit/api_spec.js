@@ -1,7 +1,7 @@
 /* globals PDFJS, expect, it, describe, Promise, beforeAll,
            InvalidPDFException, MissingPDFException, StreamType, FontType,
            PDFDocumentProxy, PasswordException, PasswordResponses, afterAll,
-           PDFPageProxy, createPromiseCapability, beforeEach, afterEach */
+           PDFPageProxy, createPromiseCapability, afterEach */
 
 'use strict';
 
