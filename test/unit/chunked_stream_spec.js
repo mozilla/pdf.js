@@ -1,6 +1,6 @@
-/* globals expect, it, describe, beforeEach, Stream, ChunkedStreamContinuous,
-   ChunkedStreamFragmented, Dict,  MissingDataException,
-   ALLOCATE_NO_CHUNKS_SIZE, ChunkedStreamBase, jasmine */
+/* globals expect, it, describe, beforeAll, beforeEach, Stream,
+   ChunkedStreamContinuous,    ChunkedStreamFragmented, Dict,
+   MissingDataException, ALLOCATE_NO_CHUNKS_SIZE, ChunkedStreamBase, jasmine */
 
 'use strict';
 
@@ -28,7 +28,7 @@ describe('stream', function () {
     }
   };
 
-  beforeEach(function() {
+  beforeAll(function() {
     jasmine.addCustomEqualityTester(arrayComparerThatFixesJasmineIssue786);
   });
 
