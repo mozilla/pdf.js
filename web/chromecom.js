@@ -297,17 +297,22 @@
     }
   }
 
+  // chrome.storage.sync is not supported in every Chromium-derivate.
+  // Note: The background page takes care of migrating values from
+  // chrome.storage.local to chrome.storage.sync when needed.
+  var storageArea = chrome.storage.sync || chrome.storage.local;
+
   Preferences._writeToStorage = function (prefObj) {
     return new Promise(function (resolve) {
       if (prefObj === Preferences.defaults) {
         var keysToRemove = Object.keys(Preferences.defaults);
         // If the storage is reset, remove the keys so that the values from
         // managed storage are applied again.
-        chrome.storage.local.remove(keysToRemove, function() {
+        storageArea.remove(keysToRemove, function() {
           resolve();
         });
       } else {
-        chrome.storage.local.set(prefObj, function() {
+        storageArea.set(prefObj, function() {
           resolve();
         });
       }
@@ -331,7 +336,7 @@
           // Managed storage not supported, e.g. in Opera.
           defaultPrefs = Preferences.defaults;
         }
-        chrome.storage.local.get(defaultPrefs, function(readPrefs) {
+        storageArea.get(defaultPrefs, function(readPrefs) {
           resolve(readPrefs);
         });
       }
