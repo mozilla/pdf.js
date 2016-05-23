@@ -1752,8 +1752,6 @@ var PDFViewerApplication = (function(){
       var pageNumberInput = document.getElementById('pageNumber');
       var currentPage = this.pdfViewer.getPageView(this.page - 1);
 
-      console.log('currentPage:',currentPage);
-
       if (currentPage.renderingState === RenderingStates.FINISHED) {
         pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
       } else {
