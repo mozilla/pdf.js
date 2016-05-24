@@ -74,6 +74,8 @@ Promise.all([
       renderPreference = renderDefaultZoomValue(prefSchema.title);
     } else if (prefName === 'sidebarViewOnLoad') {
       renderPreference = renderSidebarViewOnLoad(prefSchema.title);
+    } else if (prefName === 'externalLinkTarget') {
+      renderPreference = renderExternalLinkTarget(prefSchema.title);
     } else {
       // Should NEVER be reached. Only happens if a new type of preference is
       // added to the storage manifest.
@@ -180,6 +182,23 @@ function renderSidebarViewOnLoad(shortDescription) {
   select.onchange = function() {
     chrome.storage.local.set({
       sidebarViewOnLoad: parseInt(this.value)
+    });
+  };
+  wrapper.querySelector('span').textContent = shortDescription;
+  document.getElementById('settings-boxes').appendChild(wrapper);
+
+  function renderPreference(value) {
+    select.value = value;
+  }
+  return renderPreference;
+}
+
+function renderExternalLinkTarget(shortDescription) {
+  var wrapper = importTemplate('externalLinkTarget-template');
+  var select = wrapper.querySelector('select');
+  select.onchange = function() {
+    chrome.storage.local.set({
+      externalLinkTarget: parseInt(this.value)
     });
   };
   wrapper.querySelector('span').textContent = shortDescription;
