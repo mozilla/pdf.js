@@ -15,6 +15,17 @@ describe('Annotation layer', function() {
     }
   };
 
+  var annotationFactory;
+
+  beforeAll(function (done) {
+    annotationFactory = new AnnotationFactory();
+    done();
+  });
+
+  afterAll(function () {
+    annotationFactory = null;
+  });
+
   describe('Annotation', function() {
     it('should set and get flags', function() {
       var dict = new Dict();
@@ -185,17 +196,6 @@ describe('Annotation layer', function() {
   });
 
   describe('LinkAnnotation', function() {
-    var annotationFactory;
-
-    beforeAll(function (done) {
-      annotationFactory = new AnnotationFactory();
-      done();
-    });
-
-    afterAll(function () {
-      annotationFactory = null;
-    });
-
     it('should correctly parse a URI action', function() {
       var actionDict = new Dict();
       actionDict.set('Type', Name.get('Action'));
@@ -356,6 +356,34 @@ describe('Annotation layer', function() {
       var annotation = annotations[0];
       expect(annotation.file.filename).toEqual('Test.txt');
       expect(annotation.file.content).toEqual(stringToBytes('Test attachment'));
+    });
+  });
+
+  describe('PopupAnnotation', function() {
+    it('should inherit the parent flags when the Popup is not viewable, ' +
+       'but the parent is (PR 7352)', function () {
+      var parentDict = new Dict();
+      parentDict.set('Type', Name.get('Annot'));
+      parentDict.set('Subtype', Name.get('Text'));
+      parentDict.set('F', 28); // viewable
+
+      var popupDict = new Dict();
+      popupDict.set('Type', Name.get('Annot'));
+      popupDict.set('Subtype', Name.get('Popup'));
+      popupDict.set('F', 25); // not viewable
+      popupDict.set('Parent', parentDict);
+
+      var xrefMock = new XrefMock([popupDict]);
+      var popupRef = new Ref(13, 0);
+
+      var popupAnnotation = annotationFactory.create(xrefMock, popupRef);
+      var data = popupAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.POPUP);
+
+      // Should not modify the `annotationFlags` returned e.g. through the API.
+      expect(data.annotationFlags).toEqual(25);
+      // The Popup should inherit the `viewable` property of the parent.
+      expect(popupAnnotation.viewable).toEqual(true);
     });
   });
 });

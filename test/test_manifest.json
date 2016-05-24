@@ -1838,6 +1838,14 @@
       "type": "eq",
       "annotations": true
     },
+    {  "id": "pr7352",
+       "file": "pdfs/pr7352.pdf",
+       "md5": "336abca4b313cb215b0569883f1f683d",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue1002",
       "file": "pdfs/issue1002.pdf",
       "md5": "af62d6cd95079322d4af18edd960d15c",
