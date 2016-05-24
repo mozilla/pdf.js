@@ -95,6 +95,15 @@ describe('CFFParser', function() {
     expect(topDict.getByName('Private')).toEqual([45, 102]);
   });
 
+  it('refuses to add topDict key with invalid value (bug 1068432)',
+      function () {
+    var topDict = cff.topDict;
+    var defaultValue = topDict.getByName('UnderlinePosition');
+
+    topDict.setByKey(/* [12, 3] = */ 3075, [NaN]);
+    expect(topDict.getByName('UnderlinePosition')).toEqual(defaultValue);
+  });
+
   it('parses a CharString having cntrmask', function() {
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
