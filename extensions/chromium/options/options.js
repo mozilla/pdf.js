@@ -16,9 +16,15 @@ limitations under the License.
 /* globals chrome, Promise */
 
 'use strict';
+var storageAreaName = chrome.storage.sync ? 'sync' : 'local';
+var storageArea = chrome.storage[storageAreaName];
 
 Promise.all([
   new Promise(function getManagedPrefs(resolve) {
+    if (!chrome.storage.managed) {
+      resolve({});
+      return;
+    }
     // Get preferences as set by the system administrator.
     chrome.storage.managed.get(null, function(prefs) {
       // Managed storage may be disabled, e.g. in Opera.
@@ -26,7 +32,7 @@ Promise.all([
     });
   }),
   new Promise(function getUserPrefs(resolve) {
-    chrome.storage.local.get(null, function(prefs) {
+    storageArea.get(null, function(prefs) {
       resolve(prefs || {});
     });
   }),
@@ -93,7 +99,7 @@ Promise.all([
   // Reset button to restore default settings.
   document.getElementById('reset-button').onclick = function() {
     userPrefs = {};
-    chrome.storage.local.remove(prefNames, function() {
+    storageArea.remove(prefNames, function() {
       renderedPrefNames.forEach(function(prefName) {
         renderPreferenceFunctions[prefName](getPrefValue(prefName));
       });
@@ -102,7 +108,7 @@ Promise.all([
 
   // Automatically update the UI when the preferences were changed elsewhere.
   chrome.storage.onChanged.addListener(function(changes, areaName) {
-    var prefs = areaName === 'local' ? userPrefs :
+    var prefs = areaName === storageAreaName ? userPrefs :
                 areaName === 'managed' ? managedPrefs : null;
     if (prefs) {
       renderedPrefNames.forEach(function(prefName) {
@@ -136,7 +142,7 @@ function renderBooleanPref(shortDescription, description, prefName) {
   checkbox.onchange = function() {
     var pref = {};
     pref[prefName] = this.checked;
-    chrome.storage.local.set(pref);
+    storageArea.set(pref);
   };
   wrapper.querySelector('span').textContent = shortDescription;
   document.getElementById('settings-boxes').appendChild(wrapper);
@@ -151,7 +157,7 @@ function renderDefaultZoomValue(shortDescription) {
   var wrapper = importTemplate('defaultZoomValue-template');
   var select = wrapper.querySelector('select');
   select.onchange = function() {
-    chrome.storage.local.set({
+    storageArea.set({
       defaultZoomValue: this.value
     });
   };
@@ -180,7 +186,7 @@ function renderSidebarViewOnLoad(shortDescription) {
   var wrapper = importTemplate('sidebarViewOnLoad-template');
   var select = wrapper.querySelector('select');
   select.onchange = function() {
-    chrome.storage.local.set({
+    storageArea.set({
       sidebarViewOnLoad: parseInt(this.value)
     });
   };
@@ -197,7 +203,7 @@ function renderExternalLinkTarget(shortDescription) {
   var wrapper = importTemplate('externalLinkTarget-template');
   var select = wrapper.querySelector('select');
   select.onchange = function() {
-    chrome.storage.local.set({
+    storageArea.set({
       externalLinkTarget: parseInt(this.value)
     });
   };
