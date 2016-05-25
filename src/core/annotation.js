@@ -191,27 +191,48 @@ var Annotation = (function AnnotationClosure() {
 
   Annotation.prototype = {
     /**
+     * @private
+     */
+    _hasFlag: function Annotation_hasFlag(flags, flag) {
+      return !!(flags & flag);
+    },
+
+    /**
+     * @private
+     */
+    _isViewable: function Annotation_isViewable(flags) {
+      return !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
+             !this._hasFlag(flags, AnnotationFlag.HIDDEN) &&
+             !this._hasFlag(flags, AnnotationFlag.NOVIEW);
+    },
+
+    /**
+     * @private
+     */
+    _isPrintable: function AnnotationFlag_isPrintable(flags) {
+      return this._hasFlag(flags, AnnotationFlag.PRINT) &&
+             !this._hasFlag(flags, AnnotationFlag.INVISIBLE) &&
+             !this._hasFlag(flags, AnnotationFlag.HIDDEN);
+    },
+
+    /**
      * @return {boolean}
      */
     get viewable() {
-      if (this.flags) {
-        return !this.hasFlag(AnnotationFlag.INVISIBLE) &&
-               !this.hasFlag(AnnotationFlag.HIDDEN) &&
-               !this.hasFlag(AnnotationFlag.NOVIEW);
+      if (this.flags === 0) {
+        return true;
       }
-      return true;
+      return this._isViewable(this.flags);
     },
 
     /**
      * @return {boolean}
      */
     get printable() {
-      if (this.flags) {
-        return this.hasFlag(AnnotationFlag.PRINT) &&
-               !this.hasFlag(AnnotationFlag.INVISIBLE) &&
-               !this.hasFlag(AnnotationFlag.HIDDEN);
+      if (this.flags === 0) {
+        return false;
       }
-      return false;
+      return this._isPrintable(this.flags);
     },
 
     /**
@@ -224,11 +245,7 @@ var Annotation = (function AnnotationClosure() {
      * @see {@link shared/util.js}
      */
     setFlags: function Annotation_setFlags(flags) {
-      if (isInt(flags)) {
-        this.flags = flags;
-      } else {
-        this.flags = 0;
-      }
+      this.flags = (isInt(flags) && flags > 0) ? flags : 0;
     },
 
     /**
@@ -242,10 +259,7 @@ var Annotation = (function AnnotationClosure() {
      * @see {@link shared/util.js}
      */
     hasFlag: function Annotation_hasFlag(flag) {
-      if (this.flags) {
-        return (this.flags & flag) > 0;
-      }
-      return false;
+      return this._hasFlag(this.flags, flag);
     },
 
     /**
@@ -822,6 +836,16 @@ var PopupAnnotation = (function PopupAnnotationClosure() {
     } else {
       this.setColor(parentItem.getArray('C'));
       this.data.color = this.color;
+    }
+
+    // If the Popup annotation is not viewable, but the parent annotation is,
+    // that is most likely a bug. Fallback to inherit the flags from the parent
+    // annotation (this is consistent with the behaviour in Adobe Reader).
+    if (!this.viewable) {
+      var parentFlags = parentItem.get('F');
+      if (this._isViewable(parentFlags)) {
+        this.setFlags(parentFlags);
+      }
     }
   }
 
