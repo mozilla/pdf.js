@@ -88,6 +88,7 @@
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('find' + e.type, true, true, {
         query: e.query,
+        phraseSearch: e.phraseSearch,
         caseSensitive: e.caseSensitive,
         highlightAll: e.highlightAll,
         findPrevious: e.findPrevious
