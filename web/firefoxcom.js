@@ -163,6 +163,7 @@ Preferences._readFromStorage = function (prefObj) {
       source: window,
       type: evt.type.substring('find'.length),
       query: evt.detail.query,
+      phraseSearch: true,
       caseSensitive: !!evt.detail.caseSensitive,
       highlightAll: !!evt.detail.highlightAll,
       findPrevious: !!evt.detail.findPrevious

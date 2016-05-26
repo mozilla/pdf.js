@@ -109,6 +109,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
         type: type,
         query: this.findField.value,
         caseSensitive: this.caseSensitive.checked,
+        phraseSearch: true,
         highlightAll: this.highlightAll.checked,
         findPrevious: findPrev
       });
