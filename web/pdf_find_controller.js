@@ -78,6 +78,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       this.active = false; // If active, find results will be highlighted.
       this.pageContents = []; // Stores the text for each page.
       this.pageMatches = [];
+      this.pageMatchesLength = null;
       this.matchCount = 0;
       this.selected = { // Currently selected match.
         pageIdx: -1,
@@ -104,10 +105,114 @@ var PDFFindController = (function PDFFindControllerClosure() {
       });
     },
 
+    // Helper for multiple search - fills matchesWithLength array
+    // and takes into account cases when one search term
+    // include another search term (for example, "tamed tame" or "this is").
+    // Looking for intersecting terms in the 'matches' and
+    // leave elements with a longer match-length.
+
+    _prepareMatches: function PDFFindController_prepareMatches(
+        matchesWithLength, matches, matchesLength) {
+
+      function isSubTerm(matchesWithLength, currentIndex) {
+        var currentElem, prevElem, nextElem;
+        currentElem = matchesWithLength[currentIndex];
+        nextElem = matchesWithLength[currentIndex + 1];
+        // checking for cases like "TAMEd TAME"
+        if (currentIndex < matchesWithLength.length - 1 &&
+            currentElem.match === nextElem.match) {
+          currentElem.skipped = true;
+          return true;
+        }
+        // checking for cases like "thIS IS"
+        for (var i = currentIndex - 1; i >= 0; i--) {
+          prevElem = matchesWithLength[i];
+          if (prevElem.skipped) {
+            continue;
+          }
+          if (prevElem.match + prevElem.matchLength < currentElem.match) {
+            break;
+          }
+          if (prevElem.match + prevElem.matchLength >=
+              currentElem.match + currentElem.matchLength) {
+            currentElem.skipped = true;
+            return true;
+          }
+        }
+        return false;
+      }
+
+      var i, len;
+      // Sorting array of objects { match: <match>, matchLength: <matchLength> }
+      // in increasing index first and then the lengths.
+      matchesWithLength.sort(function(a, b) {
+        return a.match === b.match ?
+        a.matchLength - b.matchLength : a.match - b.match;
+      });
+      for (i = 0, len = matchesWithLength.length; i < len; i++) {
+        if (isSubTerm(matchesWithLength, i)) {
+          continue;
+        }
+        matches.push(matchesWithLength[i].match);
+        matchesLength.push(matchesWithLength[i].matchLength);
+      }
+    },
+
+    calcFindPhraseMatch: function PDFFindController_calcFindPhraseMatch(
+      query, pageIndex, pageContent) {
+      var matches = [];
+      var queryLen = query.length;
+      var matchIdx = -queryLen;
+      while (true) {
+        matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
+        if (matchIdx === -1) {
+          break;
+        }
+        matches.push(matchIdx);
+      }
+      this.pageMatches[pageIndex] = matches;
+    },
+
+    calcFindWordMatch: function PDFFindController_calcFindWordMatch(
+      query, pageIndex, pageContent) {
+      var matchesWithLength = [];
+      // Divide the query into pieces and search for text on each piece.
+      var queryArray = query.match(/\S+/g);
+      var subquery, subqueryLen, matchIdx;
+      for (var i = 0, len = queryArray.length; i < len; i++) {
+        subquery = queryArray[i];
+        subqueryLen = subquery.length;
+        matchIdx = -subqueryLen;
+        while (true) {
+          matchIdx = pageContent.indexOf(subquery, matchIdx + subqueryLen);
+          if (matchIdx === -1) {
+            break;
+          }
+          // Other searches do not, so we store the length.
+          matchesWithLength.push({
+            match: matchIdx,
+            matchLength: subqueryLen,
+            skipped: false
+          });
+        }
+      }
+      // Prepare arrays for store the matches.
+      if (!this.pageMatchesLength) {
+        this.pageMatchesLength = [];
+      }
+      this.pageMatchesLength[pageIndex] = [];
+      this.pageMatches[pageIndex] = [];
+      // Sort matchesWithLength, clean up intersecting terms
+      // and put the result into the two arrays.
+      this._prepareMatches(matchesWithLength, this.pageMatches[pageIndex],
+        this.pageMatchesLength[pageIndex]);
+    },
+
     calcFindMatch: function PDFFindController_calcFindMatch(pageIndex) {
       var pageContent = this.normalize(this.pageContents[pageIndex]);
       var query = this.normalize(this.state.query);
       var caseSensitive = this.state.caseSensitive;
+      var phraseSearch = this.state.phraseSearch;
       var queryLen = query.length;
 
       if (queryLen === 0) {
@@ -120,16 +225,12 @@ var PDFFindController = (function PDFFindControllerClosure() {
         query = query.toLowerCase();
       }
 
-      var matches = [];
-      var matchIdx = -queryLen;
-      while (true) {
-        matchIdx = pageContent.indexOf(query, matchIdx + queryLen);
-        if (matchIdx === -1) {
-          break;
-        }
-        matches.push(matchIdx);
+      if (phraseSearch) {
+        this.calcFindPhraseMatch(query, pageIndex, pageContent);
+      } else {
+        this.calcFindWordMatch(query, pageIndex, pageContent);
       }
-      this.pageMatches[pageIndex] = matches;
+
       this.updatePage(pageIndex);
       if (this.resumePageIdx === pageIndex) {
         this.resumePageIdx = null;
@@ -137,8 +238,8 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
 
       // Update the matches count
-      if (matches.length > 0) {
-        this.matchCount += matches.length;
+      if (this.pageMatches[pageIndex].length > 0) {
+        this.matchCount += this.pageMatches[pageIndex].length;
         this.updateUIResultsCount();
       }
     },
@@ -233,6 +334,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.resumePageIdx = null;
         this.pageMatches = [];
         this.matchCount = 0;
+        this.pageMatchesLength = null;
         var self = this;
 
         for (var i = 0; i < numPages; i++) {

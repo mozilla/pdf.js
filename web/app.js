@@ -1250,6 +1250,7 @@ var PDFViewerApplication = {
     eventBus.on('rotateccw', webViewerRotateCcw);
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
+    eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
 //#if GENERIC
     eventBus.on('fileinputchange', webViewerFileInputChange);
 //#endif
@@ -1905,9 +1906,20 @@ function webViewerDocumentProperties() {
 function webViewerFind(e) {
   PDFViewerApplication.findController.executeCommand('find' + e.type, {
     query: e.query,
+    phraseSearch: e.phraseSearch,
     caseSensitive: e.caseSensitive,
     highlightAll: e.highlightAll,
     findPrevious: e.findPrevious
+  });
+}
+
+function webViewerFindFromUrlHash(e) {
+  PDFViewerApplication.findController.executeCommand('find', {
+    query: e.query,
+    phraseSearch: e.phraseSearch,
+    caseSensitive: false,
+    highlightAll: true,
+    findPrevious: false
   });
 }
 
@@ -2054,6 +2066,7 @@ window.addEventListener('keydown', function keydown(evt) {
           if (findState) {
             PDFViewerApplication.findController.executeCommand('findagain', {
               query: findState.query,
+              phraseSearch: findState.phraseSearch,
               caseSensitive: findState.caseSensitive,
               highlightAll: findState.highlightAll,
               findPrevious: cmd === 5 || cmd === 12
