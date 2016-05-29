@@ -79,6 +79,13 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
   var webPrefs = JSON.parse(fs.readFileSync(webPrefsPath).toString());
   var webPrefsKeys = Object.keys(webPrefs);
   webPrefsKeys.sort();
+  var telemetryIndex = chromePrefsKeys.indexOf('disableTelemetry');
+  if (telemetryIndex >= 0) {
+    chromePrefsKeys.splice(telemetryIndex, 1);
+  } else {
+    console.log('Warning: disableTelemetry key not found in chrome prefs!');
+    return false;
+  }
   if (webPrefsKeys.length !== chromePrefsKeys.length) {
     return false;
   }
