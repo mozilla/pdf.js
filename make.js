@@ -125,6 +125,41 @@ target.minified = function() {
   execGulp('minified');
 };
 
+target.minifiedpost = function () {
+  var viewerFiles = [
+    'external/webL10n/l10n.js',
+    'node_modules/fabric/dist/fabric.js',
+    MINIFIED_DIR + BUILD_DIR + 'pdf.js',
+    MINIFIED_DIR + '/web/viewer.js'
+  ];
+
+  echo();
+  echo('### Minifying js files');
+
+  var UglifyJS = require('uglify-js');
+  // V8 chokes on very long sequences. Works around that.
+  var optsForHugeFile = {compress: {sequences: false}};
+
+  UglifyJS.minify(viewerFiles).code
+    .to(MINIFIED_DIR + '/web/pdf.viewer.js');
+  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code
+    .to(MINIFIED_DIR + '/build/pdf.min.js');
+  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.worker.js', optsForHugeFile).code
+    .to(MINIFIED_DIR + '/build/pdf.worker.min.js');
+
+  echo();
+  echo('### Cleaning js files');
+
+  rm(MINIFIED_DIR + '/web/viewer.js');
+  rm(MINIFIED_DIR + '/web/debugger.js');
+  rm(MINIFIED_DIR + '/build/pdf.js');
+  rm(MINIFIED_DIR + '/build/pdf.worker.js');
+  mv(MINIFIED_DIR + '/build/pdf.min.js',
+     MINIFIED_DIR + '/build/pdf.js');
+  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
+     MINIFIED_DIR + '/build/pdf.worker.js');
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Extension stuff
