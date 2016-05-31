@@ -1161,6 +1161,13 @@
        "type": "eq",
        "about": "Please note that this file currently renders incorrectly."
     },
+    {  "id": "issue5808-text",
+       "file": "pdfs/issue5808.pdf",
+       "md5": "e0584dd540d7859d6c191aa53379692e",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue6962",
        "file": "pdfs/issue6962.pdf",
        "md5": "d40e871ecca68baf93114bd28c782148",
