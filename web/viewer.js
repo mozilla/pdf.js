@@ -1239,7 +1239,39 @@ var PDFViewerApplication = {
       return;
     }
     this.pdfPresentationMode.mouseScroll(delta);
-  }
+  },     
+  
+   changeViewerColor: function(color){
+    document.getElementById('viewer').style.backgroundColor = color;
+   },
+    
+   changeToolbarViewerColor: function(color){
+    document.getElementById('toolbarViewer').style.backgroundColor = color;
+   },
+    
+   changeToolBarLabelFontSize : function(size){
+    var elements = document.getElementsByClassName('toolbarLabel');
+    for(var i=0; i < elements.length; i++){
+        var element = elements[i];
+        element.style.fontSize = size;
+    }
+   },   
+    
+   changeSecondaryToolbarButtonFontSize : function(size){
+    var elements = document.getElementsByClassName('secondaryToolbarButton');
+    for(var i=0; i < elements.length; i++){
+        var element = elements[i];        
+        element.style.fontSize = size;
+    }
+   },   
+    
+   changeDialogFontSize : function(size){
+    var elements = document.getElementsByClassName('dialog');
+    for(var i=0; i < elements.length; i++){
+        var element = elements[i];        
+        element.style.fontSize = size;
+    }
+   }
 };
 //#if GENERIC
 window.PDFView = PDFViewerApplication; // obsolete name, using it as an alias
@@ -1494,28 +1526,9 @@ function webViewerInitialized() {
   });
     
   document.getElementById('colorSelect').addEventListener('change', function() {
-        var toolbarViewer = document.getElementById('toolbarViewer');
-        var viewer = document.getElementById('viewer');
-        var color = ""
-        if(this.value === '0'){
-            color = "#484848";
-        }
-        if (this.value === '1') {
-            color = "#972727";
-        }   
-        if (this.value === '2') {
-            color = "#276597";
-        }   
-        if (this.value === '3') {
-            color = "#13634C";
-        }   
-        if (this.value === '4') {
-            color = "#6F5280";
-        }    
-        if (this.value === '5') {
-            color = "#797979";
-        }
-        toolbarViewer.style.backgroundColor = viewer.style.backgroundColor = color
+      var color = this.options[this.selectedIndex].value;
+      PDFViewerApplication.changeViewerColor(color);
+      PDFViewerApplication.changeToolbarViewerColor(color);
   });
     
     document.getElementById('textSizeSelect').addEventListener('change', function() {
@@ -1552,6 +1565,9 @@ function webViewerInitialized() {
             var element = dialog[i];
             element.style.fontSize = fontSizeButtons;
         }
+        PDFViewerApplication.changeToolBarLabelFontSize(fontSizeToolBar);
+        PDFViewerApplication.changeSecondaryToolbarButtonFontSize(fontSizeButtons);
+        PDFViewerApplication.changeDialogFontSize(fontSizeButtons);
   });
 
   document.getElementById('scaleSelect').addEventListener('change', function() {

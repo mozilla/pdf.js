@@ -767,8 +767,10 @@ var PDFViewer = (function pdfViewer() {
 
     setFindController: function (findController) {
       this.findController = findController;
-    },
+    }
+      
   };
+    
 
   return PDFViewer;
 })();
