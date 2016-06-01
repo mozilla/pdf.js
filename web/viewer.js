@@ -1527,6 +1527,7 @@ function webViewerInitialized() {
     
   document.getElementById('colorSelect').addEventListener('change', function() {
       var color = this.options[this.selectedIndex].value;
+
       PDFViewerApplication.changeViewerColor(color);
       PDFViewerApplication.changeToolbarViewerColor(color);
   });
