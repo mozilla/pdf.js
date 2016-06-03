@@ -72,7 +72,7 @@ limitations under the License.
       var extension_version = chrome.runtime.getManifest().version;
       if (window.Request && 'mode' in Request.prototype) {
         // fetch is supported in extensions since Chrome 42 (though the above
-        // feature-detection method detects selects Chrome 43+).
+        // feature-detection method detects Chrome 43+).
         // Unlike XMLHttpRequest, fetch omits credentials such as cookies in the
         // requests, which guarantees that the server cannot track the client
         // via HTTP cookies.
