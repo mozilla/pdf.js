@@ -737,6 +737,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "extgstate-text",
+       "file": "pdfs/extgstate.pdf",
+       "md5": "001bb4ec04463a01d93aad748361f049",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
+    },
     {  "id": "usmanm-bad",
        "file": "pdfs/usmanm-bad.pdf",
        "md5": "38afb822433aaf07fc8f54807cd4f61a",
