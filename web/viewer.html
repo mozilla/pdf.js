@@ -51,7 +51,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if !PRODUCTION-->
     <script src="../external/webL10n/l10n.js"></script>
     <script src="../node_modules/fabric/dist/fabric.js"></script>
-<!--#elif !MINIFIED-->
+<!--#elif GENERIC && !MINIFIED-->
     <script src="fabric.js"></script>
 <!--#endif-->
 
