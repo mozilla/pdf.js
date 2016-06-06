@@ -49,6 +49,7 @@
       //camelCased properties are for fabric and underscored properties are for sbt
       extraFields: [
         'title',
+        'uuid',
         'description',
         'field_type',
         'sbt_height',
@@ -126,7 +127,7 @@
           self.add(obj);
         });
         return this;
-      }
+      },
     });
                                                 
     // Box renders field title when available and calculates
@@ -134,15 +135,30 @@
     // scale factor
    
   };
-  
-
+  // got function to generate uuids from here https://gist.github.com/jed/982883
+  // add page id to the front so its page id:uuid
+  var fabricUUID = function(page, placeholder) {
+    function uuid(placeholder){
+      if(placeholder) {
+        return (placeholder^Math.random()*16 >> placeholder / 4).toString(16);
+      }
+      else
+        return  ([1e7]+-1e3+-4e3+-8e3+-1e11).replace( /[018]/g, uuid);
+    }
+    return page.toString() + ':' + uuid();
+  };
   var fabricViewerMethods = {
     getCanvas: function pdfViewGetCanvas(page) {
       return PDFViewerApplication.pdfViewer._pages[page - 1].canvas;
     },
     fabricMouseMove: function pdfViewFabricMouseMove(options) {
-      self = this;
-      if(this.lastObj != null) this.remove(this.lastObj);
+      var self = this,
+          uuid;
+      if(this.lastObj != null) {
+        uuid = this.lastObj.uuid ? this.lastObj.uuid: fabricUUID(PDFViewerApplication.page);  
+        this.remove(this.lastObj);
+      }
+      console.log(uuid);
       var e = options.e,
           offset = this._offset;
       this.state.lastMoveX = e.clientX - offset.left;
@@ -158,7 +174,6 @@
             }
           },
           page = PDFViewerApplication.pdfViewer._pages[PDFViewerApplication.page - 1],
-          
           rect = new fabric.TitledRect({
             left: rectX,
             top: rectY + window.scrollY,
@@ -168,6 +183,7 @@
             strokeWidth: 3,
             fill: 'transparent',
             defaultObjRotation: page.rotation,
+            uuid: uuid,
           });
       this.lastObj = rect;
       this.add(rect);
@@ -195,8 +211,8 @@
     fabricMouseUp: function pdfViewFabricMouseUp(options){
       this.off('mouse:move', fabricViewerMethods.fabricMouseMove);
       this.off('mouse:up', fabricViewerMethods.fabricMouseUp);
+      window.parent.postMessage(this.lastObj.uuid, window.location.origin, true);
       this.lastObj = null;
-      //ADD CALLBACK FOR EXTERNAL API
     },
     fabricStringifyParams: function pdfViewFabricStringifyParams(){
       var pages = {};
@@ -366,7 +382,14 @@
           });
           // });
           pdfPage.fabricState.objs = klass.toObject();
-        }
+        },
+        getObjByUUID: function(uuid) {
+          var canvas = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1].canvas;
+          for(var obj in canvas._objects) {
+            if(uuid === obj.uuid)
+              return obj;
+          }
+        },
       };
   
   function fabricCanvasSelected(options) {
