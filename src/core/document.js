@@ -47,6 +47,7 @@ var shadow = sharedUtil.shadow;
 var stringToBytes = sharedUtil.stringToBytes;
 var stringToPDFString = sharedUtil.stringToPDFString;
 var warn = sharedUtil.warn;
+var isSpace = sharedUtil.isSpace;
 var Dict = corePrimitives.Dict;
 var isDict = corePrimitives.isDict;
 var isName = corePrimitives.isName;
@@ -57,7 +58,6 @@ var StreamsSequenceStream = coreStream.StreamsSequenceStream;
 var Catalog = coreObj.Catalog;
 var ObjectLoader = coreObj.ObjectLoader;
 var XRef = coreObj.XRef;
-var Lexer = coreParser.Lexer;
 var Linearization = coreParser.Linearization;
 var calculateMD5 = coreCrypto.calculateMD5;
 var OperatorList = coreEvaluator.OperatorList;
@@ -470,7 +470,7 @@ var PDFDocument = (function PDFDocumentClosure() {
           var ch;
           do {
             ch = stream.getByte();
-          } while (Lexer.isSpace(ch));
+          } while (isSpace(ch));
           var str = '';
           while (ch >= 0x20 && ch <= 0x39) { // < '9'
             str += String.fromCharCode(ch);

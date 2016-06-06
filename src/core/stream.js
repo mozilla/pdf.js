@@ -38,6 +38,7 @@ var isArray = sharedUtil.isArray;
 var createObjectURL = sharedUtil.createObjectURL;
 var shadow = sharedUtil.shadow;
 var warn = sharedUtil.warn;
+var isSpace = sharedUtil.isSpace;
 var Dict = corePrimitives.Dict;
 var isDict = corePrimitives.isDict;
 var Jbig2Image = coreJbig2.Jbig2Image;
@@ -1146,11 +1147,6 @@ var DecryptStream = (function DecryptStreamClosure() {
 })();
 
 var Ascii85Stream = (function Ascii85StreamClosure() {
-  // Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
-  function isSpace(ch) {
-    return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
-  }
-
   function Ascii85Stream(str, maybeLength) {
     this.str = str;
     this.dict = str.dict;
