@@ -262,10 +262,12 @@ describe('CFFParser', function() {
     var bytes = new Uint8Array([0x00, // format
                                 0x00, // gid: 0 fd: 0
                                 0x01 // gid: 1 fd: 1
-                              ]);
-    parser.bytes = bytes;
+                               ]);
+    parser.bytes = bytes.slice();
     var fdSelect = parser.parseFDSelect(0, 2);
+
     expect(fdSelect.fdSelect).toEqual([0, 1]);
+    expect(fdSelect.raw).toEqual(bytes);
   });
 
   it('parses fdselect format 3', function() {
@@ -273,13 +275,32 @@ describe('CFFParser', function() {
                                 0x00, 0x02, // range count
                                 0x00, 0x00, // first gid
                                 0x09, // font dict 1 id
-                                0x00, 0x02, // nex gid
-                                0x0a, // font dict 2 gid
+                                0x00, 0x02, // next gid
+                                0x0a, // font dict 2 id
                                 0x00, 0x04 // sentinel (last gid)
-                              ]);
-    parser.bytes = bytes;
-    var fdSelect = parser.parseFDSelect(0, 2);
+                               ]);
+    parser.bytes = bytes.slice();
+    var fdSelect = parser.parseFDSelect(0, 4);
+
     expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
+    expect(fdSelect.raw).toEqual(bytes);
+  });
+
+  it('parses invalid fdselect format 3 (bug 1146106)', function() {
+    var bytes = new Uint8Array([0x03, // format
+                                0x00, 0x02, // range count
+                                0x00, 0x01, // first gid (invalid)
+                                0x09, // font dict 1 id
+                                0x00, 0x02, // next gid
+                                0x0a, // font dict 2 id
+                                0x00, 0x04 // sentinel (last gid)
+                               ]);
+    parser.bytes = bytes.slice();
+    var fdSelect = parser.parseFDSelect(0, 4);
+
+    expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
+    bytes[3] = bytes[4] = 0x00; // The adjusted first range, first gid.
+    expect(fdSelect.raw).toEqual(bytes);
   });
 
   // TODO fdArray

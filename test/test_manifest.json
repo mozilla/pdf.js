@@ -210,6 +210,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1146106",
+       "file": "pdfs/bug1146106.pdf",
+       "md5": "a323d3766da49ee40f7d5dff0aeb0cc1",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue1512",
        "file": "pdfs/issue1512r.pdf",
        "md5": "af48ede2658d99cca423147085c6609b",
