@@ -652,11 +652,6 @@ var Lexer = (function LexerClosure() {
     this.knownCommands = knownCommands;
   }
 
-  Lexer.isSpace = function Lexer_isSpace(ch) {
-    // Space is one of the following characters: SPACE, TAB, CR or LF.
-    return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
-  };
-
   // A '1' in this array means the character is white space. A '1' or
   // '2' means the character ends a name or command.
   var specialChars = [

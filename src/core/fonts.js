@@ -18,25 +18,24 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/fonts', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
-      'pdfjs/core/glyphlist', 'pdfjs/core/font_renderer',
-      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts', 'pdfjs/core/unicode',
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/glyphlist',
+      'pdfjs/core/font_renderer', 'pdfjs/core/encodings',
+      'pdfjs/core/standard_fonts', 'pdfjs/core/unicode',
       'pdfjs/core/type1_parser', 'pdfjs/core/cff_parser'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./parser.js'), require('./glyphlist.js'),
+      require('./stream.js'), require('./glyphlist.js'),
       require('./font_renderer.js'), require('./encodings.js'),
       require('./standard_fonts.js'), require('./unicode.js'),
       require('./type1_parser.js'), require('./cff_parser.js'));
   } else {
     factory((root.pdfjsCoreFonts = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
-      root.pdfjsCoreGlyphList, root.pdfjsCoreFontRenderer,
-      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts,
-      root.pdfjsCoreUnicode, root.pdfjsCoreType1Parser,
-      root.pdfjsCoreCFFParser);
+      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreGlyphList,
+      root.pdfjsCoreFontRenderer, root.pdfjsCoreEncodings,
+      root.pdfjsCoreStandardFonts, root.pdfjsCoreUnicode,
+      root.pdfjsCoreType1Parser, root.pdfjsCoreCFFParser);
   }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
+}(this, function (exports, sharedUtil, corePrimitives, coreStream,
                   coreGlyphList, coreFontRenderer, coreEncodings,
                   coreStandardFonts, coreUnicode, coreType1Parser,
                   coreCFFParser) {
@@ -55,8 +54,8 @@ var shadow = sharedUtil.shadow;
 var string32 = sharedUtil.string32;
 var warn = sharedUtil.warn;
 var MissingDataException = sharedUtil.MissingDataException;
+var isSpace = sharedUtil.isSpace;
 var Stream = coreStream.Stream;
-var Lexer = coreParser.Lexer;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
 var getDingbatsGlyphsUnicode = coreGlyphList.getDingbatsGlyphsUnicode;
 var FontRendererFactory = coreFontRenderer.FontRendererFactory;
@@ -2889,7 +2888,7 @@ var Type1Font = (function Type1FontClosure() {
       }
       if (j >= signatureLength) { // `signature` found, skip over whitespace.
         i += j;
-        while (i < streamBytesLength && Lexer.isSpace(streamBytes[i])) {
+        while (i < streamBytesLength && isSpace(streamBytes[i])) {
           i++;
         }
         found = true;

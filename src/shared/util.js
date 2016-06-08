@@ -1092,6 +1092,11 @@ function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
 }
 
+// Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
+function isSpace(ch) {
+  return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
+}
+
 /**
  * Promise Capability object.
  *
@@ -2345,6 +2350,7 @@ exports.isEmptyObj = isEmptyObj;
 exports.isInt = isInt;
 exports.isNum = isNum;
 exports.isString = isString;
+exports.isSpace = isSpace;
 exports.isSameOrigin = isSameOrigin;
 exports.isValidUrl = isValidUrl;
 exports.isLittleEndian = isLittleEndian;

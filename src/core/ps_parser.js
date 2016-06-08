@@ -28,8 +28,8 @@
 }(this, function (exports, sharedUtil, coreParser) {
 
 var error = sharedUtil.error;
+var isSpace = sharedUtil.isSpace;
 var EOF = coreParser.EOF;
-var Lexer = coreParser.Lexer;
 
 var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {
@@ -173,7 +173,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
           }
         } else if (ch === 0x25) { // '%'
           comment = true;
-        } else if (!Lexer.isSpace(ch)) {
+        } else if (!isSpace(ch)) {
           break;
         }
         ch = this.nextChar();

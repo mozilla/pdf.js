@@ -18,20 +18,19 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/type1_parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/stream', 'pdfjs/core/parser', 'pdfjs/core/encodings'],
-      factory);
+      'pdfjs/core/stream', 'pdfjs/core/encodings'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../shared/util.js'), require('./stream.js'),
-      require('./parser.js'), require('./encodings.js'));
+      require('./encodings.js'));
   } else {
     factory((root.pdfjsCoreType1Parser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreStream, root.pdfjsCoreParser, root.pdfjsCoreEncodings);
+      root.pdfjsCoreStream, root.pdfjsCoreEncodings);
   }
-}(this, function (exports, sharedUtil, coreStream, coreParser, coreEncodings) {
+}(this, function (exports, sharedUtil, coreStream, coreEncodings) {
 
 var warn = sharedUtil.warn;
+var isSpace = sharedUtil.isSpace;
 var Stream = coreStream.Stream;
-var Lexer = coreParser.Lexer;
 var getEncoding = coreEncodings.getEncoding;
 
 // Hinting is currently disabled due to unknown problems on windows
@@ -503,7 +502,7 @@ var Type1Parser = (function Type1ParserClosure() {
           }
         } else if (ch === 0x25) { // '%'
           comment = true;
-        } else if (!Lexer.isSpace(ch)) {
+        } else if (!isSpace(ch)) {
           break;
         }
         ch = this.nextChar();
@@ -516,7 +515,7 @@ var Type1Parser = (function Type1ParserClosure() {
       do {
         token += String.fromCharCode(ch);
         ch = this.nextChar();
-      } while (ch >= 0 && !Lexer.isSpace(ch) && !isSpecial(ch));
+      } while (ch >= 0 && !isSpace(ch) && !isSpecial(ch));
       return token;
     },
 
