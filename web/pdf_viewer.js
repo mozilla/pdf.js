@@ -587,6 +587,8 @@ var PDFViewer = (function pdfViewer() {
           scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
           break;
         default:
+          console.error('PDFViewer_scrollPageIntoView: \'' + dest[1].name +
+                        '\' is not a valid destination type.');
           return;
       }
 

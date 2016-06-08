@@ -1,5 +1,5 @@
 /* globals expect, it, describe, beforeEach, Name, Dict, Ref, RefSet, Cmd,
-           jasmine, isDict */
+           jasmine, isDict, isRefsEqual */
 
 'use strict';
 
@@ -156,6 +156,20 @@ describe('primitives', function() {
       var dict = new Dict();
       dict.set('Type', Name.get('Page'));
       expect(isDict(dict, 'Page')).toEqual(true);
+    });
+  });
+
+  describe('isRefsEqual', function () {
+    it('should handle different Refs pointing to the same object', function () {
+      var ref1 = new Ref(1, 0);
+      var ref2 = new Ref(1, 0);
+      expect(isRefsEqual(ref1, ref2)).toEqual(true);
+    });
+
+    it('should handle Refs pointing to different objects', function () {
+      var ref1 = new Ref(1, 0);
+      var ref2 = new Ref(2, 0);
+      expect(isRefsEqual(ref1, ref2)).toEqual(false);
     });
   });
 });

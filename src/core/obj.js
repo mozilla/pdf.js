@@ -56,6 +56,7 @@ var isName = corePrimitives.isName;
 var isCmd = corePrimitives.isCmd;
 var isDict = corePrimitives.isDict;
 var isRef = corePrimitives.isRef;
+var isRefsEqual = corePrimitives.isRefsEqual;
 var isStream = corePrimitives.isStream;
 var CipherTransformFactory = coreCrypto.CipherTransformFactory;
 var Lexer = coreParser.Lexer;
@@ -522,7 +523,7 @@ var Catalog = (function CatalogClosure() {
       return capability.promise;
     },
 
-    getPageIndex: function Catalog_getPageIndex(ref) {
+    getPageIndex: function Catalog_getPageIndex(pageRef) {
       // The page tree nodes have the count of all the leaves below them. To get
       // how many pages are before we just have to walk up the tree and keep
       // adding the count of siblings to the left of the node.
@@ -531,15 +532,21 @@ var Catalog = (function CatalogClosure() {
         var total = 0;
         var parentRef;
         return xref.fetchAsync(kidRef).then(function (node) {
+          if (isRefsEqual(kidRef, pageRef) && !isDict(node, 'Page') &&
+              !(isDict(node) && !node.has('Type') && node.has('Contents'))) {
+            throw new Error('The reference does not point to a /Page Dict.');
+          }
           if (!node) {
             return null;
           }
+          assert(isDict(node), 'node must be a Dict.');
           parentRef = node.getRaw('Parent');
           return node.getAsync('Parent');
         }).then(function (parent) {
           if (!parent) {
             return null;
           }
+          assert(isDict(parent), 'parent must be a Dict.');
           return parent.getAsync('Kids');
         }).then(function (kids) {
           if (!kids) {
@@ -549,7 +556,7 @@ var Catalog = (function CatalogClosure() {
           var found = false;
           for (var i = 0; i < kids.length; i++) {
             var kid = kids[i];
-            assert(isRef(kid), 'kids must be a ref');
+            assert(isRef(kid), 'kid must be a Ref.');
             if (kid.num === kidRef.num) {
               found = true;
               break;
@@ -585,7 +592,7 @@ var Catalog = (function CatalogClosure() {
         });
       }
 
-      return next(ref);
+      return next(pageRef);
     }
   };
 

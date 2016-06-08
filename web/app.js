@@ -857,6 +857,7 @@ var PDFViewerApplication = {
     pdfViewer.setDocument(pdfDocument);
     var firstPagePromise = pdfViewer.firstPagePromise;
     var pagesPromise = pdfViewer.pagesPromise;
+    var onePageRendered = pdfViewer.onePageRendered;
 
     this.pageRotation = 0;
 
@@ -962,9 +963,8 @@ var PDFViewerApplication = {
       }
     });
 
-    // outline depends on pagesRefMap
-    var promises = [pagesPromise, this.animationStartedPromise];
-    Promise.all(promises).then(function() {
+    Promise.all([onePageRendered, this.animationStartedPromise]).then(
+        function() {
       pdfDocument.getOutline().then(function(outline) {
         self.pdfOutlineViewer.render({ outline: outline });
       });
