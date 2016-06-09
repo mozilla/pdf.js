@@ -211,7 +211,7 @@
     fabricMouseUp: function pdfViewFabricMouseUp(options){
       this.off('mouse:move', fabricViewerMethods.fabricMouseMove);
       this.off('mouse:up', fabricViewerMethods.fabricMouseUp);
-      window.parent.postMessage(this.lastObj.uuid, window.location.origin, true);
+      window.parent.postMessage(this.lastObj.uuid, window.location.origin);
       this.lastObj = null;
     },
     fabricStringifyParams: function pdfViewFabricStringifyParams(){
