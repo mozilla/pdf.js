@@ -65,32 +65,15 @@ function getFindBar(domWindow) {
   if (PdfjsContentUtils.isRemote) {
     throw new Error('FindBar is not accessible from the content process.');
   }
-  var browser = getContainingBrowser(domWindow);
   try {
+    var browser = getContainingBrowser(domWindow);
     var tabbrowser = browser.getTabBrowser();
-    var tab;
-//#if MOZCENTRAL
-    tab = tabbrowser.getTabForBrowser(browser);
-//#else
-    if (tabbrowser.getTabForBrowser) {
-      tab = tabbrowser.getTabForBrowser(browser);
-    } else {
-      // _getTabForBrowser is depreciated in Firefox 35, see
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=1039500.
-      tab = tabbrowser._getTabForBrowser(browser);
-    }
-//#endif
+    var tab = tabbrowser.getTabForBrowser(browser);
     return tabbrowser.getFindBar(tab);
   } catch (e) {
-    try {
-      // FF22 has no _getTabForBrowser, and FF24 has no getFindBar
-      var chromeWindow = browser.ownerDocument.defaultView;
-      return chromeWindow.gFindBar;
-    } catch (ex) {
-      // Suppress errors for PDF files opened in the bookmark sidebar, see
-      // https://bugzilla.mozilla.org/show_bug.cgi?id=1248959.
-      return null;
-    }
+    // Suppress errors for PDF files opened in the bookmark sidebar, see
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1248959.
+    return null;
   }
 }
 
@@ -165,26 +148,6 @@ function getLocalizedString(strings, id, property) {
   return id;
 }
 
-function makeContentReadable(obj, window) {
-//#if MOZCENTRAL
-  /* jshint -W027 */
-  return Cu.cloneInto(obj, window);
-//#else
-  if (Cu.cloneInto) {
-    return Cu.cloneInto(obj, window);
-  }
-  if (typeof obj !== 'object' || obj === null) {
-    return obj;
-  }
-  var expose = {};
-  for (let k in obj) {
-    expose[k] = 'r';
-  }
-  obj.__exposedProps__ = expose;
-  return obj;
-//#endif
-}
-
 function createNewChannel(uri, node, principal) {
 //#if !MOZCENTRAL
   if (NetUtil.newChannel2) {
@@ -196,12 +159,6 @@ function createNewChannel(uri, node, principal) {
                                null, // aTriggeringPrincipal
                                Ci.nsILoadInfo.SEC_NORMAL,
                                Ci.nsIContentPolicy.TYPE_OTHER);
-  }
-  // The signature of `NetUtil.newChannel` changed in Firefox 38,
-  // see https://bugzilla.mozilla.org/show_bug.cgi?id=1125618.
-  var ffVersion = parseInt(Services.appinfo.platformVersion);
-  if (ffVersion < 38) {
-    return NetUtil.newChannel(uri);
   }
 //#endif
   return NetUtil.newChannel({
@@ -294,13 +251,6 @@ function ChromeActions(domWindow, contentDispositionFilename) {
 
 ChromeActions.prototype = {
   isInPrivateBrowsing: function() {
-//#if !MOZCENTRAL
-    if (!PrivateBrowsingUtils.isContentWindowPrivate) {
-      // pbu.isContentWindowPrivate was not supported prior Firefox 35.
-      // (https://bugzilla.mozilla.org/show_bug.cgi?id=1069059)
-      return PrivateBrowsingUtils.isWindowPrivate(this.domWindow);
-    }
-//#endif
     return PrivateBrowsingUtils.isContentWindowPrivate(this.domWindow);
   },
   download: function(data, sendResponse) {
@@ -423,11 +373,7 @@ ChromeActions.prototype = {
     return (!!prefBrowser && prefGfx);
   },
   supportsDocumentColors: function() {
-    if (getIntPref('browser.display.document_color_use', 0) === 2 ||
-        !getBoolPref('browser.display.use_document_colors', true)) {
-      return false;
-    }
-    return true;
+    return getIntPref('browser.display.document_color_use', 0) !== 2;
   },
   supportedMouseWheelZoomModifierKeys: function() {
     return {
@@ -839,7 +785,7 @@ RequestListener.prototype.receive = function(event) {
   var response;
   if (sync) {
     response = actions[action].call(this.actions, data);
-    event.detail.response = makeContentReadable(response, doc.defaultView);
+    event.detail.response = Cu.cloneInto(response, doc.defaultView);
   } else {
     if (!event.detail.responseExpected) {
       doc.documentElement.removeChild(message);
@@ -848,8 +794,7 @@ RequestListener.prototype.receive = function(event) {
       response = function sendResponse(response) {
         try {
           var listener = doc.createEvent('CustomEvent');
-          let detail = makeContentReadable({response: response},
-                                           doc.defaultView);
+          let detail = Cu.cloneInto({ response: response }, doc.defaultView);
           listener.initCustomEvent('pdf.js.response', true, false, detail);
           return message.dispatchEvent(listener);
         } catch (e) {
@@ -893,7 +838,7 @@ FindEventManager.prototype.receiveMessage = function(msg) {
   var type = msg.data.type;
   var contentWindow = this.contentWindow;
 
-  detail = makeContentReadable(detail, contentWindow);
+  detail = Cu.cloneInto(detail, contentWindow);
   var forward = contentWindow.document.createEvent('CustomEvent');
   forward.initCustomEvent(type, true, true, detail);
   contentWindow.dispatchEvent(forward);
@@ -1016,11 +961,6 @@ PdfStreamConverter.prototype = {
       aRequest.setResponseHeader('Content-Security-Policy', '', false);
       aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
                                  false);
-//#if !MOZCENTRAL
-      aRequest.setResponseHeader('X-Content-Security-Policy', '', false);
-      aRequest.setResponseHeader('X-Content-Security-Policy-Report-Only', '',
-                                 false);
-//#endif
     }
 
     PdfJsTelemetry.onViewerIsUsed();
@@ -1085,26 +1025,22 @@ PdfStreamConverter.prototype = {
     channel.loadGroup = aRequest.loadGroup;
     channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
 
-    // We can use resource principal when data is fetched by the chrome
-    // make sure we reuse the origin attributes from the request channel to keep
-    // isolation consistent.
-    // e.g. useful for NoScript
+    // We can use the resource principal when data is fetched by the chrome,
+    // e.g. useful for NoScript. Make make sure we reuse the origin attributes
+    // from the request channel to keep isolation consistent.
     var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-    var attrs = aRequest.loadInfo.originAttributes;
     var resourcePrincipal;
 //#if MOZCENTRAL
-    resourcePrincipal = ssm.createCodebasePrincipal(uri, attrs);
+    resourcePrincipal =
+      ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
 //#else
-    // FF16 and below had getCodebasePrincipal, it was replaced by
-    // getNoAppCodebasePrincipal (bug 758258).
-    // FF43 then replaced getNoAppCodebasePrincipal with
-    // createCodebasePrincipal (bug 1165272).
+    // FF43 replaced `getCodebasePrincipal` with `createCodebasePrincipal`,
+    // see https://bugzilla.mozilla.org/show_bug.cgi?id=1165272.
     if ('createCodebasePrincipal' in ssm) {
-      resourcePrincipal = ssm.createCodebasePrincipal(uri, attrs);
-    } else if ('getNoAppCodebasePrincipal' in ssm) {
-      resourcePrincipal = ssm.getNoAppCodebasePrincipal(uri);
+      resourcePrincipal =
+        ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
     } else {
       resourcePrincipal = ssm.getCodebasePrincipal(uri);
     }
