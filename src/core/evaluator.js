@@ -706,17 +706,30 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // Workaround for bad PDF generators that reference fonts incorrectly,
       // where `fontRef` is a `Dict` rather than a `Ref` (fixes bug946506.pdf).
-      // In this case we cannot cache the font, since it's not possible to use
-      // a `Dict` as a key in `this.fontCache` (since it's a `RefSetCache`).
-      // Furthermore, if the `fontID` is undefined, we instead reference
-      // the font by `fontName` in `font.loadedName` below.
+      // In this case we should not put the font into `this.fontCache` (which is
+      // a `RefSetCache`), since it's not meaningful to use a `Dict` as a key.
+      //
+      // However, if we don't cache the font it's not possible to remove it
+      // when `cleanup` is triggered from the API, which causes issues on
+      // subsequent rendering operations (see issue7403.pdf).
+      // A simple workaround would be to just not hold `font.translated`
+      // references in this case, but this would force us to unnecessarily load
+      // the same fonts over and over.
+      //
+      // Instead, we cheat a bit by attempting to use a modified `fontID` as a
+      // key in `this.fontCache`, to allow the font to be cached.
+      // NOTE: This works because `RefSetCache` calls `toString()` on provided
+      //       keys. Also, since `fontRef` is used when getting cached fonts,
+      //       we'll not accidentally match fonts cached with the `fontID`.
       if (fontRefIsRef) {
         this.fontCache.put(fontRef, fontCapability.promise);
       } else {
         if (!fontID) {
           fontID = (this.uniquePrefix || 'F_') + (++this.idCounters.obj);
         }
+        this.fontCache.put('id_' + fontID, fontCapability.promise);
       }
+      assert(fontID, 'The "fontID" must be defined.');
 
       // Keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page.
