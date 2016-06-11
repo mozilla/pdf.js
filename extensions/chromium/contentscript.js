@@ -160,6 +160,22 @@ function updateObjectElement(elem) {
   elem.type = 'application/not-a-pee-dee-eff-type';
   // Force the <object> to reload and render its fallback content.
   elem.data += '';
+
+  // Usually the browser renders plugin content in this tag, which is completely
+  // oblivious of styles such as padding, but we insert and render child nodes,
+  // so force padding to be zero to avoid undesired dimension changes.
+  elem.style.padding = '0';
+
+  // <object> and <embed> elements have a "display:inline" style by default.
+  // Despite this property, when a plugin is loaded in the tag, the tag is
+  // treated like "display:inline-block". However, when the browser does not
+  // render plugin content, the <object> tag does not behave like that, and as
+  // a result the width and height is ignored.
+  // Force "display:inline-block" to make sure that the width/height as set by
+  // web pages is respected.
+  // (<embed> behaves as expected with the default display value, but setting it
+  // to display:inline-block doesn't hurt).
+  elem.style.display = 'inline-block';
 }
 
 // Create an <iframe> element without borders that takes the full width and
