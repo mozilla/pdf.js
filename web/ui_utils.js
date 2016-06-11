@@ -26,6 +26,8 @@
 }(this, function (exports, pdfjsLib) {
 
 var CSS_UNITS = 96.0 / 72.0;
+var DEFAULT_PAGE = 1;
+var UNKNOWN_PAGE = 0;
 var DEFAULT_SCALE_VALUE = 'auto';
 var DEFAULT_SCALE = 1.0;
 var UNKNOWN_SCALE = 0;
@@ -510,6 +512,8 @@ var ProgressBar = (function ProgressBarClosure() {
 })();
 
 exports.CSS_UNITS = CSS_UNITS;
+exports.DEFAULT_PAGE = DEFAULT_PAGE;
+exports.UNKNOWN_PAGE = UNKNOWN_PAGE;
 exports.DEFAULT_SCALE_VALUE = DEFAULT_SCALE_VALUE;
 exports.DEFAULT_SCALE = DEFAULT_SCALE;
 exports.UNKNOWN_SCALE = UNKNOWN_SCALE;

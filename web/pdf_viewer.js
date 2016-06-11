@@ -38,6 +38,8 @@
                   textLayerBuilder, annotationLayerBuilder, pdfLinkService,
                   domEvents, pdfjsLib) {
 
+var DEFAULT_PAGE = uiUtils.DEFAULT_PAGE;
+var UNKNOWN_PAGE = uiUtils.UNKNOWN_PAGE;
 var UNKNOWN_SCALE = uiUtils.UNKNOWN_SCALE;
 var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
 var VERTICAL_PADDING = uiUtils.VERTICAL_PADDING;
@@ -156,7 +158,8 @@ var PDFViewer = (function pdfViewer() {
     },
 
     get currentPageNumber() {
-      return this._currentPageNumber;
+      return this._currentPageNumber !== UNKNOWN_PAGE ?
+        this._currentPageNumber : DEFAULT_PAGE;
     },
 
     set currentPageNumber(val) {
@@ -381,7 +384,7 @@ var PDFViewer = (function pdfViewer() {
 
     _resetView: function () {
       this._pages = [];
-      this._currentPageNumber = 1;
+      this._currentPageNumber = UNKNOWN_PAGE;
       this._currentScale = UNKNOWN_SCALE;
       this._currentScaleValue = null;
       this._buffer = new PDFPageViewBuffer(DEFAULT_CACHE_SIZE);
@@ -433,7 +436,7 @@ var PDFViewer = (function pdfViewer() {
       this._currentScale = newScale;
 
       if (!noScroll) {
-        var page = this._currentPageNumber, dest;
+        var page = this.currentPageNumber, dest;
         if (this._location && !pdfjsLib.PDFJS.ignoreCurrentPositionOnZoom &&
             !(this.isInPresentationMode || this.isChangingPresentationMode)) {
           page = this._location.pageNumber;
@@ -456,7 +459,7 @@ var PDFViewer = (function pdfViewer() {
       if (scale > 0) {
         this._setScaleUpdatePages(scale, value, noScroll, false);
       } else {
-        var currentPage = this._pages[this._currentPageNumber - 1];
+        var currentPage = this._pages[this.currentPageNumber - 1];
         if (!currentPage) {
           return;
         }
@@ -507,7 +510,7 @@ var PDFViewer = (function pdfViewer() {
         this._setScale(this._currentScaleValue, true);
       }
 
-      var pageView = this._pages[this._currentPageNumber - 1];
+      var pageView = this._pages[this.currentPageNumber - 1];
       scrollIntoView(pageView.div);
     },
 
@@ -714,7 +717,7 @@ var PDFViewer = (function pdfViewer() {
         // The algorithm in getVisibleElements doesn't work in all browsers and
         // configurations when presentation mode is active.
         var visible = [];
-        var currentPage = this._pages[this._currentPageNumber - 1];
+        var currentPage = this._pages[this.currentPageNumber - 1];
         visible.push({ id: currentPage.id, view: currentPage });
         return { first: currentPage, last: currentPage, views: visible };
       }
