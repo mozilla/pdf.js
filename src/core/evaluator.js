@@ -704,14 +704,18 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // in which case we don't cache the font and instead reference it by
       // fontName in font.loadedName below.
       var fontRefIsDict = isDict(fontRef);
-      if (!fontRefIsDict) {
+      if (fontRefIsDict) {
+        // fontID must be unique for different fonts to avoid conflicts.
+        // The "FQ" prefix is arbitrary chosen (short yet recognizable for
+        // debugging).
+        fontID = 'FQ' + (++this.idCounters.obj);
+      } else {
         this.fontCache.put(fontRef, fontCapability.promise);
       }
 
       // Keep track of each font we translated so the caller can
       // load them asynchronously before calling display on a page.
-      font.loadedName = 'g_' + this.pdfManager.docId + '_f' + (fontRefIsDict ?
-        fontName.replace(/\W/g, '') : fontID);
+      font.loadedName = 'g_' + this.pdfManager.docId + '_f' + fontID;
 
       font.translated = fontCapability.promise;
 
