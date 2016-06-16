@@ -1,6 +1,6 @@
 /* -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-/* 
+/*
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@
   } else {
     factory((root.pdfjsDraw = {}));
   }
-}(this, function (exports) {  
-  
+}(this, function (exports) {
+
   var PDFCustomFabricSetUp = function customFabricSetUp(){
     fabric.Image.prototype.toObject = function(propertiesToInclude) {
       this._originalElement = this._originalElement || {src: '#'};
@@ -59,7 +59,7 @@
       ],
       initialize: function(options) {
         options || (options = { });
-        
+
         this.callSuper('initialize', options);
         var canvas = fabricViewerMethods.getCanvas(PDFViewerApplication.page);
         var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
@@ -93,11 +93,11 @@
         ctx.fillText(this.title, left/2, top/2);
       }
     });
-    
+
     fabric.TitledRect.fromObject = function(object) {
       return new fabric.TitledRect(object);
     };
-    
+
     fabric.PageCanvas = fabric.util.createClass(fabric.Canvas, {
       type: 'page-canvas',
       extraFields: [
@@ -129,11 +129,11 @@
         return this;
       },
     });
-                                                
+
     // Box renders field title when available and calculates
     // Height + the RML/SBT inches conversion based on pdf
     // scale factor
-   
+
   };
   // got function to generate uuids from here https://gist.github.com/jed/982883
   // add page id to the front so its page id:uuid
@@ -155,7 +155,7 @@
       var self = this,
           uuid;
       if(this.lastObj != null) {
-        uuid = this.lastObj.uuid ? this.lastObj.uuid: fabricUUID(PDFViewerApplication.page);  
+        uuid = this.lastObj.uuid ? this.lastObj.uuid: fabricUUID(PDFViewerApplication.page);
         this.remove(this.lastObj);
       }
       console.log(uuid);
@@ -229,7 +229,7 @@
       var params = [];
       for(var i = 0; i < PDFViewerApplication.pdfViewer.canvases.length; i++){
         var groups = PDFViewerApplication.pdfViewer.canvases[i].getObjects('group');
-        
+
         //params.push PDFViewerApplication.pdfViewer.canvases[i].toJSON());
         params.push({'objects' : []});
         for(var j = 0; j < groups.length; j++){
@@ -271,7 +271,7 @@
               cloned = page.cloneNode(),
               clCtx = cloned.getContext('2d');
           clCtx.putImageData(imgData, 0, 0);
-          
+
           var background = new fabric.Image(cloned, {
             dx: 0,
             dy: 0,
@@ -283,13 +283,13 @@
             lockMovementY: true,
             lockRotation: true,
           }),
-              fCanvas = new fabric.PageCanvas(page.id); 
-          
+              fCanvas = new fabric.PageCanvas(page.id);
+
           pdfPage.el = container;
           pdfPage.zoomLayer = fCanvas.wrapperEl;
           fCanvas.state = {};
           fCanvas.lastObj = null;
-          
+
           if (!pdfPage.fabricState.objs) pdfPage.fabricState.objs = fCanvas.toObject();
           else{
             fCanvas.backgroundImage = null;
@@ -372,7 +372,7 @@
           /*transform stuff*/
           var transformedObjs = [];
           transformGroup._restoreObjectsState();
-          
+
           transformGroup._objects.forEach(function(obj, i) {
             if(obj.type != 'anchor') transformedObjs.push(obj);
           });
@@ -384,30 +384,31 @@
           pdfPage.fabricState.objs = klass.toObject();
         },
         getObjByUUID: function(uuid) {
-          var canvas = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1].canvas;
-          for(var obj in canvas._objects) {
-            if(uuid === obj.uuid)
-              return obj;
+          var objs = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1]
+            .canvas._objects;
+          for(var i = 0; i < objs.length; i++) {
+            if(uuid === objs[i].uuid)
+              return objs[i];
           }
         },
       };
-  
+
   function fabricCanvasSelected(options) {
    PDFViewerApplication.pdfViewer.lastSelectedObj = options.target;
     var otherCanvases = PDFViewerApplication.pdfViewer._pages.filter(function(el){
       return el.canvas != options.target.canvas &&
-        typeof el.canvas === 'object' && 
+        typeof el.canvas === 'object' &&
         el.canvas.toString().indexOf('fabric.Canvas') > -1;
     });
     otherCanvases.forEach(function(page) {
       page.canvas.deactivateAll().renderAll();
     });
   };
-  
+
   function fabricCanvasSelectionCleared(options) {
    PDFViewerApplication.pdfViewer.lastSelectedObj = null;
   };
-  
+
   PDFCustomFabricSetUp();
   exports.fabricViewerMethods = fabricViewerMethods;
   exports.fabricGlobalMethods = fabricGlobalMethods;
