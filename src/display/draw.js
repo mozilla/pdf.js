@@ -51,7 +51,7 @@
         'title',
         'uuid',
         'description',
-        'type',
+        'field_type',
         'sbt_height',
         'left_inches',
         'top_inches',
