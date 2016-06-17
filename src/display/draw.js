@@ -55,7 +55,8 @@
         'sbt_height',
         'left_inches',
         'top_inches',
-        'defaultObjRotation'
+        'defaultObjRotation',
+        'role', //role of person filling out the form
       ],
       initialize: function(options) {
         options || (options = { });
