@@ -85,6 +85,9 @@
         });
         return fabric.util.object.extend(this.callSuper('toObject', propertiesToInclude), extra);
       },
+      render: function(ctx) {
+        this.callSuper('render', ctx);
+      },
       _render: function(ctx) {
         this.callSuper('_render', ctx);
         ctx.font = '20px Helvetica';
