@@ -89,8 +89,8 @@
         this.callSuper('render', ctx);
         ctx.font = '20px Helvetica';
         ctx.fillStyle = '#333';
-        var left = this.width > 0 ? -this.width + 20: this.width + 20;
-        var top = this.height < 0 ? -this.height - 20 : this.height + 20;
+        var left = this.width > 0 ? - this.width + 20: this.width + 20;
+        var top = this.height < 0 ? - this.height - 20 : this.height + 20;
         ctx.fillText(this.title, left/2, top/2);
       }
     });
