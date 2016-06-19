@@ -173,8 +173,9 @@
           rectY =  this.state.lastMoveY < this.state.lastClickY ? this.state.lastMoveY : this.state.lastClickY,
           deleteObj = function(e){
             var key = e.which || e.keyCode || e.charCode;
+            console.log(key);
             if(key === 46){
-              self.remove(this);
+              self.remove(self.relatedTarget);
             }
           },
           page = PDFViewerApplication.pdfViewer._pages[PDFViewerApplication.page - 1],
@@ -189,6 +190,7 @@
             defaultObjRotation: page.rotation,
             uuid: uuid,
           });
+      window.addEventListener('keyup', deleteObj, false);
       this.lastObj = rect;
       this.add(rect);
       this.state.rectX = rectX;
