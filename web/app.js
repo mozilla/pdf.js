@@ -1187,7 +1187,7 @@ var PDFViewerApplication = {
 
     this.forceRendering();
 
-    this.pdfViewer.scrollPageIntoView(pageNumber);
+    this.pdfViewer.currentPageNumber = pageNumber;
   },
 
   requestPresentationMode: function pdfViewRequestPresentationMode() {

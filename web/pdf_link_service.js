@@ -115,7 +115,10 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
                           'Trying to navigate to a non-existent page.');
             return;
           }
-          self.pdfViewer.scrollPageIntoView(pageNumber, dest);
+          self.pdfViewer.scrollPageIntoView({
+            pageNumber: pageNumber,
+            destArray: dest,
+          });
 
           if (self.pdfHistory) {
             // Update the browsing history.
@@ -241,7 +244,11 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
           }
         }
         if (dest) {
-          this.pdfViewer.scrollPageIntoView(pageNumber || this.page, dest);
+          this.pdfViewer.scrollPageIntoView({
+            pageNumber: pageNumber || this.page,
+            destArray: dest,
+            allowNegativeOffset: true,
+          });
         } else if (pageNumber) {
           this.page = pageNumber; // simple page
         }
