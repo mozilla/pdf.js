@@ -18,21 +18,6 @@
 
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
-//#if PRODUCTION
-//var pdfjsWebLibs = {
-//  pdfjsWebPDFJS: window.pdfjsDistBuildPdf
-//};
-//
-//(function () {
-//#expand __BUNDLE__
-//}).call(pdfjsWebLibs);
-//#endif
-
-//#if FIREFOX || MOZCENTRAL
-//// FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
-//window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
-//#endif
-
 //#if CHROME
 //(function rewriteUrlClosure() {
 //  // Run this code outside DOMContentLoaded to make sure that the URL
@@ -48,6 +33,21 @@ var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 //    chrome.runtime.sendMessage('showPageAction');
 //  }
 //})();
+//#endif
+
+//#if PRODUCTION
+//var pdfjsWebLibs = {
+//  pdfjsWebPDFJS: window.pdfjsDistBuildPdf
+//};
+//
+//(function () {
+//#expand __BUNDLE__
+//}).call(pdfjsWebLibs);
+//#endif
+
+//#if FIREFOX || MOZCENTRAL
+//// FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
+//window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
 //#endif
 
 function getViewerConfiguration() {
