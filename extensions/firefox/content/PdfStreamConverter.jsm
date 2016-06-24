@@ -148,14 +148,15 @@ function getLocalizedString(strings, id, property) {
   return id;
 }
 
-function createNewChannel(uri, node, principal) {
+function createNewChannel(uri, node) {
 //#if !MOZCENTRAL
   if (NetUtil.newChannel2) {
+    var systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
     return NetUtil.newChannel2(uri,
                                null,
                                null,
                                node, // aLoadingNode
-                               principal, // aLoadingPrincipal
+                               systemPrincipal, // aLoadingPrincipal
                                null, // aTriggeringPrincipal
                                Ci.nsILoadInfo.SEC_NORMAL,
                                Ci.nsIContentPolicy.TYPE_OTHER);
@@ -163,10 +164,17 @@ function createNewChannel(uri, node, principal) {
 //#endif
   return NetUtil.newChannel({
     uri: uri,
-    loadingNode: node,
-    loadingPrincipal: principal,
-    contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+    loadUsingSystemPrincipal: true,
   });
+}
+
+function asyncOpenChannel(channel, listener, context) {
+//#if !MOZCENTRAL
+  if (!channel.asyncOpen2) {
+    return channel.asyncOpen(listener, context);
+  }
+//#endif
+  return channel.asyncOpen2(listener);
 }
 
 function asyncFetchChannel(channel, callback) {
@@ -271,7 +279,7 @@ ChromeActions.prototype = {
              getService(Ci.nsIExternalHelperAppService);
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = createNewChannel(blobUri, this.domWindow.document, null);
+    var netChannel = createNewChannel(blobUri, this.domWindow.document);
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
@@ -298,6 +306,7 @@ ChromeActions.prototype = {
         }
       } catch (e) {}
       channel.setURI(originalUri);
+      channel.loadInfo = netChannel.loadInfo;
       channel.contentStream = aInputStream;
       if ('nsIPrivateBrowsingChannel' in Ci &&
           channel instanceof Ci.nsIPrivateBrowsingChannel) {
@@ -333,7 +342,7 @@ ChromeActions.prototype = {
         }
       };
 
-      channel.asyncOpen(listener, null);
+      asyncOpenChannel(channel, listener, null);
     });
   },
   getLocale: function() {
@@ -973,8 +982,7 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
-    var systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE, null, systemPrincipal);
+    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE, null);
 
     var listener = this.listener;
     var dataListener = this.dataListener;
@@ -984,10 +992,11 @@ PdfStreamConverter.prototype = {
     // trigger an assertion.
     var proxy = {
       onStartRequest: function(request, context) {
-        listener.onStartRequest(aRequest, context);
+        listener.onStartRequest(aRequest, aContext);
       },
       onDataAvailable: function(request, context, inputStream, offset, count) {
-        listener.onDataAvailable(aRequest, context, inputStream, offset, count);
+        listener.onDataAvailable(aRequest, aContext, inputStream,
+                                 offset, count);
       },
       onStopRequest: function(request, context, statusCode) {
         // We get the DOM window here instead of before the request since it
@@ -1010,7 +1019,7 @@ PdfStreamConverter.prototype = {
           var findEventManager = new FindEventManager(domWindow);
           findEventManager.bind();
         }
-        listener.onStopRequest(aRequest, context, statusCode);
+        listener.onStopRequest(aRequest, aContext, statusCode);
 
         if (domWindow.frameElement) {
           var isObjectEmbed = domWindow.frameElement.tagName !== 'IFRAME' ||
@@ -1046,7 +1055,7 @@ PdfStreamConverter.prototype = {
     }
 //#endif
     aRequest.owner = resourcePrincipal;
-    channel.asyncOpen(proxy, aContext);
+    asyncOpenChannel(channel, proxy, aContext);
   },
 
   // nsIRequestObserver::onStopRequest
