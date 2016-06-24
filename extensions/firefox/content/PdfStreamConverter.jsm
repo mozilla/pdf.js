@@ -170,7 +170,7 @@ function createNewChannel(uri, node) {
 
 function asyncOpenChannel(channel, listener, context) {
 //#if !MOZCENTRAL
-  if (!channel.asyncOpen2) {
+  if (!channel.asyncOpen2 || !('originAttributes' in channel.loadInfo)) {
     return channel.asyncOpen(listener, context);
   }
 //#endif
@@ -1032,7 +1032,13 @@ PdfStreamConverter.prototype = {
     // Keep the URL the same so the browser sees it as the same.
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
+//#if MOZCENTRAL
     channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
+//#else
+    if ('originAttributes' in aRequest.loadInfo) {
+      channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
+    }
+//#endif
 
     // We can use the resource principal when data is fetched by the chrome,
     // e.g. useful for NoScript. Make make sure we reuse the origin attributes
@@ -1047,7 +1053,8 @@ PdfStreamConverter.prototype = {
 //#else
     // FF43 replaced `getCodebasePrincipal` with `createCodebasePrincipal`,
     // see https://bugzilla.mozilla.org/show_bug.cgi?id=1165272.
-    if ('createCodebasePrincipal' in ssm) {
+    if ('createCodebasePrincipal' in ssm &&
+        'originAttributes' in aRequest.loadInfo) {
       resourcePrincipal =
         ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
     } else {
