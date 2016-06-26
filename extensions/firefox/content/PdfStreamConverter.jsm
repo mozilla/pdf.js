@@ -226,63 +226,27 @@ class ChromeActions {
   }
 
   download(data, sendResponse) {
-    var self = this;
-    var originalUrl = data.originalUrl;
-    var blobUrl = data.blobUrl || originalUrl;
-    // The data may not be downloaded so we need just retry getting the pdf with
-    // the original url.
-    var originalUri = NetUtil.newURI(originalUrl);
-    var filename = data.filename;
-    if (typeof filename !== "string" ||
-        (!/\.pdf$/i.test(filename) && !data.isAttachment)) {
-      filename = "document.pdf";
-    }
-    var blobUri = NetUtil.newURI(blobUrl);
-    var extHelperAppSvc =
-          Cc["@mozilla.org/uriloader/external-helper-app-service;1"].
-             getService(Ci.nsIExternalHelperAppService);
-
-    var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = NetUtil.newChannel({
-      uri: blobUri,
-      loadUsingSystemPrincipal: true,
-    });
-    if ("nsIPrivateBrowsingChannel" in Ci &&
-        netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
-      netChannel.setPrivate(docIsPrivate);
-    }
-    NetUtil.asyncFetch(netChannel, function(aInputStream, aResult) {
-      if (!Components.isSuccessCode(aResult)) {
-        if (sendResponse) {
-          sendResponse(true);
-        }
-        return;
-      }
-      // Create a nsIInputStreamChannel so we can set the url on the channel
-      // so the filename will be correct.
-      var channel = Cc["@mozilla.org/network/input-stream-channel;1"].
-                       createInstance(Ci.nsIInputStreamChannel);
-      channel.QueryInterface(Ci.nsIChannel);
-      try {
-        // contentDisposition/contentDispositionFilename is readonly before FF18
-        channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
-        if (self.contentDispositionFilename && !data.isAttachment) {
-          channel.contentDispositionFilename = self.contentDispositionFilename;
-        } else {
-          channel.contentDispositionFilename = filename;
-        }
-      } catch (e) {}
-      channel.setURI(originalUri);
-      channel.loadInfo = netChannel.loadInfo;
-      channel.contentStream = aInputStream;
+    function channelSetPrivate(channel, isPrivate) {
       if ("nsIPrivateBrowsingChannel" in Ci &&
           channel instanceof Ci.nsIPrivateBrowsingChannel) {
-        channel.setPrivate(docIsPrivate);
+        channel.setPrivate(isPrivate);
+      }
+    }
+
+    function channelTriggerDownload(channel) {
+      channel.contentDisposition = Ci.nsIChannel.DISPOSITION_ATTACHMENT;
+      if (self.contentDispositionFilename && !data.isAttachment) {
+        channel.contentDispositionFilename = self.contentDispositionFilename;
+      } else {
+        channel.contentDispositionFilename = filename;
       }
 
       var listener = {
         extListener: null,
         onStartRequest(aRequest, aContext) {
+          var extHelperAppSvc =
+            Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
+              .getService(Ci.nsIExternalHelperAppService);
           var loadContext = self.domWindow
                                 .QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
@@ -297,18 +261,64 @@ class ChromeActions {
           if (this.extListener) {
             this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
           }
-          // Notify the content code we're done downloading.
-          if (sendResponse) {
+          if (sendResponse) { // Notify the content code we're done downloading.
             sendResponse(false);
           }
         },
-        onDataAvailable(aRequest, aContext, aDataInputStream, aOffset, aCount) {
-          this.extListener.onDataAvailable(aRequest, aContext, aDataInputStream,
+        onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
+          this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
                                            aOffset, aCount);
         }
       };
 
       channel.asyncOpen2(listener);
+    }
+
+    var self = this;
+    var originalUrl = data.originalUrl;
+    var blobUrl = data.blobUrl || originalUrl;
+    // The data may not be downloaded so we need just retry getting the pdf with
+    // the original url.
+    var originalUri = NetUtil.newURI(originalUrl);
+    var filename = data.filename;
+    if (typeof filename !== "string" ||
+        (!/\.pdf$/i.test(filename) && !data.isAttachment)) {
+      filename = "document.pdf";
+    }
+    var blobUri = NetUtil.newURI(blobUrl);
+
+    var docIsPrivate = this.isInPrivateBrowsing();
+    var netChannel = NetUtil.newChannel({
+      uri: blobUri,
+      loadUsingSystemPrincipal: true,
+    });
+    channelSetPrivate(netChannel, docIsPrivate);
+
+    if (!data.blobUrl) {
+      // If the document is still loading, trigger downloading immediately
+      // to prevent the "Download" button from appearing unresponsive.
+      channelTriggerDownload(netChannel);
+      return;
+    }
+    NetUtil.asyncFetch(netChannel, function(aInputStream, aResult) {
+      if (!Components.isSuccessCode(aResult)) {
+        if (sendResponse) {
+          sendResponse(true);
+        }
+        return;
+      }
+      // Create a nsIInputStreamChannel so we can set the url on the channel
+      // so the filename will be correct.
+      var channel = Cc["@mozilla.org/network/input-stream-channel;1"].
+                       createInstance(Ci.nsIInputStreamChannel);
+      channel.QueryInterface(Ci.nsIChannel);
+
+      channel.setURI(originalUri);
+      channel.loadInfo = netChannel.loadInfo;
+      channel.contentStream = aInputStream;
+      channelSetPrivate(channel, docIsPrivate);
+
+      channelTriggerDownload(channel);
     });
   }
 
