@@ -1555,6 +1555,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue7180-text",
+       "file": "pdfs/issue7180.pdf",
+       "md5": "73ed92d7ca55475f1f31d1d75fee3283",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {
       "id": "bug1123803",
       "file": "pdfs/bug1123803.pdf",
