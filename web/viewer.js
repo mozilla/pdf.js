@@ -169,9 +169,14 @@ function webViewerLoad() {
   var config = getViewerConfiguration();
 //#if !PRODUCTION
   require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
-  require(['pdfjs-web/app', 'mozPrintCallback_polyfill.js'], function (web) {
-    window.PDFViewerApplication = web.PDFViewerApplication;
-    web.PDFViewerApplication.run(config);
+  require(['pdfjs-web/pdfjs'], function () {
+    // Ensure that src/main_loader.js has loaded all the necessary dependencies
+    // *before* the viewer loads, to prevent issues in browsers relying on e.g.
+    // the Promise/URL polyfill in src/shared/util.js (fixes issue 7448).
+    require(['pdfjs-web/app', 'mozPrintCallback_polyfill.js'], function (web) {
+      window.PDFViewerApplication = web.PDFViewerApplication;
+      web.PDFViewerApplication.run(config);
+    });
   });
 //#else
 //window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
