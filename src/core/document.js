@@ -265,7 +265,8 @@ var Page = (function PageClosure() {
     },
 
     extractTextContent: function Page_extractTextContent(task,
-                                                         normalizeWhitespace) {
+                                                         normalizeWhitespace,
+                                                         combineTextItems) {
       var handler = {
         on: function nullHandlerOn() {},
         send: function nullHandlerSend() {}
@@ -298,7 +299,8 @@ var Page = (function PageClosure() {
                                                task,
                                                self.resources,
                                                /* stateManager = */ null,
-                                               normalizeWhitespace);
+                                               normalizeWhitespace,
+                                               combineTextItems);
       });
     },
 

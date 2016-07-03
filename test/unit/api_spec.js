@@ -771,12 +771,14 @@ describe('api', function() {
     });
     it('gets text content', function (done) {
       var defaultPromise = page.getTextContent();
-      var normalizeWhitespacePromise = page.getTextContent({
-        normalizeWhitespace: true });
+      var parametersPromise = page.getTextContent({
+        normalizeWhitespace: true,
+        disableCombineTextItems: true,
+      });
 
       var promises = [
         defaultPromise,
-        normalizeWhitespacePromise
+        parametersPromise,
       ];
       Promise.all(promises).then(function (data) {
         expect(!!data[0].items).toEqual(true);
