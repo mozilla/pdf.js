@@ -659,6 +659,9 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     WidgetAnnotation.call(this, params);
 
     this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
+
+    // Support MaxLen attribute
+    this.data.maxLen = Util.getInheritableProperty(params.dict, 'MaxLen');
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
