@@ -497,7 +497,8 @@ describe('api', function() {
         done.fail(reason);
       });
     });
-    it('gets attachments', function(done) {
+
+    it('gets non-existent attachments', function(done) {
       var promise = doc.getAttachments();
       promise.then(function (data) {
         expect(data).toEqual(null);
@@ -506,6 +507,25 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+    it('gets attachments', function(done) {
+      var url = new URL('../pdfs/bug766138.pdf', window.location).href;
+      var loadingTask = PDFJS.getDocument(url);
+      var promise = loadingTask.promise.then(function (pdfDoc) {
+        return pdfDoc.getAttachments();
+      });
+      promise.then(function (data) {
+        var attachment = data['Press Quality.joboptions'];
+        expect(attachment.filename).toEqual('Press Quality.joboptions');
+        expect(attachment.content instanceof Uint8Array).toBeTruthy();
+        expect(attachment.content.length).toEqual(30098);
+
+        loadingTask.destroy();
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+
     it('gets javascript', function(done) {
       var promise = doc.getJavaScript();
       promise.then(function (data) {
