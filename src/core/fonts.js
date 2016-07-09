@@ -200,7 +200,7 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
       }
     }
   }
-  warn('Unable to recover a standard glyph name for: ' + name);
+  info('Unable to recover a standard glyph name for: ' + name);
   return name;
 }
 
