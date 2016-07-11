@@ -376,5 +376,13 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#if !(FIREFOX || MOZCENTRAL)-->
 <!--#include viewer-snippet-mozPrintCallback-polyfill.html-->
 <!--#endif-->
+
+    <script>
+      console.log(navigator.userAgent)
+      if (navigator.userAgent.match(/msie|trident|edge/i)) {
+        document.body.classList.add('browser-ie');
+      }
+    </script>
+
   </body>
 </html>

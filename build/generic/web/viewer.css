@@ -2127,3 +2127,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     display: none;
   }
 }
+
+body.browser-ie button#print, body.browser-ie  button#secondaryPrint {
+  display: none;
+}

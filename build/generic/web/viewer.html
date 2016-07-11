@@ -424,6 +424,14 @@ See https://github.com/adobe-type-tools/cmap-resources
   </div>
 </div>
 
+
+    <script>
+      console.log(navigator.userAgent)
+      if (navigator.userAgent.match(/msie|trident|edge/i)) {
+        document.body.classList.add('browser-ie');
+      }
+    </script>
+
   </body>
 </html>
 
