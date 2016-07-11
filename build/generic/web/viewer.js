@@ -8123,10 +8123,8 @@ function webViewerInitialized() {
   appConfig.toolbar.print.addEventListener('click',
     SecondaryToolbar.printClick.bind(SecondaryToolbar));
 
-  /*
   appConfig.toolbar.download.addEventListener('click',
     SecondaryToolbar.downloadClick.bind(SecondaryToolbar));
-  */
 
 
   if (file && file.lastIndexOf('file:', 0) === 0) {
