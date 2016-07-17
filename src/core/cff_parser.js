@@ -833,7 +833,7 @@ var CFFParser = (function CFFParserClosure() {
             break;
 
           default:
-            error('Unknow encoding format: ' + format + ' in CFF');
+            error('Unknown encoding format: ' + format + ' in CFF');
             break;
         }
         var dataEnd = pos;
@@ -1306,7 +1306,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       var globalSubrIndex = this.compileIndex(cff.globalSubrIndex);
       output.add(globalSubrIndex);
 
-      // Now start on the other entries that have no specfic order.
+      // Now start on the other entries that have no specific order.
       if (cff.encoding && cff.topDict.hasName('Encoding')) {
         if (cff.encoding.predefined) {
           topDictTracker.setEntryLocation('Encoding', [cff.encoding.format],

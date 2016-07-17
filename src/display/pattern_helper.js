@@ -170,7 +170,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     // MAX_PATTERN_SIZE is used to avoid OOM situation.
     var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
     // We need to keep transparent border around our pattern for fill():
-    // createPattern with 'no-repeat' will bleed edges accross entire area.
+    // createPattern with 'no-repeat' will bleed edges across entire area.
     var BORDER_SIZE = 2;
 
     var offsetX = Math.floor(bounds[0]);

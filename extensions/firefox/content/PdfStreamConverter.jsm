@@ -357,7 +357,7 @@ ChromeActions.prototype = {
       var result = this.localizedStrings[data];
       return JSON.stringify(result || null);
     } catch (e) {
-      log('Unable to retrive localized strings: ' + e);
+      log('Unable to retrieve localized strings: ' + e);
       return 'null';
     }
   },

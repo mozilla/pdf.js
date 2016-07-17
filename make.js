@@ -366,7 +366,7 @@ target.dist = function() {
                    JSON.stringify(bowerManifest, null, 2));
 
   echo();
-  echo('### Commiting changes');
+  echo('### Committing changes');
 
   cd(DIST_DIR);
   var reason = process.env['PDFJS_UPDATE_REASON'];

@@ -1102,7 +1102,7 @@ function isSpace(ch) {
  *
  * @typedef {Object} PromiseCapability
  * @property {Promise} promise - A promise object.
- * @property {function} resolve - Fullfills the promise.
+ * @property {function} resolve - Fulfills the promise.
  * @property {function} reject - Rejects the promise.
  */
 
@@ -1125,8 +1125,8 @@ function createPromiseCapability() {
 /**
  * Polyfill for Promises:
  * The following promise implementation tries to generally implement the
- * Promise/A+ spec. Some notable differences from other promise libaries are:
- * - There currently isn't a seperate deferred and promise object.
+ * Promise/A+ spec. Some notable differences from other promise libraries are:
+ * - There currently isn't a separate deferred and promise object.
  * - Unhandled rejections eventually show an error if they aren't handled.
  *
  * Based off of the work in:
@@ -1308,7 +1308,7 @@ function createPromiseCapability() {
    * Builds a promise that is resolved when all the passed in promises are
    * resolved.
    * @param {array} promises array of data and/or promises to wait for.
-   * @return {Promise} New dependant promise.
+   * @return {Promise} New dependent promise.
    */
   Promise.all = function Promise_all(promises) {
     var resolveAll, rejectAll;

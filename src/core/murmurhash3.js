@@ -33,7 +33,7 @@
 var Uint32ArrayView = sharedUtil.Uint32ArrayView;
 
 var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
-  // Workaround for missing math precison in JS.
+  // Workaround for missing math precision in JS.
   var MASK_HIGH = 0xffff0000;
   var MASK_LOW = 0xffff;
 
