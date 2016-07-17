@@ -2637,7 +2637,7 @@ var Font = (function FontClosure() {
       // Naming tables
       builder.addTable('name', createNameTable(fontName));
 
-      // PostScript informations
+      // PostScript information
       builder.addTable('post', createPostTable(properties));
 
       return builder.toArray();
@@ -3014,7 +3014,7 @@ var Type1Font = (function Type1FontClosure() {
                           (pfbHeader[3] << 8) | pfbHeader[2];
     }
 
-    // Get the data block containing glyphs and subrs informations
+    // Get the data block containing glyphs and subrs information
     var headerBlock = getHeaderBlock(file, headerBlockLength);
     headerBlockLength = headerBlock.length;
     var headerBlockParser = new Type1Parser(headerBlock.stream, false,

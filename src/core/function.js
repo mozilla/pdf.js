@@ -362,7 +362,7 @@ var PDFFunction = (function PDFFunctionClosure() {
 
         // clip to domain
         var v = clip(src[srcOffset], domain[0], domain[1]);
-        // calulate which bound the value is in
+        // calculate which bound the value is in
         for (var i = 0, ii = bounds.length; i < ii; ++i) {
           if (v < bounds[i]) {
             break;

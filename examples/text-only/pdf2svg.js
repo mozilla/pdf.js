@@ -30,7 +30,7 @@ function buildSVG(viewport, textContent) {
 
   // processing all items
   textContent.items.forEach(function (textItem) {
-    // we have to take in account viewport transform, which incudes scale,
+    // we have to take in account viewport transform, which includes scale,
     // rotation and Y-axis flip, and not forgetting to flip text.
     var tx = PDFJS.Util.transform(
       PDFJS.Util.transform(viewport.transform, textItem.transform),

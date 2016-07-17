@@ -278,7 +278,7 @@
         // the PDF file. When the viewer is reloaded or when the user navigates
         // back and forward, the background page will not observe a HTTP request
         // with Referer. To make sure that the Referer is preserved, store it in
-        // history.state, which is preserved accross reloads/navigations.
+        // history.state, which is preserved across reloads/navigations.
         var state = window.history.state || {};
         state.chromecomState = referer;
         window.history.replaceState(state, '');

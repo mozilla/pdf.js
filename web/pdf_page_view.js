@@ -583,7 +583,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         }, function(error) {
           console.error(error);
           // Tell the printEngine that rendering this canvas/page has failed.
-          // This will make the print proces stop.
+          // This will make the print process stop.
           if ('abort' in obj) {
             obj.abort();
           } else {

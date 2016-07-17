@@ -578,7 +578,7 @@ var PDFBug = (function PDFBugClosure() {
         } else {
           panel.textContent = tool.name + ' is disabled. To enable add ' +
                               ' "' + tool.id + '" to the pdfBug parameter ' +
-                              'and refresh (seperate multiple by commas).';
+                              'and refresh (separate multiple by commas).';
         }
         buttons.push(panelButton);
       }

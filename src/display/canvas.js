@@ -1813,7 +1813,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var currentCtx = this.ctx;
       // TODO non-isolated groups - according to Rik at adobe non-isolated
       // group results aren't usually that different and they even have tools
-      // that ignore this setting. Notes from Rik on implmenting:
+      // that ignore this setting. Notes from Rik on implementing:
       // - When you encounter an transparency group, create a new canvas with
       // the dimensions of the bbox
       // - copy the content from the previous canvas to the new canvas

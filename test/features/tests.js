@@ -561,7 +561,7 @@ var tests = [
   },
   {
     id: 'Worker-xhr-response',
-    name: 'XMLHttpRequest supports the reponse property in web workers',
+    name: 'XMLHttpRequest supports the response property in web workers',
     run: function () {
       if (typeof Worker == 'undefined')
         return { output: 'Skipped', emulated: '' };

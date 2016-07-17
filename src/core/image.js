@@ -365,7 +365,7 @@ var PDFImage = (function PDFImageClosure() {
             i += 8;
           }
 
-          // handle remaing bits
+          // handle remaining bits
           if (i < loop2End) {
             buf = buffer[bufferPos++];
             mask = 128;
@@ -433,7 +433,7 @@ var PDFImage = (function PDFImageClosure() {
                                        width, height);
           }
         } else if (isArray(mask)) {
-          // Color key mask: if any of the compontents are outside the range
+          // Color key mask: if any of the components are outside the range
           // then they should be painted.
           alphaBuf = new Uint8Array(width * height);
           var numComps = this.numComps;
