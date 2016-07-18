@@ -31,9 +31,11 @@
 
 var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
+var warn = sharedUtil.warn;
 var error = sharedUtil.error;
 var isInt = sharedUtil.isInt;
 var isString = sharedUtil.isString;
+var MissingDataException = sharedUtil.MissingDataException;
 var isName = corePrimitives.isName;
 var isCmd = corePrimitives.isCmd;
 var isStream = corePrimitives.isStream;
@@ -881,41 +883,49 @@ var CMapFactory = (function CMapFactoryClosure() {
     var previous;
     var embededUseCMap;
     objLoop: while (true) {
-      var obj = lexer.getObj();
-      if (isEOF(obj)) {
-        break;
-      } else if (isName(obj)) {
-        if (obj.name === 'WMode') {
-          parseWMode(cMap, lexer);
-        } else if (obj.name === 'CMapName') {
-          parseCMapName(cMap, lexer);
+      try {
+        var obj = lexer.getObj();
+        if (isEOF(obj)) {
+          break;
+        } else if (isName(obj)) {
+          if (obj.name === 'WMode') {
+            parseWMode(cMap, lexer);
+          } else if (obj.name === 'CMapName') {
+            parseCMapName(cMap, lexer);
+          }
+          previous = obj;
+        } else if (isCmd(obj)) {
+          switch (obj.cmd) {
+            case 'endcmap':
+              break objLoop;
+            case 'usecmap':
+              if (isName(previous)) {
+                embededUseCMap = previous.name;
+              }
+              break;
+            case 'begincodespacerange':
+              parseCodespaceRange(cMap, lexer);
+              break;
+            case 'beginbfchar':
+              parseBfChar(cMap, lexer);
+              break;
+            case 'begincidchar':
+              parseCidChar(cMap, lexer);
+              break;
+            case 'beginbfrange':
+              parseBfRange(cMap, lexer);
+              break;
+            case 'begincidrange':
+              parseCidRange(cMap, lexer);
+              break;
+          }
         }
-        previous = obj;
-      } else if (isCmd(obj)) {
-        switch (obj.cmd) {
-          case 'endcmap':
-            break objLoop;
-          case 'usecmap':
-            if (isName(previous)) {
-              embededUseCMap = previous.name;
-            }
-            break;
-          case 'begincodespacerange':
-            parseCodespaceRange(cMap, lexer);
-            break;
-          case 'beginbfchar':
-            parseBfChar(cMap, lexer);
-            break;
-          case 'begincidchar':
-            parseCidChar(cMap, lexer);
-            break;
-          case 'beginbfrange':
-            parseBfRange(cMap, lexer);
-            break;
-          case 'begincidrange':
-            parseCidRange(cMap, lexer);
-            break;
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
         }
+        warn('Invalid cMap data: ' + ex);
+        continue;
       }
     }
 
@@ -926,9 +936,8 @@ var CMapFactory = (function CMapFactoryClosure() {
     }
     if (useCMap) {
       return extendCMap(cMap, builtInCMapParams, useCMap);
-    } else {
-      return Promise.resolve(cMap);
     }
+    return Promise.resolve(cMap);
   }
 
   function extendCMap(cMap, builtInCMapParams, useCMap) {
@@ -990,8 +999,6 @@ var CMapFactory = (function CMapFactoryClosure() {
             parseCMap(cMap, lexer, builtInCMapParams, null).then(
                 function (parsedCMap) {
               resolve(parsedCMap);
-            }).catch(function (e) {
-              reject(new Error({ message: 'Invalid CMap data', error: e }));
             });
           } else {
             reject(new Error('Unable to get cMap at: ' + url));
