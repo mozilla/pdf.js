@@ -1124,6 +1124,20 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue7492-eq",
+       "file": "pdfs/issue7492.pdf",
+       "md5": "7b0b28919c1088a2a5a0aeedbaa4c3ca",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue7492-text",
+       "file": "pdfs/issue7492.pdf",
+       "md5": "7b0b28919c1088a2a5a0aeedbaa4c3ca",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "ShowText-ShadingPattern",
        "file": "pdfs/ShowText-ShadingPattern.pdf",
        "md5": "fe683725db037ffe19d390969610a652",
