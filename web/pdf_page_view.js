@@ -535,10 +535,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       var CustomStyle = pdfjsLib.CustomStyle;
       var pdfPage = this.pdfPage;
 
-      var viewport = pdfPage.getViewport(1);
+      // increase to improve quality
+      var viewport = pdfPage.getViewport(4);
       // Use the same hack we use for high dpi displays for printing to get
       // better output until bug 811002 is fixed in FF.
-      var DPI = 200; // increase to improve quality
+      var DPI = 72; // increase to improve quality
       var PRINT_OUTPUT_SCALE = DPI/72; 
       var canvas = document.createElement('canvas');
 
@@ -553,8 +554,8 @@ var PDFPageView = (function PDFPageViewClosure() {
       CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
 
       var canvasWrapper = document.createElement('div');
-      canvasWrapper.style.width = viewport.width + 'pt';
-      canvasWrapper.style.height = viewport.height + 'pt';
+      canvasWrapper.style.width = '100%';
+      canvasWrapper.style.height = '100%';
 
       canvasWrapper.appendChild(canvas);
       printContainer.appendChild(canvasWrapper);
