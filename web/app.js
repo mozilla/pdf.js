@@ -1526,11 +1526,12 @@ function webViewerInitialized() {
   });
 
   appConfig.toolbar.pageNumber.addEventListener('change', function() {
-    // Handle the user inputting a floating point number.
     PDFViewerApplication.page = (this.value | 0);
 
-    if (this.value !== (this.value | 0).toString()) {
-      this.value = PDFViewerApplication.page;
+    // Ensure that the page number input displays the correct value, even if the
+    // value entered by the user was invalid (e.g. a floating point number).
+    if (this.value !== PDFViewerApplication.page.toString()) {
+      PDFViewerApplication._updateUIToolbar({});
     }
   });
 
@@ -1971,8 +1972,8 @@ function webViewerPageChanging(e) {
   PDFViewerApplication._updateUIToolbar({
     pageNumber: page,
   });
-  if (e.previousPageNumber !== page &&
-      PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
+
+  if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
   }
 

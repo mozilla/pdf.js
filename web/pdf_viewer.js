@@ -166,6 +166,9 @@ var PDFViewer = (function pdfViewer() {
      * @param {number} val - The page number.
      */
     set currentPageNumber(val) {
+      if ((val | 0) !== val) { // Ensure that `val` is an integer.
+        throw new Error('Invalid page number.');
+      }
       if (!this.pdfDocument) {
         this._currentPageNumber = val;
         return;
@@ -185,22 +188,14 @@ var PDFViewer = (function pdfViewer() {
         }
         return;
       }
-      var arg;
+
       if (!(0 < val && val <= this.pagesCount)) {
-        arg = {
-          source: this,
-          pageNumber: this._currentPageNumber,
-          previousPageNumber: val
-        };
-        this.eventBus.dispatch('pagechanging', arg);
-        this.eventBus.dispatch('pagechange', arg);
         return;
       }
 
-      arg = {
+      var arg = {
         source: this,
         pageNumber: val,
-        previousPageNumber: this._currentPageNumber
       };
       this._currentPageNumber = val;
       this.eventBus.dispatch('pagechanging', arg);
@@ -223,7 +218,7 @@ var PDFViewer = (function pdfViewer() {
      * @param {number} val - Scale of the pages in percents.
      */
     set currentScale(val) {
-      if (isNaN(val))  {
+      if (isNaN(val)) {
         throw new Error('Invalid numeric scale');
       }
       if (!this.pdfDocument) {
