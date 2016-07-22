@@ -11,6 +11,6 @@
   "private": true,
   "ignore": [
     "**/*",
-    "!build/*"
+    "!build/**/*"
   ]
 }
