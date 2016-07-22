@@ -1,0 +1,16 @@
+{
+  "name": "pdf.js",
+  "description": "",
+  "main": "",
+  "authors": [
+    "Andrew Dodson <andrew@5app.com>"
+  ],
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/5app/pdf.js",
+  "moduleType": [],
+  "private": true,
+  "ignore": [
+    "**/*",
+    "!build/*"
+  ]
+}
