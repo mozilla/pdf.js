@@ -1,0 +1,51 @@
+%PDF-1.7
+%%μῦ
+
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+
+2 0 obj
+<</Type/Pages/MediaBox[0 0 200 200]/Count 1/Kids[3 0 R]>>
+endobj
+
+3 0 obj
+<</Type/Page/Parent 2 0 R/Annots[6 0 R]/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>
+endobj
+
+4 0 obj
+<</Type/Font/Subtype/Type1/BaseFont/Times-Roman>>
+endobj
+
+5 0 obj
+<</Length 68>>
+stream
+BT
+10 10 TD
+/F1 12 Tf
+(Renders even with a broken annotation) Tj
+ET
+
+endstream
+endobj
+
+6 0 obj
+<</Type/Annot/Rect[266 116 430 204]/Contents( This annotation is broken )>>
+endobj
+
+xref
+0 7
+0000000000 65536 f 
+0000000018 00000 n 
+0000000064 00000 n 
+0000000138 00000 n 
+0000000243 00000 n 
+0000000309 00000 n 
+0000000426 00000 n 
+
+trailer
+<</Size 7/Root 1 0 R>>
+
+startxref
+518
+%%EOF

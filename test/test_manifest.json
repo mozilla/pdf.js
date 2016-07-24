@@ -1131,6 +1131,14 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue7446",
+       "file": "pdfs/issue7446.pdf",
+       "md5": "1b5bdd8a806e6ab9eda7c1c707b75fc6",
+       "rounds": 1,
+       "link": false,
+       "type": "load",
+       "about": "Annotation without the required /Subtype."
+    },
     {  "id": "issue7492-eq",
        "file": "pdfs/issue7492.pdf",
        "md5": "7b0b28919c1088a2a5a0aeedbaa4c3ca",
