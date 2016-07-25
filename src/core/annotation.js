@@ -74,13 +74,14 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
 
     // Determine the annotation's subtype.
     var subtype = dict.get('Subtype');
-    subtype = isName(subtype) ? subtype.name : '';
+    subtype = isName(subtype) ? subtype.name : null;
 
     // Return the right annotation object based on the subtype and field type.
     var parameters = {
       xref: xref,
       dict: dict,
-      ref: ref
+      ref: ref,
+      subtype: subtype,
     };
 
     switch (subtype) {
@@ -116,8 +117,12 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
         return new FileAttachmentAnnotation(parameters);
 
       default:
-        warn('Unimplemented annotation type "' + subtype + '", ' +
-             'falling back to base annotation');
+        if (!subtype) {
+          warn('Annotation is missing the required /Subtype.');
+        } else {
+          warn('Unimplemented annotation type "' + subtype + '", ' +
+               'falling back to base annotation.');
+        }
         return new Annotation(parameters);
     }
   }
@@ -181,7 +186,7 @@ var Annotation = (function AnnotationClosure() {
     // Expose public properties using a data object.
     this.data = {};
     this.data.id = params.ref.toString();
-    this.data.subtype = dict.get('Subtype').name;
+    this.data.subtype = params.subtype;
     this.data.annotationFlags = this.flags;
     this.data.rect = this.rectangle;
     this.data.color = this.color;
