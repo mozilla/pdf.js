@@ -40,7 +40,6 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_TARGETS = [BUILD_TARGET, BUILD_WORKER_TARGET],
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
-    B2G_BUILD_DIR = BUILD_DIR + '/b2g/',
     JSDOC_DIR = BUILD_DIR + 'jsdoc',
     EXTENSION_SRC_DIR = 'extensions/',
     FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
@@ -226,7 +225,6 @@ target.jsdoc = function() {
 target.web = function() {
   target.generic();
   target.extension();
-  target.b2g();
   target.jsdoc();
 
   echo();
@@ -241,7 +239,6 @@ target.web = function() {
   mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
   mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chromium');
-  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/b2g');
   mkdir('-p', GH_PAGES_DIR + '/api/draft/');
   mkdir('-p', GH_PAGES_DIR + '/examples/');
 
@@ -252,7 +249,6 @@ target.web = function() {
      GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
   cp('-R', 'test/features', GH_PAGES_DIR);
   cp('-R', 'examples/learning', GH_PAGES_DIR + '/examples/');
-  cp('-R', B2G_BUILD_DIR, GH_PAGES_DIR + EXTENSION_SRC_DIR + 'b2g/');
   cp('-R', JSDOC_DIR + '/*', GH_PAGES_DIR + '/api/draft/');
 
   var wintersmith = require('wintersmith');
@@ -879,51 +875,6 @@ target.mozcentral = function() {
       MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
   sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX,
       MOZCENTRAL_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
-};
-
-target.b2g = function() {
-  target.generic();
-  target.components();
-
-  echo();
-  echo('### Building B2G (Firefox OS App)');
-  var B2G_BUILD_CONTENT_DIR = B2G_BUILD_DIR + '/content/';
-
-  // Clear out everything in the b2g build directory
-  cd(ROOT_DIR);
-  rm('-Rf', B2G_BUILD_DIR);
-  mkdir('-p', B2G_BUILD_CONTENT_DIR);
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/web');
-  // Simulating pdfjs-dist structure in the pdfjs-components folder.
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web');
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/build');
-  mkdir('-p', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/cmaps');
-
-  var setup = {
-    defines: DEFINES,
-    copy: [
-      ['extensions/b2g/images', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['extensions/b2g/viewer.html', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['extensions/b2g/viewer.css', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['extensions/b2g/viewer.js', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['web/locale', B2G_BUILD_CONTENT_DIR + '/web'],
-      ['build/generic/build/pdf.js',
-        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/build'],
-      ['build/generic/build/pdf.worker.js',
-        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/build'],
-      ['build/components/pdf_viewer.js',
-        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web'],
-      ['build/components/pdf_viewer.css',
-        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web'],
-      ['build/components/images',
-        B2G_BUILD_CONTENT_DIR + '/pdfjs-components/web'],
-      ['external/bcmaps/*', B2G_BUILD_CONTENT_DIR + '/pdfjs-components/cmaps']
-    ],
-    preprocess: []
-  };
-  builder.build(setup);
-
-  cleanupJSSource(B2G_BUILD_CONTENT_DIR + '/web/viewer.js');
 };
 
 //
