@@ -879,7 +879,7 @@ var Font = (function FontClosure() {
   }
 
   /**
-   * Helper function for |adjustMapping|.
+   * Helper function for `adjustMapping`.
    * @return {boolean}
    */
   function isProblematicUnicodeLocation(code) {
@@ -939,7 +939,7 @@ var Font = (function FontClosure() {
       // with firefox and thuluthfont).
       if ((usedFontCharCodes[fontCharCode] !== undefined ||
            isProblematicUnicodeLocation(fontCharCode) ||
-           (isSymbolic && (isIdentityUnicode || !hasUnicodeValue))) &&
+           (isSymbolic && !hasUnicodeValue)) &&
           nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END) { // Room left.
         // Loop to try and find a free spot in the private use area.
         do {
