@@ -288,11 +288,9 @@ var PDFViewerApplication = {
 
     container.addEventListener('pagechange', function (evt) {
       var page = evt.pageNumber;
-      if (evt.previousPageNumber !== page) {
-        document.getElementById('pageNumber').value = page;
-      }
       var numPages = PDFViewerApplication.pagesCount;
 
+      document.getElementById('pageNumber').value = page;
       document.getElementById('previous').disabled = (page <= 1);
       document.getElementById('next').disabled = (page >= numPages);
     }, true);
