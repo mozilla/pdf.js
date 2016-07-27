@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-Copyright 2012 Mozilla Foundation
+Copyright 2016 Mozilla Foundation
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,44 +18,22 @@ limitations under the License.
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
     <title>PDF.js viewer</title>
 
-    <script src="../pdfjs-components/build/pdf.js"></script>
-    <script src="../pdfjs-components/web/pdf_viewer.js"></script>
-    <script src="/shared/js/l10n.js"></script>
+    <link rel="stylesheet" href="../../build/dist/web/pdf_viewer.css">
+    <link rel="stylesheet" type="text/css" href="viewer.css">
 
-    <!-- Localization -->
-    <meta name="defaultLanguage" content="en-US">
-    <meta name="availableLanguages" content="ach,af,ak,an,ar,as,ast,az,be,bg,bn-BD,bn-IN,br,bs,ca,cs,csb,cy,da,de,el,en-GB,en-ZA,eo,es-AR,es-CL,es-ES,es-MX,et,eu,fa,ff,fi,fr,fy-NL,ga-IE,gd,gl,gu-IN,he,hi-IN,hr,hu,hy-AM,id,is,it,ja,ka,kk,km,kn,ko,ku,lg,lij,lt,lv,mai,mk,ml,mn,mr,ms,my,nb-NO,nl,nn-NO,nso,oc,or,pa-IN,pl,pt-BR,pt-PT,rm,ro,ru,rw,sah,si,sk,sl,son,sq,sr,sv-SE,sw,ta,ta-LK,te,th,tl,tn,tr,uk,ur,vi,wo,xh,zh-CN,zh-TW,zu">
-    <link rel="localization" href="locale/{locale}/viewer.properties">
+    <script src="../../build/dist/build/pdf.js"></script>
+    <script src="../../build/dist/web/pdf_viewer.js"></script>
 
     <script src="viewer.js"></script>
-
-    <!-- Web Components -->
-    <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-theme/gaia-theme.css">
-    <script src="/shared/elements/config.js" defer></script>
-    <script src="/shared/elements/gaia-header/dist/gaia-header.js" defer></script>
-
-    <link rel="stylesheet" type="text/css" href="../pdfjs-components/web/pdf_viewer.css">
-    <link rel="stylesheet" type="text/css" href="viewer.css">
   </head>
 
   <body>
-    <section role="region" id="activityHeader" class="skin-organic theme-settings">
-      <gaia-header id="header" action="close">
-        <h1 id="activityTitle"></h1>
-      </gaia-header>
-
-      <footer id="open-toolbar">
-        <button class="toolbarButton pageUp" title="Previous Page" id="previous" data-l10n-id="previous"></button>
-        <button class="toolbarButton pageDown" title="Next Page" id="next" data-l10n-id="next"></button>
-
-        <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1">
-
-        <button class="toolbarButton zoomOut" title="Zoom Out" id="zoomOut" data-l10n-id="zoom_out"></button>
-        <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn" data-l10n-id="zoom_in"></button>
-      </footer>
-    </section>
+    <header>
+      <h1 id="title"></h1>
+    </header>
 
     <div id="viewerContainer">
       <div id="viewer" class="pdfViewer"></div>
@@ -66,23 +44,33 @@ limitations under the License.
       <div class="glimmer"></div>
     </div>
 
-    <div id="errorWrapper" hidden='true'>
+    <div id="errorWrapper" hidden="true">
       <div id="errorMessageLeft">
         <span id="errorMessage"></span>
-        <button id="errorShowMore" data-l10n-id="error_more_info">
+        <button id="errorShowMore">
           More Information
         </button>
-        <button id="errorShowLess" data-l10n-id="error_less_info" hidden='true'>
+        <button id="errorShowLess">
           Less Information
         </button>
       </div>
       <div id="errorMessageRight">
-        <button id="errorClose" data-l10n-id="error_close">
+        <button id="errorClose">
           Close
         </button>
       </div>
       <div class="clearBoth"></div>
-      <textarea id="errorMoreInfo" hidden='true' readonly="readonly"></textarea>
+      <textarea id="errorMoreInfo" hidden="true" readonly="readonly"></textarea>
     </div>
+
+    <footer>
+      <button class="toolbarButton pageUp" title="Previous Page" id="previous"></button>
+      <button class="toolbarButton pageDown" title="Next Page" id="next"></button>
+
+      <input type="number" id="pageNumber" class="toolbarField pageNumber" value="1" size="4" min="1">
+
+      <button class="toolbarButton zoomOut" title="Zoom Out" id="zoomOut"></button>
+      <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn"></button>
+    </footer>
   </body>
 </html>
