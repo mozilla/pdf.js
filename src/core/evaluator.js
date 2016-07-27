@@ -1132,7 +1132,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     getTextContent:
         function PartialEvaluator_getTextContent(stream, task, resources,
                                                  stateManager,
-                                                 normalizeWhitespace) {
+                                                 normalizeWhitespace,
+                                                 combineTextItems) {
 
       stateManager = (stateManager || new StateManager(new TextState()));
 
@@ -1443,7 +1444,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var isSameTextLine = !textState.font ? false :
                 ((textState.font.vertical ? args[0] : args[1]) === 0);
               advance = args[0] - args[1];
-              if (isSameTextLine && textContentItem.initialized &&
+              if (combineTextItems &&
+                  isSameTextLine && textContentItem.initialized &&
                   advance > 0 &&
                   advance <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(args[0], args[1]);
@@ -1475,7 +1477,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Optimization to treat same line movement as advance.
               advance = textState.calcTextLineMatrixAdvance(
                 args[0], args[1], args[2], args[3], args[4], args[5]);
-              if (advance !== null && textContentItem.initialized &&
+              if (combineTextItems &&
+                  advance !== null && textContentItem.initialized &&
                   advance.value > 0 &&
                   advance.value <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(advance.width,
@@ -1616,7 +1619,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               next(self.getTextContent(xobj, task,
                    xobj.dict.get('Resources') || resources, stateManager,
-                   normalizeWhitespace).then(function (formTextContent) {
+                   normalizeWhitespace, combineTextItems).then(
+                function (formTextContent) {
                   Util.appendToArray(textContent.items, formTextContent.items);
                   Util.extendObj(textContent.styles, formTextContent.styles);
                   stateManager.restore();
