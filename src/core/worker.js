@@ -891,12 +891,14 @@ var WorkerMessageHandler = {
     handler.on('GetTextContent', function wphExtractText(data) {
       var pageIndex = data.pageIndex;
       var normalizeWhitespace = data.normalizeWhitespace;
+      var combineTextItems = data.combineTextItems;
       return pdfManager.getPage(pageIndex).then(function(page) {
         var task = new WorkerTask('GetTextContent: page ' + pageIndex);
         startWorkerTask(task);
         var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent(task, normalizeWhitespace).then(
+        return page.extractTextContent(task, normalizeWhitespace,
+                                       combineTextItems).then(
             function(textContent) {
           finishWorkerTask(task);
           info('text indexing: page=' + pageNum + ' - time=' +

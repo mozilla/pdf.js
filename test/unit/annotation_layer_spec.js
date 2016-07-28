@@ -26,11 +26,35 @@ describe('Annotation layer', function() {
     annotationFactory = null;
   });
 
+  describe('AnnotationFactory', function () {
+    it('should handle missing /Subtype', function () {
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+
+      var xrefMock = new XrefMock([annotationDict]);
+      var annotationRef = new Ref(1, 0);
+
+      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toBeUndefined();
+    });
+  });
+
   describe('Annotation', function() {
+    var dict, ref;
+
+    beforeAll(function (done) {
+      dict = new Dict();
+      ref = new Ref(1, 0);
+      done();
+    });
+
+    afterAll(function () {
+      dict = ref = null;
+    });
+
     it('should set and get flags', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setFlags(13);
 
       expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
@@ -40,81 +64,63 @@ describe('Annotation layer', function() {
     });
 
     it('should be viewable and not printable by default', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
 
       expect(annotation.viewable).toEqual(true);
       expect(annotation.printable).toEqual(false);
     });
 
     it('should set and get a valid rectangle', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setRectangle([117, 694, 164.298, 720]);
 
       expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
     });
 
     it('should not set and get an invalid rectangle', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setRectangle([117, 694, 164.298]);
 
       expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
     });
 
     it('should reject a color if it is not an array', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setColor('red');
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
 
     it('should set and get a transparent color', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setColor([]);
 
       expect(annotation.color).toEqual(null);
     });
 
     it('should set and get a grayscale color', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setColor([0.4]);
 
       expect(annotation.color).toEqual(new Uint8Array([102, 102, 102]));
     });
 
     it('should set and get an RGB color', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setColor([0, 0, 1]);
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 255]));
     });
 
     it('should set and get a CMYK color', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
       expect(annotation.color).toEqual(new Uint8Array([233, 59, 47]));
     });
 
     it('should not set and get an invalid color', function() {
-      var dict = new Dict();
-      dict.set('Subtype', '');
-      var annotation = new Annotation({ dict: dict, ref: 0 });
+      var annotation = new Annotation({ dict: dict, ref: ref });
       annotation.setColor([0.4, 0.6]);
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
