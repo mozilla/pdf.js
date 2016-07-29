@@ -299,6 +299,7 @@ var PDFViewer = (function pdfViewer() {
      */
     setDocument: function (pdfDocument) {
       if (this.pdfDocument) {
+        this._cancelRendering();
         this._resetView();
       }
 
@@ -424,10 +425,8 @@ var PDFViewer = (function pdfViewer() {
       this._pagesRequests = [];
       this._pageViewsReady = false;
 
-      var container = this.viewer;
-      while (container.hasChildNodes()) {
-        container.removeChild(container.lastChild);
-      }
+      // Remove the pages from the DOM.
+      this.viewer.textContent = '';
     },
 
     _scrollUpdate: function PDFViewer_scrollUpdate() {
@@ -798,6 +797,17 @@ var PDFViewer = (function pdfViewer() {
         if (this._pages[i] &&
             this._pages[i].renderingState !== RenderingStates.FINISHED) {
           this._pages[i].reset();
+        }
+      }
+    },
+
+    /**
+     * @private
+     */
+    _cancelRendering: function PDFViewer_cancelRendering() {
+      for (var i = 0, ii = this._pages.length; i < ii; i++) {
+        if (this._pages[i]) {
+          this._pages[i].cancelRendering();
         }
       }
     },
