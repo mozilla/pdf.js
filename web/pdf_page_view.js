@@ -92,6 +92,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.textLayerFactory = textLayerFactory;
     this.annotationLayerFactory = annotationLayerFactory;
 
+    this.renderTask = null;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
 
@@ -135,11 +136,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     reset: function PDFPageView_reset(keepZoomLayer, keepAnnotations) {
-      if (this.renderTask) {
-        this.renderTask.cancel();
-      }
-      this.resume = null;
-      this.renderingState = RenderingStates.INITIAL;
+      this.cancelRendering();
 
       var div = this.div;
       div.style.width = Math.floor(this.viewport.width) + 'px';
@@ -223,6 +220,15 @@ var PDFPageView = (function PDFPageViewClosure() {
         this.cssTransform(this.zoomLayer.firstChild);
       }
       this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
+    },
+
+    cancelRendering: function PDFPageView_cancelRendering() {
+      if (this.renderTask) {
+        this.renderTask.cancel();
+        this.renderTask = null;
+      }
+      this.renderingState = RenderingStates.INITIAL;
+      this.resume = null;
     },
 
     /**
@@ -320,6 +326,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     draw: function PDFPageView_draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
+        this.reset(); // Ensure that we reset all state to prevent issues.
       }
 
       this.renderingState = RenderingStates.RUNNING;

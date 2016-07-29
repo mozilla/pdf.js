@@ -1583,6 +1583,19 @@ function webViewerPageRendered(e) {
   var pageIndex = pageNumber - 1;
   var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
 
+  // If the page is still visible when it has finished rendering,
+  // ensure that the page number input loading indicator is hidden.
+  if (pageNumber === PDFViewerApplication.page) {
+    var pageNumberInput = PDFViewerApplication.appConfig.toolbar.pageNumber;
+    pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
+  }
+
+  // Prevent errors in the edge-case where the PDF document is removed *before*
+  // the 'pagerendered' event handler is invoked.
+  if (!pageView) {
+    return;
+  }
+
   // Use the rendered page to set the corresponding thumbnail image.
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
     var thumbnailView = PDFViewerApplication.pdfThumbnailViewer.
@@ -1597,13 +1610,6 @@ function webViewerPageRendered(e) {
   if (pageView.error) {
     PDFViewerApplication.error(mozL10n.get('rendering_error', null,
       'An error occurred while rendering the page.'), pageView.error);
-  }
-
-  // If the page is still visible when it has finished rendering,
-  // ensure that the page number input loading indicator is hidden.
-  if (pageNumber === PDFViewerApplication.page) {
-    var pageNumberInput = PDFViewerApplication.appConfig.toolbar.pageNumber;
-    pageNumberInput.classList.remove(PAGE_NUMBER_LOADING_INDICATOR);
   }
 
 //#if !PRODUCTION

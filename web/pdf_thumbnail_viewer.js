@@ -135,15 +135,14 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       this.thumbnails = [];
       this._pagesRotation = 0;
       this._pagesRequests = [];
+
+      // Remove the thumbnails from the DOM.
+      this.container.textContent = '';
     },
 
     setDocument: function PDFThumbnailViewer_setDocument(pdfDocument) {
       if (this.pdfDocument) {
-        // cleanup of the elements and views
-        var thumbsView = this.container;
-        while (thumbsView.hasChildNodes()) {
-          thumbsView.removeChild(thumbsView.lastChild);
-        }
+        this._cancelRendering();
         this._resetView();
       }
 
@@ -167,6 +166,17 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
           this.thumbnails.push(thumbnail);
         }
       }.bind(this));
+    },
+
+    /**
+     * @private
+     */
+    _cancelRendering: function PDFThumbnailViewer_cancelRendering() {
+      for (var i = 0, ii = this.thumbnails.length; i < ii; i++) {
+        if (this.thumbnails[i]) {
+          this.thumbnails[i].cancelRendering();
+        }
+      }
     },
 
     /**
