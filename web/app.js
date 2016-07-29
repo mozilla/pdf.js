@@ -1641,7 +1641,7 @@ function webViewerTextLayerRendered(e) {
   }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
-  if (pageView.textLayer && pageView.textLayer.textDivs &&
+  if (pageView && pageView.textLayer && pageView.textLayer.textDivs &&
       pageView.textLayer.textDivs.length > 0 &&
       !PDFViewerApplication.supportsDocumentColors) {
     console.error(mozL10n.get('document_colors_not_allowed', null,
