@@ -229,6 +229,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.renderingState = RenderingStates.INITIAL;
       this.resume = null;
+
+      if (this.textLayer) {
+        this.textLayer.cancel();
+        this.textLayer = null;
+      }
     },
 
     /**
