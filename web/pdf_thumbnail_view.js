@@ -98,8 +98,9 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
 
-    this.resume = null;
+    this.renderTask = null;
     this.renderingState = RenderingStates.INITIAL;
+    this.resume = null;
     this.disableCanvasToImageConversion = disableCanvasToImageConversion;
 
     this.pageWidth = this.viewport.width;
@@ -151,11 +152,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     },
 
     reset: function PDFThumbnailView_reset() {
-      if (this.renderTask) {
-        this.renderTask.cancel();
-      }
-      this.resume = null;
-      this.renderingState = RenderingStates.INITIAL;
+      this.cancelRendering();
 
       this.pageWidth = this.viewport.width;
       this.pageHeight = this.viewport.height;
@@ -197,6 +194,15 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         rotation: totalRotation
       });
       this.reset();
+    },
+
+    cancelRendering: function PDFThumbnailView_cancelRendering() {
+      if (this.renderTask) {
+        this.renderTask.cancel();
+        this.renderTask = null;
+      }
+      this.renderingState = RenderingStates.INITIAL;
+      this.resume = null;
     },
 
     /**
