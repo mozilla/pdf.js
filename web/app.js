@@ -1632,18 +1632,13 @@ function webViewerPageRendered(e) {
 }
 
 function webViewerTextLayerRendered(e) {
-  var pageIndex = e.pageNumber - 1;
-  var pageView = PDFViewerApplication.pdfViewer.getPageView(pageIndex);
-
 //#if !PRODUCTION
   if (true) {
     return;
   }
 //#endif
 //#if (FIREFOX || MOZCENTRAL)
-  if (pageView && pageView.textLayer && pageView.textLayer.textDivs &&
-      pageView.textLayer.textDivs.length > 0 &&
-      !PDFViewerApplication.supportsDocumentColors) {
+  if (e.numTextDivs > 0 && !PDFViewerApplication.supportsDocumentColors) {
     console.error(mozL10n.get('document_colors_not_allowed', null,
       'PDF documents are not allowed to use their own colors: ' +
       '\'Allow pages to choose their own colors\' ' +
