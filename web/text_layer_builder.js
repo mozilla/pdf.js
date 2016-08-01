@@ -65,6 +65,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
   }
 
   TextLayerBuilder.prototype = {
+    /**
+     * @private
+     */
     _finishRendering: function TextLayerBuilder_finishRendering() {
       this.renderingDone = true;
 
@@ -76,7 +79,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       this.eventBus.dispatch('textlayerrendered', {
         source: this,
-        pageNumber: this.pageNumber
+        pageNumber: this.pageNumber,
+        numTextDivs: this.textDivs.length,
       });
     },
 
