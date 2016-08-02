@@ -538,7 +538,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       var viewport = pdfPage.getViewport(1);
       // Use the same hack we use for high dpi displays for printing to get
       // better output until bug 811002 is fixed in FF.
-      var PRINT_OUTPUT_SCALE = 2;
+      var PRINT_OUTPUT_SCALE = 4;
       var canvas = document.createElement('canvas');
 
       // The logical size of the canvas.
@@ -546,10 +546,9 @@ var PDFPageView = (function PDFPageViewClosure() {
       canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
 
       // The rendered size of the canvas, relative to the size of canvasWrapper.
-      canvas.style.width = (PRINT_OUTPUT_SCALE * 100) + '%';
+      canvas.style.width = '100%';
 
-      var cssScale = 'scale(' + (1 / PRINT_OUTPUT_SCALE) + ', ' +
-                                (1 / PRINT_OUTPUT_SCALE) + ')';
+      var cssScale = 'scale(1,1)';
       CustomStyle.setProp('transform' , canvas, cssScale);
       CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
 
