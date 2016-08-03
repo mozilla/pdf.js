@@ -53,7 +53,7 @@ var PdfjsChromeUtils = {
    */
 
   init: function () {
-    this._browsers = new Set();
+    this._browsers = new WeakSet();
     if (!this._ppmm) {
       // global parent process message manager (PPMM)
       this._ppmm = Cc['@mozilla.org/parentprocessmessagemanager;1'].
