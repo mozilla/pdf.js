@@ -1909,7 +1909,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
 
   function CipherTransformFactory(dict, fileId, password) {
     var filter = dict.get('Filter');
-    if (!isName(filter) || filter.name !== 'Standard') {
+    if (!isName(filter, 'Standard')) {
       error('unknown encryption method');
     }
     this.dict = dict;
