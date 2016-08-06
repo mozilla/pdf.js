@@ -675,6 +675,9 @@ var PDFViewerApplication = {
       return;
     }
 
+    // There could be a filename available from network call
+    filename = this.pdfDocumentProperties.getFileName();
+
     this.pdfDocument.getData().then(
       function getDataSuccess(data) {
         var blob = pdfjsLib.createBlob(data, 'application/pdf');
@@ -816,6 +819,8 @@ var PDFViewerApplication = {
     this.pdfDocument = pdfDocument;
 
     this.pdfDocumentProperties.setDocumentAndUrl(pdfDocument, this.url);
+
+    this.setTitle(this.pdfDocumentProperties.getFileName());
 
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
