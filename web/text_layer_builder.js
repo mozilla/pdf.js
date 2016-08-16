@@ -15,6 +15,14 @@
 
 'use strict';
 
+var MAX_TEXT_DIVS_TO_RENDER = 100000;
+
+var NonWhitespaceRegexp = /\S/;
+
+function isAllWhitespace(str) {
+  return !NonWhitespaceRegexp.test(str);
+}
+
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/text_layer_builder', ['exports', 'pdfjs-web/dom_events',
@@ -35,6 +43,8 @@
  * @property {number} pageIndex - The page index.
  * @property {PageViewport} viewport - The viewport of the text layer.
  * @property {PDFFindController} findController
+ * @property {boolean} enhanceTextSelection - Option to turn on improved
+ * text selection.
  */
 
 /**
@@ -57,6 +67,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.textDivs = [];
     this.findController = options.findController || null;
     this.textLayerRenderTask = null;
+    this.enhanceTextSelection = !!options.enhanceTextSelection;
     this._bindMouse();
   }
 
@@ -83,12 +94,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       if (!this.divContentDone || this.renderingDone) {
         return;
       }
-
       if (this.textLayerRenderTask) {
         this.textLayerRenderTask.cancel();
         this.textLayerRenderTask = null;
       }
-
       this.textDivs = [];
       var textLayerFrag = document.createDocumentFragment();
       this.textLayerRenderTask = pdfjsLib.renderTextLayer({
@@ -96,14 +105,16 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         container: textLayerFrag,
         viewport: this.viewport,
         textDivs: this.textDivs,
-        timeout: timeout
+        timeout: timeout,
+        enhanceTextSelection: this.enhanceTextSelection
       });
       this.textLayerRenderTask.promise.then(function () {
         this.textLayerDiv.appendChild(textLayerFrag);
         this._finishRendering();
         this.updateMatches();
+        console.timeEnd('renderLayer');
       }.bind(this), function (reason) {
-        // canceled or failed to render text layer -- skipping errors
+          // canceled or failed to render text layer -- skipping errors
       });
     },
 
@@ -349,6 +360,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       });
     },
   };
+
   return TextLayerBuilder;
 })();
 
@@ -362,13 +374,18 @@ DefaultTextLayerFactory.prototype = {
    * @param {HTMLDivElement} textLayerDiv
    * @param {number} pageIndex
    * @param {PageViewport} viewport
+   * @param {boolean} enhanceTextSelection
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport) {
+  createTextLayerBuilder: function (textLayerDiv,
+                                    pageIndex,
+                                    viewport,
+                                    enhanceTextSelection) {
     return new TextLayerBuilder({
       textLayerDiv: textLayerDiv,
       pageIndex: pageIndex,
-      viewport: viewport
+      viewport: viewport,
+      enhanceTextSelection: enhanceTextSelection
     });
   }
 };

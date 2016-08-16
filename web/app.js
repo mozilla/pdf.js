@@ -176,6 +176,7 @@ var PDFViewerApplication = {
   preferencePdfBugEnabled: false,
   preferenceShowPreviousViewOnLoad: true,
   preferenceDefaultZoomValue: '',
+  preferenceEnhanceTextSelection: false,
   isViewerEmbedded: (window.parent !== window),
   url: '',
   externalServices: DefaultExernalServices,
@@ -203,13 +204,16 @@ var PDFViewerApplication = {
 
     var container = appConfig.mainContainer;
     var viewer = appConfig.viewerContainer;
+    console.log('Enhanced Text Selection is set to:',
+                this.preferenceEnhanceTextSelection);
     this.pdfViewer = new PDFViewer({
       container: container,
       viewer: viewer,
       eventBus: eventBus,
       renderingQueue: pdfRenderingQueue,
       linkService: pdfLinkService,
-      downloadManager: downloadManager
+      downloadManager: downloadManager,
+      enhanceTextSelection: this.preferenceEnhanceTextSelection
     });
     pdfRenderingQueue.setViewer(this.pdfViewer);
     pdfLinkService.setViewer(this.pdfViewer);
@@ -357,6 +361,7 @@ var PDFViewerApplication = {
         }
         PDFJS.externalLinkTarget = value;
       }),
+
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
