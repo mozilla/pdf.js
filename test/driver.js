@@ -90,9 +90,11 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
       var task = PDFJS.renderTextLayer({
         textContent: textContent,
         container: div,
-        viewport: viewport
+        viewport: viewport,
+        enhanceTextSelection: enhanceTextSelection,
       });
       Promise.all([stylePromise, task.promise]).then(function (results) {
+        task.expandTextDivs(true);
         style.textContent = results[0];
         svg.appendChild(foreignObject);
 
