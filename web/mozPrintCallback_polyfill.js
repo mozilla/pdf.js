@@ -76,8 +76,16 @@
       }
     } else {
       renderProgress();
-      print.call(window);
-      setTimeout(abort, 20); // Tidy-up
+      // Push window.print in the macrotask queue to avoid being affected by
+      // the deprecation of running print() code in a microtask, see
+      // https://github.com/mozilla/pdf.js/issues/7547.
+      setTimeout(function() {
+        if (!canvases) {
+          return; // Print task cancelled by user.
+        }
+        print.call(window);
+        setTimeout(abort, 20); // Tidy-up
+      }, 0);
     }
   }
 
