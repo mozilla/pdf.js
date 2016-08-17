@@ -244,6 +244,12 @@ describe('primitives', function() {
       var name = Name.get('Font');
       expect(isName(name)).toEqual(true);
     });
+
+    it('handles names with name check', function () {
+      var name = Name.get('Font');
+      expect(isName(name, 'Font')).toEqual(true);
+      expect(isName(name, 'Subtype')).toEqual(false);
+    });
   });
 
   describe('isCmd', function () {
