@@ -64,7 +64,8 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
     return textLayerStylePromise;
   }
 
-  function rasterizeTextLayer(ctx, viewport, textContent) {
+  function rasterizeTextLayer(ctx, viewport, textContent,
+                              enhanceTextSelection) {
     return new Promise(function (resolve) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
@@ -470,12 +471,13 @@ var Driver = (function DriverClosure() {
               var textLayerContext = textLayerCanvas.getContext('2d');
               textLayerContext.clearRect(0, 0,
                 textLayerCanvas.width, textLayerCanvas.height);
+              var enhanceText = !!task.enhance;
               // The text builder will draw its content on the test canvas
               initPromise = page.getTextContent({
                 normalizeWhitespace: true,
               }).then(function(textContent) {
                 return rasterizeTextLayer(textLayerContext, viewport,
-                                          textContent);
+                                          textContent, enhanceText);
               });
             } else {
               textLayerCanvas = null;
