@@ -1,5 +1,5 @@
-/* globals expect, it, describe, beforeEach, Name, Dict, Ref, RefSet, Cmd,
-           jasmine, isName, isCmd, isDict, isRef, isRefsEqual */
+/* globals expect, it, describe, beforeAll, afterAll, jasmine, Name, Dict, Ref,
+           RefSet, Cmd, isName, isCmd, isDict, isRef, isRefsEqual */
 
 'use strict';
 
@@ -21,6 +21,12 @@ describe('primitives', function() {
         return obj;
       }
       return this.fetch(obj);
+    },
+    fetchAsync: function (ref) {
+      return Promise.resolve(this.fetch(ref));
+    },
+    fetchIfRefAsync: function (obj) {
+      return Promise.resolve(this.fetchIfRef(obj));
     },
   };
 
@@ -83,7 +89,7 @@ describe('primitives', function() {
     var testFontFile2 = 'file2';
     var testFontFile3 = 'file3';
 
-    beforeEach(function() {
+    beforeAll(function (done) {
       emptyDict = new Dict();
 
       dictWithSizeKey = new Dict();
@@ -93,6 +99,12 @@ describe('primitives', function() {
       dictWithManyKeys.set('FontFile', testFontFile);
       dictWithManyKeys.set('FontFile2', testFontFile2);
       dictWithManyKeys.set('FontFile3', testFontFile3);
+
+      done();
+    });
+
+    afterAll(function () {
+      emptyDict = dictWithSizeKey = dictWithManyKeys = null;
     });
 
     it('should return invalid values for unknown keys', function() {
@@ -136,6 +148,39 @@ describe('primitives', function() {
                              .toEqual(testFontFile);
     });
 
+    it('should asynchronously fetch unknown keys', function (done) {
+      var keyPromises = [
+        dictWithManyKeys.getAsync('Size'),
+        dictWithSizeKey.getAsync('FontFile', 'FontFile2', 'FontFile3')
+      ];
+
+      Promise.all(keyPromises).then(function (values) {
+        expect(values[0]).toBeUndefined();
+        expect(values[1]).toBeNull();
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+
+    it('should asynchronously fetch correct values for multiple stored keys',
+        function (done) {
+      var keyPromises = [
+        dictWithManyKeys.getAsync('FontFile3'),
+        dictWithManyKeys.getAsync('FontFile2', 'FontFile3'),
+        dictWithManyKeys.getAsync('FontFile', 'FontFile2', 'FontFile3')
+      ];
+
+      Promise.all(keyPromises).then(function (values) {
+        expect(values[0]).toEqual(testFontFile3);
+        expect(values[1]).toEqual(testFontFile2);
+        expect(values[2]).toEqual(testFontFile);
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+
     it('should callback for each stored key', function() {
       var callbackSpy = jasmine.createSpy('spy on callback in dictionary');
 
@@ -149,7 +194,8 @@ describe('primitives', function() {
       expect(callbackSpyCalls.count()).toEqual(3);
     });
 
-    it('should handle keys pointing to indirect objects', function () {
+    it('should handle keys pointing to indirect objects, both sync and async',
+        function (done) {
       var fontRef = new Ref(1, 0);
       var xref = new XRefMock([
         { ref: fontRef, data: testFontFile, }
@@ -158,7 +204,16 @@ describe('primitives', function() {
       fontDict.set('FontFile', fontRef);
 
       expect(fontDict.getRaw('FontFile')).toEqual(fontRef);
-      expect(fontDict.get('FontFile')).toEqual(testFontFile);
+      expect(fontDict.get('FontFile', 'FontFile2', 'FontFile3')).
+        toEqual(testFontFile);
+
+      fontDict.getAsync('FontFile', 'FontFile2', 'FontFile3').then(
+          function (value) {
+        expect(value).toEqual(testFontFile);
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
     });
 
     it('should handle arrays containing indirect objects', function () {
