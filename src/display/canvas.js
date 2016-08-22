@@ -2298,7 +2298,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     },
     getSinglePixelWidth: function CanvasGraphics_getSinglePixelWidth(scale) {
       if (this.cachedGetSinglePixelWidth === null) {
+        // NOTE: The `save` and `restore` commands used below is a workaround
+        // that is necessary in order to prevent `mozCurrentTransformInverse`
+        // from intermittently returning incorrect values in Firefox, see:
+        // https://github.com/mozilla/pdf.js/issues/7188.
+        this.ctx.save();
         var inverse = this.ctx.mozCurrentTransformInverse;
+        this.ctx.restore();
         // max of the current horizontal and vertical scale
         this.cachedGetSinglePixelWidth = Math.sqrt(Math.max(
           (inverse[0] * inverse[0] + inverse[1] * inverse[1]),
