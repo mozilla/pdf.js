@@ -61,6 +61,7 @@ var getDingbatsGlyphsUnicode = coreGlyphList.getDingbatsGlyphsUnicode;
 var FontRendererFactory = coreFontRenderer.FontRendererFactory;
 var StandardEncoding = coreEncodings.StandardEncoding;
 var MacRomanEncoding = coreEncodings.MacRomanEncoding;
+var WinAnsiEncoding = coreEncodings.WinAnsiEncoding;
 var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
 var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
 var getEncoding = coreEncodings.getEncoding;
@@ -2450,6 +2451,17 @@ var Font = (function FontClosure() {
             charCode = cmapMappings[i].charCode & 0xFF;
             charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
           }
+        }
+
+        // For TrueType fonts that do not include either `ToUnicode` or
+        // `Encoding` data, we pick the `defaultEncoding` somewhat arbitrarily.
+        // In order to improve text selection, we attempt to use the platformID
+        // of the chosen `cmap` table to infer a more suitable base encoding for
+        // the `toUnicode` map (fixes issue5423.pdf).
+        var builtInEncoding = cmapPlatformId === 3 ? WinAnsiEncoding :
+          (cmapPlatformId === 1 ? MacRomanEncoding : null);
+        if (builtInEncoding) {
+          adjustToUnicode(properties, builtInEncoding);
         }
       }
 
