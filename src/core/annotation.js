@@ -49,6 +49,7 @@ var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
 var isDict = corePrimitives.isDict;
 var isName = corePrimitives.isName;
+var isRef = corePrimitives.isRef;
 var Stream = coreStream.Stream;
 var ColorSpace = coreColorSpace.ColorSpace;
 var ObjectLoader = coreObj.ObjectLoader;
@@ -66,11 +67,14 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @param {Object} ref
    * @returns {Annotation}
    */
-  create: function AnnotationFactory_create(xref, ref) {
+  create: function AnnotationFactory_create(xref, ref,
+                                            uniquePrefix, idCounters) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
     }
+    var id = isRef(ref) ? ref.toString() :
+                          'annot_' + (uniquePrefix || '') + (++idCounters.obj);
 
     // Determine the annotation's subtype.
     var subtype = dict.get('Subtype');
@@ -80,8 +84,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
     var parameters = {
       xref: xref,
       dict: dict,
-      ref: ref,
+      ref: isRef(ref) ? ref : null,
       subtype: subtype,
+      id: id,
     };
 
     switch (subtype) {
@@ -185,7 +190,7 @@ var Annotation = (function AnnotationClosure() {
 
     // Expose public properties using a data object.
     this.data = {};
-    this.data.id = params.ref.toString();
+    this.data.id = params.id;
     this.data.subtype = params.subtype;
     this.data.annotationFlags = this.flags;
     this.data.rect = this.rectangle;

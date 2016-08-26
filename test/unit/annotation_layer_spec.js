@@ -1,18 +1,29 @@
 /* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
            AnnotationBorderStyleType, AnnotationType, AnnotationFlag, PDFJS,
-           beforeEach, afterEach, stringToBytes, AnnotationFactory, Ref,
+           beforeEach, afterEach, stringToBytes, AnnotationFactory, Ref, isRef,
            beforeAll, afterAll */
 
 'use strict';
 
 describe('Annotation layer', function() {
-  function XrefMock(queue) {
-    this.queue = queue || [];
-  }
-  XrefMock.prototype = {
-    fetchIfRef: function() {
-      return this.queue.shift();
+  function XRefMock(array) {
+    this.map = Object.create(null);
+    for (var elem in array) {
+      var obj = array[elem];
+      var ref = obj.ref, data = obj.data;
+      this.map[ref.toString()] = data;
     }
+  }
+  XRefMock.prototype = {
+    fetch: function (ref) {
+      return this.map[ref.toString()];
+    },
+    fetchIfRef: function (obj) {
+      if (!isRef(obj)) {
+        return obj;
+      }
+      return this.fetch(obj);
+    },
   };
 
   var annotationFactory;
@@ -27,14 +38,54 @@ describe('Annotation layer', function() {
   });
 
   describe('AnnotationFactory', function () {
+    it('should get id for annotation', function () {
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+
+      var annotationRef = new Ref(10, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.id).toEqual('10R');
+    });
+
+    it('should handle, and get fallback id\'s for, annotations that are not ' +
+       'indirect objects (issue 7569)', function () {
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+
+      var xref = new XRefMock();
+      var uniquePrefix = 'p0_', idCounters = { obj: 0, };
+
+      var annotation1 = annotationFactory.create(xref, annotationDict,
+                                                 uniquePrefix, idCounters);
+      var annotation2 = annotationFactory.create(xref, annotationDict,
+                                                 uniquePrefix, idCounters);
+      var data1 = annotation1.data, data2 = annotation2.data;
+      expect(data1.annotationType).toEqual(AnnotationType.LINK);
+      expect(data2.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data1.id).toEqual('annot_p0_1');
+      expect(data2.id).toEqual('annot_p0_2');
+    });
+
     it('should handle missing /Subtype', function () {
       var annotationDict = new Dict();
       annotationDict.set('Type', Name.get('Annot'));
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(1, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toBeUndefined();
     });
@@ -213,10 +264,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(820, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -236,10 +289,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(353, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -258,10 +313,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(798, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -283,10 +340,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(489, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -308,10 +367,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(495, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -333,10 +394,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(489, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -357,10 +420,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('A', actionDict);
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(12, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -374,10 +439,12 @@ describe('Annotation layer', function() {
       annotationDict.set('Subtype', Name.get('Link'));
       annotationDict.set('Dest', Name.get('LI0'));
 
-      var xrefMock = new XrefMock([annotationDict]);
       var annotationRef = new Ref(583, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
 
-      var annotation = annotationFactory.create(xrefMock, annotationRef);
+      var annotation = annotationFactory.create(xref, annotationRef);
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
@@ -431,10 +498,12 @@ describe('Annotation layer', function() {
       popupDict.set('F', 25); // not viewable
       popupDict.set('Parent', parentDict);
 
-      var xrefMock = new XrefMock([popupDict]);
       var popupRef = new Ref(13, 0);
+      var xref = new XRefMock([
+        { ref: popupRef, data: popupDict, }
+      ]);
 
-      var popupAnnotation = annotationFactory.create(xrefMock, popupRef);
+      var popupAnnotation = annotationFactory.create(xref, popupRef);
       var data = popupAnnotation.data;
       expect(data.annotationType).toEqual(AnnotationType.POPUP);
 
