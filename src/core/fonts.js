@@ -471,6 +471,74 @@ var ProblematicCharRanges = new Int32Array([
   0xFFF0, 0x10000
 ]);
 
+//#if !PRODUCTION
+/**
+ * Used to validate the entries in `ProblematicCharRanges`, and to ensure that
+ * its total number of characters does not exceed the PUA (Private Use Area)
+ * length.
+ * @returns {Object} An object with {number} `numChars`, {number} `puaLength`,
+ *   and {number} `percentage` parameters.
+ */
+function checkProblematicCharRanges() {
+  function printRange(limits) {
+    return '[' + limits.lower.toString('16').toUpperCase() + ', ' +
+                 limits.upper.toString('16').toUpperCase() + ')';
+  }
+
+  var numRanges = ProblematicCharRanges.length;
+  if (numRanges % 2 !== 0) {
+    throw new Error('Char ranges must contain an even number of elements.');
+  }
+  var previousLimits, numChars = 0;
+  for (var i = 0; i < numRanges; i += 2) {
+    var limits = {
+      lower: ProblematicCharRanges[i],
+      upper: ProblematicCharRanges[i + 1],
+    };
+    if (!isInt(limits.lower) || !isInt(limits.upper)) {
+      throw new Error('Range endpoints must be integers: ' +
+                      printRange(limits));
+    }
+    if (limits.lower < 0 || limits.upper < 0) {
+      throw new Error('Range endpoints must be non-negative: ' +
+                      printRange(limits));
+    }
+    var range = limits.upper - limits.lower;
+    if (range < 1) {
+      throw new Error('Range must contain at least one element: ' +
+                      printRange(limits));
+    }
+    if (previousLimits) {
+      if (limits.lower < previousLimits.lower) {
+        throw new Error('Ranges must be sorted in ascending order: ' +
+                        printRange(limits) + ', ' + printRange(previousLimits));
+      }
+      if (limits.lower < previousLimits.upper) {
+        throw new Error('Ranges must not overlap: ' +
+                        printRange(limits) + ', ' + printRange(previousLimits));
+      }
+    }
+    previousLimits = {
+      lower: limits.lower,
+      upper: limits.upper,
+    };
+    // The current range is OK.
+    numChars += range;
+  }
+  var puaLength = (PRIVATE_USE_OFFSET_END + 1) - PRIVATE_USE_OFFSET_START;
+  if (numChars > puaLength) {
+    throw new Error('Total number of chars must not exceed the PUA length.');
+  }
+  return {
+    numChars: numChars,
+    puaLength: puaLength,
+    percentage: 100 * (numChars / puaLength),
+  };
+}
+
+exports.checkProblematicCharRanges = checkProblematicCharRanges;
+//#endif
+
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
