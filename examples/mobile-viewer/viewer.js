@@ -36,31 +36,48 @@ var MAX_SCALE = 10.0;
 var DEFAULT_SCALE_VALUE = 'auto';
 
 var PDFViewerApplication = {
+  pdfLoadingTask: null,
   pdfDocument: null,
   pdfViewer: null,
   pdfHistory: null,
   pdfLinkService: null,
 
+  /**
+   * Opens PDF document specified by URL.
+   * @returns {Promise} - Returns the promise, which is resolved when document
+   *                      is opened.
+   */
   open: function (params) {
+    if (this.pdfLoadingTask) {
+      // We need to destroy already opened document
+      return this.close().then(function () {
+        // ... and repeat the open() call.
+        return this.open(params);
+      }.bind(this));
+    }
+
     var url = params.url;
     var self = this;
     this.setTitleUsingUrl(url);
 
     // Loading document.
     var loadingTask = PDFJS.getDocument(url);
+    this.pdfLoadingTask = loadingTask;
+
     loadingTask.onProgress = function (progressData) {
       self.progress(progressData.loaded / progressData.total);
     };
-    loadingTask.then(function (pdfDocument) {
-      // Document loaded, specifying document for the viewer.
-      this.pdfDocument = pdfDocument;
-      this.pdfViewer.setDocument(pdfDocument);
-      this.pdfLinkService.setDocument(pdfDocument);
-      this.pdfHistory.initialize(pdfDocument.fingerprint);
 
-      this.loadingBar.hide();
-      this.setTitleUsingMetadata(pdfDocument);
-    }.bind(this), function (exception) {
+    return loadingTask.promise.then(function (pdfDocument) {
+      // Document loaded, specifying document for the viewer.
+      self.pdfDocument = pdfDocument;
+      self.pdfViewer.setDocument(pdfDocument);
+      self.pdfLinkService.setDocument(pdfDocument);
+      self.pdfHistory.initialize(pdfDocument.fingerprint);
+
+      self.loadingBar.hide();
+      self.setTitleUsingMetadata(pdfDocument);
+    }, function (exception) {
       var message = exception && exception.message;
       var loadingErrorMessage = mozL10n.get('loading_error', null,
         'An error occurred while loading the PDF.');
@@ -84,6 +101,32 @@ var PDFViewerApplication = {
       self.error(loadingErrorMessage, moreInfo);
       self.loadingBar.hide();
     });
+  },
+
+  /**
+   * Closes opened PDF document.
+   * @returns {Promise} - Returns the promise, which is resolved when all
+   *                      destruction is completed.
+   */
+  close: function () {
+    var errorWrapper = document.getElementById('errorWrapper');
+    errorWrapper.setAttribute('hidden', 'true');
+
+    if (!this.pdfLoadingTask) {
+      return Promise.resolve();
+    }
+
+    var promise = this.pdfLoadingTask.destroy();
+    this.pdfLoadingTask = null;
+
+    if (this.pdfDocument) {
+      this.pdfDocument = null;
+
+      this.pdfViewer.setDocument(null);
+      this.pdfLinkService.setDocument(null, null);
+    }
+
+    return promise;
   },
 
   get loadingBar() {
