@@ -193,6 +193,14 @@ var PDFFindBar = (function PDFFindBarClosure() {
       this.toggleButton.classList.remove('toggled');
       this.bar.classList.add('hidden');
       this.findController.active = false;
+      //Wipe out all highlighted matches on close
+      var numPages = this.findController.pdfViewer.pagesCount;
+      for (var i = 0; i < numPages; i++) {
+          var page = this.findController.pdfViewer.getPageView(i);
+          if (page.textLayer) {
+            page.textLayer.updateMatches();
+          }
+        }
     },
 
     toggle: function PDFFindBar_toggle() {
