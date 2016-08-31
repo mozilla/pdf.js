@@ -1211,7 +1211,7 @@ var PDFViewerApplication = {
    * @typedef UpdateUIToolbarParameters
    * @property {number} pageNumber
    * @property {string} scaleValue
-   * @property {scale} scale
+   * @property {number} scale
    * @property {boolean} resetNumPages
    */
 
@@ -1262,8 +1262,8 @@ var PDFViewerApplication = {
     toolbarConfig.firstPage.disabled = (pageNumber <= 1);
     toolbarConfig.lastPage.disabled = (pageNumber >= pagesCount);
 
-    toolbarConfig.zoomOut.disabled = (scale === MIN_SCALE);
-    toolbarConfig.zoomIn.disabled = (scale === MAX_SCALE);
+    toolbarConfig.zoomOut.disabled = (scale <= MIN_SCALE);
+    toolbarConfig.zoomIn.disabled = (scale >= MAX_SCALE);
 
     selectScaleOption(scaleValue, scale);
   },
