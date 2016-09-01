@@ -187,22 +187,23 @@ var renderTextLayer = (function renderTextLayerClosure() {
       var width = ctx.measureText(textDiv.textContent).width;
       textDiv.dataset.originalWidth = width;
       textLayerFrag.appendChild(textDiv);
-       var transform;
-       if (textDiv.dataset.canvasWidth !== undefined && width > 0) {
-        //  Dataset values come of type string.
-         var textScale = textDiv.dataset.canvasWidth / width;
-         transform = 'scaleX(' + textScale + ')';
-       } else {
-         transform = '';
-       }
-       var rotation = textDiv.dataset.angle;
-       if (rotation) {
-         transform = 'rotate(' + rotation + 'deg) ' + transform;
-       }
-       if (transform) {
-         textDiv.dataset.originalTransform = transform;
-         CustomStyle.setProp('transform' , textDiv, transform);
-       }
+
+      var transform;
+      if (textDiv.dataset.canvasWidth !== undefined && width > 0) {
+        // Dataset values are of type string.
+        var textScale = textDiv.dataset.canvasWidth / width;
+        transform = 'scaleX(' + textScale + ')';
+      } else {
+        transform = '';
+      }
+      var rotation = textDiv.dataset.angle;
+      if (rotation) {
+        transform = 'rotate(' + rotation + 'deg) ' + transform;
+      }
+      if (transform) {
+        textDiv.dataset.originalTransform = transform;
+        CustomStyle.setProp('transform' , textDiv, transform);
+      }
     }
     task._renderingDone = true;
     capability.resolve();
@@ -250,13 +251,13 @@ var renderTextLayer = (function renderTextLayerClosure() {
       });
       var findPositiveMin = function (ts, offset, count) {
         var result = 0;
-          for (var i = 0; i < count; i++) {
-            var t = ts[offset++];
-            if (t > 0) {
-              result = result ? Math.min(t, result) : t;
-            }
+        for (var i = 0; i < count; i++) {
+          var t = ts[offset++];
+          if (t > 0) {
+            result = result ? Math.min(t, result) : t;
           }
-          return result;
+        }
+        return result;
       };
       // Not based on math, but to simplify calculations, using cos and sin
       // absolute values to not exceed the box (it can but insignificantly).
@@ -515,10 +516,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
       var styles = this._textContent.styles;
       var textDivs = this._textDivs;
       var viewport = this._viewport;
+      var bounds = this._bounds;
       var enhanceTextSelection = this._enhanceTextSelection;
 
       for (var i = 0, len = textItems.length; i < len; i++) {
-        appendText(textDivs, viewport, textItems[i], styles, this._bounds,
+        appendText(textDivs, viewport, textItems[i], styles, bounds,
                    enhanceTextSelection);
       }
 
@@ -548,7 +550,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
           var transform;
           var width = div.dataset.originalWidth;
           if (div.dataset.canvasWidth !== undefined && width > 0) {
-            // Dataset values come of type string.
+            // Dataset values are of type string.
             var textScale = div.dataset.canvasWidth / width;
             transform = 'scaleX(' + textScale + ')';
           } else {

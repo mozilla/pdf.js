@@ -36,7 +36,7 @@
  * @property {PageViewport} viewport - The viewport of the text layer.
  * @property {PDFFindController} findController
  * @property {boolean} enhanceTextSelection - Option to turn on improved
- * text selection.
+ *   text selection.
  */
 
 /**

@@ -51,7 +51,7 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @property {IPDFTextLayerFactory} textLayerFactory
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  * @property {boolean} enhanceTextSelection - Turns on the text selection
- * enhancement. The default is `false`.
+ *   enhancement. The default is `false`.
  */
 
 /**
