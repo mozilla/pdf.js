@@ -1442,6 +1442,39 @@ function createPromiseCapability() {
 //#endif
 })();
 
+//#if !MOZCENTRAL
+(function WeakMapClosure() {
+  if (globalScope.WeakMap) {
+    return;
+  }
+
+  var id = 0;
+  function WeakMap() {
+    this.id = '$weakmap' + (id++);
+  }
+  WeakMap.prototype = {
+    has: function(obj) {
+      return !!Object.getOwnPropertyDescriptor(obj, this.id);
+    },
+    get: function(obj, defaultValue) {
+      return this.has(obj) ? obj[this.id] : defaultValue;
+    },
+    set: function(obj, value) {
+      Object.defineProperty(obj, this.id, {
+        value: value,
+        enumerable: false,
+        configurable: true
+      });
+    },
+    delete: function(obj) {
+      delete obj[this.id];
+    }
+  };
+
+  globalScope.WeakMap = WeakMap;
+})();
+//#endif
+
 var StatTimer = (function StatTimerClosure() {
   function rpad(str, pad, length) {
     while (str.length < length) {
