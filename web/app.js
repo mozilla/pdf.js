@@ -101,7 +101,6 @@ var SCALE_SELECT_CONTAINER_PADDING = 8;
 var SCALE_SELECT_PADDING = 22;
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
-var ENHANCE_TEXT_SELECTION = false;
 
 function configure(PDFJS) {
   PDFJS.imageResourcesPath = './images/';
@@ -177,6 +176,7 @@ var PDFViewerApplication = {
   preferencePdfBugEnabled: false,
   preferenceShowPreviousViewOnLoad: true,
   preferenceDefaultZoomValue: '',
+  preferenceEnhanceTextSelection: false,
   isViewerEmbedded: (window.parent !== window),
   url: '',
   externalServices: DefaultExernalServices,
@@ -205,6 +205,9 @@ var PDFViewerApplication = {
       }),
       Preferences.get('defaultZoomValue').then(function resolved(value) {
         self.preferenceDefaultZoomValue = value;
+      }),
+      Preferences.get('enhanceTextSelection').then(function resolved(value) {
+        self.preferenceEnhanceTextSelection = value;
       }),
       Preferences.get('disableTextLayer').then(function resolved(value) {
         if (PDFJS.disableTextLayer === true) {
@@ -274,7 +277,7 @@ var PDFViewerApplication = {
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
         downloadManager: downloadManager,
-        enhanceTextSelection: ENHANCE_TEXT_SELECTION,
+        enhanceTextSelection: this.preferenceEnhanceTextSelection,
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
