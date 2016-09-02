@@ -46,6 +46,8 @@ var getDefaultSetting = displayDOMUtils.getDefaultSetting;
  *   initially be set to empty array.
  * @property {number} timeout - (optional) Delay in milliseconds before
  *   rendering of the text  runs occurs.
+ * @property {boolean} enhanceTextSelection - (optional) Whether to turn on the
+ *   text selection enhancement.
  */
 var renderTextLayer = (function renderTextLayerClosure() {
   var MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -56,16 +58,15 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  function appendText(textDivs, viewport, geom, styles, bounds,
-                      enhanceTextSelection) {
-    var style = styles[geom.fontName];
+  function appendText(task, geom) {
+    var style = task._textContent.styles[geom.fontName];
     var textDiv = document.createElement('div');
-    textDivs.push(textDiv);
+    task._textDivs.push(textDiv);
     if (isAllWhitespace(geom.str)) {
       textDiv.dataset.isWhitespace = true;
       return;
     }
-    var tx = Util.transform(viewport.transform, geom.transform);
+    var tx = Util.transform(task._viewport.transform, geom.transform);
     var angle = Math.atan2(tx[1], tx[0]);
     if (style.vertical) {
       angle += Math.PI / 2;
@@ -108,19 +109,19 @@ var renderTextLayer = (function renderTextLayerClosure() {
     // lots of such divs a lot faster.
     if (geom.str.length > 1) {
       if (style.vertical) {
-        textDiv.dataset.canvasWidth = geom.height * viewport.scale;
+        textDiv.dataset.canvasWidth = geom.height * task._viewport.scale;
       } else {
-        textDiv.dataset.canvasWidth = geom.width * viewport.scale;
+        textDiv.dataset.canvasWidth = geom.width * task._viewport.scale;
       }
     }
-    if (enhanceTextSelection) {
+    if (task._enhanceTextSelection) {
       var angleCos = 1, angleSin = 0;
       if (angle !== 0) {
         angleCos = Math.cos(angle);
         angleSin = Math.sin(angle);
       }
       var divWidth = (style.vertical ? geom.height : geom.width) *
-                     viewport.scale;
+                     task._viewport.scale;
       var divHeight = fontHeight;
 
       var m, b;
@@ -131,7 +132,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         b = [left, top, left + divWidth, top + divHeight];
       }
 
-      bounds.push({
+      task._bounds.push({
         left: b[0],
         top: b[1],
         right: b[2],
@@ -209,7 +210,10 @@ var renderTextLayer = (function renderTextLayerClosure() {
     capability.resolve();
   }
 
-  function expand(bounds, viewport) {
+  function expand(task) {
+    var bounds = task._bounds;
+    var viewport = task._viewport;
+
     var expanded = expandBounds(viewport.width, viewport.height, bounds);
     for (var i = 0; i < expanded.length; i++) {
       var div = bounds[i].div;
@@ -487,8 +491,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._textContent = textContent;
     this._container = container;
     this._viewport = viewport;
-    textDivs = textDivs || [];
-    this._textDivs = textDivs;
+    this._textDivs = textDivs || [];
     this._renderingDone = false;
     this._canceled = false;
     this._capability = createPromiseCapability();
@@ -513,15 +516,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
     _render: function TextLayer_render(timeout) {
       var textItems = this._textContent.items;
-      var styles = this._textContent.styles;
-      var textDivs = this._textDivs;
-      var viewport = this._viewport;
-      var bounds = this._bounds;
-      var enhanceTextSelection = this._enhanceTextSelection;
-
       for (var i = 0, len = textItems.length; i < len; i++) {
-        appendText(textDivs, viewport, textItems[i], styles, bounds,
-                   enhanceTextSelection);
+        appendText(this, textItems[i]);
       }
 
       if (!timeout) { // Render right away
@@ -540,7 +536,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         return;
       }
       if (!this._expanded) {
-        expand(this._bounds, this._viewport);
+        expand(this);
         this._expanded = true;
         this._bounds.length = 0;
       }
