@@ -922,38 +922,34 @@ var JpegStream = (function JpegStreamClosure() {
     if (this.bufferLength) {
       return;
     }
-    try {
-      var jpegImage = new JpegImage();
+    var jpegImage = new JpegImage();
 
-      // checking if values needs to be transformed before conversion
-      if (this.forceRGB && this.dict && isArray(this.dict.get('Decode'))) {
-        var decodeArr = this.dict.getArray('Decode');
-        var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
-        var decodeArrLength = decodeArr.length;
-        var transform = new Int32Array(decodeArrLength);
-        var transformNeeded = false;
-        var maxValue = (1 << bitsPerComponent) - 1;
-        for (var i = 0; i < decodeArrLength; i += 2) {
-          transform[i] = ((decodeArr[i + 1] - decodeArr[i]) * 256) | 0;
-          transform[i + 1] = (decodeArr[i] * maxValue) | 0;
-          if (transform[i] !== 256 || transform[i + 1] !== 0) {
-            transformNeeded = true;
-          }
-        }
-        if (transformNeeded) {
-          jpegImage.decodeTransform = transform;
+    // Checking if values need to be transformed before conversion.
+    if (this.forceRGB && this.dict && isArray(this.dict.get('Decode'))) {
+      var decodeArr = this.dict.getArray('Decode');
+      var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
+      var decodeArrLength = decodeArr.length;
+      var transform = new Int32Array(decodeArrLength);
+      var transformNeeded = false;
+      var maxValue = (1 << bitsPerComponent) - 1;
+      for (var i = 0; i < decodeArrLength; i += 2) {
+        transform[i] = ((decodeArr[i + 1] - decodeArr[i]) * 256) | 0;
+        transform[i + 1] = (decodeArr[i] * maxValue) | 0;
+        if (transform[i] !== 256 || transform[i + 1] !== 0) {
+          transformNeeded = true;
         }
       }
-
-      jpegImage.parse(this.bytes);
-      var data = jpegImage.getData(this.drawWidth, this.drawHeight,
-                                   this.forceRGB);
-      this.buffer = data;
-      this.bufferLength = data.length;
-      this.eof = true;
-    } catch (e) {
-      error('JPEG error: ' + e);
+      if (transformNeeded) {
+        jpegImage.decodeTransform = transform;
+      }
     }
+
+    jpegImage.parse(this.bytes);
+    var data = jpegImage.getData(this.drawWidth, this.drawHeight,
+                                 this.forceRGB);
+    this.buffer = data;
+    this.bufferLength = data.length;
+    this.eof = true;
   };
 
   JpegStream.prototype.getBytes = function JpegStream_getBytes(length) {
