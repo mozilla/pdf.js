@@ -183,14 +183,131 @@ var PDFViewerApplication = {
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
-    var self = this;
-    var PDFJS = pdfjsLib.PDFJS;
+    configure(pdfjsLib.PDFJS);
+    this.appConfig = appConfig;
+
+    var eventBus = appConfig.eventBus || getGlobalEventBus();
+    this.eventBus = eventBus;
+    this.bindEvents();
+
+    var pdfRenderingQueue = new PDFRenderingQueue();
+    pdfRenderingQueue.onIdle = this.cleanup.bind(this);
+    this.pdfRenderingQueue = pdfRenderingQueue;
+
+    var pdfLinkService = new PDFLinkService({
+      eventBus: eventBus
+    });
+    this.pdfLinkService = pdfLinkService;
+
+    var downloadManager = this.externalServices.createDownloadManager();
+    this.downloadManager = downloadManager;
+
+    var container = appConfig.mainContainer;
+    var viewer = appConfig.viewerContainer;
+    this.pdfViewer = new PDFViewer({
+      container: container,
+      viewer: viewer,
+      eventBus: eventBus,
+      renderingQueue: pdfRenderingQueue,
+      linkService: pdfLinkService,
+      downloadManager: downloadManager,
+      enhanceTextSelection: ENHANCE_TEXT_SELECTION,
+    });
+    pdfRenderingQueue.setViewer(this.pdfViewer);
+    pdfLinkService.setViewer(this.pdfViewer);
+
+    var thumbnailContainer = appConfig.sidebar.thumbnailView;
+    this.pdfThumbnailViewer = new PDFThumbnailViewer({
+      container: thumbnailContainer,
+      renderingQueue: pdfRenderingQueue,
+      linkService: pdfLinkService
+    });
+    pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
     Preferences.initialize();
     this.preferences = Preferences;
-    // Fetch the `Preferences` first, so that they can be used below when the
-    // various viewer components are initialized.
-    var preferencesPromise = Promise.all([
+
+    this.pdfHistory = new PDFHistory({
+      linkService: pdfLinkService,
+      eventBus: this.eventBus
+    });
+    pdfLinkService.setHistory(this.pdfHistory);
+
+    this.findController = new PDFFindController({
+      pdfViewer: this.pdfViewer
+    });
+    this.findController.onUpdateResultsCount = function (matchCount) {
+      if (this.supportsIntegratedFind) {
+        return;
+      }
+      this.findBar.updateResultsCount(matchCount);
+    }.bind(this);
+    this.findController.onUpdateState = function (state, previous, matchCount) {
+      if (this.supportsIntegratedFind) {
+        this.externalServices.updateFindControlState(
+          {result: state, findPrevious: previous});
+      } else {
+        this.findBar.updateUIState(state, previous, matchCount);
+      }
+    }.bind(this);
+
+    this.pdfViewer.setFindController(this.findController);
+
+    // FIXME better PDFFindBar constructor parameters
+    var findBarConfig = Object.create(appConfig.findBar);
+    findBarConfig.findController = this.findController;
+    findBarConfig.eventBus = this.eventBus;
+    this.findBar = new PDFFindBar(findBarConfig);
+
+    this.overlayManager = OverlayManager;
+
+    this.handTool = new HandTool({
+      container: container,
+      eventBus: this.eventBus,
+    });
+
+    this.pdfDocumentProperties =
+      new PDFDocumentProperties(appConfig.documentProperties);
+
+    this.secondaryToolbar =
+      new SecondaryToolbar(appConfig.secondaryToolbar, eventBus);
+
+    if (this.supportsFullscreen) {
+      this.pdfPresentationMode = new PDFPresentationMode({
+        container: container,
+        viewer: viewer,
+        pdfViewer: this.pdfViewer,
+        eventBus: this.eventBus,
+        contextMenuItems: appConfig.fullscreen
+      });
+    }
+
+    this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay);
+
+    this.pdfOutlineViewer = new PDFOutlineViewer({
+      container: appConfig.sidebar.outlineView,
+      eventBus: this.eventBus,
+      linkService: pdfLinkService,
+    });
+
+    this.pdfAttachmentViewer = new PDFAttachmentViewer({
+      container: appConfig.sidebar.attachmentsView,
+      eventBus: this.eventBus,
+      downloadManager: downloadManager
+    });
+
+    // FIXME better PDFSidebar constructor parameters
+    var sidebarConfig = Object.create(appConfig.sidebar);
+    sidebarConfig.pdfViewer = this.pdfViewer;
+    sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
+    sidebarConfig.pdfOutlineViewer = this.pdfOutlineViewer;
+    sidebarConfig.eventBus = this.eventBus;
+    this.pdfSidebar = new PDFSidebar(sidebarConfig);
+    this.pdfSidebar.onToggled = this.forceRendering.bind(this);
+
+    var self = this;
+    var PDFJS = pdfjsLib.PDFJS;
+    var initializedPromise = Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
       }),
@@ -244,129 +361,6 @@ var PDFViewerApplication = {
       }),
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
-
-    var initializedPromise = preferencesPromise.then(function () {
-      configure(pdfjsLib.PDFJS);
-      this.appConfig = appConfig;
-
-      var eventBus = appConfig.eventBus || getGlobalEventBus();
-      this.eventBus = eventBus;
-      this.bindEvents();
-
-      var pdfRenderingQueue = new PDFRenderingQueue();
-      pdfRenderingQueue.onIdle = this.cleanup.bind(this);
-      this.pdfRenderingQueue = pdfRenderingQueue;
-
-      var pdfLinkService = new PDFLinkService({
-        eventBus: eventBus
-      });
-      this.pdfLinkService = pdfLinkService;
-
-      var downloadManager = this.externalServices.createDownloadManager();
-      this.downloadManager = downloadManager;
-
-      var container = appConfig.mainContainer;
-      var viewer = appConfig.viewerContainer;
-      this.pdfViewer = new PDFViewer({
-        container: container,
-        viewer: viewer,
-        eventBus: eventBus,
-        renderingQueue: pdfRenderingQueue,
-        linkService: pdfLinkService,
-        downloadManager: downloadManager,
-        enhanceTextSelection: ENHANCE_TEXT_SELECTION,
-      });
-      pdfRenderingQueue.setViewer(this.pdfViewer);
-      pdfLinkService.setViewer(this.pdfViewer);
-
-      var thumbnailContainer = appConfig.sidebar.thumbnailView;
-      this.pdfThumbnailViewer = new PDFThumbnailViewer({
-        container: thumbnailContainer,
-        renderingQueue: pdfRenderingQueue,
-        linkService: pdfLinkService
-      });
-      pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
-
-      this.pdfHistory = new PDFHistory({
-        linkService: pdfLinkService,
-        eventBus: this.eventBus
-      });
-      pdfLinkService.setHistory(this.pdfHistory);
-
-      this.findController = new PDFFindController({
-        pdfViewer: this.pdfViewer
-      });
-      this.findController.onUpdateResultsCount = function (matchCount) {
-        if (this.supportsIntegratedFind) {
-          return;
-        }
-        this.findBar.updateResultsCount(matchCount);
-      }.bind(this);
-      this.findController.onUpdateState = function (state, previous,
-                                                    matchCount) {
-        if (this.supportsIntegratedFind) {
-          this.externalServices.updateFindControlState(
-            {result: state, findPrevious: previous});
-        } else {
-          this.findBar.updateUIState(state, previous, matchCount);
-        }
-      }.bind(this);
-
-      this.pdfViewer.setFindController(this.findController);
-
-      // FIXME better PDFFindBar constructor parameters
-      var findBarConfig = Object.create(appConfig.findBar);
-      findBarConfig.findController = this.findController;
-      findBarConfig.eventBus = this.eventBus;
-      this.findBar = new PDFFindBar(findBarConfig);
-
-      this.overlayManager = OverlayManager;
-
-      this.handTool = new HandTool({
-        container: container,
-        eventBus: this.eventBus,
-      });
-
-      this.pdfDocumentProperties =
-        new PDFDocumentProperties(appConfig.documentProperties);
-
-      this.secondaryToolbar =
-        new SecondaryToolbar(appConfig.secondaryToolbar, eventBus);
-
-      if (this.supportsFullscreen) {
-        this.pdfPresentationMode = new PDFPresentationMode({
-          container: container,
-          viewer: viewer,
-          pdfViewer: this.pdfViewer,
-          eventBus: this.eventBus,
-          contextMenuItems: appConfig.fullscreen
-        });
-      }
-
-      this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay);
-
-      this.pdfOutlineViewer = new PDFOutlineViewer({
-        container: appConfig.sidebar.outlineView,
-        eventBus: this.eventBus,
-        linkService: pdfLinkService,
-      });
-
-      this.pdfAttachmentViewer = new PDFAttachmentViewer({
-        container: appConfig.sidebar.attachmentsView,
-        eventBus: this.eventBus,
-        downloadManager: downloadManager
-      });
-
-      // FIXME better PDFSidebar constructor parameters
-      var sidebarConfig = Object.create(appConfig.sidebar);
-      sidebarConfig.pdfViewer = this.pdfViewer;
-      sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
-      sidebarConfig.pdfOutlineViewer = this.pdfOutlineViewer;
-      sidebarConfig.eventBus = this.eventBus;
-      this.pdfSidebar = new PDFSidebar(sidebarConfig);
-      this.pdfSidebar.onToggled = this.forceRendering.bind(this);
-
-    }.bind(this));
 
     return initializedPromise.then(function () {
       if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
