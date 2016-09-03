@@ -94,10 +94,6 @@
       "type": "boolean",
       "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
       "default": false
-    },
-    "enhanceTextSelection": {
-      "type": "boolean",
-      "default": false
     }
   }
 }
