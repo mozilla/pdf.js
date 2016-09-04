@@ -67,11 +67,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
       canvasWidth: 0,
       isWhitespace: false,
       originalTransform: '',
-      originalWidth: 0,
       paddingBottom: 0,
       paddingLeft: 0,
       paddingRight: 0,
       paddingTop: 0,
+      scale: 1,
     };
 
     task._textDivs.push(textDiv);
@@ -205,17 +205,15 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
 
       var width = ctx.measureText(textDiv.textContent).width;
-      textDivProperties.originalWidth = width;
       textLayerFrag.appendChild(textDiv);
 
       var transform = '';
       if (textDivProperties.canvasWidth !== 0 && width > 0) {
-        var scale = textDivProperties.canvasWidth / width;
-        transform = 'scaleX(' + scale + ')';
+        textDivProperties.scale = textDivProperties.canvasWidth / width;
+        transform = 'scaleX(' + textDivProperties.scale + ')';
       }
-      var rotation = textDivProperties.angle;
-      if (rotation !== 0) {
-        transform = 'rotate(' + rotation + 'deg) ' + transform;
+      if (textDivProperties.angle !== 0) {
+        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
       }
       if (transform !== '') {
         textDivProperties.originalTransform = transform;
@@ -569,21 +567,18 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
         if (expandDivs) {
           var transform = '';
-          var scale = 1;
 
-          if (divProperties.canvasWidth !== 0 &&
-              divProperties.originalWidth > 0) {
-            scale = divProperties.canvasWidth / divProperties.originalWidth;
-            transform = 'scaleX(' + scale + ')';
+          if (divProperties.scale !== 1) {
+            transform = 'scaleX(' + divProperties.scale + ')';
           }
           if (divProperties.angle !== 0) {
             transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
           }
           if (divProperties.paddingLeft !== 0) {
             div.style.paddingLeft =
-              (divProperties.paddingLeft / scale) + 'px';
+              (divProperties.paddingLeft / divProperties.scale) + 'px';
             transform += ' translateX(' +
-              (-divProperties.paddingLeft / scale) + 'px)';
+              (-divProperties.paddingLeft / divProperties.scale) + 'px)';
           }
           if (divProperties.paddingTop !== 0) {
             div.style.paddingTop = divProperties.paddingTop + 'px';
@@ -591,7 +586,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
           }
           if (divProperties.paddingRight !== 0) {
             div.style.paddingRight =
-              divProperties.paddingRight / scale + 'px';
+              (divProperties.paddingRight / divProperties.scale) + 'px';
           }
           if (divProperties.paddingBottom !== 0) {
             div.style.paddingBottom = divProperties.paddingBottom + 'px';
