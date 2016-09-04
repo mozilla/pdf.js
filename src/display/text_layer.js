@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals WeakMap */
 
 'use strict';
 
@@ -46,6 +47,8 @@ var getDefaultSetting = displayDOMUtils.getDefaultSetting;
  *   initially be set to empty array.
  * @property {number} timeout - (optional) Delay in milliseconds before
  *   rendering of the text  runs occurs.
+ * @property {boolean} enhanceTextSelection - (optional) Whether to turn on the
+ *   text selection enhancement.
  */
 var renderTextLayer = (function renderTextLayerClosure() {
   var MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -56,17 +59,31 @@ var renderTextLayer = (function renderTextLayerClosure() {
     return !NonWhitespaceRegexp.test(str);
   }
 
-  function appendText(textDivs, viewport, geom, styles, bounds,
-                      enhanceTextSelection) {
-    var style = styles[geom.fontName];
+  function appendText(task, geom, styles) {
+    // Initialize all used properties to keep the caches monomorphic.
     var textDiv = document.createElement('div');
-    textDivs.push(textDiv);
+    var textDivProperties = {
+      angle: 0,
+      canvasWidth: 0,
+      isWhitespace: false,
+      originalTransform: '',
+      paddingBottom: 0,
+      paddingLeft: 0,
+      paddingRight: 0,
+      paddingTop: 0,
+      scale: 1,
+    };
+
+    task._textDivs.push(textDiv);
     if (isAllWhitespace(geom.str)) {
-      textDiv.dataset.isWhitespace = true;
+      textDivProperties.isWhitespace = true;
+      task._textDivProperties.set(textDiv, textDivProperties);
       return;
     }
-    var tx = Util.transform(viewport.transform, geom.transform);
+
+    var tx = Util.transform(task._viewport.transform, geom.transform);
     var angle = Math.atan2(tx[1], tx[0]);
+    var style = styles[geom.fontName];
     if (style.vertical) {
       angle += Math.PI / 2;
     }
@@ -95,32 +112,34 @@ var renderTextLayer = (function renderTextLayerClosure() {
     textDiv.textContent = geom.str;
     // |fontName| is only used by the Font Inspector. This test will succeed
     // when e.g. the Font Inspector is off but the Stepper is on, but it's
-    // not worth the effort to do a more accurate test.
+    // not worth the effort to do a more accurate test. We only use `dataset`
+    // here to make the font name available for the debugger.
     if (getDefaultSetting('pdfBug')) {
       textDiv.dataset.fontName = geom.fontName;
     }
-    // Storing into dataset will convert number into string.
     if (angle !== 0) {
-      textDiv.dataset.angle = angle * (180 / Math.PI);
+      textDivProperties.angle = angle * (180 / Math.PI);
     }
     // We don't bother scaling single-char text divs, because it has very
     // little effect on text highlighting. This makes scrolling on docs with
     // lots of such divs a lot faster.
     if (geom.str.length > 1) {
       if (style.vertical) {
-        textDiv.dataset.canvasWidth = geom.height * viewport.scale;
+        textDivProperties.canvasWidth = geom.height * task._viewport.scale;
       } else {
-        textDiv.dataset.canvasWidth = geom.width * viewport.scale;
+        textDivProperties.canvasWidth = geom.width * task._viewport.scale;
       }
     }
-    if (enhanceTextSelection) {
+    task._textDivProperties.set(textDiv, textDivProperties);
+
+    if (task._enhanceTextSelection) {
       var angleCos = 1, angleSin = 0;
       if (angle !== 0) {
         angleCos = Math.cos(angle);
         angleSin = Math.sin(angle);
       }
       var divWidth = (style.vertical ? geom.height : geom.width) *
-                     viewport.scale;
+                     task._viewport.scale;
       var divHeight = fontHeight;
 
       var m, b;
@@ -131,7 +150,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         b = [left, top, left + divWidth, top + divHeight];
       }
 
-      bounds.push({
+      task._bounds.push({
         left: b[0],
         top: b[1],
         right: b[2],
@@ -170,7 +189,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     var lastFontFamily;
     for (var i = 0; i < textDivsLength; i++) {
       var textDiv = textDivs[i];
-      if (textDiv.dataset.isWhitespace !== undefined) {
+      var textDivProperties = task._textDivProperties.get(textDiv);
+      if (textDivProperties.isWhitespace) {
         continue;
       }
 
@@ -185,39 +205,40 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
 
       var width = ctx.measureText(textDiv.textContent).width;
-      textDiv.dataset.originalWidth = width;
       textLayerFrag.appendChild(textDiv);
 
-      var transform;
-      if (textDiv.dataset.canvasWidth !== undefined && width > 0) {
-        // Dataset values are of type string.
-        var textScale = textDiv.dataset.canvasWidth / width;
-        transform = 'scaleX(' + textScale + ')';
-      } else {
-        transform = '';
+      var transform = '';
+      if (textDivProperties.canvasWidth !== 0 && width > 0) {
+        textDivProperties.scale = textDivProperties.canvasWidth / width;
+        transform = 'scaleX(' + textDivProperties.scale + ')';
       }
-      var rotation = textDiv.dataset.angle;
-      if (rotation) {
-        transform = 'rotate(' + rotation + 'deg) ' + transform;
+      if (textDivProperties.angle !== 0) {
+        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
       }
-      if (transform) {
-        textDiv.dataset.originalTransform = transform;
-        CustomStyle.setProp('transform' , textDiv, transform);
+      if (transform !== '') {
+        textDivProperties.originalTransform = transform;
+        CustomStyle.setProp('transform', textDiv, transform);
       }
+      task._textDivProperties.set(textDiv, textDivProperties);
     }
     task._renderingDone = true;
     capability.resolve();
   }
 
-  function expand(bounds, viewport) {
+  function expand(task) {
+    var bounds = task._bounds;
+    var viewport = task._viewport;
+
     var expanded = expandBounds(viewport.width, viewport.height, bounds);
     for (var i = 0; i < expanded.length; i++) {
       var div = bounds[i].div;
-      if (!div.dataset.angle) {
-        div.dataset.paddingLeft = bounds[i].left - expanded[i].left;
-        div.dataset.paddingTop = bounds[i].top - expanded[i].top;
-        div.dataset.paddingRight = expanded[i].right - bounds[i].right;
-        div.dataset.paddingBottom = expanded[i].bottom - bounds[i].bottom;
+      var divProperties = task._textDivProperties.get(div);
+      if (divProperties.angle === 0) {
+        divProperties.paddingLeft = bounds[i].left - expanded[i].left;
+        divProperties.paddingTop = bounds[i].top - expanded[i].top;
+        divProperties.paddingRight = expanded[i].right - bounds[i].right;
+        divProperties.paddingBottom = expanded[i].bottom - bounds[i].bottom;
+        task._textDivProperties.set(div, divProperties);
         continue;
       }
       // Box is rotated -- trying to find padding so rotated div will not
@@ -262,10 +283,11 @@ var renderTextLayer = (function renderTextLayerClosure() {
       // Not based on math, but to simplify calculations, using cos and sin
       // absolute values to not exceed the box (it can but insignificantly).
       var boxScale = 1 + Math.min(Math.abs(c), Math.abs(s));
-      div.dataset.paddingLeft = findPositiveMin(ts, 32, 16) / boxScale;
-      div.dataset.paddingTop = findPositiveMin(ts, 48, 16) / boxScale;
-      div.dataset.paddingRight = findPositiveMin(ts, 0, 16) / boxScale;
-      div.dataset.paddingBottom = findPositiveMin(ts, 16, 16) / boxScale;
+      divProperties.paddingLeft = findPositiveMin(ts, 32, 16) / boxScale;
+      divProperties.paddingTop = findPositiveMin(ts, 48, 16) / boxScale;
+      divProperties.paddingRight = findPositiveMin(ts, 0, 16) / boxScale;
+      divProperties.paddingBottom = findPositiveMin(ts, 16, 16) / boxScale;
+      task._textDivProperties.set(div, divProperties);
     }
   }
 
@@ -487,8 +509,8 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._textContent = textContent;
     this._container = container;
     this._viewport = viewport;
-    textDivs = textDivs || [];
-    this._textDivs = textDivs;
+    this._textDivs = textDivs || [];
+    this._textDivProperties = new WeakMap();
     this._renderingDone = false;
     this._canceled = false;
     this._capability = createPromiseCapability();
@@ -513,15 +535,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
     _render: function TextLayer_render(timeout) {
       var textItems = this._textContent.items;
-      var styles = this._textContent.styles;
-      var textDivs = this._textDivs;
-      var viewport = this._viewport;
-      var bounds = this._bounds;
-      var enhanceTextSelection = this._enhanceTextSelection;
-
+      var textStyles = this._textContent.styles;
       for (var i = 0, len = textItems.length; i < len; i++) {
-        appendText(textDivs, viewport, textItems[i], styles, bounds,
-                   enhanceTextSelection);
+        appendText(this, textItems[i], textStyles);
       }
 
       if (!timeout) { // Render right away
@@ -540,58 +556,52 @@ var renderTextLayer = (function renderTextLayerClosure() {
         return;
       }
       if (!this._expanded) {
-        expand(this._bounds, this._viewport);
+        expand(this);
         this._expanded = true;
         this._bounds.length = 0;
       }
-      if (expandDivs) {
-        for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
-          var div = this._textDivs[i];
-          var transform;
-          var width = div.dataset.originalWidth;
-          if (div.dataset.canvasWidth !== undefined && width > 0) {
-            // Dataset values are of type string.
-            var textScale = div.dataset.canvasWidth / width;
-            transform = 'scaleX(' + textScale + ')';
-          } else {
-            transform = '';
+
+      for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
+        var div = this._textDivs[i];
+        var divProperties = this._textDivProperties.get(div);
+
+        if (expandDivs) {
+          var transform = '';
+
+          if (divProperties.scale !== 1) {
+            transform = 'scaleX(' + divProperties.scale + ')';
           }
-          var rotation = div.dataset.angle;
-          if (rotation) {
-            transform = 'rotate(' + rotation + 'deg) ' + transform;
+          if (divProperties.angle !== 0) {
+            transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
           }
-          if (div.dataset.paddingLeft) {
+          if (divProperties.paddingLeft !== 0) {
             div.style.paddingLeft =
-              (div.dataset.paddingLeft / textScale) + 'px';
+              (divProperties.paddingLeft / divProperties.scale) + 'px';
             transform += ' translateX(' +
-              (-div.dataset.paddingLeft / textScale) + 'px)';
+              (-divProperties.paddingLeft / divProperties.scale) + 'px)';
           }
-          if (div.dataset.paddingTop) {
-            div.style.paddingTop = div.dataset.paddingTop + 'px';
-            transform += ' translateY(' + (-div.dataset.paddingTop) + 'px)';
+          if (divProperties.paddingTop !== 0) {
+            div.style.paddingTop = divProperties.paddingTop + 'px';
+            transform += ' translateY(' + (-divProperties.paddingTop) + 'px)';
           }
-          if (div.dataset.paddingRight) {
+          if (divProperties.paddingRight !== 0) {
             div.style.paddingRight =
-            div.dataset.paddingRight / textScale + 'px';
+              (divProperties.paddingRight / divProperties.scale) + 'px';
           }
-          if (div.dataset.paddingBottom) {
-            div.style.paddingBottom = div.dataset.paddingBottom + 'px';
+          if (divProperties.paddingBottom !== 0) {
+            div.style.paddingBottom = divProperties.paddingBottom + 'px';
           }
-          if (transform) {
-            CustomStyle.setProp('transform' , div, transform);
+          if (transform !== '') {
+            CustomStyle.setProp('transform', div, transform);
           }
-        }
-      } else {
-        for (i = 0, ii = this._textDivs.length; i < ii; i++) {
-          div = this._textDivs[i];
+        } else {
           div.style.padding = 0;
-          transform = div.dataset.originalTransform || '';
-          CustomStyle.setProp('transform', div, transform);
+          CustomStyle.setProp('transform', div,
+                              divProperties.originalTransform);
         }
       }
     },
   };
-
 
   /**
    * Starts rendering of the text layer.
