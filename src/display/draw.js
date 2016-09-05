@@ -258,13 +258,7 @@
           //if(obj['fieldType'] == 'sig') obj['fieldTypeSigUser'] = data
         }
       }
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', 'hr-custom-form.html/generate', true);
-      xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-      xhr.onload = (function(d){
-        return;
-      });
-      xhr.send('params=' + JSON.stringify(params) + '&template_id=' + fabricViewerMethod.template_id);
+      return JSON.stringify(params);
     }
   },
       fabricGlobalMethods = {
