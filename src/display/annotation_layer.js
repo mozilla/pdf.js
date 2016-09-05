@@ -69,6 +69,12 @@ AnnotationElementFactory.prototype =
         return new TextAnnotationElement(parameters);
 
       case AnnotationType.WIDGET:
+        var fieldType = parameters.data.fieldType;
+
+        switch (fieldType) {
+          case 'Tx':
+            return new TextWidgetAnnotationElement(parameters);
+        }
         return new WidgetAnnotationElement(parameters);
 
       case AnnotationType.POPUP:
@@ -392,9 +398,7 @@ var TextAnnotationElement = (function TextAnnotationElementClosure() {
  */
 var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
   function WidgetAnnotationElement(parameters) {
-    var isRenderable = !parameters.data.hasAppearance &&
-                       !!parameters.data.fieldValue;
-    AnnotationElement.call(this, parameters, isRenderable);
+    AnnotationElement.call(this, parameters, true);
   }
 
   Util.inherit(WidgetAnnotationElement, AnnotationElement, {
@@ -406,6 +410,33 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
      * @returns {HTMLSectionElement}
      */
     render: function WidgetAnnotationElement_render() {
+      // Show only the container for unsupported field types.
+      return this.container;
+    }
+  });
+
+  return WidgetAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias TextWidgetAnnotationElement
+ */
+var TextWidgetAnnotationElement = (
+    function TextWidgetAnnotationElementClosure() {
+  function TextWidgetAnnotationElement(parameters) {
+    WidgetAnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(TextWidgetAnnotationElement, WidgetAnnotationElement, {
+    /**
+     * Render the text widget annotation's HTML element in the empty container.
+     *
+     * @public
+     * @memberof TextWidgetAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function TextWidgetAnnotationElement_render() {
       var content = document.createElement('div');
       content.textContent = this.data.fieldValue;
       var textAlignment = this.data.textAlignment;
@@ -427,10 +458,10 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
      * @private
      * @param {HTMLDivElement} element
      * @param {Object} font
-     * @memberof WidgetAnnotationElement
+     * @memberof TextWidgetAnnotationElement
      */
     _setTextStyle:
-        function WidgetAnnotationElement_setTextStyle(element, font) {
+        function TextWidgetAnnotationElement_setTextStyle(element, font) {
       // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
       var style = element.style;
       style.fontSize = this.data.fontSize + 'px';
@@ -452,7 +483,7 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
     }
   });
 
-  return WidgetAnnotationElement;
+  return TextWidgetAnnotationElement;
 })();
 
 /**
