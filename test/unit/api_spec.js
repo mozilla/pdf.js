@@ -341,13 +341,32 @@ describe('api', function() {
       });
     });
     it('gets non-existent page', function(done) {
-      var promise = doc.getPage(100);
-      promise.then(function () {
-        done.fail('shall fail for non-existent page');
-      }, function(data) {
-        expect(data instanceof Error).toEqual(true);
-        done();
+      var outOfRangePromise = doc.getPage(100);
+      var nonIntegerPromise = doc.getPage(2.5);
+      var nonNumberPromise = doc.getPage('1');
+
+      outOfRangePromise = outOfRangePromise.then(function () {
+        throw new Error('shall fail for out-of-range pageNumber parameter');
+      }, function (reason) {
+        expect(reason instanceof Error).toEqual(true);
       });
+      nonIntegerPromise = nonIntegerPromise.then(function () {
+        throw new Error('shall fail for non-integer pageNumber parameter');
+      }, function (reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+      nonNumberPromise = nonNumberPromise.then(function () {
+        throw new Error('shall fail for non-number pageNumber parameter');
+      }, function (reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+
+      Promise.all([outOfRangePromise, nonIntegerPromise, nonNumberPromise]).
+        then(function () {
+          done();
+        }).catch(function (reason) {
+          done.fail(reason);
+        });
     });
     it('gets page index', function(done) {
       // reference to second page
@@ -365,8 +384,8 @@ describe('api', function() {
       var promise = doc.getPageIndex(ref);
       promise.then(function () {
         done.fail('shall fail for invalid page reference.');
-      }, function (data) {
-        expect(data instanceof Error).toEqual(true);
+      }).catch(function (reason) {
+        expect(reason instanceof Error).toEqual(true);
         done();
       });
     });
