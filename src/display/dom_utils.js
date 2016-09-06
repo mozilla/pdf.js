@@ -209,6 +209,8 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.externalLinkRel : 'noreferrer';
     case 'enableStats':
       return !!(globalSettings && globalSettings.enableStats);
+    case 'renderInteractiveForms':
+      return globalSettings ? globalSettings.renderInteractiveForms : false;
     default:
       throw new Error('Unknown default setting: ' + id);
   }

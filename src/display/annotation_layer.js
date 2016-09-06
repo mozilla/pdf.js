@@ -437,18 +437,29 @@ var TextWidgetAnnotationElement = (
      * @returns {HTMLSectionElement}
      */
     render: function TextWidgetAnnotationElement_render() {
-      var content = document.createElement('div');
-      content.textContent = this.data.fieldValue;
-      var textAlignment = this.data.textAlignment;
-      content.style.textAlign = ['left', 'center', 'right'][textAlignment];
-      content.style.verticalAlign = 'middle';
-      content.style.display = 'table-cell';
+      this.container.className = 'textWidgetAnnotation';
 
-      var font = (this.data.fontRefName ?
-        this.page.commonObjs.getData(this.data.fontRefName) : null);
-      this._setTextStyle(content, font);
+      var renderInteractiveForms = getDefaultSetting('renderInteractiveForms');
+      if (renderInteractiveForms) {
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = this.data.fieldValue;
 
-      this.container.appendChild(content);
+        this.container.appendChild(input);
+      } else {
+        var content = document.createElement('div');
+        content.textContent = this.data.fieldValue;
+        var textAlignment = this.data.textAlignment;
+        content.style.textAlign = ['left', 'center', 'right'][textAlignment];
+        content.style.verticalAlign = 'middle';
+        content.style.display = 'table-cell';
+
+        var font = (this.data.fontRefName ?
+          this.page.commonObjs.getData(this.data.fontRefName) : null);
+        this._setTextStyle(content, font);
+
+        this.container.appendChild(content);
+      }
       return this.container;
     },
 
