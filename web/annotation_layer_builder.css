@@ -41,6 +41,26 @@
   cursor: pointer;
 }
 
+.annotationLayer .textWidgetAnnotation input {
+  background-color: rgba(0, 54, 255, 0.13);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  font-size: 9px;
+  height: 100%;
+  padding: 0 3px;
+  vertical-align: top;
+  width: 100%;
+}
+
+.annotationLayer .textWidgetAnnotation input:hover {
+  border: 1px solid #000;
+}
+
+.annotationLayer .textWidgetAnnotation input:focus {
+  background: none;
+  border: 1px solid transparent;
+}
+
 .annotationLayer .popupWrapper {
   position: absolute;
   width: 20em;
