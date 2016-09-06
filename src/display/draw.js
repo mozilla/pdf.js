@@ -52,6 +52,7 @@
         'uuid',
         'description',
         'field_type',
+        'field_name',
         'sbt_height',
         'left_inches',
         'top_inches',
@@ -227,39 +228,6 @@
       });
       return pages;
     },
-    fabricSaveTemplate: function pdfViewSaveTemplate(){
-      //NOTE: FabricJS apparently used to get top and left from the center of
-      //a given object, but it looks like orignX and originY are already set to
-      //left and top respectively.  It's possible this has just been changed but
-      //it might be a good idea to explicity set them in case it changes again
-      var params = [];
-      for(var i = 0; i < PDFViewerApplication.pdfViewer.canvases.length; i++){
-        var groups = PDFViewerApplication.pdfViewer.canvases[i].getObjects('group');
-
-        //params.push PDFViewerApplication.pdfViewer.canvases[i].toJSON());
-        params.push({'objects' : []});
-        for(var j = 0; j < groups.length; j++){
-          var field = groups[j].getObjects('rect')[0];
-          var data = field['fieldData'];
-          params[i]['objects'].push(field.toJSON());
-          var obj = params[i]['objects'][j];
-          obj['left'] = groups[j]['left'];
-          obj['top'] = groups[j]['top'];
-          var scale = fabricViewerMethod.currentScale * 96;
-          var pHeight = PDFViewerApplication.pdfViewer.canvases[i].height;
-          obj['height'] = Math.abs(obj['height']/(scale));
-          obj['leftInches'] = Math.abs(obj['left']/(scale));
-          obj['topInches'] = (pHeight - (obj['top']))/(scale);
-          for (var k in data){
-            obj[k] = data[k];
-          }
-          //obj['fieldType'] = data['fieldType'];
-          //obj['fieldTitle'] = data['fieldTitle'];
-          //if(obj['fieldType'] == 'sig') obj['fieldTypeSigUser'] = data
-        }
-      }
-      return JSON.stringify(params);
-    }
   },
       fabricGlobalMethods = {
         fabricPageViewDraw: function(pageView) {
@@ -391,6 +359,34 @@
               return objs[i];
           }
         },
+        fabricSaveTemplate: function pdfViewSaveTemplate() {
+          //NOTE: FabricJS apparently used to get top and left from the center of
+          //a given object, but it looks like orignX and originY are already set to
+          //left and top respectively.  It's possible this has just been changed but
+          //it might be a good idea to explicity set them in case it changes again
+          var fields = [];
+          for ( var i = 1; i <= PDFViewerApplication.pdfViewer._pages.length; i++ ) {
+            var canvas = fabricViewerMethods.getCanvas(i),
+              objs = canvas.getObjects('TitledRect');
+
+            //fields.push PDFViewerApplication.pdfViewer.canvases[i].toJSON());
+            fields.push({ 'objects': [] });
+            for ( var j = 0; j < objs.length; j++ ) {
+              var scale = PDFViewerApplication.pdfViewer.currentScale * 96,
+                pHeight = canvas.height;
+              objs[j]['height'] = Math.abs(objs[j]['height'] / (scale));
+              objs[j]['left_inches'] = Math.abs(objs[j]['left'] / (scale));
+              objs[j]['top_inches'] = (pHeight - (objs[j]['top'])) / (scale);
+              objs[j]['field_name'] = objs[j]['title'].toLowerCase()
+                .replace(' ', '_');
+              //obj['fieldType'] = data['fieldType'];
+              //obj['fieldTitle'] = data['fieldTitle'];
+              //if(obj['fieldType'] == 'sig') obj['fieldTypeSigUser'] = data
+              fields[fields.length - 1]['objects'].push(objs[j].toJSON());
+            }
+          }
+          return fields;
+        }
       };
 
   function fabricCanvasSelected(options) {
