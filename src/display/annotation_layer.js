@@ -45,6 +45,8 @@ var getDefaultSetting = displayDOMUtils.getDefaultSetting;
  * @property {PageViewport} viewport
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
+ * @property {string} imageResourcesPath
+ * @property {boolean} renderInteractiveForms
  */
 
 /**
@@ -115,6 +117,7 @@ var AnnotationElement = (function AnnotationElementClosure() {
     this.linkService = parameters.linkService;
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
+    this.renderInteractiveForms = parameters.renderInteractiveForms;
 
     if (isRenderable) {
       this.container = this._createContainer();
@@ -437,18 +440,28 @@ var TextWidgetAnnotationElement = (
      * @returns {HTMLSectionElement}
      */
     render: function TextWidgetAnnotationElement_render() {
-      var content = document.createElement('div');
-      content.textContent = this.data.fieldValue;
-      var textAlignment = this.data.textAlignment;
-      content.style.textAlign = ['left', 'center', 'right'][textAlignment];
-      content.style.verticalAlign = 'middle';
-      content.style.display = 'table-cell';
+      this.container.className = 'textWidgetAnnotation';
 
-      var font = (this.data.fontRefName ?
-        this.page.commonObjs.getData(this.data.fontRefName) : null);
-      this._setTextStyle(content, font);
+      if (this.renderInteractiveForms) {
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.value = this.data.fieldValue;
 
-      this.container.appendChild(content);
+        this.container.appendChild(input);
+      } else {
+        var content = document.createElement('div');
+        content.textContent = this.data.fieldValue;
+        var textAlignment = this.data.textAlignment;
+        content.style.textAlign = ['left', 'center', 'right'][textAlignment];
+        content.style.verticalAlign = 'middle';
+        content.style.display = 'table-cell';
+
+        var font = (this.data.fontRefName ?
+          this.page.commonObjs.getData(this.data.fontRefName) : null);
+        this._setTextStyle(content, font);
+
+        this.container.appendChild(content);
+      }
       return this.container;
     },
 
@@ -875,6 +888,7 @@ var FileAttachmentAnnotationElement = (
  * @property {PDFPage} page
  * @property {IPDFLinkService} linkService
  * @property {string} imageResourcesPath
+ * @property {boolean} renderInteractiveForms
  */
 
 /**
@@ -907,7 +921,8 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
           linkService: parameters.linkService,
           downloadManager: parameters.downloadManager,
           imageResourcesPath: parameters.imageResourcesPath ||
-                              getDefaultSetting('imageResourcesPath')
+                              getDefaultSetting('imageResourcesPath'),
+          renderInteractiveForms: parameters.renderInteractiveForms || false,
         };
         var element = annotationElementFactory.create(properties);
         if (element.isRenderable) {

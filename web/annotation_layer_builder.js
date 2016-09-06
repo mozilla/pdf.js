@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals PDFJS */
 
 'use strict';
 
@@ -78,7 +79,8 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           annotations: annotations,
           page: self.pdfPage,
           linkService: self.linkService,
-          downloadManager: self.downloadManager
+          downloadManager: self.downloadManager,
+          renderInteractiveForms: PDFJS.renderInteractiveForms,
         };
 
         if (self.div) {
