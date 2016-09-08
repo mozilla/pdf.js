@@ -732,6 +732,14 @@
        "rounds": 1,
        "type": "load"
     },
+    {  "id": "f1040-forms",
+       "file": "pdfs/f1040.pdf",
+       "md5": "7323b50c6d28d959b8b4b92c469b2469",
+       "link": true,
+       "rounds": 1,
+       "type": "eq",
+       "forms": true
+    },
     {  "id": "bug1046314",
        "file": "pdfs/bug1046314.pdf",
        "md5": "fc658439f44cd2dd27c8bee7e7a8344e",

@@ -78,7 +78,8 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           annotations: annotations,
           page: self.pdfPage,
           linkService: self.linkService,
-          downloadManager: self.downloadManager
+          downloadManager: self.downloadManager,
+          renderInteractiveForms: pdfjsLib.PDFJS.renderInteractiveForms,
         };
 
         if (self.div) {

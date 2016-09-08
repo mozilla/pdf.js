@@ -359,6 +359,9 @@ var PDFViewerApplication = {
         }
         PDFJS.externalLinkTarget = value;
       }),
+      Preferences.get('renderInteractiveForms').then(function resolved(value) {
+        PDFJS.renderInteractiveForms = value;
+      }),
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 

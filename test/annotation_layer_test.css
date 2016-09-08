@@ -43,6 +43,17 @@
   position: absolute;
 }
 
+.annotationLayer .textWidgetAnnotation input {
+  background-color: rgba(0, 54, 255, 0.13);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  font-size: 9px;
+  height: 100%;
+  padding: 0 3px;
+  vertical-align: top;
+  width: 100%;
+}
+
 .annotationLayer .popupAnnotation {
   display: block !important;
 }

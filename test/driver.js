@@ -161,7 +161,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
     return imagePromises;
   }
 
-  function rasterizeAnnotationLayer(ctx, viewport, annotations, page) {
+  function rasterizeAnnotationLayer(ctx, viewport, annotations, page,
+                                    renderInteractiveForms) {
     return new Promise(function (resolve) {
       // Building SVG with size of the viewport.
       var svg = document.createElementNS(SVG_NS, 'svg:svg');
@@ -190,7 +191,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           div: div,
           annotations: annotations,
           page: page,
-          linkService: new LinkServiceMock()
+          linkService: new LinkServiceMock(),
+          renderInteractiveForms: renderInteractiveForms,
         };
         PDFJS.AnnotationLayer.render(parameters);
 
@@ -483,7 +485,7 @@ var Driver = (function DriverClosure() {
               textLayerCanvas = null;
 
               // Render the annotation layer if necessary.
-              if (task.annotations) {
+              if (task.annotations || task.forms) {
                 // Create a dummy canvas for the drawing operations.
                 annotationLayerCanvas = self.annotationLayerCanvas;
                 if (!annotationLayerCanvas) {
@@ -501,9 +503,10 @@ var Driver = (function DriverClosure() {
                 initPromise =
                   page.getAnnotations({ intent: 'display' }).then(
                     function(annotations) {
+                      var forms = task.forms || false;
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
-                                                      page);
+                                                      page, forms);
                   });
               } else {
                 annotationLayerCanvas = null;
