@@ -1321,6 +1321,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1127-text",
+       "file": "pdfs/issue1127.pdf",
+       "md5": "4fb2be5ffefeafda4ba977de2a1bb4d8",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "text"
+    },
     {  "id": "issue4461-load",
       "file": "pdfs/issue4461.pdf",
       "md5": "9df4ecaae429adb5dc93d9342a53159d",
@@ -1474,6 +1482,22 @@
       "rounds": 1,
       "link": true,
       "type": "eq"
+    },
+    {  "id": "issue2017-eq",
+       "file": "pdfs/issue2017r.pdf",
+       "md5": "5d2bc43b386496cfb8841ca677db7046",
+       "rounds": 1,
+       "link": false,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue2017-text",
+       "file": "pdfs/issue2017r.pdf",
+       "md5": "5d2bc43b386496cfb8841ca677db7046",
+       "rounds": 1,
+       "link": false,
+       "lastPage": 1,
+       "type": "text"
     },
     {  "id": "issue5256",
        "file": "pdfs/issue5256.pdf",
@@ -1763,6 +1787,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "preistabelle-text",
+       "file": "pdfs/preistabelle.pdf",
+       "md5": "d2f0b2086160d4f3d325c79a5dc1fb4d",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "text"
+    },
     {  "id": "ichiji",
       "file": "pdfs/ichiji.pdf",
       "md5": "66b645802d33513cd598886e017392b8",
@@ -1781,6 +1813,13 @@
       "md5": "2b62cbba5d40a769be8e611eb5b61bfe",
       "rounds": 1,
       "type": "eq"
+    },
+    {  "id": "bug864847-text",
+       "file": "pdfs/bug864847.pdf",
+       "md5": "2b62cbba5d40a769be8e611eb5b61bfe",
+       "rounds": 1,
+       "lastPage": 1,
+       "type": "text"
     },
     {  "id": "issue925",
       "file": "pdfs/issue925.pdf",
@@ -2387,6 +2426,14 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue1936-text",
+       "file": "pdfs/issue1936.pdf",
+       "md5": "7302eb9b6a626308e2a933aaed9e1756",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "text"
+    },
     {  "id": "bug951051",
       "file": "pdfs/bug951051.pdf",
       "md5": "05d325a5112bd3f6022367dab7bc07b9",
@@ -2635,6 +2682,14 @@
       "link": true,
       "type": "eq",
       "about": "True type font with encoding dict with no base encoding but with differences."
+    },
+    {  "id": "issue3064-text",
+       "file": "pdfs/issue3064.pdf",
+       "md5": "0307415b7d69b13acaf8bd4285d9544b",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "text"
     },
     {  "id": "issue5421",
        "file": "pdfs/issue5421.pdf",
