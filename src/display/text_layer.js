@@ -63,6 +63,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     // Initialize all used properties to keep the caches monomorphic.
     var textDiv = document.createElement('div');
     var textDivProperties = {
+      style: '',
       angle: 0,
       canvasWidth: 0,
       isWhitespace: false,
@@ -104,10 +105,10 @@ var renderTextLayer = (function renderTextLayerClosure() {
       left = tx[4] + (fontAscent * Math.sin(angle));
       top = tx[5] - (fontAscent * Math.cos(angle));
     }
-    textDiv.style.left = left + 'px';
-    textDiv.style.top = top + 'px';
-    textDiv.style.fontSize = fontHeight + 'px';
-    textDiv.style.fontFamily = style.fontFamily;
+    textDivProperties.style = 'left: ' + left + 'px; top: ' + top +
+                              'px; font-size: ' + fontHeight +
+                              'px; font-family: ' + style.fontFamily + ';';
+    textDiv.setAttribute('style', textDivProperties.style);
 
     textDiv.textContent = geom.str;
     // |fontName| is only used by the Font Inspector. This test will succeed
@@ -517,7 +518,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._renderTimer = null;
     this._bounds = [];
     this._enhanceTextSelection = !!enhanceTextSelection;
-    this._expanded = false;
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -555,18 +555,20 @@ var renderTextLayer = (function renderTextLayerClosure() {
       if (!this._enhanceTextSelection || !this._renderingDone) {
         return;
       }
-      if (!this._expanded) {
+      if (this._bounds !== null) {
         expand(this);
-        this._expanded = true;
-        this._bounds.length = 0;
+        this._bounds = null;
       }
 
       for (var i = 0, ii = this._textDivs.length; i < ii; i++) {
         var div = this._textDivs[i];
         var divProperties = this._textDivProperties.get(div);
 
+        if (divProperties.isWhitespace) {
+          continue;
+        }
         if (expandDivs) {
-          var transform = '';
+          var transform = '', padding = '';
 
           if (divProperties.scale !== 1) {
             transform = 'scaleX(' + divProperties.scale + ')';
@@ -575,21 +577,26 @@ var renderTextLayer = (function renderTextLayerClosure() {
             transform = 'rotate(' + divProperties.angle + 'deg) ' + transform;
           }
           if (divProperties.paddingLeft !== 0) {
-            div.style.paddingLeft =
-              (divProperties.paddingLeft / divProperties.scale) + 'px';
+            padding += ' padding-left: ' +
+              (divProperties.paddingLeft / divProperties.scale) + 'px;';
             transform += ' translateX(' +
               (-divProperties.paddingLeft / divProperties.scale) + 'px)';
           }
           if (divProperties.paddingTop !== 0) {
-            div.style.paddingTop = divProperties.paddingTop + 'px';
+            padding += ' padding-top: ' + divProperties.paddingTop + 'px;';
             transform += ' translateY(' + (-divProperties.paddingTop) + 'px)';
           }
           if (divProperties.paddingRight !== 0) {
-            div.style.paddingRight =
-              (divProperties.paddingRight / divProperties.scale) + 'px';
+            padding += ' padding-right: ' +
+              (divProperties.paddingRight / divProperties.scale) + 'px;';
           }
           if (divProperties.paddingBottom !== 0) {
-            div.style.paddingBottom = divProperties.paddingBottom + 'px';
+            padding += ' padding-bottom: ' +
+              divProperties.paddingBottom + 'px;';
+          }
+
+          if (padding !== '') {
+            div.setAttribute('style', divProperties.style + padding);
           }
           if (transform !== '') {
             CustomStyle.setProp('transform', div, transform);
