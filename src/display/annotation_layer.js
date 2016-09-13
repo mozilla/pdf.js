@@ -29,7 +29,6 @@
 
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
-var isInt = sharedUtil.isInt;
 var Util = sharedUtil.Util;
 var addLinkAttributes = displayDOMUtils.addLinkAttributes;
 var LinkTarget = displayDOMUtils.LinkTarget;
@@ -451,7 +450,7 @@ var TextWidgetAnnotationElement = (
         element.type = 'text';
         element.value = this.data.fieldValue;
 
-        if (isInt(this.data.maxLen)) {
+        if (this.data.maxLen !== null) {
           element.maxLength = this.data.maxLen;
         }
       } else {
@@ -467,7 +466,7 @@ var TextWidgetAnnotationElement = (
         this._setTextStyle(element, font);
       }
 
-      if (isInt(this.data.textAlignment)) {
+      if (this.data.textAlignment !== null) {
         element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
       }
 

@@ -453,6 +453,62 @@ describe('Annotation layer', function() {
     });
   });
 
+  describe('TextWidgetAnnotation', function() {
+    var textWidgetDict;
+
+    beforeEach(function (done) {
+      textWidgetDict = new Dict();
+      textWidgetDict.set('Type', Name.get('Annot'));
+      textWidgetDict.set('Subtype', Name.get('Widget'));
+      textWidgetDict.set('FT', Name.get('Tx'));
+
+      done();
+    });
+
+    afterEach(function () {
+      textWidgetDict = null;
+    });
+
+    it('should handle unknown text alignment and maximum length', function() {
+      var textWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict, }
+      ]);
+
+      var textWidgetAnnotation = annotationFactory.create(xref, textWidgetRef);
+      expect(textWidgetAnnotation.data.textAlignment).toEqual(null);
+      expect(textWidgetAnnotation.data.maxLen).toEqual(null);
+    });
+
+    it('should not set invalid text alignment and maximum length', function() {
+      textWidgetDict.set('Q', 'center');
+      textWidgetDict.set('MaxLen', 'five');
+
+      var textWidgetRef = new Ref(43, 0);
+      var xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict, }
+      ]);
+
+      var textWidgetAnnotation = annotationFactory.create(xref, textWidgetRef);
+      expect(textWidgetAnnotation.data.textAlignment).toEqual(null);
+      expect(textWidgetAnnotation.data.maxLen).toEqual(null);
+    });
+
+    it('should set valid text alignment and maximum length', function() {
+      textWidgetDict.set('Q', 1);
+      textWidgetDict.set('MaxLen', 20);
+
+      var textWidgetRef = new Ref(84, 0);
+      var xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict, }
+      ]);
+
+      var textWidgetAnnotation = annotationFactory.create(xref, textWidgetRef);
+      expect(textWidgetAnnotation.data.textAlignment).toEqual(1);
+      expect(textWidgetAnnotation.data.maxLen).toEqual(20);
+    });
+  });
+
   describe('FileAttachmentAnnotation', function() {
     var loadingTask;
     var annotations;

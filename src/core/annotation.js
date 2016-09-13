@@ -671,8 +671,19 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   function TextWidgetAnnotation(params) {
     WidgetAnnotation.call(this, params);
 
-    this.data.textAlignment = Util.getInheritableProperty(params.dict, 'Q');
-    this.data.maxLen = Util.getInheritableProperty(params.dict, 'MaxLen');
+    // Determine the alignment of text in the field.
+    var alignment = Util.getInheritableProperty(params.dict, 'Q');
+    if (!isInt(alignment) || alignment < 0 || alignment > 2) {
+      alignment = null;
+    }
+    this.data.textAlignment = alignment;
+
+    // Determine the maximum length of text in the field.
+    var maximumLength = Util.getInheritableProperty(params.dict, 'MaxLen');
+    if (!isInt(maximumLength) || maximumLength < 0) {
+      maximumLength = null;
+    }
+    this.data.maxLen = maximumLength;
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
