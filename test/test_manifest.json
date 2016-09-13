@@ -1615,6 +1615,20 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue7580-eq",
+       "file": "pdfs/issue7580.pdf",
+       "md5": "44dd5a9b4373fcab9890cf567722a766",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue7580-text",
+       "file": "pdfs/issue7580.pdf",
+       "md5": "44dd5a9b4373fcab9890cf567722a766",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue6612-text",
        "file": "pdfs/issue6612.pdf",
        "md5": "657f33236496916597cd70ef1222509a",
