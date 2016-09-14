@@ -205,7 +205,8 @@ var Page = (function PageClosure() {
       }.bind(this));
     },
 
-    getOperatorList: function Page_getOperatorList(handler, task, intent) {
+    getOperatorList: function Page_getOperatorList(handler, task, intent,
+                                                   renderInteractiveForms) {
       var self = this;
 
       var pdfManager = this.pdfManager;
@@ -244,6 +245,8 @@ var Page = (function PageClosure() {
             return opList;
           });
       });
+
+      this.renderInteractiveForms = renderInteractiveForms;
 
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
       return Promise.all([pageListPromise, annotationsPromise]).then(
@@ -328,7 +331,8 @@ var Page = (function PageClosure() {
         var annotationRef = annotationRefs[i];
         var annotation = annotationFactory.create(this.xref, annotationRef,
                                                   this.uniquePrefix,
-                                                  this.idCounters);
+                                                  this.idCounters,
+                                                  this.renderInteractiveForms);
         if (annotation) {
           annotations.push(annotation);
         }

@@ -498,6 +498,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         canvasContext: ctx,
         transform: transform,
         viewport: this.viewport,
+        renderInteractiveForms: pdfjsLib.PDFJS.renderInteractiveForms,
         // intent: 'default', // === 'display'
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
