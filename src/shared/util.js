@@ -93,6 +93,28 @@ var AnnotationFlag = {
   LOCKEDCONTENTS: 0x200
 };
 
+var AnnotationFieldFlag = {
+  READONLY: 1,
+  REQUIRED: 2,
+  NOEXPORT: 3,
+  MULTILINE: 13,
+  PASSWORD: 14,
+  NOTOGGLETOOFF: 15,
+  RADIO: 16,
+  PUSHBUTTON: 17,
+  COMBO: 18,
+  EDIT: 19,
+  SORT: 20,
+  FILESELECT: 21,
+  MULTISELECT: 22,
+  DONOTSPELLCHECK: 23,
+  DONOTSCROLL: 24,
+  COMB: 25,
+  RICHTEXT: 26,
+  RADIOSINUNISON: 26,
+  COMMITONSELCHANGE: 27,
+};
+
 var AnnotationBorderStyleType = {
   SOLID: 1,
   DASHED: 2,
@@ -2364,6 +2386,7 @@ exports.OPS = OPS;
 exports.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
 exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
 exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
+exports.AnnotationFieldFlag = AnnotationFieldFlag;
 exports.AnnotationFlag = AnnotationFlag;
 exports.AnnotationType = AnnotationType;
 exports.FontType = FontType;
