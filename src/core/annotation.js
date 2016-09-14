@@ -55,6 +55,7 @@ var ColorSpace = coreColorSpace.ColorSpace;
 var ObjectLoader = coreObj.ObjectLoader;
 var FileSpec = coreObj.FileSpec;
 var OperatorList = coreEvaluator.OperatorList;
+var Ref = corePrimitives.Ref;
 
 /**
  * @class
@@ -627,6 +628,31 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     // Hide signatures because we cannot validate them.
     if (data.fieldType === 'Sig') {
       this.setFlags(AnnotationFlag.HIDDEN);
+    }
+
+    // Support Choice Fields (Combo Box only)
+    var dictOpts = dict.get('Opt');
+    if (data.fieldType === 'Ch' && dictOpts !== undefined) {
+      
+      if (dictOpts.num) {
+        // The options are stored in a ref
+        var optionsRefNum = dict.map.Opt.num;
+
+        // Get XRefs synchronously (if not already loaded)
+        var optionsRef = new Ref(optionsRefNum, 
+          dict.xref.entries[optionsRefNum].gen);
+        
+        dict.xref.fetch(optionsRef);
+
+        // Get the options from the xref array
+        if (dict.xref.cache[optionsRefNum]) {
+          data.options = dict.xref.cache[optionsRefNum];
+        }
+
+      } else {
+        // The options are stored directly in the dictionary
+        data.options = dictOpts;
+      }
     }
 
     // Building the full field name by collecting the field and
