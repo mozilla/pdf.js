@@ -33,6 +33,7 @@
                   coreColorSpace, coreObj, coreEvaluator) {
 
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
+var AnnotationFieldFlag = sharedUtil.AnnotationFieldFlag;
 var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationType = sharedUtil.AnnotationType;
 var OPS = sharedUtil.OPS;
@@ -621,8 +622,12 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     data.defaultAppearance = Util.getInheritableProperty(dict, 'DA') || '';
     var fieldType = Util.getInheritableProperty(dict, 'FT');
     data.fieldType = isName(fieldType) ? fieldType.name : null;
-    data.fieldFlags = Util.getInheritableProperty(dict, 'Ff') || 0;
     this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
+
+    data.fieldFlags = Util.getInheritableProperty(dict, 'Ff');
+    if (!isInt(data.fieldFlags) || data.fieldFlags < 0) {
+      data.fieldFlags = 0;
+    }
 
     // Hide signatures because we cannot validate them.
     if (data.fieldType === 'Sig') {
@@ -662,7 +667,22 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     data.fullName = fieldName.join('.');
   }
 
-  Util.inherit(WidgetAnnotation, Annotation, {});
+  Util.inherit(WidgetAnnotation, Annotation, {
+    /**
+     * Check if a provided field flag is set.
+     *
+     * @public
+     * @memberof WidgetAnnotation
+     * @param {number} flag - Bit position, numbered from one instead of
+     *                        zero, to check
+     * @return {boolean}
+     * @see {@link shared/util.js}
+     */
+    hasFieldFlag: function WidgetAnnotation_hasFieldFlag(flag) {
+      var mask = 1 << (flag - 1);
+      return !!(this.data.fieldFlags & mask);
+    },
+  });
 
   return WidgetAnnotation;
 })();
@@ -684,6 +704,10 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       maximumLength = null;
     }
     this.data.maxLen = maximumLength;
+
+    // Process field flags for the display layer.
+    this.data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
+    this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
