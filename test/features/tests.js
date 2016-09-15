@@ -408,9 +408,6 @@ var tests = [
       if ('setLineDash' in ctx) {
         ctx.setLineDash([10, 10]);
         ctx.lineDashOffset = 0;
-      } else {
-        ctx.mozDash = [10, 10];
-        ctx.mozDashOffset = 0;
       }
       ctx.stroke();
 
