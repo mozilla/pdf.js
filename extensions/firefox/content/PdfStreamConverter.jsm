@@ -970,6 +970,8 @@ PdfStreamConverter.prototype = {
       aRequest.setResponseHeader('Content-Security-Policy', '', false);
       aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
                                  false);
+      // The viewer does not need to handle HTTP Refresh header.
+      aRequest.setResponseHeader('Refresh', '', false);
     }
 
     PdfJsTelemetry.onViewerIsUsed();
