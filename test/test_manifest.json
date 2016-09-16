@@ -1220,6 +1220,20 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue6901-eq",
+       "file": "pdfs/issue6901.pdf",
+       "md5": "1a0604b1a7a3aaf2162b425a9a84230b",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue6901-text",
+       "file": "pdfs/issue6901.pdf",
+       "md5": "1a0604b1a7a3aaf2162b425a9a84230b",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue6962",
        "file": "pdfs/issue6962.pdf",
        "md5": "d40e871ecca68baf93114bd28c782148",
