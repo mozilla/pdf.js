@@ -3151,6 +3151,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-text-widget-forms",
+       "file": "pdfs/annotation-text-widget.pdf",
+       "md5": "cc9672539ad5b837152a9c6961e5f106",
+       "rounds": 1,
+       "type": "eq",
+       "forms": true
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",
