@@ -3296,7 +3296,14 @@ var Type1Font = (function Type1FontClosure() {
       var charStringsIndex = new CFFIndex();
       charStringsIndex.add([0x8B, 0x0E]); // .notdef
       for (i = 0; i < count; i++) {
-        charStringsIndex.add(glyphs[i]);
+        var glyph = glyphs[i];
+        // If the CharString outline is empty, replace it with .notdef to
+        // prevent OTS from rejecting the font (fixes bug1252420.pdf).
+        if (glyph.length === 0) {
+          charStringsIndex.add([0x8B, 0x0E]); // .notdef
+          continue;
+        }
+        charStringsIndex.add(glyph);
       }
       cff.charStrings = charStringsIndex;
 
