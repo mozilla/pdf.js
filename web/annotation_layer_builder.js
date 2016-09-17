@@ -36,6 +36,7 @@ var SimpleLinkService = pdfLinkService.SimpleLinkService;
  * @typedef {Object} AnnotationLayerBuilderOptions
  * @property {HTMLDivElement} pageDiv
  * @property {PDFPage} pdfPage
+ * @property {boolean} renderInteractiveForms
  * @property {IPDFLinkService} linkService
  * @property {DownloadManager} downloadManager
  */
@@ -51,6 +52,7 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
   function AnnotationLayerBuilder(options) {
     this.pageDiv = options.pageDiv;
     this.pdfPage = options.pdfPage;
+    this.renderInteractiveForms = options.renderInteractiveForms;
     this.linkService = options.linkService;
     this.downloadManager = options.downloadManager;
 
@@ -77,9 +79,9 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           div: self.div,
           annotations: annotations,
           page: self.pdfPage,
+          renderInteractiveForms: self.renderInteractiveForms,
           linkService: self.linkService,
           downloadManager: self.downloadManager,
-          renderInteractiveForms: pdfjsLib.PDFJS.renderInteractiveForms,
         };
 
         if (self.div) {
@@ -126,12 +128,15 @@ DefaultAnnotationLayerFactory.prototype = {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {boolean} renderInteractiveForms
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+  createAnnotationLayerBuilder: function (pageDiv, pdfPage,
+                                          renderInteractiveForms) {
     return new AnnotationLayerBuilder({
       pageDiv: pageDiv,
       pdfPage: pdfPage,
+      renderInteractiveForms: renderInteractiveForms,
       linkService: new SimpleLinkService(),
     });
   }

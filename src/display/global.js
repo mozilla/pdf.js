@@ -243,13 +243,6 @@
   PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
                            true : PDFJS.isEvalSupported);
 
-  /**
-   * Renders interactive form elements.
-   * @var {boolean}
-   */
-  PDFJS.renderInteractiveForms = (PDFJS.renderInteractiveForms === undefined ?
-                                  false : PDFJS.renderInteractiveForms);
-
 //#if !MOZCENTRAL
   var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
   delete PDFJS.openExternalLinksInNewWindow;
