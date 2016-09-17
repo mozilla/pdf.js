@@ -52,6 +52,8 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @property {IPDFAnnotationLayerFactory} annotationLayerFactory
  * @property {boolean} enhanceTextSelection - Turns on the text selection
  *   enhancement. The default is `false`.
+ * @property {boolean} renderInteractiveForms - Turns on rendering of
+ *   interactive form elements. The default is `false`.
  */
 
 /**
@@ -72,6 +74,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     var textLayerFactory = options.textLayerFactory;
     var annotationLayerFactory = options.annotationLayerFactory;
     var enhanceTextSelection = options.enhanceTextSelection || false;
+    var renderInteractiveForms = options.renderInteractiveForms || false;
 
     this.id = id;
     this.renderingId = 'page' + id;
@@ -82,6 +85,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;
     this.enhanceTextSelection = enhanceTextSelection;
+    this.renderInteractiveForms = renderInteractiveForms;
 
     this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
     this.renderingQueue = renderingQueue;
@@ -498,7 +502,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         canvasContext: ctx,
         transform: transform,
         viewport: this.viewport,
-        renderInteractiveForms: pdfjsLib.PDFJS.renderInteractiveForms,
+        renderInteractiveForms: this.renderInteractiveForms,
         // intent: 'default', // === 'display'
       };
       var renderTask = this.renderTask = this.pdfPage.render(renderContext);
@@ -524,7 +528,8 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (this.annotationLayerFactory) {
         if (!this.annotationLayer) {
           this.annotationLayer = this.annotationLayerFactory.
-            createAnnotationLayerBuilder(div, this.pdfPage);
+            createAnnotationLayerBuilder(div, this.pdfPage,
+                                         this.renderInteractiveForms);
         }
         this.annotationLayer.render(this.viewport, 'display');
       }
