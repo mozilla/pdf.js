@@ -469,7 +469,8 @@ describe('Annotation layer', function() {
       textWidgetDict = null;
     });
 
-    it('should handle unknown text alignment and maximum length', function() {
+    it('should handle unknown text alignment, maximum length and flags',
+        function() {
       var textWidgetRef = new Ref(124, 0);
       var xref = new XRefMock([
         { ref: textWidgetRef, data: textWidgetDict, }
@@ -478,11 +479,15 @@ describe('Annotation layer', function() {
       var textWidgetAnnotation = annotationFactory.create(xref, textWidgetRef);
       expect(textWidgetAnnotation.data.textAlignment).toEqual(null);
       expect(textWidgetAnnotation.data.maxLen).toEqual(null);
+      expect(textWidgetAnnotation.data.readOnly).toEqual(false);
+      expect(textWidgetAnnotation.data.multiLine).toEqual(false);
     });
 
-    it('should not set invalid text alignment and maximum length', function() {
+    it('should not set invalid text alignment, maximum length and flags',
+        function() {
       textWidgetDict.set('Q', 'center');
       textWidgetDict.set('MaxLen', 'five');
+      textWidgetDict.set('Ff', 'readonly');
 
       var textWidgetRef = new Ref(43, 0);
       var xref = new XRefMock([
@@ -492,11 +497,15 @@ describe('Annotation layer', function() {
       var textWidgetAnnotation = annotationFactory.create(xref, textWidgetRef);
       expect(textWidgetAnnotation.data.textAlignment).toEqual(null);
       expect(textWidgetAnnotation.data.maxLen).toEqual(null);
+      expect(textWidgetAnnotation.data.readOnly).toEqual(false);
+      expect(textWidgetAnnotation.data.multiLine).toEqual(false);
     });
 
-    it('should set valid text alignment and maximum length', function() {
+    it('should set valid text alignment, maximum length and flags',
+        function() {
       textWidgetDict.set('Q', 1);
       textWidgetDict.set('MaxLen', 20);
+      textWidgetDict.set('Ff', 4097);
 
       var textWidgetRef = new Ref(84, 0);
       var xref = new XRefMock([
@@ -506,6 +515,8 @@ describe('Annotation layer', function() {
       var textWidgetAnnotation = annotationFactory.create(xref, textWidgetRef);
       expect(textWidgetAnnotation.data.textAlignment).toEqual(1);
       expect(textWidgetAnnotation.data.maxLen).toEqual(20);
+      expect(textWidgetAnnotation.data.readOnly).toEqual(true);
+      expect(textWidgetAnnotation.data.multiLine).toEqual(true);
     });
   });
 

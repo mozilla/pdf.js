@@ -446,9 +446,15 @@ var TextWidgetAnnotationElement = (
 
       var element = null;
       if (this.renderInteractiveForms) {
-        element = document.createElement('input');
-        element.type = 'text';
+        if (this.data.multiLine) {
+          element = document.createElement('textarea');
+        } else {
+          element = document.createElement('input');
+          element.type = 'text';
+        }
+
         element.value = this.data.fieldValue;
+        element.disabled = this.data.readOnly;
 
         if (this.data.maxLen !== null) {
           element.maxLength = this.data.maxLen;
