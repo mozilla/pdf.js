@@ -73,9 +73,19 @@ function isPdfFile(details) {
   var header = getHeaderFromHeaders(details.responseHeaders, 'content-type');
   if (header) {
     var headerValue = header.value.toLowerCase().split(';',1)[0].trim();
-    return (headerValue === 'application/pdf' ||
-            headerValue === 'application/octet-stream' &&
-            details.url.toLowerCase().indexOf('.pdf') > 0);
+    if (headerValue === 'application/pdf') {
+      return true;
+    }
+    if (headerValue === 'application/octet-stream') {
+      if (details.url.toLowerCase().indexOf('.pdf') > 0) {
+        return true;
+      }
+      var cdHeader =
+        getHeaderFromHeaders(details.responseHeaders, 'content-disposition');
+      if (cdHeader && /\.pdf(["']|$)/i.test(cdHeader.value)) {
+        return true;
+      }
+    }
   }
 }
 
