@@ -78,6 +78,8 @@ var DEFAULT_CACHE_SIZE = 10;
  *   around the pages. The default is false.
  * @property {boolean} enhanceTextSelection - (optional) Enables the improved
  *   text selection behaviour. The default is `false`.
+ * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
+ *   interactive form elements. The default is `false`.
  */
 
 /**
@@ -130,6 +132,7 @@ var PDFViewer = (function pdfViewer() {
     this.downloadManager = options.downloadManager || null;
     this.removePageBorders = options.removePageBorders || false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
+    this.renderInteractiveForms = options.renderInteractiveForms || false;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -357,6 +360,7 @@ var PDFViewer = (function pdfViewer() {
             textLayerFactory: textLayerFactory,
             annotationLayerFactory: this,
             enhanceTextSelection: this.enhanceTextSelection,
+            renderInteractiveForms: this.renderInteractiveForms,
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -856,12 +860,15 @@ var PDFViewer = (function pdfViewer() {
     /**
      * @param {HTMLDivElement} pageDiv
      * @param {PDFPage} pdfPage
+     * @param {boolean} renderInteractiveForms
      * @returns {AnnotationLayerBuilder}
      */
-    createAnnotationLayerBuilder: function (pageDiv, pdfPage) {
+    createAnnotationLayerBuilder: function (pageDiv, pdfPage,
+                                            renderInteractiveForms) {
       return new AnnotationLayerBuilder({
         pageDiv: pageDiv,
         pdfPage: pdfPage,
+        renderInteractiveForms: renderInteractiveForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager
       });
