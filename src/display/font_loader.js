@@ -67,7 +67,8 @@ FontLoader.prototype = {
     }
 //#if !(MOZCENTRAL)
     this.nativeFontFaces.forEach(function(nativeFontFace) {
-      document.fonts.delete(nativeFontFace);
+      //document.fonts.delete(nativeFontFace);
+      document.fonts['delete'](nativeFontFace);
     });
     this.nativeFontFaces.length = 0;
 //#endif
@@ -114,7 +115,7 @@ FontLoader.prototype = {
     var getNativeFontPromise = function(nativeFontFace) {
       // Return a promise that is always fulfilled, even when the font fails to
       // load.
-      return nativeFontFace.loaded.catch(function(e) {
+      return nativeFontFace.loaded['catch'](function(e) {
         warn('Failed to load font "' + nativeFontFace.family + '": ' + e);
       });
     };

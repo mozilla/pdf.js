@@ -1192,8 +1192,8 @@ function createPromiseCapability() {
         });
       };
     }
-    if (typeof globalScope.Promise.prototype.catch !== 'function') {
-      globalScope.Promise.prototype.catch = function (onReject) {
+    if (typeof globalScope.Promise.prototype['catch'] !== 'function') {
+      globalScope.Promise.prototype['catch'] = function (onReject) {
         return globalScope.Promise.prototype.then(undefined, onReject);
       };
     }
@@ -1451,12 +1451,16 @@ function createPromiseCapability() {
       });
       HandlerManager.scheduleHandlers(this);
       return nextPromise;
-    },
+    }/*,
 
     catch: function Promise_catch(onReject) {
       return this.then(undefined, onReject);
-    }
+    }*/
   };
+
+  Promise.prototype['catch'] = function Promise_catch(onReject) {
+  	return this.then(undefined, onReject);
+	};
 
   globalScope.Promise = Promise;
 //#else
@@ -1487,11 +1491,14 @@ function createPromiseCapability() {
         enumerable: false,
         configurable: true
       });
-    },
+    }/*,
     delete: function(obj) {
       delete obj[this.id];
-    }
+    }*/
   };
+  WeakMap.prototype['delete'] = function(obj) {
+      delete obj[this.id];
+    };
 
   globalScope.WeakMap = WeakMap;
 })();
