@@ -67,6 +67,12 @@
   border: 1px solid transparent;
 }
 
+.annotationLayer .textWidgetAnnotation input.comb {
+  font-family: monospace;
+  padding-left: 2px;
+  padding-right: 0;
+}
+
 .annotationLayer .popupAnnotation {
   display: block !important;
 }
