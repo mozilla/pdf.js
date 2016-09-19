@@ -236,7 +236,7 @@ function getDocument(src, pdfDataRangeTransport,
       task._transport = transport;
       messageHandler.send('Ready', null);
     });
-  }).catch(task._capability.reject);
+  })['catch'](task._capability.reject);
 
   return task;
 }
@@ -925,8 +925,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         }
         var intentState = this.intentStates[intent];
         intentState.renderTasks.forEach(function(renderTask) {
-          var renderCompleted = renderTask.capability.promise.
-            catch(function () {}); // ignoring failures
+          var renderCompleted = renderTask.capability.promise['catch'](function () {}); // ignoring failures
           waitOn.push(renderCompleted);
           renderTask.cancel();
         });
@@ -1760,7 +1759,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
       return this.messageHandler.sendWithPromise('GetPageIndex', {
         ref: ref,
-      }).catch(function (reason) {
+      })['catch'](function (reason) {
         return Promise.reject(new Error(reason));
       });
     },

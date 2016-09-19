@@ -595,7 +595,7 @@ var WorkerMessageHandler = {
         }, evaluatorOptions);
         pdfManagerCapability.resolve(pdfManager);
         cancelXHRs = null;
-      }).catch(function (reason) {
+      })['catch'](function (reason) {
         pdfManagerCapability.reject(reason);
         cancelXHRs = null;
       });
@@ -650,7 +650,7 @@ var WorkerMessageHandler = {
         };
         fullRequest.read().then(readChunk, reject);
       });
-      readPromise.catch(function (e) {
+      readPromise['catch'](function (e) {
         pdfManagerCapability.reject(e);
         cancelXHRs = null;
       });
