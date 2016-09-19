@@ -461,6 +461,14 @@ var TextWidgetAnnotationElement = (
         if (this.data.maxLen !== null) {
           element.maxLength = this.data.maxLen;
         }
+
+        if (this.data.comb) {
+          var fieldWidth = this.data.rect[2] - this.data.rect[0];
+          var combWidth = fieldWidth / this.data.maxLen;
+
+          element.classList.add('comb');
+          element.style.letterSpacing = 'calc(' + combWidth + 'px - 1ch)';
+        }
       } else {
         element = document.createElement('div');
         element.textContent = this.data.fieldValue;
