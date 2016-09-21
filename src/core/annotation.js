@@ -678,14 +678,13 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
      *
      * @public
      * @memberof WidgetAnnotation
-     * @param {number} flag - Bit position, numbered from one instead of
-     *                        zero, to check
+     * @param {number} flag - Hexadecimal representation for an annotation
+     *                        field characteristic
      * @return {boolean}
      * @see {@link shared/util.js}
      */
     hasFieldFlag: function WidgetAnnotation_hasFieldFlag(flag) {
-      var mask = 1 << (flag - 1);
-      return !!(this.data.fieldFlags & mask);
+      return !!(this.data.fieldFlags & flag);
     },
   });
 

@@ -505,13 +505,10 @@ describe('Annotation layer', function() {
 
     it('should set valid text alignment, maximum length and flags',
         function() {
-      var flags = 0;
-      flags |= 1 << (AnnotationFieldFlag.READONLY - 1);
-      flags |= 1 << (AnnotationFieldFlag.MULTILINE - 1);
-
       textWidgetDict.set('Q', 1);
       textWidgetDict.set('MaxLen', 20);
-      textWidgetDict.set('Ff', flags);
+      textWidgetDict.set('Ff', AnnotationFieldFlag.READONLY +
+                               AnnotationFieldFlag.MULTILINE);
 
       var textWidgetRef = new Ref(84, 0);
       var xref = new XRefMock([
@@ -526,10 +523,7 @@ describe('Annotation layer', function() {
     });
 
     it('should reject comb fields without a maximum length', function() {
-      var flags = 0;
-      flags |= 1 << (AnnotationFieldFlag.COMB - 1);
-
-      textWidgetDict.set('Ff', flags);
+      textWidgetDict.set('Ff', AnnotationFieldFlag.COMB);
 
       var textWidgetRef = new Ref(46, 0);
       var xref = new XRefMock([
@@ -541,11 +535,8 @@ describe('Annotation layer', function() {
     });
 
     it('should accept comb fields with a maximum length', function() {
-      var flags = 0;
-      flags |= 1 << (AnnotationFieldFlag.COMB - 1);
-
       textWidgetDict.set('MaxLen', 20);
-      textWidgetDict.set('Ff', flags);
+      textWidgetDict.set('Ff', AnnotationFieldFlag.COMB);
 
       var textWidgetRef = new Ref(46, 0);
       var xref = new XRefMock([
@@ -558,20 +549,16 @@ describe('Annotation layer', function() {
 
     it('should only accept comb fields when the flags are valid', function() {
       var invalidFieldFlags = [
-        AnnotationFieldFlag.MULTILINE,
-        AnnotationFieldFlag.PASSWORD,
+        AnnotationFieldFlag.MULTILINE, AnnotationFieldFlag.PASSWORD,
         AnnotationFieldFlag.FILESELECT
       ];
 
-      // The field may not use combs until all invalid flags are unset.
+      // Start with all invalid flags set and remove them one by one.
+      // The field may only use combs when all invalid flags are unset.
+      var flags = AnnotationFieldFlag.COMB + AnnotationFieldFlag.MULTILINE +
+                  AnnotationFieldFlag.PASSWORD + AnnotationFieldFlag.FILESELECT;
+
       for (var i = 0, ii = invalidFieldFlags.length; i <= ii; i++) {
-        var flags = 0;
-        flags |= 1 << (AnnotationFieldFlag.COMB - 1);
-
-        for (var j = 0, jj = invalidFieldFlags.length; j < jj; j++) {
-          flags |= 1 << (invalidFieldFlags[j] - 1);
-        }
-
         textWidgetDict.set('MaxLen', 20);
         textWidgetDict.set('Ff', flags);
 
@@ -588,7 +575,7 @@ describe('Annotation layer', function() {
 
         // Remove the last invalid flag for the next iteration.
         if (!valid) {
-          invalidFieldFlags.splice(-1, 1);
+          flags -= invalidFieldFlags.splice(-1, 1);
         }
       }
     });
