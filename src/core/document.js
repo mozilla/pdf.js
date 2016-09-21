@@ -246,8 +246,6 @@ var Page = (function PageClosure() {
           });
       });
 
-      this.renderInteractiveForms = renderInteractiveForms;
-
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function(datas) {
@@ -260,7 +258,8 @@ var Page = (function PageClosure() {
         }
 
         var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageOpList, partialEvaluator, task, intent);
+          annotations, pageOpList, partialEvaluator, task, intent,
+          renderInteractiveForms);
         return annotationsReadyPromise.then(function () {
           pageOpList.flush(true);
           return pageOpList;
@@ -331,8 +330,7 @@ var Page = (function PageClosure() {
         var annotationRef = annotationRefs[i];
         var annotation = annotationFactory.create(this.xref, annotationRef,
                                                   this.uniquePrefix,
-                                                  this.idCounters,
-                                                  this.renderInteractiveForms);
+                                                  this.idCounters);
         if (annotation) {
           annotations.push(annotation);
         }
