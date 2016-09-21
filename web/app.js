@@ -1803,6 +1803,9 @@ function webViewerUpdateViewarea(e) {
 }
 
 window.addEventListener('resize', function webViewerResize(evt) {
+  if (!PDFViewerApplication.eventBus) {
+    return;
+  }
   PDFViewerApplication.eventBus.dispatch('resize');
 });
 
