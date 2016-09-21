@@ -68,12 +68,10 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @param {Object} ref
    * @param {string} uniquePrefix
    * @param {Object} idCounters
-   * @param {boolean} renderInteractiveForms
    * @returns {Annotation}
    */
   create: function AnnotationFactory_create(xref, ref,
-                                            uniquePrefix, idCounters,
-                                            renderInteractiveForms) {
+                                            uniquePrefix, idCounters) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
@@ -92,7 +90,6 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       ref: isRef(ref) ? ref : null,
       subtype: subtype,
       id: id,
-      renderInteractiveForms: renderInteractiveForms,
     };
 
     switch (subtype) {
@@ -417,7 +414,8 @@ var Annotation = (function AnnotationClosure() {
       }.bind(this));
     },
 
-    getOperatorList: function Annotation_getOperatorList(evaluator, task) {
+    getOperatorList: function Annotation_getOperatorList(evaluator, task,
+                                                         renderForms) {
       if (!this.appearance) {
         return Promise.resolve(new OperatorList());
       }
@@ -454,13 +452,13 @@ var Annotation = (function AnnotationClosure() {
   };
 
   Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, opList, partialEvaluator, task, intent) {
+      annotations, opList, partialEvaluator, task, intent, renderForms) {
     var annotationPromises = [];
     for (var i = 0, n = annotations.length; i < n; ++i) {
       if ((intent === 'display' && annotations[i].viewable) ||
           (intent === 'print' && annotations[i].printable)) {
         annotationPromises.push(
-          annotations[i].getOperatorList(partialEvaluator, task));
+          annotations[i].getOperatorList(partialEvaluator, task, renderForms));
       }
     }
     return Promise.all(annotationPromises).then(function(operatorLists) {
@@ -696,8 +694,6 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   function TextWidgetAnnotation(params) {
     WidgetAnnotation.call(this, params);
 
-    this.renderInteractiveForms = params.renderInteractiveForms;
-
     // Determine the alignment of text in the field.
     var alignment = Util.getInheritableProperty(params.dict, 'Q');
     if (!isInt(alignment) || alignment < 0 || alignment > 2) {
@@ -718,18 +714,20 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
-    getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator,
-                                                                   task) {
+    getOperatorList:
+        function TextWidgetAnnotation_getOperatorList(evaluator, task,
+                                                      renderForms) {
       var operatorList = new OperatorList();
 
       // Do not render form elements on the canvas when interactive forms are
       // enabled. The display layer is responsible for rendering them instead.
-      if (this.renderInteractiveForms) {
+      if (renderForms) {
         return Promise.resolve(operatorList);
       }
 
       if (this.appearance) {
-        return Annotation.prototype.getOperatorList.call(this, evaluator, task);
+        return Annotation.prototype.getOperatorList.call(this, evaluator, task,
+                                                         renderForms);
       }
 
       // Even if there is an appearance stream, ignore it. This is the

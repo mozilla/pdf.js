@@ -459,6 +459,9 @@ var Driver = (function DriverClosure() {
             self.canvas.height = viewport.height;
             self._clearCanvas();
 
+            // Initialize various `eq` test subtypes, see comment below.
+            var renderAnnotations = false, renderForms = false;
+
             var textLayerCanvas, annotationLayerCanvas;
             var initPromise;
             if (task.type === 'text') {
@@ -483,9 +486,13 @@ var Driver = (function DriverClosure() {
               });
             } else {
               textLayerCanvas = null;
+              // We fetch the `eq` specific test subtypes here, to avoid
+              // accidentally changing the behaviour for other types of tests.
+              renderAnnotations = !!task.annotations;
+              renderForms = !!task.forms;
 
               // Render the annotation layer if necessary.
-              if (task.annotations || task.forms) {
+              if (renderAnnotations || renderForms) {
                 // Create a dummy canvas for the drawing operations.
                 annotationLayerCanvas = self.annotationLayerCanvas;
                 if (!annotationLayerCanvas) {
@@ -503,10 +510,9 @@ var Driver = (function DriverClosure() {
                 initPromise =
                   page.getAnnotations({ intent: 'display' }).then(
                     function(annotations) {
-                      var forms = task.forms || false;
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
-                                                      page, forms);
+                                                      page, renderForms);
                   });
               } else {
                 annotationLayerCanvas = null;
@@ -516,7 +522,8 @@ var Driver = (function DriverClosure() {
 
             var renderContext = {
               canvasContext: ctx,
-              viewport: viewport
+              viewport: viewport,
+              renderInteractiveForms: renderForms,
             };
             var completeRender = (function(error) {
               // if text layer is present, compose it on top of the page
