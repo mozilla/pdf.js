@@ -448,14 +448,18 @@ var TextWidgetAnnotationElement = (
 
       var element = null;
       if (this.renderInteractiveForms) {
+        // NOTE: We cannot set the values using `element.value` below, since it
+        //       prevents the AnnotationLayer rasterizer in `test/driver.js`
+        //       from parsing the elements correctly for the reference tests.
         if (this.data.multiLine) {
           element = document.createElement('textarea');
+          element.textContent = this.data.fieldValue;
         } else {
           element = document.createElement('input');
           element.type = 'text';
+          element.setAttribute('value', this.data.fieldValue);
         }
 
-        element.value = this.data.fieldValue;
         element.disabled = this.data.readOnly;
 
         if (this.data.maxLen !== null) {
