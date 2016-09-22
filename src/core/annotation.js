@@ -676,14 +676,13 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
      *
      * @public
      * @memberof WidgetAnnotation
-     * @param {number} flag - Bit position, numbered from one instead of
-     *                        zero, to check
+     * @param {number} flag - Hexadecimal representation for an annotation
+     *                        field characteristic
      * @return {boolean}
      * @see {@link shared/util.js}
      */
     hasFieldFlag: function WidgetAnnotation_hasFieldFlag(flag) {
-      var mask = 1 << (flag - 1);
-      return !!(this.data.fieldFlags & mask);
+      return !!(this.data.fieldFlags & flag);
     },
   });
 
@@ -711,6 +710,11 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     // Process field flags for the display layer.
     this.data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
     this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
+    this.data.comb = this.hasFieldFlag(AnnotationFieldFlag.COMB) &&
+                     !this.hasFieldFlag(AnnotationFieldFlag.MULTILINE) &&
+                     !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
+                     !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
+                     this.data.maxLen !== null;
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {

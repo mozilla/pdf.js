@@ -3204,14 +3204,14 @@
     },
     {  "id": "annotation-text-widget-annotations",
        "file": "pdfs/annotation-text-widget.pdf",
-       "md5": "cc9672539ad5b837152a9c6961e5f106",
+       "md5": "b7b8923a12998fca8603fae53f73f19b",
        "rounds": 1,
        "type": "eq",
        "annotations": true
     },
     {  "id": "annotation-text-widget-forms",
        "file": "pdfs/annotation-text-widget.pdf",
-       "md5": "cc9672539ad5b837152a9c6961e5f106",
+       "md5": "b7b8923a12998fca8603fae53f73f19b",
        "rounds": 1,
        "type": "eq",
        "forms": true
