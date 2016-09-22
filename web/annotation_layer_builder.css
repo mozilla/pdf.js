@@ -77,6 +77,45 @@
   border: 1px solid transparent;
 }
 
+.annotationLayer .checkboxWidgetAnnotation div {
+  background-color: rgba(0, 54, 255, 0.13);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  cursor: pointer;
+  height: 100%;
+  width: 100%;
+}
+
+.annotationLayer .checkboxWidgetAnnotation div:hover {
+  border: 1px solid #000;
+}
+
+.annotationLayer .checkboxWidgetAnnotation div.checked:before,
+.annotationLayer .checkboxWidgetAnnotation div.checked:after {
+  border-top: 1px solid #000;
+  content: '';
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  width: 70%;
+}
+
+.annotationLayer .checkboxWidgetAnnotation div.checked:before {
+  -webkit-transform: translate(-50%, -50%) rotateZ(45deg);
+  -moz-transform: translate(-50%, -50%) rotateZ(45deg);
+  -o-transform: translate(-50%, -50%) rotateZ(45deg);
+  -ms-transform: translate(-50%, -50%) rotateZ(45deg);
+  transform: translate(-50%, -50%) rotateZ(45deg);
+}
+
+.annotationLayer .checkboxWidgetAnnotation div.checked:after {
+  -webkit-transform: translate(-50%, -50%) rotateZ(-45deg);
+  -moz-transform: translate(-50%, -50%) rotateZ(-45deg);
+  -o-transform: translate(-50%, -50%) rotateZ(-45deg);
+  -ms-transform: translate(-50%, -50%) rotateZ(-45deg);
+  transform: translate(-50%, -50%) rotateZ(-45deg);
+}
+
 .annotationLayer .popupWrapper {
   position: absolute;
   width: 20em;
