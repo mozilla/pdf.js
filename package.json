@@ -19,7 +19,8 @@
     "yargs": "^3.14.0"
   },
   "scripts": {
-    "test": "gulp lint"
+    "test": "gulp lint",
+    "gulp": "gulp"
   },
   "repository": {
     "type": "git",
