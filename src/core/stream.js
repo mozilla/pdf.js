@@ -34,6 +34,7 @@
 var Util = sharedUtil.Util;
 var error = sharedUtil.error;
 var info = sharedUtil.info;
+var isInt = sharedUtil.isInt;
 var isArray = sharedUtil.isArray;
 var createObjectURL = sharedUtil.createObjectURL;
 var shadow = sharedUtil.shadow;
@@ -891,7 +892,7 @@ var PredictorStream = (function PredictorStreamClosure() {
  * DecodeStreams.
  */
 var JpegStream = (function JpegStreamClosure() {
-  function JpegStream(stream, maybeLength, dict, xref) {
+  function JpegStream(stream, maybeLength, dict) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
     var ch;
@@ -925,8 +926,8 @@ var JpegStream = (function JpegStreamClosure() {
     var jpegImage = new JpegImage();
 
     // Checking if values need to be transformed before conversion.
-    if (this.forceRGB && this.dict && isArray(this.dict.get('Decode'))) {
-      var decodeArr = this.dict.getArray('Decode');
+    var decodeArr = this.dict.getArray('Decode', 'D');
+    if (this.forceRGB && isArray(decodeArr)) {
       var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
       var decodeArrLength = decodeArr.length;
       var transform = new Int32Array(decodeArrLength);
@@ -941,6 +942,14 @@ var JpegStream = (function JpegStreamClosure() {
       }
       if (transformNeeded) {
         jpegImage.decodeTransform = transform;
+      }
+    }
+    // Fetching the 'ColorTransform' entry, if it exists.
+    var decodeParams = this.dict.get('DecodeParms', 'DP');
+    if (isDict(decodeParams)) {
+      var colorTransform = decodeParams.get('ColorTransform');
+      if (isInt(colorTransform)) {
+        jpegImage.colorTransform = colorTransform;
       }
     }
 
@@ -1064,7 +1073,7 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
     var jbig2Image = new Jbig2Image();
 
     var chunks = [];
-    var decodeParams = this.dict.getArray('DecodeParms');
+    var decodeParams = this.dict.getArray('DecodeParms', 'DP');
 
     // According to the PDF specification, DecodeParms can be either
     // a dictionary, or an array whose elements are dictionaries.
