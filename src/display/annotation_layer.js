@@ -76,6 +76,8 @@ AnnotationElementFactory.prototype =
         switch (fieldType) {
           case 'Tx':
             return new TextWidgetAnnotationElement(parameters);
+          case 'Btn':
+            return new CheckboxWidgetAnnotationElement(parameters);
         }
         return new WidgetAnnotationElement(parameters);
 
@@ -526,6 +528,43 @@ var TextWidgetAnnotationElement = (
   });
 
   return TextWidgetAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias CheckboxWidgetAnnotationElement
+ */
+var CheckboxWidgetAnnotationElement =
+  (function CheckboxWidgetAnnotationElementClosure() {
+
+  function CheckboxWidgetAnnotationElement(parameters) {
+    WidgetAnnotationElement.call(this, parameters);
+  }
+
+  Util.inherit(CheckboxWidgetAnnotationElement, WidgetAnnotationElement, {
+    /**
+     * Render the text widget annotation's HTML element in the empty container.
+     *
+     * @public
+     * @memberof CheckboxWidgetAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function CheckboxWidgetAnnotationElement_render() {
+      this.container.className = 'checkboxWidgetAnnotation';
+
+      if (this.renderInteractiveForms) {
+        var element = document.createElement('div');
+        element.addEventListener('click', function () {
+          element.className = element.className ? '' : 'checked';
+        }, false);
+        this.container.appendChild(element);
+      }
+
+      return this.container;
+    }
+  });
+
+  return CheckboxWidgetAnnotationElement;
 })();
 
 /**
