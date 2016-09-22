@@ -534,7 +534,8 @@ var TextWidgetAnnotationElement = (
  * @class
  * @alias CheckboxWidgetAnnotationElement
  */
-var CheckboxWidgetAnnotationElement = (function CheckboxWidgetAnnotationElementClosure() {
+var CheckboxWidgetAnnotationElement =
+  (function CheckboxWidgetAnnotationElementClosure() {
 
   function CheckboxWidgetAnnotationElement(parameters) {
     WidgetAnnotationElement.call(this, parameters);
@@ -555,7 +556,7 @@ var CheckboxWidgetAnnotationElement = (function CheckboxWidgetAnnotationElementC
         var element = document.createElement('div');
         element.addEventListener('click', function () {
           element.className = element.className ? '' : 'checked';
-        }, false)
+        }, false);
         this.container.appendChild(element);
       }
 
