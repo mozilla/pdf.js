@@ -68,12 +68,10 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @param {Object} ref
    * @param {string} uniquePrefix
    * @param {Object} idCounters
-   * @param {boolean} renderInteractiveForms
    * @returns {Annotation}
    */
   create: function AnnotationFactory_create(xref, ref,
-                                            uniquePrefix, idCounters,
-                                            renderInteractiveForms) {
+                                            uniquePrefix, idCounters) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
@@ -92,7 +90,6 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       ref: isRef(ref) ? ref : null,
       subtype: subtype,
       id: id,
-      renderInteractiveForms: renderInteractiveForms,
     };
 
     switch (subtype) {
@@ -417,7 +414,8 @@ var Annotation = (function AnnotationClosure() {
       }.bind(this));
     },
 
-    getOperatorList: function Annotation_getOperatorList(evaluator, task) {
+    getOperatorList: function Annotation_getOperatorList(evaluator, task,
+                                                         renderForms) {
       if (!this.appearance) {
         return Promise.resolve(new OperatorList());
       }
@@ -454,13 +452,13 @@ var Annotation = (function AnnotationClosure() {
   };
 
   Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, opList, partialEvaluator, task, intent) {
+      annotations, opList, partialEvaluator, task, intent, renderForms) {
     var annotationPromises = [];
     for (var i = 0, n = annotations.length; i < n; ++i) {
       if ((intent === 'display' && annotations[i].viewable) ||
           (intent === 'print' && annotations[i].printable)) {
         annotationPromises.push(
-          annotations[i].getOperatorList(partialEvaluator, task));
+          annotations[i].getOperatorList(partialEvaluator, task, renderForms));
       }
     }
     return Promise.all(annotationPromises).then(function(operatorLists) {
@@ -678,14 +676,13 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
      *
      * @public
      * @memberof WidgetAnnotation
-     * @param {number} flag - Bit position, numbered from one instead of
-     *                        zero, to check
+     * @param {number} flag - Hexadecimal representation for an annotation
+     *                        field characteristic
      * @return {boolean}
      * @see {@link shared/util.js}
      */
     hasFieldFlag: function WidgetAnnotation_hasFieldFlag(flag) {
-      var mask = 1 << (flag - 1);
-      return !!(this.data.fieldFlags & mask);
+      return !!(this.data.fieldFlags & flag);
     },
   });
 
@@ -695,8 +692,6 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
 var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   function TextWidgetAnnotation(params) {
     WidgetAnnotation.call(this, params);
-
-    this.renderInteractiveForms = params.renderInteractiveForms;
 
     // Determine the alignment of text in the field.
     var alignment = Util.getInheritableProperty(params.dict, 'Q');
@@ -715,21 +710,28 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
     // Process field flags for the display layer.
     this.data.readOnly = this.hasFieldFlag(AnnotationFieldFlag.READONLY);
     this.data.multiLine = this.hasFieldFlag(AnnotationFieldFlag.MULTILINE);
+    this.data.comb = this.hasFieldFlag(AnnotationFieldFlag.COMB) &&
+                     !this.hasFieldFlag(AnnotationFieldFlag.MULTILINE) &&
+                     !this.hasFieldFlag(AnnotationFieldFlag.PASSWORD) &&
+                     !this.hasFieldFlag(AnnotationFieldFlag.FILESELECT) &&
+                     this.data.maxLen !== null;
   }
 
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
-    getOperatorList: function TextWidgetAnnotation_getOperatorList(evaluator,
-                                                                   task) {
+    getOperatorList:
+        function TextWidgetAnnotation_getOperatorList(evaluator, task,
+                                                      renderForms) {
       var operatorList = new OperatorList();
 
       // Do not render form elements on the canvas when interactive forms are
       // enabled. The display layer is responsible for rendering them instead.
-      if (this.renderInteractiveForms) {
+      if (renderForms) {
         return Promise.resolve(operatorList);
       }
 
       if (this.appearance) {
-        return Annotation.prototype.getOperatorList.call(this, evaluator, task);
+        return Annotation.prototype.getOperatorList.call(this, evaluator, task,
+                                                         renderForms);
       }
 
       // Even if there is an appearance stream, ignore it. This is the
