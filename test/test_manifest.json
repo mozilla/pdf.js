@@ -1036,6 +1036,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue7665",
+       "file": "pdfs/issue7665.pdf",
+       "md5": "f1199d16195a61e8232e2d1e742ed46b",
+       "link": false,
+       "rounds": 1,
+       "type": "load",
+       "about": "Encrypted file with indirect objects in the /Encrypt dictionary."
+    },
     {  "id": "protectip",
        "file": "pdfs/protectip.pdf",
        "md5": "676e7a7b8f96d04825361832b1838a93",
