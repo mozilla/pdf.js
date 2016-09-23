@@ -31,11 +31,12 @@
 var PasswordException = sharedUtil.PasswordException;
 var PasswordResponses = sharedUtil.PasswordResponses;
 var bytesToString = sharedUtil.bytesToString;
+var warn = sharedUtil.warn;
 var error = sharedUtil.error;
+var assert = sharedUtil.assert;
 var isInt = sharedUtil.isInt;
 var stringToBytes = sharedUtil.stringToBytes;
 var utf8StringToString = sharedUtil.utf8StringToString;
-var warn = sharedUtil.warn;
 var Name = corePrimitives.Name;
 var isName = corePrimitives.isName;
 var isDict = corePrimitives.isDict;
@@ -1932,6 +1933,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         var cfDict = dict.get('CF');
         var streamCryptoName = dict.get('StmF');
         if (isDict(cfDict) && isName(streamCryptoName)) {
+          cfDict.suppressEncryption = true; // See comment below.
           var handlerDict = cfDict.get(streamCryptoName.name);
           keyLength = (handlerDict && handlerDict.get('Length')) || 128;
           if (keyLength < 40) {
@@ -2013,7 +2015,15 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     this.encryptionKey = encryptionKey;
 
     if (algorithm >= 4) {
-      this.cf = dict.get('CF');
+      var cf = dict.get('CF');
+      if (isDict(cf)) {
+        // The 'CF' dictionary itself should not be encrypted, and by setting
+        // `suppressEncryption` we can prevent an infinite loop inside of
+        // `XRef_fetchUncompressed` if the dictionary contains indirect objects
+        // (fixes issue7665.pdf).
+        cf.suppressEncryption = true;
+      }
+      this.cf = cf;
       this.stmf = dict.get('StmF') || identityName;
       this.strf = dict.get('StrF') || identityName;
       this.eff = dict.get('EFF') || this.stmf;
@@ -2041,6 +2051,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   function buildCipherConstructor(cf, name, num, gen, key) {
+    assert(isName(name), 'Invalid crypt filter name.');
     var cryptFilter = cf.get(name.name);
     var cfm;
     if (cryptFilter !== null && cryptFilter !== undefined) {

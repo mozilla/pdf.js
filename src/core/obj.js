@@ -633,6 +633,11 @@ var XRef = (function XRefClosure() {
       if (encrypt) {
         var ids = trailerDict.get('ID');
         var fileId = (ids && ids.length) ? ids[0] : '';
+        // The 'Encrypt' dictionary itself should not be encrypted, and by
+        // setting `suppressEncryption` we can prevent an infinite loop inside
+        // of `XRef_fetchUncompressed` if the dictionary contains indirect
+        // objects (fixes issue7665.pdf).
+        encrypt.suppressEncryption = true;
         this.encrypt = new CipherTransformFactory(encrypt, fileId,
                                                   this.password);
       }
@@ -1079,11 +1084,11 @@ var XRef = (function XRefClosure() {
       return null;
     },
 
-    fetchIfRef: function XRef_fetchIfRef(obj) {
+    fetchIfRef: function XRef_fetchIfRef(obj, suppressEncryption) {
       if (!isRef(obj)) {
         return obj;
       }
-      return this.fetch(obj);
+      return this.fetch(obj, suppressEncryption);
     },
 
     fetch: function XRef_fetch(ref, suppressEncryption) {
@@ -1201,11 +1206,11 @@ var XRef = (function XRefClosure() {
       return xrefEntry;
     },
 
-    fetchIfRefAsync: function XRef_fetchIfRefAsync(obj) {
+    fetchIfRefAsync: function XRef_fetchIfRefAsync(obj, suppressEncryption) {
       if (!isRef(obj)) {
         return Promise.resolve(obj);
       }
-      return this.fetchAsync(obj);
+      return this.fetchAsync(obj, suppressEncryption);
     },
 
     fetchAsync: function XRef_fetchAsync(ref, suppressEncryption) {
