@@ -1544,6 +1544,13 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "multiple-filters-length-zero",
+       "file": "pdfs/multiple-filters-length-zero.pdf",
+       "md5": "c273c3a6fb79cbf3034fe1b62b204728",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue5752",
        "file": "pdfs/issue5752.pdf",
        "md5": "aa20ad7cff71e9481c0cd623ddbff3b7",
