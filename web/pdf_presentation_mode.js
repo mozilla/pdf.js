@@ -17,13 +17,15 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_presentation_mode', ['exports'], factory);
+    define('pdfjs-web/pdf_presentation_mode', ['exports', 'pdfjs-web/ui_utils'],
+      factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports);
+    factory(exports, require('./ui_utils.js'));
   } else {
-    factory((root.pdfjsWebPDFPresentationMode = {}));
+    factory((root.pdfjsWebPDFPresentationMode = {}), root.pdfjsWebUIUtils);
   }
-}(this, function (exports) {
+}(this, function (exports, uiUtils) {
+var normalizeWheelEventDelta = uiUtils.normalizeWheelEventDelta;
 
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
@@ -120,16 +122,19 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
     },
 
     /**
-     * Switches page when the user scrolls (using a scroll wheel or a touchpad)
-     * with large enough motion, to prevent accidental page switches.
-     * @param {number} delta - The delta value from the mouse event.
+     * @private
      */
-    mouseScroll: function PDFPresentationMode_mouseScroll(delta) {
+    _mouseWheel: function PDFPresentationMode_mouseWheel(evt) {
       if (!this.active) {
         return;
       }
+
+      evt.preventDefault();
+
+      var delta = normalizeWheelEventDelta(evt);
+
       var MOUSE_SCROLL_COOLDOWN_TIME = 50;
-      var PAGE_SWITCH_THRESHOLD = 120;
+      var PAGE_SWITCH_THRESHOLD = 0.1;
       var PageSwitchDirection = {
         UP: -1,
         DOWN: 1
@@ -340,11 +345,13 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
     _addWindowListeners: function PDFPresentationMode_addWindowListeners() {
       this.showControlsBind = this._showControls.bind(this);
       this.mouseDownBind = this._mouseDown.bind(this);
+      this.mouseWheelBind = this._mouseWheel.bind(this);
       this.resetMouseScrollStateBind = this._resetMouseScrollState.bind(this);
       this.contextMenuBind = this._contextMenu.bind(this);
 
       window.addEventListener('mousemove', this.showControlsBind);
       window.addEventListener('mousedown', this.mouseDownBind);
+      window.addEventListener('wheel', this.mouseWheelBind);
       window.addEventListener('keydown', this.resetMouseScrollStateBind);
       window.addEventListener('contextmenu', this.contextMenuBind);
     },
@@ -356,11 +363,13 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
         function PDFPresentationMode_removeWindowListeners() {
       window.removeEventListener('mousemove', this.showControlsBind);
       window.removeEventListener('mousedown', this.mouseDownBind);
+      window.removeEventListener('wheel', this.mouseWheelBind);
       window.removeEventListener('keydown', this.resetMouseScrollStateBind);
       window.removeEventListener('contextmenu', this.contextMenuBind);
 
       delete this.showControlsBind;
       delete this.mouseDownBind;
+      delete this.mouseWheelBind;
       delete this.resetMouseScrollStateBind;
       delete this.contextMenuBind;
     },
