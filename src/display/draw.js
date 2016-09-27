@@ -93,8 +93,8 @@
         this.callSuper('_render', ctx);
         ctx.font = '20px Helvetica';
         ctx.fillStyle = '#333';
-        var left = this.width > 0 ? - this.width + 20: this.width + 20;
-        var top = this.height < 0 ? - this.height - 20 : this.height + 20;
+        var left = this.width > 0 ? - this.width + 20: this.width + 20,
+          top = this.height < 0 ? - this.height - 20 : this.height - 20;
         ctx.fillText(this.title, left/2, top/2);
       }
     });
@@ -163,7 +163,6 @@
         uuid = this.lastObj.uuid ? this.lastObj.uuid: fabricUUID(PDFViewerApplication.page);
         this.remove(this.lastObj);
       }
-      console.log(uuid);
       var e = options.e,
           offset = this._offset;
       this.state.lastMoveX = e.clientX - offset.left;
@@ -174,7 +173,6 @@
           rectY =  this.state.lastMoveY < this.state.lastClickY ? this.state.lastMoveY : this.state.lastClickY,
           deleteObj = function(e){
             var key = e.which || e.keyCode || e.charCode;
-            console.log(key);
             if(key === 46){
               self.remove(self.relatedTarget);
             }
@@ -373,15 +371,15 @@
             fields.push({ 'objects': [] });
             for ( var j = 0; j < objs.length; j++ ) {
               var scale = PDFViewerApplication.pdfViewer.currentScale * 96,
-                pHeight = canvas.height;
+                pHeight = PDFViewerApplication
+                    .pdfViewer._pages[i - 1].viewport.height,
+                oHeight = Math.abs(objs[j]['height']);
               objs[j]['height'] = Math.abs(objs[j]['height'] / (scale));
               objs[j]['left_inches'] = Math.abs(objs[j]['left'] / (scale));
-              objs[j]['top_inches'] = (pHeight - (objs[j]['top'])) / (scale);
+              objs[j]['top_inches'] =
+                (pHeight - oHeight - objs[j]['top']) / (scale);
               objs[j]['field_name'] = objs[j]['title'].toLowerCase()
                 .replace(' ', '_');
-              //obj['fieldType'] = data['fieldType'];
-              //obj['fieldTitle'] = data['fieldTitle'];
-              //if(obj['fieldType'] == 'sig') obj['fieldTypeSigUser'] = data
               fields[fields.length - 1]['objects'].push(objs[j].toJSON());
             }
           }
