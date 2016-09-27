@@ -1156,6 +1156,15 @@
        "lastPage": 1,
        "type": "eq"
     },
+    {  "id": "bug956965",
+       "file": "pdfs/bug956965.pdf",
+       "md5": "9b2f1176c797ee84e989a507e745f89d",
+       "rounds": 1,
+       "link": true,
+       "firstPage": 33,
+       "lastPage": 33,
+       "type": "eq"
+    },
     {  "id": "smaskdim",
       "file": "pdfs/smaskdim.pdf",
       "md5": "de80aeca7cbf79940189fd34d59671ee",
