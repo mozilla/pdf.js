@@ -639,6 +639,14 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue4090",
+       "file": "pdfs/issue4090.pdf",
+       "md5": "8cec73e090985acf6094c683d7944425",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5202",
        "file": "pdfs/issue5202.pdf",
        "md5": "bb9cc69211112e66aab40828086a4e5a",
