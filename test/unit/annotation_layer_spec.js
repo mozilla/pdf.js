@@ -275,6 +275,8 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toEqual('http://www.ctan.org/tex-archive/info/lshort');
+      expect(data.unsafeUrl).toEqual(
+        'http://www.ctan.org/tex-archive/info/lshort');
       expect(data.dest).toBeUndefined();
     });
 
@@ -299,7 +301,8 @@ describe('Annotation layer', function() {
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toEqual('http://www.hmrc.gov.uk');
+      expect(data.url).toEqual('http://www.hmrc.gov.uk/');
+      expect(data.unsafeUrl).toEqual('http://www.hmrc.gov.uk');
       expect(data.dest).toBeUndefined();
     });
 
@@ -331,6 +334,8 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toEqual(
+        new URL(stringToUTF8String('http://www.example.com/üöä')).href);
+      expect(data.unsafeUrl).toEqual(
         stringToUTF8String('http://www.example.com/üöä'));
       expect(data.dest).toBeUndefined();
     });
@@ -356,6 +361,7 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toBeUndefined();
+      expect(data.unsafeUrl).toBeUndefined();
       expect(data.dest).toEqual('page.157');
     });
 
@@ -382,7 +388,8 @@ describe('Annotation layer', function() {
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toBeUndefined(); // ../../0013/001346/134685E.pdf#4.3
+      expect(data.url).toBeUndefined();
+      expect(data.unsafeUrl).toEqual('../../0013/001346/134685E.pdf#4.3');
       expect(data.dest).toBeUndefined();
       expect(data.newWindow).toEqual(true);
     });
@@ -410,6 +417,8 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toEqual('http://www.example.com/test.pdf#nameddest=15');
+      expect(data.unsafeUrl).toEqual(
+        'http://www.example.com/test.pdf#nameddest=15');
       expect(data.dest).toBeUndefined();
       expect(data.newWindow).toBeFalsy();
     });
@@ -436,8 +445,10 @@ describe('Annotation layer', function() {
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toEqual('http://www.example.com/test.pdf#' +
-                               '[14,{"name":"XYZ"},null,298.043,null]');
+      expect(data.url).toEqual(new URL('http://www.example.com/test.pdf#' +
+                                 '[14,{"name":"XYZ"},null,298.043,null]').href);
+      expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#' +
+                                     '[14,{"name":"XYZ"},null,298.043,null]');
       expect(data.dest).toBeUndefined();
       expect(data.newWindow).toBeFalsy();
     });
@@ -463,6 +474,7 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toBeUndefined();
+      expect(data.unsafeUrl).toBeUndefined();
       expect(data.action).toEqual('GoToPage');
     });
 
@@ -482,7 +494,31 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toBeUndefined();
+      expect(data.unsafeUrl).toBeUndefined();
       expect(data.dest).toEqual('LI0');
+    });
+
+    it('should correctly parse a simple Dest, with explicit destination array',
+        function() {
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('Dest', [new Ref(17, 0), Name.get('XYZ'),
+                                  0, 841.89, null]);
+
+      var annotationRef = new Ref(10, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, annotationRef);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toBeUndefined();
+      expect(data.unsafeUrl).toBeUndefined();
+      expect(data.dest).toEqual([{ num: 17, gen: 0, }, { name: 'XYZ' },
+                                 0, 841.89, null]);
     });
   });
 
