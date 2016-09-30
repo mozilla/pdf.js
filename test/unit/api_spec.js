@@ -643,7 +643,7 @@ describe('api', function() {
           var outlineItemTwo = outline[2];
           expect(typeof outlineItemTwo.title).toEqual('string');
           expect(outlineItemTwo.dest).toEqual(null);
-          expect(outlineItemTwo.url).toEqual('http://google.com');
+          expect(outlineItemTwo.url).toEqual('http://google.com/');
           expect(outlineItemTwo.newWindow).toBeUndefined();
 
           var outlineItemOne = outline[1];

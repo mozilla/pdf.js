@@ -594,7 +594,7 @@ var Catalog = (function CatalogClosure() {
   Catalog.parseDestDictionary = function Catalog_parseDestDictionary(params) {
     // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
     function addDefaultProtocolToUrl(url) {
-      if (isString(url) && url.indexOf('www.') === 0) {
+      if (url.indexOf('www.') === 0) {
         return ('http://' + url);
       }
       return url;
@@ -610,10 +610,18 @@ var Catalog = (function CatalogClosure() {
     }
 
     var destDict = params.destDict;
+    if (!isDict(destDict)) {
+      warn('Catalog_parseDestDictionary: "destDict" must be a dictionary.');
+      return;
+    }
     var resultObj = params.resultObj;
+    if (typeof resultObj !== 'object') {
+      warn('Catalog_parseDestDictionary: "resultObj" must be an object.');
+      return;
+    }
 
     var action = destDict.get('A'), url, dest;
-    if (action && isDict(action)) {
+    if (isDict(action)) {
       var linkType = action.get('S').name;
       switch (linkType) {
         case 'URI':
@@ -621,7 +629,7 @@ var Catalog = (function CatalogClosure() {
           if (isName(url)) {
             // Some bad PDFs do not put parentheses around relative URLs.
             url = '/' + url.name;
-          } else if (url) {
+          } else if (isString(url)) {
             url = addDefaultProtocolToUrl(url);
           }
           // TODO: pdf spec mentions urls can be relative to a Base
@@ -669,24 +677,40 @@ var Catalog = (function CatalogClosure() {
           break;
 
         case 'Named':
-          resultObj.action = action.get('N').name;
+          var namedAction = action.get('N');
+          if (isName(namedAction)) {
+            resultObj.action = namedAction.name;
+          }
           break;
 
         default:
           warn('Catalog_parseDestDictionary: Unrecognized link type "' +
                linkType + '".');
+          break;
       }
     } else if (destDict.has('Dest')) { // Simple destination link.
       dest = destDict.get('Dest');
     }
 
-    if (url) {
-      if (isValidUrl(url, /* allowRelative = */ false)) {
-        resultObj.url = tryConvertUrlEncoding(url);
+    if (isString(url)) {
+      url = tryConvertUrlEncoding(url);
+      var absoluteUrl;
+      try {
+        absoluteUrl = new URL(url).href;
+      } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
+
+      if (isValidUrl(absoluteUrl, /* allowRelative = */ false)) {
+        resultObj.url = absoluteUrl;
       }
+      resultObj.unsafeUrl = url;
     }
     if (dest) {
-      resultObj.dest = isName(dest) ? dest.name : dest;
+      if (isName(dest)) {
+        dest = dest.name;
+      }
+      if (isString(dest) || isArray(dest)) {
+        resultObj.dest = dest;
+      }
     }
   };
 
