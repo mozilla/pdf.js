@@ -610,10 +610,18 @@ var Catalog = (function CatalogClosure() {
     }
 
     var destDict = params.destDict;
+    if (!isDict(destDict)) {
+      warn('Catalog_parseDestDictionary: "destDict" must be a dictionary.');
+      return;
+    }
     var resultObj = params.resultObj;
+    if (typeof resultObj !== 'object') {
+      warn('Catalog_parseDestDictionary: "resultObj" must be an object.');
+      return;
+    }
 
     var action = destDict.get('A'), url, dest;
-    if (action && isDict(action)) {
+    if (isDict(action)) {
       var linkType = action.get('S').name;
       switch (linkType) {
         case 'URI':
@@ -638,7 +646,7 @@ var Catalog = (function CatalogClosure() {
             // We assume that we found a FileSpec dictionary
             // and fetch the URL without checking any further.
             url = urlDict.get('F') || null;
-          } else if (isString(urlDict)) {
+          } else if (urlDict) {
             url = urlDict;
           }
 
@@ -669,7 +677,10 @@ var Catalog = (function CatalogClosure() {
           break;
 
         case 'Named':
-          resultObj.action = action.get('N').name;
+          var namedAction = action.get('N');
+          if (isName(namedAction)) {
+            resultObj.action = namedAction.name;
+          }
           break;
 
         default:
@@ -681,8 +692,16 @@ var Catalog = (function CatalogClosure() {
     }
 
     if (url) {
-      if (isValidUrl(url, /* allowRelative = */ false)) {
-        resultObj.url = tryConvertUrlEncoding(url);
+      url = tryConvertUrlEncoding(url);
+      var absoluteUrl;
+      try {
+        absoluteUrl = new URL(url).href;
+      } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
+
+      if (isValidUrl(absoluteUrl, /* allowRelative = */ false)) {
+        resultObj.url = absoluteUrl;
+      } else {
+        resultObj.unsafeUrl = url.toString();
       }
     }
     if (dest) {
