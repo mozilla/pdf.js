@@ -644,6 +644,7 @@ describe('api', function() {
           expect(typeof outlineItemTwo.title).toEqual('string');
           expect(outlineItemTwo.dest).toEqual(null);
           expect(outlineItemTwo.url).toEqual('http://google.com');
+          expect(outlineItemTwo.newWindow).toBeUndefined();
 
           var outlineItemOne = outline[1];
           expect(outlineItemOne.bold).toEqual(false);
