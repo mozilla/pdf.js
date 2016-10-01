@@ -129,6 +129,9 @@ if (typeof PDFJSDev !== 'undefined' &&
  *   2^16 = 65536.
  * @property {PDFWorker}  worker - The worker that will be used for the loading
  *   and parsing of the PDF data.
+ * @property {string} docBaseUrl - (optional) The base URL of the document,
+ *   used when attempting to recover valid absolute URLs for annotations, and
+ *   outline items, that (incorrectly) only specify relative URLs.
  */
 
 /**
@@ -301,6 +304,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
     postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
                           !isPostMessageTransfersDisabled,
+    docBaseUrl: source.docBaseUrl,
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');

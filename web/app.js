@@ -180,6 +180,7 @@ var PDFViewerApplication = {
   preferenceDefaultZoomValue: '',
   isViewerEmbedded: (window.parent !== window),
   url: '',
+  baseUrl: '',
   externalServices: DefaultExernalServices,
 
   // called once when the document is loaded
@@ -522,6 +523,7 @@ var PDFViewerApplication = {
 
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
+    this.baseUrl = url.split('#')[0];
     try {
       this.setTitle(decodeURIComponent(
         pdfjsLib.getFilenameFromUrl(url)) || url);
@@ -614,6 +616,11 @@ var PDFViewerApplication = {
       this.setTitleUsingUrl(file.originalUrl);
       parameters.url = file.url;
     }
+    if (typeof PDFJSDev !== 'undefined' &&
+        PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+      parameters.docBaseUrl = this.baseUrl;
+    }
+
     if (args) {
       for (var prop in args) {
         parameters[prop] = args[prop];
@@ -682,7 +689,7 @@ var PDFViewerApplication = {
       downloadManager.downloadUrl(url, filename);
     }
 
-    var url = this.url.split('#')[0];
+    var url = this.baseUrl;
     var filename = getPDFFileNameFromURL(url);
     var downloadManager = this.downloadManager;
     downloadManager.onerror = function (err) {
@@ -719,14 +726,15 @@ var PDFViewerApplication = {
         return;
       }
       this.fellback = true;
-      var url = this.url.split('#')[0];
-      this.externalServices.fallback({ featureId: featureId, url: url },
-        function response(download) {
-          if (!download) {
-            return;
-          }
-          PDFViewerApplication.download();
-        });
+      this.externalServices.fallback({
+        featureId: featureId,
+        url: this.baseUrl,
+      }, function response(download) {
+        if (!download) {
+          return;
+        }
+        PDFViewerApplication.download();
+      });
     }
   },
 
@@ -856,7 +864,7 @@ var PDFViewerApplication = {
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       baseDocumentUrl = null;
     } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-      baseDocumentUrl = this.url.split('#')[0];
+      baseDocumentUrl = this.baseUrl;
     } else if (PDFJSDev.test('CHROME')) {
       baseDocumentUrl = location.href.split('#')[0];
     }

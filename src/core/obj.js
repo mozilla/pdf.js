@@ -157,6 +157,7 @@ var Catalog = (function CatalogClosure() {
         Catalog.parseDestDictionary({
           destDict: outlineDict,
           resultObj: data,
+          docBaseUrl: this.pdfManager.docBaseUrl,
         });
         var title = outlineDict.get('Title');
         var flags = outlineDict.get('F') || 0;
@@ -590,6 +591,8 @@ var Catalog = (function CatalogClosure() {
    * @param {Dict} destDict - The dictionary containing the destination.
    * @param {Object} resultObj - The object where the parsed destination
    *   properties will be placed.
+   * @param {string} docBaseUrl - (optional) The document base URL that is used
+   *   when attempting to recover valid absolute URLs from relative ones.
    */
   Catalog.parseDestDictionary = function Catalog_parseDestDictionary(params) {
     // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
@@ -619,6 +622,7 @@ var Catalog = (function CatalogClosure() {
       warn('Catalog_parseDestDictionary: "resultObj" must be an object.');
       return;
     }
+    var docBaseUrl = params.docBaseUrl || null;
 
     var action = destDict.get('A'), url, dest;
     if (isDict(action)) {
@@ -694,7 +698,7 @@ var Catalog = (function CatalogClosure() {
 
     if (isString(url)) {
       url = tryConvertUrlEncoding(url);
-      var absoluteUrl = createValidAbsoluteUrl(url);
+      var absoluteUrl = createValidAbsoluteUrl(url, docBaseUrl);
       if (absoluteUrl) {
         resultObj.url = absoluteUrl.href;
       }
