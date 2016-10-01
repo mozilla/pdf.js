@@ -31,6 +31,9 @@
 }(this, function (exports, sharedUtil, coreStream, coreChunkedStream,
                   coreDocument) {
 
+var warn = sharedUtil.warn;
+var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
+var shadow = sharedUtil.shadow;
 var NotImplementedException = sharedUtil.NotImplementedException;
 var MissingDataException = sharedUtil.MissingDataException;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
@@ -47,6 +50,19 @@ var BasePdfManager = (function BasePdfManagerClosure() {
   BasePdfManager.prototype = {
     get docId() {
       return this._docId;
+    },
+
+    get docBaseUrl() {
+      var docBaseUrl = null;
+      if (this._docBaseUrl) {
+        var absoluteUrl = createValidAbsoluteUrl(this._docBaseUrl);
+        if (absoluteUrl) {
+          docBaseUrl = absoluteUrl.href;
+        } else {
+          warn('Invalid absolute docBaseUrl: "' + this._docBaseUrl + '".');
+        }
+      }
+      return shadow(this, 'docBaseUrl', docBaseUrl);
     },
 
     onLoadedStream: function BasePdfManager_onLoadedStream() {
@@ -110,8 +126,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 })();
 
 var LocalPdfManager = (function LocalPdfManagerClosure() {
-  function LocalPdfManager(docId, data, password, evaluatorOptions) {
+  function LocalPdfManager(docId, data, password, evaluatorOptions,
+                           docBaseUrl) {
     this._docId = docId;
+    this._docBaseUrl = docBaseUrl;
     this.evaluatorOptions = evaluatorOptions;
     var stream = new Stream(data);
     this.pdfDocument = new PDFDocument(this, stream, password);
@@ -158,8 +176,10 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 })();
 
 var NetworkPdfManager = (function NetworkPdfManagerClosure() {
-  function NetworkPdfManager(docId, pdfNetworkStream, args, evaluatorOptions) {
+  function NetworkPdfManager(docId, pdfNetworkStream, args, evaluatorOptions,
+                             docBaseUrl) {
     this._docId = docId;
+    this._docBaseUrl = docBaseUrl;
     this.msgHandler = args.msgHandler;
     this.evaluatorOptions = evaluatorOptions;
 
