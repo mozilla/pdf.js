@@ -64,11 +64,12 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
   /**
    * @param {XRef} xref
    * @param {Object} ref
+   * @param {PDFManager} pdfManager
    * @param {string} uniquePrefix
    * @param {Object} idCounters
    * @returns {Annotation}
    */
-  create: function AnnotationFactory_create(xref, ref,
+  create: function AnnotationFactory_create(xref, ref, pdfManager,
                                             uniquePrefix, idCounters) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
@@ -88,6 +89,7 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       ref: isRef(ref) ? ref : null,
       subtype: subtype,
       id: id,
+      pdfManager: pdfManager,
     };
 
     switch (subtype) {
@@ -846,6 +848,7 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
     Catalog.parseDestDictionary({
       destDict: params.dict,
       resultObj: data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
     });
   }
 

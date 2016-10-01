@@ -329,6 +329,7 @@ var Page = (function PageClosure() {
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
         var annotation = annotationFactory.create(this.xref, annotationRef,
+                                                  this.pdfManager,
                                                   this.uniquePrefix,
                                                   this.idCounters);
         if (annotation) {
