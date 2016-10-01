@@ -480,6 +480,7 @@ var WorkerMessageHandler = {
     var WorkerTasks = [];
 
     var docId = docParams.docId;
+    var docBaseUrl = docParams.docBaseUrl;
     var workerHandlerName = docParams.docId + '_worker';
     var handler = new MessageHandler(workerHandlerName, docId, port);
 
@@ -544,7 +545,7 @@ var WorkerMessageHandler = {
       if (source.data) {
         try {
           pdfManager = new LocalPdfManager(docId, source.data, source.password,
-                                           evaluatorOptions);
+                                           evaluatorOptions, docBaseUrl);
           pdfManagerCapability.resolve(pdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
@@ -593,7 +594,7 @@ var WorkerMessageHandler = {
           length: fullRequest.contentLength,
           disableAutoFetch: disableAutoFetch,
           rangeChunkSize: source.rangeChunkSize
-        }, evaluatorOptions);
+        }, evaluatorOptions, docBaseUrl);
         pdfManagerCapability.resolve(pdfManager);
         cancelXHRs = null;
       }).catch(function (reason) {
@@ -610,7 +611,7 @@ var WorkerMessageHandler = {
         // the data is array, instantiating directly from it
         try {
           pdfManager = new LocalPdfManager(docId, pdfFile, source.password,
-                                           evaluatorOptions);
+                                           evaluatorOptions, docBaseUrl);
           pdfManagerCapability.resolve(pdfManager);
         } catch (ex) {
           pdfManagerCapability.reject(ex);
