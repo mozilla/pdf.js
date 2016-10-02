@@ -56,6 +56,8 @@
         'sbt_height',
         'left_inches',
         'top_inches',
+        'height_inches',
+        'width_inches',
         'defaultObjRotation',
         'role', //role of person filling out the form
       ],
@@ -374,10 +376,11 @@
                 pHeight = PDFViewerApplication
                     .pdfViewer._pages[i - 1].viewport.height,
                 oHeight = Math.abs(objs[j]['height']);
-              objs[j]['height'] = Math.abs(objs[j]['height'] / (scale));
+              objs[j]['height_inches'] = Math.abs(objs[j]['height'] / (scale));
               objs[j]['left_inches'] = Math.abs(objs[j]['left'] / (scale));
               objs[j]['top_inches'] =
                 (pHeight - oHeight - objs[j]['top']) / (scale);
+              objs[j]['width_inches'] = Math.abs(objs[j]['width'] / (scale));
               objs[j]['field_name'] = objs[j]['title'].toLowerCase()
                 .replace(' ', '_');
               fields[fields.length - 1]['objects'].push(objs[j].toJSON());
