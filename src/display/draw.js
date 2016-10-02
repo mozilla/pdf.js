@@ -382,7 +382,7 @@
                 (pHeight - oHeight - objs[j]['top']) / (scale);
               objs[j]['width_inches'] = Math.abs(objs[j]['width'] / (scale));
               objs[j]['field_name'] = objs[j]['title'].toLowerCase()
-                .replace(' ', '_');
+                .split(' ').join('_');
               fields[fields.length - 1]['objects'].push(objs[j].toJSON());
             }
           }
