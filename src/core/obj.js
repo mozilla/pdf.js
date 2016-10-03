@@ -48,7 +48,7 @@ var shadow = sharedUtil.shadow;
 var stringToPDFString = sharedUtil.stringToPDFString;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
-var isValidUrl = sharedUtil.isValidUrl;
+var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
 var Util = sharedUtil.Util;
 var Ref = corePrimitives.Ref;
 var RefSet = corePrimitives.RefSet;
@@ -694,13 +694,9 @@ var Catalog = (function CatalogClosure() {
 
     if (isString(url)) {
       url = tryConvertUrlEncoding(url);
-      var absoluteUrl;
-      try {
-        absoluteUrl = new URL(url).href;
-      } catch (ex) { /* `new URL()` will throw on incorrect data. */ }
-
-      if (isValidUrl(absoluteUrl, /* allowRelative = */ false)) {
-        resultObj.url = absoluteUrl;
+      var absoluteUrl = createValidAbsoluteUrl(url);
+      if (absoluteUrl) {
+        resultObj.url = absoluteUrl.href;
       }
       resultObj.unsafeUrl = url;
     }
