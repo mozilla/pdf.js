@@ -315,6 +315,9 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </div>
+<!--#if !(FIREFOX || MOZCENTRAL)-->
+<!--#include viewer-snippet-mozPrintCallback-polyfill.html-->
+<!--#endif-->
         <div id="documentPropertiesOverlay" class="container hidden">
           <div class="dialog">
             <div class="row">
@@ -367,8 +370,5 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
-<!--#if !(FIREFOX || MOZCENTRAL)-->
-<!--#include viewer-snippet-mozPrintCallback-polyfill.html-->
-<!--#endif-->
   </body>
 </html>
