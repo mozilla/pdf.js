@@ -42,7 +42,8 @@
 }
 
 .annotationLayer .textWidgetAnnotation input,
-.annotationLayer .textWidgetAnnotation textarea {
+.annotationLayer .textWidgetAnnotation textarea,
+.annotationLayer .choiceWidgetAnnotation select {
   background-color: rgba(0, 54, 255, 0.13);
   border: 1px solid transparent;
   box-sizing: border-box;
@@ -60,19 +61,22 @@
 }
 
 .annotationLayer .textWidgetAnnotation input[disabled],
-.annotationLayer .textWidgetAnnotation textarea[disabled] {
+.annotationLayer .textWidgetAnnotation textarea[disabled],
+.annotationLayer .choiceWidgetAnnotation select[disabled] {
   background: none;
   border: 1px solid transparent;
   cursor: not-allowed;
 }
 
 .annotationLayer .textWidgetAnnotation input:hover,
-.annotationLayer .textWidgetAnnotation textarea:hover {
+.annotationLayer .textWidgetAnnotation textarea:hover,
+.annotationLayer .choiceWidgetAnnotation select:hover {
   border: 1px solid #000;
 }
 
 .annotationLayer .textWidgetAnnotation input:focus,
-.annotationLayer .textWidgetAnnotation textarea:focus {
+.annotationLayer .textWidgetAnnotation textarea:focus,
+.annotationLayer .choiceWidgetAnnotation select:focus {
   background: none;
   border: 1px solid transparent;
 }
