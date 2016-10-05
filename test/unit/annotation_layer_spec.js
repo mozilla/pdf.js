@@ -614,6 +614,175 @@ describe('Annotation layer', function() {
     });
   });
 
+  describe('ChoiceWidgetAnnotation', function() {
+    var choiceWidgetDict;
+
+    beforeEach(function (done) {
+      choiceWidgetDict = new Dict();
+      choiceWidgetDict.set('Type', Name.get('Annot'));
+      choiceWidgetDict.set('Subtype', Name.get('Widget'));
+      choiceWidgetDict.set('FT', Name.get('Ch'));
+
+      done();
+    });
+
+    afterEach(function () {
+      choiceWidgetDict = null;
+    });
+
+    it('should handle missing option arrays', function() {
+      var choiceWidgetRef = new Ref(122, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.options).toEqual([]);
+    });
+
+    it('should handle option arrays with array elements', function() {
+      var options = [['foo_export', 'Foo'], ['bar_export', 'Bar']];
+      var expected = [
+        {
+          exportValue: 'foo_export',
+          displayValue: 'Foo'
+        },
+        {
+          exportValue: 'bar_export',
+          displayValue: 'Bar'
+        }
+      ];
+
+      choiceWidgetDict.set('Opt', options);
+
+      var choiceWidgetRef = new Ref(123, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.options).toEqual(expected);
+    });
+
+    it('should handle option arrays with string elements', function() {
+      var options = ['Foo', 'Bar'];
+      var expected = [
+        {
+          exportValue: 'Foo',
+          displayValue: 'Foo'
+        },
+        {
+          exportValue: 'Bar',
+          displayValue: 'Bar'
+        }
+      ];
+
+      choiceWidgetDict.set('Opt', options);
+
+      var choiceWidgetRef = new Ref(981, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.options).toEqual(expected);
+    });
+
+    it('should handle array field values', function() {
+      var fieldValue = ['Foo', 'Bar'];
+
+      choiceWidgetDict.set('V', fieldValue);
+
+      var choiceWidgetRef = new Ref(968, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.fieldValue).toEqual(fieldValue);
+    });
+
+    it('should handle string field values', function() {
+      var fieldValue = 'Foo';
+
+      choiceWidgetDict.set('V', fieldValue);
+
+      var choiceWidgetRef = new Ref(978, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.fieldValue).toEqual([fieldValue]);
+    });
+
+    it('should handle unknown flags', function() {
+      var choiceWidgetRef = new Ref(166, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.readOnly).toEqual(false);
+      expect(data.combo).toEqual(false);
+      expect(data.multiSelect).toEqual(false);
+    });
+
+    it('should not set invalid flags', function() {
+      choiceWidgetDict.set('Ff', 'readonly');
+
+      var choiceWidgetRef = new Ref(165, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.readOnly).toEqual(false);
+      expect(data.combo).toEqual(false);
+      expect(data.multiSelect).toEqual(false);
+    });
+
+    it('should set valid flags', function() {
+      choiceWidgetDict.set('Ff', AnnotationFieldFlag.READONLY +
+                                 AnnotationFieldFlag.COMBO +
+                                 AnnotationFieldFlag.MULTISELECT);
+
+      var choiceWidgetRef = new Ref(512, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+      ]);
+
+      var choiceWidgetAnnotation = annotationFactory.create(xref,
+                                                            choiceWidgetRef);
+      var data = choiceWidgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.readOnly).toEqual(true);
+      expect(data.combo).toEqual(true);
+      expect(data.multiSelect).toEqual(true);
+    });
+  });
+
   describe('FileAttachmentAnnotation', function() {
     var loadingTask;
     var annotations;

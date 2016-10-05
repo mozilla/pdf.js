@@ -3240,6 +3240,20 @@
        "type": "eq",
        "forms": true
     },
+    {  "id": "annotation-choice-widget-annotations",
+       "file": "pdfs/annotation-choice-widget.pdf",
+       "md5": "7dfb0d743a0da0f4a71b209ab43b0be5",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "annotation-choice-widget-forms",
+       "file": "pdfs/annotation-choice-widget.pdf",
+       "md5": "7dfb0d743a0da0f4a71b209ab43b0be5",
+       "rounds": 1,
+       "type": "eq",
+       "forms": true
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",

@@ -873,15 +873,15 @@ var Util = (function UtilClosure() {
     }
   };
 
-  Util.getInheritableProperty = function Util_getInheritableProperty(dict,
-                                                                     name) {
+  Util.getInheritableProperty =
+      function Util_getInheritableProperty(dict, name, getArray) {
     while (dict && !dict.has(name)) {
       dict = dict.get('Parent');
     }
     if (!dict) {
       return null;
     }
-    return dict.get(name);
+    return getArray ? dict.getArray(name) : dict.get(name);
   };
 
   Util.inherit = function Util_inherit(sub, base, prototype) {
