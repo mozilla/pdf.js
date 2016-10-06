@@ -546,22 +546,18 @@ var PDFPageView = (function PDFPageViewClosure() {
       var pdfPage = this.pdfPage;
 
       var viewport = pdfPage.getViewport(1);
-      // Use the same hack we use for high dpi displays for printing to get
-      // better output until bug 811002 is fixed in FF.
-      var PRINT_OUTPUT_SCALE = 2;
+
       var canvas = document.createElement('canvas');
 
-      // The logical size of the canvas.
-      canvas.width = Math.floor(viewport.width) * PRINT_OUTPUT_SCALE;
-      canvas.height = Math.floor(viewport.height) * PRINT_OUTPUT_SCALE;
+      // The size of the canvas in pixels for printing.
+      var PRINT_RESOLUTION = 150;
+      var PRINT_UNITS = PRINT_RESOLUTION / 72.0;
+      canvas.width = Math.floor(viewport.width * PRINT_UNITS);
+      canvas.height = Math.floor(viewport.height * PRINT_UNITS);
 
-      // The rendered size of the canvas, relative to the size of canvasWrapper.
-      canvas.style.width = (PRINT_OUTPUT_SCALE * 100) + '%';
-
-      var cssScale = 'scale(' + (1 / PRINT_OUTPUT_SCALE) + ', ' +
-                                (1 / PRINT_OUTPUT_SCALE) + ')';
-      CustomStyle.setProp('transform' , canvas, cssScale);
-      CustomStyle.setProp('transformOrigin' , canvas, '0% 0%');
+      // The physical size of the canvas as specified by the PDF document.
+      canvas.style.width = Math.floor(viewport.width * CSS_UNITS) + 'px';
+      canvas.style.height = Math.floor(viewport.height * CSS_UNITS) + 'px';
 
       var canvasWrapper = document.createElement('div');
       canvasWrapper.appendChild(canvas);
@@ -574,15 +570,10 @@ var PDFPageView = (function PDFPageViewClosure() {
         ctx.fillStyle = 'rgb(255, 255, 255)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
-//#if !(MOZCENTRAL || FIREFOX)
-        // Used by the mozCurrentTransform polyfill in src/display/canvas.js.
-        ctx._transformMatrix =
-          [PRINT_OUTPUT_SCALE, 0, 0, PRINT_OUTPUT_SCALE, 0, 0];
-//#endif
-        ctx.scale(PRINT_OUTPUT_SCALE, PRINT_OUTPUT_SCALE);
 
         var renderContext = {
           canvasContext: ctx,
+          transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
           viewport: viewport,
           intent: 'print'
         };
