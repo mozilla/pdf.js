@@ -244,7 +244,7 @@ function createWebBundle(defines) {
     amdName = 'pdfjs-dist/web/viewer';
     outputName = 'viewer.js';
     template = 'web/viewer.js';
-    files = ['app.js'];
+    files = ['app.js', 'firefox_print_service.js'];
     if (defines.FIREFOX || defines.MOZCENTRAL) {
       files.push('firefoxcom.js');
     } else if (defines.CHROME) {

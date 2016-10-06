@@ -99,6 +99,9 @@
 
   function renderProgress() {
     var progressContainer = document.getElementById('mozPrintCallback-shim');
+    if (!progressContainer) {
+      return;
+    }
     if (canvases && canvases.length) {
       var progress = Math.round(100 * index / canvases.length);
       var progressBar = progressContainer.querySelector('progress');
