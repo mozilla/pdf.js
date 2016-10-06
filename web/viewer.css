@@ -1810,8 +1810,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     position: relative;
     top: 0;
     left: 0;
-    height: 100%;
-    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    page-break-after: always;
+    page-break-inside: avoid;
   }
   #printContainer canvas {
     display: block;
