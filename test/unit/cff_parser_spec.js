@@ -1,5 +1,6 @@
-/* globals describe, it, expect, beforeAll, afterAll, Stream, CFFParser,
-           SEAC_ANALYSIS_ENABLED, CFFIndex, CFFStrings, CFFCompiler */
+/* globals describe, it, expect, beforeAll, afterAll, beforeEach, afterEach,
+           Stream, CFFParser, SEAC_ANALYSIS_ENABLED, CFFIndex, CFFStrings,
+           CFFCompiler */
 
 'use strict';
 
@@ -33,14 +34,22 @@ describe('CFFParser', function() {
       fontArr.push(parseInt(hex, 16));
     }
     fontData = new Stream(fontArr);
+    done();
+  });
 
+  afterAll(function () {
+    fontData = null;
+  });
+
+  beforeEach(function (done) {
     parser = new CFFParser(fontData, {}, SEAC_ANALYSIS_ENABLED);
     cff = parser.parse();
     done();
   });
 
-  afterAll(function () {
-    fontData = parser = cff = null;
+  afterEach(function (done) {
+    parser = cff = null;
+    done();
   });
 
   it('parses header', function() {
@@ -102,6 +111,24 @@ describe('CFFParser', function() {
 
     topDict.setByKey(/* [12, 3] = */ 3075, [NaN]);
     expect(topDict.getByName('UnderlinePosition')).toEqual(defaultValue);
+  });
+
+  it('ignores reserved commands in parseDict, and refuses to add privateDict ' +
+     'keys with invalid values (bug 1308536)', function () {
+    var bytes = new Uint8Array([
+      64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6
+    ]);
+    parser.bytes = bytes;
+    var topDict = cff.topDict;
+    topDict.setByName('Private', [bytes.length, 0]);
+
+    var parsePrivateDict = function () {
+      parser.parsePrivateDict(topDict);
+    };
+    expect(parsePrivateDict).not.toThrow();
+
+    var privateDict = topDict.privateDict;
+    expect(privateDict.getByName('BlueValues')).toBeNull();
   });
 
   it('parses a CharString having cntrmask', function() {
