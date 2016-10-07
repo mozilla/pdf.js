@@ -784,6 +784,13 @@
        "link": false,
        "type": "load"
     },
+    {  "id": "bug1308536",
+       "file": "pdfs/bug1308536.pdf",
+       "md5": "cc2258981e33ad8d96acbf87318716d5",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "bug1252420",
        "file": "pdfs/bug1252420.pdf",
        "md5": "f21c911b9b655972b06ef782a1fa6a17",
