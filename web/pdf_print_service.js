@@ -28,6 +28,7 @@
       root.pdfjsWebOverlayManager, root.pdfjsWebApp, root.pdfjsWebPDFJS);
   }
 }(this, function (exports, uiUtils, overlayManager, app, pdfjsLib) {
+  var mozL10n = uiUtils.mozL10n;
   var CSS_UNITS = uiUtils.CSS_UNITS;
   var PDFPrintServiceFactory = app.PDFPrintServiceFactory;
   var OverlayManager = overlayManager.OverlayManager;
@@ -235,7 +236,8 @@
     var progressBar = progressContainer.querySelector('progress');
     var progressPerc = progressContainer.querySelector('.relative-progress');
     progressBar.value = progress;
-    progressPerc.textContent = progress + '%';
+    progressPerc.textContent = mozL10n.get('print_progress_percent',
+      {progress: progress}, progress + '%');
   }
 
   var hasAttachEvent = !!document.attachEvent;
