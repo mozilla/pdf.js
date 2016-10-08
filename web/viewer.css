@@ -1816,7 +1816,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     page-break-after: always;
     page-break-inside: avoid;
   }
-  #printContainer canvas {
+  #printContainer canvas,
+  #printContainer img {
     display: block;
   }
 }
