@@ -39,9 +39,15 @@
     fabric.Object.prototype.originY = 'top';
     //XXX hack for rotation and zooming with groups to make sure group spans the whole page
     fabric.AnchorRect = fabric.util.createClass(fabric.Rect, {
-      type: 'anchor'
+      type: 'AnchorRect'
     });
-     /*
+
+    fabric.AnchorRect.fromObject = function(object) {
+      return new fabric.AnchorRect(object);
+    };
+
+    
+    /*
      * @namespace fabric.TitledRect
      */
     fabric.TitledRect = fabric.util.createClass(fabric.Rect, {
