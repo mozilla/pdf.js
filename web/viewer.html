@@ -360,6 +360,22 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </div>
+<!--#if !(FIREFOX || MOZCENTRAL)-->
+        <div id="printServiceOverlay" class="container hidden">
+          <div class="dialog">
+            <div class="row">
+              <span>Preparing document for printing...</span>
+            </div>
+            <div class="row">
+              <progress value="0" max="100"></progress>
+              <span class="relative-progress">0%</span>
+            </div>
+            <div class="buttonRow">
+              <button id="printCancel" class="overlayButton"><span>Cancel</span></button>
+            </div>
+          </div>
+        </div>
+<!--#endif-->
 <!--#if CHROME-->
 <!--#include viewer-snippet-chrome-overlays.html-->
 <!--#endif-->
@@ -367,8 +383,5 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
-<!--#if !(FIREFOX || MOZCENTRAL)-->
-<!--#include viewer-snippet-mozPrintCallback-polyfill.html-->
-<!--#endif-->
   </body>
 </html>

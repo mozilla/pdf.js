@@ -85,7 +85,6 @@
     this.pdfDocument = pdfDocument;
     this.pagesOverview = pagesOverview;
     this.printContainer = printContainer;
-    this.pageStyleSheet = null;
   }
 
   FirefoxPrintService.prototype = {
@@ -95,34 +94,6 @@
       var body = document.querySelector('body');
       body.setAttribute('data-pdfjsprinting', true);
 
-      var hasEqualPageSizes = this.pagesOverview.every(function (size) {
-        return size.width === this.pagesOverview[0].width &&
-               size.height === this.pagesOverview[0].height;
-      }, this);
-      if (!hasEqualPageSizes) {
-        console.warn('Not all pages have the same size. The printed ' +
-                      'result may be incorrect!');
-      }
-
-      // Insert a @page + size rule to make sure that the page size is correctly
-      // set. Note that we assume that all pages have the same size, because
-      // variable-size pages are not supported yet (e.g. in Chrome & Firefox).
-      // TODO(robwu): Use named pages when size calculation bugs get resolved
-      // (e.g. https://crbug.com/355116) AND when support for named pages is
-      // added (http://www.w3.org/TR/css3-page/#using-named-pages).
-      // In browsers where @page + size is not supported (such as Firefox,
-      // https://bugzil.la/851441), the next stylesheet will be ignored and the
-      // user has to select the correct paper size in the UI if wanted.
-      this.pageStyleSheet = document.createElement('style');
-      var pageSize = this.pagesOverview[0];
-      this.pageStyleSheet.textContent =
-        // "size:<width> <height>" is what we need. But also add "A4" because
-        // Firefox incorrectly reports support for the other value.
-        '@supports ((size:A4) and (size:1pt 1pt)) {' +
-        '@page { size: ' + pageSize.width + 'pt ' + pageSize.height + 'pt;}' +
-        '}';
-      body.appendChild(this.pageStyleSheet);
-
       for (var i = 0, ii = this.pagesOverview.length; i < ii; ++i) {
         composePage(pdfDocument, i + 1, this.pagesOverview[i], printContainer);
       }
@@ -130,10 +101,6 @@
 
     destroy: function () {
       this.printContainer.textContent = '';
-      if (this.pageStyleSheet && this.pageStyleSheet.parentNode) {
-        this.pageStyleSheet.parentNode.removeChild(this.pageStyleSheet);
-        this.pageStyleSheet = null;
-      }
     }
   };
 
