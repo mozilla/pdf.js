@@ -246,11 +246,11 @@ function createWebBundle(defines) {
     template = 'web/viewer.js';
     files = ['app.js'];
     if (defines.FIREFOX || defines.MOZCENTRAL) {
-      files.push('firefoxcom.js');
+      files.push('firefoxcom.js', 'firefox_print_service.js');
     } else if (defines.CHROME) {
-      files.push('chromecom.js', 'mozPrintCallback_polyfill.js');
+      files.push('chromecom.js', 'pdf_print_service.js');
     } else if (defines.GENERIC) {
-      files.push('mozPrintCallback_polyfill.js');
+      files.push('pdf_print_service.js');
     }
   }
 
