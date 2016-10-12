@@ -285,13 +285,26 @@
           fCanvas.renderAll();
           return pdfPage;
         },
-        fabricTransformCanvas: function (pageNumber, pageRotation, scale) {
+        fabricStorePreTransformData(pageNumber, oldScale, oldRotation) {
+          var page = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1);
+          page.fabricState.preTransform = {
+              scale: page.scale,
+              rotation: page.rotation,
+              height: page.height,
+              width: page.width,
+            };
+        },
+        fabricTransformCanvas: function (pageNumber) {
           var klass = fabricViewerMethods.getCanvas(pageNumber),
-              pdfPage = PDFViewerApplication.pdfViewer._pages[pageNumber - 1],
-              objs = klass._objects,
-              canvasScale = (scale / pdfPage.fabricState.canvasScale).toFixed(20),
-              rotation = pageRotation - pdfPage.fabricState.rotation,
-              rotationChanged = pageRotation != pdfPage.fabricState.rotation,
+              pdfPage = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1),
+              fabricState = pdfPage.fabricState,
+              pageRotation = fabricState.preTransform.rotation,
+              scale = fabricState.preTransform.scale;
+          if (scale === pdfPage.fabricState.scale && pageRotation === pdfPage.fabricState.rotation) return;
+          var objs = klass.getObjects(),
+              canvasScale = (pdfPage.fabricState.canvasScale / scale).toFixed(20),
+              rotation = pdfPage.fabricState.rotation - pageRotation,
+              rotationChanged = fabricState.preTransform.width != pdfPage.width,
               anchors = [ //mark all 4 corners of the group
                 new fabric.AnchorRect({
                   left: 0,
@@ -300,20 +313,20 @@
                   width: 0,
                 }),
                 new fabric.AnchorRect({
-                  left: pdfPage.width,
+                  left: fabricState.preTransform.width,
                   top: 0,
                   height: 0,
                   width: 0,
                 }),
                 new fabric.AnchorRect({
                   left: 0,
-                  top: pdfPage.height,
+                  top:fabricState.preTransform.height,
                   height: 0,
                   width: 0,
                 }),
                 new fabric.AnchorRect({
-                  left: pdfPage.width,
-                  top: pdfPage.height,
+                  left: fabricState.preTransform.width,
+                  top:fabricState.preTransform.height,
                   height: 0,
                   width: 0,
                 }),
@@ -321,8 +334,8 @@
               transformGroup = new fabric.Group(objs.concat(anchors), {
                 left: 0,
                 top: 0,
-                width: rotationChanged ? pdfPage.height: pdfPage.width,
-                height: rotationChanged ? pdfPage.width: pdfPage.height,
+                width:  fabricState.preTransform.width,
+                height:  fabricState.preTransform.height,
                 originX: 'left',
                 originY: 'top',
                 centeredScaling: true,
@@ -333,28 +346,27 @@
           /*transform stuff*/
           // XXX a litte bit of a hack. if abs val of rotation is > 90 (it's 270), figure out which
           // way we want to rotate to get to or from 0
+          debugger;
           if(Math.abs(rotation) > 90) rotation = (rotation/Math.abs(rotation)) * - 90;
           transformGroup.scale(canvasScale);
           transformGroup.setCoords();
-          transformGroup.rotate(rotation);
+         // transformGroup.rotate(rotation);
           transformGroup.setCoords();
+
           var tl = transformGroup.translateToOriginPoint(
             transformGroup.oCoords.tl, 'left', 'top');
-          //transformGroup.setTop(0);
-          //transformGroup.setLeft(0);
-          // transformGroup.setCoords();
           /*transform stuff*/
           var transformedObjs = [];
           transformGroup._restoreObjectsState();
+          
 
-          transformGroup._objects.forEach(function(obj, i) {
+         /* transformGroup._objects.forEach(function(obj, i) {
             if(obj.type != 'anchor') transformedObjs.push(obj);
           });
-          klass.remove(transformGroup);
-          transformedObjs.forEach(function(transformed) {
+         klass.remove(transformGroup);*/
+         transformedObjs.forEach(function(transformed) {
             klass.add(transformed);
           });
-          // });
           pdfPage.fabricState.objs = klass.toObject();
         },
         getObjByUUID: function(uuid) {

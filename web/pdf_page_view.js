@@ -103,6 +103,12 @@ var PDFPageView = (function PDFPageViewClosure() {
       canvasScale: this.scale,
       objs: null,
       rotation: this.rotation,
+      preTransform: {
+	scale: this.scale,
+	rotation: this.rotation,
+	height: this.height,
+	width: this.width,
+      },
     };
 
     var div = document.createElement('div');
@@ -204,13 +210,13 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     update: function PDFPageView_update(scale, rotation) {
+      if(this.canvas && this.canvas.toString().indexOf('fabric.Canvas') >= 0)
+	PDFJS.fabricGlobals.fabricStorePreTransformData(this.id, this.scale, this.rotation);
       this.scale = scale || this.scale;
 
       if (typeof rotation !== 'undefined') {
         this.rotation = rotation;
       }
-      if(this.canvas && this.canvas.toString().indexOf('fabric.Canvas') >= 0)
-	PDFJS.fabricGlobals.fabricTransformCanvas(this.id, this.rotation, this.scale);
 
       var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
       this.viewport = this.viewport.clone({
