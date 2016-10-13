@@ -249,6 +249,7 @@ function createWebBundle(defines) {
       files.push('firefoxcom.js', 'firefox_print_service.js');
     } else if (defines.CHROME) {
       files.push('chromecom.js', 'pdf_print_service.js');
+      files.push('chrome_print_service_extension.js');
     } else if (defines.GENERIC) {
       files.push('pdf_print_service.js');
     }
