@@ -1531,7 +1531,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               for (var j = 0, jj = items.length; j < jj; j++) {
                 if (typeof items[j] === 'string') {
                   buildTextContentItem(items[j]);
-                } else {
+                } else if (isNum(items[j])) {
                   ensureTextContentItem();
 
                   // PDF Specification 5.3.2 states:

@@ -3267,5 +3267,12 @@
        "rounds": 1,
        "lastPage": 1,
        "type": "text"
+    },
+    {  "id": "operator-in-TJ-array",
+       "file": "pdfs/operator-in-TJ-array.pdf",
+       "md5": "dfe0f15a45be18eca142adaf760984ee",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
     }
 ]
