@@ -202,7 +202,9 @@
       return;
     }
     ensureOverlay().then(function () {
-      OverlayManager.open('printServiceOverlay');
+      if (activeService) {
+        OverlayManager.open('printServiceOverlay');
+      }
     });
 
     try {
@@ -210,6 +212,10 @@
     } finally {
       if (!activeService) {
         console.error('Expected print service to be initialized.');
+        if (OverlayManager.active === 'printServiceOverlay') {
+          OverlayManager.close('printServiceOverlay');
+        }
+        return;
       }
       var activeServiceOnEntry = activeService;
       activeService.renderPages().then(function () {
