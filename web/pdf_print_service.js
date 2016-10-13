@@ -39,6 +39,7 @@
   var scratchCanvas = null;
 
   function renderPage(pdfDocument, pageNumber, size, wrapper) {
+    var activeServiceOnEntry = activeService;
     if (!scratchCanvas) {
       scratchCanvas = document.createElement('canvas');
     }
@@ -69,9 +70,7 @@
       };
       return pdfPage.render(renderContext).promise;
     }).then(function() {
-      if (!activeService) {
-        return Promise.reject(new Error('cancelled'));
-      }
+      activeServiceOnEntry.throwIfInactive();
       if (('toBlob' in scratchCanvas) &&
           !pdfjsLib.PDFJS.disableCreateObjectURL) {
         scratchCanvas.toBlob(function (blob) {
@@ -98,6 +97,8 @@
 
   PDFPrintService.prototype = {
     layout: function () {
+      this.throwIfInactive();
+
       var pdfDocument = this.pdfDocument;
       var printContainer = this.printContainer;
       var body = document.querySelector('body');
@@ -139,14 +140,17 @@
     },
 
     destroy: function () {
+      if (activeService !== this) {
+        // |activeService| cannot be replaced without calling destroy() first,
+        // so if it differs then an external consumer has a stale reference to
+        // us.
+        return;
+      }
       this.printContainer.textContent = '';
       this.wrappers = null;
       if (this.pageStyleSheet && this.pageStyleSheet.parentNode) {
         this.pageStyleSheet.parentNode.removeChild(this.pageStyleSheet);
         this.pageStyleSheet = null;
-      }
-      if (activeService !== this) {
-        return; // no need to clean up shared resources
       }
       activeService = null;
       if (scratchCanvas) {
@@ -164,10 +168,7 @@
     renderPages: function () {
       var pageCount = this.pagesOverview.length;
       var renderNextPage = function (resolve, reject) {
-        if (activeService !== this) {
-          reject(new Error('cancelled'));
-          return;
-        }
+        this.throwIfInactive();
         if (++this.currentPage >= pageCount) {
           renderProgress(pageCount, pageCount);
           resolve();
@@ -180,6 +181,16 @@
           function () { renderNextPage(resolve, reject); }, reject);
       }.bind(this);
       return new Promise(renderNextPage);
+    },
+
+    get active() {
+      return this === activeService;
+    },
+
+    throwIfInactive: function () {
+      if (!this.active) {
+        throw new Error('This print request was cancelled or completed.');
+      }
     },
   };
 
@@ -200,7 +211,22 @@
       if (!activeService) {
         console.error('Expected print service to be initialized.');
       }
-      activeService.renderPages().then(startPrint, abort);
+      var activeServiceOnEntry = activeService;
+      activeService.renderPages().then(function () {
+        activeServiceOnEntry.throwIfInactive();
+        return startPrint(activeServiceOnEntry);
+      }).catch(function () {
+        // Ignore any error messages.
+      }).then(function () {
+        // aborts acts on the "active" print request, so we need to check
+        // whether the print request (activeServiceOnEntry) is still active.
+        // Without the check, an unrelated print request (created after aborting
+        // this print request while the pages were being generated) would be
+        // aborted.
+        if (activeServiceOnEntry.active) {
+          abort();
+        }
+      });
     }
   };
 
@@ -210,17 +236,21 @@
     window.dispatchEvent(event);
   }
 
-  function startPrint() {
-    // Push window.print in the macrotask queue to avoid being affected by
-    // the deprecation of running print() code in a microtask, see
-    // https://github.com/mozilla/pdf.js/issues/7547.
-    setTimeout(function() {
-      if (!activeService) {
-        return; // Print task cancelled by user.
-      }
-      print.call(window);
-      setTimeout(abort, 20); // Tidy-up
-    }, 0);
+  function startPrint(activeServiceOnEntry) {
+    return new Promise(function (resolve) {
+      // Push window.print in the macrotask queue to avoid being affected by
+      // the deprecation of running print() code in a microtask, see
+      // https://github.com/mozilla/pdf.js/issues/7547.
+      setTimeout(function () {
+        if (!activeServiceOnEntry.active) {
+          resolve();
+          return;
+        }
+        print.call(window);
+        // Delay promise resolution in case print() was not synchronous.
+        setTimeout(resolve, 20);  // Tidy-up.
+      }, 0);
+    });
   }
 
   function abort() {
