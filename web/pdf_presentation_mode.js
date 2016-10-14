@@ -485,11 +485,13 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
 
       window.addEventListener('fullscreenchange', this.fullscreenChangeBind);
       window.addEventListener('mozfullscreenchange', this.fullscreenChangeBind);
-//#if !(FIREFOX || MOZCENTRAL)
-      window.addEventListener('webkitfullscreenchange',
-                              this.fullscreenChangeBind);
-      window.addEventListener('MSFullscreenChange', this.fullscreenChangeBind);
-//#endif
+      if (typeof PDFJSDev === 'undefined' ||
+          !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+        window.addEventListener('webkitfullscreenchange',
+                                this.fullscreenChangeBind);
+        window.addEventListener('MSFullscreenChange',
+                                this.fullscreenChangeBind);
+      }
     },
 
     /**
@@ -500,12 +502,13 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
       window.removeEventListener('fullscreenchange', this.fullscreenChangeBind);
       window.removeEventListener('mozfullscreenchange',
                                  this.fullscreenChangeBind);
-//#if !(FIREFOX || MOZCENTRAL)
-      window.removeEventListener('webkitfullscreenchange',
-                              this.fullscreenChangeBind);
-      window.removeEventListener('MSFullscreenChange',
-                                 this.fullscreenChangeBind);
-//#endif
+      if (typeof PDFJSDev === 'undefined' ||
+          !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+        window.removeEventListener('webkitfullscreenchange',
+                                this.fullscreenChangeBind);
+        window.removeEventListener('MSFullscreenChange',
+                                  this.fullscreenChangeBind);
+      }
 
       delete this.fullscreenChangeBind;
     }

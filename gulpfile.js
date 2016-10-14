@@ -127,25 +127,27 @@ function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
     return all[1].toUpperCase();
   });
 
-  // Avoiding double processing of the bundle file.
-  var templateContent = fs.readFileSync(filename).toString();
-  var tmpFile = outfilename + '.tmp';
-  fs.writeFileSync(tmpFile, templateContent.replace(
-    /\/\/#expand\s+__BUNDLE__\s*\n/, function (all) { return bundleContent; }));
-  bundleContent = null;
-  templateContent = null;
-
-  // This just preprocesses the empty pdf.js file, we don't actually want to
-  // preprocess everything yet since other build targets use this file.
-  builder.preprocess(tmpFile, outfilename,
-    builder.merge(defines, {
+  var p2 = require('./external/builder/preprocessor2.js');
+  var ctx = {
+    rootPath: __dirname,
+    saveComments: true,
+    defines: builder.merge(defines, {
       BUNDLE_VERSION: versionInfo.version,
       BUNDLE_BUILD: versionInfo.commit,
       BUNDLE_AMD_NAME: amdName,
       BUNDLE_JS_NAME: jsName,
       MAIN_FILE: isMainFile
-    }));
-  fs.unlinkSync(tmpFile);
+    })
+  };
+
+  var templateContent = fs.readFileSync(filename).toString();
+  templateContent = templateContent.replace(
+    /\/\/#expand\s+__BUNDLE__\s*\n/, function (all) { return bundleContent; });
+  bundleContent = null;
+
+  templateContent = p2.preprocessPDFJSCode(ctx, templateContent);
+  fs.writeFileSync(outfilename, templateContent);
+  templateContent = null;
 }
 
 function createBundle(defines) {

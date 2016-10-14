@@ -80,13 +80,15 @@ PDFJS.disableTextLayer = (PDFJS.disableTextLayer === undefined ?
 PDFJS.ignoreCurrentPositionOnZoom = (PDFJS.ignoreCurrentPositionOnZoom ===
   undefined ? false : PDFJS.ignoreCurrentPositionOnZoom);
 
-//#if !(FIREFOX || MOZCENTRAL)
-/**
- * Interface locale settings.
- * @var {string}
- */
-PDFJS.locale = (PDFJS.locale === undefined ? navigator.language : PDFJS.locale);
-//#endif
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  /**
+   * Interface locale settings.
+   * @var {string}
+   */
+  PDFJS.locale = (PDFJS.locale === undefined ? navigator.language :
+    PDFJS.locale);
+}
 
 /**
  * Returns scale factor for the canvas. It makes sense for the HiDPI displays.

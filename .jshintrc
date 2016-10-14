@@ -5,6 +5,7 @@
   "worker": true,
   "predef": [
     "Promise",
+    "PDFJSDev",
     "require",
     "define",
     "exports"

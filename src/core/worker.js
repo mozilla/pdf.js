@@ -82,7 +82,8 @@ var WorkerTask = (function WorkerTaskClosure() {
   return WorkerTask;
 })();
 
-//#if !PRODUCTION
+if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+/*jshint -W082 */
 /**
  * Interface that represents PDF data transport. If possible, it allows
  * progressively load entire or fragment of the PDF binary data.
@@ -210,7 +211,7 @@ IPDFStreamRangeReader.prototype = {
    */
   onProgress: null,
 };
-//#endif
+}
 
 /** @implements {IPDFStream} */
 var PDFWorkerStream = (function PDFWorkerStreamClosure() {
@@ -952,8 +953,8 @@ var WorkerMessageHandler = {
 };
 
 function initializeWorker() {
-//#if !MOZCENTRAL
-  if (!('console' in globalScope)) {
+  if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) &&
+      !('console' in globalScope)) {
     var consoleTimer = {};
 
     var workerConsole = {
@@ -991,7 +992,6 @@ function initializeWorker() {
 
     globalScope.console = workerConsole;
   }
-//#endif
 
   var handler = new MessageHandler('worker', 'main', self);
   WorkerMessageHandler.setup(handler, self);
