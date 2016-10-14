@@ -539,6 +539,9 @@ var Parser = (function ParserClosure() {
       var filter = dict.get('Filter', 'F');
       var params = dict.get('DecodeParms', 'DP');
       if (isName(filter)) {
+        if (isArray(params)) {
+          params = params[0];
+        }
         return this.makeFilter(stream, filter.name, length, params);
       }
 
@@ -599,11 +602,11 @@ var Parser = (function ParserClosure() {
         }
         if (name === 'DCTDecode' || name === 'DCT') {
           xrefStreamStats[StreamType.DCT] = true;
-          return new JpegStream(stream, maybeLength, stream.dict);
+          return new JpegStream(stream, maybeLength, stream.dict, params);
         }
         if (name === 'JPXDecode' || name === 'JPX') {
           xrefStreamStats[StreamType.JPX] = true;
-          return new JpxStream(stream, maybeLength, stream.dict);
+          return new JpxStream(stream, maybeLength, stream.dict, params);
         }
         if (name === 'ASCII85Decode' || name === 'A85') {
           xrefStreamStats[StreamType.A85] = true;
@@ -623,7 +626,7 @@ var Parser = (function ParserClosure() {
         }
         if (name === 'JBIG2Decode') {
           xrefStreamStats[StreamType.JBIG] = true;
-          return new Jbig2Stream(stream, maybeLength, stream.dict);
+          return new Jbig2Stream(stream, maybeLength, stream.dict, params);
         }
         warn('filter "' + name + '" not supported yet');
         return stream;
