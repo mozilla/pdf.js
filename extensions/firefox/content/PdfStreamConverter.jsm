@@ -38,7 +38,7 @@ Cu.import('resource://gre/modules/Services.jsm');
 Cu.import('resource://gre/modules/NetUtil.jsm');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'NetworkManager',
-  'resource://pdf.js/network.js');
+  'resource://pdf.js/PdfJsNetwork.jsm');
 
 XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
   'resource://gre/modules/PrivateBrowsingUtils.jsm');

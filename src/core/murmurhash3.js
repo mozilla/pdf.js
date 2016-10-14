@@ -44,14 +44,15 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
   }
 
   var alwaysUseUint32ArrayView = false;
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
-  // old webkits have issues with non-aligned arrays
-  try {
-    new Uint32Array(new Uint8Array(5).buffer, 0, 1);
-  } catch (e) {
-    alwaysUseUint32ArrayView = true;
+  if (typeof PDFJSDev === 'undefined' ||
+      !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+    // old webkits have issues with non-aligned arrays
+    try {
+      new Uint32Array(new Uint8Array(5).buffer, 0, 1);
+    } catch (e) {
+      alwaysUseUint32ArrayView = true;
+    }
   }
-//#endif
 
   MurmurHash3_64.prototype = {
     update: function MurmurHash3_64_update(input) {

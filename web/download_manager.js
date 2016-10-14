@@ -25,7 +25,8 @@
     factory((root.pdfjsWebDownloadManager = {}), root.pdfjsWebPDFJS);
   }
 }(this, function (exports, pdfjsLib) {
-//#if GENERIC || CHROME
+if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC || CHROME')) {
+  /* jshint -W082 */
   function download(blobUrl, filename) {
     var a = document.createElement('a');
     if (a.click) {
@@ -106,5 +107,5 @@
   };
 
   exports.DownloadManager = DownloadManager;
-//#endif
+}
 }));

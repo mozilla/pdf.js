@@ -26,12 +26,12 @@
   }
 }(this, function (exports) {
 
-//#if PRODUCTION
-//var defaultPreferences = Promise.resolve(
-//#include $ROOT/web/default_preferences.json
-//);
-//#else
-  var defaultPreferences = new Promise(function (resolve) {
+var defaultPreferences;
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+  defaultPreferences = Promise.resolve(
+    PDFJSDev.json('$ROOT/web/default_preferences.json'));
+} else {
+  defaultPreferences = new Promise(function (resolve) {
     if (DEFAULT_PREFERENCES) {
       resolve(DEFAULT_PREFERENCES);
       return;
@@ -41,7 +41,7 @@
       document.removeEventListener('defaultpreferencesloaded', loaded);
     });
   });
-//#endif
+}
 
 function cloneObj(obj) {
   var result = {};
@@ -197,21 +197,22 @@ var Preferences = {
   }
 };
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
-Preferences._writeToStorage = function (prefObj) {
-  return new Promise(function (resolve) {
-    localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
-    resolve();
-  });
-};
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+  Preferences._writeToStorage = function (prefObj) {
+    return new Promise(function (resolve) {
+      localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
+      resolve();
+    });
+  };
 
-Preferences._readFromStorage = function (prefObj) {
-  return new Promise(function (resolve) {
-    var readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
-    resolve(readPrefs);
-  });
-};
-//#endif
+  Preferences._readFromStorage = function (prefObj) {
+    return new Promise(function (resolve) {
+      var readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
+      resolve(readPrefs);
+    });
+  };
+}
 
 exports.Preferences = Preferences;
 }));

@@ -18,24 +18,21 @@
 
 'use strict';
 
-
-//#if (FIREFOX || MOZCENTRAL)
-//
-//Components.utils.import('resource://gre/modules/Services.jsm');
-//
-//var EXPORTED_SYMBOLS = ['NetworkManager'];
-//
-//var console = {
-//  log: function console_log(aMsg) {
-//    var msg = 'network.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
-//    Services.console.logStringMessage(msg);
-//    // TODO(mack): dump() doesn't seem to work here...
-//    dump(msg + '\n');
-//  }
-//}
-//#endif
-
-var NetworkManager = (function NetworkManagerClosure() {
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs/core/network', ['exports', 'pdfjs/shared/util',
+      'pdfjs/core/worker'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../shared/util.js'), require('./worker.js'));
+  } else {
+    factory((root.pdfjsCoreNetwork = {}), root.pdfjsSharedUtil,
+      root.pdfjsCoreWorker);
+  }
+}(this, function (exports, sharedUtil, coreWorker) {
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  throw new Error('Module "pdfjs/core/network" shall not ' +
+                  'be used with FIREFOX or MOZCENTRAL build.');
+}
 
   var OK_RESPONSE = 200;
   var PARTIAL_CONTENT_RESPONSE = 206;
@@ -69,8 +66,9 @@ var NetworkManager = (function NetworkManagerClosure() {
     return array.buffer;
   }
 
-//#if !(CHROME || FIREFOX || MOZCENTRAL)
-  var supportsMozChunked = (function supportsMozChunkedClosure() {
+  var supportsMozChunked =
+    typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') ? false :
+      (function supportsMozChunkedClosure() {
     try {
       var x = new XMLHttpRequest();
       // Firefox 37- required .open() to be called before setting responseType.
@@ -86,7 +84,6 @@ var NetworkManager = (function NetworkManagerClosure() {
       return false;
     }
   })();
-//#endif
 
   NetworkManager.prototype = {
     requestRange: function NetworkManager_requestRange(begin, end, listeners) {
@@ -128,15 +125,7 @@ var NetworkManager = (function NetworkManagerClosure() {
         pendingRequest.expectedStatus = 200;
       }
 
-//#if CHROME
-//    var useMozChunkedLoading = false;
-//#endif
-//#if (FIREFOX || MOZCENTRAL)
-//    var useMozChunkedLoading = !!args.onProgressiveData;
-//#endif
-//#if !(CHROME || FIREFOX || MOZCENTRAL)
       var useMozChunkedLoading = supportsMozChunked && !!args.onProgressiveData;
-//#endif
       if (useMozChunkedLoading) {
         xhr.responseType = 'moz-chunked-arraybuffer';
         pendingRequest.onProgressiveData = args.onProgressiveData;
@@ -288,22 +277,6 @@ var NetworkManager = (function NetworkManagerClosure() {
       xhr.abort();
     }
   };
-
-  return NetworkManager;
-})();
-
-//#if !(FIREFOX || MOZCENTRAL)
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/network', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/worker'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./worker.js'));
-  } else {
-    factory((root.pdfjsCoreNetwork = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreWorker);
-  }
-}(this, function (exports, sharedUtil, coreWorker) {
 
   var assert = sharedUtil.assert;
   var createPromiseCapability = sharedUtil.createPromiseCapability;
@@ -638,4 +611,3 @@ var NetworkManager = (function NetworkManagerClosure() {
   exports.PDFNetworkStream = PDFNetworkStream;
   exports.NetworkManager = NetworkManager;
 }));
-//#endif

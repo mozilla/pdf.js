@@ -102,6 +102,7 @@ var COMMON_WEB_FILES =
       ['web/viewer.html'],
     COMMON_FIREFOX_FILES_PREPROCESS =
       [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
+       FIREFOX_CONTENT_DIR + 'PdfJsNetwork.jsm',
        FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm',
        FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm'];
 //

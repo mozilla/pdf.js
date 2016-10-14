@@ -18,37 +18,37 @@
 
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
-//#if CHROME
-//(function rewriteUrlClosure() {
-//  // Run this code outside DOMContentLoaded to make sure that the URL
-//  // is rewritten as soon as possible.
-//  var queryString = document.location.search.slice(1);
-//  var m = /(^|&)file=([^&]*)/.exec(queryString);
-//  DEFAULT_URL = m ? decodeURIComponent(m[2]) : '';
-//
-//  // Example: chrome-extension://.../http://example.com/file.pdf
-//  var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
-//  history.replaceState(history.state, '', humanReadableUrl);
-//  if (top === window) {
-//    chrome.runtime.sendMessage('showPageAction');
-//  }
-//})();
-//#endif
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+  (function rewriteUrlClosure() {
+    // Run this code outside DOMContentLoaded to make sure that the URL
+    // is rewritten as soon as possible.
+    var queryString = document.location.search.slice(1);
+    var m = /(^|&)file=([^&]*)/.exec(queryString);
+    DEFAULT_URL = m ? decodeURIComponent(m[2]) : '';
 
-//#if PRODUCTION
-//var pdfjsWebLibs = {
-//  pdfjsWebPDFJS: window.pdfjsDistBuildPdf
-//};
-//
-//(function () {
+    // Example: chrome-extension://.../http://example.com/file.pdf
+    var humanReadableUrl = '/' + DEFAULT_URL + location.hash;
+    history.replaceState(history.state, '', humanReadableUrl);
+    if (top === window) {
+      chrome.runtime.sendMessage('showPageAction');
+    }
+  })();
+}
+
+var pdfjsWebLibs;
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+  pdfjsWebLibs = {
+    pdfjsWebPDFJS: window.pdfjsDistBuildPdf
+  };
+  (function () {
 //#expand __BUNDLE__
-//}).call(pdfjsWebLibs);
-//#endif
+  }).call(pdfjsWebLibs);
+}
 
-//#if FIREFOX || MOZCENTRAL
-//// FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
-//window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
-//#endif
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  // FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
+  window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
+}
 
 function getViewerConfiguration() {
   return {
@@ -169,21 +169,22 @@ function getViewerConfiguration() {
 
 function webViewerLoad() {
   var config = getViewerConfiguration();
-//#if !PRODUCTION
-  require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
-  require(['pdfjs-web/pdfjs'], function () {
-    // Ensure that src/main_loader.js has loaded all the necessary dependencies
-    // *before* the viewer loads, to prevent issues in browsers relying on e.g.
-    // the Promise/URL polyfill in src/shared/util.js (fixes issue 7448).
-    require(['pdfjs-web/app', 'pdfjs-web/pdf_print_service'], function (web) {
-      window.PDFViewerApplication = web.PDFViewerApplication;
-      web.PDFViewerApplication.run(config);
+  if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+    require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
+    require(['pdfjs-web/pdfjs'], function () {
+      // Ensure that src/main_loader.js has loaded all the necessary
+      // dependencies *before* the viewer loads, to prevent issues in browsers
+      // relying on e.g. the Promise/URL polyfill in src/shared/util.js (fixes
+      // issue 7448).
+      require(['pdfjs-web/app', 'pdfjs-web/pdf_print_service'], function (web) {
+        window.PDFViewerApplication = web.PDFViewerApplication;
+        web.PDFViewerApplication.run(config);
+      });
     });
-  });
-//#else
-//window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
-//pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication.run(config);
-//#endif
+  } else {
+    window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
+    pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication.run(config);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', webViewerLoad, true);

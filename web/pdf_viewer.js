@@ -567,8 +567,8 @@ var PDFViewer = (function pdfViewer() {
       if (!this.pdfDocument) {
         return;
       }
-//#if GENERIC
-      if (arguments.length > 1 || typeof params === 'number') {
+      if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
+          (arguments.length > 1 || typeof params === 'number')) {
         console.warn('Call of scrollPageIntoView() with obsolete signature.');
         var paramObj = {};
         if (typeof params === 'number') {
@@ -579,7 +579,6 @@ var PDFViewer = (function pdfViewer() {
         }
         params = paramObj;
       }
-//#endif
       var pageNumber = params.pageNumber || 0;
       var dest = params.destArray || null;
       var allowNegativeOffset = params.allowNegativeOffset || false;
