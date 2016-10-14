@@ -24,7 +24,8 @@
     factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil);
   }
 }(this, function (exports, sharedUtil) {
-//#if (GENERIC || SINGLE_FILE)
+if (typeof PDFJSDev === 'undefined' ||
+    PDFJSDev.test('GENERIC || SINGLE_FILE')) {
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
 var ImageKind = sharedUtil.ImageKind;
@@ -1208,5 +1209,5 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 })();
 
 exports.SVGGraphics = SVGGraphics;
-//#endif
+}
 }));

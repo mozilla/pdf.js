@@ -1,0 +1,15 @@
+var a = true;
+var b = false;
+var c = true && '1';
+var d = false && '0';
+var e = true || '1';
+var f = false || '0';
+var g = true ? '1' : '0';
+var h = false ? '1' : '0';
+var i = 'test' === 'test';
+var j = 'test' !== 'test';
+var k = 'test' === 'test2';
+var l = 'test' !== 'test2';
+var m = '1' === true;
+var n = !true;
+var o = !false;

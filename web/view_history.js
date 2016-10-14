@@ -73,27 +73,24 @@ var ViewHistory = (function ViewHistoryClosure() {
       return new Promise(function (resolve) {
         var databaseStr = JSON.stringify(this.database);
 
-//#if FIREFOX || MOZCENTRAL
-//      sessionStorage.setItem('pdfjsHistory', databaseStr);
-//      resolve();
-//#endif
-
-//#if !(FIREFOX || MOZCENTRAL)
-        localStorage.setItem('database', databaseStr);
+        if (typeof PDFJSDev !== 'undefined' &&
+            PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+          sessionStorage.setItem('pdfjsHistory', databaseStr);
+        } else {
+          localStorage.setItem('database', databaseStr);
+        }
         resolve();
-//#endif
       }.bind(this));
     },
 
     _readFromStorage: function ViewHistory_readFromStorage() {
       return new Promise(function (resolve) {
-//#if FIREFOX || MOZCENTRAL
-//      resolve(sessionStorage.getItem('pdfjsHistory'));
-//#endif
-
-//#if !(FIREFOX || MOZCENTRAL)
-        resolve(localStorage.getItem('database'));
-//#endif
+        if (typeof PDFJSDev !== 'undefined' &&
+            PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+          resolve(sessionStorage.getItem('pdfjsHistory'));
+        } else {
+          resolve(localStorage.getItem('database'));
+        }
       });
     },
 

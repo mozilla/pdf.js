@@ -9,6 +9,7 @@ external/jpgjs/
 external/jasmine/
 external/cmapscompress/
 external/importL10n/
+external/builder/fixtures_esprima/
 shared/
 test/tmp/
 test/features/

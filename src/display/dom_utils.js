@@ -83,17 +83,19 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-//#if !(FIREFOX || MOZCENTRAL || CHROME)
-function hasCanvasTypedArrays() {
-  var canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 1;
-  var ctx = canvas.getContext('2d');
-  var imageData = ctx.createImageData(1, 1);
-  return (typeof imageData.data.buffer !== 'undefined');
+var hasCanvasTypedArrays;
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+  hasCanvasTypedArrays = function hasCanvasTypedArrays() {
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    var ctx = canvas.getContext('2d');
+    var imageData = ctx.createImageData(1, 1);
+    return (typeof imageData.data.buffer !== 'undefined');
+  };
+} else {
+  hasCanvasTypedArrays = function () { return true; };
 }
-//#else
-//function hasCanvasTypedArrays() { return true; }
-//#endif
 
 var LinkTarget = {
   NONE: 0, // Default value.
