@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsFilePath, pdfjsVersion, pdfjsBuild, WeakMap */
+/* globals pdfjsFilePath, pdfjsVersion, pdfjsBuild, requirejs, pdfjsLibs,
+           WeakMap */
 
 'use strict';
 
@@ -70,13 +71,39 @@ var isWorkerDisabled = false;
 var workerSrc;
 var isPostMessageTransfersDisabled = false;
 
-//#if PRODUCTION && !SINGLE_FILE
-//#if GENERIC
-//#include $ROOT/src/frameworks.js
-//#else
-//var fakeWorkerFilesLoader = null;
-//#endif
-//#endif
+var fakeWorkerFilesLoader = null;
+var useRequireEnsure = false;
+if (typeof PDFJSDev !== 'undefined' &&
+    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
+  // For GENERIC build we need add support of different fake file loaders
+  // for different  frameworks.
+  if (typeof window === 'undefined') {
+    // node.js - disable worker and set require.ensure.
+    isWorkerDisabled = true;
+    if (typeof require.ensure === 'undefined') {
+      require.ensure = require('node-ensure');
+    }
+    useRequireEnsure = true;
+  }
+  if (typeof __webpack_require__ !== 'undefined') {
+    useRequireEnsure = true;
+  }
+  if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
+    workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
+  }
+  var dynamicLoaderSupported =
+    typeof requirejs !== 'undefined' && requirejs.load;
+  fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
+    require.ensure([], function () {
+      var worker = require('./pdf.worker.js');
+      callback(worker.WorkerMessageHandler);
+    });
+  }) : dynamicLoaderSupported ? (function (callback) {
+    requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
+      callback(worker.WorkerMessageHandler);
+    });
+  }) : null;
+}
 
 /**
  * Document initialization / loading parameters object.
@@ -1033,11 +1060,11 @@ var PDFWorker = (function PDFWorkerClosure() {
     if (getDefaultSetting('workerSrc')) {
       return getDefaultSetting('workerSrc');
     }
-//#if PRODUCTION && !(MOZCENTRAL || FIREFOX)
-//  if (pdfjsFilePath) {
-//    return pdfjsFilePath.replace(/\.js$/i, '.worker.js');
-//  }
-//#endif
+    if (typeof PDFJSDev !== 'undefined' &&
+        PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
+        pdfjsFilePath) {
+      return pdfjsFilePath.replace(/\.js$/i, '.worker.js');
+    }
     error('No PDFJS.workerSrc specified');
   }
 
@@ -1046,12 +1073,14 @@ var PDFWorker = (function PDFWorkerClosure() {
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
     var WorkerMessageHandler;
-    if (!fakeWorkerFilesLoadedCapability) {
-      fakeWorkerFilesLoadedCapability = createPromiseCapability();
-      // In the developer build load worker_loader which in turn loads all the
-      // other files and resolves the promise. In production only the
-      // pdf.worker.js file is needed.
-//#if !PRODUCTION
+    if (fakeWorkerFilesLoadedCapability) {
+      return fakeWorkerFilesLoadedCapability.promise;
+    }
+    fakeWorkerFilesLoadedCapability = createPromiseCapability();
+    // In the developer build load worker_loader which in turn loads all the
+    // other files and resolves the promise. In production only the
+    // pdf.worker.js file is needed.
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof amdRequire === 'function') {
         amdRequire(['pdfjs/core/network', 'pdfjs/core/worker'],
             function (network, worker) {
@@ -1065,19 +1094,16 @@ var PDFWorker = (function PDFWorkerClosure() {
       } else {
         throw new Error('AMD or CommonJS must be used to load fake worker.');
       }
-//#endif
-//#if PRODUCTION && SINGLE_FILE
-//    WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
-//    fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
-//#endif
-//#if PRODUCTION && !SINGLE_FILE
-//    var loader = fakeWorkerFilesLoader || function (callback) {
-//      Util.loadScript(getWorkerSrc(), function () {
-//        callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
-//      });
-//    };
-//    loader(fakeWorkerFilesLoadedCapability.resolve);
-//#endif
+    } else if (PDFJSDev.test('SINGLE_FILE')) {
+      WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
+      fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+    } else {
+      var loader = fakeWorkerFilesLoader || function (callback) {
+        Util.loadScript(getWorkerSrc(), function () {
+          callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+        });
+      };
+      loader(fakeWorkerFilesLoadedCapability.resolve);
     }
     return fakeWorkerFilesLoadedCapability.promise;
   }
@@ -1198,20 +1224,20 @@ var PDFWorker = (function PDFWorkerClosure() {
       // all requirements to run parts of pdf.js in a web worker.
       // Right now, the requirement is, that an Uint8Array is still an
       // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
-//#if !SINGLE_FILE
-      if (!isWorkerDisabled && !getDefaultSetting('disableWorker') &&
+      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SINGLE_FILE')) &&
+          !isWorkerDisabled && !getDefaultSetting('disableWorker') &&
           typeof Worker !== 'undefined') {
         var workerSrc = getWorkerSrc();
 
         try {
-//#if GENERIC
-//        // Wraps workerSrc path into blob URL, if the former does not belong
-//        // to the same origin.
-//        if (!isSameOrigin(window.location.href, workerSrc)) {
-//          workerSrc = createCDNWrapper(
-//            new URL(workerSrc, window.location).href);
-//        }
-//#endif
+          // Wraps workerSrc path into blob URL, if the former does not belong
+          // to the same origin.
+          if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC') &&
+              !isSameOrigin(window.location.href, workerSrc)) {
+            workerSrc = createCDNWrapper(
+              new URL(workerSrc, window.location).href);
+          }
+
           // Some versions of FF can't create a worker on localhost, see:
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
           var worker = new Worker(workerSrc);
@@ -1311,7 +1337,6 @@ var PDFWorker = (function PDFWorkerClosure() {
           info('The worker has been disabled.');
         }
       }
-//#endif
       // Either workers are disabled, not supported or have thrown an exception.
       // Thus, we fallback to a faked worker.
       this._setupFakeWorker();

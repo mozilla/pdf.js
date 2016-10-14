@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals chrome */
 
 'use strict';
 
@@ -191,30 +192,30 @@
 
     _pushOrReplaceState: function pdfHistory_pushOrReplaceState(stateObj,
                                                                 replace) {
-//#if CHROME
       // history.state.chromecomState is managed by chromecom.js.
-      if (window.history.state && 'chromecomState' in window.history.state) {
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+          window.history.state && 'chromecomState' in window.history.state) {
         stateObj = stateObj || {};
         stateObj.chromecomState = window.history.state.chromecomState;
       }
-//#endif
       if (replace) {
-//#if (GENERIC || CHROME)
-        window.history.replaceState(stateObj, '', document.URL);
-//#else
-//    window.history.replaceState(stateObj, '');
-//#endif
+        if (typeof PDFJSDev === 'undefined' ||
+            PDFJSDev.test('GENERIC || CHROME')) {
+          window.history.replaceState(stateObj, '', document.URL);
+        } else {
+          window.history.replaceState(stateObj, '');
+        }
       } else {
-//#if (GENERIC || CHROME)
-        window.history.pushState(stateObj, '', document.URL);
-//#else
-//    window.history.pushState(stateObj, '');
-//#endif
-//#if CHROME
-//    if (top === window) {
-//      chrome.runtime.sendMessage('showPageAction');
-//    }
-//#endif
+        if (typeof PDFJSDev === 'undefined' ||
+            PDFJSDev.test('GENERIC || CHROME')) {
+          window.history.pushState(stateObj, '', document.URL);
+        } else {
+          window.history.pushState(stateObj, '');
+        }
+        if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
+            top === window) {
+          chrome.runtime.sendMessage('showPageAction');
+        }
       }
     },
 
