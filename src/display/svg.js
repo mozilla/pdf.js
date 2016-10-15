@@ -293,16 +293,6 @@ var SVGExtraState = (function SVGExtraStateClosure() {
 })();
 
 var SVGGraphics = (function SVGGraphicsClosure() {
-  function createScratchSVG(width, height) {
-    var NS = 'http://www.w3.org/2000/svg';
-    var svg = document.createElementNS(NS, 'svg:svg');
-    svg.setAttributeNS(null, 'version', '1.1');
-    svg.setAttributeNS(null, 'width', width + 'px');
-    svg.setAttributeNS(null, 'height', height + 'px');
-    svg.setAttributeNS(null, 'viewBox', '0 0 ' + width + ' ' + height);
-    return svg;
-  }
-
   function opListToTree(opList) {
     var opTree = [];
     var tmp = [];
@@ -455,17 +445,14 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     getSVG: function SVGGraphics_getSVG(operatorList, viewport) {
-      this.svg = createScratchSVG(viewport.width, viewport.height);
       this.viewport = viewport;
 
+      var svgElement = this._initialize(viewport);
       return this.loadDependencies(operatorList).then(function () {
         this.transformMatrix = IDENTITY_MATRIX;
-        this.defs = document.createElementNS(NS, 'svg:defs');
-        this.svg.setAttributeNS(null, 'transform', pm(viewport.transform));
-        this.svg.appendChild(this.defs);
         var opTree = this.convertOpList(operatorList);
         this.executeOpTree(opTree);
-        return this.svg;
+        return svgElement;
       }.bind(this));
     },
 
@@ -1144,6 +1131,37 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 
     paintFormXObjectEnd:
         function SVGGraphics_paintFormXObjectEnd() {},
+
+    /**
+     * @private
+     */
+    _initialize: function SVGGraphics_initialize(viewport) {
+      // Create the SVG element.
+      var svg = document.createElementNS(NS, 'svg:svg');
+      svg.setAttributeNS(null, 'version', '1.1');
+      svg.setAttributeNS(null, 'width', viewport.width + 'px');
+      svg.setAttributeNS(null, 'height', viewport.height + 'px');
+      svg.setAttributeNS(null, 'viewBox', '0 0 ' + viewport.width +
+                                          ' ' + viewport.height);
+
+      // Create the definitions element.
+      var definitions = document.createElementNS(NS, 'svg:defs');
+      svg.appendChild(definitions);
+      this.defs = definitions;
+
+      // Create the root group element, which acts a container for all other
+      // groups and applies the viewport transform.
+      var rootGroup = document.createElementNS(NS, 'svg:g');
+      rootGroup.setAttributeNS(null, 'transform', pm(viewport.transform));
+      svg.appendChild(rootGroup);
+
+      // For the construction of the SVG image we are only interested in the
+      // root group, so we expose it as the entry point of the SVG image for
+      // the other code in this class.
+      this.svg = rootGroup;
+
+      return svg;
+    },
 
     /**
      * @private
