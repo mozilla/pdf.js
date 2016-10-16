@@ -79,13 +79,7 @@ function getCurrentVersion() {
 // make all
 //
 target.all = function() {
-  // Don't do anything by default
-  echo('Please specify a target. Available targets:');
-  for (var t in target) {
-    if (t !== 'all') {
-      echo('  ' + t);
-    }
-  }
+  exit(exec('gulp default'));
 };
 
 
@@ -194,27 +188,7 @@ target.components = function() {
 };
 
 target.jsdoc = function() {
-  echo();
-  echo('### Generating jsdoc');
-
-  var JSDOC_FILES = [
-    'src/doc_helper.js',
-    'src/display/api.js',
-    'src/display/global.js',
-    'src/shared/util.js',
-    'src/core/annotation.js'
-  ];
-
-  if (test('-d', JSDOC_DIR)) {
-    rm('-rf', JSDOC_DIR);
-  }
-
-  mkdir('-p',JSDOC_DIR);
-
-  exec('"node_modules/.bin/jsdoc" -d "' + JSDOC_DIR + '" ' +
-       JSDOC_FILES.join(' '));
-
-  echo();
+  exit(exec('gulp jsdoc'));
 };
 
 //
@@ -617,13 +591,7 @@ target.minified = function() {
 // make extension
 //
 target.extension = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Building extensions');
-
-  target.locale();
-  target.firefox();
-  target.chromium();
+  exit(exec('gulp extension'));
 };
 
 target.buildnumber = function() {
