@@ -20,7 +20,9 @@
 var fs = require('fs');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var mkdirp = require('mkdirp');
 var rimraf = require('rimraf');
+var runSequence = require('run-sequence');
 var stream = require('stream');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
@@ -28,6 +30,7 @@ var streamqueue = require('streamqueue');
 var zip = require('gulp-zip');
 
 var BUILD_DIR = 'build/';
+var JSDOC_DIR = 'jsdoc/';
 var L10N_DIR = 'l10n/';
 var TEST_DIR = 'test/';
 
@@ -339,6 +342,13 @@ gulp.task('default', function() {
   });
 });
 
+gulp.task('extension', function (done) {
+  console.log();
+  console.log('### Building extensions');
+
+  runSequence('locale', ['firefox', 'chromium'], done);
+});
+
 gulp.task('buildnumber', function (done) {
   console.log();
   console.log('### Getting extension build number');
@@ -419,6 +429,28 @@ gulp.task('bundle-components', ['buildnumber'], function () {
 
 gulp.task('bundle', ['buildnumber'], function () {
   return createBundle(DEFINES).pipe(gulp.dest(BUILD_DIR));
+});
+
+gulp.task('jsdoc', function (done) {
+  console.log();
+  console.log('### Generating documentation (JSDoc)');
+
+  var JSDOC_FILES = [
+    'src/doc_helper.js',
+    'src/display/api.js',
+    'src/display/global.js',
+    'src/shared/util.js',
+    'src/core/annotation.js'
+  ];
+
+  var directory = BUILD_DIR + JSDOC_DIR;
+  rimraf(directory, function () {
+    mkdirp(directory, function () {
+      var command = '"node_modules/.bin/jsdoc" -d ' + directory + ' ' +
+                    JSDOC_FILES.join(' ');
+      exec(command, done);
+    });
+  });
 });
 
 gulp.task('publish', ['generic'], function (done) {
