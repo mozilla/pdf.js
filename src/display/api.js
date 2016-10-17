@@ -627,9 +627,9 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * Page getTextContent parameters.
  *
  * @typedef {Object} getTextContentParameters
- * @param {boolean} normalizeWhitespace - replaces all occurrences of
+ * @property {boolean} normalizeWhitespace - replaces all occurrences of
  *   whitespace with standard spaces (0x20). The default value is `false`.
- * @param {boolean} disableCombineTextItems - do not attempt to combine
+ * @property {boolean} disableCombineTextItems - do not attempt to combine
  *   same line {@link TextItem}'s. The default value is `false`.
  */
 
@@ -638,8 +638,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *
  * @typedef {Object} TextContent
  * @property {array} items - array of {@link TextItem}
- * @property {Object} styles - {@link TextStyles} objects, indexed by font
- *                    name.
+ * @property {Object} styles - {@link TextStyles} objects, indexed by font name.
  */
 
 /**
@@ -668,10 +667,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * Page annotation parameters.
  *
  * @typedef {Object} GetAnnotationsParameters
- * @param {string} intent - Determines the annotations that will be fetched,
- *                 can be either 'display' (viewable annotations) or 'print'
- *                 (printable annotations).
- *                 If the parameter is omitted, all annotations are fetched.
+ * @property {string} intent - Determines the annotations that will be fetched,
+ *                    can be either 'display' (viewable annotations) or 'print'
+ *                    (printable annotations).
+ *                    If the parameter is omitted, all annotations are fetched.
  */
 
 /**
