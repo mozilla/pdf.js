@@ -75,11 +75,19 @@ function getCurrentVersion() {
     .version;
 }
 
+function execGulp(cmd) {
+  var result = exec('gulp ' + cmd);
+  if (result.code) {
+    echo('ERROR: gulp exited with ' + result.code);
+    exit(result.code);
+  }
+}
+
 //
 // make all
 //
 target.all = function() {
-  exit(exec('gulp default'));
+  execGulp('default');
 };
 
 
@@ -105,7 +113,7 @@ var COMMON_WEB_FILES =
 // modern HTML5 browsers.
 //
 target.generic = function() {
-  exec('gulp bundle-generic');
+  execGulp('bundle-generic');
 
   target.locale();
 
@@ -150,7 +158,7 @@ target.generic = function() {
 };
 
 target.components = function() {
-  exec('gulp bundle-components');
+  execGulp('bundle-components');
 
   cd(ROOT_DIR);
   echo();
@@ -188,7 +196,7 @@ target.components = function() {
 };
 
 target.jsdoc = function() {
-  exit(exec('gulp jsdoc'));
+  execGulp('jsdoc');
 };
 
 //
@@ -202,6 +210,7 @@ target.web = function() {
   target.extension();
   target.jsdoc();
 
+  cd(ROOT_DIR);
   echo();
   echo('### Creating web site');
 
@@ -355,7 +364,7 @@ target.dist = function() {
 };
 
 target.publish = function() {
-  exec('gulp publish');
+  execGulp('publish');
 };
 
 //
@@ -451,7 +460,7 @@ target.cmaps = function () {
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
 target.bundle = function(args) {
-  exec('gulp bundle');
+  execGulp('bundle');
 };
 
 //
@@ -466,7 +475,7 @@ target.singlefile = function() {
 
   var SINGLE_FILE_BUILD_DIR = SINGLE_FILE_DIR + 'build/';
 
-  exec('gulp bundle-singlefile');
+  execGulp('bundle-singlefile');
 
   cd(ROOT_DIR);
 
@@ -511,7 +520,7 @@ function cleanupCSSSource(file) {
 // modern HTML5 browsers.
 //
 target.minified = function() {
-  exec('gulp bundle-minified');
+  execGulp('bundle-minified');
   target.locale();
 
   cd(ROOT_DIR);
@@ -591,11 +600,11 @@ target.minified = function() {
 // make extension
 //
 target.extension = function() {
-  exit(exec('gulp extension'));
+  execGulp('extension');
 };
 
 target.buildnumber = function() {
-  exec('gulp buildnumber');
+  execGulp('buildnumber');
 };
 
 //
@@ -631,7 +640,7 @@ target.firefox = function() {
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi';
 
   target.locale();
-  exec('gulp bundle-firefox');
+  execGulp('bundle-firefox');
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -751,7 +760,7 @@ target.mozcentral = function() {
         ['icon.png',
          'icon64.png'];
 
-  exec('gulp bundle-mozcentral');
+  execGulp('bundle-mozcentral');
   cd(ROOT_DIR);
 
   // Clear out everything in the firefox extension build directory
@@ -851,7 +860,7 @@ target.chromium = function() {
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
 
-  exec('gulp bundle-chromium');
+  execGulp('bundle-chromium');
   cd(ROOT_DIR);
 
   // Clear out everything in the chrome extension build directory
@@ -989,7 +998,7 @@ target.chromium = function() {
 // make test
 //
 target.test = function() {
-  exec('gulp test');
+  execGulp('test');
 };
 
 //
@@ -997,7 +1006,7 @@ target.test = function() {
 // (Special tests for the Github bot)
 //
 target.bottest = function() {
-  exec('gulp bottest');
+  execGulp('bottest');
 };
 
 //
@@ -1005,9 +1014,9 @@ target.bottest = function() {
 //
 target.browsertest = function(options) {
   if (options && options.noreftest) {
-    exec('gulp browsertest-noreftest');
+    execGulp('browsertest-noreftest');
   } else {
-    exec('gulp browsertest');
+    execGulp('browsertest');
   }
 };
 
@@ -1015,21 +1024,21 @@ target.browsertest = function(options) {
 // make unittest
 //
 target.unittest = function(options, callback) {
-  exec('gulp unittest');
+  execGulp('unittest');
 };
 
 //
 // make fonttest
 //
 target.fonttest = function(options, callback) {
-  exec('gulp fonttest');
+  execGulp('fonttest');
 };
 
 //
 // make botmakeref
 //
 target.botmakeref = function() {
-  exec('gulp botmakeref');
+  execGulp('botmakeref');
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1203,35 +1212,35 @@ target.mozcentralcheck = function() {
 // make server
 //
 target.server = function () {
-  exit(exec('gulp server'));
+  execGulp('server');
 };
 
 //
 // make lint
 //
 target.lint = function() {
-  exit(exec('gulp lint'));
+  execGulp('lint');
 };
 
 //
 // make clean
 //
 target.clean = function() {
-  exit(exec('gulp clean'));
+  execGulp('clean');
 };
 
 //
 // make makefile
 //
 target.makefile = function () {
-  exit(exec('gulp makefile'));
+  execGulp('makefile');
 };
 
 //
 //make importl10n
 //
 target.importl10n = function() {
-  exit(exec('gulp importl10n'));
+  execGulp('importl10n');
 };
 
 exports.stripCommentHeaders = stripCommentHeaders;
