@@ -552,10 +552,10 @@ var PDFViewer = (function pdfViewer() {
 
     /**
      * @typedef ScrollPageIntoViewParameters
-     * @param {number} pageNumber - The page number.
-     * @param {Array} destArray - (optional) The original PDF destination array,
-     *   in the format: <page-ref> </XYZ|/FitXXX> <args..>
-     * @param {boolean} allowNegativeOffset - (optional) Allow negative page
+     * @property {number} pageNumber - The page number.
+     * @property {Array} destArray - (optional) The original PDF destination
+     *   array, in the format: <page-ref> </XYZ|/FitXXX> <args..>
+     * @property {boolean} allowNegativeOffset - (optional) Allow negative page
      *   offsets. The default value is `false`.
      */
 
