@@ -275,8 +275,8 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     this.dependencies = [];
 
     // Clipping
-    this.clipId = '';
-    this.pendingClip = false;
+    this.activeClipUrl = null;
+    this.clipGroup = null;
 
     this.maskId = '';
   }
@@ -906,26 +906,31 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     clip: function SVGGraphics_clip(type) {
       var current = this.current;
       // Add current path to clipping path
-      current.clipId = 'clippath' + clipCount;
+      var clipId = 'clippath' + clipCount;
       clipCount++;
-      this.clippath = document.createElementNS(NS, 'svg:clipPath');
-      this.clippath.setAttributeNS(null, 'id', current.clipId);
+      var clipPath = document.createElementNS(NS, 'svg:clipPath');
+      clipPath.setAttributeNS(null, 'id', clipId);
+      clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
       var clipElement = current.element.cloneNode();
       if (type === 'evenodd') {
         clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
         clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
       }
-      this.clippath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-      this.clippath.appendChild(clipElement);
-      this.defs.appendChild(this.clippath);
+      clipPath.appendChild(clipElement);
+      this.defs.appendChild(clipPath);
 
-      // Create a clipping group that references the clipping path.
-      current.pendingClip = true;
-      this.cgrp = document.createElementNS(NS, 'svg:g');
-      this.cgrp.setAttributeNS(null, 'clip-path',
-                               'url(#' + current.clipId + ')');
-      this.svg.appendChild(this.cgrp);
+      if (current.activeClipUrl) {
+        // The previous clipping group content can go out of order -- resetting
+        // cached clipGroup's.
+        current.clipGroup = null;
+        this.extraStack.forEach(function (prev) {
+          prev.clipGroup = null;
+        });
+      }
+      current.activeClipUrl = 'url(#' + clipId + ')';
+
+      this.tgrp = null;
     },
 
     closePath: function SVGGraphics_closePath() {
@@ -1167,13 +1172,26 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     /**
      * @private
      */
+    _ensureClipGroup: function SVGGraphics_ensureClipGroup() {
+      if (!this.current.clipGroup) {
+        var clipGroup = document.createElementNS(NS, 'svg:g');
+        clipGroup.setAttributeNS(null, 'clip-path',
+                                 this.current.activeClipUrl);
+        this.svg.appendChild(clipGroup);
+        this.current.clipGroup = clipGroup;
+      }
+      return this.current.clipGroup;
+    },
+
+    /**
+     * @private
+     */
     _ensureTransformGroup: function SVGGraphics_ensureTransformGroup() {
       if (!this.tgrp) {
         this.tgrp = document.createElementNS(NS, 'svg:g');
         this.tgrp.setAttributeNS(null, 'transform', pm(this.transformMatrix));
-
-        if (this.current.pendingClip) {
-          this.cgrp.appendChild(this.tgrp);
+        if (this.current.activeClipUrl) {
+          this._ensureClipGroup().appendChild(this.tgrp);
         } else {
           this.svg.appendChild(this.tgrp);
         }
