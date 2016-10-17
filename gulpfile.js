@@ -346,7 +346,7 @@ gulp.task('extension', function (done) {
   console.log();
   console.log('### Building extensions');
 
-  runSequence('locale', ['firefox', 'chromium'], done);
+  runSequence('locale', 'firefox', 'chromium', done);
 });
 
 gulp.task('buildnumber', function (done) {
