@@ -47,6 +47,7 @@ function WebServer() {
   this.verbose = false;
   this.cacheExpirationTime = 0;
   this.disableRangeRequests = false;
+  this.addContentDisposition = true;
   this.hooks = {
     'GET': [],
     'POST': []
@@ -103,6 +104,7 @@ WebServer.prototype = {
     }
 
     var disableRangeRequests = this.disableRangeRequests;
+    var addContentDisposition = this.addContentDisposition;
     var cacheExpirationTime = this.cacheExpirationTime;
 
     var filePath;
@@ -253,10 +255,15 @@ WebServer.prototype = {
       });
 
       var ext = path.extname(filePath).toLowerCase();
+      var filename = path.basename(filePath);
       var contentType = mimeTypes[ext] || defaultMimeType;
 
       if (!disableRangeRequests) {
         res.setHeader('Accept-Ranges', 'bytes');
+      }
+      if (addContentDisposition) {
+        var contentDispositionHeader = 'inline; filename="' + filename + '"';
+        res.setHeader('Content-Disposition', contentDispositionHeader);
       }
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileSize);

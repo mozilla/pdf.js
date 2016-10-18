@@ -281,8 +281,94 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   var assert = sharedUtil.assert;
   var createPromiseCapability = sharedUtil.createPromiseCapability;
   var isInt = sharedUtil.isInt;
+  var stringToUTF8String = sharedUtil.stringToUTF8String;
   var MissingPDFException = sharedUtil.MissingPDFException;
   var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
+  var InvalidHeaderException = sharedUtil.InvalidHeaderException;
+
+  /**
+   * RegExp for various RFC 6266 grammar
+   *
+   * disposition-type = "inline" | "attachment" | disp-ext-type
+   * disp-ext-type    = token
+   * disposition-parm = filename-parm | disp-ext-parm
+   * filename-parm    = "filename" "=" value
+   *                  | "filename*" "=" ext-value
+   * disp-ext-parm    = token "=" value
+   *                  | ext-token "=" ext-value
+   * ext-token        = <the characters in token, followed by "*">
+   */
+  var DISPOSITION_TYPE_REGEXP = /^([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *(?:$|;)/;
+
+  /**
+   * RegExp for various RFC 2616 grammar
+   *
+   * parameter     = token "=" ( token | quoted-string )
+   * token         = 1*<any CHAR except CTLs or separators>
+   * separators    = "(" | ")" | "<" | ">" | "@"
+   *               | "," | ";" | ":" | "\" | <">
+   *               | "/" | "[" | "]" | "?" | "="
+   *               | "{" | "}" | SP | HT
+   * quoted-string = ( <"> *(qdtext | quoted-pair ) <"> )
+   * qdtext        = <any TEXT except <">>
+   * quoted-pair   = "\" CHAR
+   * CHAR          = <any US-ASCII character (octets 0 - 127)>
+   * TEXT          = <any OCTET except CTLs, but including LWS>
+   * LWS           = [CRLF] 1*( SP | HT )
+   * CRLF          = CR LF
+   * CR            = <US-ASCII CR, carriage return (13)>
+   * LF            = <US-ASCII LF, linefeed (10)>
+   * SP            = <US-ASCII SP, space (32)>
+   * HT            = <US-ASCII HT, horizontal-tab (9)>
+   * CTL           = <any US-ASCII control character (octets 0 - 31) and
+   *                 DEL (127)>
+   * OCTET         = <any 8-bit sequence of data>
+   */
+  var PARAM_REGEXP = new RegExp(
+      /; *([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+) *= */.source + '(' +
+      /"(?:[ !\x23-\x5b\x5d-\x7e\x80-\xff]|\\[\x20-\x7e])*"/.source + '|' +
+      /([!#$%&'\*\+\-\.0-9A-Z\^_`a-z\|~]+)/.source + ')', 'g');
+
+  /**
+   * RegExp for various RFC 5987 grammar
+   *
+   * ext-value     = charset  "'" [ language ] "'" value-chars
+   * charset       = "UTF-8" / "ISO-8859-1" / mime-charset
+   * mime-charset  = 1*mime-charsetc
+   * mime-charsetc = ALPHA / DIGIT
+   *               / "!" / "#" / "$" / "%" / "&"
+   *               / "+" / "-" / "^" / "_" / "`"
+   *               / "{" / "}" / "~"
+   * language      = ( 2*3ALPHA [ extlang ] )
+   *               / 4ALPHA
+   *               / 5*8ALPHA
+   * extlang       = *3( "-" 3ALPHA )
+   * value-chars   = *( pct-encoded / attr-char )
+   * pct-encoded   = "%" HEXDIG HEXDIG
+   * attr-char     = ALPHA / DIGIT
+   *               / "!" / "#" / "$" / "&" / "+" / "-" / "."
+   *               / "^" / "_" / "`" / "|" / "~"
+   */
+
+  var EXT_VALUE_REGEXP = new RegExp(
+      /^([A-Za-z0-9!#$%&+\-^_`{}~]+)/.source + '\'' +
+      /(?:[A-Za-z]{2,3}(?:-[A-Za-z]{3}){0,3}|[A-Za-z]{4,8}|)/.source + '\'' +
+      /((?:%[0-9A-Fa-f]{2}|[A-Za-z0-9!#$&+\-\.^_`|~])+)/.source + '$');
+
+  var HEX_ESCAPE_REPLACE_REGEXP = /%([0-9A-Fa-f]{2})/g;
+
+  /**
+   * RegExp to match non-latin1 characters.
+   */
+  var NON_LATIN1_REGEXP = /[^\x20-\x7e\xa0-\xff]/g;
+
+  /**
+   * RegExp to match quoted-pair in RFC 2616
+   *
+   * quoted-pair = "\" CHAR
+   * CHAR        = <any US-ASCII character (octets 0 - 127)>
+   */
+  var QESC_REGEXP = /\\([\u0000-\u007f])/g;
 
   /** @implements {IPDFStream} */
   function PDFNetworkStream(options) {
@@ -366,6 +452,80 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     this.onProgress = null;
   }
 
+  /**
+   * Percent decode a single character.
+   *
+   * @param {string} str
+   * @param {string} hex
+   * @return {string}
+   * @api private
+   */
+
+  function pdecode(str, hex) {
+    return String.fromCharCode(parseInt(hex, 16));
+  }
+
+  /**
+   * Get ISO-8859-1 version of string.
+   *
+   * @param {string} val
+   * @return {string}
+   * @api private
+   */
+
+  function getlatin1(val) {
+    // simple Unicode -> ISO-8859-1 transformation
+    return String(val).replace(NON_LATIN1_REGEXP, '?');
+  }
+
+  function getUtf8(binary) {
+    try {
+      return stringToUTF8String(binary);
+    } catch (error) {
+      if (error instanceof URIError) {
+        throw new InvalidHeaderException('invalid extended field value');
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Decode a RFC 6987 field value (gracefully).
+   *
+   * @param {string} str
+   * @return {string}
+   * @api private
+   */
+  function decodefield(str) {
+    var match = EXT_VALUE_REGEXP.exec(str);
+
+    if (!match) {
+      throw new InvalidHeaderException('invalid extended field value');
+    }
+
+    var charset = match[1].toLowerCase();
+    var encoded = match[2];
+    var value;
+
+    // to binary string
+    var binary = encoded.replace(HEX_ESCAPE_REPLACE_REGEXP, pdecode);
+
+    switch (charset) {
+      case 'iso-8859-1':
+        value = getlatin1(binary);
+        break;
+      case 'utf-8':
+        value = getUtf8(binary);
+        break;
+      default:
+        throw new
+          InvalidHeaderException('unsupported charset in extended field');
+    }
+
+    return value;
+  }
+
   PDFNetworkStreamFullRequestReader.prototype = {
     _validateRangeRequestCapabilities: function
         PDFNetworkStreamFullRequestReader_validateRangeRequestCapabilities() {
@@ -405,6 +565,104 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       return true;
     },
 
+    _parseContentDisposition: function
+      PDFNetworkStreamFullRequestReader_parseContentDisposition(string) {
+        if (!string || typeof string !== 'string') {
+          throw new InvalidHeaderException('argument string is required');
+        }
+
+        var contentDisposition = {};
+        var match = DISPOSITION_TYPE_REGEXP.exec(string);
+        if (!match) {
+          throw new InvalidHeaderException('invalid type format');
+        }
+
+        // normalize type
+        var index = match[0].length;
+        contentDisposition.type = match[1].toLowerCase();
+
+        var key;
+        var names = [];
+        var params = {};
+        var value;
+
+        // calculate index to start at
+        index = PARAM_REGEXP.lastIndex = match[0].substr(-1) === ';' ?
+          index - 1 : index;
+
+        // match parameters
+        while ((match = PARAM_REGEXP.exec(string))) {
+          if (match.index !== index) {
+            throw new InvalidHeaderException('invalid parameter format');
+          }
+
+          index += match[0].length;
+          key = match[1].toLowerCase();
+          value = match[2];
+
+          if (names.indexOf(key) !== -1) {
+            throw new InvalidHeaderException('invalid duplicate parameter');
+          }
+
+          names.push(key);
+
+          if (key.indexOf('*') + 1 === key.length) {
+            // decode extended value
+            key = key.slice(0, -1);
+            value = decodefield(value);
+
+            // overwrite existing value
+            params[key] = value;
+            continue;
+          }
+
+          if (typeof params[key] === 'string') {
+            continue;
+          }
+
+          if (value[0] === '"') {
+            // remove quotes and escapes
+            value = value
+              .substr(1, value.length - 2)
+              .replace(QESC_REGEXP, '$1');
+          }
+
+          params[key] = value;
+        }
+
+        if (index !== -1 && index !== string.length) {
+          throw new InvalidHeaderException('invalid parameter format');
+        }
+
+        contentDisposition.parameters = params;
+        return contentDisposition;
+    },
+
+    _parseHeaders: function PDFNetworkStreamFullRequestReader_parseHeaders() {
+      try {
+        var headers = Object.create(null);
+        var networkManager = this._manager;
+        var fullRequestXhrId = this._fullRequestId;
+        var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
+        var contentDispositionString =
+          fullRequestXhr.getResponseHeader('Content-Disposition');
+
+        if (contentDispositionString && contentDispositionString.length > 0) {
+          headers.contentDisposition =
+            this._parseContentDisposition(contentDispositionString);
+        }
+
+        return headers;
+      } catch(err) {
+        if (err instanceof InvalidHeaderException) {
+          // Ignore invalid headers
+          return headers;
+        } else {
+          throw err;
+        }
+      }
+    },
+
     _onHeadersReceived:
         function PDFNetworkStreamFullRequestReader_onHeadersReceived() {
 
@@ -414,6 +672,8 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
 
       var networkManager = this._manager;
       var fullRequestXhrId = this._fullRequestId;
+      var headers = this._parseHeaders();
+
       if (networkManager.isStreamingRequest(fullRequestXhrId)) {
         // We can continue fetching when progressive loading is enabled,
         // and we don't need the autoFetch feature.
@@ -427,7 +687,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         networkManager.abortRequest(fullRequestXhrId);
       }
 
-      this._headersReceivedCapability.resolve();
+      this._headersReceivedCapability.resolve(headers);
     },
 
     _onProgressiveData:
