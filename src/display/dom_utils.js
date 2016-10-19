@@ -28,6 +28,8 @@
 
 var removeNullCharacters = sharedUtil.removeNullCharacters;
 var warn = sharedUtil.warn;
+var deprecated = sharedUtil.deprecated;
+var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
 
 /**
  * Optimised CSS custom property getter/setter.
@@ -229,9 +231,16 @@ function isExternalLinkTargetSet() {
   }
 }
 
+function isValidUrl(url, allowRelative) {
+  deprecated('isValidUrl(), please use createValidAbsoluteUrl() instead.');
+  var baseUrl = allowRelative ? 'http://example.com' : null;
+  return createValidAbsoluteUrl(url, baseUrl) !== null;
+}
+
 exports.CustomStyle = CustomStyle;
 exports.addLinkAttributes = addLinkAttributes;
 exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
+exports.isValidUrl = isValidUrl;
 exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.LinkTarget = LinkTarget;
 exports.hasCanvasTypedArrays = hasCanvasTypedArrays;

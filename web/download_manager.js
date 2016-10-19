@@ -67,10 +67,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC || CHROME')) {
 
   DownloadManager.prototype = {
     downloadUrl: function DownloadManager_downloadUrl(url, filename) {
-      if (!pdfjsLib.isValidUrl(url, true)) {
+      if (!pdfjsLib.createValidAbsoluteUrl(url, 'http://example.com')) {
         return; // restricted/invalid URL
       }
-
       download(url + '#pdfjs.action=download', filename);
     },
 
