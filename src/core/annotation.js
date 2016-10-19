@@ -38,14 +38,11 @@ var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationType = sharedUtil.AnnotationType;
 var OPS = sharedUtil.OPS;
 var Util = sharedUtil.Util;
-var isBool = sharedUtil.isBool;
 var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
-var isValidUrl = sharedUtil.isValidUrl;
 var stringToBytes = sharedUtil.stringToBytes;
 var stringToPDFString = sharedUtil.stringToPDFString;
-var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
 var Dict = corePrimitives.Dict;
 var isDict = corePrimitives.isDict;
@@ -53,6 +50,7 @@ var isName = corePrimitives.isName;
 var isRef = corePrimitives.isRef;
 var Stream = coreStream.Stream;
 var ColorSpace = coreColorSpace.ColorSpace;
+var Catalog = coreObj.Catalog;
 var ObjectLoader = coreObj.ObjectLoader;
 var FileSpec = coreObj.FileSpec;
 var OperatorList = coreEvaluator.OperatorList;
@@ -66,11 +64,12 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
   /**
    * @param {XRef} xref
    * @param {Object} ref
+   * @param {PDFManager} pdfManager
    * @param {string} uniquePrefix
    * @param {Object} idCounters
    * @returns {Annotation}
    */
-  create: function AnnotationFactory_create(xref, ref,
+  create: function AnnotationFactory_create(xref, ref, pdfManager,
                                             uniquePrefix, idCounters) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
@@ -90,6 +89,7 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       ref: isRef(ref) ? ref : null,
       subtype: subtype,
       id: id,
+      pdfManager: pdfManager,
     };
 
     switch (subtype) {
@@ -842,103 +842,14 @@ var LinkAnnotation = (function LinkAnnotationClosure() {
   function LinkAnnotation(params) {
     Annotation.call(this, params);
 
-    var dict = params.dict;
     var data = this.data;
     data.annotationType = AnnotationType.LINK;
 
-    var action = dict.get('A'), url, dest;
-    if (action && isDict(action)) {
-      var linkType = action.get('S').name;
-      switch (linkType) {
-        case 'URI':
-          url = action.get('URI');
-          if (isName(url)) {
-            // Some bad PDFs do not put parentheses around relative URLs.
-            url = '/' + url.name;
-          } else if (url) {
-            url = addDefaultProtocolToUrl(url);
-          }
-          // TODO: pdf spec mentions urls can be relative to a Base
-          // entry in the dictionary.
-          break;
-
-        case 'GoTo':
-          dest = action.get('D');
-          break;
-
-        case 'GoToR':
-          var urlDict = action.get('F');
-          if (isDict(urlDict)) {
-            // We assume that we found a FileSpec dictionary
-            // and fetch the URL without checking any further.
-            url = urlDict.get('F') || null;
-          } else if (isString(urlDict)) {
-            url = urlDict;
-          }
-
-          // NOTE: the destination is relative to the *remote* document.
-          var remoteDest = action.get('D');
-          if (remoteDest) {
-            if (isName(remoteDest)) {
-              remoteDest = remoteDest.name;
-            }
-            if (isString(url)) {
-              var baseUrl = url.split('#')[0];
-              if (isString(remoteDest)) {
-                // In practice, a named destination may contain only a number.
-                // If that happens, use the '#nameddest=' form to avoid the link
-                // redirecting to a page, instead of the correct destination.
-                url = baseUrl + '#' +
-                  (/^\d+$/.test(remoteDest) ? 'nameddest=' : '') + remoteDest;
-              } else if (isArray(remoteDest)) {
-                url = baseUrl + '#' + JSON.stringify(remoteDest);
-              }
-            }
-          }
-          // The 'NewWindow' property, equal to `LinkTarget.BLANK`.
-          var newWindow = action.get('NewWindow');
-          if (isBool(newWindow)) {
-            data.newWindow = newWindow;
-          }
-          break;
-
-        case 'Named':
-          data.action = action.get('N').name;
-          break;
-
-        default:
-          warn('unrecognized link type: ' + linkType);
-      }
-    } else if (dict.has('Dest')) { // Simple destination link.
-      dest = dict.get('Dest');
-    }
-
-    if (url) {
-      if (isValidUrl(url, /* allowRelative = */ false)) {
-        data.url = tryConvertUrlEncoding(url);
-      }
-    }
-    if (dest) {
-      data.dest = isName(dest) ? dest.name : dest;
-    }
-  }
-
-  // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
-  function addDefaultProtocolToUrl(url) {
-    if (isString(url) && url.indexOf('www.') === 0) {
-      return ('http://' + url);
-    }
-    return url;
-  }
-
-  function tryConvertUrlEncoding(url) {
-    // According to ISO 32000-1:2008, section 12.6.4.7, URIs should be encoded
-    // in 7-bit ASCII. Some bad PDFs use UTF-8 encoding, see Bugzilla 1122280.
-    try {
-      return stringToUTF8String(url);
-    } catch (e) {
-      return url;
-    }
+    Catalog.parseDestDictionary({
+      destDict: params.dict,
+      resultObj: data,
+      docBaseUrl: params.pdfManager.docBaseUrl,
+    });
   }
 
   Util.inherit(LinkAnnotation, Annotation, {});

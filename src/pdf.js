@@ -64,7 +64,9 @@
     exports.OPS = pdfjsLibs.pdfjsSharedUtil.OPS;
     exports.UNSUPPORTED_FEATURES =
       pdfjsLibs.pdfjsSharedUtil.UNSUPPORTED_FEATURES;
-    exports.isValidUrl = pdfjsLibs.pdfjsSharedUtil.isValidUrl;
+    exports.isValidUrl = pdfjsLibs.pdfjsDisplayDOMUtils.isValidUrl;
+    exports.createValidAbsoluteUrl =
+      pdfjsLibs.pdfjsSharedUtil.createValidAbsoluteUrl;
     exports.createObjectURL = pdfjsLibs.pdfjsSharedUtil.createObjectURL;
     exports.removeNullCharacters =
       pdfjsLibs.pdfjsSharedUtil.removeNullCharacters;

@@ -26,6 +26,8 @@
   }
 }(this, function (exports, pdfjsLib) {
 
+var PDFJS = pdfjsLib.PDFJS;
+
 var DEFAULT_TITLE = '\u2013';
 
 /**
@@ -82,7 +84,10 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      */
     _bindLink: function PDFOutlineViewer_bindLink(element, item) {
       if (item.url) {
-        pdfjsLib.addLinkAttributes(element, { url: item.url });
+        pdfjsLib.addLinkAttributes(element, {
+          url: item.url,
+          target: (item.newWindow ? PDFJS.LinkTarget.BLANK : undefined),
+        });
         return;
       }
       var linkService = this.linkService;

@@ -643,7 +643,8 @@ describe('api', function() {
           var outlineItemTwo = outline[2];
           expect(typeof outlineItemTwo.title).toEqual('string');
           expect(outlineItemTwo.dest).toEqual(null);
-          expect(outlineItemTwo.url).toEqual('http://google.com');
+          expect(outlineItemTwo.url).toEqual('http://google.com/');
+          expect(outlineItemTwo.newWindow).toBeUndefined();
 
           var outlineItemOne = outline[1];
           expect(outlineItemOne.bold).toEqual(false);
@@ -788,6 +789,68 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+
+    it('gets annotations containing relative URLs (bug 766086)',
+        function (done) {
+      var url = new URL('../pdfs/bug766086.pdf', window.location).href;
+
+      var defaultLoadingTask = PDFJS.getDocument(url);
+      var defaultPromise = defaultLoadingTask.promise.then(function (pdfDoc) {
+        return pdfDoc.getPage(1).then(function (pdfPage) {
+          return pdfPage.getAnnotations();
+        });
+      });
+
+      var docBaseUrlLoadingTask = PDFJS.getDocument({
+        url: url,
+        docBaseUrl: 'http://www.example.com/test/pdfs/qwerty.pdf',
+      });
+      var docBaseUrlPromise = docBaseUrlLoadingTask.promise.then(
+          function (pdfDoc) {
+        return pdfDoc.getPage(1).then(function (pdfPage) {
+          return pdfPage.getAnnotations();
+        });
+      });
+
+      var invalidDocBaseUrlLoadingTask = PDFJS.getDocument({
+        url: url,
+        docBaseUrl: 'qwerty.pdf',
+      });
+      var invalidDocBaseUrlPromise = invalidDocBaseUrlLoadingTask.promise.then(
+          function (pdfDoc) {
+        return pdfDoc.getPage(1).then(function (pdfPage) {
+          return pdfPage.getAnnotations();
+        });
+      });
+
+      Promise.all([defaultPromise, docBaseUrlPromise,
+                   invalidDocBaseUrlPromise]).then(function (data) {
+        var defaultAnnotations = data[0];
+        var docBaseUrlAnnotations = data[1];
+        var invalidDocBaseUrlAnnotations = data[2];
+
+        expect(defaultAnnotations[0].url).toBeUndefined();
+        expect(defaultAnnotations[0].unsafeUrl).toEqual(
+          '../../0021/002156/215675E.pdf#nameddest=15');
+
+        expect(docBaseUrlAnnotations[0].url).toEqual(
+          'http://www.example.com/0021/002156/215675E.pdf#nameddest=15');
+        expect(docBaseUrlAnnotations[0].unsafeUrl).toEqual(
+          '../../0021/002156/215675E.pdf#nameddest=15');
+
+        expect(invalidDocBaseUrlAnnotations[0].url).toBeUndefined();
+        expect(invalidDocBaseUrlAnnotations[0].unsafeUrl).toEqual(
+          '../../0021/002156/215675E.pdf#nameddest=15');
+
+        defaultLoadingTask.destroy();
+        docBaseUrlLoadingTask.destroy();
+        invalidDocBaseUrlLoadingTask.destroy();
+        done();
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+
     it('gets text content', function (done) {
       var defaultPromise = page.getTextContent();
       var parametersPromise = page.getTextContent({
