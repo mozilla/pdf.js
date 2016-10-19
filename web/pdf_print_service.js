@@ -187,6 +187,24 @@
       });
     },
 
+    performPrint: function () {
+      this.throwIfInactive();
+      return new Promise(function (resolve) {
+        // Push window.print in the macrotask queue to avoid being affected by
+        // the deprecation of running print() code in a microtask, see
+        // https://github.com/mozilla/pdf.js/issues/7547.
+        setTimeout(function () {
+          if (!this.active) {
+            resolve();
+            return;
+          }
+          print.call(window);
+          // Delay promise resolution in case print() was not synchronous.
+          setTimeout(resolve, 20);  // Tidy-up.
+        }.bind(this), 0);
+      }.bind(this));
+    },
+
     get active() {
       return this === activeService;
     },
@@ -223,8 +241,7 @@
       }
       var activeServiceOnEntry = activeService;
       activeService.renderPages().then(function () {
-        activeServiceOnEntry.throwIfInactive();
-        return startPrint(activeServiceOnEntry);
+        return activeServiceOnEntry.performPrint();
       }).catch(function () {
         // Ignore any error messages.
       }).then(function () {
@@ -244,23 +261,6 @@
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent(eventType, false, false, 'custom');
     window.dispatchEvent(event);
-  }
-
-  function startPrint(activeServiceOnEntry) {
-    return new Promise(function (resolve) {
-      // Push window.print in the macrotask queue to avoid being affected by
-      // the deprecation of running print() code in a microtask, see
-      // https://github.com/mozilla/pdf.js/issues/7547.
-      setTimeout(function () {
-        if (!activeServiceOnEntry.active) {
-          resolve();
-          return;
-        }
-        print.call(window);
-        // Delay promise resolution in case print() was not synchronous.
-        setTimeout(resolve, 20);  // Tidy-up.
-      }, 0);
-    });
   }
 
   function abort() {
