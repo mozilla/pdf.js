@@ -35,14 +35,10 @@
 
   var activeService = null;
 
-  // Using one canvas for all paint operations -- painting one canvas at a time.
-  var scratchCanvas = null;
-
-  function renderPage(pdfDocument, pageNumber, size, wrapper) {
-    var activeServiceOnEntry = activeService;
-    if (!scratchCanvas) {
-      scratchCanvas = document.createElement('canvas');
-    }
+  // Renders the page to the canvas of the given print service, and returns
+  // the suggested dimensions of the output page.
+  function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
+    var scratchCanvas = activeService.scratchCanvas;
 
     // The size of the canvas in pixels for printing.
     var PRINT_RESOLUTION = 150;
@@ -51,9 +47,8 @@
     scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
     // The physical size of the img as specified by the PDF document.
-    var img = document.createElement('img');
-    img.style.width = Math.floor(size.width * CSS_UNITS) + 'px';
-    img.style.height = Math.floor(size.height * CSS_UNITS) + 'px';
+    var width = Math.floor(size.width * CSS_UNITS) + 'px';
+    var height = Math.floor(size.height * CSS_UNITS) + 'px';
 
     var ctx = scratchCanvas.getContext('2d');
     ctx.save();
@@ -69,21 +64,11 @@
         intent: 'print'
       };
       return pdfPage.render(renderContext).promise;
-    }).then(function() {
-      activeServiceOnEntry.throwIfInactive();
-      if (('toBlob' in scratchCanvas) &&
-          !pdfjsLib.PDFJS.disableCreateObjectURL) {
-        scratchCanvas.toBlob(function (blob) {
-          img.src = URL.createObjectURL(blob);
-        });
-      } else {
-        img.src = scratchCanvas.toDataURL();
-      }
-      wrapper.appendChild(img);
-      return new Promise(function(resolve, reject) {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
+    }).then(function () {
+      return {
+        width: width,
+        height: height,
+      };
     });
   }
 
@@ -91,8 +76,9 @@
     this.pdfDocument = pdfDocument;
     this.pagesOverview = pagesOverview;
     this.printContainer = printContainer;
-    this.wrappers = [];
     this.currentPage = -1;
+    // The temporary canvas where renderPage paints one page at a time.
+    this.scratchCanvas = document.createElement('canvas');
   }
 
   PDFPrintService.prototype = {
@@ -100,7 +86,6 @@
       this.throwIfInactive();
 
       var pdfDocument = this.pdfDocument;
-      var printContainer = this.printContainer;
       var body = document.querySelector('body');
       body.setAttribute('data-pdfjsprinting', true);
 
@@ -131,12 +116,6 @@
         '@page { size: ' + pageSize.width + 'pt ' + pageSize.height + 'pt;}' +
         '}';
       body.appendChild(this.pageStyleSheet);
-
-      for (var i = 0, ii = this.pagesOverview.length; i < ii; ++i) {
-        var wrapper = document.createElement('div');
-        printContainer.appendChild(wrapper);
-        this.wrappers[i] = wrapper;
-      }
     },
 
     destroy: function () {
@@ -147,16 +126,13 @@
         return;
       }
       this.printContainer.textContent = '';
-      this.wrappers = null;
       if (this.pageStyleSheet && this.pageStyleSheet.parentNode) {
         this.pageStyleSheet.parentNode.removeChild(this.pageStyleSheet);
         this.pageStyleSheet = null;
       }
+      this.scratchCanvas.width = this.scratchCanvas.height = 0;
+      this.scratchCanvas = null;
       activeService = null;
-      if (scratchCanvas) {
-        scratchCanvas.width = scratchCanvas.height = 0;
-        scratchCanvas = null;
-      }
       ensureOverlay().then(function () {
         if (OverlayManager.active !== 'printServiceOverlay') {
           return; // overlay was already closed
@@ -176,11 +152,39 @@
         }
         var index = this.currentPage;
         renderProgress(index, pageCount);
-        renderPage(this.pdfDocument, index + 1,
-                   this.pagesOverview[index], this.wrappers[index]).then(
-          function () { renderNextPage(resolve, reject); }, reject);
+        renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
+          .then(this.useRenderedPage.bind(this))
+          .then(function () {
+            renderNextPage(resolve, reject);
+          }, reject);
       }.bind(this);
       return new Promise(renderNextPage);
+    },
+
+    useRenderedPage: function (printItem) {
+      this.throwIfInactive();
+      var img = document.createElement('img');
+      img.style.width = printItem.width;
+      img.style.height = printItem.height;
+
+      var scratchCanvas = this.scratchCanvas;
+      if (('toBlob' in scratchCanvas) &&
+          !pdfjsLib.PDFJS.disableCreateObjectURL) {
+        scratchCanvas.toBlob(function (blob) {
+          img.src = URL.createObjectURL(blob);
+        });
+      } else {
+        img.src = scratchCanvas.toDataURL();
+      }
+
+      var wrapper = document.createElement('div');
+      wrapper.appendChild(img);
+      this.printContainer.appendChild(wrapper);
+
+      return new Promise(function (resolve, reject) {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
     },
 
     get active() {
