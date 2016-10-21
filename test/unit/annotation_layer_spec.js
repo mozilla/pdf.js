@@ -505,6 +505,45 @@ describe('Annotation layer', function() {
       expect(data.newWindow).toBeFalsy();
     });
 
+    it('should correctly parse a Launch action, where the FileSpec dict ' +
+       'contains a relative URL, with the "docBaseUrl" parameter specified',
+        function() {
+      var fileSpecDict = new Dict();
+      fileSpecDict.set('Type', Name.get('FileSpec'));
+      fileSpecDict.set('F', 'Part II/Part II.pdf');
+      fileSpecDict.set('UF', 'Part II/Part II.pdf');
+
+      var actionDict = new Dict();
+      actionDict.set('Type', Name.get('Action'));
+      actionDict.set('S', Name.get('Launch'));
+      actionDict.set('F', fileSpecDict);
+      actionDict.set('NewWindow', true);
+
+      var annotationDict = new Dict();
+      annotationDict.set('Type', Name.get('Annot'));
+      annotationDict.set('Subtype', Name.get('Link'));
+      annotationDict.set('A', actionDict);
+
+      var annotationRef = new Ref(88, 0);
+      var xref = new XRefMock([
+        { ref: annotationRef, data: annotationDict, }
+      ]);
+      var pdfManager = new PDFManagerMock({
+        docBaseUrl: 'http://www.example.com/test/pdfs/qwerty.pdf',
+      });
+
+      var annotation = annotationFactory.create(xref, annotationRef,
+                                                pdfManager);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+      expect(data.url).toEqual(
+        new URL('http://www.example.com/test/pdfs/Part II/Part II.pdf').href);
+      expect(data.unsafeUrl).toEqual('Part II/Part II.pdf');
+      expect(data.dest).toBeUndefined();
+      expect(data.newWindow).toEqual(true);
+    });
+
     it('should correctly parse a Named action', function() {
       var actionDict = new Dict();
       actionDict.set('Type', Name.get('Action'));
