@@ -619,6 +619,8 @@ describe('api', function() {
         expect(outlineItem.title).toEqual('Chapter 1');
         expect(outlineItem.dest instanceof Array).toEqual(true);
         expect(outlineItem.url).toEqual(null);
+        expect(outlineItem.unsafeUrl).toBeUndefined();
+        expect(outlineItem.newWindow).toBeUndefined();
 
         expect(outlineItem.bold).toEqual(true);
         expect(outlineItem.italic).toEqual(false);
@@ -644,6 +646,7 @@ describe('api', function() {
           expect(typeof outlineItemTwo.title).toEqual('string');
           expect(outlineItemTwo.dest).toEqual(null);
           expect(outlineItemTwo.url).toEqual('http://google.com/');
+          expect(outlineItemTwo.unsafeUrl).toEqual('http://google.com');
           expect(outlineItemTwo.newWindow).toBeUndefined();
 
           var outlineItemOne = outline[1];
