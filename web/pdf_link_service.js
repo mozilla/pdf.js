@@ -264,6 +264,12 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
         dest = unescape(hash);
         try {
           dest = JSON.parse(dest);
+
+          if (typeof dest === 'number') {
+            // Avoid incorrectly rejecting a named destination, such as
+            // e.g. "4.3", because `JSON.parse` converted it to a number.
+            dest = dest.toString();
+          }
         } catch (ex) {}
 
         if (typeof dest === 'string' || isValidExplicitDestination(dest)) {
