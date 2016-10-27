@@ -106,13 +106,21 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
 
       var goToDestination = function(destRef) {
         // dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
-        var pageNumber = destRef instanceof Object ?
-          self._pagesRefCache[destRef.num + ' ' + destRef.gen + ' R'] :
-          (destRef + 1);
+        var pageNumber;
+        if (destRef instanceof Object) {
+          pageNumber = self._cachedPageNumber(destRef);
+        } else if ((destRef | 0) === destRef) { // Integer
+          pageNumber = destRef + 1;
+        } else {
+          console.error('PDFLinkService_navigateTo: "' + destRef +
+                        '" is not a valid destination reference.');
+          return;
+        }
+
         if (pageNumber) {
-          if (pageNumber > self.pagesCount) {
-            console.error('PDFLinkService_navigateTo: ' +
-                          'Trying to navigate to a non-existent page.');
+          if (pageNumber < 1 || pageNumber > self.pagesCount) {
+            console.error('PDFLinkService_navigateTo: "' + pageNumber +
+                          '" is a non-existent page number.');
             return;
           }
           self.pdfViewer.scrollPageIntoView({
@@ -130,10 +138,12 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
           }
         } else {
           self.pdfDocument.getPageIndex(destRef).then(function (pageIndex) {
-            var pageNum = pageIndex + 1;
-            var cacheKey = destRef.num + ' ' + destRef.gen + ' R';
-            self._pagesRefCache[cacheKey] = pageNum;
+            self.cachePageRef(pageIndex + 1, destRef);
             goToDestination(destRef);
+          }).catch(function () {
+            console.error('PDFLinkService_navigateTo: "' + destRef +
+                          '" is not a valid page reference.');
+            return;
           });
         }
       };
@@ -148,7 +158,9 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
       destinationPromise.then(function(destination) {
         dest = destination;
         if (!(destination instanceof Array)) {
-          return; // invalid destination
+          console.error('PDFLinkService_navigateTo: "' + destination +
+                        '" is not a valid destination array.');
+          return;
         }
         goToDestination(destination[0]);
       });
@@ -339,7 +351,12 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
     cachePageRef: function PDFLinkService_cachePageRef(pageNum, pageRef) {
       var refStr = pageRef.num + ' ' + pageRef.gen + ' R';
       this._pagesRefCache[refStr] = pageNum;
-    }
+    },
+
+    _cachedPageNumber: function PDFLinkService_cachedPageNumber(pageRef) {
+      var refStr = pageRef.num + ' ' + pageRef.gen + ' R';
+      return (this._pagesRefCache && this._pagesRefCache[refStr]) || null;
+    },
   };
 
   function isValidExplicitDestination(dest) {
