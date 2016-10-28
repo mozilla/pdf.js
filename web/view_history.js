@@ -75,9 +75,9 @@ var ViewHistory = (function ViewHistoryClosure() {
 
         if (typeof PDFJSDev !== 'undefined' &&
             PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-          sessionStorage.setItem('pdfjsHistory', databaseStr);
+          sessionStorage.setItem('pdfjs.history', databaseStr);
         } else {
-          localStorage.setItem('database', databaseStr);
+          localStorage.setItem('pdfjs.history', databaseStr);
         }
         resolve();
       }.bind(this));
@@ -87,9 +87,28 @@ var ViewHistory = (function ViewHistoryClosure() {
       return new Promise(function (resolve) {
         if (typeof PDFJSDev !== 'undefined' &&
             PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-          resolve(sessionStorage.getItem('pdfjsHistory'));
+          resolve(sessionStorage.getItem('pdfjs.history'));
         } else {
-          resolve(localStorage.getItem('database'));
+          var value = localStorage.getItem('pdfjs.history');
+
+          // TODO: Remove this key-name conversion after a suitable time-frame.
+          // Note that we only remove the old 'database' entry if it looks like
+          // it was created by PDF.js. to avoid removing someone else's data.
+          if (!value) {
+            var databaseStr = localStorage.getItem('database');
+            if (databaseStr) {
+              try {
+                var database = JSON.parse(databaseStr);
+                if (typeof database.files[0].fingerprint === 'string') {
+                  localStorage.setItem('pdfjs.history', databaseStr);
+                  localStorage.removeItem('database');
+                  value = databaseStr;
+                }
+              } catch (ex) { }
+            }
+          }
+
+          resolve(value);
         }
       });
     },
