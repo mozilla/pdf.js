@@ -35,13 +35,10 @@
 
   var activeService = null;
 
-  // Using one canvas for all paint operations -- painting one canvas at a time.
-  var scratchCanvas = null;
-
-  function renderPage(pdfDocument, pageNumber, size, wrapper) {
-    if (!scratchCanvas) {
-      scratchCanvas = document.createElement('canvas');
-    }
+  // Renders the page to the canvas of the given print service, and returns
+  // the suggested dimensions of the output page.
+  function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
+    var scratchCanvas = activeService.scratchCanvas;
 
     // The size of the canvas in pixels for printing.
     var PRINT_RESOLUTION = 150;
@@ -50,9 +47,8 @@
     scratchCanvas.height = Math.floor(size.height * PRINT_UNITS);
 
     // The physical size of the img as specified by the PDF document.
-    var img = document.createElement('img');
-    img.style.width = Math.floor(size.width * CSS_UNITS) + 'px';
-    img.style.height = Math.floor(size.height * CSS_UNITS) + 'px';
+    var width = Math.floor(size.width * CSS_UNITS) + 'px';
+    var height = Math.floor(size.height * CSS_UNITS) + 'px';
 
     var ctx = scratchCanvas.getContext('2d');
     ctx.save();
@@ -68,23 +64,11 @@
         intent: 'print'
       };
       return pdfPage.render(renderContext).promise;
-    }).then(function() {
-      if (!activeService) {
-        return Promise.reject(new Error('cancelled'));
-      }
-      if (('toBlob' in scratchCanvas) &&
-          !pdfjsLib.PDFJS.disableCreateObjectURL) {
-        scratchCanvas.toBlob(function (blob) {
-          img.src = URL.createObjectURL(blob);
-        });
-      } else {
-        img.src = scratchCanvas.toDataURL();
-      }
-      wrapper.appendChild(img);
-      return new Promise(function(resolve, reject) {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
+    }).then(function () {
+      return {
+        width: width,
+        height: height,
+      };
     });
   }
 
@@ -92,14 +76,16 @@
     this.pdfDocument = pdfDocument;
     this.pagesOverview = pagesOverview;
     this.printContainer = printContainer;
-    this.wrappers = [];
     this.currentPage = -1;
+    // The temporary canvas where renderPage paints one page at a time.
+    this.scratchCanvas = document.createElement('canvas');
   }
 
   PDFPrintService.prototype = {
     layout: function () {
+      this.throwIfInactive();
+
       var pdfDocument = this.pdfDocument;
-      var printContainer = this.printContainer;
       var body = document.querySelector('body');
       body.setAttribute('data-pdfjsprinting', true);
 
@@ -130,29 +116,23 @@
         '@page { size: ' + pageSize.width + 'pt ' + pageSize.height + 'pt;}' +
         '}';
       body.appendChild(this.pageStyleSheet);
-
-      for (var i = 0, ii = this.pagesOverview.length; i < ii; ++i) {
-        var wrapper = document.createElement('div');
-        printContainer.appendChild(wrapper);
-        this.wrappers[i] = wrapper;
-      }
     },
 
     destroy: function () {
+      if (activeService !== this) {
+        // |activeService| cannot be replaced without calling destroy() first,
+        // so if it differs then an external consumer has a stale reference to
+        // us.
+        return;
+      }
       this.printContainer.textContent = '';
-      this.wrappers = null;
       if (this.pageStyleSheet && this.pageStyleSheet.parentNode) {
         this.pageStyleSheet.parentNode.removeChild(this.pageStyleSheet);
         this.pageStyleSheet = null;
       }
-      if (activeService !== this) {
-        return; // no need to clean up shared resources
-      }
+      this.scratchCanvas.width = this.scratchCanvas.height = 0;
+      this.scratchCanvas = null;
       activeService = null;
-      if (scratchCanvas) {
-        scratchCanvas.width = scratchCanvas.height = 0;
-        scratchCanvas = null;
-      }
       ensureOverlay().then(function () {
         if (OverlayManager.active !== 'printServiceOverlay') {
           return; // overlay was already closed
@@ -164,10 +144,7 @@
     renderPages: function () {
       var pageCount = this.pagesOverview.length;
       var renderNextPage = function (resolve, reject) {
-        if (activeService !== this) {
-          reject(new Error('cancelled'));
-          return;
-        }
+        this.throwIfInactive();
         if (++this.currentPage >= pageCount) {
           renderProgress(pageCount, pageCount);
           resolve();
@@ -175,11 +152,67 @@
         }
         var index = this.currentPage;
         renderProgress(index, pageCount);
-        renderPage(this.pdfDocument, index + 1,
-                   this.pagesOverview[index], this.wrappers[index]).then(
-          function () { renderNextPage(resolve, reject); }, reject);
+        renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
+          .then(this.useRenderedPage.bind(this))
+          .then(function () {
+            renderNextPage(resolve, reject);
+          }, reject);
       }.bind(this);
       return new Promise(renderNextPage);
+    },
+
+    useRenderedPage: function (printItem) {
+      this.throwIfInactive();
+      var img = document.createElement('img');
+      img.style.width = printItem.width;
+      img.style.height = printItem.height;
+
+      var scratchCanvas = this.scratchCanvas;
+      if (('toBlob' in scratchCanvas) &&
+          !pdfjsLib.PDFJS.disableCreateObjectURL) {
+        scratchCanvas.toBlob(function (blob) {
+          img.src = URL.createObjectURL(blob);
+        });
+      } else {
+        img.src = scratchCanvas.toDataURL();
+      }
+
+      var wrapper = document.createElement('div');
+      wrapper.appendChild(img);
+      this.printContainer.appendChild(wrapper);
+
+      return new Promise(function (resolve, reject) {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+    },
+
+    performPrint: function () {
+      this.throwIfInactive();
+      return new Promise(function (resolve) {
+        // Push window.print in the macrotask queue to avoid being affected by
+        // the deprecation of running print() code in a microtask, see
+        // https://github.com/mozilla/pdf.js/issues/7547.
+        setTimeout(function () {
+          if (!this.active) {
+            resolve();
+            return;
+          }
+          print.call(window);
+          // Delay promise resolution in case print() was not synchronous.
+          setTimeout(resolve, 20);  // Tidy-up.
+        }.bind(this), 0);
+      }.bind(this));
+    },
+
+    get active() {
+      return this === activeService;
+    },
+
+    throwIfInactive: function () {
+      if (!this.active) {
+        throw new Error('This print request was cancelled or completed.');
+      }
     },
   };
 
@@ -191,7 +224,9 @@
       return;
     }
     ensureOverlay().then(function () {
-      OverlayManager.open('printServiceOverlay');
+      if (activeService) {
+        OverlayManager.open('printServiceOverlay');
+      }
     });
 
     try {
@@ -199,8 +234,26 @@
     } finally {
       if (!activeService) {
         console.error('Expected print service to be initialized.');
+        if (OverlayManager.active === 'printServiceOverlay') {
+          OverlayManager.close('printServiceOverlay');
+        }
+        return;
       }
-      activeService.renderPages().then(startPrint, abort);
+      var activeServiceOnEntry = activeService;
+      activeService.renderPages().then(function () {
+        return activeServiceOnEntry.performPrint();
+      }).catch(function () {
+        // Ignore any error messages.
+      }).then(function () {
+        // aborts acts on the "active" print request, so we need to check
+        // whether the print request (activeServiceOnEntry) is still active.
+        // Without the check, an unrelated print request (created after aborting
+        // this print request while the pages were being generated) would be
+        // aborted.
+        if (activeServiceOnEntry.active) {
+          abort();
+        }
+      });
     }
   };
 
@@ -208,19 +261,6 @@
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent(eventType, false, false, 'custom');
     window.dispatchEvent(event);
-  }
-
-  function startPrint() {
-    // Push window.print in the macrotask queue to avoid being affected by
-    // the deprecation of running print() code in a microtask, see
-    // https://github.com/mozilla/pdf.js/issues/7547.
-    setTimeout(function() {
-      if (!activeService) {
-        return; // Print task cancelled by user.
-      }
-      print.call(window);
-      setTimeout(abort, 20); // Tidy-up
-    }, 0);
   }
 
   function abort() {
