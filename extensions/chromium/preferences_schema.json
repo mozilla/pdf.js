@@ -89,6 +89,10 @@
       ],
       "default": 0
     },
+    "disablePageLabels": {
+      "type": "boolean",
+      "default": false
+    },
     "disableTelemetry": {
       "title": "Disable telemetry",
       "type": "boolean",
