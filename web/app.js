@@ -178,10 +178,12 @@ var PDFViewerApplication = {
   preferencePdfBugEnabled: false,
   preferenceShowPreviousViewOnLoad: true,
   preferenceDefaultZoomValue: '',
+  preferenceDisablePageLabels: false,
   isViewerEmbedded: (window.parent !== window),
   url: '',
   baseUrl: '',
   externalServices: DefaultExernalServices,
+  hasPageLabels: false,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
@@ -380,6 +382,9 @@ var PDFViewerApplication = {
         //       before the various viewer components are initialized.
         self.pdfViewer.renderInteractiveForms = value;
       }),
+      Preferences.get('disablePageLabels').then(function resolved(value) {
+        self.preferenceDisablePageLabels = value;
+      }),
       // TODO move more preferences and other async stuff here
     ]).catch(function (reason) { });
 
@@ -567,6 +572,7 @@ var PDFViewerApplication = {
     }
     this.store = null;
     this.isInitialViewSet = false;
+    this.hasPageLabels = false;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -879,7 +885,8 @@ var PDFViewerApplication = {
 
     this.pageRotation = 0;
 
-    this.pdfThumbnailViewer.setDocument(pdfDocument);
+    var pdfThumbnailViewer = this.pdfThumbnailViewer;
+    pdfThumbnailViewer.setDocument(pdfDocument);
 
     firstPagePromise.then(function(pdfPage) {
       downloadedPromise.then(function () {
@@ -956,6 +963,33 @@ var PDFViewerApplication = {
 
         self.pdfViewer.currentScaleValue = self.pdfViewer.currentScaleValue;
         self.setInitialView(initialParams.hash);
+      });
+    });
+
+    pdfDocument.getPageLabels().then(function (labels) {
+      if (!labels || self.preferenceDisablePageLabels) {
+        return;
+      }
+      var i = 0, numLabels = labels.length;
+      if (numLabels !== self.pagesCount) {
+        console.error('The number of Page Labels does not match ' +
+                      'the number of pages in the document.');
+        return;
+      }
+      // Ignore page labels that correspond to standard page numbering.
+      while (i < numLabels && labels[i] === (i + 1).toString()) {
+        i++;
+      }
+      if (i === numLabels) {
+        return;
+      }
+
+      pdfViewer.setPageLabels(labels);
+      pdfThumbnailViewer.setPageLabels(labels);
+
+      self.hasPageLabels = true;
+      self._updateUIToolbar({
+        resetNumPages: true,
       });
     });
 
@@ -1186,6 +1220,7 @@ var PDFViewerApplication = {
   /**
    * @typedef UpdateUIToolbarParameters
    * @property {number} pageNumber
+   * @property {string} pageLabel
    * @property {string} scaleValue
    * @property {number} scale
    * @property {boolean} resetNumPages
@@ -1226,11 +1261,25 @@ var PDFViewerApplication = {
     var pagesCount = this.pagesCount;
 
     if (resetNumPages) {
-      toolbarConfig.numPages.textContent =
-        mozL10n.get('page_of', { pageCount: pagesCount }, 'of {{pageCount}}');
+      if (this.hasPageLabels) {
+        toolbarConfig.pageNumber.type = 'text';
+      } else {
+        toolbarConfig.pageNumber.type = 'number';
+        toolbarConfig.numPages.textContent = mozL10n.get('of_pages',
+          { pagesCount: pagesCount }, 'of {{pagesCount}}');
+      }
       toolbarConfig.pageNumber.max = pagesCount;
     }
-    toolbarConfig.pageNumber.value = pageNumber;
+
+    if (this.hasPageLabels) {
+      toolbarConfig.pageNumber.value = params.pageLabel ||
+                                       this.pdfViewer.currentPageLabel;
+      toolbarConfig.numPages.textContent = mozL10n.get('page_of_pages',
+        { pageNumber: pageNumber, pagesCount: pagesCount },
+        '({{pageNumber}} of {{pagesCount}})');
+    } else {
+      toolbarConfig.pageNumber.value = pageNumber;
+    }
 
     toolbarConfig.previous.disabled = (pageNumber <= 1);
     toolbarConfig.next.disabled = (pageNumber >= pagesCount);
@@ -1495,11 +1544,13 @@ function webViewerInitialized() {
   });
 
   appConfig.toolbar.pageNumber.addEventListener('change', function() {
-    PDFViewerApplication.page = (this.value | 0);
+    var pdfViewer = PDFViewerApplication.pdfViewer;
+    pdfViewer.currentPageLabel = this.value;
 
     // Ensure that the page number input displays the correct value, even if the
     // value entered by the user was invalid (e.g. a floating point number).
-    if (this.value !== PDFViewerApplication.page.toString()) {
+    if (this.value !== pdfViewer.currentPageNumber.toString() &&
+        this.value !== pdfViewer.currentPageLabel) {
       PDFViewerApplication._updateUIToolbar({});
     }
   });
@@ -1930,6 +1981,7 @@ function webViewerPageChanging(e) {
 
   PDFViewerApplication._updateUIToolbar({
     pageNumber: page,
+    pageLabel: e.pageLabel,
   });
 
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {

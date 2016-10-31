@@ -91,6 +91,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
     this.id = id;
     this.renderingId = 'thumbnail' + id;
+    this.pageLabel = null;
 
     this.pdfPage = null;
     this.rotation = 0;
@@ -120,6 +121,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       linkService.page = id;
       return false;
     };
+    this.anchor = anchor;
 
     var div = document.createElement('div');
     div.id = 'thumbnailContainer' + id;
@@ -247,7 +249,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       }
       var id = this.renderingId;
       var className = 'thumbnailImage';
-      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.id },
+      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.pageId },
                                   'Thumbnail of Page {{page}}');
 
       if (this.disableCanvasToImageConversion) {
@@ -395,7 +397,32 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       ctx.drawImage(reducedImage, 0, 0, reducedWidth, reducedHeight,
                     0, 0, canvas.width, canvas.height);
       this._convertCanvasToImage();
-    }
+    },
+
+    get pageId() {
+      return (this.pageLabel !== null ? this.pageLabel : this.id);
+    },
+
+    /**
+     * @param {string|null} label
+     */
+    setPageLabel: function PDFThumbnailView_setPageLabel(label) {
+      this.pageLabel = (typeof label === 'string' ? label : null);
+
+      this.anchor.title = mozL10n.get('thumb_page_title', { page: this.pageId },
+                                      'Page {{page}}');
+
+      if (this.renderingState !== RenderingStates.FINISHED) {
+        return;
+      }
+      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.pageId },
+                                  'Thumbnail of Page {{page}}');
+      if (this.image) {
+        this.image.setAttribute('aria-label', ariaLabel);
+      } else if (this.disableCanvasToImageConversion && this.canvas) {
+        this.canvas.setAttribute('aria-label', ariaLabel);
+      }
+    },
   };
 
   return PDFThumbnailView;

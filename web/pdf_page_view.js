@@ -78,6 +78,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     this.id = id;
     this.renderingId = 'page' + id;
+    this.pageLabel = null;
 
     this.rotation = 0;
     this.scale = scale || DEFAULT_SCALE;
@@ -553,6 +554,19 @@ var PDFPageView = (function PDFPageViewClosure() {
         self.onBeforeDraw();
       }
       return promise;
+    },
+
+    /**
+     * @param {string|null} label
+     */
+    setPageLabel: function PDFView_setPageLabel(label) {
+      this.pageLabel = (typeof label === 'string' ? label : null);
+
+      if (this.pageLabel !== null) {
+        this.div.setAttribute('data-page-label', this.pageLabel);
+      } else {
+        this.div.removeAttribute('data-page-label');
+      }
     },
   };
 
