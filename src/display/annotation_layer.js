@@ -509,7 +509,7 @@ var TextWidgetAnnotationElement = (
       // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
       var style = element.style;
       style.fontSize = this.data.fontSize + 'px';
-      style.direction = (this.data.fontDirection < 0 ? 'rtl': 'ltr');
+      style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
 
       if (!font) {
         return;

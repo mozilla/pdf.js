@@ -307,7 +307,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
         continue;
       }
 
-      if(opList[x].fn === 'restore') {
+      if (opList[x].fn === 'restore') {
         opTree = tmp.pop();
       } else {
         opTree.push(opList[x]);
@@ -470,14 +470,14 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 
       for (var x = 0; x < fnArrayLen; x++) {
         var fnId = fnArray[x];
-        opList.push({'fnId' : fnId, 'fn': REVOPS[fnId], 'args': argsArray[x]});
+        opList.push({'fnId': fnId, 'fn': REVOPS[fnId], 'args': argsArray[x]});
       }
       return opListToTree(opList);
     },
 
     executeOpTree: function SVGGraphics_executeOpTree(opTree) {
       var opTreeLen = opTree.length;
-      for(var x = 0; x < opTreeLen; x++) {
+      for (var x = 0; x < opTreeLen; x++) {
         var fn = opTree[x].fn;
         var fnId = opTree[x].fnId;
         var args = opTree[x].args;
@@ -733,7 +733,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
 
       current.txtElement.setAttributeNS(null, 'transform',
                                         pm(current.textMatrix) +
-                                        ' scale(1, -1)' );
+                                        ' scale(1, -1)');
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
       current.txtgrp.appendChild(current.txtElement);
@@ -1105,7 +1105,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       rect.setAttributeNS(null, 'width', pf(width));
       rect.setAttributeNS(null, 'height', pf(height));
       rect.setAttributeNS(null, 'fill', fillColor);
-      rect.setAttributeNS(null, 'mask', 'url(#' + current.maskId +')');
+      rect.setAttributeNS(null, 'mask', 'url(#' + current.maskId + ')');
       this.defs.appendChild(mask);
 
       this._ensureTransformGroup().appendChild(rect);

@@ -1000,7 +1000,7 @@ var CalRGBCS = (function CalRGBCSClosure() {
 
   function sRGBTransferFunction(color) {
     // See http://en.wikipedia.org/wiki/SRGB.
-    if (color <= 0.0031308){
+    if (color <= 0.0031308) {
       return adjustToRange(0, 1, 12.92 * color);
     }
 

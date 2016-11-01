@@ -66,7 +66,7 @@ function downloadLanguageFiles(root, langCode, callback) {
     var request = https.get(url, function(response) {
       var content = '';
       response.setEncoding('utf8');
-      response.on("data", function(chunk) {
+      response.on('data', function(chunk) {
         content += chunk;
       });
       response.on('end', function() {
@@ -75,7 +75,7 @@ function downloadLanguageFiles(root, langCode, callback) {
         if (downloadsLeft === 0) {
           callback();
         }
-      })
+      });
     });
   });
 }
