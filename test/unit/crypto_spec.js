@@ -317,11 +317,10 @@ describe('crypto', function() {
       alg = new PDF17();
       password = new Uint8Array([117, 115, 101, 114]);
       userValidation = new Uint8Array([117, 169, 4, 32, 159, 101, 22, 220]);
-      userPassword = new Uint8Array([
-                                      131, 242, 143, 160, 87, 2, 138, 134, 79,
-                                      253, 189, 173, 224, 73, 144, 241, 190, 81,
-                                      197, 15, 249, 105, 145, 151, 15, 194, 65,
-                                      3, 1, 126, 187, 221]);
+      userPassword = new Uint8Array([131, 242, 143, 160, 87, 2, 138, 134, 79,
+                                     253, 189, 173, 224, 73, 144, 241, 190, 81,
+                                     197, 15, 249, 105, 145, 151, 15, 194, 65,
+                                     3, 1, 126, 187, 221]);
       result = alg.checkUserPassword(password, userValidation, userPassword);
       expect(result).toEqual(true);
     });

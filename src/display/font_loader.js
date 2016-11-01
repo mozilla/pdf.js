@@ -226,7 +226,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       function isFontReady(name, callback) {
         called++;
         // With setTimeout clamping this gives the font ~100ms to load.
-        if(called > 30) {
+        if (called > 30) {
           warn('Load test font never loaded.');
           callback();
           return;
