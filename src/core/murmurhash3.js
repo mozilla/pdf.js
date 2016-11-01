@@ -65,8 +65,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
           var code = input.charCodeAt(i);
           if (code <= 0xff) {
             data[length++] = code;
-          }
-          else {
+          } else {
             data[length++] = code >>> 8;
             data[length++] = code & 0xff;
           }

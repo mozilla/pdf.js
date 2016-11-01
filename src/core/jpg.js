@@ -645,7 +645,7 @@ var JpegImage = (function JpegImageClosure() {
       fileMarker = readUint16();
       while (fileMarker !== 0xFFD9) { // EOI (End of image)
         var i, j, l;
-        switch(fileMarker) {
+        switch (fileMarker) {
           case 0xFFE0: // APP0 (Application Specific)
           case 0xFFE1: // APP1
           case 0xFFE2: // APP2

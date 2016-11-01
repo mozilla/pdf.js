@@ -391,7 +391,7 @@ function compileType3Glyph(imgData) {
       var o = outlines[i];
       c.moveTo(o[0], o[1]);
       for (var j = 2, jj = o.length; j < jj; j += 2) {
-        c.lineTo(o[j], o[j+1]);
+        c.lineTo(o[j], o[j + 1]);
       }
     }
     c.fill();
