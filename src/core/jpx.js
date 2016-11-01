@@ -2135,7 +2135,7 @@ var JpxImage = (function JpxImageClosure() {
 
       // step 1 & 3
       j = offset - 2;
-      current = delta * x[j -1];
+      current = delta * x[j - 1];
       for (n = len + 3; n--; j += 2) {
         next = delta * x[j + 1];
         x[j] = K * x[j] - current - next;

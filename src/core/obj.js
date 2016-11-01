@@ -1230,7 +1230,7 @@ var XRef = (function XRefClosure() {
       } else {
         xrefEntry = this.fetchCompressed(xrefEntry, suppressEncryption);
       }
-      if (isDict(xrefEntry)){
+      if (isDict(xrefEntry)) {
         xrefEntry.objId = ref.toString();
       } else if (isStream(xrefEntry)) {
         xrefEntry.dict.objId = ref.toString();

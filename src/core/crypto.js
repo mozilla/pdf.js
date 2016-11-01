@@ -498,8 +498,7 @@ var calculateSHA512 = (function calculateSHA512Closure() {
       h5 = new Word64(0x9b05688c, 0x2b3e6c1f);
       h6 = new Word64(0x1f83d9ab, 0xfb41bd6b);
       h7 = new Word64(0x5be0cd19, 0x137e2179);
-    }
-    else {
+    } else {
       // SHA384 is exactly the same
       // except with different starting values and a trimmed result
       h0 = new Word64(0xcbbb9d5d, 0xc1059ed8);
@@ -618,8 +617,7 @@ var calculateSHA512 = (function calculateSHA512Closure() {
       h5.copyTo(result,40);
       h6.copyTo(result,48);
       h7.copyTo(result,56);
-    }
-    else {
+    } else {
       result = new Uint8Array(48);
       h0.copyTo(result,0);
       h1.copyTo(result,8);
@@ -1651,11 +1649,9 @@ var PDF20 = (function PDF20Closure() {
       }
       if (remainder === 0) {
         k = calculateSHA256(e, 0, e.length);
-      }
-      else if (remainder === 1) {
+      } else if (remainder === 1) {
         k = calculateSHA384(e, 0, e.length);
-      }
-      else if (remainder === 2) {
+      } else if (remainder === 2) {
         k = calculateSHA512(e, 0, e.length);
       }
       i++;
@@ -1977,8 +1973,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
       encryptionKey = prepareKeyData(fileIdBytes, passwordBytes,
                                      ownerPassword, userPassword, flags,
                                      revision, keyLength, encryptMetadata);
-    }
-    else {
+    } else {
       var ownerValidationSalt = stringToBytes(dict.get('O')).subarray(32, 40);
       var ownerKeySalt = stringToBytes(dict.get('O')).subarray(40, 48);
       var uBytes = stringToBytes(dict.get('U')).subarray(0, 48);
