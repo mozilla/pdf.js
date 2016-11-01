@@ -6,7 +6,6 @@ examples/
 external/bcmaps/
 external/webL10n/
 external/cmapscompress/
-external/importL10n/
 external/builder/fixtures_esprima/
 test/tmp/
 test/features/
