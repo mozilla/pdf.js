@@ -91,7 +91,7 @@ function setupForm(div, content, viewport) {
             // select box is not supported
           }
           input.className = 'inputControl';
-          input.name = item.fullName;
+          input.name = item.fieldName;
           input.title = item.alternativeText;
           assignFontStyle(input, item);
           bindInputItem(input, item);

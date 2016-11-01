@@ -577,6 +577,74 @@ describe('Annotation layer', function() {
     });
   });
 
+  describe('WidgetAnnotation', function() {
+    var widgetDict;
+
+    beforeEach(function (done) {
+      widgetDict = new Dict();
+      widgetDict.set('Type', Name.get('Annot'));
+      widgetDict.set('Subtype', Name.get('Widget'));
+
+      done();
+    });
+
+    afterEach(function () {
+      widgetDict = null;
+    });
+
+    it('should handle unknown field names', function() {
+      var widgetRef = new Ref(20, 0);
+      var xref = new XRefMock([
+        { ref: widgetRef, data: widgetDict, }
+      ]);
+
+      var widgetAnnotation = annotationFactory.create(xref, widgetRef,
+                                                      pdfManagerMock);
+      var data = widgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.fieldName).toEqual('');
+    });
+
+    it('should construct the field name when there are no ancestors',
+        function() {
+      widgetDict.set('T', 'foo');
+
+      var widgetRef = new Ref(21, 0);
+      var xref = new XRefMock([
+        { ref: widgetRef, data: widgetDict, }
+      ]);
+
+      var widgetAnnotation = annotationFactory.create(xref, widgetRef,
+                                                      pdfManagerMock);
+      var data = widgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.fieldName).toEqual('foo');
+    });
+
+    it('should construct the field name when there are ancestors', function() {
+      var firstParent = new Dict();
+      firstParent.set('T', 'foo');
+
+      var secondParent = new Dict();
+      secondParent.set('Parent', firstParent);
+      secondParent.set('T', 'bar');
+
+      widgetDict.set('Parent', secondParent);
+      widgetDict.set('T', 'baz');
+
+      var widgetRef = new Ref(22, 0);
+      var xref = new XRefMock([
+        { ref: widgetRef, data: widgetDict, }
+      ]);
+
+      var widgetAnnotation = annotationFactory.create(xref, widgetRef,
+                                                      pdfManagerMock);
+      var data = widgetAnnotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.fieldName).toEqual('foo.bar.baz');
+    });
+  });
+
   describe('TextWidgetAnnotation', function() {
     var textWidgetDict;
 
