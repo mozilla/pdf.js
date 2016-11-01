@@ -171,6 +171,7 @@ var Catalog = (function CatalogClosure() {
         var outlineItem = {
           dest: data.dest,
           url: data.url,
+          unsafeUrl: data.unsafeUrl,
           newWindow: data.newWindow,
           title: stringToPDFString(title),
           color: rgbColor,
@@ -643,6 +644,12 @@ var Catalog = (function CatalogClosure() {
         case 'GoTo':
           dest = action.get('D');
           break;
+
+        case 'Launch':
+          // We neither want, nor can, support arbitrary 'Launch' actions.
+          // However, in practice they are mostly used for linking to other PDF
+          // files, which we thus attempt to support (utilizing `docBaseUrl`).
+          /* falls through */
 
         case 'GoToR':
           var urlDict = action.get('F');
