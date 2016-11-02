@@ -621,6 +621,7 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     var data = this.data;
 
     data.annotationType = AnnotationType.WIDGET;
+    data.fieldName = this._constructFieldName(dict);
     data.fieldValue = Util.getInheritableProperty(dict, 'V',
                                                   /* getArray = */ true);
     data.alternativeText = stringToPDFString(dict.get('TU') || '');
@@ -640,41 +641,49 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
     if (data.fieldType === 'Sig') {
       this.setFlags(AnnotationFlag.HIDDEN);
     }
-
-    // Building the full field name by collecting the field and
-    // its ancestors 'T' data and joining them using '.'.
-    var fieldName = [];
-    var namedItem = dict;
-    var ref = params.ref;
-    while (namedItem) {
-      var parent = namedItem.get('Parent');
-      var parentRef = namedItem.getRaw('Parent');
-      var name = namedItem.get('T');
-      if (name) {
-        fieldName.unshift(stringToPDFString(name));
-      } else if (parent && ref) {
-        // The field name is absent, that means more than one field
-        // with the same name may exist. Replacing the empty name
-        // with the '`' plus index in the parent's 'Kids' array.
-        // This is not in the PDF spec but necessary to id the
-        // the input controls.
-        var kids = parent.get('Kids');
-        var j, jj;
-        for (j = 0, jj = kids.length; j < jj; j++) {
-          var kidRef = kids[j];
-          if (kidRef.num === ref.num && kidRef.gen === ref.gen) {
-            break;
-          }
-        }
-        fieldName.unshift('`' + j);
-      }
-      namedItem = parent;
-      ref = parentRef;
-    }
-    data.fullName = fieldName.join('.');
   }
 
   Util.inherit(WidgetAnnotation, Annotation, {
+    /**
+     * Construct the (fully qualified) field name from the (partial) field
+     * names of the field and its ancestors.
+     *
+     * @private
+     * @memberof WidgetAnnotation
+     * @param {Dict} dict - Complete widget annotation dictionary
+     * @return {string}
+     */
+    _constructFieldName: function WidgetAnnotation_constructFieldName(dict) {
+      // Both the `Parent` and `T` fields are optional. While at least one of
+      // them should be provided, bad PDF generators may fail to do so.
+      if (!dict.has('T') && !dict.has('Parent')) {
+        warn('Unknown field name, falling back to empty field name.');
+        return '';
+      }
+
+      // If no parent exists, the partial and fully qualified names are equal.
+      if (!dict.has('Parent')) {
+        return stringToPDFString(dict.get('T'));
+      }
+
+      // Form the fully qualified field name by appending the partial name to
+      // the parent's fully qualified name, separated by a period.
+      var fieldName = [];
+      if (dict.has('T')) {
+        fieldName.unshift(stringToPDFString(dict.get('T')));
+      }
+
+      var loopDict = dict;
+      while (loopDict.has('Parent')) {
+        loopDict = loopDict.get('Parent');
+
+        if (loopDict.has('T')) {
+          fieldName.unshift(stringToPDFString(loopDict.get('T')));
+        }
+      }
+      return fieldName.join('.');
+    },
+
     /**
      * Check if a provided field flag is set.
      *
