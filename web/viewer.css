@@ -135,32 +135,6 @@ select {
   cursor: default;
 }
 
-/* outer/inner center provides horizontal center */
-.outerCenter {
-  pointer-events: none;
-  position: relative;
-}
-html[dir='ltr'] .outerCenter {
-  float: right;
-  right: 50%;
-}
-html[dir='rtl'] .outerCenter {
-  float: left;
-  left: 50%;
-}
-.innerCenter {
-  pointer-events: auto;
-  position: relative;
-}
-html[dir='ltr'] .innerCenter {
-  float: right;
-  right: -50%;
-}
-html[dir='rtl'] .innerCenter {
-  float: left;
-  left: -50%;
-}
-
 #outerContainer {
   width: 100%;
   height: 100%;
@@ -494,24 +468,19 @@ html[dir='ltr'] .doorHangerRight:before {
   background-color: rgb(255, 102, 102);
 }
 
-html[dir='ltr'] #toolbarViewerLeft {
-  margin-left: -1px;
-}
-html[dir='rtl'] #toolbarViewerRight {
-  margin-right: -1px;
+#toolbarViewerMiddle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 html[dir='ltr'] #toolbarViewerLeft,
 html[dir='rtl'] #toolbarViewerRight {
-  position: absolute;
-  top: 0;
-  left: 0;
+  float: left;
 }
 html[dir='ltr'] #toolbarViewerRight,
 html[dir='rtl'] #toolbarViewerLeft {
-  position: absolute;
-  top: 0;
-  right: 0;
+  float: right;
 }
 html[dir='ltr'] #toolbarViewerLeft > *,
 html[dir='ltr'] #toolbarViewerMiddle > *,
@@ -1828,20 +1797,18 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   display: none;
 }
 
-@media all and (max-width: 960px) {
-  html[dir='ltr'] #outerContainer.sidebarMoving .outerCenter,
-  html[dir='ltr'] #outerContainer.sidebarOpen .outerCenter {
-    float: left;
-    left: 205px;
-  }
-  html[dir='rtl'] #outerContainer.sidebarMoving .outerCenter,
-  html[dir='rtl'] #outerContainer.sidebarOpen .outerCenter {
-    float: right;
-    right: 205px;
+@media all and (max-width: 1040px) {
+  #outerContainer.sidebarMoving #toolbarViewerMiddle,
+  #outerContainer.sidebarOpen #toolbarViewerMiddle {
+    display: table;
+    margin: auto;
+    left: auto;
+    position: inherit;
+    transform: none;
   }
 }
 
-@media all and (max-width: 900px) {
+@media all and (max-width: 980px) {
   .sidebarOpen .hiddenLargeView {
     display: none;
   }
@@ -1850,7 +1817,14 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-@media all and (max-width: 860px) {
+@media all and (max-width: 900px) {
+  #toolbarViewerMiddle {
+    display: table;
+    margin: auto;
+    left: auto;
+    position: inherit;
+    transform: none;
+  }
   .sidebarOpen .hiddenMediumView {
     display: none;
   }
@@ -1859,7 +1833,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-@media all and (max-width: 770px) {
+@media all and (max-width: 840px) {
   #sidebarContainer {
     top: 32px;
     z-index: 100;
@@ -1879,15 +1853,6 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     right: 0px;
   }
 
-  html[dir='ltr'] .outerCenter {
-    float: left;
-    left: 205px;
-  }
-  html[dir='rtl'] .outerCenter {
-    float: right;
-    right: 205px;
-  }
-
   #outerContainer .hiddenLargeView,
   #outerContainer .hiddenMediumView {
     display: inherit;
@@ -1898,7 +1863,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-@media all and (max-width: 700px) {
+@media all and (max-width: 770px) {
   #outerContainer .hiddenLargeView {
     display: none;
   }
@@ -1907,7 +1872,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-@media all and (max-width: 660px) {
+@media all and (max-width: 700px) {
   #outerContainer .hiddenMediumView {
     display: none;
   }
@@ -1916,29 +1881,19 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
 }
 
-@media all and (max-width: 600px) {
+@media all and (max-width: 640px) {
   .hiddenSmallView {
     display: none;
   }
   .visibleSmallView {
     display: inherit;
   }
-  html[dir='ltr'] #outerContainer.sidebarMoving .outerCenter,
-  html[dir='ltr'] #outerContainer.sidebarOpen .outerCenter,
-  html[dir='ltr'] .outerCenter {
-    left: 156px;
-  }
-  html[dir='rtl'] #outerContainer.sidebarMoving .outerCenter,
-  html[dir='rtl'] #outerContainer.sidebarOpen .outerCenter,
-  html[dir='rtl'] .outerCenter {
-    right: 156px;
-  }
   .toolbarButtonSpacer {
     width: 0;
   }
 }
 
-@media all and (max-width: 510px) {
+@media all and (max-width: 535px) {
   #scaleSelectContainer {
     display: none;
   }
