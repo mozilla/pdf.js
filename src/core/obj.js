@@ -302,8 +302,9 @@ var Catalog = (function CatalogClosure() {
           assert(!s || isName(s), 'Invalid style in PageLabel dictionary.');
           style = (s ? s.name : null);
 
-          prefix = labelDict.get('P') || '';
-          assert(isString(prefix), 'Invalid prefix in PageLabel dictionary.');
+          var p = labelDict.get('P') || '';
+          assert(isString(p), 'Invalid prefix in PageLabel dictionary.');
+          prefix = stringToPDFString(p);
 
           start = labelDict.get('St') || 1;
           assert(isInt(start), 'Invalid start in PageLabel dictionary.');

@@ -503,14 +503,24 @@ describe('api', function() {
         return pdfDoc.getPageLabels();
       });
 
-      Promise.all([promise0, promise1, promise2]).then(function (pageLabels) {
+      // PageLabels with bad "Prefix" entries.
+      var url3 = new URL('../pdfs/bad-PageLabels.pdf', window.location).href;
+      var loadingTask3 = new PDFJS.getDocument(url3);
+      var promise3 = loadingTask3.promise.then(function (pdfDoc) {
+        return pdfDoc.getPageLabels();
+      });
+
+      Promise.all([promise0, promise1, promise2, promise3]).then(
+          function (pageLabels) {
         expect(pageLabels[0]).toEqual(['i', 'ii', 'iii', '1']);
         expect(pageLabels[1]).toEqual(['Front Page1']);
         expect(pageLabels[2]).toEqual(['1', '2']);
+        expect(pageLabels[3]).toEqual(['X1']);
 
         loadingTask0.destroy();
         loadingTask1.destroy();
         loadingTask2.destroy();
+        loadingTask3.destroy();
         done();
       }).catch(function (reason) {
         done.fail(reason);
