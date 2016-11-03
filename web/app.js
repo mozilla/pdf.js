@@ -2000,7 +2000,7 @@ function webViewerPageChanging(e) {
 var zoomDisabled = false, zoomDisabledTimeout;
 function handleMouseWheel(evt) {
   var pdfViewer = PDFViewerApplication.pdfViewer;
-  if (pdfViewer.isInPresentationMode) {
+  if (!pdfViewer || pdfViewer.isInPresentationMode) {
     return;
   }
 
