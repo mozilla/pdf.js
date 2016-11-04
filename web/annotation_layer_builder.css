@@ -97,6 +97,68 @@
   width: 115%;
 }
 
+.annotationLayer .checkboxWidgetAnnotation label,
+.annotationLayer .radioButtonWidgetAnnotation label {
+  background-color: rgba(0, 54, 255, 0.13);
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  cursor: pointer;
+  height: 100%;
+  position: absolute;
+  width: 100%;
+}
+
+.annotationLayer .checkboxWidgetAnnotation input,
+.annotationLayer .radioButtonWidgetAnnotation input {
+  position: absolute;
+  left: -9999px;
+}
+
+.annotationLayer .radioButtonWidgetAnnotation label {
+  border-radius: 50%;
+}
+
+.annotationLayer .checkboxWidgetAnnotation label:hover,
+.annotationLayer .radioButtonWidgetAnnotation label:hover,
+.annotationLayer .checkboxWidgetAnnotation label:focus,
+.annotationLayer .radioButtonWidgetAnnotation label:focus,
+.annotationLayer .checkboxWidgetAnnotation input:focus + label,
+.annotationLayer .radioButtonWidgetAnnotation input:focus + label {
+  border: 1px solid #000;
+}
+
+.annotationLayer .checkboxWidgetAnnotation input:checked + label:before,
+.annotationLayer .radioButtonWidgetAnnotation input:checked + label:before {
+  content: '';
+  left: 50%;
+  top: 50%;
+  position: absolute;
+}
+
+.annotationLayer .checkboxWidgetAnnotation input:checked + label:before {
+  border-bottom: 1px solid #000;
+  border-left: 1px solid #000;
+  height: 25%;
+  -webkit-transform: translate(-50%, -65%) rotateZ(-45deg);
+  -moz-transform: translate(-50%, -65%) rotateZ(-45deg);
+  -o-transform: translate(-50%, -65%) rotateZ(-45deg);
+  -ms-transform: translate(-50%, -65%) rotateZ(-45deg);
+  transform: translate(-50%, -65%) rotateZ(-45deg);
+  width: 60%;
+}
+
+.annotationLayer .radioButtonWidgetAnnotation input:checked + label:before {
+  background-color: #000;
+  border-radius: 50%;
+  height: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -moz-transform: translate(-50%, -50%);
+  -o-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  width: 50%;
+}
+
 .annotationLayer .popupWrapper {
   position: absolute;
   width: 20em;
