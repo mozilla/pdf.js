@@ -106,6 +106,8 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
         switch (fieldType) {
           case 'Tx':
             return new TextWidgetAnnotation(parameters);
+          case 'Btn':
+            return new ButtonWidgetAnnotation(parameters);
           case 'Ch':
             return new ChoiceWidgetAnnotation(parameters);
         }
@@ -765,6 +767,59 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   });
 
   return TextWidgetAnnotation;
+})();
+
+var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
+  function ButtonWidgetAnnotation(params) {
+    WidgetAnnotation.call(this, params);
+
+    this.data.pushbutton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    this.data.radio = !this.data.pushbutton &&
+                      this.hasFieldFlag(AnnotationFieldFlag.RADIO);
+    if (isName(this.data.fieldValue)) {
+      this.data.fieldValue = this.data.fieldValue.name;
+    }
+    // Get the value of the radio button
+    if (this.data.radio) {
+      // Generate a unique ID in case no value is found
+      this.data.buttonValue = Math.random().toString(16).slice(2);
+      var appearanceState = params.dict.get('AP');
+      if (isDict(appearanceState)) {
+        var appearances = appearanceState.get('N');
+        if (isDict(appearances) && appearances.has('Off')) {
+          var keys = appearances.getKeys();
+          for (var i = 0, ii = keys.length; i < ii; i++) {
+            if (keys[i] !== 'Off') {
+              this.data.buttonValue = keys[i];
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  Util.inherit(ButtonWidgetAnnotation, WidgetAnnotation, {
+    getOperatorList:
+        function ButtonWidgetAnnotation_getOperatorList(evaluator, task,
+                                                        renderForms) {
+      var operatorList = new OperatorList();
+
+      // Do not render form elements on the canvas when interactive forms are
+      // enabled. The display layer is responsible for rendering them instead.
+      if (renderForms) {
+        return Promise.resolve(operatorList);
+      }
+
+      if (this.appearance) {
+        return Annotation.prototype.getOperatorList.call(this, evaluator, task,
+                                                        renderForms);
+      }
+      return Promise.resolve(operatorList);
+    }
+  });
+
+  return ButtonWidgetAnnotation;
 })();
 
 var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
