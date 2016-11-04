@@ -25,7 +25,7 @@ irc.mozilla.org.
 
 ### Online demo
 
-+ http://mozilla.github.io/pdf.js/web/viewer.html
++ https://mozilla.github.io/pdf.js/web/viewer.html
 
 ### Browser Extensions
 
