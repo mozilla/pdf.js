@@ -869,6 +869,97 @@ describe('Annotation layer', function() {
     });
   });
 
+  describe('CheckboxWidgetAnnotation', function() {
+    var checkboxWidgetDict;
+
+    beforeEach(function (done) {
+      checkboxWidgetDict = new Dict();
+      checkboxWidgetDict.set('Type', Name.get('Annot'));
+      checkboxWidgetDict.set('Subtype', Name.get('Widget'));
+      checkboxWidgetDict.set('FT', Name.get('Btn'));
+
+      done();
+    });
+
+    afterEach(function () {
+      checkboxWidgetDict = null;
+    });
+
+    it('should have proper flags',
+      function() {
+        var checkboxWidgetRef = new Ref(124, 0);
+        var xref = new XRefMock([
+          { ref: checkboxWidgetRef, data: checkboxWidgetDict, }
+        ]);
+
+        var checkboxWidgetAnnotation =
+          annotationFactory.create(xref, checkboxWidgetRef);
+        expect(checkboxWidgetAnnotation.data.radio).toEqual(false);
+        expect(checkboxWidgetAnnotation.data.pushbutton).toEqual(false);
+        expect(checkboxWidgetAnnotation.data.fieldValue).toEqual(null);
+      });
+
+    it('should have a proper value',
+      function() {
+        checkboxWidgetDict.set('V', Name.get('1'));
+
+        var checkboxWidgetRef = new Ref(124, 0);
+        var xref = new XRefMock([
+          { ref: checkboxWidgetRef, data: checkboxWidgetDict, }
+        ]);
+
+        var checkboxWidgetAnnotation =
+          annotationFactory.create(xref, checkboxWidgetRef);
+        expect(checkboxWidgetAnnotation.data.fieldValue).toEqual('1');
+      });
+  });
+
+  describe('RadioButtonWidgetAnnotation', function() {
+    var radioButtonWidgetDict;
+
+    beforeEach(function (done) {
+      radioButtonWidgetDict = new Dict();
+      radioButtonWidgetDict.set('Type', Name.get('Annot'));
+      radioButtonWidgetDict.set('Subtype', Name.get('Widget'));
+      radioButtonWidgetDict.set('FT', Name.get('Btn'));
+      radioButtonWidgetDict.set('Ff', AnnotationFieldFlag.RADIO);
+
+      done();
+    });
+
+    afterEach(function () {
+      radioButtonWidgetDict = null;
+    });
+
+    it('should have proper flags',
+      function() {
+        var radioButtonWidgetRef = new Ref(124, 0);
+        var xref = new XRefMock([
+          { ref: radioButtonWidgetRef, data: radioButtonWidgetDict, }
+        ]);
+
+        var radioButtonWidgetAnnotation =
+          annotationFactory.create(xref, radioButtonWidgetRef);
+        expect(radioButtonWidgetAnnotation.data.radio).toEqual(true);
+        expect(radioButtonWidgetAnnotation.data.pushbutton).toEqual(false);
+        expect(radioButtonWidgetAnnotation.data.fieldValue).toEqual(null);
+      });
+
+    it('should have a proper value',
+      function() {
+        radioButtonWidgetDict.set('V', Name.get('1'));
+
+        var radioButtonWidgetRef = new Ref(124, 0);
+        var xref = new XRefMock([
+          { ref: radioButtonWidgetRef, data: radioButtonWidgetDict, }
+        ]);
+
+        var radioButtonWidgetAnnotation =
+          annotationFactory.create(xref, radioButtonWidgetRef);
+        expect(radioButtonWidgetAnnotation.data.fieldValue).toEqual('1');
+      });
+  });
+
   describe('ChoiceWidgetAnnotation', function() {
     var choiceWidgetDict;
 
