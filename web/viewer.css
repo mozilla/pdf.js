@@ -1809,9 +1809,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 @media all and (max-width: 980px) {
+  .sidebarMoving .hiddenLargeView,
   .sidebarOpen .hiddenLargeView {
     display: none;
   }
+  .sidebarMoving .visibleLargeView,
   .sidebarOpen .visibleLargeView {
     display: inherit;
   }
@@ -1825,9 +1827,11 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     position: inherit;
     transform: none;
   }
+  .sidebarMoving .hiddenMediumView,
   .sidebarOpen .hiddenMediumView {
     display: none;
   }
+  .sidebarMoving .visibleMediumView,
   .sidebarOpen .visibleMediumView {
     display: inherit;
   }
