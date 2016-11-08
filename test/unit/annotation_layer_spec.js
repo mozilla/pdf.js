@@ -544,6 +544,60 @@ describe('Annotation layer', function() {
       expect(data.newWindow).toEqual(true);
     });
 
+    it('should recover valid URLs from JavaScript actions having certain ' +
+       'white-listed formats', function () {
+      function checkJsAction(params) {
+        var jsEntry = params.jsEntry;
+        var expectedUrl = params.expectedUrl;
+        var expectedUnsafeUrl = params.expectedUnsafeUrl;
+
+        var actionDict = new Dict();
+        actionDict.set('Type', Name.get('Action'));
+        actionDict.set('S', Name.get('JavaScript'));
+        actionDict.set('JS', jsEntry);
+
+        var annotationDict = new Dict();
+        annotationDict.set('Type', Name.get('Annot'));
+        annotationDict.set('Subtype', Name.get('Link'));
+        annotationDict.set('A', actionDict);
+
+        var annotationRef = new Ref(46, 0);
+        var xref = new XRefMock([
+          { ref: annotationRef, data: annotationDict, }
+        ]);
+
+        var annotation = annotationFactory.create(xref, annotationRef,
+                                                  pdfManagerMock);
+        var data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+
+        expect(data.url).toEqual(expectedUrl);
+        expect(data.unsafeUrl).toEqual(expectedUnsafeUrl);
+        expect(data.dest).toBeUndefined();
+        expect(data.newWindow).toBeFalsy();
+      }
+
+      // Check that we reject a 'JS' entry containing arbitrary JavaScript.
+      checkJsAction({
+        jsEntry: 'function someFun() { return "qwerty"; } someFun();',
+        expectedUrl: undefined,
+        expectedUnsafeUrl: undefined,
+      });
+      // Check that we accept a white-listed {string} 'JS' entry.
+      checkJsAction({
+        jsEntry: 'window.open(\'http://www.example.com/test.pdf\')',
+        expectedUrl: new URL('http://www.example.com/test.pdf').href,
+        expectedUnsafeUrl: 'http://www.example.com/test.pdf',
+      });
+      // Check that we accept a white-listed {Stream} 'JS' entry.
+      checkJsAction({
+        jsEntry: new StringStream(
+                   'app.launchURL("http://www.example.com/test.pdf", true)'),
+        expectedUrl: new URL('http://www.example.com/test.pdf').href,
+        expectedUnsafeUrl: 'http://www.example.com/test.pdf',
+      });
+    });
+
     it('should correctly parse a Named action', function() {
       var actionDict = new Dict();
       actionDict.set('Type', Name.get('Action'));
