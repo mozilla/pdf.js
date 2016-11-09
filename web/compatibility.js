@@ -83,6 +83,7 @@ if (typeof PDFJS === 'undefined') {
     }
     return result;
   }
+  TypedArray.prototype = Array.prototype;
 
   window.Uint8Array = TypedArray;
   window.Int8Array = TypedArray;
