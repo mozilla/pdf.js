@@ -57,6 +57,13 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     MOZCENTRAL_STREAM_CONVERTER2_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2292',
     FIREFOX_STREAM_CONVERTER2_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb2';
 
+if (process.platform == 'win32') {
+  // Default location
+  var PYTHON_BIN = 'C:/Python27/python.exe';
+} else {
+  var PYTHON_BIN = 'python2.7';
+}
+
 var DEFINES = {
   PRODUCTION: true,
   // The main build targets:
