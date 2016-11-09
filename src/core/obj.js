@@ -695,6 +695,33 @@ var Catalog = (function CatalogClosure() {
           }
           break;
 
+        case 'JavaScript':
+          var jsAction = action.get('JS'), js;
+          if (isStream(jsAction)) {
+            js = bytesToString(jsAction.getBytes());
+          } else if (isString(jsAction)) {
+            js = jsAction;
+          }
+
+          if (js) {
+            // Attempt to recover valid URLs from 'JS' entries with certain
+            // white-listed formats, e.g.
+            //  - window.open('http://example.com')
+            //  - app.launchURL('http://example.com', true)
+            var URL_OPEN_METHODS = [
+              'app.launchURL',
+              'window.open'
+            ];
+            var regex = new RegExp('^(?:' + URL_OPEN_METHODS.join('|') + ')' +
+                                   '\\((?:\'|\")(\\S+)(?:\'|\")(?:,|\\))');
+
+            var jsUrl = regex.exec(stringToPDFString(js), 'i');
+            if (jsUrl && jsUrl[1]) {
+              url = jsUrl[1];
+              break;
+            }
+          }
+          /* falls through */
         default:
           warn('Catalog_parseDestDictionary: Unrecognized link type "' +
                linkType + '".');
