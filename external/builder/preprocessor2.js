@@ -203,8 +203,15 @@ function fixComments(ctx, node) {
     while (i < node.leadingComments.length) {
       var type = node.leadingComments[i].type;
       var value = node.leadingComments[i].value;
-      if (type === 'Block' &&
-          /^\s*(globals|jshint|falls through|umdutils)\b/.test(value)) {
+
+      if (ctx.saveComments === 'copyright') {
+        // Remove all comments, except Copyright notices and License headers.
+        if (!(type === 'Block' && /\bcopyright\b/i.test(value))) {
+          node.leadingComments.splice(i, 1);
+          continue;
+        }
+      } else if (type === 'Block' &&
+                 /^\s*(globals|jshint|falls through|umdutils)\b/.test(value)) {
         node.leadingComments.splice(i, 1);
         continue;
       }
@@ -245,7 +252,7 @@ function preprocessPDFJSCode(ctx, code) {
   var saveComments = !!ctx.saveComments;
   var format = ctx.format || {
     indent: {
-      style: '  ',
+      style: ' ',
       adjustMultilineComment: saveComments,
     }
   };
