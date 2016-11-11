@@ -457,16 +457,15 @@ if (typeof PDFJS === 'undefined') {
   // https://github.com/mozilla/pdf.js/issues/3260
   // Last tested with version 6.0.4.
   // Support: Safari 6.0+
-  var isSafari = Object.prototype.toString.call(
-                  window.HTMLElement).indexOf('Constructor') > 0;
+  var isSafari = /Safari\//.test(navigator.userAgent) &&
+                 !/(Chrome\/|Android\s)/.test(navigator.userAgent);
 
   // Older versions of Android (pre 3.0) has issues with range requests, see:
   // https://github.com/mozilla/pdf.js/issues/3381.
   // Make sure that we only match webkit-based Android browsers,
   // since Firefox/Fennec works as expected.
   // Support: Android<3.0
-  var regex = /Android\s[0-2][^\d]/;
-  var isOldAndroid = regex.test(navigator.userAgent);
+  var isOldAndroid = /Android\s[0-2][^\d]/.test(navigator.userAgent);
 
   // Range requests are broken in Chrome 39 and 40, https://crbug.com/442318
   var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(navigator.userAgent);
