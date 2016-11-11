@@ -133,7 +133,7 @@ function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
   var p2 = require('./external/builder/preprocessor2.js');
   var ctx = {
     rootPath: __dirname,
-    saveComments: true,
+    saveComments: 'copyright',
     defines: builder.merge(defines, {
       BUNDLE_VERSION: versionInfo.version,
       BUNDLE_BUILD: versionInfo.commit,
