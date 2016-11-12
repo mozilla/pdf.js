@@ -375,6 +375,9 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       }
 
       var networkManager = this._manager;
+      if (!networkManager.isHttp) {
+        return false;
+      }
       var fullRequestXhrId = this._fullRequestId;
       var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
       if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
