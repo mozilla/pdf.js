@@ -264,6 +264,7 @@ target.web = function() {
 
 target.dist = function() {
   target.generic();
+  target.minified();
   target.singlefile();
   target.components();
 
@@ -288,6 +289,10 @@ target.dist = function() {
   cp('-R', GENERIC_DIR + 'LICENSE', DIST_DIR);
   cp('-R', GENERIC_DIR + 'web/cmaps', DIST_DIR);
   mkdir('-p', DIST_DIR + 'build/');
+  cp(MINIFIED_DIR + 'build/pdf.js',
+    DIST_DIR + 'build/pdf.min.js');
+  cp(MINIFIED_DIR + 'build/pdf.worker.js',
+    DIST_DIR + 'build/pdf.worker.min.js');
   cp('-R', [
     GENERIC_DIR + 'build/pdf.js',
     GENERIC_DIR + 'build/pdf.worker.js',
