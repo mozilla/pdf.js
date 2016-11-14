@@ -1418,6 +1418,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // The arguments parsed by read() are not used beyond this loop, so
           // we can reuse the same array on every iteration, thus avoiding
           // unnecessary allocations.
+
+          // In some documents args might be null for some pages. An exception
+          // is raised when trying to set args.length to be 0.
+          // This patch fixing it.
+          if (args === null) {args = [];}
           args.length = 0;
           operation.args = args;
           if (!(preprocessor.read(operation))) {
