@@ -2850,7 +2850,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
                 argsLength--;
               }
               while (argsLength < numArgs && nonProcessedArgs.length !== 0) {
-                if (!args) {
+                if (args === null) {
                   args = [];
                 }
                 args.unshift(nonProcessedArgs.pop());
@@ -2859,17 +2859,18 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
             }
 
             if (argsLength < numArgs) {
-              // If we receive too few args, it's not possible to possible
-              // to execute the command, so skip the command
-              info('Command ' + fn + ': because expected ' +
-                   numArgs + ' args, but received ' + argsLength +
-                   ' args; skipping');
-              args = null;
+              // If we receive too few arguments, it's not possible to execute
+              // the command, hence we skip the command.
+              warn('Skipping command ' + fn + ': expected ' + numArgs +
+                   ' args, but received ' + argsLength + ' args.');
+              if (args !== null) {
+                args.length = 0;
+              }
               continue;
             }
           } else if (argsLength > numArgs) {
             info('Command ' + fn + ': expected [0,' + numArgs +
-                 '] args, but received ' + argsLength + ' args');
+                 '] args, but received ' + argsLength + ' args.');
           }
 
           // TODO figure out how to type-check vararg functions
@@ -2884,7 +2885,7 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
           }
           // argument
           if (obj !== null) {
-            if (!args) {
+            if (args === null) {
               args = [];
             }
             args.push(obj);
