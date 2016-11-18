@@ -91,6 +91,12 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
       { element: options.documentPropertiesButton,
         eventName: 'documentproperties', close: true }
     ];
+    this.items = {
+      firstPage: options.firstPageButton,
+      lastPage: options.lastPageButton,
+      pageRotateCw: options.pageRotateCwButton,
+      pageRotateCcw: options.pageRotateCcwButton,
+    };
 
     this.mainContainer = mainContainer;
     this.eventBus = eventBus;
@@ -98,6 +104,8 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
     this.opened = false;
     this.containerHeight = null;
     this.previousContainerHeight = null;
+
+    this.reset();
 
     // Bind the event listeners for click and hand tool actions.
     this._bindClickListeners();
@@ -113,6 +121,31 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
      */
     get isOpen() {
       return this.opened;
+    },
+
+    setPageNumber: function SecondaryToolbar_setPageNumber(pageNumber) {
+      this.pageNumber = pageNumber;
+      this._updateUIState();
+    },
+
+    setPagesCount: function SecondaryToolbar_setPagesCount(pagesCount) {
+      this.pagesCount = pagesCount;
+      this._updateUIState();
+    },
+
+    reset: function SecondaryToolbar_reset() {
+      this.pageNumber = 0;
+      this.pagesCount = 0;
+      this._updateUIState();
+    },
+
+    _updateUIState: function SecondaryToolbar_updateUIState() {
+      var items = this.items;
+
+      items.firstPage.disabled = (this.pageNumber <= 1);
+      items.lastPage.disabled = (this.pageNumber >= this.pagesCount);
+      items.pageRotateCw.disabled = this.pagesCount === 0;
+      items.pageRotateCcw.disabled = this.pagesCount === 0;
     },
 
     _bindClickListeners: function SecondaryToolbar_bindClickListeners() {
