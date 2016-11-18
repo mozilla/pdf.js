@@ -102,6 +102,7 @@ var getGlobalEventBus = domEventsLib.getGlobalEventBus;
 var normalizeWheelEventDelta = uiUtilsLib.normalizeWheelEventDelta;
 var animationStarted = uiUtilsLib.animationStarted;
 var localized = uiUtilsLib.localized;
+var RendererType = uiUtilsLib.RendererType;
 
 var DEFAULT_SCALE_DELTA = 1.1;
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
@@ -382,6 +383,12 @@ var PDFViewerApplication = {
           return;
         }
         PDFJS.externalLinkTarget = value;
+      }),
+      Preferences.get('renderer').then(function resolved(value) {
+        // TODO: Like the `enhanceTextSelection` preference, move the
+        //       initialization and fetching of `Preferences` to occur
+        //       before the various viewer components are initialized.
+        self.pdfViewer.renderer = value;
       }),
       Preferences.get('renderInteractiveForms').then(function resolved(value) {
         // TODO: Like the `enhanceTextSelection` preference, move the
@@ -1140,7 +1147,11 @@ var PDFViewerApplication = {
     }
     this.pdfViewer.cleanup();
     this.pdfThumbnailViewer.cleanup();
-    this.pdfDocument.cleanup();
+
+    // We don't want to remove fonts used by active page SVGs.
+    if (this.pdfViewer.renderer !== RendererType.SVG) {
+      this.pdfDocument.cleanup();
+    }
   },
 
   forceRendering: function pdfViewForceRendering() {
