@@ -36,6 +36,7 @@ var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
 var getOutputScale = uiUtils.getOutputScale;
 var approximateFraction = uiUtils.approximateFraction;
 var roundToDivide = uiUtils.roundToDivide;
+var RendererType = uiUtils.RendererType;
 var RenderingStates = pdfRenderingQueue.RenderingStates;
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
@@ -54,6 +55,7 @@ var TEXT_LAYER_RENDER_DELAY = 200; // ms
  *   enhancement. The default is `false`.
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
+ * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  */
 
 /**
@@ -92,6 +94,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.renderingQueue = renderingQueue;
     this.textLayerFactory = textLayerFactory;
     this.annotationLayerFactory = annotationLayerFactory;
+    this.renderer = options.renderer || RendererType.CANVAS;
 
     this.paintTask = null;
     this.paintedViewport = null;
@@ -173,6 +176,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         this.canvas.height = 0;
         delete this.canvas;
       }
+      if (this.svg) {
+        delete this.svg;
+      }
       if (!currentZoomLayerNode) {
         this.paintedViewport = null;
       }
@@ -194,6 +200,17 @@ var PDFPageView = (function PDFPageViewClosure() {
         scale: this.scale * CSS_UNITS,
         rotation: totalRotation
       });
+
+      if (this.svg) {
+        this.cssTransform(this.svg, true);
+
+        this.eventBus.dispatch('pagerendered', {
+          source: this,
+          pageNumber: this.id,
+          cssTransform: true,
+        });
+        return;
+      }
 
       var isScalingRestricted = false;
       if (this.canvas && pdfjsLib.PDFJS.maxCanvasPixels > 0) {
@@ -251,16 +268,16 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
     },
 
-    cssTransform: function PDFPageView_transform(canvas, redrawAnnotations) {
+    cssTransform: function PDFPageView_transform(target, redrawAnnotations) {
       var CustomStyle = pdfjsLib.CustomStyle;
 
-      // Scale canvas, canvas wrapper, and page container.
+      // Scale target (canvas or svg), its wrapper, and page container.
       var width = this.viewport.width;
       var height = this.viewport.height;
       var div = this.div;
-      canvas.style.width = canvas.parentNode.style.width = div.style.width =
+      target.style.width = target.parentNode.style.width = div.style.width =
         Math.floor(width) + 'px';
-      canvas.style.height = canvas.parentNode.style.height = div.style.height =
+      target.style.height = target.parentNode.style.height = div.style.height =
         Math.floor(height) + 'px';
       // The canvas may have been originally rotated, rotate relative to that.
       var relativeRotation = this.viewport.rotation -
@@ -274,7 +291,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       var cssTransform = 'rotate(' + relativeRotation + 'deg) ' +
         'scale(' + scaleX + ',' + scaleY + ')';
-      CustomStyle.setProp('transform', canvas, cssTransform);
+      CustomStyle.setProp('transform', target, cssTransform);
 
       if (this.textLayer) {
         // Rotating the text layer is more complicated since the divs inside the
@@ -444,7 +461,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         });
       };
 
-      var paintTask = this.paintOnCanvas(canvasWrapper);
+      var paintTask = this.renderer === RendererType.SVG ?
+        this.paintOnSvg(canvasWrapper) :
+        this.paintOnCanvas(canvasWrapper);
       paintTask.onRenderContinue = renderContinueCallback;
       this.paintTask = paintTask;
 
@@ -588,6 +607,49 @@ var PDFPageView = (function PDFPageViewClosure() {
       );
 
       return result;
+    },
+
+    paintOnSvg: function PDFPageView_paintOnSvg(wrapper) {
+      if (typeof PDFJSDev !== 'undefined' &&
+          PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
+        return Promise.resolve('SVG rendering is not supported.');
+      }
+
+      var cancelled = false;
+      var ensureNotCancelled = function () {
+        if (cancelled) {
+          throw 'cancelled';
+        }
+      };
+
+      var self = this;
+      var pdfPage = this.pdfPage;
+      var SVGGraphics = pdfjsLib.SVGGraphics;
+      var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
+      var promise = pdfPage.getOperatorList().then(function (opList) {
+        ensureNotCancelled();
+        var svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
+        return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
+          ensureNotCancelled();
+          self.svg = svg;
+          self.paintedViewport = actualSizeViewport;
+
+          svg.style.width = wrapper.style.width;
+          svg.style.height = wrapper.style.height;
+          self.renderingState = RenderingStates.FINISHED;
+          wrapper.appendChild(svg);
+        });
+      });
+
+      return {
+        promise: promise,
+        onRenderContinue: function (cont) {
+          cont();
+        },
+        cancel: function () {
+          cancelled = true;
+        }
+      };
     },
 
     /**
