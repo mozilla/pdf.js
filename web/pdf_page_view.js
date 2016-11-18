@@ -613,43 +613,43 @@ var PDFPageView = (function PDFPageViewClosure() {
       if (typeof PDFJSDev !== 'undefined' &&
           PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
         return Promise.resolve('SVG rendering is not supported.');
-      }
+      } else {
+        var cancelled = false;
+        var ensureNotCancelled = function () {
+          if (cancelled) {
+            throw 'cancelled';
+          }
+        };
 
-      var cancelled = false;
-      var ensureNotCancelled = function () {
-        if (cancelled) {
-          throw 'cancelled';
-        }
-      };
-
-      var self = this;
-      var pdfPage = this.pdfPage;
-      var SVGGraphics = pdfjsLib.SVGGraphics;
-      var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
-      var promise = pdfPage.getOperatorList().then(function (opList) {
-        ensureNotCancelled();
-        var svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
-        return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
+        var self = this;
+        var pdfPage = this.pdfPage;
+        var SVGGraphics = pdfjsLib.SVGGraphics;
+        var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
+        var promise = pdfPage.getOperatorList().then(function (opList) {
           ensureNotCancelled();
-          self.svg = svg;
-          self.paintedViewport = actualSizeViewport;
+          var svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
+          return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
+            ensureNotCancelled();
+            self.svg = svg;
+            self.paintedViewport = actualSizeViewport;
 
-          svg.style.width = wrapper.style.width;
-          svg.style.height = wrapper.style.height;
-          self.renderingState = RenderingStates.FINISHED;
-          wrapper.appendChild(svg);
+            svg.style.width = wrapper.style.width;
+            svg.style.height = wrapper.style.height;
+            self.renderingState = RenderingStates.FINISHED;
+            wrapper.appendChild(svg);
+          });
         });
-      });
 
-      return {
-        promise: promise,
-        onRenderContinue: function (cont) {
-          cont();
-        },
-        cancel: function () {
-          cancelled = true;
-        }
-      };
+        return {
+          promise: promise,
+          onRenderContinue: function (cont) {
+            cont();
+          },
+          cancel: function () {
+            cancelled = true;
+          }
+        };
+      }
     },
 
     /**
