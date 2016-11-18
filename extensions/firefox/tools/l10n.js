@@ -5,6 +5,7 @@
 (function(window) {
   var gLanguage = '';
   var gExternalLocalizerServices = null;
+  var gReadyState = 'loading';
 
   // fetch an l10n objects
   function getL10nData(key) {
@@ -99,6 +100,8 @@
 
     translateFragment();
 
+    gReadyState = 'complete';
+
     // fire a 'localized' DOM event
     var evtObject = document.createEvent('Event');
     evtObject.initEvent('localized', false, false);
@@ -134,6 +137,8 @@
 
       return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
     },
+
+    getReadyState: function() { return gReadyState; },
 
     setExternalLocalizerServices: function (externalLocalizerServices) {
       gExternalLocalizerServices = externalLocalizerServices;
