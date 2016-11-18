@@ -101,9 +101,7 @@ document.webL10n = (function(window, document, undefined) {
 
   function xhrLoadText(url, onSuccess, onFailure) {
     onSuccess = onSuccess || function _onSuccess(data) {};
-    onFailure = onFailure || function _onFailure() {
-      console.warn(url + ' not found.');
-    };
+    onFailure = onFailure || function _onFailure() {};
 
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, gAsyncResourceLoading);
@@ -244,7 +242,10 @@ document.webL10n = (function(window, document, undefined) {
       function loadImport(url, callback) {
         xhrLoadText(url, function(content) {
           parseRawLines(content, false, callback); // don't allow recursive imports
-        }, null);
+        }, function () {
+          console.warn(url + ' not found.');
+          callback();
+        });
       }
 
       // fill the dictionary
