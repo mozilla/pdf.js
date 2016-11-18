@@ -35,6 +35,11 @@ var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
 
+var RendererType = {
+  CANVAS: 'canvas',
+  SVG: 'svg',
+};
+
 var mozL10n = document.mozL10n || document.webL10n;
 
 var PDFJS = pdfjsLib.PDFJS;
@@ -568,6 +573,7 @@ exports.UNKNOWN_SCALE = UNKNOWN_SCALE;
 exports.MAX_AUTO_SCALE = MAX_AUTO_SCALE;
 exports.SCROLLBAR_PADDING = SCROLLBAR_PADDING;
 exports.VERTICAL_PADDING = VERTICAL_PADDING;
+exports.RendererType = RendererType;
 exports.mozL10n = mozL10n;
 exports.EventBus = EventBus;
 exports.ProgressBar = ProgressBar;
