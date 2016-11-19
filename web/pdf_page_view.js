@@ -612,7 +612,13 @@ var PDFPageView = (function PDFPageViewClosure() {
     paintOnSvg: function PDFPageView_paintOnSvg(wrapper) {
       if (typeof PDFJSDev !== 'undefined' &&
           PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
-        return Promise.resolve('SVG rendering is not supported.');
+        // Return a mock object, to prevent errors such as e.g.
+        // "TypeError: paintTask.promise is undefined".
+        return {
+          promise: Promise.reject(new Error('SVG rendering is not supported.')),
+          onRenderContinue: function (cont) { },
+          cancel: function () { },
+        };
       } else {
         var cancelled = false;
         var ensureNotCancelled = function () {
