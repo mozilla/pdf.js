@@ -769,6 +769,9 @@ describe('api', function() {
     it('gets ref', function () {
       expect(page.ref).toEqual({ num: 15, gen: 0 });
     });
+    it('gets userUnit', function () {
+      expect(page.userUnit).toEqual(1.0);
+    });
     it('gets view', function () {
       expect(page.view).toEqual([0, 0, 595.28, 841.89]);
     });
