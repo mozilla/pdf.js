@@ -748,6 +748,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return this.pageInfo.ref;
     },
     /**
+     * @return {number} The default size of units in 1/72nds of an inch.
+     */
+    get userUnit() {
+      return this.pageInfo.userUnit;
+    },
+    /**
      * @return {Array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */

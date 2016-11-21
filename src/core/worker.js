@@ -747,14 +747,17 @@ var WorkerMessageHandler = {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
         var rotatePromise = pdfManager.ensure(page, 'rotate');
         var refPromise = pdfManager.ensure(page, 'ref');
+        var userUnitPromise = pdfManager.ensure(page, 'userUnit');
         var viewPromise = pdfManager.ensure(page, 'view');
 
-        return Promise.all([rotatePromise, refPromise, viewPromise]).then(
-            function(results) {
+        return Promise.all([
+          rotatePromise, refPromise, userUnitPromise, viewPromise
+        ]).then(function(results) {
           return {
             rotate: results[0],
             ref: results[1],
-            view: results[2]
+            userUnit: results[2],
+            view: results[3]
           };
         });
       });

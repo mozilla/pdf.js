@@ -42,6 +42,7 @@ var error = sharedUtil.error;
 var info = sharedUtil.info;
 var isArray = sharedUtil.isArray;
 var isArrayBuffer = sharedUtil.isArrayBuffer;
+var isNum = sharedUtil.isNum;
 var isString = sharedUtil.isString;
 var shadow = sharedUtil.shadow;
 var stringToBytes = sharedUtil.stringToBytes;
@@ -67,6 +68,7 @@ var AnnotationFactory = coreAnnotation.AnnotationFactory;
 
 var Page = (function PageClosure() {
 
+  var DEFAULT_USER_UNIT = 1.0;
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
@@ -136,6 +138,14 @@ var Page = (function PageClosure() {
         obj = LETTER_SIZE_MEDIABOX;
       }
       return shadow(this, 'mediaBox', obj);
+    },
+
+    get userUnit() {
+      var obj = this.getPageProp('UserUnit');
+      if (!isNum(obj) || obj <= 0) {
+        obj = DEFAULT_USER_UNIT;
+      }
+      return shadow(this, 'userUnit', obj);
     },
 
     get view() {
