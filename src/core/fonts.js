@@ -674,7 +674,7 @@ var Font = (function FontClosure() {
         for (charCode in GlyphMapForStandardFonts) {
           map[+charCode] = GlyphMapForStandardFonts[charCode];
         }
-        if (/ArialBlack/i.test(name)) {
+        if (/Arial-?Black/i.test(name)) {
           var SupplementalGlyphMapForArialBlack =
             getSupplementalGlyphMapForArialBlack();
           for (charCode in SupplementalGlyphMapForArialBlack) {
