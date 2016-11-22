@@ -17,6 +17,19 @@
 (function compatibilityWrapper() {
   'use strict';
 
+var userAgent = navigator.userAgent;
+
+var isAndroid = /Android/.test(userAgent);
+var isAndroidPre3 = /Android\s[0-2][^\d]/.test(userAgent);
+var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
+var isChrome = userAgent.indexOf('Chrom') >= 0;
+var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(userAgent);
+var isIE = userAgent.indexOf('Trident') >= 0;
+var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
+var isOpera = userAgent.indexOf('Opera') >= 0;
+var isSafari = /Safari\//.test(userAgent) &&
+               !/(Chrome\/|Android\s)/.test(userAgent);
+
 // Initializing PDFJS global object here, it case if we need to change/disable
 // some PDF.js features, e.g. range requests
 if (typeof PDFJS === 'undefined') {
@@ -29,12 +42,12 @@ if (typeof PDFJS === 'undefined') {
   if (typeof Uint8Array !== 'undefined') {
     // Support: iOS<6.0
     if (typeof Uint8Array.prototype.subarray === 'undefined') {
-        Uint8Array.prototype.subarray = function subarray(start, end) {
-          return new Uint8Array(this.slice(start, end));
-        };
-        Float32Array.prototype.subarray = function subarray(start, end) {
-          return new Float32Array(this.slice(start, end));
-        };
+      Uint8Array.prototype.subarray = function subarray(start, end) {
+        return new Uint8Array(this.slice(start, end));
+      };
+      Float32Array.prototype.subarray = function subarray(start, end) {
+        return new Float32Array(this.slice(start, end));
+      };
     }
 
     // Support: Android<4.1
@@ -429,7 +442,7 @@ if (typeof PDFJS === 'undefined') {
   function isDisabled(node) {
     return node.disabled || (node.parentNode && isDisabled(node.parentNode));
   }
-  if (navigator.userAgent.indexOf('Opera') !== -1) {
+  if (isOpera) {
     // use browser detection since we cannot feature-check this bug
     document.addEventListener('click', ignoreIfTargetDisabled, true);
   }
@@ -439,7 +452,7 @@ if (typeof PDFJS === 'undefined') {
 // Support: IE
 (function checkOnBlobSupport() {
   // sometimes IE loosing the data created with createObjectURL(), see #3977
-  if (navigator.userAgent.indexOf('Trident') >= 0) {
+  if (isIE) {
     PDFJS.disableCreateObjectURL = true;
   }
 })();
@@ -452,25 +465,19 @@ if (typeof PDFJS === 'undefined') {
   PDFJS.locale = navigator.userLanguage || 'en-US';
 })();
 
+// Support: Safari 6.0+, Android<3.0, Chrome 39/40, iOS
 (function checkRangeRequests() {
   // Safari has issues with cached range requests see:
   // https://github.com/mozilla/pdf.js/issues/3260
   // Last tested with version 6.0.4.
-  // Support: Safari 6.0+
-  var isSafari = /Safari\//.test(navigator.userAgent) &&
-                 !/(Chrome\/|Android\s)/.test(navigator.userAgent);
 
   // Older versions of Android (pre 3.0) has issues with range requests, see:
   // https://github.com/mozilla/pdf.js/issues/3381.
   // Make sure that we only match webkit-based Android browsers,
   // since Firefox/Fennec works as expected.
-  // Support: Android<3.0
-  var isOldAndroid = /Android\s[0-2][^\d]/.test(navigator.userAgent);
 
   // Range requests are broken in Chrome 39 and 40, https://crbug.com/442318
-  var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(navigator.userAgent);
-
-  if (isSafari || isOldAndroid || isChromeWithRangeBug) {
+  if (isSafari || isAndroidPre3 || isChromeWithRangeBug || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
   }
@@ -482,7 +489,7 @@ if (typeof PDFJS === 'undefined') {
   // Android 2.x has so buggy pushState support that it was removed in
   // Android 3.0 and restored as late as in Android 4.2.
   // Support: Android 2.x
-  if (!history.pushState || navigator.userAgent.indexOf('Android 2.') >= 0) {
+  if (!history.pushState || isAndroidPre3) {
     PDFJS.disableHistory = true;
   }
 })();
@@ -502,17 +509,17 @@ if (typeof PDFJS === 'undefined') {
     // Old Chrome and Android use an inaccessible CanvasPixelArray prototype.
     // Because we cannot feature detect it, we rely on user agent parsing.
     var polyfill = false, versionMatch;
-    if (navigator.userAgent.indexOf('Chrom') >= 0) {
-      versionMatch = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+    if (isChrome) {
+      versionMatch = userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
       // Chrome < 21 lacks the set function.
       polyfill = versionMatch && parseInt(versionMatch[2]) < 21;
-    } else if (navigator.userAgent.indexOf('Android') >= 0) {
+    } else if (isAndroid) {
       // Android < 4.4 lacks the set function.
       // Android >= 4.4 will contain Chrome in the user agent,
       // thus pass the Chrome check above and not reach this block.
-      polyfill = /Android\s[0-4][^\d]/g.test(navigator.userAgent);
-    } else if (navigator.userAgent.indexOf('Safari') >= 0) {
-      versionMatch = navigator.userAgent.
+      polyfill = isAndroidPre5;
+    } else if (isSafari) {
+      versionMatch = userAgent.
         match(/Version\/([0-9]+)\.([0-9]+)\.([0-9]+) Safari\//);
       // Safari < 6 lacks the set function.
       polyfill = versionMatch && parseInt(versionMatch[1]) < 6;
@@ -542,7 +549,6 @@ if (typeof PDFJS === 'undefined') {
     window.setTimeout(callback, 20);
   }
 
-  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
   if (isIOS) {
     // requestAnimationFrame on iOS is broken, replacing with fake one.
     window.requestAnimationFrame = fakeRequestAnimationFrame;
@@ -557,9 +563,8 @@ if (typeof PDFJS === 'undefined') {
     fakeRequestAnimationFrame;
 })();
 
+// Support: Android, iOS
 (function checkCanvasSizeLimitation() {
-  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
-  var isAndroid = /Android/g.test(navigator.userAgent);
   if (isIOS || isAndroid) {
     // 5MP
     PDFJS.maxCanvasPixels = 5242880;
@@ -569,9 +574,7 @@ if (typeof PDFJS === 'undefined') {
 // Disable fullscreen support for certain problematic configurations.
 // Support: IE11+ (when embedded).
 (function checkFullscreenSupport() {
-  var isEmbeddedIE = (navigator.userAgent.indexOf('Trident') >= 0 &&
-                      window.parent !== window);
-  if (isEmbeddedIE) {
+  if (isIE && window.parent !== window) {
     PDFJS.disableFullscreen = true;
   }
 })();
