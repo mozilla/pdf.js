@@ -40,6 +40,10 @@
     t['ArialBlack-Bold'] = 'Helvetica-Bold';
     t['ArialBlack-BoldItalic'] = 'Helvetica-BoldOblique';
     t['ArialBlack-Italic'] = 'Helvetica-Oblique';
+    t['Arial-Black'] = 'Helvetica';
+    t['Arial-Black-Bold'] = 'Helvetica-Bold';
+    t['Arial-Black-BoldItalic'] = 'Helvetica-BoldOblique';
+    t['Arial-Black-Italic'] = 'Helvetica-Oblique';
     t['Arial'] = 'Helvetica';
     t['Arial-Bold'] = 'Helvetica-Bold';
     t['Arial-BoldItalic'] = 'Helvetica-BoldOblique';

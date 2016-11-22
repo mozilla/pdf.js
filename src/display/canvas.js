@@ -1359,9 +1359,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var name = fontObj.loadedName || 'sans-serif';
-      var bold = fontObj.black ? (fontObj.bold ? '900' : 'bold') :
-                                 (fontObj.bold ? 'bold' : 'normal');
-
+      var bold = fontObj.black ? '900' : (fontObj.bold ? 'bold' : 'normal');
       var italic = fontObj.italic ? 'italic' : 'normal';
       var typeface = '"' + name + '", ' + fontObj.fallbackName;
 
