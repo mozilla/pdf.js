@@ -470,7 +470,10 @@ if (typeof PDFJS === 'undefined') {
   // Range requests are broken in Chrome 39 and 40, https://crbug.com/442318
   var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(navigator.userAgent);
 
-  if (isSafari || isOldAndroid || isChromeWithRangeBug) {
+  // Range requests are broken in iOS 10, but likely also in prior versions.
+  var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(navigator.userAgent);
+
+  if (isSafari || isOldAndroid || isChromeWithRangeBug || isIOS) {
     PDFJS.disableRange = true;
     PDFJS.disableStream = true;
   }
@@ -542,7 +545,7 @@ if (typeof PDFJS === 'undefined') {
     window.setTimeout(callback, 20);
   }
 
-  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
+  var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(navigator.userAgent);
   if (isIOS) {
     // requestAnimationFrame on iOS is broken, replacing with fake one.
     window.requestAnimationFrame = fakeRequestAnimationFrame;
@@ -558,7 +561,7 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 (function checkCanvasSizeLimitation() {
-  var isIOS = /(iPad|iPhone|iPod)/g.test(navigator.userAgent);
+  var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(navigator.userAgent);
   var isAndroid = /Android/g.test(navigator.userAgent);
   if (isIOS || isAndroid) {
     // 5MP
