@@ -17,13 +17,14 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/bidi', ['exports'], factory);
+    define('pdfjs/core/bidi', ['exports', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports);
+    factory(exports, require('../shared/util.js'));
   } else {
-    factory((root.pdfjsCoreBidi = {}));
+    factory((root.pdfjsCoreBidi = {}), root.pdfjsSharedUtil);
   }
-}(this, function (exports) {
+}(this, function (exports, sharedUtil) {
+  var warn = sharedUtil.warn;
 
   // Character types for symbols from 0000 to 00FF.
   // Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
@@ -52,10 +53,14 @@
 
   // Character types for symbols from 0600 to 06FF.
   // Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
+  // Note that 061D does not exist in the Unicode standard (see
+  // http://unicode.org/charts/PDF/U0600.pdf), so we replace it with an
+  // empty string and issue a warning if we encounter this character. The
+  // empty string is required to properly index the items after it.
   var arabicTypes = [
     'AN', 'AN', 'AN', 'AN', 'AN', 'AN', 'ON', 'ON', 'AL', 'ET', 'ET', 'AL',
     'CS', 'AL', 'ON', 'ON', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM', 'NSM',
-    'NSM', 'NSM', 'NSM', 'NSM', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
+    'NSM', 'NSM', 'NSM', 'NSM', 'AL', 'AL', '', 'AL', 'AL', 'AL', 'AL', 'AL',
     'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
     'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
     'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL', 'AL',
@@ -144,6 +149,9 @@
         charType = 'R';
       } else if (0x0600 <= charCode && charCode <= 0x06ff) {
         charType = arabicTypes[charCode & 0xff];
+        if (!charType) {
+          warn('Bidi: invalid Unicode character ' + charCode.toString(16));
+        }
       } else if (0x0700 <= charCode && charCode <= 0x08AC) {
         charType = 'AL';
       }
