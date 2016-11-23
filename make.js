@@ -47,6 +47,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
+    DIST_DIR = BUILD_DIR + 'dist/',
     SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/',
     COMPONENTS_DIR = BUILD_DIR + 'components/',
     REPO = 'git@github.com:mozilla/pdf.js.git',
@@ -266,8 +267,8 @@ target.dist = function() {
   target.generic();
   target.singlefile();
   target.components();
+  target.minified();
 
-  var DIST_DIR = BUILD_DIR + 'dist/';
   var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
   var VERSION = getCurrentVersion();
 
@@ -294,6 +295,9 @@ target.dist = function() {
     SINGLE_FILE_DIR + 'build/pdf.combined.js',
     SRC_DIR + 'pdf.worker.entry.js',
   ], DIST_DIR + 'build/');
+  cp(MINIFIED_DIR + 'build/pdf.js', DIST_DIR + 'build/pdf.min.js');
+  cp(MINIFIED_DIR + 'build/pdf.worker.js',
+     DIST_DIR + 'build/pdf.worker.min.js');
 
   mkdir('-p', DIST_DIR + 'web/');
   cp('-R', [
