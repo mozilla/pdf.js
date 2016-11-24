@@ -777,12 +777,6 @@ html[dir='rtl'] .toolbarButton:first-child {
   height: 1px;
 }
 
-.toolbarButtonFlexibleSpacer {
-  -webkit-box-flex: 1;
-  -moz-box-flex: 1;
-  min-width: 30px;
-}
-
 html[dir='ltr'] #findPrevious {
   margin-left: 3px;
 }
