@@ -589,12 +589,17 @@ var Catalog = (function CatalogClosure() {
   };
 
   /**
-   * Helper function used to parse the contents of destination dictionaries.
-   * @param {Dict} destDict - The dictionary containing the destination.
-   * @param {Object} resultObj - The object where the parsed destination
+   * @typedef ParseDestDictionaryParameters
+   * @property {Dict} destDict - The dictionary containing the destination.
+   * @property {Object} resultObj - The object where the parsed destination
    *   properties will be placed.
-   * @param {string} docBaseUrl - (optional) The document base URL that is used
-   *   when attempting to recover valid absolute URLs from relative ones.
+   * @property {string} docBaseUrl - (optional) The document base URL that is
+   *   used when attempting to recover valid absolute URLs from relative ones.
+   */
+
+  /**
+   * Helper function used to parse the contents of destination dictionaries.
+   * @param {ParseDestDictionaryParameters} params
    */
   Catalog.parseDestDictionary = function Catalog_parseDestDictionary(params) {
     // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
