@@ -1613,6 +1613,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "non-embedded-NuptialScript",
+       "file": "pdfs/non-embedded-NuptialScript.pdf",
+       "md5": "94225085d3fbf5d2d12b8be1c52bb3c1",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue3323",
        "file": "pdfs/issue3323.pdf",
        "md5": "1a14ff574013caeafa9d598269988764",
