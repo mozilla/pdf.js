@@ -1853,6 +1853,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue7855",
+       "file": "pdfs/issue7855.pdf",
+       "md5": "290d4d5da041ffbcb1ea5d3b0ed8ee91",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue6068",
        "file": "pdfs/issue6068.pdf",
        "md5": "bbcedb94776b40352729c16940a5b2bd",
