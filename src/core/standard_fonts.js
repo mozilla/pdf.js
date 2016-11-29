@@ -122,6 +122,7 @@
     t['MS-PMincho-Bold'] = 'MS PMincho-Bold';
     t['MS-PMincho-BoldItalic'] = 'MS PMincho-BoldItalic';
     t['MS-PMincho-Italic'] = 'MS PMincho-Italic';
+    t['NuptialScript'] = 'Times-Italic';
     t['Wingdings'] = 'ZapfDingbats';
   });
 
@@ -223,6 +224,7 @@
     t['New York'] = true;
     t['Nimbus Roman'] = true;
     t['NPS Rawlinson Roadway'] = true;
+    t['NuptialScript'] = true;
     t['Palatino'] = true;
     t['Perpetua'] = true;
     t['Plantin'] = true;
