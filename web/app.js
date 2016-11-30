@@ -1956,7 +1956,7 @@ window.addEventListener('keydown', function keydown(evt) {
     return;
   }
 
-  var handled = false;
+  var handled = false, ensureViewerFocused = false;
   var cmd = (evt.ctrlKey ? 1 : 0) |
             (evt.altKey ? 2 : 0) |
             (evt.shiftKey ? 4 : 0) |
@@ -2019,6 +2019,22 @@ window.addEventListener('keydown', function keydown(evt) {
           handled = false;
         }
         break;
+
+      case 38: // up arrow
+        if (isViewerInPresentationMode || PDFViewerApplication.page > 1) {
+          PDFViewerApplication.page = 1;
+          handled = true;
+          ensureViewerFocused = true;
+        }
+        break;
+      case 40: // down arrow
+        if (isViewerInPresentationMode ||
+            PDFViewerApplication.page < PDFViewerApplication.pagesCount) {
+          PDFViewerApplication.page = PDFViewerApplication.pagesCount;
+          handled = true;
+          ensureViewerFocused = true;
+        }
+        break;
     }
   }
 
@@ -2051,6 +2067,9 @@ window.addEventListener('keydown', function keydown(evt) {
   }
 
   if (handled) {
+    if (ensureViewerFocused && !isViewerInPresentationMode) {
+      pdfViewer.focus();
+    }
     evt.preventDefault();
     return;
   }
@@ -2067,7 +2086,6 @@ window.addEventListener('keydown', function keydown(evt) {
       return;
     }
   }
-  var ensureViewerFocused = false;
 
   if (cmd === 0) { // no control key pressed at all.
     switch (evt.keyCode) {
