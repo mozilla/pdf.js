@@ -1997,14 +1997,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         widths = dict.get('W');
         if (widths) {
           for (i = 0, ii = widths.length; i < ii; i++) {
-            start = widths[i++];
+            start = xref.fetchIfRef(widths[i++]);
             code = xref.fetchIfRef(widths[i]);
             if (isArray(code)) {
               for (j = 0, jj = code.length; j < jj; j++) {
-                glyphsWidths[start++] = code[j];
+                glyphsWidths[start++] = xref.fetchIfRef(code[j]);
               }
             } else {
-              var width = widths[++i];
+              var width = xref.fetchIfRef(widths[++i]);
               for (j = start; j <= code; j++) {
                 glyphsWidths[j] = width;
               }
@@ -2013,19 +2013,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
 
         if (properties.vertical) {
-          var vmetrics = (dict.get('DW2') || [880, -1000]);
+          var vmetrics = dict.getArray('DW2') || [880, -1000];
           defaultVMetrics = [vmetrics[1], defaultWidth * 0.5, vmetrics[0]];
           vmetrics = dict.get('W2');
           if (vmetrics) {
             for (i = 0, ii = vmetrics.length; i < ii; i++) {
-              start = vmetrics[i++];
+              start = xref.fetchIfRef(vmetrics[i++]);
               code = xref.fetchIfRef(vmetrics[i]);
               if (isArray(code)) {
                 for (j = 0, jj = code.length; j < jj; j++) {
-                  glyphsVMetrics[start++] = [code[j++], code[j++], code[j]];
+                  glyphsVMetrics[start++] = [
+                    xref.fetchIfRef(code[j++]),
+                    xref.fetchIfRef(code[j++]),
+                    xref.fetchIfRef(code[j])
+                  ];
                 }
               } else {
-                var vmetric = [vmetrics[++i], vmetrics[++i], vmetrics[++i]];
+                var vmetric = [
+                  xref.fetchIfRef(vmetrics[++i]),
+                  xref.fetchIfRef(vmetrics[++i]),
+                  xref.fetchIfRef(vmetrics[++i])
+                ];
                 for (j = start; j <= code; j++) {
                   glyphsVMetrics[j] = vmetric;
                 }
@@ -2039,7 +2047,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (widths) {
           j = firstChar;
           for (i = 0, ii = widths.length; i < ii; i++) {
-            glyphsWidths[j++] = widths[i];
+            glyphsWidths[j++] = xref.fetchIfRef(widths[i]);
           }
           defaultWidth = (parseFloat(descriptor.get('MissingWidth')) || 0);
         } else {
