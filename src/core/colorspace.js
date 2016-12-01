@@ -294,13 +294,8 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
 
     cs = xref.fetchIfRef(cs);
-    var mode;
-
     if (isName(cs)) {
-      mode = cs.name;
-      this.mode = mode;
-
-      switch (mode) {
+      switch (cs.name) {
         case 'DeviceGray':
         case 'G':
           return 'DeviceGrayCS';
@@ -313,11 +308,10 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Pattern':
           return ['PatternCS', null];
         default:
-          error('unrecognized colorspace ' + mode);
+          error('unrecognized colorspace ' + cs.name);
       }
     } else if (isArray(cs)) {
-      mode = xref.fetchIfRef(cs[0]).name;
-      this.mode = mode;
+      var mode = xref.fetchIfRef(cs[0]).name;
       var numComps, params, alt, whitePoint, blackPoint, gamma;
 
       switch (mode) {
@@ -384,12 +378,7 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Separation':
         case 'DeviceN':
           var name = xref.fetchIfRef(cs[1]);
-          numComps = 1;
-          if (isName(name)) {
-            numComps = 1;
-          } else if (isArray(name)) {
-            numComps = name.length;
-          }
+          numComps = isArray(name) ? name.length : 1;
           alt = ColorSpace.parseToIR(cs[2], xref, res);
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
@@ -549,23 +538,21 @@ var IndexedCS = (function IndexedCSClosure() {
 
     var baseNumComps = base.numComps;
     var length = baseNumComps * highVal;
-    var lookupArray;
 
     if (isStream(lookup)) {
-      lookupArray = new Uint8Array(length);
+      this.lookup = new Uint8Array(length);
       var bytes = lookup.getBytes(length);
-      lookupArray.set(bytes);
+      this.lookup.set(bytes);
     } else if (isString(lookup)) {
-      lookupArray = new Uint8Array(length);
+      this.lookup = new Uint8Array(length);
       for (var i = 0; i < length; ++i) {
-        lookupArray[i] = lookup.charCodeAt(i);
+        this.lookup[i] = lookup.charCodeAt(i);
       }
     } else if (lookup instanceof Uint8Array || lookup instanceof Array) {
-      lookupArray = lookup;
+      this.lookup = lookup;
     } else {
       error('Unrecognized lookup table: ' + lookup);
     }
-    this.lookup = lookupArray;
   }
 
   IndexedCS.prototype = {
@@ -975,15 +962,15 @@ var CalRGBCS = (function CalRGBCSClosure() {
   }
 
   function matrixProduct(a, b, result) {
-      result[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-      result[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2];
-      result[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
+    result[0] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    result[1] = a[3] * b[0] + a[4] * b[1] + a[5] * b[2];
+    result[2] = a[6] * b[0] + a[7] * b[1] + a[8] * b[2];
   }
 
   function convertToFlat(sourceWhitePoint, LMS, result) {
-      result[0] = LMS[0] * 1 / sourceWhitePoint[0];
-      result[1] = LMS[1] * 1 / sourceWhitePoint[1];
-      result[2] = LMS[2] * 1 / sourceWhitePoint[2];
+    result[0] = LMS[0] * 1 / sourceWhitePoint[0];
+    result[1] = LMS[1] * 1 / sourceWhitePoint[1];
+    result[2] = LMS[2] * 1 / sourceWhitePoint[2];
   }
 
   function convertToD65(sourceWhitePoint, LMS, result) {
