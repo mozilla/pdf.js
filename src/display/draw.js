@@ -346,11 +346,10 @@
           /*transform stuff*/
           // XXX a litte bit of a hack. if abs val of rotation is > 90 (it's 270), figure out which
           // way we want to rotate to get to or from 0
-          debugger;
           if(Math.abs(rotation) > 90) rotation = (rotation/Math.abs(rotation)) * - 90;
           transformGroup.scale(canvasScale);
           transformGroup.setCoords();
-         // transformGroup.rotate(rotation);
+          //transformGroup.rotate(rotation);
           transformGroup.setCoords();
 
           var tl = transformGroup.translateToOriginPoint(
@@ -360,10 +359,10 @@
           transformGroup._restoreObjectsState();
           
 
-         /* transformGroup._objects.forEach(function(obj, i) {
+         transformGroup._objects.forEach(function(obj, i) {
             if(obj.type != 'anchor') transformedObjs.push(obj);
           });
-         klass.remove(transformGroup);*/
+         klass.remove(transformGroup);
          transformedObjs.forEach(function(transformed) {
             klass.add(transformed);
           });
