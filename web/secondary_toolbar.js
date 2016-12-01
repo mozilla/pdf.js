@@ -68,10 +68,10 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
       { element: options.viewBookmarkButton, eventName: null, close: true },
       { element: options.firstPageButton, eventName: 'firstpage', close: true },
       { element: options.lastPageButton, eventName: 'lastpage', close: true },
-      { element: options.pageRotateCwButton, eventName: 'rotatecw',
+      /*{ element: options.pageRotateCwButton, eventName: 'rotatecw',
         close: false },
       { element: options.pageRotateCcwButton, eventName: 'rotateccw',
-        close: false },
+        close: false },*/
       { element: options.toggleHandToolButton, eventName: 'togglehandtool',
         close: true },
       { element: options.documentPropertiesButton,
