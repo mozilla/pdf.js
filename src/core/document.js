@@ -596,12 +596,9 @@ var PDFDocument = (function PDFDocumentClosure() {
           idArray[0] !== EMPTY_FINGERPRINT) {
         hash = stringToBytes(idArray[0]);
       } else {
-        if (this.stream.ensureRange) {
-          this.stream.ensureRange(0,
-            Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
-        }
-        hash = calculateMD5(this.stream.bytes.subarray(0,
-          FINGERPRINT_FIRST_BYTES), 0, FINGERPRINT_FIRST_BYTES);
+        var substream = this.stream.makeSubStream(0, FINGERPRINT_FIRST_BYTES);
+        hash = calculateMD5(substream.getBytes(FINGERPRINT_FIRST_BYTES),
+          0, Math.min(FINGERPRINT_FIRST_BYTES, this.stream.end));
       }
 
       for (var i = 0, n = hash.length; i < n; i++) {
