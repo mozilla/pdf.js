@@ -1202,6 +1202,8 @@ var PDFViewerApplication = {
   },
 
   rotatePages: function pdfViewRotatePages(delta) {
+    console.log('Rotation is not supported at this time!');
+    return;
     var pageNumber = this.page;
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
