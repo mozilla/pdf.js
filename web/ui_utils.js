@@ -427,7 +427,8 @@ var animationStarted = new Promise(function (resolve) {
  */
 var localized = new Promise(function (resolve, reject) {
   if (!mozL10n) {
-    reject(new Error('mozL10n service is not available.'));
+    // Resolve as localized even if mozL10n is not available.
+    resolve();
     return;
   }
   if (mozL10n.getReadyState() !== 'loading') {
