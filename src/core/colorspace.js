@@ -547,7 +547,7 @@ var IndexedCS = (function IndexedCSClosure() {
   function IndexedCS(base, highVal, lookup) {
     this.name = 'Indexed';
     this.numComps = 1;
-    this.defaultColor = new Uint8Array([0]);
+    this.defaultColor = new Uint8Array(this.numComps);
     this.base = base;
     this.highVal = highVal;
 
@@ -613,7 +613,7 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
   function DeviceGrayCS() {
     this.name = 'DeviceGray';
     this.numComps = 1;
-    this.defaultColor = new Float32Array([0]);
+    this.defaultColor = new Float32Array(this.numComps);
   }
 
   DeviceGrayCS.prototype = {
@@ -655,7 +655,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
   function DeviceRgbCS() {
     this.name = 'DeviceRGB';
     this.numComps = 3;
-    this.defaultColor = new Float32Array([0, 0, 0]);
+    this.defaultColor = new Float32Array(this.numComps);
   }
   DeviceRgbCS.prototype = {
     getRgb: ColorSpace.prototype.getRgb,
@@ -748,7 +748,9 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
   function DeviceCmykCS() {
     this.name = 'DeviceCMYK';
     this.numComps = 4;
-    this.defaultColor = new Float32Array([0, 0, 0, 1]);
+    this.defaultColor = new Float32Array(this.numComps);
+    // Set the fourth component to the maximum value for a black color.
+    this.defaultColor[3] = 1;
   }
   DeviceCmykCS.prototype = {
     getRgb: ColorSpace.prototype.getRgb,
@@ -788,7 +790,7 @@ var CalGrayCS = (function CalGrayCSClosure() {
   function CalGrayCS(whitePoint, blackPoint, gamma) {
     this.name = 'CalGray';
     this.numComps = 1;
-    this.defaultColor = new Float32Array([0]);
+    this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
       error('WhitePoint missing - required for color space CalGray');
@@ -911,7 +913,7 @@ var CalRGBCS = (function CalRGBCSClosure() {
   function CalRGBCS(whitePoint, blackPoint, gamma, matrix) {
     this.name = 'CalRGB';
     this.numComps = 3;
-    this.defaultColor = new Float32Array(3);
+    this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
       error('WhitePoint missing - required for color space CalRGB');
@@ -1187,7 +1189,7 @@ var LabCS = (function LabCSClosure() {
   function LabCS(whitePoint, blackPoint, range) {
     this.name = 'Lab';
     this.numComps = 3;
-    this.defaultColor = new Float32Array([0, 0, 0]);
+    this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
       error('WhitePoint missing - required for color space Lab');
