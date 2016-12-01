@@ -492,26 +492,22 @@ var AlternateCS = (function AlternateCSClosure() {
       var scaled = new Float32Array(numComps);
       var tinted = new Float32Array(baseNumComps);
       var i, j;
-      if (usesZeroToOneRange) {
-        for (i = 0; i < count; i++) {
-          for (j = 0; j < numComps; j++) {
-            scaled[j] = src[srcOffset++] * scale;
-          }
-          tintFn(scaled, 0, tinted, 0);
+
+      for (i = 0; i < count; i++) {
+        for (j = 0; j < numComps; j++) {
+          scaled[j] = src[srcOffset++] * scale;
+        }
+        tintFn(scaled, 0, tinted, 0);
+        if (usesZeroToOneRange) {
           for (j = 0; j < baseNumComps; j++) {
             baseBuf[pos++] = tinted[j] * 255;
           }
-        }
-      } else {
-        for (i = 0; i < count; i++) {
-          for (j = 0; j < numComps; j++) {
-            scaled[j] = src[srcOffset++] * scale;
-          }
-          tintFn(scaled, 0, tinted, 0);
+        } else {
           base.getRgbItem(tinted, 0, baseBuf, pos);
           pos += baseNumComps;
         }
       }
+
       if (!isPassthrough) {
         base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
       }
