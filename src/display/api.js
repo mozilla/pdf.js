@@ -1106,6 +1106,9 @@ var PDFWorker = (function PDFWorkerClosure() {
     } else if (PDFJSDev.test('SINGLE_FILE')) {
       WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
       fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+    } else if(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler) {
+      // pdf.worker.js is already present - either via evaluated script or <script />
+      fakeWorkerFilesLoadedCapability.resolve(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
     } else {
       var loader = fakeWorkerFilesLoader || function (callback) {
         Util.loadScript(getWorkerSrc(), function () {
