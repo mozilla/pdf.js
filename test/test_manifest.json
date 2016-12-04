@@ -1146,6 +1146,13 @@
        "lastPage": 2,
        "type": "eq"
     },
+    {  "id": "issue6071",
+       "file": "pdfs/issue6071.pdf",
+       "md5": "2e08526d8e7c9ba4269fc12ef488d3eb",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue1905",
        "file": "pdfs/issue1905.pdf",
        "md5": "b1bbd72ca6522ae1502aa26320f81994",
