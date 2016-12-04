@@ -515,7 +515,7 @@ describe('api', function() {
         expect(pageLabels[0]).toEqual(['i', 'ii', 'iii', '1']);
         expect(pageLabels[1]).toEqual(['Front Page1']);
         expect(pageLabels[2]).toEqual(['1', '2']);
-        expect(pageLabels[3]).toEqual(['X1']);
+        expect(pageLabels[3]).toEqual(['X3']);
 
         loadingTask0.destroy();
         loadingTask1.destroy();
