@@ -1462,18 +1462,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Optimization to treat same line movement as advance
               var isSameTextLine = !textState.font ? false :
                 ((textState.font.vertical ? args[0] : args[1]) === 0);
-              advance = args[0] - args[1];
+              diff = (args[0] - textContentItem.lastAdvanceWidth) -
+                (args[1] - textContentItem.lastAdvanceHeight);
               if (combineTextItems &&
                   isSameTextLine && textContentItem.initialized &&
-                  advance > 0 &&
-                  advance <= textContentItem.fakeMultiSpaceMax) {
+                  diff > 0 &&
+                  diff <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(args[0], args[1]);
                 textContentItem.width +=
                   (args[0] - textContentItem.lastAdvanceWidth);
                 textContentItem.height +=
                   (args[1] - textContentItem.lastAdvanceHeight);
-                diff = (args[0] - textContentItem.lastAdvanceWidth) -
-                       (args[1] - textContentItem.lastAdvanceHeight);
                 addFakeSpaces(diff, textContentItem.str);
                 break;
               }
@@ -1496,18 +1495,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               // Optimization to treat same line movement as advance.
               advance = textState.calcTextLineMatrixAdvance(
                 args[0], args[1], args[2], args[3], args[4], args[5]);
+              if (advance !== null) {
+                diff = (advance.width - textContentItem.lastAdvanceWidth) -
+                  (advance.height - textContentItem.lastAdvanceHeight);
+              }
               if (combineTextItems &&
                   advance !== null && textContentItem.initialized &&
-                  advance.value > 0 &&
-                  advance.value <= textContentItem.fakeMultiSpaceMax) {
+                  diff > 0 &&
+                  diff <= textContentItem.fakeMultiSpaceMax) {
                 textState.translateTextLineMatrix(advance.width,
                                                   advance.height);
                 textContentItem.width +=
                   (advance.width - textContentItem.lastAdvanceWidth);
                 textContentItem.height +=
                   (advance.height - textContentItem.lastAdvanceHeight);
-                diff = (advance.width - textContentItem.lastAdvanceWidth) -
-                       (advance.height - textContentItem.lastAdvanceHeight);
                 addFakeSpaces(diff, textContentItem.str);
                 break;
               }
