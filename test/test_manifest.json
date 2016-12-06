@@ -3324,5 +3324,12 @@
        "link": false,
        "rounds": 1,
        "type": "text"
+    },
+    {  "id": "issue7878",
+       "file": "pdfs/issue7878.pdf",
+       "md5": "59194e30037e8c09ae846ddd0ace4c81",
+       "link": false,
+       "rounds": 1,
+       "type": "text"
     }
 ]
