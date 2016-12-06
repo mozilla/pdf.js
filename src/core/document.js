@@ -133,12 +133,21 @@ var Page = (function PageClosure() {
     },
 
     get mediaBox() {
-      var obj = this.getInheritedPageProp('MediaBox', true);
+      var mediaBox = this.getInheritedPageProp('MediaBox', true);
       // Reset invalid media box to letter size.
-      if (!isArray(obj) || obj.length !== 4) {
-        obj = LETTER_SIZE_MEDIABOX;
+      if (!isArray(mediaBox) || mediaBox.length !== 4) {
+        return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
       }
-      return shadow(this, 'mediaBox', obj);
+      return shadow(this, 'mediaBox', mediaBox);
+    },
+
+    get cropBox() {
+      var cropBox = this.getInheritedPageProp('CropBox', true);
+      // Reset invalid crop box to media box.
+      if (!isArray(cropBox) || cropBox.length !== 4) {
+        return shadow(this, 'cropBox', this.mediaBox);
+      }
+      return shadow(this, 'cropBox', cropBox);
     },
 
     get userUnit() {
@@ -150,21 +159,16 @@ var Page = (function PageClosure() {
     },
 
     get view() {
-      var mediaBox = this.mediaBox;
-      var cropBox = this.getInheritedPageProp('CropBox', true);
-      if (!isArray(cropBox) || cropBox.length !== 4) {
-        return shadow(this, 'view', mediaBox);
-      }
-
       // From the spec, 6th ed., p.963:
       // "The crop, bleed, trim, and art boxes should not ordinarily
       // extend beyond the boundaries of the media box. If they do, they are
       // effectively reduced to their intersection with the media box."
-      cropBox = Util.intersect(cropBox, mediaBox);
-      if (!cropBox) {
+      var mediaBox = this.mediaBox, cropBox = this.cropBox;
+      if (mediaBox === cropBox) {
         return shadow(this, 'view', mediaBox);
       }
-      return shadow(this, 'view', cropBox);
+      var intersection = Util.intersect(cropBox, mediaBox);
+      return shadow(this, 'view', intersection || mediaBox);
     },
 
     get rotate() {
