@@ -1366,10 +1366,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         if (!font.vertical) {
           textChunk.lastAdvanceWidth = width;
-          textChunk.width += width * textChunk.textAdvanceScale;
+          textChunk.width += width;
         } else {
           textChunk.lastAdvanceHeight = height;
-          textChunk.height += Math.abs(height * textChunk.textAdvanceScale);
+          textChunk.height += Math.abs(height);
         }
 
         return textChunk;
@@ -1393,6 +1393,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!textContentItem.initialized) {
           return;
         }
+
+        // Do final text scaling
+        textContentItem.width *= textContentItem.textAdvanceScale;
+        textContentItem.height *= textContentItem.textAdvanceScale;
         textContent.items.push(runBidiTransform(textContentItem));
 
         textContentItem.initialized = false;
@@ -1545,10 +1549,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   advance = items[j] * textState.fontSize / 1000;
                   var breakTextRun = false;
                   if (textState.font.vertical) {
-                    offset = advance *
-                      (textState.textHScale * textState.textMatrix[2] +
-                       textState.textMatrix[3]);
-                    textState.translateTextMatrix(0, advance);
+                    offset = advance;
+                    textState.translateTextMatrix(0, offset);
                     breakTextRun = textContentItem.textRunBreakAllowed &&
                                    advance > textContentItem.fakeMultiSpaceMax;
                     if (!breakTextRun) {
@@ -1557,10 +1559,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                     }
                   } else {
                     advance = -advance;
-                    offset = advance * (
-                      textState.textHScale * textState.textMatrix[0] +
-                      textState.textMatrix[1]);
-                    textState.translateTextMatrix(advance, 0);
+                    offset = advance * textState.textHScale;
+                    textState.translateTextMatrix(offset, 0);
                     breakTextRun = textContentItem.textRunBreakAllowed &&
                                    advance > textContentItem.fakeMultiSpaceMax;
                     if (!breakTextRun) {
