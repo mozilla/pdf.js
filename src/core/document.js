@@ -91,13 +91,14 @@ var Page = (function PageClosure() {
       return this.pageDict.get(key);
     },
 
-    getInheritedPageProp: function Page_getInheritedPageProp(key) {
+    getInheritedPageProp: function Page_getInheritedPageProp(key, getArray) {
       var dict = this.pageDict, valueArray = null, loopCount = 0;
       var MAX_LOOP_COUNT = 100;
+      getArray = getArray || false;
       // Always walk up the entire parent chain, to be able to find
       // e.g. \Resources placed on multiple levels of the tree.
       while (dict) {
-        var value = dict.get(key);
+        var value = getArray ? dict.getArray(key) : dict.get(key);
         if (value) {
           if (!valueArray) {
             valueArray = [];
@@ -132,7 +133,7 @@ var Page = (function PageClosure() {
     },
 
     get mediaBox() {
-      var obj = this.getInheritedPageProp('MediaBox');
+      var obj = this.getInheritedPageProp('MediaBox', true);
       // Reset invalid media box to letter size.
       if (!isArray(obj) || obj.length !== 4) {
         obj = LETTER_SIZE_MEDIABOX;
@@ -150,7 +151,7 @@ var Page = (function PageClosure() {
 
     get view() {
       var mediaBox = this.mediaBox;
-      var cropBox = this.getInheritedPageProp('CropBox');
+      var cropBox = this.getInheritedPageProp('CropBox', true);
       if (!isArray(cropBox) || cropBox.length !== 4) {
         return shadow(this, 'view', mediaBox);
       }
