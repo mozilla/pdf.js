@@ -213,6 +213,14 @@ var PDFViewerApplication = {
         // initialized, to prevent errors if an event arrives too soon.
         self.bindEvents();
 
+        if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+          // For backwards compatibility, we dispatch the 'localized' event on
+          // the `eventBus` once the viewer has been initialized.
+          localized.then(function () {
+            self.eventBus.dispatch('localized');
+          });
+        }
+
         if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
           // Prevent external links from "replacing" the viewer,
           // when it's embedded in e.g. an iframe or an object.
@@ -1780,11 +1788,6 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   };
 }
 
-function webViewerLocalized() {
-  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
-  PDFViewerApplication.eventBus.dispatch('localized');
-}
-
 function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
@@ -2258,7 +2261,9 @@ window.addEventListener('afterprint', function afterPrint(evt) {
   PDFViewerApplication.eventBus.dispatch('afterprint');
 });
 
-localized.then(webViewerLocalized);
+localized.then(function webViewerLocalized() {
+  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
+});
 
 /* Abstract factory for the print service. */
 var PDFPrintServiceFactory = {
