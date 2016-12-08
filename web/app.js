@@ -209,6 +209,10 @@ var PDFViewerApplication = {
 
     return this._readPreferences().then(function () {
       return self._initializeViewerComponents().then(function () {
+        // Bind the various event handlers *after* the viewer has been
+        // initialized, to prevent errors if an event arrives too soon.
+        self.bindEvents();
+
         if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
           // Prevent external links from "replacing" the viewer,
           // when it's embedded in e.g. an iframe or an object.
@@ -304,7 +308,6 @@ var PDFViewerApplication = {
     return new Promise(function (resolve, reject) {
       var eventBus = appConfig.eventBus || getGlobalEventBus();
       self.eventBus = eventBus;
-      self.bindEvents();
 
       var pdfRenderingQueue = new PDFRenderingQueue();
       pdfRenderingQueue.onIdle = self.cleanup.bind(self);
@@ -1596,9 +1599,6 @@ function webViewerTextLayerRendered(e) {
 }
 
 function webViewerPageMode(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   // Handle the 'pagemode' hash parameter, see also `PDFLinkService_setHash`.
   var mode = e.mode, view;
   switch (mode) {
@@ -1623,9 +1623,6 @@ function webViewerPageMode(e) {
 }
 
 function webViewerNamedAction(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   // Processing couple of named actions that might be useful.
   // See also PDFLinkService.executeNamedAction
   var action = e.action;
@@ -1651,9 +1648,6 @@ function webViewerPresentationModeChanged(e) {
 }
 
 function webViewerSidebarViewChanged(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   PDFViewerApplication.pdfRenderingQueue.isThumbnailViewEnabled =
     PDFViewerApplication.pdfSidebar.isThumbnailViewVisible;
 
@@ -1668,9 +1662,6 @@ function webViewerSidebarViewChanged(e) {
 }
 
 function webViewerUpdateViewarea(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   var location = e.location, store = PDFViewerApplication.store;
 
   if (store) {
@@ -1709,24 +1700,25 @@ window.addEventListener('resize', function webViewerResize(evt) {
 });
 
 function webViewerResize() {
-  if (PDFViewerApplication.initialized) {
-    var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
-    if (currentScaleValue === 'auto' ||
-        currentScaleValue === 'page-fit' ||
-        currentScaleValue === 'page-width') {
-      // Note: the scale is constant for 'page-actual'.
-      PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
-    } else if (!currentScaleValue) {
-      // Normally this shouldn't happen, but if the scale wasn't initialized
-      // we set it to the default value in order to prevent any issues.
-      // (E.g. the document being rendered with the wrong scale on load.)
-      PDFViewerApplication.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
-    }
-    PDFViewerApplication.pdfViewer.update();
+  var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
+  if (currentScaleValue === 'auto' ||
+      currentScaleValue === 'page-fit' ||
+      currentScaleValue === 'page-width') {
+    // Note: the scale is constant for 'page-actual'.
+    PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
+  } else if (!currentScaleValue) {
+    // Normally this shouldn't happen, but if the scale wasn't initialized
+    // we set it to the default value in order to prevent any issues.
+    // (E.g. the document being rendered with the wrong scale on load.)
+    PDFViewerApplication.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
   }
+  PDFViewerApplication.pdfViewer.update();
 }
 
 window.addEventListener('hashchange', function webViewerHashchange(evt) {
+  if (!PDFViewerApplication.eventBus) {
+    return;
+  }
   var hash = document.location.hash.substring(1);
   PDFViewerApplication.eventBus.dispatch('hashchange', {hash: hash});
 });
@@ -1748,6 +1740,9 @@ function webViewerHashchange(e) {
 var webViewerFileInputChange;
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   window.addEventListener('change', function webViewerChange(evt) {
+    if (!PDFViewerApplication.eventBus) {
+      return;
+    }
     var files = evt.target.files;
     if (!files || files.length === 0) {
       return;
@@ -1873,9 +1868,6 @@ function webViewerFindFromUrlHash(e) {
 function webViewerScaleChanging(e) {
   PDFViewerApplication.toolbar.setPageScale(e.presetValue, e.scale);
 
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   PDFViewerApplication.pdfViewer.update();
 }
 
@@ -1900,8 +1892,11 @@ function webViewerPageChanging(e) {
 
 var zoomDisabled = false, zoomDisabledTimeout;
 function handleMouseWheel(evt) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
   var pdfViewer = PDFViewerApplication.pdfViewer;
-  if (!pdfViewer || pdfViewer.isInPresentationMode) {
+  if (pdfViewer.isInPresentationMode) {
     return;
   }
 
@@ -1954,6 +1949,9 @@ function handleMouseWheel(evt) {
 window.addEventListener('wheel', handleMouseWheel);
 
 window.addEventListener('click', function click(evt) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
     return;
   }
@@ -1966,6 +1964,9 @@ window.addEventListener('click', function click(evt) {
 }, true);
 
 window.addEventListener('keydown', function keydown(evt) {
+  if (!PDFViewerApplication.initialized) {
+    return;
+  }
   if (OverlayManager.active) {
     return;
   }
@@ -2244,10 +2245,16 @@ window.addEventListener('keydown', function keydown(evt) {
 });
 
 window.addEventListener('beforeprint', function beforePrint(evt) {
+  if (!PDFViewerApplication.eventBus) {
+    return;
+  }
   PDFViewerApplication.eventBus.dispatch('beforeprint');
 });
 
 window.addEventListener('afterprint', function afterPrint(evt) {
+  if (!PDFViewerApplication.eventBus) {
+    return;
+  }
   PDFViewerApplication.eventBus.dispatch('afterprint');
 });
 
