@@ -91,13 +91,14 @@ var Page = (function PageClosure() {
       return this.pageDict.get(key);
     },
 
-    getInheritedPageProp: function Page_getInheritedPageProp(key) {
+    getInheritedPageProp: function Page_getInheritedPageProp(key, getArray) {
       var dict = this.pageDict, valueArray = null, loopCount = 0;
       var MAX_LOOP_COUNT = 100;
+      getArray = getArray || false;
       // Always walk up the entire parent chain, to be able to find
       // e.g. \Resources placed on multiple levels of the tree.
       while (dict) {
-        var value = dict.get(key);
+        var value = getArray ? dict.getArray(key) : dict.get(key);
         if (value) {
           if (!valueArray) {
             valueArray = [];
@@ -132,12 +133,21 @@ var Page = (function PageClosure() {
     },
 
     get mediaBox() {
-      var obj = this.getInheritedPageProp('MediaBox');
+      var mediaBox = this.getInheritedPageProp('MediaBox', true);
       // Reset invalid media box to letter size.
-      if (!isArray(obj) || obj.length !== 4) {
-        obj = LETTER_SIZE_MEDIABOX;
+      if (!isArray(mediaBox) || mediaBox.length !== 4) {
+        return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
       }
-      return shadow(this, 'mediaBox', obj);
+      return shadow(this, 'mediaBox', mediaBox);
+    },
+
+    get cropBox() {
+      var cropBox = this.getInheritedPageProp('CropBox', true);
+      // Reset invalid crop box to media box.
+      if (!isArray(cropBox) || cropBox.length !== 4) {
+        return shadow(this, 'cropBox', this.mediaBox);
+      }
+      return shadow(this, 'cropBox', cropBox);
     },
 
     get userUnit() {
@@ -149,21 +159,16 @@ var Page = (function PageClosure() {
     },
 
     get view() {
-      var mediaBox = this.mediaBox;
-      var cropBox = this.getInheritedPageProp('CropBox');
-      if (!isArray(cropBox) || cropBox.length !== 4) {
-        return shadow(this, 'view', mediaBox);
-      }
-
       // From the spec, 6th ed., p.963:
       // "The crop, bleed, trim, and art boxes should not ordinarily
       // extend beyond the boundaries of the media box. If they do, they are
       // effectively reduced to their intersection with the media box."
-      cropBox = Util.intersect(cropBox, mediaBox);
-      if (!cropBox) {
+      var mediaBox = this.mediaBox, cropBox = this.cropBox;
+      if (mediaBox === cropBox) {
         return shadow(this, 'view', mediaBox);
       }
-      return shadow(this, 'view', cropBox);
+      var intersection = Util.intersect(cropBox, mediaBox);
+      return shadow(this, 'view', intersection || mediaBox);
     },
 
     get rotate() {
