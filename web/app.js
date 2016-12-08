@@ -210,6 +210,11 @@ var PDFViewerApplication = {
     return this._readPreferences().then(function () {
       return self._initializeViewerComponents();
     }).then(function () {
+      // Bind the various event handlers *after* the viewer has been
+      // initialized, to prevent errors if an event arrives too soon.
+      self.bindEvents();
+      self.bindWindowEvents();
+
       if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
         // Prevent external links from "replacing" the viewer,
         // when it's embedded in e.g. an iframe or an object.
@@ -304,7 +309,6 @@ var PDFViewerApplication = {
     return new Promise(function (resolve, reject) {
       var eventBus = appConfig.eventBus || getGlobalEventBus();
       self.eventBus = eventBus;
-      self.bindEvents();
 
       var pdfRenderingQueue = new PDFRenderingQueue();
       pdfRenderingQueue.onIdle = self.cleanup.bind(self);
@@ -1291,7 +1295,41 @@ var PDFViewerApplication = {
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       eventBus.on('fileinputchange', webViewerFileInputChange);
     }
-  }
+  },
+
+  bindWindowEvents: function pdfViewBindWindowEvents() {
+    var eventBus = this.eventBus;
+
+    window.addEventListener('wheel', webViewerWheel);
+    window.addEventListener('click', webViewerClick);
+    window.addEventListener('keydown', webViewerKeyDown);
+
+    window.addEventListener('resize', function windowResize() {
+      eventBus.dispatch('resize');
+    });
+    window.addEventListener('hashchange', function windowHashChange() {
+      eventBus.dispatch('hashchange', {
+        hash: document.location.hash.substring(1),
+      });
+    });
+    window.addEventListener('beforeprint', function windowBeforePrint() {
+      eventBus.dispatch('beforeprint');
+    });
+    window.addEventListener('afterprint', function windowAfterPrint() {
+      eventBus.dispatch('afterprint');
+    });
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      window.addEventListener('change', function windowChange(evt) {
+        var files = evt.target.files;
+        if (!files || files.length === 0) {
+          return;
+        }
+        eventBus.dispatch('fileinputchange', {
+          fileInput: evt.target,
+        });
+      });
+    }
+  },
 };
 
 var validateFileURL;
@@ -1596,9 +1634,6 @@ function webViewerTextLayerRendered(e) {
 }
 
 function webViewerPageMode(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   // Handle the 'pagemode' hash parameter, see also `PDFLinkService_setHash`.
   var mode = e.mode, view;
   switch (mode) {
@@ -1623,9 +1658,6 @@ function webViewerPageMode(e) {
 }
 
 function webViewerNamedAction(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   // Processing couple of named actions that might be useful.
   // See also PDFLinkService.executeNamedAction
   var action = e.action;
@@ -1651,9 +1683,6 @@ function webViewerPresentationModeChanged(e) {
 }
 
 function webViewerSidebarViewChanged(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   PDFViewerApplication.pdfRenderingQueue.isThumbnailViewEnabled =
     PDFViewerApplication.pdfSidebar.isThumbnailViewVisible;
 
@@ -1668,9 +1697,6 @@ function webViewerSidebarViewChanged(e) {
 }
 
 function webViewerUpdateViewarea(e) {
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   var location = e.location, store = PDFViewerApplication.store;
 
   if (store) {
@@ -1701,35 +1727,21 @@ function webViewerUpdateViewarea(e) {
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
 }
 
-window.addEventListener('resize', function webViewerResize(evt) {
-  if (!PDFViewerApplication.eventBus) {
-    return;
-  }
-  PDFViewerApplication.eventBus.dispatch('resize');
-});
-
 function webViewerResize() {
-  if (PDFViewerApplication.initialized) {
-    var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
-    if (currentScaleValue === 'auto' ||
-        currentScaleValue === 'page-fit' ||
-        currentScaleValue === 'page-width') {
-      // Note: the scale is constant for 'page-actual'.
-      PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
-    } else if (!currentScaleValue) {
-      // Normally this shouldn't happen, but if the scale wasn't initialized
-      // we set it to the default value in order to prevent any issues.
-      // (E.g. the document being rendered with the wrong scale on load.)
-      PDFViewerApplication.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
-    }
-    PDFViewerApplication.pdfViewer.update();
+  var currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
+  if (currentScaleValue === 'auto' ||
+      currentScaleValue === 'page-fit' ||
+      currentScaleValue === 'page-width') {
+    // Note: the scale is constant for 'page-actual'.
+    PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
+  } else if (!currentScaleValue) {
+    // Normally this shouldn't happen, but if the scale wasn't initialized
+    // we set it to the default value in order to prevent any issues.
+    // (E.g. the document being rendered with the wrong scale on load.)
+    PDFViewerApplication.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
   }
+  PDFViewerApplication.pdfViewer.update();
 }
-
-window.addEventListener('hashchange', function webViewerHashchange(evt) {
-  var hash = document.location.hash.substring(1);
-  PDFViewerApplication.eventBus.dispatch('hashchange', {hash: hash});
-});
 
 function webViewerHashchange(e) {
   if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
@@ -1747,15 +1759,6 @@ function webViewerHashchange(e) {
 
 var webViewerFileInputChange;
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-  window.addEventListener('change', function webViewerChange(evt) {
-    var files = evt.target.files;
-    if (!files || files.length === 0) {
-      return;
-    }
-    PDFViewerApplication.eventBus.dispatch('fileinputchange',
-      {fileInput: evt.target});
-  }, true);
-
   webViewerFileInputChange = function webViewerFileInputChange(e) {
     var file = e.fileInput.files[0];
 
@@ -1873,9 +1876,6 @@ function webViewerFindFromUrlHash(e) {
 function webViewerScaleChanging(e) {
   PDFViewerApplication.toolbar.setPageScale(e.presetValue, e.scale);
 
-  if (!PDFViewerApplication.initialized) {
-    return;
-  }
   PDFViewerApplication.pdfViewer.update();
 }
 
@@ -1899,9 +1899,9 @@ function webViewerPageChanging(e) {
 }
 
 var zoomDisabled = false, zoomDisabledTimeout;
-function handleMouseWheel(evt) {
+function webViewerWheel(evt) {
   var pdfViewer = PDFViewerApplication.pdfViewer;
-  if (!pdfViewer || pdfViewer.isInPresentationMode) {
+  if (pdfViewer.isInPresentationMode) {
     return;
   }
 
@@ -1951,9 +1951,7 @@ function handleMouseWheel(evt) {
   }
 }
 
-window.addEventListener('wheel', handleMouseWheel);
-
-window.addEventListener('click', function click(evt) {
+function webViewerClick(evt) {
   if (!PDFViewerApplication.secondaryToolbar.isOpen) {
     return;
   }
@@ -1963,9 +1961,9 @@ window.addEventListener('click', function click(evt) {
        evt.target !== appConfig.secondaryToolbar.toggleButton)) {
     PDFViewerApplication.secondaryToolbar.close();
   }
-}, true);
+}
 
-window.addEventListener('keydown', function keydown(evt) {
+function webViewerKeyDown(evt) {
   if (OverlayManager.active) {
     return;
   }
@@ -2241,15 +2239,7 @@ window.addEventListener('keydown', function keydown(evt) {
   if (handled) {
     evt.preventDefault();
   }
-});
-
-window.addEventListener('beforeprint', function beforePrint(evt) {
-  PDFViewerApplication.eventBus.dispatch('beforeprint');
-});
-
-window.addEventListener('afterprint', function afterPrint(evt) {
-  PDFViewerApplication.eventBus.dispatch('afterprint');
-});
+}
 
 localized.then(webViewerLocalized);
 
