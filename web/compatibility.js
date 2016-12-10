@@ -270,7 +270,7 @@ if (typeof PDFJS === 'undefined') {
       // initialize result and counters
       var bc = 0, bs, buffer, idx = 0, output = '';
       // get next character
-      buffer = input.charAt(idx++);
+      (buffer = input.charAt(idx++));
       // character found in table?
       // initialize bit storage and add its ascii value
       ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,

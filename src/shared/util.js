@@ -2166,7 +2166,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
               err('\\ not allowed in relative path.');
             }
             var tmp;
-            if (tmp = relativePathDotMapping[buffer.toLowerCase()]) {
+            if ((tmp = relativePathDotMapping[buffer.toLowerCase()])) {
               buffer = tmp;
             }
             if ('..' === buffer) {
