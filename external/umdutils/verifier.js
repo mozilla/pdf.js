@@ -210,7 +210,7 @@ function readDependencies(rootPaths) {
       }
     });
     if (discovered.length === 0) {
-      throw new Error ('Some circular references exist: somewhere at ' +
+      throw new Error('Some circular references exist: somewhere at ' +
         left.join(','));
     }
     discovered.sort();
