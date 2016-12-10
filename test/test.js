@@ -81,7 +81,7 @@ function parseOptions() {
       'test_manifest.json'))
     .check(describeCheck(function (argv) {
       return !argv.browser || !argv.browserManifestFile;
-    }, '--browser and --browserManifestFile must not be specified at the ' +'' +
+    }, '--browser and --browserManifestFile must not be specified at the ' +
       'same time.'));
   var result = yargs.argv;
   if (result.help) {
