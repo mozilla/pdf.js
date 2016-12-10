@@ -117,4 +117,3 @@ describe('ui_utils', function() {
     });
   });
 });
-
