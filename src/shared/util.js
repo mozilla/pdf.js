@@ -557,7 +557,7 @@ function arraysToBytes(arr) {
   }
   var resultLength = 0;
   var i, ii = arr.length;
-  var item, itemLength ;
+  var item, itemLength;
   for (i = 0; i < ii; i++) {
     item = arr[i];
     itemLength = arrayByteLength(item);
