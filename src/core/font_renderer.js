@@ -437,7 +437,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 x = xb; y = yb;
                 if (Math.abs(x - x0) > Math.abs(y - y0)) {
                   x += stack.shift();
-                } else  {
+                } else {
                   y += stack.shift();
                 }
                 bezierCurveTo(xa, ya, xb, yb, x, y);

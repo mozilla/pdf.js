@@ -977,7 +977,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var combinationOperator = pageInfo.combinationOperatorOverride ?
         regionInfo.combinationOperator : pageInfo.combinationOperator;
       var buffer = this.buffer;
-      var mask0 =  128 >> (regionInfo.x & 7);
+      var mask0 = 128 >> (regionInfo.x & 7);
       var offset0 = regionInfo.y * rowSize + (regionInfo.x >> 3);
       var i, j, mask, offset;
       switch (combinationOperator) {

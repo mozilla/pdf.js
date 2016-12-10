@@ -1314,7 +1314,7 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
             try {
               sendTest();
-            } catch (e)  {
+            } catch (e) {
               // We need fallback to a faked worker.
               this._setupFakeWorker();
             }
