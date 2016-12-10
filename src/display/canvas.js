@@ -654,7 +654,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
     if (sourceCtx.setLineDash !== undefined) {
       destCtx.setLineDash(sourceCtx.getLineDash());
-      destCtx.lineDashOffset =  sourceCtx.lineDashOffset;
+      destCtx.lineDashOffset = sourceCtx.lineDashOffset;
     }
   }
 
@@ -1862,7 +1862,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var cacheId = 'groupAt' + this.groupLevel;
       if (group.smask) {
         // Using two cache entries is case if masks are used one after another.
-        cacheId +=  '_smask_' + ((this.smaskCounter++) % 2);
+        cacheId += '_smask_' + ((this.smaskCounter++) % 2);
       }
       var scratchCanvas = this.cachedCanvases.getCanvas(
         cacheId, drawnWidth, drawnHeight, true);
