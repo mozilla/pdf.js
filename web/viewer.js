@@ -54,7 +54,7 @@ function getViewerConfiguration() {
   return {
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
-    viewerContainer:  document.getElementById('viewer'),
+    viewerContainer: document.getElementById('viewer'),
     eventBus: null, // using global event bus with DOM events
     toolbar: {
       container: document.getElementById('toolbarViewer'),
