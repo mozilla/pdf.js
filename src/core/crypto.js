@@ -2057,17 +2057,17 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         return new NullCipher();
       };
     }
-    if ('V2' === cfm.name) {
+    if (cfm.name === 'V2') {
       return function cipherTransformFactoryBuildCipherConstructorV2() {
         return new ARCFourCipher(buildObjectKey(num, gen, key, false));
       };
     }
-    if ('AESV2' === cfm.name) {
+    if (cfm.name === 'AESV2') {
       return function cipherTransformFactoryBuildCipherConstructorAESV2() {
         return new AES128Cipher(buildObjectKey(num, gen, key, true));
       };
     }
-    if ('AESV3' === cfm.name) {
+    if (cfm.name === 'AESV3') {
       return function cipherTransformFactoryBuildCipherConstructorAESV3() {
         return new AES256Cipher(key);
       };
