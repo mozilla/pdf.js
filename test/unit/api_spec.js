@@ -505,7 +505,7 @@ describe('api', function() {
 
       // PageLabels with bad "Prefix" entries.
       var url3 = new URL('../pdfs/bad-PageLabels.pdf', window.location).href;
-      var loadingTask3 = new PDFJS.getDocument(url3);
+      var loadingTask3 = PDFJS.getDocument(url3);
       var promise3 = loadingTask3.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });

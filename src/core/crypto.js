@@ -1729,13 +1729,13 @@ var PDF20 = (function PDF20Closure() {
 
 var CipherTransform = (function CipherTransformClosure() {
   function CipherTransform(stringCipherConstructor, streamCipherConstructor) {
-    this.stringCipherConstructor = stringCipherConstructor;
-    this.streamCipherConstructor = streamCipherConstructor;
+    this.StringCipherConstructor = stringCipherConstructor;
+    this.StreamCipherConstructor = streamCipherConstructor;
   }
 
   CipherTransform.prototype = {
     createStream: function CipherTransform_createStream(stream, length) {
-      var cipher = new this.streamCipherConstructor();
+      var cipher = new this.StreamCipherConstructor();
       return new DecryptStream(stream, length,
         function cipherTransformDecryptStream(data, finalize) {
           return cipher.decryptBlock(data, finalize);
@@ -1743,7 +1743,7 @@ var CipherTransform = (function CipherTransformClosure() {
       );
     },
     decryptString: function CipherTransform_decryptString(s) {
-      var cipher = new this.stringCipherConstructor();
+      var cipher = new this.StringCipherConstructor();
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data, true);
       return bytesToString(data);
