@@ -148,7 +148,7 @@ var CFFDictDataMap = {
     },
     '7': {
       name: 'FontMatrix',
-      operand: [0.001, 0, 0, 0.001, 0 , 0]
+      operand: [0.001, 0, 0, 0.001, 0, 0]
     },
     '8': {
       name: 'StrokeWidth',
