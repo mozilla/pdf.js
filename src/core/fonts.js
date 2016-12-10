@@ -879,7 +879,7 @@ var Font = (function FontClosure() {
   }
 
   /**
-   * Helper function for |adjustMapping|.
+   * Helper function for `adjustMapping`.
    * @return {boolean}
    */
   function isProblematicUnicodeLocation(code) {
@@ -922,7 +922,9 @@ var Font = (function FontClosure() {
       var fontCharCode = originalCharCode;
       // First try to map the value to a unicode position if a non identity map
       // was created.
+      var hasUnicodeValue = false;
       if (!isIdentityUnicode && toUnicode.has(originalCharCode)) {
+        hasUnicodeValue = true;
         var unicode = toUnicode.get(fontCharCode);
         // TODO: Try to map ligatures to the correct spot.
         if (unicode.length === 1) {
@@ -937,7 +939,7 @@ var Font = (function FontClosure() {
       // with firefox and thuluthfont).
       if ((usedFontCharCodes[fontCharCode] !== undefined ||
            isProblematicUnicodeLocation(fontCharCode) ||
-           (isSymbolic && isIdentityUnicode)) &&
+           (isSymbolic && !hasUnicodeValue)) &&
           nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END) { // Room left.
         // Loop to try and find a free spot in the private use area.
         do {
