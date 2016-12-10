@@ -609,22 +609,22 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     var result;
     if (!mode384) {
       result = new Uint8Array(64);
-      h0.copyTo(result,0);
-      h1.copyTo(result,8);
-      h2.copyTo(result,16);
-      h3.copyTo(result,24);
-      h4.copyTo(result,32);
-      h5.copyTo(result,40);
-      h6.copyTo(result,48);
-      h7.copyTo(result,56);
+      h0.copyTo(result, 0);
+      h1.copyTo(result, 8);
+      h2.copyTo(result, 16);
+      h3.copyTo(result, 24);
+      h4.copyTo(result, 32);
+      h5.copyTo(result, 40);
+      h6.copyTo(result, 48);
+      h7.copyTo(result, 56);
     } else {
       result = new Uint8Array(48);
-      h0.copyTo(result,0);
-      h1.copyTo(result,8);
-      h2.copyTo(result,16);
-      h3.copyTo(result,24);
-      h4.copyTo(result,32);
-      h5.copyTo(result,40);
+      h0.copyTo(result, 0);
+      h1.copyTo(result, 8);
+      h2.copyTo(result, 16);
+      h3.copyTo(result, 24);
+      h4.copyTo(result, 32);
+      h5.copyTo(result, 40);
     }
     return result;
   }
