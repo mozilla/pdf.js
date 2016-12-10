@@ -188,7 +188,7 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
           toggleHandToolButton.firstElementChild.textContent =
             mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
         }
-      }.bind(this));
+      });
     },
 
     open: function SecondaryToolbar_open() {
