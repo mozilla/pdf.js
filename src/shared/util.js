@@ -1925,7 +1925,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'relative or authority':
-          if ('/' === c && '/' === input[cursor+1]) {
+          if ('/' === c && '/' === input[cursor + 1]) {
             state = 'authority ignore slashes';
           } else {
             err('Expected /, got: ' + c);
@@ -1970,8 +1970,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             this._password = base._password;
             state = 'fragment';
           } else {
-            var nextC = input[cursor+1];
-            var nextNextC = input[cursor+2];
+            var nextC = input[cursor + 1];
+            var nextNextC = input[cursor + 2];
             if ('file' !== this._scheme || !ALPHA.test(c) ||
                 (nextC !== ':' && nextC !== '|') ||
                 (EOF !== nextNextC && '/' !== nextNextC && '\\' !== nextNextC &&

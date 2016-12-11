@@ -895,7 +895,7 @@ var Lexer = (function LexerClosure() {
             var x2 = toHexDigit(ch);
             if (x2 === -1) {
               warn('Lexer_getName: Illegal digit (' +
-                   String.fromCharCode(ch) +') in hexadecimal number.');
+                   String.fromCharCode(ch) + ') in hexadecimal number.');
               strBuf.push('#', String.fromCharCode(previousCh));
               if (specialChars[ch]) {
                 break;

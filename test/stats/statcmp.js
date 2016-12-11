@@ -159,7 +159,7 @@ function stat(baseline, current) {
   }
 
   // add horizontal line
-  var hline = width.map(function(w) { return new Array(w+1).join('-'); });
+  var hline = width.map(function(w) { return new Array(w + 1).join('-'); });
   rows.splice(1, 0, hline);
 
   // print output
