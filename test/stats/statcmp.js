@@ -179,14 +179,14 @@ function main() {
   try {
     var baselineFile = fs.readFileSync(options.baseline).toString();
     baseline = flatten(JSON.parse(baselineFile));
-  } catch(e) {
+  } catch (e) {
     console.log('Error reading file "' + options.baseline + '": ' + e);
     process.exit(0);
   }
   try {
     var currentFile = fs.readFileSync(options.current).toString();
     current = flatten(JSON.parse(currentFile));
-  } catch(e) {
+  } catch (e) {
     console.log('Error reading file "' + options.current + '": ' + e);
     process.exit(0);
   }

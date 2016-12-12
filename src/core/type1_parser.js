@@ -550,7 +550,7 @@ var Type1Parser = (function Type1ParserClosure() {
             this.getToken(); // read in 'dict'
             this.getToken(); // read in 'dup'
             this.getToken(); // read in 'begin'
-            while(true) {
+            while (true) {
               token = this.getToken();
               if (token === null || token === 'end') {
                 break;

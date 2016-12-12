@@ -568,7 +568,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
       if (this.pdfNetworkStream) {
         this.pdfNetworkStream.cancelAllRequests('abort');
       }
-      for(var requestId in this.promisesByRequest) {
+      for (var requestId in this.promisesByRequest) {
         var capability = this.promisesByRequest[requestId];
         capability.reject(new Error('Request was aborted'));
       }
