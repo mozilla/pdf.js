@@ -384,7 +384,7 @@ function getPDFFileNameFromURL(url) {
       try {
         suggestedFilename =
           reFilename.exec(decodeURIComponent(suggestedFilename))[0];
-      } catch(e) { // Possible (extremely rare) errors:
+      } catch (e) { // Possible (extremely rare) errors:
         // URIError "Malformed URI", e.g. for "%AA.pdf"
         // TypeError "null has no properties", e.g. for "%2F.pdf"
       }

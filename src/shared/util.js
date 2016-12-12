@@ -1766,7 +1766,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       u.pathname = 'c%20d';
       hasWorkingUrl = u.href === 'http://a/c%20d';
     }
-  } catch(e) { }
+  } catch (e) { }
 
   if (hasWorkingUrl) {
     return;
