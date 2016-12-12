@@ -67,6 +67,7 @@
                   overlayManagerLib, pdfAttachmentViewerLib,
                   pdfFindControllerLib, pdfFindBarLib, domEventsLib, pdfjsLib) {
 
+var DEFAULT_PAGE = uiUtilsLib.DEFAULT_PAGE;
 var UNKNOWN_SCALE = uiUtilsLib.UNKNOWN_SCALE;
 var DEFAULT_SCALE_VALUE = uiUtilsLib.DEFAULT_SCALE_VALUE;
 var MIN_SCALE = uiUtilsLib.MIN_SCALE;
@@ -1125,7 +1126,7 @@ var PDFViewerApplication = {
       this.pdfLinkService.setHash(storedHash);
     } else if (scale) {
       this.pdfViewer.currentScaleValue = scale;
-      this.page = 1;
+      this.page = DEFAULT_PAGE;
     }
 
     // Ensure that the correct page number is displayed in the UI,
