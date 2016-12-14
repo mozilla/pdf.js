@@ -68,7 +68,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
                                jsonPath.substring(ROOT_PREFIX.length));
         }
         var jsonContent = fs.readFileSync(jsonPath).toString();
-        var parsedJSON = esprima.parse('(' +jsonContent + ')');
+        var parsedJSON = esprima.parse('(' + jsonContent + ')');
         parsedJSON.body[0].expression.loc = loc;
         return parsedJSON.body[0].expression;
     }

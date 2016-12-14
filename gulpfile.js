@@ -197,7 +197,7 @@ function createBundle(defines) {
       case 'mainfile':
         // 'buildnumber' shall create BUILD_DIR for us
         tmpFile = BUILD_DIR + '~' + mainOutputName + '.tmp';
-        bundle('src/pdf.js', tmpFile, 'src/', mainFiles,  mainAMDName,
+        bundle('src/pdf.js', tmpFile, 'src/', mainFiles, mainAMDName,
           defines, true, versionJSON);
         this.push(new gutil.File({
           cwd: '',

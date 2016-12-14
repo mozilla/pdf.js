@@ -2943,6 +2943,7 @@ var ErrorFont = (function ErrorFontClosure() {
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   var charCodeToGlyphId = Object.create(null);
   var glyphId, charCode, baseEncoding;
+  var isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
   if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
@@ -2956,9 +2957,8 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
         charCodeToGlyphId[charCode] = 0; // notdef
       }
     }
-  } else if (!!(properties.flags & FontFlags.Symbolic)) {
-    // For a symbolic font the encoding should be the fonts built-in
-    // encoding.
+  } else if (isSymbolicFont) {
+    // For a symbolic font the encoding should be the fonts built-in encoding.
     for (charCode in builtInEncoding) {
       charCodeToGlyphId[charCode] = builtInEncoding[charCode];
     }

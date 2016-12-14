@@ -173,7 +173,7 @@ Preferences._readFromStorage = function (prefObj) {
       highlightAll: !!evt.detail.highlightAll,
       findPrevious: !!evt.detail.findPrevious
     });
-  }.bind(this);
+  };
 
   for (var i = 0, len = events.length; i < len; i++) {
     window.addEventListener(events[i], handleEvent);

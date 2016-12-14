@@ -374,7 +374,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         i++;
       }
       var j = horizon.length - 1;
-      while(j >= 0 && horizon[j].start >= boundary.y2) {
+      while (j >= 0 && horizon[j].start >= boundary.y2) {
         j--;
       }
 

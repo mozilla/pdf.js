@@ -435,7 +435,7 @@ var Annotation = (function AnnotationClosure() {
         // Properties
       ]);
       var bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-      var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0 ,0];
+      var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
       var transform = getTransformMatrix(data.rect, bbox, matrix);
       var self = this;
 
