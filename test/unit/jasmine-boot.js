@@ -203,4 +203,3 @@ function initializePDFJS(callback) {
     return destination;
   }
 }());
-

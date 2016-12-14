@@ -338,4 +338,3 @@ var PdfjsChromeUtils = {
     });
   }
 };
-

@@ -883,7 +883,7 @@ target.chromium = function() {
         'extensions/chromium/*.html',
         'extensions/chromium/*.js',
         'extensions/chromium/*.css',
-        'extensions/chromium/icon*.png',],
+        'extensions/chromium/icon*.png'],
        CHROME_BUILD_DIR],
       ['extensions/chromium/pageAction/*.*', CHROME_BUILD_DIR + '/pageAction'],
       ['extensions/chromium/options/*.*', CHROME_BUILD_DIR + '/options'],

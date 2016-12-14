@@ -288,7 +288,7 @@ var Driver = (function DriverClosure() {
       var self = this;
       window.onerror = function(message, source, line, column, error) {
         self._info('Error: ' + message + ' Script: ' + source + ' Line: ' +
-                  line + ' Column: ' + column + ' StackTrace: ' +  error);
+                   line + ' Column: ' + column + ' StackTrace: ' + error);
       };
       this._info('User agent: ' + navigator.userAgent);
       this._log('Harness thinks this browser is "' + this.browser +

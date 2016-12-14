@@ -210,7 +210,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
               result = value;
             }
             resolve(result);
-          } catch(e) {
+          } catch (e) {
             if (!(e instanceof MissingDataException)) {
               reject(e);
               return;

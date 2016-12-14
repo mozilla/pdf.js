@@ -346,12 +346,12 @@ describe('primitives', function() {
   });
 
   describe('isRef', function () {
-    it ('handles non-refs', function () {
+    it('handles non-refs', function () {
       var nonRef = {};
       expect(isRef(nonRef)).toEqual(false);
     });
 
-    it ('handles refs', function () {
+    it('handles refs', function () {
       var ref = new Ref(1, 0);
       expect(isRef(ref)).toEqual(true);
     });

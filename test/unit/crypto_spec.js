@@ -250,7 +250,7 @@ describe('crypto', function() {
         key = hex2binary('000102030405060708090a0b0c0d0e0f');
         iv = hex2binary('00000000000000000000000000000000');
         cipher = new AES128Cipher(key);
-        result = cipher.encrypt(input,iv);
+        result = cipher.encrypt(input, iv);
         expected = hex2binary('69c4e0d86a7b0430d8cdb78070b4c55a');
         expect(result).toEqual(expected);
       });
@@ -279,7 +279,7 @@ describe('crypto', function() {
                          '191a1b1c1d1e1f');
         iv = hex2binary('00000000000000000000000000000000');
         cipher = new AES256Cipher(key);
-        result = cipher.encrypt(input,iv);
+        result = cipher.encrypt(input, iv);
         expected = hex2binary('8ea2b7ca516745bfeafc49904b496089');
         expect(result).toEqual(expected);
       });
@@ -293,7 +293,7 @@ describe('crypto', function() {
                          '191a1b1c1d1e1f');
         iv = hex2binary('00000000000000000000000000000000');
         cipher = new AES256Cipher(key);
-        result = cipher.decryptBlock(input,false,iv);
+        result = cipher.decryptBlock(input, false, iv);
         expected = hex2binary('00112233445566778899aabbccddeeff');
         expect(result).toEqual(expected);
       });
@@ -304,7 +304,7 @@ describe('crypto', function() {
         key = hex2binary('000102030405060708090a0b0c0d0e0f101112131415161718' +
                          '191a1b1c1d1e1f');
         cipher = new AES256Cipher(key);
-        result = cipher.decryptBlock(input,false);
+        result = cipher.decryptBlock(input, false);
         expected = hex2binary('00112233445566778899aabbccddeeff');
         expect(result).toEqual(expected);
       });
