@@ -773,17 +773,18 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
   function ButtonWidgetAnnotation(params) {
     WidgetAnnotation.call(this, params);
 
-    this.data.pushbutton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    this.data.radio = !this.data.pushbutton &&
-                      this.hasFieldFlag(AnnotationFieldFlag.RADIO);
-
-    if (isName(this.data.fieldValue)) {
+    this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                         !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    if (this.data.checkBox) {
+      if (!isName(this.data.fieldValue)) {
+        return;
+      }
       this.data.fieldValue = this.data.fieldValue.name;
-    } else {
-      warn('Button widget annotation: field value is not a `Name` object.');
     }
 
-    if (this.data.radio) {
+    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    if (this.data.radioButton) {
       this.data.fieldValue = this.data.buttonValue = null;
 
       // The parent field's `V` entry holds a `Name` object with the appearance
@@ -831,7 +832,7 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
 
       if (this.appearance) {
         return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                        renderForms);
+                                                         renderForms);
       }
       return Promise.resolve(operatorList);
     }
