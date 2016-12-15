@@ -423,7 +423,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         // Compiled function consists of simple expressions such as addition,
         // subtraction, Math.max, and also contains 'var' and 'return'
         // statements. See the generation in the PostScriptCompiler below.
-        /*jshint -W054 */
+        // eslint-disable-next-line no-new-func
         return new Function('src', 'srcOffset', 'dest', 'destOffset', compiled);
       }
 

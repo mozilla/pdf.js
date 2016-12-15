@@ -1,4 +1,3 @@
-/* jshint node:true */
 /* globals cat, echo, exit, ls */
 
 'use strict';

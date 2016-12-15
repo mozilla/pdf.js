@@ -1,0 +1,11 @@
+{
+  "extends": [
+    ../../.eslintrc
+  ],
+
+  "rules": {
+    "no-empty": "off",
+    "keyword-spacing": "off",
+    "space-infix-ops": "off",
+  },
+}

@@ -1,4 +1,3 @@
-/* jshint node:true */
 /* globals cp, ls, test */
 
 'use strict';
@@ -107,10 +106,8 @@ function preprocess(inFilename, outFilename, defines) {
   var line;
   var state = STATE_NONE;
   var stack = [];
-  var control =
-  /* jshint -W101 */
+  var control = // eslint-disable-next-line max-len
     /^(?:\/\/|<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:-->)?$)?/;
-  /* jshint +W101 */
   var lineNumber = 0;
   var loc = function() {
     return fs.realpathSync(inFilename) + ':' + lineNumber;

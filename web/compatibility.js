@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint strict: ["error", "function"] */
+/* eslint-disable no-extend-native */
 /* globals VBArray, PDFJS */
 
 (function compatibilityWrapper() {

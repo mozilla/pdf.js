@@ -460,7 +460,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     convertOpList: function SVGGraphics_convertOpList(operatorList) {
       var argsArray = operatorList.argsArray;
       var fnArray = operatorList.fnArray;
-      var fnArrayLen  = fnArray.length;
+      var fnArrayLen = fnArray.length;
       var REVOPS = [];
       var opList = [];
 

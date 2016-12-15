@@ -433,7 +433,7 @@ describe('function', function() {
         expect(compiledCode).toBeNull();
       } else {
         expect(compiledCode).not.toBeNull();
-        /*jshint -W054 */
+        // eslint-disable-next-line no-new-func
         var fn = new Function('src', 'srcOffset', 'dest', 'destOffset',
                               compiledCode);
         for (var i = 0; i < samples.length; i++) {

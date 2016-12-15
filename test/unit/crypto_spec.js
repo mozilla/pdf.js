@@ -482,6 +482,7 @@ describe('CipherTransformFactory', function() {
 
   function ensurePasswordNeeded(done, dict, fileId, password) {
     try {
+      // eslint-disable-next-line no-new
       new CipherTransformFactory(dict, fileId, password);
     } catch (ex) {
       expect(ex instanceof PasswordException).toEqual(true);
@@ -495,6 +496,7 @@ describe('CipherTransformFactory', function() {
 
   function ensurePasswordIncorrect(done, dict, fileId, password) {
     try {
+      // eslint-disable-next-line no-new
       new CipherTransformFactory(dict, fileId, password);
     } catch (ex) {
       expect(ex instanceof PasswordException).toEqual(true);

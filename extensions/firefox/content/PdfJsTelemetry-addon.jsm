@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* jshint esnext:true, maxlen:120 */
+/* eslint max-len: ["error", 120] */
 /* globals Components, Services */
 
 'use strict';
