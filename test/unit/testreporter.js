@@ -1,4 +1,3 @@
-
 'use strict';
 
 var TestReporter = function(browser, appPath) {

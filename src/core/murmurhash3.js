@@ -1,4 +1,3 @@
-
 /* Copyright 2014 Opera Software ASA
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -48,6 +47,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
       !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
     // old webkits have issues with non-aligned arrays
     try {
+      // eslint-disable-next-line no-new
       new Uint32Array(new Uint8Array(5).buffer, 0, 1);
     } catch (e) {
       alwaysUseUint32ArrayView = true;

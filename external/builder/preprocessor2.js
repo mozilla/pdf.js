@@ -1,5 +1,3 @@
-/* jshint node:true */
-
 'use strict';
 
 var esprima = require('esprima');
@@ -197,8 +195,12 @@ function fixComments(ctx, node) {
   }
   // Fixes double comments in the escodegen output.
   delete node.trailingComments;
-  // Removes jshint and other service comments.
+  // Removes ESLint and other service comments.
   if (node.leadingComments) {
+    var CopyrightRegExp = /\bcopyright\b/i;
+    var BlockCommentRegExp = /^\s*(globals|eslint|falls through|umdutils)\b/;
+    var LineCommentRegExp = /^\s*eslint\b/;
+
     var i = 0;
     while (i < node.leadingComments.length) {
       var type = node.leadingComments[i].type;
@@ -206,12 +208,12 @@ function fixComments(ctx, node) {
 
       if (ctx.saveComments === 'copyright') {
         // Remove all comments, except Copyright notices and License headers.
-        if (!(type === 'Block' && /\bcopyright\b/i.test(value))) {
+        if (!(type === 'Block' && CopyrightRegExp.test(value))) {
           node.leadingComments.splice(i, 1);
           continue;
         }
-      } else if (type === 'Block' &&
-                 /^\s*(globals|jshint|falls through|umdutils)\b/.test(value)) {
+      } else if ((type === 'Block' && BlockCommentRegExp.test(value)) ||
+                 (type === 'Line' && LineCommentRegExp.test(value))) {
         node.leadingComments.splice(i, 1);
         continue;
       }

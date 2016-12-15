@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* globals pdfjsFilePath, pdfjsVersion, pdfjsBuild, requirejs, pdfjsLibs,
-           WeakMap */
+           __webpack_require__ */
 
 'use strict';
 

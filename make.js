@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* jshint node:true */
+/* eslint-env node, shelljs */
 /* globals cat, cd, cp, echo, env, exec, exit, find, ls, mkdir, mv, process, rm,
            sed, target, test */
 
