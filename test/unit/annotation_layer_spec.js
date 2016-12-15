@@ -869,95 +869,63 @@ describe('Annotation layer', function() {
     });
   });
 
-  describe('CheckboxWidgetAnnotation', function() {
-    var checkboxWidgetDict;
+  describe('ButtonWidgetAnnotation', function() {
+    var buttonWidgetDict;
 
     beforeEach(function (done) {
-      checkboxWidgetDict = new Dict();
-      checkboxWidgetDict.set('Type', Name.get('Annot'));
-      checkboxWidgetDict.set('Subtype', Name.get('Widget'));
-      checkboxWidgetDict.set('FT', Name.get('Btn'));
+      buttonWidgetDict = new Dict();
+      buttonWidgetDict.set('Type', Name.get('Annot'));
+      buttonWidgetDict.set('Subtype', Name.get('Widget'));
+      buttonWidgetDict.set('FT', Name.get('Btn'));
 
       done();
     });
 
     afterEach(function () {
-      checkboxWidgetDict = null;
+      buttonWidgetDict = null;
     });
 
-    it('should have proper flags',
-      function() {
-        var checkboxWidgetRef = new Ref(124, 0);
-        var xref = new XRefMock([
-          { ref: checkboxWidgetRef, data: checkboxWidgetDict, }
-        ]);
+    it('should handle checkboxes', function() {
+      buttonWidgetDict.set('V', Name.get('1'));
 
-        var checkboxWidgetAnnotation =
-          annotationFactory.create(xref, checkboxWidgetRef);
-        expect(checkboxWidgetAnnotation.data.radio).toEqual(false);
-        expect(checkboxWidgetAnnotation.data.pushbutton).toEqual(false);
-        expect(checkboxWidgetAnnotation.data.fieldValue).toEqual(null);
-      });
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
 
-    it('should have a proper value',
-      function() {
-        checkboxWidgetDict.set('V', Name.get('1'));
-
-        var checkboxWidgetRef = new Ref(124, 0);
-        var xref = new XRefMock([
-          { ref: checkboxWidgetRef, data: checkboxWidgetDict, }
-        ]);
-
-        var checkboxWidgetAnnotation =
-          annotationFactory.create(xref, checkboxWidgetRef);
-        expect(checkboxWidgetAnnotation.data.fieldValue).toEqual('1');
-      });
-  });
-
-  describe('RadioButtonWidgetAnnotation', function() {
-    var radioButtonWidgetDict;
-
-    beforeEach(function (done) {
-      radioButtonWidgetDict = new Dict();
-      radioButtonWidgetDict.set('Type', Name.get('Annot'));
-      radioButtonWidgetDict.set('Subtype', Name.get('Widget'));
-      radioButtonWidgetDict.set('FT', Name.get('Btn'));
-      radioButtonWidgetDict.set('Ff', AnnotationFieldFlag.RADIO);
-
-      done();
+      var buttonWidgetAnnotation =
+        annotationFactory.create(xref, buttonWidgetRef);
+      expect(buttonWidgetAnnotation.data.checkBox).toEqual(true);
+      expect(buttonWidgetAnnotation.data.fieldValue).toEqual('1');
+      expect(buttonWidgetAnnotation.data.radioButton).toEqual(false);
     });
 
-    afterEach(function () {
-      radioButtonWidgetDict = null;
+    it('should handle radio buttons', function() {
+      var parentDict = new Dict();
+      parentDict.set('V', Name.get('1'));
+
+      var normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set('2', null);
+
+      var appearanceStatesDict = new Dict();
+      appearanceStatesDict.set('N', normalAppearanceStateDict);
+
+      buttonWidgetDict.set('Ff', AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set('Parent', parentDict);
+      buttonWidgetDict.set('AP', appearanceStatesDict);
+
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
+
+      var buttonWidgetAnnotation =
+        annotationFactory.create(xref, buttonWidgetRef);
+      expect(buttonWidgetAnnotation.data.checkBox).toEqual(false);
+      expect(buttonWidgetAnnotation.data.radioButton).toEqual(true);
+      expect(buttonWidgetAnnotation.data.fieldValue).toEqual('1');
+      expect(buttonWidgetAnnotation.data.buttonValue).toEqual('2');
     });
-
-    it('should have proper flags',
-      function() {
-        var radioButtonWidgetRef = new Ref(124, 0);
-        var xref = new XRefMock([
-          { ref: radioButtonWidgetRef, data: radioButtonWidgetDict, }
-        ]);
-
-        var radioButtonWidgetAnnotation =
-          annotationFactory.create(xref, radioButtonWidgetRef);
-        expect(radioButtonWidgetAnnotation.data.radio).toEqual(true);
-        expect(radioButtonWidgetAnnotation.data.pushbutton).toEqual(false);
-        expect(radioButtonWidgetAnnotation.data.fieldValue).toEqual(null);
-      });
-
-    it('should have a proper value',
-      function() {
-        radioButtonWidgetDict.set('V', Name.get('1'));
-
-        var radioButtonWidgetRef = new Ref(124, 0);
-        var xref = new XRefMock([
-          { ref: radioButtonWidgetRef, data: radioButtonWidgetDict, }
-        ]);
-
-        var radioButtonWidgetAnnotation =
-          annotationFactory.create(xref, radioButtonWidgetRef);
-        expect(radioButtonWidgetAnnotation.data.fieldValue).toEqual('1');
-      });
   });
 
   describe('ChoiceWidgetAnnotation', function() {

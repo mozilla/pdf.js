@@ -77,14 +77,12 @@ AnnotationElementFactory.prototype =
           case 'Tx':
             return new TextWidgetAnnotationElement(parameters);
           case 'Btn':
-            if (!parameters.data.pushbutton) {
-              if (parameters.data.radio) {
-                return new RadioButtonWidgetAnnotationElement(parameters);
-              } else {
-                return new CheckboxWidgetAnnotationElement(parameters);
-              }
+            if (parameters.data.radioButton) {
+              return new RadioButtonWidgetAnnotationElement(parameters);
+            } else if (parameters.data.checkBox) {
+              return new CheckboxWidgetAnnotationElement(parameters);
             } else {
-              warn('Unimplemented push button');
+              warn('Unimplemented button widget annotation: pushbutton');
             }
             break;
           case 'Ch':
@@ -152,7 +150,6 @@ var AnnotationElement = (function AnnotationElementClosure() {
       var height = data.rect[3] - data.rect[1];
 
       container.setAttribute('data-annotation-id', data.id);
-      container.setAttribute('data-annotation-name', data.fieldName);
 
       // Do *not* modify `data.rect`, since that will corrupt the annotation
       // position on subsequent calls to `_createContainer` (see issue 6804).
@@ -568,15 +565,11 @@ var CheckboxWidgetAnnotationElement =
       var element = document.createElement('input');
       element.disabled = this.data.readOnly;
       element.type = 'checkbox';
-      element.id = this.data.fieldName;
       if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
-        element.checked = true;
+        element.setAttribute('checked', true);
       }
-      this.container.appendChild(element);
-      element = document.createElement('label');
-      element.htmlFor = this.data.fieldName;
-      this.container.appendChild(element);
 
+      this.container.appendChild(element);
       return this.container;
     }
   });
@@ -608,22 +601,16 @@ var RadioButtonWidgetAnnotationElement =
       this.container.className = 'buttonWidgetAnnotation radioButton';
 
       var element = document.createElement('input');
-      var id = this.data.fieldName + '.' + this.data.buttonValue;
       element.disabled = this.data.readOnly;
       element.type = 'radio';
-      element.id = id;
       element.name = this.data.fieldName;
-      element.value = this.data.buttonValue;
       if (this.data.fieldValue === this.data.buttonValue) {
-        element.checked = true;
+        element.setAttribute('checked', true);
       }
-      this.container.appendChild(element);
-      element = document.createElement('label');
-      element.htmlFor = id;
-      this.container.appendChild(element);
 
+      this.container.appendChild(element);
       return this.container;
-    },
+    }
   });
 
   return RadioButtonWidgetAnnotationElement;
