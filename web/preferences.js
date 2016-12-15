@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_PREFERENCES, chrome */
+/* globals DEFAULT_PREFERENCES */
 
 'use strict';
 

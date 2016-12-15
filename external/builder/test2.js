@@ -1,4 +1,3 @@
-/* globals cat, cd, echo, ls */
 'use strict';
 
 require('shelljs/make');

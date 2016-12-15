@@ -1,7 +1,7 @@
-/* globals expect, it, describe, calculateMD5, ARCFourCipher, Name, beforeAll,
-           CipherTransformFactory, calculateSHA256, calculateSHA384, afterAll,
-           calculateSHA512, AES128Cipher, AES256Cipher, PDF17, PDF20, Dict,
-           PasswordException, PasswordResponses, stringToBytes */
+/* globals stringToBytes, calculateMD5, ARCFourCipher, calculateSHA256,
+           calculateSHA384, calculateSHA512, AES128Cipher, AES256Cipher, PDF17,
+           PDF20, Dict, CipherTransformFactory, PasswordException,
+           PasswordResponses, Name */
 
 'use strict';
 

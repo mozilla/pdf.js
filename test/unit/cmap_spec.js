@@ -1,5 +1,4 @@
-/* globals expect, it, describe, StringStream, CMapFactory, Name, CMap,
-           IdentityCMap */
+/* globals StringStream, CMapFactory, CMap, IdentityCMap, Name */
 
 'use strict';
 

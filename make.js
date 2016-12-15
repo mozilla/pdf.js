@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 /* eslint-env node, shelljs */
-/* globals cat, cd, cp, echo, env, exec, exit, find, ls, mkdir, mv, process, rm,
-           sed, target, test */
 
 'use strict';
 
