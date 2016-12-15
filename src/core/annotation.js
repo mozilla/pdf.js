@@ -776,24 +776,42 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
     this.data.pushbutton = this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
     this.data.radio = !this.data.pushbutton &&
                       this.hasFieldFlag(AnnotationFieldFlag.RADIO);
+
     if (isName(this.data.fieldValue)) {
       this.data.fieldValue = this.data.fieldValue.name;
+    } else {
+      warn('Button widget annotation: field value is not a `Name` object.');
     }
-    // Get the value of the radio button
+
     if (this.data.radio) {
-      // Generate a unique ID in case no value is found
-      this.data.buttonValue = Math.random().toString(16).slice(2);
-      var appearanceState = params.dict.get('AP');
-      if (isDict(appearanceState)) {
-        var appearances = appearanceState.get('N');
-        if (isDict(appearances) && appearances.has('Off')) {
-          var keys = appearances.getKeys();
-          for (var i = 0, ii = keys.length; i < ii; i++) {
-            if (keys[i] !== 'Off') {
-              this.data.buttonValue = keys[i];
-              break;
-            }
-          }
+      this.data.fieldValue = this.data.buttonValue = null;
+
+      // The parent field's `V` entry holds a `Name` object with the appearance
+      // state of whichever child field is currently in the "on" state.
+      var fieldParent = params.dict.get('Parent');
+      if (!isDict(fieldParent) || !fieldParent.has('V')) {
+        return;
+      }
+      var fieldParentValue = fieldParent.get('V');
+      if (!isName(fieldParentValue)) {
+        return;
+      }
+      this.data.fieldValue = fieldParentValue.name;
+
+      // The button's value corresponds to its appearance state.
+      var appearanceStates = params.dict.get('AP');
+      if (!isDict(appearanceStates)) {
+        return;
+      }
+      var normalAppearanceState = appearanceStates.get('N');
+      if (!isDict(normalAppearanceState)) {
+        return;
+      }
+      var keys = normalAppearanceState.getKeys();
+      for (var i = 0, ii = keys.length; i < ii; i++) {
+        if (keys[i] !== 'Off') {
+          this.data.buttonValue = keys[i];
+          break;
         }
       }
     }
