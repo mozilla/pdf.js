@@ -563,9 +563,10 @@ var CheckboxWidgetAnnotationElement =
      * @returns {HTMLSectionElement}
      */
     render: function CheckboxWidgetAnnotationElement_render() {
-      this.container.className = 'checkboxWidgetAnnotation';
+      this.container.className = 'buttonWidgetAnnotation checkBox';
 
       var element = document.createElement('input');
+      element.disabled = this.data.readOnly;
       element.type = 'checkbox';
       element.id = this.data.fieldName;
       if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
@@ -604,10 +605,11 @@ var RadioButtonWidgetAnnotationElement =
      * @returns {HTMLSectionElement}
      */
     render: function RadioButtonWidgetAnnotationElement_render() {
-      this.container.className = 'radioButtonWidgetAnnotation';
+      this.container.className = 'buttonWidgetAnnotation radioButton';
 
       var element = document.createElement('input');
       var id = this.data.fieldName + '.' + this.data.buttonValue;
+      element.disabled = this.data.readOnly;
       element.type = 'radio';
       element.id = id;
       element.name = this.data.fieldName;

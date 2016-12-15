@@ -45,7 +45,9 @@
 
 .annotationLayer .textWidgetAnnotation input,
 .annotationLayer .textWidgetAnnotation textarea,
-.annotationLayer .choiceWidgetAnnotation select {
+.annotationLayer .choiceWidgetAnnotation select,
+.annotationLayer .buttonWidgetAnnotation.checkBox label,
+.annotationLayer .buttonWidgetAnnotation.radioButton label {
   background-color: rgba(0, 54, 255, 0.13);
   border: 1px solid transparent;
   box-sizing: border-box;
@@ -64,7 +66,9 @@
 
 .annotationLayer .textWidgetAnnotation input[disabled],
 .annotationLayer .textWidgetAnnotation textarea[disabled],
-.annotationLayer .choiceWidgetAnnotation select[disabled] {
+.annotationLayer .choiceWidgetAnnotation select[disabled],
+.annotationLayer .buttonWidgetAnnotation.checkBox input[disabled] + label,
+.annotationLayer .buttonWidgetAnnotation.radioButton input[disabled] + label {
   background: none;
   border: 1px solid transparent;
 }
@@ -73,6 +77,21 @@
   font-family: monospace;
   padding-left: 2px;
   padding-right: 0;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox label,
+.annotationLayer .buttonWidgetAnnotation.radioButton label {
+  position: absolute;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  position: absolute;
+  left: -9999px;
+}
+
+.annotationLayer .buttonWidgetAnnotation.radioButton label {
+  border-radius: 50%;
 }
 
 .annotationLayer .popupAnnotation {

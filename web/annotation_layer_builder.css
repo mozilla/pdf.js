@@ -62,7 +62,9 @@
 
 .annotationLayer .textWidgetAnnotation input[disabled],
 .annotationLayer .textWidgetAnnotation textarea[disabled],
-.annotationLayer .choiceWidgetAnnotation select[disabled] {
+.annotationLayer .choiceWidgetAnnotation select[disabled],
+.annotationLayer .buttonWidgetAnnotation.checkBox input[disabled] + label,
+.annotationLayer .buttonWidgetAnnotation.radioButton input[disabled] + label {
   background: none;
   border: 1px solid transparent;
   cursor: not-allowed;
@@ -97,8 +99,8 @@
   width: 115%;
 }
 
-.annotationLayer .checkboxWidgetAnnotation label,
-.annotationLayer .radioButtonWidgetAnnotation label {
+.annotationLayer .buttonWidgetAnnotation.checkBox label,
+.annotationLayer .buttonWidgetAnnotation.radioButton label {
   background-color: rgba(0, 54, 255, 0.13);
   border: 1px solid transparent;
   box-sizing: border-box;
@@ -108,34 +110,34 @@
   width: 100%;
 }
 
-.annotationLayer .checkboxWidgetAnnotation input,
-.annotationLayer .radioButtonWidgetAnnotation input {
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
   position: absolute;
   left: -9999px;
 }
 
-.annotationLayer .radioButtonWidgetAnnotation label {
+.annotationLayer .buttonWidgetAnnotation.radioButton label {
   border-radius: 50%;
 }
 
-.annotationLayer .checkboxWidgetAnnotation label:hover,
-.annotationLayer .radioButtonWidgetAnnotation label:hover,
-.annotationLayer .checkboxWidgetAnnotation label:focus,
-.annotationLayer .radioButtonWidgetAnnotation label:focus,
-.annotationLayer .checkboxWidgetAnnotation input:focus + label,
-.annotationLayer .radioButtonWidgetAnnotation input:focus + label {
+.annotationLayer .buttonWidgetAnnotation.checkBox label:hover,
+.annotationLayer .buttonWidgetAnnotation.checkBox label:focus,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:focus + label,
+.annotationLayer .buttonWidgetAnnotation.radioButton label:hover,
+.annotationLayer .buttonWidgetAnnotation.radioButton label:focus,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:focus + label {
   border: 1px solid #000;
 }
 
-.annotationLayer .checkboxWidgetAnnotation input:checked + label:before,
-.annotationLayer .radioButtonWidgetAnnotation input:checked + label:before {
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked + label:before,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked + label:before {
   content: '';
   left: 50%;
   top: 50%;
   position: absolute;
 }
 
-.annotationLayer .checkboxWidgetAnnotation input:checked + label:before {
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked + label:before {
   border-bottom: 1px solid #000;
   border-left: 1px solid #000;
   height: 25%;
@@ -147,7 +149,7 @@
   width: 60%;
 }
 
-.annotationLayer .radioButtonWidgetAnnotation input:checked + label:before {
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked + label:before {
   background-color: #000;
   border-radius: 50%;
   height: 50%;
