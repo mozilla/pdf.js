@@ -1,4 +1,4 @@
-/* globals expect, it, describe, PDFNetworkStream */
+/* globals PDFNetworkStream */
 
 'use strict';
 

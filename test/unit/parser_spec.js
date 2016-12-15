@@ -1,4 +1,4 @@
-/* globals expect, it, describe, StringStream, Lexer, Name, Linearization */
+/* globals StringStream, Lexer, Name, Linearization */
 
 'use strict';
 

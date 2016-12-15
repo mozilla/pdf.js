@@ -1,6 +1,6 @@
-/* globals describe, it, expect, beforeAll, afterAll, mapSpecialUnicodeValues,
-           getUnicodeForGlyph, getGlyphsUnicode, getDingbatsGlyphsUnicode,
-           getUnicodeRangeFor, getNormalizedUnicodes, reverseIfRtl */
+/* globals mapSpecialUnicodeValues, getUnicodeForGlyph, getGlyphsUnicode,
+           getDingbatsGlyphsUnicode, getUnicodeRangeFor, getNormalizedUnicodes,
+           reverseIfRtl */
 
 'use strict';
 

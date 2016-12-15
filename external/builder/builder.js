@@ -1,5 +1,3 @@
-/* globals cp, ls, test */
-
 'use strict';
 
 var fs = require('fs'),

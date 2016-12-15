@@ -1,5 +1,5 @@
-/* globals expect, it, describe, PartialEvaluator, StringStream, OPS,
-           OperatorList, Dict, Name, Stream, WorkerTask */
+/* globals OperatorList, WorkerTask, PartialEvaluator, StringStream, OPS, Dict,
+           Name, Stream */
 
 'use strict';
 

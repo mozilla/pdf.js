@@ -1,4 +1,4 @@
-/* globals describe, it, expect, checkProblematicCharRanges */
+/* globals checkProblematicCharRanges */
 
 'use strict';
 

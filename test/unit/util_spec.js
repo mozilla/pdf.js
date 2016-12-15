@@ -1,4 +1,4 @@
-/* globals describe, it, expect, stringToPDFString, removeNullCharacters */
+/* globals stringToPDFString, removeNullCharacters */
 
 'use strict';
 

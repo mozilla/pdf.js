@@ -1,4 +1,4 @@
-/* globals expect, it, describe, Metadata */
+/* globals Metadata */
 
 'use strict';
 

@@ -1,6 +1,5 @@
-/* globals jasmine, expect, it, describe, beforeEach, isArray, StringStream,
-           PostScriptParser, PostScriptLexer, PostScriptEvaluator,
-           PostScriptCompiler*/
+/* globals isArray, StringStream, PostScriptParser, PostScriptLexer,
+           PostScriptEvaluator, PostScriptCompiler */
 
 'use strict';
 
