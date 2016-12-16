@@ -1,4 +1,4 @@
-/* globals jasmine, expect, it, describe, MurmurHash3_64 */
+/* globals MurmurHash3_64 */
 
 'use strict';
 

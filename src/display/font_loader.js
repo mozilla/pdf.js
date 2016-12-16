@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals FontFace */
 
 'use strict';
 
@@ -426,7 +425,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
 
             js += 'c.' + current.cmd + '(' + args + ');\n';
           }
-          /* jshint -W054 */
+          // eslint-disable-next-line no-new-func
           this.compiledGlyphs[character] = new Function('c', 'size', js);
         } else {
           // But fall back on using Function.prototype.apply() if we're

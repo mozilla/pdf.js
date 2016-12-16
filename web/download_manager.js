@@ -26,7 +26,7 @@
   }
 }(this, function (exports, pdfjsLib) {
 if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC || CHROME')) {
-  /* jshint -W082 */
+  // eslint-disable-next-line no-inner-declarations
   function download(blobUrl, filename) {
     var a = document.createElement('a');
     if (a.click) {
@@ -63,7 +63,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC || CHROME')) {
     }
   }
 
-  function DownloadManager() {}
+  function DownloadManager() {} // eslint-disable-line no-inner-declarations
 
   DownloadManager.prototype = {
     downloadUrl: function DownloadManager_downloadUrl(url, filename) {

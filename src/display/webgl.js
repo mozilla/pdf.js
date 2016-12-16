@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* jshint -W043 */
+/* eslint-disable no-multi-str */
 
 'use strict';
 

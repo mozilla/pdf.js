@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals NetworkManager, module */
+/* globals module */
 
 'use strict';
 
@@ -83,14 +83,13 @@ var WorkerTask = (function WorkerTaskClosure() {
 })();
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-/*jshint -W082 */
 /**
  * Interface that represents PDF data transport. If possible, it allows
  * progressively load entire or fragment of the PDF binary data.
  *
  * @interface
- * */
-function IPDFStream() {}
+ */
+function IPDFStream() {} // eslint-disable-line no-inner-declarations
 IPDFStream.prototype = {
   /**
    * Gets a reader for the entire PDF data.
@@ -118,7 +117,7 @@ IPDFStream.prototype = {
  *
  * @interface
  */
-function IPDFStreamReader() {}
+function IPDFStreamReader() {} // eslint-disable-line no-inner-declarations
 IPDFStreamReader.prototype = {
   /**
    * Gets a promise that is resolved when the headers and other metadata of
@@ -179,7 +178,7 @@ IPDFStreamReader.prototype = {
  *
  * @interface
  */
-function IPDFStreamRangeReader() {}
+function IPDFStreamRangeReader() {} // eslint-disable-line no-inner-declarations
 IPDFStreamRangeReader.prototype = {
   /**
    * Gets ability of the stream to progressively load binary data.
