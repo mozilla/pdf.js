@@ -1,5 +1,4 @@
-/* globals describe, it, expect, StringStream, Type1Parser,
-           SEAC_ANALYSIS_ENABLED */
+/* globals StringStream, Type1Parser, SEAC_ANALYSIS_ENABLED */
 
 'use strict';
 

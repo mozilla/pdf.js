@@ -1,5 +1,4 @@
-/* globals expect, it, describe, PDFJS, isExternalLinkTargetSet, LinkTarget,
-           getFilenameFromUrl, beforeAll, afterAll */
+/* globals getFilenameFromUrl, PDFJS, LinkTarget, isExternalLinkTargetSet */
 
 'use strict';
 

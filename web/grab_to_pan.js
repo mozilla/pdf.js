@@ -122,7 +122,7 @@
       }
       if (event.originalTarget) {
         try {
-          /* jshint expr:true */
+          // eslint-disable-next-line no-unused-expressions
           event.originalTarget.tagName;
         } catch (e) {
           // Mozilla-specific: element is a scrollbar (XUL element)

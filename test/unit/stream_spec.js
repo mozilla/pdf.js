@@ -1,5 +1,4 @@
-/* globals jasmine, expect, it, describe, beforeEach, Stream, PredictorStream,
-           Dict */
+/* globals Stream, PredictorStream, Dict */
 
 'use strict';
 

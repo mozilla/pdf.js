@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals URL, global */
+/* globals global */
 
 'use strict';
 
@@ -620,8 +620,7 @@ function isLittleEndian() {
 // Checks if it's possible to eval JS expressions.
 function isEvalSupported() {
   try {
-    /* jshint evil: true */
-    new Function('');
+    new Function(''); // eslint-disable-line no-new, no-new-func
     return true;
   } catch (e) {
     return false;
@@ -1756,6 +1755,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 (function checkURLConstructor(scope) {
+  /* eslint-disable yoda */
+
   // feature detect for URL constructor
   var hasWorkingUrl = false;
   try {
@@ -2392,6 +2393,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   }
 
   scope.URL = JURL;
+
+  /* eslint-enable yoda */
 })(globalScope);
 }
 

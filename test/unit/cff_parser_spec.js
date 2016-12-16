@@ -1,6 +1,5 @@
-/* globals describe, it, expect, beforeAll, afterAll, beforeEach, afterEach,
-           Stream, CFFParser, SEAC_ANALYSIS_ENABLED, CFFIndex, CFFStrings,
-           CFFCompiler */
+/* globals Stream, CFFParser, SEAC_ANALYSIS_ENABLED, CFFIndex, CFFParser,
+           CFFStrings, CFFCompiler */
 
 'use strict';
 

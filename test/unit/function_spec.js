@@ -1,6 +1,5 @@
-/* globals jasmine, expect, it, describe, beforeEach, isArray, StringStream,
-           PostScriptParser, PostScriptLexer, PostScriptEvaluator,
-           PostScriptCompiler*/
+/* globals isArray, StringStream, PostScriptParser, PostScriptLexer,
+           PostScriptEvaluator, PostScriptCompiler */
 
 'use strict';
 
@@ -433,7 +432,7 @@ describe('function', function() {
         expect(compiledCode).toBeNull();
       } else {
         expect(compiledCode).not.toBeNull();
-        /*jshint -W054 */
+        // eslint-disable-next-line no-new-func
         var fn = new Function('src', 'srcOffset', 'dest', 'destOffset',
                               compiledCode);
         for (var i = 0; i < samples.length; i++) {

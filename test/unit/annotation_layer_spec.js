@@ -1,8 +1,7 @@
-/* globals expect, it, describe, Dict, Name, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType, AnnotationType, AnnotationFlag, PDFJS,
-           beforeEach, afterEach, stringToBytes, AnnotationFactory, Ref, isRef,
-           beforeAll, afterAll, AnnotationFieldFlag, stringToUTF8String,
-           StringStream, Lexer, Parser */
+/* globals isRef, AnnotationFactory, Dict, Name, Ref, AnnotationType,
+           AnnotationFlag, Annotation, AnnotationBorderStyle,
+           AnnotationBorderStyleType, StringStream, Lexer, Parser,
+           stringToUTF8String, AnnotationFieldFlag, PDFJS, stringToBytes */
 
 'use strict';
 
