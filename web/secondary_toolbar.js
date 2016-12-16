@@ -80,8 +80,8 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
     this.items = {
       firstPage: options.firstPageButton,
       lastPage: options.lastPageButton,
-      pageRotateCw: options.pageRotateCwButton,
-      pageRotateCcw: options.pageRotateCcwButton,
+      /*pageRotateCw: options.pageRotateCwButton,
+      pageRotateCcw: options.pageRotateCcwButton,*/
     };
 
     this.mainContainer = mainContainer;
@@ -130,8 +130,8 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
 
       items.firstPage.disabled = (this.pageNumber <= 1);
       items.lastPage.disabled = (this.pageNumber >= this.pagesCount);
-      items.pageRotateCw.disabled = this.pagesCount === 0;
-      items.pageRotateCcw.disabled = this.pagesCount === 0;
+      /*items.pageRotateCw.disabled = this.pagesCount === 0;
+      items.pageRotateCcw.disabled = this.pagesCount === 0;*/
     },
 
     _bindClickListeners: function SecondaryToolbar_bindClickListeners() {
