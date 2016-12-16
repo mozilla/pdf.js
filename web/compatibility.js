@@ -202,9 +202,8 @@ if (typeof PDFJS === 'undefined') {
       get: function xmlHttpRequestResponseGet() {
         if (this.responseType === 'arraybuffer') {
           return new Uint8Array(new VBArray(this.responseBody).toArray());
-        } else {
-          return this.responseText;
         }
+        return this.responseText;
       }
     });
     return;

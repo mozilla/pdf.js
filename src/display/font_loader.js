@@ -376,7 +376,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
           this.options.fontRegistry.registerFont(this);
         }
         return nativeFontFace;
-      } else {
+      } else { // eslint-disable-line no-else-return
         throw new Error('Not implemented: createNativeFontFace');
       }
     },

@@ -143,9 +143,8 @@ chrome.webRequest.onHeadersReceived.addListener(
         url: viewerUrl
       });
       return { cancel: true };
-    } else {
-      console.warn('Child frames are not supported in ancient Chrome builds!');
     }
+    console.warn('Child frames are not supported in ancient Chrome builds!');
   },
   {
     urls: [

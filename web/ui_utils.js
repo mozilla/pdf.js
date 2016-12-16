@@ -280,12 +280,14 @@ function approximateFraction(x) {
       a = p; b = q;
     }
   }
+  var result;
   // Select closest of the neighbours to x.
   if (x_ - a / b < c / d - x_) {
-    return x_ === x ? [a, b] : [b, a];
+    result = x_ === x ? [a, b] : [b, a];
   } else {
-    return x_ === x ? [c, d] : [d, c];
+    result = x_ === x ? [c, d] : [d, c];
   }
+  return result;
 }
 
 function roundToDivide(x, div) {

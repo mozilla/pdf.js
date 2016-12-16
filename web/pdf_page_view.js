@@ -624,7 +624,7 @@ var PDFPageView = (function PDFPageViewClosure() {
           onRenderContinue: function (cont) { },
           cancel: function () { },
         };
-      } else {
+      } else { // eslint-disable-line no-else-return
         var cancelled = false;
         var ensureNotCancelled = function () {
           if (cancelled) {
