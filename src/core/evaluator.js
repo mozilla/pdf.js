@@ -823,9 +823,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                          this.handler);
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
-        } else {
-          return Promise.reject('Unknown PatternType: ' + typeNum);
         }
+        return Promise.reject('Unknown PatternType: ' + typeNum);
       }
       // TODO shall we fail here?
       operatorList.addOp(fn, args);
@@ -2902,18 +2901,17 @@ var EvaluatorPreprocessor = (function EvaluatorPreprocessorClosure() {
           operation.fn = fn;
           operation.args = args;
           return true;
-        } else {
-          if (isEOF(obj)) {
-            return false; // no more commands
+        }
+        if (isEOF(obj)) {
+          return false; // no more commands
+        }
+        // argument
+        if (obj !== null) {
+          if (args === null) {
+            args = [];
           }
-          // argument
-          if (obj !== null) {
-            if (args === null) {
-              args = [];
-            }
-            args.push(obj);
-            assert(args.length <= 33, 'Too many arguments');
-          }
+          args.push(obj);
+          assert(args.length <= 33, 'Too many arguments');
         }
       }
     },

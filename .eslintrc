@@ -45,6 +45,7 @@
     "curly": ["error", "all"],
     "eqeqeq": ["error", "always"],
     "no-caller": "error",
+    "no-else-return": "error",
     "no-eval": "error",
     "no-extend-native": "error",
     "no-extra-bind": "error",

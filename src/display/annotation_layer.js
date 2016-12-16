@@ -81,9 +81,8 @@ AnnotationElementFactory.prototype =
               return new RadioButtonWidgetAnnotationElement(parameters);
             } else if (parameters.data.checkBox) {
               return new CheckboxWidgetAnnotationElement(parameters);
-            } else {
-              warn('Unimplemented button widget annotation: pushbutton');
             }
+            warn('Unimplemented button widget annotation: pushbutton');
             break;
           case 'Ch':
             return new ChoiceWidgetAnnotationElement(parameters);

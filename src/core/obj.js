@@ -1585,9 +1585,8 @@ var FileSpec = (function FileSpecClosure() {
       return dict.get('Mac');
     } else if (dict.has('DOS')) {
       return dict.get('DOS');
-    } else {
-      return null;
     }
+    return null;
   }
 
   FileSpec.prototype = {
