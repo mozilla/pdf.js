@@ -76,6 +76,15 @@ AnnotationElementFactory.prototype =
         switch (fieldType) {
           case 'Tx':
             return new TextWidgetAnnotationElement(parameters);
+          case 'Btn':
+            if (parameters.data.radioButton) {
+              return new RadioButtonWidgetAnnotationElement(parameters);
+            } else if (parameters.data.checkBox) {
+              return new CheckboxWidgetAnnotationElement(parameters);
+            } else {
+              warn('Unimplemented button widget annotation: pushbutton');
+            }
+            break;
           case 'Ch':
             return new ChoiceWidgetAnnotationElement(parameters);
         }
@@ -531,6 +540,83 @@ var TextWidgetAnnotationElement = (
 })();
 
 /**
+ * @class
+ * @alias CheckboxWidgetAnnotationElement
+ */
+var CheckboxWidgetAnnotationElement =
+    (function CheckboxWidgetAnnotationElementClosure() {
+  function CheckboxWidgetAnnotationElement(parameters) {
+    WidgetAnnotationElement.call(this, parameters,
+                                 parameters.renderInteractiveForms);
+  }
+
+  Util.inherit(CheckboxWidgetAnnotationElement, WidgetAnnotationElement, {
+    /**
+     * Render the checkbox widget annotation's HTML element
+     * in the empty container.
+     *
+     * @public
+     * @memberof CheckboxWidgetAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function CheckboxWidgetAnnotationElement_render() {
+      this.container.className = 'buttonWidgetAnnotation checkBox';
+
+      var element = document.createElement('input');
+      element.disabled = this.data.readOnly;
+      element.type = 'checkbox';
+      if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
+        element.setAttribute('checked', true);
+      }
+
+      this.container.appendChild(element);
+      return this.container;
+    }
+  });
+
+  return CheckboxWidgetAnnotationElement;
+})();
+
+/**
+ * @class
+ * @alias RadioButtonWidgetAnnotationElement
+ */
+var RadioButtonWidgetAnnotationElement =
+    (function RadioButtonWidgetAnnotationElementClosure() {
+  function RadioButtonWidgetAnnotationElement(parameters) {
+    WidgetAnnotationElement.call(this, parameters,
+                                 parameters.renderInteractiveForms);
+  }
+
+  Util.inherit(RadioButtonWidgetAnnotationElement, WidgetAnnotationElement, {
+    /**
+     * Render the radio button widget annotation's HTML element
+     * in the empty container.
+     *
+     * @public
+     * @memberof RadioButtonWidgetAnnotationElement
+     * @returns {HTMLSectionElement}
+     */
+    render: function RadioButtonWidgetAnnotationElement_render() {
+      this.container.className = 'buttonWidgetAnnotation radioButton';
+
+      var element = document.createElement('input');
+      element.disabled = this.data.readOnly;
+      element.type = 'radio';
+      element.name = this.data.fieldName;
+      if (this.data.fieldValue === this.data.buttonValue) {
+        element.setAttribute('checked', true);
+      }
+
+      this.container.appendChild(element);
+      return this.container;
+    }
+  });
+
+  return RadioButtonWidgetAnnotationElement;
+})();
+
+ /**
  * @class
  * @alias ChoiceWidgetAnnotationElement
  */
