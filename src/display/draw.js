@@ -260,7 +260,7 @@
               fCanvas = new fabric.PageCanvas(page.id);
 
           pdfPage.el = container;
-          pdfPage.zoomLayer = fCanvas.wrapperEl;
+          //pdfPage.zoomLayer = fCanvas.wrapperEl;
           fCanvas.state = {};
           fCanvas.lastObj = null;
 
