@@ -900,7 +900,12 @@ describe('Annotation layer', function() {
     });
 
     it('should handle option arrays with array elements', function() {
-      var options = [['foo_export', 'Foo'], ['bar_export', 'Bar']];
+      var optionBarRef = new Ref(20, 0);
+      var optionBarStr = 'Bar';
+      var optionOneRef = new Ref(10, 0);
+      var optionOneArr = ['bar_export', optionBarRef];
+
+      var options = [['foo_export', 'Foo'], optionOneRef];
       var expected = [
         {
           exportValue: 'foo_export',
@@ -916,7 +921,9 @@ describe('Annotation layer', function() {
 
       var choiceWidgetRef = new Ref(123, 0);
       var xref = new XRefMock([
-        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+        { ref: choiceWidgetRef, data: choiceWidgetDict, },
+        { ref: optionBarRef, data: optionBarStr, },
+        { ref: optionOneRef, data: optionOneArr, },
       ]);
 
       var choiceWidgetAnnotation = annotationFactory.create(xref,
@@ -928,7 +935,10 @@ describe('Annotation layer', function() {
     });
 
     it('should handle option arrays with string elements', function() {
-      var options = ['Foo', 'Bar'];
+      var optionBarRef = new Ref(10, 0);
+      var optionBarStr = 'Bar';
+
+      var options = ['Foo', optionBarRef];
       var expected = [
         {
           exportValue: 'Foo',
@@ -944,7 +954,8 @@ describe('Annotation layer', function() {
 
       var choiceWidgetRef = new Ref(981, 0);
       var xref = new XRefMock([
-        { ref: choiceWidgetRef, data: choiceWidgetDict, }
+        { ref: choiceWidgetRef, data: choiceWidgetDict, },
+        { ref: optionBarRef, data: optionBarStr, }
       ]);
 
       var choiceWidgetAnnotation = annotationFactory.create(xref,
