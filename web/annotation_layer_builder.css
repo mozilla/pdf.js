@@ -43,7 +43,9 @@
 
 .annotationLayer .textWidgetAnnotation input,
 .annotationLayer .textWidgetAnnotation textarea,
-.annotationLayer .choiceWidgetAnnotation select {
+.annotationLayer .choiceWidgetAnnotation select,
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
   background-color: rgba(0, 54, 255, 0.13);
   border: 1px solid transparent;
   box-sizing: border-box;
@@ -62,7 +64,9 @@
 
 .annotationLayer .textWidgetAnnotation input[disabled],
 .annotationLayer .textWidgetAnnotation textarea[disabled],
-.annotationLayer .choiceWidgetAnnotation select[disabled] {
+.annotationLayer .choiceWidgetAnnotation select[disabled],
+.annotationLayer .buttonWidgetAnnotation.checkBox input[disabled],
+.annotationLayer .buttonWidgetAnnotation.radioButton input[disabled] {
   background: none;
   border: 1px solid transparent;
   cursor: not-allowed;
@@ -70,7 +74,9 @@
 
 .annotationLayer .textWidgetAnnotation input:hover,
 .annotationLayer .textWidgetAnnotation textarea:hover,
-.annotationLayer .choiceWidgetAnnotation select:hover {
+.annotationLayer .choiceWidgetAnnotation select:hover,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:hover,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:hover {
   border: 1px solid #000;
 }
 
@@ -95,6 +101,14 @@
    * when the element has focus and revert this when it loses focus.
    */
   width: 115%;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input,
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -ms-appearance: none;
+  appearance: none;
 }
 
 .annotationLayer .popupWrapper {

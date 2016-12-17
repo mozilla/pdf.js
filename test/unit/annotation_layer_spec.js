@@ -869,6 +869,65 @@ describe('Annotation layer', function() {
     });
   });
 
+  describe('ButtonWidgetAnnotation', function() {
+    var buttonWidgetDict;
+
+    beforeEach(function (done) {
+      buttonWidgetDict = new Dict();
+      buttonWidgetDict.set('Type', Name.get('Annot'));
+      buttonWidgetDict.set('Subtype', Name.get('Widget'));
+      buttonWidgetDict.set('FT', Name.get('Btn'));
+
+      done();
+    });
+
+    afterEach(function () {
+      buttonWidgetDict = null;
+    });
+
+    it('should handle checkboxes', function() {
+      buttonWidgetDict.set('V', Name.get('1'));
+
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
+
+      var buttonWidgetAnnotation =
+        annotationFactory.create(xref, buttonWidgetRef);
+      expect(buttonWidgetAnnotation.data.checkBox).toEqual(true);
+      expect(buttonWidgetAnnotation.data.fieldValue).toEqual('1');
+      expect(buttonWidgetAnnotation.data.radioButton).toEqual(false);
+    });
+
+    it('should handle radio buttons', function() {
+      var parentDict = new Dict();
+      parentDict.set('V', Name.get('1'));
+
+      var normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set('2', null);
+
+      var appearanceStatesDict = new Dict();
+      appearanceStatesDict.set('N', normalAppearanceStateDict);
+
+      buttonWidgetDict.set('Ff', AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set('Parent', parentDict);
+      buttonWidgetDict.set('AP', appearanceStatesDict);
+
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
+
+      var buttonWidgetAnnotation =
+        annotationFactory.create(xref, buttonWidgetRef);
+      expect(buttonWidgetAnnotation.data.checkBox).toEqual(false);
+      expect(buttonWidgetAnnotation.data.radioButton).toEqual(true);
+      expect(buttonWidgetAnnotation.data.fieldValue).toEqual('1');
+      expect(buttonWidgetAnnotation.data.buttonValue).toEqual('2');
+    });
+  });
+
   describe('ChoiceWidgetAnnotation', function() {
     var choiceWidgetDict;
 
