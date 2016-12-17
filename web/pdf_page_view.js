@@ -257,10 +257,10 @@ var PDFPageView = (function PDFPageViewClosure() {
           });
           return;
         }
-        if (!this.zoomLayer) {
+        /*if (!this.zoomLayer) {
           this.zoomLayer = this.canvas.parentNode;
           this.zoomLayer.style.position = 'absolute';
-        }
+        }*/
       }
       if (this.zoomLayer) {
         this.cssTransform(this.zoomLayer.firstChild);
@@ -458,6 +458,8 @@ var PDFPageView = (function PDFPageViewClosure() {
 
         self.error = error;
         self.stats = pdfPage.stats;
+
+	self = PDFJS.fabricGlobals.fabricPageViewDraw(pdfPage); 
         if (self.onAfterDraw) {
           self.onAfterDraw();
         }
