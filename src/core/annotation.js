@@ -779,14 +779,16 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
     // it to an array of arrays as well for convenience in the display layer.
     this.data.options = [];
 
-    var options = params.dict.getArray('Opt');
+    var options = params.dict.get('Opt');
     if (isArray(options)) {
+      var xref = params.xref;
       for (var i = 0, ii = options.length; i < ii; i++) {
-        var option = options[i];
+        var option = xref.fetchIfRef(options[i]);
+        var isOptionArray = isArray(option);
 
         this.data.options[i] = {
-          exportValue: isArray(option) ? option[0] : option,
-          displayValue: isArray(option) ? option[1] : option,
+          exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
+          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
         };
       }
     }
