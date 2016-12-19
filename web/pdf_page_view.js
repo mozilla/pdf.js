@@ -210,8 +210,9 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     update: function PDFPageView_update(scale, rotation) {
-      if(this.canvas && this.canvas.toString().indexOf('fabric.Canvas') >= 0)
+      if(this.canvas && this.canvas.toString().indexOf('fabric.Canvas') >= 0){
 	PDFJS.fabricGlobals.fabricStorePreTransformData(this.id, this.scale, this.rotation);
+      }
       this.scale = scale || this.scale;
 
       if (typeof rotation !== 'undefined') {
@@ -459,8 +460,12 @@ var PDFPageView = (function PDFPageViewClosure() {
         self.error = error;
         self.stats = pdfPage.stats;
 
-	self = PDFJS.fabricGlobals.fabricPageViewDraw(pdfPage); 
-        if (self.onAfterDraw) {
+	self = PDFJS.fabricGlobals.fabricPageViewDraw(pdfPage);
+	if(self.fabricState.preTransform.scale !== self.scale ||
+	   self.fabricState.preTransform.rotation !== self.rotation) {
+	  PDFJS.fabricGlobals.fabricTransformCanvas(pdfPage.pageNumber);
+	}
+	if (self.onAfterDraw) {
           self.onAfterDraw();
         }
         self.eventBus.dispatch('pagerendered', {
