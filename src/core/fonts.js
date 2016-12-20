@@ -2252,7 +2252,7 @@ var Font = (function FontClosure() {
       var isTrueType = !tables['CFF '];
       if (!isTrueType) {
         // OpenType font
-        if ((header.version === 'OTTO' && properties.type !== 'CIDFontType2') ||
+        if ((header.version === 'OTTO' && !properties.composite) ||
             !tables['head'] || !tables['hhea'] || !tables['maxp'] ||
             !tables['post']) {
           // no major tables: throwing everything at CFFFont
@@ -2397,7 +2397,7 @@ var Font = (function FontClosure() {
         return false;
       }
 
-      if (properties.type === 'CIDFontType2') {
+      if (properties.composite) {
         var cidToGidMap = properties.cidToGidMap || [];
         var isCidToGidMapEmpty = cidToGidMap.length === 0;
 
