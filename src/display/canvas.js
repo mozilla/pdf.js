@@ -754,7 +754,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   CanvasGraphics.prototype = {
 
     beginDrawing: function CanvasGraphics_beginDrawing(transform, viewport,
-                                                       transparency) {
+                                                       transparency, background) {
       // For pdfs that use blend modes we have to clear the canvas else certain
       // blend modes can look wrong since we'd be blending with a white
       // backdrop. The problem with a transparent backdrop though is we then
@@ -764,7 +764,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var height = this.ctx.canvas.height;
 
       this.ctx.save();
-      this.ctx.fillStyle = 'rgb(255, 255, 255)';
+      this.ctx.fillStyle = background != undefined ? background : 'rgb(255, 255, 255)';
       this.ctx.fillRect(0, 0, width, height);
       this.ctx.restore();
 
