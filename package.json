@@ -30,7 +30,7 @@
     "url": "git://github.com/mozilla/pdf.js.git"
   },
   "files": [
-    "dist/"
+    "build/"
   ],
   "license": "Apache-2.0"
 }
