@@ -32,5 +32,6 @@
   "files": [
     "build/"
   ],
+  "main": "build/pdf.js",
   "license": "Apache-2.0"
 }
