@@ -23,8 +23,8 @@
  }
 }(this, function (exports) {
  'use strict';
- var pdfjsVersion = '1.6.415';
- var pdfjsBuild = '268d638';
+ var pdfjsVersion = '1.6.416';
+ var pdfjsBuild = '408d4b2';
  var pdfjsFilePath = typeof document !== 'undefined' && document.currentScript ? document.currentScript.src : null;
  var pdfjsLibs = {};
  (function pdfjsWrapper() {
