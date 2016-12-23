@@ -25,30 +25,7 @@ Cu.import('resource://gre/modules/Services.jsm');
 const ADDON_ID = 'uriloader@pdf.js';
 
 var Telemetry = Services.telemetry;
-
 var registerAddonHistogram = Telemetry.registerAddonHistogram;
-try {
-  // Swapping arguments of the registerAddonHistogram for older Firefox versions.
-  // See https://bugzilla.mozilla.org/show_bug.cgi?id=1069953.
-  var ffVersion = parseInt(Services.appinfo.platformVersion);
-  var oldTelemetryAPI = ffVersion < 36;
-  if (ffVersion === 36) {
-    // Probing FF36 to check if it has new API.
-    try {
-      Telemetry.registerAddonHistogram(ADDON_ID, 'PDF_36',
-        Telemetry.HISTOGRAM_LINEAR, 1, 40, 41);
-      var histogram = Telemetry.getAddonHistogram(ADDON_ID, 'PDF_36');
-      histogram.add(36);
-    } catch (e) {
-      oldTelemetryAPI = true;
-    }
-  }
-  if (oldTelemetryAPI) {
-    registerAddonHistogram = function (p1, p2, p3, p4, p5, p6) {
-      return Telemetry.registerAddonHistogram(p1, p2, p4, p5, p6, p3);
-    };
-  }
-} catch (ex) { }
 
 registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_USED', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
 registerAddonHistogram(ADDON_ID, 'PDF_VIEWER_FALLBACK_SHOWN', Telemetry.HISTOGRAM_BOOLEAN, 1, 2, 3);
