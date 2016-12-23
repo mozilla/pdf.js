@@ -147,44 +147,6 @@ function getLocalizedString(strings, id, property) {
   return id;
 }
 
-function createNewChannel(uri, node) {
-//#if !MOZCENTRAL
-  if (NetUtil.newChannel2) {
-    var systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
-    return NetUtil.newChannel2(uri,
-                               null,
-                               null,
-                               node, // aLoadingNode
-                               systemPrincipal, // aLoadingPrincipal
-                               null, // aTriggeringPrincipal
-                               Ci.nsILoadInfo.SEC_NORMAL,
-                               Ci.nsIContentPolicy.TYPE_OTHER);
-  }
-//#endif
-  return NetUtil.newChannel({
-    uri: uri,
-    loadUsingSystemPrincipal: true,
-  });
-}
-
-function asyncOpenChannel(channel, listener, context) {
-//#if !MOZCENTRAL
-  if (!channel.asyncOpen2 || !('originAttributes' in channel.loadInfo)) {
-    return channel.asyncOpen(listener, context);
-  }
-//#endif
-  return channel.asyncOpen2(listener);
-}
-
-function asyncFetchChannel(channel, callback) {
-//#if !MOZCENTRAL
-  if (NetUtil.asyncFetch2) {
-    return NetUtil.asyncFetch2(channel, callback);
-  }
-//#endif
-  return NetUtil.asyncFetch(channel, callback);
-}
-
 // PDF data storage
 function PdfDataListener(length) {
   this.length = length; // less than 0, if length is unknown
@@ -278,12 +240,15 @@ ChromeActions.prototype = {
              getService(Ci.nsIExternalHelperAppService);
 
     var docIsPrivate = this.isInPrivateBrowsing();
-    var netChannel = createNewChannel(blobUri, this.domWindow.document);
+    var netChannel = NetUtil.newChannel({
+      uri: blobUri,
+      loadUsingSystemPrincipal: true,
+    });
     if ('nsIPrivateBrowsingChannel' in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
     }
-    asyncFetchChannel(netChannel, function(aInputStream, aResult) {
+    NetUtil.asyncFetch(netChannel, function(aInputStream, aResult) {
       if (!Components.isSuccessCode(aResult)) {
         if (sendResponse) {
           sendResponse(true);
@@ -341,7 +306,7 @@ ChromeActions.prototype = {
         }
       };
 
-      asyncOpenChannel(channel, listener, null);
+      channel.asyncOpen2(listener);
     });
   },
   getLocale: function() {
@@ -983,7 +948,10 @@ PdfStreamConverter.prototype = {
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
-    var channel = createNewChannel(PDF_VIEWER_WEB_PAGE, null);
+    var channel = NetUtil.newChannel({
+      uri: PDF_VIEWER_WEB_PAGE,
+      loadUsingSystemPrincipal: true,
+    });
 
     var listener = this.listener;
     var dataListener = this.dataListener;
@@ -1033,13 +1001,7 @@ PdfStreamConverter.prototype = {
     // Keep the URL the same so the browser sees it as the same.
     channel.originalURI = aRequest.URI;
     channel.loadGroup = aRequest.loadGroup;
-//#if MOZCENTRAL
     channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
-//#else
-    if ('originAttributes' in aRequest.loadInfo) {
-      channel.loadInfo.originAttributes = aRequest.loadInfo.originAttributes;
-    }
-//#endif
 
     // We can use the resource principal when data is fetched by the chrome,
     // e.g. useful for NoScript. Make make sure we reuse the origin attributes
@@ -1047,23 +1009,11 @@ PdfStreamConverter.prototype = {
     var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE, null, null);
-    var resourcePrincipal;
-//#if MOZCENTRAL
-    resourcePrincipal =
+    var resourcePrincipal =
       ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
-//#else
-    // FF43 replaced `getCodebasePrincipal` with `createCodebasePrincipal`,
-    // see https://bugzilla.mozilla.org/show_bug.cgi?id=1165272.
-    if ('createCodebasePrincipal' in ssm &&
-        'originAttributes' in aRequest.loadInfo) {
-      resourcePrincipal =
-        ssm.createCodebasePrincipal(uri, aRequest.loadInfo.originAttributes);
-    } else {
-      resourcePrincipal = ssm.getCodebasePrincipal(uri);
-    }
-//#endif
     aRequest.owner = resourcePrincipal;
-    asyncOpenChannel(channel, proxy, aContext);
+
+    channel.asyncOpen2(proxy);
   },
 
   // nsIRequestObserver::onStopRequest
