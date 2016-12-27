@@ -19,7 +19,7 @@
   'use strict';
 
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-dist/web/viewer', ['exports'], factory);
+    define('pdfjs/web/viewer', ['exports'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports);
   } else {
