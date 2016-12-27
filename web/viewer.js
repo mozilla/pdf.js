@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 /* globals chrome */
+/* eslint strict: ["error", "function"] */
 
 (function (root, factory) {
   'use strict';
@@ -24,7 +25,7 @@
   } else {
     factory((root.pdfjsWebViewer = {}));
   }
-} (this, function (exports) {
+}(this, function (exports) {
   // Use strict in our context only - users might not want it
   'use strict';
 
@@ -57,7 +58,8 @@
     }).call(pdfjsWebLibs);
   }
 
-  if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  if (typeof PDFJSDev !== 'undefined'
+      && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     // FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
     window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
   }
@@ -186,13 +188,17 @@
         // dependencies *before* the viewer loads, to prevent issues in browsers
         // relying on e.g. the Promise/URL polyfill in src/shared/util.js (fixes
         // issue 7448).
-        require(['pdfjs-web/app', 'pdfjs-web/pdf_print_service'], function (web) {
+        require([
+          'pdfjs-web/app',
+          'pdfjs-web/pdf_print_service'
+        ], function (web) {
           window.PDFViewerApplication = web.PDFViewerApplication;
           web.PDFViewerApplication.run(config);
         });
       });
     } else {
-      window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
+      window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp
+        .PDFViewerApplication;
       pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication.run(config);
     }
   }
