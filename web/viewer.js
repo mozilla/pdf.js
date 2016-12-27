@@ -204,5 +204,4 @@
   }
 
   document.addEventListener('DOMContentLoaded', webViewerLoad, true);
-
 }));
