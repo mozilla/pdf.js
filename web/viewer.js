@@ -104,49 +104,49 @@ function getViewerConfiguration() {
       pageRotateCcwButton: document.getElementById('pageRotateCcw'),
       toggleHandToolButton: document.getElementById('toggleHandTool'),
       documentPropertiesButton: document.getElementById('documentProperties'),
-      },
-      fullscreen: {
-        contextFirstPage: document.getElementById('contextFirstPage'),
-        contextLastPage: document.getElementById('contextLastPage'),
-        contextPageRotateCw: document.getElementById('contextPageRotateCw'),
-        contextPageRotateCcw: document.getElementById('contextPageRotateCcw'),
-      },
-      sidebar: {
-        // Divs (and sidebar button)
-        mainContainer: document.getElementById('mainContainer'),
-        outerContainer: document.getElementById('outerContainer'),
-        toggleButton: document.getElementById('sidebarToggle'),
-        // Buttons
-        thumbnailButton: document.getElementById('viewThumbnail'),
-        outlineButton: document.getElementById('viewOutline'),
-        attachmentsButton: document.getElementById('viewAttachments'),
-        // Views
-        thumbnailView: document.getElementById('thumbnailView'),
-        outlineView: document.getElementById('outlineView'),
-        attachmentsView: document.getElementById('attachmentsView'),
-      },
-      findBar: {
-        bar: document.getElementById('findbar'),
-        toggleButton: document.getElementById('viewFind'),
-        findField: document.getElementById('findInput'),
-        highlightAllCheckbox: document.getElementById('findHighlightAll'),
-        caseSensitiveCheckbox: document.getElementById('findMatchCase'),
-        findMsg: document.getElementById('findMsg'),
-        findResultsCount: document.getElementById('findResultsCount'),
-        findStatusIcon: document.getElementById('findStatusIcon'),
-        findPreviousButton: document.getElementById('findPrevious'),
-        findNextButton: document.getElementById('findNext')
-      },
-      passwordOverlay: {
-        overlayName: 'passwordOverlay',
-        container: document.getElementById('passwordOverlay'),
-        label: document.getElementById('passwordText'),
-        input: document.getElementById('password'),
-        submitButton: document.getElementById('passwordSubmit'),
-        cancelButton: document.getElementById('passwordCancel')
-      },
-      documentProperties: {
-        overlayName: 'documentPropertiesOverlay',
+    },
+    fullscreen: {
+      contextFirstPage: document.getElementById('contextFirstPage'),
+      contextLastPage: document.getElementById('contextLastPage'),
+      contextPageRotateCw: document.getElementById('contextPageRotateCw'),
+      contextPageRotateCcw: document.getElementById('contextPageRotateCcw'),
+    },
+    sidebar: {
+      // Divs (and sidebar button)
+      mainContainer: document.getElementById('mainContainer'),
+      outerContainer: document.getElementById('outerContainer'),
+      toggleButton: document.getElementById('sidebarToggle'),
+      // Buttons
+      thumbnailButton: document.getElementById('viewThumbnail'),
+      outlineButton: document.getElementById('viewOutline'),
+      attachmentsButton: document.getElementById('viewAttachments'),
+      // Views
+      thumbnailView: document.getElementById('thumbnailView'),
+      outlineView: document.getElementById('outlineView'),
+      attachmentsView: document.getElementById('attachmentsView'),
+    },
+    findBar: {
+      bar: document.getElementById('findbar'),
+      toggleButton: document.getElementById('viewFind'),
+      findField: document.getElementById('findInput'),
+      highlightAllCheckbox: document.getElementById('findHighlightAll'),
+      caseSensitiveCheckbox: document.getElementById('findMatchCase'),
+      findMsg: document.getElementById('findMsg'),
+      findResultsCount: document.getElementById('findResultsCount'),
+      findStatusIcon: document.getElementById('findStatusIcon'),
+      findPreviousButton: document.getElementById('findPrevious'),
+      findNextButton: document.getElementById('findNext')
+    },
+    passwordOverlay: {
+      overlayName: 'passwordOverlay',
+      container: document.getElementById('passwordOverlay'),
+      label: document.getElementById('passwordText'),
+      input: document.getElementById('password'),
+      submitButton: document.getElementById('passwordSubmit'),
+      cancelButton: document.getElementById('passwordCancel')
+    },
+    documentProperties: {
+      overlayName: 'documentPropertiesOverlay',
       container: document.getElementById('documentPropertiesOverlay'),
       closeButton: document.getElementById('documentPropertiesClose'),
       fields: {
