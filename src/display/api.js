@@ -1522,10 +1522,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
       messageHandler.on('IncorrectPassword',
                         function transportIncorrectPassword(exception) {
         var loadingTask = this.loadingTask;
-        if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.INCORRECT_PASSWORD);
-        }
         loadingTask._capability.reject(
           new PasswordException(exception.message, exception.code));
       }, this);
