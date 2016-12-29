@@ -2189,11 +2189,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               hash.update(entry.name);
             } else if (isRef(entry)) {
               hash.update(entry.toString());
-            } else if (isArray(entry)) { // 'Differences' entry.
-              // Ideally we should check the contents of the array, but to avoid
-              // parsing it here and then again in |extractDataStructures|,
-              // we only use the array length for now (fixes bug1157493.pdf).
-              hash.update(entry.length.toString());
+            } else if (isArray(entry)) {
+              // 'Differences' array (fixes bug1157493.pdf).
+              var diffLength = entry.length, diffBuf = new Array(diffLength);
+
+              for (var j = 0; j < diffLength; j++) {
+                var diffEntry = entry[j];
+                if (isName(diffEntry)) {
+                  diffBuf[j] = diffEntry.name;
+                } else if (isNum(diffEntry) || isRef(diffEntry)) {
+                  diffBuf[j] = diffEntry.toString();
+                }
+              }
+              hash.update(diffBuf.join());
             }
           }
         }
