@@ -1419,6 +1419,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     this.destroyed = false;
     this.destroyCapability = null;
+    this._pendingException = null;
 
     this.pageCache = [];
     this.pagePromises = [];
@@ -1434,6 +1435,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       this.destroyed = true;
       this.destroyCapability = createPromiseCapability();
+
+      if (this._pendingException) {
+        this.loadingTask._capability.reject(this._pendingException);
+        this._pendingException = null;
+      }
 
       var waitOn = [];
       // We need to wait for all renderings to be completed, e.g.
@@ -1464,9 +1470,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.destroyCapability.promise;
     },
 
-    setupMessageHandler:
-      function WorkerTransport_setupMessageHandler() {
+    setupMessageHandler: function WorkerTransport_setupMessageHandler() {
       var messageHandler = this.messageHandler;
+      var loadingTask = this.loadingTask;
 
       function updatePassword(password) {
         messageHandler.send('UpdatePassword', password);
@@ -1510,24 +1516,36 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       messageHandler.on('NeedPassword',
                         function transportNeedPassword(exception) {
-        var loadingTask = this.loadingTask;
+        var error = new PasswordException(exception.message, exception.code);
+
         if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.NEED_PASSWORD);
+          this._pendingException = error;
+          try {
+            loadingTask.onPassword(updatePassword,
+                                   PasswordResponses.NEED_PASSWORD);
+            this._pendingException = null;
+            return;
+          } catch (ex) { }
+          this._pendingException = null;
         }
-        loadingTask._capability.reject(
-          new PasswordException(exception.message, exception.code));
+        loadingTask._capability.reject(error);
       }, this);
 
       messageHandler.on('IncorrectPassword',
                         function transportIncorrectPassword(exception) {
-        var loadingTask = this.loadingTask;
+        var error = new PasswordException(exception.message, exception.code);
+
         if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.INCORRECT_PASSWORD);
+          this._pendingException = error;
+          try {
+            loadingTask.onPassword(updatePassword,
+                                   PasswordResponses.INCORRECT_PASSWORD);
+            this._pendingException = null;
+            return;
+          } catch (ex) { }
+          this._pendingException = null;
         }
-        loadingTask._capability.reject(
-          new PasswordException(exception.message, exception.code));
+        loadingTask._capability.reject(error);
       }, this);
 
       messageHandler.on('InvalidPDF', function transportInvalidPDF(exception) {

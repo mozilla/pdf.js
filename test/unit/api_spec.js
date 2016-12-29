@@ -224,6 +224,55 @@ describe('api', function() {
           done.fail(reason);
         });
       });
+
+      it('creates pdf doc from password protected PDF file and aborts/throws ' +
+         'in the onPassword callback (issue 7806)', function (done) {
+        var url = new URL('../pdfs/issue3371.pdf', window.location).href;
+        var passwordNeededLoadingTask = PDFJS.getDocument(url);
+        var passwordIncorrectLoadingTask = PDFJS.getDocument({
+          url: url, password: 'qwerty',
+        });
+
+        passwordNeededLoadingTask.onPassword =
+            function (updatePassword, reason) {
+          if (reason === PasswordResponses.NEED_PASSWORD) {
+            passwordNeededLoadingTask.destroy();
+            return;
+          }
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        };
+        var result1 = passwordNeededLoadingTask.promise.then(function () {
+          done.fail('shall fail since the loadingTask should be destroyed');
+          return Promise.reject(new Error('loadingTask should be rejected'));
+        }, function (reason) {
+          expect(reason instanceof PasswordException).toEqual(true);
+          expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
+        });
+
+        passwordIncorrectLoadingTask.onPassword =
+            function (updatePassword, reason) {
+          if (reason === PasswordResponses.INCORRECT_PASSWORD) {
+            throw new Error('Incorrect password');
+          }
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        };
+        var result2 = passwordIncorrectLoadingTask.promise.then(function () {
+          done.fail('shall fail since the onPassword callback should throw');
+          return Promise.reject(new Error('loadingTask should be rejected'));
+        }, function (reason) {
+          expect(reason instanceof PasswordException).toEqual(true);
+          expect(reason.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
+          return passwordIncorrectLoadingTask.destroy();
+        });
+
+        Promise.all([result1, result2]).then(function () {
+          done();
+        }).catch(function (reason) {
+          done.fail(reason);
+        });
+      });
     });
   });
   describe('PDFWorker', function() {
