@@ -1419,6 +1419,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     this.destroyed = false;
     this.destroyCapability = null;
+    this._passwordCapability = null;
 
     this.pageCache = [];
     this.pagePromises = [];
@@ -1434,6 +1435,13 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       this.destroyed = true;
       this.destroyCapability = createPromiseCapability();
+
+      if (this._passwordCapability) {
+        var err = new Error('Worker was destroyed during onPassword callback');
+        this.loadingTask._capability.reject(err);
+
+        this._passwordCapability.reject(err);
+      }
 
       var waitOn = [];
       // We need to wait for all renderings to be completed, e.g.
@@ -1464,13 +1472,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.destroyCapability.promise;
     },
 
-    setupMessageHandler:
-      function WorkerTransport_setupMessageHandler() {
+    setupMessageHandler: function WorkerTransport_setupMessageHandler() {
       var messageHandler = this.messageHandler;
-
-      function updatePassword(password) {
-        messageHandler.send('UpdatePassword', password);
-      }
+      var loadingTask = this.loadingTask;
 
       var pdfDataRangeTransport = this.pdfDataRangeTransport;
       if (pdfDataRangeTransport) {
@@ -1508,27 +1512,27 @@ var WorkerTransport = (function WorkerTransportClosure() {
         loadingTask._capability.resolve(pdfDocument);
       }, this);
 
-      messageHandler.on('NeedPassword',
-                        function transportNeedPassword(exception) {
-        var loadingTask = this.loadingTask;
+      messageHandler.on('Password', function transportPassword(exception) {
+        this._passwordCapability = createPromiseCapability();
+
         if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.NEED_PASSWORD);
+          var updatePassword = function (password) {
+            this._passwordCapability.resolve({
+              password: password,
+            });
+          }.bind(this);
+          try {
+            loadingTask.onPassword(updatePassword, exception.code);
+            return this._passwordCapability.promise;
+          } catch (ex) { }
         }
-        loadingTask._capability.reject(
-          new PasswordException(exception.message, exception.code));
+        var error = new PasswordException(exception.message, exception.code);
+        loadingTask._capability.reject(error);
+
+        this._passwordCapability.reject(error);
+        return this._passwordCapability.promise;
       }, this);
 
-      messageHandler.on('IncorrectPassword',
-                        function transportIncorrectPassword(exception) {
-        var loadingTask = this.loadingTask;
-        if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.INCORRECT_PASSWORD);
-        }
-        loadingTask._capability.reject(
-          new PasswordException(exception.message, exception.code));
-      }, this);
 
       messageHandler.on('InvalidPDF', function transportInvalidPDF(exception) {
         this.loadingTask._capability.reject(

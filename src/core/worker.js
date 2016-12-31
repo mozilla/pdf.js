@@ -671,11 +671,9 @@ var WorkerMessageHandler = {
 
       var onFailure = function(e) {
         if (e instanceof PasswordException) {
-          if (e.code === PasswordResponses.NEED_PASSWORD) {
-            handler.send('NeedPassword', e);
-          } else if (e.code === PasswordResponses.INCORRECT_PASSWORD) {
-            handler.send('IncorrectPassword', e);
-          }
+          handler.sendWithPromise('Password', e).then(function (data) {
+            pdfManager.updatePassword(data.password);
+          });
         } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', e);
         } else if (e instanceof MissingPDFException) {
@@ -823,10 +821,6 @@ var WorkerMessageHandler = {
         return pdfManager.pdfDocument.xref.stats;
       }
     );
-
-    handler.on('UpdatePassword', function wphSetupUpdatePassword(data) {
-      pdfManager.updatePassword(data);
-    });
 
     handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
