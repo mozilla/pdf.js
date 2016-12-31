@@ -198,5 +198,6 @@ function webViewerLoad() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+exports.DEFAULT_URL = DEFAULT_URL;
+exports.run = webViewerLoad;
 }));

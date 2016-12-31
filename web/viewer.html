@@ -65,7 +65,13 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !MINIFIED -->
-    <script src="viewer.js"></script>
+    <script>
+      require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.', 'domReady': '../node_modules/requirejs-domready/domReady'}});
+      require(['pdfjs-web/viewer', 'pdfjs/display/global', 'domReady!'], function (pdfViewer, global) {
+        global.globalScope.DEFAULT_URL = pdfViewer.DEFAULT_URL;
+        pdfViewer.run();
+      });
+    </script>
 <!--#else-->
 <!--#include viewer-snippet-minified.html-->
 <!--#endif-->
