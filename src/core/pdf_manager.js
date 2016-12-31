@@ -107,14 +107,6 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 
     updatePassword: function BasePdfManager_updatePassword(password) {
       this.pdfDocument.xref.password = this.password = password;
-      if (this._passwordChangedCapability) {
-        this._passwordChangedCapability.resolve();
-      }
-    },
-
-    passwordChanged: function BasePdfManager_passwordChanged() {
-      this._passwordChangedCapability = createPromiseCapability();
-      return this._passwordChangedCapability.promise;
     },
 
     terminate: function BasePdfManager_terminate() {
