@@ -671,9 +671,16 @@ var WorkerMessageHandler = {
 
       var onFailure = function(e) {
         if (e instanceof PasswordException) {
-          handler.sendWithPromise('Password', e).then(function (data) {
+          var task = new WorkerTask('PasswordException: response ' + e.code);
+          startWorkerTask(task);
+
+          handler.sendWithPromise('PasswordRequest', e).then(function (data) {
+            task.finish();
             pdfManager.updatePassword(data.password);
-          });
+          }).catch(function (ex) {
+            task.finish();
+            handler.send('PasswordException', ex);
+          }.bind(null, e));
         } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', e);
         } else if (e instanceof MissingPDFException) {

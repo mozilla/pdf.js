@@ -1437,10 +1437,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
       this.destroyCapability = createPromiseCapability();
 
       if (this._passwordCapability) {
-        var err = new Error('Worker was destroyed during onPassword callback');
-        this.loadingTask._capability.reject(err);
-
-        this._passwordCapability.reject(err);
+        this._passwordCapability.reject(
+          new Error('Worker was destroyed during onPassword callback'));
       }
 
       var waitOn = [];
@@ -1512,7 +1510,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
         loadingTask._capability.resolve(pdfDocument);
       }, this);
 
-      messageHandler.on('Password', function transportPassword(exception) {
+      messageHandler.on('PasswordRequest',
+                        function transportPasswordRequest(exception) {
         this._passwordCapability = createPromiseCapability();
 
         if (loadingTask.onPassword) {
@@ -1521,18 +1520,20 @@ var WorkerTransport = (function WorkerTransportClosure() {
               password: password,
             });
           }.bind(this);
-          try {
-            loadingTask.onPassword(updatePassword, exception.code);
-            return this._passwordCapability.promise;
-          } catch (ex) { }
-        }
-        var error = new PasswordException(exception.message, exception.code);
-        loadingTask._capability.reject(error);
 
-        this._passwordCapability.reject(error);
+          loadingTask.onPassword(updatePassword, exception.code);
+        } else {
+          this._passwordCapability.reject(
+            new PasswordException(exception.message, exception.code));
+        }
         return this._passwordCapability.promise;
       }, this);
 
+      messageHandler.on('PasswordException',
+                        function transportPasswordException(exception) {
+        loadingTask._capability.reject(
+          new PasswordException(exception.message, exception.code));
+      }, this);
 
       messageHandler.on('InvalidPDF', function transportInvalidPDF(exception) {
         this.loadingTask._capability.reject(

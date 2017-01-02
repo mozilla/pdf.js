@@ -245,9 +245,9 @@ describe('api', function() {
           done.fail('shall fail since the loadingTask should be destroyed');
           return Promise.reject(new Error('loadingTask should be rejected'));
         }, function (reason) {
-          expect(reason instanceof Error).toEqual(true);
-          expect(reason.message).toEqual(
-            'Worker was destroyed during onPassword callback');
+          expect(reason instanceof PasswordException).toEqual(true);
+          expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
+          return passwordNeededLoadingTask.destroy();
         });
 
         passwordIncorrectLoadingTask.onPassword = function (callback, reason) {
