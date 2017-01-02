@@ -663,13 +663,13 @@ var WorkerMessageHandler = {
       return pdfManagerCapability.promise;
     }
 
-    var setupDoc = function(data) {
-      var onSuccess = function(doc) {
+    function setupDoc(data) {
+      function onSuccess(doc) {
         ensureNotTerminated();
         handler.send('GetDoc', { pdfInfo: doc });
-      };
+      }
 
-      var onFailure = function(e) {
+      function onFailure(e) {
         if (e instanceof PasswordException) {
           var task = new WorkerTask('PasswordException: response ' + e.code);
           startWorkerTask(task);
@@ -677,6 +677,7 @@ var WorkerMessageHandler = {
           handler.sendWithPromise('PasswordRequest', e).then(function (data) {
             task.finish();
             pdfManager.updatePassword(data.password);
+            pdfManagerReady();
           }).catch(function (ex) {
             task.finish();
             handler.send('PasswordException', ex);
@@ -691,7 +692,27 @@ var WorkerMessageHandler = {
           handler.send('UnknownError',
                        new UnknownErrorException(e.message, e.toString()));
         }
-      };
+      }
+
+      function pdfManagerReady() {
+        ensureNotTerminated();
+
+        loadDocument(false).then(onSuccess, function loadFailure(ex) {
+          ensureNotTerminated();
+
+          // Try again with recoveryMode == true
+          if (!(ex instanceof XRefParseException)) {
+            onFailure(ex);
+            return;
+          }
+          pdfManager.requestLoadedStream();
+          pdfManager.onLoadedStream().then(function() {
+            ensureNotTerminated();
+
+            loadDocument(true).then(onSuccess, onFailure);
+          });
+        }, onFailure);
+      }
 
       ensureNotTerminated();
 
@@ -719,33 +740,8 @@ var WorkerMessageHandler = {
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength });
         });
-      }).then(function pdfManagerReady() {
-        ensureNotTerminated();
-
-        loadDocument(false).then(onSuccess, function loadFailure(ex) {
-          ensureNotTerminated();
-
-          // Try again with recoveryMode == true
-          if (!(ex instanceof XRefParseException)) {
-            if (ex instanceof PasswordException) {
-              // after password exception prepare to receive a new password
-              // to repeat loading
-              pdfManager.passwordChanged().then(pdfManagerReady);
-            }
-
-            onFailure(ex);
-            return;
-          }
-
-          pdfManager.requestLoadedStream();
-          pdfManager.onLoadedStream().then(function() {
-            ensureNotTerminated();
-
-            loadDocument(true).then(onSuccess, onFailure);
-          });
-        }, onFailure);
-      }, onFailure);
-    };
+      }).then(pdfManagerReady, onFailure);
+    }
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
