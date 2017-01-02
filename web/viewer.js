@@ -15,6 +15,8 @@
 /* globals chrome */
 /* eslint strict: ["error", "function"] */
 
+var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
+
 (function (root, factory) {
   'use strict';
 
@@ -28,8 +30,6 @@
 }(this, function (exports) {
 // Use strict in our context only - users might not want it
 'use strict';
-
-var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   (function rewriteUrlClosure() {
@@ -198,6 +198,5 @@ function webViewerLoad() {
   }
 }
 
-exports.DEFAULT_URL = DEFAULT_URL;
 exports.run = webViewerLoad;
 }));

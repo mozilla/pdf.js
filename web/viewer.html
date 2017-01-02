@@ -66,9 +66,8 @@ See https://github.com/adobe-type-tools/cmap-resources
 
 <!--#if !MINIFIED -->
     <script>
-      require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.', 'domReady': '../node_modules/requirejs-domready/domReady'}});
-      require(['pdfjs-web/viewer', 'pdfjs/display/global', 'domReady!'], function (pdfViewer, global) {
-        global.globalScope.DEFAULT_URL = pdfViewer.DEFAULT_URL;
+      require.config({paths: {'pdfjs-web': '.', 'domReady': '../node_modules/requirejs-domready/domReady'}});
+      require(['pdfjs-web/viewer', 'domReady!'], function (pdfViewer) {
         pdfViewer.run();
       });
     </script>
