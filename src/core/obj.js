@@ -758,13 +758,13 @@ var Catalog = (function CatalogClosure() {
 })();
 
 var XRef = (function XRefClosure() {
-  function XRef(stream, password) {
+  function XRef(stream, pdfManager) {
     this.stream = stream;
+    this.pdfManager = pdfManager;
     this.entries = [];
     this.xrefstms = Object.create(null);
     // prepare the XRef cache
     this.cache = [];
-    this.password = password;
     this.stats = {
       streamTypes: [],
       fontTypes: []
@@ -789,7 +789,7 @@ var XRef = (function XRefClosure() {
       trailerDict.assignXref(this);
       this.trailer = trailerDict;
       var encrypt = trailerDict.get('Encrypt');
-      if (encrypt) {
+      if (isDict(encrypt)) {
         var ids = trailerDict.get('ID');
         var fileId = (ids && ids.length) ? ids[0] : '';
         // The 'Encrypt' dictionary itself should not be encrypted, and by
@@ -798,7 +798,7 @@ var XRef = (function XRefClosure() {
         // objects (fixes issue7665.pdf).
         encrypt.suppressEncryption = true;
         this.encrypt = new CipherTransformFactory(encrypt, fileId,
-                                                  this.password);
+                                                  this.pdfManager.password);
       }
 
       // get the root dictionary (catalog) object

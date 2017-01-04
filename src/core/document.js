@@ -370,22 +370,20 @@ var PDFDocument = (function PDFDocumentClosure() {
   var EMPTY_FINGERPRINT = '\x00\x00\x00\x00\x00\x00\x00' +
     '\x00\x00\x00\x00\x00\x00\x00\x00\x00';
 
-  function PDFDocument(pdfManager, arg, password) {
+  function PDFDocument(pdfManager, arg) {
+    var stream;
     if (isStream(arg)) {
-      init.call(this, pdfManager, arg, password);
+      stream = arg;
     } else if (isArrayBuffer(arg)) {
-      init.call(this, pdfManager, new Stream(arg), password);
+      stream = new Stream(arg);
     } else {
       error('PDFDocument: Unknown argument type');
     }
-  }
-
-  function init(pdfManager, stream, password) {
     assert(stream.length > 0, 'stream must have data');
+
     this.pdfManager = pdfManager;
     this.stream = stream;
-    var xref = new XRef(this.stream, password, pdfManager);
-    this.xref = xref;
+    this.xref = new XRef(stream, pdfManager);
   }
 
   function find(stream, needle, limit, backwards) {

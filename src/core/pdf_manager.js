@@ -52,6 +52,10 @@ var BasePdfManager = (function BasePdfManagerClosure() {
       return this._docId;
     },
 
+    get password() {
+      return this._password;
+    },
+
     get docBaseUrl() {
       var docBaseUrl = null;
       if (this._docBaseUrl) {
@@ -106,15 +110,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
     },
 
     updatePassword: function BasePdfManager_updatePassword(password) {
-      this.pdfDocument.xref.password = this.password = password;
-      if (this._passwordChangedCapability) {
-        this._passwordChangedCapability.resolve();
-      }
-    },
-
-    passwordChanged: function BasePdfManager_passwordChanged() {
-      this._passwordChangedCapability = createPromiseCapability();
-      return this._passwordChangedCapability.promise;
+      this._password = password;
     },
 
     terminate: function BasePdfManager_terminate() {
@@ -129,10 +125,11 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
   function LocalPdfManager(docId, data, password, evaluatorOptions,
                            docBaseUrl) {
     this._docId = docId;
+    this._password = password;
     this._docBaseUrl = docBaseUrl;
     this.evaluatorOptions = evaluatorOptions;
     var stream = new Stream(data);
-    this.pdfDocument = new PDFDocument(this, stream, password);
+    this.pdfDocument = new PDFDocument(this, stream);
     this._loadedStreamCapability = createPromiseCapability();
     this._loadedStreamCapability.resolve(stream);
   }
@@ -179,6 +176,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
   function NetworkPdfManager(docId, pdfNetworkStream, args, evaluatorOptions,
                              docBaseUrl) {
     this._docId = docId;
+    this._password = args.password;
     this._docBaseUrl = docBaseUrl;
     this.msgHandler = args.msgHandler;
     this.evaluatorOptions = evaluatorOptions;
@@ -191,8 +189,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
       rangeChunkSize: args.rangeChunkSize
     };
     this.streamManager = new ChunkedStreamManager(pdfNetworkStream, params);
-    this.pdfDocument = new PDFDocument(this, this.streamManager.getStream(),
-                                       args.password);
+    this.pdfDocument = new PDFDocument(this, this.streamManager.getStream());
   }
 
   Util.inherit(NetworkPdfManager, BasePdfManager, {
