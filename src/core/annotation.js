@@ -65,18 +65,15 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @param {XRef} xref
    * @param {Object} ref
    * @param {PDFManager} pdfManager
-   * @param {string} uniquePrefix
-   * @param {Object} idCounters
+   * @param {Object} idFactory
    * @returns {Annotation}
    */
-  create: function AnnotationFactory_create(xref, ref, pdfManager,
-                                            uniquePrefix, idCounters) {
+  create: function AnnotationFactory_create(xref, ref, pdfManager, idFactory) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
     }
-    var id = isRef(ref) ? ref.toString() :
-                          'annot_' + (uniquePrefix || '') + (++idCounters.obj);
+    var id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
 
     // Determine the annotation's subtype.
     var subtype = dict.get('Subtype');
