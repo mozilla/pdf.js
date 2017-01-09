@@ -305,8 +305,29 @@ function validateFile(path, name, context) {
         parts.shift();
       }
       while (parts[0] === '..') {
+        if (base.length === 0) {
+          error('Invalid relative CommonJS path');
+        }
         parts.shift();
         base.pop();
+      }
+      if (base.length === 0) {
+        // Reached the project root -- finding prefix matching subpath.
+        for (var prefix in context.paths) {
+          if (!context.paths.hasOwnProperty(prefix)) {
+            continue;
+          }
+          var prefixPath = context.paths[prefix];
+          if (!('./' + parts.join('/') + '/').startsWith(prefixPath + '/')) {
+            continue;
+          }
+          parts.splice(0, prefixPath.split('/').length - 1);
+          base.push(prefix);
+          break;
+        }
+        if (base.length === 0) {
+          error('Invalid relative CommonJS path prefix');
+        }
       }
       if (j !== base.concat(parts).join('/')) {
         error('CommonJS path does not point to right AMD module: ' +
@@ -473,6 +494,7 @@ function validateFiles(paths, options) {
     exports: Object.create(null),
     imports: Object.create(null),
     dependencies: Object.create(null),
+    paths: paths,
     errorCallback: errorCallback,
     warnCallback: warnCallback,
     infoCallback: infoCallback

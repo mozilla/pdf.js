@@ -1,9 +1,48 @@
-/* globals stringToBytes, calculateMD5, ARCFourCipher, calculateSHA256,
-           calculateSHA384, calculateSHA512, AES128Cipher, AES256Cipher, PDF17,
-           PDF20, Dict, CipherTransformFactory, PasswordException,
-           PasswordResponses, Name */
-
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-test/unit/crypto_spec', ['exports', 'pdfjs/core/crypto',
+           'pdfjs/core/primitives', 'pdfjs/shared/util'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../../src/core/crypto.js'),
+            require('../../src/core/primitives.js'),
+            require('../../src/shared/util.js'));
+  } else {
+    factory((root.pdfjsTestUnitCryptoSpec = {}), root.pdfjsCoreCrypto,
+             root.pdfjsCorePrimitives, root.pdfjsSharedUtil);
+  }
+}(this, function (exports, coreCrypto, corePrimitives, sharedUtil) {
+
+var calculateMD5 = coreCrypto.calculateMD5;
+var ARCFourCipher = coreCrypto.ARCFourCipher;
+var calculateSHA256 = coreCrypto.calculateSHA256;
+var calculateSHA384 = coreCrypto.calculateSHA384;
+var calculateSHA512 = coreCrypto.calculateSHA512;
+var AES128Cipher = coreCrypto.AES128Cipher;
+var AES256Cipher = coreCrypto.AES256Cipher;
+var PDF17 = coreCrypto.PDF17;
+var PDF20 = coreCrypto.PDF20;
+var CipherTransformFactory = coreCrypto.CipherTransformFactory;
+var Name = corePrimitives.Name;
+var Dict = corePrimitives.Dict;
+var stringToBytes = sharedUtil.stringToBytes;
+var PasswordException = sharedUtil.PasswordException;
+var PasswordResponses = sharedUtil.PasswordResponses;
 
 describe('crypto', function() {
   function hex2binary(s) {
@@ -669,3 +708,4 @@ describe('CipherTransformFactory', function() {
     });
   });
 });
+}));
