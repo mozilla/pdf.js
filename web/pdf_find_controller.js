@@ -399,22 +399,21 @@ var PDFFindController = (function PDFFindControllerClosure() {
         offset.matchIdx = (previous ? numMatches - 1 : 0);
         this.updateMatch(true);
         return true;
-      } else {
-        // No matches, so attempt to search the next page.
-        this.advanceOffsetPage(previous);
-        if (offset.wrapped) {
-          offset.matchIdx = null;
-          if (this.pagesToSearch < 0) {
-            // No point in wrapping again, there were no matches.
-            this.updateMatch(false);
-            // while matches were not found, searching for a page
-            // with matches should nevertheless halt.
-            return true;
-          }
-        }
-        // Matches were not found (and searching is not done).
-        return false;
       }
+      // No matches, so attempt to search the next page.
+      this.advanceOffsetPage(previous);
+      if (offset.wrapped) {
+        offset.matchIdx = null;
+        if (this.pagesToSearch < 0) {
+          // No point in wrapping again, there were no matches.
+          this.updateMatch(false);
+          // while matches were not found, searching for a page
+          // with matches should nevertheless halt.
+          return true;
+        }
+      }
+      // Matches were not found (and searching is not done).
+      return false;
     },
 
     /**

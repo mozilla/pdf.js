@@ -833,14 +833,13 @@ var PDFViewer = (function pdfViewer() {
     _getVisiblePages: function () {
       if (!this.isInPresentationMode) {
         return getVisibleElements(this.container, this._pages, true);
-      } else {
-        // The algorithm in getVisibleElements doesn't work in all browsers and
-        // configurations when presentation mode is active.
-        var visible = [];
-        var currentPage = this._pages[this._currentPageNumber - 1];
-        visible.push({ id: currentPage.id, view: currentPage });
-        return { first: currentPage, last: currentPage, views: visible };
       }
+      // The algorithm in getVisibleElements doesn't work in all browsers and
+      // configurations when presentation mode is active.
+      var visible = [];
+      var currentPage = this._pages[this._currentPageNumber - 1];
+      visible.push({ id: currentPage.id, view: currentPage });
+      return { first: currentPage, last: currentPage, views: visible };
     },
 
     cleanup: function () {

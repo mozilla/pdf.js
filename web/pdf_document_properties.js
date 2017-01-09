@@ -178,12 +178,11 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
           size_kb: (+kb.toPrecision(3)).toLocaleString(),
           size_b: fileSize.toLocaleString()
         }, '{{size_kb}} KB ({{size_b}} bytes)');
-      } else {
-        return mozL10n.get('document_properties_mb', {
-          size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
-          size_b: fileSize.toLocaleString()
-        }, '{{size_mb}} MB ({{size_b}} bytes)');
       }
+      return mozL10n.get('document_properties_mb', {
+        size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
+        size_b: fileSize.toLocaleString()
+      }, '{{size_mb}} MB ({{size_b}} bytes)');
     },
 
     /**
