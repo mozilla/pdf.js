@@ -1,6 +1,36 @@
-/* globals getFilenameFromUrl, PDFJS, LinkTarget, isExternalLinkTargetSet */
-
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-test/unit/dom_utils_spec', ['exports',
+           'pdfjs/display/dom_utils', 'pdfjs/display/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../../src/display/dom_utils.js'),
+            require('../../src/display/global.js'));
+  } else {
+    factory((root.pdfjsTestUnitDOMUtilsSpec = {}), root.pdfjsDisplayDOMUtils,
+             root.pdfjsDisplayGlobal);
+  }
+}(this, function (exports, displayDOMUtils, displayGlobal) {
+
+var PDFJS = displayGlobal.PDFJS;
+var getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
+var LinkTarget = displayDOMUtils.LinkTarget;
+var isExternalLinkTargetSet = displayDOMUtils.isExternalLinkTargetSet;
 
 describe('dom_utils', function() {
   describe('getFilenameFromUrl', function() {
@@ -52,3 +82,4 @@ describe('dom_utils', function() {
     });
   });
 });
+}));
