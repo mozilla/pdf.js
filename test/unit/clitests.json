@@ -3,6 +3,7 @@
   "spec_files": [
     "cff_parser_spec.js",
     "crypto_spec.js",
+    "document_spec.js",
     "dom_utils_spec.js",
     "evaluator_spec.js",
     "fonts_spec.js",
