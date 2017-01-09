@@ -541,7 +541,12 @@ gulp.task('lint', function (done) {
     console.log();
     console.log('### Checking UMD dependencies');
     var umd = require('./external/umdutils/verifier.js');
-    if (!umd.validateFiles({'pdfjs': './src', 'pdfjs-web': './web'})) {
+    var paths = {
+      'pdfjs': './src',
+      'pdfjs-web': './web',
+      'pdfjs-test': './test'
+    };
+    if (!umd.validateFiles(paths)) {
       done(new Error('UMD check failed.'));
       return;
     }

@@ -1,9 +1,58 @@
-/* globals isRef, AnnotationFactory, Dict, Name, Ref, AnnotationType,
-           AnnotationFlag, Annotation, AnnotationBorderStyle,
-           AnnotationBorderStyleType, StringStream, Lexer, Parser,
-           stringToUTF8String, AnnotationFieldFlag, PDFJS, stringToBytes */
-
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-test/unit/annotation_layer_spec', ['exports',
+           'pdfjs/core/primitives', 'pdfjs/core/annotation',
+           'pdfjs/core/stream', 'pdfjs/core/parser',
+           'pdfjs/shared/util', 'pdfjs/display/global'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../../src/core/primitives.js'),
+            require('../../src/core/annotation.js'),
+            require('../../src/core/stream.js'),
+            require('../../src/core/parser.js'),
+            require('../../src/shared/util.js'),
+            require('../../src/display/global.js'));
+  } else {
+    factory((root.pdfjsTestUnitAnnotationLayerSpec = {}),
+             root.pdfjsCorePrimitives, root.pdfjsCoreAnnotation,
+             root.pdfjsCoreStream, root.pdfjsCoreParser,
+             root.pdfjsSharedUtil, root.pdfjsDisplayGlobal);
+  }
+}(this, function (exports, corePrimitives, coreAnnotation, coreStream,
+                  coreParser, sharedUtil, displayGlobal) {
+
+var Annotation = coreAnnotation.Annotation;
+var AnnotationBorderStyle = coreAnnotation.AnnotationBorderStyle;
+var AnnotationFactory = coreAnnotation.AnnotationFactory;
+var Lexer = coreParser.Lexer;
+var Parser = coreParser.Parser;
+var isRef = corePrimitives.isRef;
+var Dict = corePrimitives.Dict;
+var Name = corePrimitives.Name;
+var Ref = corePrimitives.Ref;
+var StringStream = coreStream.StringStream;
+var PDFJS = displayGlobal.PDFJS;
+var AnnotationType = sharedUtil.AnnotationType;
+var AnnotationFlag = sharedUtil.AnnotationFlag;
+var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
+var AnnotationFieldFlag = sharedUtil.AnnotationFieldFlag;
+var stringToBytes = sharedUtil.stringToBytes;
+var stringToUTF8String = sharedUtil.stringToUTF8String;
 
 describe('Annotation layer', function() {
   function XRefMock(array) {
@@ -349,9 +398,11 @@ describe('Annotation layer', function() {
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
       expect(data.url).toEqual(
-        new URL(stringToUTF8String('http://www.example.com/üöä')).href);
+        new URL(stringToUTF8String(
+          'http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4')).href);
       expect(data.unsafeUrl).toEqual(
-        stringToUTF8String('http://www.example.com/üöä'));
+        stringToUTF8String(
+          'http://www.example.com/\xC3\xBC\xC3\xB6\xC3\xA4'));
       expect(data.dest).toBeUndefined();
     });
 
@@ -1178,3 +1229,4 @@ describe('Annotation layer', function() {
     });
   });
 });
+}));
