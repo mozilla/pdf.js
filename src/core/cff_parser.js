@@ -348,10 +348,9 @@ var CFFParser = (function CFFParserClosure() {
           return ((value - 247) * 256) + dict[pos++] + 108;
         } else if (value >= 251 && value <= 254) {
           return -((value - 251) * 256) - dict[pos++] - 108;
-        } else {
-          warn('CFFParser_parseDict: "' + value + '" is a reserved command.');
-          return NaN;
         }
+        warn('CFFParser_parseDict: "' + value + '" is a reserved command.');
+        return NaN;
       }
 
       function parseFloatOperand() {
@@ -1363,9 +1362,8 @@ var CFFCompiler = (function CFFCompilerClosure() {
     encodeNumber: function CFFCompiler_encodeNumber(value) {
       if (parseFloat(value) === parseInt(value, 10) && !isNaN(value)) { // isInt
         return this.encodeInteger(value);
-      } else {
-        return this.encodeFloat(value);
       }
+      return this.encodeFloat(value);
     },
     encodeFloat: function CFFCompiler_encodeFloat(num) {
       var value = num.toString();

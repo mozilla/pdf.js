@@ -1945,9 +1945,8 @@ var PDFObjects = (function PDFObjectsClosure() {
 
       if (!objs[objId]) {
         return false;
-      } else {
-        return objs[objId].resolved;
       }
+      return objs[objId].resolved;
     },
 
     hasData: function PDFObjects_hasData(objId) {
@@ -1961,9 +1960,8 @@ var PDFObjects = (function PDFObjectsClosure() {
       var objs = this.objs;
       if (!objs[objId] || !objs[objId].resolved) {
         return null;
-      } else {
-        return objs[objId].data;
       }
+      return objs[objId].data;
     },
 
     clear: function PDFObjects_clear() {

@@ -1216,11 +1216,13 @@ var LabCS = (function LabCSClosure() {
 
   // Function g(x) from spec
   function fn_g(x) {
+    var result;
     if (x >= 6 / 29) {
-      return x * x * x;
+      result = x * x * x;
     } else {
-      return (108 / 841) * (x - 4 / 29);
+      result = (108 / 841) * (x - 4 / 29);
     }
+    return result;
   }
 
   function decode(value, high1, low2, high2) {
