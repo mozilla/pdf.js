@@ -525,6 +525,19 @@ gulp.task('botmakeref', function (done) {
   });
 });
 
+gulp.task('unittestcli', function (done) {
+  var args = ['JASMINE_CONFIG_PATH=test/unit/clitests.json'];
+  var testProcess = spawn('node_modules/.bin/jasmine', args,
+                          {stdio: 'inherit'});
+  testProcess.on('close', function (code) {
+    if (code !== 0) {
+      done(new Error('Unit tests failed.'));
+      return;
+    }
+    done();
+  });
+});
+
 gulp.task('lint', function (done) {
   console.log();
   console.log('### Linting JS files');
