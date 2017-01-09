@@ -169,13 +169,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
-                            uniquePrefix, idCounters, fontCache, options) {
+                            idFactory, fontCache, options) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
     this.pageIndex = pageIndex;
-    this.uniquePrefix = uniquePrefix;
-    this.idCounters = idCounters;
+    this.idFactory = idFactory;
     this.fontCache = fontCache;
     this.options = options || DefaultPartialEvaluatorOptions;
   }
@@ -391,8 +390,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
-      var uniquePrefix = (this.uniquePrefix || '');
-      var objId = 'img_' + uniquePrefix + (++this.idCounters.obj);
+      var objId = 'img_' + this.idFactory.createObjId();
       operatorList.addDependency(objId);
       args = [objId, w, h];
 
@@ -733,7 +731,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         this.fontCache.put(fontRef, fontCapability.promise);
       } else {
         if (!fontID) {
-          fontID = (this.uniquePrefix || 'F_') + (++this.idCounters.obj);
+          fontID = this.idFactory.createObjId();
         }
         this.fontCache.put('id_' + fontID, fontCapability.promise);
       }

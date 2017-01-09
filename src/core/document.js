@@ -78,12 +78,18 @@ var Page = (function PageClosure() {
     this.xref = xref;
     this.ref = ref;
     this.fontCache = fontCache;
-    this.uniquePrefix = 'p' + this.pageIndex + '_';
-    this.idCounters = {
-      obj: 0
-    };
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
+
+    var uniquePrefix = 'p' + this.pageIndex + '_';
+    var idCounters = {
+      obj: 0,
+    };
+    this.idFactory = {
+      createObjId: function () {
+        return uniquePrefix + (++idCounters.obj);
+      },
+    };
   }
 
   Page.prototype = {
@@ -240,8 +246,7 @@ var Page = (function PageClosure() {
 
       var partialEvaluator = new PartialEvaluator(pdfManager, this.xref,
                                                   handler, this.pageIndex,
-                                                  this.uniquePrefix,
-                                                  this.idCounters,
+                                                  this.idFactory,
                                                   this.fontCache,
                                                   this.evaluatorOptions);
 
@@ -308,8 +313,7 @@ var Page = (function PageClosure() {
         var contentStream = data[0];
         var partialEvaluator = new PartialEvaluator(pdfManager, self.xref,
                                                     handler, self.pageIndex,
-                                                    self.uniquePrefix,
-                                                    self.idCounters,
+                                                    self.idFactory,
                                                     self.fontCache,
                                                     self.evaluatorOptions);
 
@@ -345,8 +349,7 @@ var Page = (function PageClosure() {
         var annotationRef = annotationRefs[i];
         var annotation = annotationFactory.create(this.xref, annotationRef,
                                                   this.pdfManager,
-                                                  this.uniquePrefix,
-                                                  this.idCounters);
+                                                  this.idFactory);
         if (annotation) {
           annotations.push(annotation);
         }
