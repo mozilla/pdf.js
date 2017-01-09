@@ -1,4 +1,4 @@
-/* Copyright 2016 Mozilla Foundation
+/* Copyright 2017 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,58 +43,28 @@
 var pdfjsLibs;
 
 function initializePDFJS(callback) {
-  require.config({paths: {'pdfjs': '../../src', 'pdfjs-web': '../../web'}});
-  require(['pdfjs/shared/util', 'pdfjs/display/global', 'pdfjs/core/primitives',
-      'pdfjs/core/annotation', 'pdfjs/core/crypto', 'pdfjs/core/stream',
-      'pdfjs/core/fonts', 'pdfjs/core/ps_parser', 'pdfjs/core/function',
-      'pdfjs/core/parser', 'pdfjs/core/evaluator', 'pdfjs/core/cmap',
-      'pdfjs/core/worker', 'pdfjs/core/network', 'pdfjs/core/type1_parser',
-      'pdfjs/core/cff_parser', 'pdfjs/core/murmurhash3', 'pdfjs/display/api',
-      'pdfjs/display/metadata', 'pdfjs/display/dom_utils', 'pdfjs-web/ui_utils',
-      'pdfjs/core/unicode', 'pdfjs/core/glyphlist'],
-    function (sharedUtil, displayGlobal, corePrimitives, coreAnnotation,
-              coreCrypto, coreStream, coreFonts, corePsParser, coreFunction,
-              coreParser, coreEvaluator, coreCMap, coreWorker, coreNetwork,
-              coreType1Parser, coreCFFParser, coreMurmurHash3, displayAPI,
-              displayMetadata, displayDOMUtils, webUIUtils, coreUnicode,
-              coreGlyphList) {
-
-      pdfjsLibs = {
-        sharedUtil: sharedUtil,
-        displayGlobal: displayGlobal,
-        corePrimitives: corePrimitives,
-        coreAnnotation: coreAnnotation,
-        coreCrypto: coreCrypto,
-        coreStream: coreStream,
-        coreFonts: coreFonts,
-        corePsParser: corePsParser,
-        coreFunction: coreFunction,
-        coreParser: coreParser,
-        coreEvaluator: coreEvaluator,
-        coreCMap: coreCMap,
-        coreWorker: coreWorker,
-        coreNetwork: coreNetwork,
-        coreType1Parser: coreType1Parser,
-        coreCFFParser: coreCFFParser,
-        coreMurmurHash3: coreMurmurHash3,
-        displayAPI: displayAPI,
-        displayMetadata: displayMetadata,
-        displayDOMUtils: displayDOMUtils,
-        webUIUtils: webUIUtils,
-        coreUnicode: coreUnicode,
-        coreGlyphList: coreGlyphList,
-      };
-
-      // Expose all loaded internal exported members to global scope.
-      Object.keys(pdfjsLibs).forEach(function (libName) {
-        var lib = pdfjsLibs[libName];
-        Object.keys(lib).forEach(function (name) {
-          if (Object.getOwnPropertyDescriptor(window, name)) {
-            return; // ignoring if already set
-          }
-          window[name] = lib[name];
-        });
-      });
+  require.config({paths: {'pdfjs': '../../src', 'pdfjs-web': '../../web',
+                 'pdfjs-test': '..'}});
+  require(['pdfjs/display/global', 'pdfjs-test/unit/annotation_layer_spec',
+           'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/cff_parser_spec',
+           'pdfjs-test/unit/cmap_spec', 'pdfjs-test/unit/crypto_spec',
+           'pdfjs-test/unit/dom_utils_spec', 'pdfjs-test/unit/evaluator_spec',
+           'pdfjs-test/unit/fonts_spec', 'pdfjs-test/unit/function_spec',
+           'pdfjs-test/unit/metadata_spec', 'pdfjs-test/unit/murmurhash3_spec',
+           'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
+           'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
+           'pdfjs-test/unit/type1_parser_spec', 'pdfjs-test/unit/ui_utils_spec',
+           'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec'],
+    function (displayGlobal, testUnitAnnotationLayerSpec,
+              testUnitApiSpec, testUnitCFFParserSpec,
+              testUnitCMapSpec, testUnitCryptoSpec,
+              testUnitDOMUtilsSpec, testUnitEvaluatorSpec,
+              testUnitFontsSpec, testUnitFunctionSpec,
+              testUnitMetadataSpec, testUnitMurmurHash3Spec,
+              testUnitNetworkSpec, testUnitParserSpec,
+              testUnitPrimitivesSpec, testUnitStreamSpec,
+              testUnitType1ParserSpec, testUnitUiUtilsSpec,
+              testUnitUnicodeSpec, testUnitUtilSpec) {
 
       // Configure the worker.
       displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
