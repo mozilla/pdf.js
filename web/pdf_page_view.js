@@ -624,43 +624,43 @@ var PDFPageView = (function PDFPageViewClosure() {
           onRenderContinue: function (cont) { },
           cancel: function () { },
         };
-      } else { // eslint-disable-line no-else-return
-        var cancelled = false;
-        var ensureNotCancelled = function () {
-          if (cancelled) {
-            throw 'cancelled';
-          }
-        };
-
-        var self = this;
-        var pdfPage = this.pdfPage;
-        var SVGGraphics = pdfjsLib.SVGGraphics;
-        var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
-        var promise = pdfPage.getOperatorList().then(function (opList) {
-          ensureNotCancelled();
-          var svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
-          return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
-            ensureNotCancelled();
-            self.svg = svg;
-            self.paintedViewport = actualSizeViewport;
-
-            svg.style.width = wrapper.style.width;
-            svg.style.height = wrapper.style.height;
-            self.renderingState = RenderingStates.FINISHED;
-            wrapper.appendChild(svg);
-          });
-        });
-
-        return {
-          promise: promise,
-          onRenderContinue: function (cont) {
-            cont();
-          },
-          cancel: function () {
-            cancelled = true;
-          }
-        };
       }
+
+      var cancelled = false;
+      var ensureNotCancelled = function () {
+        if (cancelled) {
+          throw 'cancelled';
+        }
+      };
+
+      var self = this;
+      var pdfPage = this.pdfPage;
+      var SVGGraphics = pdfjsLib.SVGGraphics;
+      var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
+      var promise = pdfPage.getOperatorList().then(function (opList) {
+        ensureNotCancelled();
+        var svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
+        return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
+          ensureNotCancelled();
+          self.svg = svg;
+          self.paintedViewport = actualSizeViewport;
+
+          svg.style.width = wrapper.style.width;
+          svg.style.height = wrapper.style.height;
+          self.renderingState = RenderingStates.FINISHED;
+          wrapper.appendChild(svg);
+        });
+      });
+
+      return {
+        promise: promise,
+        onRenderContinue: function (cont) {
+          cont();
+        },
+        cancel: function () {
+          cancelled = true;
+        }
+      };
     },
 
     /**
