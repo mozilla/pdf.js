@@ -431,33 +431,6 @@ target.locale = function() {
 };
 
 //
-// make cmaps
-// Compresses cmap files. Ensure that Adobe cmap download and uncompressed at
-// ./external/cmaps location.
-//
-target.cmaps = function () {
-  var CMAP_INPUT = 'external/cmaps';
-  var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Building cmaps');
-
-  // testing a file that usually present
-  if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
-    echo('./external/cmaps has no cmap files, please download them from:');
-    echo('  https://github.com/adobe-type-tools/cmap-resources');
-    exit(1);
-  }
-
-  rm(VIEWER_CMAP_OUTPUT + '*.bcmap');
-
-  var compressCmaps =
-    require('./external/cmapscompress/compress.js').compressCmaps;
-  compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
-};
-
-//
 // make bundle
 // Bundles all source files into one wrapper 'pdf.js' file, in the given order.
 //
