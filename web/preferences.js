@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_PREFERENCES */
 
 'use strict';
 
@@ -26,21 +25,29 @@
   }
 }(this, function (exports) {
 
-var defaultPreferences;
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
-  defaultPreferences = Promise.resolve(
-    PDFJSDev.json('$ROOT/web/default_preferences.json'));
-} else {
-  defaultPreferences = new Promise(function (resolve) {
-    if (DEFAULT_PREFERENCES) {
-      resolve(DEFAULT_PREFERENCES);
-      return;
+var defaultPreferences = null;
+function getDefaultPreferences() {
+  if (!defaultPreferences) {
+    if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+      defaultPreferences = Promise.resolve(
+        PDFJSDev.json('$ROOT/web/default_preferences.json'));
+    } else {
+      defaultPreferences = new Promise(function (resolve) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'default_preferences.json');
+        xhr.onload = xhr.onerror = function loaded() {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch (e) {
+            console.error('Unable to load default preferences: ' + e);
+            resolve({});
+          }
+        };
+        xhr.send();
+      });
     }
-    document.addEventListener('defaultpreferencesloaded', function loaded() {
-      resolve(DEFAULT_PREFERENCES);
-      document.removeEventListener('defaultpreferencesloaded', loaded);
-    });
-  });
+  }
+  return defaultPreferences;
 }
 
 function cloneObj(obj) {
@@ -69,7 +76,7 @@ var Preferences = {
    *                   have been initialized.
    */
   initialize: function preferencesInitialize() {
-    return this.initializedPromise = defaultPreferences.then(
+    return this.initializedPromise = getDefaultPreferences().then(
         function (defaults) {
 
       Object.defineProperty(this, 'defaults', {
