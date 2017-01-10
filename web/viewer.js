@@ -13,10 +13,23 @@
  * limitations under the License.
  */
 /* globals chrome */
-
-'use strict';
+/* eslint strict: ["error", "function"] */
 
 var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
+
+(function (root, factory) {
+  'use strict';
+
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-web/viewer', ['exports'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports);
+  } else {
+    factory((root.pdfjsWebViewer = {}));
+  }
+}(this, function (exports) {
+// Use strict in our context only - users might not want it
+'use strict';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   (function rewriteUrlClosure() {
@@ -185,4 +198,5 @@ function webViewerLoad() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+exports.run = webViewerLoad;
+}));

@@ -65,7 +65,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if !MINIFIED -->
-    <script src="viewer.js"></script>
+    <script>
+      require.config({paths: {'pdfjs-web': '.', 'domReady': '../node_modules/requirejs-domready/domReady'}});
+      require(['pdfjs-web/viewer', 'domReady!'], function (pdfViewer) {
+        pdfViewer.run();
+      });
+    </script>
 <!--#else-->
 <!--#include viewer-snippet-minified.html-->
 <!--#endif-->
