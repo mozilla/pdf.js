@@ -33,6 +33,8 @@ ls('*-expected.*').forEach(function(expectationFilename) {
     out = ('Error: ' + e.message).replace(/^/gm, '//');
   }
   if (out !== expectation) {
+    errors++;
+
     echo('Assertion failed for ' + inFilename);
     echo('--------------------------------------------------');
     echo('EXPECTED:');
