@@ -374,60 +374,7 @@ target.publish = function() {
 // Creates localized resources for the viewer and extension.
 //
 target.locale = function() {
-  var METADATA_OUTPUT = 'extensions/firefox/metadata.inc';
-  var CHROME_MANIFEST_OUTPUT = 'extensions/firefox/chrome.manifest.inc';
-  var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale';
-  var VIEWER_LOCALE_OUTPUT = 'web/locale/';
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Building localization files');
-
-  rm('-rf', EXTENSION_LOCALE_OUTPUT);
-  mkdir('-p', EXTENSION_LOCALE_OUTPUT);
-  rm('-rf', VIEWER_LOCALE_OUTPUT);
-  mkdir('-p', VIEWER_LOCALE_OUTPUT);
-
-  var subfolders = ls(LOCALE_SRC_DIR);
-  subfolders.sort();
-  var metadataContent = '';
-  var chromeManifestContent = '';
-  var viewerOutput = '';
-  for (var i = 0; i < subfolders.length; i++) {
-    var locale = subfolders[i];
-    var path = LOCALE_SRC_DIR + locale;
-    if (!test('-d', path)) {
-      continue;
-    }
-    if (!/^[a-z][a-z]([a-z])?(-[A-Z][A-Z])?$/.test(locale)) {
-      echo('Skipping invalid locale: ' + locale);
-      continue;
-    }
-
-    mkdir('-p', EXTENSION_LOCALE_OUTPUT + '/' + locale);
-    mkdir('-p', VIEWER_LOCALE_OUTPUT + '/' + locale);
-    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' +
-                             locale + '/\n';
-
-    if (test('-f', path + '/viewer.properties')) {
-      viewerOutput += '[' + locale + ']\n' +
-                      '@import url(' + locale + '/viewer.properties)\n\n';
-      cp(path + '/viewer.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
-      cp(path + '/viewer.properties', VIEWER_LOCALE_OUTPUT + '/' + locale);
-    }
-
-    if (test('-f', path + '/chrome.properties')) {
-      cp(path + '/chrome.properties', EXTENSION_LOCALE_OUTPUT + '/' + locale);
-    }
-
-    if (test('-f', path + '/metadata.inc')) {
-      var metadata = cat(path + '/metadata.inc');
-      metadataContent += metadata;
-    }
-  }
-  viewerOutput.to(VIEWER_LOCALE_OUTPUT + 'locale.properties');
-  metadataContent.to(METADATA_OUTPUT);
-  chromeManifestContent.to(CHROME_MANIFEST_OUTPUT);
+  execGulp('locale');
 };
 
 //
@@ -436,25 +383,7 @@ target.locale = function() {
 // ./external/cmaps location.
 //
 target.cmaps = function () {
-  var CMAP_INPUT = 'external/cmaps';
-  var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Building cmaps');
-
-  // testing a file that usually present
-  if (!test('-f', CMAP_INPUT + '/UniJIS-UCS2-H')) {
-    echo('./external/cmaps has no cmap files, please download them from:');
-    echo('  https://github.com/adobe-type-tools/cmap-resources');
-    exit(1);
-  }
-
-  rm(VIEWER_CMAP_OUTPUT + '*.bcmap');
-
-  var compressCmaps =
-    require('./external/cmapscompress/compress.js').compressCmaps;
-  compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
+  execGulp('cmaps');
 };
 
 //

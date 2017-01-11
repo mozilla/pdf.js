@@ -27,6 +27,7 @@ var stream = require('stream');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
 var streamqueue = require('streamqueue');
+var merge = require('merge-stream');
 var zip = require('gulp-zip');
 
 var BUILD_DIR = 'build/';
@@ -286,6 +287,15 @@ function checkFile(path) {
   }
 }
 
+function checkDir(path) {
+  try {
+    var stat = fs.lstatSync(path);
+    return stat.isDirectory();
+  } catch (e) {
+    return false;
+  }
+}
+
 function createTestSource(testsName) {
   var source = stream.Readable({ objectMode: true });
   source._read = function () {
@@ -380,6 +390,98 @@ gulp.task('buildnumber', function (done) {
         .on('end', done);
     });
   });
+});
+
+gulp.task('locale', function () {
+  var VIEWER_LOCALE_OUTPUT = 'web/locale/';
+  var METADATA_OUTPUT = 'extensions/firefox/';
+  var EXTENSION_LOCALE_OUTPUT = 'extensions/firefox/locale/';
+
+  console.log();
+  console.log('### Building localization files');
+
+  rimraf.sync(EXTENSION_LOCALE_OUTPUT);
+  mkdirp.sync(EXTENSION_LOCALE_OUTPUT);
+  rimraf.sync(VIEWER_LOCALE_OUTPUT);
+  mkdirp.sync(VIEWER_LOCALE_OUTPUT);
+
+  var subfolders = fs.readdirSync(L10N_DIR);
+  subfolders.sort();
+  var metadataContent = '';
+  var chromeManifestContent = '';
+  var viewerOutput = '';
+  var locales = [];
+  for (var i = 0; i < subfolders.length; i++) {
+    var locale = subfolders[i];
+    var path = L10N_DIR + locale;
+    if (!checkDir(path)) {
+      continue;
+    }
+    if (!/^[a-z][a-z]([a-z])?(-[A-Z][A-Z])?$/.test(locale)) {
+      console.log('Skipping invalid locale: ' + locale);
+      continue;
+    }
+
+    mkdirp.sync(EXTENSION_LOCALE_OUTPUT + '/' + locale);
+    mkdirp.sync(VIEWER_LOCALE_OUTPUT + '/' + locale);
+
+    locales.push(locale);
+
+    chromeManifestContent += 'locale  pdf.js  ' + locale + '  locale/' +
+                             locale + '/\n';
+
+    if (checkFile(path + '/viewer.properties')) {
+      viewerOutput += '[' + locale + ']\n' +
+                      '@import url(' + locale + '/viewer.properties)\n\n';
+    }
+
+    if (checkFile(path + '/metadata.inc')) {
+      var metadata = fs.readFileSync(path + '/metadata.inc').toString();
+      metadataContent += metadata;
+    }
+  }
+
+  return merge([
+    createStringSource('metadata.inc', metadataContent)
+      .pipe(gulp.dest(METADATA_OUTPUT)),
+    createStringSource('chrome.manifest.inc', chromeManifestContent)
+      .pipe(gulp.dest(METADATA_OUTPUT)),
+    gulp.src(L10N_DIR + '/{' + locales.join(',') + '}' +
+             '/{viewer,chrome}.properties', {base: L10N_DIR})
+      .pipe(gulp.dest(EXTENSION_LOCALE_OUTPUT)),
+
+    createStringSource('locale.properties', viewerOutput)
+      .pipe(gulp.dest(VIEWER_LOCALE_OUTPUT)),
+    gulp.src(L10N_DIR + '/{' + locales.join(',') + '}' +
+             '/viewer.properties', {base: L10N_DIR})
+      .pipe(gulp.dest(VIEWER_LOCALE_OUTPUT))
+  ]);
+});
+
+gulp.task('cmaps', function () {
+  var CMAP_INPUT = 'external/cmaps';
+  var VIEWER_CMAP_OUTPUT = 'external/bcmaps';
+
+  console.log();
+  console.log('### Building cmaps');
+
+  // Testing a file that usually present.
+  if (!checkFile(CMAP_INPUT + '/UniJIS-UCS2-H')) {
+    console.log('./external/cmaps has no cmap files, download them from:');
+    console.log('  https://github.com/adobe-type-tools/cmap-resources');
+    throw new Error('cmap files were not found');
+  }
+
+  // Remove old bcmap files.
+  fs.readdirSync(VIEWER_CMAP_OUTPUT).forEach(function (file) {
+    if (/\.bcmap$/i.test(file)) {
+      fs.unlinkSync(VIEWER_CMAP_OUTPUT + '/' + file);
+    }
+  });
+
+  var compressCmaps =
+    require('./external/cmapscompress/compress.js').compressCmaps;
+  compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
 });
 
 gulp.task('bundle-firefox', ['buildnumber'], function () {
