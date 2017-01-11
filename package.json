@@ -11,6 +11,7 @@
     "jasmine": "^2.5.2",
     "jasmine-core": "^2.5.2",
     "jsdoc": "^3.3.0-alpha9",
+    "merge-stream": "^1.0.1",
     "mkdirp": "^0.5.1",
     "node-ensure": "^0.0.0",
     "requirejs": "^2.1.22",
