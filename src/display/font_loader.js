@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals FontFace */
 
 'use strict';
 
@@ -361,25 +360,25 @@ var FontFaceObject = (function FontFaceObjectClosure() {
   }
   FontFaceObject.prototype = {
     createNativeFontFace: function FontFaceObject_createNativeFontFace() {
-      if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
-        if (!this.data) {
-          return null;
-        }
-
-        if (this.options.disableFontFace) {
-          this.disableFontFace = true;
-          return null;
-        }
-
-        var nativeFontFace = new FontFace(this.loadedName, this.data, {});
-
-        if (this.options.fontRegistry) {
-          this.options.fontRegistry.registerFont(this);
-        }
-        return nativeFontFace;
-      } else {
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('MOZCENTRAL')) {
         throw new Error('Not implemented: createNativeFontFace');
       }
+
+      if (!this.data) {
+        return null;
+      }
+
+      if (this.options.disableFontFace) {
+        this.disableFontFace = true;
+        return null;
+      }
+
+      var nativeFontFace = new FontFace(this.loadedName, this.data, {});
+
+      if (this.options.fontRegistry) {
+        this.options.fontRegistry.registerFont(this);
+      }
+      return nativeFontFace;
     },
 
     createFontFaceRule: function FontFaceObject_createFontFaceRule() {
@@ -426,7 +425,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
 
             js += 'c.' + current.cmd + '(' + args + ');\n';
           }
-          /* jshint -W054 */
+          // eslint-disable-next-line no-new-func
           this.compiledGlyphs[character] = new Function('c', 'size', js);
         } else {
           // But fall back on using Function.prototype.apply() if we're

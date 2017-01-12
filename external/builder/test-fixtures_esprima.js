@@ -1,37 +1,40 @@
-/* jshint node:true */
-/* globals cat, cd, echo, ls */
 'use strict';
 
 require('shelljs/make');
 
-var builder = require('./builder');
+var p2 = require('./preprocessor2.js');
 var fs = require('fs');
 
 var errors = 0;
 
 cd(__dirname);
-cd('fixtures');
+cd('fixtures_esprima');
 ls('*-expected.*').forEach(function(expectationFilename) {
   var inFilename = expectationFilename.replace('-expected', '');
   var expectation = cat(expectationFilename).trim()
     .replace(/__filename/g, fs.realpathSync(inFilename));
-  var outLines = [];
+  var input = fs.readFileSync(inFilename).toString();
 
-  var outFilename = function(line) {
-    outLines.push(line);
-  };
   var defines = {
     TRUE: true,
     FALSE: false,
+    OBJ: {obj: {i: 1}, j: 2},
+    TEXT: 'text'
+  };
+  var ctx = {
+    defines: defines,
+    rootPath: __dirname + '/../..',
+    saveComments: true
   };
   var out;
   try {
-    builder.preprocess(inFilename, outFilename, defines);
-    out = outLines.join('\n').trim();
+    out = p2.preprocessPDFJSCode(ctx, input);
   } catch (e) {
     out = ('Error: ' + e.message).replace(/^/gm, '//');
   }
   if (out !== expectation) {
+    errors++;
+
     echo('Assertion failed for ' + inFilename);
     echo('--------------------------------------------------');
     echo('EXPECTED:');

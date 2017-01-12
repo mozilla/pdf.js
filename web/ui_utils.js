@@ -28,10 +28,17 @@
 var CSS_UNITS = 96.0 / 72.0;
 var DEFAULT_SCALE_VALUE = 'auto';
 var DEFAULT_SCALE = 1.0;
+var MIN_SCALE = 0.25;
+var MAX_SCALE = 10.0;
 var UNKNOWN_SCALE = 0;
 var MAX_AUTO_SCALE = 1.25;
 var SCROLLBAR_PADDING = 40;
 var VERTICAL_PADDING = 5;
+
+var RendererType = {
+  CANVAS: 'canvas',
+  SVG: 'svg',
+};
 
 var mozL10n = document.mozL10n || document.webL10n;
 
@@ -122,7 +129,7 @@ function getOutputScale(ctx) {
 function scrollIntoView(element, spot, skipOverflowHiddenElements) {
   // Assuming offsetParent is available (it's not available when viewer is in
   // hidden iframe or object). We have to scroll: if the offsetParent is not set
-  // producing the error. See also animationStartedClosure.
+  // producing the error. See also animationStarted.
   var parent = element.offsetParent;
   if (!parent) {
     console.error('offsetParent is not set -- cannot scroll');
@@ -253,7 +260,7 @@ function approximateFraction(x) {
   var limit = 8;
   if (xinv > limit) {
     return [1, limit];
-  } else  if (Math.floor(xinv) === xinv) {
+  } else if (Math.floor(xinv) === xinv) {
     return [1, xinv];
   }
 
@@ -273,12 +280,14 @@ function approximateFraction(x) {
       a = p; b = q;
     }
   }
+  var result;
   // Select closest of the neighbours to x.
   if (x_ - a / b < c / d - x_) {
-    return x_ === x ? [a, b] : [b, a];
+    result = x_ === x ? [a, b] : [b, a];
   } else {
-    return x_ === x ? [c, d] : [d, c];
+    result = x_ === x ? [c, d] : [d, c];
   }
+  return result;
 }
 
 function roundToDivide(x, div) {
@@ -377,7 +386,7 @@ function getPDFFileNameFromURL(url) {
       try {
         suggestedFilename =
           reFilename.exec(decodeURIComponent(suggestedFilename))[0];
-      } catch(e) { // Possible (extremely rare) errors:
+      } catch (e) { // Possible (extremely rare) errors:
         // URIError "Malformed URI", e.g. for "%AA.pdf"
         // TypeError "null has no properties", e.g. for "%2F.pdf"
       }
@@ -407,6 +416,31 @@ function normalizeWheelEventDelta(evt) {
   }
   return delta;
 }
+
+/**
+ * Promise that is resolved when DOM window becomes visible.
+ */
+var animationStarted = new Promise(function (resolve) {
+  window.requestAnimationFrame(resolve);
+});
+
+/**
+ * Promise that is resolved when UI localization is finished.
+ */
+var localized = new Promise(function (resolve, reject) {
+  if (!mozL10n) {
+    // Resolve as localized even if mozL10n is not available.
+    resolve();
+    return;
+  }
+  if (mozL10n.getReadyState() !== 'loading') {
+    resolve();
+    return;
+  }
+  window.addEventListener('localized', function localized(evt) {
+    resolve();
+  });
+});
 
 /**
  * Simple event bus for an application. Listeners are attached using the
@@ -536,10 +570,13 @@ var ProgressBar = (function ProgressBarClosure() {
 exports.CSS_UNITS = CSS_UNITS;
 exports.DEFAULT_SCALE_VALUE = DEFAULT_SCALE_VALUE;
 exports.DEFAULT_SCALE = DEFAULT_SCALE;
+exports.MIN_SCALE = MIN_SCALE;
+exports.MAX_SCALE = MAX_SCALE;
 exports.UNKNOWN_SCALE = UNKNOWN_SCALE;
 exports.MAX_AUTO_SCALE = MAX_AUTO_SCALE;
 exports.SCROLLBAR_PADDING = SCROLLBAR_PADDING;
 exports.VERTICAL_PADDING = VERTICAL_PADDING;
+exports.RendererType = RendererType;
 exports.mozL10n = mozL10n;
 exports.EventBus = EventBus;
 exports.ProgressBar = ProgressBar;
@@ -554,4 +591,6 @@ exports.scrollIntoView = scrollIntoView;
 exports.watchScroll = watchScroll;
 exports.binarySearchFirstItem = binarySearchFirstItem;
 exports.normalizeWheelEventDelta = normalizeWheelEventDelta;
+exports.animationStarted = animationStarted;
+exports.localized = localized;
 }));

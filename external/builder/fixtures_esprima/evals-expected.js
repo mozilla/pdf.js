@@ -5,8 +5,8 @@ var d = false;
 var e = true;
 var f = 'text';
 var g = {
-  "obj": { "i": 1 },
-  "j": 2
+ "obj": { "i": 1 },
+ "j": 2
 };
 var h = { 'test': 'test' };
 var i = '0';

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /* globals chrome, DEFAULT_URL */
+
 'use strict';
 
 (function (root, factory) {
@@ -201,9 +201,11 @@
       // Use Chrome's definition of UI language instead of PDF.js's #lang=...,
       // because the shown string should match the UI at chrome://extensions.
       // These strings are from chrome/app/resources/generated_resources_*.xtb.
+      /* eslint-disable no-unexpected-multiline */
       var i18nFileAccessLabel =
         PDFJSDev.json('$ROOT/web/chrome-i18n-allow-access-to-file-urls.json')
         [chrome.i18n.getUILanguage && chrome.i18n.getUILanguage()];
+      /* eslint-enable no-unexpected-multiline */
 
       if (i18nFileAccessLabel) {
         document.getElementById('chrome-file-access-label').textContent =

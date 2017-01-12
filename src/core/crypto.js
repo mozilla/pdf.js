@@ -609,22 +609,22 @@ var calculateSHA512 = (function calculateSHA512Closure() {
     var result;
     if (!mode384) {
       result = new Uint8Array(64);
-      h0.copyTo(result,0);
-      h1.copyTo(result,8);
-      h2.copyTo(result,16);
-      h3.copyTo(result,24);
-      h4.copyTo(result,32);
-      h5.copyTo(result,40);
-      h6.copyTo(result,48);
-      h7.copyTo(result,56);
+      h0.copyTo(result, 0);
+      h1.copyTo(result, 8);
+      h2.copyTo(result, 16);
+      h3.copyTo(result, 24);
+      h4.copyTo(result, 32);
+      h5.copyTo(result, 40);
+      h6.copyTo(result, 48);
+      h7.copyTo(result, 56);
     } else {
       result = new Uint8Array(48);
-      h0.copyTo(result,0);
-      h1.copyTo(result,8);
-      h2.copyTo(result,16);
-      h3.copyTo(result,24);
-      h4.copyTo(result,32);
-      h5.copyTo(result,40);
+      h0.copyTo(result, 0);
+      h1.copyTo(result, 8);
+      h2.copyTo(result, 16);
+      h3.copyTo(result, 24);
+      h4.copyTo(result, 32);
+      h5.copyTo(result, 40);
     }
     return result;
   }
@@ -1729,13 +1729,13 @@ var PDF20 = (function PDF20Closure() {
 
 var CipherTransform = (function CipherTransformClosure() {
   function CipherTransform(stringCipherConstructor, streamCipherConstructor) {
-    this.stringCipherConstructor = stringCipherConstructor;
-    this.streamCipherConstructor = streamCipherConstructor;
+    this.StringCipherConstructor = stringCipherConstructor;
+    this.StreamCipherConstructor = streamCipherConstructor;
   }
 
   CipherTransform.prototype = {
     createStream: function CipherTransform_createStream(stream, length) {
-      var cipher = new this.streamCipherConstructor();
+      var cipher = new this.StreamCipherConstructor();
       return new DecryptStream(stream, length,
         function cipherTransformDecryptStream(data, finalize) {
           return cipher.decryptBlock(data, finalize);
@@ -1743,7 +1743,7 @@ var CipherTransform = (function CipherTransformClosure() {
       );
     },
     decryptString: function CipherTransform_decryptString(s) {
-      var cipher = new this.stringCipherConstructor();
+      var cipher = new this.StringCipherConstructor();
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data, true);
       return bytesToString(data);
@@ -2057,17 +2057,17 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         return new NullCipher();
       };
     }
-    if ('V2' === cfm.name) {
+    if (cfm.name === 'V2') {
       return function cipherTransformFactoryBuildCipherConstructorV2() {
         return new ARCFourCipher(buildObjectKey(num, gen, key, false));
       };
     }
-    if ('AESV2' === cfm.name) {
+    if (cfm.name === 'AESV2') {
       return function cipherTransformFactoryBuildCipherConstructorAESV2() {
         return new AES128Cipher(buildObjectKey(num, gen, key, true));
       };
     }
-    if ('AESV3' === cfm.name) {
+    if (cfm.name === 'AESV3') {
       return function cipherTransformFactoryBuildCipherConstructorAESV3() {
         return new AES256Cipher(key);
       };

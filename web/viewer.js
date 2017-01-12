@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*globals require, chrome */
+/* globals chrome */
 
 'use strict';
 
@@ -54,7 +54,7 @@ function getViewerConfiguration() {
   return {
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
-    viewerContainer:  document.getElementById('viewer'),
+    viewerContainer: document.getElementById('viewer'),
     eventBus: null, // using global event bus with DOM events
     toolbar: {
       container: document.getElementById('toolbarViewer'),
@@ -65,8 +65,6 @@ function getViewerConfiguration() {
       customScaleOption: document.getElementById('customScaleOption'),
       previous: document.getElementById('previous'),
       next: document.getElementById('next'),
-      firstPage: document.getElementById('firstPage'),
-      lastPage: document.getElementById('lastPage'),
       zoomIn: document.getElementById('zoomIn'),
       zoomOut: document.getElementById('zoomOut'),
       viewFind: document.getElementById('viewFind'),
@@ -171,15 +169,9 @@ function webViewerLoad() {
   var config = getViewerConfiguration();
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
-    require(['pdfjs-web/pdfjs'], function () {
-      // Ensure that src/main_loader.js has loaded all the necessary
-      // dependencies *before* the viewer loads, to prevent issues in browsers
-      // relying on e.g. the Promise/URL polyfill in src/shared/util.js (fixes
-      // issue 7448).
-      require(['pdfjs-web/app', 'pdfjs-web/pdf_print_service'], function (web) {
-        window.PDFViewerApplication = web.PDFViewerApplication;
-        web.PDFViewerApplication.run(config);
-      });
+    require(['pdfjs-web/app', 'pdfjs-web/pdf_print_service'], function (web) {
+      window.PDFViewerApplication = web.PDFViewerApplication;
+      web.PDFViewerApplication.run(config);
     });
   } else {
     window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
@@ -187,4 +179,9 @@ function webViewerLoad() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+if (document.readyState === 'interactive' ||
+    document.readyState === 'complete') {
+  webViewerLoad();
+} else {
+  document.addEventListener('DOMContentLoaded', webViewerLoad, true);
+}

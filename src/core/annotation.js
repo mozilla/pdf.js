@@ -65,18 +65,15 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @param {XRef} xref
    * @param {Object} ref
    * @param {PDFManager} pdfManager
-   * @param {string} uniquePrefix
-   * @param {Object} idCounters
+   * @param {Object} idFactory
    * @returns {Annotation}
    */
-  create: function AnnotationFactory_create(xref, ref, pdfManager,
-                                            uniquePrefix, idCounters) {
+  create: function AnnotationFactory_create(xref, ref, pdfManager, idFactory) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
     }
-    var id = isRef(ref) ? ref.toString() :
-                          'annot_' + (uniquePrefix || '') + (++idCounters.obj);
+    var id = isRef(ref) ? ref.toString() : 'annot_' + idFactory.createObjId();
 
     // Determine the annotation's subtype.
     var subtype = dict.get('Subtype');
@@ -106,6 +103,8 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
         switch (fieldType) {
           case 'Tx':
             return new TextWidgetAnnotation(parameters);
+          case 'Btn':
+            return new ButtonWidgetAnnotation(parameters);
           case 'Ch':
             return new ChoiceWidgetAnnotation(parameters);
         }
@@ -435,7 +434,7 @@ var Annotation = (function AnnotationClosure() {
         // Properties
       ]);
       var bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
-      var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0 ,0];
+      var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
       var transform = getTransformMatrix(data.rect, bbox, matrix);
       var self = this;
 
@@ -767,6 +766,78 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   return TextWidgetAnnotation;
 })();
 
+var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
+  function ButtonWidgetAnnotation(params) {
+    WidgetAnnotation.call(this, params);
+
+    this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                         !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    if (this.data.checkBox) {
+      if (!isName(this.data.fieldValue)) {
+        return;
+      }
+      this.data.fieldValue = this.data.fieldValue.name;
+    }
+
+    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
+    if (this.data.radioButton) {
+      this.data.fieldValue = this.data.buttonValue = null;
+
+      // The parent field's `V` entry holds a `Name` object with the appearance
+      // state of whichever child field is currently in the "on" state.
+      var fieldParent = params.dict.get('Parent');
+      if (!isDict(fieldParent) || !fieldParent.has('V')) {
+        return;
+      }
+      var fieldParentValue = fieldParent.get('V');
+      if (!isName(fieldParentValue)) {
+        return;
+      }
+      this.data.fieldValue = fieldParentValue.name;
+
+      // The button's value corresponds to its appearance state.
+      var appearanceStates = params.dict.get('AP');
+      if (!isDict(appearanceStates)) {
+        return;
+      }
+      var normalAppearanceState = appearanceStates.get('N');
+      if (!isDict(normalAppearanceState)) {
+        return;
+      }
+      var keys = normalAppearanceState.getKeys();
+      for (var i = 0, ii = keys.length; i < ii; i++) {
+        if (keys[i] !== 'Off') {
+          this.data.buttonValue = keys[i];
+          break;
+        }
+      }
+    }
+  }
+
+  Util.inherit(ButtonWidgetAnnotation, WidgetAnnotation, {
+    getOperatorList:
+        function ButtonWidgetAnnotation_getOperatorList(evaluator, task,
+                                                        renderForms) {
+      var operatorList = new OperatorList();
+
+      // Do not render form elements on the canvas when interactive forms are
+      // enabled. The display layer is responsible for rendering them instead.
+      if (renderForms) {
+        return Promise.resolve(operatorList);
+      }
+
+      if (this.appearance) {
+        return Annotation.prototype.getOperatorList.call(this, evaluator, task,
+                                                         renderForms);
+      }
+      return Promise.resolve(operatorList);
+    }
+  });
+
+  return ButtonWidgetAnnotation;
+})();
+
 var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
   function ChoiceWidgetAnnotation(params) {
     WidgetAnnotation.call(this, params);
@@ -779,14 +850,16 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
     // it to an array of arrays as well for convenience in the display layer.
     this.data.options = [];
 
-    var options = params.dict.getArray('Opt');
+    var options = params.dict.get('Opt');
     if (isArray(options)) {
+      var xref = params.xref;
       for (var i = 0, ii = options.length; i < ii; i++) {
-        var option = options[i];
+        var option = xref.fetchIfRef(options[i]);
+        var isOptionArray = isArray(option);
 
         this.data.options[i] = {
-          exportValue: isArray(option) ? option[0] : option,
-          displayValue: isArray(option) ? option[1] : option,
+          exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
+          displayValue: isOptionArray ? xref.fetchIfRef(option[1]) : option,
         };
       }
     }

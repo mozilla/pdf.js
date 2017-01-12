@@ -1484,7 +1484,7 @@ var JpxImage = (function JpxImageClosure() {
       var qcdOrQcc = (context.currentTile.QCC[c] !== undefined ?
         context.currentTile.QCC[c] : context.currentTile.QCD);
       component.quantizationParameters = qcdOrQcc;
-      var codOrCoc = (context.currentTile.COC[c] !== undefined  ?
+      var codOrCoc = (context.currentTile.COC[c] !== undefined ?
         context.currentTile.COC[c] : context.currentTile.COD);
       component.codingStyleParameters = codOrCoc;
     }
@@ -1552,7 +1552,7 @@ var JpxImage = (function JpxImageClosure() {
   })();
 
   var InclusionTree = (function InclusionTreeClosure() {
-    function InclusionTree(width, height,  defaultValue) {
+    function InclusionTree(width, height, defaultValue) {
       var levelsLength = log2(Math.max(width, height)) + 1;
       this.levels = [];
       for (var i = 0; i < levelsLength; i++) {

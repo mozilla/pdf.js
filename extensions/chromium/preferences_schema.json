@@ -103,6 +103,14 @@
       "type": "boolean",
       "default": false
     },
+    "renderer": {
+      "type": "string",
+      "enum": [
+        "canvas",
+        "svg"
+      ],
+      "default": "canvas"
+    },
     "renderInteractiveForms": {
       "type": "boolean",
       "default": false

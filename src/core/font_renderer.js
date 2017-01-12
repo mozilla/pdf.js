@@ -437,7 +437,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 x = xb; y = yb;
                 if (Math.abs(x - x0) > Math.abs(y - y0)) {
                   x += stack.shift();
-                } else  {
+                } else {
                   y += stack.shift();
                 }
                 bezierCurveTo(xa, ya, xb, yb, x, y);
@@ -729,9 +729,8 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                           [1 / unitsPerEm, 0, 0, 1 / unitsPerEm, 0, 0]);
         return new TrueTypeCompiled(
           parseGlyfTable(glyf, loca, indexToLocFormat), cmap, fontMatrix);
-      } else {
-        return new Type2Compiled(cff, cmap, font.fontMatrix, font.glyphNameMap);
       }
+      return new Type2Compiled(cff, cmap, font.fontMatrix, font.glyphNameMap);
     }
   };
 })();

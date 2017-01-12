@@ -284,9 +284,8 @@
           this.nextHashParam = null;
           this.updatePreviousBookmark = true;
           return;
-        } else {
-          this.nextHashParam = null;
         }
+        this.nextHashParam = null;
       }
 
       if (params.hash) {

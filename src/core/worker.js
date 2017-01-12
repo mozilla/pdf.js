@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals NetworkManager, module */
+/* globals module */
 
 'use strict';
 
@@ -83,14 +83,13 @@ var WorkerTask = (function WorkerTaskClosure() {
 })();
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-/*jshint -W082 */
 /**
  * Interface that represents PDF data transport. If possible, it allows
  * progressively load entire or fragment of the PDF binary data.
  *
  * @interface
- * */
-function IPDFStream() {}
+ */
+function IPDFStream() {} // eslint-disable-line no-inner-declarations
 IPDFStream.prototype = {
   /**
    * Gets a reader for the entire PDF data.
@@ -118,7 +117,7 @@ IPDFStream.prototype = {
  *
  * @interface
  */
-function IPDFStreamReader() {}
+function IPDFStreamReader() {} // eslint-disable-line no-inner-declarations
 IPDFStreamReader.prototype = {
   /**
    * Gets a promise that is resolved when the headers and other metadata of
@@ -179,7 +178,7 @@ IPDFStreamReader.prototype = {
  *
  * @interface
  */
-function IPDFStreamRangeReader() {}
+function IPDFStreamRangeReader() {} // eslint-disable-line no-inner-declarations
 IPDFStreamRangeReader.prototype = {
   /**
    * Gets ability of the stream to progressively load binary data.
@@ -664,19 +663,25 @@ var WorkerMessageHandler = {
       return pdfManagerCapability.promise;
     }
 
-    var setupDoc = function(data) {
-      var onSuccess = function(doc) {
+    function setupDoc(data) {
+      function onSuccess(doc) {
         ensureNotTerminated();
         handler.send('GetDoc', { pdfInfo: doc });
-      };
+      }
 
-      var onFailure = function(e) {
+      function onFailure(e) {
         if (e instanceof PasswordException) {
-          if (e.code === PasswordResponses.NEED_PASSWORD) {
-            handler.send('NeedPassword', e);
-          } else if (e.code === PasswordResponses.INCORRECT_PASSWORD) {
-            handler.send('IncorrectPassword', e);
-          }
+          var task = new WorkerTask('PasswordException: response ' + e.code);
+          startWorkerTask(task);
+
+          handler.sendWithPromise('PasswordRequest', e).then(function (data) {
+            finishWorkerTask(task);
+            pdfManager.updatePassword(data.password);
+            pdfManagerReady();
+          }).catch(function (ex) {
+            finishWorkerTask(task);
+            handler.send('PasswordException', ex);
+          }.bind(null, e));
         } else if (e instanceof InvalidPDFException) {
           handler.send('InvalidPDF', e);
         } else if (e instanceof MissingPDFException) {
@@ -687,7 +692,27 @@ var WorkerMessageHandler = {
           handler.send('UnknownError',
                        new UnknownErrorException(e.message, e.toString()));
         }
-      };
+      }
+
+      function pdfManagerReady() {
+        ensureNotTerminated();
+
+        loadDocument(false).then(onSuccess, function loadFailure(ex) {
+          ensureNotTerminated();
+
+          // Try again with recoveryMode == true
+          if (!(ex instanceof XRefParseException)) {
+            onFailure(ex);
+            return;
+          }
+          pdfManager.requestLoadedStream();
+          pdfManager.onLoadedStream().then(function() {
+            ensureNotTerminated();
+
+            loadDocument(true).then(onSuccess, onFailure);
+          });
+        }, onFailure);
+      }
 
       ensureNotTerminated();
 
@@ -715,46 +740,24 @@ var WorkerMessageHandler = {
         pdfManager.onLoadedStream().then(function(stream) {
           handler.send('DataLoaded', { length: stream.bytes.byteLength });
         });
-      }).then(function pdfManagerReady() {
-        ensureNotTerminated();
-
-        loadDocument(false).then(onSuccess, function loadFailure(ex) {
-          ensureNotTerminated();
-
-          // Try again with recoveryMode == true
-          if (!(ex instanceof XRefParseException)) {
-            if (ex instanceof PasswordException) {
-              // after password exception prepare to receive a new password
-              // to repeat loading
-              pdfManager.passwordChanged().then(pdfManagerReady);
-            }
-
-            onFailure(ex);
-            return;
-          }
-
-          pdfManager.requestLoadedStream();
-          pdfManager.onLoadedStream().then(function() {
-            ensureNotTerminated();
-
-            loadDocument(true).then(onSuccess, onFailure);
-          });
-        }, onFailure);
-      }, onFailure);
-    };
+      }).then(pdfManagerReady, onFailure);
+    }
 
     handler.on('GetPage', function wphSetupGetPage(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {
         var rotatePromise = pdfManager.ensure(page, 'rotate');
         var refPromise = pdfManager.ensure(page, 'ref');
+        var userUnitPromise = pdfManager.ensure(page, 'userUnit');
         var viewPromise = pdfManager.ensure(page, 'view');
 
-        return Promise.all([rotatePromise, refPromise, viewPromise]).then(
-            function(results) {
+        return Promise.all([
+          rotatePromise, refPromise, userUnitPromise, viewPromise
+        ]).then(function(results) {
           return {
             rotate: results[0],
             ref: results[1],
-            view: results[2]
+            userUnit: results[2],
+            view: results[3]
           };
         });
       });
@@ -821,10 +824,6 @@ var WorkerMessageHandler = {
         return pdfManager.pdfDocument.xref.stats;
       }
     );
-
-    handler.on('UpdatePassword', function wphSetupUpdatePassword(data) {
-      pdfManager.updatePassword(data);
-    });
 
     handler.on('GetAnnotations', function wphSetupGetAnnotations(data) {
       return pdfManager.getPage(data.pageIndex).then(function(page) {

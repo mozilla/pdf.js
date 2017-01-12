@@ -1,7 +1,40 @@
-/* globals expect, it, describe, beforeAll, afterAll, jasmine, Name, Dict, Ref,
-           RefSet, Cmd, isName, isCmd, isDict, isRef, isRefsEqual */
-
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-test/unit/primitives_spec', ['exports',
+           'pdfjs/core/primitives'], factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../../src/core/primitives.js'));
+  } else {
+    factory((root.pdfjsTestUnitPrimitivesSpec = {}), root.pdfjsCorePrimitives);
+  }
+}(this, function (exports, corePrimitives) {
+
+var Name = corePrimitives.Name;
+var Dict = corePrimitives.Dict;
+var Ref = corePrimitives.Ref;
+var RefSet = corePrimitives.RefSet;
+var Cmd = corePrimitives.Cmd;
+var isName = corePrimitives.isName;
+var isCmd = corePrimitives.isCmd;
+var isDict = corePrimitives.isDict;
+var isRef = corePrimitives.isRef;
+var isRefsEqual = corePrimitives.isRefsEqual;
 
 describe('primitives', function() {
   function XRefMock(array) {
@@ -346,12 +379,12 @@ describe('primitives', function() {
   });
 
   describe('isRef', function () {
-    it ('handles non-refs', function () {
+    it('handles non-refs', function () {
       var nonRef = {};
       expect(isRef(nonRef)).toEqual(false);
     });
 
-    it ('handles refs', function () {
+    it('handles refs', function () {
       var ref = new Ref(1, 0);
       expect(isRef(ref)).toEqual(true);
     });
@@ -371,3 +404,4 @@ describe('primitives', function() {
     });
   });
 });
+}));

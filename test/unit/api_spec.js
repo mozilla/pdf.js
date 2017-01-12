@@ -1,9 +1,43 @@
-/* globals PDFJS, expect, it, describe, Promise, beforeAll,
-           InvalidPDFException, MissingPDFException, StreamType, FontType,
-           PDFDocumentProxy, PasswordException, PasswordResponses, afterAll,
-           PDFPageProxy, createPromiseCapability, afterEach */
-
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-test/unit/api_spec', ['exports', 'pdfjs/shared/util',
+           'pdfjs/display/global', 'pdfjs/display/api'], factory);
+  } else if (typeof exports !== 'undefined') {
+      factory(exports, require('../../src/shared/util.js'),
+              require('../../src/display/global.js'),
+              require('../../src/display/api.js'));
+  } else {
+    factory((root.pdfjsTestUnitApiSpec = {}), root.pdfjsSharedUtil,
+             root.pdfjsDisplayGlobal, root.pdfjsDisplayApi);
+  }
+}(this, function (exports, sharedUtil, displayGlobal, displayApi) {
+
+var PDFJS = displayGlobal.PDFJS;
+var createPromiseCapability = sharedUtil.createPromiseCapability;
+var PDFDocumentProxy = displayApi.PDFDocumentProxy;
+var InvalidPDFException = sharedUtil.InvalidPDFException;
+var MissingPDFException = sharedUtil.MissingPDFException;
+var PasswordResponses = sharedUtil.PasswordResponses;
+var PasswordException = sharedUtil.PasswordException;
+var PDFPageProxy = displayApi.PDFPageProxy;
+var StreamType = sharedUtil.StreamType;
+var FontType = sharedUtil.FontType;
 
 describe('api', function() {
   var basicApiUrl = new URL('../pdfs/basicapi.pdf', window.location).href;
@@ -192,7 +226,7 @@ describe('api', function() {
         });
         var result1 = passwordNeededLoadingTask.promise.then(function () {
           done.fail('shall fail with no password');
-          return passwordNeededLoadingTask.destroy();
+          return Promise.reject(new Error('loadingTask should be rejected'));
         }, function (data) {
           expect(data instanceof PasswordException).toEqual(true);
           expect(data.code).toEqual(PasswordResponses.NEED_PASSWORD);
@@ -204,7 +238,7 @@ describe('api', function() {
         });
         var result2 = passwordIncorrectLoadingTask.promise.then(function () {
           done.fail('shall fail with wrong password');
-          return passwordNeededLoadingTask.destroy();
+          return Promise.reject(new Error('loadingTask should be rejected'));
         }, function (data) {
           expect(data instanceof PasswordException).toEqual(true);
           expect(data.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
@@ -220,6 +254,53 @@ describe('api', function() {
           return passwordAcceptedLoadingTask.destroy();
         });
         Promise.all([result1, result2, result3]).then(function () {
+          done();
+        }).catch(function (reason) {
+          done.fail(reason);
+        });
+      });
+
+      it('creates pdf doc from password protected PDF file and aborts/throws ' +
+         'in the onPassword callback (issue 7806)', function (done) {
+        var url = new URL('../pdfs/issue3371.pdf', window.location).href;
+        var passwordNeededLoadingTask = PDFJS.getDocument(url);
+        var passwordIncorrectLoadingTask = PDFJS.getDocument({
+          url: url, password: 'qwerty',
+        });
+
+        passwordNeededLoadingTask.onPassword = function (callback, reason) {
+          if (reason === PasswordResponses.NEED_PASSWORD) {
+            passwordNeededLoadingTask.destroy();
+            return;
+          }
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        };
+        var result1 = passwordNeededLoadingTask.promise.then(function () {
+          done.fail('shall fail since the loadingTask should be destroyed');
+          return Promise.reject(new Error('loadingTask should be rejected'));
+        }, function (reason) {
+          expect(reason instanceof PasswordException).toEqual(true);
+          expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
+        });
+
+        passwordIncorrectLoadingTask.onPassword = function (callback, reason) {
+          if (reason === PasswordResponses.INCORRECT_PASSWORD) {
+            throw new Error('Incorrect password');
+          }
+          // Shouldn't get here.
+          expect(false).toEqual(true);
+        };
+        var result2 = passwordIncorrectLoadingTask.promise.then(function () {
+          done.fail('shall fail since the onPassword callback should throw');
+          return Promise.reject(new Error('loadingTask should be rejected'));
+        }, function (reason) {
+          expect(reason instanceof PasswordException).toEqual(true);
+          expect(reason.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
+          return passwordIncorrectLoadingTask.destroy();
+        });
+
+        Promise.all([result1, result2]).then(function () {
           done();
         }).catch(function (reason) {
           done.fail(reason);
@@ -505,7 +586,7 @@ describe('api', function() {
 
       // PageLabels with bad "Prefix" entries.
       var url3 = new URL('../pdfs/bad-PageLabels.pdf', window.location).href;
-      var loadingTask3 = new PDFJS.getDocument(url3);
+      var loadingTask3 = PDFJS.getDocument(url3);
       var promise3 = loadingTask3.promise.then(function (pdfDoc) {
         return pdfDoc.getPageLabels();
       });
@@ -515,7 +596,7 @@ describe('api', function() {
         expect(pageLabels[0]).toEqual(['i', 'ii', 'iii', '1']);
         expect(pageLabels[1]).toEqual(['Front Page1']);
         expect(pageLabels[2]).toEqual(['1', '2']);
-        expect(pageLabels[3]).toEqual(['X1']);
+        expect(pageLabels[3]).toEqual(['X3']);
 
         loadingTask0.destroy();
         loadingTask1.destroy();
@@ -768,6 +849,9 @@ describe('api', function() {
     });
     it('gets ref', function () {
       expect(page.ref).toEqual({ num: 15, gen: 0 });
+    });
+    it('gets userUnit', function () {
+      expect(page.userUnit).toEqual(1.0);
     });
     it('gets view', function () {
       expect(page.view).toEqual([0, 0, 595.28, 841.89]);
@@ -1086,3 +1170,4 @@ describe('api', function() {
     });
   });
 });
+}));

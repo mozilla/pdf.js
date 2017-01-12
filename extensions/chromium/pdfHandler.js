@@ -54,7 +54,7 @@ function isPdfDownloadable(details) {
  * @return {undefined|{name: string, value: string}} The header, if found.
  */
 function getHeaderFromHeaders(headers, headerName) {
-  for (var i=0; i<headers.length; ++i) {
+  for (var i = 0; i < headers.length; ++i) {
     var header = headers[i];
     if (header.name.toLowerCase() === headerName) {
       return header;
@@ -72,7 +72,7 @@ function getHeaderFromHeaders(headers, headerName) {
 function isPdfFile(details) {
   var header = getHeaderFromHeaders(details.responseHeaders, 'content-type');
   if (header) {
-    var headerValue = header.value.toLowerCase().split(';',1)[0].trim();
+    var headerValue = header.value.toLowerCase().split(';', 1)[0].trim();
     if (headerValue === 'application/pdf') {
       return true;
     }
@@ -143,9 +143,8 @@ chrome.webRequest.onHeadersReceived.addListener(
         url: viewerUrl
       });
       return { cancel: true };
-    } else {
-      console.warn('Child frames are not supported in ancient Chrome builds!');
     }
+    console.warn('Child frames are not supported in ancient Chrome builds!');
   },
   {
     urls: [
@@ -153,7 +152,7 @@ chrome.webRequest.onHeadersReceived.addListener(
     ],
     types: ['main_frame', 'sub_frame']
   },
-  ['blocking','responseHeaders']);
+  ['blocking', 'responseHeaders']);
 
 chrome.webRequest.onBeforeRequest.addListener(
   function onBeforeRequestForFTP(details) {

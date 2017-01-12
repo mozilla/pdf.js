@@ -3,13 +3,15 @@
   "version": "0.8.0",
   "devDependencies": {
     "escodegen": "^1.8.0",
+    "eslint": "^3.11.1",
     "esprima": "^2.7.2",
     "gulp": "^3.9.1",
     "gulp-util": "^3.0.7",
     "gulp-zip": "^3.2.0",
-    "jasmine-core": "^2.4.1",
+    "jasmine": "^2.5.2",
+    "jasmine-core": "^2.5.2",
     "jsdoc": "^3.3.0-alpha9",
-    "jshint": "~2.8.0",
+    "merge-stream": "^1.0.1",
     "mkdirp": "^0.5.1",
     "node-ensure": "^0.0.0",
     "requirejs": "^2.1.22",
@@ -23,7 +25,7 @@
     "yargs": "^3.14.0"
   },
   "scripts": {
-    "test": "gulp lint"
+    "test": "gulp lint unittestcli"
   },
   "repository": {
     "type": "git",

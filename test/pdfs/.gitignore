@@ -38,8 +38,12 @@
 !issue7446.pdf
 !issue7492.pdf
 !issue7544.pdf
+!issue7580.pdf
 !issue7598.pdf
 !issue7665.pdf
+!issue7835.pdf
+!issue7855.pdf
+!issue7872.pdf
 !bad-PageLabels.pdf
 !filled-background.pdf
 !ArabicCIDTrueType.pdf
@@ -70,6 +74,7 @@
 !sizes.pdf
 !javauninstall-7r.pdf
 !multiple-filters-length-zero.pdf
+!non-embedded-NuptialScript.pdf
 !issue3205r.pdf
 !issue3207r.pdf
 !issue3263r.pdf
@@ -261,5 +266,7 @@
 !annotation-fileattachment.pdf
 !annotation-text-widget.pdf
 !annotation-choice-widget.pdf
+!annotation-button-widget.pdf
 !zero_descent.pdf
 !operator-in-TJ-array.pdf
+!issue7878.pdf

@@ -1,0 +1,10 @@
+{
+  "extends": [
+    ../.eslintrc
+  ],
+
+  "env": {
+    "node": true,
+    "shelljs": true,
+  },
+}

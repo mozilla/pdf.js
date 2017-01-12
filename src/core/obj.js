@@ -589,12 +589,17 @@ var Catalog = (function CatalogClosure() {
   };
 
   /**
-   * Helper function used to parse the contents of destination dictionaries.
-   * @param {Dict} destDict - The dictionary containing the destination.
-   * @param {Object} resultObj - The object where the parsed destination
+   * @typedef ParseDestDictionaryParameters
+   * @property {Dict} destDict - The dictionary containing the destination.
+   * @property {Object} resultObj - The object where the parsed destination
    *   properties will be placed.
-   * @param {string} docBaseUrl - (optional) The document base URL that is used
-   *   when attempting to recover valid absolute URLs from relative ones.
+   * @property {string} docBaseUrl - (optional) The document base URL that is
+   *   used when attempting to recover valid absolute URLs from relative ones.
+   */
+
+  /**
+   * Helper function used to parse the contents of destination dictionaries.
+   * @param {ParseDestDictionaryParameters} params
    */
   Catalog.parseDestDictionary = function Catalog_parseDestDictionary(params) {
     // Lets URLs beginning with 'www.' default to using the 'http://' protocol.
@@ -753,13 +758,13 @@ var Catalog = (function CatalogClosure() {
 })();
 
 var XRef = (function XRefClosure() {
-  function XRef(stream, password) {
+  function XRef(stream, pdfManager) {
     this.stream = stream;
+    this.pdfManager = pdfManager;
     this.entries = [];
     this.xrefstms = Object.create(null);
     // prepare the XRef cache
     this.cache = [];
-    this.password = password;
     this.stats = {
       streamTypes: [],
       fontTypes: []
@@ -784,7 +789,7 @@ var XRef = (function XRefClosure() {
       trailerDict.assignXref(this);
       this.trailer = trailerDict;
       var encrypt = trailerDict.get('Encrypt');
-      if (encrypt) {
+      if (isDict(encrypt)) {
         var ids = trailerDict.get('ID');
         var fileId = (ids && ids.length) ? ids[0] : '';
         // The 'Encrypt' dictionary itself should not be encrypted, and by
@@ -793,7 +798,7 @@ var XRef = (function XRefClosure() {
         // objects (fixes issue7665.pdf).
         encrypt.suppressEncryption = true;
         this.encrypt = new CipherTransformFactory(encrypt, fileId,
-                                                  this.password);
+                                                  this.pdfManager.password);
       }
 
       // get the root dictionary (catalog) object
@@ -1580,9 +1585,8 @@ var FileSpec = (function FileSpecClosure() {
       return dict.get('Mac');
     } else if (dict.has('DOS')) {
       return dict.get('DOS');
-    } else {
-      return null;
     }
+    return null;
   }
 
   FileSpec.prototype = {

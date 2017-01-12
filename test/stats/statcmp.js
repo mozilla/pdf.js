@@ -1,5 +1,3 @@
-/*jslint node: true */
-
 'use strict';
 
 var fs = require('fs');
@@ -159,7 +157,7 @@ function stat(baseline, current) {
   }
 
   // add horizontal line
-  var hline = width.map(function(w) { return new Array(w+1).join('-'); });
+  var hline = width.map(function(w) { return new Array(w + 1).join('-'); });
   rows.splice(1, 0, hline);
 
   // print output
@@ -179,14 +177,14 @@ function main() {
   try {
     var baselineFile = fs.readFileSync(options.baseline).toString();
     baseline = flatten(JSON.parse(baselineFile));
-  } catch(e) {
+  } catch (e) {
     console.log('Error reading file "' + options.baseline + '": ' + e);
     process.exit(0);
   }
   try {
     var currentFile = fs.readFileSync(options.current).toString();
     current = flatten(JSON.parse(currentFile));
-  } catch(e) {
+  } catch (e) {
     console.log('Error reading file "' + options.current + '": ' + e);
     process.exit(0);
   }

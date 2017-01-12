@@ -178,12 +178,11 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
           size_kb: (+kb.toPrecision(3)).toLocaleString(),
           size_b: fileSize.toLocaleString()
         }, '{{size_kb}} KB ({{size_b}} bytes)');
-      } else {
-        return mozL10n.get('document_properties_mb', {
-          size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
-          size_b: fileSize.toLocaleString()
-        }, '{{size_mb}} MB ({{size_b}} bytes)');
       }
+      return mozL10n.get('document_properties_mb', {
+        size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
+        size_b: fileSize.toLocaleString()
+      }, '{{size_mb}} MB ({{size_b}} bytes)');
     },
 
     /**
@@ -200,22 +199,22 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
       }
 
       // Remove the D: prefix if it is available.
-      if (dateToParse.substring(0,2) === 'D:') {
+      if (dateToParse.substring(0, 2) === 'D:') {
         dateToParse = dateToParse.substring(2);
       }
 
       // Get all elements from the PDF date string.
       // JavaScript's Date object expects the month to be between
       // 0 and 11 instead of 1 and 12, so we're correcting for this.
-      var year = parseInt(dateToParse.substring(0,4), 10);
-      var month = parseInt(dateToParse.substring(4,6), 10) - 1;
-      var day = parseInt(dateToParse.substring(6,8), 10);
-      var hours = parseInt(dateToParse.substring(8,10), 10);
-      var minutes = parseInt(dateToParse.substring(10,12), 10);
-      var seconds = parseInt(dateToParse.substring(12,14), 10);
-      var utRel = dateToParse.substring(14,15);
-      var offsetHours = parseInt(dateToParse.substring(15,17), 10);
-      var offsetMinutes = parseInt(dateToParse.substring(18,20), 10);
+      var year = parseInt(dateToParse.substring(0, 4), 10);
+      var month = parseInt(dateToParse.substring(4, 6), 10) - 1;
+      var day = parseInt(dateToParse.substring(6, 8), 10);
+      var hours = parseInt(dateToParse.substring(8, 10), 10);
+      var minutes = parseInt(dateToParse.substring(10, 12), 10);
+      var seconds = parseInt(dateToParse.substring(12, 14), 10);
+      var utRel = dateToParse.substring(14, 15);
+      var offsetHours = parseInt(dateToParse.substring(15, 17), 10);
+      var offsetMinutes = parseInt(dateToParse.substring(18, 20), 10);
 
       // As per spec, utRel = 'Z' means equal to universal time.
       // The other cases ('-' and '+') have to be handled here.

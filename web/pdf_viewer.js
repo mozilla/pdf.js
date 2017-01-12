@@ -45,6 +45,7 @@ var MAX_AUTO_SCALE = uiUtils.MAX_AUTO_SCALE;
 var CSS_UNITS = uiUtils.CSS_UNITS;
 var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
 var DEFAULT_SCALE_VALUE = uiUtils.DEFAULT_SCALE_VALUE;
+var RendererType = uiUtils.RendererType;
 var scrollIntoView = uiUtils.scrollIntoView;
 var watchScroll = uiUtils.watchScroll;
 var getVisibleElements = uiUtils.getVisibleElements;
@@ -80,6 +81,7 @@ var DEFAULT_CACHE_SIZE = 10;
  *   text selection behaviour. The default is `false`.
  * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
  *   interactive form elements. The default is `false`.
+ * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  */
 
 /**
@@ -133,6 +135,7 @@ var PDFViewer = (function pdfViewer() {
     this.removePageBorders = options.removePageBorders || false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.renderer = options.renderer || RendererType.CANVAS;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -393,6 +396,7 @@ var PDFViewer = (function pdfViewer() {
             annotationLayerFactory: this,
             enhanceTextSelection: this.enhanceTextSelection,
             renderInteractiveForms: this.renderInteractiveForms,
+            renderer: this.renderer,
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -829,14 +833,13 @@ var PDFViewer = (function pdfViewer() {
     _getVisiblePages: function () {
       if (!this.isInPresentationMode) {
         return getVisibleElements(this.container, this._pages, true);
-      } else {
-        // The algorithm in getVisibleElements doesn't work in all browsers and
-        // configurations when presentation mode is active.
-        var visible = [];
-        var currentPage = this._pages[this._currentPageNumber - 1];
-        visible.push({ id: currentPage.id, view: currentPage });
-        return { first: currentPage, last: currentPage, views: visible };
       }
+      // The algorithm in getVisibleElements doesn't work in all browsers and
+      // configurations when presentation mode is active.
+      var visible = [];
+      var currentPage = this._pages[this._currentPageNumber - 1];
+      visible.push({ id: currentPage.id, view: currentPage });
+      return { first: currentPage, last: currentPage, views: visible };
     },
 
     cleanup: function () {

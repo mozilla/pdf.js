@@ -1,5 +1,3 @@
-/* jshint node:true */
-
 'use strict';
 
 var esprima = require('esprima');
@@ -68,7 +66,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
                                jsonPath.substring(ROOT_PREFIX.length));
         }
         var jsonContent = fs.readFileSync(jsonPath).toString();
-        var parsedJSON = esprima.parse('(' +jsonContent + ')');
+        var parsedJSON = esprima.parse('(' + jsonContent + ')');
         parsedJSON.body[0].expression.loc = loc;
         return parsedJSON.body[0].expression;
     }
@@ -171,20 +169,36 @@ function postprocessNode(ctx, node) {
     case 'BlockStatement':
       var subExpressionIndex = 0;
       while (subExpressionIndex < node.body.length) {
-        if (node.body[subExpressionIndex].type === 'EmptyStatement') {
-          // Removing empty statements from the blocks.
-          node.body.splice(subExpressionIndex, 1);
-          continue;
-        }
-        if (node.body[subExpressionIndex].type === 'BlockStatement') {
-          // Block statements inside a block are moved to the parent one.
-          var subChildren = node.body[subExpressionIndex].body;
-          Array.prototype.splice.apply(node.body,
-            [subExpressionIndex, 1].concat(subChildren));
-          subExpressionIndex += subChildren.length;
-          continue;
+        switch (node.body[subExpressionIndex].type) {
+          case 'EmptyStatement':
+            // Removing empty statements from the blocks.
+            node.body.splice(subExpressionIndex, 1);
+            continue;
+          case 'BlockStatement':
+            // Block statements inside a block are moved to the parent one.
+            var subChildren = node.body[subExpressionIndex].body;
+            Array.prototype.splice.apply(node.body,
+              [subExpressionIndex, 1].concat(subChildren));
+            subExpressionIndex += Math.max(subChildren.length - 1, 0);
+            continue;
+          case 'ReturnStatement':
+          case 'ThrowStatement':
+            // Removing dead code after return or throw.
+            node.body.splice(subExpressionIndex + 1,
+                             node.body.length - subExpressionIndex - 1);
+            break;
         }
         subExpressionIndex++;
+      }
+      break;
+    case 'FunctionDeclaration':
+    case 'FunctionExpression':
+      var block = node.body;
+      if (block.body.length > 0 &&
+          block.body[block.body.length - 1].type === 'ReturnStatement' &&
+          !block.body[block.body.length - 1].argument) {
+        // Function body ends with return without arg -- removing it.
+        block.body.pop();
       }
       break;
   }
@@ -197,8 +211,12 @@ function fixComments(ctx, node) {
   }
   // Fixes double comments in the escodegen output.
   delete node.trailingComments;
-  // Removes jshint and other service comments.
+  // Removes ESLint and other service comments.
   if (node.leadingComments) {
+    var CopyrightRegExp = /\bcopyright\b/i;
+    var BlockCommentRegExp = /^\s*(globals|eslint|falls through|umdutils)\b/;
+    var LineCommentRegExp = /^\s*eslint\b/;
+
     var i = 0;
     while (i < node.leadingComments.length) {
       var type = node.leadingComments[i].type;
@@ -206,12 +224,12 @@ function fixComments(ctx, node) {
 
       if (ctx.saveComments === 'copyright') {
         // Remove all comments, except Copyright notices and License headers.
-        if (!(type === 'Block' && /\bcopyright\b/i.test(value))) {
+        if (!(type === 'Block' && CopyrightRegExp.test(value))) {
           node.leadingComments.splice(i, 1);
           continue;
         }
-      } else if (type === 'Block' &&
-                 /^\s*(globals|jshint|falls through|umdutils)\b/.test(value)) {
+      } else if ((type === 'Block' && BlockCommentRegExp.test(value)) ||
+                 (type === 'Line' && LineCommentRegExp.test(value))) {
         node.leadingComments.splice(i, 1);
         continue;
       }

@@ -1,7 +1,37 @@
-/* globals describe, it, expect, StringStream, Type1Parser,
-           SEAC_ANALYSIS_ENABLED */
-
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 'use strict';
+
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd) {
+    define('pdfjs-test/unit/type1_parser_spec', ['exports',
+           'pdfjs/core/fonts', 'pdfjs/core/stream', 'pdfjs/core/type1_parser'],
+           factory);
+  } else if (typeof exports !== 'undefined') {
+    factory(exports, require('../../src/core/fonts.js'),
+            require('../../src/core/stream.js'),
+            require('../../src/core/type1_parser.js'));
+  } else {
+    factory((root.pdfjsTestUnitType1ParserSpec = {}), root.pdfjsCoreFonts,
+             root.pdfjsCoreStream, root.pdfjsCoreType1Parser);
+  }
+}(this, function (exports, coreFonts, coreStream, coreType1Parser) {
+
+var SEAC_ANALYSIS_ENABLED = coreFonts.SEAC_ANALYSIS_ENABLED;
+var StringStream = coreStream.StringStream;
+var Type1Parser = coreType1Parser.Type1Parser;
 
 describe('Type1Parser', function() {
   it('splits tokens', function() {
@@ -70,10 +100,10 @@ describe('Type1Parser', function() {
     var stream = new StringStream(
       '/ExpansionFactor  99\n' +
       '/Subrs 1 array\n' +
-      'dup 0 1 RD x noaccess put\n'+
+      'dup 0 1 RD x noaccess put\n' +
       'end\n' +
       '/CharStrings 46 dict dup begin\n' +
-      '/.notdef 1 RD x ND' + '\n' +
+      '/.notdef 1 RD x ND\n' +
       'end');
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
     var program = parser.extractFontProgram();
@@ -102,3 +132,4 @@ describe('Type1Parser', function() {
     expect(props.builtInEncoding[33]).toEqual('arrowright');
   });
 });
+}));

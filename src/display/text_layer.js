@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals WeakMap */
 
 'use strict';
 
@@ -374,7 +373,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         i++;
       }
       var j = horizon.length - 1;
-      while(j >= 0 && horizon[j].start >= boundary.y2) {
+      while (j >= 0 && horizon[j].start >= boundary.y2) {
         j--;
       }
 

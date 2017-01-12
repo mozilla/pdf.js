@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*jslint node: true */
 
 'use strict';
 
@@ -81,7 +80,7 @@ function parseOptions() {
       'test_manifest.json'))
     .check(describeCheck(function (argv) {
       return !argv.browser || !argv.browserManifestFile;
-    }, '--browser and --browserManifestFile must not be specified at the ' +'' +
+    }, '--browser and --browserManifestFile must not be specified at the ' +
       'same time.'));
   var result = yargs.argv;
   if (result.help) {

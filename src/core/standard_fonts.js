@@ -40,6 +40,10 @@
     t['ArialBlack-Bold'] = 'Helvetica-Bold';
     t['ArialBlack-BoldItalic'] = 'Helvetica-BoldOblique';
     t['ArialBlack-Italic'] = 'Helvetica-Oblique';
+    t['Arial-Black'] = 'Helvetica';
+    t['Arial-Black-Bold'] = 'Helvetica-Bold';
+    t['Arial-Black-BoldItalic'] = 'Helvetica-BoldOblique';
+    t['Arial-Black-Italic'] = 'Helvetica-Oblique';
     t['Arial'] = 'Helvetica';
     t['Arial-Bold'] = 'Helvetica-Bold';
     t['Arial-BoldItalic'] = 'Helvetica-BoldOblique';
@@ -118,6 +122,7 @@
     t['MS-PMincho-Bold'] = 'MS PMincho-Bold';
     t['MS-PMincho-BoldItalic'] = 'MS PMincho-BoldItalic';
     t['MS-PMincho-Italic'] = 'MS PMincho-Italic';
+    t['NuptialScript'] = 'Times-Italic';
     t['Wingdings'] = 'ZapfDingbats';
   });
 
@@ -219,6 +224,7 @@
     t['New York'] = true;
     t['Nimbus Roman'] = true;
     t['NPS Rawlinson Roadway'] = true;
+    t['NuptialScript'] = true;
     t['Palatino'] = true;
     t['Perpetua'] = true;
     t['Plantin'] = true;

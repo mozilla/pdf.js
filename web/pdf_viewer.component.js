@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* jshint globalstrict: false */
+/* eslint strict: ["error", "function"] */
 /* umdutils ignore */
 
 (function (root, factory) {

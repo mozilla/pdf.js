@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* globals pdfjsFilePath, pdfjsVersion, pdfjsBuild, requirejs, pdfjsLibs,
-           WeakMap */
+           __webpack_require__ */
 
 'use strict';
 
@@ -748,6 +748,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       return this.pageInfo.ref;
     },
     /**
+     * @return {number} The default size of units in 1/72nds of an inch.
+     */
+    get userUnit() {
+      return this.pageInfo.userUnit;
+    },
+    /**
      * @return {Array} An array of the visible portion of the PDF page in the
      * user space units - [x1, y1, x2, y2].
      */
@@ -1308,7 +1314,7 @@ var PDFWorker = (function PDFWorkerClosure() {
             }
             try {
               sendTest();
-            } catch (e)  {
+            } catch (e) {
               // We need fallback to a faked worker.
               this._setupFakeWorker();
             }
@@ -1413,6 +1419,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     this.destroyed = false;
     this.destroyCapability = null;
+    this._passwordCapability = null;
 
     this.pageCache = [];
     this.pagePromises = [];
@@ -1428,6 +1435,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
       this.destroyed = true;
       this.destroyCapability = createPromiseCapability();
+
+      if (this._passwordCapability) {
+        this._passwordCapability.reject(
+          new Error('Worker was destroyed during onPassword callback'));
+      }
 
       var waitOn = [];
       // We need to wait for all renderings to be completed, e.g.
@@ -1458,13 +1470,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
       return this.destroyCapability.promise;
     },
 
-    setupMessageHandler:
-      function WorkerTransport_setupMessageHandler() {
+    setupMessageHandler: function WorkerTransport_setupMessageHandler() {
       var messageHandler = this.messageHandler;
-
-      function updatePassword(password) {
-        messageHandler.send('UpdatePassword', password);
-      }
+      var loadingTask = this.loadingTask;
 
       var pdfDataRangeTransport = this.pdfDataRangeTransport;
       if (pdfDataRangeTransport) {
@@ -1502,24 +1510,27 @@ var WorkerTransport = (function WorkerTransportClosure() {
         loadingTask._capability.resolve(pdfDocument);
       }, this);
 
-      messageHandler.on('NeedPassword',
-                        function transportNeedPassword(exception) {
-        var loadingTask = this.loadingTask;
+      messageHandler.on('PasswordRequest',
+                        function transportPasswordRequest(exception) {
+        this._passwordCapability = createPromiseCapability();
+
         if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.NEED_PASSWORD);
+          var updatePassword = function (password) {
+            this._passwordCapability.resolve({
+              password: password,
+            });
+          }.bind(this);
+
+          loadingTask.onPassword(updatePassword, exception.code);
+        } else {
+          this._passwordCapability.reject(
+            new PasswordException(exception.message, exception.code));
         }
-        loadingTask._capability.reject(
-          new PasswordException(exception.message, exception.code));
+        return this._passwordCapability.promise;
       }, this);
 
-      messageHandler.on('IncorrectPassword',
-                        function transportIncorrectPassword(exception) {
-        var loadingTask = this.loadingTask;
-        if (loadingTask.onPassword) {
-          return loadingTask.onPassword(updatePassword,
-                                        PasswordResponses.INCORRECT_PASSWORD);
-        }
+      messageHandler.on('PasswordException',
+                        function transportPasswordException(exception) {
         loadingTask._capability.reject(
           new PasswordException(exception.message, exception.code));
       }, this);
@@ -1934,9 +1945,8 @@ var PDFObjects = (function PDFObjectsClosure() {
 
       if (!objs[objId]) {
         return false;
-      } else {
-        return objs[objId].resolved;
       }
+      return objs[objId].resolved;
     },
 
     hasData: function PDFObjects_hasData(objId) {
@@ -1950,9 +1960,8 @@ var PDFObjects = (function PDFObjectsClosure() {
       var objs = this.objs;
       if (!objs[objId] || !objs[objId].resolved) {
         return null;
-      } else {
-        return objs[objId].data;
       }
+      return objs[objId].data;
     },
 
     clear: function PDFObjects_clear() {

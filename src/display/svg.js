@@ -460,7 +460,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
     convertOpList: function SVGGraphics_convertOpList(operatorList) {
       var argsArray = operatorList.argsArray;
       var fnArray = operatorList.fnArray;
-      var fnArrayLen  = fnArray.length;
+      var fnArrayLen = fnArray.length;
       var REVOPS = [];
       var opList = [];
 
@@ -841,7 +841,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
             var height = args[j++];
             var xw = x + width;
             var yh = y + height;
-            d.push('M', pf(x), pf(y), 'L', pf(xw) , pf(y), 'L', pf(xw), pf(yh),
+            d.push('M', pf(x), pf(y), 'L', pf(xw), pf(y), 'L', pf(xw), pf(yh),
                    'L', pf(x), pf(yh), 'Z');
             break;
           case OPS.moveTo:
@@ -852,7 +852,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
           case OPS.lineTo:
             x = args[j++];
             y = args[j++];
-            d.push('L', pf(x) , pf(y));
+            d.push('L', pf(x), pf(y));
             break;
           case OPS.curveTo:
             x = args[j + 4];
@@ -1147,6 +1147,7 @@ var SVGGraphics = (function SVGGraphicsClosure() {
       svg.setAttributeNS(null, 'version', '1.1');
       svg.setAttributeNS(null, 'width', viewport.width + 'px');
       svg.setAttributeNS(null, 'height', viewport.height + 'px');
+      svg.setAttributeNS(null, 'preserveAspectRatio', 'none');
       svg.setAttributeNS(null, 'viewBox', '0 0 ' + viewport.width +
                                           ' ' + viewport.height);
 

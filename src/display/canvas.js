@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals ImageData */
 
 'use strict';
 
@@ -654,7 +653,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
     if (sourceCtx.setLineDash !== undefined) {
       destCtx.setLineDash(sourceCtx.getLineDash());
-      destCtx.lineDashOffset =  sourceCtx.lineDashOffset;
+      destCtx.lineDashOffset = sourceCtx.lineDashOffset;
     }
   }
 
@@ -1359,9 +1358,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var name = fontObj.loadedName || 'sans-serif';
-      var bold = fontObj.black ? (fontObj.bold ? '900' : 'bold') :
-                                 (fontObj.bold ? 'bold' : 'normal');
-
+      var bold = fontObj.black ? '900' : (fontObj.bold ? 'bold' : 'normal');
       var italic = fontObj.italic ? 'italic' : 'normal';
       var typeface = '"' + name + '", ' + fontObj.fallbackName;
 
@@ -1782,13 +1779,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
       this.baseTransformStack.push(this.baseTransform);
 
-      if (isArray(matrix) && 6 === matrix.length) {
+      if (isArray(matrix) && matrix.length === 6) {
         this.transform.apply(this, matrix);
       }
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
-      if (isArray(bbox) && 4 === bbox.length) {
+      if (isArray(bbox) && bbox.length === 4) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
         this.ctx.rect(bbox[0], bbox[1], width, height);
@@ -1864,7 +1861,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var cacheId = 'groupAt' + this.groupLevel;
       if (group.smask) {
         // Using two cache entries is case if masks are used one after another.
-        cacheId +=  '_smask_' + ((this.smaskCounter++) % 2);
+        cacheId += '_smask_' + ((this.smaskCounter++) % 2);
       }
       var scratchCanvas = this.cachedCanvases.getCanvas(
         cacheId, drawnWidth, drawnHeight, true);
@@ -1949,7 +1946,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
                                                              matrix) {
       this.save();
 
-      if (isArray(rect) && 4 === rect.length) {
+      if (isArray(rect) && rect.length === 4) {
         var width = rect[2] - rect[0];
         var height = rect[3] - rect[1];
         this.ctx.rect(rect[0], rect[1], width, height);

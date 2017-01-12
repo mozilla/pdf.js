@@ -1,4 +1,3 @@
-
 /* Copyright 2014 Opera Software ASA
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,12 +31,12 @@
 
 var Uint32ArrayView = sharedUtil.Uint32ArrayView;
 
-var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
+var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
   // Workaround for missing math precision in JS.
   var MASK_HIGH = 0xffff0000;
   var MASK_LOW = 0xffff;
 
-  function MurmurHash3_64 (seed) {
+  function MurmurHash3_64(seed) {
     var SEED = 0xc3d2e1f0;
     this.h1 = seed ? seed & 0xffffffff : SEED;
     this.h2 = seed ? seed & 0xffffffff : SEED;
@@ -48,6 +47,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
       !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
     // old webkits have issues with non-aligned arrays
     try {
+      // eslint-disable-next-line no-new
       new Uint32Array(new Uint8Array(5).buffer, 0, 1);
     } catch (e) {
       alwaysUseUint32ArrayView = true;
@@ -145,7 +145,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure (seed) {
       return this;
     },
 
-    hexdigest: function MurmurHash3_64_hexdigest () {
+    hexdigest: function MurmurHash3_64_hexdigest() {
       var h1 = this.h1;
       var h2 = this.h2;
 

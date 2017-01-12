@@ -1,6 +1,3 @@
-/* jshint node:true */
-/* globals cat, echo, exit, ls */
-
 'use strict';
 
 function checkIfCrlfIsPresent(files) {
@@ -24,4 +21,3 @@ function checkIfCrlfIsPresent(files) {
 }
 
 exports.checkIfCrlfIsPresent = checkIfCrlfIsPresent;
-

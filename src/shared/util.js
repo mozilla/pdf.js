@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals URL, global */
+/* globals global */
 
 'use strict';
 
@@ -557,7 +557,7 @@ function arraysToBytes(arr) {
   }
   var resultLength = 0;
   var i, ii = arr.length;
-  var item, itemLength ;
+  var item, itemLength;
   for (i = 0; i < ii; i++) {
     item = arr[i];
     itemLength = arrayByteLength(item);
@@ -620,8 +620,7 @@ function isLittleEndian() {
 // Checks if it's possible to eval JS expressions.
 function isEvalSupported() {
   try {
-    /* jshint evil: true */
-    new Function('');
+    new Function(''); // eslint-disable-line no-new, no-new-func
     return true;
   } catch (e) {
     return false;
@@ -1756,6 +1755,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 (function checkURLConstructor(scope) {
+  /* eslint-disable yoda */
+
   // feature detect for URL constructor
   var hasWorkingUrl = false;
   try {
@@ -1766,7 +1767,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       u.pathname = 'c%20d';
       hasWorkingUrl = u.href === 'http://a/c%20d';
     }
-  } catch(e) { }
+  } catch (e) { }
 
   if (hasWorkingUrl) {
     return;
@@ -1925,7 +1926,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'relative or authority':
-          if ('/' === c && '/' === input[cursor+1]) {
+          if ('/' === c && '/' === input[cursor + 1]) {
             state = 'authority ignore slashes';
           } else {
             err('Expected /, got: ' + c);
@@ -1970,8 +1971,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             this._password = base._password;
             state = 'fragment';
           } else {
-            var nextC = input[cursor+1];
-            var nextNextC = input[cursor+2];
+            var nextC = input[cursor + 1];
+            var nextNextC = input[cursor + 2];
             if ('file' !== this._scheme || !ALPHA.test(c) ||
                 (nextC !== ':' && nextC !== '|') ||
                 (EOF !== nextNextC && '/' !== nextNextC && '\\' !== nextNextC &&
@@ -2166,7 +2167,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
               err('\\ not allowed in relative path.');
             }
             var tmp;
-            if (tmp = relativePathDotMapping[buffer.toLowerCase()]) {
+            if ((tmp = relativePathDotMapping[buffer.toLowerCase()])) {
               buffer = tmp;
             }
             if ('..' === buffer) {
@@ -2392,6 +2393,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   }
 
   scope.URL = JURL;
+
+  /* eslint-enable yoda */
 })(globalScope);
 }
 
