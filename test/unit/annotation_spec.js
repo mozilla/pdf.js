@@ -16,7 +16,7 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/annotation_layer_spec', ['exports',
+    define('pdfjs-test/unit/annotation_spec', ['exports',
       'pdfjs/core/primitives', 'pdfjs/core/annotation', 'pdfjs/core/stream',
       'pdfjs/core/parser', 'pdfjs/shared/util', 'pdfjs/display/global'],
       factory);
@@ -27,7 +27,7 @@
       require('../../src/shared/util.js'),
       require('../../src/display/global.js'));
   } else {
-    factory((root.pdfjsTestUnitAnnotationLayerSpec = {}),
+    factory((root.pdfjsTestUnitAnnotationSpec = {}),
       root.pdfjsCorePrimitives, root.pdfjsCoreAnnotation, root.pdfjsCoreStream,
       root.pdfjsCoreParser, root.pdfjsSharedUtil, root.pdfjsDisplayGlobal);
   }
@@ -52,7 +52,7 @@ var AnnotationFieldFlag = sharedUtil.AnnotationFieldFlag;
 var stringToBytes = sharedUtil.stringToBytes;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 
-describe('Annotation layer', function() {
+describe('annotation', function() {
   function XRefMock(array) {
     this.map = Object.create(null);
     for (var elem in array) {

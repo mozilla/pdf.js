@@ -45,7 +45,7 @@ var pdfjsLibs;
 function initializePDFJS(callback) {
   require.config({paths: {'pdfjs': '../../src', 'pdfjs-web': '../../web',
                  'pdfjs-test': '..'}});
-  require(['pdfjs/display/global', 'pdfjs-test/unit/annotation_layer_spec',
+  require(['pdfjs/display/global', 'pdfjs-test/unit/annotation_spec',
            'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/bidi_spec',
            'pdfjs-test/unit/cff_parser_spec', 'pdfjs-test/unit/cmap_spec',
            'pdfjs-test/unit/crypto_spec', 'pdfjs-test/unit/document_spec',
@@ -57,7 +57,7 @@ function initializePDFJS(callback) {
            'pdfjs-test/unit/type1_parser_spec',
            'pdfjs-test/unit/ui_utils_spec', 'pdfjs-test/unit/unicode_spec',
            'pdfjs-test/unit/util_spec'],
-    function (displayGlobal, testUnitAnnotationLayerSpec, testUnitApiSpec,
+    function (displayGlobal, testUnitAnnotationSpec, testUnitApiSpec,
               testUnitBidiSpec, testUnitCFFParserSpec, testUnitCMapSpec,
               testUnitCryptoSpec, testUnitDocumentSpec, testUnitDOMUtilsSpec,
               testUnitEvaluatorSpec, testUnitFontsSpec, testUnitFunctionSpec,
