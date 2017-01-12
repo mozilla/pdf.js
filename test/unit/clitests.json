@@ -1,6 +1,7 @@
 {
   "spec_dir": "test/unit",
   "spec_files": [
+    "bidi_spec.js",
     "cff_parser_spec.js",
     "crypto_spec.js",
     "document_spec.js",

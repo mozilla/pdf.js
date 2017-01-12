@@ -171,7 +171,7 @@
     }
 
     if (startLevel === -1) {
-      if ((strLength / numBidi) < 0.3) {
+      if ((numBidi / strLength) < 0.3) {
         isLTR = true;
         startLevel = 0;
       } else {
