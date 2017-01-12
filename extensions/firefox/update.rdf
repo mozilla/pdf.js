@@ -14,8 +14,8 @@
             <em:targetApplication>
               <RDF:Description>
                 <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
-                <em:minVersion>38.0</em:minVersion>
-                <em:maxVersion>50.0</em:maxVersion>
+                <em:minVersion>45.0</em:minVersion>
+                <em:maxVersion>54.0a1</em:maxVersion>
                 <!-- Use the raw link for updates so we we can use SSL. -->
                 <em:updateLink>https://raw.githubusercontent.com/mozilla/pdf.js/gh-pages/extensions/firefox/pdf.js.xpi</em:updateLink>
               </RDF:Description>
@@ -25,8 +25,8 @@
             <em:targetApplication>
               <RDF:Description>
                 <em:id>{aa3c5121-dab2-40e2-81ca-7ea25febc110}</em:id>
-                <em:minVersion>38.0</em:minVersion>
-                <em:maxVersion>50.0</em:maxVersion>
+                <em:minVersion>45.0</em:minVersion>
+                <em:maxVersion>54.0a1</em:maxVersion>
                 <!-- Use the raw link for updates so we we can use SSL. -->
                 <em:updateLink>https://raw.githubusercontent.com/mozilla/pdf.js/gh-pages/extensions/firefox/pdf.js.xpi</em:updateLink>
               </RDF:Description>
