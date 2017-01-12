@@ -16,23 +16,21 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/annotation_layer_spec', ['exports',
+    define('pdfjs-test/unit/annotation_spec', ['exports',
       'pdfjs/core/primitives', 'pdfjs/core/annotation', 'pdfjs/core/stream',
-      'pdfjs/core/parser', 'pdfjs/shared/util', 'pdfjs/display/global'],
-      factory);
+      'pdfjs/core/parser', 'pdfjs/shared/util'], factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('../../src/core/primitives.js'),
       require('../../src/core/annotation.js'),
       require('../../src/core/stream.js'), require('../../src/core/parser.js'),
-      require('../../src/shared/util.js'),
-      require('../../src/display/global.js'));
+      require('../../src/shared/util.js'));
   } else {
-    factory((root.pdfjsTestUnitAnnotationLayerSpec = {}),
+    factory((root.pdfjsTestUnitAnnotationSpec = {}),
       root.pdfjsCorePrimitives, root.pdfjsCoreAnnotation, root.pdfjsCoreStream,
-      root.pdfjsCoreParser, root.pdfjsSharedUtil, root.pdfjsDisplayGlobal);
+      root.pdfjsCoreParser, root.pdfjsSharedUtil);
   }
 }(this, function (exports, corePrimitives, coreAnnotation, coreStream,
-                  coreParser, sharedUtil, displayGlobal) {
+                  coreParser, sharedUtil) {
 
 var Annotation = coreAnnotation.Annotation;
 var AnnotationBorderStyle = coreAnnotation.AnnotationBorderStyle;
@@ -44,7 +42,6 @@ var Dict = corePrimitives.Dict;
 var Name = corePrimitives.Name;
 var Ref = corePrimitives.Ref;
 var StringStream = coreStream.StringStream;
-var PDFJS = displayGlobal.PDFJS;
 var AnnotationType = sharedUtil.AnnotationType;
 var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
@@ -52,7 +49,7 @@ var AnnotationFieldFlag = sharedUtil.AnnotationFieldFlag;
 var stringToBytes = sharedUtil.stringToBytes;
 var stringToUTF8String = sharedUtil.stringToUTF8String;
 
-describe('Annotation layer', function() {
+describe('annotation', function() {
   function XRefMock(array) {
     this.map = Object.create(null);
     for (var elem in array) {
@@ -1211,33 +1208,56 @@ describe('Annotation layer', function() {
   });
 
   describe('FileAttachmentAnnotation', function() {
-    var loadingTask;
-    var annotations;
-
-    beforeEach(function(done) {
-      var pdfUrl = new URL('../pdfs/annotation-fileattachment.pdf',
-                           window.location).href;
-      loadingTask = PDFJS.getDocument(pdfUrl);
-      loadingTask.promise.then(function(pdfDocument) {
-        return pdfDocument.getPage(1).then(function(pdfPage) {
-          return pdfPage.getAnnotations().then(function (pdfAnnotations) {
-            annotations = pdfAnnotations;
-            done();
-          });
-        });
-      }).catch(function (reason) {
-        done.fail(reason);
-      });
-    });
-
-    afterEach(function() {
-      loadingTask.destroy();
-    });
-
     it('should correctly parse a file attachment', function() {
-      var annotation = annotations[0];
-      expect(annotation.file.filename).toEqual('Test.txt');
-      expect(annotation.file.content).toEqual(stringToBytes('Test attachment'));
+      var fileStream = new StringStream(
+        '<<\n' +
+        '/Type /EmbeddedFile\n' +
+        '/Subtype /text#2Fplain\n' +
+        '>>\n' +
+        'stream\n' +
+        'Test attachment' +
+        'endstream\n'
+      );
+      var lexer = new Lexer(fileStream);
+      var parser = new Parser(lexer, /* allowStreams = */ true);
+
+      var fileStreamRef = new Ref(18, 0);
+      var fileStreamDict = parser.getObj();
+
+      var embeddedFileDict = new Dict();
+      embeddedFileDict.set('F', fileStreamRef);
+
+      var fileSpecRef = new Ref(19, 0);
+      var fileSpecDict = new Dict();
+      fileSpecDict.set('Type', Name.get('Filespec'));
+      fileSpecDict.set('Desc', '');
+      fileSpecDict.set('EF', embeddedFileDict);
+      fileSpecDict.set('UF', 'Test.txt');
+
+      var fileAttachmentRef = new Ref(20, 0);
+      var fileAttachmentDict = new Dict();
+      fileAttachmentDict.set('Type', Name.get('Annot'));
+      fileAttachmentDict.set('Subtype', Name.get('FileAttachment'));
+      fileAttachmentDict.set('FS', fileSpecRef);
+      fileAttachmentDict.set('T', 'Topic');
+      fileAttachmentDict.set('Contents', 'Test.txt');
+
+      var xref = new XRefMock([
+        { ref: fileStreamRef, data: fileStreamDict, },
+        { ref: fileSpecRef, data: fileSpecDict, },
+        { ref: fileAttachmentRef, data: fileAttachmentDict, }
+      ]);
+      embeddedFileDict.assignXref(xref);
+      fileSpecDict.assignXref(xref);
+      fileAttachmentDict.assignXref(xref);
+
+      var annotation = annotationFactory.create(xref, fileAttachmentRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.FILEATTACHMENT);
+
+      expect(data.file.filename).toEqual('Test.txt');
+      expect(data.file.content).toEqual(stringToBytes('Test attachment'));
     });
   });
 
