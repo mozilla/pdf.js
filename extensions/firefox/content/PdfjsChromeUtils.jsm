@@ -94,7 +94,7 @@ var PdfjsChromeUtils = {
       this._mmg.removeMessageListener('PDFJS:Parent:removeEventListener', this);
       this._mmg.removeMessageListener('PDFJS:Parent:updateControlState', this);
 
-      Services.obs.removeObserver(this, 'quit-application', false);
+      Services.obs.removeObserver(this, 'quit-application');
 
       this._mmg = null;
       this._ppmm = null;
