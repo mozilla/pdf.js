@@ -26,6 +26,12 @@ var LinkServiceMock = (function LinkServiceMockClosure() {
   function LinkServiceMock() {}
 
   LinkServiceMock.prototype = {
+    get page() {
+      return 0;
+    },
+
+    set page(value) {},
+
     navigateTo: function (dest) {},
 
     getDestinationHash: function (dest) {
@@ -36,7 +42,13 @@ var LinkServiceMock = (function LinkServiceMockClosure() {
       return '#';
     },
 
-    executeNamedAction: function (action) {}
+    setHash: function (hash) {},
+
+    executeNamedAction: function (action) {},
+
+    onFileAttachmentAnnotation: function (params) {},
+
+    cachePageRef: function (pageNum, pageRef) {},
   };
 
   return LinkServiceMock;
