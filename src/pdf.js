@@ -55,6 +55,8 @@
     exports.AnnotationLayer =
       pdfjsLibs.pdfjsDisplayAnnotationLayer.AnnotationLayer;
     exports.CustomStyle = pdfjsLibs.pdfjsDisplayDOMUtils.CustomStyle;
+    exports.createPromiseCapability =
+      pdfjsLibs.pdfjsSharedUtil.createPromiseCapability;
     exports.PasswordResponses = pdfjsLibs.pdfjsSharedUtil.PasswordResponses;
     exports.InvalidPDFException = pdfjsLibs.pdfjsSharedUtil.InvalidPDFException;
     exports.MissingPDFException = pdfjsLibs.pdfjsSharedUtil.MissingPDFException;

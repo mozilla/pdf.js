@@ -51,15 +51,25 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
     this.container = options.container;
     this.eventBus = options.eventBus;
     this.downloadManager = options.downloadManager;
+
+    this._renderedCapability = pdfjsLib.createPromiseCapability();
+    this.eventBus.on('fileattachmentannotation',
+      this._appendAttachment.bind(this));
   }
 
   PDFAttachmentViewer.prototype = {
-    reset: function PDFAttachmentViewer_reset() {
+    reset: function PDFAttachmentViewer_reset(keepRenderedCapability) {
       this.attachments = null;
 
       var container = this.container;
       while (container.firstChild) {
         container.removeChild(container.firstChild);
+      }
+
+      if (!keepRenderedCapability) {
+        // NOTE: The *only* situation in which the `_renderedCapability` should
+        //       not be replaced is when appending file attachment annotations.
+        this._renderedCapability = pdfjsLib.createPromiseCapability();
       }
     },
 
@@ -70,8 +80,10 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
         function PDFAttachmentViewer_dispatchEvent(attachmentsCount) {
       this.eventBus.dispatch('attachmentsloaded', {
         source: this,
-        attachmentsCount: attachmentsCount
+        attachmentsCount: attachmentsCount,
       });
+
+      this._renderedCapability.resolve();
     },
 
     /**
@@ -89,11 +101,13 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
      * @param {PDFAttachmentViewerRenderParameters} params
      */
     render: function PDFAttachmentViewer_render(params) {
-      var attachments = (params && params.attachments) || null;
+      params = params || {};
+      var attachments = params.attachments || null;
       var attachmentsCount = 0;
 
       if (this.attachments) {
-        this.reset();
+        var keepRenderedCapability = params.keepRenderedCapability === true;
+        this.reset(keepRenderedCapability);
       }
       this.attachments = attachments;
 
@@ -120,7 +134,35 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
       }
 
       this._dispatchEvent(attachmentsCount);
-    }
+    },
+
+    /**
+     * Used to append FileAttachment annotations to the sidebar.
+     * @private
+     */
+    _appendAttachment: function PDFAttachmentViewer_appendAttachment(item) {
+      this._renderedCapability.promise.then(function (id, filename, content) {
+        var attachments = this.attachments;
+
+        if (!attachments) {
+          attachments = Object.create(null);
+        } else {
+          for (var name in attachments) {
+            if (id === name) {
+              return; // Ignore the new attachment if it already exists.
+            }
+          }
+        }
+        attachments[id] = {
+          filename: filename,
+          content: content,
+        };
+        this.render({
+          attachments: attachments,
+          keepRenderedCapability: true,
+        });
+      }.bind(this, item.id, item.filename, item.content));
+    },
   };
 
   return PDFAttachmentViewer;
