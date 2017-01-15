@@ -18,15 +18,20 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/pdf_sidebar', ['exports',
-      'pdfjs-web/pdf_rendering_queue'], factory);
+      'pdfjs-web/pdf_rendering_queue', 'pdfjs-web/ui_utils'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdf_rendering_queue.js'));
+    factory(exports, require('./pdf_rendering_queue.js'),
+      require('./ui_utils.js'));
   } else {
-    factory((root.pdfjsWebPDFSidebar = {}), root.pdfjsWebPDFRenderingQueue);
+    factory((root.pdfjsWebPDFSidebar = {}), root.pdfjsWebPDFRenderingQueue,
+      root.pdfjsWebUIUtils);
   }
-}(this, function (exports, pdfRenderingQueue) {
+}(this, function (exports, pdfRenderingQueue, uiUtils) {
 
 var RenderingStates = pdfRenderingQueue.RenderingStates;
+var mozL10n = uiUtils.mozL10n;
+
+var UI_NOTIFICATION_CLASS = 'pdfSidebarNotification';
 
 var SidebarView = {
   NONE: 0,
@@ -59,6 +64,8 @@ var SidebarView = {
  *   the outline is placed.
  * @property {HTMLDivElement} attachmentsView - The container in which
  *   the attachments are placed.
+ * @property {boolean} disableNotification - (optional) Disable the notification
+ *   for documents containing outline/attachments. The default value is `false`.
  */
 
 /**
@@ -97,6 +104,8 @@ var PDFSidebar = (function PDFSidebarClosure() {
     this.outlineView = options.outlineView;
     this.attachmentsView = options.attachmentsView;
 
+    this.disableNotification = options.disableNotification || false;
+
     this._addEventListeners();
   }
 
@@ -104,7 +113,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
     reset: function PDFSidebar_reset() {
       this.isInitialViewSet = false;
 
-      this.close();
+      this._hideUINotification(null);
       this.switchView(SidebarView.THUMBS);
 
       this.outlineButton.disabled = false;
@@ -220,8 +229,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
 
       if (forceOpen && !this.isOpen) {
         this.open();
-        // NOTE: `this.open` will trigger rendering, and dispatch the event.
-        return;
+        return; // NOTE: Opening will trigger rendering, and dispatch the event.
       }
       if (shouldForceRendering) {
         this._forceRendering();
@@ -229,6 +237,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
       if (isViewChanged) {
         this._dispatchEvent();
       }
+      this._hideUINotification(this.active);
     },
 
     open: function PDFSidebar_open() {
@@ -246,6 +255,8 @@ var PDFSidebar = (function PDFSidebarClosure() {
       }
       this._forceRendering();
       this._dispatchEvent();
+
+      this._hideUINotification(this.active);
     },
 
     close: function PDFSidebar_close() {
@@ -276,7 +287,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
     _dispatchEvent: function PDFSidebar_dispatchEvent() {
       this.eventBus.dispatch('sidebarviewchanged', {
         source: this,
-        view: this.visibleView
+        view: this.visibleView,
       });
     },
 
@@ -314,6 +325,75 @@ var PDFSidebar = (function PDFSidebarClosure() {
     /**
      * @private
      */
+    _showUINotification: function (view) {
+      if (this.disableNotification) {
+        return;
+      }
+
+      this.toggleButton.title = mozL10n.get('toggle_sidebar_notification.title',
+        null, 'Toggle Sidebar (document contains outline/attachments)');
+
+      if (!this.isOpen) {
+        // Only show the notification on the `toggleButton` if the sidebar is
+        // currently closed, to avoid unnecessarily bothering the user.
+        this.toggleButton.classList.add(UI_NOTIFICATION_CLASS);
+      } else if (view === this.active) {
+        // If the sidebar is currently open *and* the `view` is visible, do not
+        // bother the user with a notification on the corresponding button.
+        return;
+      }
+
+      switch (view) {
+        case SidebarView.OUTLINE:
+          this.outlineButton.classList.add(UI_NOTIFICATION_CLASS);
+          break;
+        case SidebarView.ATTACHMENTS:
+          this.attachmentsButton.classList.add(UI_NOTIFICATION_CLASS);
+          break;
+      }
+    },
+
+    /**
+     * @private
+     */
+    _hideUINotification: function (view) {
+      if (this.disableNotification) {
+        return;
+      }
+
+      var removeNotification = function (view) {
+        switch (view) {
+          case SidebarView.OUTLINE:
+            this.outlineButton.classList.remove(UI_NOTIFICATION_CLASS);
+            break;
+          case SidebarView.ATTACHMENTS:
+            this.attachmentsButton.classList.remove(UI_NOTIFICATION_CLASS);
+            break;
+        }
+      }.bind(this);
+
+      if (!this.isOpen && view !== null) {
+        // Only hide the notifications when the sidebar is currently open,
+        // or when it is being reset (i.e. `view === null`).
+        return;
+      }
+      this.toggleButton.classList.remove(UI_NOTIFICATION_CLASS);
+
+      if (view !== null) {
+        removeNotification(view);
+        return;
+      }
+      for (view in SidebarView) { // Remove all sidebar notifications on reset.
+        removeNotification(SidebarView[view]);
+      }
+
+      this.toggleButton.title = mozL10n.get('toggle_sidebar.title', null,
+                                            'Toggle Sidebar');
+    },
+
+    /**
+     * @private
+     */
     _addEventListeners: function PDFSidebar_addEventListeners() {
       var self = this;
 
@@ -344,7 +424,12 @@ var PDFSidebar = (function PDFSidebarClosure() {
         var outlineCount = e.outlineCount;
 
         self.outlineButton.disabled = !outlineCount;
-        if (!outlineCount && self.active === SidebarView.OUTLINE) {
+
+        if (outlineCount) {
+          self._showUINotification(SidebarView.OUTLINE);
+        } else if (self.active === SidebarView.OUTLINE) {
+          // If the outline view was opened during document load, switch away
+          // from it if it turns out that the document has no outline.
           self.switchView(SidebarView.THUMBS);
         }
       });
@@ -353,7 +438,12 @@ var PDFSidebar = (function PDFSidebarClosure() {
         var attachmentsCount = e.attachmentsCount;
 
         self.attachmentsButton.disabled = !attachmentsCount;
-        if (!attachmentsCount && self.active === SidebarView.ATTACHMENTS) {
+
+        if (attachmentsCount) {
+          self._showUINotification(SidebarView.ATTACHMENTS);
+        } else if (self.active === SidebarView.ATTACHMENTS) {
+          // If the attachment view was opened during document load, switch away
+          // from it if it turns out that the document has no attachments.
           self.switchView(SidebarView.THUMBS);
         }
       });
