@@ -171,7 +171,7 @@ PdfDataListener.prototype = {
     if (this.length >= 0 && this.length < this.loaded) {
       this.length = -1; // reset the length, server is giving incorrect one
     }
-    this.onprogress(this.loaded, this.length >= 0 ? this.length : void(0));
+    this.onprogress(this.loaded, this.length >= 0 ? this.length : void 0);
   },
   readData: function PdfDataListener_readData() {
     var result = this.buffer;
