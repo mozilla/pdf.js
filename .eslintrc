@@ -104,6 +104,6 @@
     "space-before-function-paren": ["error", { "anonymous": "ignore", "named": "never", }],
     "space-in-parens": ["error", "never"],
     "space-infix-ops": ["error", { "int32Hint": false }],
-    "space-unary-ops": ["error", { "words": true, "nonwords": false, "overrides": { "void": false, }, }],
+    "space-unary-ops": ["error", { "words": true, "nonwords": false, }],
   },
 }
