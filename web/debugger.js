@@ -403,13 +403,13 @@ var Stepper = (function StepperClosure() {
       var listener = function(e) {
         switch (e.keyCode) {
           case 83: // step
-            dom.removeEventListener('keydown', listener, false);
+            dom.removeEventListener('keydown', listener);
             self.nextBreakPoint = self.currentIdx + 1;
             self.goTo(-1);
             callback();
             break;
           case 67: // continue
-            dom.removeEventListener('keydown', listener, false);
+            dom.removeEventListener('keydown', listener);
             var breakPoint = self.getNextBreakPoint();
             self.nextBreakPoint = breakPoint;
             self.goTo(-1);
@@ -417,7 +417,7 @@ var Stepper = (function StepperClosure() {
             break;
         }
       };
-      dom.addEventListener('keydown', listener, false);
+      dom.addEventListener('keydown', listener);
       self.goTo(idx);
     },
     goTo: function goTo(idx) {
