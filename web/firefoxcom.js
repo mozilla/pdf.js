@@ -76,9 +76,9 @@ var FirefoxCom = (function FirefoxComClosure() {
 
           document.documentElement.removeChild(node);
 
-          document.removeEventListener('pdf.js.response', listener, false);
+          document.removeEventListener('pdf.js.response', listener);
           return callback(response);
-        }, false);
+        });
       }
       document.documentElement.appendChild(request);
 
