@@ -320,8 +320,8 @@
         event.stopImmediatePropagation();
       }
     };
-    window.addEventListener('beforeprint', stopPropagationIfNeeded, false);
-    window.addEventListener('afterprint', stopPropagationIfNeeded, false);
+    window.addEventListener('beforeprint', stopPropagationIfNeeded);
+    window.addEventListener('afterprint', stopPropagationIfNeeded);
   }
 
   var overlayPromise;
