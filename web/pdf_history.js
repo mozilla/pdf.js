@@ -114,7 +114,7 @@
         } else {
           updateHistoryWithCurrentHash();
         }
-      }, false);
+      });
 
 
       function updateHistoryWithCurrentHash() {
@@ -162,18 +162,17 @@
         }
         // Remove the event listener when navigating away from the document,
         // since 'beforeunload' prevents Firefox from caching the document.
-        window.removeEventListener('beforeunload', pdfHistoryBeforeUnload,
-                                   false);
+        window.removeEventListener('beforeunload', pdfHistoryBeforeUnload);
       }
 
-      window.addEventListener('beforeunload', pdfHistoryBeforeUnload, false);
+      window.addEventListener('beforeunload', pdfHistoryBeforeUnload);
 
       window.addEventListener('pageshow', function pdfHistoryPageShow(evt) {
         // If the entire viewer (including the PDF file) is cached in
         // the browser, we need to reattach the 'beforeunload' event listener
         // since the 'DOMContentLoaded' event is not fired on 'pageshow'.
-        window.addEventListener('beforeunload', pdfHistoryBeforeUnload, false);
-      }, false);
+        window.addEventListener('beforeunload', pdfHistoryBeforeUnload);
+      });
 
       self.eventBus.on('presentationmodechanged', function(e) {
         self.isViewerInPresentationMode = e.active;
