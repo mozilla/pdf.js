@@ -447,13 +447,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           if (numberOfInstances > 1) {
             bitmap = decodeTextRegion(huffman, refinement,
                                       currentWidth, currentHeight, 0,
-                                      numberOfInstances, 1, //strip size
+                                      numberOfInstances, 1, // strip size
                                       symbols.concat(newSymbols),
                                       symbolCodeLength,
-                                      0, //transposed
-                                      0, //ds offset
-                                      1, //top left 7.4.3.1.1
-                                      0, //OR operator
+                                      0, // transposed
+                                      0, // ds offset
+                                      1, // top left 7.4.3.1.1
+                                      0, // OR operator
                                       huffmanTables,
                                       refinementTemplateIndex, refinementAt,
                                       decodingContext);

@@ -285,7 +285,7 @@
   window.addEventListener('keydown', function(event) {
     // Intercept Cmd/Ctrl + P in all browsers.
     // Also intercept Cmd/Ctrl + Shift + P in Chrome and Opera
-    if (event.keyCode === 80/*P*/ && (event.ctrlKey || event.metaKey) &&
+    if (event.keyCode === /* P= */ 80 && (event.ctrlKey || event.metaKey) &&
         !event.altKey && (!event.shiftKey || window.chrome || window.opera)) {
       window.print();
       if (hasAttachEvent) {
@@ -305,7 +305,7 @@
   if (hasAttachEvent) {
     document.attachEvent('onkeydown', function(event) {
       event = event || window.event;
-      if (event.keyCode === 80/*P*/ && event.ctrlKey) {
+      if (event.keyCode === /* P= */ 80 && event.ctrlKey) {
         event.keyCode = 0;
         return false;
       }

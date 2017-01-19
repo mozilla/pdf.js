@@ -104,7 +104,7 @@ var PDFFunction = (function PDFFunctionClosure() {
           return this.constructInterpolatedFromIR(IR);
         case CONSTRUCT_STICHED:
           return this.constructStichedFromIR(IR);
-        //case CONSTRUCT_POSTSCRIPT:
+        // case CONSTRUCT_POSTSCRIPT:
         default:
           return this.constructPostScriptFromIR(IR);
       }
@@ -207,7 +207,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         var samples = IR[5];
         var size = IR[6];
         var n = IR[7];
-        //var mask = IR[8];
+        // var mask = IR[8];
         var range = IR[9];
 
         // Building the cube vertices: its part and sample index

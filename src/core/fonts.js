@@ -1369,7 +1369,7 @@ var Font = (function FontClosure() {
         if (tag === 'head') {
           // clearing checksum adjustment
           data[8] = data[9] = data[10] = data[11] = 0;
-          data[17] |= 0x20; //Set font optimized for cleartype flag
+          data[17] |= 0x20; // Set font optimized for cleartype flag.
         }
 
         return {

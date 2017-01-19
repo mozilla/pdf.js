@@ -280,7 +280,7 @@ PDFViewerApplication.externalServices = {
   },
 };
 
-//// l10n.js for Firefox extension expects services to be set.
+// l10n.js for Firefox extension expects services to be set.
 document.mozL10n.setExternalLocalizerServices({
   getLocale: function () {
     return FirefoxCom.requestSync('getLocale', null);

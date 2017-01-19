@@ -961,7 +961,7 @@ var PageViewport = (function PageViewportClosure() {
       case 270:
         rotateA = 0; rotateB = -1; rotateC = -1; rotateD = 0;
         break;
-      //case 0:
+      // case 0:
       default:
         rotateA = 1; rotateB = 0; rotateC = 0; rotateD = -1;
         break;

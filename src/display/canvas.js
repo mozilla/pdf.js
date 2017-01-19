@@ -1710,10 +1710,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       return pattern;
     },
-    setStrokeColorN: function CanvasGraphics_setStrokeColorN(/*...*/) {
+    setStrokeColorN: function CanvasGraphics_setStrokeColorN() {
       this.current.strokeColor = this.getColorN_Pattern(arguments);
     },
-    setFillColorN: function CanvasGraphics_setFillColorN(/*...*/) {
+    setFillColorN: function CanvasGraphics_setFillColorN() {
       this.current.fillColor = this.getColorN_Pattern(arguments);
       this.current.patternFill = true;
     },
