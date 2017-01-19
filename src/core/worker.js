@@ -36,7 +36,6 @@ var MessageHandler = sharedUtil.MessageHandler;
 var MissingPDFException = sharedUtil.MissingPDFException;
 var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
 var PasswordException = sharedUtil.PasswordException;
-var PasswordResponses = sharedUtil.PasswordResponses;
 var UnknownErrorException = sharedUtil.UnknownErrorException;
 var XRefParseException = sharedUtil.XRefParseException;
 var arrayByteLength = sharedUtil.arrayByteLength;
@@ -448,7 +447,7 @@ var WorkerMessageHandler = {
       var responseExists = 'response' in xhr;
       // check if the property is actually implemented
       try {
-        var dummy = xhr.responseType;
+        xhr.responseType; // eslint-disable-line no-unused-expressions
       } catch (e) {
         responseExists = false;
       }

@@ -673,3 +673,5 @@ var Driver = (function DriverClosure() {
 
   return Driver;
 })();
+
+exports.Driver = Driver;

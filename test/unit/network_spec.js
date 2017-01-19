@@ -63,7 +63,7 @@ describe('network', function() {
       });
     };
 
-    var readPromise = read();
+    var readPromise = Promise.all([read(), promise]);
 
     readPromise.then(function (page) {
       expect(len).toEqual(pdf1Length);
@@ -117,12 +117,13 @@ describe('network', function() {
       });
     };
 
-    var readPromise = read();
+    var readPromise = Promise.all([read(), promise]);
 
     readPromise.then(function () {
       expect(len).toEqual(pdf2Length);
       expect(count).toBeGreaterThan(1);
       expect(isStreamingSupported).toEqual(true);
+      expect(isRangeSupported).toEqual(true);
       done();
     }).catch(function (reason) {
       done.fail(reason);
@@ -179,6 +180,7 @@ describe('network', function() {
     readPromises.then(function () {
       expect(result1.value).toEqual(rangeSize);
       expect(result2.value).toEqual(tailSize);
+      expect(isStreamingSupported).toEqual(false);
       expect(isRangeSupported).toEqual(true);
       expect(fullReaderCancelled).toEqual(true);
       done();
