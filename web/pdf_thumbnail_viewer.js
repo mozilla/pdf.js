@@ -87,7 +87,8 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       if (selected) {
         selected.classList.remove('selected');
       }
-      var thumbnail = document.getElementById('thumbnailContainer' + page);
+      var thumbnail = document.querySelector(
+        'div.thumbnail[data-page-number="' + page + '"]');
       if (thumbnail) {
         thumbnail.classList.add('selected');
       }
