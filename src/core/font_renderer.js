@@ -53,9 +53,9 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     var offset = (getUshort(data, start + 2) === 1 ?
                   getLong(data, start + 8) : getLong(data, start + 16));
     var format = getUshort(data, start + offset);
-    var length, ranges, p, i;
+    var ranges, p, i;
     if (format === 4) {
-      length = getUshort(data, start + offset + 2);
+      getUshort(data, start + offset + 2); // length
       var segCount = getUshort(data, start + offset + 6) >> 1;
       p = start + offset + 14;
       ranges = [];
@@ -82,7 +82,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
       return ranges;
     } else if (format === 12) {
-      length = getLong(data, start + offset + 4);
+      getLong(data, start + offset + 4); // length
       var groups = getLong(data, start + offset + 12);
       p = start + offset + 16;
       ranges = [];

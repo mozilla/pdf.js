@@ -785,7 +785,6 @@ var CFFParser = (function CFFParserClosure() {
       var encoding = Object.create(null);
       var bytes = this.bytes;
       var predefined = false;
-      var hasSupplement = false;
       var format, i, ii;
       var raw = null;
 
@@ -836,7 +835,7 @@ var CFFParser = (function CFFParserClosure() {
             break;
         }
         var dataEnd = pos;
-        if (format & 0x80) {
+        if (format & 0x80) { // hasSupplement
           // The font sanitizer does not support CFF encoding with a
           // supplement, since the encoding is not really used to map
           // between gid to glyph, let's overwrite what is declared in
@@ -844,7 +843,6 @@ var CFFParser = (function CFFParserClosure() {
           // StandardEncoding, that's a lie but that's ok.
           bytes[dataStart] &= 0x7f;
           readSupplement();
-          hasSupplement = true;
         }
         raw = bytes.subarray(dataStart, dataEnd);
       }

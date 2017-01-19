@@ -1296,22 +1296,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var width = 0;
         var height = 0;
         var glyphs = font.charsToGlyphs(chars);
-        var defaultVMetrics = font.defaultVMetrics;
         for (var i = 0; i < glyphs.length; i++) {
           var glyph = glyphs[i];
-          var vMetricX = null;
-          var vMetricY = null;
           var glyphWidth = null;
-          if (font.vertical) {
-            if (glyph.vmetric) {
-              glyphWidth = glyph.vmetric[0];
-              vMetricX = glyph.vmetric[1];
-              vMetricY = glyph.vmetric[2];
-            } else {
-              glyphWidth = glyph.width;
-              vMetricX = glyph.width * 0.5;
-              vMetricY = defaultVMetrics[2];
-            }
+          if (font.vertical && glyph.vmetric) {
+            glyphWidth = glyph.vmetric[0];
           } else {
             glyphWidth = glyph.width;
           }
@@ -1322,18 +1311,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             glyphUnicode = NormalizedUnicodes[glyphUnicode];
           }
           glyphUnicode = reverseIfRtl(glyphUnicode);
-
-          // The following will calculate the x and y of the individual glyphs.
-          // if (font.vertical) {
-          //   tsm[4] -= vMetricX * Math.abs(textState.fontSize) *
-          //             textState.fontMatrix[0];
-          //   tsm[5] -= vMetricY * textState.fontSize *
-          //             textState.fontMatrix[0];
-          // }
-          // var trm = Util.transform(textState.textMatrix, tsm);
-          // var pt = Util.applyTransform([trm[4], trm[5]], textState.ctm);
-          // var x = pt[0];
-          // var y = pt[1];
 
           var charSpacing = textState.charSpacing;
           if (glyph.isSpace) {

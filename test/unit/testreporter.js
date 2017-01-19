@@ -74,3 +74,5 @@ var TestReporter = function(browser, appPath) {
     setTimeout(sendQuitRequest, 500);
   };
 };
+
+exports.TestReporter = TestReporter;

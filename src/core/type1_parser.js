@@ -251,7 +251,7 @@ var Type1CharString = (function Type1CharStringClosure() {
               // first part of the charstring and then use rmoveto with
               // (dx, dy). The height argument will not be used for vmtx and
               // vhea tables reconstruction -- ignoring it.
-              var wy = this.stack.pop();
+              this.stack.pop(); // wy
               wx = this.stack.pop();
               var sby = this.stack.pop();
               sbx = this.stack.pop();
@@ -579,7 +579,7 @@ var Type1Parser = (function Type1ParserClosure() {
             }
             break;
           case 'Subrs':
-            var num = this.readInt();
+            this.readInt(); // num
             this.getToken(); // read in 'array'
             while ((token = this.getToken()) === 'dup') {
               var index = this.readInt();
