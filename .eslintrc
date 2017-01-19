@@ -53,6 +53,7 @@
     "no-fallthrough": "error",
     "no-global-assign": "error",
     "no-implied-eval": "error",
+    "no-lone-blocks": "error",
     "no-multi-spaces": "error",
     "no-multi-str": "error",
     "no-new-func": "error",
