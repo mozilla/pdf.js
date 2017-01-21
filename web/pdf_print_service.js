@@ -237,7 +237,7 @@
         if (OverlayManager.active === 'printServiceOverlay') {
           OverlayManager.close('printServiceOverlay');
         }
-        return;
+        return; // eslint-disable-line no-unsafe-finally
       }
       var activeServiceOnEntry = activeService;
       activeService.renderPages().then(function () {
