@@ -1755,8 +1755,6 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 (function checkURLConstructor(scope) {
-  /* eslint-disable yoda */
-
   // feature detect for URL constructor
   var hasWorkingUrl = false;
   try {
@@ -1798,7 +1796,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   }
 
   function IDNAToASCII(h) {
-    if ('' === h) {
+    if (h === '') {
       invalid.call(this);
     }
     // XXX
@@ -1868,7 +1866,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
         case 'scheme':
           if (c && ALPHANUMERIC.test(c)) {
             buffer += c.toLowerCase(); // ASCII-safe
-          } else if (':' === c) {
+          } else if (c === ':') {
             this._scheme = buffer;
             buffer = '';
             if (stateOverride) {
@@ -1877,7 +1875,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             if (isRelativeScheme(this._scheme)) {
               this._isRelative = true;
             }
-            if ('file' === this._scheme) {
+            if (this._scheme === 'file') {
               state = 'relative';
             } else if (this._isRelative && base &&
                        base._scheme === this._scheme) {
@@ -1901,10 +1899,10 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'scheme data':
-          if ('?' === c) {
+          if (c === '?') {
             this._query = '?';
             state = 'query';
-          } else if ('#' === c) {
+          } else if (c === '#') {
             this._fragment = '#';
             state = 'fragment';
           } else {
@@ -1926,7 +1924,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'relative or authority':
-          if ('/' === c && '/' === input[cursor + 1]) {
+          if (c === '/' && input[cursor + 1] === '/') {
             state = 'authority ignore slashes';
           } else {
             err('Expected /, got: ' + c);
@@ -1948,12 +1946,12 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             this._username = base._username;
             this._password = base._password;
             break loop;
-          } else if ('/' === c || '\\' === c) {
-            if ('\\' === c) {
+          } else if (c === '/' || c === '\\') {
+            if (c === '\\') {
               err('\\ is an invalid code point.');
             }
             state = 'relative slash';
-          } else if ('?' === c) {
+          } else if (c === '?') {
             this._host = base._host;
             this._port = base._port;
             this._path = base._path.slice();
@@ -1961,7 +1959,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             this._username = base._username;
             this._password = base._password;
             state = 'query';
-          } else if ('#' === c) {
+          } else if (c === '#') {
             this._host = base._host;
             this._port = base._port;
             this._path = base._path.slice();
@@ -1990,11 +1988,11 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'relative slash':
-          if ('/' === c || '\\' === c) {
-            if ('\\' === c) {
+          if (c === '/' || c === '\\') {
+            if (c === '\\') {
               err('\\ is an invalid code point.');
             }
-            if ('file' === this._scheme) {
+            if (this._scheme === 'file') {
               state = 'file host';
             } else {
               state = 'authority ignore slashes';
@@ -2012,7 +2010,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'authority first slash':
-          if ('/' === c) {
+          if (c === '/') {
             state = 'authority second slash';
           } else {
             err('Expected \'/\', got: ' + c);
@@ -2039,7 +2037,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'authority':
-          if ('@' === c) {
+          if (c === '@') {
             if (seenAt) {
               err('@ already seen.');
               buffer += '%40';
@@ -2047,12 +2045,12 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             seenAt = true;
             for (var i = 0; i < buffer.length; i++) {
               var cp = buffer[i];
-              if ('\t' === cp || '\n' === cp || '\r' === cp) {
+              if (cp === '\t' || cp === '\n' || cp === '\r') {
                 err('Invalid whitespace in authority.');
                 continue;
               }
               // XXX check URL code points
-              if (':' === cp && null === this._password) {
+              if (cp === ':' && this._password === null) {
                 this._password = '';
                 continue;
               }
@@ -2064,8 +2062,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
               }
             }
             buffer = '';
-          } else if (EOF === c || '/' === c || '\\' === c ||
-                     '?' === c || '#' === c) {
+          } else if (c === EOF || c === '/' || c === '\\' ||
+                     c === '?' || c === '#') {
             cursor -= buffer.length;
             buffer = '';
             state = 'host';
@@ -2076,7 +2074,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'file host':
-          if (EOF === c || '/' === c || '\\' === c || '?' === c || '#' === c) {
+          if (c === EOF || c === '/' || c === '\\' || c === '?' || c === '#') {
             if (buffer.length === 2 && ALPHA.test(buffer[0]) &&
                 (buffer[1] === ':' || buffer[1] === '|')) {
               state = 'relative path';
@@ -2088,7 +2086,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
               state = 'relative path start';
             }
             continue;
-          } else if ('\t' === c || '\n' === c || '\r' === c) {
+          } else if (c === '\t' || c === '\n' || c === '\r') {
             err('Invalid whitespace in file host.');
           } else {
             buffer += c;
@@ -2097,16 +2095,16 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 
         case 'host':
         case 'hostname':
-          if (':' === c && !seenBracket) {
+          if (c === ':' && !seenBracket) {
             // XXX host parsing
             this._host = IDNAToASCII.call(this, buffer);
             buffer = '';
             state = 'port';
-            if ('hostname' === stateOverride) {
+            if (stateOverride === 'hostname') {
               break loop;
             }
-          } else if (EOF === c || '/' === c ||
-                     '\\' === c || '?' === c || '#' === c) {
+          } else if (c === EOF || c === '/' ||
+                     c === '\\' || c === '?' || c === '#') {
             this._host = IDNAToASCII.call(this, buffer);
             buffer = '';
             state = 'relative path start';
@@ -2115,9 +2113,9 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             }
             continue;
           } else if ('\t' !== c && '\n' !== c && '\r' !== c) {
-            if ('[' === c) {
+            if (c === '[') {
               seenBracket = true;
-            } else if (']' === c) {
+            } else if (c === ']') {
               seenBracket = false;
             }
             buffer += c;
@@ -2129,8 +2127,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
         case 'port':
           if (/[0-9]/.test(c)) {
             buffer += c;
-          } else if (EOF === c || '/' === c || '\\' === c ||
-                     '?' === c || '#' === c || stateOverride) {
+          } else if (c === EOF || c === '/' || c === '\\' ||
+                     c === '?' || c === '#' || stateOverride) {
             if ('' !== buffer) {
               var temp = parseInt(buffer, 10);
               if (temp !== relative[this._scheme]) {
@@ -2143,7 +2141,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
             }
             state = 'relative path start';
             continue;
-          } else if ('\t' === c || '\n' === c || '\r' === c) {
+          } else if (c === '\t' || c === '\n' || c === '\r') {
             err('Invalid code point in port: ' + c);
           } else {
             invalid.call(this);
@@ -2151,7 +2149,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'relative path start':
-          if ('\\' === c) {
+          if (c === '\\') {
             err('\'\\\' not allowed in path.');
           }
           state = 'relative path';
@@ -2161,24 +2159,24 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'relative path':
-          if (EOF === c || '/' === c || '\\' === c ||
-              (!stateOverride && ('?' === c || '#' === c))) {
-            if ('\\' === c) {
+          if (c === EOF || c === '/' || c === '\\' ||
+              (!stateOverride && (c === '?' || c === '#'))) {
+            if (c === '\\') {
               err('\\ not allowed in relative path.');
             }
             var tmp;
             if ((tmp = relativePathDotMapping[buffer.toLowerCase()])) {
               buffer = tmp;
             }
-            if ('..' === buffer) {
+            if (buffer === '..') {
               this._path.pop();
               if ('/' !== c && '\\' !== c) {
                 this._path.push('');
               }
-            } else if ('.' === buffer && '/' !== c && '\\' !== c) {
+            } else if (buffer === '.' && '/' !== c && '\\' !== c) {
               this._path.push('');
             } else if ('.' !== buffer) {
-              if ('file' === this._scheme && this._path.length === 0 &&
+              if (this._scheme === 'file' && this._path.length === 0 &&
                   buffer.length === 2 && ALPHA.test(buffer[0]) &&
                   buffer[1] === '|') {
                 buffer = buffer[0] + ':';
@@ -2186,10 +2184,10 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
               this._path.push(buffer);
             }
             buffer = '';
-            if ('?' === c) {
+            if (c === '?') {
               this._query = '?';
               state = 'query';
-            } else if ('#' === c) {
+            } else if (c === '#') {
               this._fragment = '#';
               state = 'fragment';
             }
@@ -2199,7 +2197,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
           break;
 
         case 'query':
-          if (!stateOverride && '#' === c) {
+          if (!stateOverride && c === '#') {
             this._fragment = '#';
             state = 'fragment';
           } else if (EOF !== c && '\t' !== c && '\n' !== c && '\r' !== c) {
@@ -2325,7 +2323,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
     },
 
     get search() {
-      return this._isInvalid || !this._query || '?' === this._query ?
+      return this._isInvalid || !this._query || this._query === '?' ?
           '' : this._query;
     },
     set search(search) {
@@ -2333,14 +2331,14 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
         return;
       }
       this._query = '?';
-      if ('?' === search[0]) {
+      if (search[0] === '?') {
         search = search.slice(1);
       }
       parse.call(this, search, 'query');
     },
 
     get hash() {
-      return this._isInvalid || !this._fragment || '#' === this._fragment ?
+      return this._isInvalid || !this._fragment || this._fragment === '#' ?
           '' : this._fragment;
     },
     set hash(hash) {
@@ -2348,7 +2346,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
         return;
       }
       this._fragment = '#';
-      if ('#' === hash[0]) {
+      if (hash[0] === '#') {
         hash = hash.slice(1);
       }
       parse.call(this, hash, 'fragment');
@@ -2393,8 +2391,6 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   }
 
   scope.URL = JURL;
-
-  /* eslint-enable yoda */
 })(globalScope);
 }
 
