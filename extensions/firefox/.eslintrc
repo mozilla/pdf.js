@@ -6,4 +6,28 @@
   "parserOptions": {
     "ecmaVersion": 6
   },
+
+  "rules": {
+    // Variables
+    "no-shadow": "error",
+    "no-unused-vars": ["error", {
+      "vars": "local",
+      "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS",
+      "args": "none",
+    }],
+
+    // Stylistic Issues
+    "space-before-function-paren": ["error", "never"],
+
+    // ECMAScript 6
+    "arrow-body-style": ["error", "as-needed"],
+    "arrow-parens": ["error", "always"],
+    "arrow-spacing": ["error", { "before": true, "after": true, }],
+    "constructor-super": "error",
+    "no-confusing-arrow": "error",
+    "no-const-assign": "error",
+    "no-dupe-class-members": "error",
+    "no-useless-constructor": "error",
+    "object-shorthand": ["error", "always", { "avoidQuotes": true }],
+  },
 }
