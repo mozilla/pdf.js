@@ -2108,7 +2108,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
         return;
       }
       if (this.task.onContinue) {
-        this.task.onContinue.call(this.task, this._scheduleNextBound);
+        this.task.onContinue(this._scheduleNextBound);
       } else {
         this._scheduleNext();
       }
