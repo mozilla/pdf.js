@@ -709,7 +709,7 @@ var JpegImage = (function JpegImageClosure() {
                   z = dctZigZag[j];
                   tableData[z] = data[offset++];
                 }
-              } else if ((quantizationTableSpec >> 4) === 1) { //16 bit
+              } else if ((quantizationTableSpec >> 4) === 1) { // 16 bit values
                 for (j = 0; j < 64; j++) {
                   z = dctZigZag[j];
                   tableData[z] = readUint16();

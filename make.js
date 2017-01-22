@@ -1168,7 +1168,7 @@ target.makefile = function () {
 };
 
 //
-//make importl10n
+// make importl10n
 //
 target.importl10n = function() {
   execGulp('importl10n');

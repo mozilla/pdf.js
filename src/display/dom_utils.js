@@ -71,7 +71,7 @@ var CustomStyle = (function CustomStyleClosure() {
       }
     }
 
-    //if all fails then set to undefined
+    // If all fails then set to undefined.
     return (_cache[propName] = 'undefined');
   };
 
