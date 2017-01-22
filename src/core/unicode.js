@@ -1627,7 +1627,7 @@
 
   function reverseIfRtl(chars) {
     var charsLength = chars.length;
-    //reverse an arabic ligature
+    // Reverse an arabic ligature.
     if (charsLength <= 1 || !isRTLRangeFor(chars.charCodeAt(0))) {
       return chars;
     }
