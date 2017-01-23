@@ -596,4 +596,44 @@ if (typeof PDFJS === 'undefined') {
   });
 })();
 
+// Provides `input.type = 'type'` runtime failure protection.
+// Support: IE9,10.
+(function checkInputTypeNumberAssign() {
+  var el = document.createElement('input');
+  try {
+    el.type = 'number';
+  } catch (ex) {
+    var inputProto = el.constructor.prototype;
+    var typeProperty = Object.getOwnPropertyDescriptor(inputProto, 'type');
+    Object.defineProperty(inputProto, 'type', {
+      get: function () { return typeProperty.get.call(this); },
+      set: function (value) {
+        typeProperty.set.call(this, value === 'number' ? 'text' : value);
+      },
+      enumerable: true,
+      configurable: true
+    });
+  }
+})();
+
+// Provides correct document.readyState value for legacy browsers.
+// Support: IE9,10.
+(function checkDocumentReadyState() {
+  if (!document.attachEvent) {
+    return;
+  }
+  var documentProto = document.constructor.prototype;
+  var readyStateProto = Object.getOwnPropertyDescriptor(documentProto,
+                                                        'readyState');
+  Object.defineProperty(documentProto, 'readyState', {
+    get: function () {
+      var value = readyStateProto.get.call(this);
+      return value === 'interactive' ? 'loading' : value;
+    },
+    set: function (value) { readyStateProto.set.call(this, value); },
+    enumerable: true,
+    configurable: true
+  });
+})();
+
 }).call((typeof window === 'undefined') ? this : window);
