@@ -14,12 +14,12 @@
  */
 /* eslint max-len: ["error", 100] */
 
-'use strict';
+"use strict";
 
 // Don't remove this file!
 // FF15+ expects `PdfJs` module to be present at `resource://pdf.js/PdfJs.jsm`,
 // see https://dxr.mozilla.org/mozilla-central/source/browser/components/nsBrowserGlue.js
-var EXPORTED_SYMBOLS = ['PdfJs'];
+var EXPORTED_SYMBOLS = ["PdfJs"];
 
 var PdfJs = {
   init: function PdfJs_init() {}
