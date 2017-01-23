@@ -32,7 +32,7 @@
   var isRemote = Services.appinfo.processType ===
     Services.appinfo.PROCESS_TYPE_CONTENT;
 
-// Factory that registers/unregisters a constructor as a component.
+  // Factory that registers/unregisters a constructor as a component.
   function Factory() {
   }
 
@@ -93,7 +93,7 @@
   if (isRemote) {
     startup();
 
-    addMessageListener('PDFJS:Child:shutdown', function (e) {
+    addMessageListener('PDFJS:Child:shutdown', function() {
       shutdown();
     });
   }

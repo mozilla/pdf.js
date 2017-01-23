@@ -121,12 +121,12 @@
     get: translateString,
 
     // get the document language
-    getLanguage: function() {
+    getLanguage() {
       return gLanguage;
     },
 
     // get the direction (ltr|rtl) of the current language
-    getDirection: function() {
+    getDirection() {
       // http://www.w3.org/International/questions/qa-scripts
       // Arabic, Hebrew, Farsi, Pashto, Urdu
       var rtlList = ['ar', 'he', 'fa', 'ps', 'ur'];
@@ -137,9 +137,11 @@
       return (rtlList.indexOf(shortCode) >= 0) ? 'rtl' : 'ltr';
     },
 
-    getReadyState: function() { return gReadyState; },
+    getReadyState() {
+      return gReadyState;
+    },
 
-    setExternalLocalizerServices: function (externalLocalizerServices) {
+    setExternalLocalizerServices(externalLocalizerServices) {
       gExternalLocalizerServices = externalLocalizerServices;
 
       // ... in case if we missed DOMContentLoaded above.
