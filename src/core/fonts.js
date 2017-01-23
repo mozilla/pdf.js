@@ -2121,7 +2121,7 @@ var Font = (function FontClosure() {
               op >= 0xC0 && op <= 0xDF ? -1 : op >= 0xE0 ? -2 : 0;
             if (op >= 0x71 && op <= 0x75) {
               n = stack.pop();
-              if (n === n) {
+              if (!isNaN(n)) {
                 stackDelta = -n * 2;
               }
             }
