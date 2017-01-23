@@ -124,8 +124,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.anchor = anchor;
 
     var div = document.createElement('div');
-    div.id = 'thumbnailContainer' + id;
     div.className = 'thumbnail';
+    div.setAttribute('data-page-number', this.id);
     this.div = div;
 
     if (id === 1) {
