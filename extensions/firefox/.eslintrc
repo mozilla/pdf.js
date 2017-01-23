@@ -17,6 +17,7 @@
     }],
 
     // Stylistic Issues
+    "quotes": ["error", "double"],
     "space-before-function-paren": ["error", "never"],
 
     // ECMAScript 6
