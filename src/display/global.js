@@ -41,6 +41,7 @@
   var deprecated = sharedUtil.deprecated;
   var warn = sharedUtil.warn;
   var LinkTarget = displayDOMUtils.LinkTarget;
+  var DEFAULT_LINK_REL = displayDOMUtils.DEFAULT_LINK_REL;
 
   var isWorker = (typeof window === 'undefined');
 
@@ -233,7 +234,7 @@
    * @var {string}
    */
   PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
-                           'noreferrer' : PDFJS.externalLinkRel);
+                           DEFAULT_LINK_REL : PDFJS.externalLinkRel);
 
   /**
     * Determines if we can eval strings as JS. Primarily used to improve
