@@ -605,7 +605,6 @@ target.firefox = function() {
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
       [COMMON_FIREFOX_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR],
-      [SRC_DIR + 'core/network.js', FIREFOX_BUILD_CONTENT_DIR],
       [FIREFOX_EXTENSION_DIR + 'bootstrap.js', FIREFOX_BUILD_DIR]
     ],
     preprocessCSS: [
@@ -724,7 +723,6 @@ target.mozcentral = function() {
     preprocess: [
       [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
       [FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap.js', MOZCENTRAL_CONTENT_DIR],
-      [SRC_DIR + 'core/network.js', MOZCENTRAL_CONTENT_DIR],
       [COMMON_FIREFOX_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR],
       [FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR]
     ],
