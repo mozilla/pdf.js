@@ -152,7 +152,6 @@ var PdfjsChromeUtils = {
         this._displayWarning(aMsg);
         break;
 
-
       case "PDFJS:Parent:updateControlState":
         return this._updateControlState(aMsg);
       case "PDFJS:Parent:addEventListener":
@@ -160,6 +159,7 @@ var PdfjsChromeUtils = {
       case "PDFJS:Parent:removeEventListener":
         return this._removeEventListener(aMsg);
     }
+    return undefined;
   },
 
   /*
