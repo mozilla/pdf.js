@@ -31,6 +31,8 @@ var warn = sharedUtil.warn;
 var deprecated = sharedUtil.deprecated;
 var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
 
+var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
+
 /**
  * Optimised CSS custom property getter/setter.
  * @class
@@ -210,7 +212,7 @@ function getDefaultSetting(id) {
       globalSettings.externalLinkTarget = LinkTarget.NONE;
       return LinkTarget.NONE;
     case 'externalLinkRel':
-      return globalSettings ? globalSettings.externalLinkRel : 'noreferrer';
+      return globalSettings ? globalSettings.externalLinkRel : DEFAULT_LINK_REL;
     case 'enableStats':
       return !!(globalSettings && globalSettings.enableStats);
     default:
@@ -245,4 +247,5 @@ exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.LinkTarget = LinkTarget;
 exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
 exports.getDefaultSetting = getDefaultSetting;
+exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
 }));
