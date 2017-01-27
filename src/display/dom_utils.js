@@ -26,12 +26,39 @@
   }
 }(this, function (exports, sharedUtil) {
 
+var assert = sharedUtil.assert;
 var removeNullCharacters = sharedUtil.removeNullCharacters;
 var warn = sharedUtil.warn;
 var deprecated = sharedUtil.deprecated;
 var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
+
+function DOMCanvasFactory() {}
+DOMCanvasFactory.prototype = {
+  create: function DOMCanvasFactory_create(width, height) {
+    assert(width > 0 && height > 0, 'invalid canvas size');
+    var canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+  },
+
+  reset: function DOMCanvasFactory_reset(canvas, width, height) {
+    assert(canvas, 'canvas is not specified');
+    assert(width > 0 && height > 0, 'invalid canvas size');
+    canvas.width = width;
+    canvas.height = height;
+  },
+
+  destroy: function DOMCanvasFactory_destroy(canvas) {
+    assert(canvas, 'canvas is not specified');
+    // Zeroing the width and height cause Firefox to release graphics
+    // resources immediately, which can greatly reduce memory consumption.
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+};
 
 /**
  * Optimised CSS custom property getter/setter.
@@ -248,4 +275,5 @@ exports.LinkTarget = LinkTarget;
 exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
 exports.getDefaultSetting = getDefaultSetting;
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
+exports.DOMCanvasFactory = DOMCanvasFactory;
 }));
