@@ -216,6 +216,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 
       var i, ii;
 
+      // The temporary canvas is used to determine if fonts are loaded.
       var canvas = document.createElement('canvas');
       canvas.width = 1;
       canvas.height = 1;
