@@ -36,12 +36,12 @@ var error = sharedUtil.error;
 var isInt = sharedUtil.isInt;
 var isString = sharedUtil.isString;
 var MissingDataException = sharedUtil.MissingDataException;
+var isEOF = corePrimitives.isEOF;
 var isName = corePrimitives.isName;
 var isCmd = corePrimitives.isCmd;
 var isStream = corePrimitives.isStream;
 var StringStream = coreStream.StringStream;
 var Lexer = coreParser.Lexer;
-var isEOF = coreParser.isEOF;
 
 var BUILT_IN_CMAPS = [
 // << Start unicode maps.
