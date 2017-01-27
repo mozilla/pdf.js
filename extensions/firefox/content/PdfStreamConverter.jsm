@@ -538,11 +538,11 @@ class ChromeActions {
           break;
       }
     }
+    let result = JSON.stringify(currentPrefs);
     if (sendResponse) {
-      sendResponse(JSON.stringify(currentPrefs));
-    } else {
-      return JSON.stringify(currentPrefs);
+      sendResponse(result);
     }
+    return result;
   }
 }
 
