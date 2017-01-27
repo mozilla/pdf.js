@@ -8,6 +8,9 @@
   },
 
   "rules": {
+    // Best Practices
+    "consistent-return": "error",
+
     // Variables
     "no-shadow": "error",
     "no-unused-vars": ["error", {
@@ -17,6 +20,7 @@
     }],
 
     // Stylistic Issues
+    "no-nested-ternary": "error",
     "quotes": ["error", "double"],
     "space-before-function-paren": ["error", "never"],
 
