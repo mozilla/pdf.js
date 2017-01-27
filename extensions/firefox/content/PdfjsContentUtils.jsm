@@ -14,17 +14,17 @@
  */
 /* globals Components, Services, XPCOMUtils */
 
-'use strict';
+"use strict";
 
-var EXPORTED_SYMBOLS = ['PdfjsContentUtils'];
+var EXPORTED_SYMBOLS = ["PdfjsContentUtils"];
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
-Cu.import('resource://gre/modules/XPCOMUtils.jsm');
-Cu.import('resource://gre/modules/Services.jsm');
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 var PdfjsContentUtils = {
   _mm: null,
@@ -42,17 +42,17 @@ var PdfjsContentUtils = {
     // child *process* mm, or when loaded into the parent for in-content
     // support the psuedo child process mm 'child PPMM'.
     if (!this._mm) {
-      this._mm = Cc['@mozilla.org/childprocessmessagemanager;1'].
+      this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
         getService(Ci.nsISyncMessageSender);
-      this._mm.addMessageListener('PDFJS:Child:refreshSettings', this);
-      Services.obs.addObserver(this, 'quit-application', false);
+      this._mm.addMessageListener("PDFJS:Child:refreshSettings", this);
+      Services.obs.addObserver(this, "quit-application", false);
     }
   },
 
   uninit() {
     if (this._mm) {
-      this._mm.removeMessageListener('PDFJS:Child:refreshSettings', this);
-      Services.obs.removeObserver(this, 'quit-application');
+      this._mm.removeMessageListener("PDFJS:Child:refreshSettings", this);
+      Services.obs.removeObserver(this, "quit-application");
     }
     this._mm = null;
   },
@@ -64,34 +64,34 @@ var PdfjsContentUtils = {
    */
 
   clearUserPref(aPrefName) {
-    this._mm.sendSyncMessage('PDFJS:Parent:clearUserPref', {
+    this._mm.sendSyncMessage("PDFJS:Parent:clearUserPref", {
       name: aPrefName
     });
   },
 
   setIntPref(aPrefName, aPrefValue) {
-    this._mm.sendSyncMessage('PDFJS:Parent:setIntPref', {
+    this._mm.sendSyncMessage("PDFJS:Parent:setIntPref", {
       name: aPrefName,
       value: aPrefValue
     });
   },
 
   setBoolPref(aPrefName, aPrefValue) {
-    this._mm.sendSyncMessage('PDFJS:Parent:setBoolPref', {
+    this._mm.sendSyncMessage("PDFJS:Parent:setBoolPref", {
       name: aPrefName,
       value: aPrefValue
     });
   },
 
   setCharPref(aPrefName, aPrefValue) {
-    this._mm.sendSyncMessage('PDFJS:Parent:setCharPref', {
+    this._mm.sendSyncMessage("PDFJS:Parent:setCharPref", {
       name: aPrefName,
       value: aPrefValue
     });
   },
 
   setStringPref(aPrefName, aPrefValue) {
-    this._mm.sendSyncMessage('PDFJS:Parent:setStringPref', {
+    this._mm.sendSyncMessage("PDFJS:Parent:setStringPref", {
       name: aPrefName,
       value: aPrefValue
     });
@@ -102,7 +102,7 @@ var PdfjsContentUtils = {
    * handler app settings only available in the parent process.
    */
   isDefaultHandlerApp() {
-    return this._mm.sendSyncMessage('PDFJS:Parent:isDefaultHandlerApp')[0];
+    return this._mm.sendSyncMessage("PDFJS:Parent:isDefaultHandlerApp")[0];
   },
 
   /*
@@ -115,7 +115,7 @@ var PdfjsContentUtils = {
                        .getInterface(Ci.nsIDocShell)
                        .QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIContentFrameMessageManager);
-    winmm.sendAsyncMessage('PDFJS:Parent:displayWarning', {
+    winmm.sendAsyncMessage("PDFJS:Parent:displayWarning", {
       message: aMessage,
       label: aLabel,
       accessKey: aAccessKey,
@@ -127,18 +127,18 @@ var PdfjsContentUtils = {
    */
 
   observe(aSubject, aTopic, aData) {
-    if (aTopic === 'quit-application') {
+    if (aTopic === "quit-application") {
       this.uninit();
     }
   },
 
   receiveMessage(aMsg) {
     switch (aMsg.name) {
-      case 'PDFJS:Child:refreshSettings':
+      case "PDFJS:Child:refreshSettings":
         // Only react to this if we are remote.
         if (Services.appinfo.processType ===
             Services.appinfo.PROCESS_TYPE_CONTENT) {
-          let jsm = 'resource://pdf.js/PdfJs.jsm';
+          let jsm = "resource://pdf.js/PdfJs.jsm";
           let pdfjs = Components.utils.import(jsm, {}).PdfJs;
           pdfjs.updateRegistration();
         }
