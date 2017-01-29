@@ -1229,13 +1229,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (this.pendingEOFill) {
-        if (ctx.mozFillRule !== undefined) {
-          ctx.mozFillRule = 'evenodd';
-          ctx.fill();
-          ctx.mozFillRule = 'nonzero';
-        } else {
-          ctx.fill('evenodd');
-        }
+        ctx.fill('evenodd');
         this.pendingEOFill = false;
       } else {
         ctx.fill();
@@ -2273,13 +2267,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       if (this.pendingClip) {
         if (this.pendingClip === EO_CLIP) {
-          if (ctx.mozFillRule !== undefined) {
-            ctx.mozFillRule = 'evenodd';
-            ctx.clip();
-            ctx.mozFillRule = 'nonzero';
-          } else {
-            ctx.clip('evenodd');
-          }
+          ctx.clip('evenodd');
         } else {
           ctx.clip();
         }
