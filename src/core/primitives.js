@@ -28,6 +28,8 @@
 
 var isArray = sharedUtil.isArray;
 
+var EOF = {};
+
 var Name = (function NameClosure() {
   function Name(name) {
     this.name = name;
@@ -268,6 +270,10 @@ var RefSetCache = (function RefSetCacheClosure() {
   return RefSetCache;
 })();
 
+function isEOF(v) {
+  return (v === EOF);
+}
+
 function isName(v, name) {
   return v instanceof Name && (name === undefined || v.name === name);
 }
@@ -293,12 +299,14 @@ function isStream(v) {
   return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
 
+exports.EOF = EOF;
 exports.Cmd = Cmd;
 exports.Dict = Dict;
 exports.Name = Name;
 exports.Ref = Ref;
 exports.RefSet = RefSet;
 exports.RefSetCache = RefSetCache;
+exports.isEOF = isEOF;
 exports.isCmd = isCmd;
 exports.isDict = isDict;
 exports.isName = isName;
