@@ -18,18 +18,18 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs/core/ps_parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/parser'], factory);
+      'pdfjs/core/primitives'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./parser.js'));
+    factory(exports, require('../shared/util.js'), require('./primitives.js'));
   } else {
     factory((root.pdfjsCorePsParser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreParser);
+      root.pdfjsCorePrimitives);
   }
-}(this, function (exports, sharedUtil, coreParser) {
+}(this, function (exports, sharedUtil, corePrimitives) {
 
 var error = sharedUtil.error;
 var isSpace = sharedUtil.isSpace;
-var EOF = coreParser.EOF;
+var EOF = corePrimitives.EOF;
 
 var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {

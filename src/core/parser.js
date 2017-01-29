@@ -38,10 +38,12 @@ var isInt = sharedUtil.isInt;
 var isNum = sharedUtil.isNum;
 var isString = sharedUtil.isString;
 var warn = sharedUtil.warn;
+var EOF = corePrimitives.EOF;
 var Cmd = corePrimitives.Cmd;
 var Dict = corePrimitives.Dict;
 var Name = corePrimitives.Name;
 var Ref = corePrimitives.Ref;
+var isEOF = corePrimitives.isEOF;
 var isCmd = corePrimitives.isCmd;
 var isDict = corePrimitives.isDict;
 var isName = corePrimitives.isName;
@@ -56,12 +58,6 @@ var LZWStream = coreStream.LZWStream;
 var NullStream = coreStream.NullStream;
 var PredictorStream = coreStream.PredictorStream;
 var RunLengthStream = coreStream.RunLengthStream;
-
-var EOF = {};
-
-function isEOF(v) {
-  return (v === EOF);
-}
 
 var MAX_LENGTH_TO_CACHE = 1000;
 
@@ -1119,9 +1115,7 @@ var Linearization = {
   }
 };
 
-exports.EOF = EOF;
 exports.Lexer = Lexer;
 exports.Linearization = Linearization;
 exports.Parser = Parser;
-exports.isEOF = isEOF;
 }));
