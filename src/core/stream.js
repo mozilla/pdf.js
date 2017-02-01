@@ -129,7 +129,6 @@ var Stream = (function StreamClosure() {
     makeSubStream: function Stream_makeSubStream(start, length, dict) {
       return new Stream(this.bytes.buffer, start, length, dict);
     },
-    isStream: true
   };
 
   return Stream;
