@@ -29,6 +29,7 @@
 
 var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
 var AnnotationType = sharedUtil.AnnotationType;
+var stringToPDFString = sharedUtil.stringToPDFString;
 var Util = sharedUtil.Util;
 var addLinkAttributes = displayDOMUtils.addLinkAttributes;
 var LinkTarget = displayDOMUtils.LinkTarget;
@@ -1007,8 +1008,15 @@ var FileAttachmentAnnotationElement = (
   function FileAttachmentAnnotationElement(parameters) {
     AnnotationElement.call(this, parameters, true);
 
-    this.filename = getFilenameFromUrl(parameters.data.file.filename);
-    this.content = parameters.data.file.content;
+    var file = this.data.file;
+    this.filename = getFilenameFromUrl(file.filename);
+    this.content = file.content;
+
+    this.linkService.onFileAttachmentAnnotation({
+      id: stringToPDFString(file.filename),
+      filename: file.filename,
+      content: file.content,
+    });
   }
 
   Util.inherit(FileAttachmentAnnotationElement, AnnotationElement, {
@@ -1086,8 +1094,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
         if (!data) {
           continue;
         }
-
-        var properties = {
+        var element = annotationElementFactory.create({
           data: data,
           layer: parameters.div,
           page: parameters.page,
@@ -1097,8 +1104,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
           imageResourcesPath: parameters.imageResourcesPath ||
                               getDefaultSetting('imageResourcesPath'),
           renderInteractiveForms: parameters.renderInteractiveForms || false,
-        };
-        var element = annotationElementFactory.create(properties);
+        });
         if (element.isRenderable) {
           parameters.div.appendChild(element.render());
         }
