@@ -189,7 +189,7 @@ describe('CFFParser', function() {
   it('parses a CharString endchar with 4 args w/seac enabled', function() {
     var parser = new CFFParser(fontData, {},
                                /* seacAnalysisEnabled = */ true);
-    var cff = parser.parse();
+    parser.parse(); // cff
 
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize
@@ -211,7 +211,7 @@ describe('CFFParser', function() {
   it('parses a CharString endchar with 4 args w/seac disabled', function() {
     var parser = new CFFParser(fontData, {},
                                /* seacAnalysisEnabled = */ false);
-    var cff = parser.parse();
+    parser.parse(); // cff
 
     var bytes = new Uint8Array([0, 1, // count
                                 1,  // offsetSize

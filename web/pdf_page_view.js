@@ -360,7 +360,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var self = this;
       var pdfPage = this.pdfPage;
-      var viewport = this.viewport;
       var div = this.div;
       // Wrap the canvas so if it has a css transform for highdpi the overflow
       // will be hidden in FF.
@@ -519,8 +518,6 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       };
 
-      var self = this;
-      var pdfPage = this.pdfPage;
       var viewport = this.viewport;
       var canvas = document.createElement('canvas');
       canvas.id = 'page' + this.id;

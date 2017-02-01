@@ -62,7 +62,8 @@ function downloadLanguageFiles(root, langCode, callback) {
   files.forEach(function(fileName) {
     var outputPath = path.join(outputDir, fileName);
     var url = MOZ_AURORA_ROOT + langCode + MOZ_AURORA_PDFJS_DIR + fileName;
-    var request = https.get(url, function(response) {
+
+    https.get(url, function(response) {
       var content = '';
       response.setEncoding('utf8');
       response.on('data', function(chunk) {
