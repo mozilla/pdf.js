@@ -39,7 +39,6 @@ var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MessageHandler = sharedUtil.MessageHandler;
 var MissingPDFException = sharedUtil.MissingPDFException;
 var PageViewport = sharedUtil.PageViewport;
-var PasswordResponses = sharedUtil.PasswordResponses;
 var PasswordException = sharedUtil.PasswordException;
 var StatTimer = sharedUtil.StatTimer;
 var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;

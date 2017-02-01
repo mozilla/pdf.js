@@ -85,7 +85,6 @@
     layout: function () {
       this.throwIfInactive();
 
-      var pdfDocument = this.pdfDocument;
       var body = document.querySelector('body');
       body.setAttribute('data-pdfjsprinting', true);
 

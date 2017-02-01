@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 /* eslint strict: ["error", "function"] */
+/* eslint-disable no-unused-vars */
 /* umdutils ignore */
 
 (function (root, factory) {

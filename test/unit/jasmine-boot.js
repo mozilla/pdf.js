@@ -40,8 +40,6 @@
 
 'use strict';
 
-var pdfjsLibs;
-
 function initializePDFJS(callback) {
   require.config({paths: {'pdfjs': '../../src', 'pdfjs-web': '../../web',
                  'pdfjs-test': '..'}});

@@ -88,3 +88,7 @@ function verifyTtxOutput(output) {
     throw m[1];
   }
 }
+
+exports.decodeFontData = decodeFontData;
+exports.ttx = ttx;
+exports.verifyTtxOutput = verifyTtxOutput;

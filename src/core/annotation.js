@@ -38,7 +38,6 @@ var AnnotationFlag = sharedUtil.AnnotationFlag;
 var AnnotationType = sharedUtil.AnnotationType;
 var OPS = sharedUtil.OPS;
 var Util = sharedUtil.Util;
-var isString = sharedUtil.isString;
 var isArray = sharedUtil.isArray;
 var isInt = sharedUtil.isInt;
 var stringToBytes = sharedUtil.stringToBytes;
