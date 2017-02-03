@@ -56,6 +56,7 @@
     "no-floating-decimal": "error",
     "no-global-assign": "error",
     "no-implied-eval": "error",
+    "no-iterator": "error",
     "no-lone-blocks": "error",
     "no-multi-spaces": "error",
     "no-multi-str": "error",
@@ -92,7 +93,9 @@
     // Stylistic Issues
     "array-bracket-spacing": ["error", "never"],
     "block-spacing": ["error", "always"],
-    "brace-style": ["error", "1tbs", { "allowSingleLine": true, }],
+    "brace-style": ["error", "1tbs", {
+      "allowSingleLine": false,
+    }],
     "comma-spacing": ["error", { "before": false, "after": true, }],
     "comma-style": ["error", "last"],
     "eol-last": "error",
@@ -127,7 +130,7 @@
         "balanced": true,
       }
     }],
-  },
 
-  // ECMAScript 6
+    // ECMAScript 6
+  },
 }

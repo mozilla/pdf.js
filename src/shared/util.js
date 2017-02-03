@@ -1193,7 +1193,9 @@ function createPromiseCapability() {
     }
     if (typeof globalScope.Promise.resolve !== 'function') {
       globalScope.Promise.resolve = function (value) {
-        return new globalScope.Promise(function (resolve) { resolve(value); });
+        return new globalScope.Promise(function (resolve) {
+          resolve(value);
+        });
       };
     }
     if (typeof globalScope.Promise.reject !== 'function') {
@@ -1401,7 +1403,9 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
    * @returns {Promise}
    */
   Promise.resolve = function Promise_resolve(value) {
-    return new Promise(function (resolve) { resolve(value); });
+    return new Promise(function (resolve) {
+      resolve(value);
+    });
   };
 
   /**
@@ -1410,7 +1414,9 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
    * @returns {Promise}
    */
   Promise.reject = function Promise_reject(reason) {
-    return new Promise(function (resolve, reject) { reject(reason); });
+    return new Promise(function (resolve, reject) {
+      reject(reason);
+    });
   };
 
   Promise.prototype = {

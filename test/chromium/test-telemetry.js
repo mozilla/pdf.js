@@ -84,7 +84,9 @@ function createExtensionGlobal() {
   // Network-related mocks.
   window.Request = {};
   window.Request.prototype = {
-    get mode() { throw new TypeError('Illegal invocation'); },
+    get mode() {
+      throw new TypeError('Illegal invocation');
+    },
   };
   window.fetch = function(url, options) {
     assert.equal(url, LOG_URL);
@@ -339,7 +341,9 @@ var tests = [
     var window = createExtensionGlobal();
     var didWarn = false;
     window.console = {};
-    window.console.warn = function() { didWarn = true; };
+    window.console.warn = function() {
+      didWarn = true;
+    };
     window.chrome.runtime.id = 'abcdefghijklmnopabcdefghijklmnop';
     telemetryScript.runInNewContext(window);
     assert.deepEqual(window.test_requests, []);
@@ -373,7 +377,9 @@ var tests = [
   function test_fetch_mode_not_supported() {
     var window = createExtensionGlobal();
     delete window.Request.prototype.mode;
-    window.fetch = function() { throw new Error('Unexpected call to fetch!'); };
+    window.fetch = function() {
+      throw new Error('Unexpected call to fetch!');
+    };
     telemetryScript.runInNewContext(window);
     assert.deepEqual(window.test_requests, [{
       'Deduplication-Id': '4242424242',
