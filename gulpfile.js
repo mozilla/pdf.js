@@ -125,7 +125,9 @@ function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
   // readDependencies returns AMD module names: removing 'pdfjs' prefix and
   // adding '.js' extensions to the name.
   var umd = require('./external/umdutils/verifier.js');
-  initFiles = initFiles.map(function (p) { return pathPrefix + p; });
+  initFiles = initFiles.map(function (p) {
+    return pathPrefix + p;
+  });
   var files = umd.readDependencies(initFiles).loadOrder.map(function (name) {
     return pathPrefix + name.replace(/^[\w\-]+\//, '') + '.js';
   });
@@ -166,7 +168,9 @@ function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
 
   var templateContent = fs.readFileSync(filename).toString();
   templateContent = templateContent.replace(
-    /\/\/#expand\s+__BUNDLE__\s*\n/, function (all) { return bundleContent; });
+    /\/\/#expand\s+__BUNDLE__\s*\n/, function (all) {
+      return bundleContent;
+    });
   bundleContent = null;
 
   templateContent = p2.preprocessPDFJSCode(ctx, templateContent);

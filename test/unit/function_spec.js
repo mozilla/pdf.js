@@ -124,8 +124,9 @@ describe('function', function() {
       expect(program).toMatchArray(expectedProgram);
     });
     it('handles missing brackets', function() {
-      expect(function() { parse('{'); }).toThrow(
-        new Error('Unexpected symbol: found undefined expected 1.'));
+      expect(function() {
+        parse('{');
+      }).toThrow(new Error('Unexpected symbol: found undefined expected 1.'));
     });
     it('handles junk after the end', function() {
       var number = 3.3;

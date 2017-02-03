@@ -419,13 +419,19 @@ if (typeof PDFJS === 'undefined') {
   } else if (!('bind' in console.log)) {
     // native functions in IE9 might not have bind
     console.log = (function(fn) {
-      return function(msg) { return fn(msg); };
+      return function(msg) {
+        return fn(msg);
+      };
     })(console.log);
     console.error = (function(fn) {
-      return function(msg) { return fn(msg); };
+      return function(msg) {
+        return fn(msg);
+      };
     })(console.error);
     console.warn = (function(fn) {
-      return function(msg) { return fn(msg); };
+      return function(msg) {
+        return fn(msg);
+      };
     })(console.warn);
   }
 })();
@@ -606,7 +612,9 @@ if (typeof PDFJS === 'undefined') {
     var inputProto = el.constructor.prototype;
     var typeProperty = Object.getOwnPropertyDescriptor(inputProto, 'type');
     Object.defineProperty(inputProto, 'type', {
-      get: function () { return typeProperty.get.call(this); },
+      get: function () {
+        return typeProperty.get.call(this);
+      },
       set: function (value) {
         typeProperty.set.call(this, value === 'number' ? 'text' : value);
       },
@@ -630,7 +638,9 @@ if (typeof PDFJS === 'undefined') {
       var value = readyStateProto.get.call(this);
       return value === 'interactive' ? 'loading' : value;
     },
-    set: function (value) { readyStateProto.set.call(this, value); },
+    set: function (value) {
+      readyStateProto.set.call(this, value);
+    },
     enumerable: true,
     configurable: true
   });

@@ -211,8 +211,9 @@ describe('cmap', function() {
       expect(cmap instanceof IdentityCMap).toEqual(true);
       expect(cmap.vertical).toEqual(false);
       expect(cmap.length).toEqual(0x10000);
-      expect(function() { return cmap.isIdentityCMap; }).toThrow(
-        new Error('should not access .isIdentityCMap'));
+      expect(function() {
+        return cmap.isIdentityCMap;
+      }).toThrow(new Error('should not access .isIdentityCMap'));
       done();
     }).catch(function (reason) {
       done.fail(reason);
