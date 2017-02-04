@@ -98,7 +98,9 @@ if (typeof PDFJSDev === 'undefined' ||
     return (typeof imageData.data.buffer !== 'undefined');
   };
 } else {
-  hasCanvasTypedArrays = function () { return true; };
+  hasCanvasTypedArrays = function () {
+    return true;
+  };
 }
 
 var LinkTarget = {
