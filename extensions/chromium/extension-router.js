@@ -27,6 +27,8 @@ limitations under the License.
     'ftp',
     'file',
     'chrome-extension',
+    'blob',
+    'data',
     // Chromium OS
     'filesystem',
     // Chromium OS, shorthand for filesystem:<origin>/external/
