@@ -1092,8 +1092,12 @@ describe('api', function() {
         var xhr = new XMLHttpRequest(pdfPath);
         xhr.open('GET', pdfPath);
         xhr.responseType = 'arraybuffer';
-        xhr.onload = function () { resolve(new Uint8Array(xhr.response)); };
-        xhr.onerror = function () { reject(new Error('PDF is not loaded')); };
+        xhr.onload = function () {
+          resolve(new Uint8Array(xhr.response));
+        };
+        xhr.onerror = function () {
+          reject(new Error('PDF is not loaded'));
+        };
         xhr.send();
       });
       return loadPromise;

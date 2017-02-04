@@ -68,8 +68,12 @@
   }
   delete PDFJS.verbosity;
   Object.defineProperty(PDFJS, 'verbosity', {
-    get: function () { return sharedUtil.getVerbosityLevel(); },
-    set: function (level) { sharedUtil.setVerbosityLevel(level); },
+    get: function () {
+      return sharedUtil.getVerbosityLevel();
+    },
+    set: function (level) {
+      sharedUtil.setVerbosityLevel(level);
+    },
     enumerable: true,
     configurable: true
   });
