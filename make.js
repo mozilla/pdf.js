@@ -24,7 +24,6 @@ try {
   return;
 }
 
-var builder = require('./external/builder/builder.js');
 var fs = require('fs');
 
 var CONFIG_FILE = 'pdfjs.config';
@@ -33,15 +32,10 @@ var config = JSON.parse(fs.readFileSync(CONFIG_FILE));
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
     SRC_DIR = 'src/',
-    BUILD_TARGET = BUILD_DIR + 'pdf.js',
-    BUILD_WORKER_TARGET = BUILD_DIR + 'pdf.worker.js',
-    BUILD_TARGETS = [BUILD_TARGET, BUILD_WORKER_TARGET],
     FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
     CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
     JSDOC_DIR = BUILD_DIR + 'jsdoc',
     EXTENSION_SRC_DIR = 'extensions/',
-    FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
-    LOCALE_SRC_DIR = 'l10n/',
     GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
@@ -55,18 +49,6 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1',
     MOZCENTRAL_STREAM_CONVERTER2_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2292',
     FIREFOX_STREAM_CONVERTER2_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb2';
-
-var DEFINES = {
-  PRODUCTION: true,
-  // The main build targets:
-  GENERIC: false,
-  FIREFOX: false,
-  MOZCENTRAL: false,
-  CHROME: false,
-  MINIFIED: false,
-  SINGLE_FILE: false,
-  COMPONENTS: false
-};
 
 function getCurrentVersion() {
   // The 'build/version.json' file is created by 'buildnumber' task.
@@ -95,103 +77,17 @@ target.all = function() {
 // Production stuff
 //
 
-// Files that need to be included in every build.
-var COMMON_WEB_FILES =
-      ['web/images',
-       'web/debugger.js'],
-    COMMON_WEB_FILES_PREPROCESS =
-      ['web/viewer.html'],
-    COMMON_FIREFOX_FILES_PREPROCESS =
-      [FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfJsNetwork.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfjsContentUtils.jsm',
-       FIREFOX_CONTENT_DIR + 'PdfjsChromeUtils.jsm'];
 //
 // make generic
 // Builds the generic production viewer that should be compatible with most
 // modern HTML5 browsers.
 //
 target.generic = function() {
-  execGulp('bundle-generic');
-
-  target.locale();
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating generic viewer');
-
-  rm('-rf', GENERIC_DIR);
-  mkdir('-p', GENERIC_DIR);
-  mkdir('-p', GENERIC_DIR + BUILD_DIR);
-  mkdir('-p', GENERIC_DIR + '/web');
-  mkdir('-p', GENERIC_DIR + '/web/cmaps');
-
-  var defines = builder.merge(DEFINES, {GENERIC: true});
-
-  var setup = {
-    defines: defines,
-    copy: [
-      [BUILD_TARGETS, GENERIC_DIR + BUILD_DIR],
-      [BUILD_DIR + 'viewer.js', GENERIC_DIR + '/web'],
-      [COMMON_WEB_FILES, GENERIC_DIR + '/web'],
-      ['LICENSE', GENERIC_DIR],
-      ['external/webL10n/l10n.js', GENERIC_DIR + '/web'],
-      ['web/compatibility.js', GENERIC_DIR + '/web'],
-      ['web/compressed.tracemonkey-pldi-09.pdf', GENERIC_DIR + '/web'],
-      ['external/bcmaps/*', GENERIC_DIR + '/web/cmaps/'],
-      ['web/locale', GENERIC_DIR + '/web']
-    ],
-    preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, GENERIC_DIR + '/web']
-    ],
-    preprocessCSS: [
-      ['generic', 'web/viewer.css',
-       GENERIC_DIR + '/web/viewer.css']
-    ]
-  };
-  builder.build(setup);
-
-  cleanupJSSource(GENERIC_DIR + '/build/pdf.js');
-  cleanupJSSource(GENERIC_DIR + '/web/viewer.js');
-  cleanupCSSSource(GENERIC_DIR + '/web/viewer.css');
+  execGulp('generic');
 };
 
 target.components = function() {
-  execGulp('bundle-components');
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating generic components');
-
-  rm('-rf', COMPONENTS_DIR);
-  mkdir('-p', COMPONENTS_DIR);
-  mkdir('-p', COMPONENTS_DIR + 'images');
-
-  var defines = builder.merge(DEFINES, {COMPONENTS: true, GENERIC: true});
-
-  var COMPONENTS_IMAGES = [
-    'web/images/annotation-*.svg',
-    'web/images/loading-icon.gif',
-    'web/images/shadow.png',
-    'web/images/texture.png',
-  ];
-
-  var setup = {
-    defines: defines,
-    copy: [
-      [BUILD_DIR + 'pdf_viewer.js', COMPONENTS_DIR],
-      [COMPONENTS_IMAGES, COMPONENTS_DIR + 'images'],
-      ['web/compatibility.js', COMPONENTS_DIR],
-    ],
-    preprocess: [],
-    preprocessCSS: [
-      ['components', 'web/pdf_viewer.css', COMPONENTS_DIR + 'pdf_viewer.css'],
-    ]
-  };
-  builder.build(setup);
-
-  cleanupJSSource(COMPONENTS_DIR + 'pdf_viewer.js');
-  cleanupCSSSource(COMPONENTS_DIR + 'pdf_viewer.css');
+  execGulp('components');
 };
 
 target.jsdoc = function() {
@@ -400,50 +296,8 @@ target.bundle = function(args) {
 // flags the script loader to not attempt to load the separate worker JS file.
 //
 target.singlefile = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating singlefile build');
-
-  var SINGLE_FILE_BUILD_DIR = SINGLE_FILE_DIR + 'build/';
-
-  execGulp('bundle-singlefile');
-
-  cd(ROOT_DIR);
-
-  rm('-rf', SINGLE_FILE_DIR);
-  mkdir('-p', SINGLE_FILE_DIR);
-  mkdir('-p', SINGLE_FILE_BUILD_DIR);
-
-  cp(BUILD_DIR + 'pdf.combined.js', SINGLE_FILE_BUILD_DIR);
+  execGulp('singlefile');
 };
-
-function stripCommentHeaders(content) {
-  var notEndOfComment = '(?:[^*]|\\*(?!/))+';
-  var reg = new RegExp(
-    '\n/\\* Copyright' + notEndOfComment + '\\*/\\s*' +
-    '(?:/\\*' + notEndOfComment + '\\*/\\s*|//(?!#).*\n\\s*)*' +
-    '\\s*\'use strict\';', 'g');
-  content = content.replace(reg, '');
-  return content;
-}
-
-function cleanupJSSource(file) {
-  var content = cat(file);
-
-  content = stripCommentHeaders(content);
-
-  content.to(file);
-}
-
-function cleanupCSSSource(file) {
-  var content = cat(file);
-
-  // Strip out all license headers in the middle.
-  var reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
-  content = content.replace(reg, '');
-
-  content.to(file);
-}
 
 //
 // make minified
@@ -451,42 +305,7 @@ function cleanupCSSSource(file) {
 // modern HTML5 browsers.
 //
 target.minified = function() {
-  execGulp('bundle-minified');
-  target.locale();
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating minified viewer');
-
-  rm('-rf', MINIFIED_DIR);
-  mkdir('-p', MINIFIED_DIR);
-  mkdir('-p', MINIFIED_DIR + BUILD_DIR);
-  mkdir('-p', MINIFIED_DIR + '/web');
-  mkdir('-p', MINIFIED_DIR + '/web/cmaps');
-
-  var defines = builder.merge(DEFINES, {GENERIC: true, MINIFIED: true});
-
-  var setup = {
-    defines: defines,
-    copy: [
-      [BUILD_TARGETS, MINIFIED_DIR + BUILD_DIR],
-      [BUILD_DIR + 'viewer.js', MINIFIED_DIR + '/web'],
-      [COMMON_WEB_FILES, MINIFIED_DIR + '/web'],
-      ['web/compressed.tracemonkey-pldi-09.pdf', MINIFIED_DIR + '/web'],
-      ['external/bcmaps/*', MINIFIED_DIR + '/web/cmaps'],
-      ['web/locale', MINIFIED_DIR + '/web']
-    ],
-    preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, MINIFIED_DIR + '/web']
-    ],
-    preprocessCSS: [
-      ['minified', 'web/viewer.css',
-       MINIFIED_DIR + '/web/viewer.css']
-    ]
-  };
-  builder.build(setup);
-
-  cleanupCSSSource(MINIFIED_DIR + '/web/viewer.css');
+  execGulp('minified-pre');
 
   var viewerFiles = [
     'web/compatibility.js',
@@ -542,22 +361,10 @@ target.buildnumber = function() {
 // make firefox
 //
 target.firefox = function() {
-  cd(ROOT_DIR);
-  echo();
-  echo('### Building Firefox extension');
-  var defines = builder.merge(DEFINES, {FIREFOX: true});
+  execGulp('firefox-pre');
 
+  cd(ROOT_DIR);
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
-      FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
-      FIREFOX_EXTENSION_FILES_TO_COPY =
-        ['*.js',
-         '*.rdf',
-         '*.svg',
-         '*.png',
-         '*.manifest',
-         'locale',
-         'chrome',
-         '../../LICENSE'],
       FIREFOX_EXTENSION_FILES =
         ['bootstrap.js',
          'install.rdf',
@@ -569,55 +376,6 @@ target.firefox = function() {
          'locale',
          'LICENSE'],
       FIREFOX_EXTENSION_NAME = 'pdf.js.xpi';
-
-  target.locale();
-  execGulp('bundle-firefox');
-  cd(ROOT_DIR);
-
-  // Clear out everything in the firefox extension build directory
-  rm('-rf', FIREFOX_BUILD_DIR);
-  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR);
-  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR);
-  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web');
-  mkdir('-p', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps');
-
-  cp(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm',
-     FIREFOX_BUILD_CONTENT_DIR + 'PdfJs.jsm');
-
-  cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry-addon.jsm',
-     FIREFOX_BUILD_CONTENT_DIR + 'PdfJsTelemetry.jsm');
-
-  // Copy extension files
-  cd(FIREFOX_EXTENSION_DIR);
-  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY, ROOT_DIR + FIREFOX_BUILD_DIR);
-  cd(ROOT_DIR);
-
-  var setup = {
-    defines: defines,
-    copy: [
-      [BUILD_TARGETS, FIREFOX_BUILD_CONTENT_DIR + BUILD_DIR],
-      [BUILD_DIR + 'viewer.js', FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      [COMMON_WEB_FILES, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      ['external/bcmaps/*', FIREFOX_BUILD_CONTENT_DIR + '/web/cmaps'],
-      [FIREFOX_EXTENSION_DIR + 'tools/l10n.js',
-       FIREFOX_BUILD_CONTENT_DIR + '/web']
-    ],
-    preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR + '/web'],
-      [COMMON_FIREFOX_FILES_PREPROCESS, FIREFOX_BUILD_CONTENT_DIR],
-      [FIREFOX_EXTENSION_DIR + 'bootstrap.js', FIREFOX_BUILD_DIR]
-    ],
-    preprocessCSS: [
-      ['firefox', 'web/viewer.css',
-       FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.css']
-    ]
-  };
-  builder.build(setup);
-
-  cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.js');
-  cleanupJSSource(FIREFOX_BUILD_DIR + 'bootstrap.js');
-  cleanupJSSource(FIREFOX_BUILD_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
-  cleanupCSSSource(FIREFOX_BUILD_CONTENT_DIR + '/web/viewer.css');
 
   // Remove '.DS_Store' and other hidden files
   find(FIREFOX_BUILD_DIR).forEach(function(file) {
@@ -667,77 +425,13 @@ target.firefox = function() {
 // make mozcentral
 //
 target.mozcentral = function() {
+  execGulp('mozcentral-pre');
+
   cd(ROOT_DIR);
-  echo();
-  echo('### Building mozilla-central extension');
-  var defines = builder.merge(DEFINES, {MOZCENTRAL: true});
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
-      MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + 'content/',
-      MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + 'browser/locales/en-US/pdfviewer/',
-      FIREFOX_CONTENT_DIR = EXTENSION_SRC_DIR + '/firefox/content/',
-      FIREFOX_EXTENSION_FILES_TO_COPY =
-        ['*.svg',
-         '*.png',
-         '*.manifest',
-         'README.mozilla',
-         '../../LICENSE'],
-      DEFAULT_LOCALE_FILES =
-        [LOCALE_SRC_DIR + 'en-US/viewer.properties',
-         LOCALE_SRC_DIR + 'en-US/chrome.properties'],
-      FIREFOX_MC_EXCLUDED_FILES =
-        ['icon.png',
-         'icon64.png'];
-
-  execGulp('bundle-mozcentral');
-  cd(ROOT_DIR);
-
-  // Clear out everything in the firefox extension build directory
-  rm('-rf', MOZCENTRAL_DIR);
-  mkdir('-p', MOZCENTRAL_CONTENT_DIR);
-  mkdir('-p', MOZCENTRAL_L10N_DIR);
-  mkdir('-p', MOZCENTRAL_CONTENT_DIR + BUILD_DIR);
-  mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web');
-  mkdir('-p', MOZCENTRAL_CONTENT_DIR + '/web/cmaps');
-
-  cp(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm', MOZCENTRAL_CONTENT_DIR);
-
-  // Copy extension files
-  cd('extensions/firefox');
-  cp('-R', FIREFOX_EXTENSION_FILES_TO_COPY,
-     ROOT_DIR + MOZCENTRAL_EXTENSION_DIR);
-  mv('-f', ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome-mozcentral.manifest',
-           ROOT_DIR + MOZCENTRAL_EXTENSION_DIR + '/chrome.manifest');
-  cd(ROOT_DIR);
-
-  var setup = {
-    defines: defines,
-    copy: [
-      [BUILD_TARGETS, MOZCENTRAL_CONTENT_DIR + BUILD_DIR],
-      [BUILD_DIR + 'viewer.js', MOZCENTRAL_CONTENT_DIR + '/web'],
-      [COMMON_WEB_FILES, MOZCENTRAL_CONTENT_DIR + '/web'],
-      ['external/bcmaps/*', MOZCENTRAL_CONTENT_DIR + '/web/cmaps'],
-      ['extensions/firefox/tools/l10n.js', MOZCENTRAL_CONTENT_DIR + '/web']
-    ],
-    preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR + '/web'],
-      [FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap.js', MOZCENTRAL_CONTENT_DIR],
-      [COMMON_FIREFOX_FILES_PREPROCESS, MOZCENTRAL_CONTENT_DIR],
-      [FIREFOX_CONTENT_DIR + 'PdfJs.jsm', MOZCENTRAL_CONTENT_DIR]
-    ],
-    preprocessCSS: [
-      ['mozcentral',
-       'web/viewer.css',
-       MOZCENTRAL_CONTENT_DIR + '/web/viewer.css']
-    ]
-  };
-  builder.build(setup);
-
-  cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.js');
-  cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfJs.jsm');
-  cleanupJSSource(MOZCENTRAL_CONTENT_DIR + '/PdfjsChromeUtils.jsm');
-  cleanupCSSSource(MOZCENTRAL_CONTENT_DIR + '/web/viewer.css');
+      MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + 'content/';
 
   // Remove '.DS_Store' and other hidden files
   find(MOZCENTRAL_DIR).forEach(function(file) {
@@ -745,18 +439,6 @@ target.mozcentral = function() {
       rm('-f', file);
     }
   });
-
-  // Remove excluded files
-  cd(MOZCENTRAL_EXTENSION_DIR);
-  FIREFOX_MC_EXCLUDED_FILES.forEach(function(file) {
-    if (test('-f', file)) {
-      rm('-r', file);
-    }
-  });
-  cd(ROOT_DIR);
-
-  // Copy default localization files
-  cp(DEFAULT_LOCALE_FILES, MOZCENTRAL_L10N_DIR);
 
   // Update the build version number
   var VERSION = getCurrentVersion();
@@ -779,55 +461,12 @@ target.mozcentral = function() {
 // make chrome
 //
 target.chromium = function() {
-  target.locale();
+  execGulp('chromium-pre');
 
   cd(ROOT_DIR);
-  echo();
-  echo('### Building Chromium extension');
-  var defines = builder.merge(DEFINES, {CHROME: true});
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
-
-  execGulp('bundle-chromium');
-  cd(ROOT_DIR);
-
-  // Clear out everything in the chrome extension build directory
-  rm('-Rf', CHROME_BUILD_DIR);
-  mkdir('-p', CHROME_BUILD_CONTENT_DIR);
-  mkdir('-p', CHROME_BUILD_CONTENT_DIR + BUILD_DIR);
-  mkdir('-p', CHROME_BUILD_CONTENT_DIR + '/web');
-
-  var setup = {
-    defines: defines,
-    copy: [
-      [BUILD_TARGETS, CHROME_BUILD_CONTENT_DIR + BUILD_DIR],
-      [BUILD_DIR + 'viewer.js', CHROME_BUILD_CONTENT_DIR + '/web'],
-      [COMMON_WEB_FILES, CHROME_BUILD_CONTENT_DIR + '/web'],
-      [['extensions/chromium/*.json',
-        'extensions/chromium/*.html',
-        'extensions/chromium/*.js',
-        'extensions/chromium/*.css',
-        'extensions/chromium/icon*.png'],
-       CHROME_BUILD_DIR],
-      ['extensions/chromium/pageAction/*.*', CHROME_BUILD_DIR + '/pageAction'],
-      ['extensions/chromium/options/*.*', CHROME_BUILD_DIR + '/options'],
-      ['external/webL10n/l10n.js', CHROME_BUILD_CONTENT_DIR + '/web'],
-      ['external/bcmaps/*', CHROME_BUILD_CONTENT_DIR + '/web/cmaps'],
-      ['web/locale', CHROME_BUILD_CONTENT_DIR + '/web']
-    ],
-    preprocess: [
-      [COMMON_WEB_FILES_PREPROCESS, CHROME_BUILD_CONTENT_DIR + '/web']
-    ],
-    preprocessCSS: [
-      ['chrome', 'web/viewer.css',
-       CHROME_BUILD_CONTENT_DIR + '/web/viewer.css']
-    ]
-  };
-  builder.build(setup);
-
-  cleanupJSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.js');
-  cleanupCSSSource(CHROME_BUILD_CONTENT_DIR + '/web/viewer.css');
 
   // Update the build version number
   var VERSION = getCurrentVersion();
@@ -1171,6 +810,3 @@ target.makefile = function () {
 target.importl10n = function() {
   execGulp('importl10n');
 };
-
-exports.stripCommentHeaders = stripCommentHeaders;
-exports.builder = builder;
