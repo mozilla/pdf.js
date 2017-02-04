@@ -18,7 +18,7 @@ var PAGE_NUMBER = 1;
 var PAGE_SCALE = 1.5;
 var SVG_NS = 'http://www.w3.org/2000/svg';
 
-PDFJS.workerSrc = '../../build/pdf.worker.js';
+PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
 
 function buildSVG(viewport, textContent) {
   // Building SVG with size of the viewport (for simplicity)

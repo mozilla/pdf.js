@@ -13,7 +13,7 @@
 <!-- for legacy browsers we need to use compatibility.js -->
 <script src="../../web/compatibility.js"></script>
 
-<script src="../../build/pdf.js"></script>
+<script src="../../build/generic/build/pdf.js"></script>
 
 <script id="script">
   // atob() is used to convert base64 encoded PDF to binary-like data.
@@ -43,7 +43,7 @@
   //
   // The workerSrc property shall be specified.
   //
-  PDFJS.workerSrc = '../../build/pdf.worker.js';
+  PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
 
   // Opening PDF by passing its binary data as a string. It is still preferable
   // to use Uint8Array, but string or array-like structure will work too.
