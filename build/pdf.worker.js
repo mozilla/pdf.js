@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdfWorker = {}));
   // Use strict in our context only - users might not want it
   'use strict';
 
-var pdfjsVersion = '1.5.490';
-var pdfjsBuild = 'cbcfcf7';
+var pdfjsVersion = '1.6.214';
+var pdfjsBuild = '1c45e8f';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -11184,7 +11184,7 @@ var error = sharedUtil.error;
  *   (partners.adobe.com/public/developer/en/ps/sdk/5116.DCT_Filter.pdf)
  */
 
-var JpegImage = (function jpegImage() {
+var JpegImage = (function JpegImageClosure() {
   var dctZigZag = new Uint8Array([
      0,
      1,  8,
@@ -11212,7 +11212,9 @@ var JpegImage = (function jpegImage() {
   var dctSqrt2 =  5793;   // sqrt(2)
   var dctSqrt1d2 = 2896;  // sqrt(2) / 2
 
-  function constructor() {
+  function JpegImage() {
+    this.decodeTransform = null;
+    this.colorTransform = -1;
   }
 
   function buildHuffmanTable(codeLengths, values) {
@@ -11507,6 +11509,12 @@ var JpegImage = (function jpegImage() {
       // find marker
       bitsCount = 0;
       marker = (data[offset] << 8) | data[offset + 1];
+      // Some bad images seem to pad Scan blocks with zero bytes, skip past
+      // those to attempt to find a valid marker (fixes issue4090.pdf).
+      while (data[offset] === 0x00 && offset < data.length - 1) {
+        offset++;
+        marker = (data[offset] << 8) | data[offset + 1];
+      }
       if (marker <= 0xFF00) {
         error('JPEG error: marker was not found');
       }
@@ -11729,7 +11737,7 @@ var JpegImage = (function jpegImage() {
     return a <= 0 ? 0 : a >= 255 ? 255 : a;
   }
 
-  constructor.prototype = {
+  JpegImage.prototype = {
     parse: function parse(data) {
 
       function readUint16() {
@@ -12046,8 +12054,20 @@ var JpegImage = (function jpegImage() {
         // The adobe transform marker overrides any previous setting
         return true;
       } else if (this.numComponents === 3) {
+        if (!this.adobe && this.colorTransform === 0) {
+          // If the Adobe transform marker is not present and the image
+          // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
+          // then the colours should *not* be transformed.
+          return false;
+        }
         return true;
-      } else {
+      } else { // `this.numComponents !== 3`
+        if (!this.adobe && this.colorTransform === 1) {
+          // If the Adobe transform marker is not present and the image
+          // dictionary has a 'ColorTransform' entry, explicitly set to `1`,
+          // then the colours should be transformed.
+          return true;
+        }
         return false;
       }
     },
@@ -12189,7 +12209,7 @@ var JpegImage = (function jpegImage() {
           rgbData[offset++] = grayColor;
         }
         return rgbData;
-      } else if (this.numComponents === 3) {
+      } else if (this.numComponents === 3 && this._isColorConversionNeeded()) {
         return this._convertYccToRgb(data);
       } else if (this.numComponents === 4) {
         if (this._isColorConversionNeeded()) {
@@ -12206,7 +12226,7 @@ var JpegImage = (function jpegImage() {
     }
   };
 
-  return constructor;
+  return JpegImage;
 })();
 
 exports.JpegImage = JpegImage;
@@ -19805,6 +19825,7 @@ exports.isStream = isStream;
 var Util = sharedUtil.Util;
 var error = sharedUtil.error;
 var info = sharedUtil.info;
+var isInt = sharedUtil.isInt;
 var isArray = sharedUtil.isArray;
 var createObjectURL = sharedUtil.createObjectURL;
 var shadow = sharedUtil.shadow;
@@ -20662,7 +20683,7 @@ var PredictorStream = (function PredictorStreamClosure() {
  * DecodeStreams.
  */
 var JpegStream = (function JpegStreamClosure() {
-  function JpegStream(stream, maybeLength, dict, xref) {
+  function JpegStream(stream, maybeLength, dict) {
     // Some images may contain 'junk' before the SOI (start-of-image) marker.
     // Note: this seems to mainly affect inline images.
     var ch;
@@ -20696,8 +20717,8 @@ var JpegStream = (function JpegStreamClosure() {
     var jpegImage = new JpegImage();
 
     // Checking if values need to be transformed before conversion.
-    if (this.forceRGB && this.dict && isArray(this.dict.get('Decode'))) {
-      var decodeArr = this.dict.getArray('Decode');
+    var decodeArr = this.dict.getArray('Decode', 'D');
+    if (this.forceRGB && isArray(decodeArr)) {
       var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
       var decodeArrLength = decodeArr.length;
       var transform = new Int32Array(decodeArrLength);
@@ -20712,6 +20733,14 @@ var JpegStream = (function JpegStreamClosure() {
       }
       if (transformNeeded) {
         jpegImage.decodeTransform = transform;
+      }
+    }
+    // Fetching the 'ColorTransform' entry, if it exists.
+    var decodeParams = this.dict.get('DecodeParms', 'DP');
+    if (isDict(decodeParams)) {
+      var colorTransform = decodeParams.get('ColorTransform');
+      if (isInt(colorTransform)) {
+        jpegImage.colorTransform = colorTransform;
       }
     }
 
@@ -20835,7 +20864,7 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
     var jbig2Image = new Jbig2Image();
 
     var chunks = [];
-    var decodeParams = this.dict.getArray('DecodeParms');
+    var decodeParams = this.dict.getArray('DecodeParms', 'DP');
 
     // According to the PDF specification, DecodeParms can be either
     // a dictionary, or an array whose elements are dictionaries.
@@ -25639,7 +25668,7 @@ var Parser = (function ParserClosure() {
         }
         if (name === 'DCTDecode' || name === 'DCT') {
           xrefStreamStats[StreamType.DCT] = true;
-          return new JpegStream(stream, maybeLength, stream.dict, this.xref);
+          return new JpegStream(stream, maybeLength, stream.dict);
         }
         if (name === 'JPXDecode' || name === 'JPX') {
           xrefStreamStats[StreamType.JPX] = true;
@@ -37057,18 +37086,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    */
   NativeImageDecoder.isSupported =
       function NativeImageDecoder_isSupported(image, xref, res) {
-    var cs = ColorSpace.parse(image.dict.get('ColorSpace', 'CS'), xref, res);
+    var dict = image.dict;
+    if (dict.has('DecodeParms') || dict.has('DP')) {
+      return false;
+    }
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
-           cs.isDefaultDecode(image.dict.getArray('Decode', 'D'));
+           cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
   /**
    * Checks if the image can be decoded by the browser.
    */
   NativeImageDecoder.isDecodable =
       function NativeImageDecoder_isDecodable(image, xref, res) {
-    var cs = ColorSpace.parse(image.dict.get('ColorSpace', 'CS'), xref, res);
+    var dict = image.dict;
+    if (dict.has('DecodeParms') || dict.has('DP')) {
+      return false;
+    }
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
     return (cs.numComps === 1 || cs.numComps === 3) &&
-           cs.isDefaultDecode(image.dict.getArray('Decode', 'D'));
+           cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
 
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
