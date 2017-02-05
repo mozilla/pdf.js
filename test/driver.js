@@ -251,7 +251,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 /**
  * @class
  */
-var Driver = (function DriverClosure() {
+var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
   /**
    * @constructs Driver
    * @param {DriverOptions} options
@@ -685,5 +685,3 @@ var Driver = (function DriverClosure() {
 
   return Driver;
 })();
-
-exports.Driver = Driver;
