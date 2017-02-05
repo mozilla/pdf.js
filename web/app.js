@@ -737,7 +737,9 @@ var PDFViewerApplication = {
     }
 
     var url = this.baseUrl;
-    var filename = getPDFFileNameFromURL(url);
+    // Use this.url instead of this.baseUrl to perform filename detection based
+    // on the reference fragment as ultimate fallback if needed.
+    var filename = getPDFFileNameFromURL(this.url);
     var downloadManager = this.downloadManager;
     downloadManager.onerror = function (err) {
       // This error won't really be helpful because it's likely the
