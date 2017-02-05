@@ -569,14 +569,17 @@ var PDFViewerApplication = {
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
     this.baseUrl = url.split('#')[0];
-    try {
-      this.setTitle(decodeURIComponent(
-        pdfjsLib.getFilenameFromUrl(url)) || url);
-    } catch (e) {
-      // decodeURIComponent may throw URIError,
-      // fall back to using the unprocessed url in that case
-      this.setTitle(url);
+    var title = getPDFFileNameFromURL(url, '');
+    if (!title) {
+      try {
+        title = decodeURIComponent(pdfjsLib.getFilenameFromUrl(url)) || url;
+      } catch (e) {
+        // decodeURIComponent may throw URIError,
+        // fall back to using the unprocessed url in that case
+        title = url;
+      }
     }
+    this.setTitle(title);
   },
 
   setTitle: function pdfViewSetTitle(title) {
