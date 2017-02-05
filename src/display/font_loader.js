@@ -61,7 +61,10 @@ FontLoader.prototype = {
   clear: function fontLoaderClear() {
     var styleElement = this.styleElement;
     if (styleElement) {
-      styleElement.parentNode.removeChild(styleElement);
+      if (styleElement.parentNode) {
+        // Prevent "TypeError: styleElement.parentNode is null" during testing.
+        styleElement.parentNode.removeChild(styleElement);
+      }
       styleElement = this.styleElement = null;
     }
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
