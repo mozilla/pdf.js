@@ -36,26 +36,22 @@ function setupForm(div, content, viewport) {
     element.style.top = Math.floor(rect[1]) + 'px';
     element.style.width = Math.ceil(rect[2] - rect[0]) + 'px';
     element.style.height = Math.ceil(rect[3] - rect[1]) + 'px';
+    if (item.fieldType === 'Tx' && item.fieldFlags & (1 << 24) &&
+        item.maxLen !== null) {
+      // Comb
+      element.style.fontFamily = 'monospace';
+      var combSpacing = (rect[2] - rect[0]) / parseInt(item.maxLen);
+      element.style.letterSpacing = 'calc(' + combSpacing + 'px - 1ch)';
+    }
     return element;
   }
   function assignFontStyle(element, item) {
-    var fontStyles = '';
     if ('fontSize' in item) {
-      fontStyles += 'font-size: ' + Math.round(item.fontSize *
-                                               viewport.fontScale) + 'px;';
+      element.fontSize = Math.round(item.fontSize * viewport.fontScale) + 'px';
     }
-    switch (item.textAlignment) {
-      case 0:
-        fontStyles += 'text-align: left;';
-        break;
-      case 1:
-        fontStyles += 'text-align: center;';
-        break;
-      case 2:
-        fontStyles += 'text-align: right;';
-        break;
-    }
-    element.setAttribute('style', element.getAttribute('style') + fontStyles);
+    element.style.textAlign = ['left', 'center', 'right'][item.textAlignment];
+    element.style.verticalAlign = 'middle';
+    element.style.display = 'table-cell';
   }
 
   content.getAnnotations().then(function(items) {
@@ -73,6 +69,10 @@ function setupForm(div, content, viewport) {
           var input;
           if (item.fieldType == 'Tx') {
             input = createElementWithStyle('input', item);
+            input.text = 'text';
+            if (item.maxLen !== null) {
+              input.maxLength = parseInt(item.maxLen);
+            }
           }
           if (item.fieldType == 'Btn') {
             input = createElementWithStyle('input', item);
