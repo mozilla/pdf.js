@@ -186,6 +186,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       return;
     }
 
+    // The temporary canvas is used to measure text length in the DOM.
     var canvas = document.createElement('canvas');
     if (typeof PDFJSDev === 'undefined' ||
         PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
