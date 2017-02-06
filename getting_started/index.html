@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+    <title>Getting Started</title>
+    <!-- Bootstrap core CSS-->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template-->
+    <link href="../css/main.css" rel="stylesheet">
+  </head>
+  <body>
+    <header class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" data-toggle="collapse" data-target=".navbar-collapse" class="navbar-toggle"><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="#" class="navbar-brand"><img src="../images/logo.svg"></a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="../">Home</a></li>
+            <li class="active"><a href="../getting_started/">Getting Started</a></li>
+            <li><a href="../examples/">Examples</a></li>
+            <li><a href="https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions">FAQ</a></li>
+            <li><a href="../api/">API</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+    <div class="container">
+      <div class="starter-template">
+        <section class="content"><h1 id="getting-started">Getting Started</h1>
+<p>An introduction to <span class="caps">PDF</span>.js with<span class="widont">&nbsp;</span>examples.</p>
+<h2 id="introduction">Introduction</h2>
+<p>Before downloading <span class="caps">PDF</span>.js please take a moment to understand the different layers of the <span class="caps">PDF</span>.js<span class="widont">&nbsp;</span>project.</p>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Layer</th>
+      <th>About</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Core</td>
+      <td>The core layer is where a binary <span class="caps">PDF</span> is parsed and interpreted. This layer is the foundation for all subsequent layers. It is not documented here because using it directly is considered an advanced usage and the <span class="caps">API</span> is likely to change. For an example of using the core layer see the <a href="https://github.com/brendandahl/pdf.js.utils/tree/master/browser"><span class="caps">PDF</span> Object Browser</a>
+      </td>
+    </tr>
+    <tr>
+      <td>Display</td>
+      <td>The display layer takes the core layer and exposes an easier to use <span class="caps">API</span> to render PDFs and get other information out of a document. This <span class="caps">API</span> is what the version number is based on.</td>
+    </tr>
+    <tr>
+      <td>Viewer</td>
+      <td>The viewer is built on the display layer and is the <span class="caps">UI</span> for <span class="caps">PDF</span> viewer in Firefox and the other browser extensions within the project. It can be a good starting point for building your own viewer. <em>However, we do ask if you plan to embed the viewer in your own site, that it not just be an unmodified version. Please re-skin it or build upon it.</em></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="download">Download</h2>
+<div class="row">
+  <div class="col-md-6">
+    <h3>Pre-built</h3>
+    <p>
+      Includes the generic build of <span class="caps">PDF</span>.js and the<span class="widont">&nbsp;</span>viewer.
+    </p>
+    <span class="btn-group-vertical centered">
+      <a type="button" class="btn btn-primary" href="https://github.com/mozilla/pdf.js/releases/download/v1.6.210/pdfjs-1.6.210-dist.zip">Stable (v1.6.210)</a>
+      <a type="button" class="btn btn-warning" href="https://github.com/mozilla/pdf.js/releases/download/v1.7.225/pdfjs-1.7.225-dist.zip">Beta (v1.7.225)</a>
+    </span>
+  </div>
+  <div class="col-md-6">
+    <h3>Source</h3>
+    To get a local copy of the current code, clone it using git:
+    <pre><code>$ git clone git://github.com/mozilla/pdf.js.git
+$ cd pdf.js
+</code></pre>
+  </div>
+</div>
+
+<h2 id="file-layout-overview">File Layout Overview</h2>
+<h3 id="prebuilt">Prebuilt</h3>
+<pre><code>├── LICENSE
+├── build/
+│   ├── pdf.js                             - display layer
+│   └── pdf.worker.js                      - core layer
+└── web/
+    ├── cmaps/                             - character maps(required by core)
+    ├── compatibility.js                   - polyfills for missing features
+    ├── compressed.tracemonkey-pldi-09.pdf - test pdf
+    ├── debugger.js                        - helpful pdf debugging features
+    ├── images/                            - images for the viewer and annotation icons
+    ├── l10n.js                            - localization
+    ├── locale/                            - translation files
+    ├── viewer.css                         - viewer style sheet
+    ├── viewer.html                        - viewer html
+    └── viewer.js                          - viewer layer
+</code></pre><h3 id="source">Source</h3>
+<pre><code>├── AUTHORS
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── build/                                 - output of build steps (empty)
+├── docs/                                  - this
+├── examples/                              - bare bones examples
+├── extensions/                            - various browser extensions
+├── external/                              - third party code
+├── l10n/                                  - translation files
+├── make.js                                - build script
+├── package.json
+├── src/
+│   ├── core/                              - core layer
+│   ├── display/                           - display layer
+│   ├── images/
+│   ├── pdf.js                             - wrapper file that everything is bundled into
+│   ├── shared/                            - shared code between core and display layers
+│   └── worker_loader.js                   - used for developer builds to load worker files
+├── test/                                  - reference, unit, and font tests
+└── web/                                   - viewer layer
+</code></pre><h2 id="trying-the-viewer">Trying the Viewer</h2>
+<p>With the prebuilt or source version open <code>web/viewer.html</code> in a browser and the test pdf should load. Note: the worker is not enabled for file:// urls, so use a server. If you’re using the source build and have node, you can run <code>gulp server</code>.</p>
+<h2 id="more-information">More Information</h2>
+<p>For a further walkthrough of a minimal viewer see the hello world example. More documentation can be found in our <a href="https://github.com/mozilla/pdf.js/wiki">wiki</a><span class="widont">&nbsp;</span>too.</p>
+</section>
+      </div>
+    </div>
+    <div class="container">
+      <footer>
+        <p>&copy;Mozilla and individual contributors</p><p>PDF.js is licensed under <a href="https://github.com/mozilla/pdf.js/blob/master/LICENSE">Apache</a>,
+documentation is licensed under <a href="http://creativecommons.org/licenses/by-sa/2.5/">CC BY-SA 2.5</a></p>
+      </footer>
+    </div>
+    <!-- Bootstrap core JavaScript-->
+    <script src="../js/jquery-2.1.0.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+  </body>
+</html>

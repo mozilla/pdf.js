@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="../images/favicon.ico">
+    <title>Examples</title>
+    <!-- Bootstrap core CSS-->
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom styles for this template-->
+    <link href="../css/main.css" rel="stylesheet">
+  </head>
+  <body>
+    <header class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" data-toggle="collapse" data-target=".navbar-collapse" class="navbar-toggle"><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="#" class="navbar-brand"><img src="../images/logo.svg"></a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="../">Home</a></li>
+            <li><a href="../getting_started/">Getting Started</a></li>
+            <li class="active"><a href="../examples/">Examples</a></li>
+            <li><a href="https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions">FAQ</a></li>
+            <li><a href="../api/">API</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+    <div class="container">
+      <div class="starter-template">
+        <section class="content"><h2 id="hello-world-walkthrough">Hello World Walkthrough</h2>
+<p><a href="https://github.com/mozilla/pdf.js/tree/master/examples/helloworld">Full source</a></p>
+<p><span class="caps">PDF</span>.js heavily relies on the use of <a href="https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise">Promises</a>. If promises are new to you, it’s recommended you become familiar with them before continuing<span class="widont">&nbsp;</span>on.</p>
+<h3 id="document">Document</h3>
+<p>The object structure of <span class="caps">PDF</span>.js loosely follows the structure of an actual <span class="caps">PDF</span>. At the top level there is a document object. From the document, more information and individual pages can be fetched. To get the<span class="widont">&nbsp;</span>document:</p>
+<pre><code class="lang-js">PDFJS.getDocument(<span class="string">'helloworld.pdf'</span>)
+</code></pre>
+<p>Remember though that <span class="caps">PDF</span>.js uses promises, so the above will return a promise that is resolved with the document<span class="widont">&nbsp;</span>object.</p>
+<pre><code class="lang-js">PDFJS.getDocument(<span class="string">'helloworld.pdf'</span>).then(<span class="function"><span class="keyword">function</span>(<span class="params">pdf</span>) </span>{
+  <span class="comment">// you can now use *pdf* here</span>
+});
+</code></pre>
+<h3 id="page">Page</h3>
+<p>Now that we have the document, we can get a page. Again, this uses<span class="widont">&nbsp;</span>promises.</p>
+<pre><code class="lang-js">pdf.getPage(<span class="number">1</span>).then(<span class="function"><span class="keyword">function</span>(<span class="params">page</span>) </span>{
+  <span class="comment">// you can now use *page* here</span>
+});
+</code></pre>
+<h3 id="rendering-the-page">Rendering the Page</h3>
+<p>Each <span class="caps">PDF</span> page has its own viewport which defines the size in pixels(<span class="caps">72DPI</span>) and initial rotation. By default the viewport is scaled to the original size of the <span class="caps">PDF</span>, but this can be changed by modifying the viewport. When the viewport is created an initial transformation matrix will also be created that takes into account the desired scale, rotation, and it transforms the coordinate system (the 0,0 point in <span class="caps">PDF</span> documents the bottom-left whereas canvas 0,0 is<span class="widont">&nbsp;</span>top-left).</p>
+<pre><code class="lang-js"><span class="keyword">var</span> scale = <span class="number">1.5</span>;
+<span class="keyword">var</span> viewport = page.getViewport(scale);
+
+<span class="keyword">var</span> canvas = <span class="built_in">document</span>.getElementById(<span class="string">'the-canvas'</span>);
+<span class="keyword">var</span> context = canvas.getContext(<span class="string">'2d'</span>);
+canvas.height = viewport.height;
+canvas.width = viewport.width;
+
+<span class="keyword">var</span> renderContext = {
+  <span class="attr">canvasContext</span>: context,
+  <span class="attr">viewport</span>: viewport
+};
+page.render(renderContext);
+</code></pre>
+<p>Alternatively, if you want the canvas to render to a certain pixel size you could do the<span class="widont">&nbsp;</span>following:</p>
+<pre><code class="lang-js"><span class="keyword">var</span> desiredWidth = <span class="number">100</span>;
+<span class="keyword">var</span> viewport = page.getViewport(<span class="number">1</span>);
+<span class="keyword">var</span> scale = desiredWidth / viewport.width;
+<span class="keyword">var</span> scaledViewport = page.getViewport(scale);
+</code></pre>
+</section>
+      </div>
+    </div>
+    <div class="container">
+      <footer>
+        <p>&copy;Mozilla and individual contributors</p><p>PDF.js is licensed under <a href="https://github.com/mozilla/pdf.js/blob/master/LICENSE">Apache</a>,
+documentation is licensed under <a href="http://creativecommons.org/licenses/by-sa/2.5/">CC BY-SA 2.5</a></p>
+      </footer>
+    </div>
+    <!-- Bootstrap core JavaScript-->
+    <script src="../js/jquery-2.1.0.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+  </body>
+</html>
