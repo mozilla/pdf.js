@@ -737,7 +737,8 @@ var WorkerMessageHandler = {
         forceDataSchema: data.disableCreateObjectURL,
         maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
         disableFontFace: data.disableFontFace,
-        cMapOptions: cMapOptions
+        cMapOptions: cMapOptions,
+        disableNativeImageDecoder: data.disableNativeImageDecoder,
       };
 
       getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {

@@ -131,6 +131,10 @@ if (typeof PDFJSDev !== 'undefined' &&
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
+ * @property {boolean} disableNativeImageDecoder - (optional) Disable decoding
+ *   of certain (simple) JPEG images in the browser. This is useful for
+ *   environments without DOM image support, such as e.g. Node.js.
+ *   The default value is `false`.
  */
 
 /**
@@ -244,6 +248,7 @@ function getDocument(src, pdfDataRangeTransport,
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
+  params.disableNativeImageDecoder = params.disableNativeImageDecoder === true;
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own.
@@ -304,6 +309,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
                           !isPostMessageTransfersDisabled,
     docBaseUrl: source.docBaseUrl,
+    disableNativeImageDecoder: source.disableNativeImageDecoder,
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
