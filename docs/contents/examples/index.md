@@ -61,3 +61,25 @@ var viewport = page.getViewport(1);
 var scale = desiredWidth / viewport.width;
 var scaledViewport = page.getViewport(scale);
 ```
+
+## Interactive examples
+
+### Hello World with document load error handling
+
+The example demonstrates how promises can be used to handle errors during loading.
+It also demonstrates how to wait until page loaded and rendered.
+
+<script async src="//jsfiddle.net/pdfjs/9engc9mw/embed/js,html,result/"></script>
+
+### Hello World using base64 encoded PDF
+
+The PDF.js can accept any decoded base64 data as an array.
+
+<script async src="//jsfiddle.net/pdfjs/cq0asLqz/embed/js,html,result/"></script>
+
+### Previous/Next example
+
+The same canvas cannot be used to perform to draw two pages at the same time --
+the example demonstrate how to wait on previous operation to be complete.
+
+<script async src="//jsfiddle.net/pdfjs/wagvs9Lf/embed/js,html,result/"></script>
