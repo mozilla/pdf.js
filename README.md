@@ -102,8 +102,7 @@ the `pdfjs-dist` name. For more information and examples please refer to the
 You can play with the PDF.js API directly from your browser through the live
 demos below:
 
-+ [Hello world](http://mozilla.github.io/pdf.js/examples/learning/helloworld.html)
-+ [Simple reader with prev/next page controls](http://mozilla.github.io/pdf.js/examples/learning/prevnext.html)
++ [Interactive examples](http://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
 
 The repo contains a hello world example that you can run locally:
 
