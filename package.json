@@ -7,6 +7,7 @@
     "esprima": "^2.7.2",
     "gulp": "^3.9.1",
     "gulp-rename": "^1.2.2",
+    "gulp-replace": "^0.5.4",
     "gulp-util": "^3.0.7",
     "gulp-zip": "^3.2.0",
     "jasmine": "^2.5.2",
