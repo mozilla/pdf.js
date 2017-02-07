@@ -207,23 +207,22 @@ var CachedCanvases = (function CachedCanvasesClosure() {
       var canvasEntry;
       if (this.cache[id] !== undefined) {
         canvasEntry = this.cache[id];
-        this.canvasFactory.reset(canvasEntry.canvas, width, height);
+        this.canvasFactory.reset(canvasEntry, width, height);
         // reset canvas transform for emulated mozCurrentTransform, if needed
         canvasEntry.context.setTransform(1, 0, 0, 1, 0, 0);
       } else {
-        var canvas = this.canvasFactory.create(width, height);
-        var ctx = canvas.getContext('2d');
-        if (trackTransform) {
-          addContextCurrentTransform(ctx);
-        }
-        this.cache[id] = canvasEntry = {canvas: canvas, context: ctx};
+        canvasEntry = this.canvasFactory.create(width, height);
+        this.cache[id] = canvasEntry;
+      }
+      if (trackTransform) {
+        addContextCurrentTransform(canvasEntry.context);
       }
       return canvasEntry;
     },
     clear: function () {
       for (var id in this.cache) {
         var canvasEntry = this.cache[id];
-        this.canvasFactory.destroy(canvasEntry.canvas);
+        this.canvasFactory.destroy(canvasEntry);
         delete this.cache[id];
       }
     }
@@ -1440,7 +1439,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     get isFontSubpixelAAEnabled() {
       // Checks if anti-aliasing is enabled when scaled text is painted.
       // On Windows GDI scaled fonts looks bad.
-      var ctx = this.canvasFactory.create(10, 10).getContext('2d');
+      var ctx = this.canvasFactory.create(10, 10).context;
       ctx.scale(1.5, 1);
       ctx.fillText('I', 0, 10);
       var data = ctx.getImageData(0, 0, 10, 10).data;
