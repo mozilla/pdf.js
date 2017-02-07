@@ -949,12 +949,16 @@ var PDFViewer = (function pdfViewer() {
 
     /**
      * Returns sizes of the pages.
-     * @returns {Array} Array of objects with width/height fields.
+     * @returns {Array} Array of objects with width/height/rotation fields.
      */
     getPagesOverview: function () {
       return this._pages.map(function (pageView) {
         var viewport = pageView.pdfPage.getViewport(1);
-        return {width: viewport.width, height: viewport.height};
+        return {
+          width: viewport.width,
+          height: viewport.height,
+          rotation: viewport.rotation,
+        };
       });
     },
   };
