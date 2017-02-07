@@ -42,13 +42,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     DIST_DIR = BUILD_DIR + 'dist/',
     SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/',
     COMPONENTS_DIR = BUILD_DIR + 'components/',
-    REPO = 'git@github.com:mozilla/pdf.js.git',
-    MOZCENTRAL_PREF_PREFIX = 'pdfjs',
-    FIREFOX_PREF_PREFIX = 'extensions.uriloader@pdf.js',
-    MOZCENTRAL_STREAM_CONVERTER_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2291',
-    FIREFOX_STREAM_CONVERTER_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb1',
-    MOZCENTRAL_STREAM_CONVERTER2_ID = 'd0c5195d-e798-49d4-b1d3-9324328b2292',
-    FIREFOX_STREAM_CONVERTER2_ID = '6457a96b-2d68-439a-bcfa-44465fbcdbb2';
+    REPO = 'git@github.com:mozilla/pdf.js.git';
 
 function getCurrentVersion() {
   // The 'build/version.json' file is created by 'buildnumber' task.
@@ -101,9 +95,7 @@ target.jsdoc = function() {
 // into place.
 //
 target.web = function() {
-  target.generic();
-  target.extension();
-  target.jsdoc();
+  execGulp('web-pre');
 
   cd(ROOT_DIR);
   echo();
@@ -158,10 +150,7 @@ target.web = function() {
 };
 
 target.dist = function() {
-  target.generic();
-  target.singlefile();
-  target.components();
-  target.minified();
+  execGulp('dist-pre');
 
   var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
   var VERSION = getCurrentVersion();
@@ -305,8 +294,10 @@ target.singlefile = function() {
 // modern HTML5 browsers.
 //
 target.minified = function() {
-  execGulp('minified-pre');
+  execGulp('minified');
+};
 
+target.minifiedpost = function () {
   var viewerFiles = [
     'web/compatibility.js',
     'external/webL10n/l10n.js',
@@ -361,135 +352,33 @@ target.buildnumber = function() {
 // make firefox
 //
 target.firefox = function() {
-  execGulp('firefox-pre');
-
-  cd(ROOT_DIR);
-  var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
-      FIREFOX_EXTENSION_FILES =
-        ['bootstrap.js',
-         'install.rdf',
-         'chrome.manifest',
-         'icon.png',
-         'icon64.png',
-         'content',
-         'chrome',
-         'locale',
-         'LICENSE'],
-      FIREFOX_EXTENSION_NAME = 'pdf.js.xpi';
-
-  // Remove '.DS_Store' and other hidden files
-  find(FIREFOX_BUILD_DIR).forEach(function(file) {
-    if (file.match(/^\./)) {
-      rm('-f', file);
-    }
-  });
-
-  // Update the build version number
-  var VERSION = getCurrentVersion();
-  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
-      FIREFOX_BUILD_DIR + '/install.rdf');
-  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
-      FIREFOX_BUILD_DIR + '/update.rdf');
-
-  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, FIREFOX_STREAM_CONVERTER_ID,
-      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
-  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER2_ID/, FIREFOX_STREAM_CONVERTER2_ID,
-      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
-  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX,
-      FIREFOX_BUILD_CONTENT_DIR + 'PdfStreamConverter.jsm');
-  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, FIREFOX_PREF_PREFIX,
-      FIREFOX_BUILD_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
-
-  // Update localized metadata
-  var localizedMetadata = cat(EXTENSION_SRC_DIR + '/firefox/metadata.inc');
-  sed('-i', /.*PDFJS_LOCALIZED_METADATA.*\n/, localizedMetadata,
-      FIREFOX_BUILD_DIR + '/install.rdf');
-  var chromeManifest = cat(EXTENSION_SRC_DIR + '/firefox/chrome.manifest.inc');
-  sed('-i', /.*PDFJS_SUPPORTED_LOCALES.*\n/, chromeManifest,
-      FIREFOX_BUILD_DIR + '/chrome.manifest');
-
-  // Set timezone to UTC before calling zip to get reproducible results.
-  process.env.TZ = 'UTC';
-
-  // Create the xpi
-  cd(FIREFOX_BUILD_DIR);
-  exec('zip -r ' + FIREFOX_EXTENSION_NAME + ' ' +
-       FIREFOX_EXTENSION_FILES.join(' '));
-  echo('extension created: ' + FIREFOX_EXTENSION_NAME);
-  cd(ROOT_DIR);
+  execGulp('firefox');
 };
 
 //
 // make mozcentral
 //
 target.mozcentral = function() {
-  execGulp('mozcentral-pre');
-
-  cd(ROOT_DIR);
-
-  var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
-      MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
-      MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + 'content/';
-
-  // Remove '.DS_Store' and other hidden files
-  find(MOZCENTRAL_DIR).forEach(function(file) {
-    if (file.match(/^\./)) {
-      rm('-f', file);
-    }
-  });
-
-  // Update the build version number
-  var VERSION = getCurrentVersion();
-  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
-      MOZCENTRAL_EXTENSION_DIR + 'README.mozilla');
-
-  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER_ID/, MOZCENTRAL_STREAM_CONVERTER_ID,
-      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
-  sed('-i', /PDFJSSCRIPT_STREAM_CONVERTER2_ID/, MOZCENTRAL_STREAM_CONVERTER2_ID,
-      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
-  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX,
-      MOZCENTRAL_CONTENT_DIR + 'PdfStreamConverter.jsm');
-  sed('-i', /PDFJSSCRIPT_PREF_PREFIX/, MOZCENTRAL_PREF_PREFIX,
-      MOZCENTRAL_CONTENT_DIR + 'PdfjsChromeUtils.jsm');
+  execGulp('mozcentral');
 };
 
 //
 // make chrome
 //
 target.chromium = function() {
-  execGulp('chromium-pre');
+  execGulp('chromium');
+};
 
+target.signchromium = function () {
   cd(ROOT_DIR);
 
-  var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
-      CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';
-
-  // Update the build version number
-  var VERSION = getCurrentVersion();
-  sed('-i', /PDFJSSCRIPT_VERSION/, VERSION,
-      CHROME_BUILD_DIR + '/manifest.json');
-
-  // Allow PDF.js resources to be loaded by adding the files to
-  // the "web_accessible_resources" section.
-  var file_list = ls('-RA', CHROME_BUILD_CONTENT_DIR);
-  var public_chrome_files = file_list.reduce(function(war, file) {
-    // Exclude directories (naive: Exclude paths without dot)
-    if (file.indexOf('.') !== -1) {
-      // Only add a comma after the first file
-      if (war) {
-        war += ',\n';
-      }
-      war += JSON.stringify('content/' + file);
-    }
-    return war;
-  }, '');
-  sed('-i', /"content\/\*"/, public_chrome_files,
-      CHROME_BUILD_DIR + '/manifest.json');
+  var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/';
 
   // Bundle the files to a Chrome extension file .crx if path to key is set
   var pem = env['PDFJS_CHROME_KEY'];
   if (!pem) {
-    return;
+    echo('The PDFJS_CHROME_KEY must be specified.');
+    exit(1);
   }
 
   echo();
