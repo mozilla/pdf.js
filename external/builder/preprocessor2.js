@@ -201,6 +201,86 @@ function postprocessNode(ctx, node) {
         block.body.pop();
       }
       break;
+    case 'Program':
+      // Checking for a function closure that looks like UMD header.
+      node.body.some(function (item, index) {
+        // Is it `(function (root, factory) { ? }(this, function (?) {?}));` ?
+        if (item.type !== 'ExpressionStatement' ||
+            item.expression.type !== 'CallExpression' ||
+            item.expression.callee.type !== 'FunctionExpression' ||
+            item.expression.callee.params.length !== 2 ||
+            item.expression.arguments.length !== 2 ||
+            item.expression.arguments[0].type !== 'ThisExpression' ||
+            item.expression.arguments[1].type !== 'FunctionExpression') {
+          return false;
+        }
+        var init = item.expression.callee;
+        // Is init body looks like
+        // `if (?) { ? } else if (typeof exports !== 'undefined') { ? } ...`?
+        if (init.body.type !== 'BlockStatement' ||
+            init.body.body.length !== 1 ||
+            init.body.body[0].type !== 'IfStatement') {
+          return false;
+        }
+        var initIf = init.body.body[0];
+        if (initIf.alternate.type !== 'IfStatement' ||
+            initIf.alternate.test.type !== 'BinaryExpression' ||
+            initIf.alternate.test.operator !== '!==' ||
+            initIf.alternate.test.left.type !== 'UnaryExpression' ||
+            initIf.alternate.test.left.operator !== 'typeof' ||
+            initIf.alternate.test.left.argument.type !== 'Identifier' ||
+            initIf.alternate.test.left.argument.name !== 'exports' ||
+            initIf.alternate.test.right.type !== 'Literal' ||
+            initIf.alternate.test.right.value !== 'undefined' ||
+            initIf.alternate.consequent.type !== 'BlockStatement') {
+          return false;
+        }
+        var commonJsInit = initIf.alternate.consequent;
+        // Is commonJsInit `factory(exports, ...)` ?
+        if (commonJsInit.body.length !== 1 ||
+            commonJsInit.body[0].type !== 'ExpressionStatement' ||
+            commonJsInit.body[0].expression.type !== 'CallExpression' ||
+            commonJsInit.body[0].expression.callee.type !== 'Identifier') {
+          return false;
+        }
+        var commonJsInitArgs = commonJsInit.body[0].expression.arguments;
+        if (commonJsInitArgs.length === 0 ||
+            commonJsInitArgs[0].type !== 'Identifier' ||
+            commonJsInitArgs[0].name !== 'exports') {
+          return false;
+        }
+        var factory = item.expression.arguments[1];
+        // Is factory `function (exports, ....) { ? }` ?
+        if (factory.params.length === 0 ||
+            factory.params[0].type !== 'Identifier' ||
+            factory.params[0].name !== 'exports' ||
+            factory.body.type !== 'BlockStatement') {
+          return true;
+        }
+        var factoryParams = factory.params;
+        var factoryBody = factory.body;
+
+        // Remove closure and function and replacing parameters with vars.
+        node.body.splice(index, 1);
+        for (var i = 1, ii = factoryParams.length; i < ii; i++) {
+          var varNode = {
+            type: 'VariableDeclaration',
+            'declarations': [{
+                type: 'VariableDeclarator',
+                id: factoryParams[i],
+                init: commonJsInitArgs[i] || null,
+                loc: factoryParams[i].loc
+            }],
+            kind: 'var'
+          };
+          node.body.splice(index++, 0, varNode);
+        }
+        factoryBody.body.forEach(function (item) {
+          node.body.splice(index++, 0, item);
+        });
+        return true;
+      });
+      break;
   }
   return node;
 }
