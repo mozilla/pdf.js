@@ -167,6 +167,15 @@ function replaceWebpackRequire() {
   return replace('__webpack_require__', '__w_pdfjs_require__');
 }
 
+function replaceJSRootName(amdName) {
+  // Saving old-style JS module name.
+  var jsName = amdName.replace(/[\-_\.\/]\w/g, function (all) {
+    return all[1].toUpperCase();
+  });
+  return replace('root["' + amdName + '"] = factory()',
+                 'root["' + amdName + '"] = root.' + jsName + ' = factory()');
+}
+
 function createBundle(defines) {
   console.log();
   console.log('### Bundling files into pdf.js');
@@ -186,7 +195,8 @@ function createBundle(defines) {
   });
   var mainOutput = gulp.src('./src/pdf.js')
     .pipe(webpack2Stream(mainFileConfig))
-    .pipe(replaceWebpackRequire());
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(mainAMDName));
   if (defines.SINGLE_FILE) {
     return mainOutput; // don't need a worker file.
   }
@@ -202,7 +212,8 @@ function createBundle(defines) {
   });
   var workerOutput = gulp.src('./src/pdf.worker.js')
     .pipe(webpack2Stream(workerFileConfig))
-    .pipe(replaceWebpackRequire());
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(workerAMDName));
   return merge([mainOutput, workerOutput]);
 }
 
@@ -228,7 +239,8 @@ function createComponentsBundle(defines) {
   });
   return gulp.src('./web/pdf_viewer.component.js')
     .pipe(webpack2Stream(componentsFileConfig))
-    .pipe(replaceWebpackRequire());
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(componentsAMDName));
 }
 
 function checkFile(path) {
