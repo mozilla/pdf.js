@@ -35,19 +35,21 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
   })();
 }
 
-var pdfjsWebLibs;
+var pdfjsWebApp;
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
-  pdfjsWebLibs = {
-    pdfjsWebPDFJS: window.pdfjsDistBuildPdf
-  };
-  (function () {
-//#expand __BUNDLE__
-  }).call(pdfjsWebLibs);
+  pdfjsWebApp = require('./app.js');
 }
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   // FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
-  window.FirefoxCom = pdfjsWebLibs.pdfjsWebFirefoxCom.FirefoxCom;
+  window.FirefoxCom = require('./firefoxcom.js').FirefoxCom;
+  require('./firefox_print_service.js');
+}
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
+  require('./chromecom.js');
+}
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
+  require('./pdf_print_service.js');
 }
 
 function getViewerConfiguration() {
@@ -162,6 +164,7 @@ function getViewerConfiguration() {
     printContainer: document.getElementById('printContainer'),
     openFileInputName: 'fileInput',
     debuggerScriptPath: './debugger.js',
+    defaultUrl: DEFAULT_URL
   };
 }
 
@@ -174,8 +177,8 @@ function webViewerLoad() {
       web.PDFViewerApplication.run(config);
     });
   } else {
-    window.PDFViewerApplication = pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication;
-    pdfjsWebLibs.pdfjsWebApp.PDFViewerApplication.run(config);
+    window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
+    pdfjsWebApp.PDFViewerApplication.run(config);
   }
 }
 

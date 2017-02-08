@@ -23,6 +23,8 @@
     "streamqueue": "^1.1.1",
     "typogr": "~0.6.5",
     "uglify-js": "^2.6.1",
+    "webpack": "^2.2.1",
+    "webpack-stream": "^3.2.0",
     "wintersmith": "^2.0.0",
     "yargs": "^3.14.0"
   },
