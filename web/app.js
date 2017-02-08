@@ -190,6 +190,7 @@ var PDFViewerApplication = {
     renderer: 'canvas',
     enhanceTextSelection: false,
     renderInteractiveForms: false,
+    enablePrintAutoRotate: false,
   },
   isViewerEmbedded: (window.parent !== window),
   url: '',
@@ -304,6 +305,9 @@ var PDFViewerApplication = {
       Preferences.get('disablePageLabels').then(function resolved(value) {
         self.viewerPrefs['disablePageLabels'] = value;
       }),
+      Preferences.get('enablePrintAutoRotate').then(function resolved(value) {
+        self.viewerPrefs['enablePrintAutoRotate'] = value;
+      }),
     ]).catch(function (reason) { });
   },
 
@@ -342,6 +346,7 @@ var PDFViewerApplication = {
         renderer: self.viewerPrefs['renderer'],
         enhanceTextSelection: self.viewerPrefs['enhanceTextSelection'],
         renderInteractiveForms: self.viewerPrefs['renderInteractiveForms'],
+        enablePrintAutoRotate: self.viewerPrefs['enablePrintAutoRotate'],
       });
       pdfRenderingQueue.setViewer(self.pdfViewer);
       pdfLinkService.setViewer(self.pdfViewer);
