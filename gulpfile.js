@@ -90,10 +90,12 @@ function createWebpackConfig(defines, output) {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit
   });
+  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
 
   return {
     output: output,
     plugins: [
+      new webpack2.BannerPlugin({banner: licenseHeader, raw: true}),
       new BlockRequirePlugin()
     ],
     resolve: {
@@ -108,7 +110,7 @@ function createWebpackConfig(defines, output) {
           loader: path.join(__dirname, 'external/webpack/pdfjsdev-loader.js'),
           options: {
             rootPath: __dirname,
-            saveComments: 'copyright',
+            saveComments: false,
             defines: bundleDefines
           }
         }
