@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals DEFAULT_URL, PDFBug, Stats */
+/* globals PDFBug, Stats */
 
 'use strict';
 
@@ -1396,20 +1396,20 @@ function loadAndEnablePDFBug(enabledTabs) {
 }
 
 function webViewerInitialized() {
+  var appConfig = PDFViewerApplication.appConfig;
   var file;
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     var queryString = document.location.search.substring(1);
     var params = parseQueryString(queryString);
-    file = 'file' in params ? params.file : DEFAULT_URL;
+    file = 'file' in params ? params.file : appConfig.defaultUrl;
     validateFileURL(file);
   } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     file = window.location.href.split('#')[0];
   } else if (PDFJSDev.test('CHROME')) {
-    file = DEFAULT_URL;
+    file = appConfig.defaultUrl;
   }
 
   var waitForBeforeOpening = [];
-  var appConfig = PDFViewerApplication.appConfig;
   if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     var fileInput = document.createElement('input');
     fileInput.id = appConfig.openFileInputName;

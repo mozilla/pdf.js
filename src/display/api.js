@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsFilePath, pdfjsVersion, pdfjsBuild, requirejs, pdfjsLibs,
-           __webpack_require__ */
+/* globals requirejs, pdfjsLibs, __webpack_require__, __pdfjsdev_webpack__ */
 
 'use strict';
 
@@ -70,10 +69,18 @@ var isWorkerDisabled = false;
 var workerSrc;
 var isPostMessageTransfersDisabled = false;
 
+var pdfjsFilePath =
+  typeof PDFJSDev !== 'undefined' &&
+  PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
+  typeof document !== 'undefined' && document.currentScript ?
+    document.currentScript.src : null;
+
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
+// The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
 if (typeof PDFJSDev !== 'undefined' &&
-    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
+    PDFJSDev.test('GENERIC && !SINGLE_FILE') &&
+    typeof __pdfjsdev_webpack__ === 'undefined') {
   // For GENERIC build we need add support of different fake file loaders
   // for different  frameworks.
   if (typeof window === 'undefined') {
@@ -83,8 +90,8 @@ if (typeof PDFJSDev !== 'undefined' &&
       require.ensure = require('node-ensure');
     }
     useRequireEnsure = true;
-  }
-  if (typeof __webpack_require__ !== 'undefined') {
+  } else if (typeof require !== 'undefined' &&
+             typeof require.ensure === 'function') {
     useRequireEnsure = true;
   }
   if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
@@ -2184,11 +2191,9 @@ var _UnsupportedManager = (function UnsupportedManagerClosure() {
   };
 })();
 
-if (typeof pdfjsVersion !== 'undefined') {
-  exports.version = pdfjsVersion;
-}
-if (typeof pdfjsBuild !== 'undefined') {
-  exports.build = pdfjsBuild;
+if (typeof PDFJSDev !== 'undefined') {
+  exports.version = PDFJSDev.eval('BUNDLE_VERSION');
+  exports.build = PDFJSDev.eval('BUNDLE_BUILD');
 }
 
 exports.getDocument = getDocument;

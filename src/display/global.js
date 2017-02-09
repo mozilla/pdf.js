@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsVersion, pdfjsBuild */
 
 'use strict';
 
@@ -54,11 +53,9 @@
   }
   var PDFJS = globalScope.PDFJS;
 
-  if (typeof pdfjsVersion !== 'undefined') {
-    PDFJS.version = pdfjsVersion;
-  }
-  if (typeof pdfjsBuild !== 'undefined') {
-    PDFJS.build = pdfjsBuild;
+  if (typeof PDFJSDev !== 'undefined') {
+    PDFJS.version = PDFJSDev.eval('BUNDLE_VERSION');
+    PDFJS.build = PDFJSDev.eval('BUNDLE_BUILD');
   }
 
   PDFJS.pdfBug = false;
