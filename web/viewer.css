@@ -14,6 +14,7 @@
  */
 
 @import url(pdf_viewer.css);
+@import url(customize_viewer.css);
 
 * {
   padding: 0;
