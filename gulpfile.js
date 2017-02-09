@@ -31,6 +31,8 @@ var spawn = require('child_process').spawn;
 var streamqueue = require('streamqueue');
 var merge = require('merge-stream');
 var zip = require('gulp-zip');
+var webpack2 = require('webpack');
+var webpackStream = require('webpack-stream');
 
 var BUILD_DIR = 'build/';
 var JSDOC_DIR = 'jsdoc/';
@@ -79,12 +81,47 @@ function createStringSource(filename, content) {
   return source;
 }
 
-function stripUMDHeaders(content) {
-  var reg = new RegExp(
-    'if \\(typeof define === \'function\' && define.amd\\) \\{[^}]*' +
-    '\\} else if \\(typeof exports !== \'undefined\'\\) \\{[^}]*' +
-    '\\} else ', 'g');
-  return content.replace(reg, '');
+function createWebpackConfig(defines, output) {
+  var path = require('path');
+  var BlockRequirePlugin = require('./external/webpack/block-require.js');
+
+  var versionInfo = getVersionJSON();
+  var bundleDefines = builder.merge(defines, {
+    BUNDLE_VERSION: versionInfo.version,
+    BUNDLE_BUILD: versionInfo.commit
+  });
+  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+
+  return {
+    output: output,
+    plugins: [
+      new webpack2.BannerPlugin({banner: licenseHeader, raw: true}),
+      new BlockRequirePlugin()
+    ],
+    resolve: {
+      alias: {
+        'pdfjs': path.join(__dirname, 'src'),
+        'pdfjs-web': path.join(__dirname, 'web'),
+      }
+    },
+    module: {
+      loaders: [
+        {
+          loader: path.join(__dirname, 'external/webpack/pdfjsdev-loader.js'),
+          options: {
+            rootPath: __dirname,
+            saveComments: false,
+            defines: bundleDefines
+          }
+        }
+      ]
+    }
+  };
+}
+
+function webpack2Stream(config) {
+  // Replacing webpack1 to webpack2 in the webpack-stream.
+  return webpackStream(config, webpack2);
 }
 
 function stripCommentHeaders(content) {
@@ -124,185 +161,86 @@ function checkChromePreferencesFile(chromePrefsPath, webPrefsPath) {
   });
 }
 
-function bundle(filename, outfilename, pathPrefix, initFiles, amdName, defines,
-                isMainFile, versionInfo) {
-  // Reading UMD headers and building loading orders of modules. The
-  // readDependencies returns AMD module names: removing 'pdfjs' prefix and
-  // adding '.js' extensions to the name.
-  var umd = require('./external/umdutils/verifier.js');
-  initFiles = initFiles.map(function (p) {
-    return pathPrefix + p;
-  });
-  var files = umd.readDependencies(initFiles).loadOrder.map(function (name) {
-    return pathPrefix + name.replace(/^[\w\-]+\//, '') + '.js';
-  });
+function replaceWebpackRequire() {
+  // Produced bundles can be rebundled again, avoid collisions (e.g. in api.js)
+  // by renaming  __webpack_require__ to something else.
+  return replace('__webpack_require__', '__w_pdfjs_require__');
+}
 
-  var crlfchecker = require('./external/crlfchecker/crlfchecker.js');
-  crlfchecker.checkIfCrlfIsPresent(files);
-
-  var bundleContent = files.map(function (file) {
-    var content = fs.readFileSync(file);
-
-    // Prepend a newline because stripCommentHeaders only strips comments that
-    // follow a line feed. The file where bundleContent is inserted already
-    // contains a license header, so the header of bundleContent can be removed.
-    content = stripCommentHeaders('\n' + content);
-
-    // Removes AMD and CommonJS branches from UMD headers.
-    content = stripUMDHeaders(content);
-
-    return content;
-  }).join('');
-
+function replaceJSRootName(amdName) {
+  // Saving old-style JS module name.
   var jsName = amdName.replace(/[\-_\.\/]\w/g, function (all) {
     return all[1].toUpperCase();
   });
-
-  var p2 = require('./external/builder/preprocessor2.js');
-  var ctx = {
-    rootPath: __dirname,
-    saveComments: 'copyright',
-    defines: builder.merge(defines, {
-      BUNDLE_VERSION: versionInfo.version,
-      BUNDLE_BUILD: versionInfo.commit,
-      BUNDLE_AMD_NAME: amdName,
-      BUNDLE_JS_NAME: jsName,
-      MAIN_FILE: isMainFile
-    })
-  };
-
-  var templateContent = fs.readFileSync(filename).toString();
-  templateContent = templateContent.replace(
-    /\/\/#expand\s+__BUNDLE__\s*\n/, function (all) {
-      return bundleContent;
-    });
-  bundleContent = null;
-
-  templateContent = p2.preprocessPDFJSCode(ctx, templateContent);
-  fs.writeFileSync(outfilename, templateContent);
-  templateContent = null;
+  return replace('root["' + amdName + '"] = factory()',
+                 'root["' + amdName + '"] = root.' + jsName + ' = factory()');
 }
 
 function createBundle(defines) {
-  var versionJSON = getVersionJSON();
-
   console.log();
   console.log('### Bundling files into pdf.js');
 
-  var mainFiles = [
-    'display/global.js'
-  ];
-
-  var workerFiles = [
-    'core/worker.js'
-  ];
-
   var mainAMDName = 'pdfjs-dist/build/pdf';
-  var workerAMDName = 'pdfjs-dist/build/pdf.worker';
   var mainOutputName = 'pdf.js';
+  if (defines.SINGLE_FILE) {
+    mainAMDName = 'pdfjs-dist/build/pdf.combined';
+    mainOutputName = 'pdf.combined.js';
+  }
+
+  var mainFileConfig = createWebpackConfig(defines, {
+    filename: mainOutputName,
+    library: mainAMDName,
+    libraryTarget: 'umd',
+    umdNamedDefine: true
+  });
+  var mainOutput = gulp.src('./src/pdf.js')
+    .pipe(webpack2Stream(mainFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(mainAMDName));
+  if (defines.SINGLE_FILE) {
+    return mainOutput; // don't need a worker file.
+  }
+
+  var workerAMDName = 'pdfjs-dist/build/pdf.worker';
   var workerOutputName = 'pdf.worker.js';
 
-  // Extension does not need network.js file.
-  if (!defines.FIREFOX && !defines.MOZCENTRAL) {
-    workerFiles.push('core/network.js');
-  }
-
-  if (defines.SINGLE_FILE) {
-    // In singlefile mode, all of the src files will be bundled into
-    // the main pdf.js output.
-    mainFiles = mainFiles.concat(workerFiles);
-    workerFiles = null; // no need for worker file
-    mainAMDName = 'pdfjs-dist/build/pdf.combined';
-    workerAMDName = null;
-    mainOutputName = 'pdf.combined.js';
-    workerOutputName = null;
-  }
-
-  var state = 'mainfile';
-  var source = stream.Readable({ objectMode: true });
-  source._read = function () {
-    var tmpFile;
-    switch (state) {
-      case 'mainfile':
-        // 'buildnumber' shall create BUILD_DIR for us
-        tmpFile = BUILD_DIR + '~' + mainOutputName + '.tmp';
-        bundle('src/pdf.js', tmpFile, 'src/', mainFiles, mainAMDName,
-          defines, true, versionJSON);
-        this.push(new gutil.File({
-          cwd: '',
-          base: '',
-          path: mainOutputName,
-          contents: fs.readFileSync(tmpFile)
-        }));
-        fs.unlinkSync(tmpFile);
-        state = workerFiles ? 'workerfile' : 'stop';
-        break;
-      case 'workerfile':
-        // 'buildnumber' shall create BUILD_DIR for us
-        tmpFile = BUILD_DIR + '~' + workerOutputName + '.tmp';
-        bundle('src/pdf.js', tmpFile, 'src/', workerFiles, workerAMDName,
-          defines, false, versionJSON);
-        this.push(new gutil.File({
-          cwd: '',
-          base: '',
-          path: workerOutputName,
-          contents: fs.readFileSync(tmpFile)
-        }));
-        fs.unlinkSync(tmpFile);
-        state = 'stop';
-        break;
-      case 'stop':
-        this.push(null);
-        break;
-    }
-  };
-  return source;
+  var workerFileConfig = createWebpackConfig(defines, {
+    filename: workerOutputName,
+    library: workerAMDName,
+    libraryTarget: 'umd',
+    umdNamedDefine: true
+  });
+  var workerOutput = gulp.src('./src/pdf.worker.js')
+    .pipe(webpack2Stream(workerFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(workerAMDName));
+  return merge([mainOutput, workerOutput]);
 }
 
 function createWebBundle(defines) {
-  var versionJSON = getVersionJSON();
+  var viewerOutputName = 'viewer.js';
 
-  var template, files, outputName, amdName;
-  if (defines.COMPONENTS) {
-    amdName = 'pdfjs-dist/web/pdf_viewer';
-    template = 'web/pdf_viewer.component.js';
-    files = [
-      'pdf_viewer.js',
-      'pdf_history.js',
-      'pdf_find_controller.js',
-      'download_manager.js'
-    ];
-    outputName = 'pdf_viewer.js';
-  } else {
-    amdName = 'pdfjs-dist/web/viewer';
-    outputName = 'viewer.js';
-    template = 'web/viewer.js';
-    files = ['app.js'];
-    if (defines.FIREFOX || defines.MOZCENTRAL) {
-      files.push('firefoxcom.js', 'firefox_print_service.js');
-    } else if (defines.CHROME) {
-      files.push('chromecom.js', 'pdf_print_service.js');
-    } else if (defines.GENERIC) {
-      files.push('pdf_print_service.js');
-    }
-  }
+  var viewerFileConfig = createWebpackConfig(defines, {
+    filename: viewerOutputName
+  });
+  return gulp.src('./web/viewer.js')
+             .pipe(webpack2Stream(viewerFileConfig));
+}
 
-  var source = stream.Readable({ objectMode: true });
-  source._read = function () {
-    // 'buildnumber' shall create BUILD_DIR for us
-    var tmpFile = BUILD_DIR + '~' + outputName + '.tmp';
-    bundle(template, tmpFile, 'web/', files, amdName, defines, false,
-      versionJSON);
-    this.push(new gutil.File({
-      cwd: '',
-      base: '',
-      path: outputName,
-      contents: fs.readFileSync(tmpFile)
-    }));
-    fs.unlinkSync(tmpFile);
-    this.push(null);
-  };
-  return source;
+function createComponentsBundle(defines) {
+  var componentsAMDName = 'pdfjs-dist/web/pdf_viewer';
+  var componentsOutputName = 'pdf_viewer.js';
+
+  var componentsFileConfig = createWebpackConfig(defines, {
+    filename: componentsOutputName,
+    library: componentsAMDName,
+    libraryTarget: 'umd',
+    umdNamedDefine: true
+  });
+  return gulp.src('./web/pdf_viewer.component.js')
+    .pipe(webpack2Stream(componentsFileConfig))
+    .pipe(replaceWebpackRequire())
+    .pipe(replaceJSRootName(componentsAMDName));
 }
 
 function checkFile(path) {
@@ -631,7 +569,7 @@ gulp.task('components', ['buildnumber'], function () {
   ];
 
   return merge([
-    createWebBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
+    createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
     gulp.src('web/compatibility.js').pipe(gulp.dest(COMPONENTS_DIR)),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)

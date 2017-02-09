@@ -12,23 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals module */
 /* umdutils ignore */
 
 'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdfjs', ['exports', 'pdfjs/main_loader'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../src/main_loader.js'));
-  } else {
-    factory((root.pdfjsWebPDFJS = {}), root.pdfjsMainLoader);
-  }
-}(this, function (exports, mainLoader) {
-  // Re-export all mainLoader members.
-  for (var i in mainLoader) {
-    if (Object.prototype.hasOwnProperty.call(mainLoader, i)) {
-      exports[i] = mainLoader[i];
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+  module.exports = window['pdfjs-dist/build/pdf']; // loaded via html script tag
+} else {
+  (function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+      define('pdfjs-web/pdfjs', ['exports', 'pdfjs/main_loader'], factory);
+    } else if (typeof exports !== 'undefined') {
+      factory(exports, require('../src/main_loader.js'));
+    } else {
+      factory((root.pdfjsWebPDFJS = {}), root.pdfjsMainLoader);
     }
-  }
-}));
+  }(this, function (exports, mainLoader) {
+    // Re-export all mainLoader members.
+    for (var i in mainLoader) {
+      if (Object.prototype.hasOwnProperty.call(mainLoader, i)) {
+        exports[i] = mainLoader[i];
+      }
+    }
+  }));
+}

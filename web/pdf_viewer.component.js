@@ -12,50 +12,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint strict: ["error", "function"] */
 /* umdutils ignore */
 
-(function (root, factory) {
-  'use strict';
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-dist/web/pdf_viewer', ['exports', 'pdfjs-dist/build/pdf'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../build/pdf.js'));
-  } else {
-    factory((root.pdfjsDistWebPDFViewer = {}), root.pdfjsDistBuildPdf);
-  }
-}(this, function (exports, pdfjsLib) {
-  'use strict';
+'use strict';
 
-  var pdfViewerLibs = {
-    pdfjsWebPDFJS: pdfjsLib
-  };
+var pdfjsLib = require('./pdfjs.js');
+var pdfjsWebPDFViewer = require('./pdf_viewer.js');
+var pdfjsWebPDFPageView = require('./pdf_page_view.js');
+var pdfjsWebPDFLinkService = require('./pdf_link_service.js');
+var pdfjsWebTextLayerBuilder = require('./text_layer_builder.js');
+var pdfjsWebAnnotationLayerBuilder = require('./annotation_layer_builder.js');
+var pdfjsWebPDFHistory = require('./pdf_history.js');
+var pdfjsWebPDFFindController = require('./pdf_find_controller.js');
+var pdfjsWebUIUtils = require('./ui_utils.js');
+var pdfjsWebDownloadManager = require('./download_manager.js');
 
-  (function () {
-//#expand __BUNDLE__
-  }).call(pdfViewerLibs);
+var PDFJS = pdfjsLib.PDFJS;
 
-  var PDFJS = pdfjsLib.PDFJS;
+PDFJS.PDFViewer = pdfjsWebPDFViewer.PDFViewer;
+PDFJS.PDFPageView = pdfjsWebPDFPageView.PDFPageView;
+PDFJS.PDFLinkService = pdfjsWebPDFLinkService.PDFLinkService;
+PDFJS.TextLayerBuilder = pdfjsWebTextLayerBuilder.TextLayerBuilder;
+PDFJS.DefaultTextLayerFactory =
+  pdfjsWebTextLayerBuilder.DefaultTextLayerFactory;
+PDFJS.AnnotationLayerBuilder =
+  pdfjsWebAnnotationLayerBuilder.AnnotationLayerBuilder;
+PDFJS.DefaultAnnotationLayerFactory =
+  pdfjsWebAnnotationLayerBuilder.DefaultAnnotationLayerFactory;
+PDFJS.PDFHistory = pdfjsWebPDFHistory.PDFHistory;
+PDFJS.PDFFindController = pdfjsWebPDFFindController.PDFFindController;
+PDFJS.EventBus = pdfjsWebUIUtils.EventBus;
 
-  PDFJS.PDFViewer = pdfViewerLibs.pdfjsWebPDFViewer.PDFViewer;
-  PDFJS.PDFPageView = pdfViewerLibs.pdfjsWebPDFPageView.PDFPageView;
-  PDFJS.PDFLinkService = pdfViewerLibs.pdfjsWebPDFLinkService.PDFLinkService;
-  PDFJS.TextLayerBuilder =
-    pdfViewerLibs.pdfjsWebTextLayerBuilder.TextLayerBuilder;
-  PDFJS.DefaultTextLayerFactory =
-    pdfViewerLibs.pdfjsWebTextLayerBuilder.DefaultTextLayerFactory;
-  PDFJS.AnnotationLayerBuilder =
-    pdfViewerLibs.pdfjsWebAnnotationLayerBuilder.AnnotationLayerBuilder;
-  PDFJS.DefaultAnnotationLayerFactory =
-    pdfViewerLibs.pdfjsWebAnnotationLayerBuilder.DefaultAnnotationLayerFactory;
-  PDFJS.PDFHistory = pdfViewerLibs.pdfjsWebPDFHistory.PDFHistory;
-  PDFJS.PDFFindController =
-    pdfViewerLibs.pdfjsWebPDFFindController.PDFFindController;
-  PDFJS.EventBus = pdfViewerLibs.pdfjsWebUIUtils.EventBus;
+PDFJS.DownloadManager = pdfjsWebDownloadManager.DownloadManager;
+PDFJS.ProgressBar = pdfjsWebUIUtils.ProgressBar;
 
-  PDFJS.DownloadManager = pdfViewerLibs.pdfjsWebDownloadManager.DownloadManager;
-  PDFJS.ProgressBar = pdfViewerLibs.pdfjsWebUIUtils.ProgressBar;
-
-  exports.PDFJS = PDFJS;
-}));
+exports.PDFJS = PDFJS;
