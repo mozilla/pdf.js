@@ -36,10 +36,11 @@ function renderDocument(pdf, svgLib) {
   }
 }
 
-// In production, the bundled pdf.js shall be used instead of RequireJS.
-require.config({paths: {'pdfjs': '../../src'}});
-require(['pdfjs/display/api', 'pdfjs/display/svg', 'pdfjs/display/global'],
-    function (api, svg, global) {
+Promise.all([SystemJS.import('pdfjs/display/api'),
+             SystemJS.import('pdfjs/display/svg'),
+             SystemJS.import('pdfjs/display/global')])
+       .then(function (modules) {
+  var api = modules[0], svg = modules[1], global = modules[2];
   // In production, change this to point to the built `pdf.worker.js` file.
   global.PDFJS.workerSrc = '../../src/worker_loader.js';
 
