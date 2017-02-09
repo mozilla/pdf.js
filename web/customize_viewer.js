@@ -28,7 +28,32 @@ if (document.readyState === "complete" || document.readyState === "loaded" ||
 }
 
 function initialize() {
-  console.log('it works!');
+  var eventBus = DOMEvents.getGlobalEventBus();
+
+  setupPageNumberDisplay(eventBus);
+  setupRotateButton(eventBus);
+}
+
+/**
+ * Displays the current page number in '#pageNumberDisplay'. The standard viewer
+ * displays it in an <input>, and we just want to display it in a <span>.
+ */
+function setupPageNumberDisplay(eventBus) {
+  var pageNumberDisplay = document.getElementById('pageNumberDisplay');
+  eventBus.on('pagechange', function(ev) {
+    pageNumberDisplay.innerText = ev.pageNumber;
+  });
+}
+
+/**
+ * The standard viewer only supports a rotate button in the dropdown menu, so
+ * we need to implement the same thing for the toolbar.
+ */
+function setupRotateButton(eventBus) {
+  var pageRotateCw = document.getElementById('toolbarPageRotateCw');
+  pageRotateCw.addEventListener('click', function() {
+    eventBus.dispatch('rotatecw');
+  });
 }
 
 }));
