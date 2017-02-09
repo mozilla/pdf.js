@@ -18,7 +18,8 @@ limitations under the License.
   <head>
     <title>PDF.js test slave</title>
     <meta charset="utf-8">
-    <script src="../node_modules/requirejs/require.js"></script>
+    <script src="../node_modules/systemjs/dist/system.js"></script>
+    <script src="../systemjs.config.js"></script>
     <script src="driver.js"></script>
   </head>
   <body>
@@ -31,12 +32,13 @@ limitations under the License.
     <div id="end"></div>
   </body>
   <script>
-    require.config({paths: {'pdfjs': '../src'}});
-    require(['pdfjs/display/api', 'pdfjs/display/text_layer',
-             'pdfjs/display/annotation_layer', 'pdfjs/display/global',
-             'pdfjs/shared/util'],
-        function (api, textLayer, annotationLayer, global, pdfjsSharedUtil) {
-      window.pdfjsSharedUtil = pdfjsSharedUtil;
+    Promise.all([SystemJS.import('pdfjs/display/api'),
+                 SystemJS.import('pdfjs/display/text_layer'),
+                 SystemJS.import('pdfjs/display/annotation_layer'),
+                 SystemJS.import('pdfjs/display/global'),
+                 SystemJS.import('pdfjs/shared/util')])
+          .then(function (modules) {
+      window.pdfjsSharedUtil = modules[4];
 
       var driver = new Driver({
         disableScrolling: document.getElementById('disableScrolling'),

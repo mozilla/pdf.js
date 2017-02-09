@@ -1,8 +1,10 @@
 'use strict';
 
-// In production, the bundled pdf.js shall be used instead of RequireJS.
-require.config({paths: {'pdfjs': '../../src'}});
-require(['pdfjs/display/api', 'pdfjs/display/global'], function (api, global) {
+// In production, the bundled pdf.js shall be used instead of SystemJS.
+Promise.all([SystemJS.import('pdfjs/display/api'),
+             SystemJS.import('pdfjs/display/global')])
+       .then(function (modules) {
+  var api = modules[0], global = modules[1];
   // In production, change this to point to the built `pdf.worker.js` file.
   global.PDFJS.workerSrc = '../../src/worker_loader.js';
 

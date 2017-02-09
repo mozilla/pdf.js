@@ -41,9 +41,13 @@
 'use strict';
 
 function initializePDFJS(callback) {
-  require.config({paths: {'pdfjs': '../../src'}});
-  require(['pdfjs/core/fonts', 'pdfjs/core/stream', 'pdfjs/core/primitives',
-    'pdfjs/core/cmap'], function (fonts, stream, primitives, cmap) {
+  Promise.all([SystemJS.import('pdfjs/core/fonts'),
+               SystemJS.import('pdfjs/core/stream'),
+               SystemJS.import('pdfjs/core/primitives'),
+               SystemJS.import('pdfjs/core/cmap')])
+         .then(function (modules) {
+    var fonts = modules[0], stream = modules[1],
+        primitives = modules[2], cmap = modules[3];
     // Expose some of the PDFJS members to global scope for tests.
     window.Font = fonts.Font;
     window.ToUnicodeMap = fonts.ToUnicodeMap;
