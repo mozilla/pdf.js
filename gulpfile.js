@@ -773,8 +773,7 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
     gulp.src(FIREFOX_EXTENSION_DIR + 'chrome-mozcentral.manifest')
         .pipe(rename('chrome.manifest'))
         .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-    gulp.src(FIREFOX_EXTENSION_DIR + 'locale/en-US/*.properties',
-             {base: FIREFOX_EXTENSION_DIR})
+    gulp.src(FIREFOX_EXTENSION_DIR + 'locale/en-US/*.properties')
         .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'README.mozilla')
         .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
