@@ -646,4 +646,17 @@ if (typeof PDFJS === 'undefined') {
   });
 })();
 
+// Provides support for ChildNode.remove in legacy browsers.
+// Support: IE.
+(function checkChildNodeRemove() {
+  if (typeof Element.prototype.remove !== 'undefined') {
+    return;
+  }
+  Element.prototype.remove = function () {
+    if (this.parentNode) {
+      this.parentNode.removeChild(this);
+    }
+  };
+})();
+
 }).call((typeof window === 'undefined') ? this : window);
