@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals requirejs, pdfjsLibs, __webpack_require__, __pdfjsdev_webpack__ */
+/* globals requirejs, __pdfjsdev_webpack__ */
 
 'use strict';
 
@@ -1121,7 +1121,9 @@ var PDFWorker = (function PDFWorkerClosure() {
         throw new Error('AMD or CommonJS must be used to load fake worker.');
       }
     } else if (PDFJSDev.test('SINGLE_FILE')) {
-      WorkerMessageHandler = pdfjsLibs.pdfjsCoreWorker.WorkerMessageHandler;
+      var pdfjsCoreWorker = require('../core/worker.js');
+      require('../core/network.js');
+      WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
       fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
     } else {
       var loader = fakeWorkerFilesLoader || function (callback) {
