@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals chrome, DEFAULT_URL */
+/* globals chrome */
 
 'use strict';
 
@@ -351,7 +351,9 @@
 
   var ChromeExternalServices = Object.create(DefaultExernalServices);
   ChromeExternalServices.initPassiveLoading = function (callbacks) {
-    ChromeCom.resolvePDFFile(DEFAULT_URL, function (url, length, originalURL) {
+    var appConfig = PDFViewerApplication.appConfig;
+    ChromeCom.resolvePDFFile(appConfig.defaultUrl,
+        function (url, length, originalURL) {
       callbacks.onOpenWithURL(url, length, originalURL);
     });
   };
