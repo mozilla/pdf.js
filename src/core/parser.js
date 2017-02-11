@@ -1013,6 +1013,11 @@ var Lexer = (function LexerClosure() {
           this.nextChar();
           return Cmd.get('}');
         case 0x29: // ')'
+          // Consume the current character in order to avoid permanently hanging
+          // the worker thread if `Lexer.getObject` is called from within a loop
+          // containing try-catch statements, since we would otherwise attempt
+          // to parse the *same* character over and over (fixes issue8061.pdf).
+          this.nextChar();
           error('Illegal character: ' + ch);
           break;
       }
