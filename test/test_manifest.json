@@ -3367,5 +3367,11 @@
        "link": false,
        "rounds": 1,
        "type": "text"
+    },
+    {  "id": "font_ascent_descent",
+       "file": "pdfs/font_ascent_descent.pdf",
+       "md5": "c0048a7735010002b998c112335e47bf",
+       "rounds": 1,
+       "type": "eq"
     }
 ]

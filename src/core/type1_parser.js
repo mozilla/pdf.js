@@ -705,8 +705,8 @@ var Type1Parser = (function Type1ParserClosure() {
           case 'FontBBox':
             var fontBBox = this.readNumberArray();
             // adjusting ascent/descent
-            properties.ascent = fontBBox[3];
-            properties.descent = fontBBox[1];
+            properties.ascent = Math.max(fontBBox[3], fontBBox[1]);
+            properties.descent = Math.min(fontBBox[1], fontBBox[3]);
             properties.ascentScaled = true;
             break;
         }
