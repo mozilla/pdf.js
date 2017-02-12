@@ -66,6 +66,59 @@ DOMCanvasFactory.prototype = {
   }
 };
 
+var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
+  function DOMCMapReaderFactory(params) {
+    this.baseUrl = params.baseUrl || null;
+    this.binary = params.binary || false;
+  }
+
+  DOMCMapReaderFactory.prototype = {
+    fetch: function(params) {
+      if (!params.name) {
+        return Promise.reject(new Error('CMap name must be specified.'));
+      }
+      return new Promise(function (resolve, reject) {
+        var url = this.baseUrl + params.name;
+
+        var request = new XMLHttpRequest();
+        if (this.binary) {
+          url += '.bcmap';
+          request.responseType = 'arraybuffer';
+        }
+        request.onreadystatechange = function () {
+          if (request.readyState === XMLHttpRequest.DONE &&
+              (request.status === 200 || request.status === 0)) {
+            var data;
+            if (this.binary && request.response) {
+              data = new Uint8Array(request.response);
+            } else if (!this.binary && request.responseText) {
+              var arr = Array.prototype.map.call(request.responseText,
+                  function (ch) {
+                return ch.charCodeAt(0) & 0xFF;
+              });
+              data = new Uint8Array(arr);
+            }
+            if (data) {
+              resolve({
+                cMapData: data,
+                isBinary: this.binary,
+              });
+              return;
+            }
+            reject(new Error('Unable to load ' + (this.binary ? 'binary' : '') +
+                             ' CMap at: ' + url));
+          }
+        }.bind(this);
+
+        request.open('GET', url, true);
+        request.send(null);
+      }.bind(this));
+    },
+  };
+
+  return DOMCMapReaderFactory;
+})();
+
 /**
  * Optimised CSS custom property getter/setter.
  * @class
@@ -284,4 +337,5 @@ exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
 exports.getDefaultSetting = getDefaultSetting;
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
 exports.DOMCanvasFactory = DOMCanvasFactory;
+exports.DOMCMapReaderFactory = DOMCMapReaderFactory;
 }));
