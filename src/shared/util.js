@@ -156,6 +156,12 @@ var VERBOSITY_LEVELS = {
   infos: 5
 };
 
+var CMapCompressionType = {
+  NONE: 0,
+  BINARY: 1,
+  STREAM: 2,
+};
+
 // All the possible operations for an operator list.
 var OPS = {
   // Intentionally start from 1 so it is easy to spot bad operators that will be
@@ -2411,6 +2417,7 @@ exports.AnnotationFlag = AnnotationFlag;
 exports.AnnotationType = AnnotationType;
 exports.FontType = FontType;
 exports.ImageKind = ImageKind;
+exports.CMapCompressionType = CMapCompressionType;
 exports.InvalidPDFException = InvalidPDFException;
 exports.MessageHandler = MessageHandler;
 exports.MissingDataException = MissingDataException;

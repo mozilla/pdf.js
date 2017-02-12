@@ -36,11 +36,12 @@ var error = sharedUtil.error;
 var isInt = sharedUtil.isInt;
 var isString = sharedUtil.isString;
 var MissingDataException = sharedUtil.MissingDataException;
+var CMapCompressionType = sharedUtil.CMapCompressionType;
 var isEOF = corePrimitives.isEOF;
 var isName = corePrimitives.isName;
 var isCmd = corePrimitives.isCmd;
 var isStream = corePrimitives.isStream;
-var StringStream = coreStream.StringStream;
+var Stream = coreStream.Stream;
 var Lexer = coreParser.Lexer;
 
 var BUILT_IN_CMAPS = [
@@ -423,25 +424,6 @@ var IdentityCMap = (function IdentityCMapClosure() {
 })();
 
 var BinaryCMapReader = (function BinaryCMapReaderClosure() {
-  function fetchBinaryData(url) {
-    return new Promise(function (resolve, reject) {
-      var request = new XMLHttpRequest();
-      request.open('GET', url, true);
-      request.responseType = 'arraybuffer';
-      request.onreadystatechange = function () {
-        if (request.readyState === XMLHttpRequest.DONE) {
-          if (!request.response || request.status !== 200 &&
-              request.status !== 0) {
-            reject(new Error('Unable to get binary cMap at: ' + url));
-          } else {
-            resolve(new Uint8Array(request.response));
-          }
-        }
-      };
-      request.send(null);
-    });
-  }
-
   function hexToInt(a, size) {
     var n = 0;
     for (var i = 0; i <= size; i++) {
@@ -561,8 +543,8 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
     }
   };
 
-  function processBinaryCMap(url, cMap, extend) {
-    return fetchBinaryData(url).then(function (data) {
+  function processBinaryCMap(data, cMap, extend) {
+    return new Promise(function (resolve, reject) {
       var stream = new BinaryCMapStream(data);
       var header = stream.readByte();
       cMap.vertical = !!(header & 1);
@@ -709,22 +691,23 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
             }
             break;
           default:
-            error('Unknown type: ' + type);
-            break;
+            reject(new Error('processBinaryCMap: Unknown type: ' + type));
+            return;
         }
       }
 
       if (useCMap) {
-        return extend(useCMap);
+        resolve(extend(useCMap));
+        return;
       }
-      return cMap;
+      resolve(cMap);
     });
   }
 
   function BinaryCMapReader() {}
 
   BinaryCMapReader.prototype = {
-    read: processBinaryCMap
+    process: processBinaryCMap,
   };
 
   return BinaryCMapReader;
@@ -879,7 +862,7 @@ var CMapFactory = (function CMapFactoryClosure() {
     }
   }
 
-  function parseCMap(cMap, lexer, builtInCMapParams, useCMap) {
+  function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
     var previous;
     var embededUseCMap;
     objLoop: while (true) {
@@ -935,14 +918,13 @@ var CMapFactory = (function CMapFactoryClosure() {
       useCMap = embededUseCMap;
     }
     if (useCMap) {
-      return extendCMap(cMap, builtInCMapParams, useCMap);
+      return extendCMap(cMap, fetchBuiltInCMap, useCMap);
     }
     return Promise.resolve(cMap);
   }
 
-  function extendCMap(cMap, builtInCMapParams, useCMap) {
-    return createBuiltInCMap(useCMap, builtInCMapParams).then(
-        function(newCMap) {
+  function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
+    return createBuiltInCMap(useCMap, fetchBuiltInCMap).then(function(newCMap) {
       cMap.useCMap = newCMap;
       // If there aren't any code space ranges defined clone all the parent ones
       // into this cMap.
@@ -965,15 +947,7 @@ var CMapFactory = (function CMapFactoryClosure() {
     });
   }
 
-  function parseBinaryCMap(name, builtInCMapParams) {
-    var url = builtInCMapParams.url + name + '.bcmap';
-    var cMap = new CMap(true);
-    return new BinaryCMapReader().read(url, cMap, function (useCMap) {
-      return extendCMap(cMap, builtInCMapParams, useCMap);
-    });
-  }
-
-  function createBuiltInCMap(name, builtInCMapParams) {
+  function createBuiltInCMap(name, fetchBuiltInCMap) {
     if (name === 'Identity-H') {
       return Promise.resolve(new IdentityCMap(false, 2));
     } else if (name === 'Identity-V') {
@@ -982,45 +956,41 @@ var CMapFactory = (function CMapFactoryClosure() {
     if (BUILT_IN_CMAPS.indexOf(name) === -1) {
       return Promise.reject(new Error('Unknown cMap name: ' + name));
     }
-    assert(builtInCMapParams, 'built-in cMap parameters are not provided');
+    assert(fetchBuiltInCMap, 'Built-in CMap parameters are not provided.');
 
-    if (builtInCMapParams.packed) {
-      return parseBinaryCMap(name, builtInCMapParams);
-    }
+    return fetchBuiltInCMap(name).then(function (data) {
+      var cMapData = data.cMapData, compressionType = data.compressionType;
+      var cMap = new CMap(true);
 
-    return new Promise(function (resolve, reject) {
-      var url = builtInCMapParams.url + name;
-      var request = new XMLHttpRequest();
-      request.onreadystatechange = function () {
-        if (request.readyState === XMLHttpRequest.DONE) {
-          if (request.status === 200 || request.status === 0) {
-            var cMap = new CMap(true);
-            var lexer = new Lexer(new StringStream(request.responseText));
-            parseCMap(cMap, lexer, builtInCMapParams, null).then(
-                function (parsedCMap) {
-              resolve(parsedCMap);
-            });
-          } else {
-            reject(new Error('Unable to get cMap at: ' + url));
-          }
-        }
-      };
-      request.open('GET', url, true);
-      request.send(null);
+      if (compressionType === CMapCompressionType.BINARY) {
+        return new BinaryCMapReader().process(cMapData, cMap,
+            function (useCMap) {
+          return extendCMap(cMap, fetchBuiltInCMap, useCMap);
+        });
+      }
+      assert(compressionType === CMapCompressionType.NONE,
+        'TODO: Only BINARY/NONE CMap compression is currently supported.');
+      // Uncompressed CMap.
+      var lexer = new Lexer(new Stream(cMapData));
+      return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
     });
   }
 
   return {
-    create: function (encoding, builtInCMapParams, useCMap) {
+    create: function (params) {
+      var encoding = params.encoding;
+      var fetchBuiltInCMap = params.fetchBuiltInCMap;
+      var useCMap = params.useCMap;
+
       if (isName(encoding)) {
-        return createBuiltInCMap(encoding.name, builtInCMapParams);
+        return createBuiltInCMap(encoding.name, fetchBuiltInCMap);
       } else if (isStream(encoding)) {
         var cMap = new CMap();
         var lexer = new Lexer(encoding);
-        return parseCMap(cMap, lexer, builtInCMapParams, useCMap).then(
+        return parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap).then(
             function (parsedCMap) {
           if (parsedCMap.isIdentityCMap) {
-            return createBuiltInCMap(parsedCMap.name, builtInCMapParams);
+            return createBuiltInCMap(parsedCMap.name, fetchBuiltInCMap);
           }
           return parsedCMap;
         });
