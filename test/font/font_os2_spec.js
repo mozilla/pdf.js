@@ -20,7 +20,9 @@ describe('font_post', function() {
     });
 
     it('has invalid selection attributes presence', function(done) {
-      CMapFactory.create(new Name('Identity-H')).then(function (cMap) {
+      CMapFactory.create({
+        encoding: Name.get('Identity-H'),
+      }).then(function (cMap) {
         var font = new Font("font", new Stream(font1282), {
           loadedName: 'font',
           type: 'CIDFontType2',
