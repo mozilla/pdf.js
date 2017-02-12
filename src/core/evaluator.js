@@ -53,6 +53,7 @@ var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
 var ImageKind = sharedUtil.ImageKind;
 var OPS = sharedUtil.OPS;
 var TextRenderingMode = sharedUtil.TextRenderingMode;
+var CMapCompressionType = sharedUtil.CMapCompressionType;
 var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
@@ -112,7 +113,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     forceDataSchema: false,
     maxImageSize: -1,
     disableFontFace: false,
-    cMapOptions: { url: null, packed: false },
     disableNativeImageDecoder: false,
   };
 
@@ -178,6 +178,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.idFactory = idFactory;
     this.fontCache = fontCache;
     this.options = options || DefaultPartialEvaluatorOptions;
+
+    this.fetchBuiltInCMap = function (name) {
+      return handler.sendWithPromise('FetchBuiltInCMap', {
+        name: name,
+      });
+    };
   }
 
   // Trying to minimize Date.now() usage and check every 100 time
@@ -1879,9 +1885,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var ucs2CMapName = Name.get(registry + '-' + ordering + '-UCS2');
         // d) Obtain the CMap with the name constructed in step (c) (available
         // from the ASN Web site; see the Bibliography).
-        return CMapFactory.create(ucs2CMapName, this.options.cMapOptions,
-                                  null).then(
-            function (ucs2CMap) {
+        return CMapFactory.create({
+          encoding: ucs2CMapName,
+          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          useCMap: null,
+        }).then(function (ucs2CMap) {
           var cMap = properties.cMap;
           toUnicode = [];
           cMap.forEach(function(charcode, cid) {
@@ -1907,16 +1915,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     readToUnicode: function PartialEvaluator_readToUnicode(toUnicode) {
       var cmapObj = toUnicode;
       if (isName(cmapObj)) {
-        return CMapFactory.create(cmapObj, this.options.cMapOptions, null).then(
-            function (cmap) {
+        return CMapFactory.create({
+          encoding: cmapObj,
+          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          useCMap: null,
+        }).then(function (cmap) {
           if (cmap instanceof IdentityCMap) {
             return new IdentityToUnicodeMap(0, 0xFFFF);
           }
           return new ToUnicodeMap(cmap.getMap());
         });
       } else if (isStream(cmapObj)) {
-        return CMapFactory.create(cmapObj, this.options.cMapOptions, null).then(
-            function (cmap) {
+        return CMapFactory.create({
+          encoding: cmapObj,
+          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          useCMap: null,
+        }).then(function (cmap) {
           if (cmap instanceof IdentityCMap) {
             return new IdentityToUnicodeMap(0, 0xFFFF);
           }
@@ -2222,7 +2236,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var descriptor = preEvaluatedFont.descriptor;
       var type = preEvaluatedFont.type;
       var maxCharIndex = (composite ? 0xFFFF : 0xFF);
-      var cMapOptions = this.options.cMapOptions;
       var properties;
 
       if (!descriptor) {
@@ -2352,8 +2365,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (isName(cidEncoding)) {
           properties.cidEncoding = cidEncoding.name;
         }
-        cMapPromise = CMapFactory.create(cidEncoding, cMapOptions, null).then(
-            function (cMap) {
+        cMapPromise = CMapFactory.create({
+          encoding: cidEncoding,
+          fetchBuiltInCMap: this.fetchBuiltInCMap,
+          useCMap: null,
+        }).then(function (cMap) {
           properties.cMap = cMap;
           properties.vertical = properties.cMap.vertical;
         });
