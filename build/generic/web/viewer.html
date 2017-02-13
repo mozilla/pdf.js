@@ -26,23 +26,31 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta name="google" content="notranslate">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="<?= $assetPath ?>/viewer.css">
+
+    <script>
+       window.workerPath = <?= $workerPath ?>;
+    </script>
+    <script src="<?= $scripts[0] ?>"></script>
+    <script src="<?= $assetPath ?>/compatibility.js"></script>
+    <!-- <script src="<?= $assetPath ?>/viewer.js"></script>   
     <title>PDF.js viewer</title>
 
 
-    <link rel="stylesheet" href="viewer.css">
 
-    <script src="compatibility.js"></script>
+
 
 
 
 <!-- This snippet is used in production (included from viewer.html) -->
-<link rel="resource" type="application/l10n" href="locale/locale.properties">
-<script src="l10n.js"></script>
-<script src="../build/pdf.js"></script>
+<link rel="resource" type="application/l10n" href="<?= $assetPath ?>/locale/locale.properties">
+<script src="<?= $assetPath ?>/l10n.js"></script>
+<!-- <script src="../build/pdf.js"></script> -->
 
 
 
-    <script src="viewer.js"></script>
+    <script src="<?= $assetPath ?>/viewer.js"></script>
+
 
   </head>
 
