@@ -3,6 +3,8 @@
  */
 
 /**
+ * Display the rotate icon in the main toolbar. We have to add this because
+ * the standard viewer only showed the rotate button in the dropdown menu.
  * Transform the rotate button depending on whether we're viewing it in
  * landscape or portrait.
  */
@@ -11,8 +13,7 @@
 }
 
 #mainContainer.landscape .rotateCw::before {
-  transform: rotate(-90deg);
-  transform-origin: 8px 8px;
+  /* transform: rotate(-90deg); */
 }
 
 @media screen and (min-resolution: 2dppx) {
