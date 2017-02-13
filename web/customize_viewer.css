@@ -15,6 +15,12 @@
   transform-origin: 8px 8px;
 }
 
+@media screen and (min-resolution: 2dppx) {
+  .rotateCw::before {
+    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+  }
+}
+
 /**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
