@@ -770,6 +770,8 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
 
     gulp.src(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry.jsm')
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
+    gulp.src(FIREFOX_CONTENT_DIR + 'pdfjschildbootstrap.js')
+        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'chrome-mozcentral.manifest')
         .pipe(rename('chrome.manifest'))
         .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
