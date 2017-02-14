@@ -29,13 +29,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 <!--#if GENERIC-->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <link rel="stylesheet" href="<?= $assetPath ?>/viewer.css">
+<!--#expand <link rel="stylesheet" href="<?= $assetPath ?>/viewer.css"> -->
 
-    <script>
-       window.workerPath = <?= $workerPath ?>;
-    </script>
-    <script src="<?= $scripts[0] ?>"></script>
-    <script src="<?= $assetPath ?>/compatibility.js"></script>
+<!--#expand <script>window.workerPath = <?= $workerPath ?>;</script> -->
+<!--#expand <script src="<?= $scripts[0] ?>"></script> -->
+<!--#expand <script src="<?= $assetPath ?>/compatibility.js"></script> -->
+
 <!--#endif-->
     <title>PDF.js viewer</title>
 
@@ -75,7 +74,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if GENERIC-->
-    <script src="<?= $assetPath ?>/viewer.js"></script>
+<!--#expand <script src="<?= $assetPath ?>/viewer.js"></script> -->
 <!--#else-->
     <script src="viewer.js"></script>
 <!--#endif-->
