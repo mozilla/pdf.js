@@ -170,18 +170,29 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   function PartialEvaluator(pdfManager, xref, handler, pageIndex,
-                            idFactory, fontCache, options) {
+                            idFactory, fontCache, builtInCMapCache, options) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
     this.pageIndex = pageIndex;
     this.idFactory = idFactory;
     this.fontCache = fontCache;
+    this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
 
     this.fetchBuiltInCMap = function (name) {
+      var cachedCMap = builtInCMapCache[name];
+      if (cachedCMap) {
+        return Promise.resolve(cachedCMap);
+      }
       return handler.sendWithPromise('FetchBuiltInCMap', {
         name: name,
+      }).then(function (data) {
+        if (data.compressionType !== CMapCompressionType.NONE) {
+          // Given the size of uncompressed CMaps, only cache compressed ones.
+          builtInCMapCache[name] = data;
+        }
+        return data;
       });
     };
   }

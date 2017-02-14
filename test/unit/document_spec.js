@@ -34,11 +34,13 @@ describe('document', function () {
       var page1 = new Page(/* pdfManager = */ { }, /* xref = */ null,
                            /* pageIndex = */ 0,
                            /* pageDict = */ null, /* ref = */ null,
-                           /* fontCache = */ null);
+                           /* fontCache = */ null,
+                           /* builtInCMapCache = */ null);
       var page2 = new Page(/* pdfManager = */ { }, /* xref = */ null,
                            /* pageIndex = */ 1,
                            /* pageDict = */ null, /* ref = */ null,
-                           /* fontCache = */ null);
+                           /* fontCache = */ null,
+                           /* builtInCMapCache = */ null);
 
       var idFactory1 = page1.idFactory, idFactory2 = page2.idFactory;
 
