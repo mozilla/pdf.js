@@ -264,6 +264,64 @@
   border: 0;
 }
 
+/**
+ * Custom css for our fork of pdf.js.
+ */
+
+/**
+ * Display the rotate icon in the main toolbar. We have to add this because
+ * the standard viewer only showed the rotate button in the dropdown menu.
+ * Transform the rotate button depending on whether we're viewing it in
+ * landscape or portrait.
+ */
+.rotateCw::before {
+  content: url(images/secondaryToolbarButton-rotateCw.png);
+}
+
+#mainContainer.landscape .rotateCw::before {
+  /* transform: rotate(-90deg); */
+}
+
+@media screen and (min-resolution: 2dppx) {
+  .rotateCw::before {
+    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+  }
+}
+
+/**
+ * Remove spacing between words when displaying
+ * <span>page</span><span>1</span></span>of 7</span>
+ */
+#pageLabel, #pageNumberDisplay {
+  min-width: 0;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+/**
+ * The default viewer stops centering this at smaller screen sizes. We'd
+ * like it to be always centered, because it looks better with how we moved
+ * the buttons around.
+ */
+.outerCenter {
+  float: right !important;
+  right: 50% !important;
+  left: auto !important;
+}
+
+.innerCenter {
+  float: right !important;
+  right: -50% !important;
+  left: auto !important;
+}
+
+/* Leave space for the left buttons at very small screen sizes. */
+@media all and (max-width: 600px) {
+  .innerCenter {
+    margin-left: 72px;
+  }
+}
+
 * {
   padding: 0;
   margin: 0;
