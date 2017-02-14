@@ -405,6 +405,18 @@ var PDFViewer = (function pdfViewer() {
       }.bind(this));
     },
 
+    /**
+     * Returns `true` if the user is viewing this pdf in the landscape
+     * orientation.
+     *
+     * Custom method for this fork of pdf.js. Copied from some similar
+     * code in `_setScale`.
+     */
+    isLandscape: function PDFViewer_isLandscape() {
+      var currentPage = this._pages[this._currentPageNumber - 1];
+      return currentPage.width > currentPage.height;
+    },
+
     _resetView: function () {
       this._pages = [];
       this._currentPageNumber = 1;
