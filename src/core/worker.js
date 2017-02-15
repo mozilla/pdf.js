@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals module */
+/* globals process, __pdfjsdev_webpack__ */
 
 'use strict';
 
@@ -1012,9 +1012,16 @@ function initializeWorker() {
   handler.send('ready', null);
 }
 
+function isNodeJS() {
+  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
+  if (typeof __pdfjsdev_webpack__ === 'undefined') {
+    return typeof process === 'object' && process + '' === '[object process]';
+  }
+  return false;
+}
+
 // Worker thread (and not node.js)?
-if (typeof window === 'undefined' &&
-    !(typeof module !== 'undefined' && module.require)) {
+if (typeof window === 'undefined' && !isNodeJS()) {
   initializeWorker();
 }
 
