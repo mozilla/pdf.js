@@ -47,6 +47,7 @@ var Dict = corePrimitives.Dict;
 var isDict = corePrimitives.isDict;
 var isName = corePrimitives.isName;
 var isRef = corePrimitives.isRef;
+var isStream = corePrimitives.isStream;
 var Stream = coreStream.Stream;
 var ColorSpace = coreColorSpace.ColorSpace;
 var Catalog = coreObj.Catalog;
@@ -168,25 +169,6 @@ var Annotation = (function AnnotationClosure() {
     ];
   }
 
-  function getDefaultAppearance(dict) {
-    var appearanceState = dict.get('AP');
-    if (!isDict(appearanceState)) {
-      return;
-    }
-
-    var appearance;
-    var appearances = appearanceState.get('N');
-    if (isDict(appearances)) {
-      var as = dict.get('AS');
-      if (as && appearances.has(as.name)) {
-        appearance = appearances.get(as.name);
-      }
-    } else {
-      appearance = appearances;
-    }
-    return appearance;
-  }
-
   function Annotation(params) {
     var dict = params.dict;
 
@@ -194,7 +176,7 @@ var Annotation = (function AnnotationClosure() {
     this.setRectangle(dict.getArray('Rect'));
     this.setColor(dict.getArray('C'));
     this.setBorderStyle(dict);
-    this.appearance = getDefaultAppearance(dict);
+    this.setAppearance(dict);
 
     // Expose public properties using a data object.
     this.data = {};
@@ -377,6 +359,40 @@ var Annotation = (function AnnotationClosure() {
         // See also https://github.com/mozilla/pdf.js/issues/6179.
         this.borderStyle.setWidth(0);
       }
+    },
+
+    /**
+     * Set the (normal) appearance.
+     *
+     * @public
+     * @memberof Annotation
+     * @param {Dict} dict - The annotation's data dictionary
+     */
+    setAppearance: function Annotation_setAppearance(dict) {
+      this.appearance = null;
+
+      var appearanceStates = dict.get('AP');
+      if (!isDict(appearanceStates)) {
+        return;
+      }
+
+      // In case the normal appearance is a stream, then it is used directly.
+      var normalAppearanceState = appearanceStates.get('N');
+      if (isStream(normalAppearanceState)) {
+        this.appearance = normalAppearanceState;
+        return;
+      }
+      if (!isDict(normalAppearanceState)) {
+        return;
+      }
+
+      // In case the normal appearance is a dictionary, the `AS` entry provides
+      // the key of the stream in this dictionary.
+      var as = dict.get('AS');
+      if (!isName(as) || !normalAppearanceState.has(as.name)) {
+        return;
+      }
+      this.appearance = normalAppearanceState.get(as.name);
     },
 
     /**
