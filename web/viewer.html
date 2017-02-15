@@ -29,6 +29,12 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 <!--#if GENERIC-->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!--#expand <link rel="stylesheet" href="<?= $assetPath ?>/viewer.css"> -->
+
+<!--#expand <script>window.workerPath = <?= $workerPath ?>;</script> -->
+<!--#expand <script src="<?= $scripts[0] ?>"></script> -->
+<!--#expand <script src="<?= $assetPath ?>/compatibility.js"></script> -->
+
 <!--#endif-->
     <title>PDF.js viewer</title>
 
@@ -39,12 +45,15 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#include viewer-snippet-chrome-extension.html-->
 <!--#endif-->
 
+<!--#if !GENERIC-->
     <link rel="stylesheet" href="viewer.css">
+<!--#endif-->
+
 <!--#if !PRODUCTION-->
     <link rel="resource" type="application/l10n" href="locale/locale.properties">
 <!--#endif-->
 
-<!--#if !(FIREFOX || MOZCENTRAL || CHROME || MINIFIED)-->
+<!--#if !GENERIC && !(FIREFOX || MOZCENTRAL || CHROME || MINIFIED)-->
     <script src="compatibility.js"></script>
 <!--#endif-->
 
@@ -64,9 +73,13 @@ See https://github.com/adobe-type-tools/cmap-resources
     <script src="default_preferences.js"></script>
 <!--#endif-->
 
-<!--#if !MINIFIED -->
-    <script src="viewer.js"></script>
+<!--#if GENERIC-->
+<!--#expand <script src="<?= $assetPath ?>/viewer.js"></script> -->
 <!--#else-->
+    <script src="viewer.js"></script>
+<!--#endif-->
+
+<!--#if MINIFIED-->
 <!--#include viewer-snippet-minified.html-->
 <!--#endif-->
 

@@ -28,8 +28,8 @@ factory((root.pdfjsDistBuildPdf = {}));
   // Use strict in our context only - users might not want it
   'use strict';
 
-var pdfjsVersion = '1.6.230';
-var pdfjsBuild = 'aded2ec';
+var pdfjsVersion = '1.6.236';
+var pdfjsBuild = '21543f4';
 
   var pdfjsFilePath =
     typeof document !== 'undefined' && document.currentScript ?
@@ -10131,6 +10131,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
  */
 var PDFWorker = (function PDFWorkerClosure() {
   var nextFakeWorkerId = 0;
+  var workerSrc = window.workerPath;
 
   function getWorkerSrc() {
     if (typeof workerSrc !== 'undefined') {

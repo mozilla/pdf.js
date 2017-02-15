@@ -1025,6 +1025,9 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
  */
 var PDFWorker = (function PDFWorkerClosure() {
   var nextFakeWorkerId = 0;
+//#if GENERIC
+//var workerSrc = window.workerPath;
+//#endif
 
   function getWorkerSrc() {
     if (typeof workerSrc !== 'undefined') {
