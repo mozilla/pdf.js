@@ -125,14 +125,9 @@ Talk to us on IRC:
 
 + #pdfjs on irc.mozilla.org
 
-Join our mailing list:
+File an issue:
 
-+ dev-pdf-js@lists.mozilla.org
-
-Subscribe either using lists.mozilla.org or Google Groups:
-
-+ https://lists.mozilla.org/listinfo/dev-pdf-js
-+ https://groups.google.com/group/mozilla.dev.pdf-js/topics
++ https://github.com/mozilla/pdf.js/issues/new
 
 Follow us on twitter: @pdfjs
 
