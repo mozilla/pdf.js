@@ -948,6 +948,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "bug1337429",
+       "file": "pdfs/bug1337429.pdf",
+       "md5": "4e6e4dfdab884e9465bdce657b590028",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "glyph_accent",
        "file": "pdfs/glyph_accent.pdf",
        "md5": "1526e4edaa3ec439ebf156d0a0b385aa",
