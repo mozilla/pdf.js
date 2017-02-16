@@ -1434,7 +1434,7 @@ var Font = (function FontClosure() {
             // Continue the loop since there still may be a higher priority
             // table.
           } else if (platformId === 3 && encodingId === 1 &&
-                     ((!isSymbolicFont && hasEncoding) || !potentialTable)) {
+                     (hasEncoding || !potentialTable)) {
             useTable = true;
             if (!isSymbolicFont) {
               canBreak = true;
