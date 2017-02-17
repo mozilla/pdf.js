@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals process, __pdfjsdev_webpack__ */
 
 'use strict';
 
@@ -46,6 +45,7 @@ var error = sharedUtil.error;
 var info = sharedUtil.info;
 var warn = sharedUtil.warn;
 var setVerbosityLevel = sharedUtil.setVerbosityLevel;
+var isNodeJS = sharedUtil.isNodeJS;
 var Ref = corePrimitives.Ref;
 var LocalPdfManager = corePdfManager.LocalPdfManager;
 var NetworkPdfManager = corePdfManager.NetworkPdfManager;
@@ -1005,14 +1005,6 @@ function initializeWorker() {
   var handler = new MessageHandler('worker', 'main', self);
   WorkerMessageHandler.setup(handler, self);
   handler.send('ready', null);
-}
-
-function isNodeJS() {
-  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
-  if (typeof __pdfjsdev_webpack__ === 'undefined') {
-    return typeof process === 'object' && process + '' === '[object process]';
-  }
-  return false;
 }
 
 // Worker thread (and not node.js)?

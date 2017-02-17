@@ -4,6 +4,7 @@
     "annotation_spec.js",
     "bidi_spec.js",
     "cff_parser_spec.js",
+    "cmap_spec.js",
     "crypto_spec.js",
     "document_spec.js",
     "dom_utils_spec.js",
