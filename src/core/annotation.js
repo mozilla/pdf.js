@@ -784,28 +784,33 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
   function ButtonWidgetAnnotation(params) {
     WidgetAnnotation.call(this, params);
-
+    // Bool: is button widget a checkbox
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.checkBox) {
-      if (!isName(this.data.fieldValue)) {
-        return;
-      }
-      this.data.fieldValue = this.data.fieldValue.name;
+    // if the button is not a checkBox, check to see if its a radio button
+    if (!this.data.checkBox) {
+      // Bool: is button widget a radio button
+      this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
     }
 
-    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
-                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    if (this.data.radioButton) {
-      this.data.fieldValue = this.data.buttonValue = null;
+    if (this.data.checkBox || this.data.radioButton) {
+      // Set fieldValue
+      if (this.data.checkBox) { // For checkbox button widgets
+        if (isName(this.data.fieldValue)) {
+          this.data.fieldValue = this.data.fieldValue.name;
+        }
+      } else { // For radio button widgets
+        this.data.fieldValue = this.data.buttonValue = null;
 
-      // The parent field's `V` entry holds a `Name` object with the appearance
-      // state of whichever child field is currently in the "on" state.
-      var fieldParent = params.dict.get('Parent');
-      if (isDict(fieldParent) && fieldParent.has('V')) {
-        var fieldParentValue = fieldParent.get('V');
-        if (isName(fieldParentValue)) {
-          this.data.fieldValue = fieldParentValue.name;
+        // The parent field's `V` entry holds a `Name` object with the appearance
+        // state of whichever child field is currently in the "on" state.
+        var fieldParent = params.dict.get('Parent');
+        if (isDict(fieldParent) && fieldParent.has('V')) {
+          var fieldParentValue = fieldParent.get('V');
+          if (isName(fieldParentValue)) {
+            this.data.fieldValue = fieldParentValue.name;
+          }
         }
       }
 
