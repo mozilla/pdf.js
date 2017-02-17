@@ -71,13 +71,15 @@ var Page = (function PageClosure() {
   var DEFAULT_USER_UNIT = 1.0;
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 
-  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache) {
+  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
+                builtInCMapCache) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
     this.xref = xref;
     this.ref = ref;
     this.fontCache = fontCache;
+    this.builtInCMapCache = builtInCMapCache;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -248,6 +250,7 @@ var Page = (function PageClosure() {
                                                   handler, this.pageIndex,
                                                   this.idFactory,
                                                   this.fontCache,
+                                                  this.builtInCMapCache,
                                                   this.evaluatorOptions);
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -315,6 +318,7 @@ var Page = (function PageClosure() {
                                                     handler, self.pageIndex,
                                                     self.idFactory,
                                                     self.fontCache,
+                                                    self.builtInCMapCache,
                                                     self.evaluatorOptions);
 
         return partialEvaluator.getTextContent(contentStream,
@@ -551,9 +555,10 @@ var PDFDocument = (function PDFDocumentClosure() {
       this.xref.parse(recoveryMode);
       var self = this;
       var pageFactory = {
-        createPage: function (pageIndex, dict, ref, fontCache) {
+        createPage: function (pageIndex, dict, ref, fontCache,
+                              builtInCMapCache) {
           return new Page(self.pdfManager, self.xref, pageIndex, dict, ref,
-                          fontCache);
+                          fontCache, builtInCMapCache);
         }
       };
       this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);

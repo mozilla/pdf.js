@@ -729,15 +729,10 @@ var WorkerMessageHandler = {
 
       ensureNotTerminated();
 
-      var cMapOptions = {
-        url: data.cMapUrl === undefined ? null : data.cMapUrl,
-        packed: data.cMapPacked === true
-      };
       var evaluatorOptions = {
         forceDataSchema: data.disableCreateObjectURL,
         maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
         disableFontFace: data.disableFontFace,
-        cMapOptions: cMapOptions,
         disableNativeImageDecoder: data.disableNativeImageDecoder,
       };
 

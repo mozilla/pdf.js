@@ -71,8 +71,8 @@ var Catalog = (function CatalogClosure() {
     this.xref = xref;
     this.catDict = xref.getCatalogObj();
     this.fontCache = new RefSetCache();
-    assert(isDict(this.catDict),
-      'catalog object is not a dictionary');
+    this.builtInCMapCache = Object.create(null);
+    assert(isDict(this.catDict), 'catalog object is not a dictionary');
 
     // TODO refactor to move getPage() to the PDFDocument.
     this.pageFactory = pageFactory;
@@ -428,6 +428,7 @@ var Catalog = (function CatalogClosure() {
           delete font.translated;
         }
         this.fontCache.clear();
+        this.builtInCMapCache = Object.create(null);
       }.bind(this));
     },
 
@@ -438,7 +439,8 @@ var Catalog = (function CatalogClosure() {
             var dict = a[0];
             var ref = a[1];
             return this.pageFactory.createPage(pageIndex, dict, ref,
-                                               this.fontCache);
+                                               this.fontCache,
+                                               this.builtInCMapCache);
           }.bind(this)
         );
       }
