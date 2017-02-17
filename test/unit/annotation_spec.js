@@ -970,8 +970,18 @@ describe('annotation', function() {
       buttonWidgetDict = null;
     });
 
-    it('should handle checkboxes', function() {
-      buttonWidgetDict.set('V', Name.get('1'));
+    it('should handle checkboxes with a field value', function() {
+      var parentDict = new Dict();
+      parentDict.set('V', Name.get('1'));
+
+      var normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set('2', null);
+
+      var appearanceStatesDict = new Dict();
+      appearanceStatesDict.set('N', normalAppearanceStateDict);
+
+      buttonWidgetDict.set('Parent', parentDict);
+      buttonWidgetDict.set('AP', appearanceStatesDict);
 
       var buttonWidgetRef = new Ref(124, 0);
       var xref = new XRefMock([
@@ -984,8 +994,34 @@ describe('annotation', function() {
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
 
       expect(data.checkBox).toEqual(true);
-      expect(data.fieldValue).toEqual('1');
       expect(data.radioButton).toEqual(false);
+      expect(data.fieldValue).toEqual('1');
+      expect(data.buttonValue).toEqual('2');
+    });
+
+    it('should handle checkboxes without a field value', function() {
+      var normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set('2', null);
+
+      var appearanceStatesDict = new Dict();
+      appearanceStatesDict.set('N', normalAppearanceStateDict);
+
+      buttonWidgetDict.set('AP', appearanceStatesDict);
+
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, buttonWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.checkBox).toEqual(true);
+      expect(data.radioButton).toEqual(false);
+      expect(data.fieldValue).toEqual(null);
+      expect(data.buttonValue).toEqual('2');
     });
 
     it('should handle radio buttons with a field value', function() {
