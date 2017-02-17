@@ -787,12 +787,9 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
     // Bool: is button widget a checkbox
     this.data.checkBox = !this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    // if the button is not a checkBox, check to see if its a radio button
-    if (!this.data.checkBox) {
-      // Bool: is button widget a radio button
-      this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
-                            !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
-    }
+    // Bool: is button widget a radio button
+    this.data.radioButton = this.hasFieldFlag(AnnotationFieldFlag.RADIO) &&
+                          !this.hasFieldFlag(AnnotationFieldFlag.PUSHBUTTON);
 
     if (this.data.checkBox || this.data.radioButton) {
       // Set fieldValue
@@ -803,7 +800,7 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
       } else { // For radio button widgets
         this.data.fieldValue = this.data.buttonValue = null;
 
-        // The parent field's `V` entry holds a `Name` object with the appearance
+        // The parent fiel's `V` entry holds a `Name` object with the appearance
         // state of whichever child field is currently in the "on" state.
         var fieldParent = params.dict.get('Parent');
         if (isDict(fieldParent) && fieldParent.has('V')) {
