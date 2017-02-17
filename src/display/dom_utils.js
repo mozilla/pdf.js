@@ -31,6 +31,8 @@ var removeNullCharacters = sharedUtil.removeNullCharacters;
 var warn = sharedUtil.warn;
 var deprecated = sharedUtil.deprecated;
 var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
+var stringToBytes = sharedUtil.stringToBytes;
+var CMapCompressionType = sharedUtil.CMapCompressionType;
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 
@@ -65,6 +67,57 @@ DOMCanvasFactory.prototype = {
     canvasAndContextPair.context = null;
   }
 };
+
+var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
+  function DOMCMapReaderFactory(params) {
+    this.baseUrl = params.baseUrl || null;
+    this.isCompressed = params.isCompressed || false;
+  }
+
+  DOMCMapReaderFactory.prototype = {
+    fetch: function(params) {
+      if (!params.name) {
+        return Promise.reject(new Error('CMap name must be specified.'));
+      }
+      return new Promise(function (resolve, reject) {
+        var url = this.baseUrl + params.name;
+
+        var request = new XMLHttpRequest();
+        if (this.isCompressed) {
+          url += '.bcmap';
+          request.responseType = 'arraybuffer';
+        }
+        request.onreadystatechange = function () {
+          if (request.readyState === XMLHttpRequest.DONE &&
+              (request.status === 200 || request.status === 0)) {
+            var data;
+            if (this.isCompressed && request.response) {
+              data = new Uint8Array(request.response);
+            } else if (!this.isCompressed && request.responseText) {
+              data = stringToBytes(request.responseText);
+            }
+            if (data) {
+              resolve({
+                cMapData: data,
+                compressionType: this.isCompressed ?
+                  CMapCompressionType.BINARY : CMapCompressionType.NONE,
+              });
+              return;
+            }
+            reject(new Error('Unable to load ' +
+                             (this.isCompressed ? 'binary' : '') +
+                             ' CMap at: ' + url));
+          }
+        }.bind(this);
+
+        request.open('GET', url, true);
+        request.send(null);
+      }.bind(this));
+    },
+  };
+
+  return DOMCMapReaderFactory;
+})();
 
 /**
  * Optimised CSS custom property getter/setter.
@@ -284,4 +337,5 @@ exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
 exports.getDefaultSetting = getDefaultSetting;
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
 exports.DOMCanvasFactory = DOMCanvasFactory;
+exports.DOMCMapReaderFactory = DOMCMapReaderFactory;
 }));
