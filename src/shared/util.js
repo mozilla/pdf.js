@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals global */
+/* globals global, process, __pdfjsdev_webpack__ */
 
 'use strict';
 
@@ -1134,6 +1134,14 @@ function isArrayBuffer(v) {
 // Checks if ch is one of the following characters: SPACE, TAB, CR or LF.
 function isSpace(ch) {
   return (ch === 0x20 || ch === 0x09 || ch === 0x0D || ch === 0x0A);
+}
+
+function isNodeJS() {
+  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
+  if (typeof __pdfjsdev_webpack__ === 'undefined') {
+    return typeof process === 'object' && process + '' === '[object process]';
+  }
+  return false;
 }
 
 /**
@@ -2454,6 +2462,7 @@ exports.isInt = isInt;
 exports.isNum = isNum;
 exports.isString = isString;
 exports.isSpace = isSpace;
+exports.isNodeJS = isNodeJS;
 exports.isSameOrigin = isSameOrigin;
 exports.createValidAbsoluteUrl = createValidAbsoluteUrl;
 exports.isLittleEndian = isLittleEndian;

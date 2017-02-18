@@ -17,20 +17,22 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-test/unit/cmap_spec', ['exports', 'pdfjs/core/cmap',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/display/dom_utils'],
-      factory);
+      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/display/dom_utils',
+      'pdfjs/shared/util', 'pdfjs-test/unit/test_utils'], factory);
   } else if (typeof exports !== 'undefined') {
       factory(exports, require('../../src/core/cmap.js'),
         require('../../src/core/primitives.js'),
         require('../../src/core/stream.js'),
-        require('../../src/display/dom_utils.js'));
+        require('../../src/display/dom_utils.js'),
+        require('../../src/shared/util.js'), require('./test_utils.js'));
   } else {
     factory((root.pdfjsTestUnitCMapSpec = {}), root.pdfjsCoreCMap,
       root.pdfjsCorePrimitives, root.pdfjsCoreStream,
-      root.pdfjsDisplayDOMUtils);
+      root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil,
+      root.pdfjsTestUnitTestUtils);
   }
 }(this, function (exports, coreCMap, corePrimitives, coreStream,
-                  displayDOMUtils) {
+                  displayDOMUtils, sharedUtil, testUnitTestUtils) {
 
 var CMapFactory = coreCMap.CMapFactory;
 var CMap = coreCMap.CMap;
@@ -38,18 +40,33 @@ var IdentityCMap = coreCMap.IdentityCMap;
 var Name = corePrimitives.Name;
 var StringStream = coreStream.StringStream;
 var DOMCMapReaderFactory = displayDOMUtils.DOMCMapReaderFactory;
+var isNodeJS = sharedUtil.isNodeJS;
+var NodeCMapReaderFactory = testUnitTestUtils.NodeCMapReaderFactory;
 
-var cMapUrl = '../../external/bcmaps/';
+var cMapUrl = {
+  dom: '../../external/bcmaps/',
+  node: './external/bcmaps/',
+};
 var cMapPacked = true;
 
 describe('cmap', function() {
   var fetchBuiltInCMap;
 
   beforeAll(function (done) {
-    var CMapReaderFactory = new DOMCMapReaderFactory({
-      baseUrl: cMapUrl,
-      isCompressed: cMapPacked,
-    });
+    // Allow CMap testing in Node.js, e.g. for Travis.
+    var CMapReaderFactory;
+    if (isNodeJS()) {
+      CMapReaderFactory = new NodeCMapReaderFactory({
+        baseUrl: cMapUrl.node,
+        isCompressed: cMapPacked,
+      });
+    } else {
+      CMapReaderFactory = new DOMCMapReaderFactory({
+        baseUrl: cMapUrl.dom,
+        isCompressed: cMapPacked,
+      });
+    }
+
     fetchBuiltInCMap = function (name) {
       return CMapReaderFactory.fetch({
         name: name,
