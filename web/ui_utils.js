@@ -368,11 +368,15 @@ function noContextMenuHandler(e) {
 /**
  * Returns the filename or guessed filename from the url (see issue 3455).
  * url {String} The original PDF location.
+ * defaultFilename {string} The value to return if the file name is unknown.
  * @return {String} Guessed PDF file name.
  */
-function getPDFFileNameFromURL(url) {
-  var reURI = /^(?:([^:]+:)?\/\/[^\/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
-  //            SCHEME      HOST         1.PATH  2.QUERY   3.REF
+function getPDFFileNameFromURL(url, defaultFilename) {
+  if (typeof defaultFilename === 'undefined') {
+    defaultFilename = 'document.pdf';
+  }
+  var reURI = /^(?:(?:[^:]+:)?\/\/[^\/]+)?([^?#]*)(\?[^#]*)?(#.*)?$/;
+  //            SCHEME        HOST         1.PATH  2.QUERY   3.REF
   // Pattern to get last matching NAME.pdf
   var reFilename = /[^\/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
   var splitURI = reURI.exec(url);
@@ -392,7 +396,7 @@ function getPDFFileNameFromURL(url) {
       }
     }
   }
-  return suggestedFilename || 'document.pdf';
+  return suggestedFilename || defaultFilename;
 }
 
 function normalizeWheelEventDelta(evt) {

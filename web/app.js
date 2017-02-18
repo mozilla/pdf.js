@@ -574,14 +574,17 @@ var PDFViewerApplication = {
   setTitleUsingUrl: function pdfViewSetTitleUsingUrl(url) {
     this.url = url;
     this.baseUrl = url.split('#')[0];
-    try {
-      this.setTitle(decodeURIComponent(
-        pdfjsLib.getFilenameFromUrl(url)) || url);
-    } catch (e) {
-      // decodeURIComponent may throw URIError,
-      // fall back to using the unprocessed url in that case
-      this.setTitle(url);
+    var title = getPDFFileNameFromURL(url, '');
+    if (!title) {
+      try {
+        title = decodeURIComponent(pdfjsLib.getFilenameFromUrl(url)) || url;
+      } catch (e) {
+        // decodeURIComponent may throw URIError,
+        // fall back to using the unprocessed url in that case
+        title = url;
+      }
     }
+    this.setTitle(title);
   },
 
   setTitle: function pdfViewSetTitle(title) {
@@ -742,7 +745,9 @@ var PDFViewerApplication = {
     }
 
     var url = this.baseUrl;
-    var filename = getPDFFileNameFromURL(url);
+    // Use this.url instead of this.baseUrl to perform filename detection based
+    // on the reference fragment as ultimate fallback if needed.
+    var filename = getPDFFileNameFromURL(this.url);
     var downloadManager = this.downloadManager;
     downloadManager.onerror = function (err) {
       // This error won't really be helpful because it's likely the
