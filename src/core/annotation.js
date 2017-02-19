@@ -454,16 +454,15 @@ var Annotation = (function AnnotationClosure() {
       var self = this;
 
       return resourcesPromise.then(function(resources) {
-          var opList = new OperatorList();
-          opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-          return evaluator.getOperatorList(self.appearance, task,
-                                           resources, opList).
-            then(function () {
-              opList.addOp(OPS.endAnnotation, []);
-              self.appearance.reset();
-              return opList;
-            });
+        var opList = new OperatorList();
+        opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+        return evaluator.getOperatorList(self.appearance, task,
+                                         resources, opList).then(function () {
+          opList.addOp(OPS.endAnnotation, []);
+          self.appearance.reset();
+          return opList;
         });
+      });
     }
   };
 
@@ -758,10 +757,9 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
       var stream = new Stream(stringToBytes(this.data.defaultAppearance));
       return evaluator.getOperatorList(stream, task, this.fieldResources,
-                                       operatorList).
-        then(function () {
-          return operatorList;
-        });
+                                       operatorList).then(function () {
+        return operatorList;
+      });
     }
   });
 

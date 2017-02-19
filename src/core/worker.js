@@ -732,6 +732,7 @@ var WorkerMessageHandler = {
         maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
         disableFontFace: data.disableFontFace,
         disableNativeImageDecoder: data.disableNativeImageDecoder,
+        ignoreErrors: data.ignoreErrors,
       };
 
       getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {
@@ -899,15 +900,14 @@ var WorkerMessageHandler = {
 
     handler.on('GetTextContent', function wphExtractText(data) {
       var pageIndex = data.pageIndex;
-      var normalizeWhitespace = data.normalizeWhitespace;
-      var combineTextItems = data.combineTextItems;
       return pdfManager.getPage(pageIndex).then(function(page) {
         var task = new WorkerTask('GetTextContent: page ' + pageIndex);
         startWorkerTask(task);
+
         var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent(handler, task, normalizeWhitespace,
-                                       combineTextItems).then(
+        return page.extractTextContent(handler, task, data.normalizeWhitespace,
+                                       data.combineTextItems).then(
             function(textContent) {
           finishWorkerTask(task);
           info('text indexing: page=' + pageNum + ' - time=' +

@@ -114,6 +114,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     maxImageSize: -1,
     disableFontFace: false,
     disableNativeImageDecoder: false,
+    ignoreErrors: false,
   };
 
   function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
@@ -342,9 +343,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                  operatorList,
                                                                  task,
                                                                  initialState) {
-      var matrix = xobj.dict.getArray('Matrix');
-      var bbox = xobj.dict.getArray('BBox');
-      var group = xobj.dict.get('Group');
+      var dict = xobj.dict;
+      var matrix = dict.getArray('Matrix');
+      var bbox = dict.getArray('BBox');
+      var group = dict.get('Group');
       if (group) {
         var groupOptions = {
           matrix: matrix,
@@ -374,8 +376,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
       return this.getOperatorList(xobj, task,
-        (xobj.dict.get('Resources') || resources), operatorList, initialState).
-        then(function () {
+                                  (dict.get('Resources') || resources),
+                                  operatorList, initialState).then(function () {
           operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
           if (group) {
@@ -522,7 +524,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return this.buildFormXObject(resources, smaskContent, smaskOptions,
-                            operatorList, task, stateManager.state.clone());
+                                   operatorList, task,
+                                   stateManager.state.clone());
     },
 
     handleTilingType:
@@ -538,14 +541,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       return this.getOperatorList(pattern, task, patternResources,
                                   tilingOpList).then(function () {
-          // Add the dependencies to the parent operator list so they are
-          // resolved before sub operator list is executed synchronously.
-          operatorList.addDependencies(tilingOpList.dependencies);
-          operatorList.addOp(fn, getTilingPatternIR({
-            fnArray: tilingOpList.fnArray,
-            argsArray: tilingOpList.argsArray
-          }, patternDict, args));
-        });
+        // Add the dependencies to the parent operator list so they are
+        // resolved before sub operator list is executed synchronously.
+        operatorList.addDependencies(tilingOpList.dependencies);
+        operatorList.addOp(fn, getTilingPatternIR({
+          fnArray: tilingOpList.fnArray,
+          argsArray: tilingOpList.argsArray
+        }, patternDict, args));
+      });
     },
 
     handleSetFont:
@@ -899,7 +902,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                resources,
                                                                operatorList,
                                                                initialState) {
-
       var self = this;
       var xref = this.xref;
       var imageCache = Object.create(null);
@@ -912,6 +914,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var stateManager = new StateManager(initialState || new EvalState());
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
       var timeSlotManager = new TimeSlotManager();
+
+      function closePendingRestoreOPS(argument) {
+        for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
+          operatorList.addOp(OPS.restore, []);
+        }
+      }
 
       return new Promise(function promiseBody(resolve, reject) {
         var next = function (promise) {
@@ -1187,11 +1195,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         // Some PDFs don't close all restores inside object/form.
         // Closing those for them.
-        for (i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
-          operatorList.addOp(OPS.restore, []);
-        }
+        closePendingRestoreOPS();
         resolve();
-      });
+      }).catch(function(reason) {
+        if (this.options.ignoreErrors) {
+          // Error(s) in the OperatorList -- sending unsupported feature
+          // notification and allow rendering to continue.
+          this.handler.send('UnsupportedFeature',
+                            { featureId: UNSUPPORTED_FEATURES.unknown });
+          warn('getOperatorList - ignoring errors during task: ' + task.name);
+
+          closePendingRestoreOPS();
+          return;
+        }
+        throw reason;
+      }.bind(this));
     },
 
     getTextContent:
@@ -1660,19 +1678,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
               }
 
-              stateManager.save();
+              // Use a new `StateManager` to prevent incorrect positioning of
+              // textItems *after* the Form XObject, since errors in the data
+              // can otherwise prevent `restore` operators from being executed.
+              // NOTE: This is only an issue when `options.ignoreErrors = true`.
+              var currentState = stateManager.state.clone();
+              var xObjStateManager = new StateManager(currentState);
+
               var matrix = xobj.dict.getArray('Matrix');
               if (isArray(matrix) && matrix.length === 6) {
-                stateManager.transform(matrix);
+                xObjStateManager.transform(matrix);
               }
 
               next(self.getTextContent(xobj, task,
-                   xobj.dict.get('Resources') || resources, stateManager,
+                   xobj.dict.get('Resources') || resources, xObjStateManager,
                    normalizeWhitespace, combineTextItems).then(
                 function (formTextContent) {
                   Util.appendToArray(textContent.items, formTextContent.items);
                   Util.extendObj(textContent.styles, formTextContent.styles);
-                  stateManager.restore();
 
                   xobjsCache.key = name;
                   xobjsCache.texts = formTextContent;
@@ -1706,7 +1729,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         flushTextContentItem();
         resolve(textContent);
-      });
+      }).catch(function(reason) {
+        if (this.options.ignoreErrors) {
+          // Error(s) in the TextContent -- allow text-extraction to continue.
+          warn('getTextContent - ignoring errors during task: ' + task.name);
+
+          flushTextContentItem();
+          return textContent;
+        }
+        throw reason;
+      }.bind(this));
     },
 
     extractDataStructures:
