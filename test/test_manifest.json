@@ -1500,6 +1500,20 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "bug1130815-eq",
+       "file": "pdfs/bug1130815.pdf",
+       "md5": "3ff3b550c3af766991b2a1b11d00de85",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
+    {  "id": "bug1130815-text",
+       "file": "pdfs/bug1130815.pdf",
+       "md5": "3ff3b550c3af766991b2a1b11d00de85",
+       "rounds": 1,
+       "link": true,
+       "type": "text"
+    },
     {  "id": "issue3248",
        "file": "pdfs/issue3248.pdf",
        "md5": "970767ed68de46c316d74de67965999b",
@@ -1531,6 +1545,20 @@
        "link": true,
        "lastPage": 1,
        "type": "load"
+    },
+    {  "id": "issue6342-eq",
+       "file": "pdfs/issue6342.pdf",
+       "md5": "2ea85ca8d17117798f105be88bdb2bfd",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue6342-text",
+       "file": "pdfs/issue6342.pdf",
+       "md5": "2ea85ca8d17117798f105be88bdb2bfd",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
     },
     {  "id": "issue7020",
        "file": "pdfs/issue7020.pdf",

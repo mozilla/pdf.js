@@ -148,6 +148,10 @@ if (typeof PDFJSDev !== 'undefined' &&
  *   used when reading built-in CMap files. Providing a custom factory is useful
  *   for environments without `XMLHttpRequest` support, such as e.g. Node.js.
  *   The default value is {DOMCMapReaderFactory}.
+ * @property {boolean} stopAtErrors - (optional) Reject certain promises, e.g.
+ *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
+ *   PDF data cannot be successfully parsed, instead of attempting to recover
+ *   whatever possible of the data. The default value is `false`.
  */
 
 /**
@@ -262,6 +266,7 @@ function getDocument(src, pdfDataRangeTransport,
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.disableNativeImageDecoder = params.disableNativeImageDecoder === true;
+  params.ignoreErrors = params.stopAtErrors !== true;
   var CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
 
   if (!worker) {
@@ -325,6 +330,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
                           !isPostMessageTransfersDisabled,
     docBaseUrl: source.docBaseUrl,
     disableNativeImageDecoder: source.disableNativeImageDecoder,
+    ignoreErrors: source.ignoreErrors,
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
@@ -826,8 +832,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.pendingCleanup = false;
 
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
-      var renderInteractiveForms = (params.renderInteractiveForms === true ?
-                                    true : /* Default */ false);
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
 
       if (!this.intentStates[renderingIntent]) {
@@ -850,7 +854,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
-          renderInteractiveForms: renderInteractiveForms,
+          renderInteractiveForms: (params.renderInteractiveForms === true),
         });
       }
 
@@ -914,7 +918,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
     /**
      * @return {Promise} A promise resolved with an {@link PDFOperatorList}
-     * object that represents page's operator list.
+     *   object that represents page's operator list.
      */
     getOperatorList: function PDFPageProxy_getOperatorList() {
       function operatorListChanged() {
@@ -950,7 +954,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageIndex,
-          intent: renderingIntent
+          intent: renderingIntent,
         });
       }
       return intentState.opListReadCapability.promise;
@@ -962,12 +966,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * object that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent(params) {
+      params = params || {};
       return this.transport.messageHandler.sendWithPromise('GetTextContent', {
         pageIndex: this.pageNumber - 1,
-        normalizeWhitespace: (params && params.normalizeWhitespace === true ?
-                              true : /* Default */ false),
-        combineTextItems: (params && params.disableCombineTextItems === true ?
-                           false : /* Default */ true),
+        normalizeWhitespace: (params.normalizeWhitespace === true),
+        combineTextItems: (params.disableCombineTextItems !== true),
       });
     },
 
