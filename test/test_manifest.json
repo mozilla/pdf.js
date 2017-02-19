@@ -1518,6 +1518,20 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue6342-eq",
+       "file": "pdfs/issue6342.pdf",
+       "md5": "2ea85ca8d17117798f105be88bdb2bfd",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
+    {  "id": "issue6342-text",
+       "file": "pdfs/issue6342.pdf",
+       "md5": "2ea85ca8d17117798f105be88bdb2bfd",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "issue7020",
        "file": "pdfs/issue7020.pdf",
        "md5": "93b464e21c649e64ae92eeafe99fc31b",
