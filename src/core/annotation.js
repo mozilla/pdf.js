@@ -431,7 +431,8 @@ var Annotation = (function AnnotationClosure() {
     },
 
     getOperatorList: function Annotation_getOperatorList(evaluator, task,
-                                                         renderForms) {
+                                                         renderForms,
+                                                         ignoreErrors) {
       if (!this.appearance) {
         return Promise.resolve(new OperatorList());
       }
@@ -454,16 +455,17 @@ var Annotation = (function AnnotationClosure() {
       var self = this;
 
       return resourcesPromise.then(function(resources) {
-          var opList = new OperatorList();
-          opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-          return evaluator.getOperatorList(self.appearance, task,
-                                           resources, opList).
-            then(function () {
-              opList.addOp(OPS.endAnnotation, []);
-              self.appearance.reset();
-              return opList;
-            });
+        var opList = new OperatorList();
+        opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
+        return evaluator.getOperatorList(self.appearance, task,
+                                         resources, opList,
+                                         /* initialState = */ null,
+                                         ignoreErrors).then(function () {
+          opList.addOp(OPS.endAnnotation, []);
+          self.appearance.reset();
+          return opList;
         });
+      });
     }
   };
 
@@ -736,7 +738,8 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
   Util.inherit(TextWidgetAnnotation, WidgetAnnotation, {
     getOperatorList:
         function TextWidgetAnnotation_getOperatorList(evaluator, task,
-                                                      renderForms) {
+                                                      renderForms,
+                                                      ignoreErrors) {
       var operatorList = new OperatorList();
 
       // Do not render form elements on the canvas when interactive forms are
@@ -747,7 +750,8 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
       if (this.appearance) {
         return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                         renderForms);
+                                                         renderForms,
+                                                         ignoreErrors);
       }
 
       // Even if there is an appearance stream, ignore it. This is the
@@ -758,10 +762,10 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
 
       var stream = new Stream(stringToBytes(this.data.defaultAppearance));
       return evaluator.getOperatorList(stream, task, this.fieldResources,
-                                       operatorList).
-        then(function () {
-          return operatorList;
-        });
+                                       operatorList, /* initialState = */ null,
+                                       ignoreErrors).then(function () {
+        return operatorList;
+      });
     }
   });
 
@@ -818,7 +822,8 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
   Util.inherit(ButtonWidgetAnnotation, WidgetAnnotation, {
     getOperatorList:
         function ButtonWidgetAnnotation_getOperatorList(evaluator, task,
-                                                        renderForms) {
+                                                        renderForms,
+                                                        ignoreErrors) {
       var operatorList = new OperatorList();
 
       // Do not render form elements on the canvas when interactive forms are
@@ -829,7 +834,8 @@ var ButtonWidgetAnnotation = (function ButtonWidgetAnnotationClosure() {
 
       if (this.appearance) {
         return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                         renderForms);
+                                                         renderForms,
+                                                         ignoreErrors);
       }
       return Promise.resolve(operatorList);
     }
@@ -882,7 +888,8 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
   Util.inherit(ChoiceWidgetAnnotation, WidgetAnnotation, {
     getOperatorList:
         function ChoiceWidgetAnnotation_getOperatorList(evaluator, task,
-                                                        renderForms) {
+                                                        renderForms,
+                                                        ignoreErrors) {
       var operatorList = new OperatorList();
 
       // Do not render form elements on the canvas when interactive forms are
@@ -892,7 +899,8 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
       }
 
       return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                       renderForms);
+                                                       renderForms,
+                                                       ignoreErrors);
     }
   });
 
