@@ -655,6 +655,9 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  *   whitespace with standard spaces (0x20). The default value is `false`.
  * @property {boolean} disableCombineTextItems - do not attempt to combine
  *   same line {@link TextItem}'s. The default value is `false`.
+ * @property {boolean} stopAtErrors - (optional) Reject the `getTextContent`
+ *   promise when the data cannot be successfully parsed, instead of attempting
+ *   to recover as much data as possible. The default value is `false`.
  */
 
 /**
@@ -720,6 +723,18 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * @property {Object} canvasFactory - (optional) The factory that will be used
  *                    when creating canvases. The default value is
  *                    {DOMCanvasFactory}.
+ * @property {boolean} stopAtErrors - (optional) Reject the `RenderTask`
+ *   promise when the data cannot be successfully parsed, instead of attempting
+ *   to recover as much data as possible. The default value is `false`.
+ */
+
+/**
+ * GetOperatorList parameters.
+ *
+ * @typedef {Object} GetOperatorListParameters
+ * @property {boolean} stopAtErrors - (optional) Reject the `getOperatorList`
+ *   promise when the data cannot be successfully parsed, instead of attempting
+ *   to recover as much data as possible. The default value is `false`.
  */
 
 /**
@@ -826,8 +841,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       this.pendingCleanup = false;
 
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
-      var renderInteractiveForms = (params.renderInteractiveForms === true ?
-                                    true : /* Default */ false);
+      var renderInteractiveForms = (params.renderInteractiveForms === true);
+      var ignoreErrors = (params.stopAtErrors !== true);
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
 
       if (!this.intentStates[renderingIntent]) {
@@ -851,6 +866,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
           renderInteractiveForms: renderInteractiveForms,
+          ignoreErrors: ignoreErrors,
         });
       }
 
@@ -913,10 +929,11 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
 
     /**
+     * @param {GetOperatorListParameters} params - GetOperatorList parameters.
      * @return {Promise} A promise resolved with an {@link PDFOperatorList}
-     * object that represents page's operator list.
+     *   object that represents page's operator list.
      */
-    getOperatorList: function PDFPageProxy_getOperatorList() {
+    getOperatorList: function PDFPageProxy_getOperatorList(params) {
       function operatorListChanged() {
         if (intentState.operatorList.lastChunk) {
           intentState.opListReadCapability.resolve(intentState.operatorList);
@@ -928,6 +945,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         }
       }
 
+      params = params || {};
       var renderingIntent = 'oplist';
       if (!this.intentStates[renderingIntent]) {
         this.intentStates[renderingIntent] = Object.create(null);
@@ -950,7 +968,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageIndex,
-          intent: renderingIntent
+          intent: renderingIntent,
+          ignoreErrors: (params.stopAtErrors !== true),
         });
       }
       return intentState.opListReadCapability.promise;
@@ -962,12 +981,12 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      * object that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent(params) {
+      params = params || {};
       return this.transport.messageHandler.sendWithPromise('GetTextContent', {
         pageIndex: this.pageNumber - 1,
-        normalizeWhitespace: (params && params.normalizeWhitespace === true ?
-                              true : /* Default */ false),
-        combineTextItems: (params && params.disableCombineTextItems === true ?
-                           false : /* Default */ true),
+        normalizeWhitespace: (params.normalizeWhitespace === true),
+        combineTextItems: (params.disableCombineTextItems !== true),
+        ignoreErrors: (params.stopAtErrors !== true),
       });
     },
 
