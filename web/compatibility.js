@@ -26,6 +26,7 @@ var isAndroidPre3 = /Android\s[0-2][^\d]/.test(userAgent);
 var isAndroidPre5 = /Android\s[0-4][^\d]/.test(userAgent);
 var isChrome = userAgent.indexOf('Chrom') >= 0;
 var isChromeWithRangeBug = /Chrome\/(39|40)\./.test(userAgent);
+var isIOSChrome = userAgent.indexOf('CriOS') >= 0;
 var isIE = userAgent.indexOf('Trident') >= 0;
 var isIOS = /\b(iPad|iPhone|iPod)(?=;)/.test(userAgent);
 var isOpera = userAgent.indexOf('Opera') >= 0;
@@ -456,10 +457,11 @@ if (typeof PDFJS === 'undefined') {
 })();
 
 // Checks if possible to use URL.createObjectURL()
-// Support: IE
+// Support: IE, Chrome on iOS
 (function checkOnBlobSupport() {
-  // sometimes IE loosing the data created with createObjectURL(), see #3977
-  if (isIE) {
+  // sometimes IE and Chrome on iOS loosing the data created with
+  // createObjectURL(), see #3977 and #8081
+  if (isIE || isIOSChrome) {
     PDFJS.disableCreateObjectURL = true;
   }
 })();
