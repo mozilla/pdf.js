@@ -86,17 +86,17 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC || CHROME')) {
     },
 
     download: function DownloadManager_download(blob, url, filename) {
-      if (!URL) {
-        // URL.createObjectURL is not supported
-        this.downloadUrl(url, filename);
-        return;
-      }
-
       if (navigator.msSaveBlob) {
         // IE10 / IE11
         if (!navigator.msSaveBlob(blob, filename)) {
           this.downloadUrl(url, filename);
         }
+        return;
+      }
+
+      if (pdfjsLib.PDFJS.disableCreateObjectURL) {
+        // URL.createObjectURL is not supported
+        this.downloadUrl(url, filename);
         return;
       }
 
