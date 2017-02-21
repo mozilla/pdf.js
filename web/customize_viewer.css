@@ -2,16 +2,25 @@
  * Custom css for our fork of pdf.js.
  */
 
-body.light {
+html body.light {
   font-family: "Lato", Arial, sans-serif;
   font-size: 14px;
+}
+
+html body.light,
+html body.light #sidebarContainer,
+html body.light #sidebarContent,
+html body.light #mainContainer,
+html body.light #viewerContainer {
+   background: transparent;
+   box-shadow: none;
 }
 
 /**
  * Toolbar structure and background
  */
-body.light #toolbarContainer,
-body.light #toolbarSidebar {
+html body.light #toolbarContainer,
+html body.light #toolbarSidebar {
   margin: 5px;
   width: auto;
   height: 50px;
@@ -20,13 +29,13 @@ body.light #toolbarSidebar {
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
 }
 
-body.light .sidebarOpen #toolbarSidebar {
+html body.light .sidebarOpen #toolbarSidebar {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   margin-right: 0;
 }
 
-body.light .sidebarOpen #toolbarContainer {
+html body.light .sidebarOpen #toolbarContainer {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin-left: 0;
