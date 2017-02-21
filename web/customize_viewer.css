@@ -10,13 +10,26 @@ body.light {
 /**
  * Toolbar structure and background
  */
-body.light #toolbarContainer {
+body.light #toolbarContainer,
+body.light #toolbarSidebar {
   margin: 5px;
   width: auto;
   height: 50px;
   border-radius: 4px;
   background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+}
+
+body.light .sidebarOpen #toolbarSidebar {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: 0;
+}
+
+body.light .sidebarOpen #toolbarContainer {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 0;
 }
 
 /**
