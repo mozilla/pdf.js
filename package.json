@@ -28,6 +28,10 @@
     "wintersmith": "^2.0.0",
     "yargs": "^3.14.0"
   },
+  "keywords": [
+    "mozilla",
+    "pdf.js"
+  ],
   "scripts": {
     "test": "gulp lint unittestcli"
   },
