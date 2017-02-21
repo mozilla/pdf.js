@@ -498,31 +498,7 @@ target.botmakeref = function() {
 // Baseline operation
 //
 target.baseline = function() {
-  cd(ROOT_DIR);
-
-  echo();
-  echo('### Creating baseline environment');
-
-  var baselineCommit = env['BASELINE'];
-  if (!baselineCommit) {
-    echo('Baseline commit is not provided. Please specify BASELINE variable');
-    exit(1);
-  }
-
-  if (!test('-d', BUILD_DIR)) {
-    mkdir(BUILD_DIR);
-  }
-
-  var BASELINE_DIR = BUILD_DIR + 'baseline';
-  if (test('-d', BASELINE_DIR)) {
-    cd(BASELINE_DIR);
-    exec('git fetch origin');
-  } else {
-    cd(BUILD_DIR);
-    exec('git clone .. baseline');
-    cd(ROOT_DIR + BASELINE_DIR);
-  }
-  exec('git checkout ' + baselineCommit);
+  execGulp('baseline');
 };
 
 target.mozcentralbaseline = function() {

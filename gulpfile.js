@@ -23,6 +23,7 @@ var gutil = require('gulp-util');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
 var mkdirp = require('mkdirp');
+var path = require('path');
 var rimraf = require('rimraf');
 var runSequence = require('run-sequence');
 var stream = require('stream');
@@ -40,6 +41,7 @@ var L10N_DIR = 'l10n/';
 var TEST_DIR = 'test/';
 var EXTENSION_SRC_DIR = 'extensions/';
 
+var BASELINE_DIR = BUILD_DIR + 'baseline/';
 var GENERIC_DIR = BUILD_DIR + 'generic/';
 var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/';
@@ -953,6 +955,42 @@ gulp.task('botmakeref', function (done) {
   var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
   testProcess.on('close', function (code) {
     done();
+  });
+});
+
+gulp.task('baseline', function (done) {
+  console.log();
+  console.log('### Creating baseline environment');
+
+  var baselineCommit = process.env['BASELINE'];
+  if (!baselineCommit) {
+    done(new Error('Missing baseline commit. Specify the BASELINE variable.'));
+    return;
+  }
+
+  var initializeCommand = 'git fetch origin';
+  if (!checkDir(BASELINE_DIR)) {
+    mkdirp.sync(BASELINE_DIR);
+    initializeCommand = 'git clone ../../ .';
+  }
+
+  var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
+  exec(initializeCommand, { cwd: workingDirectory }, function (error) {
+    if (error) {
+      done(new Error('Baseline clone/fetch failed.'));
+      return;
+    }
+
+    exec('git checkout ' + baselineCommit, { cwd: workingDirectory },
+        function (error) {
+      if (error) {
+        done(new Error('Baseline commit checkout failed.'));
+        return;
+      }
+
+      console.log('Baseline commit "' + baselineCommit + '" checked out.');
+      done();
+    });
   });
 });
 
