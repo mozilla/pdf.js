@@ -3,26 +3,6 @@
  */
 
 /**
- * Display the rotate icon in the main toolbar. We have to add this because
- * the standard viewer only showed the rotate button in the dropdown menu.
- * Transform the rotate button depending on whether we're viewing it in
- * landscape or portrait.
- */
-.rotateCw::before {
-  content: url(images/secondaryToolbarButton-rotateCw.png);
-}
-
-#mainContainer.landscape .rotateCw::before {
-  /* transform: rotate(-90deg); */
-}
-
-@media screen and (min-resolution: 2dppx) {
-  .rotateCw::before {
-    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
-  }
-}
-
-/**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
  */
@@ -54,4 +34,30 @@
   .innerCenter {
     margin-left: 72px;
   }
+}
+
+/**
+ * Implement our custom icons. Disable all of the default icons, since the
+ * buttons now have inline svg in viewer.html.
+ */
+.toolbarButton::before {
+  content: '' !important;
+  display: none !important;
+}
+
+i.svg-icon {
+  color: #cccccc;
+  margin: 0;
+  overflow: auto;
+}
+
+i.svg-icon path,
+i.svg-icon rect,
+i.svg-icon circle,
+i.svg-icon polygon,
+i.svg-icon ellipse,
+i.svg-icon polyline,
+i.svg-icon line,
+i.svg-icon g {
+  fill: currentColor;
 }
