@@ -2,6 +2,11 @@
  * Custom css for our fork of pdf.js.
  */
 
+html body {
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 14px;
+}
+
 /**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
