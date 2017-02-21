@@ -2,9 +2,21 @@
  * Custom css for our fork of pdf.js.
  */
 
-html body {
+body.light {
   font-family: "Lato", Arial, sans-serif;
   font-size: 14px;
+}
+
+/**
+ * Toolbar structure and background
+ */
+body.light #toolbarContainer {
+  margin: 5px;
+  width: auto;
+  height: 50px;
+  border-radius: 4px;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
 }
 
 /**
