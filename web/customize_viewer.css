@@ -111,6 +111,7 @@ html body.light .toolbarButton {
   cursor: pointer;
   color: #757575;
   text-align: center;
+  background-color: transparent;
 }
 
 html body.light .toolbarButton:focus {
@@ -121,13 +122,16 @@ html body.light .toolbarButton:hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-html body.light .toolbarButton:active {
+html body.light .toolbarButton:active,
+html body.light .toolbarButton.toggled:active {
   border: 0;
   box-shadow: none;
   background-color: rgba(0, 0, 0, 0.15);
 }
 
-html body.light .toolbarButton.toggled {
+html body.light .toolbarButton.toggled:not(#sidebarToggle) {
+  /* The toggled state on #sidebarToggle looks redundant since the user can
+   * already see that the sidebar is open. */
   color: #ffffff;
   background-image: linear-gradient(to bottom, #067fe2, #0061b1);
   box-shadow: inset 0 1px 3px 0 rgba(0, 68, 124, 0.5);
