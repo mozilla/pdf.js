@@ -55,7 +55,7 @@ html body.light #toolbarSidebar::before {
   background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
 }
 
-html body.light #toolbarSidebar .splitToolbarButton {
+html body.light #toolbarSidebar .toolbarButton {
   position: relative;
   z-index: 10001;
 }
