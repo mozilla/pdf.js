@@ -21,12 +21,14 @@ html body.light #viewerContainer {
  */
 html body.light #toolbarContainer,
 html body.light #toolbarSidebar {
+  position: relative;
   margin: 5px;
   width: auto;
   height: 50px;
   border-radius: 4px;
   background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
   box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+  overflow: hidden;
 }
 
 html body.light .sidebarOpen #toolbarSidebar {
@@ -39,6 +41,23 @@ html body.light .sidebarOpen #toolbarContainer {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin-left: 0;
+}
+
+html body.light #toolbarSidebar::before {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+}
+
+html body.light #toolbarSidebar .splitToolbarButton {
+  position: relative;
+  z-index: 10001;
 }
 
 /**
