@@ -94,8 +94,15 @@ html body.light .toolbarButtonSpacer {
   width: 60px;
 }
 
+html body.light .innerCenter {
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  -ms-align-items: center;
+}
+
 html body.light .toolbarLabel {
-  line-height: 34px;
   font-size: 13px;
   font-weight: bold;
   color: #4a4a4a;
@@ -190,7 +197,7 @@ html body.light .toolbarButton i.svg-icon {
  * buttons now have inline svg in viewer.html.
  */
 .toolbarButton::before {
-  content: '' !important;
+  content: '' !important; /* Necessary to prevent network requests */
   display: none !important;
 }
 
