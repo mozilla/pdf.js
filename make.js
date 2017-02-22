@@ -527,6 +527,11 @@ function cleanupCSSSource(file) {
   var reg = /\n\/\* Copyright(.|\n)*?Mozilla Foundation(.|\n)*?\*\//g;
   content = content.replace(reg, '');
 
+  // Put <?= pdfjsPath() ?> in front of all relative urls, since the relative
+  // urls will no longer be valid within our framework.
+  var assetPathReg = /url\(["']?([^\:\)"']+)["']?\)/g;
+  content = content.replace(assetPathReg, 'url("<?= pdfjsPath() ?>/$1")');
+
   content.to(file);
 }
 

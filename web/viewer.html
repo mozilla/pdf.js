@@ -29,7 +29,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 <!--#if GENERIC-->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<!--#expand <link rel="stylesheet" href="<?= $assetPath ?>/viewer.css"> -->
+<!--#expand <link rel="stylesheet" href="<?= $viewerCSS ?>"> -->
 
 <!--#expand <script>window.workerPath = <?= $workerPath ?>;</script> -->
 <!--#expand <script src="<?= $pdfjsScript ?>"></script> -->
@@ -74,7 +74,7 @@ See https://github.com/adobe-type-tools/cmap-resources
 <!--#endif-->
 
 <!--#if GENERIC-->
-<!--#expand <script src="<?= $assetPath ?>/viewer.js"></script> -->
+<!--#expand <script src="<?= $viewerScript ?>"></script> -->
 <!--#else-->
     <script src="viewer.js"></script>
 <!--#endif-->

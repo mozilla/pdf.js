@@ -9641,8 +9641,8 @@ exports.DefaultExernalServices = DefaultExernalServices;
  * If we are running this after `gulp generic`, DOMContentLoaded will not have
  * fired yet. If we run it from `gulp server`, it will have fired.
  */
-if (document.readyState === "complete" || document.readyState === "loaded" ||
- document.readyState === "interactive") {
+if (document.readyState === 'complete' || document.readyState === 'loaded' ||
+ document.readyState === 'interactive') {
   initialize();
 } else {
   document.addEventListener('DOMContentLoaded', initialize);

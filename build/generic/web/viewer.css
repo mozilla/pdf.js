@@ -211,7 +211,7 @@
   overflow: visible;
   border: 9px solid transparent;
   background-clip: content-box;
-  border-image: url(images/shadow.png) 9 9 repeat;
+  border-image: url("<?= pdfjsPath() ?>/images/shadow.png") 9 9 repeat;
   background-color: white;
 }
 
@@ -241,7 +241,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  background: url('images/loading-icon.gif') center no-repeat;
+  background: url("<?= pdfjsPath() ?>/images/loading-icon.gif") center no-repeat;
 }
 
 .pdfPresentationMode:-webkit-full-screen .pdfViewer .page {
@@ -275,7 +275,7 @@
  * landscape or portrait.
  */
 .rotateCw::before {
-  content: url(images/secondaryToolbarButton-rotateCw.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-rotateCw.png");
 }
 
 #mainContainer.landscape .rotateCw::before {
@@ -284,7 +284,7 @@
 
 @media screen and (min-resolution: 2dppx) {
   .rotateCw::before {
-    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-rotateCw@2x.png");
   }
 }
 
@@ -338,7 +338,7 @@ body {
   height: 100%;
   width: 100%;
   background-color: #404040;
-  background-image: url(images/texture.png);
+  background-image: url("<?= pdfjsPath() ?>/images/texture.png");
 }
 
 body,
@@ -582,7 +582,7 @@ html[dir='rtl'] #viewerContainer {
   width: 200px;
   height: 32px;
   background-color: #424242; /* fallback */
-  background-image: url(images/texture.png),
+  background-image: url("<?= pdfjsPath() ?>/images/texture.png"),
                     linear-gradient(hsla(0,0%,30%,.99), hsla(0,0%,25%,.95));
 }
 html[dir='ltr'] #toolbarSidebar {
@@ -602,7 +602,7 @@ html[dir='rtl'] #toolbarSidebar {
   position: relative;
   height: 32px;
   background-color: #474747; /* fallback */
-  background-image: url(images/texture.png),
+  background-image: url("<?= pdfjsPath() ?>/images/texture.png"),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
 }
 html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
@@ -706,7 +706,7 @@ html[dir='rtl'] .findbar {
 }
 
 #findInput[data-status="pending"] {
-  background-image: url(images/loading-small.png);
+  background-image: url("<?= pdfjsPath() ?>/images/loading-small.png");
   background-repeat: no-repeat;
   background-position: right;
 }
@@ -1065,7 +1065,7 @@ html[dir='rtl'] .dropdownToolbarButton {
   max-width: 120px;
   padding: 0;
   overflow: hidden;
-  background: url(images/toolbarButton-menuArrows.png) no-repeat;
+  background: url("<?= pdfjsPath() ?>/images/toolbarButton-menuArrows.png") no-repeat;
 }
 html[dir='ltr'] .dropdownToolbarButton {
   background-position: 95%;
@@ -1153,73 +1153,73 @@ html[dir="rtl"] .secondaryToolbarButton::before {
 }
 
 html[dir='ltr'] .toolbarButton#sidebarToggle::before {
-  content: url(images/toolbarButton-sidebarToggle.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-sidebarToggle.png");
 }
 html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-  content: url(images/toolbarButton-sidebarToggle-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-sidebarToggle-rtl.png");
 }
 
 html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
-  content: url(images/toolbarButton-secondaryToolbarToggle.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-secondaryToolbarToggle.png");
 }
 html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-  content: url(images/toolbarButton-secondaryToolbarToggle-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-secondaryToolbarToggle-rtl.png");
 }
 
 html[dir='ltr'] .toolbarButton.findPrevious::before {
-  content: url(images/findbarButton-previous.png);
+  content: url("<?= pdfjsPath() ?>/images/findbarButton-previous.png");
 }
 html[dir='rtl'] .toolbarButton.findPrevious::before {
-  content: url(images/findbarButton-previous-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/findbarButton-previous-rtl.png");
 }
 
 html[dir='ltr'] .toolbarButton.findNext::before {
-  content: url(images/findbarButton-next.png);
+  content: url("<?= pdfjsPath() ?>/images/findbarButton-next.png");
 }
 html[dir='rtl'] .toolbarButton.findNext::before {
-  content: url(images/findbarButton-next-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/findbarButton-next-rtl.png");
 }
 
 html[dir='ltr'] .toolbarButton.pageUp::before {
-  content: url(images/toolbarButton-pageUp.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageUp.png");
 }
 html[dir='rtl'] .toolbarButton.pageUp::before {
-  content: url(images/toolbarButton-pageUp-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageUp-rtl.png");
 }
 
 html[dir='ltr'] .toolbarButton.pageDown::before {
-  content: url(images/toolbarButton-pageDown.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageDown.png");
 }
 html[dir='rtl'] .toolbarButton.pageDown::before {
-  content: url(images/toolbarButton-pageDown-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageDown-rtl.png");
 }
 
 .toolbarButton.zoomOut::before {
-  content: url(images/toolbarButton-zoomOut.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-zoomOut.png");
 }
 
 .toolbarButton.zoomIn::before {
-  content: url(images/toolbarButton-zoomIn.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-zoomIn.png");
 }
 
 .toolbarButton.presentationMode::before,
 .secondaryToolbarButton.presentationMode::before {
-  content: url(images/toolbarButton-presentationMode.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-presentationMode.png");
 }
 
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
-  content: url(images/toolbarButton-print.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-print.png");
 }
 
 .toolbarButton.openFile::before,
 .secondaryToolbarButton.openFile::before {
-  content: url(images/toolbarButton-openFile.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-openFile.png");
 }
 
 .toolbarButton.download::before,
 .secondaryToolbarButton.download::before {
-  content: url(images/toolbarButton-download.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-download.png");
 }
 
 .toolbarButton.bookmark,
@@ -1242,26 +1242,26 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
 
 .toolbarButton.bookmark::before,
 .secondaryToolbarButton.bookmark::before {
-  content: url(images/toolbarButton-bookmark.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-bookmark.png");
 }
 
 #viewThumbnail.toolbarButton::before {
-  content: url(images/toolbarButton-viewThumbnail.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewThumbnail.png");
 }
 
 html[dir="ltr"] #viewOutline.toolbarButton::before {
-  content: url(images/toolbarButton-viewOutline.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewOutline.png");
 }
 html[dir="rtl"] #viewOutline.toolbarButton::before {
-  content: url(images/toolbarButton-viewOutline-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewOutline-rtl.png");
 }
 
 #viewAttachments.toolbarButton::before {
-  content: url(images/toolbarButton-viewAttachments.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewAttachments.png");
 }
 
 #viewFind.toolbarButton::before {
-  content: url(images/toolbarButton-search.png);
+  content: url("<?= pdfjsPath() ?>/images/toolbarButton-search.png");
 }
 
 .secondaryToolbarButton {
@@ -1297,27 +1297,27 @@ html[dir="rtl"] .secondaryToolbarButton > span {
 }
 
 .secondaryToolbarButton.firstPage::before {
-  content: url(images/secondaryToolbarButton-firstPage.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-firstPage.png");
 }
 
 .secondaryToolbarButton.lastPage::before {
-  content: url(images/secondaryToolbarButton-lastPage.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-lastPage.png");
 }
 
 .secondaryToolbarButton.rotateCcw::before {
-  content: url(images/secondaryToolbarButton-rotateCcw.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-rotateCcw.png");
 }
 
 .secondaryToolbarButton.rotateCw::before {
-  content: url(images/secondaryToolbarButton-rotateCw.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-rotateCw.png");
 }
 
 .secondaryToolbarButton.handTool::before {
-  content: url(images/secondaryToolbarButton-handTool.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-handTool.png");
 }
 
 .secondaryToolbarButton.documentProperties::before {
-  content: url(images/secondaryToolbarButton-documentProperties.png);
+  content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-documentProperties.png");
 }
 
 .verticalToolbarSeparator {
@@ -1378,7 +1378,7 @@ html[dir='rtl'] .verticalToolbarSeparator {
 }
 
 .toolbarField.pageNumber.visiblePageIsLoading {
-  background-image: url(images/loading-small.png);
+  background-image: url("<?= pdfjsPath() ?>/images/loading-small.png");
   background-repeat: no-repeat;
   background-position: 1px;
 }
@@ -1563,15 +1563,15 @@ html[dir='rtl'] .attachmentsItem > button {
   color: hsla(0,0%,100%,.5);
 }
 .outlineItemToggler::before {
-  content: url(images/treeitem-expanded.png);
+  content: url("<?= pdfjsPath() ?>/images/treeitem-expanded.png");
   display: inline-block;
   position: absolute;
 }
 html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
-  content: url(images/treeitem-collapsed.png);
+  content: url("<?= pdfjsPath() ?>/images/treeitem-collapsed.png");
 }
 html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
-  content: url(images/treeitem-collapsed-rtl.png);
+  content: url("<?= pdfjsPath() ?>/images/treeitem-collapsed-rtl.png");
 }
 .outlineItemToggler.outlineItemsHidden ~ .outlineItems {
   display: none;
@@ -1690,7 +1690,7 @@ html[dir='rtl'] .outlineItemToggler::before {
   font-size: 12px;
   line-height: 14px;
   background-color: #474747; /* fallback */
-  background-image: url(images/texture.png),
+  background-image: url("<?= pdfjsPath() ?>/images/texture.png"),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
@@ -1856,7 +1856,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 .grab-to-pan-grab {
-  cursor: url("images/grab.cur"), move !important;
+  cursor: url("<?= pdfjsPath() ?>/images/grab.cur"), move !important;
   cursor: -webkit-grab !important;
   cursor: -moz-grab !important;
   cursor: grab !important;
@@ -1866,7 +1866,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 .grab-to-pan-grab:active,
 .grab-to-pan-grabbing {
-  cursor: url("images/grabbing.cur"), move !important;
+  cursor: url("<?= pdfjsPath() ?>/images/grabbing.cur"), move !important;
   cursor: -webkit-grabbing !important;
   cursor: -moz-grabbing !important;
   cursor: grabbing !important;
@@ -1918,144 +1918,144 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .toolbarField.pageNumber.visiblePageIsLoading,
   #findInput[data-status="pending"] {
-    background-image: url(images/loading-small@2x.png);
+    background-image: url("<?= pdfjsPath() ?>/images/loading-small@2x.png");
     background-size: 16px 17px;
   }
 
   .dropdownToolbarButton {
-    background: url(images/toolbarButton-menuArrows@2x.png) no-repeat;
+    background: url("<?= pdfjsPath() ?>/images/toolbarButton-menuArrows@2x.png") no-repeat;
     background-size: 7px 16px;
   }
 
   html[dir='ltr'] .toolbarButton#sidebarToggle::before {
-    content: url(images/toolbarButton-sidebarToggle@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-sidebarToggle@2x.png");
   }
   html[dir='rtl'] .toolbarButton#sidebarToggle::before {
-    content: url(images/toolbarButton-sidebarToggle-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-sidebarToggle-rtl@2x.png");
   }
 
   html[dir='ltr'] .toolbarButton#secondaryToolbarToggle::before {
-    content: url(images/toolbarButton-secondaryToolbarToggle@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-secondaryToolbarToggle@2x.png");
   }
   html[dir='rtl'] .toolbarButton#secondaryToolbarToggle::before {
-    content: url(images/toolbarButton-secondaryToolbarToggle-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-secondaryToolbarToggle-rtl@2x.png");
   }
 
   html[dir='ltr'] .toolbarButton.findPrevious::before {
-    content: url(images/findbarButton-previous@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/findbarButton-previous@2x.png");
   }
   html[dir='rtl'] .toolbarButton.findPrevious::before {
-    content: url(images/findbarButton-previous-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/findbarButton-previous-rtl@2x.png");
   }
 
   html[dir='ltr'] .toolbarButton.findNext::before {
-    content: url(images/findbarButton-next@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/findbarButton-next@2x.png");
   }
   html[dir='rtl'] .toolbarButton.findNext::before {
-    content: url(images/findbarButton-next-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/findbarButton-next-rtl@2x.png");
   }
 
   html[dir='ltr'] .toolbarButton.pageUp::before {
-    content: url(images/toolbarButton-pageUp@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageUp@2x.png");
   }
   html[dir='rtl'] .toolbarButton.pageUp::before {
-    content: url(images/toolbarButton-pageUp-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageUp-rtl@2x.png");
   }
 
   html[dir='ltr'] .toolbarButton.pageDown::before {
-    content: url(images/toolbarButton-pageDown@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageDown@2x.png");
   }
   html[dir='rtl'] .toolbarButton.pageDown::before {
-    content: url(images/toolbarButton-pageDown-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-pageDown-rtl@2x.png");
   }
 
   .toolbarButton.zoomIn::before {
-    content: url(images/toolbarButton-zoomIn@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-zoomIn@2x.png");
   }
 
   .toolbarButton.zoomOut::before {
-    content: url(images/toolbarButton-zoomOut@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-zoomOut@2x.png");
   }
 
   .toolbarButton.presentationMode::before,
   .secondaryToolbarButton.presentationMode::before {
-    content: url(images/toolbarButton-presentationMode@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-presentationMode@2x.png");
   }
 
   .toolbarButton.print::before,
   .secondaryToolbarButton.print::before {
-    content: url(images/toolbarButton-print@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-print@2x.png");
   }
 
   .toolbarButton.openFile::before,
   .secondaryToolbarButton.openFile::before {
-    content: url(images/toolbarButton-openFile@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-openFile@2x.png");
   }
 
   .toolbarButton.download::before,
   .secondaryToolbarButton.download::before {
-    content: url(images/toolbarButton-download@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-download@2x.png");
   }
 
   .toolbarButton.bookmark::before,
   .secondaryToolbarButton.bookmark::before {
-    content: url(images/toolbarButton-bookmark@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-bookmark@2x.png");
   }
 
   #viewThumbnail.toolbarButton::before {
-    content: url(images/toolbarButton-viewThumbnail@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewThumbnail@2x.png");
   }
 
   html[dir="ltr"] #viewOutline.toolbarButton::before {
-    content: url(images/toolbarButton-viewOutline@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewOutline@2x.png");
   }
   html[dir="rtl"] #viewOutline.toolbarButton::before {
-    content: url(images/toolbarButton-viewOutline-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewOutline-rtl@2x.png");
   }
 
   #viewAttachments.toolbarButton::before {
-    content: url(images/toolbarButton-viewAttachments@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-viewAttachments@2x.png");
   }
 
   #viewFind.toolbarButton::before {
-    content: url(images/toolbarButton-search@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/toolbarButton-search@2x.png");
   }
 
   .secondaryToolbarButton.firstPage::before {
-    content: url(images/secondaryToolbarButton-firstPage@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-firstPage@2x.png");
   }
 
   .secondaryToolbarButton.lastPage::before {
-    content: url(images/secondaryToolbarButton-lastPage@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-lastPage@2x.png");
   }
 
   .secondaryToolbarButton.rotateCcw::before {
-    content: url(images/secondaryToolbarButton-rotateCcw@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-rotateCcw@2x.png");
   }
 
   .secondaryToolbarButton.rotateCw::before {
-    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-rotateCw@2x.png");
   }
 
   .secondaryToolbarButton.handTool::before {
-    content: url(images/secondaryToolbarButton-handTool@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-handTool@2x.png");
   }
 
   .secondaryToolbarButton.documentProperties::before {
-    content: url(images/secondaryToolbarButton-documentProperties@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/secondaryToolbarButton-documentProperties@2x.png");
   }
 
   .outlineItemToggler::before {
     -webkit-transform: scale(0.5);
     transform: scale(0.5);
     top: -1px;
-    content: url(images/treeitem-expanded@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/treeitem-expanded@2x.png");
   }
   html[dir='ltr'] .outlineItemToggler.outlineItemsHidden::before {
-    content: url(images/treeitem-collapsed@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/treeitem-collapsed@2x.png");
   }
   html[dir='rtl'] .outlineItemToggler.outlineItemsHidden::before {
-    content: url(images/treeitem-collapsed-rtl@2x.png);
+    content: url("<?= pdfjsPath() ?>/images/treeitem-collapsed-rtl@2x.png");
   }
   html[dir='ltr'] .outlineItemToggler::before {
     right: 0;
