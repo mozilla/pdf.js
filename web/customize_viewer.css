@@ -87,6 +87,39 @@ html body.light .toolbarLabel {
    color: #4a4a4a;
 }
 
+html body.light .toolbarButton {
+  width: 38px;
+  height: 38px;
+  border-radius: 2px;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  color: #757575;
+}
+
+html body.light .toolbarButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+html body.light .toolbarButton:hover:active {
+   border: 0;
+   box-shadow: none;
+}
+
+html body.light .toolbarButton.toggled {
+  color: #ffffff;
+  background-image: linear-gradient(to bottom, #067fe2, #0061b1);
+  box-shadow: inset 0 1px 3px 0 rgba(0, 68, 124, 0.5);
+}
+
+html body.light .toolbarButton[disabled] {
+  cursor: auto;
+  color: #cccccc;
+}
+
+html body.light .toolbarButton[disabled]:hover {
+  background-color: transparent;
+}
 
 /**
  * Remove spacing between words when displaying
@@ -132,7 +165,6 @@ html body.light .toolbarLabel {
 }
 
 i.svg-icon {
-  color: #cccccc;
   margin: 0;
   overflow: auto;
 }
