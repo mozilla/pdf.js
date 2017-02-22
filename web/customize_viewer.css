@@ -72,6 +72,10 @@ html body.light #toolbarSidebar::after {
    background-color: #d9d9d9;
 }
 
+html body.light .toolbarButtonSpacer {
+   width: 60px;
+}
+
 /**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
