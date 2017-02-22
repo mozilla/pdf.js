@@ -73,6 +73,18 @@ html body.light #toolbarSidebar::after {
    background-color: #d9d9d9;
 }
 
+html body.light #toolbarViewerLeft {
+  left: 18px;
+}
+
+html body.light #toolbarViewerRight {
+  right: 18px;
+}
+
+html body.light #toolbarSidebar {
+  padding-left: 9px;
+}
+
 /**
  * Toolbar buttons and labels
  */
@@ -88,6 +100,7 @@ html body.light .toolbarLabel {
 }
 
 html body.light .toolbarButton {
+  margin: 6px;
   width: 38px;
   height: 38px;
   border-radius: 2px;
@@ -95,6 +108,7 @@ html body.light .toolbarButton {
   box-shadow: none;
   cursor: pointer;
   color: #757575;
+  text-align: center;
 }
 
 html body.light .toolbarButton:hover {
@@ -119,6 +133,11 @@ html body.light .toolbarButton[disabled] {
 
 html body.light .toolbarButton[disabled]:hover {
   background-color: transparent;
+}
+
+html body.light .toolbarButton i.svg-icon {
+  display: inline-block;
+  margin-top: 5px;
 }
 
 /**
