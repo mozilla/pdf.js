@@ -54,6 +54,8 @@ html body.light #toolbarSidebar::before {
   right: 0;
   bottom: 0;
   background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 
 html body.light #toolbarSidebar .toolbarButton {
