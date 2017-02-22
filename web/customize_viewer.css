@@ -111,13 +111,18 @@ html body.light .toolbarButton {
   text-align: center;
 }
 
+html body.light .toolbarButton:focus {
+  background-color: transparent;
+}
+
 html body.light .toolbarButton:hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-html body.light .toolbarButton:hover:active {
+html body.light .toolbarButton:active {
   border: 0;
   box-shadow: none;
+  background-color: rgba(0, 0, 0, 0.15);
 }
 
 html body.light .toolbarButton.toggled {
