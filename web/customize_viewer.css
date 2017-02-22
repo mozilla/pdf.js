@@ -60,6 +60,18 @@ html body.light #toolbarSidebar .splitToolbarButton {
   z-index: 10001;
 }
 
+html body.light #toolbarSidebar::after {
+   content: '';
+   display: block;
+   position: absolute;
+   z-index: 10001;
+   right: 0;
+   width: 1px;
+   top: 7.5px;
+   bottom: 7.5px;
+   background-color: #d9d9d9;
+}
+
 /**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
