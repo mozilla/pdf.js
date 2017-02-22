@@ -62,15 +62,15 @@ html body.light #toolbarSidebar .toolbarButton {
 }
 
 html body.light #toolbarSidebar::after {
-   content: '';
-   display: block;
-   position: absolute;
-   z-index: 10001;
-   right: 0;
-   width: 1px;
-   top: 7.5px;
-   bottom: 7.5px;
-   background-color: #d9d9d9;
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10001;
+  right: 0;
+  width: 1px;
+  top: 7.5px;
+  bottom: 7.5px;
+  background-color: #d9d9d9;
 }
 
 html body.light #toolbarViewerLeft {
@@ -89,14 +89,14 @@ html body.light #toolbarSidebar {
  * Toolbar buttons and labels
  */
 html body.light .toolbarButtonSpacer {
-   width: 60px;
+  width: 60px;
 }
 
 html body.light .toolbarLabel {
-   line-height: 34px;
-   font-size: 13px;
-   font-weight: bold;
-   color: #4a4a4a;
+  line-height: 34px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #4a4a4a;
 }
 
 html body.light .toolbarButton {
@@ -116,8 +116,8 @@ html body.light .toolbarButton:hover {
 }
 
 html body.light .toolbarButton:hover:active {
-   border: 0;
-   box-shadow: none;
+  border: 0;
+  box-shadow: none;
 }
 
 html body.light .toolbarButton.toggled {
