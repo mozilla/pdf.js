@@ -4,7 +4,8 @@
 
 html body.light {
   font-family: "Lato", Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
+  color: #4a4a4a;
 }
 
 html body.light,
@@ -72,9 +73,20 @@ html body.light #toolbarSidebar::after {
    background-color: #d9d9d9;
 }
 
+/**
+ * Toolbar buttons and labels
+ */
 html body.light .toolbarButtonSpacer {
    width: 60px;
 }
+
+html body.light .toolbarLabel {
+   line-height: 34px;
+   font-size: 13px;
+   font-weight: bold;
+   color: #4a4a4a;
+}
+
 
 /**
  * Remove spacing between words when displaying
