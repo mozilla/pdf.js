@@ -144,7 +144,7 @@ html body.light .toolbarButton i.svg-icon {
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
  */
-#pageLabel, #pageNumberDisplay {
+#pageLabel, #pageNumberDisplay, #numPages {
   min-width: 0;
   padding-right: 0;
   margin-right: 0;
