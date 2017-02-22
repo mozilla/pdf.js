@@ -2,17 +2,17 @@
  * Custom css for our fork of pdf.js.
  */
 
-html body.light {
+#lightTheme {
   font-family: "Lato", Arial, sans-serif;
   font-size: 13px;
   color: #4a4a4a;
 }
 
-html body.light,
-html body.light #sidebarContainer,
-html body.light #sidebarContent,
-html body.light #mainContainer,
-html body.light #viewerContainer {
+body#lightTheme,
+#lightTheme #sidebarContainer,
+#lightTheme #sidebarContent,
+#lightTheme #mainContainer,
+#lightTheme #viewerContainer {
    background: transparent;
    box-shadow: none;
 }
@@ -20,8 +20,8 @@ html body.light #viewerContainer {
 /**
  * Toolbar structure and background
  */
-html body.light #toolbarContainer,
-html body.light #toolbarSidebar {
+#lightTheme #toolbarContainer,
+#lightTheme #toolbarSidebar {
   position: relative;
   margin: 5px;
   width: auto;
@@ -32,19 +32,19 @@ html body.light #toolbarSidebar {
   overflow: hidden;
 }
 
-html body.light .sidebarOpen #toolbarSidebar {
+#lightTheme .sidebarOpen #toolbarSidebar {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   margin-right: 0;
 }
 
-html body.light .sidebarOpen #toolbarContainer {
+#lightTheme .sidebarOpen #toolbarContainer {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin-left: 0;
 }
 
-html body.light #toolbarSidebar::before {
+#lightTheme #toolbarSidebar::before {
   content: '';
   display: block;
   position: absolute;
@@ -58,12 +58,12 @@ html body.light #toolbarSidebar::before {
   border-bottom-left-radius: 4px;
 }
 
-html body.light #toolbarSidebar .toolbarButton {
+#lightTheme #toolbarSidebar .toolbarButton {
   position: relative;
   z-index: 10001;
 }
 
-html body.light #toolbarSidebar::after {
+#lightTheme #toolbarSidebar::after {
   content: '';
   display: block;
   position: absolute;
@@ -75,26 +75,26 @@ html body.light #toolbarSidebar::after {
   background-color: #d9d9d9;
 }
 
-html body.light #toolbarViewerLeft {
+#lightTheme #toolbarViewerLeft {
   left: 18px;
 }
 
-html body.light #toolbarViewerRight {
+#lightTheme #toolbarViewerRight {
   right: 18px;
 }
 
-html body.light #toolbarSidebar {
+#lightTheme #toolbarSidebar {
   padding-left: 9px;
 }
 
 /**
  * Toolbar buttons and labels
  */
-html body.light .toolbarButtonSpacer {
+#lightTheme .toolbarButtonSpacer {
   width: 60px;
 }
 
-html body.light .innerCenter {
+#lightTheme .innerCenter {
   display: -ms-flexbox;
   display: -webkit-flex;
   display: flex;
@@ -102,13 +102,13 @@ html body.light .innerCenter {
   -ms-align-items: center;
 }
 
-html body.light .toolbarLabel {
+#lightTheme .toolbarLabel {
   font-size: 13px;
   font-weight: bold;
   color: #4a4a4a;
 }
 
-html body.light .toolbarButton {
+#lightTheme .toolbarButton {
   margin: 6px;
   width: 38px;
   height: 38px;
@@ -121,22 +121,22 @@ html body.light .toolbarButton {
   background-color: transparent;
 }
 
-html body.light .toolbarButton:focus {
+#lightTheme .toolbarButton:focus {
   background-color: transparent;
 }
 
-html body.light .toolbarButton:hover {
+#lightTheme .toolbarButton:hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
-html body.light .toolbarButton:active,
-html body.light .toolbarButton.toggled:active {
+#lightTheme .toolbarButton:active,
+#lightTheme .toolbarButton.toggled:active {
   border: 0;
   box-shadow: none;
   background-color: rgba(0, 0, 0, 0.15);
 }
 
-html body.light .toolbarButton.toggled:not(#sidebarToggle) {
+#lightTheme .toolbarButton.toggled:not(#sidebarToggle) {
   /* The toggled state on #sidebarToggle looks redundant since the user can
    * already see that the sidebar is open. */
   color: #ffffff;
@@ -144,16 +144,16 @@ html body.light .toolbarButton.toggled:not(#sidebarToggle) {
   box-shadow: inset 0 1px 3px 0 rgba(0, 68, 124, 0.5);
 }
 
-html body.light .toolbarButton[disabled] {
+#lightTheme .toolbarButton[disabled] {
   cursor: auto;
   color: #cccccc;
 }
 
-html body.light .toolbarButton[disabled]:hover {
+#lightTheme .toolbarButton[disabled]:hover {
   background-color: transparent;
 }
 
-html body.light .toolbarButton i.svg-icon {
+#lightTheme .toolbarButton i.svg-icon {
   display: inline-block;
   margin-top: 5px;
 }
