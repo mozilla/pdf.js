@@ -298,7 +298,6 @@ target.minified = function() {
 
 target.minifiedpost = function () {
   var viewerFiles = [
-    'web/compatibility.js',
     'external/webL10n/l10n.js',
     MINIFIED_DIR + BUILD_DIR + 'pdf.js',
     MINIFIED_DIR + '/web/viewer.js'
