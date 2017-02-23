@@ -452,7 +452,6 @@ var Catalog = (function CatalogClosure() {
       var nodesToVisit = [this.catDict.getRaw('Pages')];
       var currentPageIndex = 0;
       var xref = this.xref;
-      var checkAllKids = false;
 
       function next() {
         while (nodesToVisit.length) {
@@ -476,16 +475,10 @@ var Catalog = (function CatalogClosure() {
           }
 
           // Must be a child page dictionary.
-          assert(
-            isDict(currentNode),
-            'page dictionary kid reference points to wrong type of object'
-          );
+          assert(isDict(currentNode),
+            'page dictionary kid reference points to wrong type of object');
+
           var count = currentNode.get('Count');
-          // If the current node doesn't have any children, avoid getting stuck
-          // in an empty node further down in the tree (see issue5644.pdf).
-          if (count === 0) {
-            checkAllKids = true;
-          }
           // Skip nodes where the page can't be.
           if (currentPageIndex + count <= pageIndex) {
             currentPageIndex += count;
@@ -494,21 +487,12 @@ var Catalog = (function CatalogClosure() {
 
           var kids = currentNode.get('Kids');
           assert(isArray(kids), 'page dictionary kids object is not an array');
-          if (!checkAllKids && count === kids.length) {
-            // Nodes that don't have the page have been skipped and this is the
-            // bottom of the tree which means the page requested must be a
-            // descendant of this pages node. Ideally we would just resolve the
-            // promise with the page ref here, but there is the case where more
-            // pages nodes could link to single a page (see issue 3666 pdf). To
-            // handle this push it back on the queue so if it is a pages node it
-            // will be descended into.
-            nodesToVisit = [kids[pageIndex - currentPageIndex]];
-            currentPageIndex = pageIndex;
-            continue;
-          } else {
-            for (var last = kids.length - 1; last >= 0; last--) {
-              nodesToVisit.push(kids[last]);
-            }
+
+          // Always check all `Kids` nodes, to avoid getting stuck in an empty
+          // node further down in the tree (see issue5644.pdf, issue8088.pdf),
+          // and to ensure that we actually find the correct `Page` dict.
+          for (var last = kids.length - 1; last >= 0; last--) {
+            nodesToVisit.push(kids[last]);
           }
         }
         capability.reject('Page index ' + pageIndex + ' not found.');
