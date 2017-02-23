@@ -2,31 +2,167 @@
  * Custom css for our fork of pdf.js.
  */
 
+#lightTheme {
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 13px;
+  color: #4a4a4a;
+}
+
+body#lightTheme,
+#lightTheme #sidebarContainer,
+#lightTheme #sidebarContent,
+#lightTheme #mainContainer,
+#lightTheme #viewerContainer {
+   background: transparent;
+   box-shadow: none;
+}
+
 /**
- * Display the rotate icon in the main toolbar. We have to add this because
- * the standard viewer only showed the rotate button in the dropdown menu.
- * Transform the rotate button depending on whether we're viewing it in
- * landscape or portrait.
+ * Toolbar structure and background
  */
-.rotateCw::before {
-  content: url(images/secondaryToolbarButton-rotateCw.png);
+#lightTheme #toolbarContainer,
+#lightTheme #toolbarSidebar {
+  position: relative;
+  margin: 5px;
+  width: auto;
+  height: 50px;
+  border-radius: 4px;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+  overflow: hidden;
 }
 
-#mainContainer.landscape .rotateCw::before {
-  /* transform: rotate(-90deg); */
+#lightTheme .sidebarOpen #toolbarSidebar {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: 0;
 }
 
-@media screen and (min-resolution: 2dppx) {
-  .rotateCw::before {
-    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
-  }
+#lightTheme .sidebarOpen #toolbarContainer {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 0;
+}
+
+#lightTheme #toolbarSidebar::before {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+#lightTheme #toolbarSidebar .toolbarButton {
+  position: relative;
+  z-index: 10001;
+}
+
+#lightTheme #toolbarSidebar::after {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10001;
+  right: 0;
+  width: 1px;
+  top: 7.5px;
+  bottom: 7.5px;
+  background-color: #d9d9d9;
+}
+
+#lightTheme #toolbarViewerLeft {
+  left: 18px;
+}
+
+#lightTheme #toolbarViewerRight {
+  right: 18px;
+}
+
+#lightTheme #toolbarSidebar {
+  padding-left: 9px;
+}
+
+/**
+ * Toolbar buttons and labels
+ */
+#lightTheme .toolbarButtonSpacer {
+  width: 60px;
+}
+
+#lightTheme .innerCenter {
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  -ms-align-items: center;
+}
+
+#lightTheme .toolbarLabel {
+  font-size: 13px;
+  font-weight: bold;
+  color: #4a4a4a;
+}
+
+#lightTheme .toolbarButton {
+  margin: 6px;
+  width: 38px;
+  height: 38px;
+  border-radius: 2px;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  color: #757575;
+  text-align: center;
+  background-color: transparent;
+}
+
+#lightTheme .toolbarButton:focus {
+  background-color: transparent;
+}
+
+#lightTheme .toolbarButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+#lightTheme .toolbarButton:active,
+#lightTheme .toolbarButton.toggled:active {
+  border: 0;
+  box-shadow: none;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+#lightTheme .toolbarButton.toggled:not(#sidebarToggle) {
+  /* The toggled state on #sidebarToggle looks redundant since the user can
+   * already see that the sidebar is open. */
+  color: #ffffff;
+  background-image: linear-gradient(to bottom, #067fe2, #0061b1);
+  box-shadow: inset 0 1px 3px 0 rgba(0, 68, 124, 0.5);
+}
+
+#lightTheme .toolbarButton[disabled] {
+  cursor: auto;
+  color: #cccccc;
+}
+
+#lightTheme .toolbarButton[disabled]:hover {
+  background-color: transparent;
+}
+
+#lightTheme .toolbarButton i.svg-icon {
+  display: inline-block;
+  margin-top: 5px;
 }
 
 /**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
  */
-#pageLabel, #pageNumberDisplay {
+#pageLabel, #pageNumberDisplay, #numPages {
   min-width: 0;
   padding-right: 0;
   margin-right: 0;
@@ -54,4 +190,29 @@
   .innerCenter {
     margin-left: 72px;
   }
+}
+
+/**
+ * Implement our custom icons. Disable all of the default icons, since the
+ * buttons now have inline svg in viewer.html.
+ */
+.toolbarButton::before {
+  content: '' !important; /* Necessary to prevent network requests */
+  display: none !important;
+}
+
+i.svg-icon {
+  margin: 0;
+  overflow: auto;
+}
+
+i.svg-icon path,
+i.svg-icon rect,
+i.svg-icon circle,
+i.svg-icon polygon,
+i.svg-icon ellipse,
+i.svg-icon polyline,
+i.svg-icon line,
+i.svg-icon g {
+  fill: currentColor;
 }
