@@ -216,3 +216,31 @@ i.svg-icon line,
 i.svg-icon g {
   fill: currentColor;
 }
+
+/**
+ * Main content area structure
+ */
+
+#lightTheme #mainContainer {
+  background-color: #e5e5e5;
+  border-radius: 8px;
+}
+
+#lightTheme .sidebarOpen #mainContainer {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/**
+ * Sidebar structure
+ */
+
+#lightTheme #sidebarContainer {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background-image: linear-gradient(to right, #dddddd, #dddddd 83%, #cccccc);
+}
+
+#lightTheme #sidebarContent {
+  top: 55px;
+}
