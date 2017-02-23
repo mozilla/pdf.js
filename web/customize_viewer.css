@@ -333,3 +333,21 @@ i.svg-icon g {
 #lightTheme #outlineView .outlineItems .outlineItem a {
   font-weight: normal;
 }
+
+/**
+ * Main viewer
+ */
+
+#lightTheme #viewerContainer {
+   top: 55px;
+}
+
+#lightTheme #viewer {
+   padding-top: 40px;
+}
+
+#lightTheme #viewer .page {
+   box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.15);
+   margin-bottom: 40px;
+   border: 0;
+}
