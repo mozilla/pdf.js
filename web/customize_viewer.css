@@ -251,14 +251,15 @@ i.svg-icon g {
   top: 55px;
 }
 
+#lightTheme #thumbnailView,
+#lightTheme #outlineView {
+  padding-top: 35px;
+  padding-bottom: 30px;
+}
+
 /**
  * Sidebar thumbnails
  */
-
-#lightTheme #thumbnailView {
-  padding-top: 40px;
-  padding-bottom: 30px;
-}
 
 #lightTheme #thumbnailView a {
   display: block;
@@ -291,4 +292,44 @@ i.svg-icon g {
 
 #lightTheme #thumbnailView .selected .thumbnailImage {
   mix-blend-mode: normal;
+}
+
+/**
+ * Sidebar table of contents
+ */
+
+#lightTheme #outlineView .outlineItemToggler {
+  display: none;
+}
+
+#lightTheme #outlineView .outlineItem {
+  margin-left: 10px;
+}
+
+#lightTheme #outlineView .outlineItem a {
+  color: #333333;
+  font-weight: bold;
+  padding-left: 0;
+  padding-right: 0;
+  border: 0;
+  line-height: 1.5;
+}
+
+#lightTheme #outlineView .outlineItem a:hover {
+  text-decoration: underline;
+  background: transparent;
+  box-shadow: none;
+}
+
+#lightTheme #outlineView .outlineItems {
+  margin-left: 0;
+}
+
+#lightTheme #outlineView > .outlineItem,
+#lightTheme #outlineView > .outlineItems {
+  margin-right: 10px;
+}
+
+#lightTheme #outlineView .outlineItems .outlineItem a {
+  font-weight: normal;
 }
