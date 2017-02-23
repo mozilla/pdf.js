@@ -83,6 +83,12 @@ body#lightTheme,
   right: 18px;
 }
 
+#lightTheme .sidebarOpen #toolbarViewer {
+  position: relative;
+  left: 5px;
+  margin-right: 5px;
+}
+
 #lightTheme #toolbarSidebar {
   padding-left: 9px;
 }
