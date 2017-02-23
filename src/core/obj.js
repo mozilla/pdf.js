@@ -447,7 +447,8 @@ var Catalog = (function CatalogClosure() {
 
     getPageDict: function Catalog_getPageDict(pageIndex) {
       var capability = createPromiseCapability();
-      var nodesToVisit = [this.catDict.getRaw('Pages')];
+      var catDict = this.catDict;
+      var nodesToVisit = [catDict.getRaw('Pages')];
       var currentPageIndex = 0;
       var xref = this.xref;
       var checkAllKids = false;
@@ -479,11 +480,6 @@ var Catalog = (function CatalogClosure() {
             'page dictionary kid reference points to wrong type of object'
           );
           var count = currentNode.get('Count');
-          // If the current node doesn't have any children, avoid getting stuck
-          // in an empty node further down in the tree (see issue5644.pdf).
-          if (count === 0) {
-            checkAllKids = true;
-          }
           // Skip nodes where the page can't be.
           if (currentPageIndex + count <= pageIndex) {
             currentPageIndex += count;
@@ -509,6 +505,15 @@ var Catalog = (function CatalogClosure() {
             }
           }
         }
+        if (!checkAllKids) {
+          // The optimized search attempt failed, try an exhaustive search now.
+          checkAllKids = true;
+          nodesToVisit = [catDict.getRaw('Pages')];
+          currentPageIndex = 0;
+          next();
+          return;
+        }
+        // Exhaustive and optimized failed.
         capability.reject('Page index ' + pageIndex + ' not found.');
       }
       next();

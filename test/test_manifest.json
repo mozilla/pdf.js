@@ -173,6 +173,14 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue8088",
+       "file": "pdfs/issue8088.pdf",
+       "md5": "8767f3282f95f0ed785f87a7f2a1ac10",
+       "link": true,
+       "lastPage": 1,
+       "rounds": 1,
+       "type": "load"
+    },
     {  "id": "issue2128",
        "file": "pdfs/issue2128r.pdf",
        "md5": "64118f4e74590b88bd476b4178a516d5",
