@@ -264,8 +264,10 @@ function getDocument(src, pdfDataRangeTransport,
   var CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
 
   if (!worker) {
-    // Worker was not provided -- creating and owning our own.
-    worker = new PDFWorker();
+    // Worker was not provided -- creating and owning our own. If message port
+    // is specified in global settings, using it.
+    var workerPort = getDefaultSetting('workerPort');
+    worker = workerPort ? new PDFWorker(null, workerPort) : new PDFWorker();
     task._worker = worker;
   }
   var docId = task.docId;
@@ -1227,7 +1229,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     return URL.createObjectURL(new Blob([wrapper]));
   }
 
-  function PDFWorker(name) {
+  function PDFWorker(name, port) {
     this.name = name;
     this.destroyed = false;
 
@@ -1235,6 +1237,12 @@ var PDFWorker = (function PDFWorkerClosure() {
     this._port = null;
     this._webWorker = null;
     this._messageHandler = null;
+
+    if (port) {
+      this._initializeFromPort(port);
+      return;
+    }
+
     this._initialize();
   }
 
@@ -1249,6 +1257,16 @@ var PDFWorker = (function PDFWorkerClosure() {
 
     get messageHandler() {
       return this._messageHandler;
+    },
+
+    _initializeFromPort: function PDFWorker_initializeFromPort(port) {
+      this._port = port;
+      this._messageHandler = new MessageHandler('main', 'worker', port);
+      this._messageHandler.on('ready', function () {
+        // Ignoring 'ready' event -- MessageHandler shall be already initialized
+        // and ready to accept the messages.
+      });
+      this._readyCapability.resolve();
     },
 
     _initialize: function PDFWorker_initialize() {
