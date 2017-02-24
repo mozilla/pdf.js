@@ -1227,7 +1227,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     return URL.createObjectURL(new Blob([wrapper]));
   }
 
-  function PDFWorker(name) {
+  function PDFWorker(name, customWorker) {
     this.name = name;
     this.destroyed = false;
 
@@ -1235,7 +1235,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this._port = null;
     this._webWorker = null;
     this._messageHandler = null;
-    this._initialize();
+    this._initialize(customWorker);
   }
 
   PDFWorker.prototype =  /** @lends PDFWorker.prototype */ {
@@ -1251,7 +1251,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       return this._messageHandler;
     },
 
-    _initialize: function PDFWorker_initialize() {
+    _initialize: function PDFWorker_initialize(customWorker) {
       // If worker support isn't disabled explicit and the browser has worker
       // support, create a new web worker and test if it/the browser fulfills
       // all requirements to run parts of pdf.js in a web worker.
@@ -1273,7 +1273,12 @@ var PDFWorker = (function PDFWorkerClosure() {
 
           // Some versions of FF can't create a worker on localhost, see:
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
-          var worker = new Worker(workerSrc);
+          var worker;
+          if (customWorker) {
+            worker = customWorker;
+          } else {
+            worker = new Worker(workerSrc);
+          }
           var messageHandler = new MessageHandler('main', 'worker', worker);
           var terminateEarly = function() {
             worker.removeEventListener('error', onWorkerError);
