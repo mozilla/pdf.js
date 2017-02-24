@@ -351,3 +351,35 @@ i.svg-icon g {
    margin-bottom: 40px;
    border: 0;
 }
+
+/**
+ * Make scrollbars less intrusive when possible.
+ */
+
+#viewerContainer,
+#thumbnailView,
+#outlineView {
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: none;
+  background: none;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  transition: background 0.2s;
+  background: rgba(0, 0, 0, 0);
+}
+
+#viewerContainer:hover::-webkit-scrollbar-thumb,
+#thumbnailView:hover::-webkit-scrollbar-thumb,
+#outlineView:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+}
