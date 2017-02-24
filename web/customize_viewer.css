@@ -83,6 +83,12 @@ body#lightTheme,
   right: 18px;
 }
 
+#lightTheme .sidebarOpen #toolbarViewer {
+  position: relative;
+  left: 5px;
+  margin-right: 5px;
+}
+
 #lightTheme #toolbarSidebar {
   padding-left: 9px;
 }
@@ -215,4 +221,165 @@ i.svg-icon polyline,
 i.svg-icon line,
 i.svg-icon g {
   fill: currentColor;
+}
+
+/**
+ * Main content area structure
+ */
+
+#lightTheme #mainContainer {
+  background-color: #e5e5e5;
+  border-radius: 8px;
+}
+
+#lightTheme .sidebarOpen #mainContainer {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/**
+ * Sidebar structure
+ */
+
+#lightTheme #sidebarContainer {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background-image: linear-gradient(to right, #dddddd, #dddddd 83%, #cccccc);
+}
+
+#lightTheme #sidebarContent {
+  top: 55px;
+}
+
+#lightTheme #thumbnailView,
+#lightTheme #outlineView {
+  padding-top: 35px;
+  padding-bottom: 30px;
+}
+
+/**
+ * Sidebar thumbnails
+ */
+
+#lightTheme #thumbnailView a {
+  display: block;
+}
+
+#lightTheme #thumbnailView .thumbnail {
+  margin: 0 0 18px 0;
+  border: 0;
+  float: none;
+}
+
+#lightTheme #thumbnailView .thumbnailSelectionRing {
+  background-color: transparent;
+  /* work around some inline width/height css that makes this div larger than
+   * it needs to be */
+  box-sizing: border-box;
+  border: 1px solid #24272a;
+  outline: 1px solid #24272a;
+  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.5);
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 0;
+}
+
+#lightTheme #thumbnailView .thumbnailImage {
+  display: block;
+  border: 0;
+  mix-blend-mode: multiply;
+}
+
+#lightTheme #thumbnailView .selected .thumbnailImage {
+  mix-blend-mode: normal;
+}
+
+/**
+ * Sidebar table of contents
+ */
+
+#lightTheme #outlineView .outlineItemToggler {
+  display: none;
+}
+
+#lightTheme #outlineView .outlineItem {
+  margin-left: 10px;
+}
+
+#lightTheme #outlineView .outlineItem a {
+  color: #333333;
+  font-weight: bold;
+  padding-left: 0;
+  padding-right: 0;
+  border: 0;
+  line-height: 1.5;
+}
+
+#lightTheme #outlineView .outlineItem a:hover {
+  text-decoration: underline;
+  background: transparent;
+  box-shadow: none;
+}
+
+#lightTheme #outlineView .outlineItems {
+  margin-left: 0;
+}
+
+#lightTheme #outlineView > .outlineItem,
+#lightTheme #outlineView > .outlineItems {
+  margin-right: 10px;
+}
+
+#lightTheme #outlineView .outlineItems .outlineItem a {
+  font-weight: normal;
+}
+
+/**
+ * Main viewer
+ */
+
+#lightTheme #viewerContainer {
+   top: 55px;
+}
+
+#lightTheme #viewer {
+   padding-top: 40px;
+}
+
+#lightTheme #viewer .page {
+   box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.15);
+   margin-bottom: 40px;
+   border: 0;
+}
+
+/**
+ * Make scrollbars less intrusive when possible.
+ */
+
+#viewerContainer,
+#thumbnailView,
+#outlineView {
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: none;
+  background: none;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  transition: background 0.2s;
+  background: rgba(0, 0, 0, 0);
+}
+
+#viewerContainer:hover::-webkit-scrollbar-thumb,
+#thumbnailView:hover::-webkit-scrollbar-thumb,
+#outlineView:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
 }
