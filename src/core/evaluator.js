@@ -1580,7 +1580,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                       textContentItem.width += offset;
                     }
                   }
-                  if (breakTextRun) {
+                  if (breakTextRun || (advance > 0 && !combineTextItems)) {
                     flushTextContentItem();
                   } else if (advance > 0) {
                     addFakeSpaces(advance, textContentItem.str);
