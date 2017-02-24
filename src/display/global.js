@@ -161,6 +161,12 @@
   PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
   /**
+   * Defines global port for worker process. Overrides workerSrc and
+   * disableWorker setting.
+   */
+  PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
+
+  /**
    * Disable range request loading of PDF files. When enabled and if the server
    * supports partial content requests then the PDF will be fetched in chunks.
    * Enabled (false) by default.
