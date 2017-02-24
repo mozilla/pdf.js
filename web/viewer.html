@@ -44,8 +44,8 @@ See https://github.com/adobe-type-tools/cmap-resources
     <link rel="resource" type="application/l10n" href="locale/locale.properties">
 <!--#endif-->
 
-<!--#if !(FIREFOX || MOZCENTRAL || CHROME || MINIFIED)-->
-    <script src="compatibility.js"></script>
+<!--#if !PRODUCTION-->
+    <script src="../src/shared/compatibility.js"></script>
 <!--#endif-->
 
 <!--#if !PRODUCTION-->
