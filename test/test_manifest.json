@@ -1318,6 +1318,15 @@
        "lastPage": 6,
        "type": "eq"
     },
+    {  "id": "issue8088",
+       "file": "pdfs/issue8088.pdf",
+       "md5": "5bbc33c7433799487518eb0d8094348c",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 3,
+       "type": "eq"
+    },
     {  "id": "bug866395",
        "file": "pdfs/bug866395.pdf",
        "md5": "f03bc77e84637241980b09a0a220f575",
