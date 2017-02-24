@@ -332,6 +332,33 @@ function createTestSource(testsName) {
   return source;
 }
 
+function makeRef(done, noPrompts) {
+  console.log();
+  console.log('### Creating reference images');
+
+  var PDF_BROWSERS = process.env['PDF_BROWSERS'] ||
+    'resources/browser_manifests/browser_manifest.json';
+
+  if (!checkFile('test/' + PDF_BROWSERS)) {
+    console.log('Browser manifest file test/' + PDF_BROWSERS +
+      ' does not exist.');
+    console.log('Copy and adjust the example in ' +
+      'test/resources/browser_manifests.');
+    done(new Error('Missing manifest file'));
+    return;
+  }
+
+  var args = ['test.js', '--masterMode'];
+  if (noPrompts) {
+    args.push('--noPrompts');
+  }
+  args.push('--browserManifestFile=' + PDF_BROWSERS);
+  var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
+  testProcess.on('close', function (code) {
+    done();
+  });
+}
+
 gulp.task('default', function() {
   console.log('Available tasks:');
   var tasks = Object.keys(gulp.tasks);
@@ -949,28 +976,12 @@ gulp.task('fonttest', function () {
   return createTestSource('font');
 });
 
+gulp.task('makeref', function (done) {
+  makeRef(done);
+});
+
 gulp.task('botmakeref', function (done) {
-  console.log();
-  console.log('### Creating reference images');
-
-  var PDF_BROWSERS = process.env['PDF_BROWSERS'] ||
-    'resources/browser_manifests/browser_manifest.json';
-
-  if (!checkFile('test/' + PDF_BROWSERS)) {
-    console.log('Browser manifest file test/' + PDF_BROWSERS +
-      ' does not exist.');
-    console.log('Copy and adjust the example in ' +
-      'test/resources/browser_manifests.');
-    done(new Error('Missing manifest file'));
-    return;
-  }
-
-  var args = ['test.js', '--masterMode', '--noPrompts',
-              '--browserManifestFile=' + PDF_BROWSERS];
-  var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
-  testProcess.on('close', function (code) {
-    done();
-  });
+  makeRef(done, true);
 });
 
 gulp.task('baseline', function (done) {
