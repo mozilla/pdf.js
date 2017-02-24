@@ -1359,7 +1359,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           textChunk.str.push(glyphUnicode);
 
-          if ((glyph.isSpace || glyphUnicode === ' ') && splitSpaces) {
+          if ((glyph.isSpace || glyphUnicode === ' ') && !combineTextItems && splitSpaces) {
             if (!font.vertical) {
               textChunk.lastAdvanceWidth = width;
               textChunk.width += width;
