@@ -1142,6 +1142,34 @@ describe('annotation', function() {
       expect(data.options).toEqual(expected);
     });
 
+    it('should handle inherited option arrays (issue 8094)', function() {
+      var options = [
+        ['Value1', 'Description1'],
+        ['Value2', 'Description2'],
+      ];
+      var expected = [
+        { exportValue: 'Value1', displayValue: 'Description1' },
+        { exportValue: 'Value2', displayValue: 'Description2' },
+      ];
+
+      var parentDict = new Dict();
+      parentDict.set('Opt', options);
+
+      choiceWidgetDict.set('Parent', parentDict);
+
+      var choiceWidgetRef = new Ref(123, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, },
+      ]);
+
+      var annotation = annotationFactory.create(xref, choiceWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.options).toEqual(expected);
+    });
+
     it('should handle array field values', function() {
       var fieldValue = ['Foo', 'Bar'];
 
