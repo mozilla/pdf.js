@@ -467,25 +467,6 @@ var Annotation = (function AnnotationClosure() {
     }
   };
 
-  Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, opList, partialEvaluator, task, intent, renderForms) {
-    var annotationPromises = [];
-    for (var i = 0, n = annotations.length; i < n; ++i) {
-      if ((intent === 'display' && annotations[i].viewable) ||
-          (intent === 'print' && annotations[i].printable)) {
-        annotationPromises.push(
-          annotations[i].getOperatorList(partialEvaluator, task, renderForms));
-      }
-    }
-    return Promise.all(annotationPromises).then(function(operatorLists) {
-      opList.addOp(OPS.beginAnnotations, []);
-      for (var i = 0, n = operatorLists.length; i < n; ++i) {
-        opList.addOpList(operatorLists[i]);
-      }
-      opList.addOp(OPS.endAnnotations, []);
-    });
-  };
-
   return Annotation;
 })();
 
