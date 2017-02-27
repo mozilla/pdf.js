@@ -703,12 +703,17 @@ var Catalog = (function CatalogClosure() {
               'app.launchURL',
               'window.open'
             ];
-            var regex = new RegExp('^(?:' + URL_OPEN_METHODS.join('|') + ')' +
-                                   '\\((?:\'|\")(\\S+)(?:\'|\")(?:,|\\))');
+            var regex = new RegExp(
+              '^\\s*(' + URL_OPEN_METHODS.join('|').split('.').join('\\.') +
+              ')\\((?:\'|\")([^\'\"]*)(?:\'|\")(?:,\\s*(\\w+)\\)|\\))', 'i');
 
-            var jsUrl = regex.exec(stringToPDFString(js), 'i');
-            if (jsUrl && jsUrl[1]) {
-              url = jsUrl[1];
+            var jsUrl = regex.exec(stringToPDFString(js));
+            if (jsUrl && jsUrl[2]) {
+              url = jsUrl[2];
+
+              if (jsUrl[3] === 'true' && jsUrl[1] === 'app.launchURL') {
+                resultObj.newWindow = true;
+              }
               break;
             }
           }
