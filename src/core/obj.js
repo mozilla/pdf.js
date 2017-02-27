@@ -1241,6 +1241,11 @@ var XRef = (function XRefClosure() {
       var num = ref.num;
       if (num in this.cache) {
         var cacheEntry = this.cache[num];
+        // In documents with Object Streams, it's possible that cached `Dict`s
+        // have not been assigned an `objId` yet (see e.g. issue3115r.pdf).
+        if (isDict(cacheEntry) && !cacheEntry.objId) {
+          cacheEntry.objId = ref.toString();
+        }
         return cacheEntry;
       }
 
