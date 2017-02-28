@@ -179,13 +179,6 @@ body#lightTheme,
   left: auto !important;
 }
 
-/* Leave space for the left buttons at very small screen sizes. */
-@media all and (max-width: 600px) {
-  .innerCenter {
-    margin-left: 72px;
-  }
-}
-
 /**
  * Implement our custom icons. Disable all of the default icons, since the
  * buttons now have inline svg in viewer.html.
