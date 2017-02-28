@@ -90,7 +90,7 @@ See https://github.com/adobe-type-tools/cmap-resources
   <body tabindex="1" class="loadingInProgress" id="lightTheme">
     <div id="outerContainer">
 
-      <div id="sidebarContainer">
+      <div id="sidebarContainer" class="hiddenWhenSidebarUnavailable">
         <div id="toolbarSidebar">
          <button id="viewThumbnail" class="toolbarButton toggled" title="Show Thumbnails" tabindex="2" data-l10n-id="thumbs">
 <!--#if GENERIC-->
@@ -191,13 +191,13 @@ See https://github.com/adobe-type-tools/cmap-resources
           <div id="toolbarContainer">
             <div id="toolbarViewer">
               <div id="toolbarViewerLeft">
-                <button id="sidebarToggle" class="toolbarButton" title="Toggle Sidebar" tabindex="11" data-l10n-id="toggle_sidebar">
+                <button id="sidebarToggle" class="toolbarButton hiddenWhenSidebarUnavailable" title="Toggle Sidebar" tabindex="11" data-l10n-id="toggle_sidebar">
 <!--#if GENERIC-->
 <!--#expand <?= $placeholderIcon ?> -->
 <!--#endif-->
                   <span data-l10n-id="toggle_sidebar_label">Toggle Sidebar</span>
                 </button>
-                <div class="toolbarButtonSpacer"></div>
+                <div class="toolbarButtonSpacer hiddenWhenSidebarUnavailable"></div>
                 <button id="viewFind" class="toolbarButton group hiddenSmallView hidden" title="Find in Document" tabindex="12" data-l10n-id="findbar">
                    <span data-l10n-id="findbar_label">Find</span>
                 </button>

@@ -32,18 +32,6 @@ body#lightTheme,
   overflow: hidden;
 }
 
-#lightTheme .sidebarOpen #toolbarSidebar {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  margin-right: 0;
-}
-
-#lightTheme .sidebarOpen #toolbarContainer {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  margin-left: 0;
-}
-
 #lightTheme #toolbarSidebar::before {
   content: '';
   display: block;
@@ -81,12 +69,6 @@ body#lightTheme,
 
 #lightTheme #toolbarViewerRight {
   right: 18px;
-}
-
-#lightTheme .sidebarOpen #toolbarViewer {
-  position: relative;
-  left: 5px;
-  margin-right: 5px;
 }
 
 #lightTheme #toolbarSidebar {
@@ -232,11 +214,6 @@ i.svg-icon g {
   border-radius: 8px;
 }
 
-#lightTheme .sidebarOpen #mainContainer {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
 /**
  * Sidebar structure
  */
@@ -255,6 +232,43 @@ i.svg-icon g {
 #lightTheme #outlineView {
   padding-top: 35px;
   padding-bottom: 30px;
+}
+
+/**
+ * Changes to the main content area when the sidebar is open and the screen
+ * is large enough to show the sidebar.
+ */
+
+@media all and (max-width: 770px) {
+  .hiddenWhenSidebarUnavailable {
+    display: none !important;
+  }
+}
+
+@media not all and (max-width: 770px) {
+  #lightTheme .sidebarOpen #toolbarSidebar {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 0;
+  }
+
+  #lightTheme .sidebarOpen #toolbarContainer {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 0;
+  }
+
+  #lightTheme .sidebarOpen #toolbarViewer {
+    /* Make up for the missing margin-left:5px on #toolbarContainer */
+    position: relative;
+    left: 5px;
+    margin-right: 5px;
+  }
+
+  #lightTheme .sidebarOpen #mainContainer {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
 }
 
 /**
