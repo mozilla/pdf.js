@@ -217,14 +217,14 @@ See https://github.com/adobe-type-tools/cmap-resources
 
               </div>
               <div id="toolbarViewerRight">
-                <button id="toolbarPageRotateToggle" class="toolbarButton rotateCw hiddenLargeView" title="Rotate" tabindex="31" data-l10n-id="page_rotate_cw">
+                <button id="toolbarPageRotateToggle" class="toolbarButton rotateCw" title="Rotate" tabindex="31" data-l10n-id="page_rotate_cw">
 <!--#if GENERIC-->
 <!--#expand <?= $placeholderIcon ?> -->
 <!--#endif-->
                   <span data-l10n-id="page_rotate_cw_label">Rotate</span>
                 </button>
 
-                <button id="presentationMode" class="toolbarButton presentationMode hiddenLargeView" title="Switch to Presentation Mode" tabindex="32" data-l10n-id="presentation_mode">
+                <button id="presentationMode" class="toolbarButton presentationMode hiddenWhenSidebarUnavailable" title="Switch to Presentation Mode" tabindex="32" data-l10n-id="presentation_mode">
 <!--#if GENERIC-->
 <!--#expand <?= $fullScreenIcon ?> -->
 <!--#endif-->
@@ -239,9 +239,9 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="print_label">Print</span>
                 </button>
 
-                <div class="toolbarButtonSpacer"></div>
+                <div class="toolbarButtonSpacer hiddenWhenSidebarUnavailable"></div>
 
-                <button id="download" class="toolbarButton download hiddenMediumView" title="Download" tabindex="35" data-l10n-id="download">
+                <button id="download" class="toolbarButton download" title="Download" tabindex="35" data-l10n-id="download">
 <!--#if GENERIC-->
 <!--#expand <?= $placeholderIcon ?> -->
 <!--#endif-->
