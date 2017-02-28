@@ -353,7 +353,9 @@ i.svg-icon g {
  */
 
 #lightTheme #viewerContainer {
-   top: 55px;
+   top: 50px;
+   left: 5px;
+   right: 5px;
 }
 
 #lightTheme #viewer {
