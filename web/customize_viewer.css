@@ -94,6 +94,7 @@ body#lightTheme,
   display: flex;
   align-items: center;
   -ms-align-items: center;
+  height: 50px;
 }
 
 #lightTheme .toolbarLabel {
