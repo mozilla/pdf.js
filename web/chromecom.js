@@ -19,17 +19,15 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/chromecom', ['exports', 'pdfjs-web/app',
-      'pdfjs-web/overlay_manager', 'pdfjs-web/preferences', 'pdfjs-web/pdfjs'],
-      factory);
+      'pdfjs-web/preferences', 'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./app.js'), require('./overlay_manager.js'),
-      require('./preferences.js'), require('./pdfjs.js'));
+    factory(exports, require('./app.js'), require('./preferences.js'),
+      require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebChromeCom = {}), root.pdfjsWebApp,
-      root.pdfjsWebOverlayManager, root.pdfjsWebPreferences,
-      root.pdfjsWebPDFJS);
+      root.pdfjsWebPreferences, root.pdfjsWebPDFJS);
   }
-}(this, function (exports, app, overlayManager, preferences, pdfjsLib) {
+}(this, function (exports, app, preferences, pdfjsLib) {
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
     throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +
                     'CHROME build.');
@@ -37,7 +35,6 @@
 
   var PDFViewerApplication = app.PDFViewerApplication;
   var DefaultExernalServices = app.DefaultExernalServices;
-  var OverlayManager = overlayManager.OverlayManager;
   var Preferences = preferences.Preferences;
 
   var ChromeCom = {};
@@ -171,6 +168,7 @@
 
   var chromeFileAccessOverlayPromise;
   function requestAccessToLocalFile(fileUrl) {
+    var overlayManager = PDFViewerApplication.overlayManager;
     var onCloseOverlay = null;
     if (top !== window) {
       // When the extension reloads after receiving new permissions, the pages
@@ -184,11 +182,11 @@
       onCloseOverlay = function() {
         window.removeEventListener('focus', reloadIfRuntimeIsUnavailable);
         reloadIfRuntimeIsUnavailable();
-        OverlayManager.close('chromeFileAccessOverlay');
+        overlayManager.close('chromeFileAccessOverlay');
       };
     }
     if (!chromeFileAccessOverlayPromise) {
-      chromeFileAccessOverlayPromise = OverlayManager.register(
+      chromeFileAccessOverlayPromise = overlayManager.register(
         'chromeFileAccessOverlay',
         document.getElementById('chromeFileAccessOverlay'),
         onCloseOverlay, true);
@@ -230,7 +228,7 @@
       // why this permission request is shown.
       document.getElementById('chrome-url-of-local-file').textContent = fileUrl;
 
-      OverlayManager.open('chromeFileAccessOverlay');
+      PDFViewerApplication.overlayManager.open('chromeFileAccessOverlay');
     });
   }
 

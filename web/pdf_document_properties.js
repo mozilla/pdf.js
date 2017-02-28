@@ -18,22 +18,22 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/pdf_document_properties', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/overlay_manager'], factory);
+      'pdfjs-web/ui_utils'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./overlay_manager.js'));
+    factory(exports, require('./ui_utils.js'));
   } else {
-    factory((root.pdfjsWebPDFDocumentProperties = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebOverlayManager);
+    factory((root.pdfjsWebPDFDocumentProperties = {}), root.pdfjsWebUIUtils);
   }
 }(this, function (exports, uiUtils, overlayManager) {
 
 var getPDFFileNameFromURL = uiUtils.getPDFFileNameFromURL;
 var mozL10n = uiUtils.mozL10n;
-var OverlayManager = overlayManager.OverlayManager;
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
+ * @property {OverlayManager} overlayManager - Controls the app's overlays.
  * @property {string} overlayName - Name/identifier for the overlay.
+ * @property {HTMLDivElement} container - Div container for the overlay.
  * @property {Object} fields - Names and elements of the overlay's fields.
  * @property {HTMLButtonElement} closeButton - Button for closing the overlay.
  */
@@ -47,9 +47,10 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
    * @param {PDFDocumentPropertiesOptions} options
    */
   function PDFDocumentProperties(options) {
-    this.fields = options.fields;
+    this.overlayManager = options.overlayManager;
     this.overlayName = options.overlayName;
     this.container = options.container;
+    this.fields = options.fields;
 
     this.rawFileSize = 0;
     this.url = null;
@@ -64,8 +65,8 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
       this.resolveDataAvailable = resolve;
     }.bind(this));
 
-    OverlayManager.register(this.overlayName, this.container,
-                            this.close.bind(this));
+    this.overlayManager.register(this.overlayName, this.container,
+                                 this.close.bind(this));
   }
 
   PDFDocumentProperties.prototype = {
@@ -73,7 +74,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
      * Open the document properties overlay.
      */
     open: function PDFDocumentProperties_open() {
-      Promise.all([OverlayManager.open(this.overlayName),
+      Promise.all([this.overlayManager.open(this.overlayName),
                    this.dataAvailablePromise]).then(function () {
         this._getProperties();
       }.bind(this));
@@ -83,7 +84,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
      * Close the document properties overlay.
      */
     close: function PDFDocumentProperties_close() {
-      OverlayManager.close(this.overlayName);
+      this.overlayManager.close(this.overlayName);
     },
 
     /**
@@ -119,7 +120,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
      * @private
      */
     _getProperties: function PDFDocumentProperties_getProperties() {
-      if (!OverlayManager.active) {
+      if (!this.overlayManager.active) {
         // If the dialog was closed before dataAvailablePromise was resolved,
         // don't bother updating the properties.
         return;

@@ -18,20 +18,19 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/pdf_print_service', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/overlay_manager', 'pdfjs-web/app', 'pdfjs-web/pdfjs'],
-      factory);
+      'pdfjs-web/app', 'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./overlay_manager.js'),
-      require('./app.js'), require('./pdfjs.js'));
+    factory(exports, require('./ui_utils.js'), require('./app.js'),
+      require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebPDFPrintService = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebOverlayManager, root.pdfjsWebApp, root.pdfjsWebPDFJS);
+      root.pdfjsWebApp, root.pdfjsWebPDFJS);
   }
-}(this, function (exports, uiUtils, overlayManager, app, pdfjsLib) {
+}(this, function (exports, uiUtils, app, pdfjsLib) {
   var mozL10n = uiUtils.mozL10n;
   var CSS_UNITS = uiUtils.CSS_UNITS;
   var PDFPrintServiceFactory = app.PDFPrintServiceFactory;
-  var OverlayManager = overlayManager.OverlayManager;
+  var PDFViewerApplication = app.PDFViewerApplication;
 
   var activeService = null;
 
@@ -133,10 +132,11 @@
       this.scratchCanvas = null;
       activeService = null;
       ensureOverlay().then(function () {
-        if (OverlayManager.active !== 'printServiceOverlay') {
+        var overlayManager = PDFViewerApplication.overlayManager;
+        if (overlayManager.active !== 'printServiceOverlay') {
           return; // overlay was already closed
         }
-        OverlayManager.close('printServiceOverlay');
+        overlayManager.close('printServiceOverlay');
       });
     },
 
@@ -224,7 +224,7 @@
     }
     ensureOverlay().then(function () {
       if (activeService) {
-        OverlayManager.open('printServiceOverlay');
+        PDFViewerApplication.overlayManager.open('printServiceOverlay');
       }
     });
 
@@ -233,8 +233,10 @@
     } finally {
       if (!activeService) {
         console.error('Expected print service to be initialized.');
-        if (OverlayManager.active === 'printServiceOverlay') {
-          OverlayManager.close('printServiceOverlay');
+
+        var overlayManager = PDFViewerApplication.overlayManager;
+        if (overlayManager.active === 'printServiceOverlay') {
+          overlayManager.close('printServiceOverlay');
         }
         return; // eslint-disable-line no-unsafe-finally
       }
@@ -326,8 +328,10 @@
   var overlayPromise;
   function ensureOverlay() {
     if (!overlayPromise) {
-      overlayPromise = OverlayManager.register('printServiceOverlay',
-        document.getElementById('printServiceOverlay'), abort, true);
+      overlayPromise =
+        PDFViewerApplication.overlayManager.register('printServiceOverlay',
+          document.getElementById('printServiceOverlay'), abort, true);
+
       document.getElementById('printCancel').onclick = abort;
     }
     return overlayPromise;
