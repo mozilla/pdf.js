@@ -48,11 +48,16 @@ function setupPageNumberDisplay(eventBus) {
 /**
  * The standard viewer only supports a rotate button in the dropdown menu, so
  * we need to implement the same thing for the toolbar.
+ *
+ * This button toggles between 0deg and 90deg, rather than rotating in just cw
+ * or just ccw.
  */
 function setupRotateButton(eventBus) {
-  var pageRotateCw = document.getElementById('toolbarPageRotateCw');
-  pageRotateCw.addEventListener('click', function() {
-    eventBus.dispatch('rotatecw');
+  var rotateCw = true;
+  var pageRotateToggle = document.getElementById('toolbarPageRotateToggle');
+  pageRotateToggle.addEventListener('click', function() {
+    eventBus.dispatch(rotateCw ? 'rotatecw' : 'rotateccw');
+    rotateCw = !rotateCw;
   });
 }
 
