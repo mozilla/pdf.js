@@ -32,7 +32,6 @@ function initialize() {
 
   setupPageNumberDisplay(eventBus);
   setupRotateButton(eventBus);
-  setupLandscapeIndicator(eventBus, pdfjsWebApp.PDFViewerApplication);
 }
 
 /**
@@ -49,39 +48,16 @@ function setupPageNumberDisplay(eventBus) {
 /**
  * The standard viewer only supports a rotate button in the dropdown menu, so
  * we need to implement the same thing for the toolbar.
+ *
+ * This button toggles between 0deg and 90deg, rather than rotating in just cw
+ * or just ccw.
  */
 function setupRotateButton(eventBus) {
-  var pageRotateCw = document.getElementById('toolbarPageRotateCw');
-  pageRotateCw.addEventListener('click', function() {
-    eventBus.dispatch('rotatecw');
-  });
-}
-
-/**
- * Add a 'landscape' class to '#mainContainer' when the pages are displayed in
- * landscape. This can be used to style the rotate button.
- */
-function setupLandscapeIndicator(eventBus, viewerApp) {
-  var mainContainer = document.getElementById('mainContainer');
-
-  // Set the initial value on load.
-  eventBus.on('pagesloaded', function() {
-    if (viewerApp.pdfViewer.isLandscape()) {
-      mainContainer.className = 'landscape';
-    }
-  });
-
-  // Update it every time the pages rotate.
-  eventBus.on('rotatecw', function() {
-    // The setTimeout is necessary because this event handler could get called
-    // before or after the handler that actually rotates the page.
-    setTimeout(function() {
-      if (viewerApp.pdfViewer.isLandscape()) {
-        mainContainer.className = 'landscape';
-      } else {
-        mainContainer.className = '';
-      }
-    }, 0);
+  var rotateCw = true;
+  var pageRotateToggle = document.getElementById('toolbarPageRotateToggle');
+  pageRotateToggle.addEventListener('click', function() {
+    eventBus.dispatch(rotateCw ? 'rotatecw' : 'rotateccw');
+    rotateCw = !rotateCw;
   });
 }
 
