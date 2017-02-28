@@ -82,6 +82,12 @@ body#lightTheme,
   width: 60px;
 }
 
+@media screen and (max-width: 860px) {
+  #lightTheme .toolbarButtonSpacer {
+    width: 0;
+  }
+}
+
 #lightTheme .innerCenter {
   display: -ms-flexbox;
   display: -webkit-flex;
