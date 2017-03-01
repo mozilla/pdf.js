@@ -1,5 +1,5 @@
 {
-  "spec_dir": "test/unit",
+  "spec_dir": "build/lib/test/unit",
   "spec_files": [
     "annotation_spec.js",
     "bidi_spec.js",
