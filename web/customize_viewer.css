@@ -151,6 +151,7 @@ body#lightTheme,
 #lightTheme .toolbarButton i.svg-icon {
   display: inline-block;
   margin-top: 5px;
+  overflow: hidden;
 }
 
 /**
