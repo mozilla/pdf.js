@@ -1880,7 +1880,9 @@ window.addEventListener('localized', function localized(evt) {
 });
 
 function webViewerLocalized() {
-  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
+  document.getElementsByTagName('html')[0].dir = 'ltr';
+  // TODO: Make stylesheet work with original code
+  // document.getElementByTagName('html')[0].dir = mozL10n.getDirection();
 
   PDFViewerApplication.animationStartedPromise.then(function() {
     // Adjust the width of the zoom box to fit the content.
