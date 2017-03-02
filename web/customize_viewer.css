@@ -93,6 +93,8 @@ body#lightTheme,
   display: -webkit-flex;
   display: flex;
   align-items: center;
+  -webkit-flex-align: center;
+  -webkit-align-items: center;
   -ms-align-items: center;
   height: 50px;
 }
