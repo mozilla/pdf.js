@@ -68,13 +68,14 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       (function supportsMozChunkedClosure() {
     try {
       var x = new XMLHttpRequest();
+      var globalScope = sharedUtil.globalScope;
       // Firefox 37- required .open() to be called before setting responseType.
       // https://bugzilla.mozilla.org/show_bug.cgi?id=707484
       // Even though the URL is not visited, .open() could fail if the URL is
       // blocked, e.g. via the connect-src CSP directive or the NoScript addon.
       // When this error occurs, this feature detection method will mistakenly
       // report that moz-chunked-arraybuffer is not supported in Firefox 37-.
-      x.open('GET', self.location.href);
+      x.open('GET', globalScope.location.href);
       x.responseType = 'moz-chunked-arraybuffer';
       return x.responseType === 'moz-chunked-arraybuffer';
     } catch (e) {
