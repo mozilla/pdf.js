@@ -356,7 +356,7 @@ i.svg-icon g {
  */
 
 #lightTheme #viewerContainer {
-   top: 50px;
+   top: 55px;
    left: 5px;
    right: 5px;
 }
@@ -374,12 +374,6 @@ i.svg-icon g {
 /**
  * Make scrollbars less intrusive when possible.
  */
-
-#viewerContainer,
-#thumbnailView,
-#outlineView {
-  -ms-overflow-style: -ms-autohiding-scrollbar;
-}
 
 ::-webkit-scrollbar {
   width: 5px;
