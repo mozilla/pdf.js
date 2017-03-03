@@ -112,7 +112,7 @@ var Page = (function PageClosure() {
       // e.g. \Resources placed on multiple levels of the tree.
       while (dict) {
         var value = getArray ? dict.getArray(key) : dict.get(key);
-        if (value) {
+        if (value !== undefined) {
           if (!valueArray) {
             valueArray = [];
           }
