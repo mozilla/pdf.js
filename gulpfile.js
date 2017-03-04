@@ -954,7 +954,11 @@ gulp.task('lib', ['buildnumber'], function () {
       'src/shared/{compatibility,util}.js',
       'src/{pdf,pdf.worker}.js',
     ], {base: 'src/'}),
-    gulp.src(['web/*.js', '!web/viewer.js'], {base: '.'}),
+    gulp.src([
+      'web/*.js',
+      '!web/viewer.js',
+      '!web/compatibility.js',
+    ], {base: '.'}),
     gulp.src('test/unit/*.js', {base: '.'}),
   ]).pipe(transform(preprocess))
     .pipe(gulp.dest('build/lib/'));
