@@ -22,6 +22,7 @@ var gulp = require('gulp');
 var gutil = require('gulp-util');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
+var transform = require('gulp-transform');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var rimraf = require('rimraf');
@@ -924,9 +925,45 @@ gulp.task('jsdoc', function (done) {
   });
 });
 
+gulp.task('lib', ['buildnumber'], function () {
+  function preprocess(content) {
+    content = preprocessor2.preprocessPDFJSCode(ctx, content);
+    var removeCjsSrc =
+      /^(var\s+\w+\s*=\s*require\('.*?)(?:\/src)(\/[^']*'\);)$/gm;
+    content = content.replace(removeCjsSrc, function (all, prefix, suffix) {
+      return prefix + suffix;
+    });
+    return licenseHeader + content;
+  }
+  var versionInfo = getVersionJSON();
+  var ctx = {
+    rootPath: __dirname,
+    saveComments: false,
+    defines: builder.merge(DEFINES, {
+      GENERIC: true,
+      BUNDLE_VERSION: versionInfo.version,
+      BUNDLE_BUILD: versionInfo.commit
+    })
+  };
+  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var preprocessor2 = require('./external/builder/preprocessor2.js');
+
+  return merge([
+    gulp.src([
+      'src/{core,display}/*.js',
+      'src/shared/{compatibility,util}.js',
+      'src/{pdf,pdf.worker}.js',
+    ], {base: 'src/'}),
+    gulp.src(['web/*.js', '!web/viewer.js'], {base: '.'}),
+    gulp.src('test/unit/*.js', {base: '.'}),
+  ]).pipe(transform(preprocess))
+    .pipe(gulp.dest('build/lib/'));
+});
+
 gulp.task('web-pre', ['generic', 'extension', 'jsdoc']);
 
-gulp.task('dist-pre', ['generic', 'singlefile', 'components', 'minified']);
+gulp.task('dist-pre',
+  ['generic', 'singlefile', 'components', 'lib', 'minified']);
 
 gulp.task('publish', ['generic'], function (done) {
   var version = JSON.parse(
@@ -1020,7 +1057,7 @@ gulp.task('baseline', function (done) {
   });
 });
 
-gulp.task('unittestcli', function (done) {
+gulp.task('unittestcli', ['lib'], function (done) {
   var args = ['JASMINE_CONFIG_PATH=test/unit/clitests.json'];
   var testProcess = spawn('node_modules/.bin/jasmine', args,
                           {stdio: 'inherit'});

@@ -42,6 +42,7 @@ var ROOT_DIR = __dirname + '/', // absolute path to project's root
     DIST_DIR = BUILD_DIR + 'dist/',
     SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/',
     COMPONENTS_DIR = BUILD_DIR + 'components/',
+    LIB_DIR = BUILD_DIR + 'lib/',
     REPO = 'git@github.com:mozilla/pdf.js.git';
 
 function getCurrentVersion() {
@@ -185,6 +186,8 @@ target.dist = function() {
   cp('-R', [
     COMPONENTS_DIR + '*',
   ], DIST_DIR + 'web/');
+
+  cp('-R', LIB_DIR, DIST_DIR + 'lib/');
 
   echo();
   echo('### Rebuilding manifests');
