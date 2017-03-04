@@ -505,75 +505,6 @@ var ProblematicCharRanges = new Int32Array([
   0xFFF0, 0x10000
 ]);
 
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-  /**
-   * Used to validate the entries in `ProblematicCharRanges`, and to ensure that
-   * its total number of characters does not exceed the PUA (Private Use Area)
-   * length.
-   * @returns {Object} An object with {number} `numChars`, {number} `puaLength`,
-   *   and {number} `percentage` parameters.
-   */
-  var checkProblematicCharRanges = function checkProblematicCharRanges() {
-    function printRange(limits) {
-      return '[' + limits.lower.toString('16').toUpperCase() + ', ' +
-                   limits.upper.toString('16').toUpperCase() + ')';
-    }
-
-    var numRanges = ProblematicCharRanges.length;
-    if (numRanges % 2 !== 0) {
-      throw new Error('Char ranges must contain an even number of elements.');
-    }
-    var prevLimits, numChars = 0;
-    for (var i = 0; i < numRanges; i += 2) {
-      var limits = {
-        lower: ProblematicCharRanges[i],
-        upper: ProblematicCharRanges[i + 1],
-      };
-      if (!isInt(limits.lower) || !isInt(limits.upper)) {
-        throw new Error('Range endpoints must be integers: ' +
-                        printRange(limits));
-      }
-      if (limits.lower < 0 || limits.upper < 0) {
-        throw new Error('Range endpoints must be non-negative: ' +
-                        printRange(limits));
-      }
-      var range = limits.upper - limits.lower;
-      if (range < 1) {
-        throw new Error('Range must contain at least one element: ' +
-                        printRange(limits));
-      }
-      if (prevLimits) {
-        if (limits.lower < prevLimits.lower) {
-          throw new Error('Ranges must be sorted in ascending order: ' +
-                          printRange(limits) + ', ' + printRange(prevLimits));
-        }
-        if (limits.lower < prevLimits.upper) {
-          throw new Error('Ranges must not overlap: ' +
-                          printRange(limits) + ', ' + printRange(prevLimits));
-        }
-      }
-      prevLimits = {
-        lower: limits.lower,
-        upper: limits.upper,
-      };
-      // The current range is OK.
-      numChars += range;
-    }
-    var puaLength = (PRIVATE_USE_OFFSET_END + 1) - PRIVATE_USE_OFFSET_START;
-    if (numChars > puaLength) {
-      throw new Error('Total number of chars must not exceed the PUA length.');
-    }
-    return {
-      numChars: numChars,
-      puaLength: puaLength,
-      percentage: 100 * (numChars / puaLength),
-    };
-  };
-
-  exports.SEAC_ANALYSIS_ENABLED = SEAC_ANALYSIS_ENABLED;
-  exports.checkProblematicCharRanges = checkProblematicCharRanges;
-}
-
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -3436,10 +3367,14 @@ var CFFFont = (function CFFFontClosure() {
   }
 })();
 
+exports.SEAC_ANALYSIS_ENABLED = SEAC_ANALYSIS_ENABLED;
+exports.PRIVATE_USE_OFFSET_START = PRIVATE_USE_OFFSET_START;
+exports.PRIVATE_USE_OFFSET_END = PRIVATE_USE_OFFSET_END;
 exports.ErrorFont = ErrorFont;
 exports.Font = Font;
 exports.FontFlags = FontFlags;
 exports.IdentityToUnicodeMap = IdentityToUnicodeMap;
+exports.ProblematicCharRanges = ProblematicCharRanges;
 exports.ToUnicodeMap = ToUnicodeMap;
 exports.getFontType = getFontType;
 }));
