@@ -119,16 +119,15 @@ var Page = (function PageClosure() {
           valueArray.push(value);
         }
         if (++loopCount > MAX_LOOP_COUNT) {
-          warn('Page_getInheritedPageProp: maximum loop count exceeded.');
-          break;
+          warn('getInheritedPageProp: maximum loop count exceeded for ' + key);
+          return valueArray ? valueArray[0] : undefined;
         }
         dict = dict.get('Parent');
       }
       if (!valueArray) {
-        return Dict.empty;
+        return undefined;
       }
-      if (valueArray.length === 1 || !isDict(valueArray[0]) ||
-          loopCount > MAX_LOOP_COUNT) {
+      if (valueArray.length === 1 || !isDict(valueArray[0])) {
         return valueArray[0];
       }
       return Dict.merge(this.xref, valueArray);
@@ -142,7 +141,8 @@ var Page = (function PageClosure() {
       // For robustness: The spec states that a \Resources entry has to be
       // present, but can be empty. Some document omit it still, in this case
       // we return an empty dictionary.
-      return shadow(this, 'resources', this.getInheritedPageProp('Resources'));
+      return shadow(this, 'resources',
+                    this.getInheritedPageProp('Resources') || Dict.empty);
     },
 
     get mediaBox() {
