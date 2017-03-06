@@ -41,7 +41,7 @@ function onAnimationStart(event) {
 // invocations have no effect.
 function watchObjectOrEmbed(elem) {
   var mimeType = elem.type;
-  if (mimeType && 'application/pdf' !== mimeType.toLowerCase()) {
+  if (mimeType && mimeType.toLowerCase() !== 'application/pdf') {
     return;
   }
   // <embed src> <object data>
