@@ -1,6 +1,6 @@
 'use strict';
 
-var esprima = require('esprima');
+var acorn = require('acorn');
 var escodegen = require('escodegen');
 var vm = require('vm');
 var fs = require('fs');
@@ -49,7 +49,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
           return {type: 'Literal', value: result, loc: loc};
         }
         if (typeof result === 'object') {
-          var parsedObj = esprima.parse('(' + JSON.stringify(result) + ')');
+          var parsedObj = acorn.parse('(' + JSON.stringify(result) + ')');
           parsedObj.body[0].expression.loc = loc;
           return parsedObj.body[0].expression;
         }
@@ -66,7 +66,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
                                jsonPath.substring(ROOT_PREFIX.length));
         }
         var jsonContent = fs.readFileSync(jsonPath).toString();
-        var parsedJSON = esprima.parse('(' + jsonContent + ')');
+        var parsedJSON = acorn.parse('(' + jsonContent + ')');
         parsedJSON.body[0].expression.loc = loc;
         return parsedJSON.body[0].expression;
     }
@@ -354,16 +354,21 @@ function preprocessPDFJSCode(ctx, code) {
       adjustMultilineComment: saveComments,
     }
   };
+  var comments;
   var parseComment = {
-    loc: true,
-    attachComment: saveComments
+    locations: true,
+    onComments: saveComments || (comments = []),
+    sourceType: 'module',
   };
   var codegenOptions = {
     format: format,
     comment: saveComments,
-    parse: esprima.parse
+    parse: acorn.parse,
   };
-  var syntax = esprima.parse(code, parseComment);
+  var syntax = acorn.parse(code, parseComment);
+  if (saveComments) {
+    escodegen.attachComments(syntax, comments);
+  }
   traverseTree(ctx, syntax);
   return escodegen.generate(syntax, codegenOptions);
 }

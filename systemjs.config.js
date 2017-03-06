@@ -29,10 +29,13 @@
     throw new Error('Cannot configure SystemJS');
   }
 
+  var PluginBabelPath = 'node_modules/systemjs-plugin-babel/plugin-babel.js';
+  var SystemJSPluginBabelPath =
+    'node_modules/systemjs-plugin-babel/systemjs-babel-browser.js';
+
   SystemJS.config({
     packages: {
       '': {
-        format: 'amd',
         defaultExtension: 'js',
       }
     },
@@ -40,6 +43,18 @@
       'pdfjs': new URL('src', baseLocation).href,
       'pdfjs-web': new URL('web', baseLocation).href,
       'pdfjs-test': new URL('test', baseLocation).href,
-    }
+    },
+    meta: {
+      '*': {
+        scriptLoad: false,
+        esModule: true
+      }
+    },
+    map: {
+      'plugin-babel': new URL(PluginBabelPath, baseLocation).href,
+      'systemjs-babel-build':
+        new URL(SystemJSPluginBabelPath, baseLocation).href,
+    },
+    transpiler: 'plugin-babel'
   });
 })();

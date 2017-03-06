@@ -19,9 +19,8 @@
 try {
   require('shelljs/make');
 } catch (e) {
-  console.log('ShellJS is not installed. Run "npm install" to install ' +
-              'all dependencies.');
-  return;
+  throw new Error('ShellJS is not installed. Run "npm install" to install ' +
+                  'all dependencies.');
 }
 
 var fs = require('fs');
