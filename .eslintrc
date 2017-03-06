@@ -12,8 +12,8 @@
 
   globals: {
     "PDFJSDev": false,
-    "require": false,
     "exports": false,
+    "SystemJS": false,
   },
 
   "rules": {

@@ -611,6 +611,7 @@ describe('annotation', function() {
         var jsEntry = params.jsEntry;
         var expectedUrl = params.expectedUrl;
         var expectedUnsafeUrl = params.expectedUnsafeUrl;
+        var expectedNewWindow = params.expectedNewWindow;
 
         var actionDict = new Dict();
         actionDict.set('Type', Name.get('Action'));
@@ -636,7 +637,7 @@ describe('annotation', function() {
         expect(data.url).toEqual(expectedUrl);
         expect(data.unsafeUrl).toEqual(expectedUnsafeUrl);
         expect(data.dest).toBeUndefined();
-        expect(data.newWindow).toBeFalsy();
+        expect(data.newWindow).toEqual(expectedNewWindow);
       }
 
       // Check that we reject a 'JS' entry containing arbitrary JavaScript.
@@ -644,12 +645,14 @@ describe('annotation', function() {
         jsEntry: 'function someFun() { return "qwerty"; } someFun();',
         expectedUrl: undefined,
         expectedUnsafeUrl: undefined,
+        expectedNewWindow: undefined,
       });
       // Check that we accept a white-listed {string} 'JS' entry.
       checkJsAction({
         jsEntry: 'window.open(\'http://www.example.com/test.pdf\')',
         expectedUrl: new URL('http://www.example.com/test.pdf').href,
         expectedUnsafeUrl: 'http://www.example.com/test.pdf',
+        expectedNewWindow: undefined,
       });
       // Check that we accept a white-listed {Stream} 'JS' entry.
       checkJsAction({
@@ -657,6 +660,7 @@ describe('annotation', function() {
                    'app.launchURL("http://www.example.com/test.pdf", true)'),
         expectedUrl: new URL('http://www.example.com/test.pdf').href,
         expectedUnsafeUrl: 'http://www.example.com/test.pdf',
+        expectedNewWindow: true,
       });
     });
 
@@ -1132,6 +1136,34 @@ describe('annotation', function() {
       var xref = new XRefMock([
         { ref: choiceWidgetRef, data: choiceWidgetDict, },
         { ref: optionBarRef, data: optionBarStr, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, choiceWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.options).toEqual(expected);
+    });
+
+    it('should handle inherited option arrays (issue 8094)', function() {
+      var options = [
+        ['Value1', 'Description1'],
+        ['Value2', 'Description2'],
+      ];
+      var expected = [
+        { exportValue: 'Value1', displayValue: 'Description1' },
+        { exportValue: 'Value2', displayValue: 'Description2' },
+      ];
+
+      var parentDict = new Dict();
+      parentDict.set('Opt', options);
+
+      choiceWidgetDict.set('Parent', parentDict);
+
+      var choiceWidgetRef = new Ref(123, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, },
       ]);
 
       var annotation = annotationFactory.create(xref, choiceWidgetRef,

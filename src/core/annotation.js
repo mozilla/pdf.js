@@ -467,25 +467,6 @@ var Annotation = (function AnnotationClosure() {
     }
   };
 
-  Annotation.appendToOperatorList = function Annotation_appendToOperatorList(
-      annotations, opList, partialEvaluator, task, intent, renderForms) {
-    var annotationPromises = [];
-    for (var i = 0, n = annotations.length; i < n; ++i) {
-      if ((intent === 'display' && annotations[i].viewable) ||
-          (intent === 'print' && annotations[i].printable)) {
-        annotationPromises.push(
-          annotations[i].getOperatorList(partialEvaluator, task, renderForms));
-      }
-    }
-    return Promise.all(annotationPromises).then(function(operatorLists) {
-      opList.addOp(OPS.beginAnnotations, []);
-      for (var i = 0, n = operatorLists.length; i < n; ++i) {
-        opList.addOpList(operatorLists[i]);
-      }
-      opList.addOp(OPS.endAnnotations, []);
-    });
-  };
-
   return Annotation;
 })();
 
@@ -861,9 +842,12 @@ var ChoiceWidgetAnnotation = (function ChoiceWidgetAnnotationClosure() {
     // the display value. If the array consists of strings, then these
     // represent both the export and display value. In this case, we convert
     // it to an array of arrays as well for convenience in the display layer.
+    // Note that the specification does not state that the `Opt` field is
+    // inheritable, but in practice PDF generators do make annotations
+    // inherit the options from a parent annotation (issue 8094).
     this.data.options = [];
 
-    var options = params.dict.get('Opt');
+    var options = Util.getInheritableProperty(params.dict, 'Opt');
     if (isArray(options)) {
       var xref = params.xref;
       for (var i = 0, ii = options.length; i < ii; i++) {

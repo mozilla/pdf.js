@@ -22,6 +22,7 @@ var gulp = require('gulp');
 var gutil = require('gulp-util');
 var rename = require('gulp-rename');
 var replace = require('gulp-replace');
+var transform = require('gulp-transform');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var rimraf = require('rimraf');
@@ -245,6 +246,20 @@ function createComponentsBundle(defines) {
     .pipe(replaceJSRootName(componentsAMDName));
 }
 
+function createCompatibilityBundle(defines) {
+  var compatibilityAMDName = 'pdfjs-dist/web/compatibility';
+  var compatibilityOutputName = 'compatibility.js';
+
+  var compatibilityFileConfig = createWebpackConfig(defines, {
+    filename: compatibilityOutputName,
+    library: compatibilityAMDName,
+    libraryTarget: 'umd',
+    umdNamedDefine: true
+  });
+  return gulp.src('./web/compatibility.js')
+    .pipe(webpack2Stream(compatibilityFileConfig));
+}
+
 function checkFile(path) {
   try {
     var stat = fs.lstatSync(path);
@@ -316,6 +331,33 @@ function createTestSource(testsName) {
     });
   };
   return source;
+}
+
+function makeRef(done, noPrompts) {
+  console.log();
+  console.log('### Creating reference images');
+
+  var PDF_BROWSERS = process.env['PDF_BROWSERS'] ||
+    'resources/browser_manifests/browser_manifest.json';
+
+  if (!checkFile('test/' + PDF_BROWSERS)) {
+    console.log('Browser manifest file test/' + PDF_BROWSERS +
+      ' does not exist.');
+    console.log('Copy and adjust the example in ' +
+      'test/resources/browser_manifests.');
+    done(new Error('Missing manifest file'));
+    return;
+  }
+
+  var args = ['test.js', '--masterMode'];
+  if (noPrompts) {
+    args.push('--noPrompts');
+  }
+  args.push('--browserManifestFile=' + PDF_BROWSERS);
+  var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
+  testProcess.on('close', function (code) {
+    done();
+  });
 }
 
 gulp.task('default', function() {
@@ -536,8 +578,7 @@ gulp.task('generic', ['buildnumber', 'locale'], function () {
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
     gulp.src('LICENSE').pipe(gulp.dest(GENERIC_DIR)),
     gulp.src([
-      'external/webL10n/l10n.js',
-      'web/compatibility.js'
+      'external/webL10n/l10n.js'
     ]).pipe(gulp.dest(GENERIC_DIR + 'web')),
     gulp.src([
       'web/locale/*/viewer.properties',
@@ -572,8 +613,8 @@ gulp.task('components', ['buildnumber'], function () {
 
   return merge([
     createComponentsBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
+    createCompatibilityBundle(defines).pipe(gulp.dest(COMPONENTS_DIR)),
     gulp.src(COMPONENTS_IMAGES).pipe(gulp.dest(COMPONENTS_DIR + 'images')),
-    gulp.src('web/compatibility.js').pipe(gulp.dest(COMPONENTS_DIR)),
     preprocessCSS('web/pdf_viewer.css', 'components', defines, true)
         .pipe(gulp.dest(COMPONENTS_DIR)),
   ]);
@@ -884,9 +925,49 @@ gulp.task('jsdoc', function (done) {
   });
 });
 
+gulp.task('lib', ['buildnumber'], function () {
+  function preprocess(content) {
+    content = preprocessor2.preprocessPDFJSCode(ctx, content);
+    var removeCjsSrc =
+      /^(var\s+\w+\s*=\s*require\('.*?)(?:\/src)(\/[^']*'\);)$/gm;
+    content = content.replace(removeCjsSrc, function (all, prefix, suffix) {
+      return prefix + suffix;
+    });
+    return licenseHeader + content;
+  }
+  var versionInfo = getVersionJSON();
+  var ctx = {
+    rootPath: __dirname,
+    saveComments: false,
+    defines: builder.merge(DEFINES, {
+      GENERIC: true,
+      BUNDLE_VERSION: versionInfo.version,
+      BUNDLE_BUILD: versionInfo.commit
+    })
+  };
+  var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var preprocessor2 = require('./external/builder/preprocessor2.js');
+
+  return merge([
+    gulp.src([
+      'src/{core,display}/*.js',
+      'src/shared/{compatibility,util}.js',
+      'src/{pdf,pdf.worker}.js',
+    ], {base: 'src/'}),
+    gulp.src([
+      'web/*.js',
+      '!web/viewer.js',
+      '!web/compatibility.js',
+    ], {base: '.'}),
+    gulp.src('test/unit/*.js', {base: '.'}),
+  ]).pipe(transform(preprocess))
+    .pipe(gulp.dest('build/lib/'));
+});
+
 gulp.task('web-pre', ['generic', 'extension', 'jsdoc']);
 
-gulp.task('dist-pre', ['generic', 'singlefile', 'components', 'minified']);
+gulp.task('dist-pre',
+  ['generic', 'singlefile', 'components', 'lib', 'minified']);
 
 gulp.task('publish', ['generic'], function (done) {
   var version = JSON.parse(
@@ -936,28 +1017,12 @@ gulp.task('fonttest', function () {
   return createTestSource('font');
 });
 
+gulp.task('makeref', function (done) {
+  makeRef(done);
+});
+
 gulp.task('botmakeref', function (done) {
-  console.log();
-  console.log('### Creating reference images');
-
-  var PDF_BROWSERS = process.env['PDF_BROWSERS'] ||
-    'resources/browser_manifests/browser_manifest.json';
-
-  if (!checkFile('test/' + PDF_BROWSERS)) {
-    console.log('Browser manifest file test/' + PDF_BROWSERS +
-      ' does not exist.');
-    console.log('Copy and adjust the example in ' +
-      'test/resources/browser_manifests.');
-    done(new Error('Missing manifest file'));
-    return;
-  }
-
-  var args = ['test.js', '--masterMode', '--noPrompts',
-              '--browserManifestFile=' + PDF_BROWSERS];
-  var testProcess = spawn('node', args, {cwd: TEST_DIR, stdio: 'inherit'});
-  testProcess.on('close', function (code) {
-    done();
-  });
+  makeRef(done, true);
 });
 
 gulp.task('baseline', function (done) {
@@ -996,7 +1061,7 @@ gulp.task('baseline', function (done) {
   });
 });
 
-gulp.task('unittestcli', function (done) {
+gulp.task('unittestcli', ['lib'], function (done) {
   var args = ['JASMINE_CONFIG_PATH=test/unit/clitests.json'];
   var testProcess = spawn('node_modules/.bin/jasmine', args,
                           {stdio: 'inherit'});

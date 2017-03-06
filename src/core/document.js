@@ -35,6 +35,7 @@
 }(this, function (exports, sharedUtil, corePrimitives, coreStream, coreObj,
                   coreParser, coreCrypto, coreEvaluator, coreAnnotation) {
 
+var OPS = sharedUtil.OPS;
 var MissingDataException = sharedUtil.MissingDataException;
 var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
@@ -63,13 +64,17 @@ var Linearization = coreParser.Linearization;
 var calculateMD5 = coreCrypto.calculateMD5;
 var OperatorList = coreEvaluator.OperatorList;
 var PartialEvaluator = coreEvaluator.PartialEvaluator;
-var Annotation = coreAnnotation.Annotation;
 var AnnotationFactory = coreAnnotation.AnnotationFactory;
 
 var Page = (function PageClosure() {
 
   var DEFAULT_USER_UNIT = 1.0;
   var LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
+
+  function isAnnotationRenderable(annotation, intent) {
+    return (intent === 'display' && annotation.viewable) ||
+           (intent === 'print' && annotation.printable);
+  }
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
                 builtInCMapCache) {
@@ -107,23 +112,22 @@ var Page = (function PageClosure() {
       // e.g. \Resources placed on multiple levels of the tree.
       while (dict) {
         var value = getArray ? dict.getArray(key) : dict.get(key);
-        if (value) {
+        if (value !== undefined) {
           if (!valueArray) {
             valueArray = [];
           }
           valueArray.push(value);
         }
         if (++loopCount > MAX_LOOP_COUNT) {
-          warn('Page_getInheritedPageProp: maximum loop count exceeded.');
-          break;
+          warn('getInheritedPageProp: maximum loop count exceeded for ' + key);
+          return valueArray ? valueArray[0] : undefined;
         }
         dict = dict.get('Parent');
       }
       if (!valueArray) {
-        return Dict.empty;
+        return undefined;
       }
-      if (valueArray.length === 1 || !isDict(valueArray[0]) ||
-          loopCount > MAX_LOOP_COUNT) {
+      if (valueArray.length === 1 || !isDict(valueArray[0])) {
         return valueArray[0];
       }
       return Dict.merge(this.xref, valueArray);
@@ -137,7 +141,8 @@ var Page = (function PageClosure() {
       // For robustness: The spec states that a \Resources entry has to be
       // present, but can be empty. Some document omit it still, in this case
       // we return an empty dictionary.
-      return shadow(this, 'resources', this.getInheritedPageProp('Resources'));
+      return shadow(this, 'resources',
+                    this.getInheritedPageProp('Resources') || Dict.empty);
     },
 
     get mediaBox() {
@@ -269,6 +274,8 @@ var Page = (function PageClosure() {
           });
       });
 
+      // Fetch the page's annotations and add their operator lists to the
+      // page's operator list to render them.
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function(datas) {
@@ -280,10 +287,23 @@ var Page = (function PageClosure() {
           return pageOpList;
         }
 
-        var annotationsReadyPromise = Annotation.appendToOperatorList(
-          annotations, pageOpList, partialEvaluator, task, intent,
-          renderInteractiveForms);
-        return annotationsReadyPromise.then(function () {
+        // Collect the operator list promises for the annotations. Each promise
+        // is resolved with the complete operator list for a single annotation.
+        var i, ii, opListPromises = [];
+        for (i = 0, ii = annotations.length; i < ii; i++) {
+          if (isAnnotationRenderable(annotations[i], intent)) {
+            opListPromises.push(annotations[i].getOperatorList(
+              partialEvaluator, task, renderInteractiveForms));
+          }
+        }
+
+        return Promise.all(opListPromises).then(function(opLists) {
+          pageOpList.addOp(OPS.beginAnnotations, []);
+          for (i = 0, ii = opLists.length; i < ii; i++) {
+            pageOpList.addOpList(opLists[i]);
+          }
+          pageOpList.addOp(OPS.endAnnotations, []);
+
           pageOpList.flush(true);
           return pageOpList;
         });
@@ -334,13 +354,9 @@ var Page = (function PageClosure() {
       var annotations = this.annotations;
       var annotationsData = [];
       for (var i = 0, n = annotations.length; i < n; ++i) {
-        if (intent) {
-          if (!(intent === 'display' && annotations[i].viewable) &&
-              !(intent === 'print' && annotations[i].printable)) {
-            continue;
-          }
+        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+          annotationsData.push(annotations[i].data);
         }
-        annotationsData.push(annotations[i].data);
       }
       return annotationsData;
     },

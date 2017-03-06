@@ -171,10 +171,12 @@ function getViewerConfiguration() {
 function webViewerLoad() {
   var config = getViewerConfiguration();
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-    require.config({paths: {'pdfjs': '../src', 'pdfjs-web': '.'}});
-    require(['pdfjs-web/app', 'pdfjs-web/pdf_print_service'], function (web) {
-      window.PDFViewerApplication = web.PDFViewerApplication;
-      web.PDFViewerApplication.run(config);
+    Promise.all([SystemJS.import('pdfjs-web/app'),
+                 SystemJS.import('pdfjs-web/pdf_print_service')])
+           .then(function (modules) {
+      var app = modules[0];
+      window.PDFViewerApplication = app.PDFViewerApplication;
+      app.PDFViewerApplication.run(config);
     });
   } else {
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;

@@ -41,7 +41,6 @@ var arrayByteLength = sharedUtil.arrayByteLength;
 var arraysToBytes = sharedUtil.arraysToBytes;
 var assert = sharedUtil.assert;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
-var error = sharedUtil.error;
 var info = sharedUtil.info;
 var warn = sharedUtil.warn;
 var setVerbosityLevel = sharedUtil.setVerbosityLevel;
@@ -49,7 +48,6 @@ var isNodeJS = sharedUtil.isNodeJS;
 var Ref = corePrimitives.Ref;
 var LocalPdfManager = corePdfManager.LocalPdfManager;
 var NetworkPdfManager = corePdfManager.NetworkPdfManager;
-var globalScope = sharedUtil.globalScope;
 
 var WorkerTask = (function WorkerTaskClosure() {
   function WorkerTask(name) {
@@ -962,46 +960,6 @@ var WorkerMessageHandler = {
 };
 
 function initializeWorker() {
-  if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) &&
-      !('console' in globalScope)) {
-    var consoleTimer = {};
-
-    var workerConsole = {
-      log: function log() {
-        var args = Array.prototype.slice.call(arguments);
-        globalScope.postMessage({
-          targetName: 'main',
-          action: 'console_log',
-          data: args
-        });
-      },
-
-      error: function error() {
-        var args = Array.prototype.slice.call(arguments);
-        globalScope.postMessage({
-          targetName: 'main',
-          action: 'console_error',
-          data: args
-        });
-        throw 'pdf.js execution error';
-      },
-
-      time: function time(name) {
-        consoleTimer[name] = Date.now();
-      },
-
-      timeEnd: function timeEnd(name) {
-        var time = consoleTimer[name];
-        if (!time) {
-          error('Unknown timer name ' + name);
-        }
-        this.log('Timer:', name, Date.now() - time);
-      }
-    };
-
-    globalScope.console = workerConsole;
-  }
-
   var handler = new MessageHandler('worker', 'main', self);
   WorkerMessageHandler.setup(handler, self);
   handler.send('ready', null);

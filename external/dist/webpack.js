@@ -14,4 +14,8 @@
  */
 'use strict';
 
-require('../src/shared/compatibility.js');
+var pdfjs = require('./build/pdf.js');
+var PdfjsWorker = require('worker-loader!./build/pdf.worker.js');
+pdfjs.PDFJS.workerPort = new PdfjsWorker();
+
+module.exports = pdfjs;

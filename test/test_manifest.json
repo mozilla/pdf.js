@@ -726,6 +726,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue8125",
+       "file": "pdfs/issue8125.pdf",
+       "md5": "2073d699ea82156682542f811300b3e8",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
@@ -1316,6 +1323,15 @@
        "link": true,
        "firstPage": 1,
        "lastPage": 6,
+       "type": "eq"
+    },
+    {  "id": "issue8088",
+       "file": "pdfs/issue8088.pdf",
+       "md5": "5bbc33c7433799487518eb0d8094348c",
+       "rounds": 1,
+       "link": false,
+       "firstPage": 1,
+       "lastPage": 3,
        "type": "eq"
     },
     {  "id": "bug866395",
