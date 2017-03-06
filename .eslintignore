@@ -8,6 +8,8 @@ external/webL10n/
 external/cmapscompress/
 external/builder/fixtures/
 external/builder/fixtures_esprima/
+src/shared/cffStandardStrings.js
+src/shared/fonts_utils.js
 test/tmp/
 test/features/
 test/pdfs/
