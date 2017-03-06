@@ -2,31 +2,165 @@
  * Custom css for our fork of pdf.js.
  */
 
+#lightTheme {
+  font-family: "Lato", Arial, sans-serif;
+  font-size: 13px;
+  color: #4a4a4a;
+}
+
+body#lightTheme,
+#lightTheme #sidebarContainer,
+#lightTheme #sidebarContent,
+#lightTheme #mainContainer,
+#lightTheme #viewerContainer {
+   background: transparent;
+   box-shadow: none;
+}
+
 /**
- * Display the rotate icon in the main toolbar. We have to add this because
- * the standard viewer only showed the rotate button in the dropdown menu.
- * Transform the rotate button depending on whether we're viewing it in
- * landscape or portrait.
+ * Toolbar structure and background
  */
-.rotateCw::before {
-  content: url(images/secondaryToolbarButton-rotateCw.png);
+#lightTheme #toolbarContainer,
+#lightTheme #toolbarSidebar {
+  position: relative;
+  margin: 5px;
+  width: auto;
+  height: 50px;
+  border-radius: 4px;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.2);
+  overflow: hidden;
 }
 
-#mainContainer.landscape .rotateCw::before {
-  /* transform: rotate(-90deg); */
+#lightTheme #toolbarSidebar::before {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(to bottom, #ffffff, #f0f0f0);
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 
-@media screen and (min-resolution: 2dppx) {
-  .rotateCw::before {
-    content: url(images/secondaryToolbarButton-rotateCw@2x.png);
+#lightTheme #toolbarSidebar .toolbarButton {
+  position: relative;
+  z-index: 10001;
+}
+
+#lightTheme #toolbarSidebar::after {
+  content: '';
+  display: block;
+  position: absolute;
+  z-index: 10001;
+  right: 0;
+  width: 1px;
+  top: 7.5px;
+  bottom: 7.5px;
+  background-color: #d9d9d9;
+}
+
+#lightTheme #toolbarViewerLeft {
+  left: 18px;
+}
+
+#lightTheme #toolbarViewerRight {
+  right: 18px;
+}
+
+#lightTheme #toolbarSidebar {
+  padding-left: 9px;
+}
+
+/**
+ * Toolbar buttons and labels
+ */
+#lightTheme .toolbarButtonSpacer {
+  width: 60px;
+}
+
+@media screen and (max-width: 860px) {
+  #lightTheme .toolbarButtonSpacer {
+    width: 0;
   }
+}
+
+#lightTheme .innerCenter {
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  -webkit-flex-align: center;
+  -webkit-align-items: center;
+  -ms-align-items: center;
+  height: 50px;
+}
+
+#lightTheme .toolbarLabel {
+  font-size: 13px;
+  font-weight: bold;
+  color: #4a4a4a;
+}
+
+#lightTheme .toolbarButton {
+  margin: 6px;
+  width: 38px;
+  height: 38px;
+  border-radius: 2px;
+  border: 0;
+  box-shadow: none;
+  cursor: pointer;
+  color: #757575;
+  text-align: center;
+  background-color: transparent;
+}
+
+#lightTheme .toolbarButton:focus {
+  background-color: transparent;
+}
+
+#lightTheme .toolbarButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+#lightTheme .toolbarButton:active,
+#lightTheme .toolbarButton.toggled:active {
+  border: 0;
+  box-shadow: none;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
+#lightTheme .toolbarButton.toggled:not(#sidebarToggle) {
+  /* The toggled state on #sidebarToggle looks redundant since the user can
+   * already see that the sidebar is open. */
+  color: #ffffff;
+  background-image: linear-gradient(to bottom, #067fe2, #0061b1);
+  box-shadow: inset 0 1px 3px 0 rgba(0, 68, 124, 0.5);
+}
+
+#lightTheme .toolbarButton[disabled] {
+  cursor: auto;
+  color: #cccccc;
+}
+
+#lightTheme .toolbarButton[disabled]:hover {
+  background-color: transparent;
+}
+
+#lightTheme .toolbarButton i.svg-icon {
+  display: inline-block;
+  margin-top: 5px;
+  overflow: hidden;
 }
 
 /**
  * Remove spacing between words when displaying
  * <span>page</span><span>1</span></span>of 7</span>
  */
-#pageLabel, #pageNumberDisplay {
+#pageLabel, #pageNumberDisplay, #numPages {
   min-width: 0;
   padding-right: 0;
   margin-right: 0;
@@ -49,9 +183,217 @@
   left: auto !important;
 }
 
-/* Leave space for the left buttons at very small screen sizes. */
-@media all and (max-width: 600px) {
-  .innerCenter {
-    margin-left: 72px;
+/**
+ * Implement our custom icons. Disable all of the default icons, since the
+ * buttons now have inline svg in viewer.html.
+ */
+.toolbarButton::before {
+  content: '' !important; /* Necessary to prevent network requests */
+  display: none !important;
+}
+
+i.svg-icon {
+  margin: 0;
+  overflow: auto;
+}
+
+i.svg-icon path,
+i.svg-icon rect,
+i.svg-icon circle,
+i.svg-icon polygon,
+i.svg-icon ellipse,
+i.svg-icon polyline,
+i.svg-icon line,
+i.svg-icon g {
+  fill: currentColor;
+}
+
+/**
+ * Main content area structure
+ */
+
+#lightTheme #mainContainer {
+  background-color: #e5e5e5;
+  border-radius: 8px;
+}
+
+/**
+ * Sidebar structure
+ */
+
+#lightTheme #sidebarContainer {
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background-image: linear-gradient(to right, #dddddd, #dddddd 83%, #cccccc);
+}
+
+#lightTheme #sidebarContent {
+  top: 55px;
+}
+
+#lightTheme #thumbnailView,
+#lightTheme #outlineView {
+  padding-top: 35px;
+  padding-bottom: 30px;
+}
+
+/**
+ * Changes to the main content area when the sidebar is open and the screen
+ * is large enough to show the sidebar.
+ */
+
+@media all and (max-width: 770px) {
+  .hiddenWhenSidebarUnavailable {
+    display: none !important;
   }
+}
+
+@media not all and (max-width: 770px) {
+  #lightTheme .sidebarOpen #toolbarSidebar {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-right: 0;
+  }
+
+  #lightTheme .sidebarOpen #toolbarContainer {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: 0;
+  }
+
+  #lightTheme .sidebarOpen #toolbarViewer {
+    /* Make up for the missing margin-left:5px on #toolbarContainer */
+    position: relative;
+    left: 5px;
+    margin-right: 5px;
+  }
+
+  #lightTheme .sidebarOpen #mainContainer {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+/**
+ * Sidebar thumbnails
+ */
+
+#lightTheme #thumbnailView a {
+  display: block;
+}
+
+#lightTheme #thumbnailView .thumbnail {
+  margin: 0 0 18px 0;
+  border: 0;
+  float: none;
+}
+
+#lightTheme #thumbnailView .thumbnailSelectionRing {
+  background-color: transparent;
+  /* work around some inline width/height css that makes this div larger than
+   * it needs to be */
+  box-sizing: border-box;
+  border: 1px solid #24272a;
+  outline: 1px solid #24272a;
+  box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.5);
+  margin: 0 auto;
+  padding: 0;
+  border-radius: 0;
+}
+
+#lightTheme #thumbnailView .thumbnailImage {
+  display: block;
+  border: 0;
+  mix-blend-mode: multiply;
+}
+
+#lightTheme #thumbnailView .selected .thumbnailImage {
+  mix-blend-mode: normal;
+}
+
+/**
+ * Sidebar table of contents
+ */
+
+#lightTheme #outlineView .outlineItemToggler {
+  display: none;
+}
+
+#lightTheme #outlineView .outlineItem {
+  margin-left: 10px;
+}
+
+#lightTheme #outlineView .outlineItem a {
+  color: #333333;
+  font-weight: bold;
+  padding-left: 0;
+  padding-right: 0;
+  border: 0;
+  line-height: 1.5;
+}
+
+#lightTheme #outlineView .outlineItem a:hover {
+  text-decoration: underline;
+  background: transparent;
+  box-shadow: none;
+}
+
+#lightTheme #outlineView .outlineItems {
+  margin-left: 0;
+}
+
+#lightTheme #outlineView > .outlineItem,
+#lightTheme #outlineView > .outlineItems {
+  margin-right: 10px;
+}
+
+#lightTheme #outlineView .outlineItems .outlineItem a {
+  font-weight: normal;
+}
+
+/**
+ * Main viewer
+ */
+
+#lightTheme #viewerContainer {
+   top: 55px;
+   left: 5px;
+   right: 5px;
+}
+
+#lightTheme #viewer {
+   padding-top: 40px;
+}
+
+#lightTheme #viewer .page {
+   box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.15);
+   margin-bottom: 40px;
+   border: 0;
+}
+
+/**
+ * Make scrollbars less intrusive when possible.
+ */
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: none;
+  background: none;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  transition: background 0.2s;
+  background: rgba(0, 0, 0, 0);
+}
+
+#viewerContainer:hover::-webkit-scrollbar-thumb,
+#thumbnailView:hover::-webkit-scrollbar-thumb,
+#outlineView:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
 }
