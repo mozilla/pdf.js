@@ -7052,18 +7052,6 @@ var PDFViewer = (function pdfViewer() {
       }.bind(this));
     },
 
-    /**
-     * Returns `true` if the user is viewing this pdf in the landscape
-     * orientation.
-     *
-     * Custom method for this fork of pdf.js. Copied from some similar
-     * code in `_setScale`.
-     */
-    isLandscape: function PDFViewer_isLandscape() {
-      var currentPage = this._pages[this._currentPageNumber - 1];
-      return currentPage.width > currentPage.height;
-    },
-
     _resetView: function () {
       this._pages = [];
       this._currentPageNumber = 1;
@@ -9172,7 +9160,9 @@ window.addEventListener('localized', function localized(evt) {
 });
 
 function webViewerLocalized() {
-  document.getElementsByTagName('html')[0].dir = mozL10n.getDirection();
+  document.getElementsByTagName('html')[0].dir = 'ltr';
+  // TODO: Make stylesheet work with original code
+  // document.getElementByTagName('html')[0].dir = mozL10n.getDirection();
 
   PDFViewerApplication.animationStartedPromise.then(function() {
     // Adjust the width of the zoom box to fit the content.
@@ -9653,7 +9643,6 @@ function initialize() {
 
   setupPageNumberDisplay(eventBus);
   setupRotateButton(eventBus);
-  setupLandscapeIndicator(eventBus, pdfjsWebApp.PDFViewerApplication);
 }
 
 /**
@@ -9670,39 +9659,16 @@ function setupPageNumberDisplay(eventBus) {
 /**
  * The standard viewer only supports a rotate button in the dropdown menu, so
  * we need to implement the same thing for the toolbar.
+ *
+ * This button toggles between 0deg and 90deg, rather than rotating in just cw
+ * or just ccw.
  */
 function setupRotateButton(eventBus) {
-  var pageRotateCw = document.getElementById('toolbarPageRotateCw');
-  pageRotateCw.addEventListener('click', function() {
-    eventBus.dispatch('rotatecw');
-  });
-}
-
-/**
- * Add a 'landscape' class to '#mainContainer' when the pages are displayed in
- * landscape. This can be used to style the rotate button.
- */
-function setupLandscapeIndicator(eventBus, viewerApp) {
-  var mainContainer = document.getElementById('mainContainer');
-
-  // Set the initial value on load.
-  eventBus.on('pagesloaded', function() {
-    if (viewerApp.pdfViewer.isLandscape()) {
-      mainContainer.className = 'landscape';
-    }
-  });
-
-  // Update it every time the pages rotate.
-  eventBus.on('rotatecw', function() {
-    // The setTimeout is necessary because this event handler could get called
-    // before or after the handler that actually rotates the page.
-    setTimeout(function() {
-      if (viewerApp.pdfViewer.isLandscape()) {
-        mainContainer.className = 'landscape';
-      } else {
-        mainContainer.className = '';
-      }
-    }, 0);
+  var rotateCw = true;
+  var pageRotateToggle = document.getElementById('toolbarPageRotateToggle');
+  pageRotateToggle.addEventListener('click', function() {
+    eventBus.dispatch(rotateCw ? 'rotatecw' : 'rotateccw');
+    rotateCw = !rotateCw;
   });
 }
 
