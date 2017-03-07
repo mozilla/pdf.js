@@ -3403,5 +3403,11 @@
        "md5": "c0048a7735010002b998c112335e47bf",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "issue8097",
+       "file": "pdfs/issue8097_reduced.pdf",
+       "md5": "ced0e2d88cfd5b4d3a55d937ea288af1",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
