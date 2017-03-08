@@ -364,6 +364,12 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
 .findbar > div {
   height: 32px;
 }
+.findbar.wrapContainers > div {
+  clear: both;
+}
+.findbar.wrapContainers > div#findbarMessageContainer {
+  height: auto;
+}
 html[dir='ltr'] .findbar {
   left: 68px;
 }
