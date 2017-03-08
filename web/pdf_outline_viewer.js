@@ -65,6 +65,9 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
 
       // Remove the outline from the DOM.
       this.container.textContent = '';
+      // Ensure that the left (right in RTL locales) margin is always reset,
+      // to prevent incorrect outline alignment if a new document is opened.
+      this.container.classList.remove('outlineWithDeepNesting');
     },
 
     /**
