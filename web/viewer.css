@@ -347,8 +347,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   top: 32px;
   position: absolute;
   z-index: 10000;
-  height: 32px;
-
+  height: auto;
   min-width: 16px;
   padding: 0px 6px 0px 6px;
   margin: 4px 2px 4px 2px;
@@ -359,10 +358,15 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   cursor: default;
 }
 
+.findbar {
+  min-width: 300px;
+}
+.findbar > div {
+  height: 32px;
+}
 html[dir='ltr'] .findbar {
   left: 68px;
 }
-
 html[dir='rtl'] .findbar {
   right: 68px;
 }
@@ -478,6 +482,9 @@ html[dir='ltr'] .doorHangerRight:before {
   font-style: italic;
   color: #A6B7D0;
 }
+#findMsg:empty {
+  display: none;
+}
 
 #findInput.notFound {
   background-color: rgb(255, 102, 102);
@@ -500,14 +507,14 @@ html[dir='rtl'] #toolbarViewerLeft {
 html[dir='ltr'] #toolbarViewerLeft > *,
 html[dir='ltr'] #toolbarViewerMiddle > *,
 html[dir='ltr'] #toolbarViewerRight > *,
-html[dir='ltr'] .findbar > * {
+html[dir='ltr'] .findbar * {
   position: relative;
   float: left;
 }
 html[dir='rtl'] #toolbarViewerLeft > *,
 html[dir='rtl'] #toolbarViewerMiddle > *,
 html[dir='rtl'] #toolbarViewerRight > *,
-html[dir='rtl'] .findbar > * {
+html[dir='rtl'] .findbar * {
   position: relative;
   float: right;
 }
@@ -1913,7 +1920,7 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 }
 
 @media all and (max-width: 640px) {
-  .hiddenSmallView {
+  .hiddenSmallView, .hiddenSmallView * {
     display: none;
   }
   .visibleSmallView {
@@ -1921,6 +1928,12 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   }
   .toolbarButtonSpacer {
     width: 0;
+  }
+  html[dir='ltr'] .findbar {
+    left: 38px;
+  }
+  html[dir='rtl'] .findbar {
+    right: 38px;
   }
 }
 
