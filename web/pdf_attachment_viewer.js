@@ -61,10 +61,8 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
     reset: function PDFAttachmentViewer_reset(keepRenderedCapability) {
       this.attachments = null;
 
-      var container = this.container;
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-      }
+      // Remove the attachments from the DOM.
+      this.container.textContent = '';
 
       if (!keepRenderedCapability) {
         // NOTE: The *only* situation in which the `_renderedCapability` should
