@@ -63,10 +63,8 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
       this.outline = null;
       this.lastToggleIsShow = true;
 
-      var container = this.container;
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
-      }
+      // Remove the outline from the DOM.
+      this.container.textContent = '';
     },
 
     /**
