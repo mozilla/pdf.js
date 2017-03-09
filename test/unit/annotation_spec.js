@@ -801,6 +801,28 @@ describe('annotation', function() {
 
       expect(data.fieldName).toEqual('foo.bar.baz');
     });
+
+    it('should construct the field name if a parent is not a dictionary ' +
+       '(issue 8143)', function() {
+      var parentDict = new Dict();
+      parentDict.set('Parent', null);
+      parentDict.set('T', 'foo');
+
+      widgetDict.set('Parent', parentDict);
+      widgetDict.set('T', 'bar');
+
+      var widgetRef = new Ref(22, 0);
+      var xref = new XRefMock([
+        { ref: widgetRef, data: widgetDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, widgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.fieldName).toEqual('foo.bar');
+    });
   });
 
   describe('TextWidgetAnnotation', function() {

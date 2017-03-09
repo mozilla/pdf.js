@@ -671,6 +671,12 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
       var loopDict = dict;
       while (loopDict.has('Parent')) {
         loopDict = loopDict.get('Parent');
+        if (!isDict(loopDict)) {
+          // Even though it is not allowed according to the PDF specification,
+          // bad PDF generators may provide a `Parent` entry that is not a
+          // dictionary, but `null` for example (issue 8143).
+          break;
+        }
 
         if (loopDict.has('T')) {
           fieldName.unshift(stringToPDFString(loopDict.get('T')));
