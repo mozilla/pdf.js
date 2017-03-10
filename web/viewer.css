@@ -564,10 +564,6 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
   opacity: .5;
 }
 
-.toolbarButton.group {
-  margin-right: 0;
-}
-
 .splitToolbarButton.toggled .toolbarButton {
   margin: 0;
 }
