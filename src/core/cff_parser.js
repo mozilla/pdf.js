@@ -475,7 +475,7 @@ var CFFParser = (function CFFParserClosure() {
     parseCharString: function CFFParser_parseCharString(state, data,
                                                         localSubrIndex,
                                                         globalSubrIndex) {
-      if (state.callDepth > MAX_SUBR_NESTING) {
+      if (!data || state.callDepth > MAX_SUBR_NESTING) {
         return false;
       }
       var stackSize = state.stackSize;
@@ -552,7 +552,8 @@ var CFFParser = (function CFFParserClosure() {
             bias = 1131;
           }
           var subrNumber = stack[--stackSize] + bias;
-          if (subrNumber < 0 || subrNumber >= subrsIndex.count) {
+          if (subrNumber < 0 || subrNumber >= subrsIndex.count ||
+              isNaN(subrNumber)) {
             validationCommand = CharstringValidationData[value];
             warn('Out of bounds subrIndex for ' + validationCommand.id);
             return false;
