@@ -117,6 +117,7 @@ function configure(PDFJS) {
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.cMapPacked = true;
     PDFJS.workerSrc = '../src/worker_loader.js';
+    PDFJS.pdfjsNext = true;
   } else {
     PDFJS.cMapUrl = '../web/cmaps/';
     PDFJS.cMapPacked = true;
