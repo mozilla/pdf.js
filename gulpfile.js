@@ -67,7 +67,8 @@ var DEFINES = {
   CHROME: false,
   MINIFIED: false,
   SINGLE_FILE: false,
-  COMPONENTS: false
+  COMPONENTS: false,
+  PDFJS_NEXT: false,
 };
 
 function createStringSource(filename, content) {
@@ -669,7 +670,7 @@ gulp.task('minified', ['minified-pre'], function (done) {
 gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Firefox extension');
-  var defines = builder.merge(DEFINES, {FIREFOX: true});
+  var defines = builder.merge(DEFINES, { FIREFOX: true, PDFJS_NEXT: true, });
 
   var FIREFOX_BUILD_CONTENT_DIR = FIREFOX_BUILD_DIR + '/content/',
       FIREFOX_EXTENSION_DIR = 'extensions/firefox/',
@@ -780,7 +781,7 @@ gulp.task('firefox', ['firefox-pre'], function (done) {
 gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building mozilla-central extension');
-  var defines = builder.merge(DEFINES, {MOZCENTRAL: true});
+  var defines = builder.merge(DEFINES, { MOZCENTRAL: true, PDFJS_NEXT: true, });
 
   var MOZCENTRAL_DIR = BUILD_DIR + 'mozcentral/',
       MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + 'browser/extensions/pdfjs/',
@@ -851,7 +852,7 @@ gulp.task('mozcentral', ['mozcentral-pre']);
 gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
   console.log();
   console.log('### Building Chromium extension');
-  var defines = builder.merge(DEFINES, {CHROME: true});
+  var defines = builder.merge(DEFINES, { CHROME: true, PDFJS_NEXT: true, });
 
   var CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
       CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + '/content/';

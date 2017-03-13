@@ -2065,7 +2065,7 @@ var RenderTask = (function RenderTaskClosure() {
     /**
      * Cancels the rendering task. If the task is currently rendering it will
      * not be cancelled until graphics pauses with a timeout. The promise that
-     * this object extends will resolved when cancelled.
+     * this object extends will be rejected when cancelled.
      */
     cancel: function RenderTask_cancel() {
       this._internalRenderTask.cancel();
