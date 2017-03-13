@@ -21,10 +21,12 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
   var pdfjsLib;
   // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
   if (typeof __pdfjsdev_webpack__ === 'undefined') {
-    if (typeof require === 'function') {
-      pdfjsLib = require('../build/pdf.js'); // using a bundler to pull the core
+    if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
+      pdfjsLib = window['pdfjs-dist/build/pdf'];
+    } else if (typeof require === 'function') {
+      pdfjsLib = require('../build/pdf.js');
     } else {
-      pdfjsLib = window['pdfjs-dist/build/pdf']; // loaded via html script tag
+      throw new Error('Neither `require` nor `window` found');
     }
   }
   module.exports = pdfjsLib;
