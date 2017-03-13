@@ -33,6 +33,7 @@
 
 var PDFJS = displayGlobal.PDFJS;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
+var DOMCanvasFactory = displayDOMUtils.DOMCanvasFactory;
 var RenderingCancelledException = displayDOMUtils.RenderingCancelledException;
 var PDFDocumentProxy = displayApi.PDFDocumentProxy;
 var InvalidPDFException = sharedUtil.InvalidPDFException;
@@ -46,6 +47,16 @@ var FontType = sharedUtil.FontType;
 describe('api', function() {
   var basicApiUrl = new URL('../pdfs/basicapi.pdf', window.location).href;
   var basicApiFileLength = 105779; // bytes
+  var CanvasFactory;
+
+  beforeAll(function(done) {
+    CanvasFactory = new DOMCanvasFactory();
+    done();
+  });
+
+  afterAll(function () {
+    CanvasFactory = null;
+  });
 
   function waitSome(callback) {
     var WAIT_TIMEOUT = 10;
@@ -1006,11 +1017,11 @@ describe('api', function() {
     });
 
     it('cancels rendering of page', function(done) {
-      var canvas = document.createElement('canvas');
       var viewport = page.getViewport(1);
+      var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
 
       var renderTask = page.render({
-        canvasContext: canvas.getContext('2d'),
+        canvasContext: canvasAndCtx.context,
         viewport: viewport,
       });
       renderTask.cancel();
@@ -1020,6 +1031,7 @@ describe('api', function() {
       }).catch(function (error) {
         expect(error instanceof RenderingCancelledException).toEqual(true);
         expect(error.type).toEqual('canvas');
+        CanvasFactory.destroy(canvasAndCtx);
         done();
       });
     });
@@ -1045,15 +1057,16 @@ describe('api', function() {
           pdfDocuments.push(pdf);
           return pdf.getPage(1);
         }).then(function(page) {
-          var c = document.createElement('canvas');
-          var v = page.getViewport(1.2);
-          c.width = v.width;
-          c.height = v.height;
+          var viewport = page.getViewport(1.2);
+          var canvasAndCtx = CanvasFactory.create(viewport.width,
+                                                  viewport.height);
           return page.render({
-            canvasContext: c.getContext('2d'),
-            viewport: v,
+            canvasContext: canvasAndCtx.context,
+            viewport: viewport,
           }).then(function() {
-            return c.toDataURL();
+            var data = canvasAndCtx.canvas.toDataURL();
+            CanvasFactory.destroy(canvasAndCtx);
+            return data;
           });
         });
     }
