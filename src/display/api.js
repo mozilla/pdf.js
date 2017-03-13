@@ -60,6 +60,7 @@ var FontFaceObject = displayFontLoader.FontFaceObject;
 var FontLoader = displayFontLoader.FontLoader;
 var CanvasGraphics = displayCanvas.CanvasGraphics;
 var Metadata = displayMetadata.Metadata;
+var RenderingCancelledException = displayDOMUtils.RenderingCancelledException;
 var getDefaultSetting = displayDOMUtils.getDefaultSetting;
 var DOMCanvasFactory = displayDOMUtils.DOMCanvasFactory;
 var DOMCMapReaderFactory = displayDOMUtils.DOMCMapReaderFactory;
@@ -2147,7 +2148,14 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     cancel: function InternalRenderTask_cancel() {
       this.running = false;
       this.cancelled = true;
-      this.callback('cancelled');
+
+      if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PDFJS_NEXT')) ||
+          getDefaultSetting('pdfjsNext')) {
+        this.callback(new RenderingCancelledException(
+          'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
+      } else {
+        this.callback('cancelled');
+      }
     },
 
     operatorListChanged: function InternalRenderTask_operatorListChanged() {

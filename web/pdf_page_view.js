@@ -418,7 +418,9 @@ var PDFPageView = (function PDFPageViewClosure() {
           self.paintTask = null;
         }
 
-        if (error === 'cancelled') {
+        if (((typeof PDFJSDev === 'undefined' ||
+              !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
+            error instanceof pdfjsLib.RenderingCancelledException) {
           self.error = null;
           return Promise.resolve(undefined);
         }
@@ -625,7 +627,13 @@ var PDFPageView = (function PDFPageViewClosure() {
       var cancelled = false;
       var ensureNotCancelled = function () {
         if (cancelled) {
-          throw 'cancelled';
+          if ((typeof PDFJSDev !== 'undefined' &&
+               PDFJSDev.test('PDFJS_NEXT')) || pdfjsLib.PDFJS.pdfjsNext) {
+            throw new pdfjsLib.RenderingCancelledException(
+              'Rendering cancelled, page ' + self.id, 'svg');
+          } else {
+            throw 'cancelled'; // eslint-disable-line no-throw-literal
+          }
         }
       };
 
