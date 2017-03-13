@@ -173,6 +173,19 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
+var RenderingCancelledException = (function RenderingCancelledException() {
+  function RenderingCancelledException(msg, type) {
+    this.message = msg;
+    this.type = type;
+  }
+
+  RenderingCancelledException.prototype = new Error();
+  RenderingCancelledException.prototype.name = 'RenderingCancelledException';
+  RenderingCancelledException.constructor = RenderingCancelledException;
+
+  return RenderingCancelledException;
+})();
+
 var hasCanvasTypedArrays;
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
@@ -337,6 +350,7 @@ exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
 exports.isValidUrl = isValidUrl;
 exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.LinkTarget = LinkTarget;
+exports.RenderingCancelledException = RenderingCancelledException;
 exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
 exports.getDefaultSetting = getDefaultSetting;
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;

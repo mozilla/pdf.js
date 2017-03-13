@@ -17,19 +17,23 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-test/unit/api_spec', ['exports', 'pdfjs/shared/util',
-           'pdfjs/display/global', 'pdfjs/display/api'], factory);
+      'pdfjs/display/dom_utils', 'pdfjs/display/global', 'pdfjs/display/api'],
+      factory);
   } else if (typeof exports !== 'undefined') {
       factory(exports, require('../../src/shared/util.js'),
-              require('../../src/display/global.js'),
-              require('../../src/display/api.js'));
+        require('../../src/display/dom_utils.js'),
+        require('../../src/display/global.js'),
+        require('../../src/display/api.js'));
   } else {
     factory((root.pdfjsTestUnitApiSpec = {}), root.pdfjsSharedUtil,
-             root.pdfjsDisplayGlobal, root.pdfjsDisplayApi);
+      root.pdfjsDisplayDOMUtils, root.pdfjsDisplayGlobal, root.pdfjsDisplayApi);
   }
-}(this, function (exports, sharedUtil, displayGlobal, displayApi) {
+}(this, function (exports, sharedUtil, displayDOMUtils, displayGlobal,
+                  displayApi) {
 
 var PDFJS = displayGlobal.PDFJS;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
+var RenderingCancelledException = displayDOMUtils.RenderingCancelledException;
 var PDFDocumentProxy = displayApi.PDFDocumentProxy;
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MissingPDFException = sharedUtil.MissingPDFException;
@@ -998,6 +1002,25 @@ describe('api', function() {
         done();
       }).catch(function (reason) {
         done.fail(reason);
+      });
+    });
+
+    it('cancels rendering of page', function(done) {
+      var canvas = document.createElement('canvas');
+      var viewport = page.getViewport(1);
+
+      var renderTask = page.render({
+        canvasContext: canvas.getContext('2d'),
+        viewport: viewport,
+      });
+      renderTask.cancel();
+
+      renderTask.promise.then(function() {
+        done.fail('shall cancel rendering');
+      }).catch(function (error) {
+        expect(error instanceof RenderingCancelledException).toEqual(true);
+        expect(error.type).toEqual('canvas');
+        done();
       });
     });
   });
