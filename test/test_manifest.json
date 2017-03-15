@@ -2099,6 +2099,13 @@
        "type": "eq",
        "about": "Inline JPEG images."
     },
+    {  "id": "issue7828",
+       "file": "pdfs/issue7828.pdf",
+       "md5": "462f96c877f5761fc3176156e3526184",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue1655",
        "file": "pdfs/issue1655r.pdf",
        "md5": "569f48449ba57c15c4f9ade151a651c5",
