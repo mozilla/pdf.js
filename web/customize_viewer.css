@@ -82,7 +82,7 @@ body#lightTheme,
   width: 60px;
 }
 
-@media screen and (max-width: 860px) {
+@media screen and (max-width: 960px) {
   #lightTheme .toolbarButtonSpacer {
     width: 0;
   }
