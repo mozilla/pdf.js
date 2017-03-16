@@ -235,11 +235,14 @@ See https://github.com/adobe-type-tools/cmap-resources
                   <span data-l10n-id="open_file_label">Open</span>
                 </button>
 
-                <button id="print" class="toolbarButton print hiddenMediumView hidden" title="Print" tabindex="34" data-l10n-id="print">
+                <div class="toolbarButtonSpacer hiddenWhenSidebarUnavailable"></div>
+
+                <button id="print" class="toolbarButton print hiddenMediumView" title="Print" tabindex="34" data-l10n-id="print">
+<!--#if GENERIC-->
+<!--#expand <?= $printIcon ?> -->
+<!--#endif-->
                   <span data-l10n-id="print_label">Print</span>
                 </button>
-
-                <div class="toolbarButtonSpacer hiddenWhenSidebarUnavailable"></div>
 
                 <button id="download" class="toolbarButton download" title="Download" tabindex="35" data-l10n-id="download">
 <!--#if GENERIC-->
