@@ -82,8 +82,13 @@ body#lightTheme,
   width: 60px;
 }
 
+#lightTheme .toolbarButtonSpacer.smallSpacer {
+  width: 30px;
+}
+
 @media screen and (max-width: 960px) {
-  #lightTheme .toolbarButtonSpacer {
+  #lightTheme .toolbarButtonSpacer,
+  #lightTheme .toolbarButtonSpacer.smallSpacer {
     width: 0;
   }
 }
