@@ -318,7 +318,7 @@ var TilingPattern = (function TilingPatternClosure() {
   function TilingPattern(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
-    this.bbox = IR[4];
+    this.bbox = Util.normalizeRect(IR[4]);
     this.xstep = IR[5];
     this.ystep = IR[6];
     this.paintType = IR[7];
@@ -406,7 +406,7 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
-      if (bbox && isArray(bbox) && bbox.length === 4) {
+      if (isArray(bbox) && bbox.length === 4) {
         var bboxWidth = x1 - x0;
         var bboxHeight = y1 - y0;
         graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
