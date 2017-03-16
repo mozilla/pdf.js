@@ -397,3 +397,7 @@ i.svg-icon g {
 #outlineView:hover::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
 }
+
+#mozPrintCallback-shim {
+  border-radius: 4px;
+}
