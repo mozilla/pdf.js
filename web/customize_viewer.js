@@ -51,12 +51,12 @@ function setupPageNumberDisplay(eventBus) {
   var pageNumberInfo = document.getElementById('pageNumberInfo');
   UIUtils.watchScroll(document.getElementById('viewerContainer'), function() {
     if (timeout) {
-      pageNumberInfo.className = '';
+      pageNumberInfo.classList.remove('fadeOut');
       clearTimeout(timeout);
     }
 
     timeout = setTimeout(function() {
-      pageNumberInfo.className = 'fadeOut';
+      pageNumberInfo.classList.add('fadeOut');
     }, 3000);
   });
 }
