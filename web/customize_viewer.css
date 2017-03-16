@@ -415,7 +415,7 @@ i.svg-icon g {
 @media all and (max-width: 600px) {
    #lightTheme #pageNumberWrapper {
       position: fixed;
-      top: 70px;
+      top: 65px;
       left: 0;
       right: 0;
       text-align: center;
@@ -423,12 +423,20 @@ i.svg-icon g {
 
    #lightTheme #pageNumberInfo {
       display: inline-block;
-      padding: 2px 6px;
-      border-radius: 2px;
-      background: rgba(229, 229, 229, 0.8);
+      min-width: 60px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: rgba(0, 3, 6, 0.61);
+      color: #FAFAFA;
+      font-weight: 600;
+      letter-spacing: -0.29px;
       transition: 0.3s opacity;
       -webkit-transition: 0.3s opacity;
       opacity: 1;
+   }
+
+   #lightTheme #pageNumberInfo span {
+      color: inherit;
    }
 
    #lightTheme #pageNumberInfo.fadeOut {
