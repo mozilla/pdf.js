@@ -168,7 +168,11 @@ body#lightTheme,
 #pageLabel, #pageNumberDisplay, #numPages {
   min-width: 0;
   padding-right: 0;
+  padding-left: 0;
   margin-right: 0;
+  margin-left: 0;
+  border-right: 0;
+  border-left: 0;
 }
 
 /**
@@ -405,4 +409,22 @@ i.svg-icon g {
 
 #mozPrintCallback-shim {
   border-radius: 4px;
+}
+
+/* Display a fixed page number overlay on very small devices. */
+@media all and (max-width: 600px) {
+   #lightTheme #pageNumberWrapper {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      right: 0;
+      text-align: center;
+   }
+
+   #lightTheme #pageNumberInfo {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 2px;
+      background: rgba(229, 229, 229, 0.8);
+   }
 }
