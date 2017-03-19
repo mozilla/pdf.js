@@ -1614,7 +1614,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var type = xobj.dict.get('Subtype');
               assert(isName(type), 'XObject should have a Name subtype');
 
-              if ('Form' !== type.name) {
+              if (type.name !== 'Form') {
                 xobjsCache.key = name;
                 xobjsCache.texts = null;
                 break;
