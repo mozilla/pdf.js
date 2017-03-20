@@ -9623,9 +9623,9 @@ exports.DefaultExernalServices = DefaultExernalServices;
 (function (root, factory) {
   {
     factory((root.pdfjsWebCustomizeViewer = {}), root.pdfjsWebDOMEvents,
-     root.pdfjsWebApp);
+     root.pdfjsWebUIUtils, root.pdfjsWebApp);
   }
-}(this, function (exports, DOMEvents, pdfjsWebApp) {
+}(this, function (exports, DOMEvents, UIUtils, pdfjsWebApp) {
 
 /**
  * If we are running this after `gulp generic`, DOMContentLoaded will not have
@@ -9653,6 +9653,21 @@ function setupPageNumberDisplay(eventBus) {
   var pageNumberDisplay = document.getElementById('pageNumberDisplay');
   eventBus.on('pagechange', function(ev) {
     pageNumberDisplay.innerText = ev.pageNumber;
+  });
+
+  // Fade the page number display out when the user is not scrolling. This
+  // only applies to the mobile layout.
+  var timeout = null;
+  var pageNumberInfo = document.getElementById('pageNumberInfo');
+  UIUtils.watchScroll(document.getElementById('viewerContainer'), function() {
+    if (timeout) {
+      pageNumberInfo.classList.remove('fadeOut');
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(function() {
+      pageNumberInfo.classList.add('fadeOut');
+    }, 3000);
   });
 }
 

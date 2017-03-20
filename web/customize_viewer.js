@@ -7,14 +7,15 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/customize_viewer', ['exports', 'pdfjs-web/dom_events',
-    'pdfjs-web/app'], factory);
+    'pdfjs-web/ui_utils', 'pdfjs-web/app'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./dom_events.js'), require('./app.js'));
+    factory(exports, require('./dom_events.js'), require('./ui_utils.js'),
+     require('./app.js'));
   } else {
     factory((root.pdfjsWebCustomizeViewer = {}), root.pdfjsWebDOMEvents,
-     root.pdfjsWebApp);
+     root.pdfjsWebUIUtils, root.pdfjsWebApp);
   }
-}(this, function (exports, DOMEvents, pdfjsWebApp) {
+}(this, function (exports, DOMEvents, UIUtils, pdfjsWebApp) {
 
 /**
  * If we are running this after `gulp generic`, DOMContentLoaded will not have
@@ -42,6 +43,21 @@ function setupPageNumberDisplay(eventBus) {
   var pageNumberDisplay = document.getElementById('pageNumberDisplay');
   eventBus.on('pagechange', function(ev) {
     pageNumberDisplay.innerText = ev.pageNumber;
+  });
+
+  // Fade the page number display out when the user is not scrolling. This
+  // only applies to the mobile layout.
+  var timeout = null;
+  var pageNumberInfo = document.getElementById('pageNumberInfo');
+  UIUtils.watchScroll(document.getElementById('viewerContainer'), function() {
+    if (timeout) {
+      pageNumberInfo.classList.remove('fadeOut');
+      clearTimeout(timeout);
+    }
+
+    timeout = setTimeout(function() {
+      pageNumberInfo.classList.add('fadeOut');
+    }, 3000);
   });
 }
 

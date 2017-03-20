@@ -348,8 +348,13 @@ body#lightTheme,
   width: 60px;
 }
 
-@media screen and (max-width: 860px) {
-  #lightTheme .toolbarButtonSpacer {
+#lightTheme .toolbarButtonSpacer.smallSpacer {
+  width: 30px;
+}
+
+@media screen and (max-width: 960px) {
+  #lightTheme .toolbarButtonSpacer,
+  #lightTheme .toolbarButtonSpacer.smallSpacer {
     width: 0;
   }
 }
@@ -429,7 +434,11 @@ body#lightTheme,
 #pageLabel, #pageNumberDisplay, #numPages {
   min-width: 0;
   padding-right: 0;
+  padding-left: 0;
   margin-right: 0;
+  margin-left: 0;
+  border-right: 0;
+  border-left: 0;
 }
 
 /**
@@ -662,6 +671,43 @@ i.svg-icon g {
 #thumbnailView:hover::-webkit-scrollbar-thumb,
 #outlineView:hover::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
+}
+
+#mozPrintCallback-shim {
+  border-radius: 4px;
+}
+
+/* Display a fixed page number overlay on very small devices. */
+@media all and (max-width: 600px) {
+   #lightTheme #pageNumberWrapper {
+      position: fixed;
+      top: 65px;
+      left: 0;
+      right: 0;
+      text-align: center;
+   }
+
+   #lightTheme #pageNumberInfo {
+      display: inline-block;
+      min-width: 60px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      background: rgba(0, 3, 6, 0.61);
+      color: #FAFAFA;
+      font-weight: 600;
+      letter-spacing: -0.29px;
+      transition: 0.3s opacity;
+      -webkit-transition: 0.3s opacity;
+      opacity: 1;
+   }
+
+   #lightTheme #pageNumberInfo span {
+      color: inherit;
+   }
+
+   #lightTheme #pageNumberInfo.fadeOut {
+      opacity: 0;
+   }
 }
 
 * {
