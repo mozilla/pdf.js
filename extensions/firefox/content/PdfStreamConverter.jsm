@@ -93,7 +93,12 @@ function getIntPref(pref, def) {
 
 function getStringPref(pref, def) {
   try {
-    return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
+//#if !MOZCENTRAL
+    if (!Services.prefs.getStringPref) {
+      return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
+    }
+//#endif
+    return Services.prefs.getStringPref(pref);
   } catch (ex) {
     return def;
   }
