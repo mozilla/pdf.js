@@ -330,13 +330,12 @@ var JpegImage = (function JpegImageClosure() {
     } else {
       mcuExpected = mcusPerLine * frame.mcusPerColumn;
     }
-    if (!resetInterval) {
-      resetInterval = mcuExpected;
-    }
 
     var h, v;
     while (mcu < mcuExpected) {
       // reset interval stuff
+      var mcuToRead = resetInterval ?
+        Math.min(mcuExpected - mcu, resetInterval) : mcuExpected;
       for (i = 0; i < componentsLength; i++) {
         components[i].pred = 0;
       }
@@ -344,12 +343,12 @@ var JpegImage = (function JpegImageClosure() {
 
       if (componentsLength === 1) {
         component = components[0];
-        for (n = 0; n < resetInterval; n++) {
+        for (n = 0; n < mcuToRead; n++) {
           decodeBlock(component, decodeFn, mcu);
           mcu++;
         }
       } else {
-        for (n = 0; n < resetInterval; n++) {
+        for (n = 0; n < mcuToRead; n++) {
           for (i = 0; i < componentsLength; i++) {
             component = components[i];
             h = component.h;
