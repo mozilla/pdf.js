@@ -733,6 +733,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue8169",
+       "file": "pdfs/issue8169.pdf",
+       "md5": "62fd6479f9e1c8c5ce8cba6b1781d0a5",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "txt2pdf",
        "file": "pdfs/txt2pdf.pdf",
        "md5": "02cefa0f5e8d96313bb05163b2f88c8c",
