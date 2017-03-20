@@ -113,7 +113,7 @@ function configure(PDFJS) {
   PDFJS.cMapPacked = true;
   PDFJS.workerSrc = '../src/worker_loader.js';
 //#else
-//PDFJS.cMapUrl = '../web/cmaps/';
+//PDFJS.cMapUrl = '<?= pdfjsPath('web/cmaps/') ?>';
 //PDFJS.cMapPacked = true;
 //#endif
 }
