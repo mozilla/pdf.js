@@ -595,6 +595,9 @@ var PDFDocument = (function PDFDocumentClosure() {
       try {
         infoDict = this.xref.trailer.get('Info');
       } catch (err) {
+        if (err instanceof MissingDataException) {
+          throw err;
+        }
         info('The document information dictionary is invalid.');
       }
       if (infoDict) {
