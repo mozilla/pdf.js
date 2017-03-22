@@ -104,6 +104,9 @@ var Catalog = (function CatalogClosure() {
           try {
             metadata = stringToUTF8String(bytesToString(stream.getBytes()));
           } catch (e) {
+            if (e instanceof MissingDataException) {
+              throw e;
+            }
             info('Skipping invalid metadata.');
           }
         }
