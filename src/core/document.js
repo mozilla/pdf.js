@@ -467,6 +467,9 @@ var PDFDocument = (function PDFDocumentClosure() {
           }
         }
       } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
         info('Something wrong with AcroForm entry');
         this.acroForm = null;
       }
