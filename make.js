@@ -209,7 +209,7 @@ target.dist = function() {
     license: DIST_LICENSE,
     dependencies: {
       'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^0.7.1', // used in external/dist/webpack.json
+      'worker-loader': '^0.8.0', // used in external/dist/webpack.json
     },
     browser: {
       'node-ensure': false
