@@ -2757,9 +2757,16 @@
       "md5": "797093d67c4d4d4231ac6e1fb66bf6c3",
       "rounds": 1,
       "link": true,
-      "firstPage": 1,
       "lastPage": 1,
       "type": "eq"
+    },
+    {  "id": "mao-text",
+       "file": "pdfs/mao.pdf",
+       "md5": "797093d67c4d4d4231ac6e1fb66bf6c3",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "text"
     },
     {  "id": "noembed-identity",
       "file": "pdfs/noembed-identity.pdf",
