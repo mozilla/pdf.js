@@ -906,7 +906,7 @@ var WorkerMessageHandler = {
         startWorkerTask(task);
         var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent(task, normalizeWhitespace,
+        return page.extractTextContent(handler, task, normalizeWhitespace,
                                        combineTextItems).then(
             function(textContent) {
           finishWorkerTask(task);
