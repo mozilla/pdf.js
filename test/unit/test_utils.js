@@ -35,21 +35,19 @@ var NodeCMapReaderFactory = (function NodeCMapReaderFactoryClosure() {
 
   NodeCMapReaderFactory.prototype = {
     fetch: function(params) {
-      if (!params.name) {
+      var name = params.name;
+      if (!name) {
         return Promise.reject(new Error('CMap name must be specified.'));
       }
       return new Promise(function (resolve, reject) {
-        var url = this.baseUrl + params.name;
+        var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
 
         var fs = require('fs');
-        if (this.isCompressed) {
-          url += '.bcmap';
-        }
         fs.readFile(url, function (error, data) {
           if (error || !data) {
             reject(new Error('Unable to load ' +
-                             (this.isCompressed ? 'binary' : '') +
-                             ' CMap at: ' + url));
+                             (this.isCompressed ? 'binary ' : '') +
+                             'CMap at: ' + url));
             return;
           }
           resolve({
