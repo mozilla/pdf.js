@@ -310,14 +310,9 @@ var Page = (function PageClosure() {
       });
     },
 
-    extractTextContent: function Page_extractTextContent(task,
+    extractTextContent: function Page_extractTextContent(handler, task,
                                                          normalizeWhitespace,
                                                          combineTextItems) {
-      var handler = {
-        on: function nullHandlerOn() {},
-        send: function nullHandlerSend() {}
-      };
-
       var self = this;
 
       var pdfManager = this.pdfManager;
