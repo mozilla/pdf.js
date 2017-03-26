@@ -109,6 +109,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
       this.eventBus.dispatch('find', {
         source: this,
         type: type,
+        regexMatch: false,
         query: this.findField.value,
         caseSensitive: this.caseSensitive.checked,
         phraseSearch: true,

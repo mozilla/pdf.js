@@ -55,11 +55,26 @@
       event.pageNumber = e.pageNumber;
       e.source.container.dispatchEvent(event);
     });
+
     eventBus.on('pagesinit', function (e) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('pagesinit', true, true, null);
       e.source.container.dispatchEvent(event);
+
+      //Wait 10 ms to increase performance and then
+      //search the document with a Regex and highlight the results.
+      setTimeout(function () {
+        eventBus.dispatch('regex_initial_search', {
+          query: '__',
+          isRegex: true,
+          regex: new RegExp(/[0-9]{3}/, 'g'),
+          className: 'initial_regex_highlight',
+          caseSensitive: false,
+          highlightAll: true,
+          phraseSearch: false});
+      }, 10);
     });
+
     eventBus.on('pagesloaded', function (e) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('pagesloaded', true, true, {

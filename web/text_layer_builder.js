@@ -95,6 +95,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
       this.cancel();
 
+      this.allRegexPageMatches = [];
       this.textDivs = [];
       var textLayerFrag = document.createDocumentFragment();
       this.textLayerRenderTask = pdfjsLib.renderTextLayer({
@@ -129,18 +130,17 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       this.textContent = textContent;
     },
 
-    convertMatches: function TextLayerBuilder_convertMatches(matches,
-                                                             matchesLength) {
+    convertMatches: function TextLayerBuilder_convertMatches(matches, matchesLength) {
+      if (!matches) {
+        return [];
+      }
       var i = 0;
       var iIndex = 0;
       var bidiTexts = this.textContent.items;
       var end = bidiTexts.length - 1;
-      var queryLen = (this.findController === null ?
-                      0 : this.findController.state.query.length);
+      var queryLen = this.findController === null ? 0 : this.findController.getMatchesLength();
       var ret = [];
-      if (!matches) {
-        return ret;
-      }
+
       for (var m = 0, len = matches.length; m < len; m++) {
         // Calculate the start position.
         var matchIdx = matches[m];
@@ -186,22 +186,22 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       return ret;
     },
 
-    renderMatches: function TextLayerBuilder_renderMatches(matches) {
+    renderMatches: function TextLayerBuilder_renderMatches(matches, options) {
       // Early exit if there is nothing to render.
       if (matches.length === 0) {
         return;
       }
 
+      var extraOptions = options || {};
+      var isRegex = extraOptions.isRegex;
+
       var bidiTexts = this.textContent.items;
       var textDivs = this.textDivs;
       var prevEnd = null;
       var pageIdx = this.pageIdx;
-      var isSelectedPage = (this.findController === null ?
-        false : (pageIdx === this.findController.selected.pageIdx));
-      var selectedMatchIdx = (this.findController === null ?
-                              -1 : this.findController.selected.matchIdx);
-      var highlightAll = (this.findController === null ?
-                          false : this.findController.state.highlightAll);
+      var isSelectedPage = (this.findController === null ? false : (pageIdx === this.findController.selected.pageIdx));
+      var selectedMatchIdx = (this.findController === null ? -1 : this.findController.selected.matchIdx);
+      var highlightAll = (this.findController === null ? false : (isRegex ? true : this.findController.state.highlightAll));
       var infinity = {
         divIdx: -1,
         offset: undefined
@@ -219,7 +219,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var node = document.createTextNode(content);
         if (className) {
           var span = document.createElement('span');
-          span.className = className;
+          if (extraOptions.isRegex) {
+            span.className = extraOptions.className;
+          }
+          span.className += ' ' + className;
           span.appendChild(node);
           div.appendChild(span);
           return;
@@ -244,8 +247,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var highlightSuffix = (isSelected ? ' selected' : '');
 
         if (this.findController) {
-          this.findController.updateMatchPosition(pageIdx, i, textDivs,
-                                                  begin.divIdx);
+          this.findController.updateMatchPosition(pageIdx, i, textDivs, begin.divIdx);
         }
 
         // Match inside new div.
@@ -261,11 +263,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         }
 
         if (begin.divIdx === end.divIdx) {
-          appendTextToDiv(begin.divIdx, begin.offset, end.offset,
-                          'highlight' + highlightSuffix);
+          appendTextToDiv(begin.divIdx, begin.offset, end.offset, 'highlight' + highlightSuffix);
         } else {
-          appendTextToDiv(begin.divIdx, begin.offset, infinity.offset,
-                          'highlight begin' + highlightSuffix);
+          appendTextToDiv(begin.divIdx, begin.offset, infinity.offset, 'highlight begin' + highlightSuffix);
           for (var n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
             textDivs[n0].className = 'highlight middle' + highlightSuffix;
           }
@@ -290,6 +290,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var textDivs = this.textDivs;
       var bidiTexts = this.textContent.items;
       var clearedUntilDivIdx = -1;
+      var findController = this.findController;
 
       // Clear all current matches.
       for (var i = 0, len = matches.length; i < len; i++) {
@@ -303,18 +304,34 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         clearedUntilDivIdx = match.end.divIdx + 1;
       }
 
-      if (this.findController === null || !this.findController.active) {
+      if (findController === null || !findController.active) {
         return;
       }
 
       // Convert the matches on the page controller into the match format
       // used for the textLayer.
       var pageMatches, pageMatchesLength;
-      if (this.findController !== null) {
-        pageMatches = this.findController.pageMatches[this.pageIdx] || null;
-        pageMatchesLength = (this.findController.pageMatchesLength) ?
-          this.findController.pageMatchesLength[this.pageIdx] || null : null;
+      if (findController !== null) {
+        pageMatches = findController.pageMatches[this.pageIdx] || null;
+        pageMatchesLength = (findController.pageMatchesLength) ?
+          findController.pageMatchesLength[this.pageIdx] || null : null;
       }
+
+      var regexPageMatches, regexPageMatchesLength;
+      if (findController !== null && findController.state.isRegex) {
+        regexPageMatches = findController.regexMatches[this.pageIdx] || null;
+        regexPageMatchesLength = (findController.regexMatchesLength) ?
+                                findController.regexMatchesLength[this.pageIdx] || null : null;
+
+        this.regexClassname = findController.state.className || '';
+        var regexMatches = this.convertMatches(regexPageMatches, regexPageMatchesLength);
+        this.allRegexPageMatches[this.pageIdx] = regexMatches || [];
+      }
+
+      this.renderMatches(this.allRegexPageMatches[this.pageIdx] || [], {
+        className: this.regexClassname,
+        isRegex: true
+      });
 
       this.matches = this.convertMatches(pageMatches, pageMatchesLength);
       this.renderMatches(this.matches);

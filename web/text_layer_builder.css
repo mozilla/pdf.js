@@ -60,6 +60,11 @@
   background-color: rgb(0, 100, 0);
 }
 
+/*Highlight result from the initial-regex search*/
+.initial_regex_highlight {
+  background-color: red !important;
+}
+
 .textLayer ::selection { background: rgb(0,0,255); }
 .textLayer ::-moz-selection { background: rgb(0,0,255); }
 
