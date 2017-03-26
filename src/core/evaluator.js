@@ -1071,14 +1071,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
             case OPS.shadingFill:
               var shadingRes = resources.get('Shading');
-              if (!shadingRes) {
-                error('No shading resource found');
-              }
+              assert(shadingRes, 'No shading resource found');
 
               var shading = shadingRes.get(args[0].name);
-              if (!shading) {
-                error('No shading object found');
-              }
+              assert(shading, 'No shading object found');
 
               var shadingFill = Pattern.parseShading(shading, null, xref,
                 resources, self.handler);
@@ -2166,9 +2162,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         //  - set the type according to the descendant font
         //  - get the FontDescriptor from the descendant font
         var df = dict.get('DescendantFonts');
-        if (!df) {
-          error('Descendant fonts are not specified');
-        }
+        assert(df, 'Descendant fonts are not specified');
         dict = (isArray(df) ? xref.fetchIfRef(df[0]) : df);
 
         type = dict.get('Subtype');
@@ -2261,9 +2255,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           // FontDescriptor was not required.
           // This case is here for compatibility.
           var baseFontName = dict.get('BaseFont');
-          if (!isName(baseFontName)) {
-            error('Base font is not specified');
-          }
+          assert(isName(baseFontName), 'Base font is not specified');
 
           // Using base font name as a font name.
           baseFontName = baseFontName.name.replace(/[,_]/g, '-');
