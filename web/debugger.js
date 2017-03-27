@@ -502,7 +502,7 @@ var Stats = (function Stats() {
 })();
 
 // Manages all the debugging tools.
-var PDFBug = (function PDFBugClosure() {
+window.PDFBug = (function PDFBugClosure() {
   var panelWidth = 300;
   var buttons = [];
   var activePanel = null;
