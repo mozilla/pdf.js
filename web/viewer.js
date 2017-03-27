@@ -50,6 +50,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
 }
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME || GENERIC')) {
   require('./pdf_print_service.js');
+  require('./download_manager.js');
 }
 
 function getViewerConfiguration() {
@@ -172,7 +173,8 @@ function webViewerLoad() {
   var config = getViewerConfiguration();
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     Promise.all([SystemJS.import('pdfjs-web/app'),
-                 SystemJS.import('pdfjs-web/pdf_print_service')])
+                 SystemJS.import('pdfjs-web/pdf_print_service'),
+                 SystemJS.import('pdfjs-web/download_manager')])
            .then(function (modules) {
       var app = modules[0];
       window.PDFViewerApplication = app.PDFViewerApplication;
