@@ -1,6 +1,7 @@
 {
   "parserOptions": {
-    "ecmaVersion": 5,
+    "ecmaVersion": 6,
+    "sourceType": "module"
   },
 
   "env": {
@@ -78,7 +79,7 @@
     }],
 
     // Strict Mode
-    "strict": ["error", "global"],
+    "strict": ["off", "global"],
 
     // Variables
     "no-catch-shadow": "error",
