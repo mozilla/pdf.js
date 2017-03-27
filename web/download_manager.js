@@ -17,17 +17,22 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/download_manager', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
+    define('pdfjs-web/download_manager', ['exports', 'pdfjs-web/app',
+      'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
+    factory(exports, require('./app.js'), require('./pdfjs.js'));
   } else {
-    factory((root.pdfjsWebDownloadManager = {}), root.pdfjsWebPDFJS);
+    factory((root.pdfjsWebDownloadManager = {}), root.pdfjsWebApp,
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, pdfjsLib) {
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  return;
+}(this, function (exports, app, pdfjsLib) {
+if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
+  throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
+                  'outside CHROME and GENERIC builds.');
 }
+
+var PDFViewerApplication = app.PDFViewerApplication;
+var DefaultExternalServices = app.DefaultExternalServices;
 
 function download(blobUrl, filename) {
   var a = document.createElement('a');
@@ -106,6 +111,12 @@ DownloadManager.prototype = {
     download(blobUrl, filename);
   }
 };
+
+var GenericExternalServices = Object.create(DefaultExternalServices);
+GenericExternalServices.createDownloadManager = function () {
+  return new DownloadManager();
+};
+PDFViewerApplication.externalServices = GenericExternalServices;
 
 exports.DownloadManager = DownloadManager;
 }));

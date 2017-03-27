@@ -36,7 +36,7 @@
   }
 
   var PDFViewerApplication = app.PDFViewerApplication;
-  var DefaultExernalServices = app.DefaultExernalServices;
+  var DefaultExternalServices = app.DefaultExternalServices;
   var OverlayManager = overlayManager.OverlayManager;
   var Preferences = preferences.Preferences;
 
@@ -349,7 +349,7 @@
     });
   };
 
-  var ChromeExternalServices = Object.create(DefaultExernalServices);
+  var ChromeExternalServices = Object.create(DefaultExternalServices);
   ChromeExternalServices.initPassiveLoading = function (callbacks) {
     var appConfig = PDFViewerApplication.appConfig;
     ChromeCom.resolvePDFFile(appConfig.defaultUrl,

@@ -19,7 +19,7 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-web/app', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/download_manager', 'pdfjs-web/pdf_history',
+      'pdfjs-web/pdf_history',
       'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
       'pdfjs-web/view_history', 'pdfjs-web/pdf_thumbnail_viewer',
       'pdfjs-web/toolbar', 'pdfjs-web/secondary_toolbar',
@@ -32,7 +32,7 @@
       'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'],
       factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./download_manager.js'),
+    factory(exports, require('./ui_utils.js'),
       require('./pdf_history.js'), require('./preferences.js'),
       require('./pdf_sidebar.js'), require('./view_history.js'),
       require('./pdf_thumbnail_viewer.js'), require('./toolbar.js'),
@@ -46,7 +46,7 @@
       require('./dom_events.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebApp = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebDownloadManager, root.pdfjsWebPDFHistory,
+      root.pdfjsWebPDFHistory,
       root.pdfjsWebPreferences, root.pdfjsWebPDFSidebar,
       root.pdfjsWebViewHistory, root.pdfjsWebPDFThumbnailViewer,
       root.pdfjsWebToolbar, root.pdfjsWebSecondaryToolbar,
@@ -58,7 +58,7 @@
       root.pdfjsWebPDFFindController, root.pdfjsWebPDFFindBar,
       root.pdfjsWebDOMEvents, root.pdfjsWebPDFJS);
   }
-}(this, function (exports, uiUtilsLib, downloadManagerLib, pdfHistoryLib,
+}(this, function (exports, uiUtilsLib, pdfHistoryLib,
                   preferencesLib, pdfSidebarLib, viewHistoryLib,
                   pdfThumbnailViewerLib, toolbarLib, secondaryToolbarLib,
                   passwordPromptLib, pdfPresentationModeLib,
@@ -124,13 +124,13 @@ function configure(PDFJS) {
   }
 }
 
-var DefaultExernalServices = {
+var DefaultExternalServices = {
   updateFindControlState: function (data) {},
   initPassiveLoading: function (callbacks) {},
   fallback: function (data, callback) {},
   reportTelemetry: function (data) {},
   createDownloadManager: function () {
-    return new downloadManagerLib.DownloadManager();
+    throw new Error('Not implemented: createDownloadManager');
   },
   supportsIntegratedFind: false,
   supportsDocumentFonts: true,
@@ -196,7 +196,7 @@ var PDFViewerApplication = {
   isViewerEmbedded: (window.parent !== window),
   url: '',
   baseUrl: '',
-  externalServices: DefaultExernalServices,
+  externalServices: DefaultExternalServices,
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
@@ -2270,6 +2270,6 @@ var PDFPrintServiceFactory = {
 };
 
 exports.PDFViewerApplication = PDFViewerApplication;
-exports.DefaultExernalServices = DefaultExernalServices;
+exports.DefaultExternalServices = DefaultExternalServices;
 exports.PDFPrintServiceFactory = PDFPrintServiceFactory;
 }));
