@@ -472,17 +472,6 @@ i.svg-icon {
   overflow: auto;
 }
 
-i.svg-icon path,
-i.svg-icon rect,
-i.svg-icon circle,
-i.svg-icon polygon,
-i.svg-icon ellipse,
-i.svg-icon polyline,
-i.svg-icon line,
-i.svg-icon g {
-  fill: currentColor;
-}
-
 /**
  * Main content area structure
  */
