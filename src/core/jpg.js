@@ -323,7 +323,7 @@ var JpegImage = (function JpegImageClosure() {
       decodeFn = decodeBaseline;
     }
 
-    var mcu = 0, marker;
+    var mcu = 0, fileMarker;
     var mcuExpected;
     if (componentsLength === 1) {
       mcuExpected = components[0].blocksPerLine * components[0].blocksPerColumn;
@@ -365,14 +365,16 @@ var JpegImage = (function JpegImageClosure() {
 
       // find marker
       bitsCount = 0;
-      marker = (data[offset] << 8) | data[offset + 1];
-      // Some bad images seem to pad Scan blocks with zero bytes, skip past
+      fileMarker = findNextFileMarker(data, offset);
+      // Some bad images seem to pad Scan blocks with e.g. zero bytes, skip past
       // those to attempt to find a valid marker (fixes issue4090.pdf).
-      while (data[offset] === 0x00 && offset < data.length - 1) {
-        offset++;
-        marker = (data[offset] << 8) | data[offset + 1];
+      if (fileMarker && fileMarker.invalid) {
+        warn('decodeScan - unexpected MCU data, next marker is: ' +
+             fileMarker.invalid);
+        offset = fileMarker.offset;
       }
-      if (marker <= 0xFF00) {
+      var marker = fileMarker && fileMarker.marker;
+      if (!marker || marker <= 0xFF00) {
         error('JPEG error: marker was not found');
       }
 
@@ -381,6 +383,15 @@ var JpegImage = (function JpegImageClosure() {
       } else {
         break;
       }
+    }
+
+    fileMarker = findNextFileMarker(data, offset);
+    // Some images include more Scan blocks than expected, skip past those and
+    // attempt to find the next valid marker (fixes issue8182.pdf).
+    if (fileMarker && fileMarker.invalid) {
+      warn('decodeScan - unexpected Scan data, next marker is: ' +
+           fileMarker.invalid);
+      offset = fileMarker.offset;
     }
 
     return offset - startOffset;
@@ -594,6 +605,39 @@ var JpegImage = (function JpegImageClosure() {
     return a <= 0 ? 0 : a >= 255 ? 255 : a;
   }
 
+  function findNextFileMarker(data, currentPos, startPos) {
+    function peekUint16(pos) {
+      return (data[pos] << 8) | data[pos + 1];
+    }
+
+    var maxPos = data.length - 1;
+    var newPos = startPos < currentPos ? startPos : currentPos;
+
+    if (currentPos >= maxPos) {
+      return null; // Don't attempt to read non-existent data and just return.
+    }
+    var currentMarker = peekUint16(currentPos);
+    if (currentMarker >= 0xFFC0 && currentMarker <= 0xFFFE) {
+      return {
+        invalid: null,
+        marker: currentMarker,
+        offset: currentPos,
+      };
+    }
+    var newMarker = peekUint16(newPos);
+    while (!(newMarker >= 0xFFC0 && newMarker <= 0xFFFE)) {
+      if (++newPos >= maxPos) {
+        return null; // Don't attempt to read non-existent data and just return.
+      }
+      newMarker = peekUint16(newPos);
+    }
+    return {
+      invalid: currentMarker.toString(16),
+      marker: newMarker,
+      offset: newPos,
+    };
+  }
+
   JpegImage.prototype = {
     parse: function parse(data) {
 
@@ -604,25 +648,14 @@ var JpegImage = (function JpegImageClosure() {
       }
 
       function readDataBlock() {
-        function isValidMarkerAt(pos) {
-          if (pos < data.length - 1) {
-            return (data[pos] === 0xFF &&
-                    data[pos + 1] >= 0xC0 && data[pos + 1] <= 0xFE);
-          }
-          return true;
-        }
-
         var length = readUint16();
         var endOffset = offset + length - 2;
 
-        if (!isValidMarkerAt(endOffset)) {
+        var fileMarker = findNextFileMarker(data, endOffset, offset);
+        if (fileMarker && fileMarker.invalid) {
           warn('readDataBlock - incorrect length, next marker is: ' +
-               (data[endOffset] << 8 | data[endOffset + 1]).toString('16'));
-          var pos = offset;
-          while (!isValidMarkerAt(pos)) {
-            pos++;
-          }
-          endOffset = pos;
+               fileMarker.invalid);
+          endOffset = fileMarker.offset;
         }
 
         var array = data.subarray(offset, endOffset);
