@@ -1,7 +1,7 @@
 {
   "parserOptions": {
     "ecmaVersion": 6,
-    "sourceType": "module"
+    "sourceType": "module",
   },
 
   "env": {
@@ -86,6 +86,7 @@
     "no-delete-var": "error",
     "no-label-var": "error",
     "no-shadow-restricted-names": "error",
+    "no-shadow": "off",
     "no-undef-init": "error",
     "no-undef": ["error", { "typeof": true, }],
     "no-unused-vars": ["error", {
@@ -135,5 +136,29 @@
     }],
 
     // ECMAScript 6
+    "arrow-body-style": ["error", "as-needed"],
+    "arrow-parens": ["error", "always"],
+    "arrow-spacing": ["error", {
+      "before": true,
+      "after": true,
+    }],
+    "constructor-super": "error",
+    "no-class-assign": "error",
+    "no-confusing-arrow": "error",
+    "no-const-assign": "error",
+    "no-dupe-class-members": "error",
+    "no-duplicate-imports": "error",
+    "no-this-before-super": "error",
+    "no-useless-computed-key": "error",
+    "no-useless-constructor": "error",
+    "no-useless-rename": "error",
+    "object-shorthand": ["off", "always", {
+      "avoidQuotes": true,
+    }],
+    "rest-spread-spacing": ["error", "never"],
+    "sort-imports": ["error", {
+      "ignoreCase": true,
+    }],
+    "template-curly-spacing": ["error", "never"],
   },
 }
