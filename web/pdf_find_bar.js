@@ -13,23 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_find_bar', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_find_controller'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_find_controller.js'));
-  } else {
-    factory((root.pdfjsWebPDFFindBar = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFFindController);
-  }
-}(this, function (exports, uiUtils, pdfFindController) {
-
-var mozL10n = uiUtils.mozL10n;
-var FindStates = pdfFindController.FindStates;
+import { FindStates } from 'pdfjs-web/pdf_find_controller';
+import { mozL10n } from 'pdfjs-web/ui_utils';
 
 /**
  * Creates a "search bar" given a set of DOM elements that act as controls
@@ -236,5 +221,6 @@ var PDFFindBar = (function PDFFindBarClosure() {
   return PDFFindBar;
 })();
 
-exports.PDFFindBar = PDFFindBar;
-}));
+export {
+  PDFFindBar,
+};

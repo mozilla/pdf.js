@@ -13,18 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_outline_viewer', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFOutlineViewer = {}), root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, pdfjsLib) {
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
 
 var PDFJS = pdfjsLib.PDFJS;
 
@@ -231,5 +220,6 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
   return PDFOutlineViewer;
 })();
 
-exports.PDFOutlineViewer = PDFOutlineViewer;
-}));
+export {
+  PDFOutlineViewer,
+};

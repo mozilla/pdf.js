@@ -13,31 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_page_view', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue',
-      'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_rendering_queue.js'), require('./dom_events.js'),
-      require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFPageView = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFRenderingQueue, root.pdfjsWebDOMEvents,
-      root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, uiUtils, pdfRenderingQueue, domEvents, pdfjsLib) {
-
-var CSS_UNITS = uiUtils.CSS_UNITS;
-var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
-var getOutputScale = uiUtils.getOutputScale;
-var approximateFraction = uiUtils.approximateFraction;
-var roundToDivide = uiUtils.roundToDivide;
-var RendererType = uiUtils.RendererType;
-var RenderingStates = pdfRenderingQueue.RenderingStates;
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import {
+  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, RendererType,
+  roundToDivide
+} from 'pdfjs-web/ui_utils';
+import { domEvents } from 'pdfjs-web/dom_events';
+import { RenderingStates } from 'pdfjs-web/pdf_rendering_queue';
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
 
@@ -691,5 +673,6 @@ var PDFPageView = (function PDFPageViewClosure() {
   return PDFPageView;
 })();
 
-exports.PDFPageView = PDFPageView;
-}));
+export {
+  PDFPageView,
+};

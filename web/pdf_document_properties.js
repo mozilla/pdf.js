@@ -13,23 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_document_properties', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/overlay_manager'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./overlay_manager.js'));
-  } else {
-    factory((root.pdfjsWebPDFDocumentProperties = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebOverlayManager);
-  }
-}(this, function (exports, uiUtils, overlayManager) {
-
-var getPDFFileNameFromURL = uiUtils.getPDFFileNameFromURL;
-var mozL10n = uiUtils.mozL10n;
-var OverlayManager = overlayManager.OverlayManager;
+import { getPDFFileNameFromURL, mozL10n } from 'pdfjs-web/ui_utils';
+import { OverlayManager } from 'pdfjs-web/overlay_manager';
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
@@ -239,5 +224,6 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
   return PDFDocumentProperties;
 })();
 
-exports.PDFDocumentProperties = PDFDocumentProperties;
-}));
+export {
+  PDFDocumentProperties,
+};

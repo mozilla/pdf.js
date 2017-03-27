@@ -13,19 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_presentation_mode', ['exports', 'pdfjs-web/ui_utils'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'));
-  } else {
-    factory((root.pdfjsWebPDFPresentationMode = {}), root.pdfjsWebUIUtils);
-  }
-}(this, function (exports, uiUtils) {
-var normalizeWheelEventDelta = uiUtils.normalizeWheelEventDelta;
+import { normalizeWheelEventDelta } from 'pdfjs-web/ui_utils';
 
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
@@ -517,5 +505,6 @@ var PDFPresentationMode = (function PDFPresentationModeClosure() {
   return PDFPresentationMode;
 })();
 
-exports.PDFPresentationMode = PDFPresentationMode;
-}));
+export {
+  PDFPresentationMode,
+};

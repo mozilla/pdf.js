@@ -13,28 +13,15 @@
  * limitations under the License.
  */
 
-'use strict';
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import { PDFViewerApplication } from 'pdfjs-web/app';
+import { Preferences } from 'pdfjs-web/preferences';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/firefoxcom', ['exports', 'pdfjs-web/preferences',
-      'pdfjs-web/app', 'pdfjs-web/pdfjs'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./preferences.js'), require('./app.js'),
-      require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebFirefoxCom = {}), root.pdfjsWebPreferences,
-      root.pdfjsWebApp, root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, preferences, app, pdfjsLib) {
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "pdfjs-web/firefoxcom" shall not be used outside ' +
                   'FIREFOX and MOZCENTRAL builds.');
 }
-
-var Preferences = preferences.Preferences;
-var PDFViewerApplication = app.PDFViewerApplication;
 
 var FirefoxCom = (function FirefoxComClosure() {
   return {
@@ -291,6 +278,7 @@ document.mozL10n.setExternalLocalizerServices({
   }
 });
 
-exports.DownloadManager = DownloadManager;
-exports.FirefoxCom = FirefoxCom;
-}));
+export {
+  DownloadManager,
+  FirefoxCom,
+};

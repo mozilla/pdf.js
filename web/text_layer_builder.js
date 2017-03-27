@@ -13,19 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/text_layer_builder', ['exports', 'pdfjs-web/dom_events',
-        'pdfjs-web/pdfjs'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./dom_events.js'), require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebTextLayerBuilder = {}), root.pdfjsWebDOMEvents,
-      root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, domEvents, pdfjsLib) {
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import { domEvents } from 'pdfjs-web/dom_events';
 
 var EXPAND_DIVS_TIMEOUT = 300; // ms
 
@@ -419,6 +408,7 @@ DefaultTextLayerFactory.prototype = {
   }
 };
 
-exports.TextLayerBuilder = TextLayerBuilder;
-exports.DefaultTextLayerFactory = DefaultTextLayerFactory;
-}));
+export {
+  TextLayerBuilder,
+  DefaultTextLayerFactory,
+};

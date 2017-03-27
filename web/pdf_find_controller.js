@@ -13,20 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_find_controller', ['exports', 'pdfjs-web/ui_utils'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'));
-  } else {
-    factory((root.pdfjsWebPDFFindController = {}), root.pdfjsWebUIUtils);
-  }
-}(this, function (exports, uiUtils) {
-
-var scrollIntoView = uiUtils.scrollIntoView;
+import { scrollIntoView } from 'pdfjs-web/ui_utils';
 
 var FindStates = {
   FIND_FOUND: 0,
@@ -505,6 +492,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
   return PDFFindController;
 })();
 
-exports.FindStates = FindStates;
-exports.PDFFindController = PDFFindController;
-}));
+export {
+  FindStates,
+  PDFFindController,
+};

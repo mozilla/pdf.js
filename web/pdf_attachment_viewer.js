@@ -13,18 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_attachment_viewer', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFAttachmentViewer = {}), root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, pdfjsLib) {
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
@@ -205,5 +194,6 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
   return PDFAttachmentViewer;
 })();
 
-exports.PDFAttachmentViewer = PDFAttachmentViewer;
-}));
+export {
+  PDFAttachmentViewer,
+};

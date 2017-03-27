@@ -13,24 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_thumbnail_view', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_rendering_queue.js'));
-  } else {
-    factory((root.pdfjsWebPDFThumbnailView = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFRenderingQueue);
-  }
-}(this, function (exports, uiUtils, pdfRenderingQueue) {
-
-var mozL10n = uiUtils.mozL10n;
-var getOutputScale = uiUtils.getOutputScale;
-var RenderingStates = pdfRenderingQueue.RenderingStates;
+import { getOutputScale, mozL10n } from 'pdfjs-web/ui_utils';
+import { RenderingStates } from 'pdfjs-web/pdf_rendering_queue';
 
 var THUMBNAIL_WIDTH = 98; // px
 var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px
@@ -430,5 +414,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
 PDFThumbnailView.tempImageCache = null;
 
-exports.PDFThumbnailView = PDFThumbnailView;
-}));
+export {
+  PDFThumbnailView,
+};

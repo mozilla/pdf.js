@@ -14,95 +14,34 @@
  */
 /* globals PDFBug, Stats */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/app', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/pdf_history',
-      'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
-      'pdfjs-web/view_history', 'pdfjs-web/pdf_thumbnail_viewer',
-      'pdfjs-web/toolbar', 'pdfjs-web/secondary_toolbar',
-      'pdfjs-web/password_prompt', 'pdfjs-web/pdf_presentation_mode',
-      'pdfjs-web/pdf_document_properties', 'pdfjs-web/hand_tool',
-      'pdfjs-web/pdf_viewer', 'pdfjs-web/pdf_rendering_queue',
-      'pdfjs-web/pdf_link_service', 'pdfjs-web/pdf_outline_viewer',
-      'pdfjs-web/overlay_manager', 'pdfjs-web/pdf_attachment_viewer',
-      'pdfjs-web/pdf_find_controller', 'pdfjs-web/pdf_find_bar',
-      'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_history.js'), require('./preferences.js'),
-      require('./pdf_sidebar.js'), require('./view_history.js'),
-      require('./pdf_thumbnail_viewer.js'), require('./toolbar.js'),
-      require('./secondary_toolbar.js'), require('./password_prompt.js'),
-      require('./pdf_presentation_mode.js'),
-      require('./pdf_document_properties.js'), require('./hand_tool.js'),
-      require('./pdf_viewer.js'), require('./pdf_rendering_queue.js'),
-      require('./pdf_link_service.js'), require('./pdf_outline_viewer.js'),
-      require('./overlay_manager.js'), require('./pdf_attachment_viewer.js'),
-      require('./pdf_find_controller.js'), require('./pdf_find_bar.js'),
-      require('./dom_events.js'), require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebApp = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFHistory,
-      root.pdfjsWebPreferences, root.pdfjsWebPDFSidebar,
-      root.pdfjsWebViewHistory, root.pdfjsWebPDFThumbnailViewer,
-      root.pdfjsWebToolbar, root.pdfjsWebSecondaryToolbar,
-      root.pdfjsWebPasswordPrompt, root.pdfjsWebPDFPresentationMode,
-      root.pdfjsWebPDFDocumentProperties, root.pdfjsWebHandTool,
-      root.pdfjsWebPDFViewer, root.pdfjsWebPDFRenderingQueue,
-      root.pdfjsWebPDFLinkService, root.pdfjsWebPDFOutlineViewer,
-      root.pdfjsWebOverlayManager, root.pdfjsWebPDFAttachmentViewer,
-      root.pdfjsWebPDFFindController, root.pdfjsWebPDFFindBar,
-      root.pdfjsWebDOMEvents, root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, uiUtilsLib, pdfHistoryLib,
-                  preferencesLib, pdfSidebarLib, viewHistoryLib,
-                  pdfThumbnailViewerLib, toolbarLib, secondaryToolbarLib,
-                  passwordPromptLib, pdfPresentationModeLib,
-                  pdfDocumentPropertiesLib, handToolLib, pdfViewerLib,
-                  pdfRenderingQueueLib, pdfLinkServiceLib, pdfOutlineViewerLib,
-                  overlayManagerLib, pdfAttachmentViewerLib,
-                  pdfFindControllerLib, pdfFindBarLib, domEventsLib, pdfjsLib) {
-
-var UNKNOWN_SCALE = uiUtilsLib.UNKNOWN_SCALE;
-var DEFAULT_SCALE_VALUE = uiUtilsLib.DEFAULT_SCALE_VALUE;
-var MIN_SCALE = uiUtilsLib.MIN_SCALE;
-var MAX_SCALE = uiUtilsLib.MAX_SCALE;
-var ProgressBar = uiUtilsLib.ProgressBar;
-var getPDFFileNameFromURL = uiUtilsLib.getPDFFileNameFromURL;
-var noContextMenuHandler = uiUtilsLib.noContextMenuHandler;
-var mozL10n = uiUtilsLib.mozL10n;
-var parseQueryString = uiUtilsLib.parseQueryString;
-var PDFHistory = pdfHistoryLib.PDFHistory;
-var Preferences = preferencesLib.Preferences;
-var SidebarView = pdfSidebarLib.SidebarView;
-var PDFSidebar = pdfSidebarLib.PDFSidebar;
-var ViewHistory = viewHistoryLib.ViewHistory;
-var PDFThumbnailViewer = pdfThumbnailViewerLib.PDFThumbnailViewer;
-var Toolbar = toolbarLib.Toolbar;
-var SecondaryToolbar = secondaryToolbarLib.SecondaryToolbar;
-var PasswordPrompt = passwordPromptLib.PasswordPrompt;
-var PDFPresentationMode = pdfPresentationModeLib.PDFPresentationMode;
-var PDFDocumentProperties = pdfDocumentPropertiesLib.PDFDocumentProperties;
-var HandTool = handToolLib.HandTool;
-var PresentationModeState = pdfViewerLib.PresentationModeState;
-var PDFViewer = pdfViewerLib.PDFViewer;
-var RenderingStates = pdfRenderingQueueLib.RenderingStates;
-var PDFRenderingQueue = pdfRenderingQueueLib.PDFRenderingQueue;
-var PDFLinkService = pdfLinkServiceLib.PDFLinkService;
-var PDFOutlineViewer = pdfOutlineViewerLib.PDFOutlineViewer;
-var OverlayManager = overlayManagerLib.OverlayManager;
-var PDFAttachmentViewer = pdfAttachmentViewerLib.PDFAttachmentViewer;
-var PDFFindController = pdfFindControllerLib.PDFFindController;
-var PDFFindBar = pdfFindBarLib.PDFFindBar;
-var getGlobalEventBus = domEventsLib.getGlobalEventBus;
-var normalizeWheelEventDelta = uiUtilsLib.normalizeWheelEventDelta;
-var animationStarted = uiUtilsLib.animationStarted;
-var localized = uiUtilsLib.localized;
-var RendererType = uiUtilsLib.RendererType;
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import {
+  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, localized,
+  MAX_SCALE, MIN_SCALE, mozL10n, noContextMenuHandler, normalizeWheelEventDelta,
+  parseQueryString, ProgressBar, RendererType, UNKNOWN_SCALE
+} from 'pdfjs-web/ui_utils';
+import {
+  PDFRenderingQueue, RenderingStates
+} from 'pdfjs-web/pdf_rendering_queue';
+import { PDFSidebar, SidebarView } from 'pdfjs-web/pdf_sidebar';
+import { PDFViewer, PresentationModeState } from 'pdfjs-web/pdf_viewer';
+import { getGlobalEventBus } from 'pdfjs-web/dom_events';
+import { HandTool } from 'pdfjs-web/hand_tool';
+import { OverlayManager } from 'pdfjs-web/overlay_manager';
+import { PasswordPrompt } from 'pdfjs-web/password_prompt';
+import { PDFAttachmentViewer } from 'pdfjs-web/pdf_attachment_viewer';
+import { PDFDocumentProperties } from 'pdfjs-web/pdf_document_properties';
+import { PDFFindBar } from 'pdfjs-web/pdf_find_bar';
+import { PDFFindController } from 'pdfjs-web/pdf_find_controller';
+import { PDFHistory } from 'pdfjs-web/pdf_history';
+import { PDFLinkService } from 'pdfjs-web/pdf_link_service';
+import { PDFOutlineViewer } from 'pdfjs-web/pdf_outline_viewer';
+import { PDFPresentationMode } from 'pdfjs-web/pdf_presentation_mode';
+import { PDFThumbnailViewer } from 'pdfjs-web/pdf_thumbnail_viewer';
+import { Preferences } from 'pdfjs-web/preferences';
+import { SecondaryToolbar } from 'pdfjs-web/secondary_toolbar';
+import { Toolbar } from 'pdfjs-web/toolbar';
+import { ViewHistory } from 'pdfjs-web/view_history';
 
 var DEFAULT_SCALE_DELTA = 1.1;
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;
@@ -2269,7 +2208,8 @@ var PDFPrintServiceFactory = {
   }
 };
 
-exports.PDFViewerApplication = PDFViewerApplication;
-exports.DefaultExternalServices = DefaultExternalServices;
-exports.PDFPrintServiceFactory = PDFPrintServiceFactory;
-}));
+export {
+  PDFViewerApplication,
+  DefaultExternalServices,
+  PDFPrintServiceFactory,
+};
