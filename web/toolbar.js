@@ -13,28 +13,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/toolbar', ['exports', 'pdfjs-web/ui_utils'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'));
-  } else {
-    factory((root.pdfjsWebToolbar = {}), root.pdfjsWebUIUtils);
-  }
-}(this, function (exports, uiUtils) {
-
-var mozL10n = uiUtils.mozL10n;
-var noContextMenuHandler = uiUtils.noContextMenuHandler;
-var animationStarted = uiUtils.animationStarted;
-var localized = uiUtils.localized;
-
-var DEFAULT_SCALE_VALUE = uiUtils.DEFAULT_SCALE_VALUE;
-var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
-var MIN_SCALE = uiUtils.MIN_SCALE;
-var MAX_SCALE = uiUtils.MAX_SCALE;
+import {
+  animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, localized, MAX_SCALE,
+  MIN_SCALE, mozL10n, noContextMenuHandler
+} from 'pdfjs-web/ui_utils';
 
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var SCALE_SELECT_CONTAINER_PADDING = 8;
@@ -286,5 +268,6 @@ var Toolbar = (function ToolbarClosure() {
   return Toolbar;
 })();
 
-exports.Toolbar = Toolbar;
-}));
+export {
+  Toolbar,
+};

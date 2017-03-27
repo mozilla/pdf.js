@@ -13,26 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import { DefaultExternalServices, PDFViewerApplication } from 'pdfjs-web/app';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/download_manager', ['exports', 'pdfjs-web/app',
-      'pdfjs-web/pdfjs'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./app.js'), require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebDownloadManager = {}), root.pdfjsWebApp,
-      root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, app, pdfjsLib) {
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
                   'outside CHROME and GENERIC builds.');
 }
-
-var PDFViewerApplication = app.PDFViewerApplication;
-var DefaultExternalServices = app.DefaultExternalServices;
 
 function download(blobUrl, filename) {
   var a = document.createElement('a');
@@ -118,5 +105,6 @@ GenericExternalServices.createDownloadManager = function () {
 };
 PDFViewerApplication.externalServices = GenericExternalServices;
 
-exports.DownloadManager = DownloadManager;
-}));
+export {
+  DownloadManager,
+};

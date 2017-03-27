@@ -13,48 +13,20 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_viewer', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/pdf_page_view', 'pdfjs-web/pdf_rendering_queue',
-      'pdfjs-web/text_layer_builder', 'pdfjs-web/annotation_layer_builder',
-      'pdfjs-web/pdf_link_service', 'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./pdf_page_view.js'),
-      require('./pdf_rendering_queue.js'), require('./text_layer_builder.js'),
-      require('./annotation_layer_builder.js'),
-      require('./pdf_link_service.js'), require('./dom_events.js'),
-      require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFViewer = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFPageView, root.pdfjsWebPDFRenderingQueue,
-      root.pdfjsWebTextLayerBuilder, root.pdfjsWebAnnotationLayerBuilder,
-      root.pdfjsWebPDFLinkService, root.pdfjsWebDOMEvents, root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, uiUtils, pdfPageView, pdfRenderingQueue,
-                  textLayerBuilder, annotationLayerBuilder, pdfLinkService,
-                  domEvents, pdfjsLib) {
-
-var UNKNOWN_SCALE = uiUtils.UNKNOWN_SCALE;
-var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
-var VERTICAL_PADDING = uiUtils.VERTICAL_PADDING;
-var MAX_AUTO_SCALE = uiUtils.MAX_AUTO_SCALE;
-var CSS_UNITS = uiUtils.CSS_UNITS;
-var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
-var DEFAULT_SCALE_VALUE = uiUtils.DEFAULT_SCALE_VALUE;
-var RendererType = uiUtils.RendererType;
-var scrollIntoView = uiUtils.scrollIntoView;
-var watchScroll = uiUtils.watchScroll;
-var getVisibleElements = uiUtils.getVisibleElements;
-var PDFPageView = pdfPageView.PDFPageView;
-var RenderingStates = pdfRenderingQueue.RenderingStates;
-var PDFRenderingQueue = pdfRenderingQueue.PDFRenderingQueue;
-var TextLayerBuilder = textLayerBuilder.TextLayerBuilder;
-var AnnotationLayerBuilder = annotationLayerBuilder.AnnotationLayerBuilder;
-var SimpleLinkService = pdfLinkService.SimpleLinkService;
+import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import {
+  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
+  MAX_AUTO_SCALE, RendererType, SCROLLBAR_PADDING, scrollIntoView,
+  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+} from 'pdfjs-web/ui_utils';
+import {
+  PDFRenderingQueue, RenderingStates,
+} from 'pdfjs-web/pdf_rendering_queue';
+import { AnnotationLayerBuilder } from 'pdfjs-web/annotation_layer_builder';
+import { domEvents } from 'pdfjs-web/dom_events';
+import { PDFPageView } from 'pdfjs-web/pdf_page_view';
+import { SimpleLinkService } from 'pdfjs-web/pdf_link_service';
+import { TextLayerBuilder } from 'pdfjs-web/text_layer_builder';
 
 var PresentationModeState = {
   UNKNOWN: 0,
@@ -988,6 +960,7 @@ var PDFViewer = (function pdfViewer() {
   return PDFViewer;
 })();
 
-exports.PresentationModeState = PresentationModeState;
-exports.PDFViewer = PDFViewer;
-}));
+export {
+  PresentationModeState,
+  PDFViewer,
+};

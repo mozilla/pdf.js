@@ -13,24 +13,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/hand_tool', ['exports', 'pdfjs-web/grab_to_pan',
-      'pdfjs-web/preferences', 'pdfjs-web/ui_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./grab_to_pan.js'), require('./preferences.js'),
-      require('./ui_utils.js'));
-  } else {
-    factory((root.pdfjsWebHandTool = {}), root.pdfjsWebGrabToPan,
-      root.pdfjsWebPreferences, root.pdfjsWebUIUtils);
-  }
-}(this, function (exports, grabToPan, preferences, uiUtils) {
-
-var GrabToPan = grabToPan.GrabToPan;
-var Preferences = preferences.Preferences;
-var localized = uiUtils.localized;
+import { GrabToPan } from 'pdfjs-web/grab_to_pan';
+import { localized } from 'pdfjs-web/ui_utils';
+import { Preferences } from 'pdfjs-web/preferences';
 
 /**
  * @typedef {Object} HandToolOptions
@@ -110,5 +95,6 @@ var HandTool = (function HandToolClosure() {
   return HandTool;
 })();
 
-exports.HandTool = HandTool;
-}));
+export {
+  HandTool,
+};

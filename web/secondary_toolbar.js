@@ -13,21 +13,7 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/secondary_toolbar', ['exports', 'pdfjs-web/ui_utils'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'));
-  } else {
-    factory((root.pdfjsWebSecondaryToolbar = {}), root.pdfjsWebUIUtils);
-  }
-}(this, function (exports, uiUtils) {
-
-var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
-var mozL10n = uiUtils.mozL10n;
+import { mozL10n, SCROLLBAR_PADDING } from 'pdfjs-web/ui_utils';
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
@@ -241,5 +227,6 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
   return SecondaryToolbar;
 })();
 
-exports.SecondaryToolbar = SecondaryToolbar;
-}));
+export {
+  SecondaryToolbar,
+};

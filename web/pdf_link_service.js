@@ -13,21 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_link_service', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/dom_events'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./dom_events.js'));
-  } else {
-    factory((root.pdfjsWebPDFLinkService = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebDOMEvents);
-  }
-}(this, function (exports, uiUtils, domEvents) {
-
-var parseQueryString = uiUtils.parseQueryString;
+import { domEvents } from 'pdfjs-web/dom_events';
+import { parseQueryString } from 'pdfjs-web/ui_utils';
 
 var PageNumberRegExp = /^\d+$/;
 function isPageNumber(str) {
@@ -487,6 +474,7 @@ var SimpleLinkService = (function SimpleLinkServiceClosure() {
   return SimpleLinkService;
 })();
 
-exports.PDFLinkService = PDFLinkService;
-exports.SimpleLinkService = SimpleLinkService;
-}));
+export {
+  PDFLinkService,
+  SimpleLinkService,
+};
