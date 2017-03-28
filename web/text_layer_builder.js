@@ -58,6 +58,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.matches = [];
     this.viewport = options.viewport;
     this.textDivs = [];
+    this.allRegexPageMatches = [];
     this.findController = options.findController || null;
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = options.enhanceTextSelection;
@@ -95,7 +96,6 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
       this.cancel();
 
-      this.allRegexPageMatches = [];
       this.textDivs = [];
       var textLayerFrag = document.createDocumentFragment();
       this.textLayerRenderTask = pdfjsLib.renderTextLayer({
@@ -188,7 +188,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
     renderMatches: function TextLayerBuilder_renderMatches(matches, options) {
       // Early exit if there is nothing to render.
-      if (matches.length === 0) {
+      if (matches && matches.length === 0) {
         return;
       }
 
@@ -221,6 +221,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
           var span = document.createElement('span');
           if (extraOptions.isRegex) {
             span.className = extraOptions.className;
+            span.onmousedown = function(){alert("You clicked on: " + node.nodeValue);}
           }
           span.className += ' ' + className;
           span.appendChild(node);
@@ -318,18 +319,17 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
 
       var regexPageMatches, regexPageMatchesLength;
-      if (findController !== null && findController.state.isRegex) {
+      if (findController !== null) {
         regexPageMatches = findController.regexMatches[this.pageIdx] || null;
         regexPageMatchesLength = (findController.regexMatchesLength) ?
                                 findController.regexMatchesLength[this.pageIdx] || null : null;
 
-        this.regexClassname = findController.state.className || '';
         var regexMatches = this.convertMatches(regexPageMatches, regexPageMatchesLength);
-        this.allRegexPageMatches[this.pageIdx] = regexMatches || [];
+        this.allRegexPageMatches[this.pageIdx] = (regexMatches || []);
       }
 
       this.renderMatches(this.allRegexPageMatches[this.pageIdx] || [], {
-        className: this.regexClassname,
+        className: 'initial_regex_highlight',
         isRegex: true
       });
 

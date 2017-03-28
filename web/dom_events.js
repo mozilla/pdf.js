@@ -68,11 +68,10 @@
           query: '__',
           isRegex: true,
           regex: new RegExp(/[0-9]{5}/, 'g'),
-          className: 'initial_regex_highlight',
           caseSensitive: false,
           highlightAll: true,
           phraseSearch: false});
-      }, 10);
+      }, 100);
     });
 
     eventBus.on('pagesloaded', function (e) {

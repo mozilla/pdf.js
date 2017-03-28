@@ -110,6 +110,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
         source: this,
         type: type,
         regexMatch: false,
+        isRegex: false,
         query: this.findField.value,
         caseSensitive: this.caseSensitive.checked,
         phraseSearch: true,

@@ -233,7 +233,7 @@
 
         me.swapFindWithRegexLength(pageIndex, []);
         me.swapFindWithRegex(pageIndex, []);
-        me.prepareMatchesLenghts(matchesWithLength, pageIndex);
+        me.prepareMatchesLengths(matchesWithLength, pageIndex);
       },
 
       calcFindMatch: function PDFFindController_calcFindMatch(pageIndex) {
@@ -351,7 +351,7 @@
 
         var page = this.pdfViewer.getPageView(index);
         if (page.textLayer) {
-          page.textLayer.updateMatches(this.state.className);
+          page.textLayer.updateMatches();
         }
       },
 
@@ -563,7 +563,7 @@
        * Sort matchesWithLength, clean up intersecting terms
        * and put the result into the two arrays.
        */
-      prepareMatchesLenghts: function PDFFindController_prepareMatchesLenghts(matchesWithLength, pageIndex) {
+      prepareMatchesLengths: function PDFFindController_prepareMatchesLengths(matchesWithLength, pageIndex) {
         var me = this;
         var isRegex = me.isRegexSearch();
         if (isRegex) {

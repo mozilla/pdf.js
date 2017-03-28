@@ -62,6 +62,7 @@
 
 /*Highlight result from the initial-regex search*/
 .initial_regex_highlight {
+  cursor: pointer;
   background-color: red !important;
 }
 
