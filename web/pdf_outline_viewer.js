@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
-
-var PDFJS = pdfjsLib.PDFJS;
+import {
+  addLinkAttributes, PDFJS, removeNullCharacters
+} from 'pdfjs-web/pdfjs';
 
 var DEFAULT_TITLE = '\u2013';
 
@@ -74,7 +74,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      */
     _bindLink: function PDFOutlineViewer_bindLink(element, item) {
       if (item.url) {
-        pdfjsLib.addLinkAttributes(element, {
+        addLinkAttributes(element, {
           url: item.url,
           target: (item.newWindow ? PDFJS.LinkTarget.BLANK : undefined),
         });
@@ -189,7 +189,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
           this._bindLink(element, item);
           this._setStyles(element, item);
           element.textContent =
-            pdfjsLib.removeNullCharacters(item.title) || DEFAULT_TITLE;
+            removeNullCharacters(item.title) || DEFAULT_TITLE;
 
           div.appendChild(element);
 

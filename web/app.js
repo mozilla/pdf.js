@@ -14,12 +14,16 @@
  */
 /* globals PDFBug, Stats */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import {
   animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, localized,
   MAX_SCALE, MIN_SCALE, mozL10n, noContextMenuHandler, normalizeWheelEventDelta,
   parseQueryString, ProgressBar, RendererType, UNKNOWN_SCALE
 } from 'pdfjs-web/ui_utils';
+import {
+  build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
+  MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
+  UNSUPPORTED_FEATURES, version,
+} from 'pdfjs-web/pdfjs';
 import {
   PDFRenderingQueue, RenderingStates
 } from 'pdfjs-web/pdf_rendering_queue';
@@ -140,7 +144,6 @@ var PDFViewerApplication = {
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
     var self = this;
-    var PDFJS = pdfjsLib.PDFJS;
 
     Preferences.initialize();
     this.preferences = Preferences;
@@ -179,7 +182,6 @@ var PDFViewerApplication = {
    */
   _readPreferences: function () {
     var self = this;
-    var PDFJS = pdfjsLib.PDFJS;
 
     return Promise.all([
       Preferences.get('enableWebGL').then(function resolved(value) {
@@ -445,11 +447,11 @@ var PDFViewerApplication = {
         support = false;
       }
     }
-    if (support && pdfjsLib.PDFJS.disableFullscreen === true) {
+    if (support && PDFJS.disableFullscreen === true) {
       support = false;
     }
 
-    return pdfjsLib.shadow(this, 'supportsFullscreen', support);
+    return shadow(this, 'supportsFullscreen', support);
   },
 
   get supportsIntegratedFind() {
@@ -467,7 +469,7 @@ var PDFViewerApplication = {
   get loadingBar() {
     var bar = new ProgressBar('#loadingBar', {});
 
-    return pdfjsLib.shadow(this, 'loadingBar', bar);
+    return shadow(this, 'loadingBar', bar);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
@@ -517,7 +519,7 @@ var PDFViewerApplication = {
     var title = getPDFFileNameFromURL(url, '');
     if (!title) {
       try {
-        title = decodeURIComponent(pdfjsLib.getFilenameFromUrl(url)) || url;
+        title = decodeURIComponent(getFilenameFromUrl(url)) || url;
       } catch (e) {
         // decodeURIComponent may throw URIError,
         // fall back to using the unprocessed url in that case
@@ -632,7 +634,7 @@ var PDFViewerApplication = {
     var self = this;
     self.downloadComplete = false;
 
-    var loadingTask = pdfjsLib.getDocument(parameters);
+    var loadingTask = getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = function passwordNeeded(updateCallback, reason) {
@@ -656,15 +658,15 @@ var PDFViewerApplication = {
         var loadingErrorMessage = mozL10n.get('loading_error', null,
           'An error occurred while loading the PDF.');
 
-        if (exception instanceof pdfjsLib.InvalidPDFException) {
+        if (exception instanceof InvalidPDFException) {
           // change error message also for other builds
           loadingErrorMessage = mozL10n.get('invalid_file_error', null,
                                             'Invalid or corrupted PDF file.');
-        } else if (exception instanceof pdfjsLib.MissingPDFException) {
+        } else if (exception instanceof MissingPDFException) {
           // special message for missing PDF's
           loadingErrorMessage = mozL10n.get('missing_file_error', null,
                                             'Missing PDF file.');
-        } else if (exception instanceof pdfjsLib.UnexpectedResponseException) {
+        } else if (exception instanceof UnexpectedResponseException) {
           loadingErrorMessage = mozL10n.get('unexpected_response_error', null,
                                             'Unexpected server response.');
         }
@@ -707,7 +709,7 @@ var PDFViewerApplication = {
 
     this.pdfDocument.getData().then(
       function getDataSuccess(data) {
-        var blob = pdfjsLib.createBlob(data, 'application/pdf');
+        var blob = createBlob(data, 'application/pdf');
         downloadManager.download(blob, url, filename);
       },
       downloadByUrl // Error occurred try downloading with just the url.
@@ -744,7 +746,7 @@ var PDFViewerApplication = {
    */
   error: function pdfViewError(message, moreInfo) {
     var moreInfoText = mozL10n.get('error_version_info',
-      {version: pdfjsLib.version || '?', build: pdfjsLib.build || '?'},
+      {version: version || '?', build: build || '?'},
       'PDF.js v{{version}} (build: {{build}})') + '\n';
     if (moreInfo) {
       moreInfoText +=
@@ -822,7 +824,7 @@ var PDFViewerApplication = {
       // the loading bar will not be completely filled, nor will it be hidden.
       // To prevent displaying a partially filled loading bar permanently, we
       // hide it when no data has been loaded during a certain amount of time.
-      if (pdfjsLib.PDFJS.disableAutoFetch && percent) {
+      if (PDFJS.disableAutoFetch && percent) {
         if (this.disableAutoFetchLoadingBarTimeout) {
           clearTimeout(this.disableAutoFetchLoadingBarTimeout);
           this.disableAutoFetchLoadingBarTimeout = null;
@@ -885,7 +887,7 @@ var PDFViewerApplication = {
 
       self.loadingBar.setWidth(self.appConfig.viewerContainer);
 
-      if (!pdfjsLib.PDFJS.disableHistory && !self.isViewerEmbedded) {
+      if (!PDFJS.disableHistory && !self.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
         if (!self.viewerPrefs['showPreviousViewOnLoad']) {
@@ -989,7 +991,7 @@ var PDFViewerApplication = {
         pdfDocument.getJavaScript().then(function(javaScript) {
           if (javaScript.length) {
             console.warn('Warning: JavaScript is not supported');
-            self.fallback(pdfjsLib.UNSUPPORTED_FEATURES.javaScript);
+            self.fallback(UNSUPPORTED_FEATURES.javaScript);
           }
           // Hack to support auto printing.
           var regex = /\bprint\s*\(/;
@@ -1024,8 +1026,8 @@ var PDFViewerApplication = {
       console.log('PDF ' + pdfDocument.fingerprint + ' [' +
                   info.PDFFormatVersion + ' ' + (info.Producer || '-').trim() +
                   ' / ' + (info.Creator || '-').trim() + ']' +
-                  ' (PDF.js: ' + (pdfjsLib.version || '-') +
-                  (!pdfjsLib.PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
+                  ' (PDF.js: ' + (version || '-') +
+                  (!PDFJS.disableWebGL ? ' [WebGL]' : '') + ')');
 
       var pdfTitle;
       if (metadata && metadata.has('dc:title')) {
@@ -1046,7 +1048,7 @@ var PDFViewerApplication = {
 
       if (info.IsAcroFormPresent) {
         console.warn('Warning: AcroForm/XFA is not supported');
-        self.fallback(pdfjsLib.UNSUPPORTED_FEATURES.forms);
+        self.fallback(UNSUPPORTED_FEATURES.forms);
       }
 
       if (typeof PDFJSDev !== 'undefined' &&
@@ -1329,7 +1331,10 @@ function loadAndEnablePDFBug(enabledTabs) {
     script.src = appConfig.debuggerScriptPath;
     script.onload = function () {
       PDFBug.enable(enabledTabs);
-      PDFBug.init(pdfjsLib, appConfig.mainContainer);
+      PDFBug.init({
+        PDFJS,
+        OPS,
+      }, appConfig.mainContainer);
       resolve();
     };
     script.onerror = function () {
@@ -1374,8 +1379,6 @@ function webViewerInitialized() {
     appConfig.toolbar.openFile.setAttribute('hidden', 'true');
     appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
   }
-
-  var PDFJS = pdfjsLib.PDFJS;
 
   if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) ||
       PDFViewerApplication.viewerPrefs['pdfBugEnabled']) {
@@ -1555,7 +1558,7 @@ function webViewerPageRendered(e) {
     thumbnailView.setImage(pageView);
   }
 
-  if (pdfjsLib.PDFJS.pdfBug && Stats.enabled && pageView.stats) {
+  if (PDFJS.pdfBug && Stats.enabled && pageView.stats) {
     Stats.add(pageNumber, pageView.stats);
   }
 
@@ -1720,7 +1723,7 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   webViewerFileInputChange = function webViewerFileInputChange(e) {
     var file = e.fileInput.files[0];
 
-    if (!pdfjsLib.PDFJS.disableCreateObjectURL &&
+    if (!PDFJS.disableCreateObjectURL &&
         typeof URL !== 'undefined' && URL.createObjectURL) {
       PDFViewerApplication.open(URL.createObjectURL(file));
     } else {
@@ -1843,7 +1846,7 @@ function webViewerPageChanging(e) {
   }
 
   // we need to update stats
-  if (pdfjsLib.PDFJS.pdfBug && Stats.enabled) {
+  if (PDFJS.pdfBug && Stats.enabled) {
     var pageView = PDFViewerApplication.pdfViewer.getPageView(page - 1);
     if (pageView.stats) {
       Stats.add(page, pageView.stats);

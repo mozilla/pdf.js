@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import {
   approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, RendererType,
   roundToDivide
 } from 'pdfjs-web/ui_utils';
+import {
+  CustomStyle, PDFJS, RenderingCancelledException, SVGGraphics
+} from 'pdfjs-web/pdfjs';
 import { domEvents } from 'pdfjs-web/dom_events';
 import { RenderingStates } from 'pdfjs-web/pdf_rendering_queue';
 
@@ -216,17 +218,17 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
 
       var isScalingRestricted = false;
-      if (this.canvas && pdfjsLib.PDFJS.maxCanvasPixels > 0) {
+      if (this.canvas && PDFJS.maxCanvasPixels > 0) {
         var outputScale = this.outputScale;
         if (((Math.floor(this.viewport.width) * outputScale.sx) | 0) *
             ((Math.floor(this.viewport.height) * outputScale.sy) | 0) >
-            pdfjsLib.PDFJS.maxCanvasPixels) {
+            PDFJS.maxCanvasPixels) {
           isScalingRestricted = true;
         }
       }
 
       if (this.canvas) {
-        if (pdfjsLib.PDFJS.useOnlyCssZoom ||
+        if (PDFJS.useOnlyCssZoom ||
             (this.hasRestrictedScaling && isScalingRestricted)) {
           this.cssTransform(this.canvas, true);
 
@@ -272,8 +274,6 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     cssTransform: function PDFPageView_transform(target, redrawAnnotations) {
-      var CustomStyle = pdfjsLib.CustomStyle;
-
       // Scale target (canvas or svg), its wrapper, and page container.
       var width = this.viewport.width;
       var height = this.viewport.height;
@@ -425,7 +425,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
         if (((typeof PDFJSDev === 'undefined' ||
               !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
-            error instanceof pdfjsLib.RenderingCancelledException) {
+            error instanceof RenderingCancelledException) {
           self.error = null;
           return Promise.resolve(undefined);
         }
@@ -535,7 +535,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       var outputScale = getOutputScale(ctx);
       this.outputScale = outputScale;
 
-      if (pdfjsLib.PDFJS.useOnlyCssZoom) {
+      if (PDFJS.useOnlyCssZoom) {
         var actualSizeViewport = viewport.clone({scale: CSS_UNITS});
         // Use a scale that will make the canvas be the original intended size
         // of the page.
@@ -544,10 +544,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         outputScale.scaled = true;
       }
 
-      if (pdfjsLib.PDFJS.maxCanvasPixels > 0) {
+      if (PDFJS.maxCanvasPixels > 0) {
         var pixelsInViewport = viewport.width * viewport.height;
-        var maxScale =
-          Math.sqrt(pdfjsLib.PDFJS.maxCanvasPixels / pixelsInViewport);
+        var maxScale = Math.sqrt(PDFJS.maxCanvasPixels / pixelsInViewport);
         if (outputScale.sx > maxScale || outputScale.sy > maxScale) {
           outputScale.sx = maxScale;
           outputScale.sy = maxScale;
@@ -617,8 +616,8 @@ var PDFPageView = (function PDFPageViewClosure() {
       var ensureNotCancelled = function () {
         if (cancelled) {
           if ((typeof PDFJSDev !== 'undefined' &&
-               PDFJSDev.test('PDFJS_NEXT')) || pdfjsLib.PDFJS.pdfjsNext) {
-            throw new pdfjsLib.RenderingCancelledException(
+               PDFJSDev.test('PDFJS_NEXT')) || PDFJS.pdfjsNext) {
+            throw new RenderingCancelledException(
               'Rendering cancelled, page ' + self.id, 'svg');
           } else {
             throw 'cancelled'; // eslint-disable-line no-throw-literal
@@ -628,7 +627,6 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       var self = this;
       var pdfPage = this.pdfPage;
-      var SVGGraphics = pdfjsLib.SVGGraphics;
       var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
       var promise = pdfPage.getOperatorList().then(function (opList) {
         ensureNotCancelled();
