@@ -50,6 +50,7 @@ var stringToUTF8String = sharedUtil.stringToUTF8String;
 var warn = sharedUtil.warn;
 var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
 var Util = sharedUtil.Util;
+var Dict = corePrimitives.Dict;
 var Ref = corePrimitives.Ref;
 var RefSet = corePrimitives.RefSet;
 var RefSetCache = corePrimitives.RefSetCache;
@@ -70,10 +71,11 @@ var Catalog = (function CatalogClosure() {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.catDict = xref.getCatalogObj();
-    this.fontCache = new RefSetCache();
-    this.builtInCMapCache = Object.create(null);
     assert(isDict(this.catDict), 'catalog object is not a dictionary');
 
+    this.fontCache = new RefSetCache();
+    this.builtInCMapCache = Object.create(null);
+    this.pageKidsCountCache = new RefSetCache();
     // TODO refactor to move getPage() to the PDFDocument.
     this.pageFactory = pageFactory;
     this.pagePromises = [];
@@ -421,6 +423,8 @@ var Catalog = (function CatalogClosure() {
     },
 
     cleanup: function Catalog_cleanup() {
+      this.pageKidsCountCache.clear();
+
       var promises = [];
       this.fontCache.forEach(function (promise) {
         promises.push(promise);
@@ -453,17 +457,30 @@ var Catalog = (function CatalogClosure() {
     getPageDict: function Catalog_getPageDict(pageIndex) {
       var capability = createPromiseCapability();
       var nodesToVisit = [this.catDict.getRaw('Pages')];
-      var currentPageIndex = 0;
-      var xref = this.xref;
+      var count, currentPageIndex = 0;
+      var xref = this.xref, pageKidsCountCache = this.pageKidsCountCache;
 
       function next() {
         while (nodesToVisit.length) {
           var currentNode = nodesToVisit.pop();
 
           if (isRef(currentNode)) {
+            count = pageKidsCountCache.get(currentNode);
+            // Skip nodes where the page can't be.
+            if (count > 0 && currentPageIndex + count < pageIndex) {
+              currentPageIndex += count;
+              continue;
+            }
+
             xref.fetchAsync(currentNode).then(function (obj) {
               if (isDict(obj, 'Page') || (isDict(obj) && !obj.has('Kids'))) {
                 if (pageIndex === currentPageIndex) {
+                  // Cache the Page reference, since it can *greatly* improve
+                  // performance by reducing redundant lookups in long documents
+                  // where all nodes are found at *one* level of the tree.
+                  if (currentNode && !pageKidsCountCache.has(currentNode)) {
+                    pageKidsCountCache.put(currentNode, 1);
+                  }
                   capability.resolve([obj, currentNode]);
                 } else {
                   currentPageIndex++;
@@ -481,7 +498,13 @@ var Catalog = (function CatalogClosure() {
           assert(isDict(currentNode),
             'page dictionary kid reference points to wrong type of object');
 
-          var count = currentNode.get('Count');
+          count = currentNode.get('Count');
+          // Cache the Kids count, since it can reduce redundant lookups in long
+          // documents where all nodes are found at *one* level of the tree.
+          var objId = currentNode.objId;
+          if (objId && !pageKidsCountCache.has(objId)) {
+            pageKidsCountCache.put(objId, count);
+          }
           // Skip nodes where the page can't be.
           if (currentPageIndex + count <= pageIndex) {
             currentPageIndex += count;
@@ -1251,7 +1274,7 @@ var XRef = (function XRefClosure() {
         var cacheEntry = this.cache[num];
         // In documents with Object Streams, it's possible that cached `Dict`s
         // have not been assigned an `objId` yet (see e.g. issue3115r.pdf).
-        if (isDict(cacheEntry) && !cacheEntry.objId) {
+        if (cacheEntry instanceof Dict && !cacheEntry.objId) {
           cacheEntry.objId = ref.toString();
         }
         return cacheEntry;
