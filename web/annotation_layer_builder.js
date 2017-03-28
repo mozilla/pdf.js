@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import { AnnotationLayer } from 'pdfjs-web/pdfjs';
 import { mozL10n } from 'pdfjs-web/ui_utils';
 import { SimpleLinkService } from 'pdfjs-web/pdf_link_service';
 
@@ -72,7 +72,7 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
         if (self.div) {
           // If an annotationLayer already exists, refresh its children's
           // transformation matrices.
-          pdfjsLib.AnnotationLayer.update(parameters);
+          AnnotationLayer.update(parameters);
         } else {
           // Create an annotation layer div and render the annotations
           // if there is at least one annotation.
@@ -85,7 +85,7 @@ var AnnotationLayerBuilder = (function AnnotationLayerBuilderClosure() {
           self.pageDiv.appendChild(self.div);
           parameters.div = self.div;
 
-          pdfjsLib.AnnotationLayer.render(parameters);
+          AnnotationLayer.render(parameters);
           if (typeof mozL10n !== 'undefined') {
             mozL10n.translate(self.div);
           }

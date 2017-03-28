@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import { CSS_UNITS, mozL10n } from 'pdfjs-web/ui_utils';
 import { OverlayManager } from 'pdfjs-web/overlay_manager';
+import { PDFJS } from 'pdfjs-web/pdfjs';
 import { PDFPrintServiceFactory } from 'pdfjs-web/app';
 
 var activeService = null;
@@ -152,8 +152,7 @@ PDFPrintService.prototype = {
     img.style.height = printItem.height;
 
     var scratchCanvas = this.scratchCanvas;
-    if (('toBlob' in scratchCanvas) &&
-        !pdfjsLib.PDFJS.disableCreateObjectURL) {
+    if (('toBlob' in scratchCanvas) && !PDFJS.disableCreateObjectURL) {
       scratchCanvas.toBlob(function (blob) {
         img.src = URL.createObjectURL(blob);
       });

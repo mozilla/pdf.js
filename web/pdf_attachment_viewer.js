@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import {
+  createObjectURL, createPromiseCapability, getFilenameFromUrl, PDFJS,
+  removeNullCharacters
+} from 'pdfjs-web/pdfjs';
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
@@ -41,7 +44,7 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
     this.eventBus = options.eventBus;
     this.downloadManager = options.downloadManager;
 
-    this._renderedCapability = pdfjsLib.createPromiseCapability();
+    this._renderedCapability = createPromiseCapability();
     this.eventBus.on('fileattachmentannotation',
       this._appendAttachment.bind(this));
   }
@@ -56,7 +59,7 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
       if (!keepRenderedCapability) {
         // NOTE: The *only* situation in which the `_renderedCapability` should
         //       not be replaced is when appending file attachment annotations.
-        this._renderedCapability = pdfjsLib.createPromiseCapability();
+        this._renderedCapability = createPromiseCapability();
       }
     },
 
@@ -81,8 +84,8 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
       var blobUrl;
       button.onclick = function() {
         if (!blobUrl) {
-          blobUrl = pdfjsLib.createObjectURL(
-            content, 'application/pdf', pdfjsLib.PDFJS.disableCreateObjectURL);
+          blobUrl = createObjectURL(
+            content, 'application/pdf', PDFJS.disableCreateObjectURL);
         }
         var viewerUrl;
         if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
@@ -142,8 +145,7 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
 
       for (var i = 0; i < attachmentsCount; i++) {
         var item = attachments[names[i]];
-        var filename = pdfjsLib.getFilenameFromUrl(item.filename);
-        filename = pdfjsLib.removeNullCharacters(filename);
+        var filename = removeNullCharacters(getFilenameFromUrl(item.filename));
 
         var div = document.createElement('div');
         div.className = 'attachmentsItem';

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import { domEvents } from 'pdfjs-web/dom_events';
+import { renderTextLayer } from 'pdfjs-web/pdfjs';
 
 var EXPAND_DIVS_TIMEOUT = 300; // ms
 
@@ -86,7 +86,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       this.textDivs = [];
       var textLayerFrag = document.createDocumentFragment();
-      this.textLayerRenderTask = pdfjsLib.renderTextLayer({
+      this.textLayerRenderTask = renderTextLayer({
         textContent: this.textContent,
         container: textLayerFrag,
         viewport: this.viewport,

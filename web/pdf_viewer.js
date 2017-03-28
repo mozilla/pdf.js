@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
   MAX_AUTO_SCALE, RendererType, SCROLLBAR_PADDING, scrollIntoView,
@@ -24,6 +23,7 @@ import {
 } from 'pdfjs-web/pdf_rendering_queue';
 import { AnnotationLayerBuilder } from 'pdfjs-web/annotation_layer_builder';
 import { domEvents } from 'pdfjs-web/dom_events';
+import { PDFJS } from 'pdfjs-web/pdfjs';
 import { PDFPageView } from 'pdfjs-web/pdf_page_view';
 import { SimpleLinkService } from 'pdfjs-web/pdf_link_service';
 import { TextLayerBuilder } from 'pdfjs-web/text_layer_builder';
@@ -362,7 +362,7 @@ var PDFViewer = (function pdfViewer() {
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
-          if (!pdfjsLib.PDFJS.disableTextLayer) {
+          if (!PDFJS.disableTextLayer) {
             textLayerFactory = this;
           }
           var pageView = new PDFPageView({
@@ -388,7 +388,7 @@ var PDFViewer = (function pdfViewer() {
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
         onePageRendered.then(function () {
-          if (!pdfjsLib.PDFJS.disableAutoFetch) {
+          if (!PDFJS.disableAutoFetch) {
             var getPagesLeft = pagesCount;
             for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
               pdfDocument.getPage(pageNum).then(function (pageNum, pdfPage) {
@@ -500,7 +500,7 @@ var PDFViewer = (function pdfViewer() {
 
       if (!noScroll) {
         var page = this._currentPageNumber, dest;
-        if (this._location && !pdfjsLib.PDFJS.ignoreCurrentPositionOnZoom &&
+        if (this._location && !PDFJS.ignoreCurrentPositionOnZoom &&
             !(this.isInPresentationMode || this.isChangingPresentationMode)) {
           page = this._location.pageNumber;
           dest = [null, { name: 'XYZ' }, this._location.left,

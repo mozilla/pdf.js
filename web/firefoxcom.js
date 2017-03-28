@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import {
+  createObjectURL, PDFDataRangeTransport, shadow
+} from 'pdfjs-web/pdfjs';
 import { PDFViewerApplication } from 'pdfjs-web/app';
 import { Preferences } from 'pdfjs-web/preferences';
 
@@ -94,7 +96,7 @@ var DownloadManager = (function DownloadManagerClosure() {
 
     downloadData: function DownloadManager_downloadData(data, filename,
                                                         contentType) {
-      var blobUrl = pdfjsLib.createObjectURL(data, contentType, false);
+      var blobUrl = createObjectURL(data, contentType, false);
 
       FirefoxCom.request('download', {
         blobUrl: blobUrl,
@@ -168,10 +170,10 @@ Preferences._readFromStorage = function (prefObj) {
 })();
 
 function FirefoxComDataRangeTransport(length, initialData) {
-  pdfjsLib.PDFDataRangeTransport.call(this, length, initialData);
+  PDFDataRangeTransport.call(this, length, initialData);
 }
 FirefoxComDataRangeTransport.prototype =
-  Object.create(pdfjsLib.PDFDataRangeTransport.prototype);
+  Object.create(PDFDataRangeTransport.prototype);
 FirefoxComDataRangeTransport.prototype.requestDataRange =
     function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
   FirefoxCom.request('requestDataRange', { begin: begin, end: end });
@@ -247,23 +249,22 @@ PDFViewerApplication.externalServices = {
 
   get supportsIntegratedFind() {
     var support = FirefoxCom.requestSync('supportsIntegratedFind');
-    return pdfjsLib.shadow(this, 'supportsIntegratedFind', support);
+    return shadow(this, 'supportsIntegratedFind', support);
   },
 
   get supportsDocumentFonts() {
     var support = FirefoxCom.requestSync('supportsDocumentFonts');
-    return pdfjsLib.shadow(this, 'supportsDocumentFonts', support);
+    return shadow(this, 'supportsDocumentFonts', support);
   },
 
   get supportsDocumentColors() {
     var support = FirefoxCom.requestSync('supportsDocumentColors');
-    return pdfjsLib.shadow(this, 'supportsDocumentColors', support);
+    return shadow(this, 'supportsDocumentColors', support);
   },
 
   get supportedMouseWheelZoomModifierKeys() {
     var support = FirefoxCom.requestSync('supportedMouseWheelZoomModifierKeys');
-    return pdfjsLib.shadow(this, 'supportedMouseWheelZoomModifierKeys',
-      support);
+    return shadow(this, 'supportedMouseWheelZoomModifierKeys', support);
   },
 };
 

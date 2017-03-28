@@ -14,9 +14,9 @@
  */
 /* globals chrome */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import { DefaultExternalServices, PDFViewerApplication } from 'pdfjs-web/app';
 import { OverlayManager } from 'pdfjs-web/overlay_manager';
+import { PDFJS } from 'pdfjs-web/pdfjs';
 import { Preferences } from 'pdfjs-web/preferences';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
@@ -63,7 +63,7 @@ ChromeCom.resolvePDFFile = function ChromeCom_resolvePDFFile(file, callback) {
   file = file.replace(/^drive:/i,
       'filesystem:' + location.origin + '/external/');
 
-  if (/^filesystem:/.test(file) && !pdfjsLib.PDFJS.disableWorker) {
+  if (/^filesystem:/.test(file) && !PDFJS.disableWorker) {
     // The security origin of filesystem:-URLs are not preserved when the
     // URL is passed to a Web worker, (http://crbug.com/362061), so we have
     // to create an intermediate blob:-URL as a work-around.

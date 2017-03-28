@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import { mozL10n } from 'pdfjs-web/ui_utils';
 import { OverlayManager } from 'pdfjs-web/overlay_manager';
+import { PasswordResponses } from 'pdfjs-web/pdfjs';
 
 /**
  * @typedef {Object} PasswordPromptOptions
@@ -71,7 +71,7 @@ var PasswordPrompt = (function PasswordPromptClosure() {
         var promptString = mozL10n.get('password_label', null,
           'Enter the password to open this PDF file.');
 
-        if (this.reason === pdfjsLib.PasswordResponses.INCORRECT_PASSWORD) {
+        if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
           promptString = mozL10n.get('password_invalid', null,
             'Invalid password. Please try again.');
         }

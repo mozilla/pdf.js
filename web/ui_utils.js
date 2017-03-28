@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
+import { PDFJS } from 'pdfjs-web/pdfjs';
 
 var CSS_UNITS = 96.0 / 72.0;
 var DEFAULT_SCALE_VALUE = 'auto';
@@ -31,8 +31,6 @@ var RendererType = {
 };
 
 var mozL10n = document.mozL10n || document.webL10n;
-
-var PDFJS = pdfjsLib.PDFJS;
 
 /**
  * Disables fullscreen support, and by extension Presentation Mode,

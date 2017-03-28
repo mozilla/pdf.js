@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import * as pdfjsLib from 'pdfjs-web/pdfjs';
 import { CSS_UNITS } from 'pdfjs-web/ui_utils';
 import { PDFPrintServiceFactory } from 'pdfjs-web/app';
+import { shadow } from 'pdfjs-web/pdfjs';
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(pdfDocument, pageNumber, size, printContainer) {
@@ -96,7 +96,7 @@ PDFPrintServiceFactory.instance = {
     var canvas = document.createElement('canvas');
     var value = 'mozPrintCallback' in canvas;
 
-    return pdfjsLib.shadow(this, 'supportsPrinting', value);
+    return shadow(this, 'supportsPrinting', value);
   },
 
   createPrintService: function (pdfDocument, pagesOverview, printContainer) {
