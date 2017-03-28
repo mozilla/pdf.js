@@ -90,8 +90,10 @@ var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
           request.responseType = 'arraybuffer';
         }
         request.onreadystatechange = function () {
-          if (request.readyState === XMLHttpRequest.DONE &&
-              (request.status === 200 || request.status === 0)) {
+          if (request.readyState !== XMLHttpRequest.DONE) {
+            return;
+          }
+          if (request.status === 200 || request.status === 0) {
             var data;
             if (this.isCompressed && request.response) {
               data = new Uint8Array(request.response);
@@ -106,10 +108,10 @@ var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
               });
               return;
             }
-            reject(new Error('Unable to load ' +
-                             (this.isCompressed ? 'binary ' : '') +
-                             'CMap at: ' + url));
           }
+          reject(new Error('Unable to load ' +
+                           (this.isCompressed ? 'binary ' : '') +
+                           'CMap at: ' + url));
         }.bind(this);
 
         request.send(null);

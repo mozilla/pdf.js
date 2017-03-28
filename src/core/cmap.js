@@ -954,7 +954,7 @@ var CMapFactory = (function CMapFactoryClosure() {
       return Promise.resolve(new IdentityCMap(true, 2));
     }
     if (BUILT_IN_CMAPS.indexOf(name) === -1) {
-      return Promise.reject(new Error('Unknown cMap name: ' + name));
+      return Promise.reject(new Error('Unknown CMap name: ' + name));
     }
     assert(fetchBuiltInCMap, 'Built-in CMap parameters are not provided.');
 
