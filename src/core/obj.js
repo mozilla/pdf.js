@@ -452,7 +452,8 @@ var Catalog = (function CatalogClosure() {
 
     getPageDict: function Catalog_getPageDict(pageIndex) {
       var capability = createPromiseCapability();
-      var nodesToVisit = [this.catDict.getRaw('Pages')];
+      var catDict = this.catDict;
+      var nodesToVisit = [catDict.getRaw('Pages')];
       var currentPageIndex = 0;
       var xref = this.xref;
 
@@ -498,6 +499,15 @@ var Catalog = (function CatalogClosure() {
             nodesToVisit.push(kids[last]);
           }
         }
+        if (!checkAllKids) {
+          // The optimized search attempt failed, try an exhaustive search now.
+          checkAllKids = true;
+          nodesToVisit = [catDict.getRaw('Pages')];
+          currentPageIndex = 0;
+          next();
+          return;
+        }
+        // Exhaustive and optimized failed.
         capability.reject('Page index ' + pageIndex + ' not found.');
       }
       next();
