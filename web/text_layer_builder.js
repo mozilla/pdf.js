@@ -221,7 +221,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
           var span = document.createElement('span');
           if (extraOptions.isRegex) {
             span.className = extraOptions.className;
-            span.onmousedown = function(){alert("You clicked on: " + node.nodeValue);}
+            span.addEventListener('click', function() {
+              alert("You clicked on: " + node.nodeValue);
+            });
           }
           span.className += ' ' + className;
           span.appendChild(node);
