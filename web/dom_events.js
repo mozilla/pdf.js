@@ -64,6 +64,8 @@
       //Wait 10 ms to increase performance and then
       //search the document with a Regex and highlight the results.
       setTimeout(function () {
+        var event2 = document.createEvent('CustomEvent');
+        event2.initCustomEvent('regex_initial_search', true, true, null);
         eventBus.dispatch('regex_initial_search', {
           query: '__',
           isRegex: true,
@@ -108,13 +110,13 @@
       });
       window.dispatchEvent(event);
     });
-    eventBus.on('attachmentsloaded', function (e) {
+    /*eventBus.on('attachmentsloaded', function (e) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('attachmentsloaded', true, true, {
         attachmentsCount: e.attachmentsCount
       });
       e.source.container.dispatchEvent(event);
-    });
+    });*/
     eventBus.on('sidebarviewchanged', function (e) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('sidebarviewchanged', true, true, {

@@ -940,6 +940,16 @@ html[dir="rtl"] #viewOutline.toolbarButton::before {
   content: url(images/toolbarButton-viewAttachments.png);
 }
 
+#viewFavorite.toolbarButton::before {
+  left: 5px;
+  content: url(images/toolbarButton-favorite.png);
+  top: 4px;
+}
+
+#viewCart.toolbarButton::before {
+  content: url(images/toolbarButton-cart.png);
+}
+
 #viewFind.toolbarButton::before {
   content: url(images/toolbarButton-search.png);
 }
@@ -1201,6 +1211,10 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   padding: 4px 4px 0;
 }
 #attachmentsView {
+  padding: 3px 4px 0;
+}
+
+#viewFavorite {
   padding: 3px 4px 0;
 }
 
@@ -1713,6 +1727,14 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   #viewAttachments.toolbarButton::before {
     content: url(images/toolbarButton-viewAttachments@2x.png);
+  }
+
+  #viewFavorite.toolbarButton::before {
+    content: url(images/toolbarButton-favorite@2x.png);
+  }
+
+  #viewCart.toolbarButton::before {
+    content: url(images/toolbarButton-cart@2x.png);
   }
 
   #viewFind.toolbarButton::before {
