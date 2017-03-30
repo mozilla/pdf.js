@@ -269,5 +269,45 @@ describe('cmap', function() {
       done.fail(reason);
     });
   });
+
+  it('attempts to load a non-existent built-in CMap', function(done) {
+    var cmapPromise = CMapFactory.create({
+      encoding: Name.get('null'),
+      fetchBuiltInCMap: fetchBuiltInCMap,
+      useCMap: null,
+    });
+    cmapPromise.then(function () {
+      done.fail('No CMap should be loaded');
+    }, function (reason) {
+      expect(reason instanceof Error).toEqual(true);
+      expect(reason.message).toEqual('Unknown CMap name: null');
+      done();
+    });
+  });
+
+  it('attempts to load a built-in CMap without the necessary API parameters',
+      function(done) {
+    function tmpFetchBuiltInCMap(name) {
+      var CMapReaderFactory = isNodeJS() ?
+        new NodeCMapReaderFactory({ }) : new DOMCMapReaderFactory({ });
+      return CMapReaderFactory.fetch({
+        name: name,
+      });
+    }
+
+    var cmapPromise = CMapFactory.create({
+      encoding: Name.get('Adobe-Japan1-1'),
+      fetchBuiltInCMap: tmpFetchBuiltInCMap,
+      useCMap: null,
+    });
+    cmapPromise.then(function () {
+      done.fail('No CMap should be loaded');
+    }, function (reason) {
+      expect(reason instanceof Error).toEqual(true);
+      expect(reason.message).toEqual(
+        'Unable to load CMap at: nullAdobe-Japan1-1');
+      done();
+    });
+  });
 });
 }));
