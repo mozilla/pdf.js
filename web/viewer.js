@@ -184,19 +184,10 @@ function webViewerLoad() {
       var app = modules[0];
       window.PDFViewerApplication = app.PDFViewerApplication;
       app.PDFViewerApplication.run(config);
-      if (app.PDFViewerFabricMethods.hasOwnProperty(method)){
-		    pdfjsWebApp.PDFViewerApplication.pdfViewer[method] = app.PDFViewerFabricMethods[method];
-	    }
     });
   } else {
     window.PDFViewerApplication = pdfjsWebApp.PDFViewerApplication;
     pdfjsWebApp.PDFViewerApplication.run(config);
-    for ( var method in pdfjsWebApp.FabricViewerMethods ){
-	    if (pdfjsWebApp.FabricViewerMethods.hasOwnProperty(method)){
-		    pdfjsWebApp.PDFViewerApplication.pdfViewer[method] =
-          pdfjsWebApp.FabricViewerMethods[method];
-      }
-    }
   }
 }
 
@@ -206,3 +197,4 @@ if (document.readyState === 'interactive' ||
 } else {
   document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 }
+
