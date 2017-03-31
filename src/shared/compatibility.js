@@ -643,8 +643,13 @@ PDFJS.compatibilityChecked = true;
 
 // Support: IE<10, Android<4.0, iOS
 (function checkRequestAnimationFrame() {
-  function fakeRequestAnimationFrame(callback) {
-    window.setTimeout(callback, 20);
+  function installFakeAnimationFrameFunctions() {
+    window.requestAnimationFrame = function (callback) {
+      return window.setTimeout(callback, 20);
+    };
+    window.cancelAnimationFrame = function (timeoutID) {
+      window.clearTimeout(timeoutID);
+    };
   }
 
   if (!hasDOM) {
@@ -652,7 +657,7 @@ PDFJS.compatibilityChecked = true;
   }
   if (isIOS) {
     // requestAnimationFrame on iOS is broken, replacing with fake one.
-    window.requestAnimationFrame = fakeRequestAnimationFrame;
+    installFakeAnimationFrameFunctions();
     return;
   }
   if ('requestAnimationFrame' in window) {
@@ -660,8 +665,10 @@ PDFJS.compatibilityChecked = true;
   }
   window.requestAnimationFrame =
     window.mozRequestAnimationFrame ||
-    window.webkitRequestAnimationFrame ||
-    fakeRequestAnimationFrame;
+    window.webkitRequestAnimationFrame;
+  if (!('requestAnimationFrame' in window)) {
+    installFakeAnimationFrameFunctions();
+  }
 })();
 
 // Support: Android, iOS
