@@ -113,11 +113,12 @@
 
     fabric.PageCanvas = fabric.util.createClass(fabric.Canvas, {
       type: 'page-canvas',
+      uniScaleTransform: true,
       extraFields: [
         'page',
       ],
-      centeredScaling: true,
-      centeredRotation: true,
+      centeredScaling: false,
+      centeredRotation: false,
       initialize: function(elements, options) {
         var self = this;
         this.callSuper('initialize', elements, options);
@@ -165,6 +166,7 @@
       return PDFViewerApplication.pdfViewer._pages[page - 1].canvas;
     },
     fabricMouseMove: function pdfViewFabricMouseMove(options) {
+      console.log('draw');
       var self = this,
           uuid;
       if(this.lastObj != null) {
@@ -175,10 +177,10 @@
           offset = this._offset;
       this.state.lastMoveX = e.clientX - offset.left;
       this.state.lastMoveY = e.clientY - offset.top;
-      var width = this.state.lastMoveX - this.state.lastClickX,
-          length = this.state.lastMoveY - this.state.lastClickY,
-          rectX =  this.state.lastMoveX < this.state.lastClickX ? this.state.lastMoveX : this.state.lastClickX,
-          rectY =  this.state.lastMoveY < this.state.lastClickY ? this.state.lastMoveY : this.state.lastClickY,
+      var width = Math.abs(this.state.lastMoveX - this.state.lastClickX),
+          length = Math.abs(this.state.lastMoveY - this.state.lastClickY),
+          rectX = Math.min(this.state.lastMoveX, this.state.lastClickX),
+          rectY = Math.min(this.state.lastMoveY, this.state.lastClickY),
           deleteObj = function(e){
             var key = e.which || e.keyCode || e.charCode;
             if(key === 46){
@@ -196,6 +198,9 @@
             fill: 'transparent',
             defaultObjRotation: page.rotation,
             uuid: uuid,
+            centeredScaling: false,
+            centeredTransform: false,
+            lockUniScaling: false,
           });
       window.addEventListener('keyup', deleteObj, false);
       this.lastObj = rect;
@@ -240,12 +245,12 @@
           var pdfPage = PDFViewerApplication.pdfViewer._pages[pageView.pageNumber - 1];
           var page = document.getElementById('page' + pageView.pageNumber),
               pageCtx = page.getContext('2d'),
-              container = document.getElementById('pageContainer' + pageView.pageNumber),
+              container = document
+                .querySelector('.page[data-page-number="'+ pageView.pageNumber + '"] .canvasWrapper'),
               imgData = pageCtx.getImageData(0, 0, page.width, page.height),
               cloned = page.cloneNode(),
               clCtx = cloned.getContext('2d');
           clCtx.putImageData(imgData, 0, 0);
-
           var background = new fabric.Image(cloned, {
             dx: 0,
             dy: 0,
@@ -258,6 +263,7 @@
             lockRotation: true,
           }),
               fCanvas = new fabric.PageCanvas(page.id);
+
 
           pdfPage.el = container;
           //pdfPage.zoomLayer = fCanvas.wrapperEl;
@@ -422,7 +428,6 @@
   function fabricCanvasSelectionCleared(options) {
    PDFViewerApplication.pdfViewer.lastSelectedObj = null;
   };
-
   PDFCustomFabricSetUp();
   exports.fabricViewerMethods = fabricViewerMethods;
   exports.fabricGlobalMethods = fabricGlobalMethods;
