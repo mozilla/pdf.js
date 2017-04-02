@@ -13,41 +13,12 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/canvas', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/dom_utils', 'pdfjs/display/pattern_helper',
-      'pdfjs/display/webgl'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./dom_utils.js'),
-      require('./pattern_helper.js'), require('./webgl.js'));
-  } else {
-    factory((root.pdfjsDisplayCanvas = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayDOMUtils, root.pdfjsDisplayPatternHelper,
-      root.pdfjsDisplayWebGL);
-  }
-}(this, function (exports, sharedUtil, displayDOMUtils, displayPatternHelper,
-                  displayWebGL) {
-
-var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
-var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
-var ImageKind = sharedUtil.ImageKind;
-var OPS = sharedUtil.OPS;
-var TextRenderingMode = sharedUtil.TextRenderingMode;
-var Util = sharedUtil.Util;
-var assert = sharedUtil.assert;
-var info = sharedUtil.info;
-var isNum = sharedUtil.isNum;
-var isArray = sharedUtil.isArray;
-var isLittleEndian = sharedUtil.isLittleEndian;
-var error = sharedUtil.error;
-var shadow = sharedUtil.shadow;
-var warn = sharedUtil.warn;
-var TilingPattern = displayPatternHelper.TilingPattern;
-var getShadingPatternFromIR = displayPatternHelper.getShadingPatternFromIR;
-var WebGLUtils = displayWebGL.WebGLUtils;
+import {
+  assert, error, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info,
+  isArray, isLittleEndian, isNum, OPS, shadow, TextRenderingMode, Util, warn
+} from '../shared/util';
+import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
+import { WebGLUtils } from './webgl';
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -2276,5 +2247,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   return CanvasGraphics;
 })();
 
-exports.CanvasGraphics = CanvasGraphics;
-}));
+export {
+  CanvasGraphics,
+};

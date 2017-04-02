@@ -14,22 +14,8 @@
  */
 /* eslint-disable no-multi-str */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/webgl', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/dom_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./dom_utils.js'));
-  } else {
-    factory((root.pdfjsDisplayWebGL = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayDOMUtils);
-  }
-}(this, function (exports, sharedUtil, displayDOMUtils) {
-
-var shadow = sharedUtil.shadow;
-var getDefaultSetting = displayDOMUtils.getDefaultSetting;
+import { getDefaultSetting } from './dom_utils';
+import { shadow } from '../shared/util';
 
 var WebGLUtils = (function WebGLUtilsClosure() {
   function loadShader(gl, code, shaderType) {
@@ -450,5 +436,6 @@ var WebGLUtils = (function WebGLUtilsClosure() {
   };
 })();
 
-exports.WebGLUtils = WebGLUtils;
-}));
+export {
+  WebGLUtils,
+};
