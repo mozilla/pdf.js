@@ -1287,6 +1287,27 @@ describe('annotation', function() {
     });
   });
 
+  describe('LineAnnotation', function() {
+    it('should set the line coordinates', function() {
+      var lineDict = new Dict();
+      lineDict.set('Type', Name.get('Annot'));
+      lineDict.set('Subtype', Name.get('Line'));
+      lineDict.set('L', [1, 2, 3, 4]);
+
+      var lineRef = new Ref(122, 0);
+      var xref = new XRefMock([
+        { ref: lineRef, data: lineDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, lineRef, pdfManagerMock,
+                                                idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINE);
+
+      expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
+    });
+  });
+
   describe('FileAttachmentAnnotation', function() {
     it('should correctly parse a file attachment', function() {
       var fileStream = new StringStream(
