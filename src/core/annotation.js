@@ -115,6 +115,9 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       case 'Popup':
         return new PopupAnnotation(parameters);
 
+      case 'Line':
+        return new LineAnnotation(parameters);
+
       case 'Highlight':
         return new HighlightAnnotation(parameters);
 
@@ -955,6 +958,8 @@ var PopupAnnotation = (function PopupAnnotationClosure() {
       return;
     }
 
+    var parentSubtype = parentItem.get('Subtype');
+    this.data.parentType = isName(parentSubtype) ? parentSubtype.name : null;
     this.data.parentId = dict.getRaw('Parent').toString();
     this.data.title = stringToPDFString(parentItem.get('T') || '');
     this.data.contents = stringToPDFString(parentItem.get('Contents') || '');
@@ -981,6 +986,22 @@ var PopupAnnotation = (function PopupAnnotationClosure() {
   Util.inherit(PopupAnnotation, Annotation, {});
 
   return PopupAnnotation;
+})();
+
+var LineAnnotation = (function LineAnnotationClosure() {
+  function LineAnnotation(parameters) {
+    Annotation.call(this, parameters);
+
+    this.data.annotationType = AnnotationType.LINE;
+
+    var dict = parameters.dict;
+    this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
+    this._preparePopup(dict);
+  }
+
+  Util.inherit(LineAnnotation, Annotation, {});
+
+  return LineAnnotation;
 })();
 
 var HighlightAnnotation = (function HighlightAnnotationClosure() {
