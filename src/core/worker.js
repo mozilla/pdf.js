@@ -13,41 +13,14 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/worker', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/pdf_manager'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./pdf_manager.js'));
-  } else {
-    factory((root.pdfjsCoreWorker = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCorePdfManager);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, corePdfManager) {
-
-var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
-var InvalidPDFException = sharedUtil.InvalidPDFException;
-var MessageHandler = sharedUtil.MessageHandler;
-var MissingPDFException = sharedUtil.MissingPDFException;
-var UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
-var PasswordException = sharedUtil.PasswordException;
-var UnknownErrorException = sharedUtil.UnknownErrorException;
-var XRefParseException = sharedUtil.XRefParseException;
-var arrayByteLength = sharedUtil.arrayByteLength;
-var arraysToBytes = sharedUtil.arraysToBytes;
-var assert = sharedUtil.assert;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var info = sharedUtil.info;
-var warn = sharedUtil.warn;
-var setVerbosityLevel = sharedUtil.setVerbosityLevel;
-var isNodeJS = sharedUtil.isNodeJS;
-var Ref = corePrimitives.Ref;
-var LocalPdfManager = corePdfManager.LocalPdfManager;
-var NetworkPdfManager = corePdfManager.NetworkPdfManager;
+import {
+  arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
+  InvalidPDFException, isNodeJS, MessageHandler, MissingPDFException,
+  PasswordException, setVerbosityLevel, UnexpectedResponseException,
+  UnknownErrorException, UNSUPPORTED_FEATURES, warn, XRefParseException
+} from '../shared/util';
+import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
+import { Ref } from './primitives';
 
 var WorkerTask = (function WorkerTaskClosure() {
   function WorkerTask(name) {
@@ -568,7 +541,7 @@ var WorkerMessageHandler = {
         if (source.chunkedViewerLoading) {
           pdfStream = new PDFWorkerStream(source, handler);
         } else {
-          assert(PDFNetworkStream, 'pdfjs/core/network module is not loaded');
+          assert(PDFNetworkStream, './network module is not loaded');
           pdfStream = new PDFNetworkStream(data);
         }
       } catch (ex) {
@@ -982,7 +955,8 @@ if (typeof window === 'undefined' && !isNodeJS() &&
   WorkerMessageHandler.initializeFromPort(self);
 }
 
-exports.setPDFNetworkStreamClass = setPDFNetworkStreamClass;
-exports.WorkerTask = WorkerTask;
-exports.WorkerMessageHandler = WorkerMessageHandler;
-}));
+export {
+  setPDFNetworkStreamClass,
+  WorkerTask,
+  WorkerMessageHandler,
+};

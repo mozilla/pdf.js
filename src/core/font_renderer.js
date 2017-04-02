@@ -13,31 +13,11 @@
  * limitations under the License.
  */
 
-'use strict';
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/font_renderer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/stream', 'pdfjs/core/glyphlist', 'pdfjs/core/encodings',
-      'pdfjs/core/cff_parser'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./stream.js'),
-      require('./glyphlist.js'), require('./encodings.js'),
-      require('./cff_parser.js'));
-  } else {
-    factory((root.pdfjsCoreFontRenderer = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreStream, root.pdfjsCoreGlyphList, root.pdfjsCoreEncodings,
-      root.pdfjsCoreCFFParser);
-  }
-}(this, function (exports, sharedUtil, coreStream, coreGlyphList,
-                  coreEncodings, coreCFFParser) {
-
-var Util = sharedUtil.Util;
-var bytesToString = sharedUtil.bytesToString;
-var error = sharedUtil.error;
-var Stream = coreStream.Stream;
-var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
-var StandardEncoding = coreEncodings.StandardEncoding;
-var CFFParser = coreCFFParser.CFFParser;
+import { bytesToString, error, Util } from '../shared/util';
+import { CFFParser } from './cff_parser';
+import { getGlyphsUnicode } from './glyphlist';
+import { StandardEncoding } from './encodings';
+import { Stream } from './stream';
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
@@ -735,5 +715,6 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   };
 })();
 
-exports.FontRendererFactory = FontRendererFactory;
-}));
+export {
+  FontRendererFactory,
+};

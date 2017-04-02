@@ -13,32 +13,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/colorspace', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/function'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./function.js'));
-  } else {
-    factory((root.pdfjsCoreColorSpace = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreFunction);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreFunction) {
-
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isString = sharedUtil.isString;
-var shadow = sharedUtil.shadow;
-var warn = sharedUtil.warn;
-var isDict = corePrimitives.isDict;
-var isName = corePrimitives.isName;
-var isStream = corePrimitives.isStream;
-var PDFFunction = coreFunction.PDFFunction;
+import { error, info, isArray, isString, shadow, warn } from '../shared/util';
+import { isDict, isName, isStream } from './primitives';
+import { PDFFunction } from './function';
 
 var ColorSpace = (function ColorSpaceClosure() {
   /**
@@ -1309,5 +1286,6 @@ var LabCS = (function LabCSClosure() {
   return LabCS;
 })();
 
-exports.ColorSpace = ColorSpace;
-}));
+export {
+  ColorSpace,
+};

@@ -13,101 +13,39 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/evaluator', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser',
-      'pdfjs/core/image', 'pdfjs/core/colorspace', 'pdfjs/core/murmurhash3',
-      'pdfjs/core/fonts', 'pdfjs/core/function', 'pdfjs/core/pattern',
-      'pdfjs/core/cmap', 'pdfjs/core/metrics', 'pdfjs/core/bidi',
-      'pdfjs/core/encodings', 'pdfjs/core/standard_fonts',
-      'pdfjs/core/unicode', 'pdfjs/core/glyphlist'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./parser.js'), require('./image.js'),
-      require('./colorspace.js'), require('./murmurhash3.js'),
-      require('./fonts.js'), require('./function.js'), require('./pattern.js'),
-      require('./cmap.js'), require('./metrics.js'), require('./bidi.js'),
-      require('./encodings.js'), require('./standard_fonts.js'),
-      require('./unicode.js'), require('./glyphlist.js'));
-  } else {
-    factory((root.pdfjsCoreEvaluator = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser,
-      root.pdfjsCoreImage, root.pdfjsCoreColorSpace, root.pdfjsCoreMurmurHash3,
-      root.pdfjsCoreFonts, root.pdfjsCoreFunction, root.pdfjsCorePattern,
-      root.pdfjsCoreCMap, root.pdfjsCoreMetrics, root.pdfjsCoreBidi,
-      root.pdfjsCoreEncodings, root.pdfjsCoreStandardFonts,
-      root.pdfjsCoreUnicode, root.pdfjsCoreGlyphList);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser,
-                  coreImage, coreColorSpace, coreMurmurHash3, coreFonts,
-                  coreFunction, corePattern, coreCMap, coreMetrics, coreBidi,
-                  coreEncodings, coreStandardFonts, coreUnicode,
-                  coreGlyphList) {
-
-var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
-var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
-var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
-var ImageKind = sharedUtil.ImageKind;
-var OPS = sharedUtil.OPS;
-var NativeImageDecoding = sharedUtil.NativeImageDecoding;
-var TextRenderingMode = sharedUtil.TextRenderingMode;
-var CMapCompressionType = sharedUtil.CMapCompressionType;
-var Util = sharedUtil.Util;
-var assert = sharedUtil.assert;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isNum = sharedUtil.isNum;
-var isString = sharedUtil.isString;
-var getLookupTableFactory = sharedUtil.getLookupTableFactory;
-var warn = sharedUtil.warn;
-var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
-var isEOF = corePrimitives.isEOF;
-var isCmd = corePrimitives.isCmd;
-var isDict = corePrimitives.isDict;
-var isName = corePrimitives.isName;
-var isRef = corePrimitives.isRef;
-var isStream = corePrimitives.isStream;
-var DecodeStream = coreStream.DecodeStream;
-var JpegStream = coreStream.JpegStream;
-var Stream = coreStream.Stream;
-var Lexer = coreParser.Lexer;
-var Parser = coreParser.Parser;
-var PDFImage = coreImage.PDFImage;
-var ColorSpace = coreColorSpace.ColorSpace;
-var MurmurHash3_64 = coreMurmurHash3.MurmurHash3_64;
-var ErrorFont = coreFonts.ErrorFont;
-var FontFlags = coreFonts.FontFlags;
-var Font = coreFonts.Font;
-var IdentityToUnicodeMap = coreFonts.IdentityToUnicodeMap;
-var ToUnicodeMap = coreFonts.ToUnicodeMap;
-var getFontType = coreFonts.getFontType;
-var isPDFFunction = coreFunction.isPDFFunction;
-var PDFFunction = coreFunction.PDFFunction;
-var Pattern = corePattern.Pattern;
-var getTilingPatternIR = corePattern.getTilingPatternIR;
-var CMapFactory = coreCMap.CMapFactory;
-var IdentityCMap = coreCMap.IdentityCMap;
-var getMetrics = coreMetrics.getMetrics;
-var bidi = coreBidi.bidi;
-var WinAnsiEncoding = coreEncodings.WinAnsiEncoding;
-var StandardEncoding = coreEncodings.StandardEncoding;
-var MacRomanEncoding = coreEncodings.MacRomanEncoding;
-var SymbolSetEncoding = coreEncodings.SymbolSetEncoding;
-var ZapfDingbatsEncoding = coreEncodings.ZapfDingbatsEncoding;
-var getEncoding = coreEncodings.getEncoding;
-var getStdFontMap = coreStandardFonts.getStdFontMap;
-var getSerifFonts = coreStandardFonts.getSerifFonts;
-var getSymbolsFonts = coreStandardFonts.getSymbolsFonts;
-var getNormalizedUnicodes = coreUnicode.getNormalizedUnicodes;
-var reverseIfRtl = coreUnicode.reverseIfRtl;
-var getUnicodeForGlyph = coreUnicode.getUnicodeForGlyph;
-var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
+import {
+  assert, CMapCompressionType, createPromiseCapability, error,
+  FONT_IDENTITY_MATRIX, getLookupTableFactory, IDENTITY_MATRIX, ImageKind, info,
+  isArray, isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
+  UNSUPPORTED_FEATURES, Util, warn
+} from '../shared/util';
+import { CMapFactory, IdentityCMap } from './cmap';
+import { DecodeStream, JpegStream, Stream } from './stream';
+import {
+  Dict, isCmd, isDict, isEOF, isName, isRef, isStream, Name
+} from './primitives';
+import {
+  ErrorFont, Font, FontFlags, getFontType, IdentityToUnicodeMap, ToUnicodeMap
+} from './fonts';
+import {
+  getEncoding, MacRomanEncoding, StandardEncoding, SymbolSetEncoding,
+  WinAnsiEncoding, ZapfDingbatsEncoding
+} from './encodings';
+import {
+  getNormalizedUnicodes, getUnicodeForGlyph, reverseIfRtl
+} from './unicode';
+import {
+  getSerifFonts, getStdFontMap, getSymbolsFonts
+} from './standard_fonts';
+import { getTilingPatternIR, Pattern } from './pattern';
+import { isPDFFunction, PDFFunction } from './function';
+import { Lexer, Parser } from './parser';
+import { bidi } from './bidi';
+import { ColorSpace } from './colorspace';
+import { getGlyphsUnicode } from './glyphlist';
+import { getMetrics } from './metrics';
+import { MurmurHash3_64 } from './murmurhash3';
+import { PDFImage } from './image';
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
   const DefaultPartialEvaluatorOptions = {
@@ -3439,6 +3377,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
   return QueueOptimizer;
 })();
 
-exports.OperatorList = OperatorList;
-exports.PartialEvaluator = PartialEvaluator;
-}));
+export {
+  OperatorList,
+  PartialEvaluator,
+};
