@@ -119,7 +119,7 @@ AnnotationElementFactory.prototype =
  * @alias AnnotationElement
  */
 var AnnotationElement = (function AnnotationElementClosure() {
-  function AnnotationElement(parameters, isRenderable) {
+  function AnnotationElement(parameters, isRenderable, ignoreBorder) {
     this.isRenderable = isRenderable || false;
     this.data = parameters.data;
     this.layer = parameters.layer;
@@ -131,7 +131,7 @@ var AnnotationElement = (function AnnotationElementClosure() {
     this.renderInteractiveForms = parameters.renderInteractiveForms;
 
     if (isRenderable) {
-      this.container = this._createContainer();
+      this.container = this._createContainer(ignoreBorder);
     }
   }
 
@@ -140,10 +140,12 @@ var AnnotationElement = (function AnnotationElementClosure() {
      * Create an empty container for the annotation's HTML element.
      *
      * @private
+     * @param {boolean} ignoreBorder
      * @memberof AnnotationElement
      * @returns {HTMLSectionElement}
      */
-    _createContainer: function AnnotationElement_createContainer() {
+    _createContainer:
+        function AnnotationElement_createContainer(ignoreBorder) {
       var data = this.data, page = this.page, viewport = this.viewport;
       var container = document.createElement('section');
       var width = data.rect[2] - data.rect[0];
@@ -165,7 +167,7 @@ var AnnotationElement = (function AnnotationElementClosure() {
       CustomStyle.setProp('transformOrigin', container,
                           -rect[0] + 'px ' + -rect[1] + 'px');
 
-      if (data.borderStyle.width > 0) {
+      if (!ignoreBorder && data.borderStyle.width > 0) {
         container.style.borderWidth = data.borderStyle.width + 'px';
         if (data.borderStyle.style !== AnnotationBorderStyleType.UNDERLINE) {
           // Underline styles only have a bottom border, so we do not need
@@ -873,7 +875,8 @@ var HighlightAnnotationElement = (
   function HighlightAnnotationElement(parameters) {
     var isRenderable = !!(parameters.data.hasPopup ||
                           parameters.data.title || parameters.data.contents);
-    AnnotationElement.call(this, parameters, isRenderable);
+    AnnotationElement.call(this, parameters, isRenderable,
+                           /* ignoreBorder = */ true);
   }
 
   Util.inherit(HighlightAnnotationElement, AnnotationElement, {
@@ -890,7 +893,6 @@ var HighlightAnnotationElement = (
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
       }
-
       return this.container;
     }
   });
@@ -907,7 +909,8 @@ var UnderlineAnnotationElement = (
   function UnderlineAnnotationElement(parameters) {
     var isRenderable = !!(parameters.data.hasPopup ||
                           parameters.data.title || parameters.data.contents);
-    AnnotationElement.call(this, parameters, isRenderable);
+    AnnotationElement.call(this, parameters, isRenderable,
+                           /* ignoreBorder = */ true);
   }
 
   Util.inherit(UnderlineAnnotationElement, AnnotationElement, {
@@ -924,7 +927,6 @@ var UnderlineAnnotationElement = (
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
       }
-
       return this.container;
     }
   });
@@ -940,7 +942,8 @@ var SquigglyAnnotationElement = (function SquigglyAnnotationElementClosure() {
   function SquigglyAnnotationElement(parameters) {
     var isRenderable = !!(parameters.data.hasPopup ||
                           parameters.data.title || parameters.data.contents);
-    AnnotationElement.call(this, parameters, isRenderable);
+    AnnotationElement.call(this, parameters, isRenderable,
+                           /* ignoreBorder = */ true);
   }
 
   Util.inherit(SquigglyAnnotationElement, AnnotationElement, {
@@ -957,7 +960,6 @@ var SquigglyAnnotationElement = (function SquigglyAnnotationElementClosure() {
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
       }
-
       return this.container;
     }
   });
@@ -974,7 +976,8 @@ var StrikeOutAnnotationElement = (
   function StrikeOutAnnotationElement(parameters) {
     var isRenderable = !!(parameters.data.hasPopup ||
                           parameters.data.title || parameters.data.contents);
-    AnnotationElement.call(this, parameters, isRenderable);
+    AnnotationElement.call(this, parameters, isRenderable,
+                           /* ignoreBorder = */ true);
   }
 
   Util.inherit(StrikeOutAnnotationElement, AnnotationElement, {
@@ -991,7 +994,6 @@ var StrikeOutAnnotationElement = (
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
       }
-
       return this.container;
     }
   });
