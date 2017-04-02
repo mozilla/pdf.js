@@ -13,34 +13,12 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/crypto', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'));
-  } else {
-    factory((root.pdfjsCoreCrypto = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream) {
-
-var PasswordException = sharedUtil.PasswordException;
-var PasswordResponses = sharedUtil.PasswordResponses;
-var bytesToString = sharedUtil.bytesToString;
-var warn = sharedUtil.warn;
-var error = sharedUtil.error;
-var assert = sharedUtil.assert;
-var isInt = sharedUtil.isInt;
-var stringToBytes = sharedUtil.stringToBytes;
-var utf8StringToString = sharedUtil.utf8StringToString;
-var Name = corePrimitives.Name;
-var isName = corePrimitives.isName;
-var isDict = corePrimitives.isDict;
-var DecryptStream = coreStream.DecryptStream;
+import {
+  assert, bytesToString, error, isInt, PasswordException, PasswordResponses,
+  stringToBytes, utf8StringToString, warn
+} from '../shared/util';
+import { isDict, isName, Name } from './primitives';
+import { DecryptStream } from './stream';
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
   function ARCFourCipher(key) {
@@ -2070,14 +2048,15 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   return CipherTransformFactory;
 })();
 
-exports.AES128Cipher = AES128Cipher;
-exports.AES256Cipher = AES256Cipher;
-exports.ARCFourCipher = ARCFourCipher;
-exports.CipherTransformFactory = CipherTransformFactory;
-exports.PDF17 = PDF17;
-exports.PDF20 = PDF20;
-exports.calculateMD5 = calculateMD5;
-exports.calculateSHA256 = calculateSHA256;
-exports.calculateSHA384 = calculateSHA384;
-exports.calculateSHA512 = calculateSHA512;
-}));
+export {
+  AES128Cipher,
+  AES256Cipher,
+  ARCFourCipher,
+  CipherTransformFactory,
+  PDF17,
+  PDF20,
+  calculateMD5,
+  calculateSHA256,
+  calculateSHA384,
+  calculateSHA512,
+};

@@ -14,34 +14,12 @@
  */
 /* eslint-disable no-multi-spaces */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/pattern', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/function',
-      'pdfjs/core/colorspace'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./function.js'), require('./colorspace.js'));
-  } else {
-    factory((root.pdfjsCorePattern = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreFunction,
-      root.pdfjsCoreColorSpace);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreFunction,
-                  coreColorSpace) {
-
-var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
-var MissingDataException = sharedUtil.MissingDataException;
-var Util = sharedUtil.Util;
-var assert = sharedUtil.assert;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var warn = sharedUtil.warn;
-var isStream = corePrimitives.isStream;
-var PDFFunction = coreFunction.PDFFunction;
-var ColorSpace = coreColorSpace.ColorSpace;
+import {
+  assert, error, info, MissingDataException, UNSUPPORTED_FEATURES, Util, warn
+} from '../shared/util';
+import { ColorSpace } from './colorspace';
+import { isStream } from './primitives';
+import { PDFFunction } from './function';
 
 var ShadingType = {
   FUNCTION_BASED: 1,
@@ -830,6 +808,7 @@ function getTilingPatternIR(operatorList, dict, args) {
   ];
 }
 
-exports.Pattern = Pattern;
-exports.getTilingPatternIR = getTilingPatternIR;
-}));
+export {
+  Pattern,
+  getTilingPatternIR,
+};

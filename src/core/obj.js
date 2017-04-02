@@ -13,58 +13,20 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/obj', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/crypto', 'pdfjs/core/parser',
-      'pdfjs/core/chunked_stream', 'pdfjs/core/colorspace'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./crypto.js'), require('./parser.js'),
-      require('./chunked_stream.js'), require('./colorspace.js'));
-  } else {
-    factory((root.pdfjsCoreObj = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreCrypto, root.pdfjsCoreParser,
-      root.pdfjsCoreChunkedStream, root.pdfjsCoreColorSpace);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreCrypto, coreParser,
-                  coreChunkedStream, coreColorSpace) {
-
-var InvalidPDFException = sharedUtil.InvalidPDFException;
-var MissingDataException = sharedUtil.MissingDataException;
-var XRefParseException = sharedUtil.XRefParseException;
-var assert = sharedUtil.assert;
-var bytesToString = sharedUtil.bytesToString;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isBool = sharedUtil.isBool;
-var isInt = sharedUtil.isInt;
-var isString = sharedUtil.isString;
-var shadow = sharedUtil.shadow;
-var stringToPDFString = sharedUtil.stringToPDFString;
-var stringToUTF8String = sharedUtil.stringToUTF8String;
-var warn = sharedUtil.warn;
-var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
-var Util = sharedUtil.Util;
-var Dict = corePrimitives.Dict;
-var Ref = corePrimitives.Ref;
-var RefSet = corePrimitives.RefSet;
-var RefSetCache = corePrimitives.RefSetCache;
-var isName = corePrimitives.isName;
-var isCmd = corePrimitives.isCmd;
-var isDict = corePrimitives.isDict;
-var isRef = corePrimitives.isRef;
-var isRefsEqual = corePrimitives.isRefsEqual;
-var isStream = corePrimitives.isStream;
-var CipherTransformFactory = coreCrypto.CipherTransformFactory;
-var Lexer = coreParser.Lexer;
-var Parser = coreParser.Parser;
-var ChunkedStream = coreChunkedStream.ChunkedStream;
-var ColorSpace = coreColorSpace.ColorSpace;
+import {
+  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl, error,
+  info, InvalidPDFException, isArray, isBool, isInt, isString,
+  MissingDataException, shadow, stringToPDFString, stringToUTF8String, Util,
+  warn, XRefParseException
+} from '../shared/util';
+import {
+  Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
+  RefSetCache
+} from './primitives';
+import { Lexer, Parser } from './parser';
+import { ChunkedStream } from './chunked_stream';
+import { CipherTransformFactory } from './crypto';
+import { ColorSpace } from './colorspace';
 
 var Catalog = (function CatalogClosure() {
   function Catalog(pdfManager, xref, pageFactory) {
@@ -1788,8 +1750,9 @@ var ObjectLoader = (function() {
   return ObjectLoader;
 })();
 
-exports.Catalog = Catalog;
-exports.ObjectLoader = ObjectLoader;
-exports.XRef = XRef;
-exports.FileSpec = FileSpec;
-}));
+export {
+  Catalog,
+  ObjectLoader,
+  XRef,
+  FileSpec,
+};

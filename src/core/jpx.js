@@ -13,28 +13,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/jpx', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/arithmetic_decoder'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'),
-      require('./arithmetic_decoder.js'));
-  } else {
-    factory((root.pdfjsCoreJpx = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreArithmeticDecoder);
-  }
-}(this, function (exports, sharedUtil, coreArithmeticDecoder) {
-
-var info = sharedUtil.info;
-var warn = sharedUtil.warn;
-var error = sharedUtil.error;
-var log2 = sharedUtil.log2;
-var readUint16 = sharedUtil.readUint16;
-var readUint32 = sharedUtil.readUint32;
-var ArithmeticDecoder = coreArithmeticDecoder.ArithmeticDecoder;
+import {
+  error, info, log2, readUint16, readUint32, warn
+} from '../shared/util';
+import { ArithmeticDecoder } from './arithmetic_decoder';
 
 var JpxImage = (function JpxImageClosure() {
   // Table E.1
@@ -2227,5 +2209,6 @@ var JpxImage = (function JpxImageClosure() {
   return JpxImage;
 })();
 
-exports.JpxImage = JpxImage;
-}));
+export {
+  JpxImage,
+};

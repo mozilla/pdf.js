@@ -13,47 +13,16 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/annotation', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/colorspace',
-      'pdfjs/core/obj', 'pdfjs/core/evaluator'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./colorspace.js'), require('./obj.js'),
-      require('./evaluator.js'));
-  } else {
-    factory((root.pdfjsCoreAnnotation = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreColorSpace,
-      root.pdfjsCoreObj, root.pdfjsCoreEvaluator);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream,
-                  coreColorSpace, coreObj, coreEvaluator) {
-
-var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
-var AnnotationFieldFlag = sharedUtil.AnnotationFieldFlag;
-var AnnotationFlag = sharedUtil.AnnotationFlag;
-var AnnotationType = sharedUtil.AnnotationType;
-var OPS = sharedUtil.OPS;
-var Util = sharedUtil.Util;
-var isArray = sharedUtil.isArray;
-var isInt = sharedUtil.isInt;
-var stringToBytes = sharedUtil.stringToBytes;
-var stringToPDFString = sharedUtil.stringToPDFString;
-var warn = sharedUtil.warn;
-var Dict = corePrimitives.Dict;
-var isDict = corePrimitives.isDict;
-var isName = corePrimitives.isName;
-var isRef = corePrimitives.isRef;
-var isStream = corePrimitives.isStream;
-var Stream = coreStream.Stream;
-var ColorSpace = coreColorSpace.ColorSpace;
-var Catalog = coreObj.Catalog;
-var ObjectLoader = coreObj.ObjectLoader;
-var FileSpec = coreObj.FileSpec;
-var OperatorList = coreEvaluator.OperatorList;
+import {
+  AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
+  AnnotationType, isArray, isInt, OPS, stringToBytes, stringToPDFString, Util,
+  warn
+} from '../shared/util';
+import { Catalog, FileSpec, ObjectLoader } from './obj';
+import { Dict, isDict, isName, isRef, isStream } from './primitives';
+import { ColorSpace } from './colorspace';
+import { OperatorList } from './evaluator';
+import { Stream } from './stream';
 
 /**
  * @class
@@ -1074,7 +1043,8 @@ var FileAttachmentAnnotation = (function FileAttachmentAnnotationClosure() {
   return FileAttachmentAnnotation;
 })();
 
-exports.Annotation = Annotation;
-exports.AnnotationBorderStyle = AnnotationBorderStyle;
-exports.AnnotationFactory = AnnotationFactory;
-}));
+export {
+  Annotation,
+  AnnotationBorderStyle,
+  AnnotationFactory,
+};

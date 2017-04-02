@@ -14,20 +14,7 @@
  */
 /* eslint-disable no-multi-spaces */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/jpg', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCoreJpg = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
-var warn = sharedUtil.warn;
-var error = sharedUtil.error;
+import { error, warn } from '../shared/util';
 
 /**
  * This code was forked from https://github.com/notmasteryet/jpgjs.
@@ -1138,5 +1125,6 @@ var JpegImage = (function JpegImageClosure() {
   return JpegImage;
 })();
 
-exports.JpegImage = JpegImage;
-}));
+export {
+  JpegImage,
+};

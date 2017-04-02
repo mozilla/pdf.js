@@ -13,23 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/ps_parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'));
-  } else {
-    factory((root.pdfjsCorePsParser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives);
-  }
-}(this, function (exports, sharedUtil, corePrimitives) {
-
-var error = sharedUtil.error;
-var isSpace = sharedUtil.isSpace;
-var EOF = corePrimitives.EOF;
+import { error, isSpace } from '../shared/util';
+import { EOF } from './primitives';
 
 var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {
@@ -234,6 +219,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
   return PostScriptLexer;
 })();
 
-exports.PostScriptLexer = PostScriptLexer;
-exports.PostScriptParser = PostScriptParser;
-}));
+export {
+  PostScriptLexer,
+  PostScriptParser,
+};

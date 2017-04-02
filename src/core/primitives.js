@@ -14,19 +14,7 @@
  */
 /* uses XRef */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/primitives', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCorePrimitives = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
-var isArray = sharedUtil.isArray;
+import { isArray } from '../shared/util';
 
 var EOF = {};
 
@@ -299,18 +287,19 @@ function isStream(v) {
   return typeof v === 'object' && v !== null && v.getBytes !== undefined;
 }
 
-exports.EOF = EOF;
-exports.Cmd = Cmd;
-exports.Dict = Dict;
-exports.Name = Name;
-exports.Ref = Ref;
-exports.RefSet = RefSet;
-exports.RefSetCache = RefSetCache;
-exports.isEOF = isEOF;
-exports.isCmd = isCmd;
-exports.isDict = isDict;
-exports.isName = isName;
-exports.isRef = isRef;
-exports.isRefsEqual = isRefsEqual;
-exports.isStream = isStream;
-}));
+export {
+  EOF,
+  Cmd,
+  Dict,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+  isEOF,
+  isCmd,
+  isDict,
+  isName,
+  isRef,
+  isRefsEqual,
+  isStream,
+};

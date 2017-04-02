@@ -13,18 +13,6 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/arithmetic_decoder', ['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
-  } else {
-    factory((root.pdfjsCoreArithmeticDecoder = {}));
-  }
-}(this, function (exports) {
-
 /* This class implements the QM Coder decoding as defined in
  *   JPEG 2000 Part I Final Committee Draft Version 1.0
  *   Annex C.3 Arithmetic decoding procedure
@@ -192,5 +180,6 @@ var ArithmeticDecoder = (function ArithmeticDecoderClosure() {
   return ArithmeticDecoder;
 })();
 
-exports.ArithmeticDecoder = ArithmeticDecoder;
-}));
+export {
+  ArithmeticDecoder,
+};
