@@ -13,26 +13,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/dom_utils', ['exports', 'pdfjs/shared/util'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsDisplayDOMUtils = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
-var assert = sharedUtil.assert;
-var removeNullCharacters = sharedUtil.removeNullCharacters;
-var warn = sharedUtil.warn;
-var deprecated = sharedUtil.deprecated;
-var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
-var stringToBytes = sharedUtil.stringToBytes;
-var CMapCompressionType = sharedUtil.CMapCompressionType;
+import {
+  assert, CMapCompressionType, createValidAbsoluteUrl, deprecated, globalScope,
+  removeNullCharacters, stringToBytes, warn
+} from '../shared/util';
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 
@@ -250,7 +234,7 @@ function getFilenameFromUrl(url) {
 function getDefaultSetting(id) {
   // The list of the settings and their default is maintained for backward
   // compatibility and shall not be extended or modified. See also global.js.
-  var globalSettings = sharedUtil.globalScope.PDFJS;
+  var globalSettings = globalScope.PDFJS;
   switch (id) {
     case 'pdfBug':
       return globalSettings ? globalSettings.pdfBug : false;
@@ -331,15 +315,16 @@ function isValidUrl(url, allowRelative) {
   return createValidAbsoluteUrl(url, baseUrl) !== null;
 }
 
-exports.CustomStyle = CustomStyle;
-exports.addLinkAttributes = addLinkAttributes;
-exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
-exports.isValidUrl = isValidUrl;
-exports.getFilenameFromUrl = getFilenameFromUrl;
-exports.LinkTarget = LinkTarget;
-exports.RenderingCancelledException = RenderingCancelledException;
-exports.getDefaultSetting = getDefaultSetting;
-exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
-exports.DOMCanvasFactory = DOMCanvasFactory;
-exports.DOMCMapReaderFactory = DOMCMapReaderFactory;
-}));
+export {
+  CustomStyle,
+  RenderingCancelledException,
+  addLinkAttributes,
+  isExternalLinkTargetSet,
+  isValidUrl,
+  getFilenameFromUrl,
+  LinkTarget,
+  getDefaultSetting,
+  DEFAULT_LINK_REL,
+  DOMCanvasFactory,
+  DOMCMapReaderFactory,
+};

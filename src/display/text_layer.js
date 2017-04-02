@@ -13,24 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/text_layer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/dom_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./dom_utils.js'));
-  } else {
-    factory((root.pdfjsDisplayTextLayer = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayDOMUtils);
-  }
-}(this, function (exports, sharedUtil, displayDOMUtils) {
-
-var Util = sharedUtil.Util;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var CustomStyle = displayDOMUtils.CustomStyle;
-var getDefaultSetting = displayDOMUtils.getDefaultSetting;
+import { createPromiseCapability, Util } from '../shared/util';
+import { CustomStyle, getDefaultSetting } from './dom_utils';
 
 /**
  * Text layer render parameters.
@@ -639,5 +623,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
   return renderTextLayer;
 })();
 
-exports.renderTextLayer = renderTextLayer;
-}));
+export {
+  renderTextLayer,
+};

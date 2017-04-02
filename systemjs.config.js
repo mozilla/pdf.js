@@ -47,7 +47,10 @@
     meta: {
       '*': {
         scriptLoad: false,
-        esModule: true
+        esModule: true,
+        babelOptions: {
+          es2015: false,
+        },
       }
     },
     map: {

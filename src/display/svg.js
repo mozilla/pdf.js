@@ -13,28 +13,17 @@
  * limitations under the License.
  */
 
-'use strict';
+import {
+  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isArray,
+  isNum, OPS, Util, warn
+} from '../shared/util';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/svg', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsDisplaySVG = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
+var SVGGraphics = function() {
+  throw new Error('Not implemented: SVGGraphics');
+};
+
 if (typeof PDFJSDev === 'undefined' ||
     PDFJSDev.test('GENERIC || SINGLE_FILE')) {
-var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
-var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
-var ImageKind = sharedUtil.ImageKind;
-var OPS = sharedUtil.OPS;
-var Util = sharedUtil.Util;
-var isNum = sharedUtil.isNum;
-var isArray = sharedUtil.isArray;
-var warn = sharedUtil.warn;
-var createObjectURL = sharedUtil.createObjectURL;
 
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
@@ -293,7 +282,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
   return SVGExtraState;
 })();
 
-var SVGGraphics = (function SVGGraphicsClosure() {
+SVGGraphics = (function SVGGraphicsClosure() {
   function opListToTree(opList) {
     var opTree = [];
     var tmp = [];
@@ -1203,6 +1192,8 @@ var SVGGraphics = (function SVGGraphicsClosure() {
   return SVGGraphics;
 })();
 
-exports.SVGGraphics = SVGGraphics;
 }
-}));
+
+export {
+  SVGGraphics,
+};
