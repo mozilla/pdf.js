@@ -14,18 +14,7 @@
  */
 /* globals global, process, __pdfjsdev_webpack__ */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/shared/util', ['exports', 'pdfjs/shared/compatibility'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./compatibility.js'));
-  } else {
-    factory((root.pdfjsSharedUtil = {}), root.pdfjsSharedCompatibility);
-  }
-}(this, function (exports, compatibility) {
+import './compatibility';
 
 var globalScope = (typeof window !== 'undefined') ? window :
                   (typeof global !== 'undefined') ? global :
@@ -1363,71 +1352,72 @@ function loadJpegStream(id, imageUrl, objs) {
   img.src = imageUrl;
 }
 
-exports.FONT_IDENTITY_MATRIX = FONT_IDENTITY_MATRIX;
-exports.IDENTITY_MATRIX = IDENTITY_MATRIX;
-exports.OPS = OPS;
-exports.VERBOSITY_LEVELS = VERBOSITY_LEVELS;
-exports.UNSUPPORTED_FEATURES = UNSUPPORTED_FEATURES;
-exports.AnnotationBorderStyleType = AnnotationBorderStyleType;
-exports.AnnotationFieldFlag = AnnotationFieldFlag;
-exports.AnnotationFlag = AnnotationFlag;
-exports.AnnotationType = AnnotationType;
-exports.FontType = FontType;
-exports.ImageKind = ImageKind;
-exports.CMapCompressionType = CMapCompressionType;
-exports.InvalidPDFException = InvalidPDFException;
-exports.MessageHandler = MessageHandler;
-exports.MissingDataException = MissingDataException;
-exports.MissingPDFException = MissingPDFException;
-exports.NotImplementedException = NotImplementedException;
-exports.PageViewport = PageViewport;
-exports.PasswordException = PasswordException;
-exports.PasswordResponses = PasswordResponses;
-exports.StatTimer = StatTimer;
-exports.StreamType = StreamType;
-exports.TextRenderingMode = TextRenderingMode;
-exports.UnexpectedResponseException = UnexpectedResponseException;
-exports.UnknownErrorException = UnknownErrorException;
-exports.Util = Util;
-exports.XRefParseException = XRefParseException;
-exports.arrayByteLength = arrayByteLength;
-exports.arraysToBytes = arraysToBytes;
-exports.assert = assert;
-exports.bytesToString = bytesToString;
-exports.createBlob = createBlob;
-exports.createPromiseCapability = createPromiseCapability;
-exports.createObjectURL = createObjectURL;
-exports.deprecated = deprecated;
-exports.error = error;
-exports.getLookupTableFactory = getLookupTableFactory;
-exports.getVerbosityLevel = getVerbosityLevel;
-exports.globalScope = globalScope;
-exports.info = info;
-exports.isArray = isArray;
-exports.isArrayBuffer = isArrayBuffer;
-exports.isBool = isBool;
-exports.isEmptyObj = isEmptyObj;
-exports.isInt = isInt;
-exports.isNum = isNum;
-exports.isString = isString;
-exports.isSpace = isSpace;
-exports.isNodeJS = isNodeJS;
-exports.isSameOrigin = isSameOrigin;
-exports.createValidAbsoluteUrl = createValidAbsoluteUrl;
-exports.isLittleEndian = isLittleEndian;
-exports.isEvalSupported = isEvalSupported;
-exports.loadJpegStream = loadJpegStream;
-exports.log2 = log2;
-exports.readInt8 = readInt8;
-exports.readUint16 = readUint16;
-exports.readUint32 = readUint32;
-exports.removeNullCharacters = removeNullCharacters;
-exports.setVerbosityLevel = setVerbosityLevel;
-exports.shadow = shadow;
-exports.string32 = string32;
-exports.stringToBytes = stringToBytes;
-exports.stringToPDFString = stringToPDFString;
-exports.stringToUTF8String = stringToUTF8String;
-exports.utf8StringToString = utf8StringToString;
-exports.warn = warn;
-}));
+export {
+  FONT_IDENTITY_MATRIX,
+  IDENTITY_MATRIX,
+  OPS,
+  VERBOSITY_LEVELS,
+  UNSUPPORTED_FEATURES,
+  AnnotationBorderStyleType,
+  AnnotationFieldFlag,
+  AnnotationFlag,
+  AnnotationType,
+  FontType,
+  ImageKind,
+  CMapCompressionType,
+  InvalidPDFException,
+  MessageHandler,
+  MissingDataException,
+  MissingPDFException,
+  NotImplementedException,
+  PageViewport,
+  PasswordException,
+  PasswordResponses,
+  StatTimer,
+  StreamType,
+  TextRenderingMode,
+  UnexpectedResponseException,
+  UnknownErrorException,
+  Util,
+  XRefParseException,
+  arrayByteLength,
+  arraysToBytes,
+  assert,
+  bytesToString,
+  createBlob,
+  createPromiseCapability,
+  createObjectURL,
+  deprecated,
+  error,
+  getLookupTableFactory,
+  getVerbosityLevel,
+  globalScope,
+  info,
+  isArray,
+  isArrayBuffer,
+  isBool,
+  isEmptyObj,
+  isInt,
+  isNum,
+  isString,
+  isSpace,
+  isNodeJS,
+  isSameOrigin,
+  createValidAbsoluteUrl,
+  isLittleEndian,
+  isEvalSupported,
+  loadJpegStream,
+  log2,
+  readInt8,
+  readUint16,
+  readUint32,
+  removeNullCharacters,
+  setVerbosityLevel,
+  shadow,
+  string32,
+  stringToBytes,
+  stringToPDFString,
+  stringToUTF8String,
+  utf8StringToString,
+  warn,
+};
