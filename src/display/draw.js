@@ -26,7 +26,8 @@
   } else {
     factory((root.pdfjsDraw = {}));
   }
-}(this, function (exports) {
+}(this,
+  function (exports) {
 
   var PDFCustomFabricSetUp = function customFabricSetUp(){
     fabric.Image.prototype.toObject = function(propertiesToInclude) {
@@ -48,7 +49,7 @@
       return ar;
     };
 
-    
+
     /*
      * @namespace fabric.TitledRect
      */
@@ -104,7 +105,7 @@
         ctx.font = '20px Helvetica';
         ctx.fillStyle = '#333';
         var left = this.width > 0 ? - this.width + 20: this.width + 20,
-          top = this.height < 0 ? - this.height - 20 : this.height - 20;
+            top = this.height < 0 ? - this.height - 20 : this.height - 20;
         ctx.fillText(this.title, left/2, top/2);
       }
     });
@@ -127,9 +128,9 @@
         var self = this;
         this.callSuper('initialize', elements, options);
         /*options && this.extraFields.forEach(function(field){
-          if (field === '_objRotation') self.set(field, options[field] || 0);
-          else self.set(field, options[field] || '');
-        });*/
+         if (field === '_objRotation') self.set(field, options[field] || 0);
+         else self.set(field, options[field] || '');
+         });*/
       },
       /* takes a PDFPageView object because there is a bunch of info stored on the page
        * which the canvas object doesn't have, like rotation
@@ -238,7 +239,7 @@
     },
     fabricStringifyParams: function pdfViewFabricStringifyParams(){
       var pages = {};
-     PDFViewerApplication.pdfViewer._pages.forEach(function(page){
+      PDFViewerApplication.pdfViewer._pages.forEach(function(page){
         pages[page.canvas.page] = page.canvas.toObject;
       });
       return pages;
@@ -295,14 +296,14 @@
           fCanvas.renderAll();
           return pdfPage;
         },
-        fabricStorePreTransformData(pageNumber, oldScale, oldRotation) {
+        fabricStorePreTransformData: function(pageNumber, oldScale, oldRotation) {
           var page = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1);
           page.fabricState.preTransform = {
-              scale: page.scale,
-              rotation: page.rotation,
-              height: page.height,
-              width: page.width,
-            };
+            scale: page.scale,
+            rotation: page.rotation,
+            height: page.height,
+            width: page.width,
+          };
         },
         fabricTransformCanvas: function (pageNumber) {
           var klass = fabricViewerMethods.getCanvas(pageNumber),
@@ -367,7 +368,7 @@
           /*transform stuff*/
           var transformedObjs = [];
           transformGroup._restoreObjectsState();
-          
+
 
          transformGroup._objects.forEach(function(obj, i) {
             if(obj.type != 'anchor') transformedObjs.push(obj);
@@ -380,12 +381,13 @@
         },
         getObjByUUID: function(uuid) {
           var objs = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1]
-            .canvas._objects;
+                .canvas._objects;
           for(var i = 0; i < objs.length; i++) {
             if(uuid === objs[i].uuid)
               return objs[i];
           }
         },
+
         fabricSaveTemplate: function pdfViewSaveTemplate() {
           //NOTE: FabricJS apparently used to get top and left from the center of
           //a given object, but it looks like orignX and originY are already set to
@@ -394,15 +396,14 @@
           var fields = [];
           for ( var i = 1; i <= PDFViewerApplication.pdfViewer._pages.length; i++ ) {
             var canvas = fabricViewerMethods.getCanvas(i),
-              objs = canvas.getObjects('TitledRect');
+                objs = canvas.getObjects('TitledRect');
 
-            //fields.push PDFViewerApplication.pdfViewer.canvases[i].toJSON());
             fields.push({ 'objects': [] });
             for ( var j = 0; j < objs.length; j++ ) {
               var scale = PDFViewerApplication.pdfViewer.currentScale * 96,
-                pHeight = PDFViewerApplication
+                  pHeight = PDFViewerApplication
                     .pdfViewer._pages[i - 1].viewport.height,
-                oHeight = Math.abs(objs[j]['height']);
+                  oHeight = Math.abs(objs[j]['height']);
               objs[j]['height_inches'] = Math.abs(objs[j]['height'] / (scale));
               objs[j]['left_inches'] = Math.abs(objs[j]['left'] / (scale));
               objs[j]['top_inches'] =
@@ -418,7 +419,7 @@
       };
 
   function fabricCanvasSelected(options) {
-   PDFViewerApplication.pdfViewer.lastSelectedObj = options.target;
+    PDFViewerApplication.pdfViewer.lastSelectedObj = options.target;
     var otherCanvases = PDFViewerApplication.pdfViewer._pages.filter(function(el){
       return el.canvas != options.target.canvas &&
         typeof el.canvas === 'object' &&
@@ -430,7 +431,7 @@
   };
 
   function fabricCanvasSelectionCleared(options) {
-   PDFViewerApplication.pdfViewer.lastSelectedObj = null;
+    PDFViewerApplication.pdfViewer.lastSelectedObj = null;
   };
   PDFCustomFabricSetUp();
   exports.fabricViewerMethods = fabricViewerMethods;
