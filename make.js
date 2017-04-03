@@ -128,7 +128,7 @@ target.minified = function() {
 target.minifiedpost = function () {
   var viewerFiles = [
     'external/webL10n/l10n.js',
-    'node_modules/fabric/dist/fabric.js',
+    MINIFIED_DIR + 'web/fabric.js',
     MINIFIED_DIR + BUILD_DIR + 'pdf.js',
     MINIFIED_DIR + '/web/viewer.js'
   ];
@@ -140,7 +140,7 @@ target.minifiedpost = function () {
   // V8 chokes on very long sequences. Works around that.
   var optsForHugeFile = {compress: {sequences: false}};
 
-  UglifyJS.minify(viewerFiles).code
+  UglifyJS.minify(viewerFiles, {verbose: true}).code
     .to(MINIFIED_DIR + '/web/pdf.viewer.js');
   UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code
     .to(MINIFIED_DIR + '/build/pdf.min.js');
