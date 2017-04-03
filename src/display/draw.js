@@ -42,8 +42,10 @@
       type: 'AnchorRect'
     });
 
-    fabric.AnchorRect.fromObject = function(object) {
-      return new fabric.AnchorRect(object);
+    fabric.AnchorRect.fromObject = function(object, callback) {
+      var ar =  new fabric.AnchorRect(object);
+      callback(ar);
+      return ar;
     };
 
     
@@ -107,8 +109,10 @@
       }
     });
 
-    fabric.TitledRect.fromObject = function(object) {
-      return new fabric.TitledRect(object);
+    fabric.TitledRect.fromObject = function(object, callback) {
+      var tr = new fabric.TitledRect(object);
+      callback(tr);
+      return tr;
     };
 
     fabric.PageCanvas = fabric.util.createClass(fabric.Canvas, {
