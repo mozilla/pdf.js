@@ -265,21 +265,21 @@ html[dir='rtl'] #toolbarSidebar {
               0 0 1px hsla(0,0%,0%,.1);
 }
 
-#toolbarContainer, .findbar, .secondaryToolbar {
+#toolbarContainer, .findbar, .secondaryToolbar, .pageViewsToolbar {
   position: relative;
   height: 32px;
   background-color: #474747; /* fallback */
   background-image: url(images/texture.png),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
 }
-html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar {
+html[dir='ltr'] #toolbarContainer, .findbar, .secondaryToolbar, .pageViewsToolbar {
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
               0 1px 0 hsla(0,0%,0%,.15),
               0 1px 1px hsla(0,0%,0%,.1);
 }
-html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
+html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar, .pageViewsToolbar {
   box-shadow: inset -1px 0 0 hsla(0,0%,100%,.08),
               inset 0 1px 1px hsla(0,0%,0%,.15),
               inset 0 -1px 0 hsla(0,0%,100%,.05),
@@ -343,7 +343,7 @@ html[dir='rtl'] #toolbarContainer, .findbar, .secondaryToolbar {
   animation: progressIndeterminate 950ms linear infinite;
 }
 
-.findbar, .secondaryToolbar {
+.findbar, .secondaryToolbar, .pageViewsToolbar {
   top: 32px;
   position: absolute;
   z-index: 10000;
@@ -406,7 +406,7 @@ html[dir='rtl'] #findInput[data-status="pending"] {
   background-position: left;
 }
 
-.secondaryToolbar {
+.secondaryToolbar, .pageViewsToolbar {
   padding: 6px;
   height: auto;
   z-index: 30000;
@@ -418,7 +418,24 @@ html[dir='rtl'] .secondaryToolbar {
   left: 4px;
 }
 
+.pageViewsToolbar {
+}
+
+.pageViewsToolbar.pageViewsToolbar {
+  text-align: center;
+  padding-bottom: 3px;
+  font-weight: 600;
+}
+
 #secondaryToolbarButtonContainer {
+  max-width: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: -4px;
+}
+
+#pageViewsToolbarButtonContainer {
   max-width: 200px;
   max-height: 400px;
   overflow-y: auto;
@@ -544,6 +561,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 
 .toolbarButton,
 .secondaryToolbarButton,
+.pageViewsToolbarButton,
 .overlayButton {
   border: 0 none;
   background: none;
@@ -560,6 +578,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 
 .toolbarButton[disabled],
 .secondaryToolbarButton[disabled],
+.pageViewsToolbarButton[disabled],
 .overlayButton[disabled] {
   opacity: .5;
 }
@@ -653,6 +672,7 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 .toolbarButton,
 .dropdownToolbarButton,
 .secondaryToolbarButton,
+.pageViewsToolbarButton,
 .overlayButton {
   min-width: 16px;
   padding: 2px 6px 0;
@@ -689,6 +709,8 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton:focus,
 .dropdownToolbarButton,
 .overlayButton,
+.pageViewsToolbarButton:hover,
+.pageViewsToolbarButton:focus,
 .secondaryToolbarButton:hover,
 .secondaryToolbarButton:focus {
   background-color: hsla(0,0%,0%,.12);
@@ -704,6 +726,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton:hover:active,
 .overlayButton:hover:active,
 .dropdownToolbarButton:hover:active,
+.pageViewsToolbarButton:hover:active,
 .secondaryToolbarButton:hover:active {
   background-color: hsla(0,0%,0%,.2);
   background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -721,6 +744,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton.toggled,
+.pageViewsToolbarButton.toggled,
 .secondaryToolbarButton.toggled {
   background-color: hsla(0,0%,0%,.3);
   background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -738,6 +762,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 
 .toolbarButton.toggled:hover:active,
 .splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
+.pageViewsToolbarButton.toggled:hover:active,
 .secondaryToolbarButton.toggled:hover:active {
   background-color: hsla(0,0%,0%,.4);
   border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.5) hsla(0,0%,0%,.55);
@@ -887,6 +912,22 @@ html[dir='rtl'] .toolbarButton.pageDown::before {
   content: url(images/toolbarButton-presentationMode.png);
 }
 
+.toolbarButton.pageViewsButton::before {
+  content: url(images/page-mode-c.png);
+}
+
+.modeA::before{
+  content: url(images/page-mode-a.png);
+}
+
+.modeB::before{
+  content: url(images/page-mode-b.png);
+}
+
+.modeC::before{
+  content: url(images/page-mode-c.png);
+}
+
 .toolbarButton.print::before,
 .secondaryToolbarButton.print::before {
   content: url(images/toolbarButton-print.png);
@@ -982,11 +1023,24 @@ html[dir='rtl'] .toolbarButton.pdfSidebarNotification::after {
   min-width: 100%;
   white-space: normal;
 }
-html[dir="ltr"] .secondaryToolbarButton {
+
+.pageViewsToolbarButton {
+  position: relative;
+  margin: 0 0 4px 0;
+  padding: 3px 0 1px 0;
+  height: auto;
+  min-height: 25px;
+  width: auto;
+  min-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+html[dir="ltr"] .secondaryToolbarButton .pageViewsToolbarButton {
   padding-left: 24px;
   text-align: left;
 }
-html[dir="rtl"] .secondaryToolbarButton {
+html[dir="rtl"] .secondaryToolbarButton .pageViewsToolbarButton {
   padding-right: 24px;
   text-align: right;
 }
@@ -997,11 +1051,15 @@ html[dir="rtl"] .secondaryToolbarButton.bookmark {
   padding-right: 27px;
 }
 
-html[dir="ltr"] .secondaryToolbarButton > span {
+html[dir="ltr"] .secondaryToolbarButton .pageViewsToolbarButton > span {
   padding-right: 4px;
 }
-html[dir="rtl"] .secondaryToolbarButton > span {
+html[dir="rtl"] .secondaryToolbarButton .pageViewsToolbarButton > span {
   padding-left: 4px;
+}
+
+.pageViewsToolbarButton > span {
+  padding-left: 5px;
 }
 
 .secondaryToolbarButton.firstPage::before {
@@ -1616,6 +1674,12 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     top: -4px;
   }
 
+  .pageViewsToolbarButton::before {
+    -webkit-transform: scale(0.5);
+    transform: scale(0.5);
+    top: -4px;
+  }
+
   html[dir='ltr'] .toolbarButton::before,
   html[dir='rtl'] .toolbarButton::before {
     left: -1px;
@@ -1692,6 +1756,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   .toolbarButton.presentationMode::before,
   .secondaryToolbarButton.presentationMode::before {
     content: url(images/toolbarButton-presentationMode@2x.png);
+  }
+
+  .toolbarButton.pageViewsButton::before {
+    content: url(images/page-mode-c@2x.png);
   }
 
   .toolbarButton.print::before,

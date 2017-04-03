@@ -95,6 +95,14 @@ function getViewerConfiguration() {
       toggleHandToolButton: document.getElementById('toggleHandTool'),
       documentPropertiesButton: document.getElementById('documentProperties'),
     },
+    pageViewsToolbar: {
+      toolbar: document.getElementById('pageViewsToolbar'),
+      toggleButton: document.getElementById('pageViewsToolbarToggle'),
+      toolbarButtonContainer: document.getElementById('pageViewsToolbarButtonContainer'),
+      modeA: document.getElementById('modeA'),
+      modeB: document.getElementById('modeB'),
+      modeC: document.getElementById('modeC'),
+    },
     fullscreen: {
       contextFirstPage: document.getElementById('contextFirstPage'),
       contextLastPage: document.getElementById('contextLastPage'),

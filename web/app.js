@@ -22,7 +22,7 @@
       'pdfjs-web/download_manager', 'pdfjs-web/pdf_history',
       'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
       'pdfjs-web/view_history', 'pdfjs-web/pdf_thumbnail_viewer',
-      'pdfjs-web/toolbar', 'pdfjs-web/secondary_toolbar',
+      'pdfjs-web/toolbar', 'pdfjs-web/secondary_toolbar', 'pdfjs-web/pages_views_toolbar',
       'pdfjs-web/password_prompt', 'pdfjs-web/pdf_presentation_mode',
       'pdfjs-web/pdf_document_properties', 'pdfjs-web/hand_tool',
       'pdfjs-web/pdf_viewer', 'pdfjs-web/pdf_rendering_queue',
@@ -36,8 +36,8 @@
       require('./pdf_history.js'), require('./preferences.js'),
       require('./pdf_sidebar.js'), require('./view_history.js'),
       require('./pdf_thumbnail_viewer.js'), require('./toolbar.js'),
-      require('./secondary_toolbar.js'), require('./password_prompt.js'),
-      require('./pdf_presentation_mode.js'),
+      require('./secondary_toolbar.js'),  require('./pages_views_toolbar.js'),
+      require('./password_prompt.js'), require('./pdf_presentation_mode.js'),
       require('./pdf_document_properties.js'), require('./hand_tool.js'),
       require('./pdf_viewer.js'), require('./pdf_rendering_queue.js'),
       require('./pdf_link_service.js'), require('./pdf_outline_viewer.js'),
@@ -49,7 +49,7 @@
       root.pdfjsWebDownloadManager, root.pdfjsWebPDFHistory,
       root.pdfjsWebPreferences, root.pdfjsWebPDFSidebar,
       root.pdfjsWebViewHistory, root.pdfjsWebPDFThumbnailViewer,
-      root.pdfjsWebToolbar, root.pdfjsWebSecondaryToolbar,
+      root.pdfjsWebToolbar, root.pdfjsWebSecondaryToolbar, root.pdfjsWebPageViewsToolbar,
       root.pdfjsWebPasswordPrompt, root.pdfjsWebPDFPresentationMode,
       root.pdfjsWebPDFDocumentProperties, root.pdfjsWebHandTool,
       root.pdfjsWebPDFViewer, root.pdfjsWebPDFRenderingQueue,
@@ -60,7 +60,7 @@
   }
 }(this, function (exports, uiUtilsLib, downloadManagerLib, pdfHistoryLib,
                   preferencesLib, pdfSidebarLib, viewHistoryLib,
-                  pdfThumbnailViewerLib, toolbarLib, secondaryToolbarLib,
+                  pdfThumbnailViewerLib, toolbarLib, secondaryToolbarLib, pageViewsToolbarLib,
                   passwordPromptLib, pdfPresentationModeLib,
                   pdfDocumentPropertiesLib, handToolLib, pdfViewerLib,
                   pdfRenderingQueueLib, pdfLinkServiceLib, pdfOutlineViewerLib,
@@ -84,6 +84,7 @@ var ViewHistory = viewHistoryLib.ViewHistory;
 var PDFThumbnailViewer = pdfThumbnailViewerLib.PDFThumbnailViewer;
 var Toolbar = toolbarLib.Toolbar;
 var SecondaryToolbar = secondaryToolbarLib.SecondaryToolbar;
+var PageViewsToolbar = pageViewsToolbarLib.PageViewsToolbar;
 var PasswordPrompt = passwordPromptLib.PasswordPrompt;
 var PDFPresentationMode = pdfPresentationModeLib.PDFPresentationMode;
 var PDFDocumentProperties = pdfDocumentPropertiesLib.PDFDocumentProperties;
@@ -177,6 +178,8 @@ var PDFViewerApplication = {
   toolbar: null,
   /** @type {SecondaryToolbar} */
   secondaryToolbar: null,
+  /** @type {PageViewsToolbar} */
+  pageViewsToolbar: null,
   /** @type {EventBus} */
   eventBus: null,
   pageRotation: 0,
@@ -407,6 +410,9 @@ var PDFViewerApplication = {
       self.secondaryToolbar =
         new SecondaryToolbar(appConfig.secondaryToolbar, container, eventBus);
 
+      self.pageViewsToolbar =
+        new PageViewsToolbar(appConfig.pageViewsToolbar, container, eventBus);
+
       if (self.supportsFullscreen) {
         self.pdfPresentationMode = new PDFPresentationMode({
           container: container,
@@ -629,6 +635,7 @@ var PDFViewerApplication = {
     this.findBar.reset();
     this.toolbar.reset();
     this.secondaryToolbar.reset();
+    this.pageViewsToolbar.reset();
 
     if (typeof PDFBug !== 'undefined') {
       PDFBug.cleanup();
@@ -912,6 +919,7 @@ var PDFViewerApplication = {
 
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
+    this.pageViewsToolbar.setPagesCount(pdfDocument.numPages);
 
     var id = this.documentFingerprint = pdfDocument.fingerprint;
     var store = this.store = new ViewHistory(id);
@@ -1169,6 +1177,7 @@ var PDFViewerApplication = {
     this.toolbar.setPageNumber(this.pdfViewer.currentPageNumber,
                                this.pdfViewer.currentPageLabel);
     this.secondaryToolbar.setPageNumber(this.pdfViewer.currentPageNumber);
+    this.pageViewsToolbar.setPageNumber(this.pdfViewer.currentPageNumber);
 
     if (!this.pdfViewer.currentScaleValue) {
       // Scale was not initialized: invalid bookmark or scale was not specified.
@@ -1897,6 +1906,7 @@ function webViewerPageChanging(e) {
 
   PDFViewerApplication.toolbar.setPageNumber(page, e.pageLabel || null);
   PDFViewerApplication.secondaryToolbar.setPageNumber(page);
+  PDFViewerApplication.pageViewsToolbar.setPageNumber(page);
 
   if (PDFViewerApplication.pdfSidebar.isThumbnailViewVisible) {
     PDFViewerApplication.pdfThumbnailViewer.scrollThumbnailIntoView(page);
@@ -1965,7 +1975,15 @@ function webViewerWheel(evt) {
 }
 
 function webViewerClick(evt) {
-  if (!PDFViewerApplication.secondaryToolbar.isOpen) {
+  var openContainer = false;
+  if (PDFViewerApplication.secondaryToolbar.isOpen ) {
+    openContainer = true;
+  }
+
+  if (PDFViewerApplication.pageViewsToolbar.isOpen ) {
+    openContainer = true;
+  }
+  if (!openContainer) {
     return;
   }
   var appConfig = PDFViewerApplication.appConfig;
@@ -1973,6 +1991,12 @@ function webViewerClick(evt) {
       (appConfig.toolbar.container.contains(evt.target) &&
        evt.target !== appConfig.secondaryToolbar.toggleButton)) {
     PDFViewerApplication.secondaryToolbar.close();
+  }
+
+  if (PDFViewerApplication.pdfViewer.containsElement(evt.target) ||
+      (appConfig.toolbar.container.contains(evt.target) &&
+       evt.target !== appConfig.pageViewsToolbar.toggleButton)) {
+    PDFViewerApplication.pageViewsToolbar.close();
   }
 }
 
