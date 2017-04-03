@@ -33,7 +33,9 @@ const MAX_STRING_PREF_LENGTH = 128;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/NetUtil.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
+  "resource://gre/modules/NetUtil.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "NetworkManager",
   "resource://pdf.js/PdfJsNetwork.jsm");
