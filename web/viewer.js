@@ -1,5 +1,3 @@
-/* -*- Mode: js2; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 /* Copyright 2016 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -197,4 +195,3 @@ if (document.readyState === 'interactive' ||
 } else {
   document.addEventListener('DOMContentLoaded', webViewerLoad, true);
 }
-
