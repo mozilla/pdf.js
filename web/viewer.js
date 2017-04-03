@@ -94,6 +94,7 @@ function getViewerConfiguration() {
       pageRotateCcwButton: document.getElementById('pageRotateCcw'),
       toggleHandToolButton: document.getElementById('toggleHandTool'),
       documentPropertiesButton: document.getElementById('documentProperties'),
+      shareButton: document.getElementById('shareButton'),
     },
     pageViewsToolbar: {
       toolbar: document.getElementById('pageViewsToolbar'),
@@ -102,6 +103,15 @@ function getViewerConfiguration() {
       modeA: document.getElementById('modeA'),
       modeB: document.getElementById('modeB'),
       modeC: document.getElementById('modeC'),
+    },
+    shareToolbar: {
+      secondaryToolbar: document.getElementById('secondaryToolbarButtonContainer'),
+      toolbar: document.getElementById('shareToolbar'),
+      toggleButton: document.getElementById('shareButton'),
+      toolbarButtonContainer: document.getElementById('shareToolbarButtonContainer'),
+      facebookButton: document.getElementById('facebookButton'),
+      twitterButton: document.getElementById('twitterButton'),
+      linkedinButton: document.getElementById('linkedinButton'),
     },
     fullscreen: {
       contextFirstPage: document.getElementById('contextFirstPage'),

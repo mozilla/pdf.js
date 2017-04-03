@@ -22,7 +22,8 @@
       'pdfjs-web/download_manager', 'pdfjs-web/pdf_history',
       'pdfjs-web/preferences', 'pdfjs-web/pdf_sidebar',
       'pdfjs-web/view_history', 'pdfjs-web/pdf_thumbnail_viewer',
-      'pdfjs-web/toolbar', 'pdfjs-web/secondary_toolbar', 'pdfjs-web/pages_views_toolbar',
+      'pdfjs-web/toolbar', 'pdfjs-web/secondary_toolbar',
+      'pdfjs-web/pages_views_toolbar', 'pdfjs-web/share_toolbar',
       'pdfjs-web/password_prompt', 'pdfjs-web/pdf_presentation_mode',
       'pdfjs-web/pdf_document_properties', 'pdfjs-web/hand_tool',
       'pdfjs-web/pdf_viewer', 'pdfjs-web/pdf_rendering_queue',
@@ -36,7 +37,8 @@
       require('./pdf_history.js'), require('./preferences.js'),
       require('./pdf_sidebar.js'), require('./view_history.js'),
       require('./pdf_thumbnail_viewer.js'), require('./toolbar.js'),
-      require('./secondary_toolbar.js'),  require('./pages_views_toolbar.js'),
+      require('./secondary_toolbar.js'),
+      require('./pages_views_toolbar.js'), require('./share_toolbar.js'),
       require('./password_prompt.js'), require('./pdf_presentation_mode.js'),
       require('./pdf_document_properties.js'), require('./hand_tool.js'),
       require('./pdf_viewer.js'), require('./pdf_rendering_queue.js'),
@@ -49,7 +51,8 @@
       root.pdfjsWebDownloadManager, root.pdfjsWebPDFHistory,
       root.pdfjsWebPreferences, root.pdfjsWebPDFSidebar,
       root.pdfjsWebViewHistory, root.pdfjsWebPDFThumbnailViewer,
-      root.pdfjsWebToolbar, root.pdfjsWebSecondaryToolbar, root.pdfjsWebPageViewsToolbar,
+      root.pdfjsWebToolbar, root.pdfjsWebSecondaryToolbar,
+      root.pdfjsWebPageViewsToolbar, root.pdfjsWebShareToolbar,
       root.pdfjsWebPasswordPrompt, root.pdfjsWebPDFPresentationMode,
       root.pdfjsWebPDFDocumentProperties, root.pdfjsWebHandTool,
       root.pdfjsWebPDFViewer, root.pdfjsWebPDFRenderingQueue,
@@ -60,7 +63,8 @@
   }
 }(this, function (exports, uiUtilsLib, downloadManagerLib, pdfHistoryLib,
                   preferencesLib, pdfSidebarLib, viewHistoryLib,
-                  pdfThumbnailViewerLib, toolbarLib, secondaryToolbarLib, pageViewsToolbarLib,
+                  pdfThumbnailViewerLib, toolbarLib, secondaryToolbarLib,
+                  pageViewsToolbarLib, shareToolbarLib,
                   passwordPromptLib, pdfPresentationModeLib,
                   pdfDocumentPropertiesLib, handToolLib, pdfViewerLib,
                   pdfRenderingQueueLib, pdfLinkServiceLib, pdfOutlineViewerLib,
@@ -85,6 +89,7 @@ var PDFThumbnailViewer = pdfThumbnailViewerLib.PDFThumbnailViewer;
 var Toolbar = toolbarLib.Toolbar;
 var SecondaryToolbar = secondaryToolbarLib.SecondaryToolbar;
 var PageViewsToolbar = pageViewsToolbarLib.PageViewsToolbar;
+var ShareToolbar = shareToolbarLib.ShareToolbar;
 var PasswordPrompt = passwordPromptLib.PasswordPrompt;
 var PDFPresentationMode = pdfPresentationModeLib.PDFPresentationMode;
 var PDFDocumentProperties = pdfDocumentPropertiesLib.PDFDocumentProperties;
@@ -180,6 +185,8 @@ var PDFViewerApplication = {
   secondaryToolbar: null,
   /** @type {PageViewsToolbar} */
   pageViewsToolbar: null,
+  /** @type {ShareToolbar} */
+  shareToolbar: null,
   /** @type {EventBus} */
   eventBus: null,
   pageRotation: 0,
@@ -413,6 +420,9 @@ var PDFViewerApplication = {
       self.pageViewsToolbar =
         new PageViewsToolbar(appConfig.pageViewsToolbar, container, eventBus);
 
+      self.shareToolbar =
+        new ShareToolbar(appConfig.shareToolbar, container, eventBus);
+
       if (self.supportsFullscreen) {
         self.pdfPresentationMode = new PDFPresentationMode({
           container: container,
@@ -636,6 +646,7 @@ var PDFViewerApplication = {
     this.toolbar.reset();
     this.secondaryToolbar.reset();
     this.pageViewsToolbar.reset();
+    this.shareToolbar.reset();
 
     if (typeof PDFBug !== 'undefined') {
       PDFBug.cleanup();
@@ -1980,6 +1991,10 @@ function webViewerClick(evt) {
     openContainer = true;
   }
 
+  if (PDFViewerApplication.shareToolbar.isOpen ) {
+    openContainer = true;
+  }
+
   if (PDFViewerApplication.pageViewsToolbar.isOpen ) {
     openContainer = true;
   }
@@ -1997,6 +2012,12 @@ function webViewerClick(evt) {
       (appConfig.toolbar.container.contains(evt.target) &&
        evt.target !== appConfig.pageViewsToolbar.toggleButton)) {
     PDFViewerApplication.pageViewsToolbar.close();
+  }
+
+  if (PDFViewerApplication.pdfViewer.containsElement(evt.target) ||
+      (appConfig.toolbar.container.contains(evt.target) &&
+       evt.target !== appConfig.shareToolbar.toggleButton)) {
+    PDFViewerApplication.shareToolbar.close();
   }
 }
 

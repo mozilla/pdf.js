@@ -443,6 +443,65 @@ html[dir='rtl'] .secondaryToolbar {
   margin-bottom: -4px;
 }
 
+
+.doorHangerShare,
+.doorHangerShareRight {
+  border: 1px solid hsl(0, 0%, 28%);
+  border-radius: 2px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.doorHangerShare:after, .doorHangerShare:before,
+.doorHangerShareRight:after, .doorHangerShareRight:before {
+  bottom: 100%;
+  border: solid transparent;
+  content: " ";
+  height: 0;
+  width: 0;
+  position: absolute;
+  pointer-events: none;
+  -ms-transform: rotate(90deg); /* IE 9 */
+  -webkit-transform: rotate(90deg); /* Chrome, Safari, Opera */
+  transform: rotate(90deg);
+}
+.doorHangerShare:after,
+.doorHangerShareRight:after {
+  border-bottom-color: hsl(0, 0%, 28%);
+  border-width: 8px;
+}
+.doorHangerShare:before,
+.doorHangerShareRight:before {
+  border-bottom-color: hsl(0, 0%, 28%);
+  border-width: 9px;
+}
+
+html[dir='ltr'] .doorHangerShare:after,
+html[dir='rtl'] .doorHangerShareRight:after {
+  right: -8px;
+  margin-right: -8px;
+  top: 11px;
+}
+
+html[dir='ltr'] .doorHangerShare:before,
+html[dir='rtl'] .doorHangerShareRight:before {
+  right: -10px;
+  margin-right: -8px;
+  top: 10px;
+}
+
+html[dir='rtl'] .doorHangerShare:after,
+html[dir='ltr'] .doorHangerShareRight:after {
+  right: -8px;
+  margin-right: -8px;
+  top: 11px;
+}
+
+html[dir='rtl'] .doorHangerShare:before,
+html[dir='ltr'] .doorHangerShareRight:before {
+  right: -10px;
+  margin-right: -8px;
+  top: 10px;
+}
+
 .doorHanger,
 .doorHangerRight {
   border: 1px solid hsla(0,0%,0%,.5);
@@ -562,6 +621,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .toolbarButton,
 .secondaryToolbarButton,
 .pageViewsToolbarButton,
+.shareToolbarButton,
 .overlayButton {
   border: 0 none;
   background: none;
@@ -579,6 +639,7 @@ html[dir='rtl'] .splitToolbarButton > .toolbarButton {
 .toolbarButton[disabled],
 .secondaryToolbarButton[disabled],
 .pageViewsToolbarButton[disabled],
+.shareToolbarButton[disabled],
 .overlayButton[disabled] {
   opacity: .5;
 }
@@ -673,6 +734,7 @@ html[dir='rtl'] .splitToolbarButtonSeparator {
 .dropdownToolbarButton,
 .secondaryToolbarButton,
 .pageViewsToolbarButton,
+.shareToolbarButton,
 .overlayButton {
   min-width: 16px;
   padding: 2px 6px 0;
@@ -709,6 +771,8 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton:focus,
 .dropdownToolbarButton,
 .overlayButton,
+.shareToolbarButton:hover,
+.shareToolbarButton:focus,
 .pageViewsToolbarButton:hover,
 .pageViewsToolbarButton:focus,
 .secondaryToolbarButton:hover,
@@ -726,6 +790,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 .toolbarButton:hover:active,
 .overlayButton:hover:active,
 .dropdownToolbarButton:hover:active,
+.shareToolbarButton:hover:active,
 .pageViewsToolbarButton:hover:active,
 .secondaryToolbarButton:hover:active {
   background-color: hsla(0,0%,0%,.2);
@@ -744,6 +809,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 
 .toolbarButton.toggled,
 .splitToolbarButton.toggled > .toolbarButton.toggled,
+.shareToolbarButton.toggled,
 .pageViewsToolbarButton.toggled,
 .secondaryToolbarButton.toggled {
   background-color: hsla(0,0%,0%,.3);
@@ -762,6 +828,7 @@ html[dir='rtl'] .dropdownToolbarButton {
 
 .toolbarButton.toggled:hover:active,
 .splitToolbarButton.toggled > .toolbarButton.toggled:hover:active,
+.shareToolbarButton.toggled:hover:active,
 .pageViewsToolbarButton.toggled:hover:active,
 .secondaryToolbarButton.toggled:hover:active {
   background-color: hsla(0,0%,0%,.4);
@@ -1036,6 +1103,20 @@ html[dir='rtl'] .toolbarButton.pdfSidebarNotification::after {
   text-align: left;
 }
 
+.shareToolbarButton {
+  position: relative;
+  margin: 0 0 4px 0;
+  height: auto;
+  min-height: 25px;
+  width: auto;
+  white-space: normal;
+  text-align: left;
+}
+
+.shareToolbar {
+  right: 229px;
+}
+
 html[dir="ltr"] .secondaryToolbarButton .pageViewsToolbarButton {
   padding-left: 24px;
   text-align: left;
@@ -1062,6 +1143,18 @@ html[dir="rtl"] .secondaryToolbarButton .pageViewsToolbarButton > span {
   padding-left: 5px;
 }
 
+.shareToolbarButton.facebook_share::before {
+  content: url(images/facebook_icon.png);
+}
+
+.shareToolbarButton.twitter_share::before {
+  content: url(images/twitter_icon.png);
+}
+
+.shareToolbarButton.linkedin_share::before {
+  content: url(images/linkedin_icon.png);
+}
+
 .secondaryToolbarButton.firstPage::before {
   content: url(images/secondaryToolbarButton-firstPage.png);
 }
@@ -1084,6 +1177,10 @@ html[dir="rtl"] .secondaryToolbarButton .pageViewsToolbarButton > span {
 
 .secondaryToolbarButton.documentProperties::before {
   content: url(images/secondaryToolbarButton-documentProperties.png);
+}
+
+.secondaryToolbarButton.share::before {
+  content: url(images/share_icon.png);
 }
 
 .verticalToolbarSeparator {
@@ -1680,6 +1777,12 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     top: -4px;
   }
 
+  .shareToolbarButton::before {
+    -webkit-transform: scale(0.5);
+    transform: scale(0.5);
+    top: -4px;
+  }
+
   html[dir='ltr'] .toolbarButton::before,
   html[dir='rtl'] .toolbarButton::before {
     left: -1px;
@@ -1831,6 +1934,22 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
 
   .secondaryToolbarButton.documentProperties::before {
     content: url(images/secondaryToolbarButton-documentProperties@2x.png);
+  }
+
+  .secondaryToolbarButton.share::before {
+    content: url(images/share_icon@2x.png);
+  }
+
+  .shareToolbarButton.facebook_share::before {
+    content: url(images/facebook_icon@2x.png);
+  }
+
+  .shareToolbarButton.twitter_share::before {
+    content: url(images/twitter_icon@2x.png);
+  }
+
+  .shareToolbarButton.linkedin_share::before {
+    content: url(images/linkedin_icon@2x.png);
   }
 
   .outlineItemToggler::before {

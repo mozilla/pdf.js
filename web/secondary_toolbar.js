@@ -57,6 +57,8 @@ var mozL10n = uiUtils.mozL10n;
  *   hand tool.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
+ * @property {HTMLButtonElement} shareButton - Button for opening
+ *   the share options dialog.
  */
 
 /**
@@ -89,7 +91,9 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
       { element: options.toggleHandToolButton, eventName: 'togglehandtool',
         close: true },
       { element: options.documentPropertiesButton,
-        eventName: 'documentproperties', close: true }
+        eventName: 'documentproperties', close: true },
+      { element: options.shareButton,
+        eventName: 'shareoptions', close: false }
     ];
     this.items = {
       firstPage: options.firstPageButton,
