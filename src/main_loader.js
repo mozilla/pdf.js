@@ -62,6 +62,8 @@
   exports.removeNullCharacters = sharedUtil.removeNullCharacters;
   exports.shadow = sharedUtil.shadow;
   exports.createBlob = sharedUtil.createBlob;
+  exports.RenderingCancelledException =
+    displayDOMUtils.RenderingCancelledException;
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
 }));

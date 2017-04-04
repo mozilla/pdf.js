@@ -17,19 +17,24 @@
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
     define('pdfjs-test/unit/api_spec', ['exports', 'pdfjs/shared/util',
-           'pdfjs/display/global', 'pdfjs/display/api'], factory);
+      'pdfjs/display/dom_utils', 'pdfjs/display/global', 'pdfjs/display/api'],
+      factory);
   } else if (typeof exports !== 'undefined') {
       factory(exports, require('../../src/shared/util.js'),
-              require('../../src/display/global.js'),
-              require('../../src/display/api.js'));
+        require('../../src/display/dom_utils.js'),
+        require('../../src/display/global.js'),
+        require('../../src/display/api.js'));
   } else {
     factory((root.pdfjsTestUnitApiSpec = {}), root.pdfjsSharedUtil,
-             root.pdfjsDisplayGlobal, root.pdfjsDisplayApi);
+      root.pdfjsDisplayDOMUtils, root.pdfjsDisplayGlobal, root.pdfjsDisplayApi);
   }
-}(this, function (exports, sharedUtil, displayGlobal, displayApi) {
+}(this, function (exports, sharedUtil, displayDOMUtils, displayGlobal,
+                  displayApi) {
 
 var PDFJS = displayGlobal.PDFJS;
 var createPromiseCapability = sharedUtil.createPromiseCapability;
+var DOMCanvasFactory = displayDOMUtils.DOMCanvasFactory;
+var RenderingCancelledException = displayDOMUtils.RenderingCancelledException;
 var PDFDocumentProxy = displayApi.PDFDocumentProxy;
 var InvalidPDFException = sharedUtil.InvalidPDFException;
 var MissingPDFException = sharedUtil.MissingPDFException;
@@ -42,6 +47,16 @@ var FontType = sharedUtil.FontType;
 describe('api', function() {
   var basicApiUrl = new URL('../pdfs/basicapi.pdf', window.location).href;
   var basicApiFileLength = 105779; // bytes
+  var CanvasFactory;
+
+  beforeAll(function(done) {
+    CanvasFactory = new DOMCanvasFactory();
+    done();
+  });
+
+  afterAll(function () {
+    CanvasFactory = null;
+  });
 
   function waitSome(callback) {
     var WAIT_TIMEOUT = 10;
@@ -1000,6 +1015,26 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+
+    it('cancels rendering of page', function(done) {
+      var viewport = page.getViewport(1);
+      var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+      var renderTask = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport: viewport,
+      });
+      renderTask.cancel();
+
+      renderTask.promise.then(function() {
+        done.fail('shall cancel rendering');
+      }).catch(function (error) {
+        expect(error instanceof RenderingCancelledException).toEqual(true);
+        expect(error.type).toEqual('canvas');
+        CanvasFactory.destroy(canvasAndCtx);
+        done();
+      });
+    });
   });
   describe('Multiple PDFJS instances', function() {
     // Regression test for https://github.com/mozilla/pdf.js/issues/6205
@@ -1022,15 +1057,16 @@ describe('api', function() {
           pdfDocuments.push(pdf);
           return pdf.getPage(1);
         }).then(function(page) {
-          var c = document.createElement('canvas');
-          var v = page.getViewport(1.2);
-          c.width = v.width;
-          c.height = v.height;
+          var viewport = page.getViewport(1.2);
+          var canvasAndCtx = CanvasFactory.create(viewport.width,
+                                                  viewport.height);
           return page.render({
-            canvasContext: c.getContext('2d'),
-            viewport: v,
+            canvasContext: canvasAndCtx.context,
+            viewport: viewport,
           }).then(function() {
-            return c.toDataURL();
+            var data = canvasAndCtx.canvas.toDataURL();
+            CanvasFactory.destroy(canvasAndCtx);
+            return data;
           });
         });
     }
