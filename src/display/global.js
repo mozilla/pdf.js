@@ -251,6 +251,13 @@
   PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
                            true : PDFJS.isEvalSupported);
 
+  /**
+   * Opt-in to backwards incompatible API changes. NOTE:
+   * If the `PDFJS_NEXT` build flag is set, it will override this setting.
+   * @var {boolean}
+   */
+  PDFJS.pdfjsNext = (PDFJS.pdfjsNext === undefined) ? false : PDFJS.pdfjsNext;
+
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
     var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
     delete PDFJS.openExternalLinksInNewWindow;

@@ -263,6 +263,8 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.enableStats = true;
     PDFJS.imageResourcesPath = '/web/images/';
+    // Opt-in to using the latest API.
+    PDFJS.pdfjsNext = true;
 
     // Set the passed options
     this.inflight = options.inflight;

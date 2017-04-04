@@ -60,6 +60,7 @@ var FontFaceObject = displayFontLoader.FontFaceObject;
 var FontLoader = displayFontLoader.FontLoader;
 var CanvasGraphics = displayCanvas.CanvasGraphics;
 var Metadata = displayMetadata.Metadata;
+var RenderingCancelledException = displayDOMUtils.RenderingCancelledException;
 var getDefaultSetting = displayDOMUtils.getDefaultSetting;
 var DOMCanvasFactory = displayDOMUtils.DOMCanvasFactory;
 var DOMCMapReaderFactory = displayDOMUtils.DOMCMapReaderFactory;
@@ -2065,7 +2066,7 @@ var RenderTask = (function RenderTaskClosure() {
     /**
      * Cancels the rendering task. If the task is currently rendering it will
      * not be cancelled until graphics pauses with a timeout. The promise that
-     * this object extends will resolved when cancelled.
+     * this object extends will be rejected when cancelled.
      */
     cancel: function RenderTask_cancel() {
       this._internalRenderTask.cancel();
@@ -2147,7 +2148,14 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
     cancel: function InternalRenderTask_cancel() {
       this.running = false;
       this.cancelled = true;
-      this.callback('cancelled');
+
+      if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PDFJS_NEXT')) ||
+          getDefaultSetting('pdfjsNext')) {
+        this.callback(new RenderingCancelledException(
+          'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
+      } else {
+        this.callback('cancelled');
+      }
     },
 
     operatorListChanged: function InternalRenderTask_operatorListChanged() {

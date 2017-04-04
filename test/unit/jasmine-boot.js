@@ -60,6 +60,8 @@ function initializePDFJS(callback) {
 
       // Configure the worker.
       displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
+      // Opt-in to using the latest API.
+      displayGlobal.PDFJS.pdfjsNext = true;
 
       callback();
     });
