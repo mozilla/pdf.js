@@ -131,4 +131,4 @@ File an issue:
 
 Follow us on twitter: @pdfjs
 
-+ http://twitter.com/#!/pdfjs
++ http://twitter.com/#!/pdfjs 
