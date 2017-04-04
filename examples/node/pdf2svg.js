@@ -44,7 +44,10 @@ function getFileNameFromPath(path) {
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-pdfjsLib.getDocument(data).then(function (doc) {
+pdfjsLib.getDocument({
+  data: data,
+  disableNativeImageDecoder: true,
+}).then(function (doc) {
   var numPages = doc.numPages;
   console.log('# Document Loaded');
   console.log('Number of Pages: ' + numPages);
