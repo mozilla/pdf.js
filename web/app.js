@@ -917,12 +917,33 @@ var PDFViewerApplication = {
 
   load: function pdfViewLoad(pdfDocument, scale) {
     var self = this;
+    var checkIfArray = function(obj){
+      return !!obj && obj.constructor === Array;
+    };
+
     scale = scale || UNKNOWN_SCALE;
 
     this.pdfDocument = pdfDocument;
 
-    this.pdfDocumentProperties.setDocumentAndUrl(pdfDocument, this.url);
 
+    // Fetch the metadata from the PDF file
+    this.pdfDocument.getMetadata().then(function(data) {
+      var metadata = data.metadata;
+      var metadataConfig = self.appConfig.matadataConfig;
+      var xdata, key, itm;
+      if (!metadata) {
+        return;
+      }
+      xdata = metadata.metadata;
+      for(key in xdata) {
+        itm = key.split(":");
+        if(checkIfArray(itm) && itm.length > 0 && itm[0] === "pdfx") {
+          metadataConfig[itm[1]] = xdata[key];
+        }
+      }
+    });
+
+    this.pdfDocumentProperties.setDocumentAndUrl(pdfDocument, this.url);
     var downloadedPromise = pdfDocument.getDownloadInfo().then(function() {
       self.downloadComplete = true;
       self.loadingBar.hide();

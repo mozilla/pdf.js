@@ -16,6 +16,7 @@
 
 'use strict';
 
+// var DEFAULT_URL = 'Spring.pdf';
 // var DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 var DEFAULT_URL = 'test.pdf';
 
@@ -181,6 +182,18 @@ function getViewerConfiguration() {
       errorMoreInfo: document.getElementById('errorMoreInfo'),
       moreInfoButton: document.getElementById('errorShowMore'),
       lessInfoButton: document.getElementById('errorShowLess'),
+    },
+    matadataConfig: {
+      default_color: '',
+      regex: '',
+      allow_print: 0,
+      allow_download: 0,
+      allow_favorite: 0,
+      productLookup: null,
+      page_mode: '',
+      page_zoom: null,
+      allow_share: 0,
+      allow_fullscreen: null
     },
     printContainer: document.getElementById('printContainer'),
     openFileInputName: 'fileInput',
