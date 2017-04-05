@@ -267,6 +267,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
   PartialEvaluator.prototype = {
+    clone: function(newOptions) {
+      newOptions = newOptions || DefaultPartialEvaluatorOptions;
+      var newEvaluator = Object.create(this);
+      newEvaluator.options = newOptions;
+      return newEvaluator;
+    },
+
     hasBlendModes: function PartialEvaluator_hasBlendModes(resources) {
       if (!isDict(resources)) {
         return false;
@@ -2500,6 +2507,12 @@ var TranslatedFont = (function TranslatedFontClosure() {
       if (this.type3Loaded) {
         return this.type3Loaded;
       }
+      // When parsing Type3 glyphs, always ignore them if there are errors.
+      // Compared to the parsing of e.g. an entire page, it doesn't really
+      // make sense to only be able to render a Type3 glyph partially.
+      var type3Options = Object.create(evaluator.options);
+      type3Options.ignoreErrors = false;
+      var type3Evaluator = evaluator.clone(type3Options);
 
       var translatedFont = this.font;
       var loadCharProcsPromise = Promise.resolve();
@@ -2507,12 +2520,14 @@ var TranslatedFont = (function TranslatedFontClosure() {
       var fontResources = this.dict.get('Resources') || resources;
       var charProcKeys = charProcs.getKeys();
       var charProcOperatorList = Object.create(null);
+
       for (var i = 0, n = charProcKeys.length; i < n; ++i) {
         loadCharProcsPromise = loadCharProcsPromise.then(function (key) {
           var glyphStream = charProcs.get(key);
           var operatorList = new OperatorList();
-          return evaluator.getOperatorList(glyphStream, task, fontResources,
-                                           operatorList).then(function () {
+          return type3Evaluator.getOperatorList(glyphStream, task,
+                                                fontResources, operatorList).
+              then(function () {
             charProcOperatorList[key] = operatorList.getIR();
 
             // Add the dependencies to the parent operator list so they are
