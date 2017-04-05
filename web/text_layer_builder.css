@@ -63,7 +63,6 @@
 /*Highlight result from the initial-regex search*/
 .initial_regex_highlight {
   cursor: pointer;
-  background-color: red !important;
 }
 
 .textLayer ::selection { background: rgb(0,0,255); }

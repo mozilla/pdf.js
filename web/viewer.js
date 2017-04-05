@@ -189,11 +189,11 @@ function getViewerConfiguration() {
       allow_print: 0,
       allow_download: 0,
       allow_favorite: 0,
-      productLookup: null,
+      productLookup: 0,
       page_mode: '',
-      page_zoom: null,
+      page_zoom: 0,
       allow_share: 0,
-      allow_fullscreen: null
+      allow_fullscreen: 0
     },
     printContainer: document.getElementById('printContainer'),
     openFileInputName: 'fileInput',

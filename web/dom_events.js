@@ -57,6 +57,10 @@
     });
 
     eventBus.on('pagesinit', function (e) {
+      var appConfig = PDFViewerApplication.appConfig;
+      var matadataConfig = appConfig.matadataConfig;
+      var regex = new RegExp(matadataConfig['regex'], 'g');
+
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('pagesinit', true, true, null);
       e.source.container.dispatchEvent(event);
@@ -68,8 +72,8 @@
         event2.initCustomEvent('regex_initial_search', true, true, null);
         eventBus.dispatch('regex_initial_search', {
           query: '__',
-          isRegex: true,
-          regex: new RegExp(/[0-9]{5}/, 'g'),
+          isRegex: matadataConfig['regex'] ? true : false,
+          regex: regex,
           caseSensitive: false,
           highlightAll: true,
           phraseSearch: false});

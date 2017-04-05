@@ -192,6 +192,10 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         return;
       }
 
+      var appConfig = PDFViewerApplication.appConfig;
+      var matadataConfig = appConfig.matadataConfig;
+      var regexColor = matadataConfig['default_color'] || '';
+
       var extraOptions = options || {};
       var isRegex = extraOptions.isRegex;
 
@@ -221,6 +225,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
           var span = document.createElement('span');
           if (extraOptions.isRegex) {
             span.className = extraOptions.className;
+            span.style.backgroundColor = regexColor;
             span.addEventListener('click', function() {
               alert("You clicked on: " + node.nodeValue);
             });

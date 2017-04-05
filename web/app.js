@@ -938,9 +938,11 @@ var PDFViewerApplication = {
       for(key in xdata) {
         itm = key.split(":");
         if(checkIfArray(itm) && itm.length > 0 && itm[0] === "pdfx") {
+          console.log(itm[1]+ "-->" + xdata[key]);
           metadataConfig[itm[1]] = xdata[key];
         }
       }
+      extraConfig();
     });
 
     this.pdfDocumentProperties.setDocumentAndUrl(pdfDocument, this.url);
@@ -1590,6 +1592,35 @@ function webViewerInitialized() {
     PDFViewerApplication.error(mozL10n.get('loading_error', null,
       'An error occurred while opening.'), reason);
   });
+}
+
+function extraConfig() {
+  var appConfig = PDFViewerApplication.appConfig;
+  var matadataConfig = appConfig.matadataConfig;
+
+  if (matadataConfig["allow_print"] == 0) {
+    appConfig.toolbar.print.classList.add('hidden');
+  }
+
+  if (matadataConfig["allow_download"] == 0) {
+    appConfig.toolbar.download.classList.add('hidden');
+  }
+
+  if (matadataConfig["allow_favorite"] == 0) {
+    appConfig.sidebar.favoriteButton.classList.add('hidden');
+  }
+
+  if (matadataConfig["allow_fullscreen"] == 0) {
+    appConfig.toolbar.presentationModeButton.classList.add('hidden');
+  }
+
+  if (matadataConfig["allow_share"] == 0) {
+    appConfig.secondaryToolbar.shareButton.classList.add('hidden');
+  }
+
+  if (matadataConfig["productLookup"] == 0) {
+    appConfig.sidebar.cartButton.classList.add('hidden');
+  }
 }
 
 var webViewerOpenFileViaURL;
