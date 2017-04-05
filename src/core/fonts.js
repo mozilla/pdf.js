@@ -1474,9 +1474,6 @@ var Font = (function FontClosure() {
               glyphId = (offsetIndex < 0 ?
                          j : offsets[offsetIndex + j - start]);
               glyphId = (glyphId + delta) & 0xFFFF;
-              if (glyphId === 0) {
-                continue;
-              }
               mappings.push({
                 charCode: j,
                 glyphId: glyphId
