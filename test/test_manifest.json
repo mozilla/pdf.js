@@ -1243,6 +1243,12 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue8234",
+      "file": "pdfs/issue8234.pdf",
+      "md5": "32650fc60c51a9813b98bc9876dc15af",
+      "rounds": 1,
+      "type": "eq"
+    },
     {  "id": "type4psfunc",
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",
