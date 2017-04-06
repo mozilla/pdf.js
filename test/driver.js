@@ -446,18 +446,9 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
       if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
         this._log(' Skipping page ' + task.pageNum + '/' +
-          task.pdfDoc.numPages + '... ');
-
-        // Empty the canvas
-        this.canvas.width = 1;
-        this.canvas.height = 1;
-        ctx = this.canvas.getContext('2d', {alpha: false});
-        ctx.save();
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 1, 1);
-        ctx.restore();
-
-        this._snapshot(task, '');
+                  task.pdfDoc.numPages + '...\n');
+        task.pageNum++;
+        this._nextPage(task);
         return;
       }
 
