@@ -1088,8 +1088,6 @@ var PDFWorker = (function PDFWorkerClosure() {
   var nextFakeWorkerId = 0;
 
   function getWorkerSrc() {
-    var suffix;
-    var replacer;
     if (typeof workerSrc !== 'undefined') {
       return workerSrc;
     }
@@ -1097,15 +1095,9 @@ var PDFWorker = (function PDFWorkerClosure() {
       return getDefaultSetting('workerSrc');
     }
     if (typeof PDFJSDev !== 'undefined' &&
-      PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
-      pdfjsFilePath) {
-      replacer = /\.js$/i;
-      suffix = '.worker.js';
-      if (pdfjsFilePath.indexOf('.min.js')) {
-        replacer = /\.min\.js$/i;
-        suffix = '.worker.min.js';
-      }
-      return pdfjsFilePath.replace(replacer, suffix);
+        PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
+        pdfjsFilePath) {
+      return pdfjsFilePath.replace(/(\.(?:min\.)?js)$/i, '.worker$1')
     }
     error('No PDFJS.workerSrc specified');
   }
