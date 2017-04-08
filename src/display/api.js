@@ -67,7 +67,12 @@ if (typeof PDFJSDev !== 'undefined' &&
     typeof requirejs !== 'undefined' && requirejs.load;
   fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
     require.ensure([], function () {
-      var worker = require('./pdf.worker.js');
+      var worker;
+      if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
+        worker = require('../pdf.worker.js');
+      } else {
+        worker = require('./pdf.worker.js');
+      }
       callback(worker.WorkerMessageHandler);
     });
   }) : dynamicLoaderSupported ? (function (callback) {

@@ -15,6 +15,14 @@
 
 import { CMapCompressionType } from '../../src/shared/util';
 
+class NodeFileReaderFactory {
+  static fetch(params) {
+    var fs = require('fs');
+    var file = fs.readFileSync(params.path);
+    return new Uint8Array(file);
+  }
+}
+
 class NodeCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = false, }) {
     this.baseUrl = baseUrl;
@@ -47,5 +55,6 @@ class NodeCMapReaderFactory {
 }
 
 export {
+  NodeFileReaderFactory,
   NodeCMapReaderFactory,
 };
