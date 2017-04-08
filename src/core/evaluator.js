@@ -843,7 +843,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
         }
-        return Promise.reject('Unknown PatternType: ' + typeNum);
+        return Promise.reject(new Error('Unknown PatternType: ' + typeNum));
       }
       // TODO shall we fail here?
       operatorList.addOp(fn, args);
