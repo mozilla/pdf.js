@@ -74,6 +74,7 @@
     "no-unused-labels": "error",
     "no-useless-call": "error",
     "no-useless-concat": "error",
+    "prefer-promise-reject-errors": "error",
     "wrap-iife": ["error", "any"],
     "yoda": ["error", "never", {
       "exceptRange": true,
