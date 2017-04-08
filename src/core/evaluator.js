@@ -297,10 +297,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                  xobj, smask,
                                                                  operatorList,
                                                                  task,
-                                                                 initialState) {
-      var matrix = xobj.dict.getArray('Matrix');
-      var bbox = xobj.dict.getArray('BBox');
-      var group = xobj.dict.get('Group');
+                                                                 initialState,
+                                                                 ignoreErrors) {
+      var dict = xobj.dict;
+      var matrix = dict.getArray('Matrix');
+      var bbox = dict.getArray('BBox');
+      var group = dict.get('Group');
       if (group) {
         var groupOptions = {
           matrix: matrix,
@@ -330,7 +332,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
       return this.getOperatorList(xobj, task,
-        (xobj.dict.get('Resources') || resources), operatorList, initialState).
+                                  (dict.get('Resources') || resources),
+                                  operatorList, initialState, ignoreErrors).
         then(function () {
           operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
@@ -455,7 +458,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     handleSMask: function PartialEvaluator_handleSmask(smask, resources,
                                                        operatorList, task,
-                                                       stateManager) {
+                                                       stateManager,
+                                                       ignoreErrors) {
       var smaskContent = smask.get('G');
       var smaskOptions = {
         subtype: smask.get('S').name,
@@ -478,13 +482,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return this.buildFormXObject(resources, smaskContent, smaskOptions,
-                            operatorList, task, stateManager.state.clone());
+                                   operatorList, task,
+                                   stateManager.state.clone(), ignoreErrors);
     },
 
     handleTilingType:
         function PartialEvaluator_handleTilingType(fn, args, resources,
                                                    pattern, patternDict,
-                                                   operatorList, task) {
+                                                   operatorList, task,
+                                                   ignoreErrors) {
       // Create an IR of the pattern code.
       var tilingOpList = new OperatorList();
       // Merge the available resources, to prevent issues when the patternDict
@@ -493,15 +499,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var patternResources = Dict.merge(this.xref, resourcesArray);
 
       return this.getOperatorList(pattern, task, patternResources,
-                                  tilingOpList).then(function () {
-          // Add the dependencies to the parent operator list so they are
-          // resolved before sub operator list is executed synchronously.
-          operatorList.addDependencies(tilingOpList.dependencies);
-          operatorList.addOp(fn, getTilingPatternIR({
-            fnArray: tilingOpList.fnArray,
-            argsArray: tilingOpList.argsArray
-          }, patternDict, args));
-        });
+                                  tilingOpList, /* initialState = */ null,
+                                  ignoreErrors).then(function () {
+        // Add the dependencies to the parent operator list so they are
+        // resolved before sub operator list is executed synchronously.
+        operatorList.addDependencies(tilingOpList.dependencies);
+        operatorList.addOp(fn, getTilingPatternIR({
+          fnArray: tilingOpList.fnArray,
+          argsArray: tilingOpList.argsArray
+        }, patternDict, args));
+      });
     },
 
     handleSetFont:
@@ -572,7 +579,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     setGState: function PartialEvaluator_setGState(resources, gState,
                                                    operatorList, task,
-                                                   stateManager) {
+                                                   stateManager, ignoreErrors) {
       // This array holds the converted/processed state data.
       var gStateObj = [];
       var gStateKeys = gState.getKeys();
@@ -616,7 +623,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             if (isDict(value)) {
               promise = promise.then(function (dict) {
                 return self.handleSMask(dict, resources, operatorList,
-                                        task, stateManager);
+                                        task, stateManager, ignoreErrors);
               }.bind(this, value));
               gStateObj.push([key, true]);
             } else {
@@ -821,7 +828,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
     handleColorN: function PartialEvaluator_handleColorN(operatorList, fn, args,
                                                          cs, patterns,
-                                                         resources, task) {
+                                                         resources, task,
+                                                         ignoreErrors) {
       // compile tiling patterns
       var patternName = args[args.length - 1];
       // SCN/scn applies patterns along with normal colors
@@ -834,7 +842,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (typeNum === TILING_PATTERN) {
           var color = cs.base ? cs.base.getRgb(args, 0) : null;
           return this.handleTilingType(fn, color, resources, pattern,
-                                       dict, operatorList, task);
+                                       dict, operatorList, task, ignoreErrors);
         } else if (typeNum === SHADING_PATTERN) {
           var shading = dict.get('Shading');
           var matrix = dict.getArray('Matrix');
@@ -854,8 +862,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                task,
                                                                resources,
                                                                operatorList,
-                                                               initialState) {
-
+                                                               initialState,
+                                                               ignoreErrors) {
       var self = this;
       var xref = this.xref;
       var imageCache = Object.create(null);
@@ -868,6 +876,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var stateManager = new StateManager(initialState || new EvalState());
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
       var timeSlotManager = new TimeSlotManager();
+
+      function closePendingRestoreOPS(argument) {
+        for (var i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
+          operatorList.addOp(OPS.restore, []);
+        }
+      }
 
       return new Promise(function promiseBody(resolve, reject) {
         var next = function (promise) {
@@ -922,10 +936,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   stateManager.save();
                   next(self.buildFormXObject(resources, xobj, null,
                                              operatorList, task,
-                                             stateManager.state.clone()).
-                    then(function () {
-                      stateManager.restore();
-                    }));
+                                             stateManager.state.clone(),
+                                             ignoreErrors).then(function () {
+                    stateManager.restore();
+                  }));
                   return;
                 } else if (type.name === 'Image') {
                   self.buildPaintImageXObject(resources, xobj, false,
@@ -1052,7 +1066,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               cs = stateManager.state.fillColorSpace;
               if (cs.name === 'Pattern') {
                 next(self.handleColorN(operatorList, OPS.setFillColorN, args,
-                                       cs, patterns, resources, task));
+                                       cs, patterns, resources, task,
+                                       ignoreErrors));
                 return;
               }
               args = cs.getRgb(args, 0);
@@ -1062,7 +1077,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               cs = stateManager.state.strokeColorSpace;
               if (cs.name === 'Pattern') {
                 next(self.handleColorN(operatorList, OPS.setStrokeColorN, args,
-                                       cs, patterns, resources, task));
+                                       cs, patterns, resources, task,
+                                       ignoreErrors));
                 return;
               }
               args = cs.getRgb(args, 0);
@@ -1092,7 +1108,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               var gState = extGState.get(dictName.name);
               next(self.setGState(resources, gState, operatorList, task,
-                                  stateManager));
+                                  stateManager, ignoreErrors));
               return;
             case OPS.moveTo:
             case OPS.lineTo:
@@ -1143,18 +1159,29 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         // Some PDFs don't close all restores inside object/form.
         // Closing those for them.
-        for (i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
-          operatorList.addOp(OPS.restore, []);
-        }
+        closePendingRestoreOPS();
         resolve();
-      });
+      }).catch(function(reason) {
+        if (ignoreErrors) {
+          // Error(s) in the OperatorList -- sending unsupported feature
+          // notification and allow rendering to continue.
+          this.handler.send('UnsupportedFeature',
+                            { featureId: UNSUPPORTED_FEATURES.unknown });
+          warn('getOperatorList - ignoring errors during task: ' + task.name);
+
+          closePendingRestoreOPS();
+          return;
+        }
+        throw reason;
+      }.bind(this));
     },
 
     getTextContent:
         function PartialEvaluator_getTextContent(stream, task, resources,
                                                  stateManager,
                                                  normalizeWhitespace,
-                                                 combineTextItems) {
+                                                 combineTextItems,
+                                                 ignoreErrors) {
 
       stateManager = (stateManager || new StateManager(new TextState()));
 
@@ -1616,19 +1643,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
               }
 
-              stateManager.save();
+              // Use a new `StateManager` to prevent incorrect positioning of
+              // textItems *after* the Form XObject, since errors in the data
+              // can otherwise prevent `restore` operators from being executed.
+              // NOTE: This will only be an issue when `ignoreErrors = true`.
+              var currentState = stateManager.state.clone();
+              var xObjStateManager = new StateManager(currentState);
+
               var matrix = xobj.dict.getArray('Matrix');
               if (isArray(matrix) && matrix.length === 6) {
-                stateManager.transform(matrix);
+                xObjStateManager.transform(matrix);
               }
 
               next(self.getTextContent(xobj, task,
-                   xobj.dict.get('Resources') || resources, stateManager,
-                   normalizeWhitespace, combineTextItems).then(
+                   xobj.dict.get('Resources') || resources, xObjStateManager,
+                   normalizeWhitespace, combineTextItems, ignoreErrors).then(
                 function (formTextContent) {
                   Util.appendToArray(textContent.items, formTextContent.items);
                   Util.extendObj(textContent.styles, formTextContent.styles);
-                  stateManager.restore();
 
                   xobjsCache.key = name;
                   xobjsCache.texts = formTextContent;
@@ -1662,6 +1694,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         flushTextContentItem();
         resolve(textContent);
+      }).catch(function(reason) {
+        if (ignoreErrors) {
+          warn('getTextContent - ignoring errors during task: ' + task.name);
+
+          flushTextContentItem();
+          return textContent;
+        }
+        throw reason;
       });
     },
 
@@ -2436,7 +2476,10 @@ var TranslatedFont = (function TranslatedFontClosure() {
           var glyphStream = charProcs.get(key);
           var operatorList = new OperatorList();
           return evaluator.getOperatorList(glyphStream, task, fontResources,
-                                           operatorList).then(function () {
+                                           operatorList,
+                                           /* initialState = */ null,
+                                           /* ignoreErrors = */ false).then(
+              function () {
             charProcOperatorList[key] = operatorList.getIR();
 
             // Add the dependencies to the parent operator list so they are

@@ -234,7 +234,8 @@ var Page = (function PageClosure() {
     },
 
     getOperatorList: function Page_getOperatorList(handler, task, intent,
-                                                   renderInteractiveForms) {
+                                                   renderInteractiveForms,
+                                                   ignoreErrors) {
       var self = this;
 
       var pdfManager = this.pdfManager;
@@ -269,7 +270,8 @@ var Page = (function PageClosure() {
           intent: intent
         });
         return partialEvaluator.getOperatorList(contentStream, task,
-          self.resources, opList).then(function () {
+          self.resources, opList, /* initialState = */ null,
+          ignoreErrors).then(function () {
             return opList;
           });
       });
@@ -293,7 +295,7 @@ var Page = (function PageClosure() {
         for (i = 0, ii = annotations.length; i < ii; i++) {
           if (isAnnotationRenderable(annotations[i], intent)) {
             opListPromises.push(annotations[i].getOperatorList(
-              partialEvaluator, task, renderInteractiveForms));
+              partialEvaluator, task, renderInteractiveForms, ignoreErrors));
           }
         }
 
@@ -312,7 +314,8 @@ var Page = (function PageClosure() {
 
     extractTextContent: function Page_extractTextContent(handler, task,
                                                          normalizeWhitespace,
-                                                         combineTextItems) {
+                                                         combineTextItems,
+                                                         ignoreErrors) {
       var self = this;
 
       var pdfManager = this.pdfManager;
@@ -341,7 +344,8 @@ var Page = (function PageClosure() {
                                                self.resources,
                                                /* stateManager = */ null,
                                                normalizeWhitespace,
-                                               combineTextItems);
+                                               combineTextItems,
+                                               ignoreErrors);
       });
     },
 

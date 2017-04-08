@@ -85,6 +85,8 @@ var DEFAULT_CACHE_SIZE = 10;
  *   rotation of pages whose orientation differ from the first page upon
  *   printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {boolean} stopAtErrors - (optional) Do not attempt to recover from
+ *   errors during certain API calls. The default value is `false`.
  */
 
 /**
@@ -144,6 +146,7 @@ var PDFViewer = (function pdfViewer() {
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.stopAtErrors = options.stopAtErrors === true;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -405,6 +408,7 @@ var PDFViewer = (function pdfViewer() {
             enhanceTextSelection: this.enhanceTextSelection,
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
+            stopAtErrors: this.stopAtErrors,
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -911,8 +915,9 @@ var PDFViewer = (function pdfViewer() {
       return this.pdfDocument.getPage(pageIndex + 1).then(function (page) {
         return page.getTextContent({
           normalizeWhitespace: true,
+          stopAtErrors: this.stopAtErrors,
         });
-      });
+      }.bind(this));
     },
 
     /**
