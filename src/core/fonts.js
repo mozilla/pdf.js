@@ -868,7 +868,8 @@ var Font = (function FontClosure() {
       if ((usedFontCharCodes[fontCharCode] !== undefined ||
            isProblematicUnicodeLocation(fontCharCode) ||
            (isSymbolic && !hasUnicodeValue)) &&
-          nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END) { // Room left.
+          (originalCharCode < PRIVATE_USE_OFFSET_START) &&
+          (nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END)) { // Room left.
         // Loop to try and find a free spot in the private use area.
         do {
           fontCharCode = nextAvailableFontCharCode++;
