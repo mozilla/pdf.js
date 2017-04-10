@@ -298,9 +298,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                                  operatorList,
                                                                  task,
                                                                  initialState) {
-      var matrix = xobj.dict.getArray('Matrix');
-      var bbox = xobj.dict.getArray('BBox');
-      var group = xobj.dict.get('Group');
+      var dict = xobj.dict;
+      var matrix = dict.getArray('Matrix');
+      var bbox = dict.getArray('BBox');
+      var group = dict.get('Group');
       if (group) {
         var groupOptions = {
           matrix: matrix,
@@ -330,8 +331,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
       return this.getOperatorList(xobj, task,
-        (xobj.dict.get('Resources') || resources), operatorList, initialState).
-        then(function () {
+                                  (dict.get('Resources') || resources),
+                                  operatorList, initialState).catch(
+        function (reason) {
+          // Error in the Form XObject data -- sending unsupported feature
+          // notification and attempting to let rendering continue.
+          this.handler.send('UnsupportedFeature',
+                            {featureId: UNSUPPORTED_FEATURES.unknown});
+        }.bind(this)).then(function () {
+          // Ensure that the active XObject/Group is always terminated,
+          // regardless of any errors, since rendering will fail otherwise.
           operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
           if (group) {
@@ -478,7 +487,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return this.buildFormXObject(resources, smaskContent, smaskOptions,
-                            operatorList, task, stateManager.state.clone());
+                                   operatorList, task,
+                                   stateManager.state.clone());
     },
 
     handleTilingType:
@@ -1616,22 +1626,31 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 break;
               }
 
-              stateManager.save();
+              // Use a new `StateManager` to prevent incorrect positioning of
+              // textItems *after* the XObject, since errors in the Form XObject
+              // data could prevent `restore` operators from being executed.
+              var currentState = stateManager.state.clone();
+              var xObjStateManager = new StateManager(currentState);
+
               var matrix = xobj.dict.getArray('Matrix');
               if (isArray(matrix) && matrix.length === 6) {
-                stateManager.transform(matrix);
+                xObjStateManager.transform(matrix);
               }
 
               next(self.getTextContent(xobj, task,
-                   xobj.dict.get('Resources') || resources, stateManager,
+                   xobj.dict.get('Resources') || resources, xObjStateManager,
                    normalizeWhitespace, combineTextItems).then(
                 function (formTextContent) {
                   Util.appendToArray(textContent.items, formTextContent.items);
                   Util.extendObj(textContent.styles, formTextContent.styles);
-                  stateManager.restore();
 
                   xobjsCache.key = name;
                   xobjsCache.texts = formTextContent;
+                }).catch(function (reason) {
+                  // Error in the Form XObject data -- attempting to let
+                  // extraction of the textContent continue.
+                  xobjsCache.key = name;
+                  xobjsCache.texts = null;
                 }));
               return;
             case OPS.setGState:
