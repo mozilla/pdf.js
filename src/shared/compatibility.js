@@ -663,12 +663,12 @@ PDFJS.compatibilityChecked = true;
   if ('requestAnimationFrame' in window) {
     return;
   }
-  window.requestAnimationFrame =
-    window.mozRequestAnimationFrame ||
-    window.webkitRequestAnimationFrame;
-  if (!('requestAnimationFrame' in window)) {
-    installFakeAnimationFrameFunctions();
+  window.requestAnimationFrame = window.mozRequestAnimationFrame ||
+                                 window.webkitRequestAnimationFrame;
+  if (window.requestAnimationFrame) {
+    return;
   }
+  installFakeAnimationFrameFunctions();
 })();
 
 // Support: Android, iOS
