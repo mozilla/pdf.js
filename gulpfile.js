@@ -714,7 +714,7 @@ gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
     gulp.src(FIREFOX_CONTENT_DIR + 'PdfJs-stub.jsm')
         .pipe(rename('PdfJs.jsm'))
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR)),
-    gulp.src(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry-addon.jsm')
+    gulp.src(FIREFOX_CONTENT_DIR + 'PdfJsTelemetry-stub.jsm')
         .pipe(rename('PdfJsTelemetry.jsm'))
         .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + '*.png')
