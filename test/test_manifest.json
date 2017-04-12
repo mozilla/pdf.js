@@ -3370,6 +3370,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-line",
+       "file": "pdfs/annotation-line.pdf",
+       "md5": "fde60608be2748f10fb6522cba425ca1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "annotation-fileattachment",
        "file": "pdfs/annotation-fileattachment.pdf",
        "md5": "d20ecee4b53c81b2dd44c8715a1b4a83",
