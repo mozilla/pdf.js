@@ -15,6 +15,7 @@
 /* globals global, process, __pdfjsdev_webpack__ */
 
 import './compatibility';
+import { ReadableStream } from '../../external/streams/streams-lib';
 
 var globalScope = (typeof window !== 'undefined') ? window :
                   (typeof global !== 'undefined') ? global :
@@ -1419,6 +1420,7 @@ export {
   readUint16,
   readUint32,
   removeNullCharacters,
+  ReadableStream,
   setVerbosityLevel,
   shadow,
   string32,

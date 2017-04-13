@@ -14,7 +14,7 @@
  */
 
 import {
-  removeNullCharacters, stringToPDFString
+  ReadableStream, removeNullCharacters, stringToPDFString
 } from '../../src/shared/util';
 
 describe('util', function() {
@@ -49,6 +49,18 @@ describe('util', function() {
     it('should modify string with null characters', function() {
       var str = 'string\x00With\x00Null\x00Chars';
       expect(removeNullCharacters(str)).toEqual('stringWithNullChars');
+    });
+  });
+
+  describe('ReadableStream', function() {
+    it('should return an Object', function () {
+      var readable = new ReadableStream();
+      expect(typeof readable).toEqual('object');
+    });
+
+    it('should have property getReader', function () {
+      var readable = new ReadableStream();
+      expect(typeof readable.getReader).toEqual('function');
     });
   });
 });
