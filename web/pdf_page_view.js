@@ -23,6 +23,7 @@ import {
 } from './pdfjs';
 import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
+import { fabricMethods } from 'pdfjs/display/draw';
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
 
@@ -211,7 +212,7 @@ var PDFPageView = (function PDFPageViewClosure() {
 
     update: function PDFPageView_update(scale, rotation) {
       if(this.canvas && this.canvas.toString().indexOf('fabric.Canvas') >= 0){
-	      PDFJS.fabricGlobals
+	      fabricMethods
           .fabricStorePreTransformData(this.id, this.scale, this.rotation);
       }
       this.scale = scale || this.scale;
@@ -461,10 +462,10 @@ var PDFPageView = (function PDFPageViewClosure() {
         self.error = error;
         self.stats = pdfPage.stats;
 
-	self = PDFJS.fabricGlobals.fabricPageViewDraw(pdfPage);
+	self = fabricMethods.fabricPageViewDraw(pdfPage);
 	if(self.fabricState.preTransform.scale !== self.scale ||
 	   self.fabricState.preTransform.rotation !== self.rotation) {
-	  PDFJS.fabricGlobals.fabricTransformCanvas(pdfPage.pageNumber);
+	  fabricMethods.fabricTransformCanvas(pdfPage.pageNumber);
 	}
 	if (self.onAfterDraw) {
           self.onAfterDraw();
