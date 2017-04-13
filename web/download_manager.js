@@ -13,20 +13,14 @@
  * limitations under the License.
  */
 
-'use strict';
+import {
+  createObjectURL, createValidAbsoluteUrl, PDFJS
+} from 'pdfjs-web/pdfjs';
+import { DefaultExternalServices, PDFViewerApplication } from 'pdfjs-web/app';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/download_manager', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebDownloadManager = {}), root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, pdfjsLib) {
-if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  return;
+if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
+  throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
+                  'outside CHROME and GENERIC builds.');
 }
 
 function download(blobUrl, filename) {
@@ -69,7 +63,7 @@ function DownloadManager() {}
 
 DownloadManager.prototype = {
   downloadUrl: function DownloadManager_downloadUrl(url, filename) {
-    if (!pdfjsLib.createValidAbsoluteUrl(url, 'http://example.com')) {
+    if (!createValidAbsoluteUrl(url, 'http://example.com')) {
       return; // restricted/invalid URL
     }
     download(url + '#pdfjs.action=download', filename);
@@ -82,8 +76,8 @@ DownloadManager.prototype = {
                                   filename);
     }
 
-    var blobUrl = pdfjsLib.createObjectURL(data, contentType,
-      pdfjsLib.PDFJS.disableCreateObjectURL);
+    var blobUrl = createObjectURL(data, contentType,
+                                  PDFJS.disableCreateObjectURL);
     download(blobUrl, filename);
   },
 
@@ -96,7 +90,7 @@ DownloadManager.prototype = {
       return;
     }
 
-    if (pdfjsLib.PDFJS.disableCreateObjectURL) {
+    if (PDFJS.disableCreateObjectURL) {
       // URL.createObjectURL is not supported
       this.downloadUrl(url, filename);
       return;
@@ -107,5 +101,12 @@ DownloadManager.prototype = {
   }
 };
 
-exports.DownloadManager = DownloadManager;
-}));
+var GenericExternalServices = Object.create(DefaultExternalServices);
+GenericExternalServices.createDownloadManager = function () {
+  return new DownloadManager();
+};
+PDFViewerApplication.externalServices = GenericExternalServices;
+
+export {
+  DownloadManager,
+};

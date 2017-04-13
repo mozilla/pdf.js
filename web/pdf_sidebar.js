@@ -13,23 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_sidebar', ['exports',
-      'pdfjs-web/pdf_rendering_queue', 'pdfjs-web/ui_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdf_rendering_queue.js'),
-      require('./ui_utils.js'));
-  } else {
-    factory((root.pdfjsWebPDFSidebar = {}), root.pdfjsWebPDFRenderingQueue,
-      root.pdfjsWebUIUtils);
-  }
-}(this, function (exports, pdfRenderingQueue, uiUtils) {
-
-var RenderingStates = pdfRenderingQueue.RenderingStates;
-var mozL10n = uiUtils.mozL10n;
+import { mozL10n } from 'pdfjs-web/ui_utils';
+import { RenderingStates } from 'pdfjs-web/pdf_rendering_queue';
 
 var UI_NOTIFICATION_CLASS = 'pdfSidebarNotification';
 
@@ -460,6 +445,7 @@ var PDFSidebar = (function PDFSidebarClosure() {
   return PDFSidebar;
 })();
 
-exports.SidebarView = SidebarView;
-exports.PDFSidebar = PDFSidebar;
-}));
+export {
+  SidebarView,
+  PDFSidebar,
+};

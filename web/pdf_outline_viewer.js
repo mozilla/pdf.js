@@ -13,20 +13,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_outline_viewer', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFOutlineViewer = {}), root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, pdfjsLib) {
-
-var PDFJS = pdfjsLib.PDFJS;
+import {
+  addLinkAttributes, PDFJS, removeNullCharacters
+} from 'pdfjs-web/pdfjs';
 
 var DEFAULT_TITLE = '\u2013';
 
@@ -85,7 +74,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
      */
     _bindLink: function PDFOutlineViewer_bindLink(element, item) {
       if (item.url) {
-        pdfjsLib.addLinkAttributes(element, {
+        addLinkAttributes(element, {
           url: item.url,
           target: (item.newWindow ? PDFJS.LinkTarget.BLANK : undefined),
         });
@@ -200,7 +189,7 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
           this._bindLink(element, item);
           this._setStyles(element, item);
           element.textContent =
-            pdfjsLib.removeNullCharacters(item.title) || DEFAULT_TITLE;
+            removeNullCharacters(item.title) || DEFAULT_TITLE;
 
           div.appendChild(element);
 
@@ -231,5 +220,6 @@ var PDFOutlineViewer = (function PDFOutlineViewerClosure() {
   return PDFOutlineViewer;
 })();
 
-exports.PDFOutlineViewer = PDFOutlineViewer;
-}));
+export {
+  PDFOutlineViewer,
+};
