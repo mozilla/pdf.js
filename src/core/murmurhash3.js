@@ -29,7 +29,7 @@
   }
 }(this, function (exports, sharedUtil) {
 
-var Uint32ArrayView = sharedUtil.Uint32ArrayView;
+var globalScope = sharedUtil.globalScope;
 
 var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
   // Workaround for missing math precision in JS.
@@ -87,7 +87,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
       var tailLength = length - blockCounts * 4;
       // we don't care about endianness here
       var dataUint32 = useUint32ArrayView ?
-        new Uint32ArrayView(data, blockCounts) :
+        new globalScope.Uint32ArrayView(data, blockCounts) :
         new Uint32Array(data.buffer, 0, blockCounts);
       var k1 = 0;
       var k2 = 0;

@@ -31,12 +31,12 @@
 }(this, function (exports, sharedUtil, displayDOMUtils, displayPatternHelper,
                   displayWebGL) {
 
+var globalScope = sharedUtil.globalScope;
 var FONT_IDENTITY_MATRIX = sharedUtil.FONT_IDENTITY_MATRIX;
 var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
 var ImageKind = sharedUtil.ImageKind;
 var OPS = sharedUtil.OPS;
 var TextRenderingMode = sharedUtil.TextRenderingMode;
-var Uint32ArrayView = sharedUtil.Uint32ArrayView;
 var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
 var info = sharedUtil.info;
@@ -511,7 +511,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var srcLength = src.byteLength;
       var dest32 = HasCanvasTypedArraysCached.value ?
-        new Uint32Array(dest.buffer) : new Uint32ArrayView(dest);
+        new Uint32Array(dest.buffer) : new globalScope.Uint32ArrayView(dest);
       var dest32DataLength = dest32.length;
       var fullSrcDiff = (width + 7) >> 3;
       var white = 0xFFFFFFFF;
