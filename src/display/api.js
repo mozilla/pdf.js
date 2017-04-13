@@ -1097,7 +1097,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     if (typeof PDFJSDev !== 'undefined' &&
         PDFJSDev.test('PRODUCTION && !(MOZCENTRAL || FIREFOX)') &&
         pdfjsFilePath) {
-      return pdfjsFilePath.replace(/\.js$/i, '.worker.js');
+      return pdfjsFilePath.replace(/(\.(?:min\.)?js)$/i, '.worker$1');
     }
     error('No PDFJS.workerSrc specified');
   }
