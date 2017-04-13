@@ -1960,7 +1960,8 @@ function ReadableStreamClose(stream) {
 
   if (IsReadableStreamDefaultReader(reader) === true) {
     for (var i = 0; i < reader._readRequests.length; i++) {
-      var _resolve = reader._readRequests[i];
+      var _resolve = reader._readRequests[i]._resolve;
+
       _resolve(CreateIterResultObject(undefined, true));
     }
     reader._readRequests = [];
