@@ -294,7 +294,7 @@ function fixComments(ctx, node) {
   // Removes ESLint and other service comments.
   if (node.leadingComments) {
     var CopyrightRegExp = /\bcopyright\b/i;
-    var BlockCommentRegExp = /^\s*(globals|eslint|falls through|umdutils)\b/;
+    var BlockCommentRegExp = /^\s*(globals|eslint|falls through)\b/;
     var LineCommentRegExp = /^\s*eslint\b/;
 
     var i = 0;

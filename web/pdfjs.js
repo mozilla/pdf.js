@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* globals module, __pdfjsdev_webpack__ */
-/* umdutils ignore */
 
 'use strict';
 
