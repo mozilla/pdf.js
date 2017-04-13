@@ -189,22 +189,6 @@ var RenderingCancelledException = (function RenderingCancelledException() {
   return RenderingCancelledException;
 })();
 
-var hasCanvasTypedArrays;
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
-  hasCanvasTypedArrays = function hasCanvasTypedArrays() {
-    var canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    var ctx = canvas.getContext('2d');
-    var imageData = ctx.createImageData(1, 1);
-    return (typeof imageData.data.buffer !== 'undefined');
-  };
-} else {
-  hasCanvasTypedArrays = function () {
-    return true;
-  };
-}
-
 var LinkTarget = {
   NONE: 0, // Default value.
   SELF: 1,
@@ -354,7 +338,6 @@ exports.isValidUrl = isValidUrl;
 exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.LinkTarget = LinkTarget;
 exports.RenderingCancelledException = RenderingCancelledException;
-exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
 exports.getDefaultSetting = getDefaultSetting;
 exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
 exports.DOMCanvasFactory = DOMCanvasFactory;

@@ -94,6 +94,41 @@ PDFJS.compatibilityChecked = true;
     }
   }
 
+  function Uint32ArrayView(buffer, length) {
+    this.buffer = buffer;
+    this.byteLength = buffer.length;
+    this.length = length;
+    ensureUint32ArrayViewProps(this.length);
+  }
+  Uint32ArrayView.prototype = Object.create(null);
+
+  var uint32ArrayViewSetters = 0;
+  function createUint32ArrayProp(index) {
+    return {
+      get: function () {
+        var buffer = this.buffer, offset = index << 2;
+        return (buffer[offset] | (buffer[offset + 1] << 8) |
+          (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
+      },
+      set: function (value) {
+        var buffer = this.buffer, offset = index << 2;
+        buffer[offset] = value & 255;
+        buffer[offset + 1] = (value >> 8) & 255;
+        buffer[offset + 2] = (value >> 16) & 255;
+        buffer[offset + 3] = (value >>> 24) & 255;
+      }
+    };
+  }
+
+  function ensureUint32ArrayViewProps(length) {
+    while (uint32ArrayViewSetters < length) {
+      Object.defineProperty(Uint32ArrayView.prototype,
+        uint32ArrayViewSetters,
+        createUint32ArrayProp(uint32ArrayViewSetters));
+      uint32ArrayViewSetters++;
+    }
+  }
+
   function TypedArray(arg1) {
     var result, i, n;
     if (typeof arg1 === 'number') {
@@ -126,11 +161,48 @@ PDFJS.compatibilityChecked = true;
 
   // we don't need support for set, byteLength for 32-bit array
   // so we can use the TypedArray as well
-  globalScope.Uint32Array = TypedArray;
   globalScope.Int32Array = TypedArray;
   globalScope.Uint16Array = TypedArray;
   globalScope.Float32Array = TypedArray;
   globalScope.Float64Array = TypedArray;
+
+  globalScope.Uint32Array = function () {
+    if (arguments.length === 3) {
+      // Building view for buffer, offset, and length
+      if (arguments[1] !== 0) {
+        throw new Error('offset !== 0 is not supported');
+      }
+      return new Uint32ArrayView(arguments[0], arguments[2]);
+    }
+    return TypedArray.apply(this, arguments);
+  };
+})();
+
+// window.CanvasPixelArray.buffer/.byteLength
+// Support: IE9
+(function canvasPixelArrayBuffer() {
+  if (!hasDOM || !window.CanvasPixelArray) {
+    return;
+  }
+  var cpaProto = window.CanvasPixelArray.prototype;
+  if ('buffer' in cpaProto) {
+    return;
+  }
+  // Trying to fake CanvasPixelArray as Uint8ClampedArray.
+  Object.defineProperty(cpaProto, 'buffer', {
+    get: function () {
+      return this;
+    },
+    enumerable: false,
+    configurable: true
+  });
+  Object.defineProperty(cpaProto, 'byteLength', {
+    get: function () {
+      return this.length;
+    },
+    enumerable: false,
+    configurable: true
+  });
 })();
 
 // URL = URL || webkitURL

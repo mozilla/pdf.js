@@ -296,13 +296,7 @@
   PDFJS.PDFDataRangeTransport = displayAPI.PDFDataRangeTransport;
   PDFJS.PDFWorker = displayAPI.PDFWorker;
 
-  Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
-    configurable: true,
-    get: function PDFJS_hasCanvasTypedArrays() {
-      var value = displayDOMUtils.hasCanvasTypedArrays();
-      return sharedUtil.shadow(PDFJS, 'hasCanvasTypedArrays', value);
-    }
-  });
+  PDFJS.hasCanvasTypedArrays = true; // compatibility.js ensures this invariant
   PDFJS.CustomStyle = displayDOMUtils.CustomStyle;
   PDFJS.LinkTarget = LinkTarget;
   PDFJS.addLinkAttributes = displayDOMUtils.addLinkAttributes;
