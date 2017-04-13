@@ -13,18 +13,6 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_rendering_queue', ['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
-  } else {
-    factory((root.pdfjsWebPDFRenderingQueue = {}));
-  }
-}(this, function (exports) {
-
 var CLEANUP_TIMEOUT = 30000;
 
 var RenderingStates = {
@@ -186,6 +174,7 @@ var PDFRenderingQueue = (function PDFRenderingQueueClosure() {
   return PDFRenderingQueue;
 })();
 
-exports.RenderingStates = RenderingStates;
-exports.PDFRenderingQueue = PDFRenderingQueue;
-}));
+export {
+  RenderingStates,
+  PDFRenderingQueue,
+};

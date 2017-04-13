@@ -13,24 +13,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/password_prompt', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/overlay_manager', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./overlay_manager.js'),
-      require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPasswordPrompt = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebOverlayManager, root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, uiUtils, overlayManager, pdfjsLib) {
-
-var mozL10n = uiUtils.mozL10n;
-var OverlayManager = overlayManager.OverlayManager;
+import { mozL10n } from 'pdfjs-web/ui_utils';
+import { OverlayManager } from 'pdfjs-web/overlay_manager';
+import { PasswordResponses } from 'pdfjs-web/pdfjs';
 
 /**
  * @typedef {Object} PasswordPromptOptions
@@ -86,7 +71,7 @@ var PasswordPrompt = (function PasswordPromptClosure() {
         var promptString = mozL10n.get('password_label', null,
           'Enter the password to open this PDF file.');
 
-        if (this.reason === pdfjsLib.PasswordResponses.INCORRECT_PASSWORD) {
+        if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
           promptString = mozL10n.get('password_invalid', null,
             'Invalid password. Please try again.');
         }
@@ -120,5 +105,6 @@ var PasswordPrompt = (function PasswordPromptClosure() {
   return PasswordPrompt;
 })();
 
-exports.PasswordPrompt = PasswordPrompt;
-}));
+export {
+  PasswordPrompt,
+};

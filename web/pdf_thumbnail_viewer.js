@@ -13,25 +13,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_thumbnail_viewer', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_thumbnail_view'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_thumbnail_view.js'));
-  } else {
-    factory((root.pdfjsWebPDFThumbnailViewer = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFThumbnailView);
-  }
-}(this, function (exports, uiUtils, pdfThumbnailView) {
-
-var watchScroll = uiUtils.watchScroll;
-var getVisibleElements = uiUtils.getVisibleElements;
-var scrollIntoView = uiUtils.scrollIntoView;
-var PDFThumbnailView = pdfThumbnailView.PDFThumbnailView;
+import {
+  getVisibleElements, scrollIntoView, watchScroll
+} from 'pdfjs-web/ui_utils';
+import { PDFThumbnailView } from 'pdfjs-web/pdf_thumbnail_view';
 
 var THUMBNAIL_SCROLL_MARGIN = -19;
 
@@ -247,5 +232,6 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
   return PDFThumbnailViewer;
 })();
 
-exports.PDFThumbnailViewer = PDFThumbnailViewer;
-}));
+export {
+  PDFThumbnailViewer,
+};
