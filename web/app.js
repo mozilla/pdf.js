@@ -393,15 +393,19 @@ var PDFViewerApplication = {
       findBarConfig.eventBus = eventBus;
       self.findBar = new PDFFindBar(findBarConfig);
 
-      self.overlayManager = OverlayManager;
+      self.overlayManager = new OverlayManager();
 
       self.handTool = new HandTool({
         container: container,
         eventBus: eventBus,
       });
 
+      // FIXME better PDFDocumentProperties constructor parameters
+      var documentPropertiesConfig =
+        Object.create(appConfig.documentProperties);
+      documentPropertiesConfig.overlayManager = self.overlayManager;
       self.pdfDocumentProperties =
-        new PDFDocumentProperties(appConfig.documentProperties);
+        new PDFDocumentProperties(documentPropertiesConfig);
 
       self.toolbar = new Toolbar(appConfig.toolbar, container, eventBus);
 
@@ -418,7 +422,10 @@ var PDFViewerApplication = {
         });
       }
 
-      self.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay);
+      // FIXME better PasswordPrompt constructor parameters
+      var passwordPromptConfig = Object.create(appConfig.passwordOverlay);
+      passwordPromptConfig.overlayManager = self.overlayManager;
+      self.passwordPrompt = new PasswordPrompt(passwordPromptConfig);
 
       self.pdfOutlineViewer = new PDFOutlineViewer({
         container: appConfig.sidebar.outlineView,
@@ -1978,7 +1985,7 @@ function webViewerClick(evt) {
 }
 
 function webViewerKeyDown(evt) {
-  if (OverlayManager.active) {
+  if (PDFViewerApplication.overlayManager.active) {
     return;
   }
 

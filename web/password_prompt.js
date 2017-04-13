@@ -17,23 +17,21 @@
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/password_prompt', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/overlay_manager', 'pdfjs-web/pdfjs'],
-      factory);
+    define('pdfjs-web/password_prompt', ['exports', 'pdfjs-web/ui_utils',
+      'pdfjs-web/pdfjs'], factory);
   } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./overlay_manager.js'),
-      require('./pdfjs.js'));
+    factory(exports, require('./ui_utils.js'), require('./pdfjs.js'));
   } else {
     factory((root.pdfjsWebPasswordPrompt = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebOverlayManager, root.pdfjsWebPDFJS);
+      root.pdfjsWebPDFJS);
   }
-}(this, function (exports, uiUtils, overlayManager, pdfjsLib) {
+}(this, function (exports, uiUtils, pdfjsLib) {
 
 var mozL10n = uiUtils.mozL10n;
-var OverlayManager = overlayManager.OverlayManager;
 
 /**
  * @typedef {Object} PasswordPromptOptions
+ * @property {OverlayManager} overlayManager - Controls the app's overlays.
  * @property {string} overlayName - Name of the overlay for the overlay manager.
  * @property {HTMLDivElement} container - Div container for the overlay.
  * @property {HTMLParagraphElement} label - Label containing instructions for
@@ -54,6 +52,7 @@ var PasswordPrompt = (function PasswordPromptClosure() {
    * @param {PasswordPromptOptions} options
    */
   function PasswordPrompt(options) {
+    this.overlayManager = options.overlayManager;
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
@@ -73,13 +72,13 @@ var PasswordPrompt = (function PasswordPromptClosure() {
       }
     }.bind(this));
 
-    OverlayManager.register(this.overlayName, this.container,
-                            this.close.bind(this), true);
+    this.overlayManager.register(this.overlayName, this.container,
+                                 this.close.bind(this), true);
   }
 
   PasswordPrompt.prototype = {
     open: function PasswordPrompt_open() {
-      OverlayManager.open(this.overlayName).then(function () {
+      this.overlayManager.open(this.overlayName).then(function () {
         this.input.type = 'password';
         this.input.focus();
 
@@ -96,7 +95,7 @@ var PasswordPrompt = (function PasswordPromptClosure() {
     },
 
     close: function PasswordPrompt_close() {
-      OverlayManager.close(this.overlayName).then(function () {
+      this.overlayManager.close(this.overlayName).then(function () {
         this.input.value = '';
         this.input.type = '';
       }.bind(this));
