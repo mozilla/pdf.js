@@ -1812,6 +1812,14 @@ PDFJS.compatibilityChecked = true;
         case 'javascript':
         case 'mailto':
           return 'null';
+        case 'blob':
+          // Special case of blob: -- returns valid origin of _schemeData.
+          try {
+            return new JURL(this._schemeData).origin || 'null';
+          } catch (_) {
+            // Invalid _schemeData origin -- ignoring errors.
+          }
+          return 'null';
       }
       host = this.host;
       if (!host) {
