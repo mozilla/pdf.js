@@ -22,23 +22,23 @@
       'exports', 'pdfjs/display/api',
       'pdfjs/display/annotation_layer', 'pdfjs/display/text_layer',
       'pdfjs/display/dom_utils', 'pdfjs/shared/util', 'pdfjs/display/svg',
-      'pdfjs/display/global', 'pdfjs/display/draw'],
+      'pdfjs/display/global'],
       factory);
   } else if (typeof exports !== 'undefined') {
     factory(exports, require('./display/api.js'),
       require('./display/annotation_layer.js'),
       require('./display/text_layer.js'), require('./display/dom_utils.js'),
       require('./shared/util.js'), require('./display/svg.js'),
-      require('./display/global.js'), require('./display/draw.js'));
+      require('./display/global.js'));
   } else {
     factory((root.pdfjsMainLoader = {}), root.pdfjsDisplayAPI,
       root.pdfjsDisplayAnnotationLayer, root.pdfjsDisplayTextLayer,
       root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil, root.pdfjsDisplaySVG,
-      root.pdfjsDisplayGlobal, root.pdfjsDraw);
+      root.pdfjsDisplayGlobal);
   }
 }(this, function (exports, displayAPI, displayAnnotationLayer,
                   displayTextLayer, displayDOMUtils, sharedUtil,
-                  displaySVG, displayGlobal, draw) {
+                  displaySVG, displayGlobal) {
 
   // Sync the exports below with ./pdf.js file/template.
   exports.PDFJS = displayGlobal.PDFJS;
@@ -68,5 +68,4 @@
     displayDOMUtils.RenderingCancelledException;
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
-  exports.FabricViewerMethods = draw.fabricViewerMethods;
 }));
