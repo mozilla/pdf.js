@@ -218,6 +218,7 @@
       //ADD CALLBACK FOR EXTERNAL API
     },
     fabricMouseDown: function pdfViewFabricMouseDown(options){
+      if (!PDFViewerApplication.viewerPrefs.drawMode) return;
       if (!options.target ||
           options.target.type != 'TitledRect' &&
           options.target.type != 'group'){
