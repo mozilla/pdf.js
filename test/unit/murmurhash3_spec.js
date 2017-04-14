@@ -53,7 +53,7 @@ describe('MurmurHash3_64', function() {
   });
   it('correctly generates a hash from a Uint32Array', function() {
     var hash = new MurmurHash3_64();
-    hash.update(new Uint32Array(sourceCharCodes));
+    hash.update(new Uint32Array(new Uint8Array(sourceCharCodes).buffer));
     expect(hash.hexdigest()).toEqual(hexDigestExpected);
   });
 
