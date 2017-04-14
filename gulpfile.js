@@ -112,7 +112,9 @@ function createWebpackConfig(defines, output) {
       loaders: [
         {
           loader: 'babel-loader',
+          exclude: /src\/core\/(glyphlist|unicode)/, // babel is too slow
           options: {
+            presets: bundleDefines.PDFJS_NEXT ? undefined : ['es2015'],
             plugins: ['transform-es2015-modules-commonjs']
           }
         },
@@ -936,9 +938,11 @@ gulp.task('jsdoc', function (done) {
 
 gulp.task('lib', ['buildnumber'], function () {
   function preprocess(content) {
+    var noPreset = /\/\*\s*no-babel-preset\s*\*\//.test(content);
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: 'module',
+      presets: noPreset ? undefined : ['es2015'],
       plugins: ['transform-es2015-modules-commonjs'],
     }).code;
     var removeCjsSrc =
