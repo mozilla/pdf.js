@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { AnnotationLayer } from 'pdfjs-web/pdfjs';
-import { mozL10n } from 'pdfjs-web/ui_utils';
-import { SimpleLinkService } from 'pdfjs-web/pdf_link_service';
+import { AnnotationLayer } from './pdfjs';
+import { mozL10n } from './ui_utils';
+import { SimpleLinkService } from './pdf_link_service';
 
 /**
  * @typedef {Object} AnnotationLayerBuilderOptions

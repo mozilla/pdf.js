@@ -15,7 +15,7 @@
 
 import {
   addLinkAttributes, PDFJS, removeNullCharacters
-} from 'pdfjs-web/pdfjs';
+} from './pdfjs';
 
 var DEFAULT_TITLE = '\u2013';
 

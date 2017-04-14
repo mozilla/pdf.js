@@ -17,16 +17,16 @@ import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
   MAX_AUTO_SCALE, RendererType, SCROLLBAR_PADDING, scrollIntoView,
   UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
-} from 'pdfjs-web/ui_utils';
+} from './ui_utils';
 import {
   PDFRenderingQueue, RenderingStates,
-} from 'pdfjs-web/pdf_rendering_queue';
-import { AnnotationLayerBuilder } from 'pdfjs-web/annotation_layer_builder';
-import { domEvents } from 'pdfjs-web/dom_events';
-import { PDFJS } from 'pdfjs-web/pdfjs';
-import { PDFPageView } from 'pdfjs-web/pdf_page_view';
-import { SimpleLinkService } from 'pdfjs-web/pdf_link_service';
-import { TextLayerBuilder } from 'pdfjs-web/text_layer_builder';
+} from './pdf_rendering_queue';
+import { AnnotationLayerBuilder } from './annotation_layer_builder';
+import { domEvents } from './dom_events';
+import { PDFJS } from './pdfjs';
+import { PDFPageView } from './pdf_page_view';
+import { SimpleLinkService } from './pdf_link_service';
+import { TextLayerBuilder } from './text_layer_builder';
 
 var PresentationModeState = {
   UNKNOWN: 0,

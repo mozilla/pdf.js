@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { mozL10n } from 'pdfjs-web/ui_utils';
-import { OverlayManager } from 'pdfjs-web/overlay_manager';
-import { PasswordResponses } from 'pdfjs-web/pdfjs';
+import { mozL10n } from './ui_utils';
+import { OverlayManager } from './overlay_manager';
+import { PasswordResponses } from './pdfjs';
 
 /**
  * @typedef {Object} PasswordPromptOptions

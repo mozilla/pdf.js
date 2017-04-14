@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { getOutputScale, mozL10n } from 'pdfjs-web/ui_utils';
-import { RenderingStates } from 'pdfjs-web/pdf_rendering_queue';
+import { getOutputScale, mozL10n } from './ui_utils';
+import { RenderingStates } from './pdf_rendering_queue';
 
 var THUMBNAIL_WIDTH = 98; // px
 var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px

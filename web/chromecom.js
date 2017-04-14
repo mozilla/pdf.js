@@ -14,10 +14,10 @@
  */
 /* globals chrome */
 
-import { DefaultExternalServices, PDFViewerApplication } from 'pdfjs-web/app';
-import { OverlayManager } from 'pdfjs-web/overlay_manager';
-import { PDFJS } from 'pdfjs-web/pdfjs';
-import { Preferences } from 'pdfjs-web/preferences';
+import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { OverlayManager } from './overlay_manager';
+import { PDFJS } from './pdfjs';
+import { Preferences } from './preferences';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
   throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +

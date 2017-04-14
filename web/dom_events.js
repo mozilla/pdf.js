@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { EventBus } from 'pdfjs-web/ui_utils';
+import { EventBus } from './ui_utils';
 
 // Attaching to the application event bus to dispatch events to the DOM for
 // backwards viewer API compatibility.

@@ -15,9 +15,9 @@
 
 import {
   createObjectURL, PDFDataRangeTransport, shadow
-} from 'pdfjs-web/pdfjs';
-import { PDFViewerApplication } from 'pdfjs-web/app';
-import { Preferences } from 'pdfjs-web/preferences';
+} from './pdfjs';
+import { PDFViewerApplication } from './app';
+import { Preferences } from './preferences';
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {

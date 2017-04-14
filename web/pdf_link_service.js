@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { domEvents } from 'pdfjs-web/dom_events';
-import { parseQueryString } from 'pdfjs-web/ui_utils';
+import { domEvents } from './dom_events';
+import { parseQueryString } from './ui_utils';
 
 var PageNumberRegExp = /^\d+$/;
 function isPageNumber(str) {

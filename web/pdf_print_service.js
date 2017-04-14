@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS, mozL10n } from 'pdfjs-web/ui_utils';
-import { OverlayManager } from 'pdfjs-web/overlay_manager';
-import { PDFJS } from 'pdfjs-web/pdfjs';
-import { PDFPrintServiceFactory } from 'pdfjs-web/app';
+import { CSS_UNITS, mozL10n } from './ui_utils';
+import { OverlayManager } from './overlay_manager';
+import { PDFJS } from './pdfjs';
+import { PDFPrintServiceFactory } from './app';
 
 var activeService = null;
 

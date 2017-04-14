@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { domEvents } from 'pdfjs-web/dom_events';
-import { renderTextLayer } from 'pdfjs-web/pdfjs';
+import { domEvents } from './dom_events';
+import { renderTextLayer } from './pdfjs';
 
 var EXPAND_DIVS_TIMEOUT = 300; // ms
 

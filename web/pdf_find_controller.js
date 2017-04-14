@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { scrollIntoView } from 'pdfjs-web/ui_utils';
+import { scrollIntoView } from './ui_utils';
 
 var FindStates = {
   FIND_FOUND: 0,
