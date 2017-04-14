@@ -618,10 +618,10 @@ function readUint32(data, offset) {
 // Lazy test the endianness of the platform
 // NOTE: This will be 'true' for simulated TypedArrays
 function isLittleEndian() {
-  var buffer8 = new Uint8Array(2);
+  var buffer8 = new Uint8Array(4);
   buffer8[0] = 1;
-  var buffer16 = new Uint16Array(buffer8.buffer);
-  return (buffer16[0] === 1);
+  var view32 = new Uint32Array(buffer8.buffer, 0, 1);
+  return (view32[0] === 1);
 }
 
 // Checks if it's possible to eval JS expressions.
@@ -632,50 +632,6 @@ function isEvalSupported() {
   } catch (e) {
     return false;
   }
-}
-
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
-  var Uint32ArrayView = (function Uint32ArrayViewClosure() {
-    function Uint32ArrayView(buffer, length) {
-      this.buffer = buffer;
-      this.byteLength = buffer.length;
-      this.length = length === undefined ? (this.byteLength >> 2) : length;
-      ensureUint32ArrayViewProps(this.length);
-    }
-    Uint32ArrayView.prototype = Object.create(null);
-
-    var uint32ArrayViewSetters = 0;
-    function createUint32ArrayProp(index) {
-      return {
-        get: function () {
-          var buffer = this.buffer, offset = index << 2;
-          return (buffer[offset] | (buffer[offset + 1] << 8) |
-            (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
-        },
-        set: function (value) {
-          var buffer = this.buffer, offset = index << 2;
-          buffer[offset] = value & 255;
-          buffer[offset + 1] = (value >> 8) & 255;
-          buffer[offset + 2] = (value >> 16) & 255;
-          buffer[offset + 3] = (value >>> 24) & 255;
-        }
-      };
-    }
-
-    function ensureUint32ArrayViewProps(length) {
-      while (uint32ArrayViewSetters < length) {
-        Object.defineProperty(Uint32ArrayView.prototype,
-          uint32ArrayViewSetters,
-          createUint32ArrayProp(uint32ArrayViewSetters));
-        uint32ArrayViewSetters++;
-      }
-    }
-
-    return Uint32ArrayView;
-  })();
-
-  exports.Uint32ArrayView = Uint32ArrayView;
 }
 
 var IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0];
