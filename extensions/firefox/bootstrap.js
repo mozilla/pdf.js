@@ -184,8 +184,6 @@ function shutdown(aData, aReason) {
 }
 
 function install(aData, aReason) {
-  // TODO remove after some time -- cleanup of unused preferences
-  Services.prefs.clearUserPref(EXT_PREFIX + ".database");
 }
 
 function uninstall(aData, aReason) {
