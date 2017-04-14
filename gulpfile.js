@@ -30,14 +30,15 @@ var runSequence = require('run-sequence');
 var stream = require('stream');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
+var spawnSync = require('child_process').spawnSync;
 var streamqueue = require('streamqueue');
 var merge = require('merge-stream');
 var zip = require('gulp-zip');
 var webpack2 = require('webpack');
 var webpackStream = require('webpack-stream');
+var vinyl = require('vinyl-fs');
 
 var BUILD_DIR = 'build/';
-var JSDOC_DIR = 'jsdoc/';
 var L10N_DIR = 'l10n/';
 var TEST_DIR = 'test/';
 var EXTENSION_SRC_DIR = 'extensions/';
@@ -48,10 +49,15 @@ var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/';
 var MINIFIED_DIR = BUILD_DIR + 'minified/';
 var FIREFOX_BUILD_DIR = BUILD_DIR + 'firefox/';
+var CHROME_BUILD_DIR = BUILD_DIR + 'chromium/';
+var JSDOC_BUILD_DIR = BUILD_DIR + 'jsdoc/';
+var GH_PAGES_DIR = BUILD_DIR + 'gh-pages/';
 var COMMON_WEB_FILES = [
   'web/images/*.{png,svg,gif,cur}',
   'web/debugger.js'
 ];
+
+var REPO = 'git@github.com:mozilla/pdf.js.git';
 
 var builder = require('./external/builder/builder.js');
 
@@ -285,6 +291,12 @@ function checkDir(path) {
   } catch (e) {
     return false;
   }
+}
+
+function replaceInFile(path, find, replacement) {
+  var content = fs.readFileSync(path).toString();
+  content = content.replace(find, replacement);
+  fs.writeFileSync(path, content);
 }
 
 function getTempFile(prefix, suffix) {
@@ -926,10 +938,9 @@ gulp.task('jsdoc', function (done) {
     'src/core/annotation.js'
   ];
 
-  var directory = BUILD_DIR + JSDOC_DIR;
-  rimraf(directory, function () {
-    mkdirp(directory, function () {
-      var command = '"node_modules/.bin/jsdoc" -d ' + directory + ' ' +
+  rimraf(JSDOC_BUILD_DIR, function () {
+    mkdirp(JSDOC_BUILD_DIR, function () {
+      var command = '"node_modules/.bin/jsdoc" -d ' + JSDOC_BUILD_DIR + ' ' +
                     JSDOC_FILES.join(' ');
       exec(command, done);
     });
@@ -1160,6 +1171,63 @@ gulp.task('importl10n', function(done) {
   }
   locales.downloadL10n(L10N_DIR, done);
 });
+
+gulp.task('gh-pages-prepare', ['web-pre'], function () {
+  console.log();
+  console.log('### Creating web site');
+
+  rimraf.sync(GH_PAGES_DIR);
+
+  // 'vinyl' because web/viewer.html needs its BOM.
+  return merge([
+    vinyl.src(GENERIC_DIR + '**/*', {base: GENERIC_DIR, stripBOM: false})
+         .pipe(gulp.dest(GH_PAGES_DIR)),
+    gulp.src([FIREFOX_BUILD_DIR + '*.xpi',
+              FIREFOX_BUILD_DIR + '*.rdf'])
+        .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/')),
+    gulp.src(CHROME_BUILD_DIR + '*.crx')
+        .pipe(gulp.dest(GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/')),
+    gulp.src('test/features/**/*', {base: 'test/'})
+        .pipe(gulp.dest(GH_PAGES_DIR)),
+    gulp.src(JSDOC_BUILD_DIR + '**/*', {base: JSDOC_BUILD_DIR})
+        .pipe(gulp.dest(GH_PAGES_DIR + 'api/draft/')),
+  ]);
+});
+
+gulp.task('wintersmith', ['gh-pages-prepare'], function (done) {
+  var wintersmith = require('wintersmith');
+  var env = wintersmith('docs/config.json');
+  env.build(GH_PAGES_DIR, function (error) {
+    if (error) {
+      return done(error);
+    }
+    replaceInFile(GH_PAGES_DIR + '/getting_started/index.html',
+                  /STABLE_VERSION/g, config.stableVersion);
+    replaceInFile(GH_PAGES_DIR + '/getting_started/index.html',
+                  /BETA_VERSION/g, config.betaVersion);
+    console.log('Done building with wintersmith.');
+    done();
+  });
+});
+
+gulp.task('gh-pages-git', ['gh-pages-prepare', 'wintersmith'], function () {
+  var VERSION = getVersionJSON().version;
+  var reason = process.env['PDFJS_UPDATE_REASON'];
+
+  spawnSync('git', ['init'], {cwd: GH_PAGES_DIR});
+  spawnSync('git', ['remote', 'add', 'origin', REPO], {cwd: GH_PAGES_DIR});
+  spawnSync('git', ['add', '-A'], {cwd: GH_PAGES_DIR});
+  spawnSync('git', [
+    'commit', '-am', 'gh-pages site created via gulpfile.js script',
+    '-m', 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '')
+  ], {cwd: GH_PAGES_DIR});
+  spawnSync('git', ['branch', '-m', 'gh-pages'], {cwd: GH_PAGES_DIR});
+
+  console.log();
+  console.log('Website built in ' + GH_PAGES_DIR);
+});
+
+gulp.task('web', ['gh-pages-prepare', 'wintersmith', 'gh-pages-git']);
 
 // Getting all shelljs registered tasks and register them with gulp
 require('./make.js');
