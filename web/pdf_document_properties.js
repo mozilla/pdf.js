@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { getPDFFileNameFromURL, mozL10n } from 'pdfjs-web/ui_utils';
-import { OverlayManager } from 'pdfjs-web/overlay_manager';
+import { getPDFFileNameFromURL, mozL10n } from './ui_utils';
+import { OverlayManager } from './overlay_manager';
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions

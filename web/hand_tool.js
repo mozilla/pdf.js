@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { GrabToPan } from 'pdfjs-web/grab_to_pan';
-import { localized } from 'pdfjs-web/ui_utils';
-import { Preferences } from 'pdfjs-web/preferences';
+import { GrabToPan } from './grab_to_pan';
+import { localized } from './ui_utils';
+import { Preferences } from './preferences';
 
 /**
  * @typedef {Object} HandToolOptions

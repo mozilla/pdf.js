@@ -16,12 +16,12 @@
 import {
   approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, RendererType,
   roundToDivide
-} from 'pdfjs-web/ui_utils';
+} from './ui_utils';
 import {
   CustomStyle, PDFJS, RenderingCancelledException, SVGGraphics
-} from 'pdfjs-web/pdfjs';
-import { domEvents } from 'pdfjs-web/dom_events';
-import { RenderingStates } from 'pdfjs-web/pdf_rendering_queue';
+} from './pdfjs';
+import { domEvents } from './dom_events';
+import { RenderingStates } from './pdf_rendering_queue';
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
 

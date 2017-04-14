@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { FindStates } from 'pdfjs-web/pdf_find_controller';
-import { mozL10n } from 'pdfjs-web/ui_utils';
+import { FindStates } from './pdf_find_controller';
+import { mozL10n } from './ui_utils';
 
 /**
  * Creates a "search bar" given a set of DOM elements that act as controls
