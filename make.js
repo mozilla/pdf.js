@@ -25,24 +25,15 @@ try {
 
 var fs = require('fs');
 
-var CONFIG_FILE = 'pdfjs.config';
-var config = JSON.parse(fs.readFileSync(CONFIG_FILE));
-
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
     BUILD_DIR = 'build/',
     SRC_DIR = 'src/',
-    FIREFOX_BUILD_DIR = BUILD_DIR + '/firefox/',
-    CHROME_BUILD_DIR = BUILD_DIR + '/chromium/',
-    JSDOC_DIR = BUILD_DIR + 'jsdoc',
-    EXTENSION_SRC_DIR = 'extensions/',
-    GH_PAGES_DIR = BUILD_DIR + 'gh-pages/',
     GENERIC_DIR = BUILD_DIR + 'generic/',
     MINIFIED_DIR = BUILD_DIR + 'minified/',
     DIST_DIR = BUILD_DIR + 'dist/',
     SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/',
     COMPONENTS_DIR = BUILD_DIR + 'components/',
-    LIB_DIR = BUILD_DIR + 'lib/',
-    REPO = 'git@github.com:mozilla/pdf.js.git';
+    LIB_DIR = BUILD_DIR + 'lib/';
 
 function getCurrentVersion() {
   // The 'build/version.json' file is created by 'buildnumber' task.
@@ -95,57 +86,7 @@ target.jsdoc = function() {
 // into place.
 //
 target.web = function() {
-  execGulp('web-pre');
-
-  cd(ROOT_DIR);
-  echo();
-  echo('### Creating web site');
-
-  if (test('-d', GH_PAGES_DIR)) {
-    rm('-rf', GH_PAGES_DIR);
-  }
-
-  mkdir('-p', GH_PAGES_DIR + '/web');
-  mkdir('-p', GH_PAGES_DIR + '/web/images');
-  mkdir('-p', GH_PAGES_DIR + BUILD_DIR);
-  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/firefox');
-  mkdir('-p', GH_PAGES_DIR + EXTENSION_SRC_DIR + '/chromium');
-  mkdir('-p', GH_PAGES_DIR + '/api/draft/');
-  mkdir('-p', GH_PAGES_DIR + '/examples/');
-
-  cp('-R', GENERIC_DIR + '/*', GH_PAGES_DIR);
-  cp(FIREFOX_BUILD_DIR + '/*.xpi', FIREFOX_BUILD_DIR + '/*.rdf',
-     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'firefox/');
-  cp(CHROME_BUILD_DIR + '/*.crx', FIREFOX_BUILD_DIR + '/*.rdf',
-     GH_PAGES_DIR + EXTENSION_SRC_DIR + 'chromium/');
-  cp('-R', 'test/features', GH_PAGES_DIR);
-  cp('-R', JSDOC_DIR + '/*', GH_PAGES_DIR + '/api/draft/');
-
-  var wintersmith = require('wintersmith');
-  var env = wintersmith('docs/config.json');
-  env.build(GH_PAGES_DIR, function (error) {
-    if (error) {
-      throw error;
-    }
-    sed('-i', /STABLE_VERSION/g, config.stableVersion,
-        GH_PAGES_DIR + '/getting_started/index.html');
-    sed('-i', /BETA_VERSION/g, config.betaVersion,
-        GH_PAGES_DIR + '/getting_started/index.html');
-    echo('Done building with wintersmith.');
-
-    var VERSION = getCurrentVersion();
-    var reason = process.env['PDFJS_UPDATE_REASON'];
-    cd(GH_PAGES_DIR);
-    exec('git init');
-    exec('git remote add origin ' + REPO);
-    exec('git add -A');
-    exec('git commit -am "gh-pages site created via make.js script" -m ' +
-         '"PDF.js version ' + VERSION + (reason ? ' - ' + reason : '') + '"');
-    exec('git branch -m gh-pages');
-
-    echo();
-    echo('Website built in ' + GH_PAGES_DIR);
-  });
+  execGulp('web');
 };
 
 target.dist = function() {
