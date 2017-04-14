@@ -16,7 +16,7 @@
 import {
   animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, localized, MAX_SCALE,
   MIN_SCALE, mozL10n, noContextMenuHandler
-} from 'pdfjs-web/ui_utils';
+} from './ui_utils';
 
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
 var SCALE_SELECT_CONTAINER_PADDING = 8;

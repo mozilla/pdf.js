@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS } from 'pdfjs-web/ui_utils';
-import { PDFPrintServiceFactory } from 'pdfjs-web/app';
-import { shadow } from 'pdfjs-web/pdfjs';
+import { CSS_UNITS } from './ui_utils';
+import { PDFPrintServiceFactory } from './app';
+import { shadow } from './pdfjs';
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(pdfDocument, pageNumber, size, printContainer) {

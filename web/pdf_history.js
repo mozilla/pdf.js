@@ -14,7 +14,7 @@
  */
 /* globals chrome */
 
-import { domEvents } from 'pdfjs-web/dom_events';
+import { domEvents } from './dom_events';
 
 function PDFHistory(options) {
   this.linkService = options.linkService;
