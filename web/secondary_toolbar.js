@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { mozL10n, SCROLLBAR_PADDING } from 'pdfjs-web/ui_utils';
+import { mozL10n, SCROLLBAR_PADDING } from './ui_utils';
 
 /**
  * @typedef {Object} SecondaryToolbarOptions

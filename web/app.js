@@ -18,34 +18,34 @@ import {
   animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, localized,
   MAX_SCALE, MIN_SCALE, mozL10n, noContextMenuHandler, normalizeWheelEventDelta,
   parseQueryString, ProgressBar, RendererType, UNKNOWN_SCALE
-} from 'pdfjs-web/ui_utils';
+} from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
   MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
   UNSUPPORTED_FEATURES, version,
-} from 'pdfjs-web/pdfjs';
+} from './pdfjs';
 import {
   PDFRenderingQueue, RenderingStates
-} from 'pdfjs-web/pdf_rendering_queue';
-import { PDFSidebar, SidebarView } from 'pdfjs-web/pdf_sidebar';
-import { PDFViewer, PresentationModeState } from 'pdfjs-web/pdf_viewer';
-import { getGlobalEventBus } from 'pdfjs-web/dom_events';
-import { HandTool } from 'pdfjs-web/hand_tool';
-import { OverlayManager } from 'pdfjs-web/overlay_manager';
-import { PasswordPrompt } from 'pdfjs-web/password_prompt';
-import { PDFAttachmentViewer } from 'pdfjs-web/pdf_attachment_viewer';
-import { PDFDocumentProperties } from 'pdfjs-web/pdf_document_properties';
-import { PDFFindBar } from 'pdfjs-web/pdf_find_bar';
-import { PDFFindController } from 'pdfjs-web/pdf_find_controller';
-import { PDFHistory } from 'pdfjs-web/pdf_history';
-import { PDFLinkService } from 'pdfjs-web/pdf_link_service';
-import { PDFOutlineViewer } from 'pdfjs-web/pdf_outline_viewer';
-import { PDFPresentationMode } from 'pdfjs-web/pdf_presentation_mode';
-import { PDFThumbnailViewer } from 'pdfjs-web/pdf_thumbnail_viewer';
-import { Preferences } from 'pdfjs-web/preferences';
-import { SecondaryToolbar } from 'pdfjs-web/secondary_toolbar';
-import { Toolbar } from 'pdfjs-web/toolbar';
-import { ViewHistory } from 'pdfjs-web/view_history';
+} from './pdf_rendering_queue';
+import { PDFSidebar, SidebarView } from './pdf_sidebar';
+import { PDFViewer, PresentationModeState } from './pdf_viewer';
+import { getGlobalEventBus } from './dom_events';
+import { HandTool } from './hand_tool';
+import { OverlayManager } from './overlay_manager';
+import { PasswordPrompt } from './password_prompt';
+import { PDFAttachmentViewer } from './pdf_attachment_viewer';
+import { PDFDocumentProperties } from './pdf_document_properties';
+import { PDFFindBar } from './pdf_find_bar';
+import { PDFFindController } from './pdf_find_controller';
+import { PDFHistory } from './pdf_history';
+import { PDFLinkService } from './pdf_link_service';
+import { PDFOutlineViewer } from './pdf_outline_viewer';
+import { PDFPresentationMode } from './pdf_presentation_mode';
+import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
+import { Preferences } from './preferences';
+import { SecondaryToolbar } from './secondary_toolbar';
+import { Toolbar } from './toolbar';
+import { ViewHistory } from './view_history';
 
 var DEFAULT_SCALE_DELTA = 1.1;
 var DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT = 5000;

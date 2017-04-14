@@ -15,8 +15,8 @@
 
 import {
   createObjectURL, createValidAbsoluteUrl, PDFJS
-} from 'pdfjs-web/pdfjs';
-import { DefaultExternalServices, PDFViewerApplication } from 'pdfjs-web/app';
+} from './pdfjs';
+import { DefaultExternalServices, PDFViewerApplication } from './app';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +

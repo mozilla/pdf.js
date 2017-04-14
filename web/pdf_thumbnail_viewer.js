@@ -15,8 +15,8 @@
 
 import {
   getVisibleElements, scrollIntoView, watchScroll
-} from 'pdfjs-web/ui_utils';
-import { PDFThumbnailView } from 'pdfjs-web/pdf_thumbnail_view';
+} from './ui_utils';
+import { PDFThumbnailView } from './pdf_thumbnail_view';
 
 var THUMBNAIL_SCROLL_MARGIN = -19;
 

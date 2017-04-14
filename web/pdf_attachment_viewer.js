@@ -16,7 +16,7 @@
 import {
   createObjectURL, createPromiseCapability, getFilenameFromUrl, PDFJS,
   removeNullCharacters
-} from 'pdfjs-web/pdfjs';
+} from './pdfjs';
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions

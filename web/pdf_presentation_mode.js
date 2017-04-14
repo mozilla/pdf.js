@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { normalizeWheelEventDelta } from 'pdfjs-web/ui_utils';
+import { normalizeWheelEventDelta } from './ui_utils';
 
 var DELAY_BEFORE_RESETTING_SWITCH_IN_PROGRESS = 1500; // in ms
 var DELAY_BEFORE_HIDING_CONTROLS = 3000; // in ms
