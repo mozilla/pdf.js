@@ -60,7 +60,6 @@ class PasswordPrompt {
 
   open() {
     OverlayManager.open(this.overlayName).then(() => {
-      this.input.type = 'password';
       this.input.focus();
 
       var promptString = mozL10n.get('password_label', null,
@@ -78,7 +77,6 @@ class PasswordPrompt {
   close() {
     OverlayManager.close(this.overlayName).then(() => {
       this.input.value = '';
-      this.input.type = '';
     });
   }
 
