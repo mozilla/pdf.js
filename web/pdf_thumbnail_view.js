@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability, RenderingCancelledException } from './pdfjs';
 import { getOutputScale, mozL10n } from './ui_utils';
-import { RenderingCancelledException } from './pdfjs';
 import { RenderingStates } from './pdf_rendering_queue';
 
 var THUMBNAIL_WIDTH = 98; // px
@@ -275,11 +275,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
       this.renderingState = RenderingStates.RUNNING;
 
-      var resolveRenderPromise, rejectRenderPromise;
-      var promise = new Promise(function (resolve, reject) {
-        resolveRenderPromise = resolve;
-        rejectRenderPromise = reject;
-      });
+      var renderCapability = createPromiseCapability();
 
       var self = this;
       function thumbnailDrawCallback(error) {
@@ -293,7 +289,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         if (((typeof PDFJSDev === 'undefined' ||
               !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
             error instanceof RenderingCancelledException) {
-          resolveRenderPromise(undefined);
+          renderCapability.resolve(undefined);
           return;
         }
 
@@ -301,9 +297,9 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         self._convertCanvasToImage();
 
         if (!error) {
-          resolveRenderPromise(undefined);
+          renderCapability.resolve(undefined);
         } else {
-          rejectRenderPromise(error);
+          renderCapability.reject(error);
         }
       }
 
@@ -336,7 +332,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
           thumbnailDrawCallback(error);
         }
       );
-      return promise;
+      return renderCapability.promise;
     },
 
     setImage: function PDFThumbnailView_setImage(pageView) {

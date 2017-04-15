@@ -14,6 +14,7 @@
  */
 
 import { getPDFFileNameFromURL, mozL10n } from './ui_utils';
+import { createPromiseCapability } from './pdfjs';
 import { OverlayManager } from './overlay_manager';
 
 /**
@@ -44,10 +45,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
     if (options.closeButton) {
       options.closeButton.addEventListener('click', this.close.bind(this));
     }
-
-    this.dataAvailablePromise = new Promise(function (resolve) {
-      this.resolveDataAvailable = resolve;
-    }.bind(this));
+    this._dataAvailableCapability = createPromiseCapability();
 
     OverlayManager.register(this.overlayName, this.container,
                             this.close.bind(this));
@@ -59,9 +57,9 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
      */
     open: function PDFDocumentProperties_open() {
       Promise.all([OverlayManager.open(this.overlayName),
-                   this.dataAvailablePromise]).then(function () {
+                   this._dataAvailableCapability.promise]).then(() => {
         this._getProperties();
-      }.bind(this));
+      });
     },
 
     /**
@@ -97,7 +95,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
         function PDFDocumentProperties_setDocumentAndUrl(pdfDocument, url) {
       this.pdfDocument = pdfDocument;
       this.url = url;
-      this.resolveDataAvailable();
+      this._dataAvailableCapability.resolve();
     },
 
     /**
@@ -110,16 +108,16 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
         return;
       }
       // Get the file size (if it hasn't already been set).
-      this.pdfDocument.getDownloadInfo().then(function(data) {
+      this.pdfDocument.getDownloadInfo().then((data) => {
         if (data.length === this.rawFileSize) {
           return;
         }
         this.setFileSize(data.length);
         this._updateUI(this.fields['fileSize'], this._parseFileSize());
-      }.bind(this));
+      });
 
       // Get the document properties.
-      this.pdfDocument.getMetadata().then(function(data) {
+      this.pdfDocument.getMetadata().then((data) => {
         var content = {
           'fileName': getPDFFileNameFromURL(this.url),
           'fileSize': this._parseFileSize(),
@@ -139,7 +137,7 @@ var PDFDocumentProperties = (function PDFDocumentPropertiesClosure() {
         for (var identifier in content) {
           this._updateUI(this.fields[identifier], content[identifier]);
         }
-      }.bind(this));
+      });
     },
 
     /**
