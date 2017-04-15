@@ -14,6 +14,7 @@
  */
 
 import { getOutputScale, mozL10n } from './ui_utils';
+import { RenderingCancelledException } from './pdfjs';
 import { RenderingStates } from './pdf_rendering_queue';
 
 var THUMBNAIL_WIDTH = 98; // px
@@ -288,8 +289,11 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         if (renderTask === self.renderTask) {
           self.renderTask = null;
         }
-        if (error === 'cancelled') {
-          rejectRenderPromise(error);
+
+        if (((typeof PDFJSDev === 'undefined' ||
+              !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
+            error instanceof RenderingCancelledException) {
+          resolveRenderPromise(undefined);
           return;
         }
 
