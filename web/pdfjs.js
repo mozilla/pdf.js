@@ -12,23 +12,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* umdutils ignore */
+/* globals module, __pdfjsdev_webpack__ */
 
 'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdfjs', ['exports', 'pdfjs/main_loader'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../src/main_loader.js'));
-  } else {
-    factory((root.pdfjsWebPDFJS = {}), root.pdfjsMainLoader);
-  }
-}(this, function (exports, mainLoader) {
-  // Re-export all mainLoader members.
-  for (var i in mainLoader) {
-    if (Object.prototype.hasOwnProperty.call(mainLoader, i)) {
-      exports[i] = mainLoader[i];
+if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
+  var pdfjsLib;
+  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
+  if (typeof __pdfjsdev_webpack__ === 'undefined') {
+    if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
+      pdfjsLib = window['pdfjs-dist/build/pdf'];
+    } else if (typeof require === 'function') {
+      pdfjsLib = require('../build/pdf.js');
+    } else {
+      throw new Error('Neither `require` nor `window` found');
     }
   }
-}));
+  module.exports = pdfjsLib;
+} else {
+  (function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+      define('pdfjs-web/pdfjs', ['exports', 'pdfjs/main_loader'], factory);
+    } else if (typeof exports !== 'undefined') {
+      factory(exports, require('../src/main_loader.js'));
+    } else {
+      factory((root.pdfjsWebPDFJS = {}), root.pdfjsMainLoader);
+    }
+  }(this, function (exports, mainLoader) {
+    // Re-export all mainLoader members.
+    for (var i in mainLoader) {
+      if (Object.prototype.hasOwnProperty.call(mainLoader, i)) {
+        exports[i] = mainLoader[i];
+      }
+    }
+  }));
+}

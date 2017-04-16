@@ -13,24 +13,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_thumbnail_view', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_rendering_queue'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_rendering_queue.js'));
-  } else {
-    factory((root.pdfjsWebPDFThumbnailView = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFRenderingQueue);
-  }
-}(this, function (exports, uiUtils, pdfRenderingQueue) {
-
-var mozL10n = uiUtils.mozL10n;
-var getOutputScale = uiUtils.getOutputScale;
-var RenderingStates = pdfRenderingQueue.RenderingStates;
+import { getOutputScale, mozL10n } from './ui_utils';
+import { RenderingCancelledException } from './pdfjs';
+import { RenderingStates } from './pdf_rendering_queue';
 
 var THUMBNAIL_WIDTH = 98; // px
 var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px
@@ -124,8 +109,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.anchor = anchor;
 
     var div = document.createElement('div');
-    div.id = 'thumbnailContainer' + id;
     div.className = 'thumbnail';
+    div.setAttribute('data-page-number', this.id);
     this.div = div;
 
     if (id === 1) {
@@ -304,8 +289,11 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         if (renderTask === self.renderTask) {
           self.renderTask = null;
         }
-        if (error === 'cancelled') {
-          rejectRenderPromise(error);
+
+        if (((typeof PDFJSDev === 'undefined' ||
+              !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
+            error instanceof RenderingCancelledException) {
+          resolveRenderPromise(undefined);
           return;
         }
 
@@ -430,5 +418,6 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
 PDFThumbnailView.tempImageCache = null;
 
-exports.PDFThumbnailView = PDFThumbnailView;
-}));
+export {
+  PDFThumbnailView,
+};

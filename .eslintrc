@@ -1,6 +1,7 @@
 {
   "parserOptions": {
-    "ecmaVersion": 5,
+    "ecmaVersion": 6,
+    "sourceType": "module",
   },
 
   "env": {
@@ -12,8 +13,8 @@
 
   globals: {
     "PDFJSDev": false,
-    "require": false,
     "exports": false,
+    "SystemJS": false,
   },
 
   "rules": {
@@ -36,6 +37,7 @@
     "no-sparse-arrays": "error",
     "no-unexpected-multiline": "error",
     "no-unreachable": "error",
+    "no-unsafe-finally": "error",
     "no-unsafe-negation": "error",
     "use-isnan": "error",
     "valid-typeof": ["error", { "requireStringLiterals": true, }],
@@ -46,13 +48,16 @@
     "eqeqeq": ["error", "always"],
     "no-caller": "error",
     "no-else-return": "error",
+    "no-empty-pattern": "error",
     "no-eval": "error",
     "no-extend-native": "error",
     "no-extra-bind": "error",
     "no-extra-label": "error",
     "no-fallthrough": "error",
+    "no-floating-decimal": "error",
     "no-global-assign": "error",
     "no-implied-eval": "error",
+    "no-iterator": "error",
     "no-lone-blocks": "error",
     "no-multi-spaces": "error",
     "no-multi-str": "error",
@@ -60,28 +65,43 @@
     "no-new-wrappers": "error",
     "no-new": "error",
     "no-octal-escape": "error",
+    "no-octal": "error",
     "no-redeclare": "error",
     "no-self-assign": "error",
+    "no-self-compare": "error",
+    "no-throw-literal": "error",
     "no-unused-expressions": "error",
     "no-unused-labels": "error",
+    "no-useless-call": "error",
     "no-useless-concat": "error",
+    "prefer-promise-reject-errors": "error",
     "wrap-iife": ["error", "any"],
-    "yoda": ["error", "never", { "onlyEquality": true, }],
+    "yoda": ["error", "never", {
+      "exceptRange": true,
+    }],
 
     // Strict Mode
-    "strict": ["error", "global"],
+    "strict": ["off", "global"],
 
     // Variables
     "no-catch-shadow": "error",
+    "no-delete-var": "error",
     "no-label-var": "error",
     "no-shadow-restricted-names": "error",
+    "no-shadow": "off",
     "no-undef-init": "error",
     "no-undef": ["error", { "typeof": true, }],
+    "no-unused-vars": ["error", {
+      "vars": "local",
+      "args": "none",
+    }],
 
     // Stylistic Issues
     "array-bracket-spacing": ["error", "never"],
     "block-spacing": ["error", "always"],
-    "brace-style": ["error", "1tbs", { "allowSingleLine": true, }],
+    "brace-style": ["error", "1tbs", {
+      "allowSingleLine": false,
+    }],
     "comma-spacing": ["error", { "before": false, "after": true, }],
     "comma-style": ["error", "last"],
     "eol-last": "error",
@@ -94,6 +114,7 @@
     "new-parens": "error",
     "no-array-constructor": "error",
     "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 0, "maxBOF": 1, }],
+    "no-new-object": "error",
     "no-tabs": "error",
     "no-trailing-spaces": ["error", { "skipBlankLines": false, }],
     "no-whitespace-before-property": "error",
@@ -106,5 +127,40 @@
     "space-in-parens": ["error", "never"],
     "space-infix-ops": ["error", { "int32Hint": false }],
     "space-unary-ops": ["error", { "words": true, "nonwords": false, }],
+    "spaced-comment": ["error", "always", {
+      "line": {
+        "exceptions": ["//", "#else", "#endif"],
+        "markers": ["#if", "#elif", "#include", "#expand", "#error"],
+      },
+      "block": {
+        "balanced": true,
+      }
+    }],
+
+    // ECMAScript 6
+    "arrow-body-style": ["error", "as-needed"],
+    "arrow-parens": ["error", "always"],
+    "arrow-spacing": ["error", {
+      "before": true,
+      "after": true,
+    }],
+    "constructor-super": "error",
+    "no-class-assign": "error",
+    "no-confusing-arrow": "error",
+    "no-const-assign": "error",
+    "no-dupe-class-members": "error",
+    "no-duplicate-imports": "error",
+    "no-this-before-super": "error",
+    "no-useless-computed-key": "error",
+    "no-useless-constructor": "error",
+    "no-useless-rename": "error",
+    "object-shorthand": ["off", "always", {
+      "avoidQuotes": true,
+    }],
+    "rest-spread-spacing": ["error", "never"],
+    "sort-imports": ["error", {
+      "ignoreCase": true,
+    }],
+    "template-curly-spacing": ["error", "never"],
   },
 }

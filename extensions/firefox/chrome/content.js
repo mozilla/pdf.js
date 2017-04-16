@@ -15,7 +15,7 @@
 /* globals Components, Services, XPCOMUtils, PdfjsContentUtils,
            PdfjsContentUtils, PdfStreamConverter, addMessageListener */
 
-'use strict';
+"use strict";
 
 (function contentScriptClosure() {
   // we need to use closure here -- we are running in the global context
@@ -26,13 +26,13 @@
   const Cu = Components.utils;
   const Cr = Components.results;
 
-  Cu.import('resource://gre/modules/XPCOMUtils.jsm');
-  Cu.import('resource://gre/modules/Services.jsm');
+  Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+  Cu.import("resource://gre/modules/Services.jsm");
 
   var isRemote = Services.appinfo.processType ===
     Services.appinfo.PROCESS_TYPE_CONTENT;
 
-// Factory that registers/unregisters a constructor as a component.
+  // Factory that registers/unregisters a constructor as a component.
   function Factory() {
   }
 
@@ -73,10 +73,10 @@
   var pdfStreamConverterFactory = new Factory();
 
   function startup() {
-    Cu.import('resource://pdf.js/PdfjsContentUtils.jsm');
+    Cu.import("resource://pdf.js/PdfjsContentUtils.jsm");
     PdfjsContentUtils.init();
 
-    Cu.import('resource://pdf.js/PdfStreamConverter.jsm');
+    Cu.import("resource://pdf.js/PdfStreamConverter.jsm");
     pdfStreamConverterFactory.register(PdfStreamConverter);
   }
 
@@ -84,16 +84,16 @@
     // Remove the contract/component.
     pdfStreamConverterFactory.unregister();
     // Unload the converter
-    Cu.unload('resource://pdf.js/PdfStreamConverter.jsm');
+    Cu.unload("resource://pdf.js/PdfStreamConverter.jsm");
 
     PdfjsContentUtils.uninit();
-    Cu.unload('resource://pdf.js/PdfjsContentUtils.jsm');
+    Cu.unload("resource://pdf.js/PdfjsContentUtils.jsm");
   }
 
   if (isRemote) {
     startup();
 
-    addMessageListener('PDFJS:Child:shutdown', function (e) {
+    addMessageListener("PDFJS:Child:shutdown", function() {
       shutdown();
     });
   }

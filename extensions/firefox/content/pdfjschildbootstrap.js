@@ -12,23 +12,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-/* globals Components, PdfjsContentUtils, PdfJs, Services */
+/* globals Components, PdfjsContentUtils */
 
-'use strict';
+"use strict";
 
 /*
  * pdfjschildbootstrap.js loads into the content process to take care of
  * initializing our built-in version of pdfjs when running remote.
  */
 
-Components.utils.import('resource://gre/modules/Services.jsm');
-Components.utils.import('resource://pdf.js/PdfJs.jsm');
-Components.utils.import('resource://pdf.js/PdfjsContentUtils.jsm');
+Components.utils.import("resource://pdf.js/PdfjsContentUtils.jsm");
 
 // init content utils shim pdfjs will use to access privileged apis.
 PdfjsContentUtils.init();
-
-if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
-  // register various pdfjs factories that hook us into content loading.
-  PdfJs.updateRegistration();
-}

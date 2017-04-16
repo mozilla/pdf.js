@@ -19,7 +19,7 @@
 var base64alphabet =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-function decodeFontData(base64) {
+function decodeFontData(base64) { // eslint-disable-line no-unused-vars
   var result = [];
 
   var bits = 0, bitsLength = 0;
@@ -62,7 +62,7 @@ function encodeFontData(data) {
   return buffer;
 }
 
-function ttx(data, callback) {
+function ttx(data, callback) { // eslint-disable-line no-unused-vars
   var xhr = new XMLHttpRequest();
   xhr.open('POST', '/ttx');
 
@@ -82,7 +82,7 @@ function ttx(data, callback) {
   xhr.send(encodedData);
 }
 
-function verifyTtxOutput(output) {
+function verifyTtxOutput(output) { // eslint-disable-line no-unused-vars
   var m = /^<error>(.*?)<\/error>/.exec(output);
   if (m) {
     throw m[1];

@@ -432,14 +432,12 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       var deltaHeight = decodeInteger(contextCache, 'IADH', decoder); // 6.5.6
       currentHeight += deltaHeight;
       var currentWidth = 0;
-      var totalWidth = 0;
       while (true) {
         var deltaWidth = decodeInteger(contextCache, 'IADW', decoder); // 6.5.7
         if (deltaWidth === null) {
           break; // OOB
         }
         currentWidth += deltaWidth;
-        totalWidth += currentWidth;
         var bitmap;
         if (refinement) {
           // 6.5.8.2 Refinement/aggregate-coded symbol bitmap
@@ -447,13 +445,13 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           if (numberOfInstances > 1) {
             bitmap = decodeTextRegion(huffman, refinement,
                                       currentWidth, currentHeight, 0,
-                                      numberOfInstances, 1, //strip size
+                                      numberOfInstances, 1, // strip size
                                       symbols.concat(newSymbols),
                                       symbolCodeLength,
-                                      0, //transposed
-                                      0, //ds offset
-                                      1, //top left 7.4.3.1.1
-                                      0, //OR operator
+                                      0, // transposed
+                                      0, // ds offset
+                                      1, // top left 7.4.3.1.1
+                                      0, // OR operator
                                       huffmanTables,
                                       refinementTemplateIndex, refinementAt,
                                       decodingContext);
@@ -889,7 +887,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           delete pageInfo.height;
         }
         var pageSegmentFlags = data[position + 16];
-        var pageStripingInformation = readUint16(data, position + 17);
+        readUint16(data, position + 17); // pageStripingInformation
         pageInfo.lossless = !!(pageSegmentFlags & 1);
         pageInfo.refinement = !!(pageSegmentFlags & 2);
         pageInfo.defaultPixelValue = (pageSegmentFlags >> 2) & 1;
@@ -923,7 +921,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     }
   }
 
-  function parseJbig2(data, start, end) {
+  function parseJbig2(data, start, end) { // eslint-disable-line no-unused-vars
     var position = start;
     if (data[position] !== 0x97 || data[position + 1] !== 0x4A ||
         data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
@@ -939,7 +937,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       header.numberOfPages = readUint32(data, position);
       position += 4;
     }
-    var segments = readSegments(header, data, position, end);
+    readSegments(header, data, position, end); // segments
     error('Not implemented');
     // processSegments(segments, new SimpleSegmentVisitor());
   }

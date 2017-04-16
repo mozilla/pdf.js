@@ -4,6 +4,36 @@
   ],
 
   "parserOptions": {
-    "ecmaVersion": 6
+    "ecmaVersion": 6,
+    "sourceType": "script"
+  },
+
+  "rules": {
+    // Best Practices
+    "consistent-return": "error",
+
+    // Variables
+    "no-shadow": "error",
+    "no-unused-vars": ["error", {
+      "vars": "local",
+      "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS",
+      "args": "none",
+    }],
+
+    // Stylistic Issues
+    "no-nested-ternary": "error",
+    "quotes": ["error", "double"],
+    "space-before-function-paren": ["error", "never"],
+
+    // ECMAScript 6
+    "arrow-body-style": ["error", "as-needed"],
+    "arrow-parens": ["error", "always"],
+    "arrow-spacing": ["error", { "before": true, "after": true, }],
+    "constructor-super": "error",
+    "no-confusing-arrow": "error",
+    "no-const-assign": "error",
+    "no-dupe-class-members": "error",
+    "no-useless-constructor": "error",
+    "object-shorthand": ["error", "always", { "avoidQuotes": true }],
   },
 }

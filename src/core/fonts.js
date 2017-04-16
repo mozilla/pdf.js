@@ -505,75 +505,6 @@ var ProblematicCharRanges = new Int32Array([
   0xFFF0, 0x10000
 ]);
 
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-  /**
-   * Used to validate the entries in `ProblematicCharRanges`, and to ensure that
-   * its total number of characters does not exceed the PUA (Private Use Area)
-   * length.
-   * @returns {Object} An object with {number} `numChars`, {number} `puaLength`,
-   *   and {number} `percentage` parameters.
-   */
-  var checkProblematicCharRanges = function checkProblematicCharRanges() {
-    function printRange(limits) {
-      return '[' + limits.lower.toString('16').toUpperCase() + ', ' +
-                   limits.upper.toString('16').toUpperCase() + ')';
-    }
-
-    var numRanges = ProblematicCharRanges.length;
-    if (numRanges % 2 !== 0) {
-      throw new Error('Char ranges must contain an even number of elements.');
-    }
-    var prevLimits, numChars = 0;
-    for (var i = 0; i < numRanges; i += 2) {
-      var limits = {
-        lower: ProblematicCharRanges[i],
-        upper: ProblematicCharRanges[i + 1],
-      };
-      if (!isInt(limits.lower) || !isInt(limits.upper)) {
-        throw new Error('Range endpoints must be integers: ' +
-                        printRange(limits));
-      }
-      if (limits.lower < 0 || limits.upper < 0) {
-        throw new Error('Range endpoints must be non-negative: ' +
-                        printRange(limits));
-      }
-      var range = limits.upper - limits.lower;
-      if (range < 1) {
-        throw new Error('Range must contain at least one element: ' +
-                        printRange(limits));
-      }
-      if (prevLimits) {
-        if (limits.lower < prevLimits.lower) {
-          throw new Error('Ranges must be sorted in ascending order: ' +
-                          printRange(limits) + ', ' + printRange(prevLimits));
-        }
-        if (limits.lower < prevLimits.upper) {
-          throw new Error('Ranges must not overlap: ' +
-                          printRange(limits) + ', ' + printRange(prevLimits));
-        }
-      }
-      prevLimits = {
-        lower: limits.lower,
-        upper: limits.upper,
-      };
-      // The current range is OK.
-      numChars += range;
-    }
-    var puaLength = (PRIVATE_USE_OFFSET_END + 1) - PRIVATE_USE_OFFSET_START;
-    if (numChars > puaLength) {
-      throw new Error('Total number of chars must not exceed the PUA length.');
-    }
-    return {
-      numChars: numChars,
-      puaLength: puaLength,
-      percentage: 100 * (numChars / puaLength),
-    };
-  };
-
-  exports.SEAC_ANALYSIS_ENABLED = SEAC_ANALYSIS_ENABLED;
-  exports.checkProblematicCharRanges = checkProblematicCharRanges;
-}
-
 /**
  * 'Font' is the class the outside world should use, it encapsulate all the font
  * decoding logics whatever type it is (assuming the font type is supported).
@@ -594,9 +525,6 @@ var Font = (function FontClosure() {
 
     this.glyphCache = Object.create(null);
 
-    var names = name.split('+');
-    names = names.length > 1 ? names[1] : names[0];
-    names = names.split(/[-,_]/g)[0];
     this.isSerifFont = !!(properties.flags & FontFlags.Serif);
     this.isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
     this.isMonospace = !!(properties.flags & FontFlags.FixedPitch);
@@ -1013,7 +941,9 @@ var Font = (function FontClosure() {
 
     var i, ii, j, jj;
     for (i = ranges.length - 1; i >= 0; --i) {
-      if (ranges[i][0] <= 0xFFFF) { break; }
+      if (ranges[i][0] <= 0xFFFF) {
+        break;
+      }
     }
     var bmpLength = i + 1;
 
@@ -1369,7 +1299,7 @@ var Font = (function FontClosure() {
         if (tag === 'head') {
           // clearing checksum adjustment
           data[8] = data[9] = data[10] = data[11] = 0;
-          data[17] |= 0x20; //Set font optimized for cleartype flag
+          data[17] |= 0x20; // Set font optimized for cleartype flag.
         }
 
         return {
@@ -1409,7 +1339,7 @@ var Font = (function FontClosure() {
         var start = (font.start ? font.start : 0) + cmap.offset;
         font.pos = start;
 
-        var version = font.getUint16();
+        font.getUint16(); // version
         var numTables = font.getUint16();
 
         var potentialTable;
@@ -1435,7 +1365,7 @@ var Font = (function FontClosure() {
             // Continue the loop since there still may be a higher priority
             // table.
           } else if (platformId === 3 && encodingId === 1 &&
-                     ((!isSymbolicFont && hasEncoding) || !potentialTable)) {
+                     (hasEncoding || !potentialTable)) {
             useTable = true;
             if (!isSymbolicFont) {
               canBreak = true;
@@ -1471,8 +1401,8 @@ var Font = (function FontClosure() {
         }
 
         var format = font.getUint16();
-        var length = font.getUint16();
-        var language = font.getUint16();
+        font.getUint16(); // length
+        font.getUint16(); // language
 
         var hasShortCmap = false;
         var mappings = [];
@@ -1544,9 +1474,6 @@ var Font = (function FontClosure() {
               glyphId = (offsetIndex < 0 ?
                          j : offsets[offsetIndex + j - start]);
               glyphId = (glyphId + delta) & 0xFFFF;
-              if (glyphId === 0) {
-                continue;
-              }
               mappings.push({
                 charCode: j,
                 glyphId: glyphId
@@ -2121,7 +2048,7 @@ var Font = (function FontClosure() {
               op >= 0xC0 && op <= 0xDF ? -1 : op >= 0xE0 ? -2 : 0;
             if (op >= 0x71 && op <= 0x75) {
               n = stack.pop();
-              if (n === n) {
+              if (!isNaN(n)) {
                 stackDelta = -n * 2;
               }
             }
@@ -3437,10 +3364,14 @@ var CFFFont = (function CFFFontClosure() {
   }
 })();
 
+exports.SEAC_ANALYSIS_ENABLED = SEAC_ANALYSIS_ENABLED;
+exports.PRIVATE_USE_OFFSET_START = PRIVATE_USE_OFFSET_START;
+exports.PRIVATE_USE_OFFSET_END = PRIVATE_USE_OFFSET_END;
 exports.ErrorFont = ErrorFont;
 exports.Font = Font;
 exports.FontFlags = FontFlags;
 exports.IdentityToUnicodeMap = IdentityToUnicodeMap;
+exports.ProblematicCharRanges = ProblematicCharRanges;
 exports.ToUnicodeMap = ToUnicodeMap;
 exports.getFontType = getFontType;
 }));

@@ -40,34 +40,28 @@
 
 'use strict';
 
-var pdfjsLibs;
-
 function initializePDFJS(callback) {
-  require.config({paths: {'pdfjs': '../../src', 'pdfjs-web': '../../web',
-                 'pdfjs-test': '..'}});
-  require(['pdfjs/display/global', 'pdfjs-test/unit/annotation_spec',
-           'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/bidi_spec',
-           'pdfjs-test/unit/cff_parser_spec', 'pdfjs-test/unit/cmap_spec',
-           'pdfjs-test/unit/crypto_spec', 'pdfjs-test/unit/document_spec',
-           'pdfjs-test/unit/dom_utils_spec', 'pdfjs-test/unit/evaluator_spec',
-           'pdfjs-test/unit/fonts_spec', 'pdfjs-test/unit/function_spec',
-           'pdfjs-test/unit/metadata_spec', 'pdfjs-test/unit/murmurhash3_spec',
-           'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
-           'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
-           'pdfjs-test/unit/type1_parser_spec',
-           'pdfjs-test/unit/ui_utils_spec', 'pdfjs-test/unit/unicode_spec',
-           'pdfjs-test/unit/util_spec'],
-    function (displayGlobal, testUnitAnnotationSpec, testUnitApiSpec,
-              testUnitBidiSpec, testUnitCFFParserSpec, testUnitCMapSpec,
-              testUnitCryptoSpec, testUnitDocumentSpec, testUnitDOMUtilsSpec,
-              testUnitEvaluatorSpec, testUnitFontsSpec, testUnitFunctionSpec,
-              testUnitMetadataSpec, testUnitMurmurHash3Spec,
-              testUnitNetworkSpec, testUnitParserSpec, testUnitPrimitivesSpec,
-              testUnitStreamSpec, testUnitType1ParserSpec, testUnitUiUtilsSpec,
-              testUnitUnicodeSpec, testUnitUtilSpec) {
+    Promise.all([
+      'pdfjs/display/global', 'pdfjs-test/unit/annotation_spec',
+      'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/bidi_spec',
+      'pdfjs-test/unit/cff_parser_spec', 'pdfjs-test/unit/cmap_spec',
+      'pdfjs-test/unit/crypto_spec', 'pdfjs-test/unit/document_spec',
+      'pdfjs-test/unit/dom_utils_spec', 'pdfjs-test/unit/evaluator_spec',
+      'pdfjs-test/unit/fonts_spec', 'pdfjs-test/unit/function_spec',
+      'pdfjs-test/unit/metadata_spec', 'pdfjs-test/unit/murmurhash3_spec',
+      'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
+      'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
+      'pdfjs-test/unit/type1_parser_spec', 'pdfjs-test/unit/ui_utils_spec',
+      'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec'
+    ].map(function (moduleName) {
+      return SystemJS.import(moduleName);
+    })).then(function (modules) {
+      var displayGlobal = modules[0];
 
       // Configure the worker.
       displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
+      // Opt-in to using the latest API.
+      displayGlobal.PDFJS.pdfjsNext = true;
 
       callback();
     });
@@ -85,7 +79,9 @@ function initializePDFJS(callback) {
 
   // Runner Parameters
   var queryString = new jasmine.QueryString({
-    getWindowLocation: function() { return window.location; }
+    getWindowLocation: function() {
+      return window.location;
+    }
   });
 
   var catchingExceptions = queryString.getParam('catch');
@@ -119,7 +115,9 @@ function initializePDFJS(callback) {
     addToExistingQueryString: function(key, value) {
       return queryString.fullStringWithNewParam(key, value);
     },
-    getContainer: function() { return document.body; },
+    getContainer: function() {
+      return document.body;
+    },
     createElement: function() {
       return document.createElement.apply(document, arguments);
     },
@@ -140,7 +138,9 @@ function initializePDFJS(callback) {
   // Filter which specs will be run by matching the start of the full name
   // against the `spec` query param.
   var specFilter = new jasmine.HtmlSpecFilter({
-    filterString: function() { return queryString.getParam('spec'); }
+    filterString: function() {
+      return queryString.getParam('spec');
+    }
   });
 
   env.specFilter = function(spec) {

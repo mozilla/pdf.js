@@ -26,6 +26,12 @@ var LinkServiceMock = (function LinkServiceMockClosure() {
   function LinkServiceMock() {}
 
   LinkServiceMock.prototype = {
+    get page() {
+      return 0;
+    },
+
+    set page(value) {},
+
     navigateTo: function (dest) {},
 
     getDestinationHash: function (dest) {
@@ -36,7 +42,13 @@ var LinkServiceMock = (function LinkServiceMockClosure() {
       return '#';
     },
 
-    executeNamedAction: function (action) {}
+    setHash: function (hash) {},
+
+    executeNamedAction: function (action) {},
+
+    onFileAttachmentAnnotation: function (params) {},
+
+    cachePageRef: function (pageNum, pageRef) {},
   };
 
   return LinkServiceMock;
@@ -239,7 +251,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
 /**
  * @class
  */
-var Driver = (function DriverClosure() {
+var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
   /**
    * @constructs Driver
    * @param {DriverOptions} options
@@ -251,6 +263,8 @@ var Driver = (function DriverClosure() {
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.enableStats = true;
     PDFJS.imageResourcesPath = '/web/images/';
+    // Opt-in to using the latest API.
+    PDFJS.pdfjsNext = true;
 
     // Set the passed options
     this.inflight = options.inflight;
@@ -432,18 +446,9 @@ var Driver = (function DriverClosure() {
 
       if (task.skipPages && task.skipPages.indexOf(task.pageNum) >= 0) {
         this._log(' Skipping page ' + task.pageNum + '/' +
-          task.pdfDoc.numPages + '... ');
-
-        // Empty the canvas
-        this.canvas.width = 1;
-        this.canvas.height = 1;
-        ctx = this.canvas.getContext('2d', {alpha: false});
-        ctx.save();
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, 1, 1);
-        ctx.restore();
-
-        this._snapshot(task, '');
+                  task.pdfDoc.numPages + '...\n');
+        task.pageNum++;
+        this._nextPage(task);
         return;
       }
 

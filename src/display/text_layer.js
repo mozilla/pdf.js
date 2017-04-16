@@ -186,6 +186,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       return;
     }
 
+    // The temporary canvas is used to measure text length in the DOM.
     var canvas = document.createElement('canvas');
     if (typeof PDFJSDev === 'undefined' ||
         PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
@@ -347,7 +348,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
   function expandBoundsLTR(width, bounds) {
     // Sorting by x1 coordinate and walk by the bounds in the same order.
-    bounds.sort(function (a, b) { return a.x1 - b.x1 || a.index - b.index; });
+    bounds.sort(function (a, b) {
+      return a.x1 - b.x1 || a.index - b.index;
+    });
 
     // First we see on the horizon is a fake boundary.
     var fakeBoundary = {

@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals pdfjsVersion, pdfjsBuild */
 
 'use strict';
 
@@ -41,6 +40,7 @@
   var deprecated = sharedUtil.deprecated;
   var warn = sharedUtil.warn;
   var LinkTarget = displayDOMUtils.LinkTarget;
+  var DEFAULT_LINK_REL = displayDOMUtils.DEFAULT_LINK_REL;
 
   var isWorker = (typeof window === 'undefined');
 
@@ -53,11 +53,9 @@
   }
   var PDFJS = globalScope.PDFJS;
 
-  if (typeof pdfjsVersion !== 'undefined') {
-    PDFJS.version = pdfjsVersion;
-  }
-  if (typeof pdfjsBuild !== 'undefined') {
-    PDFJS.build = pdfjsBuild;
+  if (typeof PDFJSDev !== 'undefined') {
+    PDFJS.version = PDFJSDev.eval('BUNDLE_VERSION');
+    PDFJS.build = PDFJSDev.eval('BUNDLE_BUILD');
   }
 
   PDFJS.pdfBug = false;
@@ -67,8 +65,12 @@
   }
   delete PDFJS.verbosity;
   Object.defineProperty(PDFJS, 'verbosity', {
-    get: function () { return sharedUtil.getVerbosityLevel(); },
-    set: function (level) { sharedUtil.setVerbosityLevel(level); },
+    get: function () {
+      return sharedUtil.getVerbosityLevel();
+    },
+    set: function (level) {
+      sharedUtil.setVerbosityLevel(level);
+    },
     enumerable: true,
     configurable: true
   });
@@ -159,6 +161,12 @@
   PDFJS.workerSrc = (PDFJS.workerSrc === undefined ? null : PDFJS.workerSrc);
 
   /**
+   * Defines global port for worker process. Overrides workerSrc and
+   * disableWorker setting.
+   */
+  PDFJS.workerPort = (PDFJS.workerPort === undefined ? null : PDFJS.workerPort);
+
+  /**
    * Disable range request loading of PDF files. When enabled and if the server
    * supports partial content requests then the PDF will be fetched in chunks.
    * Enabled (false) by default.
@@ -233,7 +241,7 @@
    * @var {string}
    */
   PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
-                           'noreferrer' : PDFJS.externalLinkRel);
+                           DEFAULT_LINK_REL : PDFJS.externalLinkRel);
 
   /**
     * Determines if we can eval strings as JS. Primarily used to improve
@@ -242,6 +250,13 @@
     */
   PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
                            true : PDFJS.isEvalSupported);
+
+  /**
+   * Opt-in to backwards incompatible API changes. NOTE:
+   * If the `PDFJS_NEXT` build flag is set, it will override this setting.
+   * @var {boolean}
+   */
+  PDFJS.pdfjsNext = (PDFJS.pdfjsNext === undefined) ? false : PDFJS.pdfjsNext;
 
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
     var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
@@ -281,13 +296,7 @@
   PDFJS.PDFDataRangeTransport = displayAPI.PDFDataRangeTransport;
   PDFJS.PDFWorker = displayAPI.PDFWorker;
 
-  Object.defineProperty(PDFJS, 'hasCanvasTypedArrays', {
-    configurable: true,
-    get: function PDFJS_hasCanvasTypedArrays() {
-      var value = displayDOMUtils.hasCanvasTypedArrays();
-      return sharedUtil.shadow(PDFJS, 'hasCanvasTypedArrays', value);
-    }
-  });
+  PDFJS.hasCanvasTypedArrays = true; // compatibility.js ensures this invariant
   PDFJS.CustomStyle = displayDOMUtils.CustomStyle;
   PDFJS.LinkTarget = LinkTarget;
   PDFJS.addLinkAttributes = displayDOMUtils.addLinkAttributes;

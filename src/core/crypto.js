@@ -891,11 +891,11 @@ var AES128Cipher = (function AES128CipherClosure() {
     }
 
     for (i = 1; i < 10; i++) {
-      //SubBytes
+      // SubBytes
       for (j = 0; j < 16; ++j) {
         state[j] = s[state[j]];
       }
-      //ShiftRows
+      // ShiftRows
       v = state[1];
       state[1] = state[5];
       state[5] = state[9];
@@ -914,7 +914,7 @@ var AES128Cipher = (function AES128CipherClosure() {
       state[7] = v;
       state[11] = u;
       state[15] = t;
-      //MixColumns
+      // MixColumns
       for (var j = 0; j < 16; j += 4) {
         var s0 = state[j + 0], s1 = state[j + 1];
         var s2 = state[j + 2], s3 = state[j + 3];
@@ -924,17 +924,17 @@ var AES128Cipher = (function AES128CipherClosure() {
         state[j + 2] ^= t ^ mixCol[s2 ^ s3];
         state[j + 3] ^= t ^ mixCol[s3 ^ s0];
       }
-      //AddRoundKey
+      // AddRoundKey
       for (j = 0, k = i * 16; j < 16; ++j, ++k) {
         state[j] ^= key[k];
       }
     }
 
-    //SubBytes
+    // SubBytes
     for (j = 0; j < 16; ++j) {
       state[j] = s[state[j]];
     }
-    //ShiftRows
+    // ShiftRows
     v = state[1];
     state[1] = state[5];
     state[5] = state[9];
@@ -953,7 +953,7 @@ var AES128Cipher = (function AES128CipherClosure() {
     state[7] = v;
     state[11] = u;
     state[15] = t;
-    //AddRoundKey
+    // AddRoundKey
     for (j = 0, k = 160; j < 16; ++j, ++k) {
       state[j] ^= key[k];
     }
@@ -1084,30 +1084,6 @@ var AES128Cipher = (function AES128CipherClosure() {
 })();
 
 var AES256Cipher = (function AES256CipherClosure() {
-  var rcon = new Uint8Array([
-    0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
-    0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
-    0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,
-    0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
-    0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
-    0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6,
-    0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72,
-    0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc,
-    0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02, 0x04, 0x08, 0x10,
-    0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e,
-    0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5,
-    0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94,
-    0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d, 0x01, 0x02,
-    0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d,
-    0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d,
-    0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd, 0x61, 0xc2, 0x9f,
-    0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb,
-    0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
-    0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
-    0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72, 0xe4, 0xd3, 0xbd,
-    0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
-    0x74, 0xe8, 0xcb, 0x8d]);
-
   var s = new Uint8Array([
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b,
     0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0,
@@ -1337,11 +1313,11 @@ var AES256Cipher = (function AES256CipherClosure() {
     }
 
     for (i = 1; i < 14; i++) {
-      //SubBytes
+      // SubBytes
       for (j = 0; j < 16; ++j) {
         state[j] = s[state[j]];
       }
-      //ShiftRows
+      // ShiftRows
       v = state[1];
       state[1] = state[5];
       state[5] = state[9];
@@ -1360,7 +1336,7 @@ var AES256Cipher = (function AES256CipherClosure() {
       state[7] = v;
       state[11] = u;
       state[15] = t;
-      //MixColumns
+      // MixColumns
       for (var j = 0; j < 16; j += 4) {
         var s0 = state[j + 0], s1 = state[j + 1];
         var s2 = state[j + 2], s3 = state[j + 3];
@@ -1370,17 +1346,17 @@ var AES256Cipher = (function AES256CipherClosure() {
         state[j + 2] ^= t ^ mixCol[s2 ^ s3];
         state[j + 3] ^= t ^ mixCol[s3 ^ s0];
       }
-      //AddRoundKey
+      // AddRoundKey
       for (j = 0, k = i * 16; j < 16; ++j, ++k) {
         state[j] ^= key[k];
       }
     }
 
-    //SubBytes
+    // SubBytes
     for (j = 0; j < 16; ++j) {
       state[j] = s[state[j]];
     }
-    //ShiftRows
+    // ShiftRows
     v = state[1];
     state[1] = state[5];
     state[5] = state[9];
@@ -1399,7 +1375,7 @@ var AES256Cipher = (function AES256CipherClosure() {
     state[7] = v;
     state[11] = u;
     state[15] = t;
-    //AddRoundKey
+    // AddRoundKey
     for (j = 0, k = 224; j < 16; ++j, ++k) {
       state[j] ^= key[k];
     }
@@ -1482,8 +1458,7 @@ var AES256Cipher = (function AES256CipherClosure() {
              i < sourceLength; ++i, ++bufferLength) {
           buffer[bufferLength] = data[i];
         }
-        if (bufferLength < 16) {
-          //need more data
+        if (bufferLength < 16) { // Need more data.
           this.bufferLength = bufferLength;
           return new Uint8Array([]);
         }
@@ -1596,7 +1571,7 @@ var PDF17 = (function PDF17Closure() {
       var hashData = new Uint8Array(password.length + 8);
       hashData.set(password, 0);
       hashData.set(userKeySalt, password.length);
-      //key is the decryption key for the UE string
+      // `key` is the decryption key for the UE string.
       var key = calculateSHA256(hashData, 0, hashData.length);
       var cipher = new AES256Cipher(key);
       return cipher.decryptBlock(userEncryption,
@@ -1617,7 +1592,7 @@ var PDF20 = (function PDF20Closure() {
   }
 
   function calculatePDF20Hash(password, input, userBytes) {
-    //This refers to Algorithm 2.B as defined in ISO 32000-2
+    // This refers to Algorithm 2.B as defined in ISO 32000-2.
     var k = calculateSHA256(input, 0, input.length).subarray(0, 32);
     var e = [0];
     var i = 0;
@@ -1630,16 +1605,14 @@ var PDF20 = (function PDF20Closure() {
       for (var j = 0, pos = 0; j < 64; j++, pos += arrayLength) {
         k1.set(array, pos);
       }
-      //AES128 CBC NO PADDING with
-      //first 16 bytes of k as the key and the second 16 as the iv.
+      // AES128 CBC NO PADDING with first 16 bytes of k as the key
+      // and the second 16 as the iv.
       var cipher = new AES128Cipher(k.subarray(0, 16));
       e = cipher.encrypt(k1, k.subarray(16, 32));
-      //Now we have to take the first 16 bytes of an unsigned
-      //big endian integer... and compute the remainder
-      //modulo 3.... That is a fairly large number and
-      //JavaScript isn't going to handle that well...
-      //So we're using a trick that allows us to perform
-      //modulo math byte by byte
+      // Now we have to take the first 16 bytes of an unsigned big endian
+      // integer and compute the remainder modulo 3. That is a fairly large
+      // number and JavaScript isn't going to handle that well, so we're using
+      // a trick that allows us to perform modulo math byte by byte.
       var remainder = 0;
       for (var z = 0; z < 16; z++) {
         remainder *= (256 % 3);
@@ -1716,7 +1689,7 @@ var PDF20 = (function PDF20Closure() {
       var hashData = new Uint8Array(password.length + 8);
       hashData.set(password, 0);
       hashData.set(userKeySalt, password.length);
-      //key is the decryption key for the UE string
+      // `key` is the decryption key for the UE string.
       var key = calculatePDF20Hash(password, hashData, []);
       var cipher = new AES256Cipher(key);
       return cipher.decryptBlock(userEncryption,

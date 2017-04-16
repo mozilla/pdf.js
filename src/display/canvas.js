@@ -36,7 +36,6 @@ var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
 var ImageKind = sharedUtil.ImageKind;
 var OPS = sharedUtil.OPS;
 var TextRenderingMode = sharedUtil.TextRenderingMode;
-var Uint32ArrayView = sharedUtil.Uint32ArrayView;
 var Util = sharedUtil.Util;
 var assert = sharedUtil.assert;
 var info = sharedUtil.info;
@@ -49,7 +48,6 @@ var warn = sharedUtil.warn;
 var TilingPattern = displayPatternHelper.TilingPattern;
 var getShadingPatternFromIR = displayPatternHelper.getShadingPatternFromIR;
 var WebGLUtils = displayWebGL.WebGLUtils;
-var hasCanvasTypedArrays = displayDOMUtils.hasCanvasTypedArrays;
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -68,24 +66,11 @@ var MAX_SIZE_TO_COMPILE = 1000;
 
 var FULL_CHUNK_HEIGHT = 16;
 
-var HasCanvasTypedArraysCached = {
-  get value() {
-    return shadow(HasCanvasTypedArraysCached, 'value', hasCanvasTypedArrays());
-  }
-};
-
 var IsLittleEndianCached = {
   get value() {
     return shadow(IsLittleEndianCached, 'value', isLittleEndian());
   }
 };
-
-function createScratchCanvas(width, height) {
-  var canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
-}
 
 function addContextCurrentTransform(ctx) {
   // If the context doesn't expose a `mozCurrentTransform`, add a JS based one.
@@ -204,7 +189,8 @@ function addContextCurrentTransform(ctx) {
 }
 
 var CachedCanvases = (function CachedCanvasesClosure() {
-  function CachedCanvases() {
+  function CachedCanvases(canvasFactory) {
+    this.canvasFactory = canvasFactory;
     this.cache = Object.create(null);
   }
   CachedCanvases.prototype = {
@@ -213,27 +199,22 @@ var CachedCanvases = (function CachedCanvasesClosure() {
       var canvasEntry;
       if (this.cache[id] !== undefined) {
         canvasEntry = this.cache[id];
-        canvasEntry.canvas.width = width;
-        canvasEntry.canvas.height = height;
+        this.canvasFactory.reset(canvasEntry, width, height);
         // reset canvas transform for emulated mozCurrentTransform, if needed
         canvasEntry.context.setTransform(1, 0, 0, 1, 0, 0);
       } else {
-        var canvas = createScratchCanvas(width, height);
-        var ctx = canvas.getContext('2d');
-        if (trackTransform) {
-          addContextCurrentTransform(ctx);
-        }
-        this.cache[id] = canvasEntry = {canvas: canvas, context: ctx};
+        canvasEntry = this.canvasFactory.create(width, height);
+        this.cache[id] = canvasEntry;
+      }
+      if (trackTransform) {
+        addContextCurrentTransform(canvasEntry.context);
       }
       return canvasEntry;
     },
     clear: function () {
       for (var id in this.cache) {
         var canvasEntry = this.cache[id];
-        // Zeroing the width and height causes Firefox to release graphics
-        // resources immediately, which can greatly reduce memory consumption.
-        canvasEntry.canvas.width = 0;
-        canvasEntry.canvas.height = 0;
+        this.canvasFactory.destroy(canvasEntry);
         delete this.cache[id];
       }
     }
@@ -456,7 +437,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
   // Defines the number of steps before checking the execution time
   var EXECUTION_STEPS = 10;
 
-  function CanvasGraphics(canvasCtx, commonObjs, objs, imageLayer) {
+  function CanvasGraphics(canvasCtx, commonObjs, objs, canvasFactory,
+                          imageLayer) {
     this.ctx = canvasCtx;
     this.current = new CanvasExtraState();
     this.stateStack = [];
@@ -466,6 +448,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.xobjs = null;
     this.commonObjs = commonObjs;
     this.objs = objs;
+    this.canvasFactory = canvasFactory;
     this.imageLayer = imageLayer;
     this.groupStack = [];
     this.processingType3 = null;
@@ -477,7 +460,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     this.smaskStack = [];
     this.smaskCounter = 0;
     this.tempSMask = null;
-    this.cachedCanvases = new CachedCanvases();
+    this.cachedCanvases = new CachedCanvases(this.canvasFactory);
     if (canvasCtx) {
       // NOTE: if mozCurrentTransform is polyfilled, then the current state of
       // the transformation must already be set in canvasCtx._transformMatrix.
@@ -519,13 +502,11 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
       // Grayscale, 1 bit per pixel (i.e. black-and-white).
       var srcLength = src.byteLength;
-      var dest32 = HasCanvasTypedArraysCached.value ?
-        new Uint32Array(dest.buffer) : new Uint32ArrayView(dest);
+      var dest32 = new Uint32Array(dest.buffer, 0, dest.byteLength >> 2);
       var dest32DataLength = dest32.length;
       var fullSrcDiff = (width + 7) >> 3;
       var white = 0xFFFFFFFF;
-      var black = (IsLittleEndianCached.value ||
-                   !HasCanvasTypedArraysCached.value) ? 0xFF000000 : 0x000000FF;
+      var black = IsLittleEndianCached.value ? 0xFF000000 : 0x000000FF;
       for (i = 0; i < totalChunks; i++) {
         thisChunkHeight =
           (i < fullChunks) ? FULL_CHUNK_HEIGHT : partialChunkHeight;
@@ -959,20 +940,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             this.ctx.globalAlpha = state[1];
             break;
           case 'BM':
-            if (value && value.name && (value.name !== 'Normal')) {
-              var mode = value.name.replace(/([A-Z])/g,
-                function(c) {
-                  return '-' + c.toLowerCase();
-                }
-              ).substring(1);
-              this.ctx.globalCompositeOperation = mode;
-              if (this.ctx.globalCompositeOperation !== mode) {
-                warn('globalCompositeOperation "' + mode +
-                     '" is not supported');
-              }
-            } else {
-              this.ctx.globalCompositeOperation = 'source-over';
-            }
+            this.ctx.globalCompositeOperation = value;
             break;
           case 'SMask':
             if (this.current.activeSMask) {
@@ -1019,7 +987,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
-        ['BM', 'Normal'],
+        ['BM', 'source-over'],
         ['ca', 1],
         ['CA', 1]
       ]);
@@ -1229,13 +1197,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       if (this.pendingEOFill) {
-        if (ctx.mozFillRule !== undefined) {
-          ctx.mozFillRule = 'evenodd';
-          ctx.fill();
-          ctx.mozFillRule = 'nonzero';
-        } else {
-          ctx.fill('evenodd');
-        }
+        ctx.fill('evenodd');
         this.pendingEOFill = false;
       } else {
         ctx.fill();
@@ -1454,7 +1416,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     get isFontSubpixelAAEnabled() {
       // Checks if anti-aliasing is enabled when scaled text is painted.
       // On Windows GDI scaled fonts looks bad.
-      var ctx = document.createElement('canvas').getContext('2d');
+      var ctx = this.canvasFactory.create(10, 10).context;
       ctx.scale(1.5, 1);
       ctx.fillText('I', 0, 10);
       var data = ctx.getImageData(0, 0, 10, 10).data;
@@ -1700,7 +1662,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var self = this;
         var canvasGraphicsFactory = {
           createCanvasGraphics: function (ctx) {
-            return new CanvasGraphics(ctx, self.commonObjs, self.objs);
+            return new CanvasGraphics(ctx, self.commonObjs, self.objs,
+                                      self.canvasFactory);
           }
         };
         pattern = new TilingPattern(IR, color, this.ctx, canvasGraphicsFactory,
@@ -1710,10 +1673,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
       return pattern;
     },
-    setStrokeColorN: function CanvasGraphics_setStrokeColorN(/*...*/) {
+    setStrokeColorN: function CanvasGraphics_setStrokeColorN() {
       this.current.strokeColor = this.getColorN_Pattern(arguments);
     },
-    setFillColorN: function CanvasGraphics_setFillColorN(/*...*/) {
+    setFillColorN: function CanvasGraphics_setFillColorN() {
       this.current.fillColor = this.getColorN_Pattern(arguments);
       this.current.patternFill = true;
     },
@@ -1899,7 +1862,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       copyCtxState(currentCtx, groupCtx);
       this.ctx = groupCtx;
       this.setGState([
-        ['BM', 'Normal'],
+        ['BM', 'source-over'],
         ['ca', 1],
         ['CA', 1]
       ]);
@@ -2273,13 +2236,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var ctx = this.ctx;
       if (this.pendingClip) {
         if (this.pendingClip === EO_CLIP) {
-          if (ctx.mozFillRule !== undefined) {
-            ctx.mozFillRule = 'evenodd';
-            ctx.clip();
-            ctx.mozFillRule = 'nonzero';
-          } else {
-            ctx.clip('evenodd');
-          }
+          ctx.clip('evenodd');
         } else {
           ctx.clip();
         }
@@ -2320,5 +2277,4 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 })();
 
 exports.CanvasGraphics = CanvasGraphics;
-exports.createScratchCanvas = createScratchCanvas;
 }));

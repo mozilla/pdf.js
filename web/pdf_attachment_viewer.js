@@ -13,18 +13,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_attachment_viewer', ['exports', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFAttachmentViewer = {}), root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, pdfjsLib) {
+import {
+  createObjectURL, createPromiseCapability, getFilenameFromUrl, PDFJS,
+  removeNullCharacters
+} from './pdfjs';
 
 /**
  * @typedef {Object} PDFAttachmentViewerOptions
@@ -51,15 +43,23 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
     this.container = options.container;
     this.eventBus = options.eventBus;
     this.downloadManager = options.downloadManager;
+
+    this._renderedCapability = createPromiseCapability();
+    this.eventBus.on('fileattachmentannotation',
+      this._appendAttachment.bind(this));
   }
 
   PDFAttachmentViewer.prototype = {
-    reset: function PDFAttachmentViewer_reset() {
+    reset: function PDFAttachmentViewer_reset(keepRenderedCapability) {
       this.attachments = null;
 
-      var container = this.container;
-      while (container.firstChild) {
-        container.removeChild(container.firstChild);
+      // Remove the attachments from the DOM.
+      this.container.textContent = '';
+
+      if (!keepRenderedCapability) {
+        // NOTE: The *only* situation in which the `_renderedCapability` should
+        //       not be replaced is when appending file attachment annotations.
+        this._renderedCapability = createPromiseCapability();
       }
     },
 
@@ -70,8 +70,42 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
         function PDFAttachmentViewer_dispatchEvent(attachmentsCount) {
       this.eventBus.dispatch('attachmentsloaded', {
         source: this,
-        attachmentsCount: attachmentsCount
+        attachmentsCount: attachmentsCount,
       });
+
+      this._renderedCapability.resolve();
+    },
+
+    /**
+     * @private
+     */
+    _bindPdfLink:
+        function PDFAttachmentViewer_bindPdfLink(button, content, filename) {
+      var blobUrl;
+      button.onclick = function() {
+        if (!blobUrl) {
+          blobUrl = createObjectURL(
+            content, 'application/pdf', PDFJS.disableCreateObjectURL);
+        }
+        var viewerUrl;
+        if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+          // The current URL is the viewer, let's use it and append the file.
+          viewerUrl = '?file=' + encodeURIComponent(blobUrl + '#' + filename);
+        } else if (PDFJSDev.test('CHROME')) {
+          // In the Chrome extension, the URL is rewritten using the history API
+          // in viewer.js, so an absolute URL must be generated.
+          // eslint-disable-next-line no-undef
+          viewerUrl = chrome.runtime.getURL('/content/web/viewer.html') +
+            '?file=' + encodeURIComponent(blobUrl + '#' + filename);
+        } else {
+          // Let Firefox's content handler catch the URL and display the PDF.
+          // In Firefox PDFJS.disableCreateObjectURL is always false, so
+          // blobUrl is always a blob:-URL and never a data:-URL.
+          viewerUrl = blobUrl + '?' + encodeURIComponent(filename);
+        }
+        window.open(viewerUrl);
+        return false;
+      };
     },
 
     /**
@@ -89,11 +123,13 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
      * @param {PDFAttachmentViewerRenderParameters} params
      */
     render: function PDFAttachmentViewer_render(params) {
-      var attachments = (params && params.attachments) || null;
+      params = params || {};
+      var attachments = params.attachments || null;
       var attachmentsCount = 0;
 
       if (this.attachments) {
-        this.reset();
+        var keepRenderedCapability = params.keepRenderedCapability === true;
+        this.reset(keepRenderedCapability);
       }
       this.attachments = attachments;
 
@@ -109,22 +145,57 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
 
       for (var i = 0; i < attachmentsCount; i++) {
         var item = attachments[names[i]];
-        var filename = pdfjsLib.getFilenameFromUrl(item.filename);
+        var filename = removeNullCharacters(getFilenameFromUrl(item.filename));
+
         var div = document.createElement('div');
         div.className = 'attachmentsItem';
         var button = document.createElement('button');
-        this._bindLink(button, item.content, filename);
-        button.textContent = pdfjsLib.removeNullCharacters(filename);
+        button.textContent = filename;
+        if (/\.pdf$/i.test(filename)) {
+          this._bindPdfLink(button, item.content, filename);
+        } else {
+          this._bindLink(button, item.content, filename);
+        }
+
         div.appendChild(button);
         this.container.appendChild(div);
       }
 
       this._dispatchEvent(attachmentsCount);
-    }
+    },
+
+    /**
+     * Used to append FileAttachment annotations to the sidebar.
+     * @private
+     */
+    _appendAttachment: function PDFAttachmentViewer_appendAttachment(item) {
+      this._renderedCapability.promise.then(function (id, filename, content) {
+        var attachments = this.attachments;
+
+        if (!attachments) {
+          attachments = Object.create(null);
+        } else {
+          for (var name in attachments) {
+            if (id === name) {
+              return; // Ignore the new attachment if it already exists.
+            }
+          }
+        }
+        attachments[id] = {
+          filename: filename,
+          content: content,
+        };
+        this.render({
+          attachments: attachments,
+          keepRenderedCapability: true,
+        });
+      }.bind(this, item.id, item.filename, item.content));
+    },
   };
 
   return PDFAttachmentViewer;
 })();
 
-exports.PDFAttachmentViewer = PDFAttachmentViewer;
-}));
+export {
+  PDFAttachmentViewer,
+};

@@ -15,21 +15,20 @@
 
 'use strict';
 
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
-  // Patch importScripts to work around a bug in WebKit and Chrome 48-.
-  // See https://crbug.com/572225 and https://webkit.org/b/153317.
-  self.importScripts = (function (importScripts) {
-    return function() {
-      setTimeout(function () {}, 0);
-      return importScripts.apply(this, arguments);
-    };
-  })(importScripts);
-}
+// Patch importScripts to work around a bug in WebKit and Chrome 48-.
+// See https://crbug.com/572225 and https://webkit.org/b/153317.
+self.importScripts = (function (importScripts) {
+  return function() {
+    setTimeout(function () {}, 0);
+    return importScripts.apply(this, arguments);
+  };
+})(importScripts);
 
-importScripts('../node_modules/requirejs/require.js');
+importScripts('./shared/compatibility.js');
+importScripts('../node_modules/systemjs/dist/system.js');
+importScripts('../systemjs.config.js');
 
-require.config({paths: {'pdfjs': '.'}});
-require(['pdfjs/core/network', 'pdfjs/core/worker'],
-    function (network, worker) {
+Promise.all([SystemJS.import('pdfjs/core/network'),
+             SystemJS.import('pdfjs/core/worker')]).then(function () {
   // Worker is loaded at this point.
 });

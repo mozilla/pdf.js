@@ -257,8 +257,8 @@ var CFFParser = (function CFFParserClosure() {
       var fontBBox = topDict.getByName('FontBBox');
       if (fontBBox) {
         // adjusting ascent/descent
-        properties.ascent = fontBBox[3];
-        properties.descent = fontBBox[1];
+        properties.ascent = Math.max(fontBBox[3], fontBBox[1]);
+        properties.descent = Math.min(fontBBox[1], fontBBox[3]);
         properties.ascentScaled = true;
       }
 
@@ -475,7 +475,7 @@ var CFFParser = (function CFFParserClosure() {
     parseCharString: function CFFParser_parseCharString(state, data,
                                                         localSubrIndex,
                                                         globalSubrIndex) {
-      if (state.callDepth > MAX_SUBR_NESTING) {
+      if (!data || state.callDepth > MAX_SUBR_NESTING) {
         return false;
       }
       var stackSize = state.stackSize;
@@ -552,7 +552,8 @@ var CFFParser = (function CFFParserClosure() {
             bias = 1131;
           }
           var subrNumber = stack[--stackSize] + bias;
-          if (subrNumber < 0 || subrNumber >= subrsIndex.count) {
+          if (subrNumber < 0 || subrNumber >= subrsIndex.count ||
+              isNaN(subrNumber)) {
             validationCommand = CharstringValidationData[value];
             warn('Out of bounds subrIndex for ' + validationCommand.id);
             return false;
@@ -785,7 +786,6 @@ var CFFParser = (function CFFParserClosure() {
       var encoding = Object.create(null);
       var bytes = this.bytes;
       var predefined = false;
-      var hasSupplement = false;
       var format, i, ii;
       var raw = null;
 
@@ -836,7 +836,7 @@ var CFFParser = (function CFFParserClosure() {
             break;
         }
         var dataEnd = pos;
-        if (format & 0x80) {
+        if (format & 0x80) { // hasSupplement
           // The font sanitizer does not support CFF encoding with a
           // supplement, since the encoding is not really used to map
           // between gid to glyph, let's overwrite what is declared in
@@ -844,7 +844,6 @@ var CFFParser = (function CFFParserClosure() {
           // StandardEncoding, that's a lie but that's ok.
           bytes[dataStart] &= 0x7f;
           readSupplement();
-          hasSupplement = true;
         }
         raw = bytes.subarray(dataStart, dataEnd);
       }

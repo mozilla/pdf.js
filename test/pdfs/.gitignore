@@ -21,6 +21,8 @@
 !issue5874.pdf
 !issue5808.pdf
 !issue6204.pdf
+!issue6342.pdf
+!issue6652.pdf
 !issue6782.pdf
 !issue6901.pdf
 !issue6961.pdf
@@ -45,6 +47,9 @@
 !issue7855.pdf
 !issue7872.pdf
 !issue7901.pdf
+!issue8061.pdf
+!issue8088.pdf
+!issue8125.pdf
 !bad-PageLabels.pdf
 !filled-background.pdf
 !ArabicCIDTrueType.pdf
@@ -61,6 +66,7 @@
 !bug1146106.pdf
 !bug1252420.pdf
 !bug1308536.pdf
+!bug1337429.pdf
 !issue5564_reduced.pdf
 !canvas.pdf
 !bug1132849.pdf
@@ -264,6 +270,7 @@
 !annotation-strikeout.pdf
 !annotation-squiggly.pdf
 !annotation-highlight.pdf
+!annotation-line.pdf
 !annotation-fileattachment.pdf
 !annotation-text-widget.pdf
 !annotation-choice-widget.pdf
@@ -271,3 +278,5 @@
 !zero_descent.pdf
 !operator-in-TJ-array.pdf
 !issue7878.pdf
+!font_ascent_descent.pdf
+!issue8097_reduced.pdf

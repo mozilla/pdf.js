@@ -372,13 +372,7 @@ var tests = [
       var ctx = canvas.getContext('2d');
       ctx.rect(1, 1, 50, 50);
       ctx.rect(5, 5, 41, 41);
-
-      if ('mozFillRule' in ctx) {
-        ctx.mozFillRule = 'evenodd';
-        ctx.fill();
-      } else {
-        ctx.fill('evenodd');
-      }
+      ctx.fill('evenodd');
 
       var data = ctx.getImageData(0, 0, 50, 50).data;
       var isEvenOddFill = data[20 * 4 + 20 * 200 + 3] == 0 &&

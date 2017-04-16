@@ -15,43 +15,44 @@
 /* globals Components, Services, XPCOMUtils, NetUtil, PrivateBrowsingUtils,
            dump, NetworkManager, PdfJsTelemetry, PdfjsContentUtils */
 
-'use strict';
+"use strict";
 
-var EXPORTED_SYMBOLS = ['PdfStreamConverter'];
+var EXPORTED_SYMBOLS = ["PdfStreamConverter"];
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
-// True only if this is the version of pdf.js that is included with firefox.
-const MOZ_CENTRAL = JSON.parse('PDFJSSCRIPT_MOZ_CENTRAL');
-const PDFJS_EVENT_ID = 'pdf.js.message';
-const PDF_CONTENT_TYPE = 'application/pdf';
-const PREF_PREFIX = 'PDFJSSCRIPT_PREF_PREFIX';
-const PDF_VIEWER_WEB_PAGE = 'resource://pdf.js/web/viewer.html';
+
+const PDFJS_EVENT_ID = "pdf.js.message";
+const PDF_CONTENT_TYPE = "application/pdf";
+const PREF_PREFIX = "PDFJSSCRIPT_PREF_PREFIX";
+const PDF_VIEWER_WEB_PAGE = "resource://pdf.js/web/viewer.html";
 const MAX_NUMBER_OF_PREFS = 50;
 const MAX_STRING_PREF_LENGTH = 128;
 
-Cu.import('resource://gre/modules/XPCOMUtils.jsm');
-Cu.import('resource://gre/modules/Services.jsm');
-Cu.import('resource://gre/modules/NetUtil.jsm');
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, 'NetworkManager',
-  'resource://pdf.js/PdfJsNetwork.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
+  "resource://gre/modules/NetUtil.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, 'PrivateBrowsingUtils',
-  'resource://gre/modules/PrivateBrowsingUtils.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, "NetworkManager",
+  "resource://pdf.js/PdfJsNetwork.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, 'PdfJsTelemetry',
-  'resource://pdf.js/PdfJsTelemetry.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
+  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, 'PdfjsContentUtils',
-  'resource://pdf.js/PdfjsContentUtils.jsm');
+XPCOMUtils.defineLazyModuleGetter(this, "PdfJsTelemetry",
+  "resource://pdf.js/PdfJsTelemetry.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "PdfjsContentUtils",
+  "resource://pdf.js/PdfjsContentUtils.jsm");
 
 var Svc = {};
-XPCOMUtils.defineLazyServiceGetter(Svc, 'mime',
-                                   '@mozilla.org/mime;1',
-                                   'nsIMIMEService');
+XPCOMUtils.defineLazyServiceGetter(Svc, "mime",
+                                   "@mozilla.org/mime;1",
+                                   "nsIMIMEService");
 
 function getContainingBrowser(domWindow) {
   return domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -62,7 +63,7 @@ function getContainingBrowser(domWindow) {
 
 function getFindBar(domWindow) {
   if (PdfjsContentUtils.isRemote) {
-    throw new Error('FindBar is not accessible from the content process.');
+    throw new Error("FindBar is not accessible from the content process.");
   }
   try {
     var browser = getContainingBrowser(domWindow);
@@ -94,19 +95,24 @@ function getIntPref(pref, def) {
 
 function getStringPref(pref, def) {
   try {
-    return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
+//#if !MOZCENTRAL
+    if (!Services.prefs.getStringPref) {
+      return Services.prefs.getComplexValue(pref, Ci.nsISupportsString).data;
+    }
+//#endif
+    return Services.prefs.getStringPref(pref);
   } catch (ex) {
     return def;
   }
 }
 
 function log(aMsg) {
-  if (!getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false)) {
+  if (!getBoolPref(PREF_PREFIX + ".pdfBugEnabled", false)) {
     return;
   }
-  var msg = 'PdfStreamConverter.js: ' + (aMsg.join ? aMsg.join('') : aMsg);
+  var msg = "PdfStreamConverter.js: " + (aMsg.join ? aMsg.join("") : aMsg);
   Services.console.logStringMessage(msg);
-  dump(msg + '\n');
+  dump(msg + "\n");
 }
 
 function getDOMWindow(aChannel) {
@@ -118,16 +124,16 @@ function getDOMWindow(aChannel) {
 }
 
 function getLocalizedStrings(path) {
-  var stringBundle = Cc['@mozilla.org/intl/stringbundle;1'].
+  var stringBundle = Cc["@mozilla.org/intl/stringbundle;1"].
       getService(Ci.nsIStringBundleService).
-      createBundle('chrome://pdf.js/locale/' + path);
+      createBundle("chrome://pdf.js/locale/" + path);
 
   var map = {};
   var enumerator = stringBundle.getSimpleEnumeration();
   while (enumerator.hasMoreElements()) {
     var string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
-    var key = string.key, property = 'textContent';
-    var i = key.lastIndexOf('.');
+    var key = string.key, property = "textContent";
+    var i = key.lastIndexOf(".");
     if (i >= 0) {
       property = key.substring(i + 1);
       key = key.substring(0, i);
@@ -140,7 +146,7 @@ function getLocalizedStrings(path) {
   return map;
 }
 function getLocalizedString(strings, id, property) {
-  property = property || 'textContent';
+  property = property || "textContent";
   if (id in strings) {
     return strings[id][property];
   }
@@ -190,7 +196,7 @@ PdfDataListener.prototype = {
       this.oncompleteCallback(null, errorCode);
     }
   },
-  onprogress: function() {},
+  onprogress() {},
   get oncomplete() {
     return this.oncompleteCallback;
   },
@@ -205,24 +211,27 @@ PdfDataListener.prototype = {
   }
 };
 
-// All the priviledged actions.
-function ChromeActions(domWindow, contentDispositionFilename) {
-  this.domWindow = domWindow;
-  this.contentDispositionFilename = contentDispositionFilename;
-  this.telemetryState = {
-    documentInfo: false,
-    firstPageInfo: false,
-    streamTypesUsed: [],
-    fontTypesUsed: [],
-    startAt: Date.now()
-  };
-}
+/**
+ * All the privileged actions.
+ */
+class ChromeActions {
+  constructor(domWindow, contentDispositionFilename) {
+    this.domWindow = domWindow;
+    this.contentDispositionFilename = contentDispositionFilename;
+    this.telemetryState = {
+      documentInfo: false,
+      firstPageInfo: false,
+      streamTypesUsed: [],
+      fontTypesUsed: [],
+      startAt: Date.now()
+    };
+  }
 
-ChromeActions.prototype = {
-  isInPrivateBrowsing: function() {
+  isInPrivateBrowsing() {
     return PrivateBrowsingUtils.isContentWindowPrivate(this.domWindow);
-  },
-  download: function(data, sendResponse) {
+  }
+
+  download(data, sendResponse) {
     var self = this;
     var originalUrl = data.originalUrl;
     var blobUrl = data.blobUrl || originalUrl;
@@ -230,13 +239,13 @@ ChromeActions.prototype = {
     // the original url.
     var originalUri = NetUtil.newURI(originalUrl);
     var filename = data.filename;
-    if (typeof filename !== 'string' ||
+    if (typeof filename !== "string" ||
         (!/\.pdf$/i.test(filename) && !data.isAttachment)) {
-      filename = 'document.pdf';
+      filename = "document.pdf";
     }
     var blobUri = NetUtil.newURI(blobUrl);
     var extHelperAppSvc =
-          Cc['@mozilla.org/uriloader/external-helper-app-service;1'].
+          Cc["@mozilla.org/uriloader/external-helper-app-service;1"].
              getService(Ci.nsIExternalHelperAppService);
 
     var docIsPrivate = this.isInPrivateBrowsing();
@@ -244,7 +253,7 @@ ChromeActions.prototype = {
       uri: blobUri,
       loadUsingSystemPrincipal: true,
     });
-    if ('nsIPrivateBrowsingChannel' in Ci &&
+    if ("nsIPrivateBrowsingChannel" in Ci &&
         netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
       netChannel.setPrivate(docIsPrivate);
     }
@@ -257,7 +266,7 @@ ChromeActions.prototype = {
       }
       // Create a nsIInputStreamChannel so we can set the url on the channel
       // so the filename will be correct.
-      var channel = Cc['@mozilla.org/network/input-stream-channel;1'].
+      var channel = Cc["@mozilla.org/network/input-stream-channel;1"].
                        createInstance(Ci.nsIInputStreamChannel);
       channel.QueryInterface(Ci.nsIChannel);
       try {
@@ -272,25 +281,25 @@ ChromeActions.prototype = {
       channel.setURI(originalUri);
       channel.loadInfo = netChannel.loadInfo;
       channel.contentStream = aInputStream;
-      if ('nsIPrivateBrowsingChannel' in Ci &&
+      if ("nsIPrivateBrowsingChannel" in Ci &&
           channel instanceof Ci.nsIPrivateBrowsingChannel) {
         channel.setPrivate(docIsPrivate);
       }
 
       var listener = {
         extListener: null,
-        onStartRequest: function(aRequest, aContext) {
+        onStartRequest(aRequest, aContext) {
           var loadContext = self.domWindow
                                 .QueryInterface(Ci.nsIInterfaceRequestor)
                                 .getInterface(Ci.nsIWebNavigation)
                                 .QueryInterface(Ci.nsILoadContext);
           this.extListener = extHelperAppSvc.doContent(
-            (data.isAttachment ? 'application/octet-stream' :
-                                 'application/pdf'),
+            (data.isAttachment ? "application/octet-stream" :
+                                 "application/pdf"),
             aRequest, loadContext, false);
           this.extListener.onStartRequest(aRequest, aContext);
         },
-        onStopRequest: function(aRequest, aContext, aStatusCode) {
+        onStopRequest(aRequest, aContext, aStatusCode) {
           if (this.extListener) {
             this.extListener.onStopRequest(aRequest, aContext, aStatusCode);
           }
@@ -299,33 +308,35 @@ ChromeActions.prototype = {
             sendResponse(false);
           }
         },
-        onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
-                                  aCount) {
-          this.extListener.onDataAvailable(aRequest, aContext, aInputStream,
+        onDataAvailable(aRequest, aContext, aDataInputStream, aOffset, aCount) {
+          this.extListener.onDataAvailable(aRequest, aContext, aDataInputStream,
                                            aOffset, aCount);
         }
       };
 
       channel.asyncOpen2(listener);
     });
-  },
-  getLocale: function() {
-    return getStringPref('general.useragent.locale', 'en-US');
-  },
-  getStrings: function(data) {
+  }
+
+  getLocale() {
+    return getStringPref("general.useragent.locale", "en-US");
+  }
+
+  getStrings(data) {
     try {
       // Lazy initialization of localizedStrings
-      if (!('localizedStrings' in this)) {
-        this.localizedStrings = getLocalizedStrings('viewer.properties');
+      if (!("localizedStrings" in this)) {
+        this.localizedStrings = getLocalizedStrings("viewer.properties");
       }
       var result = this.localizedStrings[data];
       return JSON.stringify(result || null);
     } catch (e) {
-      log('Unable to retrieve localized strings: ' + e);
-      return 'null';
+      log("Unable to retrieve localized strings: " + e);
+      return "null";
     }
-  },
-  supportsIntegratedFind: function() {
+  }
+
+  supportsIntegratedFind() {
     // Integrated find is only supported when we're not in a frame
     if (this.domWindow.frameElement !== null) {
       return false;
@@ -338,48 +349,52 @@ ChromeActions.prototype = {
 
     // ... or when the new find events code exists.
     var findBar = getFindBar(this.domWindow);
-    return !!findBar && ('updateControlState' in findBar);
-  },
-  supportsDocumentFonts: function() {
-    var prefBrowser = getIntPref('browser.display.use_document_fonts', 1);
-    var prefGfx = getBoolPref('gfx.downloadable_fonts.enabled', true);
+    return !!findBar && ("updateControlState" in findBar);
+  }
+
+  supportsDocumentFonts() {
+    var prefBrowser = getIntPref("browser.display.use_document_fonts", 1);
+    var prefGfx = getBoolPref("gfx.downloadable_fonts.enabled", true);
     return (!!prefBrowser && prefGfx);
-  },
-  supportsDocumentColors: function() {
-    return getIntPref('browser.display.document_color_use', 0) !== 2;
-  },
-  supportedMouseWheelZoomModifierKeys: function() {
+  }
+
+  supportsDocumentColors() {
+    return getIntPref("browser.display.document_color_use", 0) !== 2;
+  }
+
+  supportedMouseWheelZoomModifierKeys() {
     return {
-      ctrlKey: getIntPref('mousewheel.with_control.action', 3) === 3,
-      metaKey: getIntPref('mousewheel.with_meta.action', 1) === 3,
+      ctrlKey: getIntPref("mousewheel.with_control.action", 3) === 3,
+      metaKey: getIntPref("mousewheel.with_meta.action", 1) === 3,
     };
-  },
-  reportTelemetry: function (data) {
+  }
+
+  reportTelemetry(data) {
     var probeInfo = JSON.parse(data);
     switch (probeInfo.type) {
-      case 'documentInfo':
+      case "documentInfo":
         if (!this.telemetryState.documentInfo) {
           PdfJsTelemetry.onDocumentVersion(probeInfo.version | 0);
           PdfJsTelemetry.onDocumentGenerator(probeInfo.generator | 0);
           if (probeInfo.formType) {
-            PdfJsTelemetry.onForm(probeInfo.formType === 'acroform');
+            PdfJsTelemetry.onForm(probeInfo.formType === "acroform");
           }
           this.telemetryState.documentInfo = true;
         }
         break;
-      case 'pageInfo':
+      case "pageInfo":
         if (!this.telemetryState.firstPageInfo) {
           var duration = Date.now() - this.telemetryState.startAt;
           PdfJsTelemetry.onTimeToView(duration);
           this.telemetryState.firstPageInfo = true;
         }
         break;
-      case 'documentStats':
+      case "documentStats":
         // documentStats can be called several times for one documents.
         // if stream/font types are reported, trying not to submit the same
         // enumeration value multiple times.
         var documentStats = probeInfo.stats;
-        if (!documentStats || typeof documentStats !== 'object') {
+        if (!documentStats || typeof documentStats !== "object") {
           break;
         }
         var i, streamTypes = documentStats.streamTypes;
@@ -405,44 +420,48 @@ ChromeActions.prototype = {
           }
         }
         break;
-      case 'print':
+      case "print":
         PdfJsTelemetry.onPrint();
         break;
     }
-  },
-  fallback: function(args, sendResponse) {
-    var featureId = args.featureId;
-    var url = args.url;
+  }
 
-    var self = this;
+  /**
+   * @param {Object} args - Object with `featureId` and `url` properties.
+   * @param {function} sendResponse - Callback function.
+   */
+  fallback(args, sendResponse) {
+    var featureId = args.featureId;
+
     var domWindow = this.domWindow;
-    var strings = getLocalizedStrings('chrome.properties');
+    var strings = getLocalizedStrings("chrome.properties");
     var message;
-    if (featureId === 'forms') {
-      message = getLocalizedString(strings, 'unsupported_feature_forms');
+    if (featureId === "forms") {
+      message = getLocalizedString(strings, "unsupported_feature_forms");
     } else {
-      message = getLocalizedString(strings, 'unsupported_feature');
+      message = getLocalizedString(strings, "unsupported_feature");
     }
     PdfJsTelemetry.onFallback();
     PdfjsContentUtils.displayWarning(domWindow, message,
-      getLocalizedString(strings, 'open_with_different_viewer'),
-      getLocalizedString(strings, 'open_with_different_viewer', 'accessKey'));
+      getLocalizedString(strings, "open_with_different_viewer"),
+      getLocalizedString(strings, "open_with_different_viewer", "accessKey"));
 
     let winmm = domWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIDocShell)
                          .QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIContentFrameMessageManager);
 
-    winmm.addMessageListener('PDFJS:Child:fallbackDownload',
+    winmm.addMessageListener("PDFJS:Child:fallbackDownload",
       function fallbackDownload(msg) {
         let data = msg.data;
         sendResponse(data.download);
 
-        winmm.removeMessageListener('PDFJS:Child:fallbackDownload',
+        winmm.removeMessageListener("PDFJS:Child:fallbackDownload",
                                     fallbackDownload);
       });
-  },
-  updateFindControlState: function(data) {
+  }
+
+  updateFindControlState(data) {
     if (!this.supportsIntegratedFind()) {
       return;
     }
@@ -450,8 +469,8 @@ ChromeActions.prototype = {
     var result = data.result;
     var findPrevious = data.findPrevious;
     var findPreviousType = typeof findPrevious;
-    if ((typeof result !== 'number' || result < 0 || result > 3) ||
-        (findPreviousType !== 'undefined' && findPreviousType !== 'boolean')) {
+    if ((typeof result !== "number" || result < 0 || result > 3) ||
+        (findPreviousType !== "undefined" && findPreviousType !== "boolean")) {
       return;
     }
 
@@ -460,33 +479,34 @@ ChromeActions.prototype = {
                               .QueryInterface(Ci.nsIInterfaceRequestor)
                               .getInterface(Ci.nsIContentFrameMessageManager);
 
-    winmm.sendAsyncMessage('PDFJS:Parent:updateControlState', data);
-  },
-  setPreferences: function(prefs, sendResponse) {
-    var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
+    winmm.sendAsyncMessage("PDFJS:Parent:updateControlState", data);
+  }
+
+  setPreferences(prefs, sendResponse) {
+    var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + ".");
     var numberOfPrefs = 0;
     var prefValue, prefName;
     for (var key in prefs) {
       if (++numberOfPrefs > MAX_NUMBER_OF_PREFS) {
-        log('setPreferences - Exceeded the maximum number of preferences ' +
-            'that is allowed to be set at once.');
+        log("setPreferences - Exceeded the maximum number of preferences " +
+            "that is allowed to be set at once.");
         break;
       } else if (!defaultBranch.getPrefType(key)) {
         continue;
       }
       prefValue = prefs[key];
-      prefName = (PREF_PREFIX + '.' + key);
+      prefName = (PREF_PREFIX + "." + key);
       switch (typeof prefValue) {
-        case 'boolean':
+        case "boolean":
           PdfjsContentUtils.setBoolPref(prefName, prefValue);
           break;
-        case 'number':
+        case "number":
           PdfjsContentUtils.setIntPref(prefName, prefValue);
           break;
-        case 'string':
+        case "string":
           if (prefValue.length > MAX_STRING_PREF_LENGTH) {
-            log('setPreferences - Exceeded the maximum allowed length ' +
-                'for a string preference.');
+            log("setPreferences - Exceeded the maximum allowed length " +
+                "for a string preference.");
           } else {
             PdfjsContentUtils.setStringPref(prefName, prefValue);
           }
@@ -496,50 +516,50 @@ ChromeActions.prototype = {
     if (sendResponse) {
       sendResponse(true);
     }
-  },
-  getPreferences: function(prefs, sendResponse) {
-    var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + '.');
+  }
+
+  getPreferences(prefs, sendResponse) {
+    var defaultBranch = Services.prefs.getDefaultBranch(PREF_PREFIX + ".");
     var currentPrefs = {}, numberOfPrefs = 0;
     var prefValue, prefName;
     for (var key in prefs) {
       if (++numberOfPrefs > MAX_NUMBER_OF_PREFS) {
-        log('getPreferences - Exceeded the maximum number of preferences ' +
-            'that is allowed to be fetched at once.');
+        log("getPreferences - Exceeded the maximum number of preferences " +
+            "that is allowed to be fetched at once.");
         break;
       } else if (!defaultBranch.getPrefType(key)) {
         continue;
       }
       prefValue = prefs[key];
-      prefName = (PREF_PREFIX + '.' + key);
+      prefName = (PREF_PREFIX + "." + key);
       switch (typeof prefValue) {
-        case 'boolean':
+        case "boolean":
           currentPrefs[key] = getBoolPref(prefName, prefValue);
           break;
-        case 'number':
+        case "number":
           currentPrefs[key] = getIntPref(prefName, prefValue);
           break;
-        case 'string':
+        case "string":
           currentPrefs[key] = getStringPref(prefName, prefValue);
           break;
       }
     }
+    let result = JSON.stringify(currentPrefs);
     if (sendResponse) {
-      sendResponse(JSON.stringify(currentPrefs));
-    } else {
-      return JSON.stringify(currentPrefs);
+      sendResponse(result);
     }
+    return result;
   }
-};
+}
 
-var RangedChromeActions = (function RangedChromeActionsClosure() {
-  /**
-   * This is for range requests
-   */
-  function RangedChromeActions(
-              domWindow, contentDispositionFilename, originalRequest,
+/**
+ * This is for range requests.
+ */
+class RangedChromeActions extends ChromeActions {
+  constructor(domWindow, contentDispositionFilename, originalRequest,
               rangeEnabled, streamingEnabled, dataListener) {
 
-    ChromeActions.call(this, domWindow, contentDispositionFilename);
+    super(domWindow, contentDispositionFilename);
     this.dataListener = dataListener;
     this.originalRequest = originalRequest;
     this.rangeEnabled = rangeEnabled;
@@ -551,8 +571,8 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     // Pass all the headers from the original request through
     var httpHeaderVisitor = {
       headers: {},
-      visitHeader: function(aHeader, aValue) {
-        if (aHeader === 'Range') {
+      visitHeader(aHeader, aValue) {
+        if (aHeader === "Range") {
           // When loading the PDF from cache, firefox seems to set the Range
           // request header to fetch only the unfetched portions of the file
           // (e.g. 'Range: bytes=1024-'). However, we want to set this header
@@ -570,7 +590,7 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     var xhr_onreadystatechange = function xhr_onreadystatechange() {
       if (this.readyState === 1) { // LOADING
         var netChannel = this.channel;
-        if ('nsIPrivateBrowsingChannel' in Ci &&
+        if ("nsIPrivateBrowsingChannel" in Ci &&
             netChannel instanceof Ci.nsIPrivateBrowsingChannel) {
           var docIsPrivate = self.isInPrivateBrowsing();
           netChannel.setPrivate(docIsPrivate);
@@ -579,31 +599,26 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     };
     var getXhr = function getXhr() {
       const XMLHttpRequest = Components.Constructor(
-          '@mozilla.org/xmlextras/xmlhttprequest;1');
+          "@mozilla.org/xmlextras/xmlhttprequest;1");
       var xhr = new XMLHttpRequest();
-      xhr.addEventListener('readystatechange', xhr_onreadystatechange);
+      xhr.addEventListener("readystatechange", xhr_onreadystatechange);
       return xhr;
     };
 
     this.networkManager = new NetworkManager(this.pdfUrl, {
       httpHeaders: httpHeaderVisitor.headers,
-      getXhr: getXhr
+      getXhr,
     });
 
     // If we are in range request mode, this means we manually issued xhr
     // requests, which we need to abort when we leave the page
-    domWindow.addEventListener('unload', function unload(e) {
+    domWindow.addEventListener("unload", function unload(e) {
       domWindow.removeEventListener(e.type, unload);
       self.abortLoading();
     });
   }
 
-  RangedChromeActions.prototype = Object.create(ChromeActions.prototype);
-  var proto = RangedChromeActions.prototype;
-  proto.constructor = RangedChromeActions;
-
-  proto.initPassiveLoading = function RangedChromeActions_initPassiveLoading() {
-    var self = this;
+  initPassiveLoading() {
     var data;
     if (!this.streamingEnabled) {
       this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
@@ -613,32 +628,32 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     } else {
       data = this.dataListener.readData();
 
-      this.dataListener.onprogress = function (loaded, total) {
-        self.domWindow.postMessage({
-          pdfjsLoadAction: 'progressiveRead',
-          loaded: loaded,
-          total: total,
-          chunk: self.dataListener.readData()
-        }, '*');
+      this.dataListener.onprogress = (loaded, total) => {
+        this.domWindow.postMessage({
+          pdfjsLoadAction: "progressiveRead",
+          loaded,
+          total,
+          chunk: this.dataListener.readData(),
+        }, "*");
       };
-      this.dataListener.oncomplete = function () {
-        self.dataListener = null;
+      this.dataListener.oncomplete = () => {
+        this.dataListener = null;
       };
     }
 
     this.domWindow.postMessage({
-      pdfjsLoadAction: 'supportsRangedLoading',
+      pdfjsLoadAction: "supportsRangedLoading",
       rangeEnabled: this.rangeEnabled,
       streamingEnabled: this.streamingEnabled,
       pdfUrl: this.pdfUrl,
       length: this.contentLength,
-      data: data
-    }, '*');
+      data,
+    }, "*");
 
     return true;
-  };
+  }
 
-  proto.requestDataRange = function RangedChromeActions_requestDataRange(args) {
+  requestDataRange(args) {
     if (!this.rangeEnabled) {
       return;
     }
@@ -650,176 +665,169 @@ var RangedChromeActions = (function RangedChromeActionsClosure() {
     // errors from chrome code for non-range requests, so this doesn't
     // seem high-pri
     this.networkManager.requestRange(begin, end, {
-      onDone: function RangedChromeActions_onDone(args) {
+      onDone: function RangedChromeActions_onDone(aArgs) {
         domWindow.postMessage({
-          pdfjsLoadAction: 'range',
-          begin: args.begin,
-          chunk: args.chunk
-        }, '*');
+          pdfjsLoadAction: "range",
+          begin: aArgs.begin,
+          chunk: aArgs.chunk,
+        }, "*");
       },
       onProgress: function RangedChromeActions_onProgress(evt) {
         domWindow.postMessage({
-          pdfjsLoadAction: 'rangeProgress',
+          pdfjsLoadAction: "rangeProgress",
           loaded: evt.loaded,
-        }, '*');
+        }, "*");
       }
     });
-  };
+  }
 
-  proto.abortLoading = function RangedChromeActions_abortLoading() {
+  abortLoading() {
     this.networkManager.abortAllRequests();
     if (this.originalRequest) {
       this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
       this.originalRequest = null;
     }
     this.dataListener = null;
-  };
+  }
+}
 
-  return RangedChromeActions;
-})();
-
-var StandardChromeActions = (function StandardChromeActionsClosure() {
-
-  /**
-   * This is for a single network stream
-   */
-  function StandardChromeActions(domWindow, contentDispositionFilename,
-                                 originalRequest, dataListener) {
-
-    ChromeActions.call(this, domWindow, contentDispositionFilename);
+/**
+ * This is for a single network stream.
+ */
+class StandardChromeActions extends ChromeActions {
+  constructor(domWindow, contentDispositionFilename, originalRequest,
+              dataListener) {
+    super(domWindow, contentDispositionFilename);
     this.originalRequest = originalRequest;
     this.dataListener = dataListener;
   }
 
-  StandardChromeActions.prototype = Object.create(ChromeActions.prototype);
-  var proto = StandardChromeActions.prototype;
-  proto.constructor = StandardChromeActions;
-
-  proto.initPassiveLoading =
-      function StandardChromeActions_initPassiveLoading() {
-
+  initPassiveLoading() {
     if (!this.dataListener) {
       return false;
     }
 
-    var self = this;
-
-    this.dataListener.onprogress = function ChromeActions_dataListenerProgress(
-                                      loaded, total) {
-      self.domWindow.postMessage({
-        pdfjsLoadAction: 'progress',
-        loaded: loaded,
-        total: total
-      }, '*');
+    this.dataListener.onprogress = (loaded, total) => {
+      this.domWindow.postMessage({
+        pdfjsLoadAction: "progress",
+        loaded,
+        total,
+      }, "*");
     };
 
-    this.dataListener.oncomplete =
-        function StandardChromeActions_dataListenerComplete(data, errorCode) {
-      self.domWindow.postMessage({
-        pdfjsLoadAction: 'complete',
-        data: data,
-        errorCode: errorCode
-      }, '*');
+    this.dataListener.oncomplete = (data, errorCode) => {
+      this.domWindow.postMessage({
+        pdfjsLoadAction: "complete",
+        data,
+        errorCode,
+      }, "*");
 
-      self.dataListener = null;
-      self.originalRequest = null;
+      this.dataListener = null;
+      this.originalRequest = null;
     };
 
     return true;
-  };
+  }
 
-  proto.abortLoading = function StandardChromeActions_abortLoading() {
+  abortLoading() {
     if (this.originalRequest) {
       this.originalRequest.cancel(Cr.NS_BINDING_ABORTED);
       this.originalRequest = null;
     }
     this.dataListener = null;
-  };
-
-  return StandardChromeActions;
-})();
-
-// Event listener to trigger chrome privileged code.
-function RequestListener(actions) {
-  this.actions = actions;
-}
-// Receive an event and synchronously or asynchronously responds.
-RequestListener.prototype.receive = function(event) {
-  var message = event.target;
-  var doc = message.ownerDocument;
-  var action = event.detail.action;
-  var data = event.detail.data;
-  var sync = event.detail.sync;
-  var actions = this.actions;
-  if (!(action in actions)) {
-    log('Unknown action: ' + action);
-    return;
   }
-  var response;
-  if (sync) {
-    response = actions[action].call(this.actions, data);
-    event.detail.response = Cu.cloneInto(response, doc.defaultView);
-  } else {
-    if (!event.detail.responseExpected) {
-      doc.documentElement.removeChild(message);
-      response = null;
-    } else {
-      response = function sendResponse(response) {
-        try {
-          var listener = doc.createEvent('CustomEvent');
-          let detail = Cu.cloneInto({ response: response }, doc.defaultView);
-          listener.initCustomEvent('pdf.js.response', true, false, detail);
-          return message.dispatchEvent(listener);
-        } catch (e) {
-          // doc is no longer accessible because the requestor is already
-          // gone. unloaded content cannot receive the response anyway.
-          return false;
-        }
-      };
+}
+
+/**
+ * Event listener to trigger chrome privileged code.
+ */
+class RequestListener {
+  constructor(actions) {
+    this.actions = actions;
+  }
+
+  // Receive an event and synchronously or asynchronously responds.
+  receive(event) {
+    var message = event.target;
+    var doc = message.ownerDocument;
+    var action = event.detail.action;
+    var data = event.detail.data;
+    var sync = event.detail.sync;
+    var actions = this.actions;
+    if (!(action in actions)) {
+      log("Unknown action: " + action);
+      return;
     }
-    actions[action].call(this.actions, data, response);
+    var response;
+    if (sync) {
+      response = actions[action].call(this.actions, data);
+      event.detail.response = Cu.cloneInto(response, doc.defaultView);
+    } else {
+      if (!event.detail.responseExpected) {
+        doc.documentElement.removeChild(message);
+        response = null;
+      } else {
+        response = function sendResponse(aResponse) {
+          try {
+            var listener = doc.createEvent("CustomEvent");
+            let detail = Cu.cloneInto({ response: aResponse }, doc.defaultView);
+            listener.initCustomEvent("pdf.js.response", true, false, detail);
+            return message.dispatchEvent(listener);
+          } catch (e) {
+            // doc is no longer accessible because the requestor is already
+            // gone. unloaded content cannot receive the response anyway.
+            return false;
+          }
+        };
+      }
+      actions[action].call(this.actions, data, response);
+    }
   }
-};
-
-// Forwards events from the eventElement to the contentWindow only if the
-// content window matches the currently selected browser window.
-function FindEventManager(contentWindow) {
-  this.contentWindow = contentWindow;
-  this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIDocShell)
-                            .QueryInterface(Ci.nsIInterfaceRequestor)
-                            .getInterface(Ci.nsIContentFrameMessageManager);
 }
 
-FindEventManager.prototype.bind = function() {
-  var unload = function(e) {
-    this.unbind();
-    this.contentWindow.removeEventListener(e.type, unload);
-  }.bind(this);
-  this.contentWindow.addEventListener('unload', unload);
+/**
+ * Forwards events from the eventElement to the contentWindow only if the
+ * content window matches the currently selected browser window.
+ */
+class FindEventManager {
+  constructor(contentWindow) {
+    this.contentWindow = contentWindow;
+    this.winmm = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDocShell)
+                              .QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIContentFrameMessageManager);
+  }
 
-  // We cannot directly attach listeners to for the find events
-  // since the FindBar is in the parent process. Instead we're
-  // asking the PdfjsChromeUtils to do it for us and forward
-  // all the find events to us.
-  this.winmm.sendAsyncMessage('PDFJS:Parent:addEventListener');
-  this.winmm.addMessageListener('PDFJS:Child:handleEvent', this);
-};
+  bind() {
+    var unload = function(e) {
+      this.unbind();
+      this.contentWindow.removeEventListener(e.type, unload);
+    }.bind(this);
+    this.contentWindow.addEventListener("unload", unload);
 
-FindEventManager.prototype.receiveMessage = function(msg) {
-  var detail = msg.data.detail;
-  var type = msg.data.type;
-  var contentWindow = this.contentWindow;
+    // We cannot directly attach listeners to for the find events
+    // since the FindBar is in the parent process. Instead we're
+    // asking the PdfjsChromeUtils to do it for us and forward
+    // all the find events to us.
+    this.winmm.sendAsyncMessage("PDFJS:Parent:addEventListener");
+    this.winmm.addMessageListener("PDFJS:Child:handleEvent", this);
+  }
 
-  detail = Cu.cloneInto(detail, contentWindow);
-  var forward = contentWindow.document.createEvent('CustomEvent');
-  forward.initCustomEvent(type, true, true, detail);
-  contentWindow.dispatchEvent(forward);
-};
+  receiveMessage(msg) {
+    var detail = msg.data.detail;
+    var type = msg.data.type;
+    var contentWindow = this.contentWindow;
 
-FindEventManager.prototype.unbind = function() {
-  this.winmm.sendAsyncMessage('PDFJS:Parent:removeEventListener');
-};
+    detail = Cu.cloneInto(detail, contentWindow);
+    var forward = contentWindow.document.createEvent("CustomEvent");
+    forward.initCustomEvent(type, true, true, detail);
+    contentWindow.dispatchEvent(forward);
+  }
+
+  unbind() {
+    this.winmm.sendAsyncMessage("PDFJS:Parent:removeEventListener");
+  }
+}
 
 function PdfStreamConverter() {
 }
@@ -827,12 +835,12 @@ function PdfStreamConverter() {
 PdfStreamConverter.prototype = {
 
   // properties required for XPCOM registration:
-  classID: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER_ID}'),
-  classDescription: 'pdf.js Component',
-  contractID: '@mozilla.org/streamconv;1?from=application/pdf&to=*/*',
+  classID: Components.ID("{PDFJSSCRIPT_STREAM_CONVERTER_ID}"),
+  classDescription: "pdf.js Component",
+  contractID: "@mozilla.org/streamconv;1?from=application/pdf&to=*/*",
 
-  classID2: Components.ID('{PDFJSSCRIPT_STREAM_CONVERTER2_ID}'),
-  contractID2: '@mozilla.org/streamconv;1?from=application/pdf&to=text/html',
+  classID2: Components.ID("{PDFJSSCRIPT_STREAM_CONVERTER2_ID}"),
+  contractID2: "@mozilla.org/streamconv;1?from=application/pdf&to=text/html",
 
   QueryInterface: XPCOMUtils.generateQI([
       Ci.nsISupports,
@@ -858,18 +866,18 @@ PdfStreamConverter.prototype = {
    */
 
   // nsIStreamConverter::convert
-  convert: function(aFromStream, aFromType, aToType, aCtxt) {
+  convert(aFromStream, aFromType, aToType, aCtxt) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
 
   // nsIStreamConverter::asyncConvertData
-  asyncConvertData: function(aFromType, aToType, aListener, aCtxt) {
+  asyncConvertData(aFromType, aToType, aListener, aCtxt) {
     // Store the listener passed to us
     this.listener = aListener;
   },
 
   // nsIStreamListener::onDataAvailable
-  onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount) {
+  onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
     if (!this.dataListener) {
       return;
     }
@@ -881,7 +889,7 @@ PdfStreamConverter.prototype = {
   },
 
   // nsIRequestObserver::onStartRequest
-  onStartRequest: function(aRequest, aContext) {
+  onStartRequest(aRequest, aContext) {
     // Setup the request so we can use it below.
     var isHttpRequest = false;
     try {
@@ -892,29 +900,29 @@ PdfStreamConverter.prototype = {
     var rangeRequest = false;
     var streamRequest = false;
     if (isHttpRequest) {
-      var contentEncoding = 'identity';
+      var contentEncoding = "identity";
       try {
-        contentEncoding = aRequest.getResponseHeader('Content-Encoding');
+        contentEncoding = aRequest.getResponseHeader("Content-Encoding");
       } catch (e) {}
 
       var acceptRanges;
       try {
-        acceptRanges = aRequest.getResponseHeader('Accept-Ranges');
+        acceptRanges = aRequest.getResponseHeader("Accept-Ranges");
       } catch (e) {}
 
       var hash = aRequest.URI.ref;
-      var isPDFBugEnabled = getBoolPref(PREF_PREFIX + '.pdfBugEnabled', false);
-      rangeRequest = contentEncoding === 'identity' &&
-                     acceptRanges === 'bytes' &&
+      var isPDFBugEnabled = getBoolPref(PREF_PREFIX + ".pdfBugEnabled", false);
+      rangeRequest = contentEncoding === "identity" &&
+                     acceptRanges === "bytes" &&
                      aRequest.contentLength >= 0 &&
-                     !getBoolPref(PREF_PREFIX + '.disableRange', false) &&
+                     !getBoolPref(PREF_PREFIX + ".disableRange", false) &&
                      (!isPDFBugEnabled ||
-                      hash.toLowerCase().indexOf('disablerange=true') < 0);
-      streamRequest = contentEncoding === 'identity' &&
+                      hash.toLowerCase().indexOf("disablerange=true") < 0);
+      streamRequest = contentEncoding === "identity" &&
                       aRequest.contentLength >= 0 &&
-                      !getBoolPref(PREF_PREFIX + '.disableStream', false) &&
+                      !getBoolPref(PREF_PREFIX + ".disableStream", false) &&
                       (!isPDFBugEnabled ||
-                       hash.toLowerCase().indexOf('disablestream=true') < 0);
+                       hash.toLowerCase().indexOf("disablestream=true") < 0);
     }
 
     aRequest.QueryInterface(Ci.nsIChannel);
@@ -927,15 +935,15 @@ PdfStreamConverter.prototype = {
     } catch (e) {}
 
     // Change the content type so we don't get stuck in a loop.
-    aRequest.setProperty('contentType', aRequest.contentType);
-    aRequest.contentType = 'text/html';
+    aRequest.setProperty("contentType", aRequest.contentType);
+    aRequest.contentType = "text/html";
     if (isHttpRequest) {
       // We trust PDF viewer, using no CSP
-      aRequest.setResponseHeader('Content-Security-Policy', '', false);
-      aRequest.setResponseHeader('Content-Security-Policy-Report-Only', '',
+      aRequest.setResponseHeader("Content-Security-Policy", "", false);
+      aRequest.setResponseHeader("Content-Security-Policy-Report-Only", "",
                                  false);
       // The viewer does not need to handle HTTP Refresh header.
-      aRequest.setResponseHeader('Refresh', '', false);
+      aRequest.setResponseHeader("Refresh", "", false);
     }
 
     PdfJsTelemetry.onViewerIsUsed();
@@ -944,7 +952,7 @@ PdfStreamConverter.prototype = {
     // Creating storage for PDF data
     var contentLength = aRequest.contentLength;
     this.dataListener = new PdfDataListener(contentLength);
-    this.binaryStream = Cc['@mozilla.org/binaryinputstream;1']
+    this.binaryStream = Cc["@mozilla.org/binaryinputstream;1"]
                         .createInstance(Ci.nsIBinaryInputStream);
 
     // Create a new channel that is viewer loaded as a resource.
@@ -960,14 +968,14 @@ PdfStreamConverter.prototype = {
     // request(aRequest) below so we don't overwrite the original channel and
     // trigger an assertion.
     var proxy = {
-      onStartRequest: function(request, context) {
+      onStartRequest(request, context) {
         listener.onStartRequest(aRequest, aContext);
       },
-      onDataAvailable: function(request, context, inputStream, offset, count) {
+      onDataAvailable(request, context, inputStream, offset, count) {
         listener.onDataAvailable(aRequest, aContext, inputStream,
                                  offset, count);
       },
-      onStopRequest: function(request, context, statusCode) {
+      onStopRequest(request, context, statusCode) {
         // We get the DOM window here instead of before the request since it
         // may have changed during a redirect.
         var domWindow = getDOMWindow(channel);
@@ -991,8 +999,8 @@ PdfStreamConverter.prototype = {
         listener.onStopRequest(aRequest, aContext, statusCode);
 
         if (domWindow.frameElement) {
-          var isObjectEmbed = domWindow.frameElement.tagName !== 'IFRAME' ||
-            domWindow.frameElement.className === 'previewPluginContentFrame';
+          var isObjectEmbed = domWindow.frameElement.tagName !== "IFRAME" ||
+            domWindow.frameElement.className === "previewPluginContentFrame";
           PdfJsTelemetry.onEmbed(isObjectEmbed);
         }
       }
@@ -1006,7 +1014,7 @@ PdfStreamConverter.prototype = {
     // We can use the resource principal when data is fetched by the chrome,
     // e.g. useful for NoScript. Make make sure we reuse the origin attributes
     // from the request channel to keep isolation consistent.
-    var ssm = Cc['@mozilla.org/scriptsecuritymanager;1']
+    var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"]
                 .getService(Ci.nsIScriptSecurityManager);
     var uri = NetUtil.newURI(PDF_VIEWER_WEB_PAGE);
     var resourcePrincipal =
@@ -1017,7 +1025,7 @@ PdfStreamConverter.prototype = {
   },
 
   // nsIRequestObserver::onStopRequest
-  onStopRequest: function(aRequest, aContext, aStatusCode) {
+  onStopRequest(aRequest, aContext, aStatusCode) {
     if (!this.dataListener) {
       // Do nothing
       return;

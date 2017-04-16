@@ -611,6 +611,7 @@ describe('annotation', function() {
         var jsEntry = params.jsEntry;
         var expectedUrl = params.expectedUrl;
         var expectedUnsafeUrl = params.expectedUnsafeUrl;
+        var expectedNewWindow = params.expectedNewWindow;
 
         var actionDict = new Dict();
         actionDict.set('Type', Name.get('Action'));
@@ -636,7 +637,7 @@ describe('annotation', function() {
         expect(data.url).toEqual(expectedUrl);
         expect(data.unsafeUrl).toEqual(expectedUnsafeUrl);
         expect(data.dest).toBeUndefined();
-        expect(data.newWindow).toBeFalsy();
+        expect(data.newWindow).toEqual(expectedNewWindow);
       }
 
       // Check that we reject a 'JS' entry containing arbitrary JavaScript.
@@ -644,12 +645,14 @@ describe('annotation', function() {
         jsEntry: 'function someFun() { return "qwerty"; } someFun();',
         expectedUrl: undefined,
         expectedUnsafeUrl: undefined,
+        expectedNewWindow: undefined,
       });
       // Check that we accept a white-listed {string} 'JS' entry.
       checkJsAction({
         jsEntry: 'window.open(\'http://www.example.com/test.pdf\')',
         expectedUrl: new URL('http://www.example.com/test.pdf').href,
         expectedUnsafeUrl: 'http://www.example.com/test.pdf',
+        expectedNewWindow: undefined,
       });
       // Check that we accept a white-listed {Stream} 'JS' entry.
       checkJsAction({
@@ -657,6 +660,7 @@ describe('annotation', function() {
                    'app.launchURL("http://www.example.com/test.pdf", true)'),
         expectedUrl: new URL('http://www.example.com/test.pdf').href,
         expectedUnsafeUrl: 'http://www.example.com/test.pdf',
+        expectedNewWindow: true,
       });
     });
 
@@ -800,6 +804,28 @@ describe('annotation', function() {
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
 
       expect(data.fieldName).toEqual('foo.bar.baz');
+    });
+
+    it('should construct the field name if a parent is not a dictionary ' +
+       '(issue 8143)', function() {
+      var parentDict = new Dict();
+      parentDict.set('Parent', null);
+      parentDict.set('T', 'foo');
+
+      widgetDict.set('Parent', parentDict);
+      widgetDict.set('T', 'bar');
+
+      var widgetRef = new Ref(22, 0);
+      var xref = new XRefMock([
+        { ref: widgetRef, data: widgetDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, widgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.fieldName).toEqual('foo.bar');
     });
   });
 
@@ -988,7 +1014,7 @@ describe('annotation', function() {
       expect(data.radioButton).toEqual(false);
     });
 
-    it('should handle radio buttons', function() {
+    it('should handle radio buttons with a field value', function() {
       var parentDict = new Dict();
       parentDict.set('V', Name.get('1'));
 
@@ -1015,6 +1041,32 @@ describe('annotation', function() {
       expect(data.checkBox).toEqual(false);
       expect(data.radioButton).toEqual(true);
       expect(data.fieldValue).toEqual('1');
+      expect(data.buttonValue).toEqual('2');
+    });
+
+    it('should handle radio buttons without a field value', function() {
+      var normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set('2', null);
+
+      var appearanceStatesDict = new Dict();
+      appearanceStatesDict.set('N', normalAppearanceStateDict);
+
+      buttonWidgetDict.set('Ff', AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set('AP', appearanceStatesDict);
+
+      var buttonWidgetRef = new Ref(124, 0);
+      var xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, buttonWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.checkBox).toEqual(false);
+      expect(data.radioButton).toEqual(true);
+      expect(data.fieldValue).toEqual(null);
       expect(data.buttonValue).toEqual('2');
     });
   });
@@ -1116,6 +1168,34 @@ describe('annotation', function() {
       expect(data.options).toEqual(expected);
     });
 
+    it('should handle inherited option arrays (issue 8094)', function() {
+      var options = [
+        ['Value1', 'Description1'],
+        ['Value2', 'Description2'],
+      ];
+      var expected = [
+        { exportValue: 'Value1', displayValue: 'Description1' },
+        { exportValue: 'Value2', displayValue: 'Description2' },
+      ];
+
+      var parentDict = new Dict();
+      parentDict.set('Opt', options);
+
+      choiceWidgetDict.set('Parent', parentDict);
+
+      var choiceWidgetRef = new Ref(123, 0);
+      var xref = new XRefMock([
+        { ref: choiceWidgetRef, data: choiceWidgetDict, },
+      ]);
+
+      var annotation = annotationFactory.create(xref, choiceWidgetRef,
+                                                pdfManagerMock, idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+
+      expect(data.options).toEqual(expected);
+    });
+
     it('should handle array field values', function() {
       var fieldValue = ['Foo', 'Bar'];
 
@@ -1204,6 +1284,27 @@ describe('annotation', function() {
       expect(data.readOnly).toEqual(true);
       expect(data.combo).toEqual(true);
       expect(data.multiSelect).toEqual(true);
+    });
+  });
+
+  describe('LineAnnotation', function() {
+    it('should set the line coordinates', function() {
+      var lineDict = new Dict();
+      lineDict.set('Type', Name.get('Annot'));
+      lineDict.set('Subtype', Name.get('Line'));
+      lineDict.set('L', [1, 2, 3, 4]);
+
+      var lineRef = new Ref(122, 0);
+      var xref = new XRefMock([
+        { ref: lineRef, data: lineDict, }
+      ]);
+
+      var annotation = annotationFactory.create(xref, lineRef, pdfManagerMock,
+                                                idFactoryMock);
+      var data = annotation.data;
+      expect(data.annotationType).toEqual(AnnotationType.LINE);
+
+      expect(data.lineCoordinates).toEqual([1, 2, 3, 4]);
     });
   });
 

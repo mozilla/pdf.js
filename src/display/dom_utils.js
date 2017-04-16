@@ -26,10 +26,101 @@
   }
 }(this, function (exports, sharedUtil) {
 
+var assert = sharedUtil.assert;
 var removeNullCharacters = sharedUtil.removeNullCharacters;
 var warn = sharedUtil.warn;
 var deprecated = sharedUtil.deprecated;
 var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
+var stringToBytes = sharedUtil.stringToBytes;
+var CMapCompressionType = sharedUtil.CMapCompressionType;
+
+var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
+
+function DOMCanvasFactory() {}
+DOMCanvasFactory.prototype = {
+  create: function DOMCanvasFactory_create(width, height) {
+    assert(width > 0 && height > 0, 'invalid canvas size');
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext('2d');
+    canvas.width = width;
+    canvas.height = height;
+    return {
+      canvas: canvas,
+      context: context,
+    };
+  },
+
+  reset: function DOMCanvasFactory_reset(canvasAndContextPair, width, height) {
+    assert(canvasAndContextPair.canvas, 'canvas is not specified');
+    assert(width > 0 && height > 0, 'invalid canvas size');
+    canvasAndContextPair.canvas.width = width;
+    canvasAndContextPair.canvas.height = height;
+  },
+
+  destroy: function DOMCanvasFactory_destroy(canvasAndContextPair) {
+    assert(canvasAndContextPair.canvas, 'canvas is not specified');
+    // Zeroing the width and height cause Firefox to release graphics
+    // resources immediately, which can greatly reduce memory consumption.
+    canvasAndContextPair.canvas.width = 0;
+    canvasAndContextPair.canvas.height = 0;
+    canvasAndContextPair.canvas = null;
+    canvasAndContextPair.context = null;
+  }
+};
+
+var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
+  function DOMCMapReaderFactory(params) {
+    this.baseUrl = params.baseUrl || null;
+    this.isCompressed = params.isCompressed || false;
+  }
+
+  DOMCMapReaderFactory.prototype = {
+    fetch: function(params) {
+      var name = params.name;
+      if (!name) {
+        return Promise.reject(new Error('CMap name must be specified.'));
+      }
+      return new Promise(function (resolve, reject) {
+        var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+
+        var request = new XMLHttpRequest();
+        request.open('GET', url, true);
+
+        if (this.isCompressed) {
+          request.responseType = 'arraybuffer';
+        }
+        request.onreadystatechange = function () {
+          if (request.readyState !== XMLHttpRequest.DONE) {
+            return;
+          }
+          if (request.status === 200 || request.status === 0) {
+            var data;
+            if (this.isCompressed && request.response) {
+              data = new Uint8Array(request.response);
+            } else if (!this.isCompressed && request.responseText) {
+              data = stringToBytes(request.responseText);
+            }
+            if (data) {
+              resolve({
+                cMapData: data,
+                compressionType: this.isCompressed ?
+                  CMapCompressionType.BINARY : CMapCompressionType.NONE,
+              });
+              return;
+            }
+          }
+          reject(new Error('Unable to load ' +
+                           (this.isCompressed ? 'binary ' : '') +
+                           'CMap at: ' + url));
+        }.bind(this);
+
+        request.send(null);
+      }.bind(this));
+    },
+  };
+
+  return DOMCMapReaderFactory;
+})();
 
 /**
  * Optimised CSS custom property getter/setter.
@@ -71,7 +162,7 @@ var CustomStyle = (function CustomStyleClosure() {
       }
     }
 
-    //if all fails then set to undefined
+    // If all fails then set to undefined.
     return (_cache[propName] = 'undefined');
   };
 
@@ -85,19 +176,18 @@ var CustomStyle = (function CustomStyleClosure() {
   return CustomStyle;
 })();
 
-var hasCanvasTypedArrays;
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
-  hasCanvasTypedArrays = function hasCanvasTypedArrays() {
-    var canvas = document.createElement('canvas');
-    canvas.width = canvas.height = 1;
-    var ctx = canvas.getContext('2d');
-    var imageData = ctx.createImageData(1, 1);
-    return (typeof imageData.data.buffer !== 'undefined');
-  };
-} else {
-  hasCanvasTypedArrays = function () { return true; };
-}
+var RenderingCancelledException = (function RenderingCancelledException() {
+  function RenderingCancelledException(msg, type) {
+    this.message = msg;
+    this.type = type;
+  }
+
+  RenderingCancelledException.prototype = new Error();
+  RenderingCancelledException.prototype.name = 'RenderingCancelledException';
+  RenderingCancelledException.constructor = RenderingCancelledException;
+
+  return RenderingCancelledException;
+})();
 
 var LinkTarget = {
   NONE: 0, // Default value.
@@ -182,6 +272,8 @@ function getDefaultSetting(id) {
       return globalSettings ? globalSettings.cMapPacked : false;
     case 'postMessageTransfers':
       return globalSettings ? globalSettings.postMessageTransfers : true;
+    case 'workerPort':
+      return globalSettings ? globalSettings.workerPort : null;
     case 'workerSrc':
       return globalSettings ? globalSettings.workerSrc : null;
     case 'disableWorker':
@@ -210,9 +302,11 @@ function getDefaultSetting(id) {
       globalSettings.externalLinkTarget = LinkTarget.NONE;
       return LinkTarget.NONE;
     case 'externalLinkRel':
-      return globalSettings ? globalSettings.externalLinkRel : 'noreferrer';
+      return globalSettings ? globalSettings.externalLinkRel : DEFAULT_LINK_REL;
     case 'enableStats':
       return !!(globalSettings && globalSettings.enableStats);
+    case 'pdfjsNext':
+      return !!(globalSettings && globalSettings.pdfjsNext);
     default:
       throw new Error('Unknown default setting: ' + id);
   }
@@ -243,6 +337,9 @@ exports.isExternalLinkTargetSet = isExternalLinkTargetSet;
 exports.isValidUrl = isValidUrl;
 exports.getFilenameFromUrl = getFilenameFromUrl;
 exports.LinkTarget = LinkTarget;
-exports.hasCanvasTypedArrays = hasCanvasTypedArrays;
+exports.RenderingCancelledException = RenderingCancelledException;
 exports.getDefaultSetting = getDefaultSetting;
+exports.DEFAULT_LINK_REL = DEFAULT_LINK_REL;
+exports.DOMCanvasFactory = DOMCanvasFactory;
+exports.DOMCMapReaderFactory = DOMCMapReaderFactory;
 }));

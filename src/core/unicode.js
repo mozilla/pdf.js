@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* no-babel-preset */
 
 'use strict';
 
@@ -1627,7 +1628,7 @@
 
   function reverseIfRtl(chars) {
     var charsLength = chars.length;
-    //reverse an arabic ligature
+    // Reverse an arabic ligature.
     if (charsLength <= 1 || !isRTLRangeFor(chars.charCodeAt(0))) {
       return chars;
     }

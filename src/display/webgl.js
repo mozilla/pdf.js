@@ -83,6 +83,8 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     if (currentGL) {
       return;
     }
+
+    // The temporary canvas is used in the WebGL context.
     currentCanvas = document.createElement('canvas');
     currentGL = currentCanvas.getContext('webgl',
       { premultipliedalpha: false });

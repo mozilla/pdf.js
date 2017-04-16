@@ -38,7 +38,6 @@ var isInt = sharedUtil.isInt;
 var isArray = sharedUtil.isArray;
 var createObjectURL = sharedUtil.createObjectURL;
 var shadow = sharedUtil.shadow;
-var warn = sharedUtil.warn;
 var isSpace = sharedUtil.isSpace;
 var Dict = corePrimitives.Dict;
 var isDict = corePrimitives.isDict;
@@ -129,7 +128,6 @@ var Stream = (function StreamClosure() {
     makeSubStream: function Stream_makeSubStream(start, length, dict) {
       return new Stream(this.bytes.buffer, start, length, dict);
     },
-    isStream: true
   };
 
   return Stream;

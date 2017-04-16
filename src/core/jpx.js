@@ -106,7 +106,7 @@ var JpxImage = (function JpxImageClosure() {
             this.parseCodestream(data, position, position + dataLength);
             break;
           case 0x6A502020: // 'jP\024\024'
-            if (0x0d0a870a !== readUint32(data, position)) {
+            if (readUint32(data, position) !== 0x0d0a870a) {
               warn('Invalid JP2 signature');
             }
             break;

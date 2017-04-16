@@ -13,48 +13,20 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_viewer', ['exports', 'pdfjs-web/ui_utils',
-      'pdfjs-web/pdf_page_view', 'pdfjs-web/pdf_rendering_queue',
-      'pdfjs-web/text_layer_builder', 'pdfjs-web/annotation_layer_builder',
-      'pdfjs-web/pdf_link_service', 'pdfjs-web/dom_events', 'pdfjs-web/pdfjs'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'), require('./pdf_page_view.js'),
-      require('./pdf_rendering_queue.js'), require('./text_layer_builder.js'),
-      require('./annotation_layer_builder.js'),
-      require('./pdf_link_service.js'), require('./dom_events.js'),
-      require('./pdfjs.js'));
-  } else {
-    factory((root.pdfjsWebPDFViewer = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFPageView, root.pdfjsWebPDFRenderingQueue,
-      root.pdfjsWebTextLayerBuilder, root.pdfjsWebAnnotationLayerBuilder,
-      root.pdfjsWebPDFLinkService, root.pdfjsWebDOMEvents, root.pdfjsWebPDFJS);
-  }
-}(this, function (exports, uiUtils, pdfPageView, pdfRenderingQueue,
-                  textLayerBuilder, annotationLayerBuilder, pdfLinkService,
-                  domEvents, pdfjsLib) {
-
-var UNKNOWN_SCALE = uiUtils.UNKNOWN_SCALE;
-var SCROLLBAR_PADDING = uiUtils.SCROLLBAR_PADDING;
-var VERTICAL_PADDING = uiUtils.VERTICAL_PADDING;
-var MAX_AUTO_SCALE = uiUtils.MAX_AUTO_SCALE;
-var CSS_UNITS = uiUtils.CSS_UNITS;
-var DEFAULT_SCALE = uiUtils.DEFAULT_SCALE;
-var DEFAULT_SCALE_VALUE = uiUtils.DEFAULT_SCALE_VALUE;
-var RendererType = uiUtils.RendererType;
-var scrollIntoView = uiUtils.scrollIntoView;
-var watchScroll = uiUtils.watchScroll;
-var getVisibleElements = uiUtils.getVisibleElements;
-var PDFPageView = pdfPageView.PDFPageView;
-var RenderingStates = pdfRenderingQueue.RenderingStates;
-var PDFRenderingQueue = pdfRenderingQueue.PDFRenderingQueue;
-var TextLayerBuilder = textLayerBuilder.TextLayerBuilder;
-var AnnotationLayerBuilder = annotationLayerBuilder.AnnotationLayerBuilder;
-var SimpleLinkService = pdfLinkService.SimpleLinkService;
+import {
+  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
+  MAX_AUTO_SCALE, RendererType, SCROLLBAR_PADDING, scrollIntoView,
+  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+} from './ui_utils';
+import {
+  PDFRenderingQueue, RenderingStates,
+} from './pdf_rendering_queue';
+import { AnnotationLayerBuilder } from './annotation_layer_builder';
+import { domEvents } from './dom_events';
+import { PDFJS } from './pdfjs';
+import { PDFPageView } from './pdf_page_view';
+import { SimpleLinkService } from './pdf_link_service';
+import { TextLayerBuilder } from './text_layer_builder';
 
 var PresentationModeState = {
   UNKNOWN: 0,
@@ -81,6 +53,9 @@ var DEFAULT_CACHE_SIZE = 10;
  *   text selection behaviour. The default is `false`.
  * @property {boolean} renderInteractiveForms - (optional) Enables rendering of
  *   interactive form elements. The default is `false`.
+ * @property {boolean} enablePrintAutoRotate - (optional) Enables automatic
+ *   rotation of pages whose orientation differ from the first page upon
+ *   printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
  */
 
@@ -122,6 +97,10 @@ var PDFViewer = (function pdfViewer() {
     return false;
   }
 
+  function isPortraitOrientation(size) {
+    return size.width <= size.height;
+  }
+
   /**
    * @constructs PDFViewer
    * @param {PDFViewerOptions} options
@@ -135,6 +114,7 @@ var PDFViewer = (function pdfViewer() {
     this.removePageBorders = options.removePageBorders || false;
     this.enhanceTextSelection = options.enhanceTextSelection || false;
     this.renderInteractiveForms = options.renderInteractiveForms || false;
+    this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
 
     this.defaultRenderingQueue = !options.renderingQueue;
@@ -382,7 +362,7 @@ var PDFViewer = (function pdfViewer() {
         var viewport = pdfPage.getViewport(scale * CSS_UNITS);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
-          if (!pdfjsLib.PDFJS.disableTextLayer) {
+          if (!PDFJS.disableTextLayer) {
             textLayerFactory = this;
           }
           var pageView = new PDFPageView({
@@ -408,7 +388,7 @@ var PDFViewer = (function pdfViewer() {
         // starts to create the correct size canvas. Wait until one page is
         // rendered so we don't tie up too many resources early on.
         onePageRendered.then(function () {
-          if (!pdfjsLib.PDFJS.disableAutoFetch) {
+          if (!PDFJS.disableAutoFetch) {
             var getPagesLeft = pagesCount;
             for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
               pdfDocument.getPage(pageNum).then(function (pageNum, pdfPage) {
@@ -520,7 +500,7 @@ var PDFViewer = (function pdfViewer() {
 
       if (!noScroll) {
         var page = this._currentPageNumber, dest;
-        if (this._location && !pdfjsLib.PDFJS.ignoreCurrentPositionOnZoom &&
+        if (this._location && !PDFJS.ignoreCurrentPositionOnZoom &&
             !(this.isInPresentationMode || this.isChangingPresentationMode)) {
           page = this._location.pageNumber;
           dest = [null, { name: 'XYZ' }, this._location.left,
@@ -949,12 +929,30 @@ var PDFViewer = (function pdfViewer() {
 
     /**
      * Returns sizes of the pages.
-     * @returns {Array} Array of objects with width/height fields.
+     * @returns {Array} Array of objects with width/height/rotation fields.
      */
     getPagesOverview: function () {
-      return this._pages.map(function (pageView) {
+      var pagesOverview = this._pages.map(function (pageView) {
         var viewport = pageView.pdfPage.getViewport(1);
-        return {width: viewport.width, height: viewport.height};
+        return {
+          width: viewport.width,
+          height: viewport.height,
+          rotation: viewport.rotation,
+        };
+      });
+      if (!this.enablePrintAutoRotate) {
+        return pagesOverview;
+      }
+      var isFirstPagePortrait = isPortraitOrientation(pagesOverview[0]);
+      return pagesOverview.map(function (size) {
+        if (isFirstPagePortrait === isPortraitOrientation(size)) {
+          return size;
+        }
+        return {
+          width: size.height,
+          height: size.width,
+          rotation: (size.rotation + 90) % 360,
+        };
       });
     },
   };
@@ -962,6 +960,7 @@ var PDFViewer = (function pdfViewer() {
   return PDFViewer;
 })();
 
-exports.PresentationModeState = PresentationModeState;
-exports.PDFViewer = PDFViewer;
-}));
+export {
+  PresentationModeState,
+  PDFViewer,
+};

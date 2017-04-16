@@ -29,8 +29,6 @@
   }
 }(this, function (exports, sharedUtil) {
 
-var Uint32ArrayView = sharedUtil.Uint32ArrayView;
-
 var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
   // Workaround for missing math precision in JS.
   var MASK_HIGH = 0xffff0000;
@@ -42,21 +40,8 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
     this.h2 = seed ? seed & 0xffffffff : SEED;
   }
 
-  var alwaysUseUint32ArrayView = false;
-  if (typeof PDFJSDev === 'undefined' ||
-      !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
-    // old webkits have issues with non-aligned arrays
-    try {
-      // eslint-disable-next-line no-new
-      new Uint32Array(new Uint8Array(5).buffer, 0, 1);
-    } catch (e) {
-      alwaysUseUint32ArrayView = true;
-    }
-  }
-
   MurmurHash3_64.prototype = {
     update: function MurmurHash3_64_update(input) {
-      var useUint32ArrayView = alwaysUseUint32ArrayView;
       var i;
       if (typeof input === 'string') {
         var data = new Uint8Array(input.length * 2);
@@ -70,14 +55,9 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
             data[length++] = code & 0xff;
           }
         }
-      } else if (input instanceof Uint8Array) {
+      } else if (typeof input === 'object' && ('byteLength' in input)) {
         data = input;
-        length = data.length;
-      } else if (typeof input === 'object' && ('length' in input)) {
-        // processing regular arrays as well, e.g. for IE9
-        data = input;
-        length = data.length;
-        useUint32ArrayView = true;
+        length = data.byteLength;
       } else {
         throw new Error('Wrong data format in MurmurHash3_64_update. ' +
                         'Input must be a string or array.');
@@ -86,9 +66,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
       var blockCounts = length >> 2;
       var tailLength = length - blockCounts * 4;
       // we don't care about endianness here
-      var dataUint32 = useUint32ArrayView ?
-        new Uint32ArrayView(data, blockCounts) :
-        new Uint32Array(data.buffer, 0, blockCounts);
+      var dataUint32 = new Uint32Array(data.buffer, 0, blockCounts);
       var k1 = 0;
       var k2 = 0;
       var h1 = this.h1;

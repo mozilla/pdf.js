@@ -1,5 +1,6 @@
 'use strict';
 
+// eslint-disable-next-line no-unused-vars
 var TestReporter = function(browser, appPath) {
   function send(action, json, cb) {
     var r = new XMLHttpRequest();

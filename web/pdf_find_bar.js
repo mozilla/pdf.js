@@ -13,23 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-web/pdf_find_bar', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs-web/pdf_find_controller'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('./ui_utils.js'),
-      require('./pdf_find_controller.js'));
-  } else {
-    factory((root.pdfjsWebPDFFindBar = {}), root.pdfjsWebUIUtils,
-      root.pdfjsWebPDFFindController);
-  }
-}(this, function (exports, uiUtils, pdfFindController) {
-
-var mozL10n = uiUtils.mozL10n;
-var FindStates = pdfFindController.FindStates;
+import { FindStates } from './pdf_find_controller';
+import { mozL10n } from './ui_utils';
 
 /**
  * Creates a "search bar" given a set of DOM elements that act as controls
@@ -96,6 +81,8 @@ var PDFFindBar = (function PDFFindBarClosure() {
     this.caseSensitive.addEventListener('click', function() {
       self.dispatchEvent('casesensitivitychange');
     });
+
+    this.eventBus.on('resize', this._adjustWidth.bind(this));
   }
 
   PDFFindBar.prototype = {
@@ -155,6 +142,7 @@ var PDFFindBar = (function PDFFindBarClosure() {
       this.findMsg.textContent = findMsg;
 
       this.updateResultsCount(matchCount);
+      this._adjustWidth();
     },
 
     updateResultsCount: function(matchCount) {
@@ -183,6 +171,8 @@ var PDFFindBar = (function PDFFindBarClosure() {
       }
       this.findField.select();
       this.findField.focus();
+
+      this._adjustWidth();
     },
 
     close: function PDFFindBar_close() {
@@ -201,10 +191,36 @@ var PDFFindBar = (function PDFFindBarClosure() {
       } else {
         this.open();
       }
-    }
+    },
+
+    /**
+     * @private
+     */
+    _adjustWidth: function PDFFindBar_adjustWidth() {
+      if (!this.opened) {
+        return;
+      }
+
+      // The find bar has an absolute position and thus the browser extends
+      // its width to the maximum possible width once the find bar does not fit
+      // entirely within the window anymore (and its elements are automatically
+      // wrapped). Here we detect and fix that.
+      this.bar.classList.remove('wrapContainers');
+
+      var findbarHeight = this.bar.clientHeight;
+      var inputContainerHeight = this.bar.firstElementChild.clientHeight;
+
+      if (findbarHeight > inputContainerHeight) {
+        // The findbar is taller than the input container, which means that
+        // the browser wrapped some of the elements. For a consistent look,
+        // wrap all of them to adjust the width of the find bar.
+        this.bar.classList.add('wrapContainers');
+      }
+    },
   };
   return PDFFindBar;
 })();
 
-exports.PDFFindBar = PDFFindBar;
-}));
+export {
+  PDFFindBar,
+};
