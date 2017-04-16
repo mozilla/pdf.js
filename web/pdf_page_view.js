@@ -21,7 +21,7 @@ import {
   createPromiseCapability, CustomStyle, PDFJS, RenderingCancelledException,
   SVGGraphics
 } from './pdfjs';
-import { domEvents } from './dom_events';
+import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
@@ -75,7 +75,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     this.enhanceTextSelection = enhanceTextSelection;
     this.renderInteractiveForms = renderInteractiveForms;
 
-    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
+    this.eventBus = options.eventBus || getGlobalEventBus();
     this.renderingQueue = renderingQueue;
     this.textLayerFactory = textLayerFactory;
     this.annotationLayerFactory = annotationLayerFactory;
