@@ -30,15 +30,11 @@ import { PasswordResponses } from './pdfjs';
  *                                              entry.
  */
 
-/**
- * @class
- */
-var PasswordPrompt = (function PasswordPromptClosure() {
+class PasswordPrompt {
   /**
-   * @constructs PasswordPrompt
    * @param {PasswordPromptOptions} options
    */
-  function PasswordPrompt(options) {
+  constructor(options) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
@@ -52,58 +48,51 @@ var PasswordPrompt = (function PasswordPromptClosure() {
     // Attach the event listeners.
     this.submitButton.addEventListener('click', this.verify.bind(this));
     this.cancelButton.addEventListener('click', this.close.bind(this));
-    this.input.addEventListener('keydown', function (e) {
+    this.input.addEventListener('keydown', (e) => {
       if (e.keyCode === 13) { // Enter key
         this.verify();
       }
-    }.bind(this));
+    });
 
     OverlayManager.register(this.overlayName, this.container,
                             this.close.bind(this), true);
   }
 
-  PasswordPrompt.prototype = {
-    open: function PasswordPrompt_open() {
-      OverlayManager.open(this.overlayName).then(function () {
-        this.input.type = 'password';
-        this.input.focus();
+  open() {
+    OverlayManager.open(this.overlayName).then(() => {
+      this.input.focus();
 
-        var promptString = mozL10n.get('password_label', null,
-          'Enter the password to open this PDF file.');
+      var promptString = mozL10n.get('password_label', null,
+        'Enter the password to open this PDF file.');
 
-        if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
-          promptString = mozL10n.get('password_invalid', null,
-            'Invalid password. Please try again.');
-        }
-
-        this.label.textContent = promptString;
-      }.bind(this));
-    },
-
-    close: function PasswordPrompt_close() {
-      OverlayManager.close(this.overlayName).then(function () {
-        this.input.value = '';
-        this.input.type = '';
-      }.bind(this));
-    },
-
-    verify: function PasswordPrompt_verify() {
-      var password = this.input.value;
-      if (password && password.length > 0) {
-        this.close();
-        return this.updateCallback(password);
+      if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
+        promptString = mozL10n.get('password_invalid', null,
+          'Invalid password. Please try again.');
       }
-    },
 
-    setUpdateCallback:
-        function PasswordPrompt_setUpdateCallback(updateCallback, reason) {
-      this.updateCallback = updateCallback;
-      this.reason = reason;
+      this.label.textContent = promptString;
+    });
+  }
+
+  close() {
+    OverlayManager.close(this.overlayName).then(() => {
+      this.input.value = '';
+    });
+  }
+
+  verify() {
+    var password = this.input.value;
+    if (password && password.length > 0) {
+      this.close();
+      return this.updateCallback(password);
     }
-  };
+  }
 
-  return PasswordPrompt;
-})();
+  setUpdateCallback(updateCallback, reason) {
+    this.updateCallback = updateCallback;
+    this.reason = reason;
+  }
+}
 
 export {
   PasswordPrompt,
