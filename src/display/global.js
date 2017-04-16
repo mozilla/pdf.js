@@ -1,4 +1,4 @@
-/* Copyright 2015 Mozilla Foundation
+ /* Copyright 2015 Mozilla Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,6 @@ PDFJS.maxImageSize = (PDFJS.maxImageSize === undefined ?
  * @var {string}
  */
 PDFJS.cMapUrl = (PDFJS.cMapUrl === undefined ? null : PDFJS.cMapUrl);
-
 /**
  * Specifies if CMaps are binary packed.
  * @var {boolean}

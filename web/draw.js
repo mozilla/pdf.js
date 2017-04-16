@@ -159,7 +159,6 @@ function getCanvas(page) {
   return PDFViewerApplication.pdfViewer._pages[page - 1].canvas;
 };
 function fabricMouseMove(options) {
-  console.log('draw');
   var self = this,
     uuid;
   if ( this.lastObj != null ) {

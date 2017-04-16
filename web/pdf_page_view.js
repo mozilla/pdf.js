@@ -23,7 +23,7 @@ import {
 } from './pdfjs';
 import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
-import { fabricMethods } from 'pdfjs/display/draw';
+import { fabricMethods } from './draw';
 
 var TEXT_LAYER_RENDER_DELAY = 200; // ms
 
