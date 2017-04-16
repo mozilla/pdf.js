@@ -843,12 +843,13 @@ var PDFViewer = (function pdfViewer() {
       if (this._pagesRequests[pageNumber]) {
         return this._pagesRequests[pageNumber];
       }
-      var promise = this.pdfDocument.getPage(pageNumber).then(
-          function (pdfPage) {
-        pageView.setPdfPage(pdfPage);
+      var promise = this.pdfDocument.getPage(pageNumber).then((pdfPage) => {
+        if (!pageView.pdfPage) {
+          pageView.setPdfPage(pdfPage);
+        }
         this._pagesRequests[pageNumber] = null;
         return pdfPage;
-      }.bind(this));
+      });
       this._pagesRequests[pageNumber] = promise;
       return promise;
     },
@@ -859,9 +860,9 @@ var PDFViewer = (function pdfViewer() {
                                                             this._pages,
                                                             this.scroll.down);
       if (pageView) {
-        this._ensurePdfPageLoaded(pageView).then(function () {
+        this._ensurePdfPageLoaded(pageView).then(() => {
           this.renderingQueue.renderView(pageView);
-        }.bind(this));
+        });
         return true;
       }
       return false;
