@@ -12,37 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/crypto_spec', ['exports', 'pdfjs/core/crypto',
-           'pdfjs/core/primitives', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/crypto.js'),
-            require('../../src/core/primitives.js'),
-            require('../../src/shared/util.js'));
-  } else {
-    factory((root.pdfjsTestUnitCryptoSpec = {}), root.pdfjsCoreCrypto,
-             root.pdfjsCorePrimitives, root.pdfjsSharedUtil);
-  }
-}(this, function (exports, coreCrypto, corePrimitives, sharedUtil) {
-
-var calculateMD5 = coreCrypto.calculateMD5;
-var ARCFourCipher = coreCrypto.ARCFourCipher;
-var calculateSHA256 = coreCrypto.calculateSHA256;
-var calculateSHA384 = coreCrypto.calculateSHA384;
-var calculateSHA512 = coreCrypto.calculateSHA512;
-var AES128Cipher = coreCrypto.AES128Cipher;
-var AES256Cipher = coreCrypto.AES256Cipher;
-var PDF17 = coreCrypto.PDF17;
-var PDF20 = coreCrypto.PDF20;
-var CipherTransformFactory = coreCrypto.CipherTransformFactory;
-var Name = corePrimitives.Name;
-var Dict = corePrimitives.Dict;
-var stringToBytes = sharedUtil.stringToBytes;
-var PasswordException = sharedUtil.PasswordException;
-var PasswordResponses = sharedUtil.PasswordResponses;
+import {
+  AES128Cipher, AES256Cipher, ARCFourCipher, calculateMD5, calculateSHA256,
+  calculateSHA384, calculateSHA512, CipherTransformFactory, PDF17, PDF20
+} from '../../src/core/crypto';
+import { Dict, Name } from '../../src/core/primitives';
+import {
+  PasswordException, PasswordResponses, stringToBytes
+} from '../../src/shared/util';
 
 describe('crypto', function() {
   function hex2binary(s) {
@@ -708,4 +686,3 @@ describe('CipherTransformFactory', function() {
     });
   });
 });
-}));

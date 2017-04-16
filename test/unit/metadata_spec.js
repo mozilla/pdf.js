@@ -12,20 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/metadata_spec', ['exports',
-           'pdfjs/display/metadata'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/display/metadata.js'));
-  } else {
-    factory((root.pdfjsTestUnitMetadataSpec = {}), root.pdfjsDisplayMetadata);
-  }
-}(this, function (exports, displayMetadata) {
-
-var Metadata = displayMetadata.Metadata;
+import { Metadata } from '../../src/display/metadata';
 
 describe('metadata', function() {
   describe('incorrect_xmp', function() {
@@ -40,4 +28,3 @@ describe('metadata', function() {
     });
   });
 });
-}));

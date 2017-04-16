@@ -12,24 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/stream_spec', ['exports',
-           'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/primitives.js'),
-            require('../../src/core/stream.js'));
-  } else {
-    factory((root.pdfjsTestUnitStreamSpec = {}), root.pdfjsCorePrimitives,
-             root.pdfjsCoreStream);
-  }
-}(this, function (exports, corePrimitives, coreStream) {
-
-var Dict = corePrimitives.Dict;
-var Stream = coreStream.Stream;
-var PredictorStream = coreStream.PredictorStream;
+import { PredictorStream, Stream } from '../../src/core/stream';
+import { Dict } from '../../src/core/primitives';
 
 describe('stream', function() {
   beforeEach(function() {
@@ -77,4 +62,3 @@ describe('stream', function() {
     });
   });
 });
-}));

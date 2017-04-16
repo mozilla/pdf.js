@@ -12,25 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/fonts_spec', ['exports', 'pdfjs/core/fonts',
-      'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/fonts.js'),
-      require('../../src/shared/util.js'));
-  } else {
-    factory((root.pdfjsTestUnitFontsSpec = {}), root.pdfjsCoreFonts,
-      root.pdfjsSharedUtil);
-  }
-}(this, function (exports, coreFonts, sharedUtil) {
-
-var ProblematicCharRanges = coreFonts.ProblematicCharRanges;
-var PRIVATE_USE_OFFSET_START = coreFonts.PRIVATE_USE_OFFSET_START;
-var PRIVATE_USE_OFFSET_END = coreFonts.PRIVATE_USE_OFFSET_END;
-var isInt = sharedUtil.isInt;
+import {
+  PRIVATE_USE_OFFSET_END, PRIVATE_USE_OFFSET_START, ProblematicCharRanges
+} from '../../src/core/fonts';
+import { isInt } from '../../src/shared/util';
 
 /**
  * Used to validate the entries in `ProblematicCharRanges`, and to ensure that
@@ -104,4 +90,3 @@ describe('Fonts', function() {
     expect(result.percentage).toBeLessThan(EXPECTED_PERCENTAGE);
   });
 });
-}));

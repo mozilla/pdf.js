@@ -12,42 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/annotation_spec', ['exports',
-      'pdfjs/core/primitives', 'pdfjs/core/annotation', 'pdfjs/core/stream',
-      'pdfjs/core/parser', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/primitives.js'),
-      require('../../src/core/annotation.js'),
-      require('../../src/core/stream.js'), require('../../src/core/parser.js'),
-      require('../../src/shared/util.js'));
-  } else {
-    factory((root.pdfjsTestUnitAnnotationSpec = {}),
-      root.pdfjsCorePrimitives, root.pdfjsCoreAnnotation, root.pdfjsCoreStream,
-      root.pdfjsCoreParser, root.pdfjsSharedUtil);
-  }
-}(this, function (exports, corePrimitives, coreAnnotation, coreStream,
-                  coreParser, sharedUtil) {
-
-var Annotation = coreAnnotation.Annotation;
-var AnnotationBorderStyle = coreAnnotation.AnnotationBorderStyle;
-var AnnotationFactory = coreAnnotation.AnnotationFactory;
-var Lexer = coreParser.Lexer;
-var Parser = coreParser.Parser;
-var isRef = corePrimitives.isRef;
-var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
-var Ref = corePrimitives.Ref;
-var StringStream = coreStream.StringStream;
-var AnnotationType = sharedUtil.AnnotationType;
-var AnnotationFlag = sharedUtil.AnnotationFlag;
-var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
-var AnnotationFieldFlag = sharedUtil.AnnotationFieldFlag;
-var stringToBytes = sharedUtil.stringToBytes;
-var stringToUTF8String = sharedUtil.stringToUTF8String;
+import {
+  Annotation, AnnotationBorderStyle, AnnotationFactory
+} from '../../src/core/annotation';
+import {
+  AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
+  AnnotationType, stringToBytes, stringToUTF8String
+} from '../../src/shared/util';
+import { Dict, isRef, Name, Ref } from '../../src/core/primitives';
+import { Lexer, Parser } from '../../src/core/parser';
+import { StringStream } from '../../src/core/stream';
 
 describe('annotation', function() {
   function XRefMock(array) {
@@ -1393,4 +1368,3 @@ describe('annotation', function() {
     });
   });
 });
-}));
