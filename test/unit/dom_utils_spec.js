@@ -12,25 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/dom_utils_spec', ['exports',
-           'pdfjs/display/dom_utils', 'pdfjs/display/global'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/display/dom_utils.js'),
-            require('../../src/display/global.js'));
-  } else {
-    factory((root.pdfjsTestUnitDOMUtilsSpec = {}), root.pdfjsDisplayDOMUtils,
-             root.pdfjsDisplayGlobal);
-  }
-}(this, function (exports, displayDOMUtils, displayGlobal) {
-
-var PDFJS = displayGlobal.PDFJS;
-var getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
-var LinkTarget = displayDOMUtils.LinkTarget;
-var isExternalLinkTargetSet = displayDOMUtils.isExternalLinkTargetSet;
+import {
+  getFilenameFromUrl, isExternalLinkTargetSet, LinkTarget
+} from '../../src/display/dom_utils';
+import { PDFJS } from '../../src/display/global';
 
 describe('dom_utils', function() {
   describe('getFilenameFromUrl', function() {
@@ -82,4 +68,3 @@ describe('dom_utils', function() {
     });
   });
 });
-}));

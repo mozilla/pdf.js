@@ -12,37 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/api_spec', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/dom_utils', 'pdfjs/display/global', 'pdfjs/display/api'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-      factory(exports, require('../../src/shared/util.js'),
-        require('../../src/display/dom_utils.js'),
-        require('../../src/display/global.js'),
-        require('../../src/display/api.js'));
-  } else {
-    factory((root.pdfjsTestUnitApiSpec = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayDOMUtils, root.pdfjsDisplayGlobal, root.pdfjsDisplayApi);
-  }
-}(this, function (exports, sharedUtil, displayDOMUtils, displayGlobal,
-                  displayApi) {
-
-var PDFJS = displayGlobal.PDFJS;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var DOMCanvasFactory = displayDOMUtils.DOMCanvasFactory;
-var RenderingCancelledException = displayDOMUtils.RenderingCancelledException;
-var PDFDocumentProxy = displayApi.PDFDocumentProxy;
-var InvalidPDFException = sharedUtil.InvalidPDFException;
-var MissingPDFException = sharedUtil.MissingPDFException;
-var PasswordResponses = sharedUtil.PasswordResponses;
-var PasswordException = sharedUtil.PasswordException;
-var PDFPageProxy = displayApi.PDFPageProxy;
-var StreamType = sharedUtil.StreamType;
-var FontType = sharedUtil.FontType;
+import {
+  createPromiseCapability, FontType, InvalidPDFException, MissingPDFException,
+  PasswordException, PasswordResponses, StreamType
+} from '../../src/shared/util';
+import {
+  DOMCanvasFactory, RenderingCancelledException
+} from '../../src/display/dom_utils';
+import { PDFDocumentProxy, PDFPageProxy } from '../../src/display/api';
+import { PDFJS } from '../../src/display/global';
 
 describe('api', function() {
   var basicApiUrl = new URL('../pdfs/basicapi.pdf', window.location).href;
@@ -1210,4 +1189,3 @@ describe('api', function() {
     });
   });
 });
-}));

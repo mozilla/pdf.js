@@ -41,30 +41,30 @@
 'use strict';
 
 function initializePDFJS(callback) {
-    Promise.all([
-      'pdfjs/display/global', 'pdfjs-test/unit/annotation_spec',
-      'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/bidi_spec',
-      'pdfjs-test/unit/cff_parser_spec', 'pdfjs-test/unit/cmap_spec',
-      'pdfjs-test/unit/crypto_spec', 'pdfjs-test/unit/document_spec',
-      'pdfjs-test/unit/dom_utils_spec', 'pdfjs-test/unit/evaluator_spec',
-      'pdfjs-test/unit/fonts_spec', 'pdfjs-test/unit/function_spec',
-      'pdfjs-test/unit/metadata_spec', 'pdfjs-test/unit/murmurhash3_spec',
-      'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
-      'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
-      'pdfjs-test/unit/type1_parser_spec', 'pdfjs-test/unit/ui_utils_spec',
-      'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec'
-    ].map(function (moduleName) {
-      return SystemJS.import(moduleName);
-    })).then(function (modules) {
-      var displayGlobal = modules[0];
+  Promise.all([
+    'pdfjs/display/global', 'pdfjs-test/unit/annotation_spec',
+    'pdfjs-test/unit/api_spec', 'pdfjs-test/unit/bidi_spec',
+    'pdfjs-test/unit/cff_parser_spec', 'pdfjs-test/unit/cmap_spec',
+    'pdfjs-test/unit/crypto_spec', 'pdfjs-test/unit/document_spec',
+    'pdfjs-test/unit/dom_utils_spec', 'pdfjs-test/unit/evaluator_spec',
+    'pdfjs-test/unit/fonts_spec', 'pdfjs-test/unit/function_spec',
+    'pdfjs-test/unit/metadata_spec', 'pdfjs-test/unit/murmurhash3_spec',
+    'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
+    'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
+    'pdfjs-test/unit/type1_parser_spec', 'pdfjs-test/unit/ui_utils_spec',
+    'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec'
+  ].map(function (moduleName) {
+    return SystemJS.import(moduleName);
+  })).then(function (modules) {
+    var displayGlobal = modules[0];
 
-      // Configure the worker.
-      displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
-      // Opt-in to using the latest API.
-      displayGlobal.PDFJS.pdfjsNext = true;
+    // Configure the worker.
+    displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
+    // Opt-in to using the latest API.
+    displayGlobal.PDFJS.pdfjsNext = true;
 
-      callback();
-    });
+    callback();
+  });
 }
 
 (function() {

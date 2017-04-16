@@ -12,20 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/bidi_spec', ['exports', 'pdfjs/core/bidi'],
-           factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/bidi.js'));
-  } else {
-    factory((root.pdfjsTestUnitBidiSpec = {}), root.pdfjsCoreBidi);
-  }
-}(this, function (exports, coreBidi) {
-
-var bidi = coreBidi.bidi;
+import { bidi } from '../../src/core/bidi';
 
 describe('bidi', function () {
   it('should mark text as RTL if more than 30% of text is RTL', function() {
@@ -47,4 +35,3 @@ describe('bidi', function () {
     expect(bidiText.dir).toEqual('ltr');
   });
 });
-}));

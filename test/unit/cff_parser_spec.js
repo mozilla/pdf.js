@@ -12,29 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/cff_parser_spec', ['exports',
-           'pdfjs/core/cff_parser', 'pdfjs/core/fonts',
-           'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/cff_parser.js'),
-            require('../../src/core/fonts.js'),
-            require('../../src/core/stream.js'));
-  } else {
-    factory((root.pdfjsTestUnitCFFParserSpec = {}), root.pdfjsCoreCFFParser,
-             root.pdfjsCoreFonts, root.pdfjsCoreStream);
-  }
-}(this, function (exports, coreCFFParser, coreFonts, coreStream) {
-
-var CFFParser = coreCFFParser.CFFParser;
-var CFFIndex = coreCFFParser.CFFIndex;
-var CFFStrings = coreCFFParser.CFFStrings;
-var CFFCompiler = coreCFFParser.CFFCompiler;
-var SEAC_ANALYSIS_ENABLED = coreFonts.SEAC_ANALYSIS_ENABLED;
-var Stream = coreStream.Stream;
+import {
+  CFFCompiler, CFFIndex, CFFParser, CFFStrings
+} from '../../src/core/cff_parser';
+import { SEAC_ANALYSIS_ENABLED } from '../../src/core/fonts';
+import { Stream } from '../../src/core/stream';
 
 describe('CFFParser', function() {
   function createWithNullProto(obj) {
@@ -388,4 +371,3 @@ describe('CFFCompiler', function() {
 
   // TODO a lot more compiler tests
 });
-}));
