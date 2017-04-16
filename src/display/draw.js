@@ -252,54 +252,54 @@ function fabricCanvasSelectionCleared(options) {
 
 var fabricMethods = {
     fabricPageViewDraw: function(pageView) {
-      var pdfPage = PDFViewerApplication.pdfViewer._pages[pageView.pageNumber - 1];
-      var page = document.getElementById('page' + pageView.pageNumber),
-        pageCtx = page.getContext('2d'),
-        container = document
-          .querySelector('.page[data-page-number="' + pageView.pageNumber + '"] .canvasWrapper'),
-        imgData = pageCtx.getImageData(0, 0, page.width, page.height),
-        cloned = page.cloneNode(),
-        clCtx = cloned.getContext('2d');
-      clCtx.putImageData(imgData, 0, 0);
-      var background = new fabric.Image(cloned, {
-          dx: 0,
-          dy: 0,
-          width: container.clientWidth,
-          height: container.clientHeight,
-          //scaleX: pageCtx._scaleX,
-          //scaleY: pageCtx._scaleY,
-          lockMovementX: true,
-          lockMovementY: true,
-          lockRotation: true,
+        var pdfPage = PDFViewerApplication.pdfViewer._pages[pageView.pageNumber - 1];
+        var page = document.getElementById('page' + pageView.pageNumber),
+            pageCtx = page.getContext('2d'),
+            container = document
+            .querySelector('.page[data-page-number="' + pageView.pageNumber + '"] .canvasWrapper'),
+            imgData = pageCtx.getImageData(0, 0, page.width, page.height),
+            cloned = page.cloneNode(),
+            clCtx = cloned.getContext('2d');
+        clCtx.putImageData(imgData, 0, 0);
+        var background = new fabric.Image(cloned, {
+            dx: 0,
+            dy: 0,
+            width: container.clientWidth,
+            height: container.clientHeight,
+            //scaleX: pageCtx._scaleX,
+            //scaleY: pageCtx._scaleY,
+            lockMovementX: true,
+            lockMovementY: true,
+            lockRotation: true,
         }),
-        fCanvas = new fabric.PageCanvas(page.id);
-
-
-      pdfPage.el = container;
-      //pdfPage.zoomLayer = fCanvas.wrapperEl;
-      fCanvas.state = {};
-      fCanvas.lastObj = null;
-
-      if ( !pdfPage.fabricState.objs ) pdfPage.fabricState.objs = fCanvas.toObject();
-      else {
-        fCanvas.backgroundImage = null;
-        /*fCanvas.setObjScale(pdfPage.scale, pdfPage.fabricState.canvasScale);
-         fCanvas.setObjRotation(pdfPage.rotation)*/
-        fCanvas.fromObject(pdfPage.fabricState.objs);
-        pdfPage.fabricState.rotation = pdfPage.rotation;
-      }
-      fCanvas.on('mouse:down', fabricMouseDown);
-      fCanvas.on('object:selected', fabricCanvasSelected);
-      fCanvas.on('selection:cleared', fabricCanvasSelectionCleared);
-      fCanvas.on('after:render', function(options) {
-        pdfPage.fabricState.objs = fCanvas.toObject();
-      });
-      // see comment in web/pdf_page_view for explanation of why we keep track of a separate canvasScale
-      pdfPage.fabricState.canvasScale = pdfPage.scale;
-      fCanvas.setBackgroundImage(background);
-      pdfPage.canvas = fCanvas;
-      fCanvas.renderAll();
-      return pdfPage;
+            fCanvas = new fabric.PageCanvas(page.id);
+        
+        
+        pdfPage.el = container;
+        //pdfPage.zoomLayer = fCanvas.wrapperEl;
+        fCanvas.state = {};
+        fCanvas.lastObj = null;
+        
+        if ( !pdfPage.fabricState.objs ) pdfPage.fabricState.objs = fCanvas.toObject();
+        else {
+            fCanvas.backgroundImage = null;
+            /*fCanvas.setObjScale(pdfPage.scale, pdfPage.fabricState.canvasScale);
+              fCanvas.setObjRotation(pdfPage.rotation)*/
+            fCanvas.fromObject(pdfPage.fabricState.objs);
+            pdfPage.fabricState.rotation = pdfPage.rotation;
+        }
+        fCanvas.on('mouse:down', fabricMouseDown);
+        fCanvas.on('object:selected', fabricCanvasSelected);
+        fCanvas.on('selection:cleared', fabricCanvasSelectionCleared);
+        fCanvas.on('after:render', function(options) {
+            pdfPage.fabricState.objs = fCanvas.toObject();
+        });
+        // see comment in web/pdf_page_view for explanation of why we keep track of a separate canvasScale
+        pdfPage.fabricState.canvasScale = pdfPage.scale;
+        fCanvas.setBackgroundImage(background);
+        pdfPage.canvas = fCanvas;
+        fCanvas.renderAll();
+        return pdfPage;
     },
     fabricStorePreTransformData: function(pageNumber, oldScale, oldRotation) {
       var page = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1);
@@ -311,118 +311,115 @@ var fabricMethods = {
       };
     },
     fabricTransformCanvas: function(pageNumber) {
-      var klass = getCanvas(pageNumber),
-        pdfPage = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1),
-        fabricState = pdfPage.fabricState,
-        pageRotation = fabricState.preTransform.rotation,
-        scale = fabricState.preTransform.scale;
-      if ( scale === pdfPage.fabricState.scale && pageRotation === pdfPage.fabricState.rotation ) return;
-      var objs = klass.getObjects(),
-        canvasScale = (pdfPage.fabricState.canvasScale / scale).toFixed(20),
-        rotation = pdfPage.fabricState.rotation - pageRotation,
-        rotationChanged = fabricState.preTransform.width != pdfPage.width,
-        anchors = [ //mark all 4 corners of the group
-          new fabric.AnchorRect({
-            left: 0,
-            top: 0,
-            height: 0,
-            width: 0,
-          }),
-          new fabric.AnchorRect({
-            left: fabricState.preTransform.width,
-            top: 0,
-            height: 0,
-            width: 0,
-          }),
-          new fabric.AnchorRect({
-            left: 0,
-            top: fabricState.preTransform.height,
-            height: 0,
-            width: 0,
-          }),
-          new fabric.AnchorRect({
-            left: fabricState.preTransform.width,
-            top: fabricState.preTransform.height,
-            height: 0,
-            width: 0,
-          }),
-        ],
-        transformGroup = new fabric.Group(objs.concat(anchors), {
-          left: 0,
-          top: 0,
-          width: fabricState.preTransform.width,
-          height: fabricState.preTransform.height,
-          originX: 'left',
-          originY: 'top',
-          centeredScaling: true,
-          centeredRotation: true,
+        var klass = getCanvas(pageNumber),
+            pdfPage = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1),
+            fabricState = pdfPage.fabricState,
+            pageRotation = fabricState.preTransform.rotation,
+            scale = fabricState.preTransform.scale;
+        if ( scale === pdfPage.fabricState.scale && pageRotation === pdfPage.fabricState.rotation ) return;
+        var objs = klass.getObjects(),
+            canvasScale = (pdfPage.fabricState.canvasScale / scale).toFixed(20),
+            rotation = pdfPage.fabricState.rotation - pageRotation,
+            rotationChanged = fabricState.preTransform.width != pdfPage.width,
+            anchors = [ //mark all 4 corners of the group
+                new fabric.AnchorRect({
+                    left: 0,
+                    top: 0,
+                    height: 0,
+                    width: 0,
+                }),
+                new fabric.AnchorRect({
+                    left: fabricState.preTransform.width,
+                    top: 0,
+                    height: 0,
+                    width: 0,
+                }),
+                new fabric.AnchorRect({
+                    left: 0,
+                    top: fabricState.preTransform.height,
+                    height: 0,
+                    width: 0,
+                }),
+                new fabric.AnchorRect({
+                    left: fabricState.preTransform.width,
+                    top: fabricState.preTransform.height,
+                    height: 0,
+                    width: 0,
+                }),
+            ],
+            transformGroup = new fabric.Group(objs.concat(anchors), {
+                left: 0,
+                top: 0,
+                width: fabricState.preTransform.width,
+                height: fabricState.preTransform.height,
+                originX: 'left',
+                originY: 'top',
+                centeredScaling: true,
+                centeredRotation: true,
+            });
+        klass._objects = [];
+        klass.add(transformGroup);
+        /*transform stuff*/
+        // XXX a litte bit of a hack. if abs val of rotation is > 90 (it's 270), figure out which
+        // way we want to rotate to get to or from 0
+        if ( Math.abs(rotation) > 90 ) rotation = (rotation / Math.abs(rotation)) * -90;
+        transformGroup.scale(canvasScale);
+        transformGroup.setCoords();
+        //transformGroup.rotate(rotation);
+        transformGroup.setCoords();
+        
+        var tl = transformGroup.translateToOriginPoint(
+            transformGroup.oCoords.tl, 'left', 'top');
+        /*transform stuff*/
+        var transformedObjs = [];
+        transformGroup._restoreObjectsState();
+        
+        transformGroup._objects.forEach(function(obj, i) {
+            if ( obj.type != 'anchor' ) transformedObjs.push(obj);
         });
-      klass._objects = [];
-      klass.add(transformGroup);
-      /*transform stuff*/
-      // XXX a litte bit of a hack. if abs val of rotation is > 90 (it's 270), figure out which
-      // way we want to rotate to get to or from 0
-      if ( Math.abs(rotation) > 90 ) rotation = (rotation / Math.abs(rotation)) * -90;
-      transformGroup.scale(canvasScale);
-      transformGroup.setCoords();
-      //transformGroup.rotate(rotation);
-      transformGroup.setCoords();
-
-      var tl = transformGroup.translateToOriginPoint(
-        transformGroup.oCoords.tl, 'left', 'top');
-      /*transform stuff*/
-      var transformedObjs = [];
-      transformGroup._restoreObjectsState();
-
-      transformGroup._objects.forEach(function(obj, i) {
-        if ( obj.type != 'anchor' ) transformedObjs.push(obj);
-      });
-      klass.remove(transformGroup);
-      transformedObjs.forEach(function(transformed) {
-        klass.add(transformed);
-      });
-      pdfPage.fabricState.objs = klass.toObject();
+        klass.remove(transformGroup);
+        transformedObjs.forEach(function(transformed) {
+            klass.add(transformed);
+        });
+        pdfPage.fabricState.objs = klass.toObject();
     },
-  },
-  fabricGlobalMethods = {
+};
+var fabricGlobalMethods = {
     getObjByUUID: function(uuid) {
-      var objs = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1]
-        .canvas._objects;
-      for ( var i = 0; i < objs.length; i++ ) {
-        if ( uuid === objs[i].uuid )
-          return objs[i];
-      }
+        var objs = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1]
+            .canvas._objects;
+        for ( var i = 0; i < objs.length; i++ ) {
+            if ( uuid === objs[i].uuid )
+                return objs[i];
+        }
+        return null;
     },
     fabricSaveTemplate: function pdfViewSaveTemplate() {
-      //NOTE: FabricJS apparently used to get top and left from the center of
-      //a given object, but it looks like orignX and originY are already set to
-      //left and top respectively.  It's possible this has just been changed but
-      //it might be a good idea to explicity set them in case it changes again
-      var fields = [];
-      for ( var i = 1; i <= PDFViewerApplication.pdfViewer._pages.length; i++ ) {
-        var canvas = getCanvas(i),
-          objs = canvas.getObjects('TitledRect');
-
-        fields.push({ 'objects': [] });
-        for ( var j = 0; j < objs.length; j++ ) {
-          var scale = PDFViewerApplication.pdfViewer.currentScale * 96,
-            pHeight = PDFViewerApplication
-              .pdfViewer._pages[i - 1].viewport.height,
-            oHeight = Math.abs(objs[j]['height']);
-          objs[j]['height_inches'] = Math.abs(objs[j]['height'] / (scale));
-          objs[j]['left_inches'] = Math.abs(objs[j]['left'] / (scale));
-          objs[j]['top_inches'] =
-            (pHeight - oHeight - objs[j]['top']) / (scale);
-          objs[j]['width_inches'] = Math.abs(objs[j]['width'] / (scale));
-          objs[j]['field_name'] = objs[j]['title'].toLowerCase()
-            .split(' ').join('_');
-          fields[fields.length - 1]['objects'].push(objs[j].toJSON());
+        var fields = [];
+        for ( var i = 1; i <= PDFViewerApplication.pdfViewer._pages.length; i++ ) {
+            var canvas = getCanvas(i),
+                objs = canvas.getObjects('TitledRect');
+            
+            fields.push({ 'objects': [] });
+            for ( var j = 0; j < objs.length; j++ ) {
+                var scale = PDFViewerApplication.pdfViewer.currentScale * 96,
+                    pHeight = PDFViewerApplication
+                    .pdfViewer._pages[i - 1].viewport.height,
+                    oHeight = Math.abs(objs[j]['height']);
+                objs[j]['height_inches'] = Math.abs(objs[j]['height'] / (scale));
+                objs[j]['left_inches'] = Math.abs(objs[j]['left'] / (scale));
+                objs[j]['top_inches'] =
+                    (pHeight - oHeight - objs[j]['top']) / (scale);
+                objs[j]['width_inches'] = Math.abs(objs[j]['width'] / (scale));
+                objs[j]['field_name'] = objs[j]['title'].toLowerCase()
+                    .split(' ').join('_');
+                fields[fields.length - 1]['objects'].push(objs[j].toJSON());
+            }
         }
-      }
-      return fields;
+        return fields;
     },
     drawMode: false
-  };
+};
 
 PDFCustomFabricSetUp();
 
