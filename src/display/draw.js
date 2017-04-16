@@ -124,11 +124,10 @@ var PDFCustomFabricSetUp = function customFabricSetUp() {
     /* takes a PDFPageView object because there is a bunch of info stored on the page
      * which the canvas object doesn't have, like rotation
      */
-    fromObject: function(pdfPage, callback) {
+    fromObject: function(objs, callback) {
       var self = this,
         enl = [];
-      fabric.util.enlivenObjects(
-        pdfPage.fabricState.objs.objects, function(enlivened) {
+      fabric.util.enlivenObjects(objs.objects, function(enlivened) {
           enl = enlivened;
         });
       enl.forEach(function(obj) {
@@ -286,7 +285,7 @@ var fabricMethods = {
         fCanvas.backgroundImage = null;
         /*fCanvas.setObjScale(pdfPage.scale, pdfPage.fabricState.canvasScale);
          fCanvas.setObjRotation(pdfPage.rotation)*/
-        fCanvas.fromObject(pdfPage);
+        fCanvas.fromObject(pdfPage.fabricState.objs);
         pdfPage.fabricState.rotation = pdfPage.rotation;
       }
       fCanvas.on('mouse:down', fabricMouseDown);
