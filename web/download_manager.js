@@ -13,10 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  createObjectURL, createValidAbsoluteUrl, PDFJS
-} from './pdfjs';
-import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { createObjectURL, createValidAbsoluteUrl, PDFJS } from './pdfjs';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
@@ -100,12 +97,6 @@ DownloadManager.prototype = {
     download(blobUrl, filename);
   }
 };
-
-var GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function () {
-  return new DownloadManager();
-};
-PDFViewerApplication.externalServices = GenericExternalServices;
 
 export {
   DownloadManager,
