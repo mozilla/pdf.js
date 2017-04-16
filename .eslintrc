@@ -138,7 +138,7 @@
     }],
 
     // ECMAScript 6
-    "arrow-body-style": ["error", "as-needed"],
+    "arrow-body-style": ["error", "always"],
     "arrow-parens": ["error", "always"],
     "arrow-spacing": ["error", {
       "before": true,

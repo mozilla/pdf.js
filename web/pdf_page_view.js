@@ -18,7 +18,8 @@ import {
   roundToDivide
 } from './ui_utils';
 import {
-  CustomStyle, PDFJS, RenderingCancelledException, SVGGraphics
+  createPromiseCapability, CustomStyle, PDFJS, RenderingCancelledException,
+  SVGGraphics
 } from './pdfjs';
 import { domEvents } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
@@ -493,14 +494,10 @@ var PDFPageView = (function PDFPageViewClosure() {
     },
 
     paintOnCanvas: function (canvasWrapper) {
-      var resolveRenderPromise, rejectRenderPromise;
-      var promise = new Promise(function (resolve, reject) {
-        resolveRenderPromise = resolve;
-        rejectRenderPromise = reject;
-      });
+      var renderCapability = createPromiseCapability();
 
       var result = {
-        promise: promise,
+        promise: renderCapability.promise,
         onRenderContinue: function (cont) {
           cont();
         },
@@ -589,11 +586,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       renderTask.promise.then(
         function pdfPageRenderCallback() {
           showCanvas();
-          resolveRenderPromise(undefined);
+          renderCapability.resolve(undefined);
         },
         function pdfPageRenderError(error) {
           showCanvas();
-          rejectRenderPromise(error);
+          renderCapability.reject(error);
         }
       );
 

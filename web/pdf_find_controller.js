@@ -81,9 +81,9 @@ var PDFFindController = (function PDFFindControllerClosure() {
       this.dirtyMatch = false;
       this.findTimeout = null;
 
-      this.firstPagePromise = new Promise(function (resolve) {
+      this._firstPagePromise = new Promise((resolve) => {
         this.resolveFirstPage = resolve;
-      }.bind(this));
+      });
     },
 
     normalize: function PDFFindController_normalize(text) {
@@ -277,7 +277,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       this.state = state;
       this.updateUIState(FindStates.FIND_PENDING);
 
-      this.firstPagePromise.then(function() {
+      this._firstPagePromise.then(function() {
         this.extractText();
 
         clearTimeout(this.findTimeout);
