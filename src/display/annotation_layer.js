@@ -13,30 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/annotation_layer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/dom_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./dom_utils.js'));
-  } else {
-    factory((root.pdfjsDisplayAnnotationLayer = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayDOMUtils);
-  }
-}(this, function (exports, sharedUtil, displayDOMUtils) {
-
-var AnnotationBorderStyleType = sharedUtil.AnnotationBorderStyleType;
-var AnnotationType = sharedUtil.AnnotationType;
-var stringToPDFString = sharedUtil.stringToPDFString;
-var Util = sharedUtil.Util;
-var addLinkAttributes = displayDOMUtils.addLinkAttributes;
-var LinkTarget = displayDOMUtils.LinkTarget;
-var getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
-var warn = sharedUtil.warn;
-var CustomStyle = displayDOMUtils.CustomStyle;
-var getDefaultSetting = displayDOMUtils.getDefaultSetting;
+import {
+  addLinkAttributes, CustomStyle, getDefaultSetting, getFilenameFromUrl,
+  LinkTarget
+} from './dom_utils';
+import {
+  AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
+} from '../shared/util';
 
 /**
  * @typedef {Object} AnnotationElementParameters
@@ -1209,5 +1192,6 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
   };
 })();
 
-exports.AnnotationLayer = AnnotationLayer;
-}));
+export {
+  AnnotationLayer,
+};

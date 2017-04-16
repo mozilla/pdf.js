@@ -13,25 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/display/pattern_helper', ['exports', 'pdfjs/shared/util',
-      'pdfjs/display/webgl'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./webgl.js'));
-  } else {
-    factory((root.pdfjsDisplayPatternHelper = {}), root.pdfjsSharedUtil,
-      root.pdfjsDisplayWebGL);
-  }
-}(this, function (exports, sharedUtil, displayWebGL) {
-
-var Util = sharedUtil.Util;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var error = sharedUtil.error;
-var WebGLUtils = displayWebGL.WebGLUtils;
+import { error, info, isArray, Util } from '../shared/util';
+import { WebGLUtils } from './webgl';
 
 var ShadingIRs = {};
 
@@ -448,6 +431,7 @@ var TilingPattern = (function TilingPatternClosure() {
   return TilingPattern;
 })();
 
-exports.getShadingPatternFromIR = getShadingPatternFromIR;
-exports.TilingPattern = TilingPattern;
-}));
+export {
+  getShadingPatternFromIR,
+  TilingPattern,
+};
