@@ -123,7 +123,9 @@ WebBrowser.prototype = {
     if (this.finished) {
       this.log('Browser already stopped, invoking callback...');
       callback();
-    } else if (this.process) {
+    } else if (this.process && false) { // Disable this branch to allow botio to
+                                        // test the kill-by-pgrep/pkill/wmic
+                                        // logic.
       this.log('Going to wait until the browser process has exited.');
       this.callback = callback;
       this.process.once('exit', this.cleanup.bind(this));
