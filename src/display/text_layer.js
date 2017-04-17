@@ -20,14 +20,20 @@ import { CustomStyle, getDefaultSetting } from './dom_utils';
  * Text layer render parameters.
  *
  * @typedef {Object} TextLayerRenderParameters
- * @property {TextContent} textContent - Text content to render (the object is
- *   returned by the page's getTextContent() method).
+ * @property {TextContent} textContent - (optional) Text content to render
+ *   (the object is returned by the page's getTextContent() method).
+ * @property {ReadableStream} textContentStream - (optional) Text content
+ *   stream to render (the stream is returned by the page's
+ *   streamTextContent() method).
  * @property {HTMLElement} container - HTML element that will contain text runs.
  * @property {PageViewport} viewport - The target viewport to properly
  *   layout the text runs.
  * @property {Array} textDivs - (optional) HTML elements that are correspond
  *   the text items of the textContent input. This is output and shall be
  *   initially be set to empty array.
+ * @property {Array} textContentItemsStr - (optional) Strings that correspond
+ *   the `str` property of the text items of textContent input. This is output
+ *   and shall be initially be set to empty array.
  * @property {number} timeout - (optional) Delay in milliseconds before
  *   rendering of the text  runs occurs.
  * @property {boolean} enhanceTextSelection - (optional) Whether to turn on the
@@ -122,6 +128,9 @@ var renderTextLayer = (function renderTextLayerClosure() {
       }
     }
     task._textDivProperties.set(textDiv, textDivProperties);
+    if (task._textContentStream) {
+      task._layoutText(textDiv);
+    }
 
     if (task._enhanceTextSelection) {
       var angleCos = 1, angleSin = 0;
@@ -157,7 +166,6 @@ var renderTextLayer = (function renderTextLayerClosure() {
     if (task._canceled) {
       return;
     }
-    var textLayerFrag = task._container;
     var textDivs = task._textDivs;
     var capability = task._capability;
     var textDivsLength = textDivs.length;
@@ -170,50 +178,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       return;
     }
 
-    // The temporary canvas is used to measure text length in the DOM.
-    var canvas = document.createElement('canvas');
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
-       canvas.mozOpaque = true;
+    if (!task._textContentStream) {
+      for (var i = 0; i < textDivsLength; i++) {
+        task._layoutText(textDivs[i]);
+      }
     }
-    var ctx = canvas.getContext('2d', { alpha: false, });
 
-    var lastFontSize;
-    var lastFontFamily;
-    for (var i = 0; i < textDivsLength; i++) {
-      var textDiv = textDivs[i];
-      var textDivProperties = task._textDivProperties.get(textDiv);
-      if (textDivProperties.isWhitespace) {
-        continue;
-      }
-
-      var fontSize = textDiv.style.fontSize;
-      var fontFamily = textDiv.style.fontFamily;
-
-      // Only build font string and set to context if different from last.
-      if (fontSize !== lastFontSize || fontFamily !== lastFontFamily) {
-        ctx.font = fontSize + ' ' + fontFamily;
-        lastFontSize = fontSize;
-        lastFontFamily = fontFamily;
-      }
-
-      var width = ctx.measureText(textDiv.textContent).width;
-      textLayerFrag.appendChild(textDiv);
-
-      var transform = '';
-      if (textDivProperties.canvasWidth !== 0 && width > 0) {
-        textDivProperties.scale = textDivProperties.canvasWidth / width;
-        transform = 'scaleX(' + textDivProperties.scale + ')';
-      }
-      if (textDivProperties.angle !== 0) {
-        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
-      }
-      if (transform !== '') {
-        textDivProperties.originalTransform = transform;
-        CustomStyle.setProp('transform', textDiv, transform);
-      }
-      task._textDivProperties.set(textDiv, textDivProperties);
-    }
     task._renderingDone = true;
     capability.resolve();
   }
@@ -499,19 +469,27 @@ var renderTextLayer = (function renderTextLayerClosure() {
    * @param {boolean} enhanceTextSelection
    * @private
    */
-  function TextLayerRenderTask(textContent, container, viewport, textDivs,
-                               enhanceTextSelection) {
+  function TextLayerRenderTask({ textContent, textContentStream, container,
+                                 viewport, textDivs, textContentItemsStr,
+                                 enhanceTextSelection, }) {
     this._textContent = textContent;
+    this._textContentStream = textContentStream;
     this._container = container;
     this._viewport = viewport;
     this._textDivs = textDivs || [];
+    this._textContentItemsStr = textContentItemsStr || [];
+    this._enhanceTextSelection = !!enhanceTextSelection;
+
+    this._reader = null;
+    this._layoutTextLastFontSize = null;
+    this._layoutTextLastFontFamily = null;
+    this._layoutTextCtx = null;
     this._textDivProperties = new WeakMap();
     this._renderingDone = false;
     this._canceled = false;
     this._capability = createPromiseCapability();
     this._renderTimer = null;
     this._bounds = [];
-    this._enhanceTextSelection = !!enhanceTextSelection;
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -519,6 +497,10 @@ var renderTextLayer = (function renderTextLayerClosure() {
     },
 
     cancel: function TextLayer_cancel() {
+      if (this._reader) {
+        this._reader.cancel();
+        this._reader = null;
+      }
       this._canceled = true;
       if (this._renderTimer !== null) {
         clearTimeout(this._renderTimer);
@@ -527,21 +509,100 @@ var renderTextLayer = (function renderTextLayerClosure() {
       this._capability.reject('canceled');
     },
 
-    _render: function TextLayer_render(timeout) {
-      var textItems = this._textContent.items;
-      var textStyles = this._textContent.styles;
-      for (var i = 0, len = textItems.length; i < len; i++) {
-        appendText(this, textItems[i], textStyles);
+    _processItems(items, styleCache) {
+      for (let i = 0, len = items.length; i < len; i++) {
+        this._textContentItemsStr.push(items[i].str);
+        appendText(this, items[i], styleCache);
+      }
+    },
+
+    _layoutText(textDiv) {
+      let textLayerFrag = this._container;
+
+      let textDivProperties = this._textDivProperties.get(textDiv);
+      if (textDivProperties.isWhitespace) {
+        return;
       }
 
-      if (!timeout) { // Render right away
-        render(this);
-      } else { // Schedule
-        this._renderTimer = setTimeout(() => {
-          render(this);
-          this._renderTimer = null;
-        }, timeout);
+      let fontSize = textDiv.style.fontSize;
+      let fontFamily = textDiv.style.fontFamily;
+
+      // Only build font string and set to context if different from last.
+      if (fontSize !== this._layoutTextLastFontSize ||
+          fontFamily !== this._layoutTextLastFontFamily) {
+        this._layoutTextCtx.font = fontSize + ' ' + fontFamily;
+        this._lastFontSize = fontSize;
+        this._lastFontFamily = fontFamily;
       }
+
+      let width = this._layoutTextCtx.measureText(textDiv.textContent).width;
+
+      let transform = '';
+      if (textDivProperties.canvasWidth !== 0 && width > 0) {
+        textDivProperties.scale = textDivProperties.canvasWidth / width;
+        transform = 'scaleX(' + textDivProperties.scale + ')';
+      }
+      if (textDivProperties.angle !== 0) {
+        transform = 'rotate(' + textDivProperties.angle + 'deg) ' + transform;
+      }
+      if (transform !== '') {
+        textDivProperties.originalTransform = transform;
+        CustomStyle.setProp('transform', textDiv, transform);
+      }
+      this._textDivProperties.set(textDiv, textDivProperties);
+      textLayerFrag.appendChild(textDiv);
+    },
+
+    _render: function TextLayer_render(timeout) {
+      let capability = createPromiseCapability();
+      let styleCache = Object.create(null);
+
+      // The temporary canvas is used to measure text length in the DOM.
+      let canvas = document.createElement('canvas');
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
+         canvas.mozOpaque = true;
+      }
+      this._layoutTextCtx = canvas.getContext('2d', { alpha: false, });
+
+      if (this._textContent) {
+        let textItems = this._textContent.items;
+        let textStyles = this._textContent.styles;
+        this._processItems(textItems, textStyles);
+        capability.resolve();
+      } else if (this._textContentStream) {
+        let pump = () => {
+          this._reader.read().then(({ value, done, }) => {
+            if (done) {
+              capability.resolve();
+              return;
+            }
+
+            Util.extendObj(styleCache, value.styles);
+            this._processItems(value.items, styleCache);
+            pump();
+
+          }, capability.reject);
+        };
+
+        this._reader = this._textContentStream.getReader();
+        pump();
+      } else {
+        throw new Error('Neither "textContent" nor "textContentStream"' +
+          ' parameters specified.');
+      }
+
+      capability.promise.then(() => {
+        styleCache = null;
+        if (!timeout) { // Render right away
+          render(this);
+        } else { // Schedule
+          this._renderTimer = setTimeout(() => {
+            render(this);
+            this._renderTimer = null;
+          }, timeout);
+        }
+      }, this._capability.reject);
     },
 
     expandTextDivs: function TextLayer_expandTextDivs(expandDivs) {
@@ -610,11 +671,15 @@ var renderTextLayer = (function renderTextLayerClosure() {
    * @returns {TextLayerRenderTask}
    */
   function renderTextLayer(renderParameters) {
-    var task = new TextLayerRenderTask(renderParameters.textContent,
-                                       renderParameters.container,
-                                       renderParameters.viewport,
-                                       renderParameters.textDivs,
-                                       renderParameters.enhanceTextSelection);
+    var task = new TextLayerRenderTask({
+      textContent: renderParameters.textContent,
+      textContentStream: renderParameters.textContentStream,
+      container: renderParameters.container,
+      viewport: renderParameters.viewport,
+      textDivs: renderParameters.textDivs,
+      textContentItemsStr: renderParameters.textContentItemsStr,
+      enhanceTextSelection: renderParameters.enhanceTextSelection,
+    });
     task._render(renderParameters.timeout);
     return task;
   }

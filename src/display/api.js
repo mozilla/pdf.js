@@ -952,15 +952,51 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
 
     /**
      * @param {getTextContentParameters} params - getTextContent parameters.
+     * @return {ReadableStream} ReadableStream to read textContent chunks.
+     */
+    streamTextContent(params = {}) {
+      const TEXT_CONTENT_CHUNK_SIZE = 100;
+      return this.transport.messageHandler.sendWithStream('GetTextContent', {
+        pageIndex: this.pageNumber - 1,
+        normalizeWhitespace: (params.normalizeWhitespace === true),
+        combineTextItems: (params.disableCombineTextItems !== true),
+      }, {
+        highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
+        size(textContent) {
+          return textContent.items.length;
+        },
+      });
+    },
+
+    /**
+     * @param {getTextContentParameters} params - getTextContent parameters.
      * @return {Promise} That is resolved a {@link TextContent}
      * object that represent the page text content.
      */
     getTextContent: function PDFPageProxy_getTextContent(params) {
       params = params || {};
-      return this.transport.messageHandler.sendWithPromise('GetTextContent', {
-        pageIndex: this.pageNumber - 1,
-        normalizeWhitespace: (params.normalizeWhitespace === true),
-        combineTextItems: (params.disableCombineTextItems !== true),
+      let readableStream = this.streamTextContent(params);
+
+      return new Promise(function(resolve, reject) {
+        function pump() {
+          reader.read().then(function({ value, done, }) {
+            if (done) {
+              resolve(textContent);
+              return;
+            }
+            Util.extendObj(textContent.styles, value.styles);
+            Util.appendToArray(textContent.items, value.items);
+            pump();
+          }, reject);
+        }
+
+        let reader = readableStream.getReader();
+        let textContent = {
+          items: [],
+          styles: Object.create(null),
+        };
+
+        pump();
       });
     },
 
