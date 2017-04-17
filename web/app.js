@@ -42,7 +42,6 @@ import { PDFLinkService } from './pdf_link_service';
 import { PDFOutlineViewer } from './pdf_outline_viewer';
 import { PDFPresentationMode } from './pdf_presentation_mode';
 import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
-import { Preferences } from './preferences';
 import { SecondaryToolbar } from './secondary_toolbar';
 import { Toolbar } from './toolbar';
 import { ViewHistory } from './view_history';
@@ -74,6 +73,9 @@ var DefaultExternalServices = {
   reportTelemetry: function (data) {},
   createDownloadManager: function () {
     throw new Error('Not implemented: createDownloadManager');
+  },
+  createPreferences() {
+    throw new Error('Not implemented: createPreferences');
   },
   supportsIntegratedFind: false,
   supportsDocumentFonts: true,
@@ -117,6 +119,8 @@ var PDFViewerApplication = {
   store: null,
   /** @type {DownloadManager} */
   downloadManager: null,
+  /** @type {Preferences} */
+  preferences: null,
   /** @type {Toolbar} */
   toolbar: null,
   /** @type {SecondaryToolbar} */
@@ -143,37 +147,34 @@ var PDFViewerApplication = {
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
-    var self = this;
-
-    Preferences.initialize();
-    this.preferences = Preferences;
+    this.preferences = this.externalServices.createPreferences();
 
     configure(PDFJS);
     this.appConfig = appConfig;
 
-    return this._readPreferences().then(function () {
-      return self._initializeViewerComponents();
-    }).then(function () {
+    return this._readPreferences().then(() => {
+      return this._initializeViewerComponents();
+    }).then(() => {
       // Bind the various event handlers *after* the viewer has been
       // initialized, to prevent errors if an event arrives too soon.
-      self.bindEvents();
-      self.bindWindowEvents();
+      this.bindEvents();
+      this.bindWindowEvents();
 
       if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
         // For backwards compatibility, we dispatch the 'localized' event on
         // the `eventBus` once the viewer has been initialized.
-        localized.then(function () {
-          self.eventBus.dispatch('localized');
+        localized.then(() => {
+          this.eventBus.dispatch('localized');
         });
       }
 
-      if (self.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
+      if (this.isViewerEmbedded && !PDFJS.isExternalLinkTargetSet()) {
         // Prevent external links from "replacing" the viewer,
         // when it's embedded in e.g. an iframe or an object.
         PDFJS.externalLinkTarget = PDFJS.LinkTarget.TOP;
       }
 
-      self.initialized = true;
+      this.initialized = true;
     });
   },
 
@@ -181,74 +182,74 @@ var PDFViewerApplication = {
    * @private
    */
   _readPreferences: function () {
-    var self = this;
+    var { preferences, viewerPrefs, } = this;
 
     return Promise.all([
-      Preferences.get('enableWebGL').then(function resolved(value) {
+      preferences.get('enableWebGL').then(function resolved(value) {
         PDFJS.disableWebGL = !value;
       }),
-      Preferences.get('sidebarViewOnLoad').then(function resolved(value) {
-        self.viewerPrefs['sidebarViewOnLoad'] = value;
+      preferences.get('sidebarViewOnLoad').then(function resolved(value) {
+        viewerPrefs['sidebarViewOnLoad'] = value;
       }),
-      Preferences.get('pdfBugEnabled').then(function resolved(value) {
-        self.viewerPrefs['pdfBugEnabled'] = value;
+      preferences.get('pdfBugEnabled').then(function resolved(value) {
+        viewerPrefs['pdfBugEnabled'] = value;
       }),
-      Preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
-        self.viewerPrefs['showPreviousViewOnLoad'] = value;
+      preferences.get('showPreviousViewOnLoad').then(function resolved(value) {
+        viewerPrefs['showPreviousViewOnLoad'] = value;
       }),
-      Preferences.get('defaultZoomValue').then(function resolved(value) {
-        self.viewerPrefs['defaultZoomValue'] = value;
+      preferences.get('defaultZoomValue').then(function resolved(value) {
+        viewerPrefs['defaultZoomValue'] = value;
       }),
-      Preferences.get('enhanceTextSelection').then(function resolved(value) {
-        self.viewerPrefs['enhanceTextSelection'] = value;
+      preferences.get('enhanceTextSelection').then(function resolved(value) {
+        viewerPrefs['enhanceTextSelection'] = value;
       }),
-      Preferences.get('disableTextLayer').then(function resolved(value) {
+      preferences.get('disableTextLayer').then(function resolved(value) {
         if (PDFJS.disableTextLayer === true) {
           return;
         }
         PDFJS.disableTextLayer = value;
       }),
-      Preferences.get('disableRange').then(function resolved(value) {
+      preferences.get('disableRange').then(function resolved(value) {
         if (PDFJS.disableRange === true) {
           return;
         }
         PDFJS.disableRange = value;
       }),
-      Preferences.get('disableStream').then(function resolved(value) {
+      preferences.get('disableStream').then(function resolved(value) {
         if (PDFJS.disableStream === true) {
           return;
         }
         PDFJS.disableStream = value;
       }),
-      Preferences.get('disableAutoFetch').then(function resolved(value) {
+      preferences.get('disableAutoFetch').then(function resolved(value) {
         PDFJS.disableAutoFetch = value;
       }),
-      Preferences.get('disableFontFace').then(function resolved(value) {
+      preferences.get('disableFontFace').then(function resolved(value) {
         if (PDFJS.disableFontFace === true) {
           return;
         }
         PDFJS.disableFontFace = value;
       }),
-      Preferences.get('useOnlyCssZoom').then(function resolved(value) {
+      preferences.get('useOnlyCssZoom').then(function resolved(value) {
         PDFJS.useOnlyCssZoom = value;
       }),
-      Preferences.get('externalLinkTarget').then(function resolved(value) {
+      preferences.get('externalLinkTarget').then(function resolved(value) {
         if (PDFJS.isExternalLinkTargetSet()) {
           return;
         }
         PDFJS.externalLinkTarget = value;
       }),
-      Preferences.get('renderer').then(function resolved(value) {
-        self.viewerPrefs['renderer'] = value;
+      preferences.get('renderer').then(function resolved(value) {
+        viewerPrefs['renderer'] = value;
       }),
-      Preferences.get('renderInteractiveForms').then(function resolved(value) {
-        self.viewerPrefs['renderInteractiveForms'] = value;
+      preferences.get('renderInteractiveForms').then(function resolved(value) {
+        viewerPrefs['renderInteractiveForms'] = value;
       }),
-      Preferences.get('disablePageLabels').then(function resolved(value) {
-        self.viewerPrefs['disablePageLabels'] = value;
+      preferences.get('disablePageLabels').then(function resolved(value) {
+        viewerPrefs['disablePageLabels'] = value;
       }),
-      Preferences.get('enablePrintAutoRotate').then(function resolved(value) {
-        self.viewerPrefs['enablePrintAutoRotate'] = value;
+      preferences.get('enablePrintAutoRotate').then(function resolved(value) {
+        viewerPrefs['enablePrintAutoRotate'] = value;
       }),
     ]).catch(function (reason) { });
   },
@@ -260,7 +261,7 @@ var PDFViewerApplication = {
     var self = this;
     var appConfig = this.appConfig;
 
-    return new Promise(function (resolve, reject) {
+    return new Promise((resolve, reject) => {
       var eventBus = appConfig.eventBus || getGlobalEventBus();
       self.eventBus = eventBus;
 
@@ -337,8 +338,9 @@ var PDFViewerApplication = {
       self.overlayManager = OverlayManager;
 
       self.handTool = new HandTool({
-        container: container,
-        eventBus: eventBus,
+        container,
+        eventBus,
+        preferences: this.preferences,
       });
 
       self.pdfDocumentProperties =
@@ -595,12 +597,12 @@ var PDFViewerApplication = {
     }
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
-      return this.close().then(function () {
+      return this.close().then(() => {
         // Reload the preferences if a document was previously opened.
-        Preferences.reload();
+        this.preferences.reload();
         // ... and repeat the open() call.
         return this.open(file, args);
-      }.bind(this));
+      });
     }
 
     var parameters = Object.create(null), scale;
