@@ -15,7 +15,6 @@
 
 import { GrabToPan } from './grab_to_pan';
 import { localized } from './ui_utils';
-import { Preferences } from './preferences';
 
 /**
  * @typedef {Object} HandToolOptions
@@ -34,6 +33,7 @@ var HandTool = (function HandToolClosure() {
   function HandTool(options) {
     this.container = options.container;
     this.eventBus = options.eventBus;
+    var preferences = options.preferences;
 
     this.wasActive = false;
 
@@ -46,12 +46,12 @@ var HandTool = (function HandToolClosure() {
 
     this.eventBus.on('togglehandtool', this.toggle.bind(this));
 
-    Promise.all([localized, Preferences.get('enableHandToolOnLoad')]).then(
-      function resolved(values) {
-        if (values[1] === true) {
-          this.handTool.activate();
-        }
-      }.bind(this)).catch(function rejected(reason) { });
+    Promise.all([localized,
+                 preferences.get('enableHandToolOnLoad')]).then((values) => {
+      if (values[1] === true) {
+        this.handTool.activate();
+      }
+    }).catch(function rejected(reason) { });
 
     this.eventBus.on('presentationmodechanged', function (e) {
       if (e.switchInProgress) {
