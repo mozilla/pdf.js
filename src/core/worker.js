@@ -874,30 +874,35 @@ var WorkerMessageHandler = {
       });
     }, this);
 
-    handler.on('GetTextContent', function wphExtractText(data) {
+    handler.on('GetTextContent', function wphExtractText(data, sink) {
       var pageIndex = data.pageIndex;
-      return pdfManager.getPage(pageIndex).then(function(page) {
+      sink.onPull = function (desiredSize) { };
+      sink.onCancel = function (reason) { };
+
+      pdfManager.getPage(pageIndex).then(function(page) {
         var task = new WorkerTask('GetTextContent: page ' + pageIndex);
         startWorkerTask(task);
 
         var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent({
+        page.extractTextContent({
           handler,
           task,
+          sink,
           normalizeWhitespace: data.normalizeWhitespace,
           combineTextItems: data.combineTextItems,
-        }).then(function(textContent) {
+        }).then(function() {
           finishWorkerTask(task);
 
           info('text indexing: page=' + pageNum + ' - time=' +
                (Date.now() - start) + 'ms');
-          return textContent;
+          sink.close();
         }, function (reason) {
           finishWorkerTask(task);
           if (task.terminated) {
             return; // ignoring errors from the terminated thread
           }
+          sink.error(reason);
           throw reason;
         });
       });

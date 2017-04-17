@@ -957,10 +957,41 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      */
     getTextContent: function PDFPageProxy_getTextContent(params) {
       params = params || {};
-      return this.transport.messageHandler.sendWithPromise('GetTextContent', {
+      var readableStream =
+        this.transport.messageHandler.sendWithStream('GetTextContent', {
         pageIndex: this.pageNumber - 1,
         normalizeWhitespace: (params.normalizeWhitespace === true),
         combineTextItems: (params.disableCombineTextItems !== true),
+      }, {
+        highWaterMark: 5,
+        size(textContent) {
+          return textContent.items.length;
+        }
+      });
+      return new Promise((resolve, reject) => {
+        function pump() {
+          reader.read().then((result) => {
+            if (result.done) {
+              resolve(textContent);
+            } else {
+              for (var key in result.value.styles) {
+                textContent.styles[key] = result.value.styles[key];
+              }
+              textContent.items = textContent.items.concat(result.value.items);
+              pump();
+            }
+          }, (error) => {
+            reject(error);
+          });
+        }
+
+        var reader = readableStream.getReader();
+        var textContent = {
+          items: [],
+          styles: {}
+        };
+
+        pump();
       });
     },
 
