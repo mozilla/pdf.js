@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { domEvents } from './dom_events';
+import { getGlobalEventBus } from './dom_events';
 import { renderTextLayer } from './pdfjs';
 
 var EXPAND_DIVS_TIMEOUT = 300; // ms
@@ -39,7 +39,7 @@ var EXPAND_DIVS_TIMEOUT = 300; // ms
 var TextLayerBuilder = (function TextLayerBuilderClosure() {
   function TextLayerBuilder(options) {
     this.textLayerDiv = options.textLayerDiv;
-    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
+    this.eventBus = options.eventBus || getGlobalEventBus();
     this.textContent = null;
     this.renderingDone = false;
     this.pageIdx = options.pageIndex;
