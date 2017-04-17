@@ -159,6 +159,7 @@ target.dist = function() {
       type: 'git',
       url: DIST_REPO_URL
     },
+    main: BUILD_DIR + 'pdf.combined.js',
   };
   fs.writeFileSync(DIST_DIR + 'package.json',
                    JSON.stringify(npmManifest, null, 2));
