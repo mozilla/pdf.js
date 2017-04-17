@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { domEvents } from './dom_events';
+import { getGlobalEventBus } from './dom_events';
 import { parseQueryString } from './ui_utils';
 
 var PageNumberRegExp = /^\d+$/;
@@ -39,7 +39,7 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
    */
   function PDFLinkService(options) {
     options = options || {};
-    this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
+    this.eventBus = options.eventBus || getGlobalEventBus();
     this.baseUrl = null;
     this.pdfDocument = null;
     this.pdfViewer = null;

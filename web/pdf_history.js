@@ -14,11 +14,11 @@
  */
 /* globals chrome */
 
-import { domEvents } from './dom_events';
+import { getGlobalEventBus } from './dom_events';
 
 function PDFHistory(options) {
   this.linkService = options.linkService;
-  this.eventBus = options.eventBus || domEvents.getGlobalEventBus();
+  this.eventBus = options.eventBus || getGlobalEventBus();
 
   this.initialized = false;
   this.initialDestination = null;
