@@ -15,6 +15,7 @@
 /* globals chrome */
 
 import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { DownloadManager } from './download_manager';
 import { OverlayManager } from './overlay_manager';
 import { PDFJS } from './pdfjs';
 import { Preferences } from './preferences';
@@ -340,6 +341,9 @@ ChromeExternalServices.initPassiveLoading = function (callbacks) {
       function (url, length, originalURL) {
     callbacks.onOpenWithURL(url, length, originalURL);
   });
+};
+ChromeExternalServices.createDownloadManager = function() {
+  return new DownloadManager();
 };
 PDFViewerApplication.externalServices = ChromeExternalServices;
 
