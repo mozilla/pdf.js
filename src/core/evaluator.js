@@ -1176,7 +1176,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     },
 
     getTextContent({ stream, task, resources, stateManager = null,
-                     normalizeWhitespace = false, combineTextItems = false, }) {
+                     normalizeWhitespace = false, combineTextItems = false,
+                     sink, seenStyles = Object.create(null), }) {
       // Ensure that `resources`/`stateManager` is correctly initialized,
       // even if the provided parameter is e.g. `null`.
       resources = resources || Dict.empty;
@@ -1214,7 +1215,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
-      var xobjsCache = Object.create(null);
+      var skipEmptyXObjs = Object.create(null);
 
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
@@ -1225,7 +1226,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return textContentItem;
         }
         var font = textState.font;
-        if (!(font.loadedName in textContent.styles)) {
+        if (!(font.loadedName in seenStyles)) {
+          seenStyles[font.loadedName] = true;
           textContent.styles[font.loadedName] = {
             fontFamily: font.fallbackName,
             ascent: font.ascent,
@@ -1416,11 +1418,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         textContentItem.str.length = 0;
       }
 
+      function enqueueChunk() {
+        let length = textContent.items.length;
+        if (length > 0) {
+          sink.enqueue(textContent, length);
+          textContent.items = [];
+          textContent.styles = Object.create(null);
+        }
+      }
+
       var timeSlotManager = new TimeSlotManager();
 
       return new Promise(function promiseBody(resolve, reject) {
-        var next = function (promise) {
-          promise.then(function () {
+        let next = function (promise) {
+          enqueueChunk();
+          Promise.all([promise, sink.ready]).then(function () {
             try {
               promiseBody(resolve, reject);
             } catch (ex) {
@@ -1615,11 +1627,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var name = args[0].name;
-              if (xobjsCache.key === name) {
-                if (xobjsCache.texts) {
-                  Util.appendToArray(textContent.items, xobjsCache.texts.items);
-                  Util.extendObj(textContent.styles, xobjsCache.texts.styles);
-                }
+              if (name in skipEmptyXObjs) {
                 break;
               }
 
@@ -1633,8 +1641,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               assert(isName(type), 'XObject should have a Name subtype');
 
               if (type.name !== 'Form') {
-                xobjsCache.key = name;
-                xobjsCache.texts = null;
+                skipEmptyXObjs[name] = true;
                 break;
               }
 
@@ -1650,6 +1657,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 xObjStateManager.transform(matrix);
               }
 
+              // Enqueue the `textContent` chunk before parsing the /Form
+              // XObject.
+              enqueueChunk();
+              let sinkWrapper = {
+                enqueueInvoked: false,
+
+                enqueue(chunk, size) {
+                  this.enqueueInvoked = true;
+                  sink.enqueue(chunk, size);
+                },
+
+                get desiredSize() {
+                  return sink.desiredSize;
+                },
+
+                get ready() {
+                  return sink.ready;
+                },
+              };
+
               next(self.getTextContent({
                 stream: xobj,
                 task,
@@ -1657,12 +1684,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 stateManager: xObjStateManager,
                 normalizeWhitespace,
                 combineTextItems,
-              }).then(function (formTextContent) {
-                Util.appendToArray(textContent.items, formTextContent.items);
-                Util.extendObj(textContent.styles, formTextContent.styles);
-
-                xobjsCache.key = name;
-                xobjsCache.texts = formTextContent;
+                sink: sinkWrapper,
+                seenStyles,
+              }).then(function() {
+                if (!sinkWrapper.enqueueInvoked) {
+                  skipEmptyXObjs[name] = true;
+                }
               }));
               return;
             case OPS.setGState:
@@ -1686,20 +1713,27 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
               break;
           } // switch
+          if (textContent.items.length >= sink.desiredSize) {
+            // Wait for ready, if we reach highWaterMark.
+            stop = true;
+            break;
+          }
         } // while
         if (stop) {
           next(deferred);
           return;
         }
         flushTextContentItem();
-        resolve(textContent);
+        enqueueChunk();
+        resolve();
       }).catch((reason) => {
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
           warn('getTextContent - ignoring errors during task: ' + task.name);
 
           flushTextContentItem();
-          return textContent;
+          enqueueChunk();
+          return;
         }
         throw reason;
       });
