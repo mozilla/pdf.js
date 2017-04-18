@@ -162,11 +162,11 @@ var PdfJs = {
 
     // Listen for when pdf.js is completely disabled or a different pdf handler
     // is chosen.
-    Services.prefs.addObserver(PREF_DISABLED, this, false);
-    Services.prefs.addObserver(PREF_DISABLED_PLUGIN_TYPES, this, false);
-    Services.obs.addObserver(this, TOPIC_PDFJS_HANDLER_CHANGED, false);
-    Services.obs.addObserver(this, TOPIC_PLUGINS_LIST_UPDATED, false);
-    Services.obs.addObserver(this, TOPIC_PLUGIN_INFO_UPDATED, false);
+    Services.prefs.addObserver(PREF_DISABLED, this);
+    Services.prefs.addObserver(PREF_DISABLED_PLUGIN_TYPES, this);
+    Services.obs.addObserver(this, TOPIC_PDFJS_HANDLER_CHANGED);
+    Services.obs.addObserver(this, TOPIC_PLUGINS_LIST_UPDATED);
+    Services.obs.addObserver(this, TOPIC_PLUGIN_INFO_UPDATED);
 
     initializeDefaultPreferences();
   },
