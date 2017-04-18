@@ -16,7 +16,7 @@
  */
 /* globals PDFCustomFabricSetUp */
 
-'use strict';
+import { RenderingStates } from './pdf_rendering_queue';
 
 var PDFCustomFabricSetUp = function customFabricSetUp() {
   // fabric.Image.prototype.toObject = function(propertiesToInclude) {
@@ -100,35 +100,44 @@ var PDFCustomFabricSetUp = function customFabricSetUp() {
   };
 
   fabric.PageCanvas = fabric.util.createClass(fabric.Canvas, {
-    type: 'page-canvas',
-    uniScaleTransform: true,
-    extraFields: [
-      'page',
-    ],
-    centeredScaling: false,
-    centeredRotation: false,
-    initialize: function(elements, options) {
-      var self = this;
-      this.callSuper('initialize', elements, options);
-      /*options && this.extraFields.forEach(function(field){
-       if (field === '_objRotation') self.set(field, options[field] || 0);
-       else self.set(field, options[field] || '');
-       });*/
-    },
-    /* takes a PDFPageView object because there is a bunch of info stored on the page
-     * which the canvas object doesn't have, like rotation
-     */
-    fromObject: function(objs, callback) {
-      var self = this,
-          enl = [];
-        fabric.util.enlivenObjects(objs.objects, function(enlivened) {
-            enl = enlivened;
-        });
-        enl.forEach(function(obj) {
-            self.add(obj);
-        });
-        return this;
-    },
+      type: 'page-canvas',
+      uniScaleTransform: true,
+      extraFields: [
+          'page',
+          'scale',
+      ],
+      centeredScaling: false,
+      centeredRotation: false,
+      initialize: function(elements, options) {
+          var self = this;
+          this.callSuper('initialize', elements, options);
+          /*options && this.extraFields.forEach(function(field){
+            if (field === '_objRotation') self.set(field, options[field] || 0);
+            else self.set(field, options[field] || '');
+            });*/
+      },
+      /* takes a PDFPageView object because there is a bunch of info stored on the page
+       * which the canvas object doesn't have, like rotation
+       */
+      fromObject: function(objs, callback) {
+          var self = this,
+              enl = [];
+          fabric.util.enlivenObjects(objs.objects, function(enlivened) {
+              enl = enlivened;
+          });
+          enl.forEach(function(obj) {
+              self.add(obj);
+          });
+          return this;
+      },
+      toObject: function(propertiesToInclude) {
+          var self = this,
+              extra = {};
+          this.extraFields.forEach(function(field) {
+              extra[field] = self.get(field);
+          });
+          return fabric.util.object.extend(this.callSuper('toObject', propertiesToInclude), extra);
+      },
   });
 
   // Box renders field title when available and calculates
@@ -386,16 +395,18 @@ var fabricGlobalMethods = {
         return null;
     },
     fabricSaveTemplate: function pdfViewSaveTemplate() {
-        var fields = [];
+        var fields = [],
+            currentScale = PDFViewerApplication.pdfViewer.currentScale;
         for ( var i = 1; i <= PDFViewerApplication.pdfViewer.pagesCount; i++ ) {
             var canvas = this.getCanvas(i);
             if (!canvas || typeof(canvas) === undefined){
-                fields.push({ 'objects': [] });
+                fields.push({ 'objects': [], scale: currentScale });
                 continue;
             }
+            canvas.scale = currentScale;
             var objs = canvas.getObjects('TitledRect');
             for ( var j = 0; j < objs.length; j++ ) {
-                var scale = PDFViewerApplication.pdfViewer.currentScale * 96,
+                var scale = currentScale * 96,
                     pHeight = PDFViewerApplication
                     .pdfViewer._pages[i - 1].viewport.height,
                     oHeight = Math.abs(objs[j]['height']);
@@ -404,18 +415,47 @@ var fabricGlobalMethods = {
                 objs[j]['top_inches'] =
                     (pHeight - oHeight - objs[j]['top']) / (scale);
                 objs[j]['width_inches'] = Math.abs(objs[j]['width'] / (scale));
-                fields.push(canvas.toJSON());
-                //fields[fields.length - 1]['objects'].push(objs[j].toJSON());
+                fields.push(canvas.toObject());
             }
         }
         return fields;
     },
     fabricLoadTemplate: function(json) {
+        var scale = json[0].scale;
+        PDFViewerApplication.pdfViewer.currentScale = scale;
         for (var i = 1; i <= PDFViewerApplication.pdfViewer.pagesCount; i++) {
             var canvas = this.getCanvas(i);
             if (!canvas || typeof(canvas) === undefined) continue;
-            canvas.loadFromJSON(json[i - 1]);
-            canvas.renderAll();
+            var renderFinishedPromise = new Promise(function(resolve, reject) {
+                (function(i){
+                    var interval = setInterval(function(){
+                        if (PDFViewerApplication.pdfViewer.getPageView(i).rendnderingState == RenderingStates.FINISHED) {
+                            resolve(i);
+                            clearInterval(interval);
+                        }
+                    }, 10);
+                })(i);
+            });
+            renderFinishedPromise.then(function(pageNum){
+                var canvas = this.getCanvas(pageNum);
+                var obj = json[pageNum - 1],
+                    oldBg = obj.backgroundImage._originalElement,
+                    container = document
+                    .querySelector('.page[data-page-number="' + i + '"] .canvasWrapper');
+                console.log(obj);
+                canvas.loadFromJSON(obj);
+                canvas.setBackgroundImage(new fabric.Image(oldBg, {
+                    dx: 0,
+                    dy: 0,
+                    width: container.clientWidth,
+                    height: container.clientHeight,
+                    // scaleX: ctx._scaleX,
+                    // scaleY: ctx._scaleY,
+                    lockMovementX: true,
+                    lockMovementY: true,
+                    lockRotation: true,
+                }), canvas.renderAll.bind(canvas), {originX: 'left', originY: 'top'}); 
+            });
         }
     },
     getCanvas: function(page) {
