@@ -23,23 +23,8 @@ try {
                   'all dependencies.');
 }
 
-var fs = require('fs');
-
 var ROOT_DIR = __dirname + '/', // absolute path to project's root
-    BUILD_DIR = 'build/',
-    SRC_DIR = 'src/',
-    GENERIC_DIR = BUILD_DIR + 'generic/',
-    MINIFIED_DIR = BUILD_DIR + 'minified/',
-    DIST_DIR = BUILD_DIR + 'dist/',
-    SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/',
-    COMPONENTS_DIR = BUILD_DIR + 'components/',
-    LIB_DIR = BUILD_DIR + 'lib/';
-
-function getCurrentVersion() {
-  // The 'build/version.json' file is created by 'buildnumber' task.
-  return JSON.parse(fs.readFileSync(ROOT_DIR + 'build/version.json').toString())
-    .version;
-}
+    BUILD_DIR = 'build/';
 
 function execGulp(cmd) {
   var result = exec('gulp ' + cmd);
@@ -90,107 +75,7 @@ target.web = function() {
 };
 
 target.dist = function() {
-  execGulp('dist-pre');
-
-  var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
-  var VERSION = getCurrentVersion();
-
-  cd(ROOT_DIR);
-
-  echo();
-  echo('### Cloning baseline distribution');
-
-  rm('-rf', DIST_DIR);
-  mkdir('-p', DIST_DIR);
-  exec('git clone --depth 1 ' + DIST_REPO_URL + ' ' + DIST_DIR);
-
-  echo();
-  echo('### Overwriting all files');
-  rm('-rf', DIST_DIR + '*');
-
-  cp('-R', ROOT_DIR + 'external/dist/*', DIST_DIR);
-  cp('-R', GENERIC_DIR + 'LICENSE', DIST_DIR);
-  cp('-R', GENERIC_DIR + 'web/cmaps', DIST_DIR);
-  mkdir('-p', DIST_DIR + 'build/');
-  cp('-R', [
-    GENERIC_DIR + 'build/pdf.js',
-    GENERIC_DIR + 'build/pdf.worker.js',
-    SINGLE_FILE_DIR + 'build/pdf.combined.js',
-    SRC_DIR + 'pdf.worker.entry.js',
-  ], DIST_DIR + 'build/');
-  cp(MINIFIED_DIR + 'build/pdf.js', DIST_DIR + 'build/pdf.min.js');
-  cp(MINIFIED_DIR + 'build/pdf.worker.js',
-     DIST_DIR + 'build/pdf.worker.min.js');
-
-  mkdir('-p', DIST_DIR + 'web/');
-  cp('-R', [
-    COMPONENTS_DIR + '*',
-  ], DIST_DIR + 'web/');
-
-  cp('-R', LIB_DIR, DIST_DIR + 'lib/');
-
-  echo();
-  echo('### Rebuilding manifests');
-
-  var DIST_NAME = 'pdfjs-dist';
-  var DIST_DESCRIPTION = 'Generic build of Mozilla\'s PDF.js library.';
-  var DIST_KEYWORDS = ['Mozilla', 'pdf', 'pdf.js'];
-  var DIST_HOMEPAGE = 'http://mozilla.github.io/pdf.js/';
-  var DIST_BUGS_URL = 'https://github.com/mozilla/pdf.js/issues';
-  var DIST_LICENSE = 'Apache-2.0';
-  var npmManifest = {
-    name: DIST_NAME,
-    version: VERSION,
-    main: 'build/pdf.js',
-    description: DIST_DESCRIPTION,
-    keywords: DIST_KEYWORDS,
-    homepage: DIST_HOMEPAGE,
-    bugs: DIST_BUGS_URL,
-    license: DIST_LICENSE,
-    dependencies: {
-      'node-ensure': '^0.0.0', // shim for node for require.ensure
-      'worker-loader': '^0.8.0', // used in external/dist/webpack.json
-    },
-    browser: {
-      'node-ensure': false
-    },
-    format: 'amd', // to not allow system.js to choose 'cjs'
-    repository: {
-      type: 'git',
-      url: DIST_REPO_URL
-    },
-  };
-  fs.writeFileSync(DIST_DIR + 'package.json',
-                   JSON.stringify(npmManifest, null, 2));
-  var bowerManifest = {
-    name: DIST_NAME,
-    version: VERSION,
-    main: [
-      'build/pdf.js',
-      'build/pdf.worker.js',
-    ],
-    ignore: [],
-    keywords: DIST_KEYWORDS,
-  };
-  fs.writeFileSync(DIST_DIR + 'bower.json',
-                   JSON.stringify(bowerManifest, null, 2));
-
-  echo();
-  echo('### Committing changes');
-
-  cd(DIST_DIR);
-  var reason = process.env['PDFJS_UPDATE_REASON'];
-  var message = 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '');
-  exec('git add *');
-  exec('git commit -am \"' + message + '\"');
-  exec('git tag -a v' + VERSION + ' -m \"' + message + '\"');
-
-  cd(ROOT_DIR);
-
-  echo();
-  echo('Done. Push with');
-  echo('  cd ' + DIST_DIR + '; git push --tags ' + DIST_REPO_URL + ' master');
-  echo();
+  execGulp('dist');
 };
 
 target.publish = function() {
@@ -238,40 +123,6 @@ target.singlefile = function() {
 //
 target.minified = function() {
   execGulp('minified');
-};
-
-target.minifiedpost = function () {
-  var viewerFiles = [
-    'external/webL10n/l10n.js',
-    MINIFIED_DIR + BUILD_DIR + 'pdf.js',
-    MINIFIED_DIR + '/web/viewer.js'
-  ];
-
-  echo();
-  echo('### Minifying js files');
-
-  var UglifyJS = require('uglify-js');
-  // V8 chokes on very long sequences. Works around that.
-  var optsForHugeFile = {compress: {sequences: false}};
-
-  UglifyJS.minify(viewerFiles).code
-    .to(MINIFIED_DIR + '/web/pdf.viewer.js');
-  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code
-    .to(MINIFIED_DIR + '/build/pdf.min.js');
-  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.worker.js', optsForHugeFile).code
-    .to(MINIFIED_DIR + '/build/pdf.worker.min.js');
-
-  echo();
-  echo('### Cleaning js files');
-
-  rm(MINIFIED_DIR + '/web/viewer.js');
-  rm(MINIFIED_DIR + '/web/debugger.js');
-  rm(MINIFIED_DIR + '/build/pdf.js');
-  rm(MINIFIED_DIR + '/build/pdf.worker.js');
-  mv(MINIFIED_DIR + '/build/pdf.min.js',
-     MINIFIED_DIR + '/build/pdf.js');
-  mv(MINIFIED_DIR + '/build/pdf.worker.min.js',
-     MINIFIED_DIR + '/build/pdf.worker.js');
 };
 
 ////////////////////////////////////////////////////////////////////////////////
