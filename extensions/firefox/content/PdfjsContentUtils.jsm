@@ -45,7 +45,19 @@ var PdfjsContentUtils = {
       this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
         getService(Ci.nsISyncMessageSender);
       this._mm.addMessageListener("PDFJS:Child:refreshSettings", this);
-      Services.obs.addObserver(this, "quit-application", false);
+
+//#if !MOZCENTRAL
+      // The signature of `Services.obs.addObserver` changed in Firefox 55,
+      // see https://bugzilla.mozilla.org/show_bug.cgi?id=1355216.
+      // PLEASE NOTE: While the third parameter is now optional,
+      // omitting it in prior Firefox versions breaks the addon.
+      var ffVersion = parseInt(Services.appinfo.platformVersion);
+      if (ffVersion <= 55) {
+        Services.obs.addObserver(this, "quit-application", false);
+        return;
+      }
+//#endif
+      Services.obs.addObserver(this, "quit-application");
     }
   },
 
