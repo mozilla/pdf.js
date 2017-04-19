@@ -257,6 +257,7 @@ var fabricMethods = {
       lockRotation: true,
     }),
         fCanvas = new fabric.PageCanvas(page.id);
+    fCanvas.page = pageView.pageNumber;
     pdfPage.el = container;
     //pdfPage.zoomLayer = fCanvas.wrapperEl;
     fCanvas.state = {};
@@ -381,12 +382,16 @@ var fabricGlobalMethods = {
         currentScale = PDFViewerApplication.pdfViewer.currentScale;
     for ( var i = 1; i <= PDFViewerApplication.pdfViewer.pagesCount; i++ ) {
       var canvas = this.getCanvas(i);
-      if (!canvas || typeof(canvas) === undefined){
-        fields.push({ 'objects': [], scale: currentScale });
+      if (!canvas || typeof(canvas) === undefined || canvas.getObjects === undefined){
+        fields.push({ 'objects': [], scale: currentScale, page: i});
         continue;
       }
       canvas.scale = currentScale;
       var objs = canvas.getObjects('TitledRect');
+      if (objs.length === 0){
+        fields.push(canvas.toObject());
+        continue;
+      }
       for ( var j = 0; j < objs.length; j++ ) {
         var scale = currentScale * 96,
             pHeight = PDFViewerApplication
