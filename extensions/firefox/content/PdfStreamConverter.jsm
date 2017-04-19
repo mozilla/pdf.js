@@ -319,7 +319,12 @@ class ChromeActions {
   }
 
   getLocale() {
-    return getStringPref("general.useragent.locale", "en-US");
+//#if !MOZCENTRAL
+    if (!Services.locale.getRequestedLocale) {
+      return getStringPref("general.useragent.locale", "en-US");
+    }
+//#endif
+    return Services.locale.getRequestedLocale() || "en-US";
   }
 
   getStrings(data) {
