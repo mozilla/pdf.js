@@ -38,7 +38,6 @@ var PDFCustomFabricSetUp = function customFabricSetUp() {
     return ar;
   };
 
-
   /*
    * @namespace fabric.TitledRect
    */
@@ -64,13 +63,6 @@ var PDFCustomFabricSetUp = function customFabricSetUp() {
         if ( field === 'defaultObjRotation' ) self.set(field, options[field] || 0);
         else self.set(field, options[field] || '');
       });
-    },
-    calculateSBTPos: function() {
-      var canvas = fabricGlobalMethods.getCanvas(PDFViewerApplication.page);
-      var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
-      this.sbt_height = Math.abs(canvas.height / pdfScale);
-      this.left_inches = Math.abs(this.left / pdfScale);
-      this.top_inches = Math.abs((canvas.height - this.top) / pdfScale);
     },
     toObject: function(propertiesToInclude) {
       var self = this,
