@@ -26,7 +26,6 @@ var transform = require('gulp-transform');
 var mkdirp = require('mkdirp');
 var path = require('path');
 var rimraf = require('rimraf');
-var runSequence = require('run-sequence');
 var stream = require('stream');
 var exec = require('child_process').exec;
 var spawn = require('child_process').spawn;
@@ -953,14 +952,7 @@ gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
   ]);
 });
 
-gulp.task('chromium', ['chromium-pre'], function (done) {
-  // Bundle the files to a Chrome extension file .crx if path to key is set
-  if (!process.env['PDFJS_CHROME_KEY']) {
-    done();
-    return;
-  }
-  runSequence('signchromium', done);
-});
+gulp.task('chromium', ['chromium-pre']);
 
 gulp.task('jsdoc', function (done) {
   console.log();
