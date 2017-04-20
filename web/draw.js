@@ -53,7 +53,7 @@ var PDFCustomFabricSetUp = function customFabricSetUp() {
     initialize: function(options) {
       options || (options = {});
       this.callSuper('initialize', options);
-      var canvas = fabricGlobalMethods.getCanvas(PDFViewerApplication.page);
+      var canvas = drawAPIMethods.getCanvas(PDFViewerApplication.page);
       var pdfScale = PDFViewerApplication.pdfViewer.currentScale * 96;
       self = this;
       this.extraFields.forEach(function(field) {
@@ -130,7 +130,7 @@ var PDFCustomFabricSetUp = function customFabricSetUp() {
   // Box renders field title when available and calculates
   // Height + the RML/SBT inches conversion based on pdf
   // scale factor
-  PDFJS.fabricGlobals = fabricGlobalMethods;
+  PDFJS.drawAPI = drawAPIMethods;
 };
 // got function to generate uuids from here https://gist.github.com/jed/982883
 // add page id to the front so its page id:uuid
@@ -181,6 +181,7 @@ function fabricMouseMove(options) {
         lockUniScaling: false,
       });
   window.addEventListener('keyup', deleteObj, false);
+  this.on('object:modified', fabricObjectModified);
   this.lastObj = rect;
   this.add(rect);
   this.state.rectX = rectX;
@@ -191,7 +192,7 @@ function fabricMouseMove(options) {
   //ADD CALLBACK FOR EXTERNAL API
 }
 function fabricMouseDown(options) {
-  if ( !PDFJS.fabricGlobals.drawMode ) return;
+  if ( !PDFJS.drawAPI.drawMode ) return;
   if ( !options.target ||
        options.target.type != 'TitledRect' &&
        options.target.type != 'group' ) {
@@ -207,8 +208,11 @@ function fabricMouseDown(options) {
 function fabricMouseUp(options) {
   this.off('mouse:move', fabricMouseMove);
   this.off('mouse:up', fabricMouseUp);
-  window.parent.postMessage(this.lastObj.uuid, window.location.origin);
+  window.parent.postMessage({id: this.lastObj.uuid, event:'drawComplete'}, window.location.origin);
   this.lastObj = null;
+}
+function fabricObjectModified(options) {
+  window.parent.postMessage({id: options.target.uuid, event:'objectModified'}, window.location.origin);
 }
 function fabricStringifyParams() {
   var pages = {};
@@ -293,7 +297,7 @@ var fabricMethods = {
     };
   },
   fabricTransformCanvas: function(pageNumber) {
-    var klass = fabricGlobalMethods.getCanvas(pageNumber),
+    var klass = drawAPIMethods.getCanvas(pageNumber),
         pdfPage = PDFViewerApplication.pdfViewer.getPageView(pageNumber - 1),
         fabricState = pdfPage.fabricState,
         pageRotation = fabricState.preTransform.rotation,
@@ -367,7 +371,7 @@ var fabricMethods = {
     pdfPage.fabricState.objs = klass.toObject();
   },
 };
-var fabricGlobalMethods = {
+var drawAPIMethods = {
   getObjByUUID: function(uuid) {
     var objs = PDFViewerApplication.pdfViewer._pages[uuid[0] - 1]
         .canvas._objects;
@@ -452,7 +456,6 @@ var fabricGlobalMethods = {
   },
   drawMode: true,
 };
-
 PDFCustomFabricSetUp();
-PDFJS.fabricGlobals = fabricGlobalMethods;
+PDFJS.drawAPI = drawAPIMethods;
 export { fabricMethods };
