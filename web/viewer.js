@@ -41,8 +41,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
 }
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  // FIXME the l10n.js file in the Firefox extension needs global FirefoxCom.
-  window.FirefoxCom = require('./firefoxcom.js').FirefoxCom;
+  require('./firefoxcom.js');
   require('./firefox_print_service.js');
 }
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('GENERIC')) {
