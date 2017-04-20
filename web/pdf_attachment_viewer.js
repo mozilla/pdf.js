@@ -79,13 +79,15 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
     /**
      * @private
      */
-    _bindPdfLink:
-        function PDFAttachmentViewer_bindPdfLink(button, content, filename) {
+    _bindPdfLink(button, content, filename) {
+      if (PDFJS.disableCreateObjectURL) {
+        throw new Error('bindPdfLink: ' +
+                        'Unsupported "PDFJS.disableCreateObjectURL" value.');
+      }
       var blobUrl;
       button.onclick = function() {
         if (!blobUrl) {
-          blobUrl = createObjectURL(
-            content, 'application/pdf', PDFJS.disableCreateObjectURL);
+          blobUrl = createObjectURL(content, 'application/pdf');
         }
         var viewerUrl;
         if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
@@ -97,10 +99,8 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
           // eslint-disable-next-line no-undef
           viewerUrl = chrome.runtime.getURL('/content/web/viewer.html') +
             '?file=' + encodeURIComponent(blobUrl + '#' + filename);
-        } else {
+        } else if (PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
           // Let Firefox's content handler catch the URL and display the PDF.
-          // In Firefox PDFJS.disableCreateObjectURL is always false, so
-          // blobUrl is always a blob:-URL and never a data:-URL.
           viewerUrl = blobUrl + '?' + encodeURIComponent(filename);
         }
         window.open(viewerUrl);
@@ -151,7 +151,7 @@ var PDFAttachmentViewer = (function PDFAttachmentViewerClosure() {
         div.className = 'attachmentsItem';
         var button = document.createElement('button');
         button.textContent = filename;
-        if (/\.pdf$/i.test(filename)) {
+        if (/\.pdf$/i.test(filename) && !PDFJS.disableCreateObjectURL) {
           this._bindPdfLink(button, item.content, filename);
         } else {
           this._bindLink(button, item.content, filename);
