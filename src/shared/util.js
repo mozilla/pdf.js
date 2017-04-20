@@ -1190,7 +1190,7 @@ var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
     return new Blob([data], { type: contentType });
   }
-  warn('The "Blob" constructor is not supported.');
+  throw new Error('The "Blob" constructor is not supported.');
 };
 
 var createObjectURL = (function createObjectURLClosure() {
@@ -1198,9 +1198,8 @@ var createObjectURL = (function createObjectURLClosure() {
   var digits =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
-  return function createObjectURL(data, contentType, forceDataSchema) {
-    if (!forceDataSchema &&
-        typeof URL !== 'undefined' && URL.createObjectURL) {
+  return function createObjectURL(data, contentType, forceDataSchema = false) {
+    if (!forceDataSchema) {
       var blob = createBlob(data, contentType);
       return URL.createObjectURL(blob);
     }
