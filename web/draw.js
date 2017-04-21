@@ -17,6 +17,7 @@
 /* globals PDFCustomFabricSetUp */
 
 import { RenderingStates } from './pdf_rendering_queue';
+import { getGlobalEventBus } from './dom_events';
 
 var PDFCustomFabricSetUp = function customFabricSetUp() {
   // fabric.Image.prototype.toObject = function(propertiesToInclude) {
@@ -213,6 +214,10 @@ function fabricMouseUp(options) {
 }
 function fabricObjectModified(options) {
   window.parent.postMessage({id: options.target.uuid, event:'objectModified'}, window.location.origin);
+}
+function fabricViewerLoaded(options) {
+  console.log('loaded');
+  window.parent.postMessage({event:'viewerLoaded'}, window.location.origin);
 }
 function fabricStringifyParams() {
   var pages = {};
@@ -456,6 +461,8 @@ var drawAPIMethods = {
   },
   drawMode: true,
 };
+var eb = getGlobalEventBus();
+eb.on('pagesloaded', fabricViewerLoaded);
 PDFCustomFabricSetUp();
 PDFJS.drawAPI = drawAPIMethods;
 export { fabricMethods };
