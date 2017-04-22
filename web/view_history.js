@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
+const DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
 
 /**
  * View History - This is a utility for saving various view parameters for
@@ -24,13 +24,12 @@ var DEFAULT_VIEW_HISTORY_CACHE_SIZE = 20;
  *  - FIREFOX or MOZCENTRAL - uses sessionStorage.
  *  - GENERIC or CHROME     - uses localStorage, if it is available.
  */
-var ViewHistory = (function ViewHistoryClosure() {
-  function ViewHistory(fingerprint, cacheSize) {
+class ViewHistory {
+  constructor(fingerprint, cacheSize = DEFAULT_VIEW_HISTORY_CACHE_SIZE) {
     this.fingerprint = fingerprint;
-    this.cacheSize = cacheSize || DEFAULT_VIEW_HISTORY_CACHE_SIZE;
+    this.cacheSize = cacheSize;
     this.isInitializedPromiseResolved = false;
-    this.initializedPromise =
-        this._readFromStorage().then(function (databaseStr) {
+    this.initializedPromise = this._readFromStorage().then((databaseStr) => {
       this.isInitializedPromiseResolved = true;
 
       var database = JSON.parse(databaseStr || '{}');
@@ -53,82 +52,77 @@ var ViewHistory = (function ViewHistoryClosure() {
       }
       this.file = database.files[index];
       this.database = database;
-    }.bind(this));
+    });
   }
 
-  ViewHistory.prototype = {
-    _writeToStorage: function ViewHistory_writeToStorage() {
-      return new Promise(function (resolve) {
-        var databaseStr = JSON.stringify(this.database);
+  _writeToStorage() {
+    return new Promise((resolve) => {
+      var databaseStr = JSON.stringify(this.database);
 
-        if (typeof PDFJSDev !== 'undefined' &&
-            PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-          sessionStorage.setItem('pdfjs.history', databaseStr);
-        } else {
-          localStorage.setItem('pdfjs.history', databaseStr);
-        }
-        resolve();
-      }.bind(this));
-    },
+      if (typeof PDFJSDev !== 'undefined' &&
+          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+        sessionStorage.setItem('pdfjs.history', databaseStr);
+      } else {
+        localStorage.setItem('pdfjs.history', databaseStr);
+      }
+      resolve();
+    });
+  }
 
-    _readFromStorage: function ViewHistory_readFromStorage() {
-      return new Promise(function (resolve) {
-        if (typeof PDFJSDev !== 'undefined' &&
-            PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-          resolve(sessionStorage.getItem('pdfjs.history'));
-        } else {
-          var value = localStorage.getItem('pdfjs.history');
+  _readFromStorage() {
+    return new Promise(function(resolve) {
+      if (typeof PDFJSDev !== 'undefined' &&
+          PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+        resolve(sessionStorage.getItem('pdfjs.history'));
+      } else {
+        var value = localStorage.getItem('pdfjs.history');
 
-          // TODO: Remove this key-name conversion after a suitable time-frame.
-          // Note that we only remove the old 'database' entry if it looks like
-          // it was created by PDF.js. to avoid removing someone else's data.
-          if (!value) {
-            var databaseStr = localStorage.getItem('database');
-            if (databaseStr) {
-              try {
-                var database = JSON.parse(databaseStr);
-                if (typeof database.files[0].fingerprint === 'string') {
-                  localStorage.setItem('pdfjs.history', databaseStr);
-                  localStorage.removeItem('database');
-                  value = databaseStr;
-                }
-              } catch (ex) { }
-            }
+        // TODO: Remove this key-name conversion after a suitable time-frame.
+        // Note that we only remove the old 'database' entry if it looks like
+        // it was created by PDF.js, to avoid removing someone else's data.
+        if (!value) {
+          var databaseStr = localStorage.getItem('database');
+          if (databaseStr) {
+            try {
+              var database = JSON.parse(databaseStr);
+              if (typeof database.files[0].fingerprint === 'string') {
+                localStorage.setItem('pdfjs.history', databaseStr);
+                localStorage.removeItem('database');
+                value = databaseStr;
+              }
+            } catch (ex) { }
           }
-
-          resolve(value);
         }
-      });
-    },
+        resolve(value);
+      }
+    });
+  }
 
-    set: function ViewHistory_set(name, val) {
-      if (!this.isInitializedPromiseResolved) {
-        return;
-      }
-      this.file[name] = val;
-      return this._writeToStorage();
-    },
-
-    setMultiple: function ViewHistory_setMultiple(properties) {
-      if (!this.isInitializedPromiseResolved) {
-        return;
-      }
-      for (var name in properties) {
-        this.file[name] = properties[name];
-      }
-      return this._writeToStorage();
-    },
-
-    get: function ViewHistory_get(name, defaultValue) {
-      if (!this.isInitializedPromiseResolved) {
-        return defaultValue;
-      }
-      return this.file[name] || defaultValue;
+  set(name, val) {
+    if (!this.isInitializedPromiseResolved) {
+      return;
     }
-  };
+    this.file[name] = val;
+    return this._writeToStorage();
+  }
 
-  return ViewHistory;
-})();
+  setMultiple(properties) {
+    if (!this.isInitializedPromiseResolved) {
+      return;
+    }
+    for (var name in properties) {
+      this.file[name] = properties[name];
+    }
+    return this._writeToStorage();
+  }
+
+  get(name, defaultValue) {
+    if (!this.isInitializedPromiseResolved) {
+      return defaultValue;
+    }
+    return this.file[name] || defaultValue;
+  }
+}
 
 export {
   ViewHistory,
