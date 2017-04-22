@@ -28,10 +28,8 @@ class ViewHistory {
   constructor(fingerprint, cacheSize = DEFAULT_VIEW_HISTORY_CACHE_SIZE) {
     this.fingerprint = fingerprint;
     this.cacheSize = cacheSize;
-    this.isInitializedPromiseResolved = false;
-    this.initializedPromise = this._readFromStorage().then((databaseStr) => {
-      this.isInitializedPromiseResolved = true;
 
+    this._initializedPromise = this._readFromStorage().then((databaseStr) => {
       var database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
         database.files = [];
@@ -99,28 +97,38 @@ class ViewHistory {
   }
 
   set(name, val) {
-    if (!this.isInitializedPromiseResolved) {
-      return;
-    }
-    this.file[name] = val;
-    return this._writeToStorage();
+    return this._initializedPromise.then(() => {
+      this.file[name] = val;
+      return this._writeToStorage();
+    });
   }
 
   setMultiple(properties) {
-    if (!this.isInitializedPromiseResolved) {
-      return;
-    }
-    for (var name in properties) {
-      this.file[name] = properties[name];
-    }
-    return this._writeToStorage();
+    return this._initializedPromise.then(() => {
+      for (var name in properties) {
+        this.file[name] = properties[name];
+      }
+      return this._writeToStorage();
+    });
   }
 
   get(name, defaultValue) {
-    if (!this.isInitializedPromiseResolved) {
-      return defaultValue;
-    }
-    return this.file[name] || defaultValue;
+    return this._initializedPromise.then(() => {
+      var val = this.file[name];
+      return val !== undefined ? val : defaultValue;
+    });
+  }
+
+  getMultiple(properties) {
+    return this._initializedPromise.then(() => {
+      var values = Object.create(null);
+
+      for (var name in properties) {
+        var val = this.file[name];
+        values[name] = val !== undefined ? val : properties[name];
+      }
+      return values;
+    });
   }
 }
 

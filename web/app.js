@@ -882,7 +882,7 @@ var PDFViewerApplication = {
     var pdfThumbnailViewer = this.pdfThumbnailViewer;
     pdfThumbnailViewer.setDocument(pdfDocument);
 
-    firstPagePromise.then(function(pdfPage) {
+    firstPagePromise.then((pdfPage) => {
       downloadedPromise.then(function () {
         self.eventBus.dispatch('documentload', {source: self});
       });
@@ -905,58 +905,65 @@ var PDFViewerApplication = {
       }
 
       var initialParams = {
-        destination: self.initialDestination,
-        bookmark: self.initialBookmark,
+        destination: this.initialDestination,
+        bookmark: this.initialBookmark,
         hash: null,
       };
+      var storedHash = this.viewerPrefs['defaultZoomValue'] ?
+        ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
+      var sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
 
-      store.initializedPromise.then(function resolved() {
-        var storedHash = null, sidebarView = null;
-        if (self.viewerPrefs['showPreviousViewOnLoad'] &&
-            store.get('exists', false)) {
-          var pageNum = store.get('page', '1');
-          var zoom = self.viewerPrefs['defaultZoomValue'] ||
-                     store.get('zoom', DEFAULT_SCALE_VALUE);
-          var left = store.get('scrollLeft', '0');
-          var top = store.get('scrollTop', '0');
-
-          storedHash = 'page=' + pageNum + '&zoom=' + zoom + ',' +
-                       left + ',' + top;
-
-          sidebarView = store.get('sidebarView', SidebarView.NONE);
-        } else if (self.viewerPrefs['defaultZoomValue']) {
-          storedHash = 'page=1&zoom=' + self.viewerPrefs['defaultZoomValue'];
+      new Promise((resolve, reject) => {
+        if (!this.viewerPrefs['showPreviousViewOnLoad']) {
+          resolve();
+          return;
         }
-        self.setInitialView(storedHash,
-          { scale: scale, sidebarView: sidebarView });
-
+        store.getMultiple({
+          exists: false,
+          page: '1',
+          zoom: DEFAULT_SCALE_VALUE,
+          scrollLeft: '0',
+          scrollTop: '0',
+          sidebarView: SidebarView.NONE,
+        }).then((values) => {
+          if (!values.exists) {
+            resolve();
+            return;
+          }
+          storedHash = 'page=' + values.page +
+            '&zoom=' + (this.viewerPrefs['defaultZoomValue'] || values.zoom) +
+            ',' + values.scrollLeft + ',' + values.scrollTop;
+          sidebarView = this.viewerPrefs['sidebarViewOnLoad'] ||
+                        (values.sidebarView | 0);
+          resolve();
+        }).catch(function() {
+          resolve();
+        });
+      }).then(() => {
+        this.setInitialView(storedHash, { sidebarView, scale, });
         initialParams.hash = storedHash;
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
-        if (!self.isViewerEmbedded) {
-          self.pdfViewer.focus();
+        if (!this.isViewerEmbedded) {
+          this.pdfViewer.focus();
         }
-      }, function rejected(reason) {
-        console.error(reason);
-        self.setInitialView(null, { scale: scale });
-      });
-
-      // For documents with different page sizes,
-      // ensure that the correct location becomes visible on load.
-      pagesPromise.then(function resolved() {
+        return pagesPromise;
+      }).then(() => {
+        // For documents with different page sizes, once all pages are resolved,
+        // ensure that the correct location becomes visible on load.
         if (!initialParams.destination && !initialParams.bookmark &&
             !initialParams.hash) {
           return;
         }
-        if (self.hasEqualPageSizes) {
+        if (this.hasEqualPageSizes) {
           return;
         }
-        self.initialDestination = initialParams.destination;
-        self.initialBookmark = initialParams.bookmark;
+        this.initialDestination = initialParams.destination;
+        this.initialBookmark = initialParams.bookmark;
 
-        self.pdfViewer.currentScaleValue = self.pdfViewer.currentScaleValue;
-        self.setInitialView(initialParams.hash);
+        this.pdfViewer.currentScaleValue = this.pdfViewer.currentScaleValue;
+        this.setInitialView(initialParams.hash);
       });
     });
 
@@ -1085,14 +1092,11 @@ var PDFViewerApplication = {
     });
   },
 
-  setInitialView: function pdfViewSetInitialView(storedHash, options) {
-    var scale = options && options.scale;
-    var sidebarView = options && options.sidebarView;
+  setInitialView(storedHash, options = {}) {
+    var { scale = 0, sidebarView = SidebarView.NONE, } = options;
 
     this.isInitialViewSet = true;
-
-    this.pdfSidebar.setInitialView(this.viewerPrefs['sidebarViewOnLoad'] ||
-                                   (sidebarView | 0));
+    this.pdfSidebar.setInitialView(sidebarView);
 
     if (this.initialDestination) {
       this.pdfLinkService.navigateTo(this.initialDestination);
@@ -1645,33 +1649,28 @@ function webViewerPresentationModeChanged(e) {
     active ? PresentationModeState.FULLSCREEN : PresentationModeState.NORMAL;
 }
 
-function webViewerSidebarViewChanged(e) {
+function webViewerSidebarViewChanged(evt) {
   PDFViewerApplication.pdfRenderingQueue.isThumbnailViewEnabled =
     PDFViewerApplication.pdfSidebar.isThumbnailViewVisible;
 
   var store = PDFViewerApplication.store;
-  if (!store || !PDFViewerApplication.isInitialViewSet) {
+  if (store && PDFViewerApplication.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    return;
+    store.set('sidebarView', evt.view).catch(function() { });
   }
-  store.initializedPromise.then(function() {
-    store.set('sidebarView', e.view).catch(function() {});
-  });
 }
 
-function webViewerUpdateViewarea(e) {
-  var location = e.location, store = PDFViewerApplication.store;
+function webViewerUpdateViewarea(evt) {
+  var location = evt.location, store = PDFViewerApplication.store;
 
-  if (store) {
-    store.initializedPromise.then(function() {
-      store.setMultiple({
-        'exists': true,
-        'page': location.pageNumber,
-        'zoom': location.scale,
-        'scrollLeft': location.left,
-        'scrollTop': location.top,
-      }).catch(function() { /* unable to write to storage */ });
-    });
+  if (store && PDFViewerApplication.isInitialViewSet) {
+    store.setMultiple({
+      'exists': true,
+      'page': location.pageNumber,
+      'zoom': location.scale,
+      'scrollLeft': location.left,
+      'scrollTop': location.top,
+    }).catch(function() { /* unable to write to storage */ });
   }
   var href =
     PDFViewerApplication.pdfLinkService.getAnchorUrl(location.pdfOpenParams);
