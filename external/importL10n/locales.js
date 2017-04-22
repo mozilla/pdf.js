@@ -19,7 +19,7 @@ var fs = require('fs');
 var https = require('https');
 var path = require('path');
 
-// Defines all languages that have a translation at mozilla-aurora.
+// Defines all languages that have a translation at mozilla-beta.
 // This is used in make.js for the importl10n command.
 var langCodes = [
   'ach', 'af', 'ak', 'an', 'ar', 'as', 'ast', 'az', 'be', 'bg',
@@ -44,10 +44,10 @@ function downloadLanguageFiles(root, langCode, callback) {
   console.log('Downloading ' + langCode + '...');
 
   // Constants for constructing the URLs. Translations are taken from the
-  // Aurora channel as those are the most recent ones. The Nightly channel
+  // Beta channel as those are the most recent ones. The Nightly channel
   // does not provide all translations.
-  var MOZ_AURORA_ROOT = 'https://hg.mozilla.org/releases/l10n/mozilla-aurora/';
-  var MOZ_AURORA_PDFJS_DIR = '/raw-file/tip/browser/pdfviewer/';
+  var MOZ_BETA_ROOT = 'https://hg.mozilla.org/releases/l10n/mozilla-beta/';
+  var MOZ_BETA_PDFJS_DIR = '/raw-file/tip/browser/pdfviewer/';
 
   // Defines which files to download for each language.
   var files = ['chrome.properties', 'viewer.properties'];
@@ -61,7 +61,7 @@ function downloadLanguageFiles(root, langCode, callback) {
   // Download the necessary files for this language.
   files.forEach(function(fileName) {
     var outputPath = path.join(outputDir, fileName);
-    var url = MOZ_AURORA_ROOT + langCode + MOZ_AURORA_PDFJS_DIR + fileName;
+    var url = MOZ_BETA_ROOT + langCode + MOZ_BETA_PDFJS_DIR + fileName;
 
     https.get(url, function(response) {
       var content = '';
