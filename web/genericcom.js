@@ -14,6 +14,7 @@
  */
 
 import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
@@ -23,9 +24,28 @@ if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
 
 var GenericCom = {};
 
+class GenericPreferences extends BasePreferences {
+  _writeToStorage(prefObj) {
+    return new Promise(function(resolve) {
+      localStorage.setItem('pdfjs.preferences', JSON.stringify(prefObj));
+      resolve();
+    });
+  }
+
+  _readFromStorage(prefObj) {
+    return new Promise(function(resolve) {
+      var readPrefs = JSON.parse(localStorage.getItem('pdfjs.preferences'));
+      resolve(readPrefs);
+    });
+  }
+}
+
 var GenericExternalServices = Object.create(DefaultExternalServices);
-GenericExternalServices.createDownloadManager = function () {
+GenericExternalServices.createDownloadManager = function() {
   return new DownloadManager();
+};
+GenericExternalServices.createPreferences = function() {
+  return new GenericPreferences();
 };
 PDFViewerApplication.externalServices = GenericExternalServices;
 
