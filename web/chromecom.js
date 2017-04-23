@@ -15,10 +15,10 @@
 /* globals chrome */
 
 import { DefaultExternalServices, PDFViewerApplication } from './app';
+import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
 import { OverlayManager } from './overlay_manager';
 import { PDFJS } from './pdfjs';
-import { Preferences } from './preferences';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
   throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +
@@ -293,46 +293,48 @@ function setReferer(url, callback) {
 // chrome.storage.local to chrome.storage.sync when needed.
 var storageArea = chrome.storage.sync || chrome.storage.local;
 
-Preferences._writeToStorage = function (prefObj) {
-  return new Promise(function (resolve) {
-    if (prefObj === Preferences.defaults) {
-      var keysToRemove = Object.keys(Preferences.defaults);
-      // If the storage is reset, remove the keys so that the values from
-      // managed storage are applied again.
-      storageArea.remove(keysToRemove, function() {
-        resolve();
-      });
-    } else {
-      storageArea.set(prefObj, function() {
-        resolve();
-      });
-    }
-  });
-};
-
-Preferences._readFromStorage = function (prefObj) {
-  return new Promise(function (resolve) {
-    if (chrome.storage.managed) {
-      // Get preferences as set by the system administrator.
-      // See extensions/chromium/preferences_schema.json for more information.
-      // These preferences can be overridden by the user.
-      chrome.storage.managed.get(Preferences.defaults, getPreferences);
-    } else {
-      // Managed storage not supported, e.g. in old Chromium versions.
-      getPreferences(Preferences.defaults);
-    }
-
-    function getPreferences(defaultPrefs) {
-      if (chrome.runtime.lastError) {
-        // Managed storage not supported, e.g. in Opera.
-        defaultPrefs = Preferences.defaults;
+class ChromePreferences extends BasePreferences {
+  _writeToStorage(prefObj) {
+    return new Promise((resolve) => {
+      if (prefObj === this.defaults) {
+        var keysToRemove = Object.keys(this.defaults);
+        // If the storage is reset, remove the keys so that the values from
+        // managed storage are applied again.
+        storageArea.remove(keysToRemove, function() {
+          resolve();
+        });
+      } else {
+        storageArea.set(prefObj, function() {
+          resolve();
+        });
       }
-      storageArea.get(defaultPrefs, function(readPrefs) {
-        resolve(readPrefs);
-      });
-    }
-  });
-};
+    });
+  }
+
+  _readFromStorage(prefObj) {
+    return new Promise((resolve) => {
+      var getPreferences = (defaultPrefs) => {
+        if (chrome.runtime.lastError) {
+          // Managed storage not supported, e.g. in Opera.
+          defaultPrefs = this.defaults;
+        }
+        storageArea.get(defaultPrefs, function(readPrefs) {
+          resolve(readPrefs);
+        });
+      };
+
+      if (chrome.storage.managed) {
+        // Get preferences as set by the system administrator.
+        // See extensions/chromium/preferences_schema.json for more information.
+        // These preferences can be overridden by the user.
+        chrome.storage.managed.get(this.defaults, getPreferences);
+      } else {
+        // Managed storage not supported, e.g. in old Chromium versions.
+        getPreferences(this.defaults);
+      }
+    });
+  }
+}
 
 var ChromeExternalServices = Object.create(DefaultExternalServices);
 ChromeExternalServices.initPassiveLoading = function (callbacks) {
@@ -344,6 +346,9 @@ ChromeExternalServices.initPassiveLoading = function (callbacks) {
 };
 ChromeExternalServices.createDownloadManager = function() {
   return new DownloadManager();
+};
+ChromeExternalServices.createPreferences = function() {
+  return new ChromePreferences();
 };
 PDFViewerApplication.externalServices = ChromeExternalServices;
 

@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-import {
-  createObjectURL, PDFDataRangeTransport, shadow
-} from './pdfjs';
+import { createObjectURL, PDFDataRangeTransport, shadow } from './pdfjs';
+import { BasePreferences } from './preferences';
 import { PDFViewerApplication } from './app';
-import { Preferences } from './preferences';
 
 if (typeof PDFJSDev === 'undefined' ||
     !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -127,20 +125,22 @@ var DownloadManager = (function DownloadManagerClosure() {
   return DownloadManager;
 })();
 
-Preferences._writeToStorage = function (prefObj) {
-  return new Promise(function (resolve) {
-    FirefoxCom.request('setPreferences', prefObj, resolve);
-  });
-};
-
-Preferences._readFromStorage = function (prefObj) {
-  return new Promise(function (resolve) {
-    FirefoxCom.request('getPreferences', prefObj, function (prefStr) {
-      var readPrefs = JSON.parse(prefStr);
-      resolve(readPrefs);
+class FirefoxPreferences extends BasePreferences {
+  _writeToStorage(prefObj) {
+    return new Promise(function(resolve) {
+      FirefoxCom.request('setPreferences', prefObj, resolve);
     });
-  });
-};
+  }
+
+  _readFromStorage(prefObj) {
+    return new Promise(function(resolve) {
+      FirefoxCom.request('getPreferences', prefObj, function (prefStr) {
+        var readPrefs = JSON.parse(prefStr);
+        resolve(readPrefs);
+      });
+    });
+  }
+}
 
 (function listenFindEvents() {
   var events = [
@@ -245,6 +245,10 @@ PDFViewerApplication.externalServices = {
 
   createDownloadManager: function () {
     return new DownloadManager();
+  },
+
+  createPreferences() {
+    return new FirefoxPreferences();
   },
 
   get supportsIntegratedFind() {
