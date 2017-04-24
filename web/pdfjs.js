@@ -23,7 +23,11 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
     if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
       pdfjsLib = window['pdfjs-dist/build/pdf'];
     } else if (typeof require === 'function') {
-      pdfjsLib = require('../build/pdf.js');
+      if (PDFJSDev.test('LIB')) {
+        pdfjsLib = require('../pdf.js');
+      } else {
+        pdfjsLib = require('../build/pdf.js');
+      }
     } else {
       throw new Error('Neither `require` nor `window` found');
     }
