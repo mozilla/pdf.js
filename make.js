@@ -289,69 +289,6 @@ target.mozcentraldiff = function() {
   echo('Result diff can be found at ' + MOZCENTRAL_DIFF);
 };
 
-target.mozcentralcheck = function() {
-  cd(ROOT_DIR);
-
-  echo();
-  echo('### Checking mozcentral changes');
-
-  var mcPath = env['MC_PATH'];
-  if (!mcPath) {
-    echo('mozilla-central path is not provided.');
-    echo('Please specify MC_PATH variable');
-    exit(1);
-  }
-  if ((mcPath[0] !== '/' && mcPath[0] !== '~' && mcPath[1] !== ':') ||
-      !test('-d', mcPath)) {
-    echo('mozilla-central path is not in absolute form or does not exist.');
-    exit(1);
-  }
-
-  var MOZCENTRAL_DIFF = BUILD_DIR + 'mozcentral_changes.diff';
-  if (test('-f', MOZCENTRAL_DIFF)) {
-    rm(MOZCENTRAL_DIFF);
-  }
-
-  var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
-  if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
-    echo('mozcentral baseline was not found');
-    echo('Please build one using "gulp mozcentralbaseline"');
-    exit(1);
-  }
-  cd(MOZCENTRAL_BASELINE_DIR);
-  exec('git reset --hard');
-  cd(ROOT_DIR); rm('-rf', MOZCENTRAL_BASELINE_DIR + '/*'); // trying to be safe
-  cd(MOZCENTRAL_BASELINE_DIR);
-  mkdir('browser');
-  cd('browser');
-  mkdir('-p', 'extensions/pdfjs');
-  cp('-Rf', mcPath + '/browser/extensions/pdfjs/*', 'extensions/pdfjs');
-  mkdir('-p', 'locales/en-US/pdfviewer');
-  cp('-Rf', mcPath + '/browser/locales/en-US/pdfviewer/*',
-     'locales/en-US/pdfviewer');
-  // Remove '.DS_Store' and other hidden files
-  find('.').forEach(function(file) {
-    if (file.match(/^\.\w|~$/)) {
-      rm('-f', file);
-    }
-  });
-
-  cd('..');
-  exec('git add -A');
-  var diff = exec('git diff --binary --cached --unified=8',
-                  {silent: true}).output;
-
-  if (diff) {
-    echo('There were changes found at mozilla-central.');
-    diff.to('../mozcentral_changes.diff');
-    echo('Result diff can be found at ' + MOZCENTRAL_DIFF);
-    exit(1);
-  }
-
-  echo('Success: there are no changes at mozilla-central');
-};
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Other
