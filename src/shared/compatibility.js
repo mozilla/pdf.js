@@ -105,12 +105,12 @@ PDFJS.compatibilityChecked = true;
   var uint32ArrayViewSetters = 0;
   function createUint32ArrayProp(index) {
     return {
-      get: function () {
+      get() {
         var buffer = this.buffer, offset = index << 2;
         return (buffer[offset] | (buffer[offset + 1] << 8) |
           (buffer[offset + 2] << 16) | (buffer[offset + 3] << 24)) >>> 0;
       },
-      set: function (value) {
+      set(value) {
         var buffer = this.buffer, offset = index << 2;
         buffer[offset] = value & 255;
         buffer[offset + 1] = (value >> 8) & 255;
@@ -190,14 +190,14 @@ PDFJS.compatibilityChecked = true;
   }
   // Trying to fake CanvasPixelArray as Uint8ClampedArray.
   Object.defineProperty(cpaProto, 'buffer', {
-    get: function () {
+    get() {
       return this;
     },
     enumerable: false,
     configurable: true
   });
   Object.defineProperty(cpaProto, 'byteLength', {
-    get: function () {
+    get() {
       return this.length;
     },
     enumerable: false,
@@ -411,7 +411,7 @@ PDFJS.compatibilityChecked = true;
   }
 
   Object.defineProperty(HTMLElement.prototype, 'dataset', {
-    get: function() {
+    get() {
       if (this._dataset) {
         return this._dataset;
       }
@@ -470,22 +470,22 @@ PDFJS.compatibilityChecked = true;
   }
 
   var classListPrototype = {
-    add: function(name) {
+    add(name) {
       changeList(this.element, name, true, false);
     },
-    contains: function(name) {
+    contains(name) {
       return changeList(this.element, name, false, false);
     },
-    remove: function(name) {
+    remove(name) {
       changeList(this.element, name, false, true);
     },
-    toggle: function(name) {
+    toggle(name) {
       changeList(this.element, name, true, true);
     }
   };
 
   Object.defineProperty(HTMLElement.prototype, 'classList', {
-    get: function() {
+    get() {
       if (this._classList) {
         return this._classList;
       }
@@ -562,9 +562,9 @@ PDFJS.compatibilityChecked = true;
   }
   if (!('console' in window)) {
     window.console = {
-      log: function() {},
-      error: function() {},
-      warn: function() {}
+      log() {},
+      error() {},
+      warn() {}
     };
     return;
   }
@@ -772,7 +772,7 @@ PDFJS.compatibilityChecked = true;
     return;
   }
   Object.defineProperty(document, 'currentScript', {
-    get: function () {
+    get() {
       var scripts = document.getElementsByTagName('script');
       return scripts[scripts.length - 1];
     },
@@ -794,10 +794,10 @@ PDFJS.compatibilityChecked = true;
     var inputProto = el.constructor.prototype;
     var typeProperty = Object.getOwnPropertyDescriptor(inputProto, 'type');
     Object.defineProperty(inputProto, 'type', {
-      get: function () {
+      get() {
         return typeProperty.get.call(this);
       },
-      set: function (value) {
+      set(value) {
         typeProperty.set.call(this, value === 'number' ? 'text' : value);
       },
       enumerable: true,
@@ -819,11 +819,11 @@ PDFJS.compatibilityChecked = true;
   var readyStateProto = Object.getOwnPropertyDescriptor(documentProto,
                                                         'readyState');
   Object.defineProperty(documentProto, 'readyState', {
-    get: function () {
+    get() {
       var value = readyStateProto.get.call(this);
       return value === 'interactive' ? 'loading' : value;
     },
-    set: function (value) {
+    set(value) {
       readyStateProto.set.call(this, value);
     },
     enumerable: true,
@@ -979,7 +979,7 @@ PDFJS.compatibilityChecked = true;
 
     addUnhandledRejection: function addUnhandledRejection(promise) {
       this.unhandledRejections.push({
-        promise: promise,
+        promise,
         time: Date.now()
       });
       this.scheduleRejectionCheck();
@@ -1160,9 +1160,9 @@ PDFJS.compatibilityChecked = true;
       });
       this._handlers.push({
         thisPromise: this,
-        onResolve: onResolve,
-        onReject: onReject,
-        nextPromise: nextPromise
+        onResolve,
+        onReject,
+        nextPromise,
       });
       HandlerManager.scheduleHandlers(this);
       return nextPromise;
@@ -1186,20 +1186,20 @@ PDFJS.compatibilityChecked = true;
     this.id = '$weakmap' + (id++);
   }
   WeakMap.prototype = {
-    has: function(obj) {
+    has(obj) {
       return !!Object.getOwnPropertyDescriptor(obj, this.id);
     },
-    get: function(obj, defaultValue) {
+    get(obj, defaultValue) {
       return this.has(obj) ? obj[this.id] : defaultValue;
     },
-    set: function(obj, value) {
+    set(obj, value) {
       Object.defineProperty(obj, this.id, {
-        value: value,
+        value,
         enumerable: false,
         configurable: true
       });
     },
-    delete: function(obj) {
+    delete(obj) {
       delete obj[this.id];
     }
   };
@@ -1703,7 +1703,7 @@ PDFJS.compatibilityChecked = true;
   }
 
   JURL.prototype = {
-    toString: function() {
+    toString() {
       return this.href;
     },
     get href() {
