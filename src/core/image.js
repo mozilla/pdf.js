@@ -502,7 +502,8 @@ var PDFImage = (function PDFImageClosure() {
       var drawHeight = this.drawHeight;
       var imgData = { // other fields are filled in below
         width: drawWidth,
-        height: drawHeight
+        height: drawHeight,
+        interpolate: this.interpolate
       };
 
       var numComps = this.numComps;

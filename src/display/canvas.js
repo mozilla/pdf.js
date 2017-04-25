@@ -2117,8 +2117,44 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         paintHeight = newHeight;
         tmpCanvasId = tmpCanvasId === 'prescale1' ? 'prescale2' : 'prescale1';
       }
+
+      var smoothingToggle = false;
+      if (ctx.imageSmoothingEnabled !== undefined) {
+        if (imgData.interpolate !== ctx.imageSmoothingEnabled) {
+          ctx.imageSmoothingEnabled = imgData.interpolate;
+          smoothingToggle = true;
+        }
+      } else if (ctx.mozImageSmoothingEnabled !== undefined) {
+        if (imgData.interpolate !== ctx.mozImageSmoothingEnabled) {
+          ctx.mozImageSmoothingEnabled = imgData.interpolate;
+          smoothingToggle = true;
+        }
+      } else if (ctx.webkitImageSmoothingEnabled !== undefined) {
+        if (imgData.interpolate !== ctx.webkitImageSmoothingEnabled) {
+          ctx.webkitImageSmoothingEnabled = imgData.interpolate;
+          smoothingToggle = true;
+        }
+      } else if (ctx.msImageSmoothingEnabled !== undefined) {
+        if (imgData.interpolate !== ctx.msImageSmoothingEnabled) {
+          ctx.msImageSmoothingEnabled = imgData.interpolate;
+          smoothingToggle = true;
+        }
+      }
+
       ctx.drawImage(imgToPaint, 0, 0, paintWidth, paintHeight,
                                 0, -height, width, height);
+
+      if (smoothingToggle) {
+        if (ctx.imageSmoothingEnabled !== undefined) {
+          ctx.imageSmoothingEnabled = !imgData.interpolate;
+        } else if (ctx.mozImageSmoothingEnabled !== undefined) {
+          ctx.mozImageSmoothingEnabled = !imgData.interpolate;
+        } else if (ctx.webkitImageSmoothingEnabled !== undefined) {
+          ctx.webkitImageSmoothingEnabled = !imgData.interpolate;
+        } else if (ctx.msImageSmoothingEnabled !== undefined) {
+          ctx.msImageSmoothingEnabled = !imgData.interpolate;
+        }
+      }
 
       if (this.imageLayer) {
         var position = this.getCanvasPosition(0, -height);
