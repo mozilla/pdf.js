@@ -87,7 +87,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       'ABAAAAAAAAAAAD6AAAAAAAAA==');
   };
   Object.defineProperty(FontLoader.prototype, 'loadTestFont', {
-    get: function () {
+    get() {
       return shadow(this, 'loadTestFont', getLoadTestFont());
     },
     configurable: true
@@ -170,7 +170,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
     var request = {
       id: requestId,
       complete: LoadLoader_completeRequest,
-      callback: callback,
+      callback,
       started: Date.now()
     };
     context.requests.push(request);
@@ -320,7 +320,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL || CHROME')) {
     return supported;
   };
   Object.defineProperty(FontLoader, 'isSyncFontLoadingSupported', {
-    get: function () {
+    get() {
       return shadow(FontLoader, 'isSyncFontLoadingSupported',
                     isSyncFontLoadingSupported());
     },

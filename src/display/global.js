@@ -55,10 +55,10 @@ if (PDFJS.verbosity !== undefined) {
 }
 delete PDFJS.verbosity;
 Object.defineProperty(PDFJS, 'verbosity', {
-  get: function () {
+  get() {
     return getVerbosityLevel();
   },
-  set: function (level) {
+  set(level) {
     setVerbosityLevel(level);
   },
   enumerable: true,
@@ -250,10 +250,10 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
   var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
   delete PDFJS.openExternalLinksInNewWindow;
   Object.defineProperty(PDFJS, 'openExternalLinksInNewWindow', {
-    get: function () {
+    get() {
       return PDFJS.externalLinkTarget === LinkTarget.BLANK;
     },
-    set: function (value) {
+    set(value) {
       if (value) {
         deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
           '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');

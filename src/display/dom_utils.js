@@ -29,8 +29,8 @@ DOMCanvasFactory.prototype = {
     canvas.width = width;
     canvas.height = height;
     return {
-      canvas: canvas,
-      context: context,
+      canvas,
+      context,
     };
   },
 
@@ -59,7 +59,7 @@ var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
   }
 
   DOMCMapReaderFactory.prototype = {
-    fetch: function(params) {
+    fetch(params) {
       var name = params.name;
       if (!name) {
         return Promise.reject(new Error('CMap name must be specified.'));

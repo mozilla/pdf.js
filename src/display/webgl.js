@@ -430,8 +430,8 @@ var WebGLUtils = (function WebGLUtilsClosure() {
       } catch (e) { }
       return shadow(this, 'isEnabled', enabled);
     },
-    composeSMask: composeSMask,
-    drawFigures: drawFigures,
+    composeSMask,
+    drawFigures,
     clear: cleanup
   };
 })();

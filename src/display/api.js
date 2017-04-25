@@ -284,8 +284,8 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     source.initialData = pdfDataRangeTransport.initialData;
   }
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
-    docId: docId,
-    source: source,
+    docId,
+    source,
     disableRange: getDefaultSetting('disableRange'),
     maxImageSize: getDefaultSetting('maxImageSize'),
     disableFontFace: getDefaultSetting('disableFontFace'),
@@ -364,7 +364,7 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
      * @return {Promise} A promise that is resolved after destruction activity
      *                   is completed.
      */
-    destroy: function () {
+    destroy() {
       this.destroyed = true;
 
       var transportDestroyed = !this._transport ? Promise.resolve() :
@@ -968,7 +968,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     /**
      * Cleans up resources allocated by the page. (deprecated)
      */
-    destroy: function() {
+    destroy() {
       deprecated('page destroy method, use cleanup() instead');
       this.cleanup();
     },
@@ -1119,7 +1119,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this._deferred = Promise.resolve(undefined);
   }
   FakeWorkerPort.prototype = {
-    postMessage: function (obj, transfers) {
+    postMessage(obj, transfers) {
       function cloneValue(value) {
         // Trying to perform a structured clone close to the spec, including
         // transfers.
@@ -1179,14 +1179,14 @@ var PDFWorker = (function PDFWorkerClosure() {
         }, this);
       }.bind(this));
     },
-    addEventListener: function (name, listener) {
+    addEventListener(name, listener) {
       this._listeners.push(listener);
     },
-    removeEventListener: function (name, listener) {
+    removeEventListener(name, listener) {
       var i = this._listeners.indexOf(listener);
       this._listeners.splice(i, 1);
     },
-    terminate: function () {
+    terminate() {
       this._listeners = [];
     }
   };
@@ -1495,20 +1495,20 @@ var WorkerTransport = (function WorkerTransportClosure() {
       if (pdfDataRangeTransport) {
         pdfDataRangeTransport.addRangeListener(function(begin, chunk) {
           messageHandler.send('OnDataRange', {
-            begin: begin,
-            chunk: chunk
+            begin,
+            chunk,
           });
         });
 
         pdfDataRangeTransport.addProgressListener(function(loaded) {
           messageHandler.send('OnDataProgress', {
-            loaded: loaded
+            loaded,
           });
         });
 
         pdfDataRangeTransport.addProgressiveReadListener(function(chunk) {
           messageHandler.send('OnDataRange', {
-            chunk: chunk
+            chunk,
           });
         });
 
@@ -1532,12 +1532,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this._passwordCapability = createPromiseCapability();
 
         if (loadingTask.onPassword) {
-          var updatePassword = function (password) {
+          var updatePassword = (password) => {
             this._passwordCapability.resolve({
-              password: password,
+              password,
             });
-          }.bind(this);
-
+          };
           loadingTask.onPassword(updatePassword, exception.code);
         } else {
           this._passwordCapability.reject(
@@ -1628,7 +1627,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             if (getDefaultSetting('pdfBug') && globalScope.FontInspector &&
                 globalScope['FontInspector'].enabled) {
               fontRegistry = {
-                registerFont: function (font, url) {
+                registerFont(font, url) {
                   globalScope['FontInspector'].fontAdded(font, url);
                 }
               };
@@ -1636,7 +1635,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             var font = new FontFaceObject(exportedData, {
               isEvalSuported: getDefaultSetting('isEvalSupported'),
               disableFontFace: getDefaultSetting('disableFontFace'),
-              fontRegistry: fontRegistry
+              fontRegistry,
             });
 
             this.fontLoader.bind(
@@ -1784,7 +1783,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
                 buf[j] = data[i];
               }
             }
-            resolve({ data: buf, width: width, height: height});
+            resolve({ data: buf, width, height, });
           };
           img.onerror = function () {
             reject(new Error('JpegDecode failed to load image'));
@@ -1817,7 +1816,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         return this.pagePromises[pageIndex];
       }
       var promise = this.messageHandler.sendWithPromise('GetPage', {
-        pageIndex: pageIndex
+        pageIndex,
       }).then(function (pageInfo) {
         if (this.destroyed) {
           throw new Error('Transport destroyed');
@@ -1832,7 +1831,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
       return this.messageHandler.sendWithPromise('GetPageIndex', {
-        ref: ref,
+        ref,
       }).catch(function (reason) {
         return Promise.reject(new Error(reason));
       });
@@ -1840,8 +1839,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getAnnotations: function WorkerTransport_getAnnotations(pageIndex, intent) {
       return this.messageHandler.sendWithPromise('GetAnnotations', {
-        pageIndex: pageIndex,
-        intent: intent,
+        pageIndex,
+        intent,
       });
     },
 
@@ -1850,7 +1849,9 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getDestination: function WorkerTransport_getDestination(id) {
-      return this.messageHandler.sendWithPromise('GetDestination', { id: id });
+      return this.messageHandler.sendWithPromise('GetDestination', {
+        id,
+      });
     },
 
     getPageLabels: function WorkerTransport_getPageLabels() {
@@ -2194,12 +2195,12 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
 var _UnsupportedManager = (function UnsupportedManagerClosure() {
   var listeners = [];
   return {
-    listen: function (cb) {
+    listen(cb) {
       deprecated('Global UnsupportedManager.listen is used: ' +
                  ' use PDFDocumentLoadingTask.onUnsupportedFeature instead');
       listeners.push(cb);
     },
-    notify: function (featureId) {
+    notify(featureId) {
       for (var i = 0, ii = listeners.length; i < ii; i++) {
         listeners[i](featureId);
       }
