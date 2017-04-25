@@ -169,8 +169,8 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
     var scaleY = boundsHeight / height;
 
     var context = {
-      coords: coords,
-      colors: colors,
+      coords,
+      colors,
       offsetX: -offsetX,
       offsetY: -offsetY,
       scaleX: 1 / scaleX,
@@ -212,10 +212,13 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       canvas = tmpCanvas.canvas;
     }
 
-    return {canvas: canvas,
-            offsetX: offsetX - BORDER_SIZE * scaleX,
-            offsetY: offsetY - BORDER_SIZE * scaleY,
-            scaleX: scaleX, scaleY: scaleY};
+    return {
+      canvas,
+      offsetX: offsetX - BORDER_SIZE * scaleX,
+      offsetY: offsetY - BORDER_SIZE * scaleY,
+      scaleX,
+      scaleY,
+    };
   }
   return createMeshCanvas;
 })();
