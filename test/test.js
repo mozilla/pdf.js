@@ -311,6 +311,7 @@ function checkEq(task, results, browser, masterMode) {
   var taskType = task.type;
   var numEqNoSnapshot = 0;
   var numEqFailures = 0;
+  var totalTime = 0, maxTime = 0;
   for (var page = 0; page < pageResults.length; page++) {
     if (!pageResults[page]) {
       continue;
@@ -321,7 +322,8 @@ function checkEq(task, results, browser, masterMode) {
     } else {
       console.error('Valid snapshot was not found.');
     }
-
+    totalTime += pageResults[page].time;
+    maxTime = Math.max(maxTime, pageResults[page].time);
     var refSnapshot = null;
     var eq = false;
     var refPath = path.join(refSnapshotDir, (page + 1) + '.png');
@@ -370,12 +372,13 @@ function checkEq(task, results, browser, masterMode) {
     session.numEqFailures += numEqFailures;
   } else {
     console.log('TEST-PASS | ' + taskType + ' test ' + taskId + ' | in ' +
-                browser);
+                browser + ' | ' + totalTime + 'ms (max ' + maxTime + 'ms)');
   }
 }
 
 function checkFBF(task, results, browser) {
   var numFBFFailures = 0;
+  var totalTime = 0, maxTime = 0;
   var round0 = results[0], round1 = results[1];
   if (round0.length !== round1.length) {
     console.error('round 1 and 2 sizes are different');
@@ -392,20 +395,32 @@ function checkFBF(task, results, browser) {
                   (page + 1) + ' != second');
       numFBFFailures++;
     }
+    totalTime += r0Page.time;
+    maxTime = Math.max(maxTime, r0Page.time);
   }
 
   if (numFBFFailures > 0) {
     getSession(browser).numFBFFailures += numFBFFailures;
   } else {
     console.log('TEST-PASS | forward-back-forward test ' + task.id +
-                ' | in ' + browser);
+                ' | in ' + browser + ' | ' +
+                totalTime + 'ms (max ' + maxTime + 'ms)');
   }
 }
 
 function checkLoad(task, results, browser) {
+  var pageResults = results[0];
+  var totalTime = 0, maxTime = 0;
+  for (var page = 0; page < pageResults.length; page++) {
+    if (pageResults[page]) {
+      totalTime += pageResults[page].time;
+      maxTime = Math.max(maxTime, pageResults[page].time);
+    }
+  }
   // Load just checks for absence of failure, so if we got here the
   // test has passed
-  console.log('TEST-PASS | load test ' + task.id + ' | in ' + browser);
+  console.log('TEST-PASS | load test ' + task.id + ' | in ' + browser +
+              ' | ' + totalTime + 'ms (max ' + maxTime + 'ms)');
 }
 
 function checkRefTestResults(browser, id, results) {
@@ -498,6 +513,7 @@ function refTestPostHandler(req, res) {
     var page = data.page - 1;
     var failure = data.failure;
     var snapshot = data.snapshot;
+    var time = data.time;
     var lastPageNum = data.lastPageNum;
 
     session = getSession(browser);
@@ -516,7 +532,8 @@ function refTestPostHandler(req, res) {
 
     taskResults[round][page] = {
       failure: failure,
-      snapshot: snapshot
+      snapshot: snapshot,
+      time: time
     };
     if (stats) {
       stats.push({
