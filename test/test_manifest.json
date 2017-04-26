@@ -2322,6 +2322,13 @@
       "link": true,
       "type": "eq"
     },
+    {  "id": "issue7308",
+       "file": "pdfs/issue7308.pdf",
+       "md5": "ba2e23d3af93ac2c634d77ccbe2e79d5",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue1597",
       "file": "pdfs/issue1597.pdf",
       "md5": "a5ebef467fd6e2fc0aeb56c9eb725ae3",
