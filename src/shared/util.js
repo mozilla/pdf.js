@@ -1199,7 +1199,7 @@ var createObjectURL = (function createObjectURLClosure() {
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
   return function createObjectURL(data, contentType, forceDataSchema = false) {
-    if (!forceDataSchema) {
+    if (!forceDataSchema && URL.createObjectURL) {
       var blob = createBlob(data, contentType);
       return URL.createObjectURL(blob);
     }
