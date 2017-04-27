@@ -1109,7 +1109,7 @@ var Linearization = {
                       'does not equal the stream length.');
     }
     return {
-      length: length,
+      length,
       hints: getHints(),
       objectNumberFirst: getInt('O'),
       endFirst: getInt('E'),

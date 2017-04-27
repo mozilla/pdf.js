@@ -61,15 +61,15 @@ var WorkerTask = (function WorkerTaskClosure() {
       return this._capability.promise;
     },
 
-    finish: function () {
+    finish() {
       this._capability.resolve();
     },
 
-    terminate: function () {
+    terminate() {
       this.terminated = true;
     },
 
-    ensureNotTerminated: function () {
+    ensureNotTerminated() {
       if (this.terminated) {
         throw new Error('Worker task was terminated');
       }
@@ -92,7 +92,7 @@ IPDFStream.prototype = {
    * Gets a reader for the entire PDF data.
    * @returns {IPDFStreamReader}
    */
-  getFullReader: function () {
+  getFullReader() {
     return null;
   },
 
@@ -102,7 +102,7 @@ IPDFStream.prototype = {
    * @param {number} end - the end offset of the data.
    * @returns {IPDFStreamRangeReader}
    */
-  getRangeReader: function (begin, end) {
+  getRangeReader(begin, end) {
     return null;
   },
 
@@ -110,7 +110,7 @@ IPDFStream.prototype = {
    * Cancels all opened reader and closes all their opened requests.
    * @param {Object} reason - the reason for cancelling
    */
-  cancelAllRequests: function (reason) {},
+  cancelAllRequests(reason) {},
 };
 
 /**
@@ -165,13 +165,13 @@ IPDFStreamReader.prototype = {
    * set to true.
    * @returns {Promise}
    */
-  read: function () {},
+  read() {},
 
   /**
    * Cancels all pending read requests and closes the stream.
    * @param {Object} reason
    */
-  cancel: function (reason) {},
+  cancel(reason) {},
 
   /**
    * Sets or gets the progress callback. The callback can be useful when the
@@ -205,13 +205,13 @@ IPDFStreamRangeReader.prototype = {
    * set to true.
    * @returns {Promise}
    */
-  read: function () {},
+  read() {},
 
   /**
    * Cancels all pending read requests and closes the stream.
    * @param {Object} reason
    */
-  cancel: function (reason) {},
+  cancel(reason) {},
 
   /**
    * Sets or gets the progress callback. The callback can be useful when the
@@ -289,7 +289,7 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
 
     getRangeReader: function PDFWorkerStream_getRangeReader(begin, end) {
       var reader = new PDFWorkerStreamRangeReader(this, begin, end);
-      this._msgHandler.send('RequestDataRange', { begin: begin, end: end });
+      this._msgHandler.send('RequestDataRange', { begin, end, });
       this._rangeReaders.push(reader);
       return reader;
     },
@@ -469,7 +469,7 @@ var WorkerMessageHandler = {
       }
       handler.send('test', {
         supportTypedArray: true,
-        supportTransfers: supportTransfers
+        supportTransfers,
       });
     });
 
@@ -602,7 +602,7 @@ var WorkerMessageHandler = {
           url: source.url,
           password: source.password,
           length: fullRequest.contentLength,
-          disableAutoFetch: disableAutoFetch,
+          disableAutoFetch,
           rangeChunkSize: source.rangeChunkSize
         }, evaluatorOptions, docBaseUrl);
         pdfManagerCapability.resolve(pdfManager);
@@ -644,7 +644,7 @@ var WorkerMessageHandler = {
             loaded += arrayByteLength(data);
             if (!fullRequest.isStreamingSupported) {
               handler.send('DocProgress', {
-                loaded: loaded,
+                loaded,
                 total: Math.max(loaded, fullRequest.contentLength || 0)
               });
             }
@@ -890,7 +890,7 @@ var WorkerMessageHandler = {
           }
 
           handler.send('PageError', {
-            pageNum: pageNum,
+            pageNum,
             error: wrappedException,
             intent: data.intent
           });

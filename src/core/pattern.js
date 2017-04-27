@@ -394,7 +394,7 @@ Shadings.Mesh = (function MeshClosure() {
       type: 'lattice',
       coords: new Int32Array(ps),
       colors: new Int32Array(ps),
-      verticesPerRow: verticesPerRow
+      verticesPerRow,
     });
   }
 
@@ -501,7 +501,7 @@ Shadings.Mesh = (function MeshClosure() {
       type: 'lattice',
       coords: figureCoords,
       colors: figureColors,
-      verticesPerRow: verticesPerRow
+      verticesPerRow,
     };
   }
 

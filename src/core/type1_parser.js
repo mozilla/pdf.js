@@ -332,7 +332,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       return error;
     },
 
-    executeCommand: function(howManyArgs, command, keepStack) {
+    executeCommand(howManyArgs, command, keepStack) {
       var stackLength = this.stack.length;
       if (howManyArgs > stackLength) {
         return true;
@@ -573,8 +573,8 @@ var Type1Parser = (function Type1ParserClosure() {
                 this.getToken(); // read in 'def'
               }
               charstrings.push({
-                glyph: glyph,
-                encoded: encoded
+                glyph,
+                encoded,
               });
             }
             break;

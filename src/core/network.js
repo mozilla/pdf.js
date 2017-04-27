@@ -87,8 +87,8 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   NetworkManager.prototype = {
     requestRange: function NetworkManager_requestRange(begin, end, listeners) {
       var args = {
-        begin: begin,
-        end: end
+        begin,
+        end,
       };
       for (var prop in listeners) {
         args[prop] = listeners[prop];
@@ -104,7 +104,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       var xhr = this.getXhr();
       var xhrId = this.currXhrId++;
       var pendingRequest = this.pendingRequests[xhrId] = {
-        xhr: xhr
+        xhr,
       };
 
       xhr.open('GET', this.url);
@@ -226,15 +226,15 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         var matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
         var begin = parseInt(matches[1], 10);
         pendingRequest.onDone({
-          begin: begin,
-          chunk: chunk
+          begin,
+          chunk,
         });
       } else if (pendingRequest.onProgressiveData) {
         pendingRequest.onDone(null);
       } else if (chunk) {
         pendingRequest.onDone({
           begin: 0,
-          chunk: chunk
+          chunk,
         });
       } else if (pendingRequest.onError) {
         pendingRequest.onError(xhr.status);

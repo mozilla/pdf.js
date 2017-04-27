@@ -81,12 +81,12 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
 
     // Return the right annotation object based on the subtype and field type.
     var parameters = {
-      xref: xref,
-      dict: dict,
+      xref,
+      dict,
       ref: isRef(ref) ? ref : null,
-      subtype: subtype,
-      id: id,
-      pdfManager: pdfManager,
+      subtype,
+      id,
+      pdfManager,
     };
 
     switch (subtype) {
