@@ -693,7 +693,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
         var width = glyph.width;
         var character = glyph.fontChar;
-        var charWidth = width * widthAdvanceScale + charSpacing * fontDirection;
+        var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
+        var charWidth = width * widthAdvanceScale + spacing * fontDirection;
         x += charWidth;
 
         current.tspan.textContent += character;
