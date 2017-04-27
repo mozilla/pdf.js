@@ -31,6 +31,7 @@ var binarySearchFirstItem = webUiUtils.binarySearchFirstItem;
 var getPDFFileNameFromURL = webUiUtils.getPDFFileNameFromURL;
 var EventBus = webUiUtils.EventBus;
 var createObjectURL = sharedUtil.createObjectURL;
+var isNodeJS = sharedUtil.isNodeJS;
 
 describe('ui_utils', function() {
   describe('binary search', function() {
@@ -160,6 +161,9 @@ describe('ui_utils', function() {
 
     it('gets PDF filename from query string appended to "blob:" URL',
         function() {
+      if (isNodeJS()) {
+        pending('Blob in not supported in Node.js.');
+      }
       var typedArray = new Uint8Array([1, 2, 3, 4, 5]);
       var blobUrl = createObjectURL(typedArray, 'application/pdf');
       // Sanity check to ensure that a "blob:" URL was returned.

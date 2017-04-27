@@ -77,6 +77,7 @@ var DEFINES = {
   MINIFIED: false,
   SINGLE_FILE: false,
   COMPONENTS: false,
+  LIB: false,
   PDFJS_NEXT: false,
 };
 
@@ -998,6 +999,7 @@ gulp.task('lib', ['buildnumber'], function () {
     saveComments: false,
     defines: builder.merge(DEFINES, {
       GENERIC: true,
+      LIB: true,
       BUNDLE_VERSION: versionInfo.version,
       BUNDLE_BUILD: versionInfo.commit
     })

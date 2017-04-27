@@ -30,7 +30,8 @@ var RendererType = {
   SVG: 'svg',
 };
 
-var mozL10n = document.mozL10n || document.webL10n;
+var mozL10n = typeof document !== 'undefined' ?
+  (document.mozL10n || document.webL10n) : undefined;
 
 /**
  * Disables fullscreen support, and by extension Presentation Mode,
@@ -81,8 +82,9 @@ if (typeof PDFJSDev === 'undefined' ||
    * Interface locale settings.
    * @var {string}
    */
-  PDFJS.locale = (PDFJS.locale === undefined ? navigator.language :
-                  PDFJS.locale);
+  PDFJS.locale =
+    (PDFJS.locale === undefined && typeof navigator !== 'undefined' ?
+     navigator.language : PDFJS.locale);
 }
 
 /**
