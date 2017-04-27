@@ -108,14 +108,13 @@ IPDFTextLayerFactory.prototype = {
 /**
  * @interface
  */
-function IPDFAnnotationLayerFactory() {}
-IPDFAnnotationLayerFactory.prototype = {
+class IPDFAnnotationLayerFactory { // eslint-disable-line no-unused-vars
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
    * @param {boolean} renderInteractiveForms
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder: function (pageDiv, pdfPage,
-                                          renderInteractiveForms) {}
-};
+  createAnnotationLayerBuilder(pageDiv, pdfPage,
+                               renderInteractiveForms = false) {}
+}
