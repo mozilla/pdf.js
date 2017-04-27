@@ -227,34 +227,7 @@ target.mozcentralbaseline = function() {
 };
 
 target.mozcentraldiff = function() {
-  target.mozcentral();
-
-  cd(ROOT_DIR);
-
-  echo();
-  echo('### Creating mozcentral diff');
-
-  var MOZCENTRAL_DIFF = BUILD_DIR + 'mozcentral.diff';
-  if (test('-f', MOZCENTRAL_DIFF)) {
-    rm(MOZCENTRAL_DIFF);
-  }
-
-  var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
-  if (!test('-d', MOZCENTRAL_BASELINE_DIR)) {
-    echo('mozcentral baseline was not found');
-    echo('Please build one using "gulp mozcentralbaseline"');
-    exit(1);
-  }
-  cd(MOZCENTRAL_BASELINE_DIR);
-  exec('git reset --hard');
-  cd(ROOT_DIR); rm('-rf', MOZCENTRAL_BASELINE_DIR + '/*'); // trying to be safe
-  cd(MOZCENTRAL_BASELINE_DIR);
-  cp('-Rf', '../mozcentral/*', '.');
-  exec('git add -A');
-  exec('git diff --binary --cached --unified=8', {silent: true}).output.
-    to('../mozcentral.diff');
-
-  echo('Result diff can be found at ' + MOZCENTRAL_DIFF);
+  execGulp('mozcentraldiff');
 };
 
 ////////////////////////////////////////////////////////////////////////////////

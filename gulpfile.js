@@ -59,6 +59,7 @@ var COMMON_WEB_FILES = [
   'web/images/*.{png,svg,gif,cur}',
   'web/debugger.js'
 ];
+var MOZCENTRAL_DIFF_FILE = 'mozcentral.diff';
 
 var REPO = 'git@github.com:mozilla/pdf.js.git';
 var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
@@ -1369,6 +1370,36 @@ gulp.task('mozcentralbaseline', ['baseline'], function (done) {
         spawnSync('git', ['commit', '-m', 'mozcentral baseline'],
                   {cwd: MOZCENTRAL_BASELINE_DIR});
         done();
+      });
+});
+
+gulp.task('mozcentraldiff', ['mozcentral', 'mozcentralbaseline'],
+    function (done) {
+  console.log();
+  console.log('### Creating mozcentral diff');
+
+  // Create the diff between the current mozcentral build and the
+  // baseline mozcentral build, which both exist at this point.
+  // The mozcentral baseline directory is a Git repository, so we
+  // remove all files and copy the current mozcentral build files
+  // into it to create the diff.
+  rimraf.sync(MOZCENTRAL_BASELINE_DIR + '*');
+
+  gulp.src([BUILD_DIR + 'mozcentral/**/*'])
+      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+      .on('end', function () {
+        spawnSync('git', ['add', '-A'], {cwd: MOZCENTRAL_BASELINE_DIR});
+        var diff = spawnSync('git',
+          ['diff', '--binary', '--cached', '--unified=8'],
+          {cwd: MOZCENTRAL_BASELINE_DIR}).stdout;
+
+        createStringSource(MOZCENTRAL_DIFF_FILE, diff)
+          .pipe(gulp.dest(BUILD_DIR))
+          .on('end', function () {
+            console.log('Result diff can be found at ' + BUILD_DIR +
+                        MOZCENTRAL_DIFF_FILE);
+            done();
+          });
       });
 });
 
