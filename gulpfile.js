@@ -1044,10 +1044,6 @@ gulp.task('browsertest', function () {
   return createTestSource('browser');
 });
 
-gulp.task('browsertest-noreftest', function () {
-  return createTestSource('browser (no reftest)');
-});
-
 gulp.task('unittest', function () {
   return createTestSource('unit');
 });
