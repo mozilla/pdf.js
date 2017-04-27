@@ -852,7 +852,7 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
   // Clear out everything in the firefox extension build directory
   rimraf.sync(MOZCENTRAL_DIR);
 
-  var version = getVersionJSON().version;
+  var { version, commit, } = getVersionJSON();
 
   return merge([
     createBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'build')),
@@ -881,6 +881,7 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
         .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'README.mozilla')
         .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
+        .pipe(replace(/\bPDFJSSCRIPT_COMMIT\b/g, commit))
         .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
     gulp.src('LICENSE').pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
     gulp.src(FIREFOX_EXTENSION_DIR + 'tools/l10n.js')
