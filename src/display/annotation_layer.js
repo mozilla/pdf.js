@@ -237,8 +237,8 @@ var AnnotationElement = (function AnnotationElementClosure() {
       }
 
       var popupElement = new PopupElement({
-        container: container,
-        trigger: trigger,
+        container,
+        trigger,
         color: data.color,
         title: data.title,
         contents: data.contents,
@@ -1154,7 +1154,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
           continue;
         }
         var element = annotationElementFactory.create({
-          data: data,
+          data,
           layer: parameters.div,
           page: parameters.page,
           viewport: parameters.viewport,

@@ -148,7 +148,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         bottom: b[3],
         div: textDiv,
         size: [divWidth, divHeight],
-        m: m
+        m,
       });
     }
   }

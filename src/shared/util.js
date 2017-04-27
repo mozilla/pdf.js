@@ -376,7 +376,7 @@ function createValidAbsoluteUrl(url, baseUrl) {
 }
 
 function shadow(obj, prop, value) {
-  Object.defineProperty(obj, prop, { value: value,
+  Object.defineProperty(obj, prop, { value,
                                      enumerable: true,
                                      configurable: true,
                                      writable: false });
@@ -1254,8 +1254,8 @@ function MessageHandler(sourceName, targetName, comObj) {
           return action[0].call(action[1], data.data);
         }).then(function (result) {
           comObj.postMessage({
-            sourceName: sourceName,
-            targetName: targetName,
+            sourceName,
+            targetName,
             isReply: true,
             callbackId: data.callbackId,
             data: result
@@ -1266,8 +1266,8 @@ function MessageHandler(sourceName, targetName, comObj) {
             reason = reason + '';
           }
           comObj.postMessage({
-            sourceName: sourceName,
-            targetName: targetName,
+            sourceName,
+            targetName,
             isReply: true,
             callbackId: data.callbackId,
             error: reason
@@ -1284,7 +1284,7 @@ function MessageHandler(sourceName, targetName, comObj) {
 }
 
 MessageHandler.prototype = {
-  on: function messageHandlerOn(actionName, handler, scope) {
+  on(actionName, handler, scope) {
     var ah = this.actionHandler;
     if (ah[actionName]) {
       error('There is already an actionName called "' + actionName + '"');
@@ -1297,12 +1297,12 @@ MessageHandler.prototype = {
    * @param {JSON} data JSON data to send.
    * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
    */
-  send: function messageHandlerSend(actionName, data, transfers) {
+  send(actionName, data, transfers) {
     var message = {
       sourceName: this.sourceName,
       targetName: this.targetName,
       action: actionName,
-      data: data
+      data,
     };
     this.postMessage(message, transfers);
   },
@@ -1314,15 +1314,14 @@ MessageHandler.prototype = {
    * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
    * @returns {Promise} Promise to be resolved with response data.
    */
-  sendWithPromise:
-    function messageHandlerSendWithPromise(actionName, data, transfers) {
+  sendWithPromise(actionName, data, transfers) {
     var callbackId = this.callbackIndex++;
     var message = {
       sourceName: this.sourceName,
       targetName: this.targetName,
       action: actionName,
-      data: data,
-      callbackId: callbackId
+      data,
+      callbackId,
     };
     var capability = createPromiseCapability();
     this.callbacksCapabilities[callbackId] = capability;
@@ -1339,7 +1338,7 @@ MessageHandler.prototype = {
    * @param message {Object} Raw message.
    * @param transfers List of transfers/ArrayBuffers, or undefined.
    */
-  postMessage: function (message, transfers) {
+  postMessage(message, transfers) {
     if (transfers && this.postMessageTransfers) {
       this.comObj.postMessage(message, transfers);
     } else {
@@ -1347,7 +1346,7 @@ MessageHandler.prototype = {
     }
   },
 
-  destroy: function () {
+  destroy() {
     this.comObj.removeEventListener('message', this._onComObjOnMessage);
   }
 };
