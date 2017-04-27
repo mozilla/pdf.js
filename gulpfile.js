@@ -43,6 +43,7 @@ var TEST_DIR = 'test/';
 var EXTENSION_SRC_DIR = 'extensions/';
 
 var BASELINE_DIR = BUILD_DIR + 'baseline/';
+var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline/';
 var GENERIC_DIR = BUILD_DIR + 'generic/';
 var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/';
@@ -1346,6 +1347,30 @@ gulp.task('dist-repo-git', ['dist-repo-prepare'], function () {
 });
 
 gulp.task('dist', ['dist-repo-git']);
+
+gulp.task('mozcentralbaseline', ['baseline'], function (done) {
+  console.log();
+  console.log('### Creating mozcentral baseline environment');
+
+  // Create a mozcentral build.
+  rimraf.sync(BASELINE_DIR + BUILD_DIR);
+  spawnSync('gulp', ['mozcentral', '--cwd', BASELINE_DIR], {env: process.env});
+
+  // Copy the mozcentral build to the mozcentral baseline directory.
+  rimraf.sync(MOZCENTRAL_BASELINE_DIR);
+  mkdirp.sync(MOZCENTRAL_BASELINE_DIR);
+
+  gulp.src([BASELINE_DIR + BUILD_DIR + 'mozcentral/**/*'])
+      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+      .on('end', function () {
+        // Commit the mozcentral baseline.
+        spawnSync('git', ['init'], {cwd: MOZCENTRAL_BASELINE_DIR});
+        spawnSync('git', ['add', '.'], {cwd: MOZCENTRAL_BASELINE_DIR});
+        spawnSync('git', ['commit', '-m', 'mozcentral baseline'],
+                  {cwd: MOZCENTRAL_BASELINE_DIR});
+        done();
+      });
+});
 
 // Getting all shelljs registered tasks and register them with gulp
 require('./make.js');

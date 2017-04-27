@@ -223,39 +223,7 @@ target.baseline = function() {
 };
 
 target.mozcentralbaseline = function() {
-  target.baseline();
-
-  cd(ROOT_DIR);
-
-  echo();
-  echo('### Creating mozcentral baseline environment');
-
-  var BASELINE_DIR = BUILD_DIR + 'baseline';
-  var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline';
-  if (test('-d', MOZCENTRAL_BASELINE_DIR)) {
-    rm('-rf', MOZCENTRAL_BASELINE_DIR);
-  }
-
-  cd(BASELINE_DIR);
-  if (test('-d', 'build')) {
-    rm('-rf', 'build');
-  }
-  exec('node make mozcentral');
-
-  cd(ROOT_DIR);
-  mkdir(MOZCENTRAL_BASELINE_DIR);
-  cp('-Rf', BASELINE_DIR + '/build/mozcentral/*', MOZCENTRAL_BASELINE_DIR);
-  // fixing baseline
-  if (test('-f', MOZCENTRAL_BASELINE_DIR +
-                 '/browser/extensions/pdfjs/PdfStreamConverter.js')) {
-    rm(MOZCENTRAL_BASELINE_DIR +
-       '/browser/extensions/pdfjs/PdfStreamConverter.js');
-  }
-
-  cd(MOZCENTRAL_BASELINE_DIR);
-  exec('git init');
-  exec('git add .');
-  exec('git commit -m "mozcentral baseline"');
+  execGulp('mozcentralbaseline');
 };
 
 target.mozcentraldiff = function() {
