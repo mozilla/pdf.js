@@ -186,11 +186,7 @@ target.bottest = function() {
 // make browsertest
 //
 target.browsertest = function(options) {
-  if (options && options.noreftest) {
-    execGulp('browsertest-noreftest');
-  } else {
-    execGulp('browsertest');
-  }
+  execGulp('browsertest');
 };
 
 //
