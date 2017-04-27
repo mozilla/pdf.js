@@ -269,25 +269,25 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
       return this._map.length;
     },
 
-    forEach: function(callback) {
+    forEach(callback) {
       for (var charCode in this._map) {
         callback(charCode, this._map[charCode].charCodeAt(0));
       }
     },
 
-    has: function(i) {
+    has(i) {
       return this._map[i] !== undefined;
     },
 
-    get: function(i) {
+    get(i) {
       return this._map[i];
     },
 
-    charCodeOf: function(v) {
+    charCodeOf(v) {
       return this._map.indexOf(v);
     },
 
-    amend: function (map) {
+    amend(map) {
       for (var charCode in map) {
         this._map[charCode] = map[charCode];
       }
@@ -308,28 +308,28 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
       return (this.lastChar + 1) - this.firstChar;
     },
 
-    forEach: function (callback) {
+    forEach(callback) {
       for (var i = this.firstChar, ii = this.lastChar; i <= ii; i++) {
         callback(i, i);
       }
     },
 
-    has: function (i) {
+    has(i) {
       return this.firstChar <= i && i <= this.lastChar;
     },
 
-    get: function (i) {
+    get(i) {
       if (this.firstChar <= i && i <= this.lastChar) {
         return String.fromCharCode(i);
       }
       return undefined;
     },
 
-    charCodeOf: function (v) {
+    charCodeOf(v) {
       return (isInt(v) && v >= this.firstChar && v <= this.lastChar) ? v : -1;
     },
 
-    amend: function (map) {
+    amend(map) {
       error('Should not call amend()');
     },
   };
@@ -887,9 +887,9 @@ var Font = (function FontClosure() {
       usedFontCharCodes[fontCharCode] = true;
     }
     return {
-      toFontChar: toFontChar,
+      toFontChar,
       charCodeToGlyphId: newMap,
-      nextAvailableFontCharCode: nextAvailableFontCharCode
+      nextAvailableFontCharCode,
     };
   }
 
@@ -1303,11 +1303,11 @@ var Font = (function FontClosure() {
         }
 
         return {
-          tag: tag,
-          checksum: checksum,
-          length: length,
-          offset: offset,
-          data: data
+          tag,
+          checksum,
+          length,
+          offset,
+          data,
         };
       }
 
@@ -1377,9 +1377,9 @@ var Font = (function FontClosure() {
 
           if (useTable) {
             potentialTable = {
-              platformId: platformId,
-              encodingId: encodingId,
-              offset: offset
+              platformId,
+              encodingId,
+              offset,
             };
           }
           if (canBreak) {
@@ -1476,7 +1476,7 @@ var Font = (function FontClosure() {
               glyphId = (glyphId + delta) & 0xFFFF;
               mappings.push({
                 charCode: j,
-                glyphId: glyphId
+                glyphId,
               });
             }
           }
@@ -1494,8 +1494,8 @@ var Font = (function FontClosure() {
             var charCode = firstCode + j;
 
             mappings.push({
-              charCode: charCode,
-              glyphId: glyphId
+              charCode,
+              glyphId,
             });
           }
         } else {
@@ -1522,8 +1522,8 @@ var Font = (function FontClosure() {
         return {
           platformId: potentialTable.platformId,
           encodingId: potentialTable.encodingId,
-          mappings: mappings,
-          hasShortCmap: hasShortCmap
+          mappings,
+          hasShortCmap,
         };
       }
 
@@ -1977,7 +1977,7 @@ var Font = (function FontClosure() {
                 stack.length += ttContext.functionsStackDeltas[funcId];
               } else if (funcId in ttContext.functionsDefined &&
                          functionsCalled.indexOf(funcId) < 0) {
-                callstack.push({data: data, i: i, stackTop: stack.length - 1});
+                callstack.push({ data, i, stackTop: stack.length - 1, });
                 functionsCalled.push(funcId);
                 pc = ttContext.functionsDefined[funcId];
                 if (!pc) {
@@ -1998,7 +1998,7 @@ var Font = (function FontClosure() {
             // collecting inforamtion about which functions are defined
             lastDeff = i;
             funcId = stack.pop();
-            ttContext.functionsDefined[funcId] = {data: data, i: i};
+            ttContext.functionsDefined[funcId] = { data, i, };
           } else if (op === 0x2D) { // ENDF - end of function
             if (inFDEF) {
               inFDEF = false;
@@ -2596,9 +2596,9 @@ var Font = (function FontClosure() {
             var accentFontCharCode = createCharCode(charCodeToGlyphId,
                                                     accentGlyphId);
             seacMap[charCode] = {
-              baseFontCharCode: baseFontCharCode,
-              accentFontCharCode: accentFontCharCode,
-              accentOffset: accentOffset
+              baseFontCharCode,
+              accentFontCharCode,
+              accentOffset,
             };
           }
         }
@@ -2953,7 +2953,7 @@ var Type1Font = (function Type1FontClosure() {
       i++;
     }
     return {
-      found: found,
+      found,
       length: i,
     };
   }
