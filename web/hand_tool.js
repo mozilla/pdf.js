@@ -39,9 +39,9 @@ var HandTool = (function HandToolClosure() {
 
     this.handTool = new GrabToPan({
       element: this.container,
-      onActiveChanged: function(isActive) {
-        this.eventBus.dispatch('handtoolchanged', {isActive: isActive});
-      }.bind(this)
+      onActiveChanged: (isActive) => {
+        this.eventBus.dispatch('handtoolchanged', { isActive, });
+      },
     });
 
     this.eventBus.on('togglehandtool', this.toggle.bind(this));

@@ -39,10 +39,12 @@ var OverlayManager = {
       } else if (this.overlays[name]) {
         throw new Error('The overlay is already registered.');
       }
-      this.overlays[name] = { element: element,
-                              container: container,
-                              callerCloseMethod: (callerCloseMethod || null),
-                              canForceClose: (canForceClose || false) };
+      this.overlays[name] = {
+        element,
+        container,
+        callerCloseMethod: (callerCloseMethod || null),
+        canForceClose: (canForceClose || false),
+      };
       resolve();
     }.bind(this));
   },
