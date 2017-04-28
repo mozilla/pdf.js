@@ -527,15 +527,7 @@ gulp.task('bundle', ['buildnumber'], function () {
 
 function preprocessCSS(source, mode, defines, cleanup) {
   var outName = getTempFile('~preprocess', '.css');
-  var setup = {
-    defines: defines,
-    copy: [],
-    preprocess: [],
-    preprocessCSS: [
-      [mode, source, outName]
-    ]
-  };
-  builder.build(setup);
+  builder.preprocessCSS(mode, source, outName);
   var out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
   if (cleanup) {
@@ -550,15 +542,7 @@ function preprocessCSS(source, mode, defines, cleanup) {
 
 function preprocessHTML(source, defines) {
   var outName = getTempFile('~preprocess', '.html');
-  var setup = {
-    defines: defines,
-    copy: [],
-    preprocess: [
-      [source, outName]
-    ],
-    preprocessCSS: []
-  };
-  builder.build(setup);
+  builder.preprocess(source, outName, defines);
   var out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
 
@@ -568,15 +552,7 @@ function preprocessHTML(source, defines) {
 
 function preprocessJS(source, defines, cleanup) {
   var outName = getTempFile('~preprocess', '.js');
-  var setup = {
-    defines: defines,
-    copy: [],
-    preprocess: [
-      [source, outName]
-    ],
-    preprocessCSS: []
-  };
-  builder.build(setup);
+  builder.preprocess(source, outName, defines);
   var out = fs.readFileSync(outName).toString();
   fs.unlinkSync(outName);
   if (cleanup) {
