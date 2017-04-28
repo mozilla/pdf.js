@@ -852,7 +852,8 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
   // Clear out everything in the firefox extension build directory
   rimraf.sync(MOZCENTRAL_DIR);
 
-  var { version, commit, } = getVersionJSON();
+  var versionJSON = getVersionJSON();
+  var version = versionJSON.version, commit = versionJSON.commit;
 
   return merge([
     createBundle(defines).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + 'build')),
