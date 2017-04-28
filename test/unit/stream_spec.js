@@ -19,9 +19,9 @@ import { Dict } from '../../src/core/primitives';
 describe('stream', function() {
   beforeEach(function() {
     jasmine.addMatchers({
-      toMatchTypedArray: function(util, customEqualityTesters) {
+      toMatchTypedArray(util, customEqualityTesters) {
         return {
-          compare: function (actual, expected) {
+          compare(actual, expected) {
             var result = {};
             if (actual.length !== expected.length) {
               result.pass = false;

@@ -6,4 +6,8 @@
   "parserOptions": {
     "sourceType": "script"
   },
+
+  "rules": {
+    "object-shorthand": "off",
+  },
 }
