@@ -24,7 +24,7 @@ describe('evaluator', function() {
     this.queue = queue || [];
   }
   XrefMock.prototype = {
-    fetchIfRef: function() {
+    fetchIfRef() {
       return this.queue.shift();
     }
   };
@@ -32,13 +32,13 @@ describe('evaluator', function() {
     this.inputs = [];
   }
   HandlerMock.prototype = {
-    send: function(name, data) {
-      this.inputs.push({name: name, data: data});
+    send(name, data) {
+      this.inputs.push({ name, data, });
     }
   };
   function ResourcesMock() { }
   ResourcesMock.prototype = {
-    get: function(name) {
+    get(name) {
       return this[name];
     }
   };
@@ -319,7 +319,7 @@ describe('evaluator', function() {
   describe('operator list', function () {
     function MessageHandlerMock() { }
     MessageHandlerMock.prototype = {
-      send: function () { },
+      send() { },
     };
 
     it('should get correct total length after flushing', function () {

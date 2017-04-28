@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 /* eslint-env node */
+/* eslint-disable object-shorthand */
 /* globals target */
 
 'use strict';

@@ -32,23 +32,23 @@ var LinkServiceMock = (function LinkServiceMockClosure() {
 
     set page(value) {},
 
-    navigateTo: function (dest) {},
+    navigateTo(dest) {},
 
-    getDestinationHash: function (dest) {
+    getDestinationHash(dest) {
       return '#';
     },
 
-    getAnchorUrl: function (hash) {
+    getAnchorUrl(hash) {
       return '#';
     },
 
-    setHash: function (hash) {},
+    setHash(hash) {},
 
-    executeNamedAction: function (action) {},
+    executeNamedAction(action) {},
 
-    onFileAttachmentAnnotation: function (params) {},
+    onFileAttachmentAnnotation(params) {},
 
-    cachePageRef: function (pageNum, pageRef) {},
+    cachePageRef(pageNum, pageRef) {},
   };
 
   return LinkServiceMock;
@@ -101,10 +101,10 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
 
       // Rendering text layer as HTML.
       var task = PDFJS.renderTextLayer({
-        textContent: textContent,
+        textContent,
         container: div,
-        viewport: viewport,
-        enhanceTextSelection: enhanceTextSelection,
+        viewport,
+        enhanceTextSelection,
       });
       Promise.all([stylePromise, task.promise]).then(function (results) {
         task.expandTextDivs(true);
@@ -200,11 +200,11 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
         var annotation_viewport = viewport.clone({ dontFlip: true });
         var parameters = {
           viewport: annotation_viewport,
-          div: div,
-          annotations: annotations,
-          page: page,
+          div,
+          annotations,
+          page,
           linkService: new LinkServiceMock(),
-          renderInteractiveForms: renderInteractiveForms,
+          renderInteractiveForms,
         };
         PDFJS.AnnotationLayer.render(parameters);
 
@@ -527,7 +527,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
             var renderContext = {
               canvasContext: ctx,
-              viewport: viewport,
+              viewport,
               renderInteractiveForms: renderForms,
             };
             var completeRender = (function(error) {
@@ -605,7 +605,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     _info: function Driver_info(message) {
       this._send('/info', JSON.stringify({
         browser: this.browser,
-        message: message
+        message,
       }));
     },
 
@@ -641,11 +641,11 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         numPages: task.pdfDoc ?
                   (task.lastPage || task.pdfDoc.numPages) : 0,
         lastPageNum: this._getLastPageNumber(task),
-        failure: failure,
+        failure,
         file: task.file,
         round: task.round,
         page: task.pageNum,
-        snapshot: snapshot,
+        snapshot,
         stats: task.stats.times
       });
       this._send('/submit_task_results', result, callback);
