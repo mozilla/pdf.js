@@ -138,7 +138,7 @@ var PDFViewer = (function pdfViewer() {
       return this._pages.length;
     },
 
-    getPageView: function (index) {
+    getPageView(index) {
       return this._pages[index];
     },
 
@@ -301,7 +301,7 @@ var PDFViewer = (function pdfViewer() {
     /**
      * @param pdfDocument {PDFDocument}
      */
-    setDocument: function (pdfDocument) {
+    setDocument(pdfDocument) {
       if (this.pdfDocument) {
         this._cancelRendering();
         this._resetView();
@@ -360,10 +360,10 @@ var PDFViewer = (function pdfViewer() {
             container: this.viewer,
             eventBus: this.eventBus,
             id: pageNum,
-            scale: scale,
+            scale,
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
-            textLayerFactory: textLayerFactory,
+            textLayerFactory,
             annotationLayerFactory: this,
             enhanceTextSelection: this.enhanceTextSelection,
             renderInteractiveForms: this.renderInteractiveForms,
@@ -433,7 +433,7 @@ var PDFViewer = (function pdfViewer() {
       }
     },
 
-    _resetView: function () {
+    _resetView() {
       this._pages = [];
       this._currentPageNumber = 1;
       this._currentScale = UNKNOWN_SCALE;
@@ -560,7 +560,7 @@ var PDFViewer = (function pdfViewer() {
      * Refreshes page view: scrolls to the current page and updates the scale.
      * @private
      */
-    _resetCurrentPageView: function () {
+    _resetCurrentPageView() {
       if (this.isInPresentationMode) {
         // Fixes the case when PDF has different page sizes.
         this._setScale(this._currentScaleValue, true);
@@ -701,10 +701,10 @@ var PDFViewer = (function pdfViewer() {
         left = Math.max(left, 0);
         top = Math.max(top, 0);
       }
-      scrollIntoView(pageView.div, { left: left, top: top });
+      scrollIntoView(pageView.div, { left, top, });
     },
 
-    _updateLocation: function (firstPage) {
+    _updateLocation(firstPage) {
       var currentScale = this._currentScale;
       var currentScaleValue = this._currentScaleValue;
       var normalizedScaleValue =
@@ -724,11 +724,11 @@ var PDFViewer = (function pdfViewer() {
       pdfOpenParams += ',' + intLeft + ',' + intTop;
 
       this._location = {
-        pageNumber: pageNumber,
+        pageNumber,
         scale: normalizedScaleValue,
         top: intTop,
         left: intLeft,
-        pdfOpenParams: pdfOpenParams
+        pdfOpenParams,
       };
     },
 
@@ -777,11 +777,11 @@ var PDFViewer = (function pdfViewer() {
       });
     },
 
-    containsElement: function (element) {
+    containsElement(element) {
       return this.container.contains(element);
     },
 
-    focus: function () {
+    focus() {
       this.container.focus();
     },
 
@@ -798,7 +798,7 @@ var PDFViewer = (function pdfViewer() {
         false : (this.container.scrollWidth > this.container.clientWidth));
     },
 
-    _getVisiblePages: function () {
+    _getVisiblePages() {
       if (!this.isInPresentationMode) {
         return getVisibleElements(this.container, this._pages, true);
       }
@@ -810,7 +810,7 @@ var PDFViewer = (function pdfViewer() {
       return { first: currentPage, last: currentPage, views: visible };
     },
 
-    cleanup: function () {
+    cleanup() {
       for (var i = 0, ii = this._pages.length; i < ii; i++) {
         if (this._pages[i] &&
             this._pages[i].renderingState !== RenderingStates.FINISHED) {
@@ -835,7 +835,7 @@ var PDFViewer = (function pdfViewer() {
      * @returns {PDFPage}
      * @private
      */
-    _ensurePdfPageLoaded: function (pageView) {
+    _ensurePdfPageLoaded(pageView) {
       if (pageView.pdfPage) {
         return Promise.resolve(pageView.pdfPage);
       }
@@ -854,7 +854,7 @@ var PDFViewer = (function pdfViewer() {
       return promise;
     },
 
-    forceRendering: function (currentlyVisiblePages) {
+    forceRendering(currentlyVisiblePages) {
       var visiblePages = currentlyVisiblePages || this._getVisiblePages();
       var pageView = this.renderingQueue.getHighestPriority(visiblePages,
                                                             this._pages,
@@ -868,7 +868,7 @@ var PDFViewer = (function pdfViewer() {
       return false;
     },
 
-    getPageTextContent: function (pageIndex) {
+    getPageTextContent(pageIndex) {
       return this.pdfDocument.getPage(pageIndex + 1).then(function (page) {
         return page.getTextContent({
           normalizeWhitespace: true,
@@ -882,13 +882,13 @@ var PDFViewer = (function pdfViewer() {
      * @param {PageViewport} viewport
      * @returns {TextLayerBuilder}
      */
-    createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport,
-                                      enhanceTextSelection) {
+    createTextLayerBuilder(textLayerDiv, pageIndex, viewport,
+                           enhanceTextSelection = false) {
       return new TextLayerBuilder({
-        textLayerDiv: textLayerDiv,
+        textLayerDiv,
         eventBus: this.eventBus,
-        pageIndex: pageIndex,
-        viewport: viewport,
+        pageIndex,
+        viewport,
         findController: this.isInPresentationMode ? null : this.findController,
         enhanceTextSelection: this.isInPresentationMode ? false :
                                                           enhanceTextSelection,
@@ -901,18 +901,18 @@ var PDFViewer = (function pdfViewer() {
      * @param {boolean} renderInteractiveForms
      * @returns {AnnotationLayerBuilder}
      */
-    createAnnotationLayerBuilder: function (pageDiv, pdfPage,
-                                            renderInteractiveForms) {
+    createAnnotationLayerBuilder(pageDiv, pdfPage,
+                                 renderInteractiveForms = false) {
       return new AnnotationLayerBuilder({
-        pageDiv: pageDiv,
-        pdfPage: pdfPage,
-        renderInteractiveForms: renderInteractiveForms,
+        pageDiv,
+        pdfPage,
+        renderInteractiveForms,
         linkService: this.linkService,
         downloadManager: this.downloadManager
       });
     },
 
-    setFindController: function (findController) {
+    setFindController(findController) {
       this.findController = findController;
     },
 
@@ -920,7 +920,7 @@ var PDFViewer = (function pdfViewer() {
      * Returns sizes of the pages.
      * @returns {Array} Array of objects with width/height/rotation fields.
      */
-    getPagesOverview: function () {
+    getPagesOverview() {
       var pagesOverview = this._pages.map(function (pageView) {
         var viewport = pageView.pdfPage.getViewport(1);
         return {

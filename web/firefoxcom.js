@@ -34,13 +34,13 @@ var FirefoxCom = (function FirefoxComClosure() {
      * @param {String} data Optional data to send.
      * @return {*} The response.
      */
-    requestSync: function(action, data) {
+    requestSync(action, data) {
       var request = document.createTextNode('');
       document.documentElement.appendChild(request);
 
       var sender = document.createEvent('CustomEvent');
       sender.initCustomEvent('pdf.js.message', true, false,
-                             {action: action, data: data, sync: true});
+                             { action, data, sync: true, });
       request.dispatchEvent(sender);
       var response = sender.detail.response;
       document.documentElement.removeChild(request);
@@ -54,7 +54,7 @@ var FirefoxCom = (function FirefoxComClosure() {
      * @param {Function} callback Optional response callback that will be called
      * with one data argument.
      */
-    request: function(action, data, callback) {
+    request(action, data, callback) {
       var request = document.createTextNode('');
       if (callback) {
         document.addEventListener('pdf.js.response', function listener(event) {
@@ -71,8 +71,8 @@ var FirefoxCom = (function FirefoxComClosure() {
 
       var sender = document.createEvent('CustomEvent');
       sender.initCustomEvent('pdf.js.message', true, false, {
-        action: action,
-        data: data,
+        action,
+        data,
         sync: false,
         responseExpected: !!callback
       });
@@ -88,7 +88,7 @@ var DownloadManager = (function DownloadManagerClosure() {
     downloadUrl: function DownloadManager_downloadUrl(url, filename) {
       FirefoxCom.request('download', {
         originalUrl: url,
-        filename: filename
+        filename,
       });
     },
 
@@ -97,9 +97,9 @@ var DownloadManager = (function DownloadManagerClosure() {
       var blobUrl = createObjectURL(data, contentType, false);
 
       FirefoxCom.request('download', {
-        blobUrl: blobUrl,
+        blobUrl,
         originalUrl: blobUrl,
-        filename: filename,
+        filename,
         isAttachment: true
       });
     },
@@ -108,9 +108,9 @@ var DownloadManager = (function DownloadManagerClosure() {
       var blobUrl = window.URL.createObjectURL(blob);
 
       FirefoxCom.request('download', {
-        blobUrl: blobUrl,
+        blobUrl,
         originalUrl: url,
-        filename: filename
+        filename,
       },
         function response(err) {
           if (err && this.onerror) {
@@ -176,7 +176,7 @@ FirefoxComDataRangeTransport.prototype =
   Object.create(PDFDataRangeTransport.prototype);
 FirefoxComDataRangeTransport.prototype.requestDataRange =
     function FirefoxComDataRangeTransport_requestDataRange(begin, end) {
-  FirefoxCom.request('requestDataRange', { begin: begin, end: end });
+  FirefoxCom.request('requestDataRange', { begin, end, });
 };
 FirefoxComDataRangeTransport.prototype.abort =
     function FirefoxComDataRangeTransport_abort() {
@@ -185,11 +185,11 @@ FirefoxComDataRangeTransport.prototype.abort =
 };
 
 PDFViewerApplication.externalServices = {
-  updateFindControlState: function (data) {
+  updateFindControlState(data) {
     FirefoxCom.request('updateFindControlState', data);
   },
 
-  initPassiveLoading: function (callbacks) {
+  initPassiveLoading(callbacks) {
     var pdfDataRangeTransport;
 
     window.addEventListener('message', function windowMessage(e) {
@@ -235,15 +235,15 @@ PDFViewerApplication.externalServices = {
     FirefoxCom.requestSync('initPassiveLoading', null);
   },
 
-  fallback: function (data, callback) {
+  fallback(data, callback) {
     FirefoxCom.request('fallback', data, callback);
   },
 
-  reportTelemetry: function (data) {
+  reportTelemetry(data) {
     FirefoxCom.request('reportTelemetry', JSON.stringify(data));
   },
 
-  createDownloadManager: function () {
+  createDownloadManager() {
     return new DownloadManager();
   },
 
@@ -274,11 +274,11 @@ PDFViewerApplication.externalServices = {
 
 // l10n.js for Firefox extension expects services to be set.
 document.mozL10n.setExternalLocalizerServices({
-  getLocale: function () {
+  getLocale() {
     return FirefoxCom.requestSync('getLocale', null);
   },
 
-  getStrings: function (key) {
+  getStrings(key) {
     return FirefoxCom.requestSync('getStrings', key);
   }
 });

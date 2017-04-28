@@ -328,7 +328,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
       id: view.id,
       x: currentWidth,
       y: currentHeight,
-      view: view,
+      view,
       percent: percentHeight
     });
   }
@@ -345,7 +345,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
       return a.id - b.id; // ensure stability
     });
   }
-  return {first: first, last: last, views: visible};
+  return { first, last, views: visible, };
 }
 
 /**

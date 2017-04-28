@@ -127,7 +127,7 @@ var PDFPageView = (function PDFPageViewClosure() {
     /**
      * @private
      */
-    _resetZoomLayer: function(removeFromDOM) {
+    _resetZoomLayer(removeFromDOM = false) {
       if (!this.zoomLayer) {
         return;
       }
@@ -493,15 +493,15 @@ var PDFPageView = (function PDFPageViewClosure() {
       return resultPromise;
     },
 
-    paintOnCanvas: function (canvasWrapper) {
+    paintOnCanvas(canvasWrapper) {
       var renderCapability = createPromiseCapability();
 
       var result = {
         promise: renderCapability.promise,
-        onRenderContinue: function (cont) {
+        onRenderContinue(cont) {
           cont();
         },
-        cancel: function () {
+        cancel() {
           renderTask.cancel();
         }
       };
@@ -568,7 +568,7 @@ var PDFPageView = (function PDFPageViewClosure() {
         [outputScale.sx, 0, 0, outputScale.sy, 0, 0];
       var renderContext = {
         canvasContext: ctx,
-        transform: transform,
+        transform,
         viewport: this.viewport,
         renderInteractiveForms: this.renderInteractiveForms,
         // intent: 'default', // === 'display'
@@ -604,8 +604,8 @@ var PDFPageView = (function PDFPageViewClosure() {
         // "TypeError: paintTask.promise is undefined".
         return {
           promise: Promise.reject(new Error('SVG rendering is not supported.')),
-          onRenderContinue: function (cont) { },
-          cancel: function () { },
+          onRenderContinue(cont) { },
+          cancel() { },
         };
       }
 
@@ -641,11 +641,11 @@ var PDFPageView = (function PDFPageViewClosure() {
       });
 
       return {
-        promise: promise,
-        onRenderContinue: function (cont) {
+        promise,
+        onRenderContinue(cont) {
           cont();
         },
-        cancel: function () {
+        cancel() {
           cancelled = true;
         }
       };

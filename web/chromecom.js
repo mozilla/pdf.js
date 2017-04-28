@@ -38,8 +38,8 @@ var ChromeCom = {};
  */
 ChromeCom.request = function ChromeCom_request(action, data, callback) {
   var message = {
-    action: action,
-    data: data
+    action,
+    data,
   };
   if (!chrome.runtime) {
     console.error('chrome.runtime is undefined.');

@@ -51,8 +51,8 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
     return pdfPage.render(renderContext).promise;
   }).then(function () {
     return {
-      width: width,
-      height: height,
+      width,
+      height,
     };
   });
 }
@@ -67,7 +67,7 @@ function PDFPrintService(pdfDocument, pagesOverview, printContainer) {
 }
 
 PDFPrintService.prototype = {
-  layout: function () {
+  layout() {
     this.throwIfInactive();
 
     var body = document.querySelector('body');
@@ -102,7 +102,7 @@ PDFPrintService.prototype = {
     body.appendChild(this.pageStyleSheet);
   },
 
-  destroy: function () {
+  destroy() {
     if (activeService !== this) {
       // |activeService| cannot be replaced without calling destroy() first,
       // so if it differs then an external consumer has a stale reference to
@@ -125,7 +125,7 @@ PDFPrintService.prototype = {
     });
   },
 
-  renderPages: function () {
+  renderPages() {
     var pageCount = this.pagesOverview.length;
     var renderNextPage = function (resolve, reject) {
       this.throwIfInactive();
@@ -145,7 +145,7 @@ PDFPrintService.prototype = {
     return new Promise(renderNextPage);
   },
 
-  useRenderedPage: function (printItem) {
+  useRenderedPage(printItem) {
     this.throwIfInactive();
     var img = document.createElement('img');
     img.style.width = printItem.width;
@@ -170,7 +170,7 @@ PDFPrintService.prototype = {
     });
   },
 
-  performPrint: function () {
+  performPrint() {
     this.throwIfInactive();
     return new Promise(function (resolve) {
       // Push window.print in the macrotask queue to avoid being affected by
@@ -192,7 +192,7 @@ PDFPrintService.prototype = {
     return this === activeService;
   },
 
-  throwIfInactive: function () {
+  throwIfInactive() {
     if (!this.active) {
       throw new Error('This print request was cancelled or completed.');
     }
@@ -260,7 +260,7 @@ function renderProgress(index, total) {
   var progressPerc = progressContainer.querySelector('.relative-progress');
   progressBar.value = progress;
   progressPerc.textContent = mozL10n.get('print_progress_percent',
-    {progress: progress}, progress + '%');
+    { progress, }, progress + '%');
 }
 
 var hasAttachEvent = !!document.attachEvent;
@@ -320,7 +320,7 @@ function ensureOverlay() {
 PDFPrintServiceFactory.instance = {
   supportsPrinting: true,
 
-  createPrintService: function (pdfDocument, pagesOverview, printContainer) {
+  createPrintService(pdfDocument, pagesOverview, printContainer) {
     if (activeService) {
       throw new Error('The print service is created and active.');
     }

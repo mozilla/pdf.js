@@ -195,8 +195,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
      * @returns {PDFPage}
      * @private
      */
-    _ensurePdfPageLoaded:
-        function PDFThumbnailViewer_ensurePdfPageLoaded(thumbView) {
+    _ensurePdfPageLoaded(thumbView) {
       if (thumbView.pdfPage) {
         return Promise.resolve(thumbView.pdfPage);
       }
@@ -204,25 +203,24 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
       if (this._pagesRequests[pageNumber]) {
         return this._pagesRequests[pageNumber];
       }
-      var promise = this.pdfDocument.getPage(pageNumber).then(
-        function (pdfPage) {
-          thumbView.setPdfPage(pdfPage);
-          this._pagesRequests[pageNumber] = null;
-          return pdfPage;
-        }.bind(this));
+      var promise = this.pdfDocument.getPage(pageNumber).then((pdfPage) => {
+        thumbView.setPdfPage(pdfPage);
+        this._pagesRequests[pageNumber] = null;
+        return pdfPage;
+      });
       this._pagesRequests[pageNumber] = promise;
       return promise;
     },
 
-    forceRendering: function () {
+    forceRendering() {
       var visibleThumbs = this._getVisibleThumbs();
       var thumbView = this.renderingQueue.getHighestPriority(visibleThumbs,
                                                              this.thumbnails,
                                                              this.scroll.down);
       if (thumbView) {
-        this._ensurePdfPageLoaded(thumbView).then(function () {
+        this._ensurePdfPageLoaded(thumbView).then(() => {
           this.renderingQueue.renderView(thumbView);
-        }.bind(this));
+        });
         return true;
       }
       return false;
