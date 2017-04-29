@@ -396,7 +396,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         function PartialEvaluator_buildPaintImageXObject(resources, image,
                                                          inline, operatorList,
                                                          cacheKey, imageCache) {
-      var self = this;
       var dict = image.dict;
       var w = dict.get('Width', 'W');
       var h = dict.get('Height', 'H');
@@ -481,20 +480,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (useNativeImageDecoder &&
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
-        nativeImageDecoder = new NativeImageDecoder(self.xref, resources,
-          self.handler, self.options.forceDataSchema);
+        nativeImageDecoder = new NativeImageDecoder(this.xref, resources,
+          this.handler, this.options.forceDataSchema);
       }
 
-      PDFImage.buildImage(self.handler, self.xref, resources, image, inline,
-                          nativeImageDecoder).
-        then(function(imageObj) {
-          var imgData = imageObj.createImageData(/* forceRGBA = */ false);
-          self.handler.send('obj', [objId, self.pageIndex, 'Image', imgData],
-            [imgData.data.buffer]);
-        }).then(undefined, function (reason) {
-          warn('Unable to decode image: ' + reason);
-          self.handler.send('obj', [objId, self.pageIndex, 'Image', null]);
-        });
+      PDFImage.buildImage(this.handler, this.xref, resources, image, inline,
+                          nativeImageDecoder).then((imageObj) => {
+        var imgData = imageObj.createImageData(/* forceRGBA = */ false);
+        this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
+          [imgData.data.buffer]);
+      }).catch((reason) => {
+        warn('Unable to decode image: ' + reason);
+        this.handler.send('obj', [objId, this.pageIndex, 'Image', null]);
+      });
 
       operatorList.addOp(OPS.paintImageXObject, args);
       if (cacheKey) {
@@ -567,25 +565,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         fontName = fontArgs[0].name;
       }
 
-      var self = this;
-      return this.loadFont(fontName, fontRef, resources).then(
-          function (translated) {
+      return this.loadFont(fontName, fontRef, resources).then((translated) => {
         if (!translated.font.isType3Font) {
           return translated;
         }
-        return translated.loadType3Data(self, resources, operatorList, task).
+        return translated.loadType3Data(this, resources, operatorList, task).
           then(function () {
           return translated;
-        }, function (reason) {
+        }).catch((reason) => {
           // Error in the font data -- sending unsupported feature notification.
-          self.handler.send('UnsupportedFeature',
+          this.handler.send('UnsupportedFeature',
                             {featureId: UNSUPPORTED_FEATURES.font});
           return new TranslatedFont('g_font_error',
             new ErrorFont('Type3 font load error: ' + reason), translated.font);
         });
-      }).then(function (translated) {
+      }).then((translated) => {
         state.font = translated.font;
-        translated.send(self.handler);
+        translated.send(this.handler);
         return translated.loadedName;
       });
     },
@@ -596,7 +592,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var isAddToPathSet = !!(state.textRenderingMode &
                               TextRenderingMode.ADD_TO_PATH_FLAG);
       if (font.data && (isAddToPathSet || this.options.disableFontFace)) {
-        var buildPath = function (fontChar) {
+        var buildPath = (fontChar) => {
           if (!font.renderer.hasBuiltPath(fontChar)) {
             var path = font.renderer.getPathJs(fontChar);
             this.handler.send('commonobj', [
@@ -605,7 +601,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               path
             ]);
           }
-        }.bind(this);
+        };
 
         for (var i = 0, ii = glyphs.length; i < ii; i++) {
           var glyph = glyphs[i];
@@ -629,11 +625,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // This array holds the converted/processed state data.
       var gStateObj = [];
       var gStateKeys = gState.getKeys();
-      var self = this;
       var promise = Promise.resolve();
       for (var i = 0, ii = gStateKeys.length; i < ii; i++) {
-        var key = gStateKeys[i];
-        var value = gState.get(key);
+        let key = gStateKeys[i];
+        let value = gState.get(key);
         switch (key) {
           case 'Type':
             break;
@@ -649,8 +644,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             gStateObj.push([key, value]);
             break;
           case 'Font':
-            promise = promise.then(function () {
-              return self.handleSetFont(resources, null, value[0], operatorList,
+            promise = promise.then(() => {
+              return this.handleSetFont(resources, null, value[0], operatorList,
                                         task, stateManager.state).
                 then(function (loadedName) {
                   operatorList.addDependency(loadedName);
@@ -667,10 +662,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             }
             if (isDict(value)) {
-              promise = promise.then(function (dict) {
-                return self.handleSMask(dict, resources, operatorList,
+              promise = promise.then(() => {
+                return this.handleSMask(value, resources, operatorList,
                                         task, stateManager);
-              }.bind(this, value));
+              });
               gStateObj.push([key, true]);
             } else {
               warn('Unsupported SMask type');
@@ -824,7 +819,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         translatedPromise = Promise.reject(e);
       }
 
-      var self = this;
       translatedPromise.then(function (translatedFont) {
         if (translatedFont.fontType !== undefined) {
           var xrefFontStats = xref.stats.fontTypes;
@@ -833,10 +827,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
         fontCapability.resolve(new TranslatedFont(font.loadedName,
           translatedFont, font));
-      }, function (reason) {
+      }).catch((reason) => {
         // TODO fontCapability.reject?
         // Error in the font data -- sending unsupported feature notification.
-        self.handler.send('UnsupportedFeature',
+        this.handler.send('UnsupportedFeature',
                           {featureId: UNSUPPORTED_FEATURES.font});
 
         try {
@@ -1203,7 +1197,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         // Closing those for them.
         closePendingRestoreOPS();
         resolve();
-      }).catch(function(reason) {
+      }).catch((reason) => {
         if (this.options.ignoreErrors) {
           // Error(s) in the OperatorList -- sending unsupported feature
           // notification and allow rendering to continue.
@@ -1215,7 +1209,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return;
         }
         throw reason;
-      }.bind(this));
+      });
     },
 
     getTextContent:
@@ -1735,7 +1729,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         }
         flushTextContentItem();
         resolve(textContent);
-      }).catch(function(reason) {
+      }).catch((reason) => {
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
           warn('getTextContent - ignoring errors during task: ' + task.name);
@@ -1744,7 +1738,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           return textContent;
         }
         throw reason;
-      }.bind(this));
+      });
     },
 
     extractDataStructures:
@@ -1848,10 +1842,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       properties.baseEncodingName = baseEncodingName;
       properties.hasEncoding = !!baseEncodingName || differences.length > 0;
       properties.dict = dict;
-      return toUnicodePromise.then(function(toUnicode) {
+      return toUnicodePromise.then((toUnicode) => {
         properties.toUnicode = toUnicode;
         return this.buildToUnicode(properties);
-      }.bind(this)).then(function (toUnicode) {
+      }).then(function (toUnicode) {
         properties.toUnicode = toUnicode;
         return properties;
       });
@@ -2360,12 +2354,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             firstChar: 0,
             lastChar: maxCharIndex
           };
-          return this.extractDataStructures(dict, dict, properties).then(
-              function (properties) {
-            properties.widths = this.buildCharCodeToWidth(metrics.widths,
-                                                          properties);
-            return new Font(baseFontName, null, properties);
-          }.bind(this));
+          return this.extractDataStructures(dict, dict, properties).
+            then((properties) => {
+              properties.widths = this.buildCharCodeToWidth(metrics.widths,
+                                                            properties);
+              return new Font(baseFontName, null, properties);
+            });
         }
       }
 
@@ -2462,17 +2456,16 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         cMapPromise = Promise.resolve(undefined);
       }
 
-      return cMapPromise.then(function () {
+      return cMapPromise.then(() => {
         return this.extractDataStructures(dict, baseDict, properties);
-      }.bind(this)).then(function (properties) {
+      }).then((properties) => {
         this.extractWidths(dict, descriptor, properties);
 
         if (type === 'Type3') {
           properties.isType3Font = true;
         }
-
         return new Font(fontName.name, fontFile, properties);
-      }.bind(this));
+      });
     }
   };
 
@@ -2521,7 +2514,8 @@ var TranslatedFont = (function TranslatedFontClosure() {
       var charProcOperatorList = Object.create(null);
 
       for (var i = 0, n = charProcKeys.length; i < n; ++i) {
-        loadCharProcsPromise = loadCharProcsPromise.then(function (key) {
+        let key = charProcKeys[i];
+        loadCharProcsPromise = loadCharProcsPromise.then(function () {
           var glyphStream = charProcs.get(key);
           var operatorList = new OperatorList();
           return type3Evaluator.getOperatorList(glyphStream, task,
@@ -2532,12 +2526,12 @@ var TranslatedFont = (function TranslatedFontClosure() {
             // Add the dependencies to the parent operator list so they are
             // resolved before sub operator list is executed synchronously.
             parentOperatorList.addDependencies(operatorList.dependencies);
-          }, function (reason) {
-            warn('Type3 font resource \"' + key + '\" is not available');
+          }).catch(function(reason) {
+            warn(`Type3 font resource "${key}" is not available.`);
             var operatorList = new OperatorList();
             charProcOperatorList[key] = operatorList.getIR();
           });
-        }.bind(this, charProcKeys[i]));
+        });
       }
       this.type3Loaded = loadCharProcsPromise.then(function () {
         translatedFont.charProcOperatorList = charProcOperatorList;
