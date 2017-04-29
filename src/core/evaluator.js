@@ -109,7 +109,7 @@ var getUnicodeForGlyph = coreUnicode.getUnicodeForGlyph;
 var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
 
 var PartialEvaluator = (function PartialEvaluatorClosure() {
-  var DefaultPartialEvaluatorOptions = {
+  const DefaultPartialEvaluatorOptions = {
     forceDataSchema: false,
     maxImageSize: -1,
     disableFontFace: false,
@@ -170,8 +170,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
 
-  function PartialEvaluator(pdfManager, xref, handler, pageIndex,
-                            idFactory, fontCache, builtInCMapCache, options) {
+  function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
+                              fontCache, builtInCMapCache, options = null, }) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
@@ -186,7 +186,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (cachedCMap) {
         return Promise.resolve(cachedCMap);
       }
-      return handler.sendWithPromise('FetchBuiltInCMap', {
+      return this.handler.sendWithPromise('FetchBuiltInCMap', {
         name,
       }).then((data) => {
         if (data.compressionType !== CMapCompressionType.NONE) {
@@ -381,15 +381,19 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       operatorList.addOp(OPS.paintFormXObjectBegin, [matrix, bbox]);
 
-      return this.getOperatorList(xobj, task,
-                                  (dict.get('Resources') || resources),
-                                  operatorList, initialState).then(function () {
-          operatorList.addOp(OPS.paintFormXObjectEnd, []);
+      return this.getOperatorList({
+        stream: xobj,
+        task,
+        resources: dict.get('Resources') || resources,
+        operatorList,
+        initialState,
+      }).then(function () {
+        operatorList.addOp(OPS.paintFormXObjectEnd, []);
 
-          if (group) {
-            operatorList.addOp(OPS.endGroup, [groupOptions]);
-          }
-        });
+        if (group) {
+          operatorList.addOp(OPS.endGroup, [groupOptions]);
+        }
+      });
     },
 
     buildPaintImageXObject:
@@ -543,8 +547,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var resourcesArray = [patternDict.get('Resources'), resources];
       var patternResources = Dict.merge(this.xref, resourcesArray);
 
-      return this.getOperatorList(pattern, task, patternResources,
-                                  tilingOpList).then(function () {
+      return this.getOperatorList({
+        stream: pattern,
+        task,
+        resources: patternResources,
+        operatorList: tilingOpList,
+      }).then(function () {
         // Add the dependencies to the parent operator list so they are
         // resolved before sub operator list is executed synchronously.
         operatorList.addDependencies(tilingOpList.dependencies);
@@ -897,21 +905,22 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       return Promise.resolve();
     },
 
-    getOperatorList: function PartialEvaluator_getOperatorList(stream,
-                                                               task,
-                                                               resources,
-                                                               operatorList,
-                                                               initialState) {
+    getOperatorList({ stream, task, resources, operatorList,
+                      initialState = null, }) {
+      // Ensure that `resources`/`initialState` is correctly initialized,
+      // even if the provided parameter is e.g. `null`.
+      resources = resources || Dict.empty;
+      initialState = initialState || new EvalState();
+
+      assert(operatorList, 'getOperatorList: missing "operatorList" parameter');
+
       var self = this;
       var xref = this.xref;
       var imageCache = Object.create(null);
 
-      assert(operatorList);
-
-      resources = (resources || Dict.empty);
       var xobjs = (resources.get('XObject') || Dict.empty);
       var patterns = (resources.get('Pattern') || Dict.empty);
-      var stateManager = new StateManager(initialState || new EvalState());
+      var stateManager = new StateManager(initialState);
       var preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
       var timeSlotManager = new TimeSlotManager();
 
@@ -1212,13 +1221,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       });
     },
 
-    getTextContent:
-        function PartialEvaluator_getTextContent(stream, task, resources,
-                                                 stateManager,
-                                                 normalizeWhitespace,
-                                                 combineTextItems) {
-
-      stateManager = (stateManager || new StateManager(new TextState()));
+    getTextContent({ stream, task, resources, stateManager = null,
+                     normalizeWhitespace = false, combineTextItems = false, }) {
+      // Ensure that `resources`/`stateManager` is correctly initialized,
+      // even if the provided parameter is e.g. `null`.
+      resources = resources || Dict.empty;
+      stateManager = stateManager || new StateManager(new TextState());
 
       var WhitespaceRegexp = /\s/g;
 
@@ -1249,8 +1257,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       var self = this;
       var xref = this.xref;
-
-      resources = (xref.fetchIfRef(resources) || Dict.empty);
 
       // The xobj is parsed iff it's needed, e.g. if there is a `DO` cmd.
       var xobjs = null;
@@ -1690,16 +1696,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 xObjStateManager.transform(matrix);
               }
 
-              next(self.getTextContent(xobj, task,
-                   xobj.dict.get('Resources') || resources, xObjStateManager,
-                   normalizeWhitespace, combineTextItems).then(
-                function (formTextContent) {
-                  Util.appendToArray(textContent.items, formTextContent.items);
-                  Util.extendObj(textContent.styles, formTextContent.styles);
+              next(self.getTextContent({
+                stream: xobj,
+                task,
+                resources: xobj.dict.get('Resources') || resources,
+                stateManager: xObjStateManager,
+                normalizeWhitespace,
+                combineTextItems,
+              }).then(function (formTextContent) {
+                Util.appendToArray(textContent.items, formTextContent.items);
+                Util.extendObj(textContent.styles, formTextContent.styles);
 
-                  xobjsCache.key = name;
-                  xobjsCache.texts = formTextContent;
-                }));
+                xobjsCache.key = name;
+                xobjsCache.texts = formTextContent;
+              }));
               return;
             case OPS.setGState:
               flushTextContentItem();
@@ -2518,9 +2528,12 @@ var TranslatedFont = (function TranslatedFontClosure() {
         loadCharProcsPromise = loadCharProcsPromise.then(function () {
           var glyphStream = charProcs.get(key);
           var operatorList = new OperatorList();
-          return type3Evaluator.getOperatorList(glyphStream, task,
-                                                fontResources, operatorList).
-              then(function () {
+          return type3Evaluator.getOperatorList({
+            stream: glyphStream,
+            task,
+            resources: fontResources,
+            operatorList,
+          }).then(function () {
             charProcOperatorList[key] = operatorList.getIR();
 
             // Add the dependencies to the parent operator list so they are

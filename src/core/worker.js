@@ -848,9 +848,12 @@ var WorkerMessageHandler = {
         var pageNum = pageIndex + 1;
         var start = Date.now();
         // Pre compile the pdf page and fetch the fonts/images.
-        page.getOperatorList(handler, task, data.intent,
-                             data.renderInteractiveForms).then(
-            function(operatorList) {
+        page.getOperatorList({
+          handler,
+          task,
+          intent: data.intent,
+          renderInteractiveForms: data.renderInteractiveForms,
+        }).then(function(operatorList) {
           finishWorkerTask(task);
 
           info('page=' + pageNum + ' - getOperatorList: time=' +
@@ -906,10 +909,14 @@ var WorkerMessageHandler = {
 
         var pageNum = pageIndex + 1;
         var start = Date.now();
-        return page.extractTextContent(handler, task, data.normalizeWhitespace,
-                                       data.combineTextItems).then(
-            function(textContent) {
+        return page.extractTextContent({
+          handler,
+          task,
+          normalizeWhitespace: data.normalizeWhitespace,
+          combineTextItems: data.combineTextItems,
+        }).then(function(textContent) {
           finishWorkerTask(task);
+
           info('text indexing: page=' + pageNum + ' - time=' +
                (Date.now() - start) + 'ms');
           return textContent;
