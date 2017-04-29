@@ -2344,7 +2344,7 @@ var LZWStream = (function LZWStreamClosure() {
 
     var maxLzwDictionarySize = 4096;
     var lzwState = {
-      earlyChange: earlyChange,
+      earlyChange,
       codeLength: 9,
       nextCode: 258,
       dictionaryValues: new Uint8Array(maxLzwDictionarySize),

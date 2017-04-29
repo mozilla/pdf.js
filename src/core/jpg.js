@@ -803,8 +803,8 @@ var JpegImage = (function JpegImageClosure() {
               }
               var qId = data[offset + 2];
               l = frame.components.push({
-                h: h,
-                v: v,
+                h,
+                v,
                 quantizationId: qId,
                 quantizationTable: null, // See comment below.
               });

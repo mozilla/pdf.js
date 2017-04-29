@@ -512,13 +512,13 @@ var JpxImage = (function JpxImageClosure() {
     var numprecincts = numprecinctswide * numprecinctshigh;
 
     resolution.precinctParameters = {
-      precinctWidth: precinctWidth,
-      precinctHeight: precinctHeight,
-      numprecinctswide: numprecinctswide,
-      numprecinctshigh: numprecinctshigh,
-      numprecincts: numprecincts,
-      precinctWidthInSubband: precinctWidthInSubband,
-      precinctHeightInSubband: precinctHeightInSubband
+      precinctWidth,
+      precinctHeight,
+      numprecinctswide,
+      numprecinctshigh,
+      numprecincts,
+      precinctWidthInSubband,
+      precinctHeightInSubband,
     };
   }
   function buildCodeblocks(context, subband, dimensions) {
@@ -619,7 +619,7 @@ var JpxImage = (function JpxImageClosure() {
       }
     }
     return {
-      layerNumber: layerNumber,
+      layerNumber,
       codeblocks: precinctCodeblocks
     };
   }
@@ -921,10 +921,10 @@ var JpxImage = (function JpxImageClosure() {
     }
     return {
       components: sizePerComponent,
-      minWidth: minWidth,
-      minHeight: minHeight,
-      maxNumWide: maxNumWide,
-      maxNumHigh: maxNumHigh
+      minWidth,
+      minHeight,
+      maxNumWide,
+      maxNumHigh,
     };
   }
   function buildPackets(context) {
@@ -1184,8 +1184,8 @@ var JpxImage = (function JpxImageClosure() {
           codingpassesLog2 - 1 : codingpassesLog2) + codeblock.Lblock;
         var codedDataLength = readBits(bits);
         queue.push({
-          codeblock: codeblock,
-          codingpasses: codingpasses,
+          codeblock,
+          codingpasses,
           dataLength: codedDataLength
         });
       }
@@ -1200,7 +1200,7 @@ var JpxImage = (function JpxImageClosure() {
           codeblock.data = [];
         }
         codeblock.data.push({
-          data: data,
+          data,
           start: offset + position,
           end: offset + position + packetItem.dataLength,
           codingpasses: packetItem.codingpasses
@@ -1363,8 +1363,8 @@ var JpxImage = (function JpxImageClosure() {
                          reversible, segmentationSymbolUsed);
       }
       subbandCoefficients.push({
-        width: width,
-        height: height,
+        width,
+        height,
         items: coefficients
       });
     }
@@ -1498,8 +1498,8 @@ var JpxImage = (function JpxImageClosure() {
       this.levels = [];
       for (var i = 0; i < levelsLength; i++) {
         var level = {
-          width: width,
-          height: height,
+          width,
+          height,
           items: []
         };
         this.levels.push(level);
@@ -1562,9 +1562,9 @@ var JpxImage = (function JpxImageClosure() {
         }
 
         var level = {
-          width: width,
-          height: height,
-          items: items
+          width,
+          height,
+          items,
         };
         this.levels.push(level);
 
@@ -2097,9 +2097,9 @@ var JpxImage = (function JpxImageClosure() {
       }
 
       return {
-        width: width,
-        height: height,
-        items: items
+        width,
+        height,
+        items,
       };
     };
     return Transform;

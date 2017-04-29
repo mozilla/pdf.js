@@ -280,7 +280,7 @@ var PDFImage = (function PDFImageClosure() {
       }
     }
 
-    return {data: data, width: width, height: height};
+    return { data, width, height, };
   };
 
   PDFImage.prototype = {

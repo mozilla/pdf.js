@@ -144,7 +144,7 @@ var Catalog = (function CatalogClosure() {
         return null;
       }
       var root = { items: [] };
-      var queue = [{obj: obj, parent: root}];
+      var queue = [{ obj, parent: root, }];
       // To avoid recursion, keep track of the already processed items.
       var processed = new RefSet();
       processed.put(obj);
@@ -188,12 +188,12 @@ var Catalog = (function CatalogClosure() {
         i.parent.items.push(outlineItem);
         obj = outlineDict.getRaw('First');
         if (isRef(obj) && !processed.has(obj)) {
-          queue.push({obj: obj, parent: outlineItem});
+          queue.push({ obj, parent: outlineItem, });
           processed.put(obj);
         }
         obj = outlineDict.getRaw('Next');
         if (isRef(obj) && !processed.has(obj)) {
-          queue.push({obj: obj, parent: i.parent});
+          queue.push({ obj, parent: i.parent, });
           processed.put(obj);
         }
       }
@@ -962,7 +962,7 @@ var XRef = (function XRefClosure() {
 
         this.streamState = {
           entryRanges: range,
-          byteWidths: byteWidths,
+          byteWidths,
           entryNum: 0,
           streamPos: stream.pos
         };
