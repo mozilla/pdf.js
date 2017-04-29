@@ -41,7 +41,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function ContextCache() {}
 
   ContextCache.prototype = {
-    getContexts: function(id) {
+    getContexts(id) {
       if (id in this) {
         return this[id];
       }
@@ -720,7 +720,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       position = segmentHeader.headerEnd;
       var segment = {
         header: segmentHeader,
-        data: data
+        data,
       };
       if (!header.randomAccess) {
         segment.start = position;

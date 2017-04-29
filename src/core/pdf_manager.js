@@ -231,7 +231,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
     sendProgressiveData:
         function NetworkPdfManager_sendProgressiveData(chunk) {
-      this.streamManager.onReceiveData({ chunk: chunk });
+      this.streamManager.onReceiveData({ chunk, });
     },
 
     onLoadedStream: function NetworkPdfManager_onLoadedStream() {

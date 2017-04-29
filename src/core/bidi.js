@@ -115,7 +115,7 @@
 
   function createBidiText(str, isLTR, vertical) {
     return {
-      str: str,
+      str,
       dir: (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'))
     };
   }

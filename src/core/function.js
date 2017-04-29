@@ -870,36 +870,36 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     this.parts = [];
   }
   ExpressionBuilderVisitor.prototype = {
-    visitArgument: function (arg) {
+    visitArgument(arg) {
       this.parts.push('Math.max(', arg.min, ', Math.min(',
                       arg.max, ', src[srcOffset + ', arg.index, ']))');
     },
-    visitVariable: function (variable) {
+    visitVariable(variable) {
       this.parts.push('v', variable.index);
     },
-    visitLiteral: function (literal) {
+    visitLiteral(literal) {
       this.parts.push(literal.number);
     },
-    visitBinaryOperation: function (operation) {
+    visitBinaryOperation(operation) {
       this.parts.push('(');
       operation.arg1.visit(this);
       this.parts.push(' ', operation.op, ' ');
       operation.arg2.visit(this);
       this.parts.push(')');
     },
-    visitVariableDefinition: function (definition) {
+    visitVariableDefinition(definition) {
       this.parts.push('var ');
       definition.variable.visit(this);
       this.parts.push(' = ');
       definition.arg.visit(this);
       this.parts.push(';');
     },
-    visitMin: function (max) {
+    visitMin(max) {
       this.parts.push('Math.min(');
       max.arg.visit(this);
       this.parts.push(', ', max.max, ')');
     },
-    toString: function () {
+    toString() {
       return this.parts.join('');
     }
   };

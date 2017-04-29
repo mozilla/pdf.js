@@ -93,7 +93,7 @@ var Page = (function PageClosure() {
       obj: 0,
     };
     this.idFactory = {
-      createObjId: function () {
+      createObjId() {
         return uniquePrefix + (++idCounters.obj);
       },
     };
@@ -266,7 +266,7 @@ var Page = (function PageClosure() {
         handler.send('StartRenderPage', {
           transparency: partialEvaluator.hasBlendModes(self.resources),
           pageIndex: self.pageIndex,
-          intent: intent
+          intent,
         });
         return partialEvaluator.getOperatorList(contentStream, task,
           self.resources, opList).then(function () {
@@ -567,11 +567,9 @@ var PDFDocument = (function PDFDocumentClosure() {
     },
     setup: function PDFDocument_setup(recoveryMode) {
       this.xref.parse(recoveryMode);
-      var self = this;
       var pageFactory = {
-        createPage: function (pageIndex, dict, ref, fontCache,
-                              builtInCMapCache) {
-          return new Page(self.pdfManager, self.xref, pageIndex, dict, ref,
+        createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
+          return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
                           fontCache, builtInCMapCache);
         }
       };

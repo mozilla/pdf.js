@@ -237,7 +237,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
           repeat += code[i++];
         }
         while (repeat-- > 0) {
-          points.push({flags: flags});
+          points.push({ flags, });
         }
       }
       for (j = 0; j < numberOfPoints; j++) {
@@ -617,7 +617,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     this.fontMatrix = fontMatrix;
   }
   CompiledFont.prototype = {
-    getPathJs: function (unicode) {
+    getPathJs(unicode) {
       var cmap = lookupCmap(this.cmap, unicode);
       var fn = this.compiledGlyphs[cmap.glyphId];
       if (!fn) {
@@ -630,7 +630,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       return fn;
     },
 
-    compileGlyph: function (code) {
+    compileGlyph(code) {
       if (!code || code.length === 0 || code[0] === 14) {
         return noop;
       }
@@ -647,11 +647,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       return cmds;
     },
 
-    compileGlyphImpl: function () {
+    compileGlyphImpl() {
       error('Children classes should implement this.');
     },
 
-    hasBuiltPath: function (unicode) {
+    hasBuiltPath(unicode) {
       var cmap = lookupCmap(this.cmap, unicode);
       return (this.compiledGlyphs[cmap.glyphId] !== undefined &&
               this.compiledCharCodeToGlyphId[cmap.charCode] !== undefined);
@@ -667,7 +667,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   Util.inherit(TrueTypeCompiled, CompiledFont, {
-    compileGlyphImpl: function (code, cmds) {
+    compileGlyphImpl(code, cmds) {
       compileGlyf(code, cmds, this);
     }
   });
@@ -689,7 +689,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   }
 
   Util.inherit(Type2Compiled, CompiledFont, {
-    compileGlyphImpl: function (code, cmds) {
+    compileGlyphImpl(code, cmds) {
       compileCharString(code, cmds, this);
     }
   });

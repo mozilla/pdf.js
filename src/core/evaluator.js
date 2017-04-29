@@ -124,11 +124,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.forceDataSchema = forceDataSchema;
   }
   NativeImageDecoder.prototype = {
-    canDecode: function (image) {
+    canDecode(image) {
       return image instanceof JpegStream &&
              NativeImageDecoder.isDecodable(image, this.xref, this.resources);
     },
-    decode: function (image) {
+    decode(image) {
       // For natively supported JPEGs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
@@ -181,17 +181,17 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
 
-    this.fetchBuiltInCMap = function (name) {
-      var cachedCMap = builtInCMapCache[name];
+    this.fetchBuiltInCMap = (name) => {
+      var cachedCMap = this.builtInCMapCache[name];
       if (cachedCMap) {
         return Promise.resolve(cachedCMap);
       }
       return handler.sendWithPromise('FetchBuiltInCMap', {
-        name: name,
-      }).then(function (data) {
+        name,
+      }).then((data) => {
         if (data.compressionType !== CMapCompressionType.NONE) {
           // Given the size of uncompressed CMaps, only cache compressed ones.
-          builtInCMapCache[name] = data;
+          this.builtInCMapCache[name] = data;
         }
         return data;
       });
@@ -267,8 +267,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   var TILING_PATTERN = 1, SHADING_PATTERN = 2;
 
   PartialEvaluator.prototype = {
-    clone: function(newOptions) {
-      newOptions = newOptions || DefaultPartialEvaluatorOptions;
+    clone(newOptions = DefaultPartialEvaluatorOptions) {
       var newEvaluator = Object.create(this);
       newEvaluator.options = newOptions;
       return newEvaluator;
@@ -356,9 +355,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       var group = dict.get('Group');
       if (group) {
         var groupOptions = {
-          matrix: matrix,
-          bbox: bbox,
-          smask: smask,
+          matrix,
+          bbox,
+          smask,
           isolated: false,
           knockout: false
         };
@@ -437,7 +436,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (cacheKey) {
           imageCache[cacheKey] = {
             fn: OPS.paintImageMaskXObject,
-            args: args
+            args,
           };
         }
         return;
@@ -501,7 +500,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (cacheKey) {
         imageCache[cacheKey] = {
           fn: OPS.paintImageXObject,
-          args: args
+          args,
         };
       }
     },
@@ -2207,9 +2206,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return {
-        defaultWidth: defaultWidth,
-        monospace: monospace,
-        widths: widths
+        defaultWidth,
+        monospace,
+        widths,
       };
     },
 
@@ -2308,10 +2307,10 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       return {
-        descriptor: descriptor,
-        dict: dict,
-        baseDict: baseDict,
-        composite: composite,
+        descriptor,
+        dict,
+        baseDict,
+        composite,
         type: type.name,
         hash: hash ? hash.hexdigest() : ''
       };
@@ -2353,11 +2352,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                                   FontFlags.Nonsymbolic);
 
           properties = {
-            type: type,
+            type,
             name: baseFontName,
             widths: metrics.widths,
             defaultWidth: metrics.defaultWidth,
-            flags: flags,
+            flags,
             firstChar: 0,
             lastChar: maxCharIndex
           };
@@ -2421,15 +2420,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       }
 
       properties = {
-        type: type,
+        type,
         name: fontName.name,
-        subtype: subtype,
+        subtype,
         file: fontFile,
-        length1: length1,
-        length2: length2,
-        length3: length3,
+        length1,
+        length2,
+        length3,
         loadedName: baseDict.loadedName,
-        composite: composite,
+        composite,
         wideChars: composite,
         fixedPitch: false,
         fontMatrix: (dict.getArray('FontMatrix') || FONT_IDENTITY_MATRIX),
@@ -2489,7 +2488,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
     this.sent = false;
   }
   TranslatedFont.prototype = {
-    send: function (handler) {
+    send(handler) {
       if (this.sent) {
         return;
       }
@@ -2501,7 +2500,7 @@ var TranslatedFont = (function TranslatedFontClosure() {
       ]);
       this.sent = true;
     },
-    loadType3Data: function (evaluator, resources, parentOperatorList, task) {
+    loadType3Data(evaluator, resources, parentOperatorList, task) {
       assert(this.font.isType3Font);
 
       if (this.type3Loaded) {
@@ -2594,7 +2593,7 @@ var OperatorList = (function OperatorListClosure() {
       return (this._totalLength + this.length);
     },
 
-    addOp: function(fn, args) {
+    addOp(fn, args) {
       this.fnArray.push(fn);
       this.argsArray.push(args);
       if (this.messageHandler) {
@@ -2608,7 +2607,7 @@ var OperatorList = (function OperatorListClosure() {
       }
     },
 
-    addDependency: function(dependency) {
+    addDependency(dependency) {
       if (dependency in this.dependencies) {
         return;
       }
@@ -2616,20 +2615,20 @@ var OperatorList = (function OperatorListClosure() {
       this.addOp(OPS.dependency, [dependency]);
     },
 
-    addDependencies: function(dependencies) {
+    addDependencies(dependencies) {
       for (var key in dependencies) {
         this.addDependency(key);
       }
     },
 
-    addOpList: function(opList) {
+    addOpList(opList) {
       Util.extendObj(this.dependencies, opList.dependencies);
       for (var i = 0, ii = opList.length; i < ii; i++) {
         this.addOp(opList.fnArray[i], opList.argsArray[i]);
       }
     },
 
-    getIR: function() {
+    getIR() {
       return {
         fnArray: this.fnArray,
         argsArray: this.argsArray,
@@ -2637,7 +2636,7 @@ var OperatorList = (function OperatorListClosure() {
       };
     },
 
-    flush: function(lastChunk) {
+    flush(lastChunk) {
       if (this.intent !== 'oplist') {
         new QueueOptimizer().optimize(this);
       }
@@ -2649,8 +2648,8 @@ var OperatorList = (function OperatorListClosure() {
         operatorList: {
           fnArray: this.fnArray,
           argsArray: this.argsArray,
-          lastChunk: lastChunk,
-          length: length
+          lastChunk,
+          length,
         },
         pageIndex: this.pageIndex,
         intent: this.intent
@@ -2670,18 +2669,18 @@ var StateManager = (function StateManagerClosure() {
     this.stateStack = [];
   }
   StateManager.prototype = {
-    save: function () {
+    save() {
       var old = this.state;
       this.stateStack.push(this.state);
       this.state = old.clone();
     },
-    restore: function () {
+    restore() {
       var prev = this.stateStack.pop();
       if (prev) {
         this.state = prev;
       }
     },
-    transform: function (args) {
+    transform(args) {
       this.state.ctm = Util.transform(this.state.ctm, args);
     }
   };
@@ -3110,7 +3109,7 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
           maxLineHeight = 0;
         }
         map.push({
-          transform: transform,
+          transform,
           x: currentX, y: currentY,
           w: img.width, h: img.height
         });
@@ -3403,8 +3402,8 @@ var QueueOptimizer = (function QueueOptimizerClosure() {
       var fnArray = queue.fnArray, argsArray = queue.argsArray;
       var context = {
         iCurr: 0,
-        fnArray: fnArray,
-        argsArray: argsArray
+        fnArray,
+        argsArray,
       };
       var state;
       var i = 0, ii = fnArray.length;
