@@ -459,14 +459,14 @@ var Stats = (function Stats() {
     name: 'Stats',
     panel: null,
     manager: null,
-    init: function init(pdfjsLib) {
+    init(pdfjsLib) {
       this.panel.setAttribute('style', 'padding: 5px;');
       pdfjsLib.PDFJS.enableStats = true;
     },
     enabled: false,
     active: false,
     // Stats specific functions.
-    add: function(pageNumber, stat) {
+    add(pageNumber, stat) {
       if (!stat) {
         return;
       }
@@ -485,7 +485,7 @@ var Stats = (function Stats() {
       statsDiv.textContent = stat.toString();
       wrapper.appendChild(title);
       wrapper.appendChild(statsDiv);
-      stats.push({ pageNumber: pageNumber, div: wrapper });
+      stats.push({ pageNumber, div: wrapper, });
       stats.sort(function(a, b) {
         return a.pageNumber - b.pageNumber;
       });
@@ -494,7 +494,7 @@ var Stats = (function Stats() {
         this.panel.appendChild(stats[i].div);
       }
     },
-    cleanup: function () {
+    cleanup() {
       stats = [];
       clear(this.panel);
     }
@@ -513,7 +513,7 @@ window.PDFBug = (function PDFBugClosure() {
       StepperManager,
       Stats
     ],
-    enable: function(ids) {
+    enable(ids) {
       var all = false, tools = this.tools;
       if (ids.length === 1 && ids[0] === 'all') {
         all = true;
@@ -535,7 +535,7 @@ window.PDFBug = (function PDFBugClosure() {
         });
       }
     },
-    init: function init(pdfjsLib, container) {
+    init(pdfjsLib, container) {
       /*
        * Basic Layout:
        * PDFBug
@@ -588,14 +588,14 @@ window.PDFBug = (function PDFBugClosure() {
       }
       this.selectPanel(0);
     },
-    cleanup: function cleanup() {
+    cleanup() {
       for (var i = 0, ii = this.tools.length; i < ii; i++) {
         if (this.tools[i].enabled) {
           this.tools[i].cleanup();
         }
       }
     },
-    selectPanel: function selectPanel(index) {
+    selectPanel(index) {
       if (typeof index !== 'number') {
         index = this.tools.indexOf(index);
       }

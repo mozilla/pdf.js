@@ -111,14 +111,14 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
             return;
           }
           self.pdfViewer.scrollPageIntoView({
-            pageNumber: pageNumber,
+            pageNumber,
             destArray: dest,
           });
 
           if (self.pdfHistory) {
             // Update the browsing history.
             self.pdfHistory.push({
-              dest: dest,
+              dest,
               hash: destString,
               page: pageNumber
             });
@@ -333,14 +333,14 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
 
       this.eventBus.dispatch('namedaction', {
         source: this,
-        action: action
+        action,
       });
     },
 
     /**
      * @param {Object} params
      */
-    onFileAttachmentAnnotation: function (params) {
+    onFileAttachmentAnnotation(params = {}) {
       this.eventBus.dispatch('fileattachmentannotation', {
         source: this,
         id: params.id,
@@ -438,38 +438,38 @@ var SimpleLinkService = (function SimpleLinkServiceClosure() {
     /**
      * @param dest - The PDF destination object.
      */
-    navigateTo: function (dest) {},
+    navigateTo(dest) {},
     /**
      * @param dest - The PDF destination object.
      * @returns {string} The hyperlink to the PDF object.
      */
-    getDestinationHash: function (dest) {
+    getDestinationHash(dest) {
       return '#';
     },
     /**
      * @param hash - The PDF parameters/hash.
      * @returns {string} The hyperlink to the PDF object.
      */
-    getAnchorUrl: function (hash) {
+    getAnchorUrl(hash) {
       return '#';
     },
     /**
      * @param {string} hash
      */
-    setHash: function (hash) {},
+    setHash(hash) {},
     /**
      * @param {string} action
      */
-    executeNamedAction: function (action) {},
+    executeNamedAction(action) {},
     /**
      * @param {Object} params
      */
-    onFileAttachmentAnnotation: function (params) {},
+    onFileAttachmentAnnotation(params) {},
     /**
      * @param {number} pageNum - page number.
      * @param {Object} pageRef - reference to the page.
      */
-    cachePageRef: function (pageNum, pageRef) {}
+    cachePageRef(pageNum, pageRef) {}
   };
   return SimpleLinkService;
 })();

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable no-unused-vars */
 
 'use strict';
 
@@ -31,31 +32,31 @@ IPDFLinkService.prototype = {
   /**
    * @param dest - The PDF destination object.
    */
-  navigateTo: function (dest) {},
+  navigateTo(dest) {},
   /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
    */
-  getDestinationHash: function (dest) {},
+  getDestinationHash(dest) {},
   /**
    * @param hash - The PDF parameters/hash.
    * @returns {string} The hyperlink to the PDF object.
    */
-  getAnchorUrl: function (hash) {},
+  getAnchorUrl(hash) {},
   /**
    * @param {string} hash
    */
-  setHash: function (hash) {},
+  setHash(hash) {},
   /**
    * @param {string} action
    */
-  executeNamedAction: function (action) {},
+  executeNamedAction(action) {},
 
   /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
-  cachePageRef: function (pageNum, pageRef) {},
+  cachePageRef(pageNum, pageRef) {},
 };
 
 /**
@@ -63,10 +64,10 @@ IPDFLinkService.prototype = {
  */
 function IPDFHistory() {}
 IPDFHistory.prototype = {
-  forward: function () {},
-  back: function () {},
-  push: function (params) {},
-  updateNextHashParam: function (hash) {},
+  forward() {},
+  back() {},
+  push(params) {},
+  updateNextHashParam(hash) {},
 };
 
 /**
@@ -85,8 +86,8 @@ IRenderableView.prototype = {
   /**
    * @returns {Promise} Resolved on draw completion.
    */
-  draw: function () {},
-  resume: function () {},
+  draw() {},
+  resume() {},
 };
 
 /**
@@ -101,14 +102,14 @@ IPDFTextLayerFactory.prototype = {
    * @param {boolean} enhanceTextSelection
    * @returns {TextLayerBuilder}
    */
-  createTextLayerBuilder: function (textLayerDiv, pageIndex, viewport,
-                                    enhanceTextSelection) {}
+  createTextLayerBuilder(textLayerDiv, pageIndex, viewport,
+                         enhanceTextSelection = false) {}
 };
 
 /**
  * @interface
  */
-class IPDFAnnotationLayerFactory { // eslint-disable-line no-unused-vars
+class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
