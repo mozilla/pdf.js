@@ -75,7 +75,7 @@ function FirefoxPrintService(pdfDocument, pagesOverview, printContainer) {
 }
 
 FirefoxPrintService.prototype = {
-  layout: function () {
+  layout() {
     var pdfDocument = this.pdfDocument;
     var printContainer = this.printContainer;
     var body = document.querySelector('body');
@@ -86,7 +86,7 @@ FirefoxPrintService.prototype = {
     }
   },
 
-  destroy: function () {
+  destroy() {
     this.printContainer.textContent = '';
   }
 };
@@ -99,9 +99,8 @@ PDFPrintServiceFactory.instance = {
     return shadow(this, 'supportsPrinting', value);
   },
 
-  createPrintService: function (pdfDocument, pagesOverview, printContainer) {
-    return new FirefoxPrintService(pdfDocument, pagesOverview,
-                                   printContainer);
+  createPrintService(pdfDocument, pagesOverview, printContainer) {
+    return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
   }
 };
 

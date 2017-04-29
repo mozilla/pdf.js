@@ -70,25 +70,25 @@ var Toolbar = (function ToolbarClosure() {
   }
 
   Toolbar.prototype = {
-    setPageNumber: function (pageNumber, pageLabel) {
+    setPageNumber(pageNumber, pageLabel) {
       this.pageNumber = pageNumber;
       this.pageLabel = pageLabel;
       this._updateUIState(false);
     },
 
-    setPagesCount: function (pagesCount, hasPageLabels) {
+    setPagesCount(pagesCount, hasPageLabels) {
       this.pagesCount = pagesCount;
       this.hasPageLabels = hasPageLabels;
       this._updateUIState(true);
     },
 
-    setPageScale: function (pageScaleValue, pageScale) {
+    setPageScale(pageScaleValue, pageScale) {
       this.pageScaleValue = pageScaleValue;
       this.pageScale = pageScale;
       this._updateUIState(false);
     },
 
-    reset: function () {
+    reset() {
       this.pageNumber = 0;
       this.pageLabel = null;
       this.hasPageLabels = false;
@@ -209,7 +209,7 @@ var Toolbar = (function ToolbarClosure() {
         } else {
           items.pageNumber.type = 'number';
           items.numPages.textContent = mozL10n.get('of_pages',
-            { pagesCount: pagesCount }, 'of {{pagesCount}}');
+            { pagesCount, }, 'of {{pagesCount}}');
         }
         items.pageNumber.max = pagesCount;
       }
@@ -217,8 +217,7 @@ var Toolbar = (function ToolbarClosure() {
       if (this.hasPageLabels) {
         items.pageNumber.value = this.pageLabel;
         items.numPages.textContent = mozL10n.get('page_of_pages',
-          { pageNumber: pageNumber, pagesCount: pagesCount },
-          '({{pageNumber}} of {{pagesCount}})');
+          { pageNumber, pagesCount, }, '({{pageNumber}} of {{pagesCount}})');
       } else {
         items.pageNumber.value = pageNumber;
       }
