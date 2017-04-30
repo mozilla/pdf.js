@@ -46,7 +46,7 @@ describe('cmap', function() {
 
     fetchBuiltInCMap = function (name) {
       return CMapReaderFactory.fetch({
-        name: name,
+        name,
       });
     };
     done();
@@ -175,7 +175,7 @@ describe('cmap', function() {
     var stream = new StringStream(str);
     var cmapPromise = CMapFactory.create({
       encoding: stream,
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function (cmap) {
@@ -214,7 +214,7 @@ describe('cmap', function() {
   it('loads built in cmap', function(done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get('Adobe-Japan1-1'),
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function (cmap) {
@@ -231,7 +231,7 @@ describe('cmap', function() {
   it('loads built in identity cmap', function(done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get('Identity-H'),
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function (cmap) {
@@ -250,7 +250,7 @@ describe('cmap', function() {
   it('attempts to load a non-existent built-in CMap', function(done) {
     var cmapPromise = CMapFactory.create({
       encoding: Name.get('null'),
-      fetchBuiltInCMap: fetchBuiltInCMap,
+      fetchBuiltInCMap,
       useCMap: null,
     });
     cmapPromise.then(function () {
@@ -268,7 +268,7 @@ describe('cmap', function() {
       var CMapReaderFactory = isNodeJS() ?
         new NodeCMapReaderFactory({ }) : new DOMCMapReaderFactory({ });
       return CMapReaderFactory.fetch({
-        name: name,
+        name,
       });
     }
 

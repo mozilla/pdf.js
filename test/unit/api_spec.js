@@ -216,7 +216,7 @@ describe('api', function() {
         var url = new URL('../pdfs/pr6531_2.pdf', window.location).href;
 
         var passwordNeededLoadingTask = PDFJS.getDocument({
-          url: url, password: '',
+          url, password: '',
         });
         var result1 = passwordNeededLoadingTask.promise.then(function () {
           done.fail('shall fail with no password');
@@ -228,7 +228,7 @@ describe('api', function() {
         });
 
         var passwordIncorrectLoadingTask = PDFJS.getDocument({
-          url: url, password: 'qwerty',
+          url, password: 'qwerty',
         });
         var result2 = passwordIncorrectLoadingTask.promise.then(function () {
           done.fail('shall fail with wrong password');
@@ -240,7 +240,7 @@ describe('api', function() {
         });
 
         var passwordAcceptedLoadingTask = PDFJS.getDocument({
-          url: url, password: 'asdfasdf',
+          url, password: 'asdfasdf',
         });
 
         var result3 = passwordAcceptedLoadingTask.promise.then(function (data) {
@@ -259,7 +259,7 @@ describe('api', function() {
         var url = new URL('../pdfs/issue3371.pdf', window.location).href;
         var passwordNeededLoadingTask = PDFJS.getDocument(url);
         var passwordIncorrectLoadingTask = PDFJS.getDocument({
-          url: url, password: 'qwerty',
+          url, password: 'qwerty',
         });
 
         passwordNeededLoadingTask.onPassword = function (callback, reason) {
@@ -342,7 +342,7 @@ describe('api', function() {
     });
     it('worker created and can be used in getDocument', function (done) {
       var worker = new PDFJS.PDFWorker('test1');
-      var loadingTask = PDFJS.getDocument({url: basicApiUrl, worker: worker});
+      var loadingTask = PDFJS.getDocument({ url: basicApiUrl, worker, });
       loadingTask.promise.then(function () {
         var docWorker = loadingTask._worker;
         expect(!!docWorker).toEqual(false);
@@ -893,7 +893,7 @@ describe('api', function() {
       });
 
       var docBaseUrlLoadingTask = PDFJS.getDocument({
-        url: url,
+        url,
         docBaseUrl: 'http://www.example.com/test/pdfs/qwerty.pdf',
       });
       var docBaseUrlPromise = docBaseUrlLoadingTask.promise.then(
@@ -904,7 +904,7 @@ describe('api', function() {
       });
 
       var invalidDocBaseUrlLoadingTask = PDFJS.getDocument({
-        url: url,
+        url,
         docBaseUrl: 'qwerty.pdf',
       });
       var invalidDocBaseUrlPromise = invalidDocBaseUrlLoadingTask.promise.then(
@@ -1001,7 +1001,7 @@ describe('api', function() {
 
       var renderTask = page.render({
         canvasContext: canvasAndCtx.context,
-        viewport: viewport,
+        viewport,
       });
       renderTask.cancel();
 
@@ -1041,7 +1041,7 @@ describe('api', function() {
                                                   viewport.height);
           return page.render({
             canvasContext: canvasAndCtx.context,
-            viewport: viewport,
+            viewport,
           }).then(function() {
             var data = canvasAndCtx.canvas.toDataURL();
             CanvasFactory.destroy(canvasAndCtx);

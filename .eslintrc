@@ -154,7 +154,7 @@
     "no-useless-computed-key": "error",
     "no-useless-constructor": "error",
     "no-useless-rename": "error",
-    "object-shorthand": ["off", "always", {
+    "object-shorthand": ["error", "always", {
       "avoidQuotes": true,
     }],
     "rest-spread-spacing": ["error", "never"],

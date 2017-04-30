@@ -27,19 +27,19 @@ describe('primitives', function() {
     }
   }
   XRefMock.prototype = {
-    fetch: function (ref) {
+    fetch(ref) {
       return this.map[ref.toString()];
     },
-    fetchIfRef: function (obj) {
+    fetchIfRef(obj) {
       if (!isRef(obj)) {
         return obj;
       }
       return this.fetch(obj);
     },
-    fetchAsync: function (ref) {
+    fetchAsync(ref) {
       return Promise.resolve(this.fetch(ref));
     },
-    fetchIfRefAsync: function (obj) {
+    fetchIfRefAsync(obj) {
       return Promise.resolve(this.fetchIfRef(obj));
     },
   };
