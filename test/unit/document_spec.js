@@ -12,21 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/document_spec', ['exports', 'pdfjs/core/document'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/document.js'));
-  } else {
-    factory((root.pdfjsTestUnitDocumentSpec = {}),
-      root.pdfjsCoreDocument);
-  }
-}(this, function (exports, coreDocument) {
-
-var Page = coreDocument.Page;
+import { Page } from '../../src/core/document';
 
 describe('document', function () {
   describe('Page', function () {
@@ -55,4 +42,3 @@ describe('document', function () {
     });
   });
 });
-}));

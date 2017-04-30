@@ -12,36 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/evaluator_spec', ['exports',
-           'pdfjs/core/evaluator', 'pdfjs/core/primitives',
-           'pdfjs/core/stream', 'pdfjs/core/worker',
-           'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/evaluator.js'),
-            require('../../src/core/primitives.js'),
-            require('../../src/core/stream.js'),
-            require('../../src/core/worker.js'),
-            require('../../src/shared/util.js'));
-  } else {
-    factory((root.pdfjsTestUnitEvaluatorSpec = {}), root.pdfjsCoreEvaluator,
-             root.pdfjsCorePrimitives, root.pdfjsCoreStream,
-             root.pdfjsCoreWorker, root.pdfjsSharedUtil);
-  }
-}(this, function (exports, coreEvaluator, corePrimitives, coreStream,
-                  coreWorker, sharedUtil) {
-
-var OperatorList = coreEvaluator.OperatorList;
-var PartialEvaluator = coreEvaluator.PartialEvaluator;
-var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
-var Stream = coreStream.Stream;
-var StringStream = coreStream.StringStream;
-var WorkerTask = coreWorker.WorkerTask;
-var OPS = sharedUtil.OPS;
+import { Dict, Name } from '../../src/core/primitives';
+import { OperatorList, PartialEvaluator } from '../../src/core/evaluator';
+import { Stream, StringStream } from '../../src/core/stream';
+import { OPS } from '../../src/shared/util';
+import { WorkerTask } from '../../src/core/worker';
 
 describe('evaluator', function() {
   function XrefMock(queue) {
@@ -361,4 +337,3 @@ describe('evaluator', function() {
     });
   });
 });
-}));

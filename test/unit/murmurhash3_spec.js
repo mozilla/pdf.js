@@ -12,21 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/murmurhash3_spec', ['exports',
-           'pdfjs/core/murmurhash3'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/murmurhash3.js'));
-  } else {
-    factory((root.pdfjsTestUnitMurmurHash3Spec = {}),
-             root.pdfjsCoreMurmurHash3);
-  }
-}(this, function (exports, coreMurmurHash3) {
-
-var MurmurHash3_64 = coreMurmurHash3.MurmurHash3_64;
+import { MurmurHash3_64 } from '../../src/core/murmurhash3';
 
 describe('MurmurHash3_64', function() {
   it('instantiates without seed', function() {
@@ -76,4 +63,3 @@ describe('MurmurHash3_64', function() {
     expect(hexdigest1).not.toEqual(hexdigest2);
   });
 });
-}));

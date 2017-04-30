@@ -12,20 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/network_spec', ['exports', 'pdfjs/core/network'],
-           factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/network.js'));
-  } else {
-    factory((root.pdfjsTestUnitNetworkSpec = {}), root.pdfjsCoreNetwork);
-  }
-}(this, function (exports, coreNetwork) {
-
-var PDFNetworkStream = coreNetwork.PDFNetworkStream;
+import { PDFNetworkStream } from '../../src/core/network';
 
 describe('network', function() {
   var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;
@@ -189,4 +177,3 @@ describe('network', function() {
     });
   });
 });
-}));

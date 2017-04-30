@@ -12,26 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/ui_utils_spec', ['exports',
-      'pdfjs-web/ui_utils', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../web/ui_utils.js'),
-      require('../../src/shared/util.js'));
-  } else {
-    factory((root.pdfjsTestUnitUiUtilsSpec = {}), root.pdfjsWebUiUtils,
-      root.pdfjsSharedUtil);
-  }
-}(this, function (exports, webUiUtils, sharedUtil) {
-
-var binarySearchFirstItem = webUiUtils.binarySearchFirstItem;
-var getPDFFileNameFromURL = webUiUtils.getPDFFileNameFromURL;
-var EventBus = webUiUtils.EventBus;
-var createObjectURL = sharedUtil.createObjectURL;
-var isNodeJS = sharedUtil.isNodeJS;
+import {
+  binarySearchFirstItem, EventBus, getPDFFileNameFromURL
+} from '../../web/ui_utils';
+import { createObjectURL, isNodeJS } from '../../src/shared/util';
 
 describe('ui_utils', function() {
   describe('binary search', function() {
@@ -275,4 +260,3 @@ describe('ui_utils', function() {
     });
   });
 });
-}));
