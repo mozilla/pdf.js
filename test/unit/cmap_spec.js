@@ -12,36 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/cmap_spec', ['exports', 'pdfjs/core/cmap',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/display/dom_utils',
-      'pdfjs/shared/util', 'pdfjs-test/unit/test_utils'], factory);
-  } else if (typeof exports !== 'undefined') {
-      factory(exports, require('../../src/core/cmap.js'),
-        require('../../src/core/primitives.js'),
-        require('../../src/core/stream.js'),
-        require('../../src/display/dom_utils.js'),
-        require('../../src/shared/util.js'), require('./test_utils.js'));
-  } else {
-    factory((root.pdfjsTestUnitCMapSpec = {}), root.pdfjsCoreCMap,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream,
-      root.pdfjsDisplayDOMUtils, root.pdfjsSharedUtil,
-      root.pdfjsTestUnitTestUtils);
-  }
-}(this, function (exports, coreCMap, corePrimitives, coreStream,
-                  displayDOMUtils, sharedUtil, testUnitTestUtils) {
-
-var CMapFactory = coreCMap.CMapFactory;
-var CMap = coreCMap.CMap;
-var IdentityCMap = coreCMap.IdentityCMap;
-var Name = corePrimitives.Name;
-var StringStream = coreStream.StringStream;
-var DOMCMapReaderFactory = displayDOMUtils.DOMCMapReaderFactory;
-var isNodeJS = sharedUtil.isNodeJS;
-var NodeCMapReaderFactory = testUnitTestUtils.NodeCMapReaderFactory;
+import { CMap, CMapFactory, IdentityCMap } from '../../src/core/cmap';
+import { DOMCMapReaderFactory } from '../../src/display/dom_utils';
+import { isNodeJS } from '../../src/shared/util';
+import { Name } from '../../src/core/primitives';
+import { NodeCMapReaderFactory } from './test_utils';
+import { StringStream } from '../../src/core/stream';
 
 var cMapUrl = {
   dom: '../../external/bcmaps/',
@@ -310,4 +287,3 @@ describe('cmap', function() {
     });
   });
 });
-}));

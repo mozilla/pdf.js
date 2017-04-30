@@ -12,28 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/unicode_spec', ['exports',
-           'pdfjs/core/glyphlist', 'pdfjs/core/unicode'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/glyphlist.js'),
-            require('../../src/core/unicode.js'));
-  } else {
-    factory((root.pdfjsTestUnitUnicodeSpec = {}),
-             root.pdfjsCoreGlyphList, root.pdfjsCoreUnicode);
-  }
-}(this, function (exports, coreGlyphList, coreUnicode) {
-
-var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
-var getDingbatsGlyphsUnicode = coreGlyphList.getDingbatsGlyphsUnicode;
-var mapSpecialUnicodeValues = coreUnicode.mapSpecialUnicodeValues;
-var getUnicodeForGlyph = coreUnicode.getUnicodeForGlyph;
-var getUnicodeRangeFor = coreUnicode.getUnicodeRangeFor;
-var getNormalizedUnicodes = coreUnicode.getNormalizedUnicodes;
-var reverseIfRtl = coreUnicode.reverseIfRtl;
+import {
+  getDingbatsGlyphsUnicode, getGlyphsUnicode
+} from '../../src/core/glyphlist';
+import {
+  getNormalizedUnicodes, getUnicodeForGlyph, getUnicodeRangeFor,
+  mapSpecialUnicodeValues, reverseIfRtl
+} from '../../src/core/unicode';
 
 describe('unicode', function () {
   describe('mapSpecialUnicodeValues', function () {
@@ -159,4 +145,3 @@ describe('unicode', function () {
     });
   });
 });
-}));

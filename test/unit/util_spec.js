@@ -12,21 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/util_spec', ['exports',
-           'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/shared/util.js'));
-  } else {
-    factory((root.pdfjsTestUnitUtilSpec = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
-var stringToPDFString = sharedUtil.stringToPDFString;
-var removeNullCharacters = sharedUtil.removeNullCharacters;
+import {
+  removeNullCharacters, stringToPDFString
+} from '../../src/shared/util';
 
 describe('util', function() {
   describe('stringToPDFString', function() {
@@ -63,4 +52,3 @@ describe('util', function() {
     });
   });
 });
-}));

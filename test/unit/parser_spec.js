@@ -12,26 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-'use strict';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs-test/unit/parser_spec', ['exports', 'pdfjs/core/parser',
-           'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../../src/core/parser.js'),
-            require('../../src/core/primitives.js'),
-            require('../../src/core/stream.js'));
-  } else {
-    factory((root.pdfjsTestUnitParserSpec = {}), root.pdfjsCoreParser,
-             root.pdfjsCorePrimitives, root.pdfjsCoreStream);
-  }
-}(this, function (exports, coreParser, corePrimitives, coreStream) {
-
-var Lexer = coreParser.Lexer;
-var Linearization = coreParser.Linearization;
-var Name = corePrimitives.Name;
-var StringStream = coreStream.StringStream;
+import { Lexer, Linearization } from '../../src/core/parser';
+import { Name } from '../../src/core/primitives';
+import { StringStream } from '../../src/core/stream';
 
 describe('parser', function() {
   describe('Lexer', function() {
@@ -294,4 +278,3 @@ describe('parser', function() {
     });
   });
 });
-}));
