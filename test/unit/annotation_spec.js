@@ -34,10 +34,10 @@ describe('annotation', function() {
     }
   }
   XRefMock.prototype = {
-    fetch: function (ref) {
+    fetch(ref) {
       return this.map[ref.toString()];
     },
-    fetchIfRef: function (obj) {
+    fetchIfRef(obj) {
       if (!isRef(obj)) {
         return obj;
       }
@@ -56,7 +56,7 @@ describe('annotation', function() {
       obj: params.startObjId || 0,
     };
     return {
-      createObjId: function () {
+      createObjId() {
         return uniquePrefix + (++idCounters.obj);
       },
     };
@@ -153,7 +153,7 @@ describe('annotation', function() {
     });
 
     it('should set and get flags', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setFlags(13);
 
       expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
@@ -163,63 +163,63 @@ describe('annotation', function() {
     });
 
     it('should be viewable and not printable by default', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
 
       expect(annotation.viewable).toEqual(true);
       expect(annotation.printable).toEqual(false);
     });
 
     it('should set and get a valid rectangle', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setRectangle([117, 694, 164.298, 720]);
 
       expect(annotation.rectangle).toEqual([117, 694, 164.298, 720]);
     });
 
     it('should not set and get an invalid rectangle', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setRectangle([117, 694, 164.298]);
 
       expect(annotation.rectangle).toEqual([0, 0, 0, 0]);
     });
 
     it('should reject a color if it is not an array', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setColor('red');
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
     });
 
     it('should set and get a transparent color', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setColor([]);
 
       expect(annotation.color).toEqual(null);
     });
 
     it('should set and get a grayscale color', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.4]);
 
       expect(annotation.color).toEqual(new Uint8Array([102, 102, 102]));
     });
 
     it('should set and get an RGB color', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0, 0, 1]);
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 255]));
     });
 
     it('should set and get a CMYK color', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
       expect(annotation.color).toEqual(new Uint8Array([233, 59, 47]));
     });
 
     it('should not set and get an invalid color', function() {
-      var annotation = new Annotation({ dict: dict, ref: ref });
+      var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.4, 0.6]);
 
       expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));

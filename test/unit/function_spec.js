@@ -23,9 +23,9 @@ import { StringStream } from '../../src/core/stream';
 describe('function', function() {
   beforeEach(function() {
     jasmine.addMatchers({
-      toMatchArray: function(util, customEqualityTesters) {
+      toMatchArray(util, customEqualityTesters) {
         return {
-          compare: function (actual, expected) {
+          compare(actual, expected) {
             var result = {};
             if (actual.length !== expected.length) {
               result.pass = false;

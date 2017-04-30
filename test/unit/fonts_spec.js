@@ -76,8 +76,8 @@ var checkProblematicCharRanges = function checkProblematicCharRanges() {
     throw new Error('Total number of chars must not exceed the PUA length.');
   }
   return {
-    numChars: numChars,
-    puaLength: puaLength,
+    numChars,
+    puaLength,
     percentage: 100 * (numChars / puaLength),
   };
 };
