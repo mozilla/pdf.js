@@ -1584,8 +1584,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
         var operatorList = font.charProcOperatorList[glyph.operatorListId];
         if (!operatorList) {
-          warn('Type3 character \"' + glyph.operatorListId +
-               '\" is not available');
+          warn(`Type3 character "${glyph.operatorListId}" is not available.`);
           continue;
         }
         this.processingType3 = glyph;
