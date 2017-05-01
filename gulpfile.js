@@ -44,6 +44,7 @@ var TEST_DIR = 'test/';
 var EXTENSION_SRC_DIR = 'extensions/';
 
 var BASELINE_DIR = BUILD_DIR + 'baseline/';
+var MOZCENTRAL_BASELINE_DIR = BUILD_DIR + 'mozcentral.baseline/';
 var GENERIC_DIR = BUILD_DIR + 'generic/';
 var COMPONENTS_DIR = BUILD_DIR + 'components/';
 var SINGLE_FILE_DIR = BUILD_DIR + 'singlefile/';
@@ -59,6 +60,7 @@ var COMMON_WEB_FILES = [
   'web/images/*.{png,svg,gif,cur}',
   'web/debugger.js'
 ];
+var MOZCENTRAL_DIFF_FILE = 'mozcentral.diff';
 
 var REPO = 'git@github.com:mozilla/pdf.js.git';
 var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
@@ -81,6 +83,20 @@ var DEFINES = {
   LIB: false,
   PDFJS_NEXT: false,
 };
+
+function safeSpawnSync(command, parameters, options) {
+  // Execute all commands in a shell.
+  options = options || {};
+  options.shell = true;
+
+  var result = spawnSync(command, parameters, options);
+  if (result.status !== 0) {
+    console.log('Error: command "' + command + '" with parameters "' +
+                parameters + '" exited with code ' + result.status);
+    process.exit(result.status);
+  }
+  return result;
+}
 
 function createStringSource(filename, content) {
   var source = stream.Readable({ objectMode: true });
@@ -678,12 +694,13 @@ gulp.task('minified-post', ['minified-pre'], function () {
   // V8 chokes on very long sequences. Works around that.
   var optsForHugeFile = {compress: {sequences: false}};
 
-  UglifyJS.minify(viewerFiles).code
-    .to(MINIFIED_DIR + '/web/pdf.viewer.js');
-  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code
-    .to(MINIFIED_DIR + '/build/pdf.min.js');
-  UglifyJS.minify(MINIFIED_DIR + '/build/pdf.worker.js', optsForHugeFile).code
-    .to(MINIFIED_DIR + '/build/pdf.worker.min.js');
+  fs.writeFileSync(MINIFIED_DIR + '/web/pdf.viewer.js',
+                   UglifyJS.minify(viewerFiles).code);
+  fs.writeFileSync(MINIFIED_DIR + '/build/pdf.min.js',
+                   UglifyJS.minify(MINIFIED_DIR + '/build/pdf.js').code);
+  fs.writeFileSync(MINIFIED_DIR + '/build/pdf.worker.min.js',
+                   UglifyJS.minify(MINIFIED_DIR + '/build/pdf.worker.js',
+                                   optsForHugeFile).code);
 
   console.log();
   console.log('### Cleaning js files');
@@ -1043,10 +1060,6 @@ gulp.task('browsertest', function () {
   return createTestSource('browser');
 });
 
-gulp.task('browsertest-noreftest', function () {
-  return createTestSource('browser (no reftest)');
-});
-
 gulp.task('unittest', function () {
   return createTestSource('unit');
 });
@@ -1223,14 +1236,14 @@ gulp.task('gh-pages-git', ['gh-pages-prepare', 'wintersmith'], function () {
   var VERSION = getVersionJSON().version;
   var reason = process.env['PDFJS_UPDATE_REASON'];
 
-  spawnSync('git', ['init'], {cwd: GH_PAGES_DIR});
-  spawnSync('git', ['remote', 'add', 'origin', REPO], {cwd: GH_PAGES_DIR});
-  spawnSync('git', ['add', '-A'], {cwd: GH_PAGES_DIR});
-  spawnSync('git', [
+  safeSpawnSync('git', ['init'], {cwd: GH_PAGES_DIR});
+  safeSpawnSync('git', ['remote', 'add', 'origin', REPO], {cwd: GH_PAGES_DIR});
+  safeSpawnSync('git', ['add', '-A'], {cwd: GH_PAGES_DIR});
+  safeSpawnSync('git', [
     'commit', '-am', 'gh-pages site created via gulpfile.js script',
     '-m', 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '')
   ], {cwd: GH_PAGES_DIR});
-  spawnSync('git', ['branch', '-m', 'gh-pages'], {cwd: GH_PAGES_DIR});
+  safeSpawnSync('git', ['branch', '-m', 'gh-pages'], {cwd: GH_PAGES_DIR});
 
   console.log();
   console.log('Website built in ' + GH_PAGES_DIR);
@@ -1246,7 +1259,7 @@ gulp.task('dist-repo-prepare', ['dist-pre'], function () {
 
   rimraf.sync(DIST_DIR);
   mkdirp.sync(DIST_DIR);
-  spawnSync('git', ['clone', '--depth', '1', DIST_REPO_URL, DIST_DIR]);
+  safeSpawnSync('git', ['clone', '--depth', '1', DIST_REPO_URL, DIST_DIR]);
 
   console.log();
   console.log('### Overwriting all files');
@@ -1334,10 +1347,10 @@ gulp.task('dist-repo-git', ['dist-repo-prepare'], function () {
 
   var reason = process.env['PDFJS_UPDATE_REASON'];
   var message = 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '');
-  spawnSync('git', ['add', '*'], {cwd: DIST_DIR});
-  spawnSync('git', ['commit', '-am', message], {cwd: DIST_DIR});
-  spawnSync('git', ['tag', '-a', 'v' + VERSION, '-m', message],
-            {cwd: DIST_DIR});
+  safeSpawnSync('git', ['add', '*'], {cwd: DIST_DIR});
+  safeSpawnSync('git', ['commit', '-am', message], {cwd: DIST_DIR});
+  safeSpawnSync('git', ['tag', '-a', 'v' + VERSION, '-m', message],
+                {cwd: DIST_DIR});
 
   console.log();
   console.log('Done. Push with');
@@ -1348,38 +1361,59 @@ gulp.task('dist-repo-git', ['dist-repo-prepare'], function () {
 
 gulp.task('dist', ['dist-repo-git']);
 
-// Getting all shelljs registered tasks and register them with gulp
-require('./make.js');
+gulp.task('mozcentralbaseline', ['baseline'], function (done) {
+  console.log();
+  console.log('### Creating mozcentral baseline environment');
 
-var gulpContext = false;
-for (var taskName in global.target) {
-  if (taskName in gulp.tasks) {
-    continue;
-  }
+  // Create a mozcentral build.
+  rimraf.sync(BASELINE_DIR + BUILD_DIR);
 
-  var task = (function (shellJsTask) {
-    return function () {
-      gulpContext = true;
-      try {
-        shellJsTask.call(global.target);
-      } finally {
-        gulpContext = false;
-      }
-    };
-  })(global.target[taskName]);
-  gulp.task(taskName, task);
-}
+  var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
+  safeSpawnSync('gulp', ['mozcentral'],
+                {env: process.env, cwd: workingDirectory, stdio: 'inherit'});
 
-Object.keys(gulp.tasks).forEach(function (taskName) {
-  var oldTask = global.target[taskName] || function () {
-    gulp.run(taskName);
-  };
+  // Copy the mozcentral build to the mozcentral baseline directory.
+  rimraf.sync(MOZCENTRAL_BASELINE_DIR);
+  mkdirp.sync(MOZCENTRAL_BASELINE_DIR);
 
-  global.target[taskName] = function (args) {
-    // The require('shelljs/make') import in make.js will try to execute tasks
-    // listed in arguments, guarding with gulpContext
-    if (gulpContext) {
-      oldTask.call(global.target, args);
-    }
-  };
+  gulp.src([BASELINE_DIR + BUILD_DIR + 'mozcentral/**/*'])
+      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+      .on('end', function () {
+        // Commit the mozcentral baseline.
+        safeSpawnSync('git', ['init'], {cwd: MOZCENTRAL_BASELINE_DIR});
+        safeSpawnSync('git', ['add', '.'], {cwd: MOZCENTRAL_BASELINE_DIR});
+        safeSpawnSync('git', ['commit', '-m', '"mozcentral baseline"'],
+                      {cwd: MOZCENTRAL_BASELINE_DIR});
+        done();
+      });
+});
+
+gulp.task('mozcentraldiff', ['mozcentral', 'mozcentralbaseline'],
+    function (done) {
+  console.log();
+  console.log('### Creating mozcentral diff');
+
+  // Create the diff between the current mozcentral build and the
+  // baseline mozcentral build, which both exist at this point.
+  // The mozcentral baseline directory is a Git repository, so we
+  // remove all files and copy the current mozcentral build files
+  // into it to create the diff.
+  rimraf.sync(MOZCENTRAL_BASELINE_DIR + '*');
+
+  gulp.src([BUILD_DIR + 'mozcentral/**/*'])
+      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+      .on('end', function () {
+        safeSpawnSync('git', ['add', '-A'], {cwd: MOZCENTRAL_BASELINE_DIR});
+        var diff = safeSpawnSync('git',
+          ['diff', '--binary', '--cached', '--unified=8'],
+          {cwd: MOZCENTRAL_BASELINE_DIR}).stdout;
+
+        createStringSource(MOZCENTRAL_DIFF_FILE, diff)
+          .pipe(gulp.dest(BUILD_DIR))
+          .on('end', function () {
+            console.log('Result diff can be found at ' + BUILD_DIR +
+                        MOZCENTRAL_DIFF_FILE);
+            done();
+          });
+      });
 });
