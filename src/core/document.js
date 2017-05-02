@@ -225,18 +225,15 @@ var Page = (function PageClosure() {
         // TODO: add async getInheritedPageProp and remove this.
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
-      return this.resourcesPromise.then(function resourceSuccess() {
+      return this.resourcesPromise.then(() => {
         var objectLoader = new ObjectLoader(this.resources.map,
                                             keys,
                                             this.xref);
         return objectLoader.load();
-      }.bind(this));
+      });
     },
 
-    getOperatorList: function Page_getOperatorList(handler, task, intent,
-                                                   renderInteractiveForms) {
-      var self = this;
-
+    getOperatorList(handler, task, intent, renderInteractiveForms) {
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
@@ -259,17 +256,16 @@ var Page = (function PageClosure() {
                                                   this.evaluatorOptions);
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
-      var pageListPromise = dataPromises.then(function(data) {
-        var contentStream = data[0];
-        var opList = new OperatorList(intent, handler, self.pageIndex);
+      var pageListPromise = dataPromises.then(([contentStream]) => {
+        var opList = new OperatorList(intent, handler, this.pageIndex);
 
         handler.send('StartRenderPage', {
-          transparency: partialEvaluator.hasBlendModes(self.resources),
-          pageIndex: self.pageIndex,
+          transparency: partialEvaluator.hasBlendModes(this.resources),
+          pageIndex: this.pageIndex,
           intent,
         });
         return partialEvaluator.getOperatorList(contentStream, task,
-          self.resources, opList).then(function () {
+          this.resources, opList).then(function () {
             return opList;
           });
       });
@@ -278,10 +274,7 @@ var Page = (function PageClosure() {
       // page's operator list to render them.
       var annotationsPromise = pdfManager.ensure(this, 'annotations');
       return Promise.all([pageListPromise, annotationsPromise]).then(
-          function(datas) {
-        var pageOpList = datas[0];
-        var annotations = datas[1];
-
+          function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
           pageOpList.flush(true);
           return pageOpList;
@@ -310,11 +303,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    extractTextContent: function Page_extractTextContent(handler, task,
-                                                         normalizeWhitespace,
-                                                         combineTextItems) {
-      var self = this;
-
+    extractTextContent(handler, task, normalizeWhitespace, combineTextItems) {
       var pdfManager = this.pdfManager;
       var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
                                                    []);
@@ -325,20 +314,18 @@ var Page = (function PageClosure() {
         'Font'
       ]);
 
-      var dataPromises = Promise.all([contentStreamPromise,
-                                      resourcesPromise]);
-      return dataPromises.then(function(data) {
-        var contentStream = data[0];
-        var partialEvaluator = new PartialEvaluator(pdfManager, self.xref,
-                                                    handler, self.pageIndex,
-                                                    self.idFactory,
-                                                    self.fontCache,
-                                                    self.builtInCMapCache,
-                                                    self.evaluatorOptions);
+      var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
+      return dataPromises.then(([contentStream]) => {
+        var partialEvaluator = new PartialEvaluator(pdfManager, this.xref,
+                                                    handler, this.pageIndex,
+                                                    this.idFactory,
+                                                    this.fontCache,
+                                                    this.builtInCMapCache,
+                                                    this.evaluatorOptions);
 
         return partialEvaluator.getTextContent(contentStream,
                                                task,
-                                               self.resources,
+                                               this.resources,
                                                /* stateManager = */ null,
                                                normalizeWhitespace,
                                                combineTextItems);
