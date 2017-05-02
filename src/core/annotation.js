@@ -417,20 +417,17 @@ var Annotation = (function AnnotationClosure() {
     },
 
     loadResources: function Annotation_loadResources(keys) {
-      return new Promise(function (resolve, reject) {
-        this.appearance.dict.getAsync('Resources').then(function (resources) {
-          if (!resources) {
-            resolve();
-            return;
-          }
-          var objectLoader = new ObjectLoader(resources.map,
-                                              keys,
-                                              resources.xref);
-          objectLoader.load().then(function() {
-            resolve(resources);
-          }, reject);
-        }, reject);
-      }.bind(this));
+      return this.appearance.dict.getAsync('Resources').then((resources) => {
+        if (!resources) {
+          return;
+        }
+        var objectLoader = new ObjectLoader(resources.map,
+                                            keys,
+                                            resources.xref);
+        return objectLoader.load().then(function() {
+          return resources;
+        });
+      });
     },
 
     getOperatorList: function Annotation_getOperatorList(evaluator, task,
@@ -454,15 +451,14 @@ var Annotation = (function AnnotationClosure() {
       var bbox = appearanceDict.getArray('BBox') || [0, 0, 1, 1];
       var matrix = appearanceDict.getArray('Matrix') || [1, 0, 0, 1, 0, 0];
       var transform = getTransformMatrix(data.rect, bbox, matrix);
-      var self = this;
 
-      return resourcesPromise.then(function(resources) {
+      return resourcesPromise.then((resources) => {
         var opList = new OperatorList();
         opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-        return evaluator.getOperatorList(self.appearance, task,
-                                         resources, opList).then(function () {
+        return evaluator.getOperatorList(this.appearance, task,
+                                         resources, opList).then(() => {
           opList.addOp(OPS.endAnnotation, []);
-          self.appearance.reset();
+          this.appearance.reset();
           return opList;
         });
       });
