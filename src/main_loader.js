@@ -44,6 +44,7 @@
   exports.version = displayAPI.version;
   exports.getDocument = displayAPI.getDocument;
   exports.PDFDataRangeTransport = displayAPI.PDFDataRangeTransport;
+  exports.LoopbackPort = displayAPI.LoopbackPort;
   exports.PDFWorker = displayAPI.PDFWorker;
   exports.renderTextLayer = displayTextLayer.renderTextLayer;
   exports.AnnotationLayer = displayAnnotationLayer.AnnotationLayer;

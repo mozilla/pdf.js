@@ -14,7 +14,8 @@
  */
 
 import {
-  _UnsupportedManager, getDocument, PDFDataRangeTransport, PDFWorker
+  _UnsupportedManager, getDocument, LoopbackPort, PDFDataRangeTransport,
+  PDFWorker
 } from './api';
 import {
   addLinkAttributes, CustomStyle, DEFAULT_LINK_REL, getFilenameFromUrl,
@@ -281,6 +282,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
 }
 
 PDFJS.getDocument = getDocument;
+PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
 PDFJS.PDFWorker = PDFWorker;
 
