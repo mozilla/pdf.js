@@ -48,6 +48,23 @@ describe('parser', function() {
       expect(result).toEqual(-205.88);
     });
 
+    it('should ignore minus signs in the middle of number', function() {
+      var input = new StringStream('205--.88');
+      var lexer = new Lexer(input);
+      var result = lexer.getNumber();
+
+      expect(result).toEqual(205.88);
+    });
+
+    it('should ignore line-breaks between operator and digit in number',
+        function() {
+      var input = new StringStream('-\r\n205.88');
+      var lexer = new Lexer(input);
+      var result = lexer.getNumber();
+
+      expect(result).toEqual(-205.88);
+    });
+
     it('should handle glued numbers and operators', function() {
       var input = new StringStream('123ET');
       var lexer = new Lexer(input);

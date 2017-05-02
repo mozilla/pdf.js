@@ -1485,6 +1485,14 @@
        "link": true,
        "type": "eq"
     },
+    {  "id": "bug1354114",
+       "file": "pdfs/bug1354114.pdf",
+       "md5": "ad718d04702d29a37792c7f222fe1fa6",
+       "rounds": 1,
+       "firstPage": 30,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue5874",
        "file": "pdfs/issue5874.pdf",
        "md5": "25922edf223aa91bc259663d0a34a6ab",
