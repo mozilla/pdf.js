@@ -429,27 +429,24 @@ var Catalog = (function CatalogClosure() {
       this.fontCache.forEach(function (promise) {
         promises.push(promise);
       });
-      return Promise.all(promises).then(function (translatedFonts) {
+      return Promise.all(promises).then((translatedFonts) => {
         for (var i = 0, ii = translatedFonts.length; i < ii; i++) {
           var font = translatedFonts[i].dict;
           delete font.translated;
         }
         this.fontCache.clear();
         this.builtInCMapCache = Object.create(null);
-      }.bind(this));
+      });
     },
 
     getPage: function Catalog_getPage(pageIndex) {
       if (!(pageIndex in this.pagePromises)) {
         this.pagePromises[pageIndex] = this.getPageDict(pageIndex).then(
-          function (a) {
-            var dict = a[0];
-            var ref = a[1];
-            return this.pageFactory.createPage(pageIndex, dict, ref,
-                                               this.fontCache,
-                                               this.builtInCMapCache);
-          }.bind(this)
-        );
+            ([dict, ref]) => {
+          return this.pageFactory.createPage(pageIndex, dict, ref,
+                                             this.fontCache,
+                                             this.builtInCMapCache);
+        });
       }
       return this.pagePromises[pageIndex];
     },
@@ -1772,8 +1769,7 @@ var ObjectLoader = (function() {
       }
 
       if (pendingRequests.length) {
-        this.xref.stream.manager.requestRanges(pendingRequests).then(
-            function pendingRequestCallback() {
+        this.xref.stream.manager.requestRanges(pendingRequests).then(() => {
           nodesToVisit = nodesToRevisit;
           for (var i = 0; i < nodesToRevisit.length; i++) {
             var node = nodesToRevisit[i];
@@ -1784,7 +1780,7 @@ var ObjectLoader = (function() {
             }
           }
           this._walk(nodesToVisit);
-        }.bind(this), this.capability.reject);
+        }, this.capability.reject);
         return;
       }
       // Everything is loaded.

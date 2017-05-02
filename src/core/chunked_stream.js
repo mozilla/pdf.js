@@ -334,12 +334,12 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         };
         rangeReader.read().then(readChunk, reject);
       });
-      promise.then(function (data) {
+      promise.then((data) => {
         if (this.aborted) {
           return; // ignoring any data after abort
         }
         this.onReceiveData({ chunk: data, begin, });
-      }.bind(this));
+      });
       // TODO check errors
     },
 
