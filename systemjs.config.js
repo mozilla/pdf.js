@@ -32,6 +32,11 @@
   var PluginBabelPath = 'node_modules/systemjs-plugin-babel/plugin-babel.js';
   var SystemJSPluginBabelPath =
     'node_modules/systemjs-plugin-babel/systemjs-babel-browser.js';
+  var PluginBabelCachePath = 'external/systemjs/plugin-babel-cached.js';
+
+  var isCachingPossible = typeof indexedDB !== 'undefined' &&
+                          typeof TextEncoder !== 'undefined' &&
+                          typeof crypto !== 'undefined';
 
   SystemJS.config({
     packages: {
@@ -57,7 +62,8 @@
       'plugin-babel': new URL(PluginBabelPath, baseLocation).href,
       'systemjs-babel-build':
         new URL(SystemJSPluginBabelPath, baseLocation).href,
+      'plugin-babel-cached': new URL(PluginBabelCachePath, baseLocation).href,
     },
-    transpiler: 'plugin-babel'
+    transpiler: isCachingPossible ? 'plugin-babel-cached' : 'plugin-babel'
   });
 })();
