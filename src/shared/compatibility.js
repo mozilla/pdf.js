@@ -1000,7 +1000,7 @@ PDFJS.compatibilityChecked = true;
         return;
       }
       this.pendingRejectionCheck = true;
-      setTimeout(function rejectionCheck() {
+      setTimeout(() => {
         this.pendingRejectionCheck = false;
         var now = Date.now();
         for (var i = 0; i < this.unhandledRejections.length; i++) {
@@ -1023,7 +1023,7 @@ PDFJS.compatibilityChecked = true;
         if (this.unhandledRejections.length) {
           this.scheduleRejectionCheck();
         }
-      }.bind(this), REJECTION_TIMEOUT);
+      }, REJECTION_TIMEOUT);
     }
   };
 
