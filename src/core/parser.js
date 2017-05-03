@@ -721,9 +721,14 @@ var Lexer = (function LexerClosure() {
         divideBy = 10;
         ch = this.nextChar();
       }
+      if (ch === 0x0A || ch === 0x0D) { // LF, CR
+        // Ignore line-breaks (this is consistent with Adobe Reader).
+        do {
+          ch = this.nextChar();
+        } while (ch === 0x0A || ch === 0x0D);
+      }
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
-        error('Invalid number: ' + String.fromCharCode(ch));
-        return 0;
+        error(`Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
       }
 
       var baseValue = ch - 0x30; // '0'
