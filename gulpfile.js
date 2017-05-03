@@ -129,6 +129,8 @@ function createWebpackConfig(defines, output) {
     BUNDLE_BUILD: versionInfo.commit
   });
   var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
+  var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
+                         !bundleDefines.CHROME;
 
   return {
     output: output,
@@ -142,6 +144,7 @@ function createWebpackConfig(defines, output) {
         'pdfjs-web': path.join(__dirname, 'web'),
       }
     },
+    devtool: enableSourceMaps ? 'source-map' : undefined,
     module: {
       loaders: [
         {
@@ -1329,8 +1332,11 @@ gulp.task('dist-repo-prepare', ['dist-pre'], function () {
         .pipe(gulp.dest(DIST_DIR)),
     gulp.src([
       GENERIC_DIR + 'build/pdf.js',
+      GENERIC_DIR + 'build/pdf.js.map',
       GENERIC_DIR + 'build/pdf.worker.js',
+      GENERIC_DIR + 'build/pdf.worker.js.map',
       SINGLE_FILE_DIR + 'build/pdf.combined.js',
+      SINGLE_FILE_DIR + 'build/pdf.combined.js.map',
       SRC_DIR + 'pdf.worker.entry.js',
     ]).pipe(gulp.dest(DIST_DIR + 'build/')),
     gulp.src(MINIFIED_DIR + 'build/pdf.js')
