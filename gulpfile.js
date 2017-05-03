@@ -88,6 +88,13 @@ function safeSpawnSync(command, parameters, options) {
   // Execute all commands in a shell.
   options = options || {};
   options.shell = true;
+  // `options.shell = true` requires parameters to be quoted.
+  parameters = parameters.map((param) => {
+    if (!/[\s`~!#$*(){\[|\\;'"<>?]/.test(param)) {
+      return param;
+    }
+    return '\"' + param.replace(/([$\\"`])/g, '\\$1') + '\"';
+  });
 
   var result = spawnSync(command, parameters, options);
   if (result.status !== 0) {
