@@ -369,13 +369,13 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
 
       var transportDestroyed = !this._transport ? Promise.resolve() :
         this._transport.destroy();
-      return transportDestroyed.then(function () {
+      return transportDestroyed.then(() => {
         this._transport = null;
         if (this._worker) {
           this._worker.destroy();
           this._worker = null;
         }
-      }.bind(this));
+      });
     },
 
     /**
@@ -436,22 +436,22 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
     },
 
     onDataProgress: function PDFDataRangeTransport_onDataProgress(loaded) {
-      this._readyCapability.promise.then(function () {
+      this._readyCapability.promise.then(() => {
         var listeners = this._progressListeners;
         for (var i = 0, n = listeners.length; i < n; ++i) {
           listeners[i](loaded);
         }
-      }.bind(this));
+      });
     },
 
     onDataProgressiveRead:
         function PDFDataRangeTransport_onDataProgress(chunk) {
-      this._readyCapability.promise.then(function () {
+      this._readyCapability.promise.then(() => {
         var listeners = this._progressiveReadListeners;
         for (var i = 0, n = listeners.length; i < n; ++i) {
           listeners[i](chunk);
         }
-      }.bind(this));
+      });
     },
 
     transportReady: function PDFDataRangeTransport_transportReady() {
@@ -822,6 +822,26 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         });
       }
 
+      var complete = (error) => {
+        var i = intentState.renderTasks.indexOf(internalRenderTask);
+        if (i >= 0) {
+          intentState.renderTasks.splice(i, 1);
+        }
+
+        if (this.cleanupAfterRender) {
+          this.pendingCleanup = true;
+        }
+        this._tryCleanup();
+
+        if (error) {
+          internalRenderTask.capability.reject(error);
+        } else {
+          internalRenderTask.capability.resolve();
+        }
+        stats.timeEnd('Rendering');
+        stats.timeEnd('Overall');
+      };
+
       var internalRenderTask = new InternalRenderTask(complete, params,
                                                       this.objs,
                                                       this.commonObjs,
@@ -841,41 +861,15 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         renderTask.onContinue = params.continueCallback;
       }
 
-      var self = this;
-      intentState.displayReadyCapability.promise.then(
-        function pageDisplayReadyPromise(transparency) {
-          if (self.pendingCleanup) {
-            complete();
-            return;
-          }
-          stats.time('Rendering');
-          internalRenderTask.initializeGraphics(transparency);
-          internalRenderTask.operatorListChanged();
-        },
-        function pageDisplayReadPromiseError(reason) {
-          complete(reason);
+      intentState.displayReadyCapability.promise.then((transparency) => {
+        if (this.pendingCleanup) {
+          complete();
+          return;
         }
-      );
-
-      function complete(error) {
-        var i = intentState.renderTasks.indexOf(internalRenderTask);
-        if (i >= 0) {
-          intentState.renderTasks.splice(i, 1);
-        }
-
-        if (self.cleanupAfterRender) {
-          self.pendingCleanup = true;
-        }
-        self._tryCleanup();
-
-        if (error) {
-          internalRenderTask.capability.reject(error);
-        } else {
-          internalRenderTask.capability.resolve();
-        }
-        stats.timeEnd('Rendering');
-        stats.timeEnd('Overall');
-      }
+        stats.time('Rendering');
+        internalRenderTask.initializeGraphics(transparency);
+        internalRenderTask.operatorListChanged();
+      }, complete);
 
       return renderTask;
     },
@@ -1106,11 +1100,11 @@ class LoopbackPort {
 
     var cloned = new WeakMap();
     var e = {data: cloneValue(obj)};
-    this._deferred.then(function () {
+    this._deferred.then(() => {
       this._listeners.forEach(function (listener) {
         listener.call(this, e);
       }, this);
-    }.bind(this));
+    });
   }
 
   addEventListener(name, listener) {
@@ -1267,7 +1261,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
           var worker = new Worker(workerSrc);
           var messageHandler = new MessageHandler('main', 'worker', worker);
-          var terminateEarly = function() {
+          var terminateEarly = () => {
             worker.removeEventListener('error', onWorkerError);
             messageHandler.destroy();
             worker.terminate();
@@ -1278,18 +1272,18 @@ var PDFWorker = (function PDFWorkerClosure() {
               // error (e.g. NetworkError / SecurityError).
               this._setupFakeWorker();
             }
-          }.bind(this);
+          };
 
-          var onWorkerError = function(event) {
+          var onWorkerError = () => {
             if (!this._webWorker) {
               // Worker failed to initialize due to an error. Clean up and fall
               // back to the fake worker.
               terminateEarly();
             }
-          }.bind(this);
+          };
           worker.addEventListener('error', onWorkerError);
 
-          messageHandler.on('test', function PDFWorker_test(data) {
+          messageHandler.on('test', (data) => {
             worker.removeEventListener('error', onWorkerError);
             if (this.destroyed) {
               terminateEarly();
@@ -1313,7 +1307,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               messageHandler.destroy();
               worker.terminate();
             }
-          }.bind(this));
+          });
 
           messageHandler.on('console_log', function (data) {
             console.log.apply(console, data);
@@ -1322,7 +1316,7 @@ var PDFWorker = (function PDFWorkerClosure() {
             console.error.apply(console, data);
           });
 
-          messageHandler.on('ready', function (data) {
+          messageHandler.on('ready', (data) => {
             worker.removeEventListener('error', onWorkerError);
             if (this.destroyed) {
               terminateEarly();
@@ -1334,7 +1328,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               // We need fallback to a faked worker.
               this._setupFakeWorker();
             }
-          }.bind(this));
+          });
 
           var sendTest = function () {
             var postMessageTransfers =
@@ -1373,7 +1367,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         isWorkerDisabled = true;
       }
 
-      setupFakeWorkerGlobal().then(function (WorkerMessageHandler) {
+      setupFakeWorkerGlobal().then((WorkerMessageHandler) => {
         if (this.destroyed) {
           this._readyCapability.reject(new Error('Worker was destroyed'));
           return;
@@ -1397,7 +1391,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         var messageHandler = new MessageHandler(id, id + '_worker', port);
         this._messageHandler = messageHandler;
         this._readyCapability.resolve();
-      }.bind(this));
+      });
     },
 
     /**
@@ -1472,21 +1466,20 @@ var WorkerTransport = (function WorkerTransportClosure() {
       });
       this.pageCache = [];
       this.pagePromises = [];
-      var self = this;
       // We also need to wait for the worker to finish its long running tasks.
       var terminated = this.messageHandler.sendWithPromise('Terminate', null);
       waitOn.push(terminated);
-      Promise.all(waitOn).then(function () {
-        self.fontLoader.clear();
-        if (self.pdfDataRangeTransport) {
-          self.pdfDataRangeTransport.abort();
-          self.pdfDataRangeTransport = null;
+      Promise.all(waitOn).then(() => {
+        this.fontLoader.clear();
+        if (this.pdfDataRangeTransport) {
+          this.pdfDataRangeTransport.abort();
+          this.pdfDataRangeTransport = null;
         }
-        if (self.messageHandler) {
-          self.messageHandler.destroy();
-          self.messageHandler = null;
+        if (this.messageHandler) {
+          this.messageHandler.destroy();
+          this.messageHandler = null;
         }
-        self.destroyCapability.resolve();
+        this.destroyCapability.resolve();
       }, this.destroyCapability.reject);
       return this.destroyCapability.promise;
     },
@@ -1641,13 +1634,11 @@ var WorkerTransport = (function WorkerTransportClosure() {
               disableFontFace: getDefaultSetting('disableFontFace'),
               fontRegistry,
             });
+            var fontReady = (fontObjs) => {
+              this.commonObjs.resolve(id, font);
+            };
 
-            this.fontLoader.bind(
-              [font],
-              function fontReady(fontObjs) {
-                this.commonObjs.resolve(id, font);
-              }.bind(this)
-            );
+            this.fontLoader.bind([font], fontReady);
             break;
           case 'FontPath':
             this.commonObjs.resolve(id, data[2]);
@@ -1821,14 +1812,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }
       var promise = this.messageHandler.sendWithPromise('GetPage', {
         pageIndex,
-      }).then(function (pageInfo) {
+      }).then((pageInfo) => {
         if (this.destroyed) {
           throw new Error('Transport destroyed');
         }
         var page = new PDFPageProxy(pageIndex, pageInfo, this);
         this.pageCache[pageIndex] = page;
         return page;
-      }.bind(this));
+      });
       this.pagePromises[pageIndex] = promise;
       return promise;
     },
@@ -1889,8 +1880,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     startCleanup: function WorkerTransport_startCleanup() {
-      this.messageHandler.sendWithPromise('Cleanup', null).
-        then(function endCleanup() {
+      this.messageHandler.sendWithPromise('Cleanup', null).then(() => {
         for (var i = 0, ii = this.pageCache.length; i < ii; i++) {
           var page = this.pageCache[i];
           if (page) {
@@ -1899,7 +1889,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
         this.commonObjs.clear();
         this.fontLoader.clear();
-      }.bind(this));
+      });
     }
   };
   return WorkerTransport;
