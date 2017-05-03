@@ -64,7 +64,7 @@ var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
       if (!name) {
         return Promise.reject(new Error('CMap name must be specified.'));
       }
-      return new Promise(function (resolve, reject) {
+      return new Promise((resolve, reject) => {
         var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
 
         var request = new XMLHttpRequest();
@@ -73,7 +73,7 @@ var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
         if (this.isCompressed) {
           request.responseType = 'arraybuffer';
         }
-        request.onreadystatechange = function () {
+        request.onreadystatechange = () => {
           if (request.readyState !== XMLHttpRequest.DONE) {
             return;
           }
@@ -96,10 +96,10 @@ var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
           reject(new Error('Unable to load ' +
                            (this.isCompressed ? 'binary ' : '') +
                            'CMap at: ' + url));
-        }.bind(this);
+        };
 
         request.send(null);
-      }.bind(this));
+      });
     },
   };
 

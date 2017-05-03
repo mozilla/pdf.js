@@ -312,13 +312,11 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
      * @param {Object} destination
      * @memberof LinkAnnotationElement
      */
-    _bindLink: function LinkAnnotationElement_bindLink(link, destination) {
-      var self = this;
-
+    _bindLink(link, destination) {
       link.href = this.linkService.getDestinationHash(destination);
-      link.onclick = function() {
+      link.onclick = () => {
         if (destination) {
-          self.linkService.navigateTo(destination);
+          this.linkService.navigateTo(destination);
         }
         return false;
       };
@@ -335,13 +333,10 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
      * @param {Object} action
      * @memberof LinkAnnotationElement
      */
-    _bindNamedAction:
-        function LinkAnnotationElement_bindNamedAction(link, action) {
-      var self = this;
-
+    _bindNamedAction(link, action) {
       link.href = this.linkService.getAnchorUrl('');
-      link.onclick = function() {
-        self.linkService.executeNamedAction(action);
+      link.onclick = () => {
+        this.linkService.executeNamedAction(action);
         return false;
       };
       link.className = 'internalLink';

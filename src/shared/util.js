@@ -1227,7 +1227,7 @@ function MessageHandler(sourceName, targetName, comObj) {
   var callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
   var ah = this.actionHandler = Object.create(null);
 
-  this._onComObjOnMessage = function messageHandlerComObjOnMessage(event) {
+  this._onComObjOnMessage = (event) => {
     var data = event.data;
     if (data.targetName !== this.sourceName) {
       return;
@@ -1279,7 +1279,7 @@ function MessageHandler(sourceName, targetName, comObj) {
     } else {
       error('Unknown action from worker: ' + data.action);
     }
-  }.bind(this);
+  };
   comObj.addEventListener('message', this._onComObjOnMessage);
 }
 
