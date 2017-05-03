@@ -1424,3 +1424,12 @@ gulp.task('mozcentraldiff', ['mozcentral', 'mozcentralbaseline'],
           });
       });
 });
+
+gulp.task('externaltest', function () {
+  gutil.log('Running test-fixtures.js');
+  safeSpawnSync('node', ['external/builder/test-fixtures.js'],
+                {stdio: 'inherit'});
+  gutil.log('Running test-fixtures_esprima.js');
+  safeSpawnSync('node', ['external/builder/test-fixtures_esprima.js'],
+                {stdio: 'inherit'});
+});
