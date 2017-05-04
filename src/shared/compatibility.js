@@ -15,19 +15,7 @@
 /* eslint-disable no-extend-native */
 /* globals VBArray, PDFJS, global */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/shared/compatibility', ['exports'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports);
-  } else {
-    factory((root.pdfjsSharedCompatibility = {}));
-  }
-}(this, function (exports) {
-
-// Skip compatibility checks for the extensions and if we already run
+// Skip compatibility checks for the extensions and if we already ran
 // this module.
 if ((typeof PDFJSDev === 'undefined' ||
      !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) &&
@@ -1850,5 +1838,3 @@ PDFJS.compatibilityChecked = true;
 })();
 
 }
-
-}));
