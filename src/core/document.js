@@ -233,10 +233,9 @@ var Page = (function PageClosure() {
       });
     },
 
-    getOperatorList(handler, task, intent, renderInteractiveForms) {
-      var pdfManager = this.pdfManager;
-      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
-                                                   []);
+    getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+      var contentStreamPromise = this.pdfManager.ensure(this,
+                                                        'getContentStream');
       var resourcesPromise = this.loadResources([
         'ExtGState',
         'ColorSpace',
@@ -248,12 +247,16 @@ var Page = (function PageClosure() {
         // Properties
       ]);
 
-      var partialEvaluator = new PartialEvaluator(pdfManager, this.xref,
-                                                  handler, this.pageIndex,
-                                                  this.idFactory,
-                                                  this.fontCache,
-                                                  this.builtInCMapCache,
-                                                  this.evaluatorOptions);
+      var partialEvaluator = new PartialEvaluator({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        handler,
+        pageIndex: this.pageIndex,
+        idFactory: this.idFactory,
+        fontCache: this.fontCache,
+        builtInCMapCache: this.builtInCMapCache,
+        options: this.evaluatorOptions,
+      });
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
       var pageListPromise = dataPromises.then(([contentStream]) => {
@@ -264,15 +267,19 @@ var Page = (function PageClosure() {
           pageIndex: this.pageIndex,
           intent,
         });
-        return partialEvaluator.getOperatorList(contentStream, task,
-          this.resources, opList).then(function () {
-            return opList;
-          });
+        return partialEvaluator.getOperatorList({
+          stream: contentStream,
+          task,
+          resources: this.resources,
+          operatorList: opList,
+        }).then(function () {
+          return opList;
+        });
       });
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = pdfManager.ensure(this, 'annotations');
+      var annotationsPromise = this.pdfManager.ensure(this, 'annotations');
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
@@ -303,11 +310,10 @@ var Page = (function PageClosure() {
       });
     },
 
-    extractTextContent(handler, task, normalizeWhitespace, combineTextItems) {
-      var pdfManager = this.pdfManager;
-      var contentStreamPromise = pdfManager.ensure(this, 'getContentStream',
-                                                   []);
-
+    extractTextContent({ handler, task, normalizeWhitespace,
+                         combineTextItems, }) {
+      var contentStreamPromise = this.pdfManager.ensure(this,
+                                                        'getContentStream');
       var resourcesPromise = this.loadResources([
         'ExtGState',
         'XObject',
@@ -316,19 +322,24 @@ var Page = (function PageClosure() {
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
       return dataPromises.then(([contentStream]) => {
-        var partialEvaluator = new PartialEvaluator(pdfManager, this.xref,
-                                                    handler, this.pageIndex,
-                                                    this.idFactory,
-                                                    this.fontCache,
-                                                    this.builtInCMapCache,
-                                                    this.evaluatorOptions);
+        var partialEvaluator = new PartialEvaluator({
+          pdfManager: this.pdfManager,
+          xref: this.xref,
+          handler,
+          pageIndex: this.pageIndex,
+          idFactory: this.idFactory,
+          fontCache: this.fontCache,
+          builtInCMapCache: this.builtInCMapCache,
+          options: this.evaluatorOptions,
+        });
 
-        return partialEvaluator.getTextContent(contentStream,
-                                               task,
-                                               this.resources,
-                                               /* stateManager = */ null,
-                                               normalizeWhitespace,
-                                               combineTextItems);
+        return partialEvaluator.getTextContent({
+          stream: contentStream,
+          task,
+          resources: this.resources,
+          normalizeWhitespace,
+          combineTextItems,
+        });
       });
     },
 
