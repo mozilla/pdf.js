@@ -161,8 +161,8 @@ class PDFAttachmentViewer {
    * Used to append FileAttachment annotations to the sidebar.
    * @private
    */
-  _appendAttachment(item) {
-    this._renderedCapability.promise.then(function (id, filename, content) {
+  _appendAttachment({ id, filename, content, }) {
+    this._renderedCapability.promise.then(() => {
       var attachments = this.attachments;
 
       if (!attachments) {
@@ -182,7 +182,7 @@ class PDFAttachmentViewer {
         attachments,
         keepRenderedCapability: true,
       });
-    }.bind(this, item.id, item.filename, item.content));
+    });
   }
 }
 
