@@ -138,10 +138,10 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
         return Promise.resolve();
       }
 
-      return pdfDocument.getPage(1).then(function (firstPage) {
+      return pdfDocument.getPage(1).then((firstPage) => {
         var pagesCount = pdfDocument.numPages;
         var viewport = firstPage.getViewport(1.0);
-        for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+        for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var thumbnail = new PDFThumbnailView({
             container: this.container,
             id: pageNum,
@@ -152,7 +152,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
           });
           this.thumbnails.push(thumbnail);
         }
-      }.bind(this));
+      });
     },
 
     /**

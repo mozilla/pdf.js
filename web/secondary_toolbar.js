@@ -139,19 +139,17 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
       this.toggleButton.addEventListener('click', this.toggle.bind(this));
 
       // All items within the secondary toolbar.
-      for (var button in this.buttons) {
-        var element = this.buttons[button].element;
-        var eventName = this.buttons[button].eventName;
-        var close = this.buttons[button].close;
+      for (let button in this.buttons) {
+        let { element, eventName, close, } = this.buttons[button];
 
-        element.addEventListener('click', function (eventName, close) {
+        element.addEventListener('click', (evt) => {
           if (eventName !== null) {
             this.eventBus.dispatch(eventName, { source: this, });
           }
           if (close) {
             this.close();
           }
-        }.bind(this, eventName, close));
+        });
       }
     },
 

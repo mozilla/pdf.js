@@ -383,8 +383,8 @@ var PDFViewer = (function pdfViewer() {
             return;
           }
           var getPagesLeft = pagesCount;
-          for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
-            pdfDocument.getPage(pageNum).then(function(pageNum, pdfPage) {
+          for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
+            pdfDocument.getPage(pageNum).then((pdfPage) => {
               var pageView = this._pages[pageNum - 1];
               if (!pageView.pdfPage) {
                 pageView.setPdfPage(pdfPage);
@@ -393,7 +393,7 @@ var PDFViewer = (function pdfViewer() {
               if (--getPagesLeft === 0) {
                 pagesCapability.resolve();
               }
-            }.bind(this, pageNum));
+            });
           }
         });
 
