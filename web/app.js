@@ -833,10 +833,10 @@ var PDFViewerApplication = {
         }
         this.loadingBar.show();
 
-        this.disableAutoFetchLoadingBarTimeout = setTimeout(function () {
+        this.disableAutoFetchLoadingBarTimeout = setTimeout(() => {
           this.loadingBar.hide();
           this.disableAutoFetchLoadingBarTimeout = null;
-        }.bind(this), DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
+        }, DISABLE_AUTO_FETCH_LOADING_BAR_TIMEOUT);
       }
     }
   },

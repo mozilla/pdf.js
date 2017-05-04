@@ -105,20 +105,19 @@ var DownloadManager = (function DownloadManagerClosure() {
     },
 
     download: function DownloadManager_download(blob, url, filename) {
-      var blobUrl = window.URL.createObjectURL(blob);
+      let blobUrl = window.URL.createObjectURL(blob);
+      let onResponse = (err) => {
+        if (err && this.onerror) {
+          this.onerror(err);
+        }
+        window.URL.revokeObjectURL(blobUrl);
+      };
 
       FirefoxCom.request('download', {
         blobUrl,
         originalUrl: url,
         filename,
-      },
-        function response(err) {
-          if (err && this.onerror) {
-            this.onerror(err);
-          }
-          window.URL.revokeObjectURL(blobUrl);
-        }.bind(this)
-      );
+      }, onResponse);
     }
   };
 

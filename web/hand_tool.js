@@ -53,16 +53,16 @@ var HandTool = (function HandToolClosure() {
       }
     }).catch(function rejected(reason) { });
 
-    this.eventBus.on('presentationmodechanged', function (e) {
-      if (e.switchInProgress) {
+    this.eventBus.on('presentationmodechanged', (evt) => {
+      if (evt.switchInProgress) {
         return;
       }
-      if (e.active) {
+      if (evt.active) {
         this.enterPresentationMode();
       } else {
         this.exitPresentationMode();
       }
-    }.bind(this));
+    });
   }
 
   HandTool.prototype = {

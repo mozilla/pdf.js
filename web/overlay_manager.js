@@ -30,9 +30,8 @@ var OverlayManager = {
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    registered.
    */
-  register: function overlayManagerRegister(name, element,
-                                            callerCloseMethod, canForceClose) {
-    return new Promise(function (resolve) {
+  register(name, element, callerCloseMethod, canForceClose) {
+    return new Promise((resolve) => {
       var container;
       if (!name || !element || !(container = element.parentNode)) {
         throw new Error('Not enough parameters.');
@@ -46,7 +45,7 @@ var OverlayManager = {
         canForceClose: (canForceClose || false),
       };
       resolve();
-    }.bind(this));
+    });
   },
 
   /**
@@ -54,8 +53,8 @@ var OverlayManager = {
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    unregistered.
    */
-  unregister: function overlayManagerUnregister(name) {
-    return new Promise(function (resolve) {
+  unregister(name) {
+    return new Promise((resolve) => {
       if (!this.overlays[name]) {
         throw new Error('The overlay does not exist.');
       } else if (this.active === name) {
@@ -64,7 +63,7 @@ var OverlayManager = {
       delete this.overlays[name];
 
       resolve();
-    }.bind(this));
+    });
   },
 
   /**
@@ -72,8 +71,8 @@ var OverlayManager = {
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    opened.
    */
-  open: function overlayManagerOpen(name) {
-    return new Promise(function (resolve) {
+  open(name) {
+    return new Promise((resolve) => {
       if (!this.overlays[name]) {
         throw new Error('The overlay does not exist.');
       } else if (this.active) {
@@ -91,7 +90,7 @@ var OverlayManager = {
 
       window.addEventListener('keydown', this._keyDown);
       resolve();
-    }.bind(this));
+    });
   },
 
   /**
@@ -99,8 +98,8 @@ var OverlayManager = {
    * @returns {Promise} A promise that is resolved when the overlay has been
    *                    closed.
    */
-  close: function overlayManagerClose(name) {
-    return new Promise(function (resolve) {
+  close(name) {
+    return new Promise((resolve) => {
       if (!this.overlays[name]) {
         throw new Error('The overlay does not exist.');
       } else if (!this.active) {
@@ -114,13 +113,13 @@ var OverlayManager = {
 
       window.removeEventListener('keydown', this._keyDown);
       resolve();
-    }.bind(this));
+    });
   },
 
   /**
    * @private
    */
-  _keyDown: function overlayManager_keyDown(evt) {
+  _keyDown(evt) {
     var self = OverlayManager;
     if (self.active && evt.keyCode === 27) { // Esc key.
       self._closeThroughCaller();
@@ -131,7 +130,7 @@ var OverlayManager = {
   /**
    * @private
    */
-  _closeThroughCaller: function overlayManager_closeThroughCaller() {
+  _closeThroughCaller() {
     if (this.overlays[this.active].callerCloseMethod) {
       this.overlays[this.active].callerCloseMethod();
     }

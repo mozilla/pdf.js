@@ -149,11 +149,11 @@ var FontInspector = (function FontInspectorClosure() {
       fonts.appendChild(font);
       // Somewhat of a hack, should probably add a hook for when the text layer
       // is done rendering.
-      setTimeout(function() {
+      setTimeout(() => {
         if (this.active) {
           resetSelection();
         }
-      }.bind(this), 2000);
+      }, 2000);
     }
   };
 })();

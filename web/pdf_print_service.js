@@ -127,7 +127,7 @@ PDFPrintService.prototype = {
 
   renderPages() {
     var pageCount = this.pagesOverview.length;
-    var renderNextPage = function (resolve, reject) {
+    var renderNextPage = (resolve, reject) => {
       this.throwIfInactive();
       if (++this.currentPage >= pageCount) {
         renderProgress(pageCount, pageCount);
@@ -141,7 +141,7 @@ PDFPrintService.prototype = {
         .then(function () {
           renderNextPage(resolve, reject);
         }, reject);
-    }.bind(this);
+    };
     return new Promise(renderNextPage);
   },
 
@@ -172,11 +172,11 @@ PDFPrintService.prototype = {
 
   performPrint() {
     this.throwIfInactive();
-    return new Promise(function (resolve) {
+    return new Promise((resolve) => {
       // Push window.print in the macrotask queue to avoid being affected by
       // the deprecation of running print() code in a microtask, see
       // https://github.com/mozilla/pdf.js/issues/7547.
-      setTimeout(function () {
+      setTimeout(() => {
         if (!this.active) {
           resolve();
           return;
@@ -184,8 +184,8 @@ PDFPrintService.prototype = {
         print.call(window);
         // Delay promise resolution in case print() was not synchronous.
         setTimeout(resolve, 20);  // Tidy-up.
-      }.bind(this), 0);
-    }.bind(this));
+      }, 0);
+    });
   },
 
   get active() {
