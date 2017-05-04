@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { mozL10n } from './ui_utils';
+import { NullL10n } from './ui_utils';
 import { PasswordResponses } from 'pdfjs-lib';
 
 /**
@@ -33,8 +33,9 @@ class PasswordPrompt {
   /**
    * @param {PasswordPromptOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
+   * @param {IL10n} l10n - Localization service.
    */
-  constructor(options, overlayManager) {
+  constructor(options, overlayManager, l10n = NullL10n) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
@@ -42,6 +43,7 @@ class PasswordPrompt {
     this.submitButton = options.submitButton;
     this.cancelButton = options.cancelButton;
     this.overlayManager = overlayManager;
+    this.l10n = l10n;
 
     this.updateCallback = null;
     this.reason = null;
@@ -63,15 +65,18 @@ class PasswordPrompt {
     this.overlayManager.open(this.overlayName).then(() => {
       this.input.focus();
 
-      var promptString = mozL10n.get('password_label', null,
-        'Enter the password to open this PDF file.');
-
+      let promptString;
       if (this.reason === PasswordResponses.INCORRECT_PASSWORD) {
-        promptString = mozL10n.get('password_invalid', null,
+        promptString = this.l10n.get('password_invalid', null,
           'Invalid password. Please try again.');
+      } else {
+        promptString = this.l10n.get('password_label', null,
+          'Enter the password to open this PDF file.');
       }
 
-      this.label.textContent = promptString;
+      promptString.then((msg) => {
+        this.label.textContent = msg;
+      });
     });
   }
 

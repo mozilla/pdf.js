@@ -118,9 +118,39 @@ class IPDFAnnotationLayerFactory {
   /**
    * @param {HTMLDivElement} pageDiv
    * @param {PDFPage} pdfPage
+   * @param {IL10n} l10n
    * @param {boolean} renderInteractiveForms
    * @returns {AnnotationLayerBuilder}
    */
   createAnnotationLayerBuilder(pageDiv, pdfPage,
-                               renderInteractiveForms = false) {}
+                               renderInteractiveForms = false,
+                               l10n = undefined) {}
+}
+
+/**
+ * @interface
+ */
+class IL10n {
+  /**
+   * @returns {Promise<string>} - Resolves to 'rtl' or 'ltr'.
+   */
+  getDirection() {}
+
+  /**
+   * Translates text identified by the key and adds/formats data using the args
+   * property bag. If the key was not found, translation falls back to the
+   * fallback text.
+   * @param {string} key
+   * @param {object} args
+   * @param {string} fallback
+   * @returns {Promise<string>}
+   */
+  get(key, args, fallback) { }
+
+  /**
+   * Translates HTML element.
+   * @param {HTMLElement} element
+   * @returns {Promise<void>}
+   */
+  translate(element) { }
 }

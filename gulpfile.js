@@ -609,9 +609,6 @@ gulp.task('generic', ['buildnumber', 'locale'], function () {
         .pipe(gulp.dest(GENERIC_DIR + 'web')),
     gulp.src('LICENSE').pipe(gulp.dest(GENERIC_DIR)),
     gulp.src([
-      'external/webL10n/l10n.js'
-    ]).pipe(gulp.dest(GENERIC_DIR + 'web')),
-    gulp.src([
       'web/locale/*/viewer.properties',
       'web/locale/locale.properties'
     ], {base: 'web/'}).pipe(gulp.dest(GENERIC_DIR + 'web')),
@@ -695,7 +692,6 @@ gulp.task('minified-pre', ['buildnumber', 'locale'], function () {
 
 gulp.task('minified-post', ['minified-pre'], function () {
   var viewerFiles = [
-    'external/webL10n/l10n.js',
     MINIFIED_DIR + BUILD_DIR + 'pdf.js',
     MINIFIED_DIR + '/web/viewer.js'
   ];
@@ -788,9 +784,6 @@ gulp.task('firefox-pre', ['buildnumber', 'locale'], function () {
              {base: FIREFOX_EXTENSION_DIR})
         .pipe(gulp.dest(FIREFOX_BUILD_DIR)),
     gulp.src('LICENSE').pipe(gulp.dest(FIREFOX_BUILD_DIR)),
-
-    gulp.src(FIREFOX_EXTENSION_DIR + 'tools/l10n.js')
-        .pipe(gulp.dest(FIREFOX_BUILD_CONTENT_DIR + '/web')),
 
     preprocessJS(FIREFOX_CONTENT_DIR + 'PdfStreamConverter.jsm', defines, true)
         .pipe(replace(/\bPDFJSSCRIPT_STREAM_CONVERTER_ID\b/g,
@@ -892,8 +885,6 @@ gulp.task('mozcentral-pre', ['buildnumber', 'locale'], function () {
         .pipe(replace(/\bPDFJSSCRIPT_COMMIT\b/g, commit))
         .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
     gulp.src('LICENSE').pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-    gulp.src(FIREFOX_EXTENSION_DIR + 'tools/l10n.js')
-        .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + '/web')),
 
     preprocessJS(FIREFOX_CONTENT_DIR + 'PdfJs.jsm', defines, true)
         .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR)),
@@ -935,8 +926,6 @@ gulp.task('chromium-pre', ['buildnumber', 'locale'], function () {
     gulp.src(COMMON_WEB_FILES, {base: 'web/'})
         .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
 
-    gulp.src('external/webL10n/l10n.js')
-        .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + 'web')),
     gulp.src([
       'web/locale/*/viewer.properties',
       'web/locale/locale.properties'

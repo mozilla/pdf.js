@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { cloneObj, getPDFFileNameFromURL, mozL10n } from './ui_utils';
+import { cloneObj, getPDFFileNameFromURL, NullL10n } from './ui_utils';
 import { createPromiseCapability } from 'pdfjs-lib';
 
 const DEFAULT_FIELD_CONTENT = '-';
@@ -30,13 +30,15 @@ class PDFDocumentProperties {
   /**
    * @param {PDFDocumentPropertiesOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
+   * @param {IL10n} l10n - Localization service.
    */
   constructor({ overlayName, fields, container, closeButton, },
-              overlayManager) {
+              overlayManager, l10n = NullL10n) {
     this.overlayName = overlayName;
     this.fields = fields;
     this.container = container;
     this.overlayManager = overlayManager;
+    this.l10n = l10n;
 
     this._reset();
 
@@ -70,15 +72,23 @@ class PDFDocumentProperties {
       }
       // Get the document properties.
       this.pdfDocument.getMetadata().then(({ info, metadata, }) => {
+        return Promise.all([
+          info,
+          metadata,
+          this._parseFileSize(this.maybeFileSize),
+          this._parseDate(info.CreationDate),
+          this._parseDate(info.ModDate)
+        ]);
+      }).then(([info, metadata, fileSize, creationDate, modificationDate]) => {
         freezeFieldData({
           'fileName': getPDFFileNameFromURL(this.url),
-          'fileSize': this._parseFileSize(this.maybeFileSize),
+          'fileSize': fileSize,
           'title': info.Title,
           'author': info.Author,
           'subject': info.Subject,
           'keywords': info.Keywords,
-          'creationDate': this._parseDate(info.CreationDate),
-          'modificationDate': this._parseDate(info.ModDate),
+          'creationDate': creationDate,
+          'modificationDate': modificationDate,
           'creator': info.Creator,
           'producer': info.Producer,
           'version': info.PDFFormatVersion,
@@ -90,8 +100,10 @@ class PDFDocumentProperties {
         // `this.setFileSize` wasn't called) or may be incorrectly set.
         return this.pdfDocument.getDownloadInfo();
       }).then(({ length, }) => {
+        return this._parseFileSize(length);
+      }).then((fileSize) => {
         let data = cloneObj(this.fieldData);
-        data['fileSize'] = this._parseFileSize(length);
+        data['fileSize'] = fileSize;
 
         freezeFieldData(data);
         this._updateUI();
@@ -185,14 +197,14 @@ class PDFDocumentProperties {
   _parseFileSize(fileSize = 0) {
     let kb = fileSize / 1024;
     if (!kb) {
-      return;
+      return Promise.resolve(undefined);
     } else if (kb < 1024) {
-      return mozL10n.get('document_properties_kb', {
+      return this.l10n.get('document_properties_kb', {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
         size_b: fileSize.toLocaleString()
       }, '{{size_kb}} KB ({{size_b}} bytes)');
     }
-    return mozL10n.get('document_properties_mb', {
+    return this.l10n.get('document_properties_mb', {
       size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
       size_b: fileSize.toLocaleString()
     }, '{{size_mb}} MB ({{size_b}} bytes)');
@@ -243,9 +255,9 @@ class PDFDocumentProperties {
     var date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
     var dateString = date.toLocaleDateString();
     var timeString = date.toLocaleTimeString();
-    return mozL10n.get('document_properties_date_string',
-                       { date: dateString, time: timeString },
-                       '{{date}}, {{time}}');
+    return this.l10n.get('document_properties_date_string',
+                         { date: dateString, time: timeString },
+                         '{{date}}, {{time}}');
   }
 }
 

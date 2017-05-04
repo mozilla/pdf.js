@@ -16,7 +16,7 @@
 import {
   createPromiseCapability, RenderingCancelledException
 } from 'pdfjs-lib';
-import { getOutputScale, mozL10n } from './ui_utils';
+import { getOutputScale, NullL10n } from './ui_utils';
 import { RenderingStates } from './pdf_rendering_queue';
 
 var THUMBNAIL_WIDTH = 98; // px
@@ -32,6 +32,7 @@ var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px
  * @property {boolean} disableCanvasToImageConversion - (optional) Don't convert
  *   the canvas thumbnails to images. This prevents `toDataURL` calls,
  *   but increases the overall memory usage. The default value is false.
+ * @property {IL10n} l10n - Localization service.
  */
 
 const TempImageFactory = (function TempImageFactoryClosure() {
@@ -118,9 +119,14 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     this.canvasHeight = (this.canvasWidth / this.pageRatio) | 0;
     this.scale = this.canvasWidth / this.pageWidth;
 
+    this.l10n = options.l10n || NullL10n;
+
     var anchor = document.createElement('a');
     anchor.href = linkService.getAnchorUrl('#page=' + id);
-    anchor.title = mozL10n.get('thumb_page_title', {page: id}, 'Page {{page}}');
+    this.l10n.get('thumb_page_title', {page: id}, 'Page {{page}}').
+        then((msg) => {
+      anchor.title = msg;
+    });
     anchor.onclick = function stopNavigation() {
       linkService.page = id;
       return false;
@@ -253,13 +259,14 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       }
       var id = this.renderingId;
       var className = 'thumbnailImage';
-      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.pageId },
-                                  'Thumbnail of Page {{page}}');
 
       if (this.disableCanvasToImageConversion) {
         this.canvas.id = id;
         this.canvas.className = className;
-        this.canvas.setAttribute('aria-label', ariaLabel);
+        this.l10n.get('thumb_page_canvas', { page: this.pageId },
+                      'Thumbnail of Page {{page}}').then((msg) => {
+          this.canvas.setAttribute('aria-label', msg);
+        });
 
         this.div.setAttribute('data-loaded', true);
         this.ring.appendChild(this.canvas);
@@ -268,7 +275,11 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       var image = document.createElement('img');
       image.id = id;
       image.className = className;
-      image.setAttribute('aria-label', ariaLabel);
+      this.l10n.get('thumb_page_canvas', { page: this.pageId },
+        'Thumbnail of Page {{page}}').
+          then((msg) => {
+        image.setAttribute('aria-label', msg);
+      });
 
       image.style.width = this.canvasWidth + 'px';
       image.style.height = this.canvasHeight + 'px';
@@ -409,19 +420,23 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     setPageLabel: function PDFThumbnailView_setPageLabel(label) {
       this.pageLabel = (typeof label === 'string' ? label : null);
 
-      this.anchor.title = mozL10n.get('thumb_page_title', { page: this.pageId },
-                                      'Page {{page}}');
+      this.l10n.get('thumb_page_title', { page: this.pageId }, 'Page {{page}}').
+          then((msg) => {
+        this.anchor.title = msg;
+      });
 
       if (this.renderingState !== RenderingStates.FINISHED) {
         return;
       }
-      var ariaLabel = mozL10n.get('thumb_page_canvas', { page: this.pageId },
-                                  'Thumbnail of Page {{page}}');
-      if (this.image) {
-        this.image.setAttribute('aria-label', ariaLabel);
-      } else if (this.disableCanvasToImageConversion && this.canvas) {
-        this.canvas.setAttribute('aria-label', ariaLabel);
-      }
+
+      this.l10n.get('thumb_page_canvas', { page: this.pageId },
+                    'Thumbnail of Page {{page}}').then((ariaLabel) => {
+        if (this.image) {
+          this.image.setAttribute('aria-label', ariaLabel);
+        } else if (this.disableCanvasToImageConversion && this.canvas) {
+          this.canvas.setAttribute('aria-label', ariaLabel);
+        }
+      });
     },
   };
 

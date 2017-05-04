@@ -14,8 +14,8 @@
  */
 
 import {
-  animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, localized, MAX_SCALE,
-  MIN_SCALE, mozL10n, noContextMenuHandler
+  animationStarted, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, MAX_SCALE,
+  MIN_SCALE, noContextMenuHandler, NullL10n
 } from './ui_utils';
 
 var PAGE_NUMBER_LOADING_INDICATOR = 'visiblePageIsLoading';
@@ -55,11 +55,13 @@ var Toolbar = (function ToolbarClosure() {
    * @param {ToolbarOptions} options
    * @param {HTMLDivElement} mainContainer
    * @param {EventBus} eventBus
+   * @param {IL10n} l10n - Localization service.
    */
-  function Toolbar(options, mainContainer, eventBus) {
+  function Toolbar(options, mainContainer, eventBus, l10n = NullL10n) {
     this.toolbar = options.container;
     this.mainContainer = mainContainer;
     this.eventBus = eventBus;
+    this.l10n = l10n;
     this.items = options;
 
     this._wasLocalized = false;
@@ -160,7 +162,9 @@ var Toolbar = (function ToolbarClosure() {
       // Suppress context menus for some controls
       items.scaleSelect.oncontextmenu = noContextMenuHandler;
 
-      localized.then(this._localized.bind(this));
+      eventBus.on('localized', (evt) => {
+        this._localized();
+      });
     },
 
     _localized: function Toolbar_localized() {
@@ -170,7 +174,12 @@ var Toolbar = (function ToolbarClosure() {
     },
 
     _updateUIState: function Toolbar_updateUIState(resetNumPages) {
-      function selectScaleOption(value, scale) {
+      if (!this._wasLocalized) {
+        // Don't update UI state until we will localize the toolbar.
+        return;
+      }
+
+      let selectScaleOption = (value, scale) => {
         var options = items.scaleSelect.options;
         var predefinedValueFound = false;
         for (var i = 0, ii = options.length; i < ii; i++) {
@@ -184,17 +193,14 @@ var Toolbar = (function ToolbarClosure() {
         }
         if (!predefinedValueFound) {
           var customScale = Math.round(scale * 10000) / 100;
-          items.customScaleOption.textContent =
-            mozL10n.get('page_scale_percent', {scale: customScale},
-                        '{{scale}}%');
+          this.l10n.get('page_scale_percent', {scale: customScale},
+            '{{scale}}%').
+              then((msg) => {
+            items.customScaleOption.textContent = msg;
+          });
           items.customScaleOption.selected = true;
         }
-      }
-
-      if (!this._wasLocalized) {
-        // Don't update UI state until we will localize the toolbar.
-        return;
-      }
+      };
 
       var pageNumber = this.pageNumber;
       var scaleValue = (this.pageScaleValue || this.pageScale).toString();
@@ -208,16 +214,21 @@ var Toolbar = (function ToolbarClosure() {
           items.pageNumber.type = 'text';
         } else {
           items.pageNumber.type = 'number';
-          items.numPages.textContent = mozL10n.get('of_pages',
-            { pagesCount, }, 'of {{pagesCount}}');
+          this.l10n.get('of_pages', { pagesCount, }, 'of {{pagesCount}}').
+              then((msg) => {
+            items.numPages.textContent = msg;
+          });
         }
         items.pageNumber.max = pagesCount;
       }
 
       if (this.hasPageLabels) {
         items.pageNumber.value = this.pageLabel;
-        items.numPages.textContent = mozL10n.get('page_of_pages',
-          { pageNumber, pagesCount, }, '({{pageNumber}} of {{pagesCount}})');
+        this.l10n.get('page_of_pages', { pageNumber, pagesCount, },
+                      '({{pageNumber}} of {{pagesCount}})').
+            then((msg) => {
+          items.numPages.textContent = msg;
+        });
       } else {
         items.pageNumber.value = pageNumber;
       }
