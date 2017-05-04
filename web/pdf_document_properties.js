@@ -17,6 +17,8 @@ import { getPDFFileNameFromURL, mozL10n } from './ui_utils';
 import { createPromiseCapability } from './pdfjs';
 import { OverlayManager } from './overlay_manager';
 
+const DEFAULT_FIELD_CONTENT = '-';
+
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
  * @property {string} overlayName - Name/identifier for the overlay.
@@ -62,7 +64,13 @@ class PDFDocumentProperties {
    * Close the document properties overlay.
    */
   close() {
-    OverlayManager.close(this.overlayName);
+    OverlayManager.close(this.overlayName).then(() => {
+      // Reset the dialog on close, to prevent incorrect properties from being
+      // shown if a new PDF file is opened in the default viewer (issue 8371).
+      for (let field in this.fields) {
+        this._updateUI(this.fields[field], DEFAULT_FIELD_CONTENT);
+      }
+    });
   }
 
   /**
@@ -97,13 +105,18 @@ class PDFDocumentProperties {
    * @private
    */
   _getProperties() {
-    if (!OverlayManager.active) {
-      // If the dialog was closed before `_dataAvailableCapability` was
-      // resolved, don't bother updating the properties.
+    if (OverlayManager.active !== this.overlayName) {
+      // If the dialog was closed before `_dataAvailableCapability.promise` is
+      // resolved, do *not* update any of the properties since that would force
+      // the dialog into an inconsistent state (given that it's reset on close,
+      // please refer to the comment above).
       return;
     }
     // Get the file size (if it hasn't already been set).
     this.pdfDocument.getDownloadInfo().then((data) => {
+      if (OverlayManager.active !== this.overlayName) {
+        return;
+      }
       if (data.length === this.rawFileSize) {
         return;
       }
@@ -139,7 +152,7 @@ class PDFDocumentProperties {
    * @private
    */
   _updateUI(field, content) {
-    if (field && content !== undefined && content !== '') {
+    if (field && content) {
       field.textContent = content;
     }
   }
