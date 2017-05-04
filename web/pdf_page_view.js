@@ -14,8 +14,8 @@
  */
 
 import {
-  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, RendererType,
-  roundToDivide
+  approximateFraction, CSS_UNITS, DEFAULT_SCALE, getOutputScale, NullL10n,
+  RendererType, roundToDivide
 } from './ui_utils';
 import {
   createPromiseCapability, CustomStyle, PDFJS, RenderingCancelledException,
@@ -41,6 +41,7 @@ const TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @property {boolean} renderInteractiveForms - Turns on rendering of
  *   interactive form elements. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {IL10n} l10n - Localization service.
  */
 
 /**
@@ -71,6 +72,7 @@ class PDFPageView {
     this.textLayerFactory = options.textLayerFactory;
     this.annotationLayerFactory = options.annotationLayerFactory;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.l10n = options.l10n || NullL10n;
 
     this.paintTask = null;
     this.paintedViewportMap = new WeakMap();
@@ -467,7 +469,7 @@ class PDFPageView {
       if (!this.annotationLayer) {
         this.annotationLayer = this.annotationLayerFactory.
           createAnnotationLayerBuilder(div, pdfPage,
-                                       this.renderInteractiveForms);
+                                       this.renderInteractiveForms, this.l10n);
       }
       this.annotationLayer.render(this.viewport, 'display');
     }

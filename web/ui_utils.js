@@ -30,8 +30,29 @@ var RendererType = {
   SVG: 'svg',
 };
 
-var mozL10n = typeof document !== 'undefined' ?
-  (document.mozL10n || document.webL10n) : undefined;
+// Replaces {{arguments}} with their values.
+function formatL10nValue(text, args) {
+  if (!args) {
+    return text;
+  }
+  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
+    return (name in args ? args[name] : '{{' + name + '}}');
+  });
+}
+
+/**
+ * No-op implemetation of the localization service.
+ * @implements {IL10n}
+ */
+var NullL10n = {
+  get(property, args, fallback) {
+    return Promise.resolve(formatL10nValue(fallback, args));
+  },
+
+  translate(element) {
+    return Promise.resolve();
+  }
+};
 
 /**
  * Disables fullscreen support, and by extension Presentation Mode,
@@ -440,22 +461,14 @@ var animationStarted = new Promise(function (resolve) {
 });
 
 /**
- * Promise that is resolved when UI localization is finished.
+ * (deprecated) External localization service.
  */
-var localized = new Promise(function (resolve, reject) {
-  if (!mozL10n) {
-    // Resolve as localized even if mozL10n is not available.
-    resolve();
-    return;
-  }
-  if (mozL10n.getReadyState() !== 'loading') {
-    resolve();
-    return;
-  }
-  window.addEventListener('localized', function localized(evt) {
-    resolve();
-  });
-});
+var mozL10n;
+
+/**
+ * (deprecated) Promise that is resolved when UI localization is finished.
+ */
+var localized = Promise.resolve();
 
 /**
  * Simple event bus for an application. Listeners are attached using the
@@ -595,6 +608,7 @@ export {
   cloneObj,
   RendererType,
   mozL10n,
+  NullL10n,
   EventBus,
   ProgressBar,
   getPDFFileNameFromURL,
