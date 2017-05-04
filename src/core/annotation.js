@@ -455,8 +455,12 @@ var Annotation = (function AnnotationClosure() {
       return resourcesPromise.then((resources) => {
         var opList = new OperatorList();
         opList.addOp(OPS.beginAnnotation, [data.rect, transform, matrix]);
-        return evaluator.getOperatorList(this.appearance, task,
-                                         resources, opList).then(() => {
+        return evaluator.getOperatorList({
+          stream: this.appearance,
+          task,
+          resources,
+          operatorList: opList,
+        }).then(() => {
           opList.addOp(OPS.endAnnotation, []);
           this.appearance.reset();
           return opList;
@@ -755,8 +759,12 @@ var TextWidgetAnnotation = (function TextWidgetAnnotationClosure() {
       }
 
       var stream = new Stream(stringToBytes(this.data.defaultAppearance));
-      return evaluator.getOperatorList(stream, task, this.fieldResources,
-                                       operatorList).then(function () {
+      return evaluator.getOperatorList({
+        stream,
+        task,
+        resources: this.fieldResources,
+        operatorList,
+      }).then(function () {
         return operatorList;
       });
     }
