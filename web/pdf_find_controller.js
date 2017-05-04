@@ -277,7 +277,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       this.state = state;
       this.updateUIState(FindStates.FIND_PENDING);
 
-      this._firstPagePromise.then(function() {
+      this._firstPagePromise.then(() => {
         this.extractText();
 
         clearTimeout(this.findTimeout);
@@ -287,7 +287,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
         } else {
           this.nextMatch();
         }
-      }.bind(this));
+      });
     },
 
     updatePage: function PDFFindController_updatePage(index) {

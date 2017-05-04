@@ -94,11 +94,11 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         timeout,
         enhanceTextSelection: this.enhanceTextSelection,
       });
-      this.textLayerRenderTask.promise.then(function () {
+      this.textLayerRenderTask.promise.then(() => {
         this.textLayerDiv.appendChild(textLayerFrag);
         this._finishRendering();
         this.updateMatches();
-      }.bind(this), function (reason) {
+      }, function (reason) {
         // cancelled or failed to render text layer -- skipping errors
       });
     },
