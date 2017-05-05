@@ -20,37 +20,36 @@ import {
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 
-function DOMCanvasFactory() {}
-DOMCanvasFactory.prototype = {
-  create: function DOMCanvasFactory_create(width, height) {
+class DOMCanvasFactory {
+  create(width, height) {
     assert(width > 0 && height > 0, 'invalid canvas size');
-    var canvas = document.createElement('canvas');
-    var context = canvas.getContext('2d');
+    let canvas = document.createElement('canvas');
+    let context = canvas.getContext('2d');
     canvas.width = width;
     canvas.height = height;
     return {
       canvas,
       context,
     };
-  },
+  }
 
-  reset: function DOMCanvasFactory_reset(canvasAndContextPair, width, height) {
-    assert(canvasAndContextPair.canvas, 'canvas is not specified');
+  reset(canvasAndContext, width, height) {
+    assert(canvasAndContext.canvas, 'canvas is not specified');
     assert(width > 0 && height > 0, 'invalid canvas size');
-    canvasAndContextPair.canvas.width = width;
-    canvasAndContextPair.canvas.height = height;
-  },
+    canvasAndContext.canvas.width = width;
+    canvasAndContext.canvas.height = height;
+  }
 
-  destroy: function DOMCanvasFactory_destroy(canvasAndContextPair) {
-    assert(canvasAndContextPair.canvas, 'canvas is not specified');
+  destroy(canvasAndContext) {
+    assert(canvasAndContext.canvas, 'canvas is not specified');
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
-    canvasAndContextPair.canvas.width = 0;
-    canvasAndContextPair.canvas.height = 0;
-    canvasAndContextPair.canvas = null;
-    canvasAndContextPair.context = null;
+    canvasAndContext.canvas.width = 0;
+    canvasAndContext.canvas.height = 0;
+    canvasAndContext.canvas = null;
+    canvasAndContext.context = null;
   }
-};
+}
 
 class DOMCMapReaderFactory {
   constructor({ baseUrl = null, isCompressed = false, }) {
