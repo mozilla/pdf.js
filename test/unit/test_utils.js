@@ -16,20 +16,19 @@
 import { CMapCompressionType } from '../../src/shared/util';
 
 class NodeCMapReaderFactory {
-  constructor(params) {
-    this.baseUrl = params.baseUrl || null;
-    this.isCompressed = params.isCompressed || false;
+  constructor({ baseUrl = null, isCompressed = false, }) {
+    this.baseUrl = baseUrl;
+    this.isCompressed = isCompressed;
   }
 
-  fetch(params) {
-    var name = params.name;
+  fetch({ name, }) {
     if (!name) {
       return Promise.reject(new Error('CMap name must be specified.'));
     }
     return new Promise((resolve, reject) => {
-      var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+      let url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
 
-      var fs = require('fs');
+      let fs = require('fs');
       fs.readFile(url, (error, data) => {
         if (error || !data) {
           reject(new Error('Unable to load ' +

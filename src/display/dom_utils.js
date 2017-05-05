@@ -52,59 +52,54 @@ DOMCanvasFactory.prototype = {
   }
 };
 
-var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
-  function DOMCMapReaderFactory(params) {
-    this.baseUrl = params.baseUrl || null;
-    this.isCompressed = params.isCompressed || false;
+class DOMCMapReaderFactory {
+  constructor({ baseUrl = null, isCompressed = false, }) {
+    this.baseUrl = baseUrl;
+    this.isCompressed = isCompressed;
   }
 
-  DOMCMapReaderFactory.prototype = {
-    fetch(params) {
-      var name = params.name;
-      if (!name) {
-        return Promise.reject(new Error('CMap name must be specified.'));
+  fetch({ name, }) {
+    if (!name) {
+      return Promise.reject(new Error('CMap name must be specified.'));
+    }
+    return new Promise((resolve, reject) => {
+      let url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+
+      let request = new XMLHttpRequest();
+      request.open('GET', url, true);
+
+      if (this.isCompressed) {
+        request.responseType = 'arraybuffer';
       }
-      return new Promise((resolve, reject) => {
-        var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
-
-        var request = new XMLHttpRequest();
-        request.open('GET', url, true);
-
-        if (this.isCompressed) {
-          request.responseType = 'arraybuffer';
+      request.onreadystatechange = () => {
+        if (request.readyState !== XMLHttpRequest.DONE) {
+          return;
         }
-        request.onreadystatechange = () => {
-          if (request.readyState !== XMLHttpRequest.DONE) {
+        if (request.status === 200 || request.status === 0) {
+          let data;
+          if (this.isCompressed && request.response) {
+            data = new Uint8Array(request.response);
+          } else if (!this.isCompressed && request.responseText) {
+            data = stringToBytes(request.responseText);
+          }
+          if (data) {
+            resolve({
+              cMapData: data,
+              compressionType: this.isCompressed ?
+                CMapCompressionType.BINARY : CMapCompressionType.NONE,
+            });
             return;
           }
-          if (request.status === 200 || request.status === 0) {
-            var data;
-            if (this.isCompressed && request.response) {
-              data = new Uint8Array(request.response);
-            } else if (!this.isCompressed && request.responseText) {
-              data = stringToBytes(request.responseText);
-            }
-            if (data) {
-              resolve({
-                cMapData: data,
-                compressionType: this.isCompressed ?
-                  CMapCompressionType.BINARY : CMapCompressionType.NONE,
-              });
-              return;
-            }
-          }
-          reject(new Error('Unable to load ' +
-                           (this.isCompressed ? 'binary ' : '') +
-                           'CMap at: ' + url));
-        };
+        }
+        reject(new Error('Unable to load ' +
+                         (this.isCompressed ? 'binary ' : '') +
+                         'CMap at: ' + url));
+      };
 
-        request.send(null);
-      });
-    },
-  };
-
-  return DOMCMapReaderFactory;
-})();
+      request.send(null);
+    });
+  }
+}
 
 /**
  * Optimised CSS custom property getter/setter.
