@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { cloneObj } from './ui_utils';
+
 var defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
@@ -36,16 +38,6 @@ function getDefaultPreferences() {
     }
   }
   return defaultPreferences;
-}
-
-function cloneObj(obj) {
-  var result = {};
-  for (var i in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, i)) {
-      result[i] = obj[i];
-    }
-  }
-  return result;
 }
 
 /**
