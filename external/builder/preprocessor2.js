@@ -347,28 +347,23 @@ function traverseTree(ctx, node) {
 }
 
 function preprocessPDFJSCode(ctx, code) {
-  var saveComments = !!ctx.saveComments;
   var format = ctx.format || {
     indent: {
       style: ' ',
-      adjustMultilineComment: saveComments,
     }
   };
-  var comments;
-  var parseComment = {
+  var parseOptions = {
     locations: true,
-    onComments: saveComments || (comments = []),
+    sourceFile: ctx.sourceFile,
     sourceType: 'module',
   };
   var codegenOptions = {
     format: format,
-    comment: saveComments,
     parse: acorn.parse,
+    sourceMap: ctx.sourceMap,
+    sourceMapWithCode: ctx.sourceMap,
   };
-  var syntax = acorn.parse(code, parseComment);
-  if (saveComments) {
-    escodegen.attachComments(syntax, comments);
-  }
+  var syntax = acorn.parse(code, parseOptions);
   traverseTree(ctx, syntax);
   return escodegen.generate(syntax, codegenOptions);
 }

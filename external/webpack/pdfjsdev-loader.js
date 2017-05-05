@@ -17,6 +17,7 @@
 'use strict';
 
 var preprocessor2 = require('../builder/preprocessor2.js');
+var path = require('path');
 
 module.exports = function (source) {
   // Options must be specified, ignoring request if not.
@@ -24,7 +25,19 @@ module.exports = function (source) {
     return source;
   }
   this.cacheable();
-  var ctx = this.query;
-  source = preprocessor2.preprocessPDFJSCode(ctx, source);
-  return source;
+
+  var filePath = this.resourcePath;
+  var context = this.options.context;
+  var sourcePath = path.relative(context, filePath).split(path.sep).join('/');
+
+  var ctx = Object.create(this.query);
+  ctx.sourceMap = true;
+  ctx.sourceFile = sourcePath;
+
+  var callback = this.callback;
+  var sourceAndMap = preprocessor2.preprocessPDFJSCode(ctx, source);
+  var map = sourceAndMap.map.toJSON();
+  // escodegen does not embed source -- setting map's sourcesContent.
+  map.sourcesContent = [source];
+  callback(null, sourceAndMap.code, map);
 };
