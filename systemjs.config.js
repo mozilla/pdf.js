@@ -36,7 +36,8 @@
 
   var isCachingPossible = typeof indexedDB !== 'undefined' &&
                           typeof TextEncoder !== 'undefined' &&
-                          typeof crypto !== 'undefined';
+                          typeof crypto !== 'undefined' &&
+                          typeof crypto.subtle !== 'undefined';
 
   SystemJS.config({
     packages: {
