@@ -85,9 +85,8 @@ var CFFIndex = coreCFFParser.CFFIndex;
 var CFFCharset = coreCFFParser.CFFCharset;
 
 // Unicode Private Use Area
-var PRIVATE_USE_OFFSET_START = 0xE000;
-var PRIVATE_USE_OFFSET_END = 0xF8FF;
-var SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = false;
+var PRIVATE_USE_OFFSET_START = 0xF0000;
+var PRIVATE_USE_OFFSET_END = 0xFFFFD;
 
 // PDF Glyph Space Units are one Thousandth of a TextSpace Unit
 // except for Type 3 fonts
@@ -873,12 +872,6 @@ var Font = (function FontClosure() {
         // Loop to try and find a free spot in the private use area.
         do {
           fontCharCode = nextAvailableFontCharCode++;
-
-          if (SKIP_PRIVATE_USE_RANGE_F000_TO_F01F && fontCharCode === 0xF000) {
-            fontCharCode = 0xF020;
-            nextAvailableFontCharCode = fontCharCode + 1;
-          }
-
         } while (usedFontCharCodes[fontCharCode] !== undefined &&
                  nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END);
       }
@@ -3352,16 +3345,6 @@ var CFFFont = (function CFFFontClosure() {
 (function checkSeacSupport() {
   if (typeof navigator !== 'undefined' && /Windows/.test(navigator.userAgent)) {
     SEAC_ANALYSIS_ENABLED = true;
-  }
-})();
-
-// Workaround for Private Use Area characters in Chrome on Windows
-// http://code.google.com/p/chromium/issues/detail?id=122465
-// https://github.com/mozilla/pdf.js/issues/1689
-(function checkChromeWindows() {
-  if (typeof navigator !== 'undefined' &&
-      /Windows.*Chrome/.test(navigator.userAgent)) {
-    SKIP_PRIVATE_USE_RANGE_F000_TO_F01F = true;
   }
 })();
 
