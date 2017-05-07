@@ -20,20 +20,17 @@ import { localized } from './ui_utils';
  * @typedef {Object} HandToolOptions
  * @property {HTMLDivElement} container - The document container.
  * @property {EventBus} eventBus - The application event bus.
+ * @property {BasePreferences} preferences - Object for reading/writing
+ *                                           persistent settings.
  */
 
-/**
- * @class
- */
-var HandTool = (function HandToolClosure() {
+class HandTool {
   /**
-   * @constructs HandTool
    * @param {HandToolOptions} options
    */
-  function HandTool(options) {
-    this.container = options.container;
-    this.eventBus = options.eventBus;
-    var preferences = options.preferences;
+  constructor({ container, eventBus, preferences, }) {
+    this.container = container;
+    this.eventBus = eventBus;
 
     this.wasActive = false;
 
@@ -46,12 +43,12 @@ var HandTool = (function HandToolClosure() {
 
     this.eventBus.on('togglehandtool', this.toggle.bind(this));
 
-    Promise.all([localized,
-                 preferences.get('enableHandToolOnLoad')]).then((values) => {
+    let enableOnLoad = preferences.get('enableHandToolOnLoad');
+    Promise.all([localized, enableOnLoad]).then((values) => {
       if (values[1] === true) {
         this.handTool.activate();
       }
-    }).catch(function rejected(reason) { });
+    }).catch(function(reason) {});
 
     this.eventBus.on('presentationmodechanged', (evt) => {
       if (evt.switchInProgress) {
@@ -65,35 +62,31 @@ var HandTool = (function HandToolClosure() {
     });
   }
 
-  HandTool.prototype = {
-    /**
-     * @return {boolean}
-     */
-    get isActive() {
-      return !!this.handTool.active;
-    },
+  /**
+   * @return {boolean}
+   */
+  get isActive() {
+    return !!this.handTool.active;
+  }
 
-    toggle: function HandTool_toggle() {
-      this.handTool.toggle();
-    },
+  toggle() {
+    this.handTool.toggle();
+  }
 
-    enterPresentationMode: function HandTool_enterPresentationMode() {
-      if (this.isActive) {
-        this.wasActive = true;
-        this.handTool.deactivate();
-      }
-    },
-
-    exitPresentationMode: function HandTool_exitPresentationMode() {
-      if (this.wasActive) {
-        this.wasActive = false;
-        this.handTool.activate();
-      }
+  enterPresentationMode() {
+    if (this.isActive) {
+      this.wasActive = true;
+      this.handTool.deactivate();
     }
-  };
+  }
 
-  return HandTool;
-})();
+  exitPresentationMode() {
+    if (this.wasActive) {
+      this.wasActive = false;
+      this.handTool.activate();
+    }
+  }
+}
 
 export {
   HandTool,
