@@ -1249,6 +1249,13 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue8380",
+       "file": "pdfs/issue8380.pdf",
+       "md5": "2782af6a4d0540fcea3897560f842094",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "type4psfunc",
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",
