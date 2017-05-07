@@ -422,6 +422,16 @@ function normalizeWheelEventDelta(evt) {
   return delta;
 }
 
+function cloneObj(obj) {
+  var result = {};
+  for (var i in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, i)) {
+      result[i] = obj[i];
+    }
+  }
+  return result;
+}
+
 /**
  * Promise that is resolved when DOM window becomes visible.
  */
@@ -582,6 +592,7 @@ export {
   MAX_AUTO_SCALE,
   SCROLLBAR_PADDING,
   VERTICAL_PADDING,
+  cloneObj,
   RendererType,
   mozL10n,
   EventBus,
