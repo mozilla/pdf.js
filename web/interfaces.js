@@ -19,82 +19,87 @@
 /**
  * @interface
  */
-function IPDFLinkService() {}
-IPDFLinkService.prototype = {
+class IPDFLinkService {
   /**
    * @returns {number}
    */
-  get page() {},
+  get page() {}
+
   /**
    * @param {number} value
    */
-  set page(value) {},
+  set page(value) {}
+
   /**
    * @param dest - The PDF destination object.
    */
-  navigateTo(dest) {},
+  navigateTo(dest) {}
+
   /**
    * @param dest - The PDF destination object.
    * @returns {string} The hyperlink to the PDF object.
    */
-  getDestinationHash(dest) {},
+  getDestinationHash(dest) {}
+
   /**
    * @param hash - The PDF parameters/hash.
    * @returns {string} The hyperlink to the PDF object.
    */
-  getAnchorUrl(hash) {},
+  getAnchorUrl(hash) {}
+
   /**
    * @param {string} hash
    */
-  setHash(hash) {},
+  setHash(hash) {}
+
   /**
    * @param {string} action
    */
-  executeNamedAction(action) {},
+  executeNamedAction(action) {}
 
   /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */
-  cachePageRef(pageNum, pageRef) {},
-};
+  cachePageRef(pageNum, pageRef) {}
+}
 
 /**
  * @interface
  */
-function IPDFHistory() {}
-IPDFHistory.prototype = {
-  forward() {},
-  back() {},
-  push(params) {},
-  updateNextHashParam(hash) {},
-};
+class IPDFHistory {
+  forward() {}
+  back() {}
+  push(params) {}
+  updateNextHashParam(hash) {}
+}
 
 /**
  * @interface
  */
-function IRenderableView() {}
-IRenderableView.prototype = {
+class IRenderableView {
   /**
    * @returns {string} - Unique ID for rendering queue.
    */
-  get renderingId() {},
+  get renderingId() {}
+
   /**
    * @returns {RenderingStates}
    */
-  get renderingState() {},
+  get renderingState() {}
+
   /**
    * @returns {Promise} Resolved on draw completion.
    */
-  draw() {},
-  resume() {},
-};
+  draw() {}
+
+  resume() {}
+}
 
 /**
  * @interface
  */
-function IPDFTextLayerFactory() {}
-IPDFTextLayerFactory.prototype = {
+class IPDFTextLayerFactory {
   /**
    * @param {HTMLDivElement} textLayerDiv
    * @param {number} pageIndex
@@ -104,7 +109,7 @@ IPDFTextLayerFactory.prototype = {
    */
   createTextLayerBuilder(textLayerDiv, pageIndex, viewport,
                          enhanceTextSelection = false) {}
-};
+}
 
 /**
  * @interface
