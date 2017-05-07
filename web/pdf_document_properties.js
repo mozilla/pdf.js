@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-import { getPDFFileNameFromURL, mozL10n } from './ui_utils';
+import { cloneObj, getPDFFileNameFromURL, mozL10n } from './ui_utils';
 import { createPromiseCapability } from './pdfjs';
 import { OverlayManager } from './overlay_manager';
+
+const DEFAULT_FIELD_CONTENT = '-';
 
 /**
  * @typedef {Object} PDFDocumentPropertiesOptions
@@ -29,21 +31,16 @@ class PDFDocumentProperties {
   /**
    * @param {PDFDocumentPropertiesOptions} options
    */
-  constructor(options) {
-    this.overlayName = options.overlayName;
-    this.fields = options.fields;
-    this.container = options.container;
+  constructor({ overlayName, fields, container, closeButton, }) {
+    this.overlayName = overlayName;
+    this.fields = fields;
+    this.container = container;
 
-    this.rawFileSize = 0;
-    this.url = null;
-    this.pdfDocument = null;
+    this._reset();
 
-    // Bind the event listener for the Close button.
-    if (options.closeButton) {
-      options.closeButton.addEventListener('click', this.close.bind(this));
+    if (closeButton) { // Bind the event listener for the Close button.
+      closeButton.addEventListener('click', this.close.bind(this));
     }
-    this._dataAvailableCapability = createPromiseCapability();
-
     OverlayManager.register(this.overlayName, this.container,
                             this.close.bind(this));
   }
@@ -52,9 +49,51 @@ class PDFDocumentProperties {
    * Open the document properties overlay.
    */
   open() {
+    let freezeFieldData = (data) => {
+      Object.defineProperty(this, 'fieldData', {
+        value: Object.freeze(data),
+        writable: false,
+        enumerable: true,
+        configurable: true,
+      });
+    };
+
     Promise.all([OverlayManager.open(this.overlayName),
                  this._dataAvailableCapability.promise]).then(() => {
-      this._getProperties();
+      // If the document properties were previously fetched (for this PDF file),
+      // just update the dialog immediately to avoid redundant lookups.
+      if (this.fieldData) {
+        this._updateUI();
+        return;
+      }
+      // Get the document properties.
+      this.pdfDocument.getMetadata().then(({ info, metadata, }) => {
+        freezeFieldData({
+          'fileName': getPDFFileNameFromURL(this.url),
+          'fileSize': this._parseFileSize(this.maybeFileSize),
+          'title': info.Title,
+          'author': info.Author,
+          'subject': info.Subject,
+          'keywords': info.Keywords,
+          'creationDate': this._parseDate(info.CreationDate),
+          'modificationDate': this._parseDate(info.ModDate),
+          'creator': info.Creator,
+          'producer': info.Producer,
+          'version': info.PDFFormatVersion,
+          'pageCount': this.pdfDocument.numPages,
+        });
+        this._updateUI();
+
+        // Get the correct fileSize, since it may not have been set (if
+        // `this.setFileSize` wasn't called) or may be incorrectly set.
+        return this.pdfDocument.getDownloadInfo();
+      }).then(({ length, }) => {
+        let data = cloneObj(this.fieldData);
+        data['fileSize'] = this._parseFileSize(length);
+
+        freezeFieldData(data);
+        this._updateUI();
+      });
     });
   }
 
@@ -66,19 +105,6 @@ class PDFDocumentProperties {
   }
 
   /**
-   * Set the file size of the PDF document. This method is used to
-   * update the file size in the document properties overlay once it
-   * is known so we do not have to wait until the entire file is loaded.
-   *
-   * @param {number} fileSize - The file size of the PDF document.
-   */
-  setFileSize(fileSize) {
-    if (fileSize > 0) {
-      this.rawFileSize = fileSize;
-    }
-  }
-
-  /**
    * Set a reference to the PDF document and the URL in order
    * to populate the overlay fields with the document properties.
    * Note that the overlay will contain no information if this method
@@ -87,68 +113,75 @@ class PDFDocumentProperties {
    * @param {Object} pdfDocument - A reference to the PDF document.
    * @param {string} url - The URL of the document.
    */
-  setDocumentAndUrl(pdfDocument, url) {
+  setDocument(pdfDocument, url) {
+    if (this.pdfDocument) {
+      this._reset();
+      this._updateUI(true);
+    }
+    if (!pdfDocument) {
+      return;
+    }
     this.pdfDocument = pdfDocument;
     this.url = url;
+
     this._dataAvailableCapability.resolve();
   }
 
   /**
+   * Set the file size of the PDF document. This method is used to
+   * update the file size in the document properties overlay once it
+   * is known so we do not have to wait until the entire file is loaded.
+   *
+   * @param {number} fileSize - The file size of the PDF document.
+   */
+  setFileSize(fileSize) {
+    if (typeof fileSize === 'number' && fileSize > 0) {
+      this.maybeFileSize = fileSize;
+    }
+  }
+
+  /**
    * @private
    */
-  _getProperties() {
-    if (!OverlayManager.active) {
-      // If the dialog was closed before `_dataAvailableCapability` was
-      // resolved, don't bother updating the properties.
+  _reset() {
+    this.pdfDocument = null;
+    this.url = null;
+
+    this.maybeFileSize = 0;
+    delete this.fieldData;
+    this._dataAvailableCapability = createPromiseCapability();
+  }
+
+  /**
+   * Always updates all of the dialog fields, to prevent inconsistent UI state.
+   * NOTE: If the contents of a particular field is neither a non-empty string,
+   *       nor a number, it will fall back to `DEFAULT_FIELD_CONTENT`.
+   * @private
+   */
+  _updateUI(reset = false) {
+    if (reset || !this.fieldData) {
+      for (let id in this.fields) {
+        this.fields[id].textContent = DEFAULT_FIELD_CONTENT;
+      }
       return;
     }
-    // Get the file size (if it hasn't already been set).
-    this.pdfDocument.getDownloadInfo().then((data) => {
-      if (data.length === this.rawFileSize) {
-        return;
-      }
-      this.setFileSize(data.length);
-      this._updateUI(this.fields['fileSize'], this._parseFileSize());
-    });
-
-    // Get the document properties.
-    this.pdfDocument.getMetadata().then((data) => {
-      var content = {
-        'fileName': getPDFFileNameFromURL(this.url),
-        'fileSize': this._parseFileSize(),
-        'title': data.info.Title,
-        'author': data.info.Author,
-        'subject': data.info.Subject,
-        'keywords': data.info.Keywords,
-        'creationDate': this._parseDate(data.info.CreationDate),
-        'modificationDate': this._parseDate(data.info.ModDate),
-        'creator': data.info.Creator,
-        'producer': data.info.Producer,
-        'version': data.info.PDFFormatVersion,
-        'pageCount': this.pdfDocument.numPages
-      };
-
-      // Show the properties in the dialog.
-      for (var identifier in content) {
-        this._updateUI(this.fields[identifier], content[identifier]);
-      }
-    });
-  }
-
-  /**
-   * @private
-   */
-  _updateUI(field, content) {
-    if (field && content !== undefined && content !== '') {
-      field.textContent = content;
+    if (OverlayManager.active !== this.overlayName) {
+      // Don't bother updating the dialog if has already been closed,
+      // since it will be updated the next time `this.open` is called.
+      return;
+    }
+    for (let id in this.fields) {
+      let content = this.fieldData[id];
+      this.fields[id].textContent = (content || content === 0) ?
+                                    content : DEFAULT_FIELD_CONTENT;
     }
   }
 
   /**
    * @private
    */
-  _parseFileSize() {
-    var fileSize = this.rawFileSize, kb = fileSize / 1024;
+  _parseFileSize(fileSize = 0) {
+    let kb = fileSize / 1024;
     if (!kb) {
       return;
     } else if (kb < 1024) {
@@ -167,14 +200,14 @@ class PDFDocumentProperties {
    * @private
    */
   _parseDate(inputDate) {
+    if (!inputDate) {
+      return;
+    }
     // This is implemented according to the PDF specification, but note that
     // Adobe Reader doesn't handle changing the date to universal time
     // and doesn't use the user's time zone (they're effectively ignoring
     // the HH' and mm' parts of the date string).
-    var dateToParse = inputDate;
-    if (dateToParse === undefined) {
-      return '';
-    }
+    let dateToParse = inputDate;
 
     // Remove the D: prefix if it is available.
     if (dateToParse.substring(0, 2) === 'D:') {
