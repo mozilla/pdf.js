@@ -52,6 +52,7 @@ var IDENTITY_MATRIX = sharedUtil.IDENTITY_MATRIX;
 var UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;
 var ImageKind = sharedUtil.ImageKind;
 var OPS = sharedUtil.OPS;
+var NativeImageDecoding = sharedUtil.NativeImageDecoding;
 var TextRenderingMode = sharedUtil.TextRenderingMode;
 var CMapCompressionType = sharedUtil.CMapCompressionType;
 var Util = sharedUtil.Util;
@@ -113,7 +114,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     forceDataSchema: false,
     maxImageSize: -1,
     disableFontFace: false,
-    disableNativeImageDecoder: false,
+    nativeImageDecoderSupport: NativeImageDecoding.DECODE,
     ignoreErrors: false,
   };
 
@@ -461,14 +462,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         return;
       }
 
-      var useNativeImageDecoder = !this.options.disableNativeImageDecoder;
+      var nativeImageDecoderSupport = this.options.nativeImageDecoderSupport;
       // If there is no imageMask, create the PDFImage and a lot
       // of image processing can be done here.
       var objId = 'img_' + this.idFactory.createObjId();
       operatorList.addDependency(objId);
       args = [objId, w, h];
 
-      if (useNativeImageDecoder &&
+      if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
           NativeImageDecoder.isSupported(image, this.xref, resources)) {
         // These JPEGs don't need any more processing so we can just send it.
@@ -481,7 +482,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       // Creates native image decoder only if a JPEG image or mask is present.
       var nativeImageDecoder = null;
-      if (useNativeImageDecoder &&
+      if (nativeImageDecoderSupport === NativeImageDecoding.DECODE &&
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
         nativeImageDecoder = new NativeImageDecoder(this.xref, resources,
