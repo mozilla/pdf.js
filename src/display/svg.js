@@ -1029,8 +1029,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var imgObj = this.objs.get(objId);
       var imgEl = document.createElementNS(NS, 'svg:image');
       imgEl.setAttributeNS(XLINK_NS, 'xlink:href', imgObj.src);
-      imgEl.setAttributeNS(null, 'width', imgObj.width + 'px');
-      imgEl.setAttributeNS(null, 'height', imgObj.height + 'px');
+      imgEl.setAttributeNS(null, 'width', pf(w));
+      imgEl.setAttributeNS(null, 'height', pf(h));
       imgEl.setAttributeNS(null, 'x', '0');
       imgEl.setAttributeNS(null, 'y', pf(-h));
       imgEl.setAttributeNS(null, 'transform',

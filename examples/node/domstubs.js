@@ -147,3 +147,21 @@ global.document = {
     return [];
   }
 };
+
+function Image () {
+  this._src = null;
+  this.onload = null;
+}
+Image.prototype = {
+  get src () {
+    return this._src;
+  },
+  set src (value) {
+    this._src = value;
+    if (this.onload) {
+      this.onload();
+    }
+  }
+}
+
+global.Image = Image;

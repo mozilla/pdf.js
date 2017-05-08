@@ -22,6 +22,12 @@ var globalScope = (typeof window !== 'undefined') ? window :
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+const NativeImageDecoding = {
+  NONE: 'none',
+  DECODE: 'decode',
+  DISPLAY: 'display'
+};
+
 var TextRenderingMode = {
   FILL: 0,
   STROKE: 1,
@@ -1369,6 +1375,7 @@ export {
   MessageHandler,
   MissingDataException,
   MissingPDFException,
+  NativeImageDecoding,
   NotImplementedException,
   PageViewport,
   PasswordException,

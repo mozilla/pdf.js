@@ -17,9 +17,9 @@
 import {
   createPromiseCapability, deprecated, error, getVerbosityLevel, globalScope,
   info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
-  loadJpegStream, MessageHandler, MissingPDFException, PageViewport,
-  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
-  UnknownErrorException, Util, warn
+  loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
+  PageViewport, PasswordException, StatTimer, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
@@ -104,10 +104,18 @@ if (typeof PDFJSDev !== 'undefined' &&
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
- * @property {boolean} disableNativeImageDecoder - (optional) Disable decoding
+ * @property {boolean} disableNativeImageDecoder - (deprecated) Disable decoding
  *   of certain (simple) JPEG images in the browser. This is useful for
  *   environments without DOM image support, such as e.g. Node.js.
  *   The default value is `false`.
+ * @property {string} nativeImageDecoderSupport - (optional) Strategy for
+ *   decoding certain (simple) JPEG images in the browser. This is useful for
+ *   environments without DOM image and canvas support, such as e.g. Node.js.
+ *   Valid values are 'decode', 'display' or 'none'; where 'decode' is intended
+ *   for browsers with full image/canvas support, 'display' for environments
+ *   with limited image support through stubs (useful for SVG conversion),
+ *   and 'none' where JPEG images will be decoded entirely by PDF.js.
+ *   The default value is 'decode'.
  * @property {Object} CMapReaderFactory - (optional) The factory that will be
  *   used when reading built-in CMap files. Providing a custom factory is useful
  *   for environments without `XMLHttpRequest` support, such as e.g. Node.js.
@@ -229,9 +237,23 @@ function getDocument(src, pdfDataRangeTransport,
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
-  params.disableNativeImageDecoder = params.disableNativeImageDecoder === true;
   params.ignoreErrors = params.stopAtErrors !== true;
   var CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
+
+  if (params.disableNativeImageDecoder !== undefined) {
+    deprecated('parameter disableNativeImageDecoder, ' +
+      'use nativeImageDecoderSupport instead');
+  }
+  params.nativeImageDecoderSupport = params.nativeImageDecoderSupport ||
+    (params.disableNativeImageDecoder === true ? NativeImageDecoding.NONE :
+      NativeImageDecoding.DECODE);
+  if (params.nativeImageDecoderSupport !== NativeImageDecoding.DECODE &&
+      params.nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
+      params.nativeImageDecoderSupport !== NativeImageDecoding.DISPLAY) {
+    warn('Invalid parameter nativeImageDecoderSupport: ' +
+      'need a state of enum {NativeImageDecoding}');
+    params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
+  }
 
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
@@ -293,7 +315,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     postMessageTransfers: getDefaultSetting('postMessageTransfers') &&
                           !isPostMessageTransfersDisabled,
     docBaseUrl: source.docBaseUrl,
-    disableNativeImageDecoder: source.disableNativeImageDecoder,
+    nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
   }).then(function (workerId) {
     if (worker.destroyed) {
