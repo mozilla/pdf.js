@@ -54,6 +54,7 @@
   exports.InvalidPDFException = sharedUtil.InvalidPDFException;
   exports.MissingPDFException = sharedUtil.MissingPDFException;
   exports.SVGGraphics = displaySVG.SVGGraphics;
+  exports.NativeImageDecoding = sharedUtil.NativeImageDecoding;
   exports.UnexpectedResponseException = sharedUtil.UnexpectedResponseException;
   exports.OPS = sharedUtil.OPS;
   exports.UNSUPPORTED_FEATURES = sharedUtil.UNSUPPORTED_FEATURES;

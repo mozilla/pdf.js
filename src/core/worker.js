@@ -731,7 +731,7 @@ var WorkerMessageHandler = {
         forceDataSchema: data.disableCreateObjectURL,
         maxImageSize: data.maxImageSize === undefined ? -1 : data.maxImageSize,
         disableFontFace: data.disableFontFace,
-        disableNativeImageDecoder: data.disableNativeImageDecoder,
+        nativeImageDecoderSupport: data.nativeImageDecoderSupport,
         ignoreErrors: data.ignoreErrors,
       };
 
