@@ -45,17 +45,13 @@ import { mozL10n, SCROLLBAR_PADDING } from './ui_utils';
  *   the document properties dialog.
  */
 
-/**
- * @class
- */
-var SecondaryToolbar = (function SecondaryToolbarClosure() {
+class SecondaryToolbar {
   /**
-   * @constructs SecondaryToolbar
    * @param {SecondaryToolbarOptions} options
    * @param {HTMLDivElement} mainContainer
    * @param {EventBus} eventBus
    */
-  function SecondaryToolbar(options, mainContainer, eventBus) {
+  constructor(options, mainContainer, eventBus) {
     this.toolbar = options.toolbar;
     this.toggleButton = options.toggleButton;
     this.toolbarButtonContainer = options.toolbarButtonContainer;
@@ -101,129 +97,124 @@ var SecondaryToolbar = (function SecondaryToolbarClosure() {
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
   }
 
-  SecondaryToolbar.prototype = {
-    /**
-     * @return {boolean}
-     */
-    get isOpen() {
-      return this.opened;
-    },
+  /**
+   * @return {boolean}
+   */
+  get isOpen() {
+    return this.opened;
+  }
 
-    setPageNumber: function SecondaryToolbar_setPageNumber(pageNumber) {
-      this.pageNumber = pageNumber;
-      this._updateUIState();
-    },
+  setPageNumber(pageNumber) {
+    this.pageNumber = pageNumber;
+    this._updateUIState();
+  }
 
-    setPagesCount: function SecondaryToolbar_setPagesCount(pagesCount) {
-      this.pagesCount = pagesCount;
-      this._updateUIState();
-    },
+  setPagesCount(pagesCount) {
+    this.pagesCount = pagesCount;
+    this._updateUIState();
+  }
 
-    reset: function SecondaryToolbar_reset() {
-      this.pageNumber = 0;
-      this.pagesCount = 0;
-      this._updateUIState();
-    },
+  reset() {
+    this.pageNumber = 0;
+    this.pagesCount = 0;
+    this._updateUIState();
+  }
 
-    _updateUIState: function SecondaryToolbar_updateUIState() {
-      var items = this.items;
+  _updateUIState() {
+    this.items.firstPage.disabled = (this.pageNumber <= 1);
+    this.items.lastPage.disabled = (this.pageNumber >= this.pagesCount);
+    this.items.pageRotateCw.disabled = this.pagesCount === 0;
+    this.items.pageRotateCcw.disabled = this.pagesCount === 0;
+  }
 
-      items.firstPage.disabled = (this.pageNumber <= 1);
-      items.lastPage.disabled = (this.pageNumber >= this.pagesCount);
-      items.pageRotateCw.disabled = this.pagesCount === 0;
-      items.pageRotateCcw.disabled = this.pagesCount === 0;
-    },
+  _bindClickListeners() {
+    // Button to toggle the visibility of the secondary toolbar.
+    this.toggleButton.addEventListener('click', this.toggle.bind(this));
 
-    _bindClickListeners: function SecondaryToolbar_bindClickListeners() {
-      // Button to toggle the visibility of the secondary toolbar.
-      this.toggleButton.addEventListener('click', this.toggle.bind(this));
+    // All items within the secondary toolbar.
+    for (let button in this.buttons) {
+      let { element, eventName, close, } = this.buttons[button];
 
-      // All items within the secondary toolbar.
-      for (let button in this.buttons) {
-        let { element, eventName, close, } = this.buttons[button];
-
-        element.addEventListener('click', (evt) => {
-          if (eventName !== null) {
-            this.eventBus.dispatch(eventName, { source: this, });
-          }
-          if (close) {
-            this.close();
-          }
-        });
-      }
-    },
-
-    _bindHandToolListener:
-        function SecondaryToolbar_bindHandToolListener(toggleHandToolButton) {
-      var isHandToolActive = false;
-      this.eventBus.on('handtoolchanged', function (e) {
-        if (isHandToolActive === e.isActive) {
-          return;
+      element.addEventListener('click', (evt) => {
+        if (eventName !== null) {
+          this.eventBus.dispatch(eventName, { source: this, });
         }
-        isHandToolActive = e.isActive;
-        if (isHandToolActive) {
-          toggleHandToolButton.title =
-            mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
-          toggleHandToolButton.firstElementChild.textContent =
-            mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
-        } else {
-          toggleHandToolButton.title =
-            mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
-          toggleHandToolButton.firstElementChild.textContent =
-            mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+        if (close) {
+          this.close();
         }
       });
-    },
-
-    open: function SecondaryToolbar_open() {
-      if (this.opened) {
-        return;
-      }
-      this.opened = true;
-      this._setMaxHeight();
-
-      this.toggleButton.classList.add('toggled');
-      this.toolbar.classList.remove('hidden');
-    },
-
-    close: function SecondaryToolbar_close() {
-      if (!this.opened) {
-        return;
-      }
-      this.opened = false;
-      this.toolbar.classList.add('hidden');
-      this.toggleButton.classList.remove('toggled');
-    },
-
-    toggle: function SecondaryToolbar_toggle() {
-      if (this.opened) {
-        this.close();
-      } else {
-        this.open();
-      }
-    },
-
-    /**
-     * @private
-     */
-    _setMaxHeight: function SecondaryToolbar_setMaxHeight() {
-      if (!this.opened) {
-        return; // Only adjust the 'max-height' if the toolbar is visible.
-      }
-      this.containerHeight = this.mainContainer.clientHeight;
-
-      if (this.containerHeight === this.previousContainerHeight) {
-        return;
-      }
-      this.toolbarButtonContainer.setAttribute('style',
-        'max-height: ' + (this.containerHeight - SCROLLBAR_PADDING) + 'px;');
-
-      this.previousContainerHeight = this.containerHeight;
     }
-  };
+  }
 
-  return SecondaryToolbar;
-})();
+  _bindHandToolListener(toggleHandToolButton) {
+    let isHandToolActive = false;
+
+    this.eventBus.on('handtoolchanged', function(evt) {
+      if (isHandToolActive === evt.isActive) {
+        return;
+      }
+      isHandToolActive = evt.isActive;
+
+      if (isHandToolActive) {
+        toggleHandToolButton.title =
+          mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
+        toggleHandToolButton.firstElementChild.textContent =
+          mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
+      } else {
+        toggleHandToolButton.title =
+          mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
+        toggleHandToolButton.firstElementChild.textContent =
+          mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+      }
+    });
+  }
+
+  open() {
+    if (this.opened) {
+      return;
+    }
+    this.opened = true;
+    this._setMaxHeight();
+
+    this.toggleButton.classList.add('toggled');
+    this.toolbar.classList.remove('hidden');
+  }
+
+  close() {
+    if (!this.opened) {
+      return;
+    }
+    this.opened = false;
+    this.toolbar.classList.add('hidden');
+    this.toggleButton.classList.remove('toggled');
+  }
+
+  toggle() {
+    if (this.opened) {
+      this.close();
+    } else {
+      this.open();
+    }
+  }
+
+  /**
+   * @private
+   */
+  _setMaxHeight() {
+    if (!this.opened) {
+      return; // Only adjust the 'max-height' if the toolbar is visible.
+    }
+    this.containerHeight = this.mainContainer.clientHeight;
+
+    if (this.containerHeight === this.previousContainerHeight) {
+      return;
+    }
+    this.toolbarButtonContainer.setAttribute('style',
+      'max-height: ' + (this.containerHeight - SCROLLBAR_PADDING) + 'px;');
+
+    this.previousContainerHeight = this.containerHeight;
+  }
+}
 
 export {
   SecondaryToolbar,
