@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability } from './pdfjs';
 import { scrollIntoView } from './ui_utils';
 
 var FindStates = {
@@ -231,43 +232,32 @@ var PDFFindController = (function PDFFindControllerClosure() {
       }
     },
 
-    extractText: function PDFFindController_extractText() {
+    extractText() {
       if (this.startedTextExtraction) {
         return;
       }
       this.startedTextExtraction = true;
+      this.pageContents.length = 0;
 
-      this.pageContents = [];
-      var extractTextPromisesResolves = [];
-      var numPages = this.pdfViewer.pagesCount;
-      for (var i = 0; i < numPages; i++) {
-        this.extractTextPromises.push(new Promise(function (resolve) {
-          extractTextPromisesResolves.push(resolve);
-        }));
-      }
+      let promise = Promise.resolve();
+      for (let i = 0, ii = this.pdfViewer.pagesCount; i < ii; i++) {
+        let extractTextCapability = createPromiseCapability();
+        this.extractTextPromises[i] = extractTextCapability.promise;
 
-      var self = this;
-      function extractPageText(pageIndex) {
-        self.pdfViewer.getPageTextContent(pageIndex).then(
-          function textContentResolved(textContent) {
-            var textItems = textContent.items;
-            var str = [];
+        promise = promise.then(() => {
+          return this.pdfViewer.getPageTextContent(i).then((textContent) => {
+            let textItems = textContent.items;
+            let strBuf = [];
 
-            for (var i = 0, len = textItems.length; i < len; i++) {
-              str.push(textItems[i].str);
+            for (let j = 0, jj = textItems.length; j < jj; j++) {
+              strBuf.push(textItems[j].str);
             }
-
             // Store the pageContent as a string.
-            self.pageContents.push(str.join(''));
-
-            extractTextPromisesResolves[pageIndex](pageIndex);
-            if ((pageIndex + 1) < self.pdfViewer.pagesCount) {
-              extractPageText(pageIndex + 1);
-            }
-          }
-        );
+            this.pageContents[i] = strBuf.join('');
+            extractTextCapability.resolve(i);
+          });
+        });
       }
-      extractPageText(0);
     },
 
     executeCommand: function PDFFindController_executeCommand(cmd, state) {
