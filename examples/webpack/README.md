@@ -6,7 +6,7 @@ Example to demonstrate PDF.js library usage with Webpack.
 
 Build project and install the example dependencies:
 
-    $ gulp dist
+    $ gulp dist-install
     $ cd examples/webpack
     $ npm install
 

@@ -18,7 +18,7 @@ var PAGE_NUMBER = 1;
 var PAGE_SCALE = 1.5;
 var SVG_NS = 'http://www.w3.org/2000/svg';
 
-PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
+PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 function buildSVG(viewport, textContent) {
   // Building SVG with size of the viewport (for simplicity)
@@ -63,7 +63,7 @@ function pageLoaded() {
 document.addEventListener('DOMContentLoaded', function () {
   if (typeof PDFJS === 'undefined') {
     alert('Built version of PDF.js was not found.\n' +
-          'Please run `gulp generic`.');
+          'Please run `gulp dist-install`.');
     return;
   }
   pageLoaded();

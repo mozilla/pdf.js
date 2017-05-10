@@ -10,7 +10,7 @@
 
 <canvas id="the-canvas" style="border:1px  solid black"></canvas>
 
-<script src="../../build/generic/build/pdf.js"></script>
+<script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
 
 <script id="script">
   // atob() is used to convert base64 encoded PDF to binary-like data.
@@ -40,7 +40,7 @@
   //
   // The workerSrc property shall be specified.
   //
-  PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
+  PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   // Opening PDF by passing its binary data as a string. It is still preferable
   // to use Uint8Array, but string or array-like structure will work too.
