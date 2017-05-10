@@ -312,18 +312,17 @@ var PDFFindController = (function PDFFindControllerClosure() {
         this.pageMatches = [];
         this.matchCount = 0;
         this.pageMatchesLength = null;
-        var self = this;
 
-        for (var i = 0; i < numPages; i++) {
+        for (let i = 0; i < numPages; i++) {
           // Wipe out any previous highlighted matches.
           this.updatePage(i);
 
           // As soon as the text is extracted start finding the matches.
           if (!(i in this.pendingFindMatches)) {
             this.pendingFindMatches[i] = true;
-            this.extractTextPromises[i].then(function(pageIdx) {
-              delete self.pendingFindMatches[pageIdx];
-              self.calcFindMatch(pageIdx);
+            this.extractTextPromises[i].then((pageIdx) => {
+              delete this.pendingFindMatches[pageIdx];
+              this.calcFindMatch(pageIdx);
             });
           }
         }
