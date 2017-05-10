@@ -778,7 +778,14 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         fnId = fnArray[i];
 
         if (fnId !== OPS.dependency) {
-          this[fnId].apply(this, argsArray[i]);
+          var tempArgsArray = argsArray[i];
+          if(fnId === 59) {
+            this[58].apply(this, tempArgsArray);
+          }
+          if(fnId === 22 || fnId === 23) {
+            fnId = 24;
+          }
+          this[fnId].apply(this, tempArgsArray);
         } else {
           var deps = argsArray[i];
           for (var n = 0, nn = deps.length; n < nn; n++) {
