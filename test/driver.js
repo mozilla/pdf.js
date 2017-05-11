@@ -334,66 +334,67 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       }, this.delay);
     },
 
-    _nextTask: function Driver_nextTask() {
-      var self = this;
-      var failure = '';
+    _nextTask() {
+      let failure = '';
 
-      this._cleanup();
+      this._cleanup().then(() => {
+        if (this.currentTask === this.manifest.length) {
+          this._done();
+          return;
+        }
+        let task = this.manifest[this.currentTask];
+        task.round = 0;
+        task.pageNum = task.firstPage || 1;
+        task.stats = { times: [] };
 
-      if (this.currentTask === this.manifest.length) {
-        this._done();
-        return;
-      }
-      var task = this.manifest[this.currentTask];
-      task.round = 0;
-      task.pageNum = task.firstPage || 1;
-      task.stats = { times: [] };
+        this._log('Loading file "' + task.file + '"\n');
 
-      this._log('Loading file "' + task.file + '"\n');
-
-      var absoluteUrl = new URL(task.file, window.location).href;
-      PDFJS.disableRange = task.disableRange;
-      PDFJS.disableAutoFetch = !task.enableAutoFetch;
-      try {
-        PDFJS.getDocument({
-          url: absoluteUrl,
-          password: task.password
-        }).then(function(doc) {
-          task.pdfDoc = doc;
-          self._nextPage(task, failure);
-        }, function(e) {
-          failure = 'Loading PDF document: ' + e;
-          self._nextPage(task, failure);
-        });
-        return;
-      } catch (e) {
-        failure = 'Loading PDF document: ' + this._exceptionToString(e);
-      }
-      this._nextPage(task, failure);
+        let absoluteUrl = new URL(task.file, window.location).href;
+        PDFJS.disableRange = task.disableRange;
+        PDFJS.disableAutoFetch = !task.enableAutoFetch;
+        try {
+          PDFJS.getDocument({
+            url: absoluteUrl,
+            password: task.password,
+          }).then((doc) => {
+            task.pdfDoc = doc;
+            this._nextPage(task, failure);
+          }, (err) => {
+            failure = 'Loading PDF document: ' + err;
+            this._nextPage(task, failure);
+          });
+          return;
+        } catch (e) {
+          failure = 'Loading PDF document: ' + this._exceptionToString(e);
+        }
+        this._nextPage(task, failure);
+      });
     },
 
-    _cleanup: function Driver_cleanup() {
+    _cleanup() {
       // Clear out all the stylesheets since a new one is created for each font.
       while (document.styleSheets.length > 0) {
-        var styleSheet = document.styleSheets[0];
+        let styleSheet = document.styleSheets[0];
         while (styleSheet.cssRules.length > 0) {
           styleSheet.deleteRule(0);
         }
-        var ownerNode = styleSheet.ownerNode;
+        let ownerNode = styleSheet.ownerNode;
         ownerNode.parentNode.removeChild(ownerNode);
       }
-      var body = document.body;
+      let body = document.body;
       while (body.lastChild !== this.end) {
         body.removeChild(body.lastChild);
       }
 
+      let destroyedPromises = [];
       // Wipe out the link to the pdfdoc so it can be GC'ed.
-      for (var i = 0; i < this.manifest.length; i++) {
+      for (let i = 0; i < this.manifest.length; i++) {
         if (this.manifest[i].pdfDoc) {
-          this.manifest[i].pdfDoc.destroy();
+          destroyedPromises.push(this.manifest[i].pdfDoc.destroy());
           delete this.manifest[i].pdfDoc;
         }
       }
+      return Promise.all(destroyedPromises);
     },
 
     _exceptionToString: function Driver_exceptionToString(e) {
