@@ -69,8 +69,7 @@ describe('api', function() {
           expect((data[0].loaded / data[0].total) > 0).toEqual(true);
           expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
           expect(loadingTask).toEqual(data[1].loadingTask);
-          loadingTask.destroy();
-          done();
+          loadingTask.destroy().then(done);
         }).catch(function (reason) {
           done.fail(reason);
         });
@@ -78,12 +77,13 @@ describe('api', function() {
       it('creates pdf doc from URL and aborts before worker initialized',
           function(done) {
         var loadingTask = PDFJS.getDocument(basicApiUrl);
-        loadingTask.destroy();
+        let destroyed = loadingTask.destroy();
+
         loadingTask.promise.then(function(reason) {
           done.fail('shall fail loading');
         }).catch(function (reason) {
           expect(true).toEqual(true);
-          done();
+          destroyed.then(done);
         });
       });
       it('creates pdf doc from URL and aborts loading after worker initialized',
@@ -134,8 +134,7 @@ describe('api', function() {
         var loadingTask = PDFJS.getDocument(typedArrayPdf);
         loadingTask.promise.then(function(data) {
           expect(data instanceof PDFDocumentProxy).toEqual(true);
-          loadingTask.destroy();
-          done();
+          loadingTask.destroy().then(done);
         }).catch(function (reason) {
           done.fail(reason);
         });
@@ -149,8 +148,7 @@ describe('api', function() {
           done.fail('shall fail loading');
         }).catch(function (error) {
           expect(error instanceof InvalidPDFException).toEqual(true);
-          loadingTask.destroy();
-          done();
+          loadingTask.destroy().then(done);
         });
       });
       it('creates pdf doc from non-existent URL', function(done) {
@@ -161,8 +159,7 @@ describe('api', function() {
           done.fail('shall fail loading');
         }).catch(function (error) {
           expect(error instanceof MissingPDFException).toEqual(true);
-          loadingTask.destroy();
-          done();
+          loadingTask.destroy().then(done);
         });
       });
       it('creates pdf doc from PDF file protected with user and owner password',
@@ -205,8 +202,7 @@ describe('api', function() {
         ];
         Promise.all(promises).then(function (data) {
           expect(data[2] instanceof PDFDocumentProxy).toEqual(true);
-          loadingTask.destroy();
-          done();
+          loadingTask.destroy().then(done);
         }).catch(function (reason) {
           done.fail(reason);
         });
@@ -262,9 +258,10 @@ describe('api', function() {
           url, password: 'qwerty',
         });
 
+        let passwordNeededDestroyed;
         passwordNeededLoadingTask.onPassword = function (callback, reason) {
           if (reason === PasswordResponses.NEED_PASSWORD) {
-            passwordNeededLoadingTask.destroy();
+            passwordNeededDestroyed = passwordNeededLoadingTask.destroy();
             return;
           }
           // Shouldn't get here.
@@ -276,6 +273,7 @@ describe('api', function() {
         }, function (reason) {
           expect(reason instanceof PasswordException).toEqual(true);
           expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
+          return passwordNeededDestroyed;
         });
 
         passwordIncorrectLoadingTask.onPassword = function (callback, reason) {
@@ -393,8 +391,8 @@ describe('api', function() {
       });
     });
 
-    afterAll(function() {
-      loadingTask.destroy();
+    afterAll(function(done) {
+      loadingTask.destroy().then(done);
     });
 
     it('gets number of pages', function() {
@@ -508,8 +506,7 @@ describe('api', function() {
           'Page.2': [{ num: 6, gen: 0}, { name: 'XYZ' }, 0, 375, null],
         });
 
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -524,8 +521,7 @@ describe('api', function() {
         expect(destination).toEqual([{ num: 1, gen: 0}, { name: 'XYZ' },
                                      0, 375, null]);
 
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -540,8 +536,7 @@ describe('api', function() {
       promise.then(function (destination) {
         expect(destination).toEqual(null);
 
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -592,11 +587,12 @@ describe('api', function() {
         expect(pageLabels[2]).toEqual(['1', '2']);
         expect(pageLabels[3]).toEqual(['X3']);
 
-        loadingTask0.destroy();
-        loadingTask1.destroy();
-        loadingTask2.destroy();
-        loadingTask3.destroy();
-        done();
+        Promise.all([
+          loadingTask0.destroy(),
+          loadingTask1.destroy(),
+          loadingTask2.destroy(),
+          loadingTask3.destroy()
+        ]).then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -623,8 +619,7 @@ describe('api', function() {
         expect(attachment.content instanceof Uint8Array).toBeTruthy();
         expect(attachment.content.length).toEqual(30098);
 
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -653,8 +648,7 @@ describe('api', function() {
       promise.then(function (data) {
         expect(data).toEqual(['print({});']);
         expect(data[0]).toMatch(viewerPrintRegExp);
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -671,8 +665,7 @@ describe('api', function() {
         expect(data).toEqual(
           ['this.print({bUI:true,bSilent:false,bShrinkToFit:true});']);
         expect(data[0]).toMatch(viewerPrintRegExp);
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -687,8 +680,7 @@ describe('api', function() {
       promise.then(function (outline) {
         expect(outline).toEqual(null);
 
-        loadingTask.destroy();
-        done();
+        loadingTask.destroy().then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -739,8 +731,7 @@ describe('api', function() {
           expect(outlineItemOne.italic).toEqual(true);
           expect(outlineItemOne.color).toEqual(new Uint8Array([0, 0, 0]));
 
-          loadingTask.destroy(); // Cleanup the worker.
-          done();
+          loadingTask.destroy().then(done);
         });
       }).catch(function (reason) {
         done.fail(reason);
@@ -806,9 +797,10 @@ describe('api', function() {
 
         expect(fingerprint1).not.toEqual(fingerprint2);
 
-        loadingTask1.destroy();
-        loadingTask2.destroy();
-        done();
+        Promise.all([
+          loadingTask1.destroy(),
+          loadingTask2.destroy()
+        ]).then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
@@ -831,8 +823,8 @@ describe('api', function() {
       });
     });
 
-    afterAll(function() {
-      loadingTask.destroy();
+    afterAll(function(done) {
+      loadingTask.destroy().then(done);
     });
 
     it('gets page number', function () {
@@ -933,10 +925,11 @@ describe('api', function() {
         expect(invalidDocBaseUrlAnnotations[0].unsafeUrl).toEqual(
           '../../0021/002156/215675E.pdf#nameddest=15');
 
-        defaultLoadingTask.destroy();
-        docBaseUrlLoadingTask.destroy();
-        invalidDocBaseUrlLoadingTask.destroy();
-        done();
+        Promise.all([
+          defaultLoadingTask.destroy(),
+          docBaseUrlLoadingTask.destroy(),
+          invalidDocBaseUrlLoadingTask.destroy()
+        ]).then(done);
       }).catch(function (reason) {
         done.fail(reason);
       });
