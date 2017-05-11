@@ -20,91 +20,85 @@ import {
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 
-function DOMCanvasFactory() {}
-DOMCanvasFactory.prototype = {
-  create: function DOMCanvasFactory_create(width, height) {
+class DOMCanvasFactory {
+  create(width, height) {
     assert(width > 0 && height > 0, 'invalid canvas size');
-    var canvas = document.createElement('canvas');
-    var context = canvas.getContext('2d');
+    let canvas = document.createElement('canvas');
+    let context = canvas.getContext('2d');
     canvas.width = width;
     canvas.height = height;
     return {
       canvas,
       context,
     };
-  },
+  }
 
-  reset: function DOMCanvasFactory_reset(canvasAndContextPair, width, height) {
-    assert(canvasAndContextPair.canvas, 'canvas is not specified');
+  reset(canvasAndContext, width, height) {
+    assert(canvasAndContext.canvas, 'canvas is not specified');
     assert(width > 0 && height > 0, 'invalid canvas size');
-    canvasAndContextPair.canvas.width = width;
-    canvasAndContextPair.canvas.height = height;
-  },
+    canvasAndContext.canvas.width = width;
+    canvasAndContext.canvas.height = height;
+  }
 
-  destroy: function DOMCanvasFactory_destroy(canvasAndContextPair) {
-    assert(canvasAndContextPair.canvas, 'canvas is not specified');
+  destroy(canvasAndContext) {
+    assert(canvasAndContext.canvas, 'canvas is not specified');
     // Zeroing the width and height cause Firefox to release graphics
     // resources immediately, which can greatly reduce memory consumption.
-    canvasAndContextPair.canvas.width = 0;
-    canvasAndContextPair.canvas.height = 0;
-    canvasAndContextPair.canvas = null;
-    canvasAndContextPair.context = null;
+    canvasAndContext.canvas.width = 0;
+    canvasAndContext.canvas.height = 0;
+    canvasAndContext.canvas = null;
+    canvasAndContext.context = null;
   }
-};
+}
 
-var DOMCMapReaderFactory = (function DOMCMapReaderFactoryClosure() {
-  function DOMCMapReaderFactory(params) {
-    this.baseUrl = params.baseUrl || null;
-    this.isCompressed = params.isCompressed || false;
+class DOMCMapReaderFactory {
+  constructor({ baseUrl = null, isCompressed = false, }) {
+    this.baseUrl = baseUrl;
+    this.isCompressed = isCompressed;
   }
 
-  DOMCMapReaderFactory.prototype = {
-    fetch(params) {
-      var name = params.name;
-      if (!name) {
-        return Promise.reject(new Error('CMap name must be specified.'));
+  fetch({ name, }) {
+    if (!name) {
+      return Promise.reject(new Error('CMap name must be specified.'));
+    }
+    return new Promise((resolve, reject) => {
+      let url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
+
+      let request = new XMLHttpRequest();
+      request.open('GET', url, true);
+
+      if (this.isCompressed) {
+        request.responseType = 'arraybuffer';
       }
-      return new Promise((resolve, reject) => {
-        var url = this.baseUrl + name + (this.isCompressed ? '.bcmap' : '');
-
-        var request = new XMLHttpRequest();
-        request.open('GET', url, true);
-
-        if (this.isCompressed) {
-          request.responseType = 'arraybuffer';
+      request.onreadystatechange = () => {
+        if (request.readyState !== XMLHttpRequest.DONE) {
+          return;
         }
-        request.onreadystatechange = () => {
-          if (request.readyState !== XMLHttpRequest.DONE) {
+        if (request.status === 200 || request.status === 0) {
+          let data;
+          if (this.isCompressed && request.response) {
+            data = new Uint8Array(request.response);
+          } else if (!this.isCompressed && request.responseText) {
+            data = stringToBytes(request.responseText);
+          }
+          if (data) {
+            resolve({
+              cMapData: data,
+              compressionType: this.isCompressed ?
+                CMapCompressionType.BINARY : CMapCompressionType.NONE,
+            });
             return;
           }
-          if (request.status === 200 || request.status === 0) {
-            var data;
-            if (this.isCompressed && request.response) {
-              data = new Uint8Array(request.response);
-            } else if (!this.isCompressed && request.responseText) {
-              data = stringToBytes(request.responseText);
-            }
-            if (data) {
-              resolve({
-                cMapData: data,
-                compressionType: this.isCompressed ?
-                  CMapCompressionType.BINARY : CMapCompressionType.NONE,
-              });
-              return;
-            }
-          }
-          reject(new Error('Unable to load ' +
-                           (this.isCompressed ? 'binary ' : '') +
-                           'CMap at: ' + url));
-        };
+        }
+        reject(new Error('Unable to load ' +
+                         (this.isCompressed ? 'binary ' : '') +
+                         'CMap at: ' + url));
+      };
 
-        request.send(null);
-      });
-    },
-  };
-
-  return DOMCMapReaderFactory;
-})();
+      request.send(null);
+    });
+  }
+}
 
 /**
  * Optimised CSS custom property getter/setter.
