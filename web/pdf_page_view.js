@@ -356,7 +356,7 @@ var PDFPageView = (function PDFPageViewClosure() {
       return this.viewport.convertToPdfPoint(x, y);
     },
 
-    draw: function PDFPageView_draw() {
+    draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
         this.reset(); // Ensure that we reset all state to prevent issues.
@@ -364,12 +364,11 @@ var PDFPageView = (function PDFPageViewClosure() {
 
       this.renderingState = RenderingStates.RUNNING;
 
-      var self = this;
-      var pdfPage = this.pdfPage;
-      var div = this.div;
+      let pdfPage = this.pdfPage;
+      let div = this.div;
       // Wrap the canvas so if it has a css transform for highdpi the overflow
       // will be hidden in FF.
-      var canvasWrapper = document.createElement('div');
+      let canvasWrapper = document.createElement('div');
       canvasWrapper.style.width = div.style.width;
       canvasWrapper.style.height = div.style.height;
       canvasWrapper.classList.add('canvasWrapper');
@@ -381,10 +380,9 @@ var PDFPageView = (function PDFPageViewClosure() {
         div.appendChild(canvasWrapper);
       }
 
-      var textLayerDiv = null;
-      var textLayer = null;
+      let textLayer = null;
       if (this.textLayerFactory) {
-        textLayerDiv = document.createElement('div');
+        let textLayerDiv = document.createElement('div');
         textLayerDiv.className = 'textLayer';
         textLayerDiv.style.width = canvasWrapper.style.width;
         textLayerDiv.style.height = canvasWrapper.style.height;
@@ -401,13 +399,13 @@ var PDFPageView = (function PDFPageViewClosure() {
       }
       this.textLayer = textLayer;
 
-      var renderContinueCallback = null;
+      let renderContinueCallback = null;
       if (this.renderingQueue) {
-        renderContinueCallback = function renderContinueCallback(cont) {
-          if (!self.renderingQueue.isHighestPriority(self)) {
-            self.renderingState = RenderingStates.PAUSED;
-            self.resume = function resumeCallback() {
-              self.renderingState = RenderingStates.RUNNING;
+        renderContinueCallback = (cont) => {
+          if (!this.renderingQueue.isHighestPriority(this)) {
+            this.renderingState = RenderingStates.PAUSED;
+            this.resume = () => {
+              this.renderingState = RenderingStates.RUNNING;
               cont();
             };
             return;
@@ -416,37 +414,37 @@ var PDFPageView = (function PDFPageViewClosure() {
         };
       }
 
-      var finishPaintTask = function finishPaintTask(error) {
+      let finishPaintTask = (error) => {
         // The paintTask may have been replaced by a new one, so only remove
         // the reference to the paintTask if it matches the one that is
         // triggering this callback.
-        if (paintTask === self.paintTask) {
-          self.paintTask = null;
+        if (paintTask === this.paintTask) {
+          this.paintTask = null;
         }
 
         if (((typeof PDFJSDev === 'undefined' ||
               !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
             error instanceof RenderingCancelledException) {
-          self.error = null;
+          this.error = null;
           return Promise.resolve(undefined);
         }
 
-        self.renderingState = RenderingStates.FINISHED;
+        this.renderingState = RenderingStates.FINISHED;
 
-        if (self.loadingIconDiv) {
-          div.removeChild(self.loadingIconDiv);
-          delete self.loadingIconDiv;
+        if (this.loadingIconDiv) {
+          div.removeChild(this.loadingIconDiv);
+          delete this.loadingIconDiv;
         }
-        self._resetZoomLayer(/* removeFromDOM = */ true);
+        this._resetZoomLayer(/* removeFromDOM = */ true);
 
-        self.error = error;
-        self.stats = pdfPage.stats;
-        if (self.onAfterDraw) {
-          self.onAfterDraw();
+        this.error = error;
+        this.stats = pdfPage.stats;
+        if (this.onAfterDraw) {
+          this.onAfterDraw();
         }
-        self.eventBus.dispatch('pagerendered', {
-          source: self,
-          pageNumber: self.id,
+        this.eventBus.dispatch('pagerendered', {
+          source: this,
+          pageNumber: this.id,
           cssTransform: false,
         });
 
@@ -456,13 +454,13 @@ var PDFPageView = (function PDFPageViewClosure() {
         return Promise.resolve(undefined);
       };
 
-      var paintTask = this.renderer === RendererType.SVG ?
+      let paintTask = this.renderer === RendererType.SVG ?
         this.paintOnSvg(canvasWrapper) :
         this.paintOnCanvas(canvasWrapper);
       paintTask.onRenderContinue = renderContinueCallback;
       this.paintTask = paintTask;
 
-      var resultPromise = paintTask.promise.then(function () {
+      let resultPromise = paintTask.promise.then(function() {
         return finishPaintTask(null).then(function () {
           if (textLayer) {
             pdfPage.getTextContent({
@@ -473,7 +471,7 @@ var PDFPageView = (function PDFPageViewClosure() {
             });
           }
         });
-      }, function (reason) {
+      }, function(reason) {
         return finishPaintTask(reason);
       });
 
@@ -583,21 +581,17 @@ var PDFPageView = (function PDFPageViewClosure() {
         }
       };
 
-      renderTask.promise.then(
-        function pdfPageRenderCallback() {
-          showCanvas();
-          renderCapability.resolve(undefined);
-        },
-        function pdfPageRenderError(error) {
-          showCanvas();
-          renderCapability.reject(error);
-        }
-      );
-
+      renderTask.promise.then(function() {
+        showCanvas();
+        renderCapability.resolve(undefined);
+      }, function(error) {
+        showCanvas();
+        renderCapability.reject(error);
+      });
       return result;
     },
 
-    paintOnSvg: function PDFPageView_paintOnSvg(wrapper) {
+    paintOnSvg(wrapper) {
       if (typeof PDFJSDev !== 'undefined' &&
           PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) {
         // Return a mock object, to prevent errors such as e.g.
@@ -609,33 +603,32 @@ var PDFPageView = (function PDFPageViewClosure() {
         };
       }
 
-      var cancelled = false;
-      var ensureNotCancelled = function () {
+      let cancelled = false;
+      let ensureNotCancelled = () => {
         if (cancelled) {
           if ((typeof PDFJSDev !== 'undefined' &&
                PDFJSDev.test('PDFJS_NEXT')) || PDFJS.pdfjsNext) {
             throw new RenderingCancelledException(
-              'Rendering cancelled, page ' + self.id, 'svg');
+              'Rendering cancelled, page ' + this.id, 'svg');
           } else {
             throw 'cancelled'; // eslint-disable-line no-throw-literal
           }
         }
       };
 
-      var self = this;
-      var pdfPage = this.pdfPage;
-      var actualSizeViewport = this.viewport.clone({scale: CSS_UNITS});
-      var promise = pdfPage.getOperatorList().then(function (opList) {
+      let pdfPage = this.pdfPage;
+      let actualSizeViewport = this.viewport.clone({ scale: CSS_UNITS, });
+      let promise = pdfPage.getOperatorList().then((opList) => {
         ensureNotCancelled();
         var svgGfx = new SVGGraphics(pdfPage.commonObjs, pdfPage.objs);
-        return svgGfx.getSVG(opList, actualSizeViewport).then(function (svg) {
+        return svgGfx.getSVG(opList, actualSizeViewport).then((svg) => {
           ensureNotCancelled();
-          self.svg = svg;
-          self.paintedViewportMap.set(svg, actualSizeViewport);
+          this.svg = svg;
+          this.paintedViewportMap.set(svg, actualSizeViewport);
 
           svg.style.width = wrapper.style.width;
           svg.style.height = wrapper.style.height;
-          self.renderingState = RenderingStates.FINISHED;
+          this.renderingState = RenderingStates.FINISHED;
           wrapper.appendChild(svg);
         });
       });
