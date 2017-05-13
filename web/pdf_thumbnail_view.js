@@ -267,7 +267,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       delete this.canvas;
     },
 
-    draw: function PDFThumbnailView_draw() {
+    draw() {
       if (this.renderingState !== RenderingStates.INITIAL) {
         console.error('Must be in new state before drawing');
         return Promise.resolve(undefined);
@@ -275,15 +275,14 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
       this.renderingState = RenderingStates.RUNNING;
 
-      var renderCapability = createPromiseCapability();
+      let renderCapability = createPromiseCapability();
 
-      var self = this;
-      function thumbnailDrawCallback(error) {
+      let finishRenderTask = (error) => {
         // The renderTask may have been replaced by a new one, so only remove
         // the reference to the renderTask if it matches the one that is
         // triggering this callback.
-        if (renderTask === self.renderTask) {
-          self.renderTask = null;
+        if (renderTask === this.renderTask) {
+          this.renderTask = null;
         }
 
         if (((typeof PDFJSDev === 'undefined' ||
@@ -293,23 +292,23 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
           return;
         }
 
-        self.renderingState = RenderingStates.FINISHED;
-        self._convertCanvasToImage();
+        this.renderingState = RenderingStates.FINISHED;
+        this._convertCanvasToImage();
 
         if (!error) {
           renderCapability.resolve(undefined);
         } else {
           renderCapability.reject(error);
         }
-      }
+      };
 
-      var ctx = this._getPageDrawContext();
-      var drawViewport = this.viewport.clone({ scale: this.scale });
-      var renderContinueCallback = function renderContinueCallback(cont) {
-        if (!self.renderingQueue.isHighestPriority(self)) {
-          self.renderingState = RenderingStates.PAUSED;
-          self.resume = function resumeCallback() {
-            self.renderingState = RenderingStates.RUNNING;
+      let ctx = this._getPageDrawContext();
+      let drawViewport = this.viewport.clone({ scale: this.scale, });
+      let renderContinueCallback = (cont) => {
+        if (!this.renderingQueue.isHighestPriority(this)) {
+          this.renderingState = RenderingStates.PAUSED;
+          this.resume = () => {
+            this.renderingState = RenderingStates.RUNNING;
             cont();
           };
           return;
@@ -317,21 +316,18 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         cont();
       };
 
-      var renderContext = {
+      let renderContext = {
         canvasContext: ctx,
         viewport: drawViewport
       };
-      var renderTask = this.renderTask = this.pdfPage.render(renderContext);
+      let renderTask = this.renderTask = this.pdfPage.render(renderContext);
       renderTask.onContinue = renderContinueCallback;
 
-      renderTask.promise.then(
-        function pdfPageRenderCallback() {
-          thumbnailDrawCallback(null);
-        },
-        function pdfPageRenderError(error) {
-          thumbnailDrawCallback(error);
-        }
-      );
+      renderTask.promise.then(function() {
+        finishRenderTask(null);
+      }, function(error) {
+        finishRenderTask(error);
+      });
       return renderCapability.promise;
     },
 
