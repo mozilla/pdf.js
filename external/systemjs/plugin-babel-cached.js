@@ -55,6 +55,9 @@ function storeCache(address, hashCode, translated, format) {
       tx.oncomplete = function () {
         resolve();
       };
+      tx.onerror = function () {
+        resolve();
+      };
     });
   });
 }
@@ -73,6 +76,9 @@ function loadCache(address, hashCode) {
           translated: found.translated,
           format: found.format,
         } : null);
+      };
+      tx.onerror = function () {
+        resolve(null);
       };
     });
   });
