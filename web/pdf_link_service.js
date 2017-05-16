@@ -16,11 +16,6 @@
 import { getGlobalEventBus } from './dom_events';
 import { parseQueryString } from './ui_utils';
 
-var PageNumberRegExp = /^\d+$/;
-function isPageNumber(str) {
-  return PageNumberRegExp.test(str);
-}
-
 /**
  * @typedef {Object} PDFLinkServiceOptions
  * @property {EventBus} eventBus - The application event bus.
@@ -154,19 +149,15 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
     },
 
     /**
-     * @param dest - The PDF destination object.
+     * @param {string|Array} dest - The PDF destination object.
      * @returns {string} The hyperlink to the PDF object.
      */
-    getDestinationHash: function PDFLinkService_getDestinationHash(dest) {
+    getDestinationHash(dest) {
       if (typeof dest === 'string') {
-        // In practice, a named destination may contain only a number.
-        // If that happens, use the '#nameddest=' form to avoid the link
-        // redirecting to a page, instead of the correct destination.
-        return this.getAnchorUrl(
-          '#' + (isPageNumber(dest) ? 'nameddest=' : '') + escape(dest));
+        return this.getAnchorUrl('#' + escape(dest));
       }
       if (dest instanceof Array) {
-        var str = JSON.stringify(dest);
+        let str = JSON.stringify(dest);
         return this.getAnchorUrl('#' + escape(str));
       }
       return this.getAnchorUrl('');
@@ -259,7 +250,7 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
         }
       } else { // Named (or explicit) destination.
         if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-            isPageNumber(hash) && hash <= this.pagesCount) {
+            /^\d+$/.test(hash) && hash <= this.pagesCount) {
           console.warn('PDFLinkService_setHash: specifying a page number ' +
                        'directly after the hash symbol (#) is deprecated, ' +
                        'please use the "#page=' + hash + '" form instead.');
