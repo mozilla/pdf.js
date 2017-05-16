@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { CMapCompressionType } from '../../src/shared/util';
+import { CMapCompressionType, isNodeJS } from '../../src/shared/util';
 
 class NodeFileReaderFactory {
   static fetch(params) {
@@ -21,6 +21,26 @@ class NodeFileReaderFactory {
     var file = fs.readFileSync(params.path);
     return new Uint8Array(file);
   }
+}
+
+const TEST_PDFS_PATH = {
+  dom: '../pdfs/',
+  node: './test/pdfs/',
+};
+
+function buildGetDocumentParams(filename, options) {
+  let params = Object.create(null);
+  if (isNodeJS()) {
+    params.data = NodeFileReaderFactory.fetch({
+      path: TEST_PDFS_PATH.node + filename,
+    });
+  } else {
+    params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
+  }
+  for (let option in options) {
+    params[option] = options[option];
+  }
+  return params;
 }
 
 class NodeCMapReaderFactory {
@@ -57,4 +77,6 @@ class NodeCMapReaderFactory {
 export {
   NodeFileReaderFactory,
   NodeCMapReaderFactory,
+  buildGetDocumentParams,
+  TEST_PDFS_PATH,
 };

@@ -14,6 +14,9 @@
  */
 
 import {
+  buildGetDocumentParams, NodeFileReaderFactory, TEST_PDFS_PATH
+} from './test_utils';
+import {
   createPromiseCapability, FontType, InvalidPDFException, isNodeJS,
   MissingPDFException, PasswordException, PasswordResponses, StreamType,
   stringToBytes
@@ -24,28 +27,7 @@ import {
 import {
   getDocument, PDFDocumentProxy, PDFPageProxy
 } from '../../src/display/api';
-import { NodeFileReaderFactory } from './test_utils';
 import { PDFJS } from '../../src/display/global';
-
-const TEST_PDFS_PATH = {
-  dom: '../pdfs/',
-  node: './test/pdfs/',
-};
-
-function buildGetDocumentParams(filename, options) {
-  let params = Object.create(null);
-  if (isNodeJS()) {
-    params.data = NodeFileReaderFactory.fetch({
-      path: TEST_PDFS_PATH.node + filename,
-    });
-  } else {
-    params.url = new URL(TEST_PDFS_PATH.dom + filename, window.location).href;
-  }
-  for (let option in options) {
-    params[option] = options[option];
-  }
-  return params;
-}
 
 describe('api', function() {
   let basicApiFileName = 'basicapi.pdf';
