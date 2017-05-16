@@ -2128,7 +2128,8 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
                                     this.objs, this.canvasFactory,
                                     params.imageLayer);
 
-      this.gfx.beginDrawing(params.transform, params.viewport, transparency);
+      this.gfx.beginDrawing(params.transform, params.viewport,
+                                transparency, params.background);
       this.operatorListIdx = 0;
       this.graphicsReady = true;
       if (this.graphicsReadyCallback) {

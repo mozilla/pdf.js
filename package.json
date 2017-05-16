@@ -41,5 +41,9 @@
     "type": "git",
     "url": "git://github.com/mozilla/pdf.js.git"
   },
+  "files": [
+    "build/"
+  ],
+  "main": "build/pdf.js",
   "license": "Apache-2.0"
 }
