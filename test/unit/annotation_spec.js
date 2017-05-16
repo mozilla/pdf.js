@@ -503,9 +503,8 @@ describe('annotation', function() {
       var data = annotation.data;
       expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toEqual('http://www.example.com/test.pdf#nameddest=15');
-      expect(data.unsafeUrl).toEqual(
-        'http://www.example.com/test.pdf#nameddest=15');
+      expect(data.url).toEqual('http://www.example.com/test.pdf#15');
+      expect(data.unsafeUrl).toEqual('http://www.example.com/test.pdf#15');
       expect(data.dest).toBeUndefined();
       expect(data.newWindow).toBeFalsy();
     });
