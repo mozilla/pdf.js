@@ -8,7 +8,18 @@
     "sourceType": "script"
   },
 
+  "plugins": [
+    "mozilla"
+  ],
+
+  "globals": {
+    "Components": false,
+    "dump": false
+  },
+
   "rules": {
+    "mozilla/import-globals": "error",
+
     // Best Practices
     "consistent-return": "error",
 

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 /* eslint max-len: ["error", 100] */
-/* globals Components, Services */
 
 "use strict";
 
