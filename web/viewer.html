@@ -279,6 +279,19 @@ See https://github.com/adobe-type-tools/cmap-resources
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
         </div>
+        
+        <script>
+          var byeprogress = new XMLHttpRequest();
+          if (byeprogress.onprogress === undefined)
+          {
+            document.getElementById('loadingBox').innerHTML += '<span style="color: #EEEEEE; font-size: 11px;">Loading file...</span>';
+          }
+          else
+          {
+            document.getElementById('loadingBar').style.display = 'inline-block';
+            document.getElementById('loadingBar').style.visibility = 'visible';
+          }
+        </script>
 
         <div id="errorWrapper" hidden='true'>
           <div id="errorMessageLeft">
