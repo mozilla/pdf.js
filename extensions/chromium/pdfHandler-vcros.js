@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /* eslint strict: ["error", "function"] */
-/* globals chrome, getViewerURL */
+/* import-globals-from pdfHandler.js */
 
 (function() {
   'use strict';
