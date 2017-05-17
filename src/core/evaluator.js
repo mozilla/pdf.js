@@ -474,9 +474,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           NativeImageDecoder.isSupported(image, this.xref, resources)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
-        this.handler.send('obj',
-          [objId, this.pageIndex, 'JpegStream',
-           image.getIR(this.options.forceDataSchema)]);
+        this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
+                                  image.getIR(this.options.forceDataSchema)]);
+        if (cacheKey) {
+          imageCache[cacheKey] = {
+            fn: OPS.paintJpegXObject,
+            args,
+          };
+        }
         return;
       }
 
