@@ -717,6 +717,11 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * @property {Object} canvasFactory - (optional) The factory that will be used
  *                    when creating canvases. The default value is
  *                    {DOMCanvasFactory}.
+ * @property {Object} background - (optional) Background to use for the canvas.
+ *                    Can use any valid canvas.fillStyle: A DOMString parsed as
+ *                    CSS <color> value, a CanvasGradient object (a linear or
+ *                    radial gradient) or a CanvasPattern object (a repetitive
+ *                    image). The default value is 'rgb(255,255,255)'.
  */
 
 /**
@@ -2128,7 +2133,12 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
                                     this.objs, this.canvasFactory,
                                     params.imageLayer);
 
-      this.gfx.beginDrawing(params.transform, params.viewport, transparency);
+      this.gfx.beginDrawing({
+        transform: params.transform,
+        viewport: params.viewport,
+        transparency,
+        background: params.background,
+      });
       this.operatorListIdx = 0;
       this.graphicsReady = true;
       if (this.graphicsReadyCallback) {
