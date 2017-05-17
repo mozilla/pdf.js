@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals Components, Services, XPCOMUtils, PdfjsContentUtils,
-           PdfjsContentUtils, PdfStreamConverter, addMessageListener */
+/* eslint-env mozilla/frame-script */
 
 "use strict";
 
