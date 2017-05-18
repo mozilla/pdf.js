@@ -249,7 +249,8 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       }
       data = spliceString(data, CFF_CHECKSUM_OFFSET, 4, string32(checksum));
 
-      var url = 'url(data:font/opentype;base64,' + btoa(data) + ');';
+      var url = 'url(data:font/opentype;base64,' +
+                btoa(unescape(encodeURIComponent(data))) + ');';
       var rule = '@font-face { font-family:"' + loadTestFontId + '";src:' +
                  url + '}';
       this.insertRule(rule);
