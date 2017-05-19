@@ -20,7 +20,7 @@ var https = require('https');
 var path = require('path');
 
 // Defines all languages that have a translation at mozilla-central.
-// This is used in make.js for the importl10n command.
+// This is used in gulpfile.js for the `importl10n` command.
 var langCodes = [
   'ach', 'af', 'ak', 'an', 'ar', 'as', 'ast', 'az', 'be', 'bg',
   'bn-BD', 'bn-IN', 'br', 'bs', 'ca', 'cs', 'csb', 'cy', 'da',
