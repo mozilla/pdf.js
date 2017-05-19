@@ -1196,7 +1196,7 @@ gulp.task('importl10n', function(done) {
   var locales = require('./external/importL10n/locales.js');
 
   console.log();
-  console.log('### Importing translations from mozilla-aurora');
+  console.log('### Importing translations from mozilla-central');
 
   if (!fs.existsSync(L10N_DIR)) {
     fs.mkdirSync(L10N_DIR);

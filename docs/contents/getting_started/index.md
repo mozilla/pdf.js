@@ -92,7 +92,7 @@ $ cd pdf.js
 ├── extensions/                            - various browser extensions
 ├── external/                              - third party code
 ├── l10n/                                  - translation files
-├── make.js                                - build script
+├── gulpfile.js                            - build script
 ├── package.json
 ├── src/
 │   ├── core/                              - core layer
