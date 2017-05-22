@@ -210,7 +210,11 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
           xhrStatus === OK_RESPONSE &&
           pendingRequest.expectedStatus === PARTIAL_CONTENT_RESPONSE;
 
-      if (!ok_response_on_range_request &&
+      var range_response_on_full_request =
+          xhrStatus === PARTIAL_CONTENT_RESPONSE &&
+          pendingRequest.expectedStatus === OK_RESPONSE;
+
+      if (!ok_response_on_range_request && !range_response_on_full_request &&
           xhrStatus !== pendingRequest.expectedStatus) {
         if (pendingRequest.onError) {
           pendingRequest.onError(xhr.status);
