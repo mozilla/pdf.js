@@ -24,13 +24,11 @@ import {
   MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
   UNSUPPORTED_FEATURES, version,
 } from './pdfjs';
-import {
-  PDFRenderingQueue, RenderingStates
-} from './pdf_rendering_queue';
+import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
+import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
 import { PDFViewer, PresentationModeState } from './pdf_viewer';
 import { getGlobalEventBus } from './dom_events';
-import { HandTool } from './hand_tool';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
 import { PDFAttachmentViewer } from './pdf_attachment_viewer';
@@ -115,6 +113,8 @@ var PDFViewerApplication = {
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
   pdfAttachmentViewer: null,
+  /** @type {PDFCursorTools} */
+  pdfCursorTools: null,
   /** @type {ViewHistory} */
   store: null,
   /** @type {DownloadManager} */
@@ -337,14 +337,14 @@ var PDFViewerApplication = {
 
       this.overlayManager = OverlayManager;
 
-      this.handTool = new HandTool({
+      this.pdfDocumentProperties =
+        new PDFDocumentProperties(appConfig.documentProperties);
+
+      this.pdfCursorTools = new PDFCursorTools({
         container,
         eventBus,
         preferences: this.preferences,
       });
-
-      this.pdfDocumentProperties =
-        new PDFDocumentProperties(appConfig.documentProperties);
 
       this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus);
 
@@ -2119,11 +2119,13 @@ function webViewerKeyDown(evt) {
         }
         break;
 
-      case 72: // 'h'
-        if (!isViewerInPresentationMode) {
-          PDFViewerApplication.handTool.toggle();
-        }
+      case 83: // 's'
+        PDFViewerApplication.pdfCursorTools.switchTool(CursorTool.SELECT);
         break;
+      case 72: // 'h'
+        PDFViewerApplication.pdfCursorTools.switchTool(CursorTool.HAND);
+        break;
+
       case 82: // 'r'
         PDFViewerApplication.rotatePages(90);
         break;
