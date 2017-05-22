@@ -683,13 +683,9 @@ var Catalog = (function CatalogClosure() {
               remoteDest = remoteDest.name;
             }
             if (isString(url)) {
-              var baseUrl = url.split('#')[0];
+              let baseUrl = url.split('#')[0];
               if (isString(remoteDest)) {
-                // In practice, a named destination may contain only a number.
-                // If that happens, use the '#nameddest=' form to avoid the link
-                // redirecting to a page, instead of the correct destination.
-                url = baseUrl + '#' +
-                  (/^\d+$/.test(remoteDest) ? 'nameddest=' : '') + remoteDest;
+                url = baseUrl + '#' + remoteDest;
               } else if (isArray(remoteDest)) {
                 url = baseUrl + '#' + JSON.stringify(remoteDest);
               }

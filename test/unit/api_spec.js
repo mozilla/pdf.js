@@ -944,16 +944,16 @@ describe('api', function() {
 
         expect(defaultAnnotations[0].url).toBeUndefined();
         expect(defaultAnnotations[0].unsafeUrl).toEqual(
-          '../../0021/002156/215675E.pdf#nameddest=15');
+          '../../0021/002156/215675E.pdf#15');
 
         expect(docBaseUrlAnnotations[0].url).toEqual(
-          'http://www.example.com/0021/002156/215675E.pdf#nameddest=15');
+          'http://www.example.com/0021/002156/215675E.pdf#15');
         expect(docBaseUrlAnnotations[0].unsafeUrl).toEqual(
-          '../../0021/002156/215675E.pdf#nameddest=15');
+          '../../0021/002156/215675E.pdf#15');
 
         expect(invalidDocBaseUrlAnnotations[0].url).toBeUndefined();
         expect(invalidDocBaseUrlAnnotations[0].unsafeUrl).toEqual(
-          '../../0021/002156/215675E.pdf#nameddest=15');
+          '../../0021/002156/215675E.pdf#15');
 
         Promise.all([
           defaultLoadingTask.destroy(),
