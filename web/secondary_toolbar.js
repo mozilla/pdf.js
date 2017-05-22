@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { mozL10n, SCROLLBAR_PADDING } from './ui_utils';
+import { CursorTool } from './pdf_cursor_tools';
+import { SCROLLBAR_PADDING } from './ui_utils';
 
 /**
  * @typedef {Object} SecondaryToolbarOptions
@@ -39,7 +40,9 @@ import { mozL10n, SCROLLBAR_PADDING } from './ui_utils';
  *   clockwise.
  * @property {HTMLButtonElement} pageRotateCcwButton - Button to rotate the
  *   pages counterclockwise.
- * @property {HTMLButtonElement} toggleHandToolButton - Button to toggle the
+ * @property {HTMLButtonElement} cursorSelectToolButton - Button to enable the
+ *   select tool.
+ * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
@@ -68,8 +71,10 @@ class SecondaryToolbar {
         close: false },
       { element: options.pageRotateCcwButton, eventName: 'rotateccw',
         close: false },
-      { element: options.toggleHandToolButton, eventName: 'togglehandtool',
-        close: true },
+      { element: options.cursorSelectToolButton, eventName: 'switchcursortool',
+        eventDetails: { tool: CursorTool.SELECT, }, close: true },
+      { element: options.cursorHandToolButton, eventName: 'switchcursortool',
+        eventDetails: { tool: CursorTool.HAND, }, close: true },
       { element: options.documentPropertiesButton,
         eventName: 'documentproperties', close: true }
     ];
@@ -89,9 +94,9 @@ class SecondaryToolbar {
 
     this.reset();
 
-    // Bind the event listeners for click and hand tool actions.
+    // Bind the event listeners for click and cursor tool actions.
     this._bindClickListeners();
-    this._bindHandToolListener(options.toggleHandToolButton);
+    this._bindCursorToolsListener(options);
 
     // Bind the event listener for adjusting the 'max-height' of the toolbar.
     this.eventBus.on('resize', this._setMaxHeight.bind(this));
@@ -133,11 +138,15 @@ class SecondaryToolbar {
 
     // All items within the secondary toolbar.
     for (let button in this.buttons) {
-      let { element, eventName, close, } = this.buttons[button];
+      let { element, eventName, close, eventDetails, } = this.buttons[button];
 
       element.addEventListener('click', (evt) => {
         if (eventName !== null) {
-          this.eventBus.dispatch(eventName, { source: this, });
+          let details = { source: this, };
+          for (let property in eventDetails) {
+            details[property] = eventDetails[property];
+          }
+          this.eventBus.dispatch(eventName, details);
         }
         if (close) {
           this.close();
@@ -146,25 +155,18 @@ class SecondaryToolbar {
     }
   }
 
-  _bindHandToolListener(toggleHandToolButton) {
-    let isHandToolActive = false;
+  _bindCursorToolsListener(buttons) {
+    this.eventBus.on('cursortoolchanged', function(evt) {
+      buttons.cursorSelectToolButton.classList.remove('toggled');
+      buttons.cursorHandToolButton.classList.remove('toggled');
 
-    this.eventBus.on('handtoolchanged', function(evt) {
-      if (isHandToolActive === evt.isActive) {
-        return;
-      }
-      isHandToolActive = evt.isActive;
-
-      if (isHandToolActive) {
-        toggleHandToolButton.title =
-          mozL10n.get('hand_tool_disable.title', null, 'Disable hand tool');
-        toggleHandToolButton.firstElementChild.textContent =
-          mozL10n.get('hand_tool_disable_label', null, 'Disable hand tool');
-      } else {
-        toggleHandToolButton.title =
-          mozL10n.get('hand_tool_enable.title', null, 'Enable hand tool');
-        toggleHandToolButton.firstElementChild.textContent =
-          mozL10n.get('hand_tool_enable_label', null, 'Enable hand tool');
+      switch (evt.tool) {
+        case CursorTool.SELECT:
+          buttons.cursorSelectToolButton.classList.add('toggled');
+          break;
+        case CursorTool.HAND:
+          buttons.cursorHandToolButton.classList.add('toggled');
+          break;
       }
     });
   }
