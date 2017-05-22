@@ -84,9 +84,7 @@ viewer, run:
 
 This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` directory.
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
-be loaded by `pdf.js`. If you want to support more browsers than Firefox you'll also need
-to include `compatibility.js` from `build/generic/web/`. The PDF.js files are large and
-should be minified for production.
+be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 
 ## Using PDF.js in a web application
 
