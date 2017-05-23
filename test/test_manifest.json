@@ -2467,6 +2467,14 @@
       "rounds": 1,
       "type": "load"
     },
+    {  "id": "issue8047",
+       "file": "pdfs/issue8047.pdf",
+       "md5": "83f1b9f7e95caa8e2625390afd7c7276",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue818",
       "file": "pdfs/issue818.pdf",
       "md5": "dd2f8a5bd65164ad74da2b45a6ca90cc",
