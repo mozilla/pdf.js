@@ -354,7 +354,7 @@ function compileType3Glyph(imgData) {
 }
 
 var CanvasExtraState = (function CanvasExtraStateClosure() {
-  function CanvasExtraState(old) {
+  function CanvasExtraState() {
     // Are soft masks and alpha values shapes or opacities?
     this.alphaIsShape = false;
     this.fontSize = 0;
@@ -385,8 +385,6 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     this.lineWidth = 1;
     this.activeSMask = null;
     this.resumeSMaskCtx = null; // nonclonable field (see the save method below)
-
-    this.old = old;
   }
 
   CanvasExtraState.prototype = {
@@ -609,6 +607,23 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     }
   }
 
+  function resetCtxToDefault(ctx) {
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#000000';
+    ctx.fillRule = 'nonzero';
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+    ctx.miterLimit = 10;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.font = '10px sans-serif';
+    if (ctx.setLineDash !== undefined) {
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+    }
+  }
+
   function composeSMaskBackdrop(bytes, r0, g0, b0) {
     var length = bytes.length;
     for (var i = 3; i < length; i += 4) {
@@ -734,6 +749,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       this.ctx.save();
+      resetCtxToDefault(this.ctx);
       if (transform) {
         this.ctx.transform.apply(this.ctx, transform);
       }
@@ -1863,8 +1879,6 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     beginAnnotations: function CanvasGraphics_beginAnnotations() {
       this.save();
-      this.current = new CanvasExtraState();
-
       if (this.baseTransform) {
         this.ctx.setTransform.apply(this.ctx, this.baseTransform);
       }
@@ -1877,6 +1891,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
     beginAnnotation: function CanvasGraphics_beginAnnotation(rect, transform,
                                                              matrix) {
       this.save();
+      resetCtxToDefault(this.ctx);
+      this.current = new CanvasExtraState();
 
       if (isArray(rect) && rect.length === 4) {
         var width = rect[2] - rect[0];
