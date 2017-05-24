@@ -480,30 +480,40 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                                    stateManager.state.clone());
     },
 
-    handleTilingType:
-        function PartialEvaluator_handleTilingType(fn, args, resources,
-                                                   pattern, patternDict,
-                                                   operatorList, task) {
+    handleTilingType(fn, args, resources, pattern, patternDict, operatorList,
+                     task) {
       // Create an IR of the pattern code.
-      var tilingOpList = new OperatorList();
+      let tilingOpList = new OperatorList();
       // Merge the available resources, to prevent issues when the patternDict
       // is missing some /Resources entries (fixes issue6541.pdf).
-      var resourcesArray = [patternDict.get('Resources'), resources];
-      var patternResources = Dict.merge(this.xref, resourcesArray);
+      let resourcesArray = [patternDict.get('Resources'), resources];
+      let patternResources = Dict.merge(this.xref, resourcesArray);
 
       return this.getOperatorList({
         stream: pattern,
         task,
         resources: patternResources,
         operatorList: tilingOpList,
-      }).then(function () {
-        // Add the dependencies to the parent operator list so they are
-        // resolved before sub operator list is executed synchronously.
-        operatorList.addDependencies(tilingOpList.dependencies);
-        operatorList.addOp(fn, getTilingPatternIR({
+      }).then(function() {
+        return getTilingPatternIR({
           fnArray: tilingOpList.fnArray,
           argsArray: tilingOpList.argsArray,
-        }, patternDict, args));
+        }, patternDict, args);
+      }).then(function(tilingPatternIR) {
+        // Add the dependencies to the parent operator list so they are
+        // resolved before the sub operator list is executed synchronously.
+        operatorList.addDependencies(tilingOpList.dependencies);
+        operatorList.addOp(fn, tilingPatternIR);
+      }, (reason) => {
+        if (this.options.ignoreErrors) {
+          // Error(s) in the TilingPattern -- sending unsupported feature
+          // notification and allow rendering to continue.
+          this.handler.send('UnsupportedFeature',
+                            { featureId: UNSUPPORTED_FEATURES.unknown, });
+          warn(`handleTilingType - ignoring pattern: "${reason}".`);
+          return;
+        }
+        throw reason;
       });
     },
 
