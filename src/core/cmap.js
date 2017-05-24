@@ -283,24 +283,34 @@ var CMap = (function CMapClosure() {
       // indices in the *billions*. For such tables we use for..in, which isn't
       // ideal because it stringifies the indices for all present elements, but
       // it does avoid iterating over every undefined entry.
-      var map = this._map;
-      var length = map.length;
-      var i;
+      let map = this._map;
+      let length = map.length;
       if (length <= 0x10000) {
-        for (i = 0; i < length; i++) {
+        for (let i = 0; i < length; i++) {
           if (map[i] !== undefined) {
             callback(i, map[i]);
           }
         }
       } else {
-        for (i in this._map) {
+        for (let i in map) {
           callback(i, map[i]);
         }
       }
     },
 
     charCodeOf(value) {
-      return this._map.indexOf(value);
+      // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
+      // are both very sparse and very large (see issue8372.pdf).
+      let map = this._map;
+      if (map.length <= 0x10000) {
+        return map.indexOf(value);
+      }
+      for (let charCode in map) {
+        if (map[charCode] === value) {
+          return (charCode | 0);
+        }
+      }
+      return -1;
     },
 
     getMap() {
