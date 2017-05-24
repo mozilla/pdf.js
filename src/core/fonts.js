@@ -283,8 +283,19 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
       return this._map[i];
     },
 
-    charCodeOf(v) {
-      return this._map.indexOf(v);
+    charCodeOf(value) {
+      // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
+      // are both very sparse and very large (see issue8372.pdf).
+      let map = this._map;
+      if (map.length <= 0x10000) {
+        return map.indexOf(value);
+      }
+      for (let charCode in map) {
+        if (map[charCode] === value) {
+          return (charCode | 0);
+        }
+      }
+      return -1;
     },
 
     amend(map) {

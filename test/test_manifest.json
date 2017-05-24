@@ -2125,6 +2125,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue8372-text",
+       "file": "pdfs/issue8372.pdf",
+       "md5": "b02fb07364dd00ad5044bd259860da97",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "bug894572",
        "file": "pdfs/bug894572.pdf",
        "md5": "e54a6b0451939f685ed37e3d46e16158",
