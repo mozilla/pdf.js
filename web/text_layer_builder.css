@@ -24,6 +24,12 @@
   line-height: 1.0;
 }
 
+@media print {
+  .textLayer {
+    display: none;
+  }
+}
+
 .textLayer > div {
   color: transparent;
   position: absolute;
