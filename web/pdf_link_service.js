@@ -80,71 +80,76 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
     },
 
     /**
-     * @param dest - The PDF destination object.
+     * @param {string|Array} dest - The named, or explicit, PDF destination.
      */
-    navigateTo: function PDFLinkService_navigateTo(dest) {
-      var destString = '';
-      var self = this;
+    navigateTo(dest) {
+      let goToDestination = ({ namedDest, explicitDest, }) => {
+        // Dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
+        let destRef = explicitDest[0], pageNumber;
 
-      var goToDestination = function(destRef) {
-        // dest array looks like that: <page-ref> </XYZ|/FitXXX> <args..>
-        var pageNumber;
         if (destRef instanceof Object) {
-          pageNumber = self._cachedPageNumber(destRef);
+          pageNumber = this._cachedPageNumber(destRef);
+
+          if (pageNumber === null) {
+            // Fetch the page reference if it's not yet available. This could
+            // only occur during loading, before all pages have been resolved.
+            this.pdfDocument.getPageIndex(destRef).then((pageIndex) => {
+              this.cachePageRef(pageIndex + 1, destRef);
+              goToDestination({ namedDest, explicitDest, });
+            }).catch(() => {
+              console.error(`PDFLinkService.navigateTo: "${destRef}" is not ` +
+                            `a valid page reference, for dest="${dest}".`);
+            });
+            return;
+          }
         } else if ((destRef | 0) === destRef) { // Integer
           pageNumber = destRef + 1;
         } else {
-          console.error('PDFLinkService_navigateTo: "' + destRef +
-                        '" is not a valid destination reference.');
+          console.error(`PDFLinkService.navigateTo: "${destRef}" is not ` +
+                        `a valid destination reference, for dest="${dest}".`);
+          return;
+        }
+        if (!pageNumber || pageNumber < 1 || pageNumber > this.pagesCount) {
+          console.error(`PDFLinkService.navigateTo: "${pageNumber}" is not ` +
+                        `a valid page number, for dest="${dest}".`);
           return;
         }
 
-        if (pageNumber) {
-          if (pageNumber < 1 || pageNumber > self.pagesCount) {
-            console.error('PDFLinkService_navigateTo: "' + pageNumber +
-                          '" is a non-existent page number.');
-            return;
-          }
-          self.pdfViewer.scrollPageIntoView({
-            pageNumber,
-            destArray: dest,
-          });
+        this.pdfViewer.scrollPageIntoView({
+          pageNumber,
+          destArray: explicitDest,
+        });
 
-          if (self.pdfHistory) {
-            // Update the browsing history.
-            self.pdfHistory.push({
-              dest,
-              hash: destString,
-              page: pageNumber
-            });
-          }
-        } else {
-          self.pdfDocument.getPageIndex(destRef).then(function (pageIndex) {
-            self.cachePageRef(pageIndex + 1, destRef);
-            goToDestination(destRef);
-          }).catch(function () {
-            console.error('PDFLinkService_navigateTo: "' + destRef +
-                          '" is not a valid page reference.');
-            return;
+        if (this.pdfHistory) { // Update the browsing history, if enabled.
+          this.pdfHistory.push({
+            dest: explicitDest,
+            hash: namedDest,
+            page: pageNumber,
           });
         }
       };
 
-      var destinationPromise;
-      if (typeof dest === 'string') {
-        destString = dest;
-        destinationPromise = this.pdfDocument.getDestination(dest);
-      } else {
-        destinationPromise = Promise.resolve(dest);
-      }
-      destinationPromise.then(function(destination) {
-        dest = destination;
-        if (!(destination instanceof Array)) {
-          console.error('PDFLinkService_navigateTo: "' + destination +
-                        '" is not a valid destination array.');
+      new Promise((resolve, reject) => {
+        if (typeof dest === 'string') {
+          this.pdfDocument.getDestination(dest).then((destArray) => {
+            resolve({
+              namedDest: dest,
+              explicitDest: destArray,
+            });
+          });
           return;
         }
-        goToDestination(destination[0]);
+        resolve({
+          namedDest: '',
+          explicitDest: dest,
+        });
+      }).then((data) => {
+        if (!(data.explicitDest instanceof Array)) {
+          console.error(`PDFLinkService.navigateTo: "${data.explicitDest}" is` +
+                        ` not a valid destination array, for dest="${dest}".`);
+          return;
+        }
+        goToDestination(data);
       });
     },
 
