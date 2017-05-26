@@ -15,7 +15,6 @@
 
 import { cloneObj, getPDFFileNameFromURL, mozL10n } from './ui_utils';
 import { createPromiseCapability } from './pdfjs';
-import { OverlayManager } from './overlay_manager';
 
 const DEFAULT_FIELD_CONTENT = '-';
 
@@ -30,19 +29,22 @@ const DEFAULT_FIELD_CONTENT = '-';
 class PDFDocumentProperties {
   /**
    * @param {PDFDocumentPropertiesOptions} options
+   * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    */
-  constructor({ overlayName, fields, container, closeButton, }) {
+  constructor({ overlayName, fields, container, closeButton, },
+              overlayManager) {
     this.overlayName = overlayName;
     this.fields = fields;
     this.container = container;
+    this.overlayManager = overlayManager;
 
     this._reset();
 
     if (closeButton) { // Bind the event listener for the Close button.
       closeButton.addEventListener('click', this.close.bind(this));
     }
-    OverlayManager.register(this.overlayName, this.container,
-                            this.close.bind(this));
+    this.overlayManager.register(this.overlayName, this.container,
+                                 this.close.bind(this));
   }
 
   /**
@@ -58,7 +60,7 @@ class PDFDocumentProperties {
       });
     };
 
-    Promise.all([OverlayManager.open(this.overlayName),
+    Promise.all([this.overlayManager.open(this.overlayName),
                  this._dataAvailableCapability.promise]).then(() => {
       // If the document properties were previously fetched (for this PDF file),
       // just update the dialog immediately to avoid redundant lookups.
@@ -101,7 +103,7 @@ class PDFDocumentProperties {
    * Close the document properties overlay.
    */
   close() {
-    OverlayManager.close(this.overlayName);
+    this.overlayManager.close(this.overlayName);
   }
 
   /**
@@ -165,7 +167,7 @@ class PDFDocumentProperties {
       }
       return;
     }
-    if (OverlayManager.active !== this.overlayName) {
+    if (this.overlayManager.active !== this.overlayName) {
       // Don't bother updating the dialog if has already been closed,
       // since it will be updated the next time `this.open` is called.
       return;

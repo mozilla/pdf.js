@@ -14,11 +14,11 @@
  */
 
 import { CSS_UNITS, mozL10n } from './ui_utils';
-import { OverlayManager } from './overlay_manager';
+import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
 import { PDFJS } from './pdfjs';
-import { PDFPrintServiceFactory } from './app';
 
-var activeService = null;
+let activeService = null;
+let overlayManager = null;
 
 // Renders the page to the canvas of the given print service, and returns
 // the suggested dimensions of the output page.
@@ -118,10 +118,10 @@ PDFPrintService.prototype = {
     this.scratchCanvas = null;
     activeService = null;
     ensureOverlay().then(function () {
-      if (OverlayManager.active !== 'printServiceOverlay') {
+      if (overlayManager.active !== 'printServiceOverlay') {
         return; // overlay was already closed
       }
-      OverlayManager.close('printServiceOverlay');
+      overlayManager.close('printServiceOverlay');
     });
   },
 
@@ -208,7 +208,7 @@ window.print = function print() {
   }
   ensureOverlay().then(function () {
     if (activeService) {
-      OverlayManager.open('printServiceOverlay');
+      overlayManager.open('printServiceOverlay');
     }
   });
 
@@ -217,9 +217,11 @@ window.print = function print() {
   } finally {
     if (!activeService) {
       console.error('Expected print service to be initialized.');
-      if (OverlayManager.active === 'printServiceOverlay') {
-        OverlayManager.close('printServiceOverlay');
-      }
+      ensureOverlay().then(function () {
+        if (overlayManager.active === 'printServiceOverlay') {
+          overlayManager.close('printServiceOverlay');
+        }
+      });
       return; // eslint-disable-line no-unsafe-finally
     }
     var activeServiceOnEntry = activeService;
@@ -310,7 +312,12 @@ if ('onbeforeprint' in window) {
 var overlayPromise;
 function ensureOverlay() {
   if (!overlayPromise) {
-    overlayPromise = OverlayManager.register('printServiceOverlay',
+    overlayManager = PDFViewerApplication.overlayManager;
+    if (!overlayManager) {
+      throw new Error('The overlay manager has not yet been initialized.');
+    }
+
+    overlayPromise = overlayManager.register('printServiceOverlay',
       document.getElementById('printServiceOverlay'), abort, true);
     document.getElementById('printCancel').onclick = abort;
   }
