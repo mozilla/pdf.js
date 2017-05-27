@@ -67,4 +67,38 @@
     },
     transpiler: isCachingPossible ? 'plugin-babel-cached' : 'plugin-babel'
   });
+
+  // Workaround for fetch() mutiple-files-at-one-time bug
+  if (typeof self !== 'undefined' && typeof self.fetch !== 'undefined' &&
+      /\sChrom(e|ium)\//.test(navigator.userAgent)) {
+    var oldFetch = self.fetch;
+    var lastFetch = Promise.resolve();
+    var deferred = function () {
+      var result = {};
+      result.promise = new Promise(function (resolve, reject) {
+        result.resolve = resolve;
+        result.reject = reject;
+      });
+      return result;
+    };
+    self.fetch = function () {
+      var args = Array.prototype.slice.call(arguments, 0);
+      var fetchDeferred = deferred();
+      var resDeferred = deferred();
+      lastFetch = lastFetch.then(function () {
+        oldFetch.apply(null, args).then(function (res) {
+          var oldText = res.text;
+          res.text = function () {
+            return oldText.call(this).then(function (text) {
+              resDeferred.resolve();
+              return text;
+            }, resDeferred.reject);
+          };
+          fetchDeferred.resolve(res);
+        }, fetchDeferred.reject);
+        return resDeferred.promise;
+      }).catch(function () { /* ignore errors */ });
+      return fetchDeferred.promise;
+    };
+  }
 })();
