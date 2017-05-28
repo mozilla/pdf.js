@@ -14,7 +14,6 @@
  */
 
 import { mozL10n } from './ui_utils';
-import { OverlayManager } from './overlay_manager';
 import { PasswordResponses } from './pdfjs';
 
 /**
@@ -33,14 +32,16 @@ import { PasswordResponses } from './pdfjs';
 class PasswordPrompt {
   /**
    * @param {PasswordPromptOptions} options
+   * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    */
-  constructor(options) {
+  constructor(options, overlayManager) {
     this.overlayName = options.overlayName;
     this.container = options.container;
     this.label = options.label;
     this.input = options.input;
     this.submitButton = options.submitButton;
     this.cancelButton = options.cancelButton;
+    this.overlayManager = overlayManager;
 
     this.updateCallback = null;
     this.reason = null;
@@ -54,12 +55,12 @@ class PasswordPrompt {
       }
     });
 
-    OverlayManager.register(this.overlayName, this.container,
-                            this.close.bind(this), true);
+    this.overlayManager.register(this.overlayName, this.container,
+                                 this.close.bind(this), true);
   }
 
   open() {
-    OverlayManager.open(this.overlayName).then(() => {
+    this.overlayManager.open(this.overlayName).then(() => {
       this.input.focus();
 
       var promptString = mozL10n.get('password_label', null,
@@ -75,7 +76,7 @@ class PasswordPrompt {
   }
 
   close() {
-    OverlayManager.close(this.overlayName).then(() => {
+    this.overlayManager.close(this.overlayName).then(() => {
       this.input.value = '';
     });
   }
