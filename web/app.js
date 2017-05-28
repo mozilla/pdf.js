@@ -119,6 +119,8 @@ var PDFViewerApplication = {
   store: null,
   /** @type {DownloadManager} */
   downloadManager: null,
+  /** @type {OverlayManager} */
+  overlayManager: null,
   /** @type {Preferences} */
   preferences: null,
   /** @type {Toolbar} */
@@ -261,6 +263,8 @@ var PDFViewerApplication = {
     let appConfig = this.appConfig;
 
     return new Promise((resolve, reject) => {
+      this.overlayManager = new OverlayManager();
+
       let eventBus = appConfig.eventBus || getGlobalEventBus();
       this.eventBus = eventBus;
 
@@ -329,16 +333,15 @@ var PDFViewerApplication = {
 
       this.pdfViewer.setFindController(this.findController);
 
-      // FIXME better PDFFindBar constructor parameters
+      // TODO: improve `PDFFindBar` constructor parameter passing
       let findBarConfig = Object.create(appConfig.findBar);
       findBarConfig.findController = this.findController;
       findBarConfig.eventBus = eventBus;
       this.findBar = new PDFFindBar(findBarConfig);
 
-      this.overlayManager = OverlayManager;
-
       this.pdfDocumentProperties =
-        new PDFDocumentProperties(appConfig.documentProperties);
+        new PDFDocumentProperties(appConfig.documentProperties,
+                                  this.overlayManager);
 
       this.pdfCursorTools = new PDFCursorTools({
         container,
@@ -361,7 +364,8 @@ var PDFViewerApplication = {
         });
       }
 
-      this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay);
+      this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay,
+                                               this.overlayManager);
 
       this.pdfOutlineViewer = new PDFOutlineViewer({
         container: appConfig.sidebar.outlineView,
@@ -375,7 +379,7 @@ var PDFViewerApplication = {
         downloadManager,
       });
 
-      // FIXME better PDFSidebar constructor parameters
+      // TODO: improve `PDFSidebar` constructor parameter passing
       let sidebarConfig = Object.create(appConfig.sidebar);
       sidebarConfig.pdfViewer = this.pdfViewer;
       sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
@@ -1911,7 +1915,7 @@ function webViewerClick(evt) {
 }
 
 function webViewerKeyDown(evt) {
-  if (OverlayManager.active) {
+  if (PDFViewerApplication.overlayManager.active) {
     return;
   }
 
