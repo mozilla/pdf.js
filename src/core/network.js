@@ -70,6 +70,7 @@ if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       (function supportsMozChunkedClosure() {
     try {
       var x = new XMLHttpRequest();
+      var globalScope = sharedUtil.globalScope;
       // Firefox 37- required .open() to be called before setting responseType.
       // https://bugzilla.mozilla.org/show_bug.cgi?id=707484
       // Even though the URL is not visited, .open() could fail if the URL is
