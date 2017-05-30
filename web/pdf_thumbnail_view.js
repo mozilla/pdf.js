@@ -32,35 +32,52 @@ var THUMBNAIL_CANVAS_BORDER_WIDTH = 1; // px
  *   but increases the overall memory usage. The default value is false.
  */
 
+const TempImageFactory = (function TempImageFactoryClosure() {
+  let tempCanvasCache = null;
+
+  return {
+    getCanvas(width, height) {
+      let tempCanvas = tempCanvasCache;
+      if (!tempCanvas) {
+        tempCanvas = document.createElement('canvas');
+        tempCanvasCache = tempCanvas;
+      }
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+
+      // Since this is a temporary canvas, we need to fill it with a white
+      // background ourselves. `_getPageDrawContext` uses CSS rules for this.
+      if (typeof PDFJSDev === 'undefined' ||
+          PDFJSDev.test('MOZCENTRAL || FIREFOX || GENERIC')) {
+        tempCanvas.mozOpaque = true;
+      }
+
+      let ctx = tempCanvas.getContext('2d', { alpha: false, });
+      ctx.save();
+      ctx.fillStyle = 'rgb(255, 255, 255)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+      return tempCanvas;
+    },
+
+    destroyCanvas() {
+      let tempCanvas = tempCanvasCache;
+      if (tempCanvas) {
+        // Zeroing the width and height causes Firefox to release graphics
+        // resources immediately, which can greatly reduce memory consumption.
+        tempCanvas.width = 0;
+        tempCanvas.height = 0;
+      }
+      tempCanvasCache = null;
+    },
+  };
+})();
+
 /**
  * @class
  * @implements {IRenderableView}
  */
 var PDFThumbnailView = (function PDFThumbnailViewClosure() {
-  function getTempCanvas(width, height) {
-    var tempCanvas = PDFThumbnailView.tempImageCache;
-    if (!tempCanvas) {
-      tempCanvas = document.createElement('canvas');
-      PDFThumbnailView.tempImageCache = tempCanvas;
-    }
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-
-    // Since this is a temporary canvas, we need to fill the canvas with a white
-    // background ourselves. `_getPageDrawContext` uses CSS rules for this.
-    if (typeof PDFJSDev === 'undefined' ||
-        PDFJSDev.test('MOZCENTRAL || FIREFOX || GENERIC')) {
-      tempCanvas.mozOpaque = true;
-    }
-
-    var ctx = tempCanvas.getContext('2d', {alpha: false});
-    ctx.save();
-    ctx.fillStyle = 'rgb(255, 255, 255)';
-    ctx.fillRect(0, 0, width, height);
-    ctx.restore();
-    return tempCanvas;
-  }
-
   /**
    * @constructs PDFThumbnailView
    * @param {PDFThumbnailViewOptions} options
@@ -358,7 +375,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       var MAX_NUM_SCALING_STEPS = 3;
       var reducedWidth = canvas.width << MAX_NUM_SCALING_STEPS;
       var reducedHeight = canvas.height << MAX_NUM_SCALING_STEPS;
-      var reducedImage = getTempCanvas(reducedWidth, reducedHeight);
+      var reducedImage = TempImageFactory.getCanvas(reducedWidth,
+                                                    reducedHeight);
       var reducedImageCtx = reducedImage.getContext('2d');
 
       while (reducedWidth > img.width || reducedHeight > img.height) {
@@ -405,10 +423,12 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     },
   };
 
+  PDFThumbnailView.cleanup = function() {
+    TempImageFactory.destroyCanvas();
+  };
+
   return PDFThumbnailView;
 })();
-
-PDFThumbnailView.tempImageCache = null;
 
 export {
   PDFThumbnailView,
