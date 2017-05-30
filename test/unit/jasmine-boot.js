@@ -60,7 +60,7 @@ function initializePDFJS(callback) {
     var displayGlobal = modules[0];
 
     // Configure the worker.
-    displayGlobal.PDFJS.workerSrc = '../../src/worker_loader.js';
+    displayGlobal.PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
     // Opt-in to using the latest API.
     displayGlobal.PDFJS.pdfjsNext = true;
 

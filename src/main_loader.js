@@ -68,4 +68,5 @@
     displayDOMUtils.RenderingCancelledException;
   exports.getFilenameFromUrl = displayDOMUtils.getFilenameFromUrl;
   exports.addLinkAttributes = displayDOMUtils.addLinkAttributes;
+  exports.StatTimer = sharedUtil.StatTimer;
 }));

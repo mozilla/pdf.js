@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals PDFJS, pdfjsSharedUtil */
+/* globals PDFJS, pdfjsDistBuildPdf */
 
 'use strict';
 
 var WAITING_TIME = 100; // ms
 var PDF_TO_CSS_UNITS = 96.0 / 72.0;
+
+var StatTimer = pdfjsDistBuildPdf.StatTimer;
 
 /**
  * @class
@@ -258,7 +260,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
    */
   function Driver(options) {
     // Configure the global PDFJS object
-    PDFJS.workerSrc = '../src/worker_loader.js';
+    PDFJS.workerSrc = '../build/generic/build/pdf.worker.js';
     PDFJS.cMapPacked = true;
     PDFJS.cMapUrl = '../external/bcmaps/';
     PDFJS.enableStats = true;
@@ -547,7 +549,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
               }
               page.cleanup();
               task.stats = page.stats;
-              page.stats = new pdfjsSharedUtil.StatTimer();
+              page.stats = new StatTimer();
               self._snapshot(task, error);
             });
             initPromise.then(function () {
