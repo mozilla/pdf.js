@@ -1055,22 +1055,22 @@ gulp.task('publish', ['generic'], function (done) {
     });
 });
 
-gulp.task('test', function () {
+gulp.task('test', ['generic'], function () {
   return streamqueue({ objectMode: true },
     createTestSource('unit'), createTestSource('browser'));
 });
 
-gulp.task('bottest', function () {
+gulp.task('bottest', ['generic'], function () {
   return streamqueue({ objectMode: true },
     createTestSource('unit'), createTestSource('font'),
     createTestSource('browser (no reftest)'));
 });
 
-gulp.task('browsertest', function () {
+gulp.task('browsertest', ['generic'], function () {
   return createTestSource('browser');
 });
 
-gulp.task('unittest', function () {
+gulp.task('unittest', ['generic'], function () {
   return createTestSource('unit');
 });
 
@@ -1078,11 +1078,11 @@ gulp.task('fonttest', function () {
   return createTestSource('font');
 });
 
-gulp.task('makeref', function (done) {
+gulp.task('makeref', ['generic'], function (done) {
   makeRef(done);
 });
 
-gulp.task('botmakeref', function (done) {
+gulp.task('botmakeref', ['generic'], function (done) {
   makeRef(done, true);
 });
 

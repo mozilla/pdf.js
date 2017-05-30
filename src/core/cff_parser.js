@@ -13,34 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/cff_parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/charsets', 'pdfjs/core/encodings'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./charsets.js'),
-      require('./encodings.js'));
-  } else {
-    factory((root.pdfjsCoreCFFParser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreCharsets, root.pdfjsCoreEncodings);
-  }
-}(this, function (exports, sharedUtil, coreCharsets, coreEncodings) {
-
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var bytesToString = sharedUtil.bytesToString;
-var warn = sharedUtil.warn;
-var isArray = sharedUtil.isArray;
-var Util = sharedUtil.Util;
-var stringToBytes = sharedUtil.stringToBytes;
-var assert = sharedUtil.assert;
-var ISOAdobeCharset = coreCharsets.ISOAdobeCharset;
-var ExpertCharset = coreCharsets.ExpertCharset;
-var ExpertSubsetCharset = coreCharsets.ExpertSubsetCharset;
-var StandardEncoding = coreEncodings.StandardEncoding;
-var ExpertEncoding = coreEncodings.ExpertEncoding;
+import {
+  assert, bytesToString, error, info, isArray, stringToBytes, Util, warn
+} from '../shared/util';
+import {
+  ExpertCharset, ExpertSubsetCharset, ISOAdobeCharset
+} from './charsets';
+import { ExpertEncoding, StandardEncoding } from './encodings';
 
 // Maximum subroutine call depth of type 2 chartrings. Matches OTS.
 var MAX_SUBR_NESTING = 10;
@@ -1651,14 +1630,15 @@ var CFFCompiler = (function CFFCompilerClosure() {
   return CFFCompiler;
 })();
 
-exports.CFFStandardStrings = CFFStandardStrings;
-exports.CFFParser = CFFParser;
-exports.CFF = CFF;
-exports.CFFHeader = CFFHeader;
-exports.CFFStrings = CFFStrings;
-exports.CFFIndex = CFFIndex;
-exports.CFFCharset = CFFCharset;
-exports.CFFTopDict = CFFTopDict;
-exports.CFFPrivateDict = CFFPrivateDict;
-exports.CFFCompiler = CFFCompiler;
-}));
+export {
+  CFFStandardStrings,
+  CFFParser,
+  CFF,
+  CFFHeader,
+  CFFStrings,
+  CFFIndex,
+  CFFCharset,
+  CFFTopDict,
+  CFFPrivateDict,
+  CFFCompiler,
+};

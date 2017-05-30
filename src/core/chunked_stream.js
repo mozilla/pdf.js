@@ -13,26 +13,10 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/chunked_stream', ['exports', 'pdfjs/shared/util'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCoreChunkedStream = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
-var MissingDataException = sharedUtil.MissingDataException;
-var arrayByteLength = sharedUtil.arrayByteLength;
-var arraysToBytes = sharedUtil.arraysToBytes;
-var assert = sharedUtil.assert;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var isInt = sharedUtil.isInt;
-var isEmptyObj = sharedUtil.isEmptyObj;
+import {
+  arrayByteLength, arraysToBytes, assert, createPromiseCapability, isEmptyObj,
+  isInt, MissingDataException
+} from '../shared/util';
 
 var ChunkedStream = (function ChunkedStreamClosure() {
   function ChunkedStream(length, chunkSize, manager) {
@@ -578,6 +562,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
   return ChunkedStreamManager;
 })();
 
-exports.ChunkedStream = ChunkedStream;
-exports.ChunkedStreamManager = ChunkedStreamManager;
-}));
+export {
+  ChunkedStream,
+  ChunkedStreamManager,
+};

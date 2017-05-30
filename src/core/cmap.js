@@ -13,36 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/cmap', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/parser'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./parser.js'));
-  } else {
-    factory((root.pdfjsCoreCMap = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream, root.pdfjsCoreParser);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreParser) {
-
-var Util = sharedUtil.Util;
-var assert = sharedUtil.assert;
-var warn = sharedUtil.warn;
-var error = sharedUtil.error;
-var isInt = sharedUtil.isInt;
-var isString = sharedUtil.isString;
-var MissingDataException = sharedUtil.MissingDataException;
-var CMapCompressionType = sharedUtil.CMapCompressionType;
-var isEOF = corePrimitives.isEOF;
-var isName = corePrimitives.isName;
-var isCmd = corePrimitives.isCmd;
-var isStream = corePrimitives.isStream;
-var Stream = coreStream.Stream;
-var Lexer = coreParser.Lexer;
+import {
+  assert, CMapCompressionType, error, isInt, isString, MissingDataException,
+  Util, warn
+} from '../shared/util';
+import { isCmd, isEOF, isName, isStream } from './primitives';
+import { Lexer } from './parser';
+import { Stream } from './stream';
 
 var BUILT_IN_CMAPS = [
 // << Start unicode maps.
@@ -1010,7 +987,8 @@ var CMapFactory = (function CMapFactoryClosure() {
   };
 })();
 
-exports.CMap = CMap;
-exports.CMapFactory = CMapFactory;
-exports.IdentityCMap = IdentityCMap;
-}));
+export {
+  CMap,
+  IdentityCMap,
+  CMapFactory,
+};
