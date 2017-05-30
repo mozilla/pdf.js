@@ -24,13 +24,11 @@ import {
   MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
   UNSUPPORTED_FEATURES, version,
 } from './pdfjs';
-import {
-  PDFRenderingQueue, RenderingStates
-} from './pdf_rendering_queue';
+import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
+import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
 import { PDFViewer, PresentationModeState } from './pdf_viewer';
 import { getGlobalEventBus } from './dom_events';
-import { HandTool } from './hand_tool';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
 import { PDFAttachmentViewer } from './pdf_attachment_viewer';
@@ -115,10 +113,14 @@ var PDFViewerApplication = {
   pdfOutlineViewer: null,
   /** @type {PDFAttachmentViewer} */
   pdfAttachmentViewer: null,
+  /** @type {PDFCursorTools} */
+  pdfCursorTools: null,
   /** @type {ViewHistory} */
   store: null,
   /** @type {DownloadManager} */
   downloadManager: null,
+  /** @type {OverlayManager} */
+  overlayManager: null,
   /** @type {Preferences} */
   preferences: null,
   /** @type {Toolbar} */
@@ -261,6 +263,8 @@ var PDFViewerApplication = {
     let appConfig = this.appConfig;
 
     return new Promise((resolve, reject) => {
+      this.overlayManager = new OverlayManager();
+
       let eventBus = appConfig.eventBus || getGlobalEventBus();
       this.eventBus = eventBus;
 
@@ -329,22 +333,21 @@ var PDFViewerApplication = {
 
       this.pdfViewer.setFindController(this.findController);
 
-      // FIXME better PDFFindBar constructor parameters
+      // TODO: improve `PDFFindBar` constructor parameter passing
       let findBarConfig = Object.create(appConfig.findBar);
       findBarConfig.findController = this.findController;
       findBarConfig.eventBus = eventBus;
       this.findBar = new PDFFindBar(findBarConfig);
 
-      this.overlayManager = OverlayManager;
+      this.pdfDocumentProperties =
+        new PDFDocumentProperties(appConfig.documentProperties,
+                                  this.overlayManager);
 
-      this.handTool = new HandTool({
+      this.pdfCursorTools = new PDFCursorTools({
         container,
         eventBus,
         preferences: this.preferences,
       });
-
-      this.pdfDocumentProperties =
-        new PDFDocumentProperties(appConfig.documentProperties);
 
       this.toolbar = new Toolbar(appConfig.toolbar, container, eventBus);
 
@@ -361,7 +364,8 @@ var PDFViewerApplication = {
         });
       }
 
-      this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay);
+      this.passwordPrompt = new PasswordPrompt(appConfig.passwordOverlay,
+                                               this.overlayManager);
 
       this.pdfOutlineViewer = new PDFOutlineViewer({
         container: appConfig.sidebar.outlineView,
@@ -375,7 +379,7 @@ var PDFViewerApplication = {
         downloadManager,
       });
 
-      // FIXME better PDFSidebar constructor parameters
+      // TODO: improve `PDFSidebar` constructor parameter passing
       let sidebarConfig = Object.create(appConfig.sidebar);
       sidebarConfig.pdfViewer = this.pdfViewer;
       sidebarConfig.pdfThumbnailViewer = this.pdfThumbnailViewer;
@@ -1911,7 +1915,7 @@ function webViewerClick(evt) {
 }
 
 function webViewerKeyDown(evt) {
-  if (OverlayManager.active) {
+  if (PDFViewerApplication.overlayManager.active) {
     return;
   }
 
@@ -2119,11 +2123,13 @@ function webViewerKeyDown(evt) {
         }
         break;
 
-      case 72: // 'h'
-        if (!isViewerInPresentationMode) {
-          PDFViewerApplication.handTool.toggle();
-        }
+      case 83: // 's'
+        PDFViewerApplication.pdfCursorTools.switchTool(CursorTool.SELECT);
         break;
+      case 72: // 'h'
+        PDFViewerApplication.pdfCursorTools.switchTool(CursorTool.HAND);
+        break;
+
       case 82: // 'r'
         PDFViewerApplication.rotatePages(90);
         break;

@@ -52,7 +52,8 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/network_spec', 'pdfjs-test/unit/parser_spec',
     'pdfjs-test/unit/primitives_spec', 'pdfjs-test/unit/stream_spec',
     'pdfjs-test/unit/type1_parser_spec', 'pdfjs-test/unit/ui_utils_spec',
-    'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec'
+    'pdfjs-test/unit/unicode_spec', 'pdfjs-test/unit/util_spec',
+    'pdfjs-test/unit/custom_spec'
   ].map(function (moduleName) {
     return SystemJS.import(moduleName);
   })).then(function (modules) {

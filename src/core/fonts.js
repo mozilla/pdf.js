@@ -283,8 +283,19 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
       return this._map[i];
     },
 
-    charCodeOf(v) {
-      return this._map.indexOf(v);
+    charCodeOf(value) {
+      // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
+      // are both very sparse and very large (see issue8372.pdf).
+      let map = this._map;
+      if (map.length <= 0x10000) {
+        return map.indexOf(value);
+      }
+      for (let charCode in map) {
+        if (map[charCode] === value) {
+          return (charCode | 0);
+        }
+      }
+      return -1;
     },
 
     amend(map) {
@@ -499,6 +510,7 @@ var ProblematicCharRanges = new Int32Array([
   0x205F, 0x2070,
   0x25CC, 0x25CD,
   0x3000, 0x3001,
+  0x3164, 0x3165,
   // Chars that is used in complex-script shaping.
   0xAA60, 0xAA80,
   // Specials Unicode block.

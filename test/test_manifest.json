@@ -1249,6 +1249,20 @@
       "rounds": 1,
       "type": "eq"
     },
+    {  "id": "issue8380",
+       "file": "pdfs/issue8380.pdf",
+       "md5": "2782af6a4d0540fcea3897560f842094",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
+    {  "id": "issue8424",
+       "file": "pdfs/issue8424.pdf",
+       "md5": "3de1ea4c085e8fe8e156153418058955",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "type4psfunc",
       "file": "pdfs/type4psfunc.pdf",
       "md5": "7e6027a02ff78577f74dccdf84e37189",
@@ -2111,6 +2125,13 @@
        "link": false,
        "type": "text"
     },
+    {  "id": "issue8372-text",
+       "file": "pdfs/issue8372.pdf",
+       "md5": "b02fb07364dd00ad5044bd259860da97",
+       "rounds": 1,
+       "link": false,
+       "type": "text"
+    },
     {  "id": "bug894572",
        "file": "pdfs/bug894572.pdf",
        "md5": "e54a6b0451939f685ed37e3d46e16158",
@@ -2459,6 +2480,14 @@
       "md5": "bf5ab1cf7fe3a502c3754f55e6ceeabd",
       "rounds": 1,
       "type": "load"
+    },
+    {  "id": "issue8047",
+       "file": "pdfs/issue8047.pdf",
+       "md5": "83f1b9f7e95caa8e2625390afd7c7276",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq"
     },
     {  "id": "issue818",
       "file": "pdfs/issue818.pdf",
