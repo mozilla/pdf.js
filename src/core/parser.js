@@ -13,51 +13,17 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'));
-  } else {
-    factory((root.pdfjsCoreParser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream) {
-
-var MissingDataException = sharedUtil.MissingDataException;
-var StreamType = sharedUtil.StreamType;
-var assert = sharedUtil.assert;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isInt = sharedUtil.isInt;
-var isNum = sharedUtil.isNum;
-var isString = sharedUtil.isString;
-var warn = sharedUtil.warn;
-var EOF = corePrimitives.EOF;
-var Cmd = corePrimitives.Cmd;
-var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
-var Ref = corePrimitives.Ref;
-var isEOF = corePrimitives.isEOF;
-var isCmd = corePrimitives.isCmd;
-var isDict = corePrimitives.isDict;
-var isName = corePrimitives.isName;
-var Ascii85Stream = coreStream.Ascii85Stream;
-var AsciiHexStream = coreStream.AsciiHexStream;
-var CCITTFaxStream = coreStream.CCITTFaxStream;
-var FlateStream = coreStream.FlateStream;
-var Jbig2Stream = coreStream.Jbig2Stream;
-var JpegStream = coreStream.JpegStream;
-var JpxStream = coreStream.JpxStream;
-var LZWStream = coreStream.LZWStream;
-var NullStream = coreStream.NullStream;
-var PredictorStream = coreStream.PredictorStream;
-var RunLengthStream = coreStream.RunLengthStream;
+import {
+  Ascii85Stream, AsciiHexStream, CCITTFaxStream, FlateStream, Jbig2Stream,
+  JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
+} from './stream';
+import {
+  assert, error, info, isArray, isInt, isNum, isString, MissingDataException,
+  StreamType, warn
+} from '../shared/util';
+import {
+  Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
+} from './primitives';
 
 var MAX_LENGTH_TO_CACHE = 1000;
 
@@ -1125,7 +1091,8 @@ var Linearization = {
   }
 };
 
-exports.Lexer = Lexer;
-exports.Linearization = Linearization;
-exports.Parser = Parser;
-}));
+export {
+  Lexer,
+  Linearization,
+  Parser,
+};

@@ -13,38 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/stream', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/jbig2', 'pdfjs/core/jpg',
-      'pdfjs/core/jpx'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./jbig2.js'), require('./jpg.js'), require('./jpx.js'));
-  } else {
-    factory((root.pdfjsCoreStream = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreJbig2, root.pdfjsCoreJpg,
-      root.pdfjsCoreJpx);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreJbig2, coreJpg,
-                  coreJpx) {
-
-var Util = sharedUtil.Util;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isInt = sharedUtil.isInt;
-var isArray = sharedUtil.isArray;
-var createObjectURL = sharedUtil.createObjectURL;
-var shadow = sharedUtil.shadow;
-var isSpace = sharedUtil.isSpace;
-var Dict = corePrimitives.Dict;
-var isDict = corePrimitives.isDict;
-var isStream = corePrimitives.isStream;
-var Jbig2Image = coreJbig2.Jbig2Image;
-var JpegImage = coreJpg.JpegImage;
-var JpxImage = coreJpx.JpxImage;
+import {
+  createObjectURL, error, info, isArray, isInt, isSpace, shadow, Util
+} from '../shared/util';
+import { Dict, isDict, isStream } from './primitives';
+import { Jbig2Image } from './jbig2';
+import { JpegImage } from './jpg';
+import { JpxImage } from './jpx';
 
 var Stream = (function StreamClosure() {
   function Stream(arrayBuffer, start, length, dict) {
@@ -2476,20 +2451,21 @@ var NullStream = (function NullStreamClosure() {
   return NullStream;
 })();
 
-exports.Ascii85Stream = Ascii85Stream;
-exports.AsciiHexStream = AsciiHexStream;
-exports.CCITTFaxStream = CCITTFaxStream;
-exports.DecryptStream = DecryptStream;
-exports.DecodeStream = DecodeStream;
-exports.FlateStream = FlateStream;
-exports.Jbig2Stream = Jbig2Stream;
-exports.JpegStream = JpegStream;
-exports.JpxStream = JpxStream;
-exports.NullStream = NullStream;
-exports.PredictorStream = PredictorStream;
-exports.RunLengthStream = RunLengthStream;
-exports.Stream = Stream;
-exports.StreamsSequenceStream = StreamsSequenceStream;
-exports.StringStream = StringStream;
-exports.LZWStream = LZWStream;
-}));
+export {
+  Ascii85Stream,
+  AsciiHexStream,
+  CCITTFaxStream,
+  DecryptStream,
+  DecodeStream,
+  FlateStream,
+  Jbig2Stream,
+  JpegStream,
+  JpxStream,
+  NullStream,
+  PredictorStream,
+  RunLengthStream,
+  Stream,
+  StreamsSequenceStream,
+  StringStream,
+  LZWStream,
+};

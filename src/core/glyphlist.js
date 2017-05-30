@@ -14,18 +14,7 @@
  */
 /* no-babel-preset */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/glyphlist', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCoreGlyphList = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-var getLookupTableFactory = sharedUtil.getLookupTableFactory;
+var getLookupTableFactory = require('../shared/util').getLookupTableFactory;
 
 var getGlyphsUnicode = getLookupTableFactory(function (t) {
   t['A'] = 0x0041;
@@ -4561,4 +4550,3 @@ var getDingbatsGlyphsUnicode = getLookupTableFactory(function (t) {
 
 exports.getGlyphsUnicode = getGlyphsUnicode;
 exports.getDingbatsGlyphsUnicode = getDingbatsGlyphsUnicode;
-}));
