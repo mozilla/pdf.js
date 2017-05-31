@@ -75,13 +75,16 @@ var DefaultExternalServices = {
   createPreferences() {
     throw new Error('Not implemented: createPreferences');
   },
+  createL10n() {
+    throw new Error('Not implemented: createL10n');
+  },
   supportsIntegratedFind: false,
   supportsDocumentFonts: true,
   supportsDocumentColors: true,
   supportedMouseWheelZoomModifierKeys: {
     ctrlKey: true,
     metaKey: true,
-  }
+  },
 };
 
 var PDFViewerApplication = {
