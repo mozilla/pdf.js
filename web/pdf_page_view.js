@@ -20,7 +20,7 @@ import {
 import {
   createPromiseCapability, CustomStyle, PDFJS, RenderingCancelledException,
   SVGGraphics
-} from './pdfjs';
+} from 'pdfjs-lib';
 import { getGlobalEventBus } from './dom_events';
 import { RenderingStates } from './pdf_rendering_queue';
 

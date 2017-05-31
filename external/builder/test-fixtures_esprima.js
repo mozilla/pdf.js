@@ -24,8 +24,12 @@ files.forEach(function(expectationFilename) {
     OBJ: {obj: {i: 1}, j: 2},
     TEXT: 'text'
   };
+  var map = {
+    'import-alias': 'import-name',
+  };
   var ctx = {
     defines: defines,
+    map: map,
     rootPath: __dirname + '/../..',
   };
   var out;

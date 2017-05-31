@@ -23,7 +23,7 @@ import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
   MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
   UNSUPPORTED_FEATURES, version,
-} from './pdfjs';
+} from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';

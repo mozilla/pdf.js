@@ -49,6 +49,7 @@
       'pdfjs': new URL('src', baseLocation).href,
       'pdfjs-web': new URL('web', baseLocation).href,
       'pdfjs-test': new URL('test', baseLocation).href,
+      'pdfjs-lib': new URL('src/pdf', baseLocation).href,
     },
     meta: {
       '*': {

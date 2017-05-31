@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, PDFJS } from './pdfjs';
+import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
   MAX_AUTO_SCALE, RendererType, SCROLLBAR_PADDING, scrollIntoView,

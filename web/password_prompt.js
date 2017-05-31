@@ -14,7 +14,7 @@
  */
 
 import { mozL10n } from './ui_utils';
-import { PasswordResponses } from './pdfjs';
+import { PasswordResponses } from 'pdfjs-lib';
 
 /**
  * @typedef {Object} PasswordPromptOptions

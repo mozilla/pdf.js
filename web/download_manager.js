@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createObjectURL, createValidAbsoluteUrl, PDFJS } from './pdfjs';
+import { createObjectURL, createValidAbsoluteUrl, PDFJS } from 'pdfjs-lib';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
