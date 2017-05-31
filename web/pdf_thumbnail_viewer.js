@@ -14,7 +14,7 @@
  */
 
 import {
-  getVisibleElements, scrollIntoView, watchScroll
+  getVisibleElements, NullL10n, scrollIntoView, watchScroll
 } from './ui_utils';
 import { PDFThumbnailView } from './pdf_thumbnail_view';
 
@@ -26,6 +26,7 @@ var THUMBNAIL_SCROLL_MARGIN = -19;
  *   elements.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {IL10n} l10n - Localization service.
  */
 
 /**
@@ -42,6 +43,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
     this.container = options.container;
     this.renderingQueue = options.renderingQueue;
     this.linkService = options.linkService;
+    this.l10n = options.l10n || NullL10n;
 
     this.scroll = watchScroll(this.container, this._scrollUpdated.bind(this));
     this._resetView();
@@ -142,6 +144,7 @@ var PDFThumbnailViewer = (function PDFThumbnailViewerClosure() {
             linkService: this.linkService,
             renderingQueue: this.renderingQueue,
             disableCanvasToImageConversion: false,
+            l10n: this.l10n,
           });
           this.thumbnails.push(thumbnail);
         }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { CSS_UNITS, mozL10n } from './ui_utils';
+import { CSS_UNITS, NullL10n } from './ui_utils';
 import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
 import { PDFJS } from 'pdfjs-lib';
 
@@ -57,10 +57,11 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
   });
 }
 
-function PDFPrintService(pdfDocument, pagesOverview, printContainer) {
+function PDFPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
   this.pdfDocument = pdfDocument;
   this.pagesOverview = pagesOverview;
   this.printContainer = printContainer;
+  this.l10n = l10n || NullL10n;
   this.currentPage = -1;
   // The temporary canvas where renderPage paints one page at a time.
   this.scratchCanvas = document.createElement('canvas');
@@ -130,12 +131,12 @@ PDFPrintService.prototype = {
     var renderNextPage = (resolve, reject) => {
       this.throwIfInactive();
       if (++this.currentPage >= pageCount) {
-        renderProgress(pageCount, pageCount);
+        renderProgress(pageCount, pageCount, this.l10n);
         resolve();
         return;
       }
       var index = this.currentPage;
-      renderProgress(index, pageCount);
+      renderProgress(index, pageCount, this.l10n);
       renderPage(this, this.pdfDocument, index + 1, this.pagesOverview[index])
         .then(this.useRenderedPage.bind(this))
         .then(function () {
@@ -255,14 +256,16 @@ function abort() {
   }
 }
 
-function renderProgress(index, total) {
+function renderProgress(index, total, l10n) {
   var progressContainer = document.getElementById('printServiceOverlay');
   var progress = Math.round(100 * index / total);
   var progressBar = progressContainer.querySelector('progress');
   var progressPerc = progressContainer.querySelector('.relative-progress');
   progressBar.value = progress;
-  progressPerc.textContent = mozL10n.get('print_progress_percent',
-    { progress, }, progress + '%');
+  l10n.get('print_progress_percent', { progress, }, progress + '%').
+      then((msg) => {
+    progressPerc.textContent = msg;
+  });
 }
 
 var hasAttachEvent = !!document.attachEvent;
@@ -327,12 +330,12 @@ function ensureOverlay() {
 PDFPrintServiceFactory.instance = {
   supportsPrinting: true,
 
-  createPrintService(pdfDocument, pagesOverview, printContainer) {
+  createPrintService(pdfDocument, pagesOverview, printContainer, l10n) {
     if (activeService) {
       throw new Error('The print service is created and active.');
     }
     activeService = new PDFPrintService(pdfDocument, pagesOverview,
-                                        printContainer);
+                                        printContainer, l10n);
     return activeService;
   }
 };
