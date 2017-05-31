@@ -67,10 +67,11 @@ function getIntPref(aPref, aDefaultValue) {
 }
 
 function isDefaultHandler() {
- if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
-   return PdfjsContentUtils.isDefaultHandlerApp();
- }
- return PdfjsChromeUtils.isDefaultHandlerApp();
+  if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
+    throw new Error("isDefaultHandler should only get called in the parent " +
+                    "process.");
+  }
+  return PdfjsChromeUtils.isDefaultHandlerApp();
 }
 
 function initializeDefaultPreferences() {
@@ -251,13 +252,16 @@ var PdfJs = {
 
   // nsIObserver
   observe: function observe(aSubject, aTopic, aData) {
-    this.updateRegistration();
-    if (Services.appinfo.processType ===
+    if (Services.appinfo.processType !==
         Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
-      let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
-      PdfjsChromeUtils.notifyChildOfSettingsChange();
+      throw new Error("Only the parent process should be observing PDF " +
+                      "handler changes.");
     }
+
+    this.updateRegistration();
+    let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
+    let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
+    PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
   },
 
   /**
