@@ -142,6 +142,7 @@ function createWebpackConfig(defines, output) {
       alias: {
         'pdfjs': path.join(__dirname, 'src'),
         'pdfjs-web': path.join(__dirname, 'web'),
+        'pdfjs-lib': path.join(__dirname, 'web/pdfjs'),
       }
     },
     devtool: enableSourceMaps ? 'source-map' : undefined,
@@ -1008,7 +1009,10 @@ gulp.task('lib', ['buildnumber'], function () {
       LIB: true,
       BUNDLE_VERSION: versionInfo.version,
       BUNDLE_BUILD: versionInfo.commit
-    })
+    }),
+    map: {
+      'pdfjs-lib': '../pdf'
+    }
   };
   var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
@@ -1021,6 +1025,7 @@ gulp.task('lib', ['buildnumber'], function () {
     ], {base: 'src/'}),
     gulp.src([
       'web/*.js',
+      '!web/pdfjs.js',
       '!web/viewer.js',
       '!web/compatibility.js',
     ], {base: '.'}),

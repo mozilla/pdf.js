@@ -14,7 +14,7 @@
  */
 
 import { cloneObj, getPDFFileNameFromURL, mozL10n } from './ui_utils';
-import { createPromiseCapability } from './pdfjs';
+import { createPromiseCapability } from 'pdfjs-lib';
 
 const DEFAULT_FIELD_CONTENT = '-';
 
