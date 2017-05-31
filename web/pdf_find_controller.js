@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability } from './pdfjs';
+import { createPromiseCapability } from 'pdfjs-lib';
 import { scrollIntoView } from './ui_utils';
 
 var FindStates = {

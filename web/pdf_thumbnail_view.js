@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, RenderingCancelledException } from './pdfjs';
+import {
+  createPromiseCapability, RenderingCancelledException
+} from 'pdfjs-lib';
 import { getOutputScale, mozL10n } from './ui_utils';
 import { RenderingStates } from './pdf_rendering_queue';
 

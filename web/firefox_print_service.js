@@ -15,7 +15,7 @@
 
 import { CSS_UNITS } from './ui_utils';
 import { PDFPrintServiceFactory } from './app';
-import { shadow } from './pdfjs';
+import { shadow } from 'pdfjs-lib';
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(pdfDocument, pageNumber, size, printContainer) {

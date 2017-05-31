@@ -15,7 +15,7 @@
 
 import { CSS_UNITS, mozL10n } from './ui_utils';
 import { PDFPrintServiceFactory, PDFViewerApplication } from './app';
-import { PDFJS } from './pdfjs';
+import { PDFJS } from 'pdfjs-lib';
 
 let activeService = null;
 let overlayManager = null;

@@ -17,7 +17,7 @@
 import { DefaultExternalServices, PDFViewerApplication } from './app';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
-import { PDFJS } from './pdfjs';
+import { PDFJS } from 'pdfjs-lib';
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('CHROME')) {
   throw new Error('Module "pdfjs-web/chromecom" shall not be used outside ' +
