@@ -14,7 +14,7 @@
  */
 
 import { getGlobalEventBus } from './dom_events';
-import { renderTextLayer } from './pdfjs';
+import { renderTextLayer } from 'pdfjs-lib';
 
 var EXPAND_DIVS_TIMEOUT = 300; // ms
 

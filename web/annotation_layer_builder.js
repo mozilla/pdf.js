@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { AnnotationLayer } from './pdfjs';
+import { AnnotationLayer } from 'pdfjs-lib';
 import { mozL10n } from './ui_utils';
 import { SimpleLinkService } from './pdf_link_service';
 

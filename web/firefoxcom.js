@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createObjectURL, PDFDataRangeTransport, shadow } from './pdfjs';
+import { createObjectURL, PDFDataRangeTransport, shadow } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
 import { PDFViewerApplication } from './app';
 
