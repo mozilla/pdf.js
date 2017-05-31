@@ -21,7 +21,7 @@ var data = new Uint8Array(fs.readFileSync(pdfPath));
 function writeToFile(svgdump, pageNum) {
   var name = getFileNameFromPath(pdfPath);
   if(!fs.existsSync('./svgdump/')) {
-    fs.mkdirSync('./svgdump/')
+    fs.mkdirSync('./svgdump/');
   }
 
   try {
