@@ -23,7 +23,13 @@ function writeToFile(svgdump, pageNum) {
   if(!fs.existsSync('./svgdump/')) {
     fs.mkdirSync('./svgdump/')
   }
-  fs.writeFileSync('./svgdump/' + name + "-" + pageNum + '.svg', svgdump, 'utf-8');
+
+  try {
+    fs.writeFileSync('./svgdump/' + name + '-' + pageNum + '.svg', svgdump, 'utf-8');
+    console.log('Page: ' + pageNum);
+  } catch(err) {
+    console.log('Error: ' + err);
+  }
 }
 
 // Get filename from the path
@@ -62,7 +68,7 @@ pdfjsLib.getDocument({
           writeToFile(svgDump, pageNum);
         });
       });
-    })
+    });
   };
 
   for (var i = 1; i <= numPages; i++) {
