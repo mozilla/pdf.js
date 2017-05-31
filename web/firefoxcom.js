@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import '../extensions/firefox/tools/l10n';
 import { createObjectURL, PDFDataRangeTransport, shadow } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
 import { PDFViewerApplication } from './app';
@@ -141,6 +142,25 @@ class FirefoxPreferences extends BasePreferences {
   }
 }
 
+class MozL10n {
+  constructor(mozL10n) {
+    this.mozL10n = mozL10n;
+  }
+
+  getDirection() {
+    return Promise.resolve(this.mozL10n.getDirection());
+  }
+
+  get(property, args, fallback) {
+    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  }
+
+  translate(element) {
+    this.mozL10n.translate(element);
+    return Promise.resolve();
+  }
+}
+
 (function listenFindEvents() {
   var events = [
     'find',
@@ -248,6 +268,12 @@ PDFViewerApplication.externalServices = {
 
   createPreferences() {
     return new FirefoxPreferences();
+  },
+
+  createL10n() {
+    var mozL10n = document.mozL10n;
+    // TODO refactor mozL10n.setExternalLocalizerServices
+    return new MozL10n(mozL10n);
   },
 
   get supportsIntegratedFind() {

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { mozL10n } from './ui_utils';
+import { NullL10n } from './ui_utils';
 import { RenderingStates } from './pdf_rendering_queue';
 
 const UI_NOTIFICATION_CLASS = 'pdfSidebarNotification';
@@ -56,8 +56,9 @@ const SidebarView = {
 class PDFSidebar {
   /**
    * @param {PDFSidebarOptions} options
+   * @param {IL10n} l10n - Localization service.
    */
-  constructor(options) {
+  constructor(options, l10n = NullL10n) {
     this.isOpen = false;
     this.active = SidebarView.THUMBS;
     this.isInitialViewSet = false;
@@ -86,6 +87,8 @@ class PDFSidebar {
     this.attachmentsView = options.attachmentsView;
 
     this.disableNotification = options.disableNotification || false;
+
+    this.l10n = l10n;
 
     this._addEventListeners();
   }
@@ -310,8 +313,11 @@ class PDFSidebar {
       return;
     }
 
-    this.toggleButton.title = mozL10n.get('toggle_sidebar_notification.title',
-      null, 'Toggle Sidebar (document contains outline/attachments)');
+    this.l10n.get('toggle_sidebar_notification.title', null,
+                  'Toggle Sidebar (document contains outline/attachments)').
+        then((msg) => {
+      this.toggleButton.title = msg;
+    });
 
     if (!this.isOpen) {
       // Only show the notification on the `toggleButton` if the sidebar is
@@ -367,8 +373,10 @@ class PDFSidebar {
       removeNotification(SidebarView[view]);
     }
 
-    this.toggleButton.title = mozL10n.get('toggle_sidebar.title', null,
-                                          'Toggle Sidebar');
+    this.l10n.get('toggle_sidebar.title', null, 'Toggle Sidebar').
+        then((msg) => {
+      this.toggleButton.title = msg;
+    });
   }
 
   /**

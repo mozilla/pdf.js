@@ -16,7 +16,7 @@
 import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
-  MAX_AUTO_SCALE, RendererType, SCROLLBAR_PADDING, scrollIntoView,
+  MAX_AUTO_SCALE, NullL10n, RendererType, SCROLLBAR_PADDING, scrollIntoView,
   UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -55,6 +55,7 @@ var DEFAULT_CACHE_SIZE = 10;
  *   rotation of pages whose orientation differ from the first page upon
  *   printing. The default is `false`.
  * @property {string} renderer - 'canvas' or 'svg'. The default is 'canvas'.
+ * @property {IL10n} l10n - Localization service.
  */
 
 /**
@@ -114,6 +115,7 @@ var PDFViewer = (function pdfViewer() {
     this.renderInteractiveForms = options.renderInteractiveForms || false;
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
+    this.l10n = options.l10n || NullL10n;
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {
@@ -368,6 +370,7 @@ var PDFViewer = (function pdfViewer() {
             enhanceTextSelection: this.enhanceTextSelection,
             renderInteractiveForms: this.renderInteractiveForms,
             renderer: this.renderer,
+            l10n: this.l10n,
           });
           bindOnAfterAndBeforeDraw(pageView);
           this._pages.push(pageView);
@@ -899,16 +902,19 @@ var PDFViewer = (function pdfViewer() {
      * @param {HTMLDivElement} pageDiv
      * @param {PDFPage} pdfPage
      * @param {boolean} renderInteractiveForms
+     * @param {IL10n} l10n
      * @returns {AnnotationLayerBuilder}
      */
     createAnnotationLayerBuilder(pageDiv, pdfPage,
-                                 renderInteractiveForms = false) {
+                                 renderInteractiveForms = false,
+                                 l10n = NullL10n) {
       return new AnnotationLayerBuilder({
         pageDiv,
         pdfPage,
         renderInteractiveForms,
         linkService: this.linkService,
-        downloadManager: this.downloadManager
+        downloadManager: this.downloadManager,
+        l10n,
       });
     },
 

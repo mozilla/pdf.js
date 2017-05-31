@@ -16,6 +16,8 @@
 import { DefaultExternalServices, PDFViewerApplication } from './app';
 import { BasePreferences } from './preferences';
 import { DownloadManager } from './download_manager';
+import { GenericL10n } from './genericl10n';
+import { PDFJS } from 'pdfjs-lib';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('GENERIC')) {
   throw new Error('Module "pdfjs-web/genericcom" shall not be used outside ' +
@@ -46,6 +48,9 @@ GenericExternalServices.createDownloadManager = function() {
 };
 GenericExternalServices.createPreferences = function() {
   return new GenericPreferences();
+};
+GenericExternalServices.createL10n = function () {
+  return new GenericL10n(PDFJS.locale);
 };
 PDFViewerApplication.externalServices = GenericExternalServices;
 
