@@ -131,6 +131,8 @@ function createWebpackConfig(defines, output) {
   var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
   var enableSourceMaps = !bundleDefines.FIREFOX && !bundleDefines.MOZCENTRAL &&
                          !bundleDefines.CHROME;
+  var pdfjsNext = bundleDefines.PDFJS_NEXT ||
+                  process.env['PDFJS_NEXT'] === 'true';
 
   return {
     output: output,
@@ -152,7 +154,7 @@ function createWebpackConfig(defines, output) {
           loader: 'babel-loader',
           exclude: /src\/core\/(glyphlist|unicode)/, // babel is too slow
           options: {
-            presets: bundleDefines.PDFJS_NEXT ? undefined : ['es2015'],
+            presets: pdfjsNext ? undefined : ['es2015'],
             plugins: ['transform-es2015-modules-commonjs']
           }
         },
