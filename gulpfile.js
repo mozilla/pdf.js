@@ -1018,8 +1018,7 @@ gulp.task('lib', ['buildnumber'], function () {
   };
   var licenseHeader = fs.readFileSync('./src/license_header.js').toString();
   var preprocessor2 = require('./external/builder/preprocessor2.js');
-
-  return merge([
+  var buildLib = merge([
     gulp.src([
       'src/{core,display}/*.js',
       'src/shared/{compatibility,util}.js',
@@ -1034,6 +1033,11 @@ gulp.task('lib', ['buildnumber'], function () {
     gulp.src('test/unit/*.js', {base: '.'}),
   ]).pipe(transform(preprocess))
     .pipe(gulp.dest('build/lib/'));
+  return merge([
+    buildLib,
+    gulp.src('external/streams/streams-lib.js', {base: '.'})
+      .pipe(gulp.dest('build/')),
+  ]);
 });
 
 gulp.task('web-pre', ['generic', 'extension', 'jsdoc']);
@@ -1327,6 +1331,8 @@ gulp.task('dist-repo-prepare', ['dist-pre'], function () {
     createStringSource('bower.json', JSON.stringify(bowerManifest, null, 2));
 
   return merge([
+    gulp.src('external/streams/streams-lib.js', {base: '.'})
+      .pipe(gulp.dest('build/dist/')),
     packageJsonSrc.pipe(gulp.dest(DIST_DIR)),
     bowerJsonSrc.pipe(gulp.dest(DIST_DIR)),
     vinyl.src('external/dist/**/*',
