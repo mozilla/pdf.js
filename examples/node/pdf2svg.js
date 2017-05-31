@@ -20,7 +20,7 @@ var data = new Uint8Array(fs.readFileSync(pdfPath));
 // Dumps svg outputs to a folder called svgdump
 function writeToFile(svgdump, pageNum) {
   var name = getFileNameFromPath(pdfPath);
-  if(!fs.existsSync('./svgdump/')) {
+  if (!fs.existsSync('./svgdump/')) {
     fs.mkdirSync('./svgdump/');
   }
 
