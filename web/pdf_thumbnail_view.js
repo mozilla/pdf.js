@@ -123,7 +123,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
     var anchor = document.createElement('a');
     anchor.href = linkService.getAnchorUrl('#page=' + id);
-    this.l10n.get('thumb_page_title', {page: id}, 'Page {{page}}').
+    this.l10n.get('thumb_page_title', { page: id, }, 'Page {{page}}').
         then((msg) => {
       anchor.title = msg;
     });
@@ -205,7 +205,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       var totalRotation = (this.rotation + this.pdfPageRotate) % 360;
       this.viewport = this.viewport.clone({
         scale: 1,
-        rotation: totalRotation
+        rotation: totalRotation,
       });
       this.reset();
     },
@@ -233,7 +233,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
           PDFJSDev.test('MOZCENTRAL || FIREFOX || GENERIC')) {
         canvas.mozOpaque = true;
       }
-      var ctx = canvas.getContext('2d', {alpha: false});
+      var ctx = canvas.getContext('2d', { alpha: false, });
       var outputScale = getOutputScale(ctx);
 
       canvas.width = (this.canvasWidth * outputScale.sx) | 0;
@@ -263,7 +263,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       if (this.disableCanvasToImageConversion) {
         this.canvas.id = id;
         this.canvas.className = className;
-        this.l10n.get('thumb_page_canvas', { page: this.pageId },
+        this.l10n.get('thumb_page_canvas', { page: this.pageId, },
                       'Thumbnail of Page {{page}}').then((msg) => {
           this.canvas.setAttribute('aria-label', msg);
         });
@@ -275,7 +275,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
       var image = document.createElement('img');
       image.id = id;
       image.className = className;
-      this.l10n.get('thumb_page_canvas', { page: this.pageId },
+      this.l10n.get('thumb_page_canvas', { page: this.pageId, },
         'Thumbnail of Page {{page}}').
           then((msg) => {
         image.setAttribute('aria-label', msg);
@@ -348,7 +348,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
 
       let renderContext = {
         canvasContext: ctx,
-        viewport: drawViewport
+        viewport: drawViewport,
       };
       let renderTask = this.renderTask = this.pdfPage.render(renderContext);
       renderTask.onContinue = renderContinueCallback;
@@ -420,8 +420,8 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
     setPageLabel: function PDFThumbnailView_setPageLabel(label) {
       this.pageLabel = (typeof label === 'string' ? label : null);
 
-      this.l10n.get('thumb_page_title', { page: this.pageId }, 'Page {{page}}').
-          then((msg) => {
+      this.l10n.get('thumb_page_title', { page: this.pageId, },
+                    'Page {{page}}').then((msg) => {
         this.anchor.title = msg;
       });
 
@@ -429,7 +429,7 @@ var PDFThumbnailView = (function PDFThumbnailViewClosure() {
         return;
       }
 
-      this.l10n.get('thumb_page_canvas', { page: this.pageId },
+      this.l10n.get('thumb_page_canvas', { page: this.pageId, },
                     'Thumbnail of Page {{page}}').then((ariaLabel) => {
         if (this.image) {
           this.image.setAttribute('aria-label', ariaLabel);

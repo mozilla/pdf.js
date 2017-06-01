@@ -189,7 +189,7 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
           this.eventBus.dispatch('findfromurlhash', {
             source: this,
             query: params['search'].replace(/"/g, ''),
-            phraseSearch: (params['phrase'] === 'true')
+            phraseSearch: (params['phrase'] === 'true'),
           });
         }
         // borrowing syntax from "Parameters for Opening PDF Files"
@@ -212,23 +212,23 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
           if (zoomArg.indexOf('Fit') === -1) {
             // If the zoomArg is a number, it has to get divided by 100. If it's
             // a string, it should stay as it is.
-            dest = [null, { name: 'XYZ' },
+            dest = [null, { name: 'XYZ', },
                     zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null,
                     zoomArgs.length > 2 ? (zoomArgs[2] | 0) : null,
                     (zoomArgNumber ? zoomArgNumber / 100 : zoomArg)];
           } else {
             if (zoomArg === 'Fit' || zoomArg === 'FitB') {
-              dest = [null, { name: zoomArg }];
+              dest = [null, { name: zoomArg, }];
             } else if ((zoomArg === 'FitH' || zoomArg === 'FitBH') ||
                        (zoomArg === 'FitV' || zoomArg === 'FitBV')) {
-              dest = [null, { name: zoomArg },
+              dest = [null, { name: zoomArg, },
                       zoomArgs.length > 1 ? (zoomArgs[1] | 0) : null];
             } else if (zoomArg === 'FitR') {
               if (zoomArgs.length !== 5) {
                 console.error('PDFLinkService_setHash: ' +
                               'Not enough parameters for \'FitR\'.');
               } else {
-                dest = [null, { name: zoomArg },
+                dest = [null, { name: zoomArg, },
                         (zoomArgs[1] | 0), (zoomArgs[2] | 0),
                         (zoomArgs[3] | 0), (zoomArgs[4] | 0)];
               }
@@ -250,7 +250,7 @@ var PDFLinkService = (function PDFLinkServiceClosure() {
         if ('pagemode' in params) {
           this.eventBus.dispatch('pagemode', {
             source: this,
-            mode: params.pagemode
+            mode: params.pagemode,
           });
         }
       } else { // Named (or explicit) destination.
@@ -465,7 +465,7 @@ var SimpleLinkService = (function SimpleLinkServiceClosure() {
      * @param {number} pageNum - page number.
      * @param {Object} pageRef - reference to the page.
      */
-    cachePageRef(pageNum, pageRef) {}
+    cachePageRef(pageNum, pageRef) {},
   };
   return SimpleLinkService;
 })();

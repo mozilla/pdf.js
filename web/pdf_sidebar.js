@@ -22,7 +22,7 @@ const SidebarView = {
   NONE: 0,
   THUMBS: 1,
   OUTLINE: 2,
-  ATTACHMENTS: 3
+  ATTACHMENTS: 3,
 };
 
 /**

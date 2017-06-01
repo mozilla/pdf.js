@@ -68,7 +68,7 @@ PDFHistory.prototype = {
         // is opened in the web viewer.
         this.reInitialized = true;
       }
-      this._pushOrReplaceState({fingerprint: this.fingerprint}, true);
+      this._pushOrReplaceState({ fingerprint: this.fingerprint, }, true);
     }
 
     var self = this;
@@ -95,8 +95,8 @@ PDFHistory.prototype = {
         // Replace the previous state if it was not explicitly set.
         var previousParams = (self.previousHash && self.currentBookmark &&
           self.previousHash !== self.currentBookmark) ?
-          {hash: self.currentBookmark, page: self.currentPage} :
-          {page: 1};
+          { hash: self.currentBookmark, page: self.currentPage, } :
+          { page: 1, };
         replacePreviousHistoryState(previousParams, function() {
           updateHistoryWithCurrentHash();
         });
@@ -108,7 +108,7 @@ PDFHistory.prototype = {
 
     function updateHistoryWithCurrentHash() {
       self.previousHash = window.location.hash.slice(1);
-      self._pushToHistory({hash: self.previousHash}, false, true);
+      self._pushToHistory({ hash: self.previousHash, }, false, true);
       self._updatePreviousBookmark();
     }
 
@@ -329,7 +329,7 @@ PDFHistory.prototype = {
     } else {
       return null;
     }
-    var params = {hash: this.currentBookmark, page: this.currentPage};
+    var params = { hash: this.currentBookmark, page: this.currentPage, };
     if (this.isViewerInPresentationMode) {
       params.hash = null;
     }
@@ -337,7 +337,7 @@ PDFHistory.prototype = {
   },
 
   _stateObj: function pdfHistory_stateObj(params) {
-    return {fingerprint: this.fingerprint, uid: this.uid, target: params};
+    return { fingerprint: this.fingerprint, uid: this.uid, target: params, };
   },
 
   _pushToHistory: function pdfHistory_pushToHistory(params,
@@ -418,7 +418,7 @@ PDFHistory.prototype = {
         window.history.forward();
       }
     }
-  }
+  },
 };
 
 export {

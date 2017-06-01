@@ -34,7 +34,7 @@ function attachDOMEventsToEventBus(eventBus) {
   eventBus.on('textlayerrendered', function (e) {
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('textlayerrendered', true, true, {
-      pageNumber: e.pageNumber
+      pageNumber: e.pageNumber,
     });
     e.source.textLayerDiv.dispatchEvent(event);
   });
@@ -52,7 +52,7 @@ function attachDOMEventsToEventBus(eventBus) {
   eventBus.on('pagesloaded', function (e) {
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('pagesloaded', true, true, {
-      pagesCount: e.pagesCount
+      pagesCount: e.pagesCount,
     });
     e.source.container.dispatchEvent(event);
   });
@@ -79,14 +79,14 @@ function attachDOMEventsToEventBus(eventBus) {
       phraseSearch: e.phraseSearch,
       caseSensitive: e.caseSensitive,
       highlightAll: e.highlightAll,
-      findPrevious: e.findPrevious
+      findPrevious: e.findPrevious,
     });
     window.dispatchEvent(event);
   });
   eventBus.on('attachmentsloaded', function (e) {
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('attachmentsloaded', true, true, {
-      attachmentsCount: e.attachmentsCount
+      attachmentsCount: e.attachmentsCount,
     });
     e.source.container.dispatchEvent(event);
   });
@@ -107,7 +107,7 @@ function attachDOMEventsToEventBus(eventBus) {
   eventBus.on('namedaction', function (e) {
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('namedaction', true, true, {
-      action: e.action
+      action: e.action,
     });
     e.source.pdfViewer.container.dispatchEvent(event);
   });
@@ -115,14 +115,14 @@ function attachDOMEventsToEventBus(eventBus) {
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('presentationmodechanged', true, true, {
       active: e.active,
-      switchInProgress: e.switchInProgress
+      switchInProgress: e.switchInProgress,
     });
     window.dispatchEvent(event);
   });
   eventBus.on('outlineloaded', function (e) {
     var event = document.createEvent('CustomEvent');
     event.initCustomEvent('outlineloaded', true, true, {
-      outlineCount: e.outlineCount
+      outlineCount: e.outlineCount,
     });
     e.source.container.dispatchEvent(event);
   });

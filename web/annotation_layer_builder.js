@@ -49,7 +49,7 @@ class AnnotationLayerBuilder {
   render(viewport, intent = 'display') {
     this.pdfPage.getAnnotations({ intent, }).then((annotations) => {
       var parameters = {
-        viewport: viewport.clone({ dontFlip: true }),
+        viewport: viewport.clone({ dontFlip: true, }),
         div: this.div,
         annotations,
         page: this.pdfPage,
