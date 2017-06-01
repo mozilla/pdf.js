@@ -39,5 +39,5 @@ this.PdfJsTelemetry = {
   onStreamType(streamTypeId) {
   },
   onTimeToView(ms) {
-  }
+  },
 };

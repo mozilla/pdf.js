@@ -103,7 +103,7 @@ function watchObjectOrEmbed(elem) {
     attributes: true,
     childList: false,
     characterData: false,
-    attributeFilter: [srcAttribute]
+    attributeFilter: [srcAttribute],
   });
 }
 
