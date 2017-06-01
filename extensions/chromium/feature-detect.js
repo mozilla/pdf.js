@@ -95,12 +95,12 @@ function featureTestRedirectOnHeadersReceived(callback) {
     // If supported, the request is redirected.
     // If not supported, the return value is ignored.
     return {
-      redirectUrl: chrome.runtime.getURL('/manifest.json')
+      redirectUrl: chrome.runtime.getURL('/manifest.json'),
     };
   }
   chrome.webRequest.onHeadersReceived.addListener(onHeadersReceived, {
     types: ['xmlhttprequest'],
-    urls: [url]
+    urls: [url],
   }, ['blocking']);
 
   var x = new XMLHttpRequest();
