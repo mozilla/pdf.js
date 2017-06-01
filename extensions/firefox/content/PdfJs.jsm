@@ -126,7 +126,7 @@ Factory.prototype = {
       registrar.unregisterFactory(this._classID2, this._factory);
     }
     this._factory = null;
-  }
+  },
 };
 
 var PdfJs = {
@@ -325,5 +325,5 @@ var PdfJs = {
     delete this._pdfStreamConverterFactory;
 
     this._registered = false;
-  }
+  },
 };

@@ -103,12 +103,12 @@ function getHeadersWithContentDispositionAttachment(details) {
   var headers = details.responseHeaders;
   var cdHeader = getHeaderFromHeaders(headers, 'content-disposition');
   if (!cdHeader) {
-    cdHeader = {name: 'Content-Disposition'};
+    cdHeader = { name: 'Content-Disposition', };
     headers.push(cdHeader);
   }
   if (!/^attachment/i.test(cdHeader.value)) {
     cdHeader.value = 'attachment' + cdHeader.value.replace(/^[^;]+/i, '');
-    return { responseHeaders: headers };
+    return { responseHeaders: headers, };
   }
 }
 
@@ -133,7 +133,7 @@ chrome.webRequest.onHeadersReceived.addListener(
 
     // Replace frame with viewer
     if (Features.webRequestRedirectUrl) {
-      return { redirectUrl: viewerUrl };
+      return { redirectUrl: viewerUrl, };
     }
     // Aww.. redirectUrl is not yet supported, so we have to use a different
     // method as fallback (Chromium <35).
@@ -141,9 +141,9 @@ chrome.webRequest.onHeadersReceived.addListener(
     if (details.frameId === 0) {
       // Main frame. Just replace the tab and be done!
       chrome.tabs.update(details.tabId, {
-        url: viewerUrl
+        url: viewerUrl,
       });
-      return { cancel: true };
+      return { cancel: true, };
     }
     console.warn('Child frames are not supported in ancient Chrome builds!');
   },
@@ -151,7 +151,7 @@ chrome.webRequest.onHeadersReceived.addListener(
     urls: [
       '<all_urls>'
     ],
-    types: ['main_frame', 'sub_frame']
+    types: ['main_frame', 'sub_frame'],
   },
   ['blocking', 'responseHeaders']);
 
@@ -165,14 +165,14 @@ chrome.webRequest.onBeforeRequest.addListener(
       return;
     }
     var viewerUrl = getViewerURL(details.url);
-    return { redirectUrl: viewerUrl };
+    return { redirectUrl: viewerUrl, };
   },
   {
     urls: [
       'ftp://*/*.pdf',
       'ftp://*/*.PDF'
     ],
-    types: ['main_frame', 'sub_frame']
+    types: ['main_frame', 'sub_frame'],
   },
   ['blocking']);
 
@@ -187,14 +187,14 @@ chrome.webRequest.onBeforeRequest.addListener(
     // through XMLHttpRequest. Necessary to deal with http://crbug.com/302548
     var viewerUrl = getViewerURL(details.url);
 
-    return { redirectUrl: viewerUrl };
+    return { redirectUrl: viewerUrl, };
   },
   {
     urls: [
       'file://*/*.pdf',
       'file://*/*.PDF'
     ],
-    types: ['main_frame', 'sub_frame']
+    types: ['main_frame', 'sub_frame'],
   },
   ['blocking']);
 
@@ -210,17 +210,17 @@ chrome.extension.isAllowedFileSchemeAccess(function(isAllowedAccess) {
   chrome.webNavigation.onBeforeNavigate.addListener(function(details) {
     if (details.frameId === 0 && !isPdfDownloadable(details)) {
       chrome.tabs.update(details.tabId, {
-        url: getViewerURL(details.url)
+        url: getViewerURL(details.url),
       });
     }
   }, {
     url: [{
       urlPrefix: 'file://',
-      pathSuffix: '.pdf'
+      pathSuffix: '.pdf',
     }, {
       urlPrefix: 'file://',
-      pathSuffix: '.PDF'
-    }]
+      pathSuffix: '.PDF',
+    }],
   });
 });
 
@@ -262,11 +262,11 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         windowId: sender.tab.windowId,
         index: sender.tab.index + 1,
         url: url,
-        openerTabId: sender.tab.id
+        openerTabId: sender.tab.id,
       });
     } else {
       chrome.tabs.update(sender.tab.id, {
-        url: url
+        url: url,
       });
     }
   }
