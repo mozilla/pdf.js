@@ -49,7 +49,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
         canvasContext: ctx,
         transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
         viewport: pdfPage.getViewport(1, size.rotation),
-        intent: 'print'
+        intent: 'print',
       };
       return pdfPage.render(renderContext).promise;
     }).then(function() {
@@ -88,7 +88,7 @@ FirefoxPrintService.prototype = {
 
   destroy() {
     this.printContainer.textContent = '';
-  }
+  },
 };
 
 PDFPrintServiceFactory.instance = {
@@ -101,7 +101,7 @@ PDFPrintServiceFactory.instance = {
 
   createPrintService(pdfDocument, pagesOverview, printContainer) {
     return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
-  }
+  },
 };
 
 export {

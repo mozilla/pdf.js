@@ -147,8 +147,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var match = {
           begin: {
             divIdx: i,
-            offset: matchIdx - iIndex
-          }
+            offset: matchIdx - iIndex,
+          },
         };
 
         // Calculate the end position.
@@ -167,7 +167,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
         match.end = {
           divIdx: i,
-          offset: matchIdx - iIndex
+          offset: matchIdx - iIndex,
         };
         ret.push(match);
       }
@@ -193,7 +193,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
                           false : this.findController.state.highlightAll);
       var infinity = {
         divIdx: -1,
-        offset: undefined
+        offset: undefined,
       };
 
       function beginText(begin, className) {
@@ -405,7 +405,7 @@ DefaultTextLayerFactory.prototype = {
       viewport,
       enhanceTextSelection,
     });
-  }
+  },
 };
 
 export {

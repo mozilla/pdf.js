@@ -75,10 +75,10 @@ var FirefoxCom = (function FirefoxComClosure() {
         action,
         data,
         sync: false,
-        responseExpected: !!callback
+        responseExpected: !!callback,
       });
       return request.dispatchEvent(sender);
-    }
+    },
   };
 })();
 
@@ -101,7 +101,7 @@ var DownloadManager = (function DownloadManagerClosure() {
         blobUrl,
         originalUrl: blobUrl,
         filename,
-        isAttachment: true
+        isAttachment: true,
       });
     },
 
@@ -119,7 +119,7 @@ var DownloadManager = (function DownloadManagerClosure() {
         originalUrl: url,
         filename,
       }, onResponse);
-    }
+    },
   };
 
   return DownloadManager;
@@ -179,7 +179,7 @@ class MozL10n {
       phraseSearch: true,
       caseSensitive: !!evt.detail.caseSensitive,
       highlightAll: !!evt.detail.highlightAll,
-      findPrevious: !!evt.detail.findPrevious
+      findPrevious: !!evt.detail.findPrevious,
     });
   };
 
@@ -305,7 +305,7 @@ document.mozL10n.setExternalLocalizerServices({
 
   getStrings(key) {
     return FirefoxCom.requestSync('getStrings', key);
-  }
+  },
 });
 
 export {
