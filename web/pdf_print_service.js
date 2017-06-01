@@ -46,7 +46,7 @@ function renderPage(activeServiceOnEntry, pdfDocument, pageNumber, size) {
       canvasContext: ctx,
       transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
       viewport: pdfPage.getViewport(1, size.rotation),
-      intent: 'print'
+      intent: 'print',
     };
     return pdfPage.render(renderContext).promise;
   }).then(function () {
@@ -337,7 +337,7 @@ PDFPrintServiceFactory.instance = {
     activeService = new PDFPrintService(pdfDocument, pagesOverview,
                                         printContainer, l10n);
     return activeService;
-  }
+  },
 };
 
 export {

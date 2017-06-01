@@ -171,7 +171,7 @@ class PDFOutlineViewer {
     }
 
     var fragment = document.createDocumentFragment();
-    var queue = [{ parent: fragment, items: this.outline }];
+    var queue = [{ parent: fragment, items: this.outline, }];
     var hasAnyNesting = false;
     while (queue.length > 0) {
       var levelData = queue.shift();
@@ -196,7 +196,7 @@ class PDFOutlineViewer {
           var itemsDiv = document.createElement('div');
           itemsDiv.className = 'outlineItems';
           div.appendChild(itemsDiv);
-          queue.push({ parent: itemsDiv, items: item.items });
+          queue.push({ parent: itemsDiv, items: item.items, });
         }
 
         levelData.parent.appendChild(div);
