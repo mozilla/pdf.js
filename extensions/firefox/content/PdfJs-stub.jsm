@@ -22,5 +22,5 @@
 var EXPORTED_SYMBOLS = ["PdfJs"];
 
 var PdfJs = {
-  init: function PdfJs_init() {}
+  init: function PdfJs_init() {},
 };

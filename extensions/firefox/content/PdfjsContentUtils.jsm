@@ -76,35 +76,35 @@ var PdfjsContentUtils = {
 
   clearUserPref(aPrefName) {
     this._mm.sendSyncMessage("PDFJS:Parent:clearUserPref", {
-      name: aPrefName
+      name: aPrefName,
     });
   },
 
   setIntPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setIntPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
   setBoolPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setBoolPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
   setCharPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setCharPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
   setStringPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setStringPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
@@ -155,5 +155,5 @@ var PdfjsContentUtils = {
         }
         break;
     }
-  }
+  },
 };

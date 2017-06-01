@@ -44,7 +44,7 @@ var g_referrers = {};
 (function() {
   var requestFilter = {
     urls: ['*://*/*'],
-    types: ['main_frame', 'sub_frame']
+    types: ['main_frame', 'sub_frame'],
   };
   chrome.webRequest.onSendHeaders.addListener(function(details) {
     g_requestHeaders[details.requestId] = details.requestHeaders;
@@ -104,7 +104,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, {
         urls: [data.requestUrl],
         types: ['xmlhttprequest'],
-        tabId: tabId
+        tabId: tabId,
       }, ['blocking', 'requestHeaders']);
     }
     // Acknowledge the message, and include the latest referer for this frame.
@@ -126,7 +126,7 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
     var headers = details.requestHeaders;
     var refererHeader = getHeaderFromHeaders(headers, 'referer');
     if (!refererHeader) {
-      refererHeader = {name: 'Referer'};
+      refererHeader = { name: 'Referer', };
       headers.push(refererHeader);
     } else if (refererHeader.value &&
         refererHeader.value.lastIndexOf('chrome-extension:', 0) !== 0) {
@@ -135,6 +135,6 @@ chrome.runtime.onConnect.addListener(function onReceivePort(port) {
       return;
     }
     refererHeader.value = referer;
-    return {requestHeaders: headers};
+    return { requestHeaders: headers, };
   }
 });

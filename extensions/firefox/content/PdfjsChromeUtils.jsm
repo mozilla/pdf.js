@@ -197,7 +197,7 @@ var PdfjsChromeUtils = {
       query: aEvent.detail.query,
       caseSensitive: aEvent.detail.caseSensitive,
       highlightAll: aEvent.detail.highlightAll,
-      findPrevious: aEvent.detail.findPrevious
+      findPrevious: aEvent.detail.findPrevious,
     };
 
     let browser = aEvent.currentTarget.browser;
@@ -331,7 +331,7 @@ var PdfjsChromeUtils = {
       callback() {
         messageSent = true;
         sendMessage(true);
-      }
+      },
     }];
     notificationBox.appendNotification(data.message, "pdfjs-fallback", null,
                                        notificationBox.PRIORITY_INFO_LOW,
@@ -349,5 +349,5 @@ var PdfjsChromeUtils = {
       }
       sendMessage(false);
     });
-  }
+  },
 };

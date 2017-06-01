@@ -49,7 +49,7 @@ limitations under the License.
       chrome.windows.getLastFocused(function(chromeWindow) {
         var windowId = chromeWindow && chromeWindow.id;
         if (windowId) {
-          chrome.windows.update(windowId, { focused: true });
+          chrome.windows.update(windowId, { focused: true, });
         }
         openViewer(windowId, fileEntries);
       });
@@ -77,7 +77,7 @@ limitations under the License.
       chrome.tabs.create({
         windowId: windowId,
         active: true,
-        url: url
+        url: url,
       }, function() {
         openViewer(windowId, fileEntries);
       });
@@ -85,7 +85,7 @@ limitations under the License.
       chrome.windows.create({
         type: 'normal',
         focused: true,
-        url: url
+        url: url,
       }, function(chromeWindow) {
         openViewer(chromeWindow.id, fileEntries);
       });

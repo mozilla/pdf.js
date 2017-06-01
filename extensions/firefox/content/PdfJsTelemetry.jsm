@@ -65,5 +65,5 @@ this.PdfJsTelemetry = {
   onTimeToView(ms) {
     let histogram = Services.telemetry.getHistogramById("PDF_VIEWER_TIME_TO_VIEW_MS");
     histogram.add(ms);
-  }
+  },
 };
