@@ -201,12 +201,12 @@ class PDFDocumentProperties {
     } else if (kb < 1024) {
       return this.l10n.get('document_properties_kb', {
         size_kb: (+kb.toPrecision(3)).toLocaleString(),
-        size_b: fileSize.toLocaleString()
+        size_b: fileSize.toLocaleString(),
       }, '{{size_kb}} KB ({{size_b}} bytes)');
     }
     return this.l10n.get('document_properties_mb', {
       size_mb: (+(kb / 1024).toPrecision(3)).toLocaleString(),
-      size_b: fileSize.toLocaleString()
+      size_b: fileSize.toLocaleString(),
     }, '{{size_mb}} MB ({{size_b}} bytes)');
   }
 
@@ -256,7 +256,7 @@ class PDFDocumentProperties {
     var dateString = date.toLocaleDateString();
     var timeString = date.toLocaleTimeString();
     return this.l10n.get('document_properties_date_string',
-                         { date: dateString, time: timeString },
+                         { date: dateString, time: timeString, },
                          '{{date}}, {{time}}');
   }
 }

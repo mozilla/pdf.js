@@ -208,7 +208,7 @@ function requestAccessToLocalFile(fileUrl, overlayManager) {
       // checkbox causes the extension to reload, and Chrome will close all
       // tabs upon reload.
       ChromeCom.request('openExtensionsPageForFileAccess', {
-        newTab: e.ctrlKey || e.metaKey || e.button === 1 || window !== top
+        newTab: e.ctrlKey || e.metaKey || e.button === 1 || window !== top,
       });
     };
 
@@ -254,14 +254,14 @@ function setReferer(url, callback) {
   if (!port) {
     // The background page will accept the port, and keep adding the Referer
     // request header to requests to |url| until the port is disconnected.
-    port = chrome.runtime.connect({name: 'chromecom-referrer'});
+    port = chrome.runtime.connect({ name: 'chromecom-referrer', });
   }
   port.onDisconnect.addListener(onDisconnect);
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.
   port.postMessage({
     referer: window.history.state && window.history.state.chromecomState,
-    requestUrl: url
+    requestUrl: url,
   });
 
   function onMessage(referer) {

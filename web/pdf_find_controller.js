@@ -20,7 +20,7 @@ var FindStates = {
   FIND_FOUND: 0,
   FIND_NOTFOUND: 1,
   FIND_WRAPPED: 2,
-  FIND_PENDING: 3
+  FIND_PENDING: 3,
 };
 
 var FIND_SCROLL_OFFSET_TOP = -50;
@@ -70,11 +70,11 @@ var PDFFindController = (function PDFFindControllerClosure() {
       this.matchCount = 0;
       this.selected = { // Currently selected match.
         pageIdx: -1,
-        matchIdx: -1
+        matchIdx: -1,
       };
       this.offset = { // Where the find algorithm currently is in the document.
         pageIdx: null,
-        matchIdx: null
+        matchIdx: null,
       };
       this.pagesToSearch = null;
       this.resumePageIdx = null;
@@ -180,7 +180,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
           matchesWithLength.push({
             match: matchIdx,
             matchLength: subqueryLen,
-            skipped: false
+            skipped: false,
           });
         }
       }
@@ -406,7 +406,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
           this.selected.pageIdx === pageIndex) {
         var spot = {
           top: FIND_SCROLL_OFFSET_TOP,
-          left: FIND_SCROLL_OFFSET_LEFT
+          left: FIND_SCROLL_OFFSET_LEFT,
         };
         scrollIntoView(elements[beginIdx], spot,
                        /* skipOverflowHiddenElements = */ true);
@@ -476,7 +476,7 @@ var PDFFindController = (function PDFFindControllerClosure() {
       if (this.onUpdateState) {
         this.onUpdateState(state, previous, this.matchCount);
       }
-    }
+    },
   };
   return PDFFindController;
 })();

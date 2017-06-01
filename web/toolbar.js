@@ -128,7 +128,7 @@ var Toolbar = (function ToolbarClosure() {
       items.pageNumber.addEventListener('change', function() {
         eventBus.dispatch('pagenumberchanged', {
           source: self,
-          value: this.value
+          value: this.value,
         });
       });
 
@@ -138,7 +138,7 @@ var Toolbar = (function ToolbarClosure() {
         }
         eventBus.dispatch('scalechanged', {
           source: self,
-          value: this.value
+          value: this.value,
         });
       });
 
@@ -193,7 +193,7 @@ var Toolbar = (function ToolbarClosure() {
         }
         if (!predefinedValueFound) {
           var customScale = Math.round(scale * 10000) / 100;
-          this.l10n.get('page_scale_percent', {scale: customScale},
+          this.l10n.get('page_scale_percent', { scale: customScale, },
             '{{scale}}%').
               then((msg) => {
             items.customScaleOption.textContent = msg;

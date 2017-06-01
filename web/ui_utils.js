@@ -51,7 +51,7 @@ var NullL10n = {
 
   translate(element) {
     return Promise.resolve();
-  }
+  },
 };
 
 /**
@@ -125,7 +125,7 @@ function getOutputScale(ctx) {
   return {
     sx: pixelRatio,
     sy: pixelRatio,
-    scaled: pixelRatio !== 1
+    scaled: pixelRatio !== 1,
   };
 }
 
@@ -200,7 +200,7 @@ function watchScroll(viewAreaElement, callback) {
   var state = {
     down: true,
     lastY: viewAreaElement.scrollTop,
-    _eventHandler: debounceScroll
+    _eventHandler: debounceScroll,
   };
 
   var rAF = null;
@@ -350,7 +350,7 @@ function getVisibleElements(scrollEl, views, sortByVisibility) {
       x: currentWidth,
       y: currentHeight,
       view,
-      percent: percentHeight
+      percent: percentHeight,
     });
   }
 
@@ -508,7 +508,7 @@ var EventBus = (function EventBusClosure() {
       eventListeners.slice(0).forEach(function (listener) {
         listener.apply(null, args);
       });
-    }
+    },
   };
   return EventBus;
 })();
@@ -589,7 +589,7 @@ var ProgressBar = (function ProgressBarClosure() {
       this.visible = true;
       document.body.classList.add('loadingInProgress');
       this.bar.classList.remove('hidden');
-    }
+    },
   };
 
   return ProgressBar;

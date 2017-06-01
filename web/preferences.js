@@ -57,7 +57,7 @@ class BasePreferences {
         value: Object.freeze(defaults),
         writable: false,
         enumerable: true,
-        configurable: false
+        configurable: false,
       });
 
       this.prefs = cloneObj(defaults);

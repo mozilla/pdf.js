@@ -46,7 +46,7 @@ class ViewHistory {
         }
       }
       if (typeof index !== 'number') {
-        index = database.files.push({fingerprint: this.fingerprint}) - 1;
+        index = database.files.push({ fingerprint: this.fingerprint, }) - 1;
       }
       this.file = database.files[index];
       this.database = database;

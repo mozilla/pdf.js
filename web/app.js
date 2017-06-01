@@ -22,7 +22,7 @@ import {
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
   MissingPDFException, OPS, PDFJS, shadow, UnexpectedResponseException,
-  UNSUPPORTED_FEATURES, version,
+  UNSUPPORTED_FEATURES, version
 } from 'pdfjs-lib';
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -329,7 +329,7 @@ var PDFViewerApplication = {
         container: thumbnailContainer,
         renderingQueue: pdfRenderingQueue,
         linkService: pdfLinkService,
-        l10n: this.l10n
+        l10n: this.l10n,
       });
       pdfRenderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
 
@@ -389,7 +389,7 @@ var PDFViewerApplication = {
           viewer,
           pdfViewer: this.pdfViewer,
           eventBus,
-          contextMenuItems: appConfig.fullscreen
+          contextMenuItems: appConfig.fullscreen,
         });
       }
 
@@ -543,7 +543,7 @@ var PDFViewerApplication = {
         },
         onProgress(loaded, total) {
           PDFViewerApplication.progress(loaded / total);
-        }
+        },
       });
     } else {
       throw new Error('Not implemented: initPassiveLoading');
@@ -779,25 +779,25 @@ var PDFViewerApplication = {
    */
   error: function pdfViewError(message, moreInfo) {
     let moreInfoText = [this.l10n.get('error_version_info',
-      {version: version || '?', build: build || '?'},
+      { version: version || '?', build: build || '?', },
       'PDF.js v{{version}} (build: {{build}})')];
     if (moreInfo) {
       moreInfoText.push(
-        this.l10n.get('error_message', {message: moreInfo.message},
+        this.l10n.get('error_message', { message: moreInfo.message, },
                       'Message: {{message}}'));
       if (moreInfo.stack) {
         moreInfoText.push(
-          this.l10n.get('error_stack', {stack: moreInfo.stack},
+          this.l10n.get('error_stack', { stack: moreInfo.stack, },
                         'Stack: {{stack}}'));
       } else {
         if (moreInfo.filename) {
           moreInfoText.push(
-            this.l10n.get('error_file', {file: moreInfo.filename},
+            this.l10n.get('error_file', { file: moreInfo.filename, },
                           'File: {{file}}'));
         }
         if (moreInfo.lineNumber) {
           moreInfoText.push(
-            this.l10n.get('error_line', {line: moreInfo.lineNumber},
+            this.l10n.get('error_line', { line: moreInfo.lineNumber, },
                           'Line: {{line}}'));
         }
       }
@@ -1133,7 +1133,7 @@ var PDFViewerApplication = {
       this.initialDestination = null;
     } else if (this.initialBookmark) {
       this.pdfLinkService.setHash(this.initialBookmark);
-      this.pdfHistory.push({ hash: this.initialBookmark }, true);
+      this.pdfHistory.push({ hash: this.initialBookmark, }, true);
       this.initialBookmark = null;
     } else if (storedHash) {
       this.pdfLinkService.setHash(storedHash);
@@ -1215,7 +1215,7 @@ var PDFViewerApplication = {
     if (typeof PDFJSDev !== 'undefined' &&
         PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
       this.externalServices.reportTelemetry({
-        type: 'print'
+        type: 'print',
       });
     }
   },
@@ -1608,7 +1608,7 @@ function webViewerPageRendered(e) {
   if (typeof PDFJSDev !== 'undefined' &&
       PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
     PDFViewerApplication.externalServices.reportTelemetry({
-      type: 'pageInfo'
+      type: 'pageInfo',
     });
     // It is a good time to report stream and font types.
     PDFViewerApplication.pdfDocument.getStats().then(function (stats) {
@@ -1851,7 +1851,7 @@ function webViewerFind(e) {
     phraseSearch: e.phraseSearch,
     caseSensitive: e.caseSensitive,
     highlightAll: e.highlightAll,
-    findPrevious: e.findPrevious
+    findPrevious: e.findPrevious,
   });
 }
 
@@ -1861,7 +1861,7 @@ function webViewerFindFromUrlHash(e) {
     phraseSearch: e.phraseSearch,
     caseSensitive: false,
     highlightAll: true,
-    findPrevious: false
+    findPrevious: false,
   });
 }
 
@@ -1989,7 +1989,7 @@ function webViewerKeyDown(evt) {
               phraseSearch: findState.phraseSearch,
               caseSensitive: findState.caseSensitive,
               highlightAll: findState.highlightAll,
-              findPrevious: cmd === 5 || cmd === 12
+              findPrevious: cmd === 5 || cmd === 12,
             });
           }
           handled = true;
@@ -2241,8 +2241,8 @@ var PDFPrintServiceFactory = {
     supportsPrinting: false,
     createPrintService() {
       throw new Error('Not implemented: createPrintService');
-    }
-  }
+    },
+  },
 };
 
 export {
