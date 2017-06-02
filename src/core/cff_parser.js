@@ -457,6 +457,9 @@ var CFFParser = (function CFFParserClosure() {
       if (!data || state.callDepth > MAX_SUBR_NESTING) {
         return false;
       }
+      if (data === undefined) {
+        return false;
+      }
       var stackSize = state.stackSize;
       var stack = state.stack;
 
