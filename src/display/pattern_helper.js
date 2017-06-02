@@ -41,9 +41,9 @@ ShadingIRs.RadialAxial = {
           grad.addColorStop(c[0], c[1]);
         }
         return grad;
-      }
+      },
     };
-  }
+  },
 };
 
 var createMeshCanvas = (function createMeshCanvasClosure() {
@@ -174,7 +174,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       offsetX: -offsetX,
       offsetY: -offsetY,
       scaleX: 1 / scaleX,
-      scaleY: 1 / scaleY
+      scaleY: 1 / scaleY,
     };
 
     var paddedWidth = width + BORDER_SIZE * 2;
@@ -269,9 +269,9 @@ ShadingIRs.Mesh = {
                   temporaryPatternCanvas.scaleY);
 
         return ctx.createPattern(temporaryPatternCanvas.canvas, 'no-repeat');
-      }
+      },
     };
-  }
+  },
 };
 
 ShadingIRs.Dummy = {
@@ -280,9 +280,9 @@ ShadingIRs.Dummy = {
       type: 'Pattern',
       getPattern: function Dummy_fromIR_getPattern() {
         return 'hotpink';
-      }
+      },
     };
-  }
+  },
 };
 
 function getShadingPatternFromIR(raw) {
@@ -296,7 +296,7 @@ function getShadingPatternFromIR(raw) {
 var TilingPattern = (function TilingPatternClosure() {
   var PaintType = {
     COLORED: 1,
-    UNCOLORED: 2
+    UNCOLORED: 2,
   };
 
   var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
@@ -428,7 +428,7 @@ var TilingPattern = (function TilingPatternClosure() {
       this.scaleToContext();
 
       return ctx.createPattern(temporaryPatternCanvas, 'repeat');
-    }
+    },
   };
 
   return TilingPattern;

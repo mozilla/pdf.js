@@ -88,7 +88,7 @@ Metadata.prototype = {
 
   has: function Metadata_has(name) {
     return typeof this.metadata[name] !== 'undefined';
-  }
+  },
 };
 
 export {
