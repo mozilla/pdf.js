@@ -176,7 +176,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         PDFJSDev.test('FIREFOX || MOZCENTRAL || GENERIC')) {
        canvas.mozOpaque = true;
     }
-    var ctx = canvas.getContext('2d', {alpha: false});
+    var ctx = canvas.getContext('2d', { alpha: false, });
 
     var lastFontSize;
     var lastFontFamily;
@@ -293,7 +293,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         y2: box.bottom,
         index: i,
         x1New: undefined,
-        x2New: undefined
+        x2New: undefined,
       };
     });
     expandBoundsLTR(width, bounds);
@@ -304,7 +304,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         left: b.x1New,
         top: 0,
         right: b.x2New,
-        bottom: 0
+        bottom: 0,
       };
     });
 
@@ -344,12 +344,12 @@ var renderTextLayer = (function renderTextLayerClosure() {
       y2: Infinity,
       index: -1,
       x1New: 0,
-      x2New: 0
+      x2New: 0,
     };
     var horizon = [{
       start: -Infinity,
       end: Infinity,
-      boundary: fakeBoundary
+      boundary: fakeBoundary,
     }];
 
     bounds.forEach(function (boundary) {
@@ -428,7 +428,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
           changedHorizon.push({
             start: horizonPart.start,
             end: horizonPart.end,
-            boundary: useBoundary
+            boundary: useBoundary,
           });
           lastBoundary = useBoundary;
         }
@@ -438,7 +438,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         changedHorizon.unshift({
           start: horizon[i].start,
           end: boundary.y1,
-          boundary: horizon[i].boundary
+          boundary: horizon[i].boundary,
         });
       }
       if (boundary.y2 < horizon[j].end) {
@@ -446,7 +446,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
         changedHorizon.push({
           start: boundary.y2,
           end: horizon[j].end,
-          boundary: horizon[j].boundary
+          boundary: horizon[j].boundary,
         });
       }
 

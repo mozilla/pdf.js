@@ -97,7 +97,7 @@ AnnotationElementFactory.prototype =
       default:
         return new AnnotationElement(parameters);
     }
-  }
+  },
 };
 
 /**
@@ -242,7 +242,7 @@ var AnnotationElement = (function AnnotationElementClosure() {
         color: data.color,
         title: data.title,
         contents: data.contents,
-        hideWrapper: true
+        hideWrapper: true,
       });
       var popup = popupElement.render();
 
@@ -260,7 +260,7 @@ var AnnotationElement = (function AnnotationElementClosure() {
      */
     render: function AnnotationElement_render() {
       throw new Error('Abstract method AnnotationElement.render called');
-    }
+    },
   };
 
   return AnnotationElement;
@@ -340,7 +340,7 @@ var LinkAnnotationElement = (function LinkAnnotationElementClosure() {
         return false;
       };
       link.className = 'internalLink';
-    }
+    },
   });
 
   return LinkAnnotationElement;
@@ -375,7 +375,7 @@ var TextAnnotationElement = (function TextAnnotationElementClosure() {
         this.data.name.toLowerCase() + '.svg';
       image.alt = '[{{type}} Annotation]';
       image.dataset.l10nId = 'text_annotation_type';
-      image.dataset.l10nArgs = JSON.stringify({type: this.data.name});
+      image.dataset.l10nArgs = JSON.stringify({ type: this.data.name, });
 
       if (!this.data.hasPopup) {
         this._createPopup(this.container, image, this.data);
@@ -383,7 +383,7 @@ var TextAnnotationElement = (function TextAnnotationElementClosure() {
 
       this.container.appendChild(image);
       return this.container;
-    }
+    },
   });
 
   return TextAnnotationElement;
@@ -409,7 +409,7 @@ var WidgetAnnotationElement = (function WidgetAnnotationElementClosure() {
     render: function WidgetAnnotationElement_render() {
       // Show only the container for unsupported field types.
       return this.container;
-    }
+    },
   });
 
   return WidgetAnnotationElement;
@@ -516,7 +516,7 @@ var TextWidgetAnnotationElement = (
       var fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
       var fallbackName = font.fallbackName || 'Helvetica, sans-serif';
       style.fontFamily = fontFamily + fallbackName;
-    }
+    },
   });
 
   return TextWidgetAnnotationElement;
@@ -554,7 +554,7 @@ var CheckboxWidgetAnnotationElement =
 
       this.container.appendChild(element);
       return this.container;
-    }
+    },
   });
 
   return CheckboxWidgetAnnotationElement;
@@ -593,7 +593,7 @@ var RadioButtonWidgetAnnotationElement =
 
       this.container.appendChild(element);
       return this.container;
-    }
+    },
   });
 
   return RadioButtonWidgetAnnotationElement;
@@ -651,7 +651,7 @@ var ChoiceWidgetAnnotationElement = (
 
       this.container.appendChild(selectElement);
       return this.container;
-    }
+    },
   });
 
   return ChoiceWidgetAnnotationElement;
@@ -697,7 +697,7 @@ var PopupAnnotationElement = (function PopupAnnotationElementClosure() {
         trigger: parentElement,
         color: this.data.color,
         title: this.data.title,
-        contents: this.data.contents
+        contents: this.data.contents,
       });
 
       // Position the popup next to the parent annotation's container.
@@ -711,7 +711,7 @@ var PopupAnnotationElement = (function PopupAnnotationElementClosure() {
 
       this.container.appendChild(popup.render());
       return this.container;
-    }
+    },
   });
 
   return PopupAnnotationElement;
@@ -849,7 +849,7 @@ var PopupElement = (function PopupElementClosure() {
         this.hideElement.setAttribute('hidden', true);
         this.container.style.zIndex -= 1;
       }
-    }
+    },
   };
 
   return PopupElement;
@@ -912,7 +912,7 @@ var LineAnnotationElement = (function LineAnnotationElementClosure() {
       this._createPopup(this.container, line, this.data);
 
       return this.container;
-    }
+    },
   });
 
   return LineAnnotationElement;
@@ -946,7 +946,7 @@ var HighlightAnnotationElement = (
         this._createPopup(this.container, null, this.data);
       }
       return this.container;
-    }
+    },
   });
 
   return HighlightAnnotationElement;
@@ -980,7 +980,7 @@ var UnderlineAnnotationElement = (
         this._createPopup(this.container, null, this.data);
       }
       return this.container;
-    }
+    },
   });
 
   return UnderlineAnnotationElement;
@@ -1013,7 +1013,7 @@ var SquigglyAnnotationElement = (function SquigglyAnnotationElementClosure() {
         this._createPopup(this.container, null, this.data);
       }
       return this.container;
-    }
+    },
   });
 
   return SquigglyAnnotationElement;
@@ -1047,7 +1047,7 @@ var StrikeOutAnnotationElement = (
         this._createPopup(this.container, null, this.data);
       }
       return this.container;
-    }
+    },
   });
 
   return StrikeOutAnnotationElement;
@@ -1110,7 +1110,7 @@ var FileAttachmentAnnotationElement = (
         return;
       }
       this.downloadManager.downloadData(this.content, this.filename, '');
-    }
+    },
   });
 
   return FileAttachmentAnnotationElement;
@@ -1183,7 +1183,7 @@ var AnnotationLayer = (function AnnotationLayerClosure() {
         }
       }
       parameters.div.removeAttribute('hidden');
-    }
+    },
   };
 })();
 

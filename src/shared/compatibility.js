@@ -104,7 +104,7 @@ PDFJS.compatibilityChecked = true;
         buffer[offset + 1] = (value >> 8) & 255;
         buffer[offset + 2] = (value >> 16) & 255;
         buffer[offset + 3] = (value >>> 24) & 255;
-      }
+      },
     };
   }
 
@@ -182,14 +182,14 @@ PDFJS.compatibilityChecked = true;
       return this;
     },
     enumerable: false,
-    configurable: true
+    configurable: true,
   });
   Object.defineProperty(cpaProto, 'byteLength', {
     get() {
       return this.length;
     },
     enumerable: false,
-    configurable: true
+    configurable: true,
   });
 })();
 
@@ -210,13 +210,13 @@ PDFJS.compatibilityChecked = true;
       if (hasDOM) {
         // some browsers (e.g. safari) cannot use defineProperty() on DOM
         // objects and thus the native version is not sufficient
-        Object.defineProperty(new Image(), 'id', { value: 'test' });
+        Object.defineProperty(new Image(), 'id', { value: 'test', });
       }
       // ... another test for android gb browser for non-DOM objects
       var Test = function Test() {};
-      Test.prototype = { get id() { } };
+      Test.prototype = { get id() { }, };
       Object.defineProperty(new Test(), 'id',
-        { value: '', configurable: true, enumerable: true, writable: false });
+        { value: '', configurable: true, enumerable: true, writable: false, });
     } catch (e) {
       definePropertyPossible = false;
     }
@@ -258,7 +258,7 @@ PDFJS.compatibilityChecked = true;
     // IE10 might have response, but not overrideMimeType
     // Support: IE10
     Object.defineProperty(xhrPrototype, 'overrideMimeType', {
-      value: function xmlHttpRequestOverrideMimeType(mimeType) {}
+      value: function xmlHttpRequestOverrideMimeType(mimeType) {},
     });
   }
   if ('responseType' in xhr) {
@@ -277,7 +277,7 @@ PDFJS.compatibilityChecked = true;
           this.overrideMimeType('text/plain; charset=x-user-defined');
         }
       }
-    }
+    },
   });
 
   // Support: IE9
@@ -288,7 +288,7 @@ PDFJS.compatibilityChecked = true;
           return new Uint8Array(new VBArray(this.responseBody).toArray());
         }
         return this.responseText;
-      }
+      },
     });
     return;
   }
@@ -305,7 +305,7 @@ PDFJS.compatibilityChecked = true;
         result[i] = text.charCodeAt(i) & 0xFF;
       }
       return result.buffer;
-    }
+    },
   });
 })();
 
@@ -420,11 +420,11 @@ PDFJS.compatibilityChecked = true;
       Object.defineProperty(this, '_dataset', {
         value: dataset,
         writable: false,
-        enumerable: false
+        enumerable: false,
       });
       return dataset;
     },
-    enumerable: true
+    enumerable: true,
   });
 })();
 
@@ -469,7 +469,7 @@ PDFJS.compatibilityChecked = true;
     },
     toggle(name) {
       changeList(this.element, name, true, true);
-    }
+    },
   };
 
   Object.defineProperty(HTMLElement.prototype, 'classList', {
@@ -482,17 +482,17 @@ PDFJS.compatibilityChecked = true;
         element: {
           value: this,
           writable: false,
-          enumerable: true
-        }
+          enumerable: true,
+        },
       });
       Object.defineProperty(this, '_classList', {
         value: classList,
         writable: false,
-        enumerable: false
+        enumerable: false,
       });
       return classList;
     },
-    enumerable: true
+    enumerable: true,
   });
 })();
 
@@ -511,7 +511,7 @@ PDFJS.compatibilityChecked = true;
       globalScope.postMessage({
         targetName: 'main',
         action: 'console_log',
-        data: args
+        data: args,
       });
     },
 
@@ -520,7 +520,7 @@ PDFJS.compatibilityChecked = true;
       globalScope.postMessage({
         targetName: 'main',
         action: 'console_error',
-        data: args
+        data: args,
       });
     },
 
@@ -534,7 +534,7 @@ PDFJS.compatibilityChecked = true;
         throw new Error('Unknown timer name ' + name);
       }
       this.log('Timer:', name, Date.now() - time);
-    }
+    },
   };
 
   globalScope.console = workerConsole;
@@ -552,7 +552,7 @@ PDFJS.compatibilityChecked = true;
     window.console = {
       log() {},
       error() {},
-      warn() {}
+      warn() {},
     };
     return;
   }
@@ -765,7 +765,7 @@ PDFJS.compatibilityChecked = true;
       return scripts[scripts.length - 1];
     },
     enumerable: true,
-    configurable: true
+    configurable: true,
   });
 })();
 
@@ -789,7 +789,7 @@ PDFJS.compatibilityChecked = true;
         typeProperty.set.call(this, value === 'number' ? 'text' : value);
       },
       enumerable: true,
-      configurable: true
+      configurable: true,
     });
   }
 })();
@@ -815,7 +815,7 @@ PDFJS.compatibilityChecked = true;
       readyStateProto.set.call(this, value);
     },
     enumerable: true,
-    configurable: true
+    configurable: true,
   });
 })();
 
@@ -968,7 +968,7 @@ PDFJS.compatibilityChecked = true;
     addUnhandledRejection: function addUnhandledRejection(promise) {
       this.unhandledRejections.push({
         promise,
-        time: Date.now()
+        time: Date.now(),
       });
       this.scheduleRejectionCheck();
     },
@@ -1012,7 +1012,7 @@ PDFJS.compatibilityChecked = true;
           this.scheduleRejectionCheck();
         }
       }, REJECTION_TIMEOUT);
-    }
+    },
   };
 
   var Promise = function Promise(resolver) {
@@ -1158,7 +1158,7 @@ PDFJS.compatibilityChecked = true;
 
     catch: function Promise_catch(onReject) {
       return this.then(undefined, onReject);
-    }
+    },
   };
 
   globalScope.Promise = Promise;
@@ -1184,12 +1184,12 @@ PDFJS.compatibilityChecked = true;
       Object.defineProperty(obj, this.id, {
         value,
         enumerable: false,
-        configurable: true
+        configurable: true,
       });
     },
     delete(obj) {
       delete obj[this.id];
-    }
+    },
   };
 
   globalScope.WeakMap = WeakMap;
@@ -1818,7 +1818,7 @@ PDFJS.compatibilityChecked = true;
         return '';
       }
       return this._scheme + '://' + host;
-    }
+    },
   };
 
   // Copy over the static methods

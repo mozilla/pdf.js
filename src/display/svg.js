@@ -28,7 +28,7 @@ if (typeof PDFJSDev === 'undefined' ||
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
   fontWeight: 'normal',
-  fillColor: '#000000'
+  fillColor: '#000000',
 };
 
 var convertImgDataToPng = (function convertImgDataToPngClosure() {
@@ -277,7 +277,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     setCurrentPoint: function SVGExtraState_setCurrentPoint(x, y) {
       this.x = x;
       this.y = y;
-    }
+    },
   };
   return SVGExtraState;
 })();
@@ -290,7 +290,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     for (var x = 0; x < opListLen; x++) {
       if (opList[x].fn === 'save') {
-        opTree.push({'fnId': 92, 'fn': 'group', 'items': []});
+        opTree.push({ 'fnId': 92, 'fn': 'group', 'items': [], });
         tmp.push(opTree);
         opTree = opTree[opTree.length - 1].items;
         continue;
@@ -458,7 +458,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       for (var x = 0; x < fnArrayLen; x++) {
         var fnId = fnArray[x];
-        opList.push({'fnId': fnId, 'fn': REVOPS[fnId], 'args': argsArray[x]});
+        opList.push({
+          'fnId': fnId,
+          'fn': REVOPS[fnId],
+          'args': argsArray[x],
+        });
       }
       return opListToTree(opList);
     },
@@ -1187,7 +1191,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
         }
       }
       return this.tgrp;
-    }
+    },
   };
   return SVGGraphics;
 })();
