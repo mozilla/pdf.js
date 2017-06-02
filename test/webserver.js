@@ -34,7 +34,7 @@ var mimeTypes = {
   '.png': 'image/png',
   '.log': 'text/plain',
   '.bcmap': 'application/octet-stream',
-  '.properties': 'text/plain'
+  '.properties': 'text/plain',
 };
 
 var defaultMimeType = 'application/octet-stream';
@@ -49,7 +49,7 @@ function WebServer() {
   this.disableRangeRequests = false;
   this.hooks = {
     'GET': [],
-    'POST': []
+    'POST': [],
   };
 }
 WebServer.prototype = {
@@ -245,7 +245,7 @@ WebServer.prototype = {
     }
 
     function serveRequestedFile(filePath) {
-      var stream = fs.createReadStream(filePath, {flags: 'rs'});
+      var stream = fs.createReadStream(filePath, { flags: 'rs', });
 
       stream.on('error', function (error) {
         res.writeHead(500);
@@ -272,7 +272,7 @@ WebServer.prototype = {
 
     function serveRequestedFileRange(filePath, start, end) {
       var stream = fs.createReadStream(filePath, {
-        flags: 'rs', start: start, end: end - 1});
+        flags: 'rs', start: start, end: end - 1, });
 
       stream.on('error', function (error) {
         res.writeHead(500);
@@ -292,7 +292,7 @@ WebServer.prototype = {
       stream.pipe(res);
     }
 
-  }
+  },
 };
 
 exports.WebServer = WebServer;

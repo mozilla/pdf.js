@@ -472,7 +472,7 @@ function refTestPostHandler(req, res) {
     body += data;
   });
   req.on('end', function () {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.writeHead(200, { 'Content-Type': 'text/plain', });
     res.end();
 
     var session;
@@ -517,7 +517,7 @@ function refTestPostHandler(req, res) {
 
     taskResults[round][page] = {
       failure: failure,
-      snapshot: snapshot
+      snapshot: snapshot,
     };
     if (stats) {
       stats.push({
@@ -525,7 +525,7 @@ function refTestPostHandler(req, res) {
         'pdf': id,
         'page': page,
         'round': round,
-        'stats': data.stats
+        'stats': data.stats,
       });
     }
 
@@ -594,13 +594,13 @@ function unitTestPostHandler(req, res) {
           onCancel = fn;
         }, function (err, xml) {
           clearTimeout(timeoutId);
-          res.writeHead(200, {'Content-Type': 'text/xml'});
+          res.writeHead(200, { 'Content-Type': 'text/xml', });
           res.end(err ? '<error>' + err + '</error>' : xml);
         });
       return;
     }
 
-    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.writeHead(200, { 'Content-Type': 'text/plain', });
     res.end();
 
     var data = JSON.parse(body);
@@ -633,7 +633,7 @@ function startBrowsers(url, initSessionCallback) {
   } else if (options.browser) {
     var browserPath = options.browser;
     var name = path.basename(browserPath, path.extname(browserPath));
-    browsers = [{name: name, path: browserPath}];
+    browsers = [{ name: name, path: browserPath, }];
   } else {
     console.error('Specify either browser or browserManifestFile.');
     process.exit(1);
@@ -653,7 +653,7 @@ function startBrowsers(url, initSessionCallback) {
       name: b.name,
       config: b,
       browser: browser,
-      closed: false
+      closed: false,
     };
     if (initSessionCallback) {
       initSessionCallback(session);

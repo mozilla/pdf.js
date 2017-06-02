@@ -35,11 +35,11 @@ function runTtx(ttxResourcesHome, fontPath, registerOnCancel, callback) {
       }
       var ttxEnv = {
         'PYTHONPATH': path.join(fontToolsHome, 'Lib'),
-        'PYTHONDONTWRITEBYTECODE': true
+        'PYTHONDONTWRITEBYTECODE': true,
       };
       var ttxStdioMode = 'ignore';
       var ttx = spawn('python', [ttxPath, fontPath],
-        {cwd: fontToolsHome, stdio: ttxStdioMode, env: ttxEnv});
+        { cwd: fontToolsHome, stdio: ttxStdioMode, env: ttxEnv, });
       var ttxRunError;
       registerOnCancel(function (reason) {
         ttxRunError = reason;
