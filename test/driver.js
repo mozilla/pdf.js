@@ -199,7 +199,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       stylePromise.then(function (styles) {
         style.textContent = styles;
 
-        var annotation_viewport = viewport.clone({ dontFlip: true });
+        var annotation_viewport = viewport.clone({ dontFlip: true, });
         var parameters = {
           viewport: annotation_viewport,
           div,
@@ -347,7 +347,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         let task = this.manifest[this.currentTask];
         task.round = 0;
         task.pageNum = task.firstPage || 1;
-        task.stats = { times: [] };
+        task.stats = { times: [], };
 
         this._log('Loading file "' + task.file + '"\n');
 
@@ -460,7 +460,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           this._log(' Loading page ' + task.pageNum + '/' +
             task.pdfDoc.numPages + '... ');
           this.canvas.mozOpaque = true;
-          ctx = this.canvas.getContext('2d', {alpha: false});
+          ctx = this.canvas.getContext('2d', { alpha: false, });
           task.pdfDoc.getPage(task.pageNum).then(function(page) {
             var viewport = page.getViewport(PDF_TO_CSS_UNITS);
             self.canvas.width = viewport.width;
@@ -516,7 +516,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
 
                 // The annotation builder will draw its content on the canvas.
                 initPromise =
-                  page.getAnnotations({ intent: 'display' }).then(
+                  page.getAnnotations({ intent: 'display', }).then(
                     function(annotations) {
                       return rasterizeAnnotationLayer(annotationLayerContext,
                                                       viewport, annotations,
@@ -572,7 +572,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
     },
 
     _clearCanvas: function Driver_clearCanvas() {
-      var ctx = this.canvas.getContext('2d', {alpha: false});
+      var ctx = this.canvas.getContext('2d', { alpha: false, });
       ctx.beginPath();
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     },
@@ -649,7 +649,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
         round: task.round,
         page: task.pageNum,
         snapshot,
-        stats: task.stats.times
+        stats: task.stats.times,
       });
       this._send('/submit_task_results', result, callback);
     },
@@ -676,7 +676,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
       };
       this.inflight.textContent = this.inFlightRequests++;
       r.send(message);
-    }
+    },
   };
 
   return Driver;

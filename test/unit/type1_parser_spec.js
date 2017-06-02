@@ -111,7 +111,7 @@ describe('Type1Parser', function() {
       'dup 33 /arrowright put\n' +
       'readonly def\n');
     var parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-    var props = { overridableEncoding: true };
+    var props = { overridableEncoding: true, };
     parser.extractFontHeader(props);
     expect(props.builtInEncoding[33]).toEqual('arrowright');
   });

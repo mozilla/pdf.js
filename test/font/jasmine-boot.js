@@ -73,7 +73,7 @@ function initializePDFJS(callback) {
   var queryString = new jasmine.QueryString({
     getWindowLocation() {
       return window.location;
-    }
+    },
   });
 
   var catchingExceptions = queryString.getParam('catch');
@@ -116,7 +116,7 @@ function initializePDFJS(callback) {
     createTextNode() {
       return document.createTextNode.apply(document, arguments);
     },
-    timer: new jasmine.Timer()
+    timer: new jasmine.Timer(),
   });
 
   env.addReporter(htmlReporter);
@@ -132,7 +132,7 @@ function initializePDFJS(callback) {
   var specFilter = new jasmine.HtmlSpecFilter({
     filterString() {
       return queryString.getParam('spec');
-    }
+    },
   });
 
   env.specFilter = function(spec) {

@@ -480,7 +480,7 @@ describe('api', function() {
     });
     it('gets page index', function(done) {
       // reference to second page
-      var ref = {num: 17, gen: 0};
+      var ref = { num: 17, gen: 0, };
       var promise = doc.getPageIndex(ref);
       promise.then(function(pageIndex) {
         expect(pageIndex).toEqual(1);
@@ -490,7 +490,7 @@ describe('api', function() {
       });
     });
     it('gets invalid page index', function (done) {
-      var ref = { num: 3, gen: 0 }; // Reference to a font dictionary.
+      var ref = { num: 3, gen: 0, }; // Reference to a font dictionary.
       var promise = doc.getPageIndex(ref);
       promise.then(function () {
         done.fail('shall fail for invalid page reference.');
@@ -503,8 +503,9 @@ describe('api', function() {
     it('gets destinations, from /Dests dictionary', function(done) {
       var promise = doc.getDestinations();
       promise.then(function(data) {
-        expect(data).toEqual({ chapter1: [{ gen: 0, num: 17 }, { name: 'XYZ' },
-                                          0, 841.89, null] });
+        expect(data).toEqual({
+          chapter1: [{ gen: 0, num: 17, }, { name: 'XYZ', }, 0, 841.89, null],
+        });
         done();
       }).catch(function (reason) {
         done.fail(reason);
@@ -513,7 +514,7 @@ describe('api', function() {
     it('gets a destination, from /Dests dictionary', function(done) {
       var promise = doc.getDestination('chapter1');
       promise.then(function(data) {
-        expect(data).toEqual([{ gen: 0, num: 17 }, { name: 'XYZ' },
+        expect(data).toEqual([{ gen: 0, num: 17, }, { name: 'XYZ', },
                               0, 841.89, null]);
         done();
       }).catch(function (reason) {
@@ -538,8 +539,8 @@ describe('api', function() {
       });
       promise.then(function (destinations) {
         expect(destinations).toEqual({
-          'Page.1': [{ num: 1, gen: 0}, { name: 'XYZ' }, 0, 375, null],
-          'Page.2': [{ num: 6, gen: 0}, { name: 'XYZ' }, 0, 375, null],
+          'Page.1': [{ num: 1, gen: 0, }, { name: 'XYZ', }, 0, 375, null],
+          'Page.2': [{ num: 6, gen: 0, }, { name: 'XYZ', }, 0, 375, null],
         });
 
         loadingTask.destroy().then(done);
@@ -553,7 +554,7 @@ describe('api', function() {
         return pdfDocument.getDestination('Page.1');
       });
       promise.then(function (destination) {
-        expect(destination).toEqual([{ num: 1, gen: 0}, { name: 'XYZ' },
+        expect(destination).toEqual([{ num: 1, gen: 0, }, { name: 'XYZ', },
                                      0, 375, null]);
 
         loadingTask.destroy().then(done);
@@ -793,7 +794,7 @@ describe('api', function() {
     it('gets download info', function(done) {
       var promise = doc.getDownloadInfo();
       promise.then(function (data) {
-        expect(data).toEqual({ length: basicApiFileLength });
+        expect(data).toEqual({ length: basicApiFileLength, });
         done();
       }).catch(function (reason) {
         done.fail(reason);
@@ -802,7 +803,7 @@ describe('api', function() {
     it('gets stats', function(done) {
       var promise = doc.getStats();
       promise.then(function (stats) {
-        expect(stats).toEqual({ streamTypes: [], fontTypes: [] });
+        expect(stats).toEqual({ streamTypes: [], fontTypes: [], });
         done();
       }).catch(function (reason) {
         done.fail(reason);
@@ -864,7 +865,7 @@ describe('api', function() {
       expect(page.rotate).toEqual(0);
     });
     it('gets ref', function () {
-      expect(page.ref).toEqual({ num: 15, gen: 0 });
+      expect(page.ref).toEqual({ num: 15, gen: 0, });
     });
     it('gets userUnit', function () {
       expect(page.userUnit).toEqual(1.0);
@@ -886,12 +887,12 @@ describe('api', function() {
         expect(data.length).toEqual(4);
       });
 
-      var displayPromise = page.getAnnotations({ intent: 'display' }).then(
+      var displayPromise = page.getAnnotations({ intent: 'display', }).then(
           function (data) {
         expect(data.length).toEqual(4);
       });
 
-      var printPromise = page.getAnnotations({ intent: 'print' }).then(
+      var printPromise = page.getAnnotations({ intent: 'print', }).then(
           function (data) {
         expect(data.length).toEqual(4);
       });
@@ -1011,7 +1012,7 @@ describe('api', function() {
 
       promise.then(function (stats) {
         expect(stats).toEqual({ streamTypes: expectedStreamTypes,
-                                fontTypes: expectedFontTypes });
+                                fontTypes: expectedFontTypes, });
         done();
       }).catch(function (reason) {
         done.fail(reason);
