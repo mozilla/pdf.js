@@ -208,6 +208,14 @@ var Catalog = (function CatalogClosure() {
         return isDict(dest) ? dest.get('D') : dest;
       }
 
+      // Use a simple cache in order to make multiple lookups of the same
+      // destinationId more efficient (useful for big NameTree's).
+      if (!this._getDestinationCache) {
+        this._getDestinationCache = Object.create(null);
+      } else if (this._getDestinationCache[destinationId] !== undefined) {
+        return this._getDestinationCache[destinationId];
+      }
+
       var xref = this.xref;
       var dest = null, nameTreeRef, nameDictionaryRef;
       var obj = this.catDict.get('Names');
@@ -227,6 +235,8 @@ var Catalog = (function CatalogClosure() {
         var nameTree = new NameTree(nameTreeRef, xref);
         dest = fetchDestination(nameTree.get(destinationId));
       }
+
+      this._getDestinationCache[destinationId] = dest;
       return dest;
     },
 
