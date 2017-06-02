@@ -102,6 +102,13 @@
     "brace-style": ["error", "1tbs", {
       "allowSingleLine": false,
     }],
+    "comma-dangle": ["error", {
+      "arrays": "ignore",
+      "objects": "always",
+      "imports": "never",
+      "exports": "always",
+      "functions": "never",
+    }],
     "comma-spacing": ["error", { "before": false, "after": true, }],
     "comma-style": ["error", "last"],
     "eol-last": "error",
@@ -118,6 +125,7 @@
     "no-tabs": "error",
     "no-trailing-spaces": ["error", { "skipBlankLines": false, }],
     "no-whitespace-before-property": "error",
+    "object-curly-spacing": ["error", "always"],
     "operator-linebreak": ["error", "after", { "overrides": { ":": "ignore", } }],
     "quotes": ["error", "single"],
     "semi-spacing": ["error", { "before": false, "after": true, }],

@@ -21,8 +21,8 @@ files.forEach(function(expectationFilename) {
   var defines = {
     TRUE: true,
     FALSE: false,
-    OBJ: {obj: {i: 1}, j: 2},
-    TEXT: 'text'
+    OBJ: { obj: { i: 1, }, j: 2, },
+    TEXT: 'text',
   };
   var map = {
     'import-alias': 'import-name',
