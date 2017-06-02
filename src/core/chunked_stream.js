@@ -435,12 +435,12 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
         if (prevChunk >= 0 && prevChunk + 1 !== chunk) {
           groupedChunks.push({ beginChunk,
-                               endChunk: prevChunk + 1 });
+                               endChunk: prevChunk + 1, });
           beginChunk = chunk;
         }
         if (i + 1 === chunks.length) {
           groupedChunks.push({ beginChunk,
-                               endChunk: chunk + 1 });
+                               endChunk: chunk + 1, });
         }
 
         prevChunk = chunk;
@@ -453,7 +453,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
                          args.loaded);
       this.msgHandler.send('DocProgress', {
         loaded: bytesLoaded,
-        total: this.length
+        total: this.length,
       });
     },
 
@@ -529,7 +529,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
 
       this.msgHandler.send('DocProgress', {
         loaded: this.stream.numChunksLoaded * this.chunkSize,
-        total: this.length
+        total: this.length,
       });
     },
 
@@ -556,7 +556,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         var capability = this.promisesByRequest[requestId];
         capability.reject(new Error('Request was aborted'));
       }
-    }
+    },
   };
 
   return ChunkedStreamManager;

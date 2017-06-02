@@ -75,7 +75,7 @@ var Type1CharString = (function Type1CharStringClosure() {
     'rmoveto': [21],
     'hmoveto': [22],
     'vhcurveto': [30],
-    'hvcurveto': [31]
+    'hvcurveto': [31],
   };
 
   function Type1CharString() {
@@ -342,7 +342,7 @@ var Type1CharString = (function Type1CharStringClosure() {
         this.stack.length = 0;
       }
       return false;
-    }
+    },
   };
 
   return Type1CharString;
@@ -517,8 +517,8 @@ var Type1Parser = (function Type1ParserClosure() {
         subrs: [],
         charstrings: [],
         properties: {
-          'privateData': privateData
-        }
+          'privateData': privateData,
+        },
       };
       var token, length, data, lenIV, encoded;
       while ((token = this.getToken()) !== null) {
@@ -635,7 +635,7 @@ var Type1Parser = (function Type1ParserClosure() {
           charstring: output,
           width: charString.width,
           lsb: charString.lsb,
-          seac: charString.seac
+          seac: charString.seac,
         });
       }
 
@@ -695,7 +695,7 @@ var Type1Parser = (function Type1ParserClosure() {
             break;
         }
       }
-    }
+    },
   };
 
   return Type1Parser;

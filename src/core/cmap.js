@@ -335,7 +335,7 @@ var CMap = (function CMapClosure() {
         }
       }
       return true;
-    }
+    },
   };
   return CMap;
 })();
@@ -404,7 +404,7 @@ var IdentityCMap = (function IdentityCMapClosure() {
 
     get isIdentityCMap() {
       error('should not access .isIdentityCMap');
-    }
+    },
   };
 
   return IdentityCMap;
@@ -527,7 +527,7 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
         s += String.fromCharCode(this.readNumber());
       }
       return s;
-    }
+    },
   };
 
   function processBinaryCMap(data, cMap, extend) {
@@ -983,7 +983,7 @@ var CMapFactory = (function CMapFactoryClosure() {
         });
       }
       return Promise.reject(new Error('Encoding required.'));
-    }
+    },
   };
 })();
 

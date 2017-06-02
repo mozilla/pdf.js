@@ -67,7 +67,7 @@ var JpegImage = (function JpegImageClosure() {
     while (length > 0 && !codeLengths[length - 1]) {
       length--;
     }
-    code.push({children: [], index: 0});
+    code.push({ children: [], index: 0, });
     var p = code[0], q;
     for (i = 0; i < length; i++) {
       for (j = 0; j < codeLengths[i]; j++) {
@@ -79,7 +79,7 @@ var JpegImage = (function JpegImageClosure() {
         p.index++;
         code.push(p);
         while (code.length <= i) {
-          code.push(q = {children: [], index: 0});
+          code.push(q = { children: [], index: 0, });
           p.children[p.index] = q.children;
           p = q;
         }
@@ -87,7 +87,7 @@ var JpegImage = (function JpegImageClosure() {
       }
       if (i + 1 < length) {
         // p here points to last code
-        code.push(q = {children: [], index: 0});
+        code.push(q = { children: [], index: 0, });
         p.children[p.index] = q.children;
         p = q;
       }
@@ -711,14 +711,14 @@ var JpegImage = (function JpegImageClosure() {
                   appData[2] === 0x49 && appData[3] === 0x46 &&
                   appData[4] === 0) { // 'JFIF\x00'
                 jfif = {
-                  version: { major: appData[5], minor: appData[6] },
+                  version: { major: appData[5], minor: appData[6], },
                   densityUnits: appData[7],
                   xDensity: (appData[8] << 8) | appData[9],
                   yDensity: (appData[10] << 8) | appData[11],
                   thumbWidth: appData[12],
                   thumbHeight: appData[13],
                   thumbData: appData.subarray(14, 14 +
-                                              3 * appData[12] * appData[13])
+                                              3 * appData[12] * appData[13]),
                 };
               }
             }
@@ -731,7 +731,7 @@ var JpegImage = (function JpegImageClosure() {
                   version: (appData[5] << 8) | appData[6],
                   flags0: (appData[7] << 8) | appData[8],
                   flags1: (appData[9] << 8) | appData[10],
-                  transformCode: appData[11]
+                  transformCode: appData[11],
                 };
               }
             }
@@ -891,7 +891,7 @@ var JpegImage = (function JpegImageClosure() {
           scaleX: component.h / frame.maxH,
           scaleY: component.v / frame.maxV,
           blocksPerLine: component.blocksPerLine,
-          blocksPerColumn: component.blocksPerColumn
+          blocksPerColumn: component.blocksPerColumn,
         });
       }
       this.numComponents = this.components.length;
@@ -1119,7 +1119,7 @@ var JpegImage = (function JpegImageClosure() {
         }
       }
       return data;
-    }
+    },
   };
 
   return JpegImage;

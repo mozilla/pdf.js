@@ -328,7 +328,7 @@ var Page = (function PageClosure() {
         }
       }
       return shadow(this, 'annotations', annotations);
-    }
+    },
   };
 
   return Page;
@@ -395,9 +395,9 @@ var PDFDocument = (function PDFDocumentClosure() {
         Producer: isString,
         CreationDate: isString,
         ModDate: isString,
-        Trapped: isName
+        Trapped: isName,
       });
-    }
+    },
   };
 
   PDFDocument.prototype = {
@@ -529,7 +529,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
           return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
                           fontCache, builtInCMapCache);
-        }
+        },
       };
       this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
     },
@@ -543,7 +543,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
         IsAcroFormPresent: !!this.acroForm,
-        IsXFAPresent: !!this.xfa
+        IsXFAPresent: !!this.xfa,
       };
       var infoDict;
       try {
@@ -602,7 +602,7 @@ var PDFDocument = (function PDFDocumentClosure() {
 
     cleanup: function PDFDocument_cleanup() {
       return this.catalog.cleanup();
-    }
+    },
   };
 
   return PDFDocument;

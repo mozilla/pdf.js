@@ -100,97 +100,97 @@ var CFFStandardStrings = [
 var CFFParser = (function CFFParserClosure() {
   var CharstringValidationData = [
     null,
-    { id: 'hstem', min: 2, stackClearing: true, stem: true },
+    { id: 'hstem', min: 2, stackClearing: true, stem: true, },
     null,
-    { id: 'vstem', min: 2, stackClearing: true, stem: true },
-    { id: 'vmoveto', min: 1, stackClearing: true },
-    { id: 'rlineto', min: 2, resetStack: true },
-    { id: 'hlineto', min: 1, resetStack: true },
-    { id: 'vlineto', min: 1, resetStack: true },
-    { id: 'rrcurveto', min: 6, resetStack: true },
+    { id: 'vstem', min: 2, stackClearing: true, stem: true, },
+    { id: 'vmoveto', min: 1, stackClearing: true, },
+    { id: 'rlineto', min: 2, resetStack: true, },
+    { id: 'hlineto', min: 1, resetStack: true, },
+    { id: 'vlineto', min: 1, resetStack: true, },
+    { id: 'rrcurveto', min: 6, resetStack: true, },
     null,
-    { id: 'callsubr', min: 1, undefStack: true },
-    { id: 'return', min: 0, undefStack: true },
+    { id: 'callsubr', min: 1, undefStack: true, },
+    { id: 'return', min: 0, undefStack: true, },
     null, // 12
     null,
-    { id: 'endchar', min: 0, stackClearing: true },
+    { id: 'endchar', min: 0, stackClearing: true, },
     null,
     null,
     null,
-    { id: 'hstemhm', min: 2, stackClearing: true, stem: true },
-    { id: 'hintmask', min: 0, stackClearing: true },
-    { id: 'cntrmask', min: 0, stackClearing: true },
-    { id: 'rmoveto', min: 2, stackClearing: true },
-    { id: 'hmoveto', min: 1, stackClearing: true },
-    { id: 'vstemhm', min: 2, stackClearing: true, stem: true },
-    { id: 'rcurveline', min: 8, resetStack: true },
-    { id: 'rlinecurve', min: 8, resetStack: true },
-    { id: 'vvcurveto', min: 4, resetStack: true },
-    { id: 'hhcurveto', min: 4, resetStack: true },
+    { id: 'hstemhm', min: 2, stackClearing: true, stem: true, },
+    { id: 'hintmask', min: 0, stackClearing: true, },
+    { id: 'cntrmask', min: 0, stackClearing: true, },
+    { id: 'rmoveto', min: 2, stackClearing: true, },
+    { id: 'hmoveto', min: 1, stackClearing: true, },
+    { id: 'vstemhm', min: 2, stackClearing: true, stem: true, },
+    { id: 'rcurveline', min: 8, resetStack: true, },
+    { id: 'rlinecurve', min: 8, resetStack: true, },
+    { id: 'vvcurveto', min: 4, resetStack: true, },
+    { id: 'hhcurveto', min: 4, resetStack: true, },
     null, // shortint
-    { id: 'callgsubr', min: 1, undefStack: true },
-    { id: 'vhcurveto', min: 4, resetStack: true },
-    { id: 'hvcurveto', min: 4, resetStack: true }
+    { id: 'callgsubr', min: 1, undefStack: true, },
+    { id: 'vhcurveto', min: 4, resetStack: true, },
+    { id: 'hvcurveto', min: 4, resetStack: true, }
   ];
   var CharstringValidationData12 = [
     null,
     null,
     null,
-    { id: 'and', min: 2, stackDelta: -1 },
-    { id: 'or', min: 2, stackDelta: -1 },
-    { id: 'not', min: 1, stackDelta: 0 },
+    { id: 'and', min: 2, stackDelta: -1, },
+    { id: 'or', min: 2, stackDelta: -1, },
+    { id: 'not', min: 1, stackDelta: 0, },
     null,
     null,
     null,
-    { id: 'abs', min: 1, stackDelta: 0 },
+    { id: 'abs', min: 1, stackDelta: 0, },
     { id: 'add', min: 2, stackDelta: -1,
       stackFn: function stack_div(stack, index) {
         stack[index - 2] = stack[index - 2] + stack[index - 1];
-      }
+      },
     },
     { id: 'sub', min: 2, stackDelta: -1,
       stackFn: function stack_div(stack, index) {
         stack[index - 2] = stack[index - 2] - stack[index - 1];
-      }
+      },
     },
     { id: 'div', min: 2, stackDelta: -1,
       stackFn: function stack_div(stack, index) {
         stack[index - 2] = stack[index - 2] / stack[index - 1];
-      }
+      },
     },
     null,
     { id: 'neg', min: 1, stackDelta: 0,
       stackFn: function stack_div(stack, index) {
         stack[index - 1] = -stack[index - 1];
-      }
+      },
     },
-    { id: 'eq', min: 2, stackDelta: -1 },
+    { id: 'eq', min: 2, stackDelta: -1, },
     null,
     null,
-    { id: 'drop', min: 1, stackDelta: -1 },
+    { id: 'drop', min: 1, stackDelta: -1, },
     null,
-    { id: 'put', min: 2, stackDelta: -2 },
-    { id: 'get', min: 1, stackDelta: 0 },
-    { id: 'ifelse', min: 4, stackDelta: -3 },
-    { id: 'random', min: 0, stackDelta: 1 },
+    { id: 'put', min: 2, stackDelta: -2, },
+    { id: 'get', min: 1, stackDelta: 0, },
+    { id: 'ifelse', min: 4, stackDelta: -3, },
+    { id: 'random', min: 0, stackDelta: 1, },
     { id: 'mul', min: 2, stackDelta: -1,
       stackFn: function stack_div(stack, index) {
         stack[index - 2] = stack[index - 2] * stack[index - 1];
-      }
+      },
     },
     null,
-    { id: 'sqrt', min: 1, stackDelta: 0 },
-    { id: 'dup', min: 1, stackDelta: 1 },
-    { id: 'exch', min: 2, stackDelta: 0 },
-    { id: 'index', min: 2, stackDelta: 0 },
-    { id: 'roll', min: 3, stackDelta: -2 },
+    { id: 'sqrt', min: 1, stackDelta: 0, },
+    { id: 'dup', min: 1, stackDelta: 1, },
+    { id: 'exch', min: 2, stackDelta: 0, },
+    { id: 'index', min: 2, stackDelta: 0, },
+    { id: 'roll', min: 3, stackDelta: -2, },
     null,
     null,
     null,
-    { id: 'hflex', min: 7, resetStack: true },
-    { id: 'flex', min: 13, resetStack: true },
-    { id: 'hflex1', min: 9, resetStack: true },
-    { id: 'flex1', min: 11, resetStack: true }
+    { id: 'hflex', min: 7, resetStack: true, },
+    { id: 'flex', min: 13, resetStack: true, },
+    { id: 'hflex1', min: 9, resetStack: true, },
+    { id: 'flex1', min: 11, resetStack: true, }
   ];
 
   function CFFParser(file, properties, seacAnalysisEnabled) {
@@ -302,7 +302,7 @@ var CFFParser = (function CFFParserClosure() {
       var hdrSize = bytes[2];
       var offSize = bytes[3];
       var header = new CFFHeader(major, minor, hdrSize, offSize);
-      return { obj: header, endPos: hdrSize };
+      return { obj: header, endPos: hdrSize, };
     },
     parseDict: function CFFParser_parseDict(dict) {
       var pos = 0;
@@ -404,7 +404,7 @@ var CFFParser = (function CFFParserClosure() {
         var offsetEnd = offsets[i + 1];
         cffIndex.add(bytes.subarray(offsetStart, offsetEnd));
       }
-      return {obj: cffIndex, endPos: end};
+      return { obj: cffIndex, endPos: end, };
     },
     parseNameIndex: function CFFParser_parseNameIndex(index) {
       var names = [];
@@ -618,7 +618,7 @@ var CFFParser = (function CFFParserClosure() {
           hints: 0,
           firstStackClearing: true,
           seac: null,
-          width: null
+          width: null,
         };
         var valid = true;
         var localSubrToUse = null;
@@ -875,7 +875,7 @@ var CFFParser = (function CFFParserClosure() {
       assert(fdSelect.length === length, 'parseFDSelect: Invalid font data.');
 
       return new CFFFDSelect(fdSelect, rawBytes);
-    }
+    },
   };
   return CFFParser;
 })();
@@ -931,7 +931,7 @@ var CFFStrings = (function CFFStringsClosure() {
     },
     get count() {
       return this.strings.length;
-    }
+    },
   };
   return CFFStrings;
 })();
@@ -955,7 +955,7 @@ var CFFIndex = (function CFFIndexClosure() {
     },
     get count() {
       return this.objects.length;
-    }
+    },
   };
   return CFFIndex;
 })();
@@ -1018,7 +1018,7 @@ var CFFDict = (function CFFDictClosure() {
     },
     removeByName: function CFFDict_removeByName(name) {
       delete this.values[this.nameToKeyMap[name]];
-    }
+    },
   };
   CFFDict.createTables = function CFFDict_createTables(layout) {
     var tables = {
@@ -1027,7 +1027,7 @@ var CFFDict = (function CFFDictClosure() {
       defaults: {},
       types: {},
       opcodes: {},
-      order: []
+      order: [],
     };
     for (var i = 0, ii = layout.length; i < ii; ++i) {
       var entry = layout[i];
@@ -1132,7 +1132,7 @@ var CFFPrivateDict = (function CFFPrivateDictClosure() {
 var CFFCharsetPredefinedTypes = {
   ISO_ADOBE: 0,
   EXPERT: 1,
-  EXPERT_SUBSET: 2
+  EXPERT_SUBSET: 2,
 };
 var CFFCharset = (function CFFCharsetClosure() {
   function CFFCharset(predefined, format, charset, raw) {
@@ -1165,7 +1165,7 @@ var CFFFDSelect = (function CFFFDSelectClosure() {
         return -1;
       }
       return this.fdSelect[glyphIndex];
-    }
+    },
   };
   return CFFFDSelect;
 })();
@@ -1218,7 +1218,7 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
         data[offset3] = (value >> 8) & 0xFF;
         data[offset4] = value & 0xFF;
       }
-    }
+    },
   };
   return CFFOffsetTracker;
 })();
@@ -1237,7 +1237,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
         add: function CFFCompiler_add(data) {
           this.data = this.data.concat(data);
           this.length = this.data.length;
-        }
+        },
       };
 
       // Compile the five entries that must be in order.
@@ -1433,7 +1433,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
       fdArrayIndex = this.compileIndex(fdArrayIndex, fontDictTrackers);
       return {
         trackers: fontDictTrackers,
-        output: fdArrayIndex
+        output: fdArrayIndex,
       };
     },
     compilePrivateDicts: function CFFCompiler_compilePrivateDicts(dicts,
@@ -1625,7 +1625,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
         }
       }
       return data;
-    }
+    },
   };
   return CFFCompiler;
 })();
