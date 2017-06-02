@@ -105,7 +105,7 @@ var Catalog = (function CatalogClosure() {
       if (!isRef(obj)) {
         return null;
       }
-      var root = { items: [] };
+      var root = { items: [], };
       var queue = [{ obj, parent: root, }];
       // To avoid recursion, keep track of the already processed items.
       var processed = new RefSet();
@@ -145,7 +145,7 @@ var Catalog = (function CatalogClosure() {
           count: outlineDict.get('Count'),
           bold: !!(flags & 2),
           italic: !!(flags & 1),
-          items: []
+          items: [],
         };
         i.parent.items.push(outlineItem);
         obj = outlineDict.getRaw('First');
@@ -556,7 +556,7 @@ var Catalog = (function CatalogClosure() {
       }
 
       return next(pageRef);
-    }
+    },
   };
 
   /**
@@ -739,7 +739,7 @@ var XRef = (function XRefClosure() {
     this.cache = [];
     this.stats = {
       streamTypes: [],
-      fontTypes: []
+      fontTypes: [],
     };
   }
 
@@ -787,7 +787,7 @@ var XRef = (function XRefClosure() {
           entryNum: 0,
           streamPos: parser.lexer.stream.pos,
           parserBuf1: parser.buf1,
-          parserBuf2: parser.buf2
+          parserBuf2: parser.buf2,
         };
       }
 
@@ -919,7 +919,7 @@ var XRef = (function XRefClosure() {
           entryRanges: range,
           byteWidths,
           entryNum: 0,
-          streamPos: stream.pos
+          streamPos: stream.pos,
         };
       }
       this.readXRefStream(stream);
@@ -1071,7 +1071,7 @@ var XRef = (function XRefClosure() {
             this.entries[m[1]] = {
               offset: position - stream.start,
               gen: m[2] | 0,
-              uncompressed: true
+              uncompressed: true,
             };
           }
           var contentLength = skipUntil(buffer, position, endobjBytes) + 7;
@@ -1369,7 +1369,7 @@ var XRef = (function XRefClosure() {
 
     getCatalogObj: function XRef_getCatalogObj() {
       return this.root;
-    }
+    },
   };
 
   return XRef;
@@ -1490,7 +1490,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
         }
       }
       return null;
-    }
+    },
   };
   return NameOrNumberTree;
 })();
@@ -1602,9 +1602,9 @@ var FileSpec = (function FileSpecClosure() {
     get serializable() {
       return {
         filename: this.filename,
-        content: this.content
+        content: this.content,
       };
-    }
+    },
   };
   return FileSpec;
 })();
@@ -1702,7 +1702,7 @@ var ObjectLoader = (function() {
               throw e;
             }
             nodesToRevisit.push(currentNode);
-            pendingRequests.push({ begin: e.begin, end: e.end });
+            pendingRequests.push({ begin: e.begin, end: e.end, });
           }
         }
         if (currentNode && currentNode.getBaseStreams) {
@@ -1714,7 +1714,7 @@ var ObjectLoader = (function() {
               foundMissingData = true;
               pendingRequests.push({
                 begin: stream.start,
-                end: stream.end
+                end: stream.end,
               });
             }
           }
@@ -1744,7 +1744,7 @@ var ObjectLoader = (function() {
       // Everything is loaded.
       this.refSet = null;
       this.capability.resolve();
-    }
+    },
   };
 
   return ObjectLoader;

@@ -245,7 +245,7 @@ var DecodeStream = (function DecodeStreamClosure() {
         return this.str.getBaseStreams();
       }
       return [];
-    }
+    },
   };
 
   return DecodeStream;
@@ -892,7 +892,7 @@ var JpegStream = (function JpegStreamClosure() {
       // If this.maybeLength is null, we'll get the entire stream.
       return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
-    configurable: true
+    configurable: true,
   });
 
   JpegStream.prototype.ensureBuffer = function JpegStream_ensureBuffer(req) {
@@ -969,7 +969,7 @@ var JpxStream = (function JpxStreamClosure() {
       // If this.maybeLength is null, we'll get the entire stream.
       return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
-    configurable: true
+    configurable: true,
   });
 
   JpxStream.prototype.ensureBuffer = function JpxStream_ensureBuffer(req) {
@@ -1039,7 +1039,7 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
       // If this.maybeLength is null, we'll get the entire stream.
       return shadow(this, 'bytes', this.stream.getBytes(this.maybeLength));
     },
-    configurable: true
+    configurable: true,
   });
 
   Jbig2Stream.prototype.ensureBuffer = function Jbig2Stream_ensureBuffer(req) {
@@ -1054,10 +1054,10 @@ var Jbig2Stream = (function Jbig2StreamClosure() {
       var globalsStream = this.params.get('JBIG2Globals');
       if (isStream(globalsStream)) {
         var globals = globalsStream.getBytes();
-        chunks.push({data: globals, start: 0, end: globals.length});
+        chunks.push({ data: globals, start: 0, end: globals.length, });
       }
     }
-    chunks.push({data: this.bytes, start: 0, end: this.bytes.length});
+    chunks.push({ data: this.bytes, start: 0, end: this.bytes.length, });
     var data = jbig2Image.parseChunks(chunks);
     var dataLength = data.length;
 
@@ -2326,7 +2326,7 @@ var LZWStream = (function LZWStreamClosure() {
       dictionaryLengths: new Uint16Array(maxLzwDictionarySize),
       dictionaryPrevCodes: new Uint16Array(maxLzwDictionarySize),
       currentSequence: new Uint8Array(maxLzwDictionarySize),
-      currentSequenceLength: 0
+      currentSequenceLength: 0,
     };
     for (var i = 0; i < 256; ++i) {
       lzwState.dictionaryValues[i] = i;

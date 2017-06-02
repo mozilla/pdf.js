@@ -265,7 +265,7 @@ NetworkManager.prototype = {
     var xhr = this.pendingRequests[xhrId].xhr;
     delete this.pendingRequests[xhrId];
     xhr.abort();
-  }
+  },
 };
 
 /** @implements {IPDFStream} */
@@ -274,7 +274,7 @@ function PDFNetworkStream(options) {
   var source = options.source;
   this._manager = new NetworkManager(source.url, {
     httpHeaders: source.httpHeaders,
-    withCredentials: source.withCredentials
+    withCredentials: source.withCredentials,
   });
   this._rangeChunkSize = source.rangeChunkSize;
   this._fullRequestReader = null;
@@ -313,7 +313,7 @@ PDFNetworkStream.prototype = {
     readers.forEach(function (reader) {
       reader.cancel(reason);
     });
-  }
+  },
 };
 
 /** @implements {IPDFStreamReader} */
@@ -327,7 +327,7 @@ function PDFNetworkStreamFullRequestReader(manager, options) {
                        this._onProgressiveData.bind(this),
     onDone: this._onDone.bind(this),
     onError: this._onError.bind(this),
-    onProgress: this._onProgress.bind(this)
+    onProgress: this._onProgress.bind(this),
   };
   this._url = source.url;
   this._fullRequestId = manager.requestFull(args);
@@ -421,7 +421,7 @@ PDFNetworkStreamFullRequestReader.prototype = {
       function PDFNetworkStreamFullRequestReader_onProgressiveData(chunk) {
     if (this._requests.length > 0) {
       var requestCapability = this._requests.shift();
-      requestCapability.resolve({value: chunk, done: false});
+      requestCapability.resolve({ value: chunk, done: false, });
     } else {
       this._cachedChunks.push(chunk);
     }
@@ -436,7 +436,7 @@ PDFNetworkStreamFullRequestReader.prototype = {
       return;
     }
     this._requests.forEach(function (requestCapability) {
-      requestCapability.resolve({value: undefined, done: true});
+      requestCapability.resolve({ value: undefined, done: true, });
     });
     this._requests = [];
   },
@@ -464,7 +464,7 @@ PDFNetworkStreamFullRequestReader.prototype = {
     if (this.onProgress) {
       this.onProgress({
         loaded: data.loaded,
-        total: data.lengthComputable ? data.total : this._contentLength
+        total: data.lengthComputable ? data.total : this._contentLength,
       });
     }
   },
@@ -494,7 +494,7 @@ PDFNetworkStreamFullRequestReader.prototype = {
       return Promise.resolve(chunk);
     }
     if (this._done) {
-      return Promise.resolve({value: undefined, done: true});
+      return Promise.resolve({ value: undefined, done: true, });
     }
     var requestCapability = createPromiseCapability();
     this._requests.push(requestCapability);
@@ -505,14 +505,14 @@ PDFNetworkStreamFullRequestReader.prototype = {
     this._done = true;
     this._headersReceivedCapability.reject(reason);
     this._requests.forEach(function (requestCapability) {
-      requestCapability.resolve({value: undefined, done: true});
+      requestCapability.resolve({ value: undefined, done: true, });
     });
     this._requests = [];
     if (this._manager.isPendingRequest(this._fullRequestId)) {
       this._manager.abortRequest(this._fullRequestId);
     }
     this._fullRequestReader = null;
-  }
+  },
 };
 
 /** @implements {IPDFStreamRangeReader} */
@@ -520,7 +520,7 @@ function PDFNetworkStreamRangeRequestReader(manager, begin, end) {
   this._manager = manager;
   var args = {
     onDone: this._onDone.bind(this),
-    onProgress: this._onProgress.bind(this)
+    onProgress: this._onProgress.bind(this),
   };
   this._requestId = manager.requestRange(begin, end, args);
   this._requests = [];
@@ -542,13 +542,13 @@ PDFNetworkStreamRangeRequestReader.prototype = {
     var chunk = data.chunk;
     if (this._requests.length > 0) {
       var requestCapability = this._requests.shift();
-      requestCapability.resolve({value: chunk, done: false});
+      requestCapability.resolve({ value: chunk, done: false, });
     } else {
       this._queuedChunk = chunk;
     }
     this._done = true;
     this._requests.forEach(function (requestCapability) {
-      requestCapability.resolve({value: undefined, done: true});
+      requestCapability.resolve({ value: undefined, done: true, });
     });
     this._requests = [];
     this._close();
@@ -557,7 +557,7 @@ PDFNetworkStreamRangeRequestReader.prototype = {
   _onProgress: function PDFNetworkStreamRangeRequestReader_onProgress(evt) {
     if (!this.isStreamingSupported && this.onProgress) {
       this.onProgress({
-        loaded: evt.loaded
+        loaded: evt.loaded,
       });
     }
   },
@@ -570,10 +570,10 @@ PDFNetworkStreamRangeRequestReader.prototype = {
     if (this._queuedChunk !== null) {
       var chunk = this._queuedChunk;
       this._queuedChunk = null;
-      return Promise.resolve({value: chunk, done: false});
+      return Promise.resolve({ value: chunk, done: false, });
     }
     if (this._done) {
-      return Promise.resolve({value: undefined, done: true});
+      return Promise.resolve({ value: undefined, done: true, });
     }
     var requestCapability = createPromiseCapability();
     this._requests.push(requestCapability);
@@ -583,14 +583,14 @@ PDFNetworkStreamRangeRequestReader.prototype = {
   cancel: function PDFNetworkStreamRangeRequestReader_cancel(reason) {
     this._done = true;
     this._requests.forEach(function (requestCapability) {
-      requestCapability.resolve({value: undefined, done: true});
+      requestCapability.resolve({ value: undefined, done: true, });
     });
     this._requests = [];
     if (this._manager.isPendingRequest(this._requestId)) {
       this._manager.abortRequest(this._requestId);
     }
     this._close();
-  }
+  },
 };
 
 setPDFNetworkStreamClass(PDFNetworkStream);

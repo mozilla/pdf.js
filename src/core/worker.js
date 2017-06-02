@@ -46,7 +46,7 @@ var WorkerTask = (function WorkerTaskClosure() {
       if (this.terminated) {
         throw new Error('Worker task was terminated');
       }
-    }
+    },
   };
 
   return WorkerTask;
@@ -241,7 +241,7 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
          // Reporting to first range reader.
          var firstReader = this._rangeReaders[0];
          if (firstReader.onProgress) {
-           firstReader.onProgress({loaded: evt.loaded});
+           firstReader.onProgress({ loaded: evt.loaded, });
          }
        }
     },
@@ -275,7 +275,7 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
       readers.forEach(function (rangeReader) {
         rangeReader.cancel(reason);
       });
-    }
+    },
   };
 
   /** @implements {IPDFStreamReader} */
@@ -296,7 +296,7 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
       }
       if (this._requests.length > 0) {
         var requestCapability = this._requests.shift();
-        requestCapability.resolve({value: chunk, done: false});
+        requestCapability.resolve({ value: chunk, done: false, });
         return;
       }
       this._queuedChunks.push(chunk);
@@ -321,10 +321,10 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
     read: function PDFWorkerStreamReader_read() {
       if (this._queuedChunks.length > 0) {
         var chunk = this._queuedChunks.shift();
-        return Promise.resolve({value: chunk, done: false});
+        return Promise.resolve({ value: chunk, done: false, });
       }
       if (this._done) {
-        return Promise.resolve({value: undefined, done: true});
+        return Promise.resolve({ value: undefined, done: true, });
       }
       var requestCapability = createPromiseCapability();
       this._requests.push(requestCapability);
@@ -334,10 +334,10 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
     cancel: function PDFWorkerStreamReader_cancel(reason) {
       this._done = true;
       this._requests.forEach(function (requestCapability) {
-        requestCapability.resolve({value: undefined, done: true});
+        requestCapability.resolve({ value: undefined, done: true, });
       });
       this._requests = [];
-    }
+    },
   };
 
   /** @implements {IPDFStreamRangeReader} */
@@ -360,9 +360,9 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
         this._queuedChunk = chunk;
       } else {
         var requestsCapability = this._requests.shift();
-        requestsCapability.resolve({value: chunk, done: false});
+        requestsCapability.resolve({ value: chunk, done: false, });
         this._requests.forEach(function (requestCapability) {
-          requestCapability.resolve({value: undefined, done: true});
+          requestCapability.resolve({ value: undefined, done: true, });
         });
         this._requests = [];
       }
@@ -376,10 +376,10 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
 
     read: function PDFWorkerStreamRangeReader_read() {
       if (this._queuedChunk) {
-        return Promise.resolve({value: this._queuedChunk, done: false});
+        return Promise.resolve({ value: this._queuedChunk, done: false, });
       }
       if (this._done) {
-        return Promise.resolve({value: undefined, done: true});
+        return Promise.resolve({ value: undefined, done: true, });
       }
       var requestCapability = createPromiseCapability();
       this._requests.push(requestCapability);
@@ -389,11 +389,11 @@ var PDFWorkerStream = (function PDFWorkerStreamClosure() {
     cancel: function PDFWorkerStreamRangeReader_cancel(reason) {
       this._done = true;
       this._requests.forEach(function (requestCapability) {
-        requestCapability.resolve({value: undefined, done: true});
+        requestCapability.resolve({ value: undefined, done: true, });
       });
       this._requests = [];
       this._stream._removeRangeReader(this);
-    }
+    },
   };
 
   return PDFWorkerStream;
@@ -558,7 +558,7 @@ var WorkerMessageHandler = {
           fullRequest.onProgress = function (evt) {
             handler.send('DocProgress', {
               loaded: evt.loaded,
-              total: evt.total
+              total: evt.total,
             });
           };
         }
@@ -576,7 +576,7 @@ var WorkerMessageHandler = {
           password: source.password,
           length: fullRequest.contentLength,
           disableAutoFetch,
-          rangeChunkSize: source.rangeChunkSize
+          rangeChunkSize: source.rangeChunkSize,
         }, evaluatorOptions, docBaseUrl);
         pdfManagerCapability.resolve(pdfManager);
         cancelXHRs = null;
@@ -618,7 +618,7 @@ var WorkerMessageHandler = {
             if (!fullRequest.isStreamingSupported) {
               handler.send('DocProgress', {
                 loaded,
-                total: Math.max(loaded, fullRequest.contentLength || 0)
+                total: Math.max(loaded, fullRequest.contentLength || 0),
               });
             }
 
@@ -650,7 +650,7 @@ var WorkerMessageHandler = {
     function setupDoc(data) {
       function onSuccess(doc) {
         ensureNotTerminated();
-        handler.send('GetDoc', { pdfInfo: doc });
+        handler.send('GetDoc', { pdfInfo: doc, });
       }
 
       function onFailure(e) {
@@ -719,7 +719,7 @@ var WorkerMessageHandler = {
         pdfManager = newPdfManager;
         handler.send('PDFManagerReady', null);
         pdfManager.onLoadedStream().then(function(stream) {
-          handler.send('DataLoaded', { length: stream.bytes.byteLength });
+          handler.send('DataLoaded', { length: stream.bytes.byteLength, });
         });
       }).then(pdfManagerReady, onFailure);
     }
@@ -738,7 +738,7 @@ var WorkerMessageHandler = {
             rotate: results[0],
             ref: results[1],
             userUnit: results[2],
-            view: results[3]
+            view: results[3],
           };
         });
       });
@@ -840,7 +840,7 @@ var WorkerMessageHandler = {
           // For compatibility with older behavior, generating unknown
           // unsupported feature notification on errors.
           handler.send('UnsupportedFeature',
-                       {featureId: UNSUPPORTED_FEATURES.unknown});
+                       { featureId: UNSUPPORTED_FEATURES.unknown, });
 
           var minimumStackMessage =
             'worker.js: while trying to getPage() and getOperatorList()';
@@ -851,24 +851,24 @@ var WorkerMessageHandler = {
           if (typeof e === 'string') {
             wrappedException = {
               message: e,
-              stack: minimumStackMessage
+              stack: minimumStackMessage,
             };
           } else if (typeof e === 'object') {
             wrappedException = {
               message: e.message || e.toString(),
-              stack: e.stack || minimumStackMessage
+              stack: e.stack || minimumStackMessage,
             };
           } else {
             wrappedException = {
               message: 'Unknown exception type: ' + (typeof e),
-              stack: minimumStackMessage
+              stack: minimumStackMessage,
             };
           }
 
           handler.send('PageError', {
             pageNum,
             error: wrappedException,
-            intent: data.intent
+            intent: data.intent,
           });
         });
       });
