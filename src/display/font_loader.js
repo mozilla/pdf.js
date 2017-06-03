@@ -25,7 +25,7 @@ function FontLoader(docId) {
     this.loadTestFontId = 0;
     this.loadingContext = {
       requests: [],
-      nextRequestId: 0
+      nextRequestId: 0,
     };
   }
 }
@@ -55,7 +55,7 @@ FontLoader.prototype = {
       });
       this.nativeFontFaces.length = 0;
     }
-  }
+  },
 };
 
 if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
@@ -90,7 +90,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
     get() {
       return shadow(this, 'loadTestFont', getLoadTestFont());
     },
-    configurable: true
+    configurable: true,
   });
 
   FontLoader.prototype.addNativeFontFace =
@@ -171,7 +171,7 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
       id: requestId,
       complete: LoadLoader_completeRequest,
       callback,
-      started: Date.now()
+      started: Date.now(),
     };
     context.requests.push(request);
     return request;
@@ -325,14 +325,14 @@ if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL || CHROME')) {
                     isSyncFontLoadingSupported());
     },
     enumerable: true,
-    configurable: true
+    configurable: true,
   });
 }
 
 var IsEvalSupportedCached = {
   get value() {
     return shadow(this, 'value', isEvalSupported());
-  }
+  },
 };
 
 var FontFaceObject = (function FontFaceObjectClosure() {
@@ -430,7 +430,7 @@ var FontFaceObject = (function FontFaceObjectClosure() {
         }
       }
       return this.compiledGlyphs[character];
-    }
+    },
   };
 
   return FontFaceObject;

@@ -26,7 +26,7 @@ var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 const NativeImageDecoding = {
   NONE: 'none',
   DECODE: 'decode',
-  DISPLAY: 'display'
+  DISPLAY: 'display',
 };
 
 var TextRenderingMode = {
@@ -39,13 +39,13 @@ var TextRenderingMode = {
   FILL_STROKE_ADD_TO_PATH: 6,
   ADD_TO_PATH: 7,
   FILL_STROKE_MASK: 3,
-  ADD_TO_PATH_FLAG: 4
+  ADD_TO_PATH_FLAG: 4,
 };
 
 var ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
-  RGBA_32BPP: 3
+  RGBA_32BPP: 3,
 };
 
 var AnnotationType = {
@@ -74,7 +74,7 @@ var AnnotationType = {
   TRAPNET: 23,
   WATERMARK: 24,
   THREED: 25,
-  REDACT: 26
+  REDACT: 26,
 };
 
 var AnnotationFlag = {
@@ -87,7 +87,7 @@ var AnnotationFlag = {
   READONLY: 0x40,
   LOCKED: 0x80,
   TOGGLENOVIEW: 0x100,
-  LOCKEDCONTENTS: 0x200
+  LOCKEDCONTENTS: 0x200,
 };
 
 var AnnotationFieldFlag = {
@@ -117,7 +117,7 @@ var AnnotationBorderStyleType = {
   DASHED: 2,
   BEVELED: 3,
   INSET: 4,
-  UNDERLINE: 5
+  UNDERLINE: 5,
 };
 
 var StreamType = {
@@ -130,7 +130,7 @@ var StreamType = {
   A85: 6,
   AHX: 7,
   CCF: 8,
-  RL: 9
+  RL: 9,
 };
 
 var FontType = {
@@ -144,13 +144,13 @@ var FontType = {
   TYPE3: 7,
   OPENTYPE: 8,
   TYPE0: 9,
-  MMTYPE1: 10
+  MMTYPE1: 10,
 };
 
 var VERBOSITY_LEVELS = {
   errors: 0,
   warnings: 1,
-  infos: 5
+  infos: 5,
 };
 
 var CMapCompressionType = {
@@ -253,7 +253,7 @@ var OPS = {
   paintImageXObjectRepeat: 88,
   paintImageMaskXObjectRepeat: 89,
   paintSolidColorImageMask: 90,
-  constructPath: 91
+  constructPath: 91,
 };
 
 var verbosity = VERBOSITY_LEVELS.warnings;
@@ -317,7 +317,7 @@ var UNSUPPORTED_FEATURES = {
   javaScript: 'javaScript',
   smask: 'smask',
   shadingPattern: 'shadingPattern',
-  font: 'font'
+  font: 'font',
 };
 
 // Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
@@ -375,7 +375,7 @@ function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value,
                                      enumerable: true,
                                      configurable: true,
-                                     writable: false });
+                                     writable: false, });
   return value;
 }
 
@@ -393,7 +393,7 @@ function getLookupTableFactory(initializer) {
 
 var PasswordResponses = {
   NEED_PASSWORD: 1,
-  INCORRECT_PASSWORD: 2
+  INCORRECT_PASSWORD: 2,
 };
 
 var PasswordException = (function PasswordExceptionClosure() {
@@ -1011,7 +1011,7 @@ var PageViewport = (function PageViewportClosure() {
      */
     convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
       return Util.applyInverseTransform([x, y], this.transform);
-    }
+    },
   };
   return PageViewport;
 })();
@@ -1154,7 +1154,7 @@ var StatTimer = (function StatTimerClosure() {
       this.times.push({
         'name': name,
         'start': this.started[name],
-        'end': Date.now()
+        'end': Date.now(),
       });
       // Remove timer from started so it can be called again.
       delete this.started[name];
@@ -1177,14 +1177,14 @@ var StatTimer = (function StatTimerClosure() {
         out += rpad(span['name'], ' ', longest) + ' ' + duration + 'ms\n';
       }
       return out;
-    }
+    },
   };
   return StatTimer;
 })();
 
 var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
-    return new Blob([data], { type: contentType });
+    return new Blob([data], { type: contentType, });
   }
   throw new Error('The "Blob" constructor is not supported.');
 };
@@ -1254,7 +1254,7 @@ function MessageHandler(sourceName, targetName, comObj) {
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            data: result
+            data: result,
           });
         }, function (reason) {
           if (reason instanceof Error) {
@@ -1266,7 +1266,7 @@ function MessageHandler(sourceName, targetName, comObj) {
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            error: reason
+            error: reason,
           });
         });
       } else {
@@ -1344,7 +1344,7 @@ MessageHandler.prototype = {
 
   destroy() {
     this.comObj.removeEventListener('message', this._onComObjOnMessage);
-  }
+  },
 };
 
 function loadJpegStream(id, imageUrl, objs) {

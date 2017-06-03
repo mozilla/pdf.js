@@ -191,11 +191,11 @@ function getDocument(src, pdfDataRangeTransport,
 
   var source;
   if (typeof src === 'string') {
-    source = { url: src };
+    source = { url: src, };
   } else if (isArrayBuffer(src)) {
-    source = { data: src };
+    source = { data: src, };
   } else if (src instanceof PDFDataRangeTransport) {
-    source = { range: src };
+    source = { range: src, };
   } else {
     if (typeof src !== 'object') {
       error('Invalid parameter in getDocument, need either Uint8Array, ' +
@@ -415,7 +415,7 @@ var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
      */
     then: function PDFDocumentLoadingTask_then(onFulfilled, onRejected) {
       return this.promise.then.apply(this.promise, arguments);
-    }
+    },
   };
 
   return PDFDocumentLoadingTask;
@@ -491,7 +491,7 @@ var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
     },
 
     abort: function PDFDataRangeTransport_abort() {
-    }
+    },
   };
   return PDFDataRangeTransport;
 })();
@@ -639,7 +639,7 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
      */
     destroy: function PDFDocumentProxy_destroy() {
       return this.loadingTask.destroy();
-    }
+    },
   };
   return PDFDocumentProxy;
 })();
@@ -843,7 +843,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         intentState.operatorList = {
           fnArray: [],
           argsArray: [],
-          lastChunk: false
+          lastChunk: false,
         };
 
         this.stats.time('Page Request');
@@ -939,7 +939,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         intentState.operatorList = {
           fnArray: [],
           argsArray: [],
-          lastChunk: false
+          lastChunk: false,
         };
 
         this.transport.messageHandler.send('RenderPageRequest', {
@@ -1066,7 +1066,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
         intentState.receivingOperatorList = false;
         this._tryCleanup();
       }
-    }
+    },
   };
   return PDFPageProxy;
 })();
@@ -1125,13 +1125,13 @@ class LoopbackPort {
 
     if (!this._defer) {
       this._listeners.forEach(function (listener) {
-        listener.call(this, {data: obj});
+        listener.call(this, { data: obj, });
       }, this);
       return;
     }
 
     var cloned = new WeakMap();
-    var e = {data: cloneValue(obj)};
+    var e = { data: cloneValue(obj), };
     this._deferred.then(() => {
       this._listeners.forEach(function (listener) {
         listener.call(this, e);
@@ -1332,7 +1332,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._readyCapability.resolve();
               // Send global setting, e.g. verbosity level.
               messageHandler.send('configure', {
-                verbosity: getVerbosityLevel()
+                verbosity: getVerbosityLevel(),
               });
             } else {
               this._setupFakeWorker();
@@ -1441,7 +1441,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         this._messageHandler.destroy();
         this._messageHandler = null;
       }
-    }
+    },
   };
 
   return PDFWorker;
@@ -1658,7 +1658,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               fontRegistry = {
                 registerFont(font, url) {
                   globalScope['FontInspector'].fontAdded(font, url);
-                }
+                },
               };
             }
             var font = new FontFaceObject(exportedData, {
@@ -1724,7 +1724,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         if (loadingTask.onProgress) {
           loadingTask.onProgress({
             loaded: data.loaded,
-            total: data.total
+            total: data.total,
           });
         }
       }, this);
@@ -1902,7 +1902,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         then(function transportMetadata(results) {
         return {
           info: results[0],
-          metadata: (results[1] ? new Metadata(results[1]) : null)
+          metadata: (results[1] ? new Metadata(results[1]) : null),
         };
       });
     },
@@ -1922,7 +1922,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         this.commonObjs.clear();
         this.fontLoader.clear();
       });
-    }
+    },
   };
   return WorkerTransport;
 
@@ -1953,7 +1953,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       var obj = {
         capability: createPromiseCapability(),
         data: null,
-        resolved: false
+        resolved: false,
       };
       this.objs[objId] = obj;
 
@@ -2027,7 +2027,7 @@ var PDFObjects = (function PDFObjectsClosure() {
 
     clear: function PDFObjects_clear() {
       this.objs = Object.create(null);
-    }
+    },
   };
   return PDFObjects;
 })();
@@ -2078,7 +2078,7 @@ var RenderTask = (function RenderTaskClosure() {
      */
     then: function RenderTask_then(onFulfilled, onRejected) {
       return this.promise.then.apply(this.promise, arguments);
-    }
+    },
   };
 
   return RenderTask;
@@ -2212,7 +2212,7 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
           this.callback();
         }
       }
-    }
+    },
 
   };
 
@@ -2235,7 +2235,7 @@ var _UnsupportedManager = (function UnsupportedManagerClosure() {
       for (var i = 0, ii = listeners.length; i < ii; i++) {
         listeners[i](featureId);
       }
-    }
+    },
   };
 })();
 
