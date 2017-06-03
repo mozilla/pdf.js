@@ -957,38 +957,40 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
      */
     getTextContent: function PDFPageProxy_getTextContent(params) {
       params = params || {};
-      var readableStream =
-        this.transport.messageHandler.sendWithStream('GetTextContent', {
+      const TEXT_CONTENT_CHUNK_SIZE = 100;
+      let readableStream =
+          this.transport.messageHandler.sendWithStream('GetTextContent', {
         pageIndex: this.pageNumber - 1,
         normalizeWhitespace: (params.normalizeWhitespace === true),
         combineTextItems: (params.disableCombineTextItems !== true),
       }, {
-        highWaterMark: 5,
+        highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
         size(textContent) {
           return textContent.items.length;
         }
       });
-      return new Promise((resolve, reject) => {
+
+      return new Promise(function(resolve, reject) {
         function pump() {
-          reader.read().then((result) => {
-            if (result.done) {
+          reader.read().then(function({ value, done }) {
+            if (done) {
               resolve(textContent);
             } else {
-              for (var key in result.value.styles) {
-                textContent.styles[key] = result.value.styles[key];
+              for (let key in value.styles) {
+                textContent.styles[key] = value.styles[key];
               }
-              textContent.items = textContent.items.concat(result.value.items);
+              textContent.items = textContent.items.concat(value.items);
               pump();
             }
-          }, (error) => {
+          }, function(error) {
             reject(error);
           });
         }
 
-        var reader = readableStream.getReader();
-        var textContent = {
+        let reader = readableStream.getReader();
+        let textContent = {
           items: [],
-          styles: {}
+          styles: Object.create(null)
         };
 
         pump();

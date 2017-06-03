@@ -1660,13 +1660,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 normalizeWhitespace,
                 combineTextItems,
                 sink
-              }).then(function (formTextContent) {
-                // Util.appendToArray(textContent.items, formTextContent.items);
-                // Util.extendObj(textContent.styles, formTextContent.styles);
-
-                // xobjsCache.key = name;
-                // xobjsCache.texts = formTextContent;
-              }));
+              }).then(function (formTextContent) {}));
               return;
             case OPS.setGState:
               flushTextContentItem();
