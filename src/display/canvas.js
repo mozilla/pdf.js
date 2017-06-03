@@ -1897,6 +1897,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (isArray(rect) && rect.length === 4) {
         var width = rect[2] - rect[0];
         var height = rect[3] - rect[1];
+        // IE does not support blending modes
+        if (document.createElement('canvas').msToBlob) {
+          this.ctx.globalAlpha = 0.4;
+        }
         this.ctx.rect(rect[0], rect[1], width, height);
         this.clip();
         this.endPath();
