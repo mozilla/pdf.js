@@ -28,7 +28,7 @@ describe('network', function() {
         rangeChunkSize: 65536,
         disableStream: true,
       },
-      disableRange: true
+      disableRange: true,
     });
 
     var fullReader = stream.getFullReader();
@@ -82,7 +82,7 @@ describe('network', function() {
         rangeChunkSize: 65536,
         disableStream: false,
       },
-      disableRange: false
+      disableRange: false,
     });
 
     var fullReader = stream.getFullReader();
@@ -129,7 +129,7 @@ describe('network', function() {
         rangeChunkSize: rangeSize,
         disableStream: true,
       },
-      disableRange: false
+      disableRange: false,
     });
 
     var fullReader = stream.getFullReader();
@@ -150,7 +150,7 @@ describe('network', function() {
                                              pdf1Length - tailSize);
     var range2Reader = stream.getRangeReader(pdf1Length - tailSize, pdf1Length);
 
-    var result1 = {value: 0}, result2 = {value: 0};
+    var result1 = { value: 0, }, result2 = { value: 0, };
     var read = function (reader, lenResult) {
       return reader.read().then(function (result) {
         if (result.done) {

@@ -26,7 +26,7 @@ describe('evaluator', function() {
   XrefMock.prototype = {
     fetchIfRef() {
       return this.queue.shift();
-    }
+    },
   };
   function HandlerMock() {
     this.inputs = [];
@@ -34,13 +34,13 @@ describe('evaluator', function() {
   HandlerMock.prototype = {
     send(name, data) {
       this.inputs.push({ name, data, });
-    }
+    },
   };
   function ResourcesMock() { }
   ResourcesMock.prototype = {
     get(name) {
       return this[name];
-    }
+    },
   };
 
   function PdfManagerMock() { }

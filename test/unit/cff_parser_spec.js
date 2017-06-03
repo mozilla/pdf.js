@@ -283,7 +283,7 @@ describe('CFFParser', function() {
                               ]);
     parser.bytes = bytes;
     var encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
-    expect(encoding.encoding).toEqual(createWithNullProto({0x8: 1}));
+    expect(encoding.encoding).toEqual(createWithNullProto({ 0x8: 1, }));
   });
 
   it('parses encoding format 1', function() {
@@ -297,7 +297,7 @@ describe('CFFParser', function() {
     parser.bytes = bytes;
     var encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
     expect(encoding.encoding).toEqual(
-      createWithNullProto({0x7: 0x01, 0x08: 0x02}));
+      createWithNullProto({ 0x7: 0x01, 0x08: 0x02, }));
   });
 
   it('parses fdselect format 0', function() {
