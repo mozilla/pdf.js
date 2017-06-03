@@ -38,9 +38,9 @@ describe('stream', function() {
               }
             }
             return result;
-          }
+          },
         };
-      }
+      },
     });
   });
   describe('PredictorStream', function() {
