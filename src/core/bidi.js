@@ -105,7 +105,7 @@ function reverseValues(arr, start, end) {
 function createBidiText(str, isLTR, vertical) {
   return {
     str,
-    dir: (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl'))
+    dir: (vertical ? 'ttb' : (isLTR ? 'ltr' : 'rtl')),
   };
 }
 

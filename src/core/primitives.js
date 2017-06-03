@@ -151,7 +151,7 @@ var Dict = (function DictClosure() {
       for (var key in this.map) {
         callback(key, this.get(key));
       }
-    }
+    },
   };
 
   Dict.empty = new Dict(null);
@@ -192,7 +192,7 @@ var Ref = (function RefClosure() {
         str += this.gen;
       }
       return str;
-    }
+    },
   };
 
   return Ref;
@@ -216,7 +216,7 @@ var RefSet = (function RefSetClosure() {
 
     remove: function RefSet_remove(ref) {
       delete this.dict[ref.toString()];
-    }
+    },
   };
 
   return RefSet;
@@ -252,7 +252,7 @@ var RefSetCache = (function RefSetCacheClosure() {
 
     clear: function RefSetCache_clear() {
       this.dict = Object.create(null);
-    }
+    },
   };
 
   return RefSetCache;

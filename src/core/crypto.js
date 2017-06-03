@@ -55,7 +55,7 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
       this.a = a;
       this.b = b;
       return output;
-    }
+    },
   };
   ARCFourCipher.prototype.decryptBlock = ARCFourCipher.prototype.encryptBlock;
 
@@ -229,7 +229,7 @@ var Word64 = (function Word64Closure() {
     assign: function Word64_assign(word) {
       this.high = word.high;
       this.low = word.low;
-    }
+    },
   };
   return Word64;
 })();
@@ -623,7 +623,7 @@ var NullCipher = (function NullCipherClosure() {
   NullCipher.prototype = {
     decryptBlock: function NullCipher_decryptBlock(data) {
       return data;
-    }
+    },
   };
 
   return NullCipher;
@@ -1055,7 +1055,7 @@ var AES128Cipher = (function AES128CipherClosure() {
         output.set(result[i], j);
       }
       return output;
-    }
+    },
   };
 
   return AES128Cipher;
@@ -1487,7 +1487,7 @@ var AES256Cipher = (function AES256CipherClosure() {
         output.set(result[i], j);
       }
       return output;
-    }
+    },
   };
 
   return AES256Cipher;
@@ -1555,7 +1555,7 @@ var PDF17 = (function PDF17Closure() {
       return cipher.decryptBlock(userEncryption,
                                  false,
                                  new Uint8Array(16));
-    }
+    },
   };
   return PDF17;
 })();
@@ -1673,7 +1673,7 @@ var PDF20 = (function PDF20Closure() {
       return cipher.decryptBlock(userEncryption,
                                  false,
                                  new Uint8Array(16));
-    }
+    },
   };
   return PDF20;
 })();
@@ -1698,7 +1698,7 @@ var CipherTransform = (function CipherTransformClosure() {
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data, true);
       return bytesToString(data);
-    }
+    },
   };
   return CipherTransform;
 })();
@@ -2042,7 +2042,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         return new ARCFourCipher(key);
       };
       return new CipherTransform(cipherConstructor, cipherConstructor);
-    }
+    },
   };
 
   return CipherTransformFactory;

@@ -476,7 +476,7 @@ var PDFImage = (function PDFImageClosure() {
       var drawHeight = this.drawHeight;
       var imgData = { // other fields are filled in below
         width: drawWidth,
-        height: drawHeight
+        height: drawHeight,
       };
 
       var numComps = this.numComps;
@@ -633,7 +633,7 @@ var PDFImage = (function PDFImageClosure() {
       this.image.drawHeight = drawHeight || this.height;
       this.image.forceRGB = !!forceRGB;
       return this.image.getBytes(length);
-    }
+    },
   };
   return PDFImage;
 })();

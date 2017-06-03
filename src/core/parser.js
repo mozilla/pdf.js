@@ -599,7 +599,7 @@ var Parser = (function ParserClosure() {
         warn('Invalid stream: \"' + ex + '\"');
         return new NullStream(stream);
       }
-    }
+    },
   };
 
   return Parser;
@@ -1036,7 +1036,7 @@ var Lexer = (function LexerClosure() {
         }
         ch = this.nextChar();
       }
-    }
+    },
   };
 
   return Lexer;
@@ -1086,9 +1086,9 @@ var Linearization = {
       endFirst: getInt('E'),
       numPages: getInt('N'),
       mainXRefEntriesOffset: getInt('T'),
-      pageFirst: (linDict.has('P') ? getInt('P', true) : 0)
+      pageFirst: (linDict.has('P') ? getInt('P', true) : 0),
     };
-  }
+  },
 };
 
 export {

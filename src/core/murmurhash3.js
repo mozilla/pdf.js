@@ -134,7 +134,7 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
       }
 
       return str;
-    }
+    },
   };
 
   return MurmurHash3_64;

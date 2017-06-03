@@ -197,7 +197,7 @@ var ColorSpace = (function ColorSpaceClosure() {
      * This should be true for all colorspaces except for lab color spaces
      * which are [0,100], [-128, 127], [-128, 127].
      */
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
 
   ColorSpace.parse = function ColorSpace_parse(cs, xref, res) {
@@ -408,7 +408,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     },
     get cmyk() {
       return shadow(this, 'cmyk', new DeviceCmykCS());
-    }
+    },
   };
 
   return ColorSpace;
@@ -489,7 +489,7 @@ var AlternateCS = (function AlternateCSClosure() {
     isDefaultDecode: function AlternateCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
 
   return AlternateCS;
@@ -564,7 +564,7 @@ var IndexedCS = (function IndexedCSClosure() {
       // indexed color maps shouldn't be changed
       return true;
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
   return IndexedCS;
 })();
@@ -606,7 +606,7 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
     isDefaultDecode: function DeviceGrayCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
   return DeviceGrayCS;
 })();
@@ -655,7 +655,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     isDefaultDecode: function DeviceRgbCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
   return DeviceRgbCS;
 })();
@@ -737,7 +737,7 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
     isDefaultDecode: function DeviceCmykCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
 
   return DeviceCmykCS;
@@ -834,7 +834,7 @@ var CalGrayCS = (function CalGrayCSClosure() {
     isDefaultDecode: function CalGrayCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
   return CalGrayCS;
 })();
@@ -1137,7 +1137,7 @@ var CalRGBCS = (function CalRGBCSClosure() {
     isDefaultDecode: function CalRGBCS_isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true
+    usesZeroToOneRange: true,
   };
   return CalRGBCS;
 })();
@@ -1281,7 +1281,7 @@ var LabCS = (function LabCSClosure() {
       // ranges that are used.
       return true;
     },
-    usesZeroToOneRange: false
+    usesZeroToOneRange: false,
   };
   return LabCS;
 })();
