@@ -460,7 +460,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
         dest.set(output, destOffset);
       };
-    }
+    },
   };
 })();
 
@@ -524,7 +524,7 @@ var PostScriptStack = (function PostScriptStackClosure() {
       for (i = c, j = r; i < j; i++, j--) {
         t = stack[i]; stack[i] = stack[j]; stack[j] = t;
       }
-    }
+    },
   };
   return PostScriptStack;
 })();
@@ -760,7 +760,7 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
         }
       }
       return stack.stack;
-    }
+    },
   };
   return PostScriptEvaluator;
 })();
@@ -881,7 +881,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     },
     toString() {
       return this.parts.join('');
-    }
+    },
   };
 
   function buildAddOperation(num1, num2) {
@@ -1126,7 +1126,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
         result.push(out.join(''));
       });
       return result.join('\n');
-    }
+    },
   };
 
   return PostScriptCompiler;

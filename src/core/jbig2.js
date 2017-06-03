@@ -28,7 +28,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         return this[id];
       }
       return (this[id] = new Int8Array(1 << 16));
-    }
+    },
   };
 
   function DecodingContext(data, start, end) {
@@ -45,7 +45,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     get contextCache() {
       var cache = new ContextCache();
       return shadow(this, 'contextCache', cache);
-    }
+    },
   };
 
   // Annex A. Arithmetic Integer Decoding Procedure
@@ -113,29 +113,32 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   ];
 
   var CodingTemplates = [
-    [{x: -1, y: -2}, {x: 0, y: -2}, {x: 1, y: -2}, {x: -2, y: -1},
-     {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: 2, y: -1},
-     {x: -4, y: 0}, {x: -3, y: 0}, {x: -2, y: 0}, {x: -1, y: 0}],
-    [{x: -1, y: -2}, {x: 0, y: -2}, {x: 1, y: -2}, {x: 2, y: -2},
-     {x: -2, y: -1}, {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1},
-     {x: 2, y: -1}, {x: -3, y: 0}, {x: -2, y: 0}, {x: -1, y: 0}],
-    [{x: -1, y: -2}, {x: 0, y: -2}, {x: 1, y: -2}, {x: -2, y: -1},
-     {x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: -2, y: 0},
-     {x: -1, y: 0}],
-    [{x: -3, y: -1}, {x: -2, y: -1}, {x: -1, y: -1}, {x: 0, y: -1},
-     {x: 1, y: -1}, {x: -4, y: 0}, {x: -3, y: 0}, {x: -2, y: 0}, {x: -1, y: 0}]
+    [{ x: -1, y: -2, }, { x: 0, y: -2, }, { x: 1, y: -2, }, { x: -2, y: -1, },
+     { x: -1, y: -1, }, { x: 0, y: -1, }, { x: 1, y: -1, }, { x: 2, y: -1, },
+     { x: -4, y: 0, }, { x: -3, y: 0, }, { x: -2, y: 0, }, { x: -1, y: 0, }],
+    [{ x: -1, y: -2, }, { x: 0, y: -2, }, { x: 1, y: -2, }, { x: 2, y: -2, },
+     { x: -2, y: -1, }, { x: -1, y: -1, }, { x: 0, y: -1, }, { x: 1, y: -1, },
+     { x: 2, y: -1, }, { x: -3, y: 0, }, { x: -2, y: 0, }, { x: -1, y: 0, }],
+    [{ x: -1, y: -2, }, { x: 0, y: -2, }, { x: 1, y: -2, }, { x: -2, y: -1, },
+     { x: -1, y: -1, }, { x: 0, y: -1, }, { x: 1, y: -1, }, { x: -2, y: 0, },
+     { x: -1, y: 0, }],
+    [{ x: -3, y: -1, }, { x: -2, y: -1, }, { x: -1, y: -1, }, { x: 0, y: -1, },
+     { x: 1, y: -1, }, { x: -4, y: 0, }, { x: -3, y: 0, }, { x: -2, y: 0, },
+     { x: -1, y: 0, }]
   ];
 
   var RefinementTemplates = [
     {
-      coding: [{x: 0, y: -1}, {x: 1, y: -1}, {x: -1, y: 0}],
-      reference: [{x: 0, y: -1}, {x: 1, y: -1}, {x: -1, y: 0}, {x: 0, y: 0},
-                  {x: 1, y: 0}, {x: -1, y: 1}, {x: 0, y: 1}, {x: 1, y: 1}]
+      coding: [{ x: 0, y: -1, }, { x: 1, y: -1, }, { x: -1, y: 0, }],
+      reference: [{ x: 0, y: -1, }, { x: 1, y: -1, }, { x: -1, y: 0, },
+                  { x: 0, y: 0, }, { x: 1, y: 0, }, { x: -1, y: 1, },
+                  { x: 0, y: 1, }, { x: 1, y: 1, }],
     },
     {
-      coding: [{x: -1, y: -1}, {x: 0, y: -1}, {x: 1, y: -1}, {x: -1, y: 0}],
-      reference: [{x: 0, y: -1}, {x: -1, y: 0}, {x: 0, y: 0}, {x: 1, y: 0},
-                  {x: 0, y: 1}, {x: 1, y: 1}]
+      coding: [{ x: -1, y: -1, }, { x: 0, y: -1, }, { x: 1, y: -1, },
+               { x: -1, y: 0, }],
+      reference: [{ x: 0, y: -1, }, { x: -1, y: 0, }, { x: 0, y: 0, },
+                  { x: 1, y: 0, }, { x: 0, y: 1, }, { x: 1, y: 1, }],
     }
   ];
 
@@ -731,7 +734,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       height: readUint32(data, start + 4),
       x: readUint32(data, start + 8),
       y: readUint32(data, start + 12),
-      combinationOperator: data[start + 16] & 7
+      combinationOperator: data[start + 16] & 7,
     };
   }
   var RegionSegmentInformationFieldLength = 17;
@@ -763,7 +766,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           for (i = 0; i < atLength; i++) {
             at.push({
               x: readInt8(data, position),
-              y: readInt8(data, position + 1)
+              y: readInt8(data, position + 1),
             });
             position += 2;
           }
@@ -774,7 +777,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           for (i = 0; i < 2; i++) {
             at.push({
               x: readInt8(data, position),
-              y: readInt8(data, position + 1)
+              y: readInt8(data, position + 1),
             });
             position += 2;
           }
@@ -821,7 +824,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           for (i = 0; i < 2; i++) {
             at.push({
               x: readInt8(data, position),
-              y: readInt8(data, position + 1)
+              y: readInt8(data, position + 1),
             });
             position += 2;
           }
@@ -850,7 +853,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           for (i = 0; i < atLength; i++) {
             at.push({
               x: readInt8(data, position),
-              y: readInt8(data, position + 1)
+              y: readInt8(data, position + 1),
             });
             position += 2;
           }
@@ -863,7 +866,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           width: readUint32(data, position),
           height: readUint32(data, position + 4),
           resolutionX: readUint32(data, position + 8),
-          resolutionY: readUint32(data, position + 12)
+          resolutionY: readUint32(data, position + 12),
         };
         if (pageInfo.height === 0xFFFFFFFF) {
           delete pageInfo.height;
@@ -1070,7 +1073,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     onImmediateLosslessTextRegion:
       function SimpleSegmentVisitor_onImmediateLosslessTextRegion() {
       this.onImmediateTextRegion.apply(this, arguments);
-    }
+    },
   };
 
   function Jbig2Image() {}
@@ -1078,7 +1081,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   Jbig2Image.prototype = {
     parseChunks: function Jbig2Image_parseChunks(chunks) {
       return parseJbig2Chunks(chunks);
-    }
+    },
   };
 
   return Jbig2Image;

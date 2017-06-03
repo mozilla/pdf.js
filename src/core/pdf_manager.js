@@ -94,7 +94,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 
     terminate: function BasePdfManager_terminate() {
       return new NotImplementedException();
-    }
+    },
   };
 
   return BasePdfManager;
@@ -145,7 +145,7 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 
     terminate: function LocalPdfManager_terminate() {
       return;
-    }
+    },
   });
 
   return LocalPdfManager;
@@ -165,7 +165,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
       url: args.url,
       length: args.length,
       disableAutoFetch: args.disableAutoFetch,
-      rangeChunkSize: args.rangeChunkSize
+      rangeChunkSize: args.rangeChunkSize,
     };
     this.streamManager = new ChunkedStreamManager(pdfNetworkStream, params);
     this.pdfDocument = new PDFDocument(this, this.streamManager.getStream());
@@ -219,7 +219,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
     terminate: function NetworkPdfManager_terminate() {
       this.streamManager.abort();
-    }
+    },
   });
 
   return NetworkPdfManager;

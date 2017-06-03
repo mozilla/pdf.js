@@ -91,7 +91,7 @@ var PostScriptParser = (function PostScriptParserClosure() {
       } else {
         error('PS Function: error parsing conditional.');
       }
-    }
+    },
   };
   return PostScriptParser;
 })();
@@ -102,7 +102,7 @@ var PostScriptTokenTypes = {
   NUMBER: 2,
   OPERATOR: 3,
   IF: 4,
-  IFELSE: 5
+  IFELSE: 5,
 };
 
 var PostScriptToken = (function PostScriptTokenClosure() {
@@ -214,7 +214,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
         error('Invalid floating point number: ' + value);
       }
       return value;
-    }
+    },
   };
   return PostScriptLexer;
 })();
