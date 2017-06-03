@@ -40,7 +40,7 @@ var FULL_CHUNK_HEIGHT = 16;
 var IsLittleEndianCached = {
   get value() {
     return shadow(IsLittleEndianCached, 'value', isLittleEndian());
-  }
+  },
 };
 
 function addContextCurrentTransform(ctx) {
@@ -60,7 +60,7 @@ function addContextCurrentTransform(ctx) {
     Object.defineProperty(ctx, 'mozCurrentTransform', {
       get: function getCurrentTransform() {
         return this._transformMatrix;
-      }
+      },
     });
 
     Object.defineProperty(ctx, 'mozCurrentTransformInverse', {
@@ -83,7 +83,7 @@ function addContextCurrentTransform(ctx) {
           (d * e - c * f) / bc_ad,
           (b * e - a * f) / ad_bc
         ];
-      }
+      },
     });
 
     ctx.save = function ctxSave() {
@@ -188,7 +188,7 @@ var CachedCanvases = (function CachedCanvasesClosure() {
         this.canvasFactory.destroy(canvasEntry);
         delete this.cache[id];
       }
-    }
+    },
   };
   return CachedCanvases;
 })();
@@ -394,7 +394,7 @@ var CanvasExtraState = (function CanvasExtraStateClosure() {
     setCurrentPoint: function CanvasExtraState_setCurrentPoint(x, y) {
       this.x = x;
       this.y = y;
-    }
+    },
   };
   return CanvasExtraState;
 })();
@@ -1649,7 +1649,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           createCanvasGraphics: (ctx) => {
             return new CanvasGraphics(ctx, this.commonObjs, this.objs,
                                       this.canvasFactory);
-          }
+          },
         };
         pattern = new TilingPattern(IR, color, this.ctx, canvasGraphicsFactory,
                                     baseTransform);
@@ -1933,7 +1933,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           left: position[0],
           top: position[1],
           width: w / currentTransform[0],
-          height: h / currentTransform[3]
+          height: h / currentTransform[3],
         });
       }
       this.restore();
@@ -2070,8 +2070,8 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var height = imgData.height;
       var map = [];
       for (var i = 0, ii = positions.length; i < ii; i += 2) {
-        map.push({transform: [scaleX, 0, 0, scaleY, positions[i],
-                 positions[i + 1]], x: 0, y: 0, w: width, h: height});
+        map.push({ transform: [scaleX, 0, 0, scaleY, positions[i],
+                   positions[i + 1]], x: 0, y: 0, w: width, h: height, });
       }
       this.paintInlineImageXObjectGroup(imgData, map);
     },
@@ -2141,7 +2141,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
           left: position[0],
           top: position[1],
           width: width / currentTransform[0],
-          height: height / currentTransform[3]
+          height: height / currentTransform[3],
         });
       }
       this.restore();
@@ -2171,7 +2171,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
             left: position[0],
             top: position[1],
             width: w,
-            height: h
+            height: h,
           });
         }
         ctx.restore();
@@ -2251,7 +2251,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         transform[0] * x + transform[2] * y + transform[4],
         transform[1] * x + transform[3] * y + transform[5]
       ];
-    }
+    },
   };
 
   for (var op in OPS) {
