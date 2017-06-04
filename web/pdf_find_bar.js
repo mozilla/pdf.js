@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FindStates } from './pdf_find_controller';
+import { FindState } from './pdf_find_controller';
 import { NullL10n } from './ui_utils';
 
 /**
@@ -108,19 +108,19 @@ class PDFFindBar {
     var status = '';
 
     switch (state) {
-      case FindStates.FIND_FOUND:
+      case FindState.FOUND:
         break;
 
-      case FindStates.FIND_PENDING:
+      case FindState.PENDING:
         status = 'pending';
         break;
 
-      case FindStates.FIND_NOTFOUND:
+      case FindState.NOT_FOUND:
         findMsg = this.l10n.get('find_not_found', null, 'Phrase not found');
         notFound = true;
         break;
 
-      case FindStates.FIND_WRAPPED:
+      case FindState.WRAPPED:
         if (previous) {
           findMsg = this.l10n.get('find_reached_top', null,
             'Reached top of document, continued from bottom');
