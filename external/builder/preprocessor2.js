@@ -22,7 +22,7 @@ function evalWithDefines(code, defines, loc) {
   if (!code || !code.trim()) {
     throw new Error('No JavaScript expression given');
   }
-  return vm.runInNewContext(code, defines, {displayErrors: false});
+  return vm.runInNewContext(code, defines, { displayErrors: false, });
 }
 
 function handlePreprocessorAction(ctx, actionName, args, loc) {
@@ -36,7 +36,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
           throw new Error('No code for testing is given');
         }
         var isTrue = !!evalWithDefines(arg.value, ctx.defines);
-        return {type: 'Literal', value: isTrue, loc: loc};
+        return { type: 'Literal', value: isTrue, loc: loc, };
       case 'eval':
         arg = args[0];
         if (!arg || arg.type !== 'Literal' ||
@@ -46,7 +46,7 @@ function handlePreprocessorAction(ctx, actionName, args, loc) {
         var result = evalWithDefines(arg.value, ctx.defines);
         if (typeof result === 'boolean' || typeof result === 'string' ||
             typeof result === 'number') {
-          return {type: 'Literal', value: result, loc: loc};
+          return { type: 'Literal', value: result, loc: loc, };
         }
         if (typeof result === 'object') {
           var parsedObj = acorn.parse('(' + JSON.stringify(result) + ')');
@@ -94,7 +94,7 @@ function postprocessNode(ctx, node) {
         return node.consequent;
       } else if (isLiteral(node.test, false)) {
         // if (false) stmt1; else stmt2; => stmt2
-        return node.alternate || {type: 'EmptyStatement', loc: node.loc};
+        return node.alternate || { type: 'EmptyStatement', loc: node.loc, };
       }
       break;
     case 'ConditionalExpression':
@@ -110,13 +110,13 @@ function postprocessNode(ctx, node) {
       if (node.operator === 'typeof' &&
           isPDFJSPreprocessor(node.argument)) {
         // typeof PDFJSDev => 'object'
-        return {type: 'Literal', value: 'object', loc: node.loc};
+        return { type: 'Literal', value: 'object', loc: node.loc, };
       }
       if (node.operator === '!' &&
           node.argument.type === 'Literal' &&
           typeof node.argument.value === 'boolean') {
         // !true => false,  !false => true
-        return {type: 'Literal', value: !node.argument.value, loc: node.loc};
+        return { type: 'Literal', value: !node.argument.value, loc: node.loc, };
       }
       break;
     case 'LogicalExpression':
@@ -157,7 +157,7 @@ function postprocessNode(ctx, node) {
                  return {
                    type: 'Literal',
                    value: (node.operator[0] === '=') === equal,
-                   loc: node.loc
+                   loc: node.loc,
                  };
              }
           }
@@ -285,7 +285,7 @@ function preprocessPDFJSCode(ctx, code) {
   var format = ctx.format || {
     indent: {
       style: ' ',
-    }
+    },
   };
   var parseOptions = {
     locations: true,
