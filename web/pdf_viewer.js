@@ -695,7 +695,13 @@ var PDFViewer = (function pdfViewer() {
         pageView.viewport.convertToViewportPoint(x + width, y + height)
       ];
       var left = Math.min(boundingRect[0][0], boundingRect[1][0]);
-      var top = Math.min(boundingRect[0][1], boundingRect[1][1]);
+      // Some pdf generator will generate a large top value (e.g. 10000)
+      // for outline destination
+      // which exceeds the hight of the page
+      // Therefore we have to ensure top is not less 0
+      // otherwise viewer will scroll to previous page
+      // See PR 6903 and bug 874482 for more discussion
+      var top = Math.max(Math.min(boundingRect[0][1], boundingRect[1][1]), 0);
 
       if (!allowNegativeOffset) {
         // Some bad PDF generators will create destinations with e.g. top values
