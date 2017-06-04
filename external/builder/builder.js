@@ -53,7 +53,7 @@ function preprocess(inFilename, outFilename, defines) {
       throw new Error('No JavaScript expression given at ' + loc());
     }
     try {
-      return vm.runInNewContext(code, defines, {displayErrors: false});
+      return vm.runInNewContext(code, defines, { displayErrors: false, });
     } catch (e) {
       throw new Error('Could not evaluate "' + code + '" at ' + loc() + '\n' +
                       e.name + ': ' + e.message);
