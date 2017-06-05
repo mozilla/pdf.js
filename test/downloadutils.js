@@ -93,7 +93,6 @@ function downloadManifestFiles(manifest, callback) {
     downloadFile(file, url, function (err) {
       if (err) {
         console.error('Error during downloading of ' + url + ': ' + err);
-        fs.writeFileSync(file, ''); // making it empty file
         fs.writeFileSync(file + '.error', err);
       }
       i++;

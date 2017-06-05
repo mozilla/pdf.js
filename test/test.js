@@ -420,12 +420,12 @@ function checkRefTestResults(browser, id, results) {
       }
       if (pageResult.failure) {
         failed = true;
+        session.numErrors++;
         if (fs.existsSync(task.file + '.error')) {
           console.log('TEST-SKIPPED | PDF was not downloaded ' + id + ' | in ' +
                       browser + ' | page' + (page + 1) + ' round ' +
                       (round + 1) + ' | ' + pageResult.failure);
         } else {
-          session.numErrors++;
           console.log('TEST-UNEXPECTED-FAIL | test failed ' + id + ' | in ' +
             browser + ' | page' + (page + 1) + ' round ' +
             (round + 1) + ' | ' + pageResult.failure);
