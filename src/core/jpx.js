@@ -343,6 +343,9 @@ var JpxImage = (function JpxImageClosure() {
                 context.currentTile.COC = [];
               }
               break;
+            case 0xFF58: // PLT, jump over it (We jump from box to box)
+              length = readUint16(data, position);
+              break;
             case 0xFF90: // Start of tile-part (SOT)
               length = readUint16(data, position);
               tile = {};
