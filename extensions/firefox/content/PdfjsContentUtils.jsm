@@ -43,7 +43,7 @@ var PdfjsContentUtils = {
     if (!this._mm) {
       this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
         getService(Ci.nsISyncMessageSender);
-      this._mm.addMessageListener("PDFJS:Child:refreshSettings", this);
+      this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
 
 //#if !MOZCENTRAL
       // The signature of `Services.obs.addObserver` changed in Firefox 55,
@@ -62,7 +62,7 @@ var PdfjsContentUtils = {
 
   uninit() {
     if (this._mm) {
-      this._mm.removeMessageListener("PDFJS:Child:refreshSettings", this);
+      this._mm.removeMessageListener("PDFJS:Child:updateSettings", this);
       Services.obs.removeObserver(this, "quit-application");
     }
     this._mm = null;
@@ -109,14 +109,6 @@ var PdfjsContentUtils = {
   },
 
   /*
-   * Forwards default app query to the parent where we check various
-   * handler app settings only available in the parent process.
-   */
-  isDefaultHandlerApp() {
-    return this._mm.sendSyncMessage("PDFJS:Parent:isDefaultHandlerApp")[0];
-  },
-
-  /*
    * Request the display of a notification warning in the associated window
    * when the renderer isn't sure a pdf displayed correctly.
    */
@@ -145,13 +137,17 @@ var PdfjsContentUtils = {
 
   receiveMessage(aMsg) {
     switch (aMsg.name) {
-      case "PDFJS:Child:refreshSettings":
+      case "PDFJS:Child:updateSettings":
         // Only react to this if we are remote.
         if (Services.appinfo.processType ===
             Services.appinfo.PROCESS_TYPE_CONTENT) {
           let jsm = "resource://pdf.js/PdfJs.jsm";
           let pdfjs = Components.utils.import(jsm, {}).PdfJs;
-          pdfjs.updateRegistration();
+          if (aMsg.data.enabled) {
+            pdfjs.ensureRegistered();
+          } else {
+            pdfjs.ensureUnregistered();
+          }
         }
         break;
     }
