@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<!--#if GENERIC || CHROME-->
+    <meta name="google" content="notranslate">
+<!--#endif-->
+<!--#if GENERIC-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<!--#endif-->
+    <title>index</title>
+    <style>
+      *{ margin: 0; padding: 0 }
+      .box{ width: 1212px; margin: 0 auto;}
+      .one{ text-align: center; }
+      iframe{ min-height: 1657px }
+    </style>
+  </head>
+
+  <body>
+  <div class="box">
+    <div class="one">
+      <h1>下面是PDF iframe 演示</h1>
+    </div>
+    <div class="two">
+      <iframe src="viewer.html?file=3c3e0704-bdf3-487f-a160-fc15ab2fb1bf.pdf" frameborder="0" scrolling="no" width="100%" height="auto"></iframe>
+    </div>
+  </div>
+  <script type="text/javascript">
+    setTimeout(function(){
+      var iframe_pages = document.getElementsByTagName('iframe');
+      for(var iframe_index = 0;iframe_index < iframe_pages.length;iframe_index++){
+        var heightsum = iframe_pages[iframe_index].contentWindow.document.getElementsByTagName('html')[0].getAttribute('heightsum') + 'px';
+        iframe_pages[iframe_index].style.height = heightsum;
+        console.log(heightsum);
+      }
+      console.log('-----------success----------');
+    },1700);
+  </script>
+  </body>
+</html>
