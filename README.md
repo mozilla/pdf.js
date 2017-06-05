@@ -112,6 +112,28 @@ contributor Julian Viereck:
 More learning resources can be found at:
 
 + https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
++ 
+## Optimizing
+
+PDF.js is blazing fast!
+
+However if you find yourself needing more speed you can try going into web/viewer.js and editing the DEFAULT_PREFERENCES.
+
+During initialisation, DEFAULT_PREFERENCES sets a few options. 
+````
+
+var DEFAULT_PREFERENCES = {
+    ..
+    ..
+    ..
+    }
+
+// Set disableFontFace & disableTextLayer to be true to save memory!
+DEFAULT_PREFERENCES.disableFontFace = true;
+DEFAULT_PREFERENCES.disableTextLayer = true;
+````
+
+However, with these settings, you can no longer underline the text. But this should be good enough if you are showing an invoice or a report.
 
 ## Questions
 
