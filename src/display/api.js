@@ -976,10 +976,8 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
             if (done) {
               resolve(textContent);
             } else {
-              for (let key in value.styles) {
-                textContent.styles[key] = value.styles[key];
-              }
-              textContent.items = textContent.items.concat(value.items);
+              Util.extendObj(textContent.styles, value.styles);
+              Util.appendToArray(textContent.items, value.items);
               pump();
             }
           }, function(error) {

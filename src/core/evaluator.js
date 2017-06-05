@@ -1652,6 +1652,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               // Enqueue textContent chunk before call for sub-form.
               enqueueChunk();
+              let sinkWrapper = {
+                cachedChunks = [],
+                enqueue(chunk, size) {
+                  sink.enqueue(chunk, size);
+                  this.cachedChunks.push(chunk);
+                },
+
+                get desiredSize() {
+                  return sink.desiredSize;
+                },
+
+                get ready() {
+                  return sink.ready;
+                }
+              };
               next(self.getTextContent({
                 stream: xobj,
                 task,
@@ -1659,7 +1674,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 stateManager: xObjStateManager,
                 normalizeWhitespace,
                 combineTextItems,
-                sink
+                sinkWrapper
               }).then(function (formTextContent) {}));
               return;
             case OPS.setGState:
