@@ -225,7 +225,9 @@ var ToUnicodeMap = (function ToUnicodeMapClosure() {
 
     forEach(callback) {
       for (var charCode in this._map) {
-        callback(charCode, this._map[charCode].charCodeAt(0));
+        if (this._map.hasOwnProperty(charCode)) {
+          callback(charCode, this._map[charCode].charCodeAt(0));
+        }
       }
     },
 
