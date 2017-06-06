@@ -1592,7 +1592,8 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
   display: none;
 }
 
-@media screen and (min-resolution: 2dppx) {
+@media screen and (min-resolution: 2dppx),
+       screen and (-webkit-min-device-pixel-ratio: 2) {
   /* Rules for Retina screens */
   .toolbarButton::before {
     -webkit-transform: scale(0.5);
