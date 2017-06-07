@@ -242,7 +242,8 @@ ChromiumBrowser.prototype.buildArguments = function (url) {
   var profileDir = this.getProfileDir();
   return ['--user-data-dir=' + profileDir,
     '--no-first-run', '--disable-sync',
-    '--no-default-browser-check', url];
+    '--no-default-browser-check',
+    '--enable-logging', '--v=1', url];
 };
 
 WebBrowser.create = function (desc) {
