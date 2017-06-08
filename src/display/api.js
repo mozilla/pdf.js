@@ -1210,6 +1210,10 @@ var PDFWorker = (function PDFWorkerClosure() {
       require('../core/network.js');
       WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
       fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+    } else if(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler) {
+      // pdf.worker.js is already present
+      WorkerMessageHandler = window.pdfjsDistBuildPdfWorker.WorkerMessageHandler;
+      fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
     } else {
       var loader = fakeWorkerFilesLoader || function (callback) {
         Util.loadScript(getWorkerSrc(), function () {
