@@ -1214,24 +1214,50 @@ var createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
+function resolveCall(fn, args, thisArg = null) {
+  if (!fn) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise((resolve, reject) => {
+    resolve(fn.apply(thisArg, args));
+  });
+}
+
+function resolveOrReject(capability, success, reason) {
+  if (success) {
+    capability.resolve();
+  } else {
+    capability.reject(reason);
+  }
+}
+
+function finalize(promise) {
+  return Promise.resolve(promise).catch(() => {});
+}
+
 function MessageHandler(sourceName, targetName, comObj) {
   this.sourceName = sourceName;
   this.targetName = targetName;
   this.comObj = comObj;
-  this.callbackIndex = 1;
+  this.callbackId = 1;
+  this.streamId = 1;
   this.postMessageTransfers = true;
-  var callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
-  var ah = this.actionHandler = Object.create(null);
+  this.streamSinks = Object.create(null);
+  this.streamControllers = Object.create(null);
+  let callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
+  let ah = this.actionHandler = Object.create(null);
 
   this._onComObjOnMessage = (event) => {
-    var data = event.data;
+    let data = event.data;
     if (data.targetName !== this.sourceName) {
       return;
     }
-    if (data.isReply) {
-      var callbackId = data.callbackId;
+    if (data.stream) {
+      this._processStreamMessage(data);
+    } else if (data.isReply) {
+      let callbackId = data.callbackId;
       if (data.callbackId in callbacksCapabilities) {
-        var callback = callbacksCapabilities[callbackId];
+        let callback = callbacksCapabilities[callbackId];
         delete callbacksCapabilities[callbackId];
         if ('error' in data) {
           callback.reject(data.error);
@@ -1242,13 +1268,13 @@ function MessageHandler(sourceName, targetName, comObj) {
         error('Cannot resolve callback ' + callbackId);
       }
     } else if (data.action in ah) {
-      var action = ah[data.action];
+      let action = ah[data.action];
       if (data.callbackId) {
-        var sourceName = this.sourceName;
-        var targetName = data.sourceName;
+        let sourceName = this.sourceName;
+        let targetName = data.sourceName;
         Promise.resolve().then(function () {
           return action[0].call(action[1], data.data);
-        }).then(function (result) {
+        }).then((result) => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -1256,7 +1282,7 @@ function MessageHandler(sourceName, targetName, comObj) {
             callbackId: data.callbackId,
             data: result,
           });
-        }, function (reason) {
+        }, (reason) => {
           if (reason instanceof Error) {
             // Serialize error to avoid "DataCloneError"
             reason = reason + '';
@@ -1269,6 +1295,8 @@ function MessageHandler(sourceName, targetName, comObj) {
             error: reason,
           });
         });
+      } else if (data.streamId) {
+        this._createStreamSink(data);
       } else {
         action[0].call(action[1], data.data);
       }
@@ -1289,9 +1317,9 @@ MessageHandler.prototype = {
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
+   * @param {String} actionName - Action to call.
+   * @param {JSON} data - JSON data to send.
+   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers
    */
   send(actionName, data, transfers) {
     var message = {
@@ -1304,14 +1332,14 @@ MessageHandler.prototype = {
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
-   * Expects that other side will callback with the response.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
+   * Expects that the other side will callback with the response.
+   * @param {String} actionName - Action to call.
+   * @param {JSON} data - JSON data to send.
+   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
    * @returns {Promise} Promise to be resolved with response data.
    */
   sendWithPromise(actionName, data, transfers) {
-    var callbackId = this.callbackIndex++;
+    var callbackId = this.callbackId++;
     var message = {
       sourceName: this.sourceName,
       targetName: this.targetName,
@@ -1329,9 +1357,214 @@ MessageHandler.prototype = {
     return capability.promise;
   },
   /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * Expect that the other side will callback to signal 'start_complete'.
+   * @param {String} actionName - Action to call.
+   * @param {JSON} data - JSON data to send.
+   * @param {Object} queueingStrategy - strategy to signal backpressure based on
+   *                 internal queue.
+   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
+   * @return {ReadableStream} ReadableStream to read data in chunks.
+   */
+  sendWithStream(actionName, data, queueingStrategy, transfers) {
+    let streamId = this.streamId++;
+    let sourceName = this.sourceName;
+    let targetName = this.targetName;
+
+    return new ReadableStream({
+      start: (controller) => {
+        let startCapability = createPromiseCapability();
+        this.streamControllers[streamId] = {
+          controller,
+          startCall: startCapability,
+        };
+        this.postMessage({
+          sourceName,
+          targetName,
+          action: actionName,
+          streamId,
+          data,
+          desiredSize: controller.desiredSize,
+        });
+        // Return Promise for Async process, to signal success/failure.
+        return startCapability.promise;
+      },
+
+      pull: (controller) => {
+        let pullCapability = createPromiseCapability();
+        this.streamControllers[streamId].pullCall = pullCapability;
+        this.postMessage({
+          sourceName,
+          targetName,
+          stream: 'pull',
+          streamId,
+          desiredSize: controller.desiredSize,
+        });
+        // Returning Promise will not call "pull"
+        // again until current pull is resolved.
+        return pullCapability.promise;
+      },
+
+      cancel: (reason) => {
+        let cancelCapability = createPromiseCapability();
+        this.streamControllers[streamId].cancelCall = cancelCapability;
+        this.postMessage({
+          sourceName,
+          targetName,
+          stream: 'cancel',
+          reason,
+          streamId,
+        });
+        // Return Promise to signal success or failure.
+        return cancelCapability.promise;
+      },
+    }, queueingStrategy);
+  },
+
+  _createStreamSink(data) {
+    let self = this;
+    let action = this.actionHandler[data.action];
+    let streamId = data.streamId;
+    let desiredSize = data.desiredSize;
+    let sourceName = this.sourceName;
+    let targetName = data.sourceName;
+    let capability = createPromiseCapability();
+
+    let sendStreamRequest = ({ stream, chunk, success, reason, }) => {
+      this.comObj.postMessage({ sourceName, targetName, stream, streamId,
+                                chunk, success, reason, });
+    };
+
+    let streamSink = {
+      enqueue(chunk, size = 1) {
+        let lastDesiredSize = this.desiredSize;
+        this.desiredSize -= size;
+        // Enqueue decreases the desiredSize property of sink,
+        // so when it changes from positive to negative,
+        // set ready as unresolved promise.
+        if (lastDesiredSize > 0 && this.desiredSize <= 0) {
+          this.sinkCapability = createPromiseCapability();
+          this.ready = this.sinkCapability.promise;
+        }
+        sendStreamRequest({ stream: 'enqueue', chunk, });
+      },
+
+      close() {
+        sendStreamRequest({ stream: 'close', });
+        delete self.streamSinks[streamId];
+      },
+
+      error(reason) {
+        sendStreamRequest({ stream: 'error', reason, });
+      },
+
+      sinkCapability: capability,
+      onPull: null,
+      onCancel: null,
+      desiredSize,
+      ready: null,
+    };
+
+    streamSink.sinkCapability.resolve();
+    streamSink.ready = streamSink.sinkCapability.promise;
+    this.streamSinks[streamId] = streamSink;
+    resolveCall(action[0], [data.data, streamSink], action[1]).then(() => {
+      sendStreamRequest({ stream: 'start_complete', success: true, });
+    }, (reason) => {
+      sendStreamRequest({ stream: 'start_complete', success: false, reason, });
+    });
+  },
+
+  _processStreamMessage(data) {
+    let sourceName = this.sourceName;
+    let targetName = data.sourceName;
+    let streamId = data.streamId;
+
+    let sendStreamResponse = ({ stream, success, reason, }) => {
+      this.comObj.postMessage({ sourceName, targetName, stream,
+                                success, streamId, reason, });
+    };
+
+    let deleteStreamController = () => {
+      // Delete streamController only when start, pull and
+      // cancel callbacks are resolved, to avoid "TypeError".
+      Promise.all([
+        this.streamControllers[data.streamId].startCall,
+        this.streamControllers[data.streamId].pullCall,
+        this.streamControllers[data.streamId].cancelCall
+      ].map(function(capability) {
+        return capability && finalize(capability.promise);
+      })).then(() => {
+        delete this.streamControllers[data.streamId];
+      });
+    };
+
+    switch (data.stream) {
+      case 'start_complete':
+        resolveOrReject(this.streamControllers[data.streamId].startCall,
+                        data.success, data.reason);
+        break;
+      case 'pull_complete':
+        resolveOrReject(this.streamControllers[data.streamId].pullCall,
+                        data.success, data.reason);
+        break;
+      case 'pull':
+        // Ignore any pull after close is called.
+        if (!this.streamSinks[data.streamId]) {
+          sendStreamResponse({ stream: 'pull_complete', success: true, });
+          break;
+        }
+        // Pull increases the desiredSize property of sink,
+        // so when it changes from negative to positive,
+        // set ready property as resolved promise.
+        if (this.streamSinks[data.streamId].desiredSize <= 0 &&
+            data.desiredSize > 0) {
+          this.streamSinks[data.streamId].sinkCapability.resolve();
+        }
+        // Reset desiredSize property of sink on every pull.
+        this.streamSinks[data.streamId].desiredSize = data.desiredSize;
+        resolveCall(this.streamSinks[data.streamId].onPull).then(() => {
+          sendStreamResponse({ stream: 'pull_complete', success: true, });
+        }, (reason) => {
+          sendStreamResponse({ stream: 'pull_complete',
+                               success: false, reason, });
+        });
+        break;
+      case 'enqueue':
+        this.streamControllers[data.streamId].controller.enqueue(data.chunk);
+        break;
+      case 'close':
+        this.streamControllers[data.streamId].controller.close();
+        deleteStreamController();
+        break;
+      case 'error':
+        this.streamControllers[data.streamId].controller.error(data.reason);
+        deleteStreamController();
+        break;
+      case 'cancel_complete':
+        resolveOrReject(this.streamControllers[data.streamId].cancelCall,
+                        data.success, data.reason);
+        deleteStreamController();
+        break;
+      case 'cancel':
+        resolveCall(this.streamSinks[data.streamId].onCancel,
+                    [data.reason]).then(() => {
+          sendStreamResponse({ stream: 'cancel_complete', success: true, });
+        }, (reason) => {
+          sendStreamResponse({ stream: 'cancel_complete',
+                               success: false, reason, });
+        });
+        delete this.streamSinks[data.streamId];
+        break;
+      default:
+        throw new Error('Unexpected stream case');
+    }
+  },
+
+  /**
    * Sends raw message to the comObj.
    * @private
-   * @param message {Object} Raw message.
+   * @param {Object} message - Raw message.
    * @param transfers List of transfers/ArrayBuffers, or undefined.
    */
   postMessage(message, transfers) {
