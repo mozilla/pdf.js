@@ -628,14 +628,11 @@ var Font = (function FontClosure() {
         }
       } else if (isOpenTypeFile(file)) {
         // Sometimes the type/subtype can be a complete lie (see issue7598.pdf).
-        type = subtype = 'OpenType';
+        subtype = 'OpenType';
       }
     }
     if (subtype === 'CIDFontType0C' && type !== 'CIDFontType0') {
       type = 'CIDFontType0';
-    }
-    if (subtype === 'OpenType') {
-      type = 'OpenType';
     }
     // Some CIDFontType0C fonts by mistake claim CIDFontType0.
     if (type === 'CIDFontType0') {
@@ -643,10 +640,13 @@ var Font = (function FontClosure() {
         subtype = 'CIDFontType0';
       } else if (isOpenTypeFile(file)) {
         // Sometimes the type/subtype can be a complete lie (see issue6782.pdf).
-        type = subtype = 'OpenType';
+        subtype = 'OpenType';
       } else {
         subtype = 'CIDFontType0C';
       }
+    }
+    if (subtype === 'OpenType' && type !== 'OpenType') {
+      type = 'OpenType';
     }
 
     var data;
