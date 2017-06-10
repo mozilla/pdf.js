@@ -795,12 +795,18 @@ Shadings.Dummy = (function DummyClosure() {
 })();
 
 function getTilingPatternIR(operatorList, dict, args) {
-  var matrix = dict.getArray('Matrix');
-  var bbox = dict.getArray('BBox');
-  var xstep = dict.get('XStep');
-  var ystep = dict.get('YStep');
-  var paintType = dict.get('PaintType');
-  var tilingType = dict.get('TilingType');
+  let matrix = dict.getArray('Matrix');
+  let bbox = Util.normalizeRect(dict.getArray('BBox'));
+  let xstep = dict.get('XStep');
+  let ystep = dict.get('YStep');
+  let paintType = dict.get('PaintType');
+  let tilingType = dict.get('TilingType');
+
+  // Ensure that the pattern has a non-zero width and height, to prevent errors
+  // in `pattern_helper.js` (fixes issue8330.pdf).
+  if ((bbox[2] - bbox[0]) === 0 || (bbox[3] - bbox[1]) === 0) {
+    throw new Error(`getTilingPatternIR - invalid /BBox array: [${bbox}].`);
+  }
 
   return [
     'TilingPattern', args, operatorList, matrix, bbox, xstep, ystep,
