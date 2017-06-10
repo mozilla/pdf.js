@@ -264,7 +264,7 @@ function getDocument(src, pdfDataRangeTransport,
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global settings, using it.
     var workerPort = getDefaultSetting('workerPort');
-    worker = workerPort ? new PDFWorker(null, workerPort) : new PDFWorker();
+    worker = workerPort ? PDFWorker.fromPort(workerPort) : new PDFWorker();
     task._worker = worker;
   }
   var docId = task.docId;
@@ -1160,7 +1160,7 @@ class LoopbackPort {
  * @class
  */
 var PDFWorker = (function PDFWorkerClosure() {
-  var nextFakeWorkerId = 0;
+  let nextFakeWorkerId = 0;
 
   function getWorkerSrc() {
     if (typeof workerSrc !== 'undefined') {
@@ -1177,7 +1177,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     error('No PDFJS.workerSrc specified');
   }
 
-  var fakeWorkerFilesLoadedCapability;
+  let fakeWorkerFilesLoadedCapability;
 
   // Loads worker code into main thread.
   function setupFakeWorkerGlobal() {
@@ -1229,7 +1229,13 @@ var PDFWorker = (function PDFWorkerClosure() {
     return URL.createObjectURL(new Blob([wrapper]));
   }
 
+  let pdfWorkerPorts = new WeakMap();
+
   function PDFWorker(name, port) {
+    if (pdfWorkerPorts.has(port)) {
+      throw new Error('Cannot use more than one PDFWorker per port');
+    }
+
     this.name = name;
     this.destroyed = false;
 
@@ -1239,6 +1245,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this._messageHandler = null;
 
     if (port) {
+      pdfWorkerPorts.set(port, this);
       this._initializeFromPort(port);
       return;
     }
@@ -1442,6 +1449,13 @@ var PDFWorker = (function PDFWorkerClosure() {
         this._messageHandler = null;
       }
     },
+  };
+
+  PDFWorker.fromPort = function (port) {
+    if (pdfWorkerPorts.has(port)) {
+      return pdfWorkerPorts.get(port);
+    }
+    return new PDFWorker(null, port);
   };
 
   return PDFWorker;
