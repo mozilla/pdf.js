@@ -180,26 +180,25 @@ var Toolbar = (function ToolbarClosure() {
       }
 
       let selectScaleOption = (value, scale) => {
-        var options = items.scaleSelect.options;
-        var predefinedValueFound = false;
-        for (var i = 0, ii = options.length; i < ii; i++) {
-          var option = options[i];
-          if (option.value !== value) {
-            option.selected = false;
-            continue;
+        let customScale = Math.round(scale * 10000) / 100;
+        this.l10n.get('page_scale_percent', { scale: customScale, },
+                      '{{scale}}%').then((msg) => {
+          let options = items.scaleSelect.options;
+          let predefinedValueFound = false;
+          for (let i = 0, ii = options.length; i < ii; i++) {
+            let option = options[i];
+            if (option.value !== value) {
+              option.selected = false;
+              continue;
+            }
+            option.selected = true;
+            predefinedValueFound = true;
           }
-          option.selected = true;
-          predefinedValueFound = true;
-        }
-        if (!predefinedValueFound) {
-          var customScale = Math.round(scale * 10000) / 100;
-          this.l10n.get('page_scale_percent', { scale: customScale, },
-            '{{scale}}%').
-              then((msg) => {
+          if (!predefinedValueFound) {
             items.customScaleOption.textContent = msg;
-          });
-          items.customScaleOption.selected = true;
-        }
+            items.customScaleOption.selected = true;
+          }
+        });
       };
 
       var pageNumber = this.pageNumber;
