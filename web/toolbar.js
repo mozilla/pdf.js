@@ -194,11 +194,10 @@ var Toolbar = (function ToolbarClosure() {
         if (!predefinedValueFound) {
           var customScale = Math.round(scale * 10000) / 100;
           this.l10n.get('page_scale_percent', { scale: customScale, },
-            '{{scale}}%').
-              then((msg) => {
+                        '{{scale}}%').then((msg) => {
             items.customScaleOption.textContent = msg;
+            items.customScaleOption.selected = true;
           });
-          items.customScaleOption.selected = true;
         }
       };
 
