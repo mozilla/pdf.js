@@ -12,8 +12,8 @@ var fs = require('fs');
 // HACK adding DOMParser to read XMP metadata.
 global.DOMParser = require('./domparsermock.js').DOMParserMock;
 
-// Run `gulp dist` to generate 'pdfjs-dist' npm package files.
-var pdfjsLib = require('../../build/dist');
+// Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
+var pdfjsLib = require('pdfjs-dist');
 
 // Loading file from file system into typed array
 var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';

@@ -104,6 +104,8 @@ The repository contains a hello world example that you can run locally:
 
 + [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
 
+More examples can be found at the examples folder. Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
+
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
 

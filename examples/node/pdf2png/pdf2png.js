@@ -48,7 +48,7 @@ NodeCanvasFactory.prototype = {
   },
 };
 
-var pdfjsLib = require('../../../build/dist');
+var pdfjsLib = require('pdfjs-dist');
 
 // Relative path of the PDF file.
 var pdfURL = '../../helloworld/helloworld.pdf';
