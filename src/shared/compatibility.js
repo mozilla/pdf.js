@@ -21,9 +21,10 @@ if ((typeof PDFJSDev === 'undefined' ||
      !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) &&
     (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
 
-var globalScope = (typeof window !== 'undefined') ? window :
-                  (typeof global !== 'undefined') ? global :
-                  (typeof self !== 'undefined') ? self : this;
+var globalScope =
+  (typeof window !== 'undefined' && window.Math === Math) ? window :
+  (typeof global !== 'undefined' && global.Math === Math) ? global :
+  (typeof self !== 'undefined' && self.Math === Math) ? self : this;
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
