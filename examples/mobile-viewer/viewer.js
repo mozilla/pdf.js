@@ -18,14 +18,14 @@
 
 if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
   alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist`');
+        '  `gulp dist-install`');
 }
 
 PDFJS.useOnlyCssZoom = true;
 PDFJS.disableTextLayer = true;
 PDFJS.maxImageSize = 1024 * 1024;
-PDFJS.workerSrc = '../../build/dist/build/pdf.worker.js';
-PDFJS.cMapUrl = '../../build/dist/cmaps/';
+PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
 PDFJS.cMapPacked = true;
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';

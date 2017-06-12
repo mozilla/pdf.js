@@ -22,7 +22,7 @@
 <!-- for legacy browsers add compatibility.js -->
 <!--<script src="../compatibility.js"></script>-->
 
-<script src="../../build/generic/build/pdf.js"></script>
+<script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
 
 <script id="script">
   //
@@ -44,7 +44,7 @@
   // pdf.js's one, or the pdf.js is executed via eval(), the workerSrc property
   // shall be specified.
   //
-  // PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
+  // PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
   var pdfDoc = null,
       pageNum = 1,

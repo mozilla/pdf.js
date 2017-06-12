@@ -1031,9 +1031,6 @@ gulp.task('lib', ['buildnumber'], function () {
 
 gulp.task('web-pre', ['generic', 'extension', 'jsdoc']);
 
-gulp.task('dist-pre',
-  ['generic', 'singlefile', 'components', 'lib', 'minified']);
-
 gulp.task('publish', ['generic'], function (done) {
   var version = JSON.parse(
     fs.readFileSync(BUILD_DIR + 'version.json').toString()).version;
@@ -1262,7 +1259,9 @@ gulp.task('gh-pages-git', ['gh-pages-prepare', 'wintersmith'], function () {
 
 gulp.task('web', ['gh-pages-prepare', 'wintersmith', 'gh-pages-git']);
 
-gulp.task('dist-repo-prepare', ['dist-pre'], function () {
+gulp.task('dist-pre',
+          ['generic', 'singlefile', 'components', 'lib', 'minified'],
+          function () {
   var VERSION = getVersionJSON().version;
 
   console.log();
@@ -1355,7 +1354,18 @@ gulp.task('dist-repo-prepare', ['dist-pre'], function () {
   ]);
 });
 
-gulp.task('dist-repo-git', ['dist-repo-prepare'], function () {
+gulp.task('dist-install', ['dist-pre'], function () {
+  var distPath = DIST_DIR;
+  var opts = {};
+  var installPath = process.env['PDFJS_INSTALL_PATH'];
+  if (installPath) {
+    opts.cwd = installPath;
+    distPath = path.relative(installPath, distPath);
+  }
+  safeSpawnSync('npm', ['install', distPath], opts);
+});
+
+gulp.task('dist-repo-git', ['dist-pre'], function () {
   var VERSION = getVersionJSON().version;
 
   console.log();
