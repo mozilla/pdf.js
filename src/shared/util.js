@@ -17,9 +17,10 @@
 import './compatibility';
 import { ReadableStream } from '../../external/streams/streams-lib';
 
-var globalScope = (typeof window !== 'undefined') ? window :
-                  (typeof global !== 'undefined') ? global :
-                  (typeof self !== 'undefined') ? self : this;
+var globalScope =
+  (typeof window !== 'undefined' && window.Math === Math) ? window :
+  (typeof global !== 'undefined' && global.Math === Math) ? global :
+  (typeof self !== 'undefined' && self.Math === Math) ? self : this;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
