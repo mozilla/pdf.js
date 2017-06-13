@@ -1232,7 +1232,7 @@ var PDFWorker = (function PDFWorkerClosure() {
   let pdfWorkerPorts = new WeakMap();
 
   function PDFWorker(name, port) {
-    if (pdfWorkerPorts.has(port)) {
+    if (port && pdfWorkerPorts.has(port)) {
       throw new Error('Cannot use more than one PDFWorker per port');
     }
 
