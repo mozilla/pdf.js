@@ -1041,6 +1041,32 @@ describe('api', function() {
         done();
       });
     });
+    it('multiple render() on the same canvas', function(done) {
+      if (isNodeJS()) {
+        pending('TODO: Support Canvas testing in Node.js.');
+      }
+      var viewport = page.getViewport(1);
+      var canvasAndCtx = CanvasFactory.create(viewport.width, viewport.height);
+
+      var renderTask1 = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+      var renderTask2 = page.render({
+        canvasContext: canvasAndCtx.context,
+        viewport,
+      });
+
+      Promise.all([
+        renderTask1.promise,
+        renderTask2.promise.then(() => {
+          done.fail('shall fail rendering');
+        }, (reason) => {
+          /* it fails because we already using this canvas */
+          expect(/multiple render\(\)/.test(reason.message)).toEqual(true);
+        })
+      ]).then(done);
+    });
   });
   describe('Multiple PDFJS instances', function() {
     if (isNodeJS()) {
