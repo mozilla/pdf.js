@@ -186,9 +186,8 @@ var Page = (function PageClosure() {
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
       return this.resourcesPromise.then(() => {
-        var objectLoader = new ObjectLoader(this.resources.map,
-                                            keys,
-                                            this.xref);
+        let objectLoader = new ObjectLoader(this.resources, keys, this.xref);
+
         return objectLoader.load();
       });
     },

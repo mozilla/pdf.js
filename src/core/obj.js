@@ -1610,7 +1610,7 @@ var FileSpec = (function FileSpecClosure() {
 })();
 
 /**
- * A helper for loading missing data in object graphs. It traverses the graph
+ * A helper for loading missing data in `Dict` graphs. It traverses the graph
  * depth first and queues up any objects that have missing data. Once it has
  * has traversed as many objects that are available it attempts to bundle the
  * missing data requests and then resume from the nodes that weren't ready.
@@ -1626,23 +1626,18 @@ let ObjectLoader = (function() {
   }
 
   function addChildren(node, nodesToVisit) {
-    let value;
     if (isDict(node) || isStream(node)) {
-      let map;
-      if (isDict(node)) {
-        map = node.map;
-      } else {
-        map = node.dict.map;
-      }
-      for (let key in map) {
-        value = map[key];
-        if (mayHaveChildren(value)) {
-          nodesToVisit.push(value);
+      let dict = isDict(node) ? node : node.dict;
+      let dictKeys = dict.getKeys();
+      for (let i = 0, ii = dictKeys.length; i < ii; i++) {
+        let rawValue = dict.getRaw(dictKeys[i]);
+        if (mayHaveChildren(rawValue)) {
+          nodesToVisit.push(rawValue);
         }
       }
     } else if (isArray(node)) {
       for (let i = 0, ii = node.length; i < ii; i++) {
-        value = node[i];
+        let value = node[i];
         if (mayHaveChildren(value)) {
           nodesToVisit.push(value);
         }
@@ -1650,8 +1645,8 @@ let ObjectLoader = (function() {
     }
   }
 
-  function ObjectLoader(obj, keys, xref) {
-    this.obj = obj;
+  function ObjectLoader(dict, keys, xref) {
+    this.dict = dict;
     this.keys = keys;
     this.xref = xref;
     this.refSet = null;
@@ -1668,12 +1663,16 @@ let ObjectLoader = (function() {
         return this.capability.promise;
       }
 
-      let keys = this.keys;
+      let { keys, dict, } = this;
       this.refSet = new RefSet();
       // Setup the initial nodes to visit.
       let nodesToVisit = [];
       for (let i = 0, ii = keys.length; i < ii; i++) {
-        nodesToVisit.push(this.obj[keys[i]]);
+        let rawValue = dict.getRaw(keys[i]);
+        // Skip nodes that are guaranteed to be empty.
+        if (rawValue !== undefined) {
+          nodesToVisit.push(rawValue);
+        }
       }
 
       this._walk(nodesToVisit);
