@@ -1176,10 +1176,14 @@ PDFJS.compatibilityChecked = true;
   }
   WeakMap.prototype = {
     has(obj) {
+      if ((typeof obj !== 'object' && typeof obj !== 'function') ||
+          obj === null) {
+        return false;
+      }
       return !!Object.getOwnPropertyDescriptor(obj, this.id);
     },
-    get(obj, defaultValue) {
-      return this.has(obj) ? obj[this.id] : defaultValue;
+    get(obj) {
+      return this.has(obj) ? obj[this.id] : undefined;
     },
     set(obj, value) {
       Object.defineProperty(obj, this.id, {
