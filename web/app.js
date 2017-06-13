@@ -151,6 +151,7 @@ var PDFViewerApplication = {
   url: '',
   baseUrl: '',
   externalServices: DefaultExternalServices,
+  _boundEvents: {},
 
   // called once when the document is loaded
   initialize: function pdfViewInitialize(appConfig) {
@@ -1259,13 +1260,16 @@ var PDFViewerApplication = {
     this.pdfPresentationMode.request();
   },
 
-  bindEvents: function pdfViewBindEvents() {
-    var eventBus = this.eventBus;
+  bindEvents() {
+    let eventBus = this.eventBus;
+
+    this._boundEvents.beforePrint = this.beforePrint.bind(this);
+    this._boundEvents.afterPrint = this.afterPrint.bind(this);
 
     eventBus.on('resize', webViewerResize);
     eventBus.on('hashchange', webViewerHashchange);
-    eventBus.on('beforeprint', this.beforePrint.bind(this));
-    eventBus.on('afterprint', this.afterPrint.bind(this));
+    eventBus.on('beforeprint', this._boundEvents.beforePrint);
+    eventBus.on('afterprint', this._boundEvents.afterPrint);
     eventBus.on('pagerendered', webViewerPageRendered);
     eventBus.on('textlayerrendered', webViewerTextLayerRendered);
     eventBus.on('updateviewarea', webViewerUpdateViewarea);
@@ -1297,38 +1301,108 @@ var PDFViewerApplication = {
     }
   },
 
-  bindWindowEvents: function pdfViewBindWindowEvents() {
-    var eventBus = this.eventBus;
+  bindWindowEvents() {
+    let eventBus = this.eventBus;
+
+    this._boundEvents.windowResize = () => {
+      eventBus.dispatch('resize');
+    };
+    this._boundEvents.windowHashChange = () => {
+      eventBus.dispatch('hashchange', {
+        hash: document.location.hash.substring(1),
+      });
+    };
+    this._boundEvents.windowBeforePrint = () => {
+      eventBus.dispatch('beforeprint');
+    };
+    this._boundEvents.windowAfterPrint = () => {
+      eventBus.dispatch('afterprint');
+    };
 
     window.addEventListener('wheel', webViewerWheel);
     window.addEventListener('click', webViewerClick);
     window.addEventListener('keydown', webViewerKeyDown);
-
-    window.addEventListener('resize', function windowResize() {
-      eventBus.dispatch('resize');
-    });
-    window.addEventListener('hashchange', function windowHashChange() {
-      eventBus.dispatch('hashchange', {
-        hash: document.location.hash.substring(1),
-      });
-    });
-    window.addEventListener('beforeprint', function windowBeforePrint() {
-      eventBus.dispatch('beforeprint');
-    });
-    window.addEventListener('afterprint', function windowAfterPrint() {
-      eventBus.dispatch('afterprint');
-    });
+    window.addEventListener('resize', this._boundEvents.windowResize);
+    window.addEventListener('hashchange', this._boundEvents.windowHashChange);
+    window.addEventListener('beforeprint', this._boundEvents.windowBeforePrint);
+    window.addEventListener('afterprint', this._boundEvents.windowAfterPrint);
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-      window.addEventListener('change', function windowChange(evt) {
-        var files = evt.target.files;
+      this._boundEvents.windowChange = (evt) => {
+        let files = evt.target.files;
         if (!files || files.length === 0) {
           return;
         }
         eventBus.dispatch('fileinputchange', {
           fileInput: evt.target,
         });
-      });
+      };
+      window.addEventListener('change', this._boundEvents.windowChange);
     }
+  },
+
+  unbindEvents() {
+    let eventBus = this.eventBus;
+
+    eventBus.off('resize', webViewerResize);
+    eventBus.off('hashchange', webViewerHashchange);
+    eventBus.off('beforeprint', this._boundEvents.beforePrint);
+    eventBus.off('afterprint', this._boundEvents.afterPrint);
+    eventBus.off('pagerendered', webViewerPageRendered);
+    eventBus.off('textlayerrendered', webViewerTextLayerRendered);
+    eventBus.off('updateviewarea', webViewerUpdateViewarea);
+    eventBus.off('pagechanging', webViewerPageChanging);
+    eventBus.off('scalechanging', webViewerScaleChanging);
+    eventBus.off('sidebarviewchanged', webViewerSidebarViewChanged);
+    eventBus.off('pagemode', webViewerPageMode);
+    eventBus.off('namedaction', webViewerNamedAction);
+    eventBus.off('presentationmodechanged', webViewerPresentationModeChanged);
+    eventBus.off('presentationmode', webViewerPresentationMode);
+    eventBus.off('openfile', webViewerOpenFile);
+    eventBus.off('print', webViewerPrint);
+    eventBus.off('download', webViewerDownload);
+    eventBus.off('firstpage', webViewerFirstPage);
+    eventBus.off('lastpage', webViewerLastPage);
+    eventBus.off('nextpage', webViewerNextPage);
+    eventBus.off('previouspage', webViewerPreviousPage);
+    eventBus.off('zoomin', webViewerZoomIn);
+    eventBus.off('zoomout', webViewerZoomOut);
+    eventBus.off('pagenumberchanged', webViewerPageNumberChanged);
+    eventBus.off('scalechanged', webViewerScaleChanged);
+    eventBus.off('rotatecw', webViewerRotateCw);
+    eventBus.off('rotateccw', webViewerRotateCcw);
+    eventBus.off('documentproperties', webViewerDocumentProperties);
+    eventBus.off('find', webViewerFind);
+    eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      eventBus.off('fileinputchange', webViewerFileInputChange);
+    }
+
+    this._boundEvents.beforePrint = null;
+    this._boundEvents.afterPrint = null;
+  },
+
+  unbindWindowEvents() {
+    window.removeEventListener('wheel', webViewerWheel);
+    window.removeEventListener('click', webViewerClick);
+    window.removeEventListener('keydown', webViewerKeyDown);
+    window.removeEventListener('resize',
+      this._boundEvents.windowResize);
+    window.removeEventListener('hashchange',
+      this._boundEvents.windowHashChange);
+    window.removeEventListener('beforeprint',
+      this._boundEvents.windowBeforePrint);
+    window.removeEventListener('afterprint',
+      this._boundEvents.windowAfterPrint);
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+      window.removeEventListener('change',
+        this._boundEvents.windowChange);
+      this._boundEvents.windowChange = null;
+    }
+
+    this._boundEvents.windowResize = null;
+    this._boundEvents.windowHashChange = null;
+    this._boundEvents.windowBeforePrint = null;
+    this._boundEvents.windowAfterPrint = null;
   },
 };
 
