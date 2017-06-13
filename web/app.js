@@ -1330,6 +1330,78 @@ var PDFViewerApplication = {
       });
     }
   },
+
+  unbindEvents: function pdfViewBindEvents() {
+    var eventBus = this.eventBus;
+
+    eventBus.off('resize', webViewerResize);
+    eventBus.off('hashchange', webViewerHashchange);
+    eventBus.off('beforeprint', this.beforePrint.bind(this));
+    eventBus.off('afterprint', this.afterPrint.bind(this));
+    eventBus.off('pagerendered', webViewerPageRendered);
+    eventBus.off('textlayerrendered', webViewerTextLayerRendered);
+    eventBus.off('updateviewarea', webViewerUpdateViewarea);
+    eventBus.off('pagechanging', webViewerPageChanging);
+    eventBus.off('scalechanging', webViewerScaleChanging);
+    eventBus.off('sidebarviewchanged', webViewerSidebarViewChanged);
+    eventBus.off('pagemode', webViewerPageMode);
+    eventBus.off('namedaction', webViewerNamedAction);
+    eventBus.off('presentationmodechanged', webViewerPresentationModeChanged);
+    eventBus.off('presentationmode', webViewerPresentationMode);
+    eventBus.off('openfile', webViewerOpenFile);
+    eventBus.off('print', webViewerPrint);
+    eventBus.off('download', webViewerDownload);
+    eventBus.off('firstpage', webViewerFirstPage);
+    eventBus.off('lastpage', webViewerLastPage);
+    eventBus.off('nextpage', webViewerNextPage);
+    eventBus.off('previouspage', webViewerPreviousPage);
+    eventBus.off('zoomin', webViewerZoomIn);
+    eventBus.off('zoomout', webViewerZoomOut);
+    eventBus.off('pagenumberchanged', webViewerPageNumberChanged);
+    eventBus.off('scalechanged', webViewerScaleChanged);
+    eventBus.off('rotatecw', webViewerRotateCw);
+    eventBus.off('rotateccw', webViewerRotateCcw);
+    eventBus.off('documentproperties', webViewerDocumentProperties);
+    eventBus.off('find', webViewerFind);
+    eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+        eventBus.off('fileinputchange', webViewerFileInputChange);
+    }
+  },
+
+  unbindWindowEvents: function pdfViewBindWindowEvents() {
+    var eventBus = this.eventBus;
+
+    window.removeEventListener('wheel', webViewerWheel);
+    window.removeEventListener('click', webViewerClick);
+    window.removeEventListener('keydown', webViewerKeyDown);
+
+    window.removeEventListener('resize', function windowResize() {
+        eventBus.dispatch('resize');
+    });
+    window.removeEventListener('hashchange', function windowHashChange() {
+        eventBus.dispatch('hashchange', {
+            hash: document.location.hash.substring(1),
+        });
+    });
+    window.removeEventListener('beforeprint', function windowBeforePrint() {
+        eventBus.dispatch('beforeprint');
+    });
+    window.removeEventListener('afterprint', function windowAfterPrint() {
+        eventBus.dispatch('afterprint');
+    });
+    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+        window.removeEventListener('change', function windowChange(evt) {
+            var files = evt.target.files;
+            if (!files || files.length === 0) {
+                return;
+            }
+            eventBus.dispatch('fileinputchange', {
+                fileInput: evt.target,
+            });
+        });
+    }
+  },
 };
 
 var validateFileURL;
