@@ -151,11 +151,6 @@ var PDFViewerApplication = {
   url: '',
   baseUrl: '',
   externalServices: DefaultExternalServices,
-  /**
-   * Hold Event Listeners bound to an object here to be unbound later
-   * @type {{}}
-   * @private
-   */
   _boundEvents: {},
 
   // called once when the document is loaded
@@ -1309,34 +1304,29 @@ var PDFViewerApplication = {
   bindWindowEvents() {
     let eventBus = this.eventBus;
 
-    // Window Resize
-    this._boundEvents.windowResize = (function () {
-      this.dispatch('resize');
-    }).bind(eventBus);
-    // Window Hash Change
-    this._boundEvents.windowHashChange = (function () {
-      this.dispatch('hashchange', {
+    this._boundEvents.windowResize = () => {
+      eventBus.dispatch('resize');
+    };
+    this._boundEvents.windowHashChange = () => {
+      eventBus.dispatch('hashchange', {
         hash: document.location.hash.substring(1),
       });
-    }).bind(eventBus);
-    // Window Before Print
-    this._boundEvents.windowBeforePrint = (function () {
-      this.dispatch('beforeprint');
-    }).bind(eventBus);
-    // Window After Print
-    this._boundEvents.windowAfterPrint = (function () {
-      this.dispatch('afterprint');
-    }).bind(eventBus);
-    // Window Change
-    this._boundEvents.windowChange = (function (evt) {
+    };
+    this._boundEvents.windowBeforePrint = () => {
+      eventBus.dispatch('beforeprint');
+    };
+    this._boundEvents.windowAfterPrint = () => {
+      eventBus.dispatch('afterprint');
+    };
+    this._boundEvents.windowChange = (evt) => {
       let files = evt.target.files;
       if (!files || files.length === 0) {
         return;
       }
-      this.dispatch('fileinputchange', {
+      eventBus.dispatch('fileinputchange', {
         fileInput: evt.target,
       });
-    }).bind(eventBus);
+    };
 
     window.addEventListener('wheel', webViewerWheel);
     window.addEventListener('click', webViewerClick);
@@ -1384,7 +1374,7 @@ var PDFViewerApplication = {
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-        eventBus.off('fileinputchange', webViewerFileInputChange);
+      eventBus.off('fileinputchange', webViewerFileInputChange);
     }
 
     delete this._boundEvents.beforePrint;
