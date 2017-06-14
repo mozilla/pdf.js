@@ -1265,8 +1265,8 @@ var PDFViewerApplication = {
     this.pdfPresentationMode.request();
   },
 
-  bindEvents: function pdfViewBindEvents() {
-    var eventBus = this.eventBus;
+  bindEvents() {
+    let eventBus = this.eventBus;
 
     this._boundEvents.beforePrint = this.beforePrint.bind(this);
     this._boundEvents.afterPrint = this.afterPrint.bind(this);
@@ -1306,8 +1306,8 @@ var PDFViewerApplication = {
     }
   },
 
-  bindWindowEvents: function pdfViewBindWindowEvents() {
-    var eventBus = this.eventBus;
+  bindWindowEvents() {
+    let eventBus = this.eventBus;
 
     // Window Resize
     this._boundEvents.windowResize = (function () {
@@ -1329,7 +1329,7 @@ var PDFViewerApplication = {
     }).bind(eventBus);
     // Window Change
     this._boundEvents.windowChange = (function (evt) {
-      var files = evt.target.files;
+      let files = evt.target.files;
       if (!files || files.length === 0) {
         return;
       }
@@ -1350,8 +1350,8 @@ var PDFViewerApplication = {
     }
   },
 
-  unbindEvents: function pdfViewBindEvents() {
-    var eventBus = this.eventBus;
+  unbindEvents() {
+    let eventBus = this.eventBus;
 
     eventBus.off('resize', webViewerResize);
     eventBus.off('hashchange', webViewerHashchange);
@@ -1391,7 +1391,7 @@ var PDFViewerApplication = {
     delete this._boundEvents.afterPrint;
   },
 
-  unbindWindowEvents: function pdfViewBindWindowEvents() {
+  unbindWindowEvents() {
     window.removeEventListener('wheel', webViewerWheel);
     window.removeEventListener('click', webViewerClick);
     window.removeEventListener('keydown', webViewerKeyDown);
