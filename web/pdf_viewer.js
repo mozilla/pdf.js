@@ -452,14 +452,11 @@ var PDFViewer = (function pdfViewer() {
       this.viewer.textContent = '';
     },
 
-    _scrollUpdate: function PDFViewer_scrollUpdate() {
+    _scrollUpdate() {
       if (this.pagesCount === 0) {
         return;
       }
       this.update();
-      for (var i = 0, ii = this._pages.length; i < ii; i++) {
-        this._pages[i].updatePosition();
-      }
     },
 
     _setScaleDispatchEvent: function pdfViewer_setScaleDispatchEvent(
