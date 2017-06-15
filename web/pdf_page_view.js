@@ -255,15 +255,6 @@ class PDFPageView {
     }
   }
 
-  /**
-   * Called when moved in the parent's container.
-   */
-  updatePosition() {
-    if (this.textLayer) {
-      this.textLayer.render(TEXT_LAYER_RENDER_DELAY);
-    }
-  }
-
   cssTransform(target, redrawAnnotations = false) {
     // Scale target (canvas or svg), its wrapper and page container.
     let width = this.viewport.width;
