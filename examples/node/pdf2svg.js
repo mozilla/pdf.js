@@ -20,18 +20,16 @@ var data = new Uint8Array(fs.readFileSync(pdfPath));
 // Dumps svg outputs to a folder called svgdump
 function writeToFile(svgdump, pageNum) {
   var name = getFileNameFromPath(pdfPath);
-  fs.mkdir('./svgdump/', function(err) {
-    if (!err || err.code === 'EEXIST') {
-      fs.writeFile('./svgdump/' + name + "-" + pageNum + '.svg', svgdump,
-        function(err) {
-          if (err) {
-            console.log('Error: ' + err);
-          } else {
-            console.log('Page: ' + pageNum);
-          }
-        });
-    }
-  });
+  if (!fs.existsSync('./svgdump/')) {
+    fs.mkdirSync('./svgdump/');
+  }
+
+  try {
+    fs.writeFileSync('./svgdump/' + name + '-' + pageNum + '.svg', svgdump, 'utf-8');
+    console.log('Page: ' + pageNum);
+  } catch(err) {
+    console.log('Error: ' + err);
+  }
 }
 
 // Get filename from the path
@@ -70,7 +68,7 @@ pdfjsLib.getDocument({
           writeToFile(svgDump, pageNum);
         });
       });
-    })
+    });
   };
 
   for (var i = 1; i <= numPages; i++) {
