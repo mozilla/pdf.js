@@ -136,6 +136,7 @@ var PDFViewerApplication = {
   l10n: null,
   pageRotation: 0,
   isInitialViewSet: false,
+  downloadComplete: false,
   viewerPrefs: {
     sidebarViewOnLoad: SidebarView.NONE,
     pdfBugEnabled: false,
@@ -600,7 +601,9 @@ var PDFViewerApplication = {
       this.pdfDocumentProperties.setDocument(null, null);
     }
     this.store = null;
+    this.pageRotation = 0;
     this.isInitialViewSet = false;
+    this.downloadComplete = false;
 
     this.pdfSidebar.reset();
     this.pdfOutlineViewer.reset();
@@ -669,8 +672,6 @@ var PDFViewerApplication = {
         this.pdfDocumentProperties.setFileSize(args.length);
       }
     }
-
-    this.downloadComplete = false;
 
     let loadingTask = getDocument(parameters);
     this.pdfLoadingTask = loadingTask;
@@ -911,8 +912,6 @@ var PDFViewerApplication = {
     let firstPagePromise = pdfViewer.firstPagePromise;
     let pagesPromise = pdfViewer.pagesPromise;
     let onePageRendered = pdfViewer.onePageRendered;
-
-    this.pageRotation = 0;
 
     let pdfThumbnailViewer = this.pdfThumbnailViewer;
     pdfThumbnailViewer.setDocument(pdfDocument);
@@ -1242,8 +1241,11 @@ var PDFViewerApplication = {
     this.forceRendering();
   },
 
-  rotatePages: function pdfViewRotatePages(delta) {
-    var pageNumber = this.page;
+  rotatePages(delta) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    let pageNumber = this.page;
     this.pageRotation = (this.pageRotation + 360 + delta) % 360;
     this.pdfViewer.pagesRotation = this.pageRotation;
     this.pdfThumbnailViewer.pagesRotation = this.pageRotation;
