@@ -1610,39 +1610,34 @@ var FileSpec = (function FileSpecClosure() {
 })();
 
 /**
- * A helper for loading missing data in object graphs. It traverses the graph
+ * A helper for loading missing data in `Dict` graphs. It traverses the graph
  * depth first and queues up any objects that have missing data. Once it has
  * has traversed as many objects that are available it attempts to bundle the
  * missing data requests and then resume from the nodes that weren't ready.
  *
  * NOTE: It provides protection from circular references by keeping track of
- * of loaded references. However, you must be careful not to load any graphs
+ * loaded references. However, you must be careful not to load any graphs
  * that have references to the catalog or other pages since that will cause the
  * entire PDF document object graph to be traversed.
  */
-var ObjectLoader = (function() {
+let ObjectLoader = (function() {
   function mayHaveChildren(value) {
     return isRef(value) || isDict(value) || isArray(value) || isStream(value);
   }
 
   function addChildren(node, nodesToVisit) {
-    var value;
     if (isDict(node) || isStream(node)) {
-      var map;
-      if (isDict(node)) {
-        map = node.map;
-      } else {
-        map = node.dict.map;
-      }
-      for (var key in map) {
-        value = map[key];
-        if (mayHaveChildren(value)) {
-          nodesToVisit.push(value);
+      let dict = isDict(node) ? node : node.dict;
+      let dictKeys = dict.getKeys();
+      for (let i = 0, ii = dictKeys.length; i < ii; i++) {
+        let rawValue = dict.getRaw(dictKeys[i]);
+        if (mayHaveChildren(rawValue)) {
+          nodesToVisit.push(rawValue);
         }
       }
     } else if (isArray(node)) {
-      for (var i = 0, ii = node.length; i < ii; i++) {
-        value = node[i];
+      for (let i = 0, ii = node.length; i < ii; i++) {
+        let value = node[i];
         if (mayHaveChildren(value)) {
           nodesToVisit.push(value);
         }
@@ -1650,8 +1645,8 @@ var ObjectLoader = (function() {
     }
   }
 
-  function ObjectLoader(obj, keys, xref) {
-    this.obj = obj;
+  function ObjectLoader(dict, keys, xref) {
+    this.dict = dict;
     this.keys = keys;
     this.xref = xref;
     this.refSet = null;
@@ -1659,8 +1654,7 @@ var ObjectLoader = (function() {
   }
 
   ObjectLoader.prototype = {
-    load: function ObjectLoader_load() {
-      var keys = this.keys;
+    load() {
       this.capability = createPromiseCapability();
       // Don't walk the graph if all the data is already loaded.
       if (!(this.xref.stream instanceof ChunkedStream) ||
@@ -1669,23 +1663,28 @@ var ObjectLoader = (function() {
         return this.capability.promise;
       }
 
+      let { keys, dict, } = this;
       this.refSet = new RefSet();
       // Setup the initial nodes to visit.
-      var nodesToVisit = [];
-      for (var i = 0; i < keys.length; i++) {
-        nodesToVisit.push(this.obj[keys[i]]);
+      let nodesToVisit = [];
+      for (let i = 0, ii = keys.length; i < ii; i++) {
+        let rawValue = dict.getRaw(keys[i]);
+        // Skip nodes that are guaranteed to be empty.
+        if (rawValue !== undefined) {
+          nodesToVisit.push(rawValue);
+        }
       }
 
       this._walk(nodesToVisit);
       return this.capability.promise;
     },
 
-    _walk: function ObjectLoader_walk(nodesToVisit) {
-      var nodesToRevisit = [];
-      var pendingRequests = [];
+    _walk(nodesToVisit) {
+      let nodesToRevisit = [];
+      let pendingRequests = [];
       // DFS walk of the object graph.
       while (nodesToVisit.length) {
-        var currentNode = nodesToVisit.pop();
+        let currentNode = nodesToVisit.pop();
 
         // Only references or chunked streams can cause missing data exceptions.
         if (isRef(currentNode)) {
@@ -1694,28 +1693,24 @@ var ObjectLoader = (function() {
             continue;
           }
           try {
-            var ref = currentNode;
-            this.refSet.put(ref);
+            this.refSet.put(currentNode);
             currentNode = this.xref.fetch(currentNode);
-          } catch (e) {
-            if (!(e instanceof MissingDataException)) {
-              throw e;
+          } catch (ex) {
+            if (!(ex instanceof MissingDataException)) {
+              throw ex;
             }
             nodesToRevisit.push(currentNode);
-            pendingRequests.push({ begin: e.begin, end: e.end, });
+            pendingRequests.push({ begin: ex.begin, end: ex.end, });
           }
         }
         if (currentNode && currentNode.getBaseStreams) {
-          var baseStreams = currentNode.getBaseStreams();
-          var foundMissingData = false;
-          for (var i = 0; i < baseStreams.length; i++) {
-            var stream = baseStreams[i];
+          let baseStreams = currentNode.getBaseStreams();
+          let foundMissingData = false;
+          for (let i = 0, ii = baseStreams.length; i < ii; i++) {
+            let stream = baseStreams[i];
             if (stream.getMissingChunks && stream.getMissingChunks().length) {
               foundMissingData = true;
-              pendingRequests.push({
-                begin: stream.start,
-                end: stream.end,
-              });
+              pendingRequests.push({ begin: stream.start, end: stream.end, });
             }
           }
           if (foundMissingData) {
@@ -1728,16 +1723,15 @@ var ObjectLoader = (function() {
 
       if (pendingRequests.length) {
         this.xref.stream.manager.requestRanges(pendingRequests).then(() => {
-          nodesToVisit = nodesToRevisit;
-          for (var i = 0; i < nodesToRevisit.length; i++) {
-            var node = nodesToRevisit[i];
-            // Remove any reference nodes from the currrent refset so they
+          for (let i = 0, ii = nodesToRevisit.length; i < ii; i++) {
+            let node = nodesToRevisit[i];
+            // Remove any reference nodes from the current `RefSet` so they
             // aren't skipped when we revist them.
             if (isRef(node)) {
               this.refSet.remove(node);
             }
           }
-          this._walk(nodesToVisit);
+          this._walk(nodesToRevisit);
         }, this.capability.reject);
         return;
       }
