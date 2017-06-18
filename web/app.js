@@ -907,7 +907,6 @@ var PDFViewerApplication = {
     this.pdfDocumentProperties.setDocument(pdfDocument, this.url);
 
     let pdfViewer = this.pdfViewer;
-    pdfViewer.currentScale = scale;
     pdfViewer.setDocument(pdfDocument);
     let firstPagePromise = pdfViewer.firstPagePromise;
     let pagesPromise = pdfViewer.pagesPromise;
