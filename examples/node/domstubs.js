@@ -91,24 +91,27 @@ DOMElement.prototype = {
   },
 
   toString: function DOMElement_toString() {
-    var attrList = [];
-    for (i in this.attributes) {
-      attrList.push(i + '="' + xmlEncode(this.attributes[i]) + '"');
+    var buf = [];
+    buf.push('<' + this.nodeName);
+    if (this.nodeName === 'svg:svg') {
+      buf.push(' xmlns:xlink="http://www.w3.org/1999/xlink"' +
+               ' xmlns:svg="http://www.w3.org/2000/svg"');
+    }
+    for (var i in this.attributes) {
+      buf.push(' ' + i + '="' + xmlEncode(this.attributes[i]) + '"');
     }
 
+    buf.push('>');
+
     if (this.nodeName === 'svg:tspan' || this.nodeName === 'svg:style') {
-      var encText = xmlEncode(this.textContent);
-      return '<' + this.nodeName + ' ' + attrList.join(' ') + '>' +
-             encText + '</' + this.nodeName + '>';
-    } else if (this.nodeName === 'svg:svg') {
-      var ns = 'xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-               'xmlns:svg="http://www.w3.org/2000/svg"'
-      return '<' + this.nodeName + ' ' + ns + ' ' + attrList.join(' ') + '>' +
-             this.childNodes.join('') + '</' + this.nodeName + '>';
+      buf.push(xmlEncode(this.textContent));
     } else {
-      return '<' + this.nodeName + ' ' + attrList.join(' ') + '>' +
-             this.childNodes.join('') + '</' + this.nodeName + '>';
+      this.childNodes.forEach(function(childNode) {
+        buf.push(childNode.toString());
+      });
     }
+    buf.push('</' + this.nodeName + '>');
+    return buf.join('');
   },
 
   cloneNode: function DOMElement_cloneNode() {
