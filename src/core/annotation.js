@@ -390,9 +390,8 @@ var Annotation = (function AnnotationClosure() {
         if (!resources) {
           return;
         }
-        var objectLoader = new ObjectLoader(resources.map,
-                                            keys,
-                                            resources.xref);
+        let objectLoader = new ObjectLoader(resources, keys, resources.xref);
+
         return objectLoader.load().then(function() {
           return resources;
         });
