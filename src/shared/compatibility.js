@@ -1713,92 +1713,94 @@ PDFJS.compatibilityChecked = true;
           (this._isRelative ? '//' + authority + this.host : '') +
           this.pathname + this._query + this._fragment;
     },
-    set href(href) {
+    // The named parameter should be different from the setter's function name.
+    // Otherwise Safari 5 will throw an error (see issue 8541)
+    set href(value) {
       clear.call(this);
-      parse.call(this, href);
+      parse.call(this, value);
     },
 
     get protocol() {
       return this._scheme + ':';
     },
-    set protocol(protocol) {
+    set protocol(value) {
       if (this._isInvalid) {
         return;
       }
-      parse.call(this, protocol + ':', 'scheme start');
+      parse.call(this, value + ':', 'scheme start');
     },
 
     get host() {
       return this._isInvalid ? '' : this._port ?
           this._host + ':' + this._port : this._host;
     },
-    set host(host) {
+    set host(value) {
       if (this._isInvalid || !this._isRelative) {
         return;
       }
-      parse.call(this, host, 'host');
+      parse.call(this, value, 'host');
     },
 
     get hostname() {
       return this._host;
     },
-    set hostname(hostname) {
+    set hostname(value) {
       if (this._isInvalid || !this._isRelative) {
         return;
       }
-      parse.call(this, hostname, 'hostname');
+      parse.call(this, value, 'hostname');
     },
 
     get port() {
       return this._port;
     },
-    set port(port) {
+    set port(value) {
       if (this._isInvalid || !this._isRelative) {
         return;
       }
-      parse.call(this, port, 'port');
+      parse.call(this, value, 'port');
     },
 
     get pathname() {
       return this._isInvalid ? '' : this._isRelative ?
           '/' + this._path.join('/') : this._schemeData;
     },
-    set pathname(pathname) {
+    set pathname(value) {
       if (this._isInvalid || !this._isRelative) {
         return;
       }
       this._path = [];
-      parse.call(this, pathname, 'relative path start');
+      parse.call(this, value, 'relative path start');
     },
 
     get search() {
       return this._isInvalid || !this._query || this._query === '?' ?
           '' : this._query;
     },
-    set search(search) {
+    set search(value) {
       if (this._isInvalid || !this._isRelative) {
         return;
       }
       this._query = '?';
-      if (search[0] === '?') {
-        search = search.slice(1);
+      if (value[0] === '?') {
+        value = value.slice(1);
       }
-      parse.call(this, search, 'query');
+      parse.call(this, value, 'query');
     },
 
     get hash() {
       return this._isInvalid || !this._fragment || this._fragment === '#' ?
           '' : this._fragment;
     },
-    set hash(hash) {
+    set hash(value) {
       if (this._isInvalid) {
         return;
       }
       this._fragment = '#';
-      if (hash[0] === '#') {
-        hash = hash.slice(1);
+      if (value[0] === '#') {
+        value = value.slice(1);
       }
-      parse.call(this, hash, 'fragment');
+      parse.call(this, value, 'fragment');
     },
 
     get origin() {
