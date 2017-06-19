@@ -77,6 +77,10 @@ function DOMElement(name) {
 
 DOMElement.prototype = {
 
+  getAttributeNS: function DOMElement_getAttributeNS(NS, name) {
+    return name in this.attributes ? this.attributes[name] : null;
+  },
+
   setAttributeNS: function DOMElement_setAttributeNS(NS, name, value) {
     value = value || '';
     value = xmlEncode(value);
