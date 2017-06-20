@@ -351,8 +351,8 @@ var PDFViewer = (function pdfViewer() {
       // Fetch a single page so we can get a viewport that will be the default
       // viewport for all pages
       return firstPagePromise.then((pdfPage) => {
-        var scale = this.currentScale;
-        var viewport = pdfPage.getViewport(scale * CSS_UNITS);
+        let scale = this.currentScale, rotation = this.pagesRotation;
+        let viewport = pdfPage.getViewport(scale * CSS_UNITS, rotation);
         for (var pageNum = 1; pageNum <= pagesCount; ++pageNum) {
           var textLayerFactory = null;
           if (!PDFJS.disableTextLayer) {
@@ -363,6 +363,7 @@ var PDFViewer = (function pdfViewer() {
             eventBus: this.eventBus,
             id: pageNum,
             scale,
+            rotation,
             defaultViewport: viewport.clone(),
             renderingQueue: this.renderingQueue,
             textLayerFactory,

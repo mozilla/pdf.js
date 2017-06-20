@@ -130,12 +130,13 @@ class PDFThumbnailViewer {
     }
 
     return pdfDocument.getPage(1).then((firstPage) => {
-      let pagesCount = pdfDocument.numPages;
-      let viewport = firstPage.getViewport(1.0);
+      let pagesCount = pdfDocument.numPages, rotation = this.pagesRotation;
+      let viewport = firstPage.getViewport(1.0, rotation);
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
         let thumbnail = new PDFThumbnailView({
           container: this.container,
           id: pageNum,
+          rotation,
           defaultViewport: viewport.clone(),
           linkService: this.linkService,
           renderingQueue: this.renderingQueue,
