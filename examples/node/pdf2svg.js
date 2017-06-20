@@ -18,7 +18,7 @@ var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';
 var data = new Uint8Array(fs.readFileSync(pdfPath));
 
 // Dumps svg outputs to a folder called svgdump
-function writeToFile(svgdump, pageNum) {
+function writeToFile(svgdump, pageNum, callback) {
   var name = getFileNameFromPath(pdfPath);
   fs.mkdir('./svgdump/', function(err) {
     if (!err || err.code === 'EEXIST') {
@@ -29,7 +29,10 @@ function writeToFile(svgdump, pageNum) {
           } else {
             console.log('Page: ' + pageNum);
           }
+          callback();
         });
+    } else {
+      callback();
     }
   });
 }
@@ -67,7 +70,9 @@ pdfjsLib.getDocument({
         svgGfx.embedFonts = true;
         return svgGfx.getSVG(opList, viewport).then(function (svg) {
           var svgDump = svg.toString();
-          writeToFile(svgDump, pageNum);
+          return new Promise(function(resolve) {
+            writeToFile(svgDump, pageNum, resolve);
+          });
         });
       });
     })
