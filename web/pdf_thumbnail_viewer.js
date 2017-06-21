@@ -95,8 +95,15 @@ class PDFThumbnailViewer {
   }
 
   set pagesRotation(rotation) {
+    if (!(typeof rotation === 'number' && rotation % 90 === 0)) {
+      throw new Error('Invalid thumbnails rotation angle.');
+    }
+    if (!this.pdfDocument) {
+      return;
+    }
     this._pagesRotation = rotation;
-    for (let i = 0, l = this._thumbnails.length; i < l; i++) {
+
+    for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
       this._thumbnails[i].update(rotation);
     }
   }
