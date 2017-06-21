@@ -6,6 +6,9 @@
 //
 
 var fs = require('fs');
+var util = require('util');
+var path = require('path');
+var stream = require('stream');
 
 // HACK few hacks to let PDF.js be loaded not as a module in global space.
 require('./domstubs.js').setStubs(global);
@@ -17,32 +20,66 @@ var pdfjsLib = require('pdfjs-dist');
 var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';
 var data = new Uint8Array(fs.readFileSync(pdfPath));
 
-// Dumps svg outputs to a folder called svgdump
-function writeToFile(svgdump, pageNum, callback) {
-  var name = getFileNameFromPath(pdfPath);
-  fs.mkdir('./svgdump/', function(err) {
-    if (!err || err.code === 'EEXIST') {
-      fs.writeFile('./svgdump/' + name + "-" + pageNum + '.svg', svgdump,
-        function(err) {
-          if (err) {
-            console.log('Error: ' + err);
-          } else {
-            console.log('Page: ' + pageNum);
-          }
-          callback();
-        });
-    } else {
-      callback();
-    }
-  });
+var outputDirectory = './svgdump';
+
+try {
+  // Note: This creates a directory only one level deep. If you want to create
+  // multiple subdirectories on the fly, use the mkdirp module from npm.
+  fs.mkdirSync(outputDirectory);
+} catch (e) {
+  if (e.code !== 'EEXIST') {
+    throw e;
+  }
 }
 
-// Get filename from the path
+// Dumps svg outputs to a folder called svgdump
+function getFilePathForPage(pageNum) {
+  var name = path.basename(pdfPath, path.extname(pdfPath));
+  return path.join(outputDirectory, name + '-' + pageNum + '.svg');
+}
 
-function getFileNameFromPath(path) {
-  var index = path.lastIndexOf('/');
-  var extIndex = path.lastIndexOf('.');
-  return path.substring(index, extIndex);
+/**
+ * A readable stream which offers a stream representing the serialization of a
+ * given DOM element (as defined by domstubs.js).
+ *
+ * @param {object} options
+ * @param {DOMElement} options.svgElement The element to serialize
+ */
+function ReadableSVGStream(options) {
+  if (!(this instanceof ReadableSVGStream)) {
+    return new ReadableSVGStream(options);
+  }
+  stream.Readable.call(this, options);
+  this.serializer = options.svgElement.getSerializer();
+}
+util.inherits(ReadableSVGStream, stream.Readable);
+// Implements https://nodejs.org/api/stream.html#stream_readable_read_size_1
+ReadableSVGStream.prototype._read = function() {
+  var chunk;
+  while ((chunk = this.serializer.getNext()) !== null) {
+    if (!this.push(chunk)) {
+      return;
+    }
+  }
+  this.push(null);
+};
+
+// Streams the SVG element to the given file path.
+function writeSvgToFile(svgElement, filePath) {
+  var readableSvgStream = new ReadableSVGStream({
+    svgElement: svgElement,
+  });
+  var writableStream = fs.createWriteStream(filePath);
+  return new Promise(function(resolve, reject) {
+    readableSvgStream.once('error', reject);
+    writableStream.once('error', reject);
+    writableStream.once('finish', resolve);
+    readableSvgStream.pipe(writableStream);
+  }).catch(function(err) {
+    readableSvgStream = null; // Explicitly null because of v8 bug 6512.
+    writableStream.end();
+    throw err;
+  });
 }
 
 // Will be using promises to load document, pages and misc data instead of
@@ -69,13 +106,14 @@ pdfjsLib.getDocument({
         var svgGfx = new pdfjsLib.SVGGraphics(page.commonObjs, page.objs);
         svgGfx.embedFonts = true;
         return svgGfx.getSVG(opList, viewport).then(function (svg) {
-          var svgDump = svg.toString();
-          return new Promise(function(resolve) {
-            writeToFile(svgDump, pageNum, resolve);
+          return writeSvgToFile(svg, getFilePathForPage(pageNum)).then(function () {
+            console.log('Page: ' + pageNum);
+          }, function(err) {
+            console.log('Error: ' + err);
           });
         });
       });
-    })
+    });
   };
 
   for (var i = 1; i <= numPages; i++) {
