@@ -32,6 +32,7 @@ const TEXT_LAYER_RENDER_DELAY = 200; // ms
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} id - The page unique ID (normally its number).
  * @property {number} scale - The page scale display.
+ * @property {number} rotation - The page rotation angle.
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {IPDFTextLayerFactory} textLayerFactory
@@ -59,8 +60,8 @@ class PDFPageView {
     this.renderingId = 'page' + this.id;
 
     this.pageLabel = null;
-    this.rotation = 0;
     this.scale = options.scale || DEFAULT_SCALE;
+    this.rotation = options.rotation || 0;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this.hasRestrictedScaling = false;

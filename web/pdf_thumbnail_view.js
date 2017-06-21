@@ -27,6 +27,7 @@ const THUMBNAIL_WIDTH = 98; // px
  * @typedef {Object} PDFThumbnailViewOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {number} id - The thumbnail's unique ID (normally its number).
+ * @property {number} rotation - The thumbnail rotation angle.
  * @property {PageViewport} defaultViewport - The page viewport.
  * @property {IPDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
@@ -84,14 +85,15 @@ class PDFThumbnailView {
   /**
    * @param {PDFThumbnailViewOptions} options
    */
-  constructor({ container, id, defaultViewport, linkService, renderingQueue,
-                disableCanvasToImageConversion = false, l10n = NullL10n, }) {
+  constructor({ container, id, rotation, defaultViewport, linkService,
+                renderingQueue, disableCanvasToImageConversion = false,
+                l10n = NullL10n, }) {
     this.id = id;
     this.renderingId = 'thumbnail' + id;
     this.pageLabel = null;
 
     this.pdfPage = null;
-    this.rotation = 0;
+    this.rotation = rotation || 0;
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
 
