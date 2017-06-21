@@ -166,7 +166,6 @@ var PDFViewer = (function pdfViewer() {
         throw new Error('Invalid page number.');
       }
       if (!this.pdfDocument) {
-        this._currentPageNumber = val;
         return;
       }
       // The intent can be to just reset a scroll position and/or scale.
@@ -217,9 +216,9 @@ var PDFViewer = (function pdfViewer() {
      * @param {string} val - The page label.
      */
     set currentPageLabel(val) {
-      var pageNumber = val | 0; // Fallback page number.
+      let pageNumber = val | 0; // Fallback page number.
       if (this._pageLabels) {
-        var i = this._pageLabels.indexOf(val);
+        let i = this._pageLabels.indexOf(val);
         if (i >= 0) {
           pageNumber = i + 1;
         }
@@ -243,8 +242,6 @@ var PDFViewer = (function pdfViewer() {
         throw new Error('Invalid numeric scale');
       }
       if (!this.pdfDocument) {
-        this._currentScale = val;
-        this._currentScaleValue = val !== UNKNOWN_SCALE ? val.toString() : null;
         return;
       }
       this._setScale(val, false);
@@ -262,8 +259,6 @@ var PDFViewer = (function pdfViewer() {
      */
     set currentScaleValue(val) {
       if (!this.pdfDocument) {
-        this._currentScale = isNaN(val) ? UNKNOWN_SCALE : val;
-        this._currentScaleValue = val.toString();
         return;
       }
       this._setScale(val, false);
@@ -283,13 +278,13 @@ var PDFViewer = (function pdfViewer() {
       if (!(typeof rotation === 'number' && rotation % 90 === 0)) {
         throw new Error('Invalid pages rotation angle.');
       }
-      this._pagesRotation = rotation;
-
       if (!this.pdfDocument) {
         return;
       }
-      for (var i = 0, l = this._pages.length; i < l; i++) {
-        var pageView = this._pages[i];
+      this._pagesRotation = rotation;
+
+      for (let i = 0, ii = this._pages.length; i < ii; i++) {
+        let pageView = this._pages[i];
         pageView.update(pageView.scale, rotation);
       }
 
