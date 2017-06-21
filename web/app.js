@@ -134,7 +134,6 @@ var PDFViewerApplication = {
   eventBus: null,
   /** @type {IL10n} */
   l10n: null,
-  pageRotation: 0,
   isInitialViewSet: false,
   downloadComplete: false,
   viewerPrefs: {
@@ -451,6 +450,10 @@ var PDFViewerApplication = {
     return this.pdfDocument ? this.pdfDocument.numPages : 0;
   },
 
+  get pageRotation() {
+    return this.pdfViewer.pagesRotation;
+  },
+
   set page(val) {
     this.pdfViewer.currentPageNumber = val;
   },
@@ -601,7 +604,6 @@ var PDFViewerApplication = {
       this.pdfDocumentProperties.setDocument(null, null);
     }
     this.store = null;
-    this.pageRotation = 0;
     this.isInitialViewSet = false;
     this.downloadComplete = false;
 
@@ -1244,14 +1246,16 @@ var PDFViewerApplication = {
     if (!this.pdfDocument) {
       return;
     }
-    let pageNumber = this.page;
-    this.pageRotation = (this.pageRotation + 360 + delta) % 360;
-    this.pdfViewer.pagesRotation = this.pageRotation;
-    this.pdfThumbnailViewer.pagesRotation = this.pageRotation;
+    let { pdfViewer, pdfThumbnailViewer, } = this;
+    let pageNumber = pdfViewer.currentPageNumber;
+    let newRotation = (pdfViewer.pagesRotation + 360 + delta) % 360;
+
+    pdfViewer.pagesRotation = newRotation;
+    pdfThumbnailViewer.pagesRotation = newRotation;
 
     this.forceRendering();
-
-    this.pdfViewer.currentPageNumber = pageNumber;
+    // Ensure that the active page doesn't change during rotation.
+    pdfViewer.currentPageNumber = pageNumber;
   },
 
   requestPresentationMode: function pdfViewRequestPresentationMode() {
