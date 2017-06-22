@@ -361,6 +361,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     this.extraStack = [];
     this.commonObjs = commonObjs;
     this.objs = objs;
+    this.pendingClip = null;
     this.pendingEOFill = false;
 
     this.embedFonts = false;
@@ -389,6 +390,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.transformMatrix = this.transformStack.pop();
       this.current = this.extraStack.pop();
 
+      this.pendingClip = null;
       this.tgrp = null;
     },
 
@@ -894,9 +896,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.setCurrentPoint(x, y);
     },
 
-    endPath: function SVGGraphics_endPath() {},
-
-    clip: function SVGGraphics_clip(type) {
+    endPath: function SVGGraphics_endPath() {
+      if (!this.pendingClip) {
+        return;
+      }
       var current = this.current;
       // Add current path to clipping path
       var clipId = 'clippath' + clipCount;
@@ -905,17 +908,18 @@ SVGGraphics = (function SVGGraphicsClosure() {
       clipPath.setAttributeNS(null, 'id', clipId);
       clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
       var clipElement = current.element.cloneNode();
-      if (type === 'evenodd') {
+      if (this.pendingClip === 'evenodd') {
         clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
         clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
       }
+      this.pendingClip = null;
       clipPath.appendChild(clipElement);
       this.defs.appendChild(clipPath);
 
       if (current.activeClipUrl) {
         // The previous clipping group content can go out of order -- resetting
-        // cached clipGroup's.
+        // cached clipGroups.
         current.clipGroup = null;
         this.extraStack.forEach(function (prev) {
           prev.clipGroup = null;
@@ -924,6 +928,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.activeClipUrl = 'url(#' + clipId + ')';
 
       this.tgrp = null;
+    },
+
+    clip: function SVGGraphics_clip(type) {
+      this.pendingClip = type;
     },
 
     closePath: function SVGGraphics_closePath() {

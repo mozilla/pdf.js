@@ -2776,6 +2776,14 @@
       "type": "eq",
       "about": "CFF font that is drawn with clipping."
     },
+    {  "id": "clippath",
+      "file": "pdfs/clippath.pdf",
+      "md5": "7ab95c0f106dccd90d6569f241fe8771",
+      "rounds": 1,
+      "link": false,
+      "type": "eq",
+      "about": "Clipping before a path exists, followed by adding a path and then drawing a rectangle."
+    },
     {  "id": "annotation-tx",
       "file": "pdfs/annotation-tx.pdf",
       "md5": "56321ea830be9c4f8437ca17ac535b2d",
