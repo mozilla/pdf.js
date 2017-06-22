@@ -803,6 +803,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
     setMiterLimit: function SVGGraphics_setMiterLimit(limit) {
       this.current.miterLimit = limit;
     },
+    setStrokeAlpha: function SVGGraphics_setStrokeAlpha(strokeAlpha) {
+      this.current.strokeAlpha = strokeAlpha;
+    },
     setStrokeRGBColor: function SVGGraphics_setStrokeRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
       this.current.strokeColor = color;
@@ -973,6 +976,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case 'Font':
             this.setFont(value);
             break;
+          case 'CA':
+            this.setStrokeAlpha(value);
+            break;
           case 'ca':
             this.setFillAlpha(value);
             break;
@@ -992,6 +998,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
+      current.element.setAttributeNS(null, 'stroke-opacity',
+                                     current.strokeAlpha);
       current.element.setAttributeNS(null, 'fill', 'none');
     },
 
