@@ -807,6 +807,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
       var color = Util.makeCssRgb(r, g, b);
       this.current.strokeColor = color;
     },
+    setFillAlpha: function SVGGraphics_setFillAlpha(fillAlpha) {
+      this.current.fillAlpha = fillAlpha;
+    },
     setFillRGBColor: function SVGGraphics_setFillRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
       this.current.fillColor = color;
@@ -970,6 +973,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case 'Font':
             this.setFont(value);
             break;
+          case 'ca':
+            this.setFillAlpha(value);
+            break;
           default:
             warn('Unimplemented graphic state ' + key);
             break;
@@ -980,6 +986,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     fill: function SVGGraphics_fill() {
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
+      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
     },
 
     stroke: function SVGGraphics_stroke() {
@@ -989,9 +996,8 @@ SVGGraphics = (function SVGGraphicsClosure() {
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      var current = this.current;
-      current.element.setAttributeNS(null, 'fill', current.fillColor);
-      current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.fill();
     },
 
     fillStroke: function SVGGraphics_fillStroke() {
