@@ -41,6 +41,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
     this.textLayerDiv = options.textLayerDiv;
     this.eventBus = options.eventBus || getGlobalEventBus();
     this.textContent = null;
+    this.textContentItemsStr = [];
+    this.textContentStream = null;
     this.renderingDone = false;
     this.pageIdx = options.pageIndex;
     this.pageNumber = this.pageIdx + 1;
@@ -79,7 +81,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
      *   for specified amount of ms.
      */
     render: function TextLayerBuilder_render(timeout) {
-      if (!this.textContent || this.renderingDone) {
+      if (!(this.textContent || this.textContentStream) || this.renderingDone) {
         return;
       }
       this.cancel();
@@ -88,9 +90,11 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       var textLayerFrag = document.createDocumentFragment();
       this.textLayerRenderTask = renderTextLayer({
         textContent: this.textContent,
+        textContentStream: this.textContentStream,
         container: textLayerFrag,
         viewport: this.viewport,
         textDivs: this.textDivs,
+        textContentItemsStr: this.textContentItemsStr,
         timeout,
         enhanceTextSelection: this.enhanceTextSelection,
       });
@@ -113,6 +117,11 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       }
     },
 
+    setTextContentStream(readableStream) {
+      this.cancel();
+      this.textContentStream = readableStream;
+    },
+
     setTextContent: function TextLayerBuilder_setTextContent(textContent) {
       this.cancel();
       this.textContent = textContent;
@@ -122,8 +131,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
                                                              matchesLength) {
       var i = 0;
       var iIndex = 0;
-      var bidiTexts = this.textContent.items;
-      var end = bidiTexts.length - 1;
+      let textContentItemsStr = this.textContentItemsStr;
+      var end = textContentItemsStr.length - 1;
       var queryLen = (this.findController === null ?
                       0 : this.findController.state.query.length);
       var ret = [];
@@ -135,12 +144,13 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var matchIdx = matches[m];
 
         // Loop over the divIdxs.
-        while (i !== end && matchIdx >= (iIndex + bidiTexts[i].str.length)) {
-          iIndex += bidiTexts[i].str.length;
+        while (i !== end && matchIdx >=
+               (iIndex + textContentItemsStr[i].length)) {
+          iIndex += textContentItemsStr[i].length;
           i++;
         }
 
-        if (i === bidiTexts.length) {
+        if (i === textContentItemsStr.length) {
           console.error('Could not find a matching mapping');
         }
 
@@ -160,8 +170,9 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
         // Somewhat the same array as above, but use > instead of >= to get
         // the end position right.
-        while (i !== end && matchIdx > (iIndex + bidiTexts[i].str.length)) {
-          iIndex += bidiTexts[i].str.length;
+        while (i !== end && matchIdx >
+               (iIndex + textContentItemsStr[i].length)) {
+          iIndex += textContentItemsStr[i].length;
           i++;
         }
 
@@ -181,7 +192,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         return;
       }
 
-      var bidiTexts = this.textContent.items;
+      let textContentItemsStr = this.textContentItemsStr;
       var textDivs = this.textDivs;
       var prevEnd = null;
       var pageIdx = this.pageIdx;
@@ -204,7 +215,8 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
 
       function appendTextToDiv(divIdx, fromOffset, toOffset, className) {
         var div = textDivs[divIdx];
-        var content = bidiTexts[divIdx].str.substring(fromOffset, toOffset);
+        var content =
+          textContentItemsStr[divIdx].substring(fromOffset, toOffset);
         var node = document.createTextNode(content);
         if (className) {
           var span = document.createElement('span');
@@ -277,7 +289,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
       // Clear all matches.
       var matches = this.matches;
       var textDivs = this.textDivs;
-      var bidiTexts = this.textContent.items;
+      let textContentItemsStr = this.textContentItemsStr;
       var clearedUntilDivIdx = -1;
 
       // Clear all current matches.
@@ -286,7 +298,7 @@ var TextLayerBuilder = (function TextLayerBuilderClosure() {
         var begin = Math.max(clearedUntilDivIdx, match.begin.divIdx);
         for (var n = begin, end = match.end.divIdx; n <= end; n++) {
           var div = textDivs[n];
-          div.textContent = bidiTexts[n].str;
+          div.textContent = textContentItemsStr[n];
           div.className = '';
         }
         clearedUntilDivIdx = match.end.divIdx + 1;

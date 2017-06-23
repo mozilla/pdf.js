@@ -1378,6 +1378,7 @@ MessageHandler.prototype = {
         this.streamControllers[streamId] = {
           controller,
           startCall: startCapability,
+          isClosed: false,
         };
         this.postMessage({
           sourceName,
@@ -1409,6 +1410,7 @@ MessageHandler.prototype = {
       cancel: (reason) => {
         let cancelCapability = createPromiseCapability();
         this.streamControllers[streamId].cancelCall = cancelCapability;
+        this.streamControllers[streamId].isClosed = true;
         this.postMessage({
           sourceName,
           targetName,
@@ -1532,9 +1534,15 @@ MessageHandler.prototype = {
         });
         break;
       case 'enqueue':
-        this.streamControllers[data.streamId].controller.enqueue(data.chunk);
+        if (!this.streamControllers[data.streamId].isClosed) {
+          this.streamControllers[data.streamId].controller.enqueue(data.chunk);
+        }
         break;
       case 'close':
+        if (this.streamControllers[data.streamId].isClosed) {
+          break;
+        }
+        this.streamControllers[data.streamId].isClosed = true;
         this.streamControllers[data.streamId].controller.close();
         deleteStreamController();
         break;
@@ -1548,6 +1556,9 @@ MessageHandler.prototype = {
         deleteStreamController();
         break;
       case 'cancel':
+        if (!this.streamSinks[data.streamId]) {
+          break;
+        }
         resolveCall(this.streamSinks[data.streamId].onCancel,
                     [data.reason]).then(() => {
           sendStreamResponse({ stream: 'cancel_complete', success: true, });
