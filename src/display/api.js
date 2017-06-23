@@ -211,6 +211,8 @@ function getDocument(src, pdfDataRangeTransport,
   var params = {};
   var rangeTransport = null;
   var worker = null;
+  var CMapReaderFactory = DOMCMapReaderFactory;
+
   for (var key in source) {
     if (key === 'url' && typeof window !== 'undefined') {
       // The full path is required in the 'url' field.
@@ -237,13 +239,15 @@ function getDocument(src, pdfDataRangeTransport,
               'array-like object is expected in the data property.');
       }
       continue;
+    } else if (key === 'CMapReaderFactory') {
+      CMapReaderFactory = source[key];
+      continue;
     }
     params[key] = source[key];
   }
 
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.ignoreErrors = params.stopAtErrors !== true;
-  var CMapReaderFactory = params.CMapReaderFactory || DOMCMapReaderFactory;
 
   if (params.disableNativeImageDecoder !== undefined) {
     deprecated('parameter disableNativeImageDecoder, ' +
