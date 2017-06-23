@@ -270,7 +270,7 @@ var Page = (function PageClosure() {
     },
 
     extractTextContent({ handler, task, normalizeWhitespace,
-                         combineTextItems, }) {
+                         sink, combineTextItems, }) {
       var contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
       var resourcesPromise = this.loadResources([
@@ -298,6 +298,7 @@ var Page = (function PageClosure() {
           resources: this.resources,
           normalizeWhitespace,
           combineTextItems,
+          sink,
         });
       });
     },
