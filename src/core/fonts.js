@@ -2278,15 +2278,15 @@ var Font = (function FontClosure() {
       // Helper function to try to skip mapping of empty glyphs.
       // Note: In some cases, just relying on the glyph data doesn't work,
       //       hence we also use a few heuristics to fix various PDF files.
-      function hasGlyph(glyphId, charCode, widthCode) {
+      function hasGlyph(glyphId, charCode = -1, widthCode = -1) {
         if (!missingGlyphs[glyphId]) {
           return true;
         }
-        if (!skipToUnicode && charCode >= 0 && toUnicode.has(charCode)) {
-          return true;
+        if (!skipToUnicode) {
+          return charCode >= 0 && toUnicode.has(charCode);
         }
-        if (widths && widthCode >= 0 && isNum(widths[widthCode])) {
-          return true;
+        if (widths) {
+          return widthCode >= 0 && isNum(widths[widthCode]);
         }
         return false;
       }
