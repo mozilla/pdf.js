@@ -805,9 +805,15 @@ SVGGraphics = (function SVGGraphicsClosure() {
     setMiterLimit: function SVGGraphics_setMiterLimit(limit) {
       this.current.miterLimit = limit;
     },
+    setStrokeAlpha: function SVGGraphics_setStrokeAlpha(strokeAlpha) {
+      this.current.strokeAlpha = strokeAlpha;
+    },
     setStrokeRGBColor: function SVGGraphics_setStrokeRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
       this.current.strokeColor = color;
+    },
+    setFillAlpha: function SVGGraphics_setFillAlpha(fillAlpha) {
+      this.current.fillAlpha = fillAlpha;
     },
     setFillRGBColor: function SVGGraphics_setFillRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
@@ -978,6 +984,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case 'Font':
             this.setFont(value);
             break;
+          case 'CA':
+            this.setStrokeAlpha(value);
+            break;
+          case 'ca':
+            this.setFillAlpha(value);
+            break;
           default:
             warn('Unimplemented graphic state ' + key);
             break;
@@ -988,18 +1000,20 @@ SVGGraphics = (function SVGGraphicsClosure() {
     fill: function SVGGraphics_fill() {
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
+      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
     },
 
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
+      current.element.setAttributeNS(null, 'stroke-opacity',
+                                     current.strokeAlpha);
       current.element.setAttributeNS(null, 'fill', 'none');
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      var current = this.current;
-      current.element.setAttributeNS(null, 'fill', current.fillColor);
-      current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.fill();
     },
 
     fillStroke: function SVGGraphics_fillStroke() {
