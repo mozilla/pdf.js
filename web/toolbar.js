@@ -96,9 +96,8 @@ class Toolbar {
   }
 
   _bindListeners() {
-    let eventBus = this.eventBus;
+    let { eventBus, items, } = this;
     let self = this;
-    let items = this.items;
 
     items.previous.addEventListener('click', function() {
       eventBus.dispatch('previouspage');
@@ -172,35 +171,9 @@ class Toolbar {
       // Don't update the UI state until we localize the toolbar.
       return;
     }
-
-    let selectScaleOption = (value, scale) => {
-      let customScale = Math.round(scale * 10000) / 100;
-      this.l10n.get('page_scale_percent', { scale: customScale, },
-                    '{{scale}}%').then((msg) => {
-        let options = items.scaleSelect.options;
-        let predefinedValueFound = false;
-        for (let i = 0, ii = options.length; i < ii; i++) {
-          let option = options[i];
-          if (option.value !== value) {
-            option.selected = false;
-            continue;
-          }
-          option.selected = true;
-          predefinedValueFound = true;
-        }
-        if (!predefinedValueFound) {
-          items.customScaleOption.textContent = msg;
-          items.customScaleOption.selected = true;
-        }
-      });
-    };
-
-    let pageNumber = this.pageNumber;
+    let { pageNumber, pagesCount, items, } = this;
     let scaleValue = (this.pageScaleValue || this.pageScale).toString();
     let scale = this.pageScale;
-
-    let items = this.items;
-    let pagesCount = this.pagesCount;
 
     if (resetNumPages) {
       if (this.hasPageLabels) {
@@ -218,8 +191,7 @@ class Toolbar {
     if (this.hasPageLabels) {
       items.pageNumber.value = this.pageLabel;
       this.l10n.get('page_of_pages', { pageNumber, pagesCount, },
-                    '({{pageNumber}} of {{pagesCount}})').
-          then((msg) => {
+                    '({{pageNumber}} of {{pagesCount}})').then((msg) => {
         items.numPages.textContent = msg;
       });
     } else {
@@ -232,7 +204,25 @@ class Toolbar {
     items.zoomOut.disabled = (scale <= MIN_SCALE);
     items.zoomIn.disabled = (scale >= MAX_SCALE);
 
-    selectScaleOption(scaleValue, scale);
+    let customScale = Math.round(scale * 10000) / 100;
+    this.l10n.get('page_scale_percent', { scale: customScale, },
+                  '{{scale}}%').then((msg) => {
+      let options = items.scaleSelect.options;
+      let predefinedValueFound = false;
+      for (let i = 0, ii = options.length; i < ii; i++) {
+        let option = options[i];
+        if (option.value !== scaleValue) {
+          option.selected = false;
+          continue;
+        }
+        option.selected = true;
+        predefinedValueFound = true;
+      }
+      if (!predefinedValueFound) {
+        items.customScaleOption.textContent = msg;
+        items.customScaleOption.selected = true;
+      }
+    });
   }
 
   updateLoadingIndicatorState(loading = false) {
