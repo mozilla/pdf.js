@@ -882,16 +882,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
         }
       }
       current.path.setAttributeNS(null, 'd', d.join(' '));
-      current.path.setAttributeNS(null, 'stroke-miterlimit',
-                                  pf(current.miterLimit));
-      current.path.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-      current.path.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
-      current.path.setAttributeNS(null, 'stroke-width',
-                                  pf(current.lineWidth) + 'px');
-      current.path.setAttributeNS(null, 'stroke-dasharray',
-                                  current.dashArray.map(pf).join(' '));
-      current.path.setAttributeNS(null, 'stroke-dashoffset',
-                                  pf(current.dashPhase) + 'px');
       current.path.setAttributeNS(null, 'fill', 'none');
 
       this._ensureTransformGroup().appendChild(current.path);
@@ -1005,9 +995,21 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
+
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
       current.element.setAttributeNS(null, 'stroke-opacity',
                                      current.strokeAlpha);
+      current.element.setAttributeNS(null, 'stroke-miterlimit',
+                                     pf(current.miterLimit));
+      current.element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
+      current.element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
+      current.element.setAttributeNS(null, 'stroke-width',
+                                     pf(current.lineWidth) + 'px');
+      current.element.setAttributeNS(null, 'stroke-dasharray',
+                                     current.dashArray.map(pf).join(' '));
+      current.element.setAttributeNS(null, 'stroke-dashoffset',
+                                     pf(current.dashPhase) + 'px');
+
       current.element.setAttributeNS(null, 'fill', 'none');
     },
 
