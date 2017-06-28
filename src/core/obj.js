@@ -14,8 +14,8 @@
  */
 
 import {
-  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl, error,
-  info, InvalidPDFException, isArray, isBool, isInt, isString,
+  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl,
+  FormatError, info, InvalidPDFException, isArray, isBool, isInt, isString,
   MissingDataException, shadow, stringToPDFString, stringToUTF8String, Util,
   warn, XRefParseException
 } from '../shared/util';
@@ -534,7 +534,7 @@ var Catalog = (function CatalogClosure() {
             }));
           }
           if (!found) {
-            error('kid ref not found in parents kids');
+            throw new FormatError('kid ref not found in parents kids');
           }
           return Promise.all(kidPromises).then(function () {
             return [total, parentRef];
@@ -775,7 +775,7 @@ var XRef = (function XRefClosure() {
 
       // get the root dictionary (catalog) object
       if (!(this.root = trailerDict.get('Root'))) {
-        error('Invalid root reference');
+        throw new FormatError('Invalid root reference');
       }
     },
 
@@ -795,7 +795,8 @@ var XRef = (function XRefClosure() {
 
       // Sanity check
       if (!isCmd(obj, 'trailer')) {
-        error('Invalid XRef table: could not find trailer dictionary');
+        throw new FormatError(
+          'Invalid XRef table: could not find trailer dictionary');
       }
       // Read trailer dictionary, e.g.
       // trailer
@@ -813,7 +814,8 @@ var XRef = (function XRefClosure() {
         dict = dict.dict;
       }
       if (!isDict(dict)) {
-        error('Invalid XRef table: could not parse trailer dictionary');
+        throw new FormatError(
+          'Invalid XRef table: could not parse trailer dictionary');
       }
       delete this.tableState;
 
@@ -852,7 +854,8 @@ var XRef = (function XRefClosure() {
         var first = tableState.firstEntryNum;
         var count = tableState.entryCount;
         if (!isInt(first) || !isInt(count)) {
-          error('Invalid XRef table: wrong types in subsection header');
+          throw new FormatError(
+            'Invalid XRef table: wrong types in subsection header');
         }
         // Inner loop is over objects themselves
         for (var i = tableState.entryNum; i < count; i++) {
@@ -875,7 +878,8 @@ var XRef = (function XRefClosure() {
           // Validate entry obj
           if (!isInt(entry.offset) || !isInt(entry.gen) ||
               !(entry.free || entry.uncompressed)) {
-            error('Invalid entry in XRef subsection: ' + first + ', ' + count);
+            throw new FormatError(
+              `Invalid entry in XRef subsection: ${first}, ${count}`);
           }
 
           // The first xref table entry, i.e. obj 0, should be free. Attempting
@@ -899,7 +903,8 @@ var XRef = (function XRefClosure() {
 
       // Sanity check: as per spec, first object must be free
       if (this.entries[0] && !this.entries[0].free) {
-        error('Invalid XRef table: unexpected first object');
+        throw new FormatError(
+          'Invalid XRef table: unexpected first object');
       }
       return obj;
     },
@@ -944,11 +949,13 @@ var XRef = (function XRefClosure() {
         var n = entryRanges[1];
 
         if (!isInt(first) || !isInt(n)) {
-          error('Invalid XRef range fields: ' + first + ', ' + n);
+          throw new FormatError(
+            `Invalid XRef range fields: ${first}, ${n}`);
         }
         if (!isInt(typeFieldWidth) || !isInt(offsetFieldWidth) ||
             !isInt(generationFieldWidth)) {
-          error('Invalid XRef entry fields length: ' + first + ', ' + n);
+          throw new FormatError(
+            `Invalid XRef entry fields length: ${first}, ${n}`);
         }
         for (i = streamState.entryNum; i < n; ++i) {
           streamState.entryNum = i;
@@ -981,7 +988,7 @@ var XRef = (function XRefClosure() {
             case 2:
               break;
             default:
-              error('Invalid XRef entry type: ' + type);
+              throw new FormatError(`Invalid XRef entry type: ${type}`);
           }
           if (!this.entries[first + i]) {
             this.entries[first + i] = entry;
@@ -1126,7 +1133,6 @@ var XRef = (function XRefClosure() {
         return dict;
       }
       // nothing helps
-      // calling error() would reject worker with an UnknownErrorException.
       throw new InvalidPDFException('Invalid PDF structure');
     },
 
@@ -1167,17 +1173,17 @@ var XRef = (function XRefClosure() {
             if (!isInt(parser.getObj()) ||
                 !isCmd(parser.getObj(), 'obj') ||
                 !isStream(obj = parser.getObj())) {
-              error('Invalid XRef stream');
+              throw new FormatError('Invalid XRef stream');
             }
             dict = this.processXRefStream(obj);
             if (!this.topDict) {
               this.topDict = dict;
             }
             if (!dict) {
-              error('Failed to read XRef stream');
+              throw new FormatError('Failed to read XRef stream');
             }
           } else {
-            error('Invalid XRef stream header');
+            throw new FormatError('Invalid XRef stream header');
           }
 
           // Recursively get previous dictionary, if any
@@ -1260,7 +1266,7 @@ var XRef = (function XRefClosure() {
       var gen = ref.gen;
       var num = ref.num;
       if (xrefEntry.gen !== gen) {
-        error('inconsistent generation in XRef');
+        throw new FormatError('inconsistent generation in XRef');
       }
       var stream = this.stream.makeSubStream(xrefEntry.offset +
                                              this.stream.start);
@@ -1271,7 +1277,7 @@ var XRef = (function XRefClosure() {
       if (!isInt(obj1) || parseInt(obj1, 10) !== num ||
           !isInt(obj2) || parseInt(obj2, 10) !== gen ||
           !isCmd(obj3)) {
-        error('bad XRef entry');
+        throw new FormatError('bad XRef entry');
       }
       if (!isCmd(obj3, 'obj')) {
         // some bad PDFs use "obj1234" and really mean 1234
@@ -1281,7 +1287,7 @@ var XRef = (function XRefClosure() {
             return num;
           }
         }
-        error('bad XRef entry');
+        throw new FormatError('bad XRef entry');
       }
       if (this.encrypt && !suppressEncryption) {
         xrefEntry = parser.getObj(this.encrypt.createCipherTransform(num, gen));
@@ -1299,12 +1305,13 @@ var XRef = (function XRefClosure() {
       var tableOffset = xrefEntry.offset;
       var stream = this.fetch(new Ref(tableOffset, 0));
       if (!isStream(stream)) {
-        error('bad ObjStm stream');
+        throw new FormatError('bad ObjStm stream');
       }
       var first = stream.dict.get('First');
       var n = stream.dict.get('N');
       if (!isInt(first) || !isInt(n)) {
-        error('invalid first and n parameters for ObjStm stream');
+        throw new FormatError(
+          'invalid first and n parameters for ObjStm stream');
       }
       var parser = new Parser(new Lexer(stream), false, this);
       parser.allowStreams = true;
@@ -1313,12 +1320,14 @@ var XRef = (function XRefClosure() {
       for (i = 0; i < n; ++i) {
         num = parser.getObj();
         if (!isInt(num)) {
-          error('invalid object number in the ObjStm stream: ' + num);
+          throw new FormatError(
+            `invalid object number in the ObjStm stream: ${num}`);
         }
         nums.push(num);
         var offset = parser.getObj();
         if (!isInt(offset)) {
-          error('invalid object offset in the ObjStm stream: ' + offset);
+          throw new FormatError(
+            `invalid object offset in the ObjStm stream: ${offset}`);
         }
       }
       // read stream objects for cache
@@ -1337,7 +1346,7 @@ var XRef = (function XRefClosure() {
       }
       xrefEntry = entries[xrefEntry.gen];
       if (xrefEntry === undefined) {
-        error('bad XRef entry for compressed object');
+        throw new FormatError('bad XRef entry for compressed object');
       }
       return xrefEntry;
     },
