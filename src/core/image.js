@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { assert, error, ImageKind, info, isArray, warn } from '../shared/util';
+import {
+  assert, FormatError, ImageKind, info, isArray, warn
+} from '../shared/util';
 import { DecodeStream, JpegStream } from './stream';
 import { isStream, Name } from './primitives';
 import { ColorSpace } from './colorspace';
@@ -96,8 +98,8 @@ var PDFImage = (function PDFImageClosure() {
     this.height = dict.get('Height', 'H');
 
     if (this.width < 1 || this.height < 1) {
-      error('Invalid image width: ' + this.width + ' or height: ' +
-            this.height);
+      throw new FormatError(`Invalid image width: ${this.width} or ` +
+                            `height: ${this.height}`);
     }
 
     this.interpolate = dict.get('Interpolate', 'I') || false;
@@ -111,7 +113,8 @@ var PDFImage = (function PDFImageClosure() {
         if (this.imageMask) {
           bitsPerComponent = 1;
         } else {
-          error('Bits per component missing in image: ' + this.imageMask);
+          throw new FormatError(
+            `Bits per component missing in image: ${this.imageMask}`);
         }
       }
     }
@@ -132,8 +135,8 @@ var PDFImage = (function PDFImageClosure() {
             colorSpace = Name.get('DeviceCMYK');
             break;
           default:
-            error('JPX images with ' + this.numComps +
-                  ' color components not supported.');
+            throw new Error(`JPX images with ${this.numComps} ` +
+                            'color components not supported.');
         }
       }
       this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
@@ -424,7 +427,7 @@ var PDFImage = (function PDFImageClosure() {
             alphaBuf[i] = opacity;
           }
         } else {
-          error('Unknown mask format.');
+          throw new FormatError('Unknown mask format.');
         }
       }
 
@@ -583,7 +586,8 @@ var PDFImage = (function PDFImageClosure() {
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
       var numComps = this.numComps;
       if (numComps !== 1) {
-        error('Reading gray scale from a color image: ' + numComps);
+        throw new FormatError(
+          `Reading gray scale from a color image: ${numComps}`);
       }
 
       var width = this.width;

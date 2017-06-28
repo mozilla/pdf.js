@@ -15,7 +15,8 @@
 /* eslint-disable no-multi-spaces */
 
 import {
-  assert, error, info, MissingDataException, UNSUPPORTED_FEATURES, Util, warn
+  assert, FormatError, info, MissingDataException, unreachable,
+  UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { ColorSpace } from './colorspace';
 import { isStream } from './primitives';
@@ -34,14 +35,14 @@ var ShadingType = {
 var Pattern = (function PatternClosure() {
   // Constructor should define this.getPattern
   function Pattern() {
-    error('should not call Pattern constructor');
+    throw new Error('should not call Pattern constructor');
   }
 
   Pattern.prototype = {
     // Input: current Canvas context
     // Output: the appropriate fillStyle or strokeStyle
     getPattern: function Pattern_getPattern(ctx) {
-      error('Should not call Pattern.getStyle: ' + ctx);
+      throw new Error(`Should not call Pattern.getStyle: ${ctx}`);
     },
   };
 
@@ -63,7 +64,7 @@ var Pattern = (function PatternClosure() {
         case ShadingType.TENSOR_PATCH_MESH:
           return new Shadings.Mesh(shading, matrix, xref, res);
         default:
-          throw new Error('Unsupported ShadingType: ' + type);
+          throw new FormatError('Unsupported ShadingType: ' + type);
       }
     } catch (ex) {
       if (ex instanceof MissingDataException) {
@@ -198,7 +199,7 @@ Shadings.RadialAxial = (function RadialAxialClosure() {
         r1 = coordsArr[5];
         type = 'radial';
       } else {
-        error('getPattern type unknown: ' + shadingType);
+        unreachable(`getPattern type unknown: ${shadingType}`);
       }
 
       var matrix = this.matrix;
@@ -754,7 +755,7 @@ Shadings.Mesh = (function MeshClosure() {
         patchMesh = true;
         break;
       default:
-        error('Unsupported mesh type.');
+        unreachable('Unsupported mesh type.');
         break;
     }
 
@@ -805,7 +806,7 @@ function getTilingPatternIR(operatorList, dict, args) {
   // Ensure that the pattern has a non-zero width and height, to prevent errors
   // in `pattern_helper.js` (fixes issue8330.pdf).
   if ((bbox[2] - bbox[0]) === 0 || (bbox[3] - bbox[1]) === 0) {
-    throw new Error(`getTilingPatternIR - invalid /BBox array: [${bbox}].`);
+    throw new FormatError(`Invalid getTilingPatternIR /BBox array: [${bbox}].`);
   }
 
   return [

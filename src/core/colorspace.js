@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { error, info, isArray, isString, shadow, warn } from '../shared/util';
+import {
+  FormatError, info, isArray, isString, shadow, warn
+} from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
 import { PDFFunction } from './function';
 
@@ -55,7 +57,7 @@ var ColorSpace = (function ColorSpaceClosure() {
 
   // Constructor should define this.numComps, this.defaultColor, this.name
   function ColorSpace() {
-    error('should not call ColorSpace constructor');
+    throw new Error('should not call ColorSpace constructor');
   }
 
   ColorSpace.prototype = {
@@ -75,7 +77,7 @@ var ColorSpace = (function ColorSpaceClosure() {
      */
     getRgbItem: function ColorSpace_getRgbItem(src, srcOffset,
                                                dest, destOffset) {
-      error('Should not call ColorSpace.getRgbItem');
+      throw new Error('Should not call ColorSpace.getRgbItem');
     },
     /**
      * Converts the specified number of the color values to the RGB colors.
@@ -89,7 +91,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     getRgbBuffer: function ColorSpace_getRgbBuffer(src, srcOffset, count,
                                                    dest, destOffset, bits,
                                                    alpha01) {
-      error('Should not call ColorSpace.getRgbBuffer');
+      throw new Error('Should not call ColorSpace.getRgbBuffer');
     },
     /**
      * Determines the number of bytes required to store the result of the
@@ -98,7 +100,7 @@ var ColorSpace = (function ColorSpaceClosure() {
      */
     getOutputLength: function ColorSpace_getOutputLength(inputLength,
                                                          alpha01) {
-      error('Should not call ColorSpace.getOutputLength');
+      throw new Error('Should not call ColorSpace.getOutputLength');
     },
     /**
      * Returns true if source data will be equal the result/output data.
@@ -254,9 +256,8 @@ var ColorSpace = (function ColorSpaceClosure() {
         var range = IR[3];
         return new LabCS(whitePoint, blackPoint, range);
       default:
-        error('Unknown name ' + name);
+        throw new FormatError(`Unknown colorspace name: ${name}`);
     }
-    return null;
   };
 
   ColorSpace.parseToIR = function ColorSpace_parseToIR(cs, xref, res) {
@@ -285,9 +286,10 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Pattern':
           return ['PatternCS', null];
         default:
-          error('unrecognized colorspace ' + cs.name);
+          throw new FormatError(`unrecognized colorspace ${cs.name}`);
       }
-    } else if (isArray(cs)) {
+    }
+    if (isArray(cs)) {
       var mode = xref.fetchIfRef(cs[0]).name;
       var numComps, params, alt, whitePoint, blackPoint, gamma;
 
@@ -366,12 +368,10 @@ var ColorSpace = (function ColorSpaceClosure() {
           var range = params.getArray('Range');
           return ['LabCS', whitePoint, blackPoint, range];
         default:
-          error('unimplemented color space object "' + mode + '"');
+          throw new FormatError(`unimplemented color space object "${mode}"`);
       }
-    } else {
-      error('unrecognized color space object: "' + cs + '"');
     }
-    return null;
+    throw new FormatError(`unrecognized color space object: "${cs}"`);
   };
   /**
    * Checks if a decode map matches the default decode map for a color space.
@@ -528,7 +528,7 @@ var IndexedCS = (function IndexedCSClosure() {
     } else if (lookup instanceof Uint8Array || lookup instanceof Array) {
       this.lookup = lookup;
     } else {
-      error('Unrecognized lookup table: ' + lookup);
+      throw new FormatError(`Unrecognized lookup table: ${lookup}`);
     }
   }
 
@@ -753,7 +753,8 @@ var CalGrayCS = (function CalGrayCSClosure() {
     this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
-      error('WhitePoint missing - required for color space CalGray');
+      throw new FormatError(
+        'WhitePoint missing - required for color space CalGray');
     }
     blackPoint = blackPoint || [0, 0, 0];
     gamma = gamma || 1;
@@ -771,8 +772,8 @@ var CalGrayCS = (function CalGrayCSClosure() {
 
     // Validate variables as per spec.
     if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-      error('Invalid WhitePoint components for ' + this.name +
-            ', no fallback available');
+      throw new FormatError(`Invalid WhitePoint components for ${this.name}` +
+                            ', no fallback available');
     }
 
     if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {
@@ -876,7 +877,8 @@ var CalRGBCS = (function CalRGBCSClosure() {
     this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
-      error('WhitePoint missing - required for color space CalRGB');
+      throw new FormatError(
+        'WhitePoint missing - required for color space CalRGB');
     }
     blackPoint = blackPoint || new Float32Array(3);
     gamma = gamma || new Float32Array([1, 1, 1]);
@@ -909,8 +911,8 @@ var CalRGBCS = (function CalRGBCSClosure() {
 
     // Validate variables as per spec.
     if (XW < 0 || ZW < 0 || YW !== 1) {
-      error('Invalid WhitePoint components for ' + this.name +
-            ', no fallback available');
+      throw new FormatError(`Invalid WhitePoint components for ${this.name}` +
+                            ', no fallback available');
     }
 
     if (XB < 0 || YB < 0 || ZB < 0) {
@@ -1152,7 +1154,8 @@ var LabCS = (function LabCSClosure() {
     this.defaultColor = new Float32Array(this.numComps);
 
     if (!whitePoint) {
-      error('WhitePoint missing - required for color space Lab');
+      throw new FormatError(
+        'WhitePoint missing - required for color space Lab');
     }
     blackPoint = blackPoint || [0, 0, 0];
     range = range || [-100, 100, -100, 100];
@@ -1174,7 +1177,8 @@ var LabCS = (function LabCSClosure() {
 
     // Validate vars as per spec
     if (this.XW < 0 || this.ZW < 0 || this.YW !== 1) {
-      error('Invalid WhitePoint components, no fallback available');
+      throw new FormatError(
+        'Invalid WhitePoint components, no fallback available');
     }
 
     if (this.XB < 0 || this.YB < 0 || this.ZB < 0) {

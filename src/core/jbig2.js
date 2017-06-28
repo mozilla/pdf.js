@@ -14,9 +14,21 @@
  */
 
 import {
-  error, log2, readInt8, readUint16, readUint32, shadow
+  log2, readInt8, readUint16, readUint32, shadow
 } from '../shared/util';
 import { ArithmeticDecoder } from './arithmetic_decoder';
+
+let Jbig2Error = (function Jbig2ErrorClosure() {
+  function Jbig2Error(msg) {
+    this.message = 'JBIG2 error: ' + msg;
+  }
+
+  Jbig2Error.prototype = new Error();
+  Jbig2Error.prototype.name = 'Jbig2Error';
+  Jbig2Error.constructor = Jbig2Error;
+
+  return Jbig2Error;
+})();
 
 var Jbig2Image = (function Jbig2ImageClosure() {
   // Utility data structures
@@ -194,7 +206,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
   function decodeBitmap(mmr, width, height, templateIndex, prediction, skip, at,
                         decodingContext) {
     if (mmr) {
-      error('JBIG2 error: MMR encoding is not supported');
+      throw new Jbig2Error('MMR encoding is not supported');
     }
 
     // Use optimized version for the most common case
@@ -361,7 +373,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         var sltp = decoder.readBit(contexts, pseudoPixelContext);
         ltp ^= sltp;
         if (ltp) {
-          error('JBIG2 error: prediction is not supported');
+          throw new Jbig2Error('prediction is not supported');
         }
       }
       var row = new Uint8Array(width);
@@ -403,7 +415,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                   refinementTemplateIndex, refinementAt,
                                   decodingContext) {
     if (huffman) {
-      error('JBIG2 error: huffman is not supported');
+      throw new Jbig2Error('huffman is not supported');
     }
 
     var newSymbols = [];
@@ -490,7 +502,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                             refinementTemplateIndex, refinementAt,
                             decodingContext) {
     if (huffman) {
-      error('JBIG2 error: huffman is not supported');
+      throw new Jbig2Error('huffman is not supported');
     }
 
     // Prepare bitmap
@@ -566,8 +578,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                 }
                 break;
               default:
-                error('JBIG2 error: operator ' + combinationOperator +
-                      ' is not supported');
+                throw new Jbig2Error(
+                  `operator ${combinationOperator} is not supported`);
             }
           }
           currentS += symbolHeight - 1;
@@ -590,8 +602,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                 }
                 break;
               default:
-                error('JBIG2 error: operator ' + combinationOperator +
-                      ' is not supported');
+                throw new Jbig2Error(
+                  `operator ${combinationOperator} is not supported`);
             }
           }
           currentS += symbolWidth - 1;
@@ -613,7 +625,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     var flags = data[start + 4];
     var segmentType = flags & 0x3F;
     if (!SegmentTypes[segmentType]) {
-      error('JBIG2 error: invalid segment type: ' + segmentType);
+      throw new Jbig2Error('invalid segment type: ' + segmentType);
     }
     segmentHeader.type = segmentType;
     segmentHeader.typeName = SegmentTypes[segmentType];
@@ -633,7 +645,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         retainBits.push(data[position++]);
       }
     } else if (referredFlags === 5 || referredFlags === 6) {
-      error('JBIG2 error: invalid referred-to flags');
+      throw new Jbig2Error('invalid referred-to flags');
     }
 
     segmentHeader.retainBits = retainBits;
@@ -687,10 +699,10 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
         }
         if (segmentHeader.length === 0xFFFFFFFF) {
-          error('JBIG2 error: segment end was not found');
+          throw new Jbig2Error('segment end was not found');
         }
       } else {
-        error('JBIG2 error: invalid unknown segment length');
+        throw new Jbig2Error('invalid unknown segment length');
       }
     }
     segmentHeader.headerEnd = position;
@@ -834,7 +846,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         position += 4;
         // TODO 7.4.3.1.7 Symbol ID Huffman table decoding
         if (textRegion.huffman) {
-          error('JBIG2 error: huffman is not supported');
+          throw new Jbig2Error('huffman is not supported');
         }
         args = [textRegion, header.referredTo, data, position, end];
         break;
@@ -891,8 +903,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                // are comments and can be ignored.
         break;
       default:
-        error('JBIG2 error: segment type ' + header.typeName + '(' +
-              header.type + ') is not implemented');
+        throw new Jbig2Error(`segment type ${header.typeName}(${header.type})` +
+                             ' is not implemented');
     }
     var callbackName = 'on' + header.typeName;
     if (callbackName in visitor) {
@@ -912,7 +924,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
         data[position + 2] !== 0x42 || data[position + 3] !== 0x32 ||
         data[position + 4] !== 0x0D || data[position + 5] !== 0x0A ||
         data[position + 6] !== 0x1A || data[position + 7] !== 0x0A) {
-      error('JBIG2 error: invalid header');
+      throw new Jbig2Error('invalid header');
     }
     var header = {};
     position += 8;
@@ -923,7 +935,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
       position += 4;
     }
     readSegments(header, data, position, end); // segments
-    error('Not implemented');
+    throw new Error('Not implemented');
     // processSegments(segments, new SimpleSegmentVisitor());
   }
 
@@ -999,8 +1011,8 @@ var Jbig2Image = (function Jbig2ImageClosure() {
           }
           break;
         default:
-          error('JBIG2 error: operator ' + combinationOperator +
-                ' is not supported');
+          throw new Jbig2Error(
+            `operator ${combinationOperator} is not supported`);
       }
     },
     onImmediateGenericRegion:
@@ -1024,7 +1036,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
                                                        data, start, end) {
       var huffmanTables;
       if (dictionary.huffman) {
-        error('JBIG2 error: huffman is not supported');
+        throw new Jbig2Error('huffman is not supported');
       }
 
       // Combines exported symbols from all referred segments

@@ -14,7 +14,7 @@
  */
 
 import {
-  createObjectURL, error, info, isArray, isInt, isSpace, shadow, Util
+  createObjectURL, FormatError, info, isArray, isInt, isSpace, shadow, Util
 } from '../shared/util';
 import { Dict, isDict, isStream } from './primitives';
 import { Jbig2Image } from './jbig2';
@@ -392,16 +392,19 @@ var FlateStream = (function FlateStreamClosure() {
     var cmf = str.getByte();
     var flg = str.getByte();
     if (cmf === -1 || flg === -1) {
-      error('Invalid header in flate stream: ' + cmf + ', ' + flg);
+      throw new FormatError(
+        `Invalid header in flate stream: ${cmf}, ${flg}`);
     }
     if ((cmf & 0x0f) !== 0x08) {
-      error('Unknown compression method in flate stream: ' + cmf + ', ' + flg);
+      throw new FormatError(
+        `Unknown compression method in flate stream: ${cmf}, ${flg}`);
     }
     if ((((cmf << 8) + flg) % 31) !== 0) {
-      error('Bad FCHECK in flate stream: ' + cmf + ', ' + flg);
+      throw new FormatError(`Bad FCHECK in flate stream: ${cmf}, ${flg}`);
     }
     if (flg & 0x20) {
-      error('FDICT bit set in flate stream: ' + cmf + ', ' + flg);
+      throw new FormatError(
+        `FDICT bit set in flate stream: ${cmf}, ${flg}`);
     }
 
     this.codeSize = 0;
@@ -420,7 +423,7 @@ var FlateStream = (function FlateStreamClosure() {
     var b;
     while (codeSize < bits) {
       if ((b = str.getByte()) === -1) {
-        error('Bad encoding in flate stream');
+        throw new FormatError('Bad encoding in flate stream');
       }
       codeBuf |= b << codeSize;
       codeSize += 8;
@@ -453,7 +456,7 @@ var FlateStream = (function FlateStreamClosure() {
     var codeLen = code >> 16;
     var codeVal = code & 0xffff;
     if (codeLen < 1 || codeSize < codeLen) {
-      error('Bad encoding in flate stream');
+      throw new FormatError('Bad encoding in flate stream');
     }
     this.codeBuf = (codeBuf >> codeLen);
     this.codeSize = (codeSize - codeLen);
@@ -515,25 +518,26 @@ var FlateStream = (function FlateStreamClosure() {
       var b;
 
       if ((b = str.getByte()) === -1) {
-        error('Bad block header in flate stream');
+        throw new FormatError('Bad block header in flate stream');
       }
       var blockLen = b;
       if ((b = str.getByte()) === -1) {
-        error('Bad block header in flate stream');
+        throw new FormatError('Bad block header in flate stream');
       }
       blockLen |= (b << 8);
       if ((b = str.getByte()) === -1) {
-        error('Bad block header in flate stream');
+        throw new FormatError('Bad block header in flate stream');
       }
       var check = b;
       if ((b = str.getByte()) === -1) {
-        error('Bad block header in flate stream');
+        throw new FormatError('Bad block header in flate stream');
       }
       check |= (b << 8);
       if (check !== (~blockLen & 0xffff) &&
           (blockLen !== 0 || check !== 0)) {
         // Ignoring error for bad "empty" block (see issue 1277)
-        error('Bad uncompressed block length in flate stream');
+        throw new FormatError(
+          'Bad uncompressed block length in flate stream');
       }
 
       this.codeBuf = 0;
@@ -608,7 +612,7 @@ var FlateStream = (function FlateStreamClosure() {
       distCodeTable =
         this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
     } else {
-      error('Unknown block type in flate stream');
+      throw new FormatError('Unknown block type in flate stream');
     }
 
     buffer = this.buffer;
@@ -666,7 +670,7 @@ var PredictorStream = (function PredictorStreamClosure() {
       return str; // no prediction
     }
     if (predictor !== 2 && (predictor < 10 || predictor > 15)) {
-      error('Unsupported predictor: ' + predictor);
+      throw new FormatError(`Unsupported predictor: ${predictor}`);
     }
 
     if (predictor === 2) {
@@ -851,7 +855,7 @@ var PredictorStream = (function PredictorStreamClosure() {
         }
         break;
       default:
-        error('Unsupported predictor: ' + predictor);
+        throw new FormatError(`Unsupported predictor: ${predictor}`);
     }
     this.bufferLength += rowBytes;
   };

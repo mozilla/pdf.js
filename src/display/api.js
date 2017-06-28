@@ -15,7 +15,7 @@
 /* globals requirejs, __pdfjsdev_webpack__ */
 
 import {
-  createPromiseCapability, deprecated, error, getVerbosityLevel, globalScope,
+  createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
   info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
   loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
   PageViewport, PasswordException, StatTimer, stringToBytes,
@@ -198,11 +198,12 @@ function getDocument(src, pdfDataRangeTransport,
     source = { range: src, };
   } else {
     if (typeof src !== 'object') {
-      error('Invalid parameter in getDocument, need either Uint8Array, ' +
-        'string or a parameter object');
+      throw new Error('Invalid parameter in getDocument, ' +
+                      'need either Uint8Array, string or a parameter object');
     }
     if (!src.url && !src.data && !src.range) {
-      error('Invalid parameter object: need either .data, .range or .url');
+      throw new Error(
+        'Invalid parameter object: need either .data, .range or .url');
     }
 
     source = src;
@@ -235,8 +236,9 @@ function getDocument(src, pdfDataRangeTransport,
       } else if (isArrayBuffer(pdfBytes)) {
         params[key] = new Uint8Array(pdfBytes);
       } else {
-        error('Invalid PDF binary data: either typed array, string or ' +
-              'array-like object is expected in the data property.');
+        throw new Error('Invalid PDF binary data: either typed array, ' +
+                        'string or array-like object is expected in the ' +
+                        'data property.');
       }
       continue;
     } else if (key === 'CMapReaderFactory') {
@@ -1214,7 +1216,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         pdfjsFilePath) {
       return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
     }
-    error('No PDFJS.workerSrc specified');
+    throw new Error('No PDFJS.workerSrc specified');
   }
 
   let fakeWorkerFilesLoadedCapability;
@@ -1730,7 +1732,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             this.commonObjs.resolve(id, data[2]);
             break;
           default:
-            error('Got unknown common object type ' + type);
+            throw new Error(`Got unknown common object type ${type}`);
         }
       }, this);
 
@@ -1765,7 +1767,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             }
             break;
           default:
-            error('Got unknown object type ' + type);
+            throw new Error(`Got unknown object type ${type}`);
         }
       }, this);
 
@@ -1794,7 +1796,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         if (intentState.displayReadyCapability) {
           intentState.displayReadyCapability.reject(data.error);
         } else {
-          error(data.error);
+          throw new Error(data.error);
         }
 
         if (intentState.operatorList) {
@@ -2038,7 +2040,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
       if (!obj || !obj.resolved) {
-        error('Requesting object that isn\'t resolved yet ' + objId);
+        throw new Error(`Requesting object that isn't resolved yet ${objId}`);
       }
 
       return obj.data;
