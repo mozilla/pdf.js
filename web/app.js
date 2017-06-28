@@ -507,7 +507,7 @@ var PDFViewerApplication = {
   },
 
   get loadingBar() {
-    var bar = new ProgressBar('#loadingBar', {});
+    var bar = new ProgressBar('#loadingBar');
 
     return shadow(this, 'loadingBar', bar);
   },
