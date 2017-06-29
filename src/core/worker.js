@@ -654,6 +654,8 @@ var WorkerMessageHandler = {
       }
 
       function onFailure(e) {
+        ensureNotTerminated();
+
         if (e instanceof PasswordException) {
           var task = new WorkerTask('PasswordException: response ' + e.code);
           startWorkerTask(task);
