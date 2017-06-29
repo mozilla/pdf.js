@@ -24,7 +24,7 @@ var ExpertEncoding = [
   'sixoldstyle', 'sevenoldstyle', 'eightoldstyle', 'nineoldstyle', 'colon',
   'semicolon', 'commasuperior', 'threequartersemdash', 'periodsuperior',
   'questionsmall', '', 'asuperior', 'bsuperior', 'centsuperior', 'dsuperior',
-  'esuperior', '', '', 'isuperior', '', '', 'lsuperior', 'msuperior',
+  'esuperior', '', '', '', 'isuperior', '', '', 'lsuperior', 'msuperior',
   'nsuperior', 'osuperior', '', '', 'rsuperior', 'ssuperior', 'tsuperior',
   '', 'ff', 'fi', 'fl', 'ffi', 'ffl', 'parenleftinferior', '',
   'parenrightinferior', 'Circumflexsmall', 'hyphensuperior', 'Gravesmall',
