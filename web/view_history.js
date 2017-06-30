@@ -30,16 +30,16 @@ class ViewHistory {
     this.cacheSize = cacheSize;
 
     this._initializedPromise = this._readFromStorage().then((databaseStr) => {
-      var database = JSON.parse(databaseStr || '{}');
+      let database = JSON.parse(databaseStr || '{}');
       if (!('files' in database)) {
         database.files = [];
       }
       if (database.files.length >= this.cacheSize) {
         database.files.shift();
       }
-      var index;
-      for (var i = 0, length = database.files.length; i < length; i++) {
-        var branch = database.files[i];
+      let index;
+      for (let i = 0, length = database.files.length; i < length; i++) {
+        let branch = database.files[i];
         if (branch.fingerprint === this.fingerprint) {
           index = i;
           break;
@@ -55,7 +55,7 @@ class ViewHistory {
 
   _writeToStorage() {
     return new Promise((resolve) => {
-      var databaseStr = JSON.stringify(this.database);
+      let databaseStr = JSON.stringify(this.database);
 
       if (typeof PDFJSDev !== 'undefined' &&
           PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
@@ -73,16 +73,16 @@ class ViewHistory {
           PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         resolve(sessionStorage.getItem('pdfjs.history'));
       } else {
-        var value = localStorage.getItem('pdfjs.history');
+        let value = localStorage.getItem('pdfjs.history');
 
         // TODO: Remove this key-name conversion after a suitable time-frame.
         // Note that we only remove the old 'database' entry if it looks like
         // it was created by PDF.js, to avoid removing someone else's data.
         if (!value) {
-          var databaseStr = localStorage.getItem('database');
+          let databaseStr = localStorage.getItem('database');
           if (databaseStr) {
             try {
-              var database = JSON.parse(databaseStr);
+              let database = JSON.parse(databaseStr);
               if (typeof database.files[0].fingerprint === 'string') {
                 localStorage.setItem('pdfjs.history', databaseStr);
                 localStorage.removeItem('database');
@@ -105,7 +105,7 @@ class ViewHistory {
 
   setMultiple(properties) {
     return this._initializedPromise.then(() => {
-      for (var name in properties) {
+      for (let name in properties) {
         this.file[name] = properties[name];
       }
       return this._writeToStorage();
@@ -114,17 +114,17 @@ class ViewHistory {
 
   get(name, defaultValue) {
     return this._initializedPromise.then(() => {
-      var val = this.file[name];
+      let val = this.file[name];
       return val !== undefined ? val : defaultValue;
     });
   }
 
   getMultiple(properties) {
     return this._initializedPromise.then(() => {
-      var values = Object.create(null);
+      let values = Object.create(null);
 
-      for (var name in properties) {
-        var val = this.file[name];
+      for (let name in properties) {
+        let val = this.file[name];
         values[name] = val !== undefined ? val : properties[name];
       }
       return values;
