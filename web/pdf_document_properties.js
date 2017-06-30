@@ -231,15 +231,15 @@ class PDFDocumentProperties {
     // Get all elements from the PDF date string.
     // JavaScript's `Date` object expects the month to be between
     // 0 and 11 instead of 1 and 12, so we're correcting for this.
-    var year = parseInt(dateToParse.substring(0, 4), 10);
-    var month = parseInt(dateToParse.substring(4, 6), 10) - 1;
-    var day = parseInt(dateToParse.substring(6, 8), 10);
-    var hours = parseInt(dateToParse.substring(8, 10), 10);
-    var minutes = parseInt(dateToParse.substring(10, 12), 10);
-    var seconds = parseInt(dateToParse.substring(12, 14), 10);
-    var utRel = dateToParse.substring(14, 15);
-    var offsetHours = parseInt(dateToParse.substring(15, 17), 10);
-    var offsetMinutes = parseInt(dateToParse.substring(18, 20), 10);
+    let year = parseInt(dateToParse.substring(0, 4), 10);
+    let month = parseInt(dateToParse.substring(4, 6), 10) - 1;
+    let day = parseInt(dateToParse.substring(6, 8), 10);
+    let hours = parseInt(dateToParse.substring(8, 10), 10);
+    let minutes = parseInt(dateToParse.substring(10, 12), 10);
+    let seconds = parseInt(dateToParse.substring(12, 14), 10);
+    let utRel = dateToParse.substring(14, 15);
+    let offsetHours = parseInt(dateToParse.substring(15, 17), 10);
+    let offsetMinutes = parseInt(dateToParse.substring(18, 20), 10);
 
     // As per spec, utRel = 'Z' means equal to universal time.
     // The other cases ('-' and '+') have to be handled here.
@@ -252,9 +252,9 @@ class PDFDocumentProperties {
     }
 
     // Return the new date format from the user's locale.
-    var date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
-    var dateString = date.toLocaleDateString();
-    var timeString = date.toLocaleTimeString();
+    let date = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+    let dateString = date.toLocaleDateString();
+    let timeString = date.toLocaleTimeString();
     return this.l10n.get('document_properties_date_string',
                          { date: dateString, time: timeString, },
                          '{{date}}, {{time}}');
