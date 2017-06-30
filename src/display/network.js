@@ -17,7 +17,7 @@ import {
   assert, createPromiseCapability, globalScope, isInt, MissingPDFException,
   UnexpectedResponseException
 } from '../shared/util';
-import { setPDFNetworkStreamClass } from './worker';
+import { setPDFNetworkStreamClass } from './api';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "./network" shall not ' +
