@@ -491,7 +491,7 @@ PDFNetworkStreamFullRequestReader.prototype = {
     }
     if (this._cachedChunks.length > 0) {
       var chunk = this._cachedChunks.shift();
-      return Promise.resolve(chunk);
+      return Promise.resolve({ value: chunk, done: false, });
     }
     if (this._done) {
       return Promise.resolve({ value: undefined, done: true, });
