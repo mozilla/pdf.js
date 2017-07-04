@@ -1156,6 +1156,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue8570",
+       "file": "pdfs/issue8570.pdf",
+       "md5": "0355731adb72df233eaa10464dcc8c51",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "tutorial",
        "file": "pdfs/tutorial.pdf",
        "md5": "6e122f618c27f3aa9a689423e3be6b8d",
