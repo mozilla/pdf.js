@@ -2406,21 +2406,23 @@ var Font = (function FontClosure() {
               cmapMappings[i].glyphId;
           }
         } else {
-          // For (3, 0) cmap tables:
-          // The charcode key being stored in charCodeToGlyphId is the lower
-          // byte of the two-byte charcodes of the cmap table since according to
-          // the spec: 'each byte from the string shall be prepended with the
-          // high byte of the range [of charcodes in the cmap table], to form
-          // a two-byte character, which shall be used to select the
-          // associated glyph description from the subtable'.
-          //
-          // For (1, 0) cmap tables:
-          // 'single bytes from the string shall be used to look up the
-          // associated glyph descriptions from the subtable'. This means
-          // charcodes in the cmap will be single bytes, so no-op since
-          // glyph.charCode & 0xFF === glyph.charCode
+          // When there is only a (1, 0) cmap table, the char code is a single
+          // byte and it is used directly as the char code.
+
+          // When a (3, 0) cmap table is present, it is used instead but the
+          // spec has special rules for char codes in the range of 0xF000 to
+          // 0xF0FF and it says the (3, 0) table should map the values from
+          // the (1, 0) table by prepending 0xF0 to the char codes. To reverse
+          // this, the upper bits of the char code are cleared, but only for the
+          // special range since some PDFs have char codes outside of this range
+          // (e.g. 0x2013) which when masked would overwrite other values in the
+          // cmap.
           for (i = 0; i < cmapMappingsLength; ++i) {
-            charCode = cmapMappings[i].charCode & 0xFF;
+            charCode = cmapMappings[i].charCode;
+            if (cmapPlatformId === 3 &&
+                charCode >= 0xF000 && charCode <= 0xF0FF) {
+              charCode &= 0xFF;
+            }
             charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
           }
         }
