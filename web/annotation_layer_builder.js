@@ -31,13 +31,14 @@ class AnnotationLayerBuilder {
   /**
    * @param {AnnotationLayerBuilderOptions} options
    */
-  constructor(options) {
-    this.pageDiv = options.pageDiv;
-    this.pdfPage = options.pdfPage;
-    this.renderInteractiveForms = options.renderInteractiveForms;
-    this.linkService = options.linkService;
-    this.downloadManager = options.downloadManager;
-    this.l10n = options.l10n || NullL10n;
+  constructor({ pageDiv, pdfPage, linkService, downloadManager,
+                renderInteractiveForms = false, l10n = NullL10n, }) {
+    this.pageDiv = pageDiv;
+    this.pdfPage = pdfPage;
+    this.linkService = linkService;
+    this.downloadManager = downloadManager;
+    this.renderInteractiveForms = renderInteractiveForms;
+    this.l10n = l10n;
 
     this.div = null;
   }
@@ -48,7 +49,7 @@ class AnnotationLayerBuilder {
    */
   render(viewport, intent = 'display') {
     this.pdfPage.getAnnotations({ intent, }).then((annotations) => {
-      var parameters = {
+      let parameters = {
         viewport: viewport.clone({ dontFlip: true, }),
         div: this.div,
         annotations,
@@ -68,7 +69,6 @@ class AnnotationLayerBuilder {
         if (annotations.length === 0) {
           return;
         }
-
         this.div = document.createElement('div');
         this.div.className = 'annotationLayer';
         this.pageDiv.appendChild(this.div);
@@ -99,8 +99,7 @@ class DefaultAnnotationLayerFactory {
    * @param {IL10n} l10n
    * @returns {AnnotationLayerBuilder}
    */
-  createAnnotationLayerBuilder(pageDiv, pdfPage,
-                               renderInteractiveForms = false,
+  createAnnotationLayerBuilder(pageDiv, pdfPage, renderInteractiveForms = false,
                                l10n = NullL10n) {
     return new AnnotationLayerBuilder({
       pageDiv,

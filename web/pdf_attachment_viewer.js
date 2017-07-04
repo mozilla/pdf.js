@@ -27,19 +27,19 @@ import {
 
 /**
  * @typedef {Object} PDFAttachmentViewerRenderParameters
- * @property {Array|null} attachments - An array of attachment objects.
+ * @property {Object|null} attachments - A lookup table of attachment objects.
  */
 
 class PDFAttachmentViewer {
   /**
    * @param {PDFAttachmentViewerOptions} options
    */
-  constructor(options) {
+  constructor({ container, eventBus, downloadManager, }) {
     this.attachments = null;
 
-    this.container = options.container;
-    this.eventBus = options.eventBus;
-    this.downloadManager = options.downloadManager;
+    this.container = container;
+    this.eventBus = eventBus;
+    this.downloadManager = downloadManager;
 
     this._renderedCapability = createPromiseCapability();
     this.eventBus.on('fileattachmentannotation',
@@ -79,12 +79,12 @@ class PDFAttachmentViewer {
       throw new Error('bindPdfLink: ' +
                       'Unsupported "PDFJS.disableCreateObjectURL" value.');
     }
-    var blobUrl;
+    let blobUrl;
     button.onclick = function() {
       if (!blobUrl) {
         blobUrl = createObjectURL(content, 'application/pdf');
       }
-      var viewerUrl;
+      let viewerUrl;
       if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
         // The current URL is the viewer, let's use it and append the file.
         viewerUrl = '?file=' + encodeURIComponent(blobUrl + '#' + filename);
@@ -116,33 +116,31 @@ class PDFAttachmentViewer {
   /**
    * @param {PDFAttachmentViewerRenderParameters} params
    */
-  render(params = {}) {
-    var attachments = params.attachments || null;
-    var attachmentsCount = 0;
+  render({ attachments, keepRenderedCapability = false, }) {
+    let attachmentsCount = 0;
 
     if (this.attachments) {
-      var keepRenderedCapability = params.keepRenderedCapability === true;
-      this.reset(keepRenderedCapability);
+      this.reset(keepRenderedCapability === true);
     }
-    this.attachments = attachments;
+    this.attachments = attachments || null;
 
     if (!attachments) {
       this._dispatchEvent(attachmentsCount);
       return;
     }
 
-    var names = Object.keys(attachments).sort(function(a, b) {
+    let names = Object.keys(attachments).sort(function(a, b) {
       return a.toLowerCase().localeCompare(b.toLowerCase());
     });
     attachmentsCount = names.length;
 
-    for (var i = 0; i < attachmentsCount; i++) {
-      var item = attachments[names[i]];
-      var filename = removeNullCharacters(getFilenameFromUrl(item.filename));
+    for (let i = 0; i < attachmentsCount; i++) {
+      let item = attachments[names[i]];
+      let filename = removeNullCharacters(getFilenameFromUrl(item.filename));
 
-      var div = document.createElement('div');
+      let div = document.createElement('div');
       div.className = 'attachmentsItem';
-      var button = document.createElement('button');
+      let button = document.createElement('button');
       button.textContent = filename;
       if (/\.pdf$/i.test(filename) && !PDFJS.disableCreateObjectURL) {
         this._bindPdfLink(button, item.content, filename);
@@ -163,12 +161,12 @@ class PDFAttachmentViewer {
    */
   _appendAttachment({ id, filename, content, }) {
     this._renderedCapability.promise.then(() => {
-      var attachments = this.attachments;
+      let attachments = this.attachments;
 
       if (!attachments) {
         attachments = Object.create(null);
       } else {
-        for (var name in attachments) {
+        for (let name in attachments) {
           if (id === name) {
             return; // Ignore the new attachment if it already exists.
           }
