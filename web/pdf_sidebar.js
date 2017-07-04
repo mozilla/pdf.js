@@ -138,7 +138,7 @@ class PDFSidebar {
       // immediately closing it would be bad UX.
       return;
     }
-    var isViewPreserved = (view === this.visibleView);
+    let isViewPreserved = (view === this.visibleView);
     this.switchView(view, /* forceOpen */ true);
 
     if (isViewPreserved) {
@@ -159,8 +159,8 @@ class PDFSidebar {
       this.close();
       return;
     }
-    var isViewChanged = (view !== this.active);
-    var shouldForceRendering = false;
+    let isViewChanged = (view !== this.active);
+    let shouldForceRendering = false;
 
     switch (view) {
       case SidebarView.THUMBS:
@@ -290,19 +290,18 @@ class PDFSidebar {
    * @private
    */
   _updateThumbnailViewer() {
-    var pdfViewer = this.pdfViewer;
-    var thumbnailViewer = this.pdfThumbnailViewer;
+    let { pdfViewer, pdfThumbnailViewer, } = this;
 
     // Use the rendered pages to set the corresponding thumbnail images.
-    var pagesCount = pdfViewer.pagesCount;
-    for (var pageIndex = 0; pageIndex < pagesCount; pageIndex++) {
-      var pageView = pdfViewer.getPageView(pageIndex);
+    let pagesCount = pdfViewer.pagesCount;
+    for (let pageIndex = 0; pageIndex < pagesCount; pageIndex++) {
+      let pageView = pdfViewer.getPageView(pageIndex);
       if (pageView && pageView.renderingState === RenderingStates.FINISHED) {
-        var thumbnailView = thumbnailViewer.getThumbnail(pageIndex);
+        let thumbnailView = pdfThumbnailViewer.getThumbnail(pageIndex);
         thumbnailView.setImage(pageView);
       }
     }
-    thumbnailViewer.scrollThumbnailIntoView(pdfViewer.currentPageNumber);
+    pdfThumbnailViewer.scrollThumbnailIntoView(pdfViewer.currentPageNumber);
   }
 
   /**
@@ -347,7 +346,7 @@ class PDFSidebar {
       return;
     }
 
-    var removeNotification = (view) => {
+    let removeNotification = (view) => {
       switch (view) {
         case SidebarView.OUTLINE:
           this.outlineButton.classList.remove(UI_NOTIFICATION_CLASS);
@@ -407,7 +406,7 @@ class PDFSidebar {
 
     // Disable/enable views.
     this.eventBus.on('outlineloaded', (evt) => {
-      var outlineCount = evt.outlineCount;
+      let outlineCount = evt.outlineCount;
 
       this.outlineButton.disabled = !outlineCount;
 
@@ -421,7 +420,7 @@ class PDFSidebar {
     });
 
     this.eventBus.on('attachmentsloaded', (evt) => {
-      var attachmentsCount = evt.attachmentsCount;
+      let attachmentsCount = evt.attachmentsCount;
 
       this.attachmentsButton.disabled = !attachmentsCount;
 

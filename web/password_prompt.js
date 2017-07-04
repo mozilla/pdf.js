@@ -87,7 +87,7 @@ class PasswordPrompt {
   }
 
   verify() {
-    var password = this.input.value;
+    let password = this.input.value;
     if (password && password.length > 0) {
       this.close();
       return this.updateCallback(password);
