@@ -801,7 +801,7 @@ var Font = (function FontClosure() {
    * font that we build
    * 'charCodeToGlyphId' - maps the new font char codes to glyph ids
    */
-  function adjustMapping(charCodeToGlyphId, properties) {
+  function adjustMapping(charCodeToGlyphId, properties, missingGlyphs) {
     var toUnicode = properties.toUnicode;
     var isSymbolic = !!(properties.flags & FontFlags.Symbolic);
     var isIdentityUnicode =
@@ -831,7 +831,8 @@ var Font = (function FontClosure() {
       // font was symbolic and there is only an identity unicode map since the
       // characters probably aren't in the correct position (fixes an issue
       // with firefox and thuluthfont).
-      if ((usedFontCharCodes[fontCharCode] !== undefined ||
+      if (!missingGlyphs[glyphId] &&
+          (usedFontCharCodes[fontCharCode] !== undefined ||
            isProblematicUnicodeLocation(fontCharCode) ||
            (isSymbolic && !hasUnicodeValue)) &&
           nextAvailableFontCharCode <= PRIVATE_USE_OFFSET_END) { // Room left.
@@ -1686,9 +1687,15 @@ var Font = (function FontClosure() {
         var startOffset = itemDecode(locaData, 0);
         var writeOffset = 0;
         var missingGlyphData = Object.create(null);
+        // Glyph zero should be notdef which isn't drawn. Sometimes this is a
+        // valid glyph but, then it is duplicated.
+        missingGlyphData[0] = true;
         itemEncode(locaData, 0, writeOffset);
         var i, j;
-        for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
+        // When called with dupFirstEntry the number of glyphs has already been
+        // increased but there isn't data yet for the duplicated glyph.
+        var locaCount = dupFirstEntry ? numGlyphs - 1 : numGlyphs;
+        for (i = 0, j = itemSize; i < locaCount; i++, j += itemSize) {
           var endOffset = itemDecode(locaData, j);
           if (endOffset > oldGlyfDataLength &&
               ((oldGlyfDataLength + 3) & ~3) === endOffset) {
@@ -1698,17 +1705,14 @@ var Font = (function FontClosure() {
           }
           if (endOffset > oldGlyfDataLength) {
             // glyph end offset points outside glyf data, rejecting the glyph
-            itemEncode(locaData, j, writeOffset);
             startOffset = endOffset;
-            continue;
-          }
-
-          if (startOffset === endOffset) {
-            missingGlyphData[i] = true;
           }
 
           var newLength = sanitizeGlyph(oldGlyfData, startOffset, endOffset,
                                         newGlyfData, writeOffset, hintsValid);
+          if (newLength === 0) {
+            missingGlyphData[i] = true;
+          }
           writeOffset += newLength;
           itemEncode(locaData, j, writeOffset);
           startOffset = endOffset;
@@ -2271,24 +2275,10 @@ var Font = (function FontClosure() {
       }
 
       var charCodeToGlyphId = [], charCode;
-      var toUnicode = properties.toUnicode, widths = properties.widths;
-      var skipToUnicode = (toUnicode instanceof IdentityToUnicodeMap ||
-                           toUnicode.length === 0x10000);
 
       // Helper function to try to skip mapping of empty glyphs.
-      // Note: In some cases, just relying on the glyph data doesn't work,
-      //       hence we also use a few heuristics to fix various PDF files.
-      function hasGlyph(glyphId, charCode, widthCode) {
-        if (!missingGlyphs[glyphId]) {
-          return true;
-        }
-        if (!skipToUnicode && charCode >= 0 && toUnicode.has(charCode)) {
-          return true;
-        }
-        if (widths && widthCode >= 0 && isNum(widths[widthCode])) {
-          return true;
-        }
-        return false;
+      function hasGlyph(glyphId) {
+        return !missingGlyphs[glyphId];
       }
 
       if (properties.composite) {
@@ -2304,8 +2294,7 @@ var Font = (function FontClosure() {
             glyphId = cidToGidMap[cid];
           }
 
-          if (glyphId >= 0 && glyphId < numGlyphs &&
-              hasGlyph(glyphId, charCode, cid)) {
+          if (glyphId >= 0 && glyphId < numGlyphs && hasGlyph(glyphId)) {
             charCodeToGlyphId[charCode] = glyphId;
           }
         });
@@ -2361,10 +2350,9 @@ var Font = (function FontClosure() {
             // Ensure that non-standard glyph names are resolved to valid ones.
             standardGlyphName = recoverGlyphName(glyphName, glyphsUnicodeMap);
 
-            var unicodeOrCharCode, isUnicode = false;
+            var unicodeOrCharCode;
             if (cmapPlatformId === 3 && cmapEncodingId === 1) {
               unicodeOrCharCode = glyphsUnicodeMap[standardGlyphName];
-              isUnicode = true;
             } else if (cmapPlatformId === 1 && cmapEncodingId === 0) {
               // TODO: the encoding needs to be updated with mac os table.
               unicodeOrCharCode = MacRomanEncoding.indexOf(standardGlyphName);
@@ -2375,8 +2363,7 @@ var Font = (function FontClosure() {
               if (cmapMappings[i].charCode !== unicodeOrCharCode) {
                 continue;
               }
-              var code = isUnicode ? charCode : unicodeOrCharCode;
-              if (hasGlyph(cmapMappings[i].glyphId, code, -1)) {
+              if (hasGlyph(cmapMappings[i].glyphId)) {
                 charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
                 found = true;
                 break;
@@ -2390,7 +2377,7 @@ var Font = (function FontClosure() {
               if (glyphId === -1 && standardGlyphName !== glyphName) {
                 glyphId = properties.glyphNames.indexOf(standardGlyphName);
               }
-              if (glyphId > 0 && hasGlyph(glyphId, -1, -1)) {
+              if (glyphId > 0 && hasGlyph(glyphId)) {
                 charCodeToGlyphId[charCode] = glyphId;
                 found = true;
               }
@@ -2434,7 +2421,8 @@ var Font = (function FontClosure() {
       }
 
       // Converting glyphs and ids into font's cmap table
-      var newMapping = adjustMapping(charCodeToGlyphId, properties);
+      var newMapping = adjustMapping(charCodeToGlyphId, properties,
+                                     missingGlyphs);
       this.toFontChar = newMapping.toFontChar;
       tables['cmap'] = {
         tag: 'cmap',
@@ -2501,7 +2489,7 @@ var Font = (function FontClosure() {
       }
 
       var mapping = font.getGlyphMapping(properties);
-      var newMapping = adjustMapping(mapping, properties);
+      var newMapping = adjustMapping(mapping, properties, Object.create(null));
       this.toFontChar = newMapping.toFontChar;
       var numGlyphs = font.numGlyphs;
 
