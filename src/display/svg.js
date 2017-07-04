@@ -97,6 +97,58 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     return (b << 16) | a;
   }
 
+  /**
+   * @param {Uint8Array} literals The input data.
+   * @returns {Uint8Array} The DEFLATE-compressed data stream in zlib format.
+   *   This is the required format for compressed streams in the PNG format:
+   *   http://www.libpng.org/pub/png/spec/1.2/PNG-Compression.html
+   */
+  function deflateSync(literals) {
+    return deflateSyncUncompressed(literals);
+  }
+
+  // An implementation of DEFLATE with compression level 0 (Z_NO_COMPRESSION).
+  function deflateSyncUncompressed(literals) {
+    var len = literals.length;
+    var maxBlockLength = 0xFFFF;
+
+    var deflateBlocks = Math.ceil(len / maxBlockLength);
+    var idat = new Uint8Array(2 + len + deflateBlocks * 5 + 4);
+    var pi = 0;
+    idat[pi++] = 0x78; // compression method and flags
+    idat[pi++] = 0x9c; // flags
+
+    var pos = 0;
+    while (len > maxBlockLength) {
+      // writing non-final DEFLATE blocks type 0 and length of 65535
+      idat[pi++] = 0x00;
+      idat[pi++] = 0xff;
+      idat[pi++] = 0xff;
+      idat[pi++] = 0x00;
+      idat[pi++] = 0x00;
+      idat.set(literals.subarray(pos, pos + maxBlockLength), pi);
+      pi += maxBlockLength;
+      pos += maxBlockLength;
+      len -= maxBlockLength;
+    }
+
+    // writing non-final DEFLATE blocks type 0
+    idat[pi++] = 0x01;
+    idat[pi++] = len & 0xff;
+    idat[pi++] = len >> 8 & 0xff;
+    idat[pi++] = (~len & 0xffff) & 0xff;
+    idat[pi++] = (~len & 0xffff) >> 8 & 0xff;
+    idat.set(literals.subarray(pos), pi);
+    pi += literals.length - pos;
+
+    var adler = adler32(literals, 0, literals.length); // checksum
+    idat[pi++] = adler >> 24 & 0xff;
+    idat[pi++] = adler >> 16 & 0xff;
+    idat[pi++] = adler >> 8 & 0xff;
+    idat[pi++] = adler & 0xff;
+    return idat;
+  }
+
   function encode(imgData, kind, forceDataSchema) {
     var width = imgData.width;
     var height = imgData.height;
@@ -162,43 +214,7 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
       0x00 // interlace method
     ]);
 
-    var len = literals.length;
-    var maxBlockLength = 0xFFFF;
-
-    var deflateBlocks = Math.ceil(len / maxBlockLength);
-    var idat = new Uint8Array(2 + len + deflateBlocks * 5 + 4);
-    var pi = 0;
-    idat[pi++] = 0x78; // compression method and flags
-    idat[pi++] = 0x9c; // flags
-
-    var pos = 0;
-    while (len > maxBlockLength) {
-      // writing non-final DEFLATE blocks type 0 and length of 65535
-      idat[pi++] = 0x00;
-      idat[pi++] = 0xff;
-      idat[pi++] = 0xff;
-      idat[pi++] = 0x00;
-      idat[pi++] = 0x00;
-      idat.set(literals.subarray(pos, pos + maxBlockLength), pi);
-      pi += maxBlockLength;
-      pos += maxBlockLength;
-      len -= maxBlockLength;
-    }
-
-    // writing non-final DEFLATE blocks type 0
-    idat[pi++] = 0x01;
-    idat[pi++] = len & 0xff;
-    idat[pi++] = len >> 8 & 0xff;
-    idat[pi++] = (~len & 0xffff) & 0xff;
-    idat[pi++] = (~len & 0xffff) >> 8 & 0xff;
-    idat.set(literals.subarray(pos), pi);
-    pi += literals.length - pos;
-
-    var adler = adler32(literals, 0, literals.length); // checksum
-    idat[pi++] = adler >> 24 & 0xff;
-    idat[pi++] = adler >> 16 & 0xff;
-    idat[pi++] = adler >> 8 & 0xff;
-    idat[pi++] = adler & 0xff;
+    var idat = deflateSync(literals);
 
     // PNG will consists: header, IHDR+data, IDAT+data, and IEND.
     var pngLength = PNG_HEADER.length + (CHUNK_WRAPPER_SIZE * 3) +
