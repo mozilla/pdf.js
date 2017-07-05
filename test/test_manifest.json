@@ -2945,6 +2945,13 @@
        "type": "eq",
        "about": "Inline image with ASCII85Decode filter."
     },
+    {  "id": "issue8613",
+       "file": "pdfs/issue8613.pdf",
+       "md5": "bc7ad2db75710aa9916c5769e0c02123",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug1108753",
        "file": "pdfs/bug1108753.pdf",
        "md5": "a7aaf92d55b4602afb0ca3d75198b56b",
