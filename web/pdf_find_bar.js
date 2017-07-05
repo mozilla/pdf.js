@@ -140,10 +140,10 @@ class PDFFindBar {
     this.findField.setAttribute('data-status', status);
     Promise.resolve(findMsg).then((msg) => {
       this.findMsg.textContent = msg;
+      this._adjustWidth();
     });
 
     this.updateResultsCount(matchCount);
-    this._adjustWidth();
   }
 
   updateResultsCount(matchCount) {
@@ -160,6 +160,9 @@ class PDFFindBar {
       this.findResultsCount.textContent = matchCount.toLocaleString();
       this.findResultsCount.classList.remove('hidden');
     }
+    // Since `updateResultsCount` may be called from `PDFFindController`,
+    // ensure that the width of the findbar is always updated correctly.
+    this._adjustWidth();
   }
 
   open() {
