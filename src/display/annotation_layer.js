@@ -441,6 +441,7 @@ var TextWidgetAnnotationElement = (
       this.container.className = 'textWidgetAnnotation';
 
       var element = null;
+      var font = null;
       if (this.renderInteractiveForms) {
         // NOTE: We cannot set the values using `element.value` below, since it
         //       prevents the AnnotationLayer rasterizer in `test/driver.js`
@@ -453,6 +454,8 @@ var TextWidgetAnnotationElement = (
           element.type = 'text';
           element.setAttribute('value', this.data.fieldValue);
         }
+
+        element.name = this.data.fieldName;
 
         element.disabled = this.data.readOnly;
 
@@ -467,18 +470,29 @@ var TextWidgetAnnotationElement = (
           element.classList.add('comb');
           element.style.letterSpacing = 'calc(' + combWidth + 'px - 1ch)';
         }
+
+        if (this.data.fontRefName) {
+          var fonts = this.data.annotationFonts;
+          for (var f = 0; f < fonts.length; f++) {
+            if (fonts[f].length >= 3 &&
+                fonts[f][0] === this.data.fontRefName) {
+              font = fonts[f][2];
+              break;
+            }
+          }
+        }
       } else {
         element = document.createElement('div');
         element.textContent = this.data.fieldValue;
         element.style.verticalAlign = 'middle';
         element.style.display = 'table-cell';
 
-        var font = null;
         if (this.data.fontRefName) {
           font = this.page.commonObjs.getData(this.data.fontRefName);
         }
-        this._setTextStyle(element, font);
       }
+
+      this._setTextStyle(element, font);
 
       if (this.data.textAlignment !== null) {
         element.style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
@@ -500,6 +514,7 @@ var TextWidgetAnnotationElement = (
         function TextWidgetAnnotationElement_setTextStyle(element, font) {
       // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
       var style = element.style;
+      style.color = this.data.fontColor;
       style.fontSize = this.data.fontSize + 'px';
       style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
 
@@ -546,6 +561,7 @@ var CheckboxWidgetAnnotationElement =
       this.container.className = 'buttonWidgetAnnotation checkBox';
 
       var element = document.createElement('input');
+      element.name = this.data.fieldName;
       element.disabled = this.data.readOnly;
       element.type = 'checkbox';
       if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
@@ -584,6 +600,7 @@ var RadioButtonWidgetAnnotationElement =
       this.container.className = 'buttonWidgetAnnotation radioButton';
 
       var element = document.createElement('input');
+      element.name = this.data.fieldName;
       element.disabled = this.data.readOnly;
       element.type = 'radio';
       element.name = this.data.fieldName;
@@ -623,7 +640,30 @@ var ChoiceWidgetAnnotationElement = (
       this.container.className = 'choiceWidgetAnnotation';
 
       var selectElement = document.createElement('select');
+      selectElement.name = this.data.fieldName;
       selectElement.disabled = this.data.readOnly;
+
+      var style = selectElement.style;
+      style.color = this.data.fontColor;
+      style.fontSize = this.data.fontSize + 'px';
+
+      if (this.data.fontRefName) {
+        var fonts = this.data.annotationFonts;
+        for (var f = 0; f < fonts.length; f++) {
+          if (fonts[f].length >= 3 && fonts[f][0] === this.data.fontRefName) {
+            var font = fonts[f][2];
+
+            style.fontWeight = font.black ? font.bold ? '900' :
+                                 'bold' : font.bold ? 'bold' : 'normal';
+            style.fontStyle = font.italic ? 'italic' : 'normal';
+            var fontFamily = font.loadedName ? '"' +
+                               font.loadedName + '", ' : '';
+            var fallbackName = font.fallbackName || 'Helvetica, sans-serif';
+            style.fontFamily = fontFamily + fallbackName;
+            break;
+          }
+        }
+      }
 
       if (!this.data.combo) {
         // List boxes have a size and (optionally) multiple selection.
@@ -641,6 +681,21 @@ var ChoiceWidgetAnnotationElement = (
         var optionElement = document.createElement('option');
         optionElement.textContent = option.displayValue;
         optionElement.value = option.exportValue;
+
+        optionElement.style.color = style.color;
+        optionElement.style.fontSize = style.fontSize;
+
+        if (style.fontWeight) {
+          optionElement.style.fontWeight = style.fontWeight;
+        }
+
+        if (style.fontStyle) {
+          optionElement.style.fontStyle = style.fontStyle;
+        }
+
+        if (style.fontFamily) {
+          optionElement.style.fontFamily = style.fontFamily;
+        }
 
         if (this.data.fieldValue.indexOf(option.displayValue) >= 0) {
           optionElement.setAttribute('selected', true);
