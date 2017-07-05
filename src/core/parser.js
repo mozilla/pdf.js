@@ -373,7 +373,7 @@ var Parser = (function ParserClosure() {
       var startPos = stream.pos, length, i, ii;
       if (filterName === 'DCTDecode' || filterName === 'DCT') {
         length = this.findDCTDecodeInlineStreamEnd(stream);
-      } else if (filterName === 'ASCII85Decide' || filterName === 'A85') {
+      } else if (filterName === 'ASCII85Decode' || filterName === 'A85') {
         length = this.findASCII85DecodeInlineStreamEnd(stream);
       } else if (filterName === 'ASCIIHexDecode' || filterName === 'AHx') {
         length = this.findASCIIHexDecodeInlineStreamEnd(stream);
