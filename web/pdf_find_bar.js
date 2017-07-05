@@ -151,15 +151,15 @@ class PDFFindBar {
       return; // No UI control is provided.
     }
 
-    // If there are no matches, hide the counter.
     if (!matchCount) {
+      // If there are no matches, hide and reset the counter.
       this.findResultsCount.classList.add('hidden');
-      return;
+      this.findResultsCount.textContent = '';
+    } else {
+      // Update and show the match counter.
+      this.findResultsCount.textContent = matchCount.toLocaleString();
+      this.findResultsCount.classList.remove('hidden');
     }
-
-    // Create and show the match counter.
-    this.findResultsCount.textContent = matchCount.toLocaleString();
-    this.findResultsCount.classList.remove('hidden');
   }
 
   open() {
