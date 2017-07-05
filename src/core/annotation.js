@@ -37,7 +37,8 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @param {Object} idFactory
    * @returns {Annotation}
    */
-  create: function AnnotationFactory_create(xref, ref, pdfManager, idFactory) {
+  create: function AnnotationFactory_create(
+    evaluator, task, xref, ref, pdfManager, idFactory) {
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
@@ -56,51 +57,61 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
       subtype,
       id,
       pdfManager,
+      evaluator,
+      task,
     };
 
     switch (subtype) {
       case 'Link':
-        return new LinkAnnotation(parameters);
+        return Promise.resolve(new LinkAnnotation(parameters));
 
       case 'Text':
-        return new TextAnnotation(parameters);
+        return Promise.resolve(new TextAnnotation(parameters));
 
       case 'Widget':
         var fieldType = Util.getInheritableProperty(dict, 'FT');
         fieldType = isName(fieldType) ? fieldType.name : null;
 
+        var widget = new WidgetAnnotation(parameters);
+
         switch (fieldType) {
           case 'Tx':
-            return new TextWidgetAnnotation(parameters);
+            widget = new TextWidgetAnnotation(parameters);
+            break;
           case 'Btn':
-            return new ButtonWidgetAnnotation(parameters);
+            widget = new ButtonWidgetAnnotation(parameters);
+            break;
           case 'Ch':
-            return new ChoiceWidgetAnnotation(parameters);
+            widget = new ChoiceWidgetAnnotation(parameters);
+            break;
+          default:
+            warn('Unimplemented widget field type "' + fieldType + '", ' +
+               'falling back to base field type.');
+            break;
         }
-        warn('Unimplemented widget field type "' + fieldType + '", ' +
-             'falling back to base field type.');
-        return new WidgetAnnotation(parameters);
+
+        return widget.parseAppearance(parameters);
 
       case 'Popup':
-        return new PopupAnnotation(parameters);
+        return Promise.resolve(new PopupAnnotation(parameters));
 
       case 'Line':
-        return new LineAnnotation(parameters);
+        return Promise.resolve(new LineAnnotation(parameters));
 
       case 'Highlight':
-        return new HighlightAnnotation(parameters);
+        return Promise.resolve(new HighlightAnnotation(parameters));
 
       case 'Underline':
-        return new UnderlineAnnotation(parameters);
+        return Promise.resolve(new UnderlineAnnotation(parameters));
 
       case 'Squiggly':
-        return new SquigglyAnnotation(parameters);
+        return Promise.resolve(new SquigglyAnnotation(parameters));
 
       case 'StrikeOut':
-        return new StrikeOutAnnotation(parameters);
+        return Promise.resolve(new StrikeOutAnnotation(parameters));
 
       case 'FileAttachment':
-        return new FileAttachmentAnnotation(parameters);
+        return Promise.resolve(new FileAttachmentAnnotation(parameters));
 
       default:
         if (!subtype) {
@@ -109,7 +120,7 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
           warn('Unimplemented annotation type "' + subtype + '", ' +
                'falling back to base annotation.');
         }
-        return new Annotation(parameters);
+        return Promise.resolve(new Annotation(parameters));
     }
   },
 };
@@ -667,6 +678,59 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
      */
     hasFieldFlag: function WidgetAnnotation_hasFieldFlag(flag) {
       return !!(this.data.fieldFlags & flag);
+    },
+
+    /**
+     * Parse widget annotation appearance and extract font infromation.
+     *
+     * @public
+     * @memberof WidgetAnnotation
+     * @param {number} flag - Hexadecimal representation for an annotation
+     *                        field characteristic
+     * @return {Promise}
+     */
+    parseAppearance: function WidgetAnnotation_parseAppearance(params) {
+      var data = this.data;
+      var self = this;
+
+      var opList = new OperatorList();
+      var appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+      var formFonts = params.pdfManager.pdfDocument.acroForm.get('DR');
+      opList.acroForm = params.pdfManager.pdfDocument.acroForm;
+      return params.evaluator.getOperatorList({
+          stream: appearanceStream,
+          task: params.task,
+          resources: formFonts,
+          operatorList: opList,
+      }).then(function () {
+        var a = opList.argsArray;
+        var i;
+        for (i = 0; i < opList.fnArray.length; i++) {
+          var fn = opList.fnArray[i];
+          switch (fn | 0) {
+            case OPS.setFont:
+              data.annotationFonts = opList.acroForm.annotationFonts;
+              data.fontRefName = a[i][0];
+              data.fontSize = a[i][1];
+              break;
+            case OPS.setGrayFill:
+              if (a[i].length >= 1) {
+                var gray = Math.round(a[i][0] * 0x100);
+                data.fontColor = Util.makeCssRgb(gray, gray, gray);
+              }
+
+              break;
+            case OPS.setFillRGBColor:
+              if (a[i].length >= 3) {
+                data.fontColor = Util.makeCssRgb(a[i][0], a[i][1], a[i][2]);
+              }
+
+              break;
+          }
+        }
+
+        return self;
+      });
     },
   });
 

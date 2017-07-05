@@ -14,9 +14,9 @@
  */
 
 import {
-  assert, error, info, isArray, isArrayBuffer, isNum, isSpace, isString,
-  MissingDataException, OPS, shadow, stringToBytes, stringToPDFString, Util,
-  warn
+  assert, createPromiseCapability, error, info, isArray, isArrayBuffer, isNum,
+  isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
+  stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream } from './primitives';
@@ -238,7 +238,7 @@ var Page = (function PageClosure() {
 
       // Fetch the page's annotations and add their operator lists to the
       // page's operator list to render them.
-      var annotationsPromise = this.pdfManager.ensure(this, 'annotations');
+      var annotationsPromise = this.annotations;
       return Promise.all([pageListPromise, annotationsPromise]).then(
           function ([pageOpList, annotations]) {
         if (annotations.length === 0) {
@@ -304,30 +304,100 @@ var Page = (function PageClosure() {
     },
 
     getAnnotationsData: function Page_getAnnotationsData(intent) {
-      var annotations = this.annotations;
-      var annotationsData = [];
-      for (var i = 0, n = annotations.length; i < n; ++i) {
-        if (!intent || isAnnotationRenderable(annotations[i], intent)) {
-          annotationsData.push(annotations[i].data);
+      var annotationsPromise = this.annotations;
+      return annotationsPromise.then(function (annotations) {
+        var annotationsData = [];
+        for (var i = 0, n = annotations.length; i < n; ++i) {
+          if (!intent || isAnnotationRenderable(annotations[i], intent)) {
+            annotationsData.push(annotations[i].data);
+          }
         }
-      }
-      return annotationsData;
+        return annotationsData;
+      });
     },
 
     get annotations() {
-      var annotations = [];
+      var AnnotationWorkerTask = (function AnnotationWorkerTaskClosure() {
+        function AnnotationWorkerTask(name) {
+          this.name = name;
+          this.terminated = false;
+          this.capability = createPromiseCapability();
+        }
+
+        AnnotationWorkerTask.prototype = {
+          get finished() {
+            return this.capability.promise;
+          },
+
+          finish() {
+            this.capability.resolve();
+          },
+
+          terminate() {
+            this.terminated = true;
+          },
+
+          ensureNotTerminated() {
+            if (this.terminated) {
+              throw new Error('Annotation worker task was terminated');
+            }
+          },
+        };
+
+        return AnnotationWorkerTask;
+      })();
+
+      this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
+
+      var task = new AnnotationWorkerTask(
+        'GetAnnotationAppereances: page ' + this.pageIndex);
+
+      var handler = {};
+
+      var self = this;
+
+      handler.send = function (actionname, data) {
+        self.pdfManager.pdfDocument.acroForm.annotationFonts.push(data);
+      };
+
+      var pageNum = this.pageIndex + 1;
+      var start = Date.now();
+
+      var partialEvaluator = new PartialEvaluator({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        handler,
+        pageIndex: this.pageIndex,
+        idFactory: this.idFactory,
+        fontCache: this.fontCache,
+        builtInCMapCache: this.builtInCMapCache,
+        options: this.evaluatorOptions,
+      });
+
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
       var annotationFactory = new AnnotationFactory();
+      var annotationsPromise = [];
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = annotationFactory.create(this.xref, annotationRef,
-                                                  this.pdfManager,
-                                                  this.idFactory);
-        if (annotation) {
-          annotations.push(annotation);
-        }
+          annotationsPromise.push(annotationFactory.create(
+          partialEvaluator,
+          task,
+          this.xref,
+          annotationRef,
+          this.pdfManager,
+          this.idFactory));
       }
-      return shadow(this, 'annotations', annotations);
+
+      return shadow(this, 'annotations',
+        Promise.all(annotationsPromise)).then(function (annotations) {
+
+        task.finish();
+        info('page=' + pageNum + ' - annotations: time=' +
+          (Date.now() - start) +
+          'ms, len=' + annotations.length);
+
+        return annotations;
+      });
     },
   };
 
