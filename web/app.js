@@ -985,6 +985,12 @@ let PDFViewerApplication = {
 
         pdfViewer.currentScaleValue = pdfViewer.currentScaleValue;
         this.setInitialView(initialParams.hash);
+      }).then(function() {
+        // At this point, rendering of the initial page(s) should always have
+        // started (and may even have completed).
+        // To prevent any future issues, e.g. the document being completely
+        // blank on load, always trigger rendering here.
+        pdfViewer.update();
       });
     });
 
