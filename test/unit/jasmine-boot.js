@@ -50,6 +50,7 @@ function initializePDFJS(callback) {
     'pdfjs-test/unit/cmap_spec',
     'pdfjs-test/unit/crypto_spec',
     'pdfjs-test/unit/custom_spec',
+    'pdfjs-test/unit/display_svg_spec',
     'pdfjs-test/unit/document_spec',
     'pdfjs-test/unit/dom_utils_spec',
     'pdfjs-test/unit/evaluator_spec',
