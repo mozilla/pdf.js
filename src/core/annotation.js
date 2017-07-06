@@ -38,7 +38,12 @@ AnnotationFactory.prototype = /** @lends AnnotationFactory.prototype */ {
    * @returns {Annotation}
    */
   create: function AnnotationFactory_create(
-    evaluator, task, xref, ref, pdfManager, idFactory) {
+    xref, ref, pdfManager, idFactory, evaluator, task) {
+
+    if (!xref) {
+      return;
+    }
+
     var dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
@@ -690,6 +695,10 @@ var WidgetAnnotation = (function WidgetAnnotationClosure() {
      * @return {Promise}
      */
     parseAppearance: function WidgetAnnotation_parseAppearance(params) {
+      if (!params.pdfManager || !params.pdfManager.pdfDocument) {
+        return Promise.resolve(this);
+      }
+
       var data = this.data;
       var self = this;
 

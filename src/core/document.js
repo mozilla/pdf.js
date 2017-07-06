@@ -347,7 +347,10 @@ var Page = (function PageClosure() {
         return AnnotationWorkerTask;
       })();
 
-      this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
+      if (this.pdfManager && this.pdfManager.pdfDocument &&
+          this.pdfManager.pdfDocument.acroForm) {
+        this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
+      }
 
       var task = new AnnotationWorkerTask(
         'GetAnnotationAppereances: page ' + this.pageIndex);
@@ -357,7 +360,10 @@ var Page = (function PageClosure() {
       var self = this;
 
       handler.send = function (actionname, data) {
-        self.pdfManager.pdfDocument.acroForm.annotationFonts.push(data);
+        if (self.pdfManager && self.pdfManager.pdfDocument &&
+            self.pdfManager.pdfDocument.acroForm) {
+          self.pdfManager.pdfDocument.acroForm.annotationFonts.push(data);
+        }
       };
 
       var pageNum = this.pageIndex + 1;
@@ -380,12 +386,13 @@ var Page = (function PageClosure() {
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
           annotationsPromise.push(annotationFactory.create(
-          partialEvaluator,
-          task,
           this.xref,
           annotationRef,
           this.pdfManager,
-          this.idFactory));
+          this.idFactory,
+          partialEvaluator,
+          task
+        ));
       }
 
       return shadow(this, 'annotations',
@@ -397,6 +404,9 @@ var Page = (function PageClosure() {
           'ms, len=' + annotations.length);
 
         return annotations;
+      }, function (reason) {
+        error('page=' + pageNum + 'error: ' + reason);
+        return [];
       });
     },
   };
