@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals __non_webpack_require__ */
 
 import {
   createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isArray,
-  isNum, OPS, Util, warn
+  isNodeJS, isNum, OPS, Util, warn
 } from '../shared/util';
 
 var SVGGraphics = function() {
@@ -104,6 +105,37 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
    *   http://www.libpng.org/pub/png/spec/1.2/PNG-Compression.html
    */
   function deflateSync(literals) {
+    if (!isNodeJS()) {
+      // zlib is certainly not available outside of Node.js. We can either use
+      // the pako library for client-side DEFLATE compression, or use the canvas
+      // API of the browser to obtain a more optimal PNG file.
+      return deflateSyncUncompressed(literals);
+    }
+    try {
+      // NOTE: This implementation is far from perfect, but already way better
+      // than not applying any compression.
+      //
+      // A better algorithm will try to choose a good predictor/filter and
+      // then choose a suitable zlib compression strategy (e.g. 3,Z_RLE).
+      //
+      // Node v0.11.12 zlib.deflateSync is introduced (and returns a Buffer).
+      // Node v3.0.0   Buffer inherits from Uint8Array.
+      // Node v8.0.0   zlib.deflateSync accepts Uint8Array as input.
+      var input;
+        // eslint-disable-next-line no-undef
+      if (parseInt(process.versions.node) >= 8) {
+        input = literals;
+      } else {
+        // eslint-disable-next-line no-undef
+        input = new Buffer(literals);
+      }
+      var output = __non_webpack_require__('zlib')
+        .deflateSync(input, { level: 9, });
+      return output instanceof Uint8Array ? output : new Uint8Array(output);
+    } catch (e) {
+      warn('Not compressing PNG because zlib.deflateSync is unavailable: ' + e);
+    }
+
     return deflateSyncUncompressed(literals);
   }
 
