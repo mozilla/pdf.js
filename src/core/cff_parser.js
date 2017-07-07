@@ -268,12 +268,14 @@ var CFFParser = (function CFFParserClosure() {
       cff.charset = charset;
       cff.encoding = encoding;
 
-      var charStringsAndSeacs = this.parseCharStrings(
-                                  charStringIndex,
-                                  topDict.privateDict.subrsIndex,
-                                  globalSubrIndex.obj,
-                                  cff.fdSelect,
-                                  cff.fdArray);
+      var charStringsAndSeacs = this.parseCharStrings({
+        charStrings: charStringIndex,
+        localSubrIndex: topDict.privateDict.subrsIndex,
+        globalSubrIndex: globalSubrIndex.obj,
+        fdSelect: cff.fdSelect,
+        fdArray: cff.fdArray,
+        privateDict: topDict.privateDict,
+      });
       cff.charStrings = charStringsAndSeacs.charStrings;
       cff.seacs = charStringsAndSeacs.seacs;
       cff.widths = charStringsAndSeacs.widths;
@@ -601,11 +603,8 @@ var CFFParser = (function CFFParserClosure() {
       state.stackSize = stackSize;
       return true;
     },
-    parseCharStrings: function CFFParser_parseCharStrings(charStrings,
-                                                          localSubrIndex,
-                                                          globalSubrIndex,
-                                                          fdSelect,
-                                                          fdArray) {
+    parseCharStrings({ charStrings, localSubrIndex, globalSubrIndex, fdSelect,
+                       fdArray, privateDict, }) {
       var seacs = [];
       var widths = [];
       var count = charStrings.count;
@@ -623,6 +622,7 @@ var CFFParser = (function CFFParserClosure() {
         };
         var valid = true;
         var localSubrToUse = null;
+        var privateDictToUse = privateDict;
         if (fdSelect && fdArray.length) {
           var fdIndex = fdSelect.getFDIndex(i);
           if (fdIndex === -1) {
@@ -634,7 +634,8 @@ var CFFParser = (function CFFParserClosure() {
             valid = false;
           }
           if (valid) {
-            localSubrToUse = fdArray[fdIndex].privateDict.subrsIndex;
+            privateDictToUse = fdArray[fdIndex].privateDict;
+            localSubrToUse = privateDictToUse.subrsIndex;
           }
         } else if (localSubrIndex) {
           localSubrToUse = localSubrIndex;
@@ -644,7 +645,11 @@ var CFFParser = (function CFFParserClosure() {
                                        globalSubrIndex);
         }
         if (state.width !== null) {
-          widths[i] = state.width;
+          const nominalWidth = privateDictToUse.getByName('nominalWidthX');
+          widths[i] = nominalWidth + state.width;
+        } else {
+          const defaultWidth = privateDictToUse.getByName('defaultWidthX');
+          widths[i] = defaultWidth;
         }
         if (state.seac !== null) {
           seacs[i] = state.seac;
