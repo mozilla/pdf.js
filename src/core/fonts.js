@@ -14,9 +14,9 @@
  */
 
 import {
-  assert, bytesToString, error, FONT_IDENTITY_MATRIX, FontType, info, isArray,
-  isInt, isNum, isSpace, MissingDataException, readUint32, shadow, string32,
-  warn
+  assert, bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info,
+  isArray, isInt, isNum, isSpace, MissingDataException, readUint32, shadow,
+  string32, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -295,7 +295,7 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     amend(map) {
-      error('Should not call amend()');
+      throw new Error('Should not call amend()');
     },
   };
 
@@ -683,8 +683,7 @@ var Font = (function FontClosure() {
         break;
 
       default:
-        error('Font ' + type + ' is not supported');
-        break;
+        throw new FormatError(`Font ${type} is not supported`);
     }
 
     this.data = data;
@@ -1079,7 +1078,8 @@ var Font = (function FontClosure() {
         } else if (position < 123) {
           ulUnicodeRange4 |= 1 << position - 96;
         } else {
-          error('Unicode ranges Bits > 123 are reserved for internal usage');
+          throw new FormatError(
+            'Unicode ranges Bits > 123 are reserved for internal usage');
         }
       }
     } else {
@@ -2170,7 +2170,7 @@ var Font = (function FontClosure() {
         this.isOpenType = true;
       } else {
         if (!tables['loca']) {
-          error('Required "loca" table is not found');
+          throw new FormatError('Required "loca" table is not found');
         }
         if (!tables['glyf']) {
           warn('Required "glyf" table is not found -- trying to recover.');
@@ -2184,7 +2184,7 @@ var Font = (function FontClosure() {
       }
 
       if (!tables['maxp']) {
-        error('Required "maxp" table is not found');
+        throw new FormatError('Required "maxp" table is not found');
       }
 
       font.pos = (font.start || 0) + tables['maxp'].offset;
@@ -2226,7 +2226,7 @@ var Font = (function FontClosure() {
       sanitizeMetrics(font, tables['hhea'], tables['hmtx'], numGlyphs);
 
       if (!tables['head']) {
-        error('Required "head" table is not found');
+        throw new FormatError('Required "head" table is not found');
       }
 
       sanitizeHead(tables['head'], numGlyphs,
@@ -2242,7 +2242,7 @@ var Font = (function FontClosure() {
       }
 
       if (!tables['hhea']) {
-        error('Required "hhea" table is not found');
+        throw new FormatError('Required "hhea" table is not found');
       }
 
       // Sanitizer reduces the glyph advanceWidth to the maxAdvanceWidth

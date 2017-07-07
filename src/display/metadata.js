@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import { error } from '../shared/util';
-
 function fixMetadata(meta) {
   return meta.replace(/>\\376\\377([^<]+)/g, function(all, codes) {
     var bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
@@ -40,7 +38,7 @@ function Metadata(meta) {
     var parser = new DOMParser();
     meta = parser.parseFromString(meta, 'application/xml');
   } else if (!(meta instanceof Document)) {
-    error('Metadata: Invalid metadata object');
+    throw new Error('Metadata: Invalid metadata object');
   }
 
   this.metaDocument = meta;

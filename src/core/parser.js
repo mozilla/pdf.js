@@ -18,8 +18,8 @@ import {
   JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, error, info, isArray, isInt, isNum, isString, MissingDataException,
-  StreamType, warn
+  assert, FormatError, info, isArray, isInt, isNum, isString,
+  MissingDataException, StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -79,7 +79,7 @@ var Parser = (function ParserClosure() {
             }
             if (isEOF(this.buf1)) {
               if (!this.recoveryMode) {
-                error('End of file inside array');
+                throw new FormatError('End of file inside array');
               }
               return array;
             }
@@ -103,7 +103,7 @@ var Parser = (function ParserClosure() {
             }
             if (isEOF(this.buf1)) {
               if (!this.recoveryMode) {
-                error('End of file inside dictionary');
+                throw new FormatError('End of file inside dictionary');
               }
               return dict;
             }
@@ -348,7 +348,7 @@ var Parser = (function ParserClosure() {
       var dict = new Dict(this.xref);
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
-          error('Dictionary key must be a name object');
+          throw new FormatError('Dictionary key must be a name object');
         }
         var key = this.buf1.name;
         this.shift();
@@ -482,7 +482,7 @@ var Parser = (function ParserClosure() {
           stream.pos += scanLength;
         }
         if (!found) {
-          error('Missing endstream');
+          throw new FormatError('Missing endstream');
         }
         length = skipped;
 
@@ -517,7 +517,7 @@ var Parser = (function ParserClosure() {
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
           filter = this.xref.fetchIfRef(filterArray[i]);
           if (!isName(filter)) {
-            error('Bad filter name: ' + filter);
+            throw new FormatError('Bad filter name: ' + filter);
           }
 
           params = null;
@@ -694,7 +694,8 @@ var Lexer = (function LexerClosure() {
         } while (ch === 0x0A || ch === 0x0D);
       }
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
-        error(`Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
+        throw new FormatError(
+          `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
       }
 
       var baseValue = ch - 0x30; // '0'
@@ -989,8 +990,7 @@ var Lexer = (function LexerClosure() {
           // containing try-catch statements, since we would otherwise attempt
           // to parse the *same* character over and over (fixes issue8061.pdf).
           this.nextChar();
-          error('Illegal character: ' + ch);
-          break;
+          throw new FormatError(`Illegal character: ${ch}`);
       }
 
       // command
@@ -1005,7 +1005,7 @@ var Lexer = (function LexerClosure() {
           break;
         }
         if (str.length === 128) {
-          error('Command token too long: ' + str.length);
+          throw new FormatError(`Command token too long: ${str.length}`);
         }
         str = possibleCommand;
         knownCommandFound = knownCommands && knownCommands[str] !== undefined;

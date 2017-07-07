@@ -14,9 +14,9 @@
  */
 
 import {
-  assert, CMapCompressionType, createPromiseCapability, error,
-  FONT_IDENTITY_MATRIX, getLookupTableFactory, IDENTITY_MATRIX, ImageKind, info,
-  isArray, isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
+  assert, CMapCompressionType, createPromiseCapability, FONT_IDENTITY_MATRIX,
+  FormatError, getLookupTableFactory, IDENTITY_MATRIX, ImageKind, info, isArray,
+  isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
   UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
@@ -953,7 +953,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                   info('Ignored XObject subtype PS');
                   continue;
                 } else {
-                  error('Unhandled XObject subtype ' + type.name);
+                  throw new FormatError(
+                    `Unhandled XObject subtype ${type.name}`);
                 }
               }
               break;
@@ -1791,14 +1792,15 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               } else if (isName(data)) {
                 differences[index++] = data.name;
               } else {
-                error('Invalid entry in \'Differences\' array: ' + data);
+                throw new FormatError(
+                  `Invalid entry in 'Differences' array: ${data}`);
               }
             }
           }
         } else if (isName(encoding)) {
           baseEncodingName = encoding.name;
         } else {
-          error('Encoding is not a Name nor a Dict');
+          throw new FormatError('Encoding is not a Name nor a Dict');
         }
         // According to table 114 if the encoding is a named encoding it must be
         // one of these predefined encodings.

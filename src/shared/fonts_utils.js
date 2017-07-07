@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 /* globals CFFDictDataMap, CFFDictPrivateDataMap, CFFEncodingMap, CFFStrings,
-           Components, Dict, dump, error, isNum, netscape, Stream */
+           Components, Dict, dump, FormatError, isNum, netscape, Stream */
 
 'use strict';
 
@@ -54,7 +54,7 @@ function readCharset(aStream, aCharstrings) {
       }
     }
   } else {
-    error('Invalid charset format');
+    throw new FormatError('Invalid charset format');
   }
 
   return charset;
@@ -176,7 +176,7 @@ function readFontDictData(aString, aMap) {
     } else if (value <= 254) {
       token = -(value - 251) * 256 - aString[i++] - 108;
     } else if (value === 255) {
-      error('255 is not a valid DICT command');
+      throw new FormatError('255 is not a valid DICT command');
     }
 
     fontDictDataTokens.push(token);
@@ -217,8 +217,7 @@ function readFontIndexData(aStream, aIsByte) {
       return aStream.getByte() << 24 | aStream.getByte() << 16 |
              aStream.getByte() << 8 | aStream.getByte();
     }
-    error(offsize + ' is not a valid offset size');
-    return null;
+    throw new FormatError(offsize + ' is not a valid offset size');
   }
 
   var offsets = [];
@@ -375,11 +374,11 @@ var Type2Parser = function type2Parser(aFilePath) {
     dump('Read Charset for ' + charStrings.length + ' glyphs');
     var charsetEntry = font.get('charset');
     if (charsetEntry === 0) {
-      error('Need to support CFFISOAdobeCharset');
+      throw new FormatError('Need to support CFFISOAdobeCharset');
     } else if (charsetEntry === 1) {
-      error('Need to support CFFExpert');
+      throw new FormatError('Need to support CFFExpert');
     } else if (charsetEntry === 2) {
-      error('Need to support CFFExpertSubsetCharset');
+      throw new FormatError('Need to support CFFExpertSubsetCharset');
     } else {
       aStream.pos = charsetEntry;
       readCharset(aStream, charStrings);

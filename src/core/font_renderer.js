@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { bytesToString, error, Util } from '../shared/util';
+import { bytesToString, FormatError, Util } from '../shared/util';
 import { CFFParser } from './cff_parser';
 import { getGlyphsUnicode } from './glyphlist';
 import { StandardEncoding } from './encodings';
@@ -76,7 +76,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
       return ranges;
     }
-    error('not supported cmap: ' + format);
+    throw new FormatError(`unsupported cmap: ${format}`);
   }
 
   function parseCff(data, start, end, seacAnalysisEnabled) {
@@ -423,7 +423,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 bezierCurveTo(xa, ya, xb, yb, x, y);
                 break;
               default:
-                error('unknown operator: 12 ' + v);
+                throw new FormatError(`unknown operator: 12 ${v}`);
             }
             break;
           case 14: // endchar
@@ -566,7 +566,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             break;
           default:
             if (v < 32) {
-              error('unknown operator: ' + v);
+              throw new FormatError(`unknown operator: ${v}`);
             }
             if (v < 247) {
               stack.push(v - 139);
@@ -628,7 +628,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     },
 
     compileGlyphImpl() {
-      error('Children classes should implement this.');
+      throw new Error('Children classes should implement this.');
     },
 
     hasBuiltPath(unicode) {

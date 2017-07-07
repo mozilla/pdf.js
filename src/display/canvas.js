@@ -14,8 +14,8 @@
  */
 
 import {
-  assert, error, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info,
-  isArray, isLittleEndian, isNum, OPS, shadow, TextRenderingMode, Util, warn
+  assert, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isArray,
+  isLittleEndian, isNum, OPS, shadow, TextRenderingMode, Util, warn
 } from '../shared/util';
 import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
 import { WebGLUtils } from './webgl';
@@ -553,7 +553,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
         ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
       }
     } else {
-      error('bad image kind: ' + imgData.kind);
+      throw new Error(`bad image kind: ${imgData.kind}`);
     }
   }
 
@@ -1277,7 +1277,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       var current = this.current;
 
       if (!fontObj) {
-        error('Can\'t find font for ' + fontRefName);
+        throw new Error(`Can't find font for ${fontRefName}`);
       }
 
       current.fontMatrix = (fontObj.fontMatrix ?
@@ -1716,10 +1716,10 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
 
     // Images
     beginInlineImage: function CanvasGraphics_beginInlineImage() {
-      error('Should not call beginInlineImage');
+      throw new Error('Should not call beginInlineImage');
     },
     beginImageData: function CanvasGraphics_beginImageData() {
-      error('Should not call beginImageData');
+      throw new Error('Should not call beginImageData');
     },
 
     paintFormXObjectBegin: function CanvasGraphics_paintFormXObjectBegin(matrix,
