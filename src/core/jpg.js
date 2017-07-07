@@ -14,7 +14,19 @@
  */
 /* eslint-disable no-multi-spaces */
 
-import { error, warn } from '../shared/util';
+import { warn } from '../shared/util';
+
+let JpegError = (function JpegErrorClosure() {
+  function JpegError(msg) {
+    this.message = 'JPEG error: ' + msg;
+  }
+
+  JpegError.prototype = new Error();
+  JpegError.prototype.name = 'JpegError';
+  JpegError.constructor = JpegError;
+
+  return JpegError;
+})();
 
 /**
  * This code was forked from https://github.com/notmasteryet/jpgjs.
@@ -115,8 +127,8 @@ var JpegImage = (function JpegImageClosure() {
       if (bitsData === 0xFF) {
         var nextByte = data[offset++];
         if (nextByte) {
-          error('JPEG error: unexpected marker ' +
-                ((bitsData << 8) | nextByte).toString(16));
+          throw new JpegError(
+            `unexpected marker ${((bitsData << 8) | nextByte).toString(16)}`);
         }
         // unstuff 0
       }
@@ -132,7 +144,7 @@ var JpegImage = (function JpegImageClosure() {
           return node;
         }
         if (typeof node !== 'object') {
-          error('JPEG error: invalid huffman sequence');
+          throw new JpegError('invalid huffman sequence');
         }
       }
     }
@@ -239,7 +251,7 @@ var JpegImage = (function JpegImageClosure() {
             }
           } else {
             if (s !== 1) {
-              error('JPEG error: invalid ACn encoding');
+              throw new JpegError('invalid ACn encoding');
             }
             successiveACNextValue = receiveAndExtend(s);
             successiveACState = r ? 2 : 3;
@@ -362,7 +374,7 @@ var JpegImage = (function JpegImageClosure() {
       }
       var marker = fileMarker && fileMarker.marker;
       if (!marker || marker <= 0xFF00) {
-        error('JPEG error: marker was not found');
+        throw new JpegError('marker was not found');
       }
 
       if (marker >= 0xFFD0 && marker <= 0xFFD7) { // RSTx
@@ -396,7 +408,7 @@ var JpegImage = (function JpegImageClosure() {
     var t;
 
     if (!qt) {
-      error('JPEG error: missing required Quantization Table.');
+      throw new JpegError('missing required Quantization Table.');
     }
 
     // inverse DCT on rows
@@ -680,7 +692,7 @@ var JpegImage = (function JpegImageClosure() {
       var huffmanTablesAC = [], huffmanTablesDC = [];
       var fileMarker = readUint16();
       if (fileMarker !== 0xFFD8) { // SOI (Start of Image)
-        error('JPEG error: SOI not found');
+        throw new JpegError('SOI not found');
       }
 
       fileMarker = readUint16();
@@ -755,7 +767,7 @@ var JpegImage = (function JpegImageClosure() {
                   tableData[z] = readUint16();
                 }
               } else {
-                error('JPEG error: DQT - invalid table spec');
+                throw new JpegError('DQT - invalid table spec');
               }
               quantizationTables[quantizationTableSpec & 15] = tableData;
             }
@@ -765,7 +777,7 @@ var JpegImage = (function JpegImageClosure() {
           case 0xFFC1: // SOF1 (Start of Frame, Extended DCT)
           case 0xFFC2: // SOF2 (Start of Frame, Progressive DCT)
             if (frame) {
-              error('JPEG error: Only single frame JPEGs supported');
+              throw new JpegError('Only single frame JPEGs supported');
             }
             readUint16(); // skip data length
             frame = {};
@@ -865,7 +877,7 @@ var JpegImage = (function JpegImageClosure() {
               offset -= 3;
               break;
             }
-            error('JPEG error: unknown marker ' + fileMarker.toString(16));
+            throw new JpegError('unknown marker ' + fileMarker.toString(16));
         }
         fileMarker = readUint16();
       }
@@ -1090,7 +1102,7 @@ var JpegImage = (function JpegImageClosure() {
 
     getData: function getData(width, height, forceRGBoutput) {
       if (this.numComponents > 4) {
-        error('JPEG error: Unsupported color mode');
+        throw new JpegError('Unsupported color mode');
       }
       // type of data: Uint8Array(width * height * numComponents)
       var data = this._getLinearizedBlockData(width, height);

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { error, isSpace } from '../shared/util';
+import { FormatError, isSpace } from '../shared/util';
 import { EOF } from './primitives';
 
 var PostScriptParser = (function PostScriptParserClosure() {
@@ -39,8 +39,8 @@ var PostScriptParser = (function PostScriptParserClosure() {
       if (this.accept(type)) {
         return true;
       }
-      error('Unexpected symbol: found ' + this.token.type + ' expected ' +
-        type + '.');
+      throw new FormatError(
+        `Unexpected symbol: found ${this.token.type} expected ${type}.`);
     },
     parse: function PostScriptParser_parse() {
       this.nextToken();
@@ -89,7 +89,7 @@ var PostScriptParser = (function PostScriptParserClosure() {
         this.operators[conditionLocation] = endOfTrue;
         this.operators[conditionLocation + 1] = 'jz';
       } else {
-        error('PS Function: error parsing conditional.');
+        throw new FormatError('PS Function: error parsing conditional.');
       }
     },
   };
@@ -211,7 +211,7 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
       }
       var value = parseFloat(strBuf.join(''));
       if (isNaN(value)) {
-        error('Invalid floating point number: ' + value);
+        throw new FormatError(`Invalid floating point number: ${value}`);
       }
       return value;
     },
