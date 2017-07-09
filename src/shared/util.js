@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals global, process, __pdfjsdev_webpack__ */
 
 import './compatibility';
 import { ReadableStream } from '../../external/streams/streams-lib';
 
 var globalScope =
   (typeof window !== 'undefined' && window.Math === Math) ? window :
+  // eslint-disable-next-line no-undef
   (typeof global !== 'undefined' && global.Math === Math) ? global :
   (typeof self !== 'undefined' && self.Math === Math) ? self : this;
 
@@ -1092,11 +1092,8 @@ function isSpace(ch) {
 }
 
 function isNodeJS() {
-  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
-  if (typeof __pdfjsdev_webpack__ === 'undefined') {
-    return typeof process === 'object' && process + '' === '[object process]';
-  }
-  return false;
+  // eslint-disable-next-line no-undef
+  return typeof process === 'object' && process + '' === '[object process]';
 }
 
 /**

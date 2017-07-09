@@ -121,7 +121,6 @@ function createStringSource(filename, content) {
 
 function createWebpackConfig(defines, output) {
   var path = require('path');
-  var BlockRequirePlugin = require('./external/webpack/block-require.js');
 
   var versionInfo = getVersionJSON();
   var bundleDefines = builder.merge(defines, {
@@ -138,7 +137,6 @@ function createWebpackConfig(defines, output) {
     output: output,
     plugins: [
       new webpack2.BannerPlugin({ banner: licenseHeader, raw: true, }),
-      new BlockRequirePlugin()
     ],
     resolve: {
       alias: {
@@ -168,6 +166,19 @@ function createWebpackConfig(defines, output) {
         },
       ],
     },
+    // Avoid shadowing actual Node.js variables with polyfills, by disabling
+    // polyfills/mocks - https://webpack.js.org/configuration/node/
+    node: {
+      console: false,
+      global: false,
+      process: false,
+      __filename: false,
+      __dirname: false,
+      Buffer: false,
+      setImmediate: false,
+    },
+    // If we upgrade to Webpack 3.0+, the above can be replaced with:
+    // node: false,
   };
 }
 
@@ -975,13 +986,32 @@ gulp.task('jsdoc', function (done) {
 });
 
 gulp.task('lib', ['buildnumber'], function () {
+  // When we create a bundle, webpack is run on the source and it will replace
+  // require with __webpack_require__. When we want to use the real require,
+  // __non_webpack_require__ has to be used.
+  // In this target, we don't create a bundle, so we have to replace the
+  // occurences of __non_webpack_require__ ourselves.
+  function babelPluginReplaceNonWebPackRequire(babel) {
+    return {
+      visitor: {
+        Identifier(path, state) {
+          if (path.node.name === '__non_webpack_require__') {
+            path.replaceWith(babel.types.identifier('require'));
+          }
+        },
+      },
+    };
+  }
   function preprocess(content) {
     var noPreset = /\/\*\s*no-babel-preset\s*\*\//.test(content);
     content = preprocessor2.preprocessPDFJSCode(ctx, content);
     content = babel.transform(content, {
       sourceType: 'module',
       presets: noPreset ? undefined : ['es2015'],
-      plugins: ['transform-es2015-modules-commonjs'],
+      plugins: [
+        'transform-es2015-modules-commonjs',
+        babelPluginReplaceNonWebPackRequire,
+      ],
     }).code;
     var removeCjsSrc =
       /^(var\s+\w+\s*=\s*require\('.*?)(?:\/src)(\/[^']*'\);)$/gm;
