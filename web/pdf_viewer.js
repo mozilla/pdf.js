@@ -915,6 +915,22 @@ var PDFViewer = (function pdfViewer() {
     },
 
     /**
+     * @returns {boolean} Whether all pages of the PDF document have identical
+     *                    widths and heights.
+     */
+    get hasEqualPageSizes() {
+      let firstPageView = this._pages[0];
+      for (let i = 1, ii = this._pages.length; i < ii; ++i) {
+        let pageView = this._pages[i];
+        if (pageView.width !== firstPageView.width ||
+            pageView.height !== firstPageView.height) {
+          return false;
+        }
+      }
+      return true;
+    },
+
+    /**
      * Returns sizes of the pages.
      * @returns {Array} Array of objects with width/height/rotation fields.
      */
