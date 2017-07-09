@@ -977,7 +977,7 @@ let PDFViewerApplication = {
             !initialParams.hash) {
           return;
         }
-        if (this.hasEqualPageSizes) {
+        if (pdfViewer.hasEqualPageSizes) {
           return;
         }
         this.initialDestination = initialParams.destination;
@@ -1215,19 +1215,6 @@ let PDFViewerApplication = {
         type: 'print',
       });
     }
-  },
-
-  // Whether all pages of the PDF have the same width and height.
-  get hasEqualPageSizes() {
-    let firstPage = this.pdfViewer.getPageView(0);
-    for (let i = 1, ii = this.pagesCount; i < ii; ++i) {
-      let pageView = this.pdfViewer.getPageView(i);
-      if (pageView.width !== firstPage.width ||
-          pageView.height !== firstPage.height) {
-        return false;
-      }
-    }
-    return true;
   },
 
   afterPrint: function pdfViewSetupAfterPrint() {
