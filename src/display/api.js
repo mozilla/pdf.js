@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals requirejs, __pdfjsdev_webpack__ */
+/* globals requirejs, __non_webpack_require__ */
 
 import {
   createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
@@ -43,21 +43,19 @@ var pdfjsFilePath =
 
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
-// The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
 if (typeof PDFJSDev !== 'undefined' &&
-    PDFJSDev.test('GENERIC && !SINGLE_FILE') &&
-    typeof __pdfjsdev_webpack__ === 'undefined') {
+    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
   // For GENERIC build we need add support of different fake file loaders
   // for different  frameworks.
   if (typeof window === 'undefined') {
     // node.js - disable worker and set require.ensure.
     isWorkerDisabled = true;
-    if (typeof require.ensure === 'undefined') {
-      require.ensure = require('node-ensure');
+    if (typeof __non_webpack_require__.ensure === 'undefined') {
+      __non_webpack_require__.ensure = __non_webpack_require__('node-ensure');
     }
     useRequireEnsure = true;
-  } else if (typeof require !== 'undefined' &&
-             typeof require.ensure === 'function') {
+  } else if (typeof __non_webpack_require__ !== 'undefined' &&
+             typeof __non_webpack_require__.ensure === 'function') {
     useRequireEnsure = true;
   }
   if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
@@ -66,12 +64,12 @@ if (typeof PDFJSDev !== 'undefined' &&
   var dynamicLoaderSupported =
     typeof requirejs !== 'undefined' && requirejs.load;
   fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
-    require.ensure([], function () {
+    __non_webpack_require__.ensure([], function () {
       var worker;
       if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-        worker = require('../pdf.worker.js');
+        worker = __non_webpack_require__('../pdf.worker.js');
       } else {
-        worker = require('./pdf.worker.js');
+        worker = __non_webpack_require__('./pdf.worker.js');
       }
       callback(worker.WorkerMessageHandler);
     });
