@@ -12,19 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals module, __pdfjsdev_webpack__ */
+/* globals module, __non_webpack_require__ */
 
 'use strict';
 
 var pdfjsLib;
-// The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
-if (typeof __pdfjsdev_webpack__ === 'undefined') {
-  if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
-    pdfjsLib = window['pdfjs-dist/build/pdf'];
-  } else if (typeof require === 'function') {
-    pdfjsLib = require('../build/pdf.js');
-  } else {
-    throw new Error('Neither `require` nor `window` found');
-  }
+if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
+  pdfjsLib = window['pdfjs-dist/build/pdf'];
+} else if (typeof __non_webpack_require__ === 'function') {
+  pdfjsLib = __non_webpack_require__('../build/pdf.js');
+} else {
+  throw new Error('Neither `require` nor `window` found');
 }
 module.exports = pdfjsLib;

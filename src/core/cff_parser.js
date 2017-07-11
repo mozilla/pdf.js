@@ -14,7 +14,7 @@
  */
 
 import {
-  assert, bytesToString, error, info, isArray, stringToBytes, Util, warn
+  assert, bytesToString, FormatError, info, isArray, stringToBytes, Util, warn
 } from '../shared/util';
 import {
   ExpertCharset, ExpertSubsetCharset, ISOAdobeCharset
@@ -291,8 +291,9 @@ var CFFParser = (function CFFParserClosure() {
         ++offset;
       }
       if (offset >= bytesLength) {
-        error('Invalid CFF header');
-      } else if (offset !== 0) {
+        throw new FormatError('Invalid CFF header');
+      }
+      if (offset !== 0) {
         info('cff data is shifted');
         bytes = bytes.subarray(offset);
         this.bytes = bytes;
@@ -750,7 +751,7 @@ var CFFParser = (function CFFParserClosure() {
           }
           break;
         default:
-          error('Unknown charset format');
+          throw new FormatError('Unknown charset format');
       }
       // Raw won't be needed if we actually compile the charset.
       var end = pos;
@@ -811,8 +812,7 @@ var CFFParser = (function CFFParserClosure() {
             break;
 
           default:
-            error('Unknown encoding format: ' + format + ' in CFF');
-            break;
+            throw new FormatError(`Unknown encoding format: ${format} in CFF`);
         }
         var dataEnd = pos;
         if (format & 0x80) { // hasSupplement
@@ -869,8 +869,7 @@ var CFFParser = (function CFFParserClosure() {
           }
           break;
         default:
-          error('parseFDSelect: Unknown format "' + format + '".');
-          break;
+          throw new FormatError(`parseFDSelect: Unknown format "${format}".`);
       }
       assert(fdSelect.length === length, 'parseFDSelect: Invalid font data.');
 
@@ -999,7 +998,7 @@ var CFFDict = (function CFFDictClosure() {
     },
     setByName: function CFFDict_setByName(name, value) {
       if (!(name in this.nameToKeyMap)) {
-        error('Invalid dictionary name "' + name + '"');
+        throw new FormatError(`Invalid dictionary name "${name}"`);
       }
       this.values[this.nameToKeyMap[name]] = value;
     },
@@ -1008,7 +1007,7 @@ var CFFDict = (function CFFDictClosure() {
     },
     getByName: function CFFDict_getByName(name) {
       if (!(name in this.nameToKeyMap)) {
-        error('Invalid dictionary name "' + name + '"');
+        throw new FormatError(`Invalid dictionary name ${name}"`);
       }
       var key = this.nameToKeyMap[name];
       if (!(key in this.values)) {
@@ -1182,7 +1181,7 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
     },
     track: function CFFOffsetTracker_track(key, location) {
       if (key in this.offsets) {
-        error('Already tracking location of ' + key);
+        throw new FormatError(`Already tracking location of ${key}`);
       }
       this.offsets[key] = location;
     },
@@ -1195,7 +1194,7 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
                                                                  values,
                                                                  output) {
       if (!(key in this.offsets)) {
-        error('Not tracking location of ' + key);
+        throw new FormatError(`Not tracking location of ${key}`);
       }
       var data = output.data;
       var dataOffset = this.offsets[key];
@@ -1209,7 +1208,7 @@ var CFFOffsetTracker = (function CFFOffsetTrackerClosure() {
         // It's easy to screw up offsets so perform this sanity check.
         if (data[offset0] !== 0x1d || data[offset1] !== 0 ||
             data[offset2] !== 0 || data[offset3] !== 0 || data[offset4] !== 0) {
-          error('writing to an offset that is not empty');
+          throw new FormatError('writing to an offset that is not empty');
         }
         var value = values[i];
         data[offset0] = 0x1d;
@@ -1520,8 +1519,7 @@ var CFFCompiler = (function CFFCompilerClosure() {
               }
               break;
             default:
-              error('Unknown data type of ' + type);
-              break;
+              throw new FormatError(`Unknown data type of ${type}`);
           }
         }
         out = out.concat(dict.opcodes[key]);

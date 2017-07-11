@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals requirejs, __pdfjsdev_webpack__ */
+/* globals requirejs, __non_webpack_require__ */
 
 import {
-  createPromiseCapability, deprecated, error, getVerbosityLevel, globalScope,
+  createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
   info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
   loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
   PageViewport, PasswordException, StatTimer, stringToBytes,
@@ -43,21 +43,19 @@ var pdfjsFilePath =
 
 var fakeWorkerFilesLoader = null;
 var useRequireEnsure = false;
-// The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
 if (typeof PDFJSDev !== 'undefined' &&
-    PDFJSDev.test('GENERIC && !SINGLE_FILE') &&
-    typeof __pdfjsdev_webpack__ === 'undefined') {
+    PDFJSDev.test('GENERIC && !SINGLE_FILE')) {
   // For GENERIC build we need add support of different fake file loaders
   // for different  frameworks.
   if (typeof window === 'undefined') {
     // node.js - disable worker and set require.ensure.
     isWorkerDisabled = true;
-    if (typeof require.ensure === 'undefined') {
-      require.ensure = require('node-ensure');
+    if (typeof __non_webpack_require__.ensure === 'undefined') {
+      __non_webpack_require__.ensure = __non_webpack_require__('node-ensure');
     }
     useRequireEnsure = true;
-  } else if (typeof require !== 'undefined' &&
-             typeof require.ensure === 'function') {
+  } else if (typeof __non_webpack_require__ !== 'undefined' &&
+             typeof __non_webpack_require__.ensure === 'function') {
     useRequireEnsure = true;
   }
   if (typeof requirejs !== 'undefined' && requirejs.toUrl) {
@@ -66,12 +64,12 @@ if (typeof PDFJSDev !== 'undefined' &&
   var dynamicLoaderSupported =
     typeof requirejs !== 'undefined' && requirejs.load;
   fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
-    require.ensure([], function () {
+    __non_webpack_require__.ensure([], function () {
       var worker;
       if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('LIB')) {
-        worker = require('../pdf.worker.js');
+        worker = __non_webpack_require__('../pdf.worker.js');
       } else {
-        worker = require('./pdf.worker.js');
+        worker = __non_webpack_require__('./pdf.worker.js');
       }
       callback(worker.WorkerMessageHandler);
     });
@@ -198,11 +196,12 @@ function getDocument(src, pdfDataRangeTransport,
     source = { range: src, };
   } else {
     if (typeof src !== 'object') {
-      error('Invalid parameter in getDocument, need either Uint8Array, ' +
-        'string or a parameter object');
+      throw new Error('Invalid parameter in getDocument, ' +
+                      'need either Uint8Array, string or a parameter object');
     }
     if (!src.url && !src.data && !src.range) {
-      error('Invalid parameter object: need either .data, .range or .url');
+      throw new Error(
+        'Invalid parameter object: need either .data, .range or .url');
     }
 
     source = src;
@@ -235,8 +234,9 @@ function getDocument(src, pdfDataRangeTransport,
       } else if (isArrayBuffer(pdfBytes)) {
         params[key] = new Uint8Array(pdfBytes);
       } else {
-        error('Invalid PDF binary data: either typed array, string or ' +
-              'array-like object is expected in the data property.');
+        throw new Error('Invalid PDF binary data: either typed array, ' +
+                        'string or array-like object is expected in the ' +
+                        'data property.');
       }
       continue;
     } else if (key === 'CMapReaderFactory') {
@@ -1214,7 +1214,7 @@ var PDFWorker = (function PDFWorkerClosure() {
         pdfjsFilePath) {
       return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
     }
-    error('No PDFJS.workerSrc specified');
+    throw new Error('No PDFJS.workerSrc specified');
   }
 
   let fakeWorkerFilesLoadedCapability;
@@ -1730,7 +1730,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             this.commonObjs.resolve(id, data[2]);
             break;
           default:
-            error('Got unknown common object type ' + type);
+            throw new Error(`Got unknown common object type ${type}`);
         }
       }, this);
 
@@ -1765,7 +1765,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
             }
             break;
           default:
-            error('Got unknown object type ' + type);
+            throw new Error(`Got unknown object type ${type}`);
         }
       }, this);
 
@@ -1794,7 +1794,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         if (intentState.displayReadyCapability) {
           intentState.displayReadyCapability.reject(data.error);
         } else {
-          error(data.error);
+          throw new Error(data.error);
         }
 
         if (intentState.operatorList) {
@@ -2038,7 +2038,7 @@ var PDFObjects = (function PDFObjectsClosure() {
       // If there isn't an object yet or the object isn't resolved, then the
       // data isn't ready yet!
       if (!obj || !obj.resolved) {
-        error('Requesting object that isn\'t resolved yet ' + objId);
+        throw new Error(`Requesting object that isn't resolved yet ${objId}`);
       }
 
       return obj.data;

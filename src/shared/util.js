@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals global, process, __pdfjsdev_webpack__ */
 
 import './compatibility';
 import { ReadableStream } from '../../external/streams/streams-lib';
 
 var globalScope =
   (typeof window !== 'undefined' && window.Math === Math) ? window :
+  // eslint-disable-next-line no-undef
   (typeof global !== 'undefined' && global.Math === Math) ? global :
   (typeof self !== 'undefined' && self.Math === Math) ? self : this;
 
@@ -288,27 +288,13 @@ function deprecated(details) {
   console.log('Deprecated API usage: ' + details);
 }
 
-// Fatal errors that should trigger the fallback UI and halt execution by
-// throwing an exception.
-function error(msg) {
-  if (verbosity >= VERBOSITY_LEVELS.errors) {
-    console.log('Error: ' + msg);
-    console.log(backtrace());
-  }
+function unreachable(msg) {
   throw new Error(msg);
-}
-
-function backtrace() {
-  try {
-    throw new Error();
-  } catch (e) {
-    return e.stack ? e.stack.split('\n').slice(2).join('\n') : '';
-  }
 }
 
 function assert(cond, msg) {
   if (!cond) {
-    error(msg);
+    unreachable(msg);
   }
 }
 
@@ -497,6 +483,21 @@ var XRefParseException = (function XRefParseExceptionClosure() {
   XRefParseException.constructor = XRefParseException;
 
   return XRefParseException;
+})();
+
+/**
+ * Error caused during parsing PDF data.
+ */
+let FormatError = (function FormatErrorClosure() {
+  function FormatError(msg) {
+    this.message = msg;
+  }
+
+  FormatError.prototype = new Error();
+  FormatError.prototype.name = 'FormatError';
+  FormatError.constructor = FormatError;
+
+  return FormatError;
 })();
 
 var NullCharactersRegExp = /\x00/g;
@@ -1091,11 +1092,8 @@ function isSpace(ch) {
 }
 
 function isNodeJS() {
-  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
-  if (typeof __pdfjsdev_webpack__ === 'undefined') {
-    return typeof process === 'object' && process + '' === '[object process]';
-  }
-  return false;
+  // eslint-disable-next-line no-undef
+  return typeof process === 'object' && process + '' === '[object process]';
 }
 
 /**
@@ -1266,7 +1264,7 @@ function MessageHandler(sourceName, targetName, comObj) {
           callback.resolve(data.data);
         }
       } else {
-        error('Cannot resolve callback ' + callbackId);
+        throw new Error(`Cannot resolve callback ${callbackId}`);
       }
     } else if (data.action in ah) {
       let action = ah[data.action];
@@ -1302,7 +1300,7 @@ function MessageHandler(sourceName, targetName, comObj) {
         action[0].call(action[1], data.data);
       }
     } else {
-      error('Unknown action from worker: ' + data.action);
+      throw new Error(`Unknown action from worker: ${data.action}`);
     }
   };
   comObj.addEventListener('message', this._onComObjOnMessage);
@@ -1312,7 +1310,7 @@ MessageHandler.prototype = {
   on(actionName, handler, scope) {
     var ah = this.actionHandler;
     if (ah[actionName]) {
-      error('There is already an actionName called "' + actionName + '"');
+      throw new Error(`There is already an actionName called "${actionName}"`);
     }
     ah[actionName] = [handler, scope];
   },
@@ -1633,6 +1631,7 @@ export {
   UnknownErrorException,
   Util,
   XRefParseException,
+  FormatError,
   arrayByteLength,
   arraysToBytes,
   assert,
@@ -1641,7 +1640,6 @@ export {
   createPromiseCapability,
   createObjectURL,
   deprecated,
-  error,
   getLookupTableFactory,
   getVerbosityLevel,
   globalScope,
@@ -1674,4 +1672,5 @@ export {
   stringToUTF8String,
   utf8StringToString,
   warn,
+  unreachable,
 };

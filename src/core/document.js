@@ -14,7 +14,7 @@
  */
 
 import {
-  assert, createPromiseCapability, error, info, isArray, isArrayBuffer, isNum,
+  assert, createPromiseCapability, info, isArray, isArrayBuffer, isNum,
   isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
   stringToPDFString, Util, warn
 } from '../shared/util';
@@ -433,7 +433,7 @@ var PDFDocument = (function PDFDocumentClosure() {
     } else if (isArrayBuffer(arg)) {
       stream = new Stream(arg);
     } else {
-      error('PDFDocument: Unknown argument type');
+      throw new Error('PDFDocument: Unknown argument type');
     }
     assert(stream.length > 0, 'stream must have data');
 

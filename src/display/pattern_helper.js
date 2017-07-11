@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { error, info, isArray, Util } from '../shared/util';
+import { FormatError, info, isArray, Util } from '../shared/util';
 import { WebGLUtils } from './webgl';
 
 var ShadingIRs = {};
@@ -140,8 +140,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
         }
         break;
       default:
-        error('illigal figure');
-        break;
+        throw new Error('illegal figure');
     }
   }
 
@@ -288,7 +287,7 @@ ShadingIRs.Dummy = {
 function getShadingPatternFromIR(raw) {
   var shadingIR = ShadingIRs[raw[0]];
   if (!shadingIR) {
-    error('Unknown IR type: ' + raw[0]);
+    throw new Error(`Unknown IR type: ${raw[0]}`);
   }
   return shadingIR.fromIR(raw);
 }
@@ -415,7 +414,7 @@ var TilingPattern = (function TilingPatternClosure() {
             context.strokeStyle = cssColor;
             break;
           default:
-            error('Unsupported paint type: ' + paintType);
+            throw new FormatError(`Unsupported paint type: ${paintType}`);
         }
       },
 
