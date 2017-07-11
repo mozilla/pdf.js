@@ -14,9 +14,9 @@
  */
 
 import {
-  assert, createPromiseCapability, info, isArray, isArrayBuffer, isNum,
-  isSpace, isString, MissingDataException, OPS, shadow, stringToBytes,
-  stringToPDFString, Util, warn
+  assert, createPromiseCapability, error, info, isArray, isArrayBuffer,
+  isNum, isSpace, isString, MissingDataException, OPS, shadow,
+  stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream } from './primitives';
