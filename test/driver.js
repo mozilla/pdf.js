@@ -358,6 +358,7 @@ var Driver = (function DriverClosure() { // eslint-disable-line no-unused-vars
           PDFJS.getDocument({
             url: absoluteUrl,
             password: task.password,
+            nativeImageDecoderSupport: 'none',
           }).then((doc) => {
             task.pdfDoc = doc;
             this._nextPage(task, failure);
