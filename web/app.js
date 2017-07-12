@@ -1404,10 +1404,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
     'http://mozilla.github.io', 'https://mozilla.github.io'];
   validateFileURL = function validateFileURL(file) {
     try {
-      
-      if (file === undefined)
+      if (file === undefined) {
         return;
-      
+      }
       let viewerOrigin = new URL(window.location.href).origin || 'null';
       if (HOSTED_VIEWER_ORIGINS.indexOf(viewerOrigin) >= 0) {
         // Hosted or local viewer, allow for any file locations
