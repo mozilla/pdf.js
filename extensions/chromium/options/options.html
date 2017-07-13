@@ -15,25 +15,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <html>
-<head>
-<meta charset="utf-8">
-<title>PDF.js viewer options</title>
-<style>
-/* TODO: Remove as much custom CSS as possible - crbug.com/446511 */
-body {
-  min-width: 400px; /* a page at the settings page is at least 400px wide */
-  margin: 14px 17px; /* already added by default in Chrome 40.0.2212.0 */
-}
-.settings-row {
-  margin: 0.65em 0;
-}
-</style>
-</head>
-<body>
-<div id="settings-boxes"></div>
-<button id="reset-button">Restore default settings</button>
 
-<template id="checkbox-template">
+<head>
+    <meta charset="utf-8">
+    <title>PDF.js viewer options</title>
+    <style>
+        /* TODO: Remove as much custom CSS as possible - crbug.com/446511 */
+        
+        body {
+            min-width: 400px;
+            /* a page at the settings page is at least 400px wide */
+            margin: 14px 17px;
+            /* already added by default in Chrome 40.0.2212.0 */
+        }
+        
+        .settings-row {
+            margin: 0.65em 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="settings-boxes"></div>
+    <button id="reset-button">Restore default settings</button>
+
+    <template id="checkbox-template">
 <!-- Chromium's style: //src/extensions/renderer/resources/extension.css -->
 <div class="checkbox">
   <label>
@@ -43,15 +49,15 @@ body {
 </div>
 </template>
 
-<template id="defaultZoomValue-template">
+    <template id="defaultZoomValue-template">
 <div class="settings-row">
   <label>
     <span></span>
     <select>
       <option value="auto" selected="selected">Automatic Zoom</option>
       <option value="page-actual">Actual Size</option>
-      <option value="page-fit">Fit Page</option>
-      <option value="page-width">Full Width</option>
+      <option value="page-fit">Page Fit</option>
+      <option value="page-width">Page Width</option>
       <option value="custom" class="custom-zoom" hidden></option>
       <option value="50">50%</option>
       <option value="75">75%</option>
@@ -66,7 +72,7 @@ body {
 </div>
 </template>
 
-<template id="sidebarViewOnLoad-template">
+    <template id="sidebarViewOnLoad-template">
 <div class="settings-row">
   <label>
     <span></span>
@@ -80,7 +86,7 @@ body {
 </div>
 </template>
 
-<template id="externalLinkTarget-template">
+    <template id="externalLinkTarget-template">
 <div class="settings-row">
   <label>
     <span></span>
@@ -95,6 +101,7 @@ body {
 </div>
 </template>
 
-<script src="options.js"></script>
+    <script src="options.js"></script>
 </body>
+
 </html>
