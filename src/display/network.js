@@ -18,7 +18,6 @@ import {
   UnexpectedResponseException
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
-import { setPDFNetworkStreamClass } from './api';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "./network" shall not ' +
@@ -593,8 +592,6 @@ PDFNetworkStreamRangeRequestReader.prototype = {
     this._close();
   },
 };
-
-setPDFNetworkStreamClass(PDFNetworkStream);
 
 export {
   PDFNetworkStream,
