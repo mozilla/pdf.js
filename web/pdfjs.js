@@ -19,9 +19,7 @@
 var pdfjsLib;
 if (typeof window !== 'undefined' && window['pdfjs-dist/build/pdf']) {
   pdfjsLib = window['pdfjs-dist/build/pdf'];
-} else if (typeof __non_webpack_require__ === 'function') {
-  pdfjsLib = __non_webpack_require__('../build/pdf.js');
 } else {
-  throw new Error('Neither `require` nor `window` found');
+  pdfjsLib = __non_webpack_require__('../build/pdf.js');
 }
 module.exports = pdfjsLib;
