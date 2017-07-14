@@ -60,7 +60,22 @@ function DOMElement(name) {
 DOMElement.prototype = {
 
   getAttributeNS: function DOMElement_getAttributeNS(NS, name) {
-    return name in this.attributes ? this.attributes[name] : null;
+    // Fast path
+    if (name in this.attributes) {
+      return this.attributes[name];
+    }
+    // Slow path - used by test/unit/display_svg_spec.js
+    // Assuming that there is only one matching attribute for a given name,
+    // across all namespaces.
+    if (NS) {
+      var suffix = ':' + name;
+      for (var fullName in this.attributes) {
+        if (fullName.slice(-suffix.length) === suffix) {
+          return this.attributes[fullName];
+        }
+      }
+    }
+    return null;
   },
 
   setAttributeNS: function DOMElement_setAttributeNS(NS, name, value) {
