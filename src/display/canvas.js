@@ -2105,32 +2105,35 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       }
 
       var paintWidth = width, paintHeight = height;
+      var tmpWidth = paintWidth, tmpHeight = paintHeight;
       var tmpCanvasId = 'prescale';
       // Vertial or horizontal scaling shall not be more than 2 to not loose the
       // pixels during drawImage operation
       while ((widthScale > 2 && paintWidth > 1) ||
              (heightScale > 2 && paintHeight > 1)) {
-        var newWidth = paintWidth, newHeight = paintHeight;
+        tmpWidth = paintWidth;
+        tmpHeight = paintHeight;
+
         if (widthScale > 2 && paintWidth > 1) {
-          newWidth = Math.ceil(paintWidth / 2);
-          widthScale /= paintWidth / newWidth;
+          tmpWidth = Math.ceil(paintWidth / 2);
+          widthScale /= paintWidth / tmpWidth;
         }
         if (heightScale > 2 && paintHeight > 1) {
-          newHeight = Math.ceil(paintHeight / 2);
-          heightScale /= paintHeight / newHeight;
+          tmpHeight = Math.ceil(paintHeight / 2);
+          heightScale /= paintHeight / tmpHeight;
         }
 
-        paintWidth = newWidth;
-        paintHeight = newHeight;
+        paintWidth = tmpWidth;
+        paintHeight = tmpHeight;
       }
 
       // painting on the temporary canvas
       tmpCanvas = this.cachedCanvases.getCanvas(tmpCanvasId,
-                                                newWidth, newHeight);
+                                                tmpWidth, tmpHeight);
       tmpCtx = tmpCanvas.context;
-      tmpCtx.clearRect(0, 0, newWidth, newHeight);
+      tmpCtx.clearRect(0, 0, tmpWidth, tmpHeight);
       tmpCtx.drawImage(imgToPaint, 0, 0, width, height,
-                                   0, 0, newWidth, newHeight);
+                                   0, 0, tmpWidth, tmpHeight);
       imgToPaint = tmpCanvas.canvas;
 
       // final painting
