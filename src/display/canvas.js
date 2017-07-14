@@ -1417,17 +1417,51 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       return shadow(this, 'isFontSubpixelAAEnabled', enabled);
     },
 
-    showText: function CanvasGraphics_showText(glyphs) {
+    showText: function CanvasGraphics_showText(unmergedGlyphs) {
       var current = this.current;
       var font = current.font;
       if (font.isType3Font) {
-        return this.showType3Text(glyphs);
+        return this.showType3Text(unmergedGlyphs);
       }
 
       var fontSize = current.fontSize;
       if (fontSize === 0) {
         return;
       }
+
+      // If glyphs placed next to each other are of the same type,
+      // we can merge them and reduce calls to fillText/drawChar.
+      var glyphs = unmergedGlyphs.reduce((glyphList, glyph, index) => {
+        if (index < 1) {
+          glyphList.push(glyph);
+          return glyphList;
+        }
+
+        var previousGlyph = glyphList[glyphList.length - 1];
+
+        if (isNum(previousGlyph) !== isNum(glyph) ||
+            glyph.accent ||
+            glyph.isInFont !== previousGlyph.isInFont ||
+            glyph.isSpace !== previousGlyph.isSpace) {
+          glyphList.push(glyph);
+          return glyphList;
+        }
+
+        if (isNum(glyph)) {
+          glyphList.splice(glyphList.length - 1, 1, previousGlyph + glyph);
+        } else {
+          glyphList.splice(glyphList.length - 1, 1, {
+            accent: previousGlyph.accent,
+            fontChar: previousGlyph.fontChar + glyph.fontChar,
+            isInFont: previousGlyph.isInFont,
+            isSpace: previousGlyph.isSpace,
+            unicode: previousGlyph.unicode + glyph.unicode,
+            width: previousGlyph.width + glyph.width,
+          });
+        }
+
+        return glyphList;
+      }, []);
 
       var ctx = this.ctx;
       var fontSizeScale = current.fontSizeScale;
