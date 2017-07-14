@@ -1044,6 +1044,7 @@ gulp.task('lib', ['buildnumber'], function () {
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([
+      'examples/node/domstubs.js',
       'web/*.js',
       '!web/pdfjs.js',
       '!web/viewer.js',

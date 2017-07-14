@@ -41,24 +41,6 @@ function xmlEncode(s){
   return buf;
 }
 
-global.btoa = function btoa(chars) {
-  var digits =
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  var buffer = '';
-    var i, n;
-    for (i = 0, n = chars.length; i < n; i += 3) {
-      var b1 = chars.charCodeAt(i) & 0xFF;
-      var b2 = chars.charCodeAt(i + 1) & 0xFF;
-      var b3 = chars.charCodeAt(i + 2) & 0xFF;
-      var d1 = b1 >> 2, d2 = ((b1 & 3) << 4) | (b2 >> 4);
-      var d3 = i + 1 < n ? ((b2 & 0xF) << 2) | (b3 >> 6) : 64;
-      var d4 = i + 2 < n ? (b3 & 0x3F) : 64;
-      buffer += (digits.charAt(d1) + digits.charAt(d2) +
-      digits.charAt(d3) + digits.charAt(d4));
-    }
-  return buffer;
-};
-
 function DOMElement(name) {
   this.nodeName = name;
   this.childNodes = [];
@@ -127,7 +109,7 @@ DOMElement.prototype = {
   },
 }
 
-global.document = {
+const document = {
   childNodes : [],
 
   get currentScript() {
@@ -171,4 +153,20 @@ Image.prototype = {
   }
 }
 
-global.Image = Image;
+exports.document = document;
+exports.Image = Image;
+
+var exported_symbols = Object.keys(exports);
+
+exports.setStubs = function(namespace) {
+  exported_symbols.forEach(function(key) {
+    console.assert(!(key in namespace), 'property should not be set: ' + key);
+    namespace[key] = exports[key];
+  });
+};
+exports.unsetStubs = function(namespace) {
+  exported_symbols.forEach(function(key) {
+    console.assert(key in namespace, 'property should be set: ' + key);
+    delete namespace[key];
+  });
+};
