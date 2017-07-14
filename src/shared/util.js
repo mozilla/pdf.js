@@ -591,13 +591,9 @@ function string32(value) {
                              (value >> 8) & 0xff, value & 0xff);
 }
 
+// NOTE: This name is misleading as it rounds the result up
 function log2(x) {
-  var n = 1, i = 0;
-  while (x > n) {
-    n <<= 1;
-    i++;
-  }
-  return i;
+  return Math.ceil(Math.log(x) * Math.LOG2E);
 }
 
 function readInt8(data, start) {
