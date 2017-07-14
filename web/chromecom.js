@@ -328,7 +328,18 @@ class ChromePreferences extends BasePreferences {
         // Get preferences as set by the system administrator.
         // See extensions/chromium/preferences_schema.json for more information.
         // These preferences can be overridden by the user.
-        chrome.storage.managed.get(this.defaults, getPreferences);
+        chrome.storage.managed.get(this.defaults, function(items) {
+          // Migration code for https://github.com/mozilla/pdf.js/pull/7635.
+          // Never remove this, because we have no means of modifying managed
+          // preferences.
+          if (items && items.enableHandToolOnLoad && !items.cursorToolOnLoad) {
+            // if the old enableHandToolOnLoad has a non-default value,
+            // and cursorToolOnLoad has a default value, migrate.
+            items.enableHandToolOnLoad = false;
+            items.cursorToolOnLoad = 1;
+          }
+          getPreferences(items);
+        });
       } else {
         // Managed storage not supported, e.g. in old Chromium versions.
         getPreferences(this.defaults);
