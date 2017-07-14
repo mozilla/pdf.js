@@ -73,10 +73,9 @@ class IPDFLinkService {
  * @interface
  */
 class IPDFHistory {
-  forward() {}
+  push() {}
   back() {}
-  push(params) {}
-  updateNextHashParam(hash) {}
+  forward() {}
 }
 
 /**
