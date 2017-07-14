@@ -1293,7 +1293,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     this._initialize();
   }
 
-  PDFWorker.prototype =  /** @lends PDFWorker.prototype */ {
+  PDFWorker.prototype = /** @lends PDFWorker.prototype */ {
     get promise() {
       return this._readyCapability.promise;
     },
