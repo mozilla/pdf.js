@@ -20,6 +20,8 @@ import { buildGetDocumentParams } from './test_utils';
 import { getDocument } from '../../src/display/api';
 import { SVGGraphics } from '../../src/display/svg';
 
+const XLINK_NS = 'http://www.w3.org/1999/xlink';
+
 // withZlib(true, callback); = run test with require('zlib') if possible.
 // withZlib(false, callback); = run test without require('zlib').deflateSync.
 // The return value of callback is returned as-is.
@@ -41,14 +43,18 @@ function withZlib(isZlibRequired, callback) {
 
   var zlib = __non_webpack_require__('zlib');
   var deflateSync = zlib.deflateSync;
-  zlib.deflateSync = function() {
+  zlib.deflateSync = disabledDeflateSync;
+  function disabledDeflateSync() {
     throw new Error('zlib.deflateSync is explicitly disabled for testing.');
-  };
-  try {
-    return callback();
-  } finally {
-    zlib.deflateSync = deflateSync;
   }
+  function restoreDeflateSync() {
+    if (zlib.deflateSync === disabledDeflateSync) {
+      zlib.deflateSync = deflateSync;
+    }
+  }
+  var promise = callback();
+  promise.then(restoreDeflateSync, restoreDeflateSync);
+  return promise;
 }
 
 describe('SVGGraphics', function () {
@@ -86,12 +92,13 @@ describe('SVGGraphics', function () {
         };
 
         // This points to the XObject image in xobject-image.pdf.
-        var xobjectObjId = { ref: 4, gen: 0, };
+        var xobjectObjId = 'img_p0_1';
         if (isNodeJS()) {
           setStubs(global);
         }
         try {
-          svgGfx.paintImageXObject(xobjectObjId, elementContainer);
+          var imgData = svgGfx.objs.get(xobjectObjId);
+          svgGfx.paintInlineImageXObject(imgData, elementContainer);
         } finally {
           if (isNodeJS()) {
             unsetStubs(global);
@@ -101,35 +108,35 @@ describe('SVGGraphics', function () {
       });
     }
 
-    it('should produce a reasonably small svg:image', function() {
+    it('should produce a reasonably small svg:image', function(done) {
       if (!isNodeJS()) {
         pending('zlib.deflateSync is not supported in non-Node environments.');
       }
       withZlib(true, getSVGImage).then(function(svgImg) {
         expect(svgImg.nodeName).toBe('svg:image');
-        expect(svgImg.getAttribute('width')).toBe('200px');
-        expect(svgImg.getAttribute('height')).toBe('100px');
-        var imgUrl = svgImg.getAttribute('xlink:href');
+        expect(svgImg.getAttributeNS(null, 'width')).toBe('200px');
+        expect(svgImg.getAttributeNS(null, 'height')).toBe('100px');
+        var imgUrl = svgImg.getAttributeNS(XLINK_NS, 'href');
         // forceDataSchema = true, so the generated URL should be a data:-URL.
         expect(imgUrl).toMatch(/^data:image\/png;base64,/);
         // Test whether the generated image has a reasonable file size.
         // I obtained a data URL of size 366 with Node 8.1.3 and zlib 1.2.11.
         // Without zlib (uncompressed), the size of the data URL was excessive
-        // (80247).
+        // (80246).
         expect(imgUrl.length).toBeLessThan(367);
-      });
+      }).then(done, done.fail);
     });
 
-    it('should produce a svg:image even if zlib is unavailable', function() {
+    it('should be able to produce a svg:image without zlib', function(done) {
       withZlib(false, getSVGImage).then(function(svgImg) {
         expect(svgImg.nodeName).toBe('svg:image');
-        expect(svgImg.getAttribute('width')).toBe('200px');
-        expect(svgImg.getAttribute('height')).toBe('100px');
-        var imgUrl = svgImg.getAttribute('xlink:href');
+        expect(svgImg.getAttributeNS(null, 'width')).toBe('200px');
+        expect(svgImg.getAttributeNS(null, 'height')).toBe('100px');
+        var imgUrl = svgImg.getAttributeNS(XLINK_NS, 'href');
         expect(imgUrl).toMatch(/^data:image\/png;base64,/);
         // The size of our naively generated PNG file is excessive :(
-        expect(imgUrl.length).toBe(80247);
-      });
+        expect(imgUrl.length).toBe(80246);
+      }).then(done, done.fail);
     });
   });
 });
