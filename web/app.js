@@ -932,10 +932,14 @@ let PDFViewerApplication = {
         // i.e. not when it is embedded in a web page.
         let resetHistory = !this.viewerPrefs['showPreviousViewOnLoad'];
         this.pdfHistory.initialize(id, resetHistory);
+
+        if (this.pdfHistory.initialBookmark) {
+          this.initialBookmark = this.pdfHistory.initialBookmark;
+        }
       }
 
       let initialParams = {
-        bookmark: this.initialBookmark,
+        bookmark: null,
         hash: null,
       };
       let storePromise = store.getMultiple({
@@ -969,8 +973,10 @@ let PDFViewerApplication = {
           sidebarView,
         };
       }).then(({ hash, sidebarView, }) => {
-        this.setInitialView(hash, { sidebarView, });
+        initialParams.bookmark = this.initialBookmark;
         initialParams.hash = hash;
+
+        this.setInitialView(hash, { sidebarView, });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -1800,7 +1806,7 @@ function webViewerHashchange(evt) {
   }
   if (!PDFViewerApplication.isInitialViewSet) {
     PDFViewerApplication.initialBookmark = hash;
-  } else {
+  } else if (!PDFViewerApplication.pdfHistory.popStateInProgress) {
     PDFViewerApplication.pdfLinkService.setHash(hash);
   }
 }

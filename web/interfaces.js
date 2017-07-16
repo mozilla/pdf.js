@@ -73,9 +73,18 @@ class IPDFLinkService {
  * @interface
  */
 class IPDFHistory {
-  initialize() {}
+  /**
+   * @param {string} fingerprint - The PDF document's unique fingerprint.
+   * @param {boolean} resetHistory - (optional) Reset the browsing history.
+   */
+  initialize(fingerprint, resetHistory = false) {}
 
-  push() {}
+  /**
+   * @param {Object} params
+   */
+  push({ namedDest, explicitDest, pageNumber, }) {}
+
+  pushCurrentPosition() {}
 
   back() {}
 
