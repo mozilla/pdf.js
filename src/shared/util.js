@@ -908,33 +908,35 @@ var PageViewport = (function PageViewportClosure() {
       rotation = rotation + 360;
     }
     var sideways = rotation % 180;
-    var a = rotation < 180 ? 1 : -1;
-    var flip = dontFlip ? -1 : 1;
-    var rotate = sideways ? [0, a, a * flip, 0] : [a, 0, 0, -a * flip];
+    var scaleX = rotation < 180 ? scale : -scale;
+    var scaleY = dontFlip ? scaleX : -scaleX;
     var width, height;
     if (sideways) {
-      width = Math.abs(viewBox[3] - viewBox[1]);
-      height = Math.abs(viewBox[2] - viewBox[0]);
+      width = scale * Math.abs(viewBox[3] - viewBox[1]);
+      height = scale * Math.abs(viewBox[2] - viewBox[0]);
     } else {
-      width = Math.abs(viewBox[2] - viewBox[0]);
-      height = Math.abs(viewBox[3] - viewBox[1]);
+      width = scale * Math.abs(viewBox[2] - viewBox[0]);
+      height = scale * Math.abs(viewBox[3] - viewBox[1]);
     }
 
     // creating transform for the following operations:
     // translate(-centerX, -centerY), rotate and flip vertically,
     // scale, and translate(offsetCanvasX, offsetCanvasY)
-    var centerX = (viewBox[2] + viewBox[0]) / 2;
-    var centerY = (viewBox[3] + viewBox[1]) / 2;
-    this.transform = rotate.map((v) => {
-      return v * scale;
-    }).concat(
-      (width / 2 - rotate[0] * centerX - rotate[2] * centerY) * scale + offsetX,
-      (height / 2 - rotate[1] * centerX - rotate[3] * centerY) * scale + offsetY
-    );
+    var centerX = scaleX * (viewBox[2] + viewBox[0]) / 2;
+    var centerY = scaleY * (viewBox[3] + viewBox[1]) / 2;
 
-    this.width = width * scale;
-    this.height = height * scale;
-    this.fontScale = scale;
+    if (sideways) {
+      this.transform = [0, scaleX, -scaleY, 0,
+                        offsetX + centerY + width / 2,
+                        offsetY - centerX + height / 2];
+    } else {
+      this.transform = [scaleX, 0, 0, scaleY,
+                        offsetX - centerX + width / 2,
+                        offsetY - centerY + height / 2];
+    }
+
+    this.width = width;
+    this.height = height;
   }
   PageViewport.prototype = /** @lends PageViewport.prototype */ {
     /**
