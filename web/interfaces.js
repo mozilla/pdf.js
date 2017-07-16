@@ -74,6 +74,7 @@ class IPDFLinkService {
  */
 class IPDFHistory {
   push() {}
+  pushCurrentPosition() {}
   back() {}
   forward() {}
 }

@@ -111,6 +111,13 @@ class PDFLinkService {
         return;
       }
 
+      if (this.pdfHistory) {
+        // Update the browser history before scrolling the new destination into
+        // view, to be able to accurately capture the current document position.
+        this.pdfHistory.pushCurrentPosition();
+        this.pdfHistory.push({ namedDest, explicitDest, pageNumber, });
+      }
+
       this.pdfViewer.scrollPageIntoView({
         pageNumber,
         destArray: explicitDest,
