@@ -630,6 +630,28 @@ describe('api', function() {
       });
     });
 
+    it('gets default page mode', function(done) {
+      var loadingTask = getDocument(buildGetDocumentParams('tracemonkey.pdf'));
+
+      loadingTask.promise.then(function(pdfDocument) {
+        return pdfDocument.getPageMode();
+      }).then(function(mode) {
+        expect(mode).toEqual('UseNone');
+
+        loadingTask.destroy().then(done);
+      }).catch(function (reason) {
+        done.fail(reason);
+      });
+    });
+    it('gets non-default page mode', function(done) {
+      doc.getPageMode().then(function(mode) {
+        expect(mode).toEqual('UseOutlines');
+        done();
+      }).catch(function(reason) {
+        done.fail(reason);
+      });
+    });
+
     it('gets non-existent attachments', function(done) {
       var promise = doc.getAttachments();
       promise.then(function (data) {
