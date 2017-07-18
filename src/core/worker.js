@@ -770,6 +770,10 @@ var WorkerMessageHandler = {
       }
     );
 
+    handler.on('GetPageMode', function wphSetupGetPageMode(data) {
+      return pdfManager.ensureCatalog('pageMode');
+    });
+
     handler.on('GetAttachments',
       function wphSetupGetAttachments(data) {
         return pdfManager.ensureCatalog('attachments');

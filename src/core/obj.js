@@ -313,6 +313,24 @@ var Catalog = (function CatalogClosure() {
       return pageLabels;
     },
 
+    get pageMode() {
+      let obj = this.catDict.get('PageMode');
+      let pageMode = 'UseNone'; // Default value.
+
+      if (isName(obj)) {
+        switch (obj.name) {
+          case 'UseNone':
+          case 'UseOutlines':
+          case 'UseThumbs':
+          case 'FullScreen':
+          case 'UseOC':
+          case 'UseAttachments':
+            pageMode = obj.name;
+        }
+      }
+      return shadow(this, 'pageMode', pageMode);
+    },
+
     get attachments() {
       var xref = this.xref;
       var attachments = null, nameTreeRef;
