@@ -932,37 +932,34 @@ let PDFViewerApplication = {
         bookmark: this.initialBookmark,
         hash: null,
       };
-      let storedHash = this.viewerPrefs['defaultZoomValue'] ?
-        ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
-      let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
+      let storePromise = store.getMultiple({
+        exists: false,
+        page: '1',
+        zoom: DEFAULT_SCALE_VALUE,
+        scrollLeft: '0',
+        scrollTop: '0',
+        sidebarView: SidebarView.NONE,
+      }).catch(() => { /* Unable to read from storage -- ignoring errors. */ });
 
-      new Promise((resolve, reject) => {
-        if (!this.viewerPrefs['showPreviousViewOnLoad']) {
-          resolve();
-          return;
-        }
-        store.getMultiple({
-          exists: false,
-          page: '1',
-          zoom: DEFAULT_SCALE_VALUE,
-          scrollLeft: '0',
-          scrollTop: '0',
-          sidebarView: SidebarView.NONE,
-        }).then((values) => {
-          if (!values.exists) {
-            resolve();
-            return;
-          }
-          storedHash = 'page=' + values.page +
+      storePromise.then((values = {}) => {
+        // Initialize the default values, from user preferences.
+        let hash = this.viewerPrefs['defaultZoomValue'] ?
+          ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
+        let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
+
+        if (values.exists && this.viewerPrefs['showPreviousViewOnLoad']) {
+          hash = 'page=' + values.page +
             '&zoom=' + (this.viewerPrefs['defaultZoomValue'] || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
-          sidebarView = this.viewerPrefs['sidebarViewOnLoad'] ||
-                        (values.sidebarView | 0);
-          resolve();
-        }).catch(resolve);
-      }).then(() => {
-        this.setInitialView(storedHash, { sidebarView, scale, });
-        initialParams.hash = storedHash;
+          sidebarView = sidebarView || (values.sidebarView | 0);
+        }
+        return {
+          hash,
+          sidebarView,
+        };
+      }).then(({ hash, sidebarView, }) => {
+        this.setInitialView(hash, { sidebarView, scale, });
+        initialParams.hash = hash;
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
