@@ -1545,9 +1545,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 args[4], args[5]);
               break;
             case OPS.setCharSpacing:
+              flushTextContentItem();
               textState.charSpacing = args[0];
               break;
             case OPS.setWordSpacing:
+              flushTextContentItem();
               textState.wordSpacing = args[0];
               break;
             case OPS.beginText:
