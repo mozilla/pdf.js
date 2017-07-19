@@ -102,6 +102,10 @@
       "type": "boolean",
       "default": false
     },
+    "disablePageMode": {
+      "type": "boolean",
+      "default": false
+    },
     "disableTelemetry": {
       "title": "Disable telemetry",
       "type": "boolean",
