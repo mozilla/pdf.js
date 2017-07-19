@@ -836,6 +836,29 @@ PDFJS.compatibilityChecked = true;
   };
 })();
 
+// Provides support for Number.isNaN in legacy browsers.
+// Support: IE.
+(function checkNumberIsNaN() {
+  if (Number.isNaN) {
+    return;
+  }
+  Number.isNaN = function(value) {
+    return typeof value === 'number' && isNaN(value);
+  };
+})();
+
+// Provides support for Number.isInteger in legacy browsers.
+// Support: IE.
+(function checkNumberIsInteger() {
+  if (Number.isInteger) {
+    return;
+  }
+  Number.isInteger = function(value) {
+    return typeof value === 'number' && isFinite(value) &&
+           Math.floor(value) === value;
+  };
+})();
+
 /**
  * Polyfill for Promises:
  * The following promise implementation tries to generally implement the

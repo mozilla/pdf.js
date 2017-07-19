@@ -27,6 +27,7 @@
       "default": 0
     },
     "enableHandToolOnLoad": {
+      "description": "Deprecated. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
       "type": "boolean",
       "default": false
     },

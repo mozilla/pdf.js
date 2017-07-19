@@ -58,6 +58,11 @@ class IPDFLinkService {
   executeNamedAction(action) {}
 
   /**
+   * @param {Object} params
+   */
+  onFileAttachmentAnnotation({ id, filename, content, }) {}
+
+  /**
    * @param {number} pageNum - page number.
    * @param {Object} pageRef - reference to the page.
    */

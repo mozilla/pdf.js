@@ -59,7 +59,9 @@
     "no-implied-eval": "error",
     "no-iterator": "error",
     "no-lone-blocks": "error",
-    "no-multi-spaces": "error",
+    "no-multi-spaces": ["error", {
+      "ignoreEOLComments": true,
+    }],
     "no-multi-str": "error",
     "no-new-func": "error",
     "no-new-wrappers": "error",

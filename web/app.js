@@ -977,7 +977,7 @@ let PDFViewerApplication = {
             !initialParams.hash) {
           return;
         }
-        if (this.hasEqualPageSizes) {
+        if (pdfViewer.hasEqualPageSizes) {
           return;
         }
         this.initialDestination = initialParams.destination;
@@ -985,6 +985,12 @@ let PDFViewerApplication = {
 
         pdfViewer.currentScaleValue = pdfViewer.currentScaleValue;
         this.setInitialView(initialParams.hash);
+      }).then(function() {
+        // At this point, rendering of the initial page(s) should always have
+        // started (and may even have completed).
+        // To prevent any future issues, e.g. the document being completely
+        // blank on load, always trigger rendering here.
+        pdfViewer.update();
       });
     });
 
@@ -1211,19 +1217,6 @@ let PDFViewerApplication = {
     }
   },
 
-  // Whether all pages of the PDF have the same width and height.
-  get hasEqualPageSizes() {
-    let firstPage = this.pdfViewer.getPageView(0);
-    for (let i = 1, ii = this.pagesCount; i < ii; ++i) {
-      let pageView = this.pdfViewer.getPageView(i);
-      if (pageView.width !== firstPage.width ||
-          pageView.height !== firstPage.height) {
-        return false;
-      }
-    }
-    return true;
-  },
-
   afterPrint: function pdfViewSetupAfterPrint() {
     if (this.printService) {
       this.printService.destroy();
@@ -1403,6 +1396,9 @@ if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
   const HOSTED_VIEWER_ORIGINS = ['null',
     'http://mozilla.github.io', 'https://mozilla.github.io'];
   validateFileURL = function validateFileURL(file) {
+    if (file === undefined) {
+      return;
+    }
     try {
       let viewerOrigin = new URL(window.location.href).origin || 'null';
       if (HOSTED_VIEWER_ORIGINS.indexOf(viewerOrigin) >= 0) {
@@ -1790,19 +1786,18 @@ function webViewerUpdateViewarea(evt) {
 }
 
 function webViewerResize() {
-  let currentScaleValue = PDFViewerApplication.pdfViewer.currentScaleValue;
+  let { pdfDocument, pdfViewer, } = PDFViewerApplication;
+  if (!pdfDocument) {
+    return;
+  }
+  let currentScaleValue = pdfViewer.currentScaleValue;
   if (currentScaleValue === 'auto' ||
       currentScaleValue === 'page-fit' ||
       currentScaleValue === 'page-width') {
     // Note: the scale is constant for 'page-actual'.
-    PDFViewerApplication.pdfViewer.currentScaleValue = currentScaleValue;
-  } else if (!currentScaleValue) {
-    // Normally this shouldn't happen, but if the scale wasn't initialized
-    // we set it to the default value in order to prevent any issues.
-    // (E.g. the document being rendered with the wrong scale on load.)
-    PDFViewerApplication.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
+    pdfViewer.currentScaleValue = currentScaleValue;
   }
-  PDFViewerApplication.pdfViewer.update();
+  pdfViewer.update();
 }
 
 function webViewerHashchange(evt) {
