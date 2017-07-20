@@ -15,8 +15,8 @@
 
 import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 import {
-  CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
-  MAX_AUTO_SCALE, NullL10n, RendererType, SCROLLBAR_PADDING, scrollIntoView,
+  CSS_UNITS, DEFAULT_SCALE, getVisibleElements,
+  MAX_AUTO_SCALE, NullL10n, RendererType, SCROLLBAR_PADDING,
   UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
@@ -820,3 +820,4 @@ export {
   PresentationModeState,
   PDFViewer,
 };
+
