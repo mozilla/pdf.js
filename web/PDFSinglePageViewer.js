@@ -820,4 +820,3 @@ export {
   PresentationModeState,
   PDFViewer,
 };
-
