@@ -14,8 +14,8 @@
  */
 
 import {
-  arrayByteLength, arraysToBytes, assert, createPromiseCapability, isEmptyObj,
-  isInt, MissingDataException
+  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj, isInt,
+  MissingDataException
 } from '../shared/util';
 
 var ChunkedStream = (function ChunkedStreamClosure() {
@@ -58,12 +58,15 @@ var ChunkedStream = (function ChunkedStreamClosure() {
     onReceiveData: function ChunkedStream_onReceiveData(begin, chunk) {
       var end = begin + chunk.byteLength;
 
-      assert(begin % this.chunkSize === 0, 'Bad begin offset: ' + begin);
+      if (begin % this.chunkSize !== 0) {
+        throw new Error(`Bad begin offset: ${begin}`);
+      }
       // Using this.length is inaccurate here since this.start can be moved
       // See ChunkedStream.moveStart()
       var length = this.bytes.length;
-      assert(end % this.chunkSize === 0 || end === length,
-             'Bad end offset: ' + end);
+      if (end % this.chunkSize !== 0 && end !== length) {
+        throw new Error(`Bad end offset: ${end}`);
+      }
 
       this.bytes.set(new Uint8Array(chunk), begin);
       var chunkSize = this.chunkSize;
