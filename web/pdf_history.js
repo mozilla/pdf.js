@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 
-import { parseQueryString, waitOnEventOrTimeout } from './ui_utils';
+import { cloneObj, parseQueryString, waitOnEventOrTimeout } from './ui_utils';
 import { getGlobalEventBus } from './dom_events';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
+// Heuristic value used when adding a temporary position to the browser history.
+const UPDATE_VIEWAREA_TIMEOUT = 2000; // milliseconds
 
 /**
  * @typedef {Object} PDFHistoryOptions
@@ -117,8 +119,8 @@ class PDFHistory {
     // The browser history contains a valid entry, ensure that the history is
     // initialized correctly on PDF document load.
     let destination = state.destination;
-    this._updateInternalState(destination, state.uid);
-
+    this._updateInternalState(destination, state.uid,
+                              /* removeTemporary = */ true);
     if (destination.dest) {
       this.initialBookmark = JSON.stringify(destination.dest);
 
@@ -275,14 +277,23 @@ class PDFHistory {
   /**
    * @private
    */
-  _tryPushCurrentPosition() {
+  _tryPushCurrentPosition(temporary = false) {
     if (!this._position) {
       return;
     }
     let position = this._position;
+    if (temporary) {
+      position = cloneObj(this._position);
+      position.temporary = true;
+    }
 
     if (!this._destination) {
       this._pushOrReplaceState(position);
+      return;
+    }
+    if (this._destination.temporary) {
+      // Always replace a previous *temporary* position.
+      this._pushOrReplaceState(position, /* forceReplace = */ true);
       return;
     }
     if (this._destination.hash === position.hash) {
@@ -337,7 +348,12 @@ class PDFHistory {
   /**
    * @private
    */
-  _updateInternalState(destination, uid) {
+  _updateInternalState(destination, uid, removeTemporary = false) {
+    if (removeTemporary && destination && destination.temporary) {
+      // When the `destination` comes from the browser history,
+      // we no longer treat it as a *temporary* position.
+      delete destination.temporary;
+    }
     this._destination = destination;
     this._currentUid = uid;
     this._uid = this._currentUid + 1;
@@ -347,6 +363,11 @@ class PDFHistory {
    * @private
    */
   _updateViewarea({ location, }) {
+    if (this._updateViewareaTimeout) {
+      clearTimeout(this._updateViewareaTimeout);
+      this._updateViewareaTimeout = null;
+    }
+
     this._position = {
       hash: this._isViewerInPresentationMode ?
         `page=${location.pageNumber}` : location.pdfOpenParams.substring(1),
@@ -356,6 +377,30 @@ class PDFHistory {
 
     if (this._popStateInProgress) {
       return;
+    }
+
+    if (UPDATE_VIEWAREA_TIMEOUT > 0) {
+      // When closing the browser, a 'pagehide' event will be dispatched which
+      // *should* allow us to push the current position to the browser history.
+      // In practice, it seems that the event is arriving too late in order for
+      // the session history to be successfully updated.
+      // (For additional details, please refer to the discussion in
+      //  https://bugzilla.mozilla.org/show_bug.cgi?id=1153393.)
+      //
+      // To workaround this we attempt to *temporarily* add the current position
+      // to the browser history only when the viewer is *idle*,
+      // i.e. when scrolling and/or zooming does not occur.
+      //
+      // PLEASE NOTE: It's absolutely imperative that the browser history is
+      // *not* updated too often, since that would render the viewer more or
+      // less unusable. Hence the use of a timeout to delay the update until
+      // the viewer has been idle for `UPDATE_VIEWAREA_TIMEOUT` milliseconds.
+      this._updateViewareaTimeout = setTimeout(() => {
+        if (!this._popStateInProgress) {
+          this._tryPushCurrentPosition(/* temporary = */ true);
+        }
+        this._updateViewareaTimeout = null;
+      }, UPDATE_VIEWAREA_TIMEOUT);
     }
   }
 
@@ -408,14 +453,23 @@ class PDFHistory {
 
     // This case corresponds to navigation backwards in the browser history.
     if (state.uid < this._currentUid && this._position && this._destination) {
-      if (this._destination.page &&
-          this._destination.page !== this._position.first &&
-          this._destination.page !== this._position.page) {
+      let shouldGoBack = false;
+
+      if (this._destination.temporary) {
+        // If the `this._destination` contains a *temporary* position, always
+        // push the `this._position` to the browser history before moving back.
+        this._pushOrReplaceState(this._position);
+        shouldGoBack = true;
+      } else if (this._destination.page &&
+                 this._destination.page !== this._position.first &&
+                 this._destination.page !== this._position.page) {
         // If the `page` of the `this._destination` is no longer visible,
         // push the `this._position` to the browser history before moving back.
         this._pushOrReplaceState(this._destination);
         this._pushOrReplaceState(this._position);
-
+        shouldGoBack = true;
+      }
+      if (shouldGoBack) {
         // After `window.history.back()`, we must not enter this block on the
         // resulting 'popstate' event, since that may cause an infinite loop.
         this._currentUid = state.uid;
@@ -427,8 +481,8 @@ class PDFHistory {
 
     // Navigate to the new destination.
     let destination = state.destination;
-    this._updateInternalState(destination, state.uid);
-
+    this._updateInternalState(destination, state.uid,
+                              /* removeTemporary = */ true);
     if (destination.dest) {
       this.linkService.navigateTo(destination.dest);
     } else if (destination.hash) {
