@@ -14,7 +14,7 @@
  */
 
 import {
-  assert, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isArray,
+  FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isArray,
   isLittleEndian, isNum, OPS, shadow, TextRenderingMode, Util, warn
 } from '../shared/util';
 import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
@@ -1777,7 +1777,9 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       if (group.matrix) {
         currentCtx.transform.apply(currentCtx, group.matrix);
       }
-      assert(group.bbox, 'Bounding box is required.');
+      if (!group.bbox) {
+        throw new Error('Bounding box is required.');
+      }
 
       // Based on the current transform figure out how big the bounding box
       // will actually be.

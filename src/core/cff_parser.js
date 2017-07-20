@@ -14,7 +14,7 @@
  */
 
 import {
-  assert, bytesToString, FormatError, info, isArray, stringToBytes, Util, warn
+  bytesToString, FormatError, info, isArray, stringToBytes, Util, warn
 } from '../shared/util';
 import {
   ExpertCharset, ExpertSubsetCharset, ISOAdobeCharset
@@ -871,7 +871,9 @@ var CFFParser = (function CFFParserClosure() {
         default:
           throw new FormatError(`parseFDSelect: Unknown format "${format}".`);
       }
-      assert(fdSelect.length === length, 'parseFDSelect: Invalid font data.');
+      if (fdSelect.length !== length) {
+        throw new FormatError('parseFDSelect: Invalid font data.');
+      }
 
       return new CFFFDSelect(fdSelect, rawBytes);
     },
@@ -1440,9 +1442,10 @@ var CFFCompiler = (function CFFCompilerClosure() {
                                                                   output) {
       for (var i = 0, ii = dicts.length; i < ii; ++i) {
         var fontDict = dicts[i];
-        assert(fontDict.privateDict && fontDict.hasName('Private'),
-               'There must be an private dictionary.');
         var privateDict = fontDict.privateDict;
+        if (!privateDict || !fontDict.hasName('Private')) {
+          throw new FormatError('There must be a private dictionary.');
+        }
         var privateDictTracker = new CFFOffsetTracker();
         var privateDictData = this.compileDict(privateDict, privateDictTracker);
 

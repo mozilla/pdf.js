@@ -14,8 +14,8 @@
  */
 
 import {
-  assert, bytesToString, FormatError, isInt, PasswordException,
-  PasswordResponses, stringToBytes, utf8StringToString, warn
+  bytesToString, FormatError, isInt, PasswordException, PasswordResponses,
+  stringToBytes, utf8StringToString, warn
 } from '../shared/util';
 import { isDict, isName, Name } from './primitives';
 import { DecryptStream } from './stream';
@@ -1997,7 +1997,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   function buildCipherConstructor(cf, name, num, gen, key) {
-    assert(isName(name), 'Invalid crypt filter name.');
+    if (!isName(name)) {
+      throw new FormatError('Invalid crypt filter name.');
+    }
     var cryptFilter = cf.get(name.name);
     var cfm;
     if (cryptFilter !== null && cryptFilter !== undefined) {

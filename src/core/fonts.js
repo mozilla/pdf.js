@@ -14,9 +14,9 @@
  */
 
 import {
-  assert, bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info,
-  isArray, isInt, isNum, isSpace, MissingDataException, readUint32, shadow,
-  string32, warn
+  bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isArray,
+  isInt, isNum, isSpace, MissingDataException, readUint32, shadow, string32,
+  warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -2286,7 +2286,9 @@ var Font = (function FontClosure() {
         var isCidToGidMapEmpty = cidToGidMap.length === 0;
 
         properties.cMap.forEach(function(charCode, cid) {
-          assert(cid <= 0xffff, 'Max size of CID is 65,535');
+          if (cid > 0xffff) {
+            throw new FormatError('Max size of CID is 65,535');
+          }
           var glyphId = -1;
           if (isCidToGidMapEmpty) {
             glyphId = cid;
