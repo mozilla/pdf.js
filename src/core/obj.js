@@ -168,7 +168,7 @@ var Catalog = (function CatalogClosure() {
         'page count in top level pages object is not an integer'
       );
       // shadow the prototype getter
-      return shadow(this, 'num', obj);
+      return shadow(this, 'numPages', obj);
     },
     get destinations() {
       function fetchDestination(dest) {
