@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-import {
-  assert, info, isArray, isArrayBuffer, isNum, isSpace, isString,
-  MissingDataException, OPS, shadow, stringToBytes, stringToPDFString, Util,
-  warn
-} from '../shared/util';
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream } from './primitives';
+import {
+  info, isArray, isArrayBuffer, isNum, isSpace, isString, MissingDataException,
+  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+} from '../shared/util';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { OperatorList, PartialEvaluator } from './evaluator';
 import { AnnotationFactory } from './annotation';
@@ -355,7 +354,9 @@ var PDFDocument = (function PDFDocumentClosure() {
     } else {
       throw new Error('PDFDocument: Unknown argument type');
     }
-    assert(stream.length > 0, 'stream must have data');
+    if (stream.length <= 0) {
+      throw new Error('PDFDocument: stream must have data');
+    }
 
     this.pdfManager = pdfManager;
     this.stream = stream;

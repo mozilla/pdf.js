@@ -328,7 +328,9 @@ Shadings.Mesh = (function MeshClosure() {
       var coord = reader.readCoordinate();
       var color = reader.readComponents();
       if (verticesLeft === 0) { // ignoring flags if we started a triangle
-        assert((0 <= f && f <= 2), 'Unknown type4 flag');
+        if (!(0 <= f && f <= 2)) {
+          throw new FormatError('Unknown type4 flag');
+        }
         switch (f) {
           case 0:
             verticesLeft = 3;
@@ -492,7 +494,9 @@ Shadings.Mesh = (function MeshClosure() {
     var cs = new Int32Array(4); // c00, c30, c03, c33
     while (reader.hasData) {
       var f = reader.readFlag();
-      assert((0 <= f && f <= 3), 'Unknown type6 flag');
+      if (!(0 <= f && f <= 3)) {
+        throw new FormatError('Unknown type6 flag');
+      }
       var i, ii;
       var pi = coords.length;
       for (i = 0, ii = (f !== 0 ? 8 : 12); i < ii; i++) {
@@ -602,7 +606,9 @@ Shadings.Mesh = (function MeshClosure() {
     var cs = new Int32Array(4); // c00, c30, c03, c33
     while (reader.hasData) {
       var f = reader.readFlag();
-      assert((0 <= f && f <= 3), 'Unknown type7 flag');
+      if (!(0 <= f && f <= 3)) {
+        throw new FormatError('Unknown type7 flag');
+      }
       var i, ii;
       var pi = coords.length;
       for (i = 0, ii = (f !== 0 ? 12 : 16); i < ii; i++) {
@@ -706,7 +712,9 @@ Shadings.Mesh = (function MeshClosure() {
   }
 
   function Mesh(stream, matrix, xref, res) {
-    assert(isStream(stream), 'Mesh data is not a stream');
+    if (!isStream(stream)) {
+      throw new FormatError('Mesh data is not a stream');
+    }
     var dict = stream.dict;
     this.matrix = matrix;
     this.shadingType = dict.get('ShadingType');
@@ -743,7 +751,9 @@ Shadings.Mesh = (function MeshClosure() {
         break;
       case ShadingType.LATTICE_FORM_MESH:
         var verticesPerRow = dict.get('VerticesPerRow') | 0;
-        assert(verticesPerRow >= 2, 'Invalid VerticesPerRow');
+        if (verticesPerRow < 2) {
+          throw new FormatError('Invalid VerticesPerRow');
+        }
         decodeType5Shading(this, reader, verticesPerRow);
         break;
       case ShadingType.COONS_PATCH_MESH:

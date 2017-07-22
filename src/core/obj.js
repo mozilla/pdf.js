@@ -14,8 +14,8 @@
  */
 
 import {
-  assert, bytesToString, createPromiseCapability, createValidAbsoluteUrl,
-  FormatError, info, InvalidPDFException, isArray, isBool, isInt, isString,
+  bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
+  info, InvalidPDFException, isArray, isBool, isInt, isString,
   MissingDataException, shadow, stringToPDFString, stringToUTF8String, Util,
   warn, XRefParseException
 } from '../shared/util';
@@ -33,7 +33,9 @@ var Catalog = (function CatalogClosure() {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.catDict = xref.getCatalogObj();
-    assert(isDict(this.catDict), 'catalog object is not a dictionary');
+    if (!isDict(this.catDict)) {
+      throw new FormatError('catalog object is not a dictionary');
+    }
 
     this.fontCache = new RefSetCache();
     this.builtInCMapCache = Object.create(null);
@@ -80,7 +82,9 @@ var Catalog = (function CatalogClosure() {
     },
     get toplevelPagesDict() {
       var pagesObj = this.catDict.get('Pages');
-      assert(isDict(pagesObj), 'invalid top-level pages dictionary');
+      if (!isDict(pagesObj)) {
+        throw new FormatError('invalid top-level pages dictionary');
+      }
       // shadow the prototype getter
       return shadow(this, 'toplevelPagesDict', pagesObj);
     },
@@ -118,7 +122,9 @@ var Catalog = (function CatalogClosure() {
         if (outlineDict === null) {
           continue;
         }
-        assert(outlineDict.has('Title'), 'Invalid outline item');
+        if (!outlineDict.has('Title')) {
+          throw new FormatError('Invalid outline item');
+        }
 
         var data = { url: null, dest: null, };
         Catalog.parseDestDictionary({
@@ -163,10 +169,10 @@ var Catalog = (function CatalogClosure() {
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
-      assert(
-        isInt(obj),
-        'page count in top level pages object is not an integer'
-      );
+      if (!isInt(obj)) {
+        throw new FormatError(
+          'page count in top level pages object is not an integer');
+      }
       // shadow the prototype getter
       return shadow(this, 'numPages', obj);
     },
@@ -258,23 +264,31 @@ var Catalog = (function CatalogClosure() {
       for (var i = 0, ii = this.numPages; i < ii; i++) {
         if (i in nums) {
           var labelDict = nums[i];
-          assert(isDict(labelDict), 'The PageLabel is not a dictionary.');
+          if (!isDict(labelDict)) {
+            throw new FormatError('The PageLabel is not a dictionary.');
+          }
 
           var type = labelDict.get('Type');
-          assert(!type || isName(type, 'PageLabel'),
-                 'Invalid type in PageLabel dictionary.');
+          if (type && !isName(type, 'PageLabel')) {
+            throw new FormatError('Invalid type in PageLabel dictionary.');
+          }
 
           var s = labelDict.get('S');
-          assert(!s || isName(s), 'Invalid style in PageLabel dictionary.');
+          if (s && !isName(s)) {
+            throw new FormatError('Invalid style in PageLabel dictionary.');
+          }
           style = s ? s.name : null;
 
           var p = labelDict.get('P');
-          assert(!p || isString(p), 'Invalid prefix in PageLabel dictionary.');
+          if (p && !isString(p)) {
+            throw new FormatError('Invalid prefix in PageLabel dictionary.');
+          }
           prefix = p ? stringToPDFString(p) : '';
 
           var st = labelDict.get('St');
-          assert(!st || (isInt(st) && st >= 1),
-                 'Invalid start in PageLabel dictionary.');
+          if (st && !(isInt(st) && st >= 1)) {
+            throw new FormatError('Invalid start in PageLabel dictionary.');
+          }
           currentIndex = st || 1;
         }
 
@@ -302,8 +316,10 @@ var Catalog = (function CatalogClosure() {
             currentLabel = charBuf.join('');
             break;
           default:
-            assert(!style,
-                   'Invalid style "' + style + '" in PageLabel dictionary.');
+            if (style) {
+              throw new FormatError(
+                `Invalid style "${style}" in PageLabel dictionary.`);
+            }
         }
         pageLabels[i] = prefix + currentLabel;
 
@@ -454,8 +470,11 @@ var Catalog = (function CatalogClosure() {
           }
 
           // Must be a child page dictionary.
-          assert(isDict(currentNode),
-            'page dictionary kid reference points to wrong type of object');
+          if (!isDict(currentNode)) {
+            capability.reject(new FormatError(
+              'page dictionary kid reference points to wrong type of object'));
+            return;
+          }
 
           count = currentNode.get('Count');
           // Cache the Kids count, since it can reduce redundant lookups in long
@@ -471,7 +490,11 @@ var Catalog = (function CatalogClosure() {
           }
 
           var kids = currentNode.get('Kids');
-          assert(isArray(kids), 'page dictionary kids object is not an array');
+          if (!isArray(kids)) {
+            capability.reject(new FormatError(
+              'page dictionary kids object is not an array'));
+            return;
+          }
 
           // Always check all `Kids` nodes, to avoid getting stuck in an empty
           // node further down in the tree (see issue5644.pdf, issue8088.pdf),
@@ -480,7 +503,7 @@ var Catalog = (function CatalogClosure() {
             nodesToVisit.push(kids[last]);
           }
         }
-        capability.reject('Page index ' + pageIndex + ' not found.');
+        capability.reject(new Error('Page index ' + pageIndex + ' not found.'));
       }
       next();
       return capability.promise;
@@ -497,19 +520,24 @@ var Catalog = (function CatalogClosure() {
         return xref.fetchAsync(kidRef).then(function (node) {
           if (isRefsEqual(kidRef, pageRef) && !isDict(node, 'Page') &&
               !(isDict(node) && !node.has('Type') && node.has('Contents'))) {
-            throw new Error('The reference does not point to a /Page Dict.');
+            throw new FormatError(
+              'The reference does not point to a /Page Dict.');
           }
           if (!node) {
             return null;
           }
-          assert(isDict(node), 'node must be a Dict.');
+          if (!isDict(node)) {
+            throw new FormatError('node must be a Dict.');
+          }
           parentRef = node.getRaw('Parent');
           return node.getAsync('Parent');
         }).then(function (parent) {
           if (!parent) {
             return null;
           }
-          assert(isDict(parent), 'parent must be a Dict.');
+          if (!isDict(parent)) {
+            throw new FormatError('parent must be a Dict.');
+          }
           return parent.getAsync('Kids');
         }).then(function (kids) {
           if (!kids) {
@@ -519,7 +547,9 @@ var Catalog = (function CatalogClosure() {
           var found = false;
           for (var i = 0; i < kids.length; i++) {
             var kid = kids[i];
-            assert(isRef(kid), 'kid must be a Ref.');
+            if (!isRef(kid)) {
+              throw new FormatError('kid must be a Ref.');
+            }
             if (kid.num === kidRef.num) {
               found = true;
               break;
@@ -1229,7 +1259,9 @@ var XRef = (function XRefClosure() {
     },
 
     fetch: function XRef_fetch(ref, suppressEncryption) {
-      assert(isRef(ref), 'ref object is not a reference');
+      if (!isRef(ref)) {
+        throw new Error('ref object is not a reference');
+      }
       var num = ref.num;
       if (num in this.cache) {
         var cacheEntry = this.cache[num];
@@ -1415,8 +1447,9 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
           var kids = obj.get('Kids');
           for (i = 0, n = kids.length; i < n; i++) {
             var kid = kids[i];
-            assert(!processed.has(kid),
-                   'Duplicate entry in "' + this._type + '" tree.');
+            if (processed.has(kid)) {
+              throw new FormatError(`Duplicate entry in "${this._type}" tree.`);
+            }
             queue.push(kid);
             processed.put(kid);
           }
