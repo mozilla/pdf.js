@@ -14,8 +14,8 @@
  */
 
 import {
-  assert, CMapCompressionType, FormatError, isInt, isString,
-  MissingDataException, Util, warn
+  CMapCompressionType, FormatError, isInt, isString, MissingDataException, Util,
+  warn
 } from '../shared/util';
 import { isCmd, isEOF, isName, isStream } from './primitives';
 import { Lexer } from './parser';
@@ -561,7 +561,9 @@ var BinaryCMapReader = (function BinaryCMapReaderClosure() {
         var sequence = !!(b & 0x10);
         var dataSize = b & 15;
 
-        assert(dataSize + 1 <= MAX_NUM_SIZE);
+        if (dataSize + 1 > MAX_NUM_SIZE) {
+          throw new Error('processBinaryCMap: Invalid dataSize.');
+        }
 
         var ucs2DataSize = 1;
         var subitemsCount = stream.readNumber();
@@ -943,7 +945,10 @@ var CMapFactory = (function CMapFactoryClosure() {
     if (BUILT_IN_CMAPS.indexOf(name) === -1) {
       return Promise.reject(new Error('Unknown CMap name: ' + name));
     }
-    assert(fetchBuiltInCMap, 'Built-in CMap parameters are not provided.');
+    if (!fetchBuiltInCMap) {
+      return Promise.reject(new Error(
+        'Built-in CMap parameters are not provided.'));
+    }
 
     return fetchBuiltInCMap(name).then(function (data) {
       var cMapData = data.cMapData, compressionType = data.compressionType;
@@ -955,11 +960,12 @@ var CMapFactory = (function CMapFactoryClosure() {
           return extendCMap(cMap, fetchBuiltInCMap, useCMap);
         });
       }
-      assert(compressionType === CMapCompressionType.NONE,
-        'TODO: Only BINARY/NONE CMap compression is currently supported.');
-      // Uncompressed CMap.
-      var lexer = new Lexer(new Stream(cMapData));
-      return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
+      if (compressionType === CMapCompressionType.NONE) {
+        var lexer = new Lexer(new Stream(cMapData));
+        return parseCMap(cMap, lexer, fetchBuiltInCMap, null);
+      }
+      return Promise.reject(new Error(
+        'TODO: Only BINARY/NONE CMap compression is currently supported.'));
     });
   }
 
