@@ -569,6 +569,13 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getPageLabels();
     },
     /**
+     * @return {Promise} A promise that is resolved with a {string} containing
+     *   the PageMode name.
+     */
+    getPageMode() {
+      return this.transport.getPageMode();
+    },
+    /**
      * @return {Promise} A promise that is resolved with a lookup table for
      * mapping named attachments to their content.
      */
@@ -1937,6 +1944,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
 
     getPageLabels: function WorkerTransport_getPageLabels() {
       return this.messageHandler.sendWithPromise('GetPageLabels', null);
+    },
+
+    getPageMode() {
+      return this.messageHandler.sendWithPromise('GetPageMode', null);
     },
 
     getAttachments: function WorkerTransport_getAttachments() {
