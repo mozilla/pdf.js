@@ -144,6 +144,7 @@
 .annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation,
 .annotationLayer .lineAnnotation svg line,
+.annotationLayer .squareAnnotation svg rect,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }

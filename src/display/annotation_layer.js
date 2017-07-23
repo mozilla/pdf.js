@@ -74,6 +74,9 @@ class AnnotationElementFactory {
       case AnnotationType.LINE:
         return new LineAnnotationElement(parameters);
 
+      case AnnotationType.SQUARE:
+        return new SquareAnnotationElement(parameters);
+
       case AnnotationType.HIGHLIGHT:
         return new HighlightAnnotationElement(parameters);
 
@@ -590,7 +593,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line'];
+    const IGNORE_TYPES = ['Line', 'Square'];
 
     this.container.className = 'popupAnnotation';
 
@@ -802,9 +805,59 @@ class LineAnnotationElement extends AnnotationElement {
   }
 }
 
+class SquareAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the square annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof SquareAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'squareAnnotation';
+
+    // Create an invisible square with the same rectangle that acts as the
+    // trigger for the popup. Only the square itself should trigger the
+    // popup, not the entire container.
+    let data = this.data;
+    let width = data.rect[2] - data.rect[0];
+    let height = data.rect[3] - data.rect[1];
+    let svg = this.svgFactory.create(width, height);
+
+    // The browser draws half of the borders inside the square and half of
+    // the borders outside the square by default. This behavior cannot be
+    // changed programmatically, so correct for that here.
+    let borderWidth = data.borderStyle.width;
+    let square = this.svgFactory.createElement('svg:rect');
+    square.setAttribute('x', borderWidth / 2);
+    square.setAttribute('y', borderWidth / 2);
+    square.setAttribute('width', width - borderWidth);
+    square.setAttribute('height', height - borderWidth);
+    square.setAttribute('stroke-width', borderWidth);
+    square.setAttribute('stroke', 'transparent');
+    square.setAttribute('fill', 'none');
+
+    svg.appendChild(square);
+    this.container.append(svg);
+
+    // Create the popup ourselves so that we can bind it to the square instead
+    // of to the entire container (which is the default).
+    this._createPopup(this.container, square, data);
+
+    return this.container;
+  }
+}
+
 class HighlightAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     let isRenderable = !!(parameters.data.hasPopup ||
+
                           parameters.data.title || parameters.data.contents);
     super(parameters, isRenderable, /* ignoreBorder = */ true);
   }
