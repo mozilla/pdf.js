@@ -29,9 +29,9 @@ Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
 
 #### Firefox (and Seamonkey)
 
-PDF.js is built into version 19+ of Firefox, however one extension is still available:
+PDF.js is built into version 19+ of Firefox, however, one extension is still available:
 
-+ [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This extension is mainly intended for developers/testers, and it is updated every time new code is merged into the PDF.js codebase. It should be quite stable, but might break from time to time.
++ [Development Version](http://mozilla.github.io/pdf.js/extensions/firefox/pdf.js.xpi) - This extension is mainly intended for developers/testers, and it is updated every time new code is merged into the PDF.js codebase. It should be quite stable but might break from time to time.
 
   + Please note that the extension is *not* guaranteed to be compatible with Firefox versions that are *older* than the current ESR version, see the [Release Calendar](https://wiki.mozilla.org/RapidRelease/Calendar#Past_branch_dates).
 
@@ -62,7 +62,7 @@ If everything worked out, install all dependencies for PDF.js:
 
     $ npm install
 
-Finally you need to start a local web server as some browsers do not allow opening
+Finally, you need to start a local web server as some browsers do not allow opening
 PDF files using a `file://` URL. Run:
 
     $ gulp server
@@ -97,8 +97,7 @@ the `pdfjs-dist` name. For more information and examples please refer to the
 
 ## Learning
 
-You can play with the PDF.js API directly from your browser using the live
-demos below:
+You can play with the PDF.js API directly from your browser using the live demos below:
 
 + [Interactive examples](http://mozilla.github.io/pdf.js/examples/index.html#interactive-examples)
 
@@ -106,7 +105,7 @@ The repository contains a hello world example that you can run locally:
 
 + [examples/helloworld/](https://github.com/mozilla/pdf.js/blob/master/examples/helloworld/)
 
-More examples can be found at the examples folder. Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
+More examples can be found in the examples folder. Some of them are using the pdfjs-dist package, which can be built and installed in this repo directory via `gulp dist-install` command.
 
 For an introduction to the PDF.js code, check out the presentation by our
 contributor Julian Viereck:
