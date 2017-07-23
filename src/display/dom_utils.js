@@ -14,12 +14,13 @@
  */
 
 import {
-  CMapCompressionType, createValidAbsoluteUrl, deprecated,
+  assert, CMapCompressionType, createValidAbsoluteUrl, deprecated,
   removeNullCharacters, stringToBytes, warn
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
 
-var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
+const DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 class DOMCanvasFactory {
   create(width, height) {
@@ -106,6 +107,27 @@ class DOMCMapReaderFactory {
 
       request.send(null);
     });
+  }
+}
+
+class DOMSVGFactory {
+  create(width, height) {
+    assert(width > 0 && height > 0, 'Invalid SVG dimensions');
+
+    let svg = document.createElementNS(SVG_NS, 'svg:svg');
+    svg.setAttribute('version', '1.1');
+    svg.setAttribute('width', width + 'px');
+    svg.setAttribute('height', height + 'px');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+
+    return svg;
+  }
+
+  createElement(type) {
+    assert(typeof type === 'string', 'Invalid SVG element type');
+
+    return document.createElementNS(SVG_NS, type);
   }
 }
 
@@ -330,4 +352,5 @@ export {
   DEFAULT_LINK_REL,
   DOMCanvasFactory,
   DOMCMapReaderFactory,
+  DOMSVGFactory,
 };

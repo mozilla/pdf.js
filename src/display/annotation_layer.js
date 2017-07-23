@@ -14,8 +14,8 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, getDefaultSetting, getFilenameFromUrl,
-  LinkTarget
+  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
+  getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
@@ -31,6 +31,7 @@ import {
  * @property {DownloadManager} downloadManager
  * @property {string} imageResourcesPath
  * @property {boolean} renderInteractiveForms
+ * @property {Object} svgFactory
  */
 
 class AnnotationElementFactory {
@@ -105,6 +106,7 @@ class AnnotationElement {
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
     this.renderInteractiveForms = parameters.renderInteractiveForms;
+    this.svgFactory = parameters.svgFactory;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -769,8 +771,6 @@ class LineAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-
     this.container.className = 'lineAnnotation';
 
     // Create an invisible line with the same starting and ending coordinates
@@ -779,30 +779,24 @@ class LineAnnotationElement extends AnnotationElement {
     let data = this.data;
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
-
-    let svg = document.createElementNS(SVG_NS, 'svg:svg');
-    svg.setAttributeNS(null, 'version', '1.1');
-    svg.setAttributeNS(null, 'width', width + 'px');
-    svg.setAttributeNS(null, 'height', height + 'px');
-    svg.setAttributeNS(null, 'preserveAspectRatio', 'none');
-    svg.setAttributeNS(null, 'viewBox', '0 0 ' + width + ' ' + height);
+    let svg = this.svgFactory.create(width, height);
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    let line = document.createElementNS(SVG_NS, 'svg:line');
-    line.setAttributeNS(null, 'x1', data.rect[2] - data.lineCoordinates[0]);
-    line.setAttributeNS(null, 'y1', data.rect[3] - data.lineCoordinates[1]);
-    line.setAttributeNS(null, 'x2', data.rect[2] - data.lineCoordinates[2]);
-    line.setAttributeNS(null, 'y2', data.rect[3] - data.lineCoordinates[3]);
-    line.setAttributeNS(null, 'stroke-width', data.borderStyle.width);
-    line.setAttributeNS(null, 'stroke', 'transparent');
+    let line = this.svgFactory.createElement('svg:line');
+    line.setAttribute('x1', data.rect[2] - data.lineCoordinates[0]);
+    line.setAttribute('y1', data.rect[3] - data.lineCoordinates[1]);
+    line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
+    line.setAttribute('y2', data.rect[3] - data.lineCoordinates[3]);
+    line.setAttribute('stroke-width', data.borderStyle.width);
+    line.setAttribute('stroke', 'transparent');
 
     svg.appendChild(line);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the line instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, line, this.data);
+    this._createPopup(this.container, line, data);
 
     return this.container;
   }
@@ -993,6 +987,7 @@ class AnnotationLayer {
         imageResourcesPath: parameters.imageResourcesPath ||
                             getDefaultSetting('imageResourcesPath'),
         renderInteractiveForms: parameters.renderInteractiveForms || false,
+        svgFactory: new DOMSVGFactory(),
       });
       if (element.isRenderable) {
         parameters.div.appendChild(element.render());
