@@ -141,6 +141,7 @@ let PDFViewerApplication = {
     pdfBugEnabled: false,
     showPreviousViewOnLoad: true,
     defaultZoomValue: '',
+    disablePageMode: false,
     disablePageLabels: false,
     renderer: 'canvas',
     enhanceTextSelection: false,
@@ -254,6 +255,9 @@ let PDFViewerApplication = {
       }),
       preferences.get('renderInteractiveForms').then(function resolved(value) {
         viewerPrefs['renderInteractiveForms'] = value;
+      }),
+      preferences.get('disablePageMode').then(function resolved(value) {
+        viewerPrefs['disablePageMode'] = value;
       }),
       preferences.get('disablePageLabels').then(function resolved(value) {
         viewerPrefs['disablePageLabels'] = value;
@@ -883,6 +887,11 @@ let PDFViewerApplication = {
       });
     });
 
+    // Since the `setInitialView` call below depends on this being resolved,
+    // fetch it early to avoid delaying initial rendering of the PDF document.
+    let pageModePromise = pdfDocument.getPageMode().catch(
+      function() { /* Avoid breaking initial rendering; ignoring errors. */ });
+
     this.toolbar.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar.setPagesCount(pdfDocument.numPages);
 
@@ -932,37 +941,39 @@ let PDFViewerApplication = {
         bookmark: this.initialBookmark,
         hash: null,
       };
-      let storedHash = this.viewerPrefs['defaultZoomValue'] ?
-        ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
-      let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
+      let storePromise = store.getMultiple({
+        exists: false,
+        page: '1',
+        zoom: DEFAULT_SCALE_VALUE,
+        scrollLeft: '0',
+        scrollTop: '0',
+        sidebarView: SidebarView.NONE,
+      }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
-      new Promise((resolve, reject) => {
-        if (!this.viewerPrefs['showPreviousViewOnLoad']) {
-          resolve();
-          return;
-        }
-        store.getMultiple({
-          exists: false,
-          page: '1',
-          zoom: DEFAULT_SCALE_VALUE,
-          scrollLeft: '0',
-          scrollTop: '0',
-          sidebarView: SidebarView.NONE,
-        }).then((values) => {
-          if (!values.exists) {
-            resolve();
-            return;
-          }
-          storedHash = 'page=' + values.page +
+      Promise.all([storePromise, pageModePromise]).then(
+          ([values = {}, pageMode]) => {
+        // Initialize the default values, from user preferences.
+        let hash = this.viewerPrefs['defaultZoomValue'] ?
+          ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
+        let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
+
+        if (values.exists && this.viewerPrefs['showPreviousViewOnLoad']) {
+          hash = 'page=' + values.page +
             '&zoom=' + (this.viewerPrefs['defaultZoomValue'] || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
-          sidebarView = this.viewerPrefs['sidebarViewOnLoad'] ||
-                        (values.sidebarView | 0);
-          resolve();
-        }).catch(resolve);
-      }).then(() => {
-        this.setInitialView(storedHash, { sidebarView, scale, });
-        initialParams.hash = storedHash;
+          sidebarView = sidebarView || (values.sidebarView | 0);
+        }
+        if (pageMode && !this.viewerPrefs['disablePageMode']) {
+          // Always let the user preference/history take precedence.
+          sidebarView = sidebarView || apiPageModeToSidebarView(pageMode);
+        }
+        return {
+          hash,
+          sidebarView,
+        };
+      }).then(({ hash, sidebarView, }) => {
+        this.setInitialView(hash, { sidebarView, scale, });
+        initialParams.hash = hash;
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -2291,6 +2302,30 @@ function webViewerKeyDown(evt) {
   if (handled) {
     evt.preventDefault();
   }
+}
+
+/**
+ * Converts API PageMode values to the format used by `PDFSidebar`.
+ * NOTE: There's also a "FullScreen" parameter which is not possible to support,
+ *       since the Fullscreen API used in browsers requires that entering
+ *       fullscreen mode only occurs as a result of a user-initiated event.
+ * @param {string} mode - The API PageMode value.
+ * @returns {number} A value from {SidebarView}.
+ */
+function apiPageModeToSidebarView(mode) {
+  switch (mode) {
+    case 'UseNone':
+      return SidebarView.NONE;
+    case 'UseThumbs':
+      return SidebarView.THUMBS;
+    case 'UseOutlines':
+      return SidebarView.OUTLINE;
+    case 'UseAttachments':
+      return SidebarView.ATTACHMENTS;
+    case 'UseOC':
+      // Not implemented, since we don't support Optional Content Groups yet.
+  }
+  return SidebarView.NONE; // Default value.
 }
 
 /* Abstract factory for the print service. */
