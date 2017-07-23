@@ -77,6 +77,9 @@ class AnnotationElementFactory {
       case AnnotationType.SQUARE:
         return new SquareAnnotationElement(parameters);
 
+      case AnnotationType.CIRCLE:
+        return new CircleAnnotationElement(parameters);
+
       case AnnotationType.HIGHLIGHT:
         return new HighlightAnnotationElement(parameters);
 
@@ -593,7 +596,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line', 'Square'];
+    const IGNORE_TYPES = ['Line', 'Square', 'Circle'];
 
     this.container.className = 'popupAnnotation';
 
@@ -854,10 +857,58 @@ class SquareAnnotationElement extends AnnotationElement {
   }
 }
 
+class CircleAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the circle annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof CircleAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'circleAnnotation';
+
+    // Create an invisible circle with the same ellipse that acts as the
+    // trigger for the popup. Only the circle itself should trigger the
+    // popup, not the entire container.
+    let data = this.data;
+    let width = data.rect[2] - data.rect[0];
+    let height = data.rect[3] - data.rect[1];
+    let svg = this.svgFactory.create(width, height);
+
+    // The browser draws half of the borders inside the circle and half of
+    // the borders outside the circle by default. This behavior cannot be
+    // changed programmatically, so correct for that here.
+    let borderWidth = data.borderStyle.width;
+    let circle = this.svgFactory.createElement('svg:ellipse');
+    circle.setAttribute('cx', width / 2);
+    circle.setAttribute('cy', height / 2);
+    circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
+    circle.setAttribute('ry', (height / 2) - (borderWidth / 2));
+    circle.setAttribute('stroke-width', borderWidth);
+    circle.setAttribute('stroke', 'transparent');
+    circle.setAttribute('fill', 'none');
+
+    svg.appendChild(circle);
+    this.container.append(svg);
+
+    // Create the popup ourselves so that we can bind it to the circle instead
+    // of to the entire container (which is the default).
+    this._createPopup(this.container, circle, data);
+
+    return this.container;
+  }
+}
+
 class HighlightAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     let isRenderable = !!(parameters.data.hasPopup ||
-
                           parameters.data.title || parameters.data.contents);
     super(parameters, isRenderable, /* ignoreBorder = */ true);
   }

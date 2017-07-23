@@ -84,6 +84,9 @@ class AnnotationFactory {
       case 'Square':
         return new SquareAnnotation(parameters);
 
+      case 'Circle':
+        return new CircleAnnotation(parameters);
+
       case 'Highlight':
         return new HighlightAnnotation(parameters);
 
@@ -894,6 +897,15 @@ class SquareAnnotation extends Annotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.SQUARE;
+    this._preparePopup(parameters.dict);
+  }
+}
+
+class CircleAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.CIRCLE;
     this._preparePopup(parameters.dict);
   }
 }
