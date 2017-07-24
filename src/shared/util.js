@@ -1438,6 +1438,9 @@ MessageHandler.prototype = {
 
     let streamSink = {
       enqueue(chunk, size = 1) {
+        if (this.isCancelled) {
+          return;
+        }
         let lastDesiredSize = this.desiredSize;
         this.desiredSize -= size;
         // Enqueue decreases the desiredSize property of sink,
@@ -1451,6 +1454,9 @@ MessageHandler.prototype = {
       },
 
       close() {
+        if (this.isCancelled) {
+          return;
+        }
         sendStreamRequest({ stream: 'close', });
         delete self.streamSinks[streamId];
       },
@@ -1462,6 +1468,7 @@ MessageHandler.prototype = {
       sinkCapability: capability,
       onPull: null,
       onCancel: null,
+      isCancelled: false,
       desiredSize,
       ready: null,
     };
@@ -1564,6 +1571,8 @@ MessageHandler.prototype = {
           sendStreamResponse({ stream: 'cancel_complete',
                                success: false, reason, });
         });
+        this.streamSinks[data.streamId].sinkCapability.reject(data.reason);
+        this.streamSinks[data.streamId].isCancelled = true;
         delete this.streamSinks[data.streamId];
         break;
       default:
