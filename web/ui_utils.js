@@ -217,7 +217,7 @@ function parseQueryString(query) {
   for (let i = 0, ii = parts.length; i < ii; ++i) {
     let param = parts[i].split('=');
     let key = param[0].toLowerCase();
-    let value = param.length > 1 ? param[1] : null;
+    let value = param.length > 1 ? param.slice(1, param.length).join("=") : null;
     params[decodeURIComponent(key)] = decodeURIComponent(value);
   }
   return params;
