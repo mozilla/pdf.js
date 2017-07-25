@@ -1765,6 +1765,13 @@
        "rounds": 1,
        "type": "eq"
     },
+    {  "id": "issue8697",
+       "file": "pdfs/issue8697.pdf",
+       "md5": "65c6f0d861d49fa685051a64c3f78694",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "non-embedded-NuptialScript",
        "file": "pdfs/non-embedded-NuptialScript.pdf",
        "md5": "94225085d3fbf5d2d12b8be1c52bb3c1",
