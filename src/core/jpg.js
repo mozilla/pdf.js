@@ -958,12 +958,13 @@ var JpegImage = (function JpegImageClosure() {
       return data;
     },
 
-    _isColorConversionNeeded: function isColorConversionNeeded() {
-      if (this.adobe && this.adobe.transformCode) {
-        // The adobe transform marker overrides any previous setting
-        return true;
-      } else if (this.numComponents === 3) {
-        if (!this.adobe && this.colorTransform === 0) {
+    _isColorConversionNeeded() {
+      if (this.adobe) {
+        // The adobe transform marker overrides any previous setting.
+        return !!this.adobe.transformCode;
+      }
+      if (this.numComponents === 3) {
+        if (this.colorTransform === 0) {
           // If the Adobe transform marker is not present and the image
           // dictionary has a 'ColorTransform' entry, explicitly set to `0`,
           // then the colours should *not* be transformed.
@@ -972,7 +973,7 @@ var JpegImage = (function JpegImageClosure() {
         return true;
       }
       // `this.numComponents !== 3`
-      if (!this.adobe && this.colorTransform === 1) {
+      if (this.colorTransform === 1) {
         // If the Adobe transform marker is not present and the image
         // dictionary has a 'ColorTransform' entry, explicitly set to `1`,
         // then the colours should be transformed.

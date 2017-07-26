@@ -541,7 +541,9 @@ var WorkerMessageHandler = {
         if (source.chunkedViewerLoading) {
           pdfStream = new PDFWorkerStream(source, handler);
         } else {
-          assert(PDFNetworkStream, './network module is not loaded');
+          if (!PDFNetworkStream) {
+            throw new Error('./network module is not loaded');
+          }
           pdfStream = new PDFNetworkStream(data);
         }
       } catch (ex) {
@@ -769,6 +771,10 @@ var WorkerMessageHandler = {
         return pdfManager.ensureCatalog('pageLabels');
       }
     );
+
+    handler.on('GetPageMode', function wphSetupGetPageMode(data) {
+      return pdfManager.ensureCatalog('pageMode');
+    });
 
     handler.on('GetAttachments',
       function wphSetupGetAttachments(data) {
