@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { PDFNetworkStream } from '../../src/core/network';
+import { PDFNetworkStream } from '../../src/display/network';
 
 describe('network', function() {
   var pdf1 = new URL('../pdfs/tracemonkey.pdf', window.location).href;

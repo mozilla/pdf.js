@@ -21,9 +21,4 @@ var pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
 
 var pdfjsCoreWorker = require('./core/worker.js');
 
-if (typeof PDFJSDev === 'undefined' ||
-    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
-  require('./core/network.js');
-}
-
 exports.WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
