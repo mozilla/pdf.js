@@ -18,16 +18,9 @@ import { OperatorList, PartialEvaluator } from '../../src/core/evaluator';
 import { Stream, StringStream } from '../../src/core/stream';
 import { OPS } from '../../src/shared/util';
 import { WorkerTask } from '../../src/core/worker';
+import { XRefMock } from './test_utils';
 
 describe('evaluator', function() {
-  function XrefMock(queue) {
-    this.queue = queue || [];
-  }
-  XrefMock.prototype = {
-    fetchIfRef() {
-      return this.queue.shift();
-    },
-  };
   function HandlerMock() {
     this.inputs = [];
   }
@@ -63,7 +56,7 @@ describe('evaluator', function() {
   beforeAll(function(done) {
     partialEvaluator = new PartialEvaluator({
       pdfManager: new PdfManagerMock(),
-      xref: new XrefMock(),
+      xref: new XRefMock(),
       handler: new HandlerMock(),
       pageIndex: 0,
     });

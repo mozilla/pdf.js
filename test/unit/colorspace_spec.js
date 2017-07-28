@@ -13,34 +13,12 @@
  * limitations under the License.
  */
 
-import { Dict, isRef, Name, Ref } from '../../src/core/primitives';
+import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Stream, StringStream } from '../../src/core/stream';
 import { ColorSpace } from '../../src/core/colorspace';
+import { XRefMock } from './test_utils';
 
 describe('colorspace', function () {
-  class XRefMock {
-    constructor(array) {
-      this.map = Object.create(null);
-      for (let elem in array) {
-        let obj = array[elem];
-        let ref = obj.ref;
-        let data = obj.data;
-        this.map[ref.toString()] = data;
-      }
-    }
-
-    fetch(ref) {
-      return this.map[ref.toString()];
-    }
-
-    fetchIfRef(obj) {
-      if (!isRef(obj)) {
-        return obj;
-      }
-      return this.fetch(obj);
-    }
-  }
-
   describe('ColorSpace', function () {
     it('should be true if decode is not an array', function () {
       expect(ColorSpace.isDefaultDecode('string', 0)).toBeTruthy();
