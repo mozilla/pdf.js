@@ -83,7 +83,7 @@ function isPortraitOrientation(size) {
  * Simple viewer control to display PDF content/pages.
  * @implements {IRenderableView}
  */
-class PDFSinglePageViewer {
+class PDFSPViewer {
   /**
    * @param {PDFViewerOptions} options
    */
@@ -167,7 +167,7 @@ class PDFSinglePageViewer {
 
     if (!(0 < val && val <= this.pagesCount)) {
       console.error(
-        `PDFSinglePageViewer._setCurrentPageNumber: "${val}" is out of bounds.`);
+        `PDFSPViewer._setCurrentPageNumber: "${val}" is out of bounds.`);
       return;
     }
 
@@ -523,7 +523,7 @@ class PDFSinglePageViewer {
           break;
         default:
           console.error(
-            `PDFSinglePageViewer._setScale: "${value}" is an unknown zoom value.`);
+            `PDFSPViewer._setScale: "${value}" is an unknown zoom value.`);
           return;
       }
       this._setScaleUpdatePages(scale, value, noScroll, /* preset = */ true);
@@ -585,7 +585,7 @@ class PDFSinglePageViewer {
     let pageView = this._pages[pageNumber - 1];
     if (!pageView) {
       console.error(
-        'PDFSinglePageViewer.scrollPageIntoView: Invalid "pageNumber" parameter.');
+        'PDFSPViewer.scrollPageIntoView: Invalid "pageNumber" parameter.');
       return;
     }
     let x = 0, y = 0;
@@ -645,7 +645,7 @@ class PDFSinglePageViewer {
         scale = Math.min(Math.abs(widthScale), Math.abs(heightScale));
         break;
       default:
-        console.error(`PDFSinglePageViewer.scrollPageIntoView: "${dest[1].name}" ` +
+        console.error(`PDFSPViewer.scrollPageIntoView: "${dest[1].name}" ` +
                       'is not a valid destination type.');
         return;
     }
@@ -940,5 +940,5 @@ class PDFSinglePageViewer {
 
 export {
   PresentationModeState,
-  PDFSinglePageViewer,
+  PDFSPViewer,
 };

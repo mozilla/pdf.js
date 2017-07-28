@@ -1,6 +1,6 @@
 'use strict';
 
-if (!PDFJS.PDFSinglePageViewer || !PDFJS.getDocument) {
+if (!PDFJS.PDFSPViewer || !PDFJS.getDocument) {
   alert('Please build the pdfjs-dist library using\n' +
         '  `gulp dist-install`');
 }
@@ -18,7 +18,7 @@ var container = document.getElementById('viewerContainer');
 // (Optionally) enable hyperlinks within PDF files.
 var pdfLinkService = new PDFJS.PDFLinkService();
 
-var pdfSinglePageViewer = new PDFJS.PDFSinglePageViewer({
+var pdfSinglePageViewer = new PDFJS.PDFSPViewer({
   container: container,
   linkService: pdfLinkService,
 });
