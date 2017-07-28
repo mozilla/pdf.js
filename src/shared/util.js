@@ -14,7 +14,7 @@
  */
 
 import './compatibility';
-import { ReadableStream } from '../../external/streams/streams-lib';
+import { ReadableStream } from './streams_polyfill';
 
 var globalScope =
   (typeof window !== 'undefined' && window.Math === Math) ? window :
