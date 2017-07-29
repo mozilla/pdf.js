@@ -846,6 +846,11 @@ let PDFViewerApplication = {
   },
 
   progress(level) {
+    if (this.downloadComplete) {
+      // Don't accidentally show the loading bar again when the entire file has
+      // already been fetched (only an issue when disableAutoFetch is enabled).
+      return;
+    }
     let percent = Math.round(level * 100);
     // When we transition from full request to range requests, it's possible
     // that we discard some of the loaded data. This can cause the loading
