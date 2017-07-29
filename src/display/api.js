@@ -340,7 +340,14 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
     docId,
-    source,
+    source: {
+      data: source.data,
+      url: source.url,
+      password: source.password,
+      disableAutoFetch: source.disableAutoFetch,
+      rangeChunkSize: source.rangeChunkSize,
+      length: source.length,
+    },
     maxImageSize: getDefaultSetting('maxImageSize'),
     disableFontFace: getDefaultSetting('disableFontFace'),
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
