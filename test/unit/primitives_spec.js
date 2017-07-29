@@ -16,34 +16,9 @@
 import {
   Cmd, Dict, isCmd, isDict, isName, isRef, isRefsEqual, Name, Ref, RefSet
 } from '../../src/core/primitives';
+import { XRefMock } from './test_utils';
 
 describe('primitives', function() {
-  function XRefMock(array) {
-    this.map = Object.create(null);
-    for (var elem in array) {
-      var obj = array[elem];
-      var ref = obj.ref, data = obj.data;
-      this.map[ref.toString()] = data;
-    }
-  }
-  XRefMock.prototype = {
-    fetch(ref) {
-      return this.map[ref.toString()];
-    },
-    fetchIfRef(obj) {
-      if (!isRef(obj)) {
-        return obj;
-      }
-      return this.fetch(obj);
-    },
-    fetchAsync(ref) {
-      return Promise.resolve(this.fetch(ref));
-    },
-    fetchIfRefAsync(obj) {
-      return Promise.resolve(this.fetchIfRef(obj));
-    },
-  };
-
   describe('Name', function() {
     it('should retain the given name', function() {
       var givenName = 'Font';
