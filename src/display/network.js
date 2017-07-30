@@ -18,6 +18,7 @@ import {
   UnexpectedResponseException
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
+import { validateRangeRequestCapabilities } from './network_utils';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "./network" shall not ' +
@@ -351,51 +352,27 @@ function PDFNetworkStreamFullRequestReader(manager, options) {
 }
 
 PDFNetworkStreamFullRequestReader.prototype = {
-  _validateRangeRequestCapabilities: function
-      PDFNetworkStreamFullRequestReader_validateRangeRequestCapabilities() {
+  getResponseHeader(name) {
+    let fullRequestXhrId = this._fullRequestId;
+    let fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
-    if (this._disableRange) {
-      return false;
-    }
-
-    var networkManager = this._manager;
-    if (!networkManager.isHttp) {
-      return false;
-    }
-    var fullRequestXhrId = this._fullRequestId;
-    var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
-    if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
-      return false;
-    }
-
-    var contentEncoding =
-      fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
-    if (contentEncoding !== 'identity') {
-      return false;
-    }
-
-    var length = fullRequestXhr.getResponseHeader('Content-Length');
-    length = parseInt(length, 10);
-    if (!isInt(length)) {
-      return false;
-    }
-
-    this._contentLength = length; // setting right content length
-
-    if (length <= 2 * this._rangeChunkSize) {
-      // The file size is smaller than the size of two chunks, so it does
-      // not make any sense to abort the request and retry with a range
-      // request.
-      return false;
-    }
-
-    return true;
+    return fullRequestXhr.getResponseHeader(name);
   },
 
   _onHeadersReceived:
       function PDFNetworkStreamFullRequestReader_onHeadersReceived() {
+    let { allowRangeRequests, suggestedLength, } =
+      validateRangeRequestCapabilities({
+        getResponseHeader: this.getResponseHeader.bind(this),
+        isHttp: this._manager.isHttp,
+        rangeChunkSize: this._rangeChunkSize,
+        disableRange: this._disableRange,
+      });
 
-    if (this._validateRangeRequestCapabilities()) {
+    // Setting right content length.
+    this._contentLength = suggestedLength || this._contentLength;
+
+    if (allowRangeRequests) {
       this._isRangeSupported = true;
     }
 
