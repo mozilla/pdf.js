@@ -1705,6 +1705,7 @@ PDFJS.compatibilityChecked = true;
   // Does not process domain names or IP addresses.
   // Does not handle encoding for the query parameter.
   function JURL(url, base /* , encoding */) {
+    url = String(url);
     if (base !== undefined && !(base instanceof JURL)) {
       base = new JURL(String(base));
     }
