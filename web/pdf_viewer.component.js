@@ -16,7 +16,7 @@
 'use strict';
 
 var pdfjsLib = require('./pdfjs.js');
-var pdfjsWebPDFViewer = require('./base_viewer.js');
+var pdfjsWebPDFViewer = require('./pdf_viewer.js');
 var pdfjsWebPDFPageView = require('./pdf_page_view.js');
 var pdfjsWebPDFLinkService = require('./pdf_link_service.js');
 var pdfjsWebTextLayerBuilder = require('./text_layer_builder.js');

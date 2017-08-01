@@ -17,7 +17,7 @@
 import {
   animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
   MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, ProgressBar, RendererType
+  parseQueryString, PresentationModeState, ProgressBar, RendererType
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -27,7 +27,6 @@ import {
 import { CursorTool, PDFCursorTools } from './pdf_cursor_tools';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { PDFSidebar, SidebarView } from './pdf_sidebar';
-import { PDFViewer, PresentationModeState } from './base_viewer';
 import { getGlobalEventBus } from './dom_events';
 import { OverlayManager } from './overlay_manager';
 import { PasswordPrompt } from './password_prompt';
@@ -40,6 +39,7 @@ import { PDFLinkService } from './pdf_link_service';
 import { PDFOutlineViewer } from './pdf_outline_viewer';
 import { PDFPresentationMode } from './pdf_presentation_mode';
 import { PDFThumbnailViewer } from './pdf_thumbnail_viewer';
+import { PDFViewer } from './pdf_viewer';
 import { SecondaryToolbar } from './secondary_toolbar';
 import { Toolbar } from './toolbar';
 import { ViewHistory } from './view_history';
