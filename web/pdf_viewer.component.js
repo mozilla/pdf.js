@@ -17,6 +17,7 @@
 
 var pdfjsLib = require('./pdfjs.js');
 var pdfjsWebPDFViewer = require('./pdf_viewer.js');
+var pdfjsWebPDFSinglePageViewer = require('./pdf_single_page_viewer');
 var pdfjsWebPDFPageView = require('./pdf_page_view.js');
 var pdfjsWebPDFLinkService = require('./pdf_link_service.js');
 var pdfjsWebTextLayerBuilder = require('./text_layer_builder.js');
@@ -30,6 +31,7 @@ var pdfjsWebGenericL10n = require('./genericl10n.js');
 var PDFJS = pdfjsLib.PDFJS;
 
 PDFJS.PDFViewer = pdfjsWebPDFViewer.PDFViewer;
+PDFJS.PDFSinglePageViewer = pdfjsWebPDFSinglePageViewer.PDFSinglePageViewer;
 PDFJS.PDFPageView = pdfjsWebPDFPageView.PDFPageView;
 PDFJS.PDFLinkService = pdfjsWebPDFLinkService.PDFLinkService;
 PDFJS.SimpleLinkService = pdfjsWebPDFLinkService.SimpleLinkService;
