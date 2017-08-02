@@ -28,6 +28,13 @@ describe('CFFParser', function() {
     return result;
   }
 
+  // Stub that returns `0` for any privateDict key.
+  var privateDictStub = {
+    getByName(name) {
+      return 0;
+    },
+  };
+
   var fontData, parser, cff;
 
   beforeAll(function (done) {
@@ -163,7 +170,10 @@ describe('CFFParser', function() {
                               ]);
     parser.bytes = bytes;
     var charStringsIndex = parser.parseIndex(0).obj;
-    var charStrings = parser.parseCharStrings(charStringsIndex).charStrings;
+    var charStrings = parser.parseCharStrings({
+      charStrings: charStringsIndex,
+      privateDict: privateDictStub,
+    }).charStrings;
     expect(charStrings.count).toEqual(1);
     // shoudn't be sanitized
     expect(charStrings.get(0).length).toEqual(38);
@@ -180,7 +190,10 @@ describe('CFFParser', function() {
                                 237, 247, 22, 247, 72, 204, 247, 86, 14]);
     parser.bytes = bytes;
     var charStringsIndex = parser.parseIndex(0).obj;
-    var result = parser.parseCharStrings(charStringsIndex);
+    var result = parser.parseCharStrings({
+      charStrings: charStringsIndex,
+      privateDict: privateDictStub,
+    });
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0).length).toEqual(1);
     expect(result.seacs.length).toEqual(1);
@@ -202,7 +215,10 @@ describe('CFFParser', function() {
                                 237, 247, 22, 247, 72, 204, 247, 86, 14]);
     parser.bytes = bytes;
     var charStringsIndex = parser.parseIndex(0).obj;
-    var result = parser.parseCharStrings(charStringsIndex);
+    var result = parser.parseCharStrings({
+      charStrings: charStringsIndex,
+      privateDict: privateDictStub,
+    });
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0).length).toEqual(9);
     expect(result.seacs.length).toEqual(0);
@@ -215,7 +231,10 @@ describe('CFFParser', function() {
                                 14]);
     parser.bytes = bytes;
     var charStringsIndex = parser.parseIndex(0).obj;
-    var result = parser.parseCharStrings(charStringsIndex);
+    var result = parser.parseCharStrings({
+      charStrings: charStringsIndex,
+      privateDict: privateDictStub,
+    });
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0)[0]).toEqual(14);
     expect(result.seacs.length).toEqual(0);
