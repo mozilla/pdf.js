@@ -345,8 +345,11 @@ var Page = (function PageClosure() {
         return AnnotationWorkerTask;
       })();
 
+      // create a blank annotation fonts array
+      // if it's not initialized yet
       if (this.pdfManager && this.pdfManager.pdfDocument &&
-          this.pdfManager.pdfDocument.acroForm) {
+          this.pdfManager.pdfDocument.acroForm &&
+          !this.pdfManager.pdfDocument.acroForm.annotationFonts) {
         this.pdfManager.pdfDocument.acroForm.annotationFonts = [];
       }
 
