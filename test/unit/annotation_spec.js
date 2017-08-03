@@ -20,31 +20,12 @@ import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
   AnnotationType, stringToBytes, stringToUTF8String
 } from '../../src/shared/util';
-import { Dict, isRef, Name, Ref } from '../../src/core/primitives';
+import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Lexer, Parser } from '../../src/core/parser';
 import { StringStream } from '../../src/core/stream';
+import { XRefMock } from './test_utils';
 
 describe('annotation', function() {
-  function XRefMock(array) {
-    this.map = Object.create(null);
-    for (var elem in array) {
-      var obj = array[elem];
-      var ref = obj.ref, data = obj.data;
-      this.map[ref.toString()] = data;
-    }
-  }
-  XRefMock.prototype = {
-    fetch(ref) {
-      return this.map[ref.toString()];
-    },
-    fetchIfRef(obj) {
-      if (!isRef(obj)) {
-        return obj;
-      }
-      return this.fetch(obj);
-    },
-  };
-
   function PDFManagerMock(params) {
     this.docBaseUrl = params.docBaseUrl || null;
   }

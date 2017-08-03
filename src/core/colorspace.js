@@ -1111,11 +1111,7 @@ var CalRGBCS = (function CalRGBCSClosure() {
   }
 
   CalRGBCS.prototype = {
-    getRgb: function CalRGBCS_getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
+    getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function CalRGBCS_getRgbItem(src, srcOffset,
                                              dest, destOffset) {
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);

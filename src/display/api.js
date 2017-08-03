@@ -15,7 +15,7 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
+  assert, createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
   info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
   loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
   PageViewport, PasswordException, StatTimer, stringToBytes,
@@ -28,6 +28,7 @@ import {
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
 import { Metadata } from './metadata';
+import { PDFDataTransportStream } from './transport_stream';
 
 var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
 
@@ -78,6 +79,17 @@ if (typeof PDFJSDev !== 'undefined' &&
       callback(worker.WorkerMessageHandler);
     });
   }) : null;
+}
+
+/** @type IPDFStream */
+var PDFNetworkStream;
+
+/**
+ * Sets PDFNetworkStream class to be used as alternative PDF data transport.
+ * @param {IPDFStream} cls - the PDF data transport.
+ */
+function setPDFNetworkStreamClass(cls) {
+  PDFNetworkStream = cls;
 }
 
 /**
@@ -281,8 +293,20 @@ function getDocument(src, pdfDataRangeTransport,
       if (task.destroyed) {
         throw new Error('Loading aborted');
       }
+
+      let networkStream;
+      if (rangeTransport) {
+        networkStream = new PDFDataTransportStream(params, rangeTransport);
+      } else if (!params.data) {
+        networkStream = new PDFNetworkStream({
+          source: params,
+          disableRange: getDefaultSetting('disableRange'),
+        });
+      }
+
       var messageHandler = new MessageHandler(docId, workerId, worker.port);
-      var transport = new WorkerTransport(messageHandler, task, rangeTransport,
+      messageHandler.postMessageTransfers = worker.postMessageTransfers;
+      var transport = new WorkerTransport(messageHandler, task, networkStream,
                                           CMapReaderFactory);
       task._transport = transport;
       messageHandler.send('Ready', null);
@@ -316,8 +340,14 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
     docId,
-    source,
-    disableRange: getDefaultSetting('disableRange'),
+    source: {
+      data: source.data,
+      url: source.url,
+      password: source.password,
+      disableAutoFetch: source.disableAutoFetch,
+      rangeChunkSize: source.rangeChunkSize,
+      length: source.length,
+    },
     maxImageSize: getDefaultSetting('maxImageSize'),
     disableFontFace: getDefaultSetting('disableFontFace'),
     disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
@@ -1238,9 +1268,7 @@ var PDFWorker = (function PDFWorkerClosure() {
     // pdf.worker.js file is needed.
     if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
       if (typeof SystemJS === 'object') {
-        Promise.all([SystemJS.import('pdfjs/core/network'),
-                     SystemJS.import('pdfjs/core/worker')]).then((modules) => {
-          var worker = modules[1];
+        SystemJS.import('pdfjs/core/worker').then((worker) => {
           WorkerMessageHandler = worker.WorkerMessageHandler;
           fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
         });
@@ -1254,7 +1282,6 @@ var PDFWorker = (function PDFWorkerClosure() {
       }
     } else if (PDFJSDev.test('SINGLE_FILE')) {
       var pdfjsCoreWorker = require('../core/worker.js');
-      require('../core/network.js');
       WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
       fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
     } else {
@@ -1285,6 +1312,7 @@ var PDFWorker = (function PDFWorkerClosure() {
 
     this.name = name;
     this.destroyed = false;
+    this.postMessageTransfers = true;
 
     this._readyCapability = createPromiseCapability();
     this._port = null;
@@ -1381,6 +1409,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               this._port = worker;
               this._webWorker = worker;
               if (!data.supportTransfers) {
+                this.postMessageTransfers = false;
                 isPostMessageTransfersDisabled = true;
               }
               this._readyCapability.resolve();
@@ -1513,11 +1542,10 @@ var PDFWorker = (function PDFWorkerClosure() {
  * @ignore
  */
 var WorkerTransport = (function WorkerTransportClosure() {
-  function WorkerTransport(messageHandler, loadingTask, pdfDataRangeTransport,
+  function WorkerTransport(messageHandler, loadingTask, networkStream,
                            CMapReaderFactory) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
-    this.pdfDataRangeTransport = pdfDataRangeTransport;
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader(loadingTask.docId);
     this.CMapReaderFactory = new CMapReaderFactory({
@@ -1528,6 +1556,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
     this.destroyed = false;
     this.destroyCapability = null;
     this._passwordCapability = null;
+
+    this._networkStream = networkStream;
+    this._fullReader = null;
+    this._lastProgress = null;
 
     this.pageCache = [];
     this.pagePromises = [];
@@ -1564,10 +1596,10 @@ var WorkerTransport = (function WorkerTransportClosure() {
       waitOn.push(terminated);
       Promise.all(waitOn).then(() => {
         this.fontLoader.clear();
-        if (this.pdfDataRangeTransport) {
-          this.pdfDataRangeTransport.abort();
-          this.pdfDataRangeTransport = null;
+        if (this._networkStream) {
+          this._networkStream.cancelAllRequests();
         }
+
         if (this.messageHandler) {
           this.messageHandler.destroy();
           this.messageHandler = null;
@@ -1581,32 +1613,92 @@ var WorkerTransport = (function WorkerTransportClosure() {
       var messageHandler = this.messageHandler;
       var loadingTask = this.loadingTask;
 
-      var pdfDataRangeTransport = this.pdfDataRangeTransport;
-      if (pdfDataRangeTransport) {
-        pdfDataRangeTransport.addRangeListener(function(begin, chunk) {
-          messageHandler.send('OnDataRange', {
-            begin,
-            chunk,
+      messageHandler.on('GetReader', function(data, sink) {
+        assert(this._networkStream);
+        this._fullReader = this._networkStream.getFullReader();
+        this._fullReader.onProgress = (evt) => {
+          this._lastProgress = {
+            loaded: evt.loaded,
+            total: evt.total,
+          };
+        };
+        sink.onPull = () => {
+          this._fullReader.read().then(function({ value, done, }) {
+            if (done) {
+              sink.close();
+              return;
+            }
+            assert(isArrayBuffer(value));
+            // Enqueue data chunk into sink, and transfer it
+            // to other side as `Transferable` object.
+            sink.enqueue(new Uint8Array(value), 1, [value]);
+          }).catch((reason) => {
+            sink.error(reason);
           });
-        });
+        };
 
-        pdfDataRangeTransport.addProgressListener(function(loaded) {
-          messageHandler.send('OnDataProgress', {
-            loaded,
+        sink.onCancel = (reason) => {
+          this._fullReader.cancel(reason);
+        };
+      }, this);
+
+      messageHandler.on('ReaderHeadersReady', function(data) {
+        let headersCapability = createPromiseCapability();
+        let fullReader = this._fullReader;
+        fullReader.headersReady.then(() => {
+          // If stream or range are disabled, it's our only way to report
+          // loading progress.
+          if (!fullReader.isStreamingSupported ||
+              !fullReader.isRangeSupported) {
+            if (this._lastProgress) {
+              let loadingTask = this.loadingTask;
+              if (loadingTask.onProgress) {
+                loadingTask.onProgress(this._lastProgress);
+              }
+            }
+            fullReader.onProgress = (evt) => {
+              let loadingTask = this.loadingTask;
+              if (loadingTask.onProgress) {
+                loadingTask.onProgress({
+                  loaded: evt.loaded,
+                  total: evt.total,
+                });
+              }
+            };
+          }
+
+          headersCapability.resolve({
+            isStreamingSupported: fullReader.isStreamingSupported,
+            isRangeSupported: fullReader.isRangeSupported,
+            contentLength: fullReader.contentLength,
           });
-        });
+        }, headersCapability.reject);
 
-        pdfDataRangeTransport.addProgressiveReadListener(function(chunk) {
-          messageHandler.send('OnDataRange', {
-            chunk,
+        return headersCapability.promise;
+      }, this);
+
+      messageHandler.on('GetRangeReader', function(data, sink) {
+        assert(this._networkStream);
+        let _rangeReader =
+          this._networkStream.getRangeReader(data.begin, data.end);
+
+        sink.onPull = () => {
+          _rangeReader.read().then(function({ value, done, }) {
+            if (done) {
+              sink.close();
+              return;
+            }
+            assert(isArrayBuffer(value));
+            sink.enqueue(new Uint8Array(value), 1, [value]);
+          }).catch((reason) => {
+            sink.error(reason);
           });
-        });
+        };
 
-        messageHandler.on('RequestDataRange',
-          function transportDataRange(data) {
-            pdfDataRangeTransport.requestDataRange(data.begin, data.end);
-          }, this);
-      }
+        sink.onCancel = (reason) => {
+          _rangeReader.cancel(reason);
+        };
+      }, this);
 
       messageHandler.on('GetDoc', function transportDoc(data) {
         var pdfInfo = data.pdfInfo;
@@ -1668,9 +1760,6 @@ var WorkerTransport = (function WorkerTransportClosure() {
       }, this);
 
       messageHandler.on('PDFManagerReady', function transportPage(data) {
-        if (this.pdfDataRangeTransport) {
-          this.pdfDataRangeTransport.transportReady();
-        }
       }, this);
 
       messageHandler.on('StartRenderPage', function transportRender(data) {
@@ -2335,6 +2424,7 @@ export {
   PDFWorker,
   PDFDocumentProxy,
   PDFPageProxy,
+  setPDFNetworkStreamClass,
   _UnsupportedManager,
   version,
   build,
