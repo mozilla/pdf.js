@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
-import { isInt } from '../shared/util';
+import { assert, isInt } from '../shared/util';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
+  assert(rangeChunkSize > 0);
   let returnValues = {
     allowRangeRequests: false,
     suggestedLength: undefined,

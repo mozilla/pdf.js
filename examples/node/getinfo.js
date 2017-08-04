@@ -17,11 +17,10 @@ var pdfjsLib = require('pdfjs-dist');
 
 // Loading file from file system into typed array
 var pdfPath = process.argv[2] || '../../web/compressed.tracemonkey-pldi-09.pdf';
-var data = new Uint8Array(fs.readFileSync(pdfPath));
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-pdfjsLib.getDocument(data).then(function (doc) {
+pdfjsLib.getDocument(pdfPath).then(function (doc) {
   var numPages = doc.numPages;
   console.log('# Document Loaded');
   console.log('Number of Pages: ' + numPages);
