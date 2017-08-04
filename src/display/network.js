@@ -14,7 +14,7 @@
  */
 
 import {
-  assert, createPromiseCapability, isInt, MissingPDFException,
+  assert, createPromiseCapability, MissingPDFException,
   UnexpectedResponseException
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
@@ -352,18 +352,16 @@ function PDFNetworkStreamFullRequestReader(manager, options) {
 }
 
 PDFNetworkStreamFullRequestReader.prototype = {
-  getResponseHeader(name) {
-    let fullRequestXhrId = this._fullRequestId;
-    let fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
-
-    return fullRequestXhr.getResponseHeader(name);
-  },
-
   _onHeadersReceived:
       function PDFNetworkStreamFullRequestReader_onHeadersReceived() {
+    var fullRequestXhrId = this._fullRequestId;
+    var fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
+
     let { allowRangeRequests, suggestedLength, } =
       validateRangeRequestCapabilities({
-        getResponseHeader: this.getResponseHeader.bind(this),
+        getResponseHeader: (name) => {
+          return fullRequestXhr.getResponseHeader(name);
+        },
         isHttp: this._manager.isHttp,
         rangeChunkSize: this._rangeChunkSize,
         disableRange: this._disableRange,
@@ -377,7 +375,6 @@ PDFNetworkStreamFullRequestReader.prototype = {
     }
 
     var networkManager = this._manager;
-    var fullRequestXhrId = this._fullRequestId;
     if (networkManager.isStreamingRequest(fullRequestXhrId)) {
       // We can continue fetching when progressive loading is enabled,
       // and we don't need the autoFetch feature.
