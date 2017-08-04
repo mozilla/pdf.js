@@ -341,7 +341,7 @@ class PDFViewer {
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
-    return firstPagePromise.then((pdfPage) => {
+    firstPagePromise.then((pdfPage) => {
       let scale = this.currentScale;
       let viewport = pdfPage.getViewport(scale * CSS_UNITS);
       for (let pageNum = 1; pageNum <= pagesCount; ++pageNum) {
@@ -387,6 +387,12 @@ class PDFViewer {
             if (--getPagesLeft === 0) {
               pagesCapability.resolve();
             }
+          }, (reason) => {
+            console.error(`Unable to get page ${pageNum} to initialize viewer`,
+                          reason);
+            if (--getPagesLeft === 0) {
+              pagesCapability.resolve();
+            }
           });
         }
       });
@@ -400,6 +406,8 @@ class PDFViewer {
       if (this.findController) {
         this.findController.resolveFirstPage();
       }
+    }).catch((reason) => {
+      console.error('Unable to initialize viewer', reason);
     });
   }
 
@@ -838,6 +846,10 @@ class PDFViewer {
       }
       this._pagesRequests[pageNumber] = null;
       return pdfPage;
+    }).catch((reason) => {
+      console.error('Unable to get page for page view', reason);
+      // Page error -- there is nothing can be done.
+      this._pagesRequests[pageNumber] = null;
     });
     this._pagesRequests[pageNumber] = promise;
     return promise;

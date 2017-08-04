@@ -251,6 +251,11 @@ class PDFFindController {
           // Store the pageContent as a string.
           this.pageContents[i] = strBuf.join('');
           extractTextCapability.resolve(i);
+        }, (reason) => {
+          console.error(`Unable to get page ${i + 1} text content`, reason);
+          // Page error -- assuming no text content.
+          this.pageContents[i] = '';
+          extractTextCapability.resolve(i);
         });
       });
     }
