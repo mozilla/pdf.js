@@ -500,6 +500,21 @@ let FormatError = (function FormatErrorClosure() {
   return FormatError;
 })();
 
+/**
+ * Error used to indicate task cancellation.
+ */
+let AbortException = (function AbortExceptionClosure() {
+  function AbortException(msg) {
+    this.name = 'AbortException';
+    this.message = msg;
+  }
+
+  AbortException.prototype = new Error();
+  AbortException.constructor = AbortException;
+
+  return AbortException;
+})();
+
 var NullCharactersRegExp = /\x00/g;
 
 function removeNullCharacters(str) {
@@ -1227,6 +1242,8 @@ function wrapReason(reason) {
     return reason;
   }
   switch (reason.name) {
+    case 'AbortException':
+      return new AbortException(reason.message);
     case 'MissingPDFException':
       return new MissingPDFException(reason.message);
     case 'UnexpectedResponseException':
@@ -1273,7 +1290,7 @@ function MessageHandler(sourceName, targetName, comObj) {
         let callback = callbacksCapabilities[callbackId];
         delete callbacksCapabilities[callbackId];
         if ('error' in data) {
-          callback.reject(data.error);
+          callback.reject(wrapReason(data.error));
         } else {
           callback.resolve(data.data);
         }
@@ -1651,6 +1668,7 @@ export {
   FontType,
   ImageKind,
   CMapCompressionType,
+  AbortException,
   InvalidPDFException,
   MessageHandler,
   MissingDataException,

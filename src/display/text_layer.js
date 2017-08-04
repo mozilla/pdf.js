@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createPromiseCapability, Util } from '../shared/util';
+import { AbortException, createPromiseCapability, Util } from '../shared/util';
 import { CustomStyle, getDefaultSetting } from './dom_utils';
 
 /**
@@ -498,7 +498,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
 
     cancel: function TextLayer_cancel() {
       if (this._reader) {
-        this._reader.cancel();
+        this._reader.cancel(new AbortException('text layer task cancelled'));
         this._reader = null;
       }
       this._canceled = true;

@@ -14,10 +14,10 @@
  */
 
 import {
-  assert, CMapCompressionType, createPromiseCapability, FONT_IDENTITY_MATRIX,
-  FormatError, getLookupTableFactory, IDENTITY_MATRIX, ImageKind, info, isArray,
-  isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
-  UNSUPPORTED_FEATURES, Util, warn
+  AbortException, assert, CMapCompressionType, createPromiseCapability,
+  FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
+  ImageKind, info, isArray, isNum, isString, NativeImageDecoding, OPS,
+  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import { DecodeStream, JpegStream, Stream } from './stream';
@@ -1744,6 +1744,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         enqueueChunk();
         resolve();
       }).catch((reason) => {
+        if (reason instanceof AbortException) {
+          return;
+        }
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
           warn('getTextContent - ignoring errors during task: ' + task.name);
