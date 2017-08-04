@@ -56,6 +56,7 @@ class PDFPageView {
     this.id = options.id;
     this.renderingId = 'page' + this.id;
 
+    this.pdfPage = null;
     this.pageLabel = null;
     this.rotation = 0;
     this.scale = options.scale || DEFAULT_SCALE;
@@ -110,6 +111,7 @@ class PDFPageView {
     this.reset();
     if (this.pdfPage) {
       this.pdfPage.cleanup();
+      this.pdfPage = null;
     }
   }
 
@@ -339,6 +341,11 @@ class PDFPageView {
     if (this.renderingState !== RenderingStates.INITIAL) {
       console.error('Must be in new state before drawing');
       this.reset(); // Ensure that we reset all state to prevent issues.
+    }
+
+    if (!this.pdfPage) {
+      this.renderingState = RenderingStates.FINISHED;
+      return Promise.reject(new Error('Page is not loaded'));
     }
 
     this.renderingState = RenderingStates.RUNNING;
