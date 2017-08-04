@@ -1353,6 +1353,13 @@ var Font = (function FontClosure() {
           var offset = font.getInt32() >>> 0;
           var useTable = false;
 
+          // Sometimes there are multiple of the same type of table. Default
+          // to choosing the first table and skip the rest.
+          if (potentialTable && potentialTable.platformId === platformId &&
+              potentialTable.encodingId === encodingId) {
+            continue;
+          }
+
           if (platformId === 0 && encodingId === 0) {
             useTable = true;
             // Continue the loop since there still may be a higher priority
@@ -2393,11 +2400,9 @@ var Font = (function FontClosure() {
               if (cmapMappings[i].charCode !== unicodeOrCharCode) {
                 continue;
               }
-              if (hasGlyph(cmapMappings[i].glyphId)) {
-                charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
-                found = true;
-                break;
-              }
+              charCodeToGlyphId[charCode] = cmapMappings[i].glyphId;
+              found = true;
+              break;
             }
             if (!found && properties.glyphNames) {
               // Try to map using the post table.
