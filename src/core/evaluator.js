@@ -915,9 +915,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           switch (fn | 0) {
             case OPS.paintXObject:
-              if (args[0].code) {
-                break;
-              }
               // eagerly compile XForm objects
               var name = args[0].name;
               if (!name) {
@@ -1631,10 +1628,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             case OPS.paintXObject:
               flushTextContentItem();
-              if (args[0].code) {
-                break;
-              }
-
               if (!xobjs) {
                 xobjs = (resources.get('XObject') || Dict.empty);
               }
