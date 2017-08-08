@@ -2459,7 +2459,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         capHeight: descriptor.get('CapHeight'),
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
-        coded: false,
+        isType3Font: false,
       };
 
       var cMapPromise;
