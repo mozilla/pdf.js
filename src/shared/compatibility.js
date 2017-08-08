@@ -24,7 +24,8 @@ if ((typeof PDFJSDev === 'undefined' ||
 var globalScope =
   (typeof window !== 'undefined' && window.Math === Math) ? window :
   (typeof global !== 'undefined' && global.Math === Math) ? global :
-  (typeof self !== 'undefined' && self.Math === Math) ? self : this;
+  (typeof self !== 'undefined' && self.Math === Math) ? self :
+  (typeof this !== 'undefined' && this.Math === Math) ? this : {};
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
