@@ -3618,5 +3618,12 @@
        "md5": "ced0e2d88cfd5b4d3a55d937ea288af1",
        "rounds": 1,
        "type": "eq"
+    },
+    {  "id": "pr8491",
+       "file": "pdfs/pr8491.pdf",
+       "md5": "36ea2e28cd77e9e70731f574ab27cbe0",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
     }
 ]
