@@ -14,10 +14,10 @@
  */
 
 import {
-  assert, CMapCompressionType, createPromiseCapability, FONT_IDENTITY_MATRIX,
-  FormatError, getLookupTableFactory, IDENTITY_MATRIX, ImageKind, info, isArray,
-  isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
-  UNSUPPORTED_FEATURES, Util, warn
+  AbortException, assert, CMapCompressionType, createPromiseCapability,
+  FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
+  ImageKind, info, isArray, isNum, isString, NativeImageDecoding, OPS,
+  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import { DecodeStream, JpegStream, Stream } from './stream';
@@ -915,9 +915,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
           switch (fn | 0) {
             case OPS.paintXObject:
-              if (args[0].code) {
-                break;
-              }
               // eagerly compile XForm objects
               var name = args[0].name;
               if (!name) {
@@ -1631,10 +1628,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               break;
             case OPS.paintXObject:
               flushTextContentItem();
-              if (args[0].code) {
-                break;
-              }
-
               if (!xobjs) {
                 xobjs = (resources.get('XObject') || Dict.empty);
               }
@@ -1744,6 +1737,9 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         enqueueChunk();
         resolve();
       }).catch((reason) => {
+        if (reason instanceof AbortException) {
+          return;
+        }
         if (this.options.ignoreErrors) {
           // Error(s) in the TextContent -- allow text-extraction to continue.
           warn('getTextContent - ignoring errors during task: ' + task.name);
@@ -2463,7 +2459,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         capHeight: descriptor.get('CapHeight'),
         flags: descriptor.get('Flags'),
         italicAngle: descriptor.get('ItalicAngle'),
-        coded: false,
+        isType3Font: false,
       };
 
       var cMapPromise;
