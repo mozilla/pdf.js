@@ -18,6 +18,8 @@ import { getGlobalEventBus } from './dom_events';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
 const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
+// Heuristic value used when adding the current position to the browser history.
+const POSITION_UPDATED_THRESHOLD = 50;
 // Heuristic value used when adding a temporary position to the browser history.
 const UPDATE_VIEWAREA_TIMEOUT = 2000; // milliseconds
 
@@ -63,11 +65,15 @@ class PDFHistory {
 
     this._boundEvents = Object.create(null);
     this._isViewerInPresentationMode = false;
+    this._isPagesLoaded = false;
 
-    // Ensure that we don't miss a 'presentationmodechanged' event, by
-    // registering the listener immediately.
+    // Ensure that we don't miss either a 'presentationmodechanged' or a
+    // 'pagesloaded' event, by registering the listeners immediately.
     this.eventBus.on('presentationmodechanged', (evt) => {
       this._isViewerInPresentationMode = evt.active || evt.switchInProgress;
+    });
+    this.eventBus.on('pagesloaded', (evt) => {
+      this._isPagesLoaded = !!evt.pagesCount;
     });
   }
 
@@ -97,6 +103,7 @@ class PDFHistory {
     this._popStateInProgress = false;
     this._blockHashChange = 0;
     this._currentHash = getCurrentHash();
+    this._numPositionUpdates = 0;
 
     this._currentUid = this._uid = 0;
     this._destination = null;
@@ -299,7 +306,9 @@ class PDFHistory {
     if (this._destination.hash === position.hash) {
       return; // The current document position has not changed.
     }
-    if (!this._destination.page) {
+    if (!this._destination.page &&
+        (POSITION_UPDATED_THRESHOLD <= 0 ||
+         this._numPositionUpdates <= POSITION_UPDATED_THRESHOLD)) {
       // `this._destination` was set through the user changing the hash of
       // the document. Do not add `this._position` to the browser history,
       // to avoid "flooding" it with lots of (nearly) identical entries,
@@ -357,6 +366,8 @@ class PDFHistory {
     this._destination = destination;
     this._currentUid = uid;
     this._uid = this._currentUid + 1;
+    // This should always be reset when `this._destination` is updated.
+    this._numPositionUpdates = 0;
   }
 
   /**
@@ -377,6 +388,19 @@ class PDFHistory {
 
     if (this._popStateInProgress) {
       return;
+    }
+
+    if (POSITION_UPDATED_THRESHOLD > 0 && this._isPagesLoaded &&
+        this._destination && !this._destination.page) {
+      // If the current destination was set through the user changing the hash
+      // of the document, we will usually not try to push the current position
+      // to the browser history; see `this._tryPushCurrentPosition()`.
+      //
+      // To prevent `this._tryPushCurrentPosition()` from effectively being
+      // reduced to a no-op in this case, we will assume that the position
+      // *did* in fact change if the 'updateviewarea' event was dispatched
+      // more than `POSITION_UPDATED_THRESHOLD` times.
+      this._numPositionUpdates++;
     }
 
     if (UPDATE_VIEWAREA_TIMEOUT > 0) {
