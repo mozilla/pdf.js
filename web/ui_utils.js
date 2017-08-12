@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { PDFJS } from 'pdfjs-lib';
+import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 
 const CSS_UNITS = 96.0 / 72.0;
 const DEFAULT_SCALE_VALUE = 'auto';
@@ -453,6 +453,62 @@ function cloneObj(obj) {
   return result;
 }
 
+const WaitOnType = {
+  EVENT: 'event',
+  TIMEOUT: 'timeout',
+};
+
+/**
+ * @typedef {Object} WaitOnEventOrTimeoutParameters
+ * @property {Object} target - The event target, can for example be:
+ *   `window`, `document`, a DOM element, or an {EventBus} instance.
+ * @property {string} name - The name of the event.
+ * @property {number} delay - The delay, in milliseconds, after which the
+ *   timeout occurs (if the event wasn't already dispatched).
+ */
+
+/**
+ * Allows waiting for an event or a timeout, whichever occurs first.
+ * Can be used to ensure that an action always occurs, even when an event
+ * arrives late or not at all.
+ *
+ * @param {WaitOnEventOrTimeoutParameters}
+ * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
+ */
+function waitOnEventOrTimeout({ target, name, delay = 0, }) {
+  if (typeof target !== 'object' || !(name && typeof name === 'string') ||
+      !(Number.isInteger(delay) && delay >= 0)) {
+    return Promise.reject(
+      new Error('waitOnEventOrTimeout - invalid paramaters.'));
+  }
+  let capability = createPromiseCapability();
+
+  function handler(type) {
+    if (target instanceof EventBus) {
+      target.off(name, eventHandler);
+    } else {
+      target.removeEventListener(name, eventHandler);
+    }
+
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+    capability.resolve(type);
+  }
+
+  let eventHandler = handler.bind(null, WaitOnType.EVENT);
+  if (target instanceof EventBus) {
+    target.on(name, eventHandler);
+  } else {
+    target.addEventListener(name, eventHandler);
+  }
+
+  let timeoutHandler = handler.bind(null, WaitOnType.TIMEOUT);
+  let timeout = setTimeout(timeoutHandler, delay);
+
+  return capability.promise;
+}
+
 /**
  * Promise that is resolved when DOM window becomes visible.
  */
@@ -618,4 +674,6 @@ export {
   normalizeWheelEventDelta,
   animationStarted,
   localized,
+  WaitOnType,
+  waitOnEventOrTimeout,
 };
