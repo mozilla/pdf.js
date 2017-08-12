@@ -455,7 +455,7 @@ var TextWidgetAnnotationElement = (
           element.setAttribute('value', this.data.fieldValue);
         }
 
-        element.name = this.data.fieldName;
+        element.name = encodeURIComponent(this.data.fieldName);
 
         element.disabled = this.data.readOnly;
 
@@ -514,8 +514,15 @@ var TextWidgetAnnotationElement = (
         function TextWidgetAnnotationElement_setTextStyle(element, font) {
       // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
       var style = element.style;
-      style.color = this.data.fontColor;
-      style.fontSize = this.data.fontSize + 'px';
+
+      if (this.data.fontColor) {
+        style.color = this.data.fontColor;
+      }
+
+      if (this.data.fontSize) {
+        style.fontSize = this.data.fontSize + 'px';
+      }
+
       style.direction = (this.data.fontDirection < 0 ? 'rtl' : 'ltr');
 
       if (!font) {
@@ -561,7 +568,7 @@ var CheckboxWidgetAnnotationElement =
       this.container.className = 'buttonWidgetAnnotation checkBox';
 
       var element = document.createElement('input');
-      element.name = this.data.fieldName;
+      element.name = encodeURIComponent(this.data.fieldName);
       element.disabled = this.data.readOnly;
       element.type = 'checkbox';
       if (this.data.fieldValue && this.data.fieldValue !== 'Off') {
@@ -600,10 +607,9 @@ var RadioButtonWidgetAnnotationElement =
       this.container.className = 'buttonWidgetAnnotation radioButton';
 
       var element = document.createElement('input');
-      element.name = this.data.fieldName;
+      element.name = encodeURIComponent(this.data.fieldName);
       element.disabled = this.data.readOnly;
       element.type = 'radio';
-      element.name = this.data.fieldName;
       if (this.data.fieldValue === this.data.buttonValue) {
         element.setAttribute('checked', true);
       }
@@ -640,12 +646,18 @@ var ChoiceWidgetAnnotationElement = (
       this.container.className = 'choiceWidgetAnnotation';
 
       var selectElement = document.createElement('select');
-      selectElement.name = this.data.fieldName;
+      selectElement.name = encodeURIComponent(this.data.fieldName);
       selectElement.disabled = this.data.readOnly;
 
       var style = selectElement.style;
-      style.color = this.data.fontColor;
-      style.fontSize = this.data.fontSize + 'px';
+
+      if (this.data.fontColor) {
+        style.color = this.data.fontColor;
+      }
+
+      if (this.data.fontSize) {
+        style.fontSize = this.data.fontSize + 'px';
+      }
 
       if (this.data.fontRefName) {
         var fonts = this.data.annotationFonts;
