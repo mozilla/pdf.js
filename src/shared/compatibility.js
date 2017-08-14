@@ -53,6 +53,12 @@ PDFJS.compatibilityChecked = true;
 // Checking if the typed arrays are supported
 // Support: iOS<6.0 (subarray), IE<10, Android<4.0
 (function checkTypedArrayCompatibility() {
+  if (typeof Uint8ClampedArray === 'undefined') {
+    // Support: IE<11
+    globalScope.Uint8ClampedArray =
+      require('core-js/fn/typed/uint8-clamped-array');
+  }
+
   if (typeof Uint8Array !== 'undefined') {
     // Support: iOS<6.0
     if (typeof Uint8Array.prototype.subarray === 'undefined') {
