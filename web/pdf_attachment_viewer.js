@@ -35,13 +35,12 @@ class PDFAttachmentViewer {
    * @param {PDFAttachmentViewerOptions} options
    */
   constructor({ container, eventBus, downloadManager, }) {
-    this.attachments = null;
-
     this.container = container;
     this.eventBus = eventBus;
     this.downloadManager = downloadManager;
 
-    this._renderedCapability = createPromiseCapability();
+    this.reset();
+
     this.eventBus.on('fileattachmentannotation',
       this._appendAttachment.bind(this));
   }
