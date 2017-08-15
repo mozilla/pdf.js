@@ -1386,7 +1386,7 @@ var JpxImage = (function JpxImageClosure() {
         transformedTiles[c] = transformTile(context, tile, c);
       }
       var tile0 = transformedTiles[0];
-      var out = new Uint8Array(tile0.items.length * componentsCount);
+      var out = new Uint8ClampedArray(tile0.items.length * componentsCount);
       var result = {
         left: tile0.left,
         top: tile0.top,
