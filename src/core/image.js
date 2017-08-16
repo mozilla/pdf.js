@@ -219,7 +219,9 @@ var PDFImage = (function PDFImageClosure() {
   PDFImage.createMask =
       function PDFImage_createMask(imgArray, width, height,
                                    imageIsFromDecodeStream, inverseDecode) {
-
+    if (!(imgArray instanceof Uint8ClampedArray)) {
+      throw new Error('imgArray should be a Uint8ClampedArray.');
+    }
     // |imgArray| might not contain full data for every pixel of the mask, so
     // we need to distinguish between |computedLength| and |actualLength|.
     // In particular, if inverseDecode is true, then the array we return must
@@ -376,6 +378,9 @@ var PDFImage = (function PDFImageClosure() {
 
     fillOpacity: function PDFImage_fillOpacity(rgbaBuf, width, height,
                                                actualHeight, image) {
+      if (!(rgbaBuf instanceof Uint8ClampedArray)) {
+        throw new Error('rgbaBuf should be a Uint8ClampedArray.');
+      }
       var smask = this.smask;
       var mask = this.mask;
       var alphaBuf, sw, sh, i, ii, j;
@@ -442,6 +447,9 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     undoPreblend: function PDFImage_undoPreblend(buffer, width, height) {
+      if (!(buffer instanceof Uint8ClampedArray)) {
+        throw new Error('buffer should be a Uint8ClampedArray.');
+      }
       var matte = this.smask && this.smask.matte;
       if (!matte) {
         return;
@@ -580,6 +588,9 @@ var PDFImage = (function PDFImageClosure() {
     },
 
     fillGrayBuffer: function PDFImage_fillGrayBuffer(buffer) {
+      if (!(buffer instanceof Uint8ClampedArray)) {
+        throw new Error('buffer should be a Uint8ClampedArray.');
+      }
       var numComps = this.numComps;
       if (numComps !== 1) {
         throw new FormatError(

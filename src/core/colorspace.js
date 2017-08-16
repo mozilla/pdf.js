@@ -114,6 +114,9 @@ var ColorSpace = (function ColorSpaceClosure() {
     fillRgb: function ColorSpace_fillRgb(dest, originalWidth,
                                          originalHeight, width, height,
                                          actualHeight, bpc, comps, alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var count = originalWidth * originalHeight;
       var rgbBuf = null;
       var numComponentColors = 1 << bpc;
@@ -435,6 +438,9 @@ var AlternateCS = (function AlternateCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function AlternateCS_getRgbItem(src, srcOffset,
                                                 dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var tmpBuf = this.tmpBuf;
       this.tintFn(src, srcOffset, tmpBuf, 0);
       this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
@@ -442,6 +448,9 @@ var AlternateCS = (function AlternateCSClosure() {
     getRgbBuffer: function AlternateCS_getRgbBuffer(src, srcOffset, count,
                                                     dest, destOffset, bits,
                                                     alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var tintFn = this.tintFn;
       var base = this.base;
       var scale = 1 / ((1 << bits) - 1);
@@ -535,6 +544,9 @@ var IndexedCS = (function IndexedCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function IndexedCS_getRgbItem(src, srcOffset,
                                               dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var numComps = this.base.numComps;
       var start = src[srcOffset] * numComps;
       this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
@@ -542,6 +554,9 @@ var IndexedCS = (function IndexedCSClosure() {
     getRgbBuffer: function IndexedCS_getRgbBuffer(src, srcOffset, count,
                                                   dest, destOffset, bits,
                                                   alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var base = this.base;
       var numComps = base.numComps;
       var outputDelta = base.getOutputLength(numComps, alpha01);
@@ -579,12 +594,18 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function DeviceGrayCS_getRgbItem(src, srcOffset,
                                                  dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       let c = src[srcOffset] * 255;
       dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
     },
     getRgbBuffer: function DeviceGrayCS_getRgbBuffer(src, srcOffset, count,
                                                      dest, destOffset, bits,
                                                      alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var scale = 255 / ((1 << bits) - 1);
       var j = srcOffset, q = destOffset;
       for (var i = 0; i < count; ++i) {
@@ -619,6 +640,9 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function DeviceRgbCS_getRgbItem(src, srcOffset,
                                                 dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       dest[destOffset] = src[srcOffset] * 255;
       dest[destOffset + 1] = src[srcOffset + 1] * 255;
       dest[destOffset + 2] = src[srcOffset + 2] * 255;
@@ -626,6 +650,9 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     getRgbBuffer: function DeviceRgbCS_getRgbBuffer(src, srcOffset, count,
                                                     dest, destOffset, bits,
                                                     alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       if (bits === 8 && alpha01 === 0) {
         dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
         return;
@@ -709,11 +736,17 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function DeviceCmykCS_getRgbItem(src, srcOffset,
                                                  dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       convertToRgb(src, srcOffset, 1, dest, destOffset);
     },
     getRgbBuffer: function DeviceCmykCS_getRgbBuffer(src, srcOffset, count,
                                                      dest, destOffset, bits,
                                                      alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var scale = 1 / ((1 << bits) - 1);
       for (var i = 0; i < count; i++) {
         convertToRgb(src, srcOffset, scale, dest, destOffset);
@@ -807,11 +840,17 @@ var CalGrayCS = (function CalGrayCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function CalGrayCS_getRgbItem(src, srcOffset,
                                               dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
     getRgbBuffer: function CalGrayCS_getRgbBuffer(src, srcOffset, count,
                                                   dest, destOffset, bits,
                                                   alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var scale = 1 / ((1 << bits) - 1);
 
       for (var i = 0; i < count; ++i) {
@@ -1103,11 +1142,17 @@ var CalRGBCS = (function CalRGBCSClosure() {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function CalRGBCS_getRgbItem(src, srcOffset,
                                              dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
     getRgbBuffer: function CalRGBCS_getRgbBuffer(src, srcOffset, count,
                                                  dest, destOffset, bits,
                                                  alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var scale = 1 / ((1 << bits) - 1);
 
       for (var i = 0; i < count; ++i) {
@@ -1248,11 +1293,17 @@ var LabCS = (function LabCSClosure() {
   LabCS.prototype = {
     getRgb: ColorSpace.prototype.getRgb,
     getRgbItem: function LabCS_getRgbItem(src, srcOffset, dest, destOffset) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       convertToRgb(this, src, srcOffset, false, dest, destOffset);
     },
     getRgbBuffer: function LabCS_getRgbBuffer(src, srcOffset, count,
                                               dest, destOffset, bits,
                                               alpha01) {
+      if (!(dest instanceof Uint8ClampedArray)) {
+        throw new Error('dest should be a Uint8ClampedArray.');
+      }
       var maxVal = (1 << bits) - 1;
       for (var i = 0; i < count; i++) {
         convertToRgb(this, src, srcOffset, maxVal, dest, destOffset);
