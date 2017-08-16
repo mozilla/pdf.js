@@ -183,14 +183,16 @@ var ChunkedStream = (function ChunkedStreamClosure() {
 
     // returns subarray of original buffer
     // should only be read
-    getBytes: function ChunkedStream_getBytes(length) {
+    getBytes(length, clampedArray = false) {
       var bytes = this.bytes;
       var pos = this.pos;
       var strEnd = this.end;
 
       if (!length) {
         this.ensureRange(pos, strEnd);
-        return bytes.subarray(pos, strEnd);
+        let subarray = bytes.subarray(pos, strEnd);
+        return !clampedArray || subarray instanceof Uint8ClampedArray ?
+               subarray : new Uint8ClampedArray(subarray);
       }
 
       var end = pos + length;
@@ -200,7 +202,9 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       this.ensureRange(pos, end);
 
       this.pos = end;
-      return bytes.subarray(pos, end);
+      let subarray = bytes.subarray(pos, end);
+      return !clampedArray || subarray instanceof Uint8ClampedArray ?
+             subarray : new Uint8ClampedArray(subarray);
     },
 
     peekByte: function ChunkedStream_peekByte() {
@@ -209,8 +213,8 @@ var ChunkedStream = (function ChunkedStreamClosure() {
       return peekedByte;
     },
 
-    peekBytes: function ChunkedStream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, clampedArray = false) {
+      var bytes = this.getBytes(length, clampedArray);
       this.pos -= bytes.length;
       return bytes;
     },

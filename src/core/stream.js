@@ -63,28 +63,32 @@ var Stream = (function StreamClosure() {
     },
     // returns subarray of original buffer
     // should only be read
-    getBytes: function Stream_getBytes(length) {
+    getBytes(length, clampedArray = false) {
       var bytes = this.bytes;
       var pos = this.pos;
       var strEnd = this.end;
 
       if (!length) {
-        return bytes.subarray(pos, strEnd);
+        let subarray = bytes.subarray(pos, strEnd);
+        return !clampedArray || subarray instanceof Uint8ClampedArray ?
+               subarray : new Uint8ClampedArray(subarray);
       }
       var end = pos + length;
       if (end > strEnd) {
         end = strEnd;
       }
       this.pos = end;
-      return bytes.subarray(pos, end);
+      let subarray = bytes.subarray(pos, end);
+      return !clampedArray || subarray instanceof Uint8ClampedArray ?
+             subarray : new Uint8ClampedArray(subarray);
     },
     peekByte: function Stream_peekByte() {
       var peekedByte = this.getByte();
       this.pos--;
       return peekedByte;
     },
-    peekBytes: function Stream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, clampedArray = false) {
+      var bytes = this.getBytes(length, clampedArray);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -190,7 +194,7 @@ var DecodeStream = (function DecodeStreamClosure() {
       var b3 = this.getByte();
       return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
     },
-    getBytes: function DecodeStream_getBytes(length) {
+    getBytes(length, clampedArray = false) {
       var end, pos = this.pos;
 
       if (length) {
@@ -212,15 +216,17 @@ var DecodeStream = (function DecodeStreamClosure() {
       }
 
       this.pos = end;
-      return this.buffer.subarray(pos, end);
+      let subarray = this.buffer.subarray(pos, end);
+      return !clampedArray || subarray instanceof Uint8ClampedArray ?
+             subarray : new Uint8ClampedArray(subarray);
     },
     peekByte: function DecodeStream_peekByte() {
       var peekedByte = this.getByte();
       this.pos--;
       return peekedByte;
     },
-    peekBytes: function DecodeStream_peekBytes(length) {
-      var bytes = this.getBytes(length);
+    peekBytes(length, clampedArray = false) {
+      var bytes = this.getBytes(length, clampedArray);
       this.pos -= bytes.length;
       return bytes;
     },
@@ -940,9 +946,10 @@ var JpegStream = (function JpegStreamClosure() {
     this.eof = true;
   };
 
-  JpegStream.prototype.getBytes = function JpegStream_getBytes(length) {
+  JpegStream.prototype.getBytes = function(length, clampedArray = false) {
     this.ensureBuffer();
-    return this.buffer;
+    return !clampedArray || this.buffer instanceof Uint8ClampedArray ?
+           this.buffer : new Uint8ClampedArray(this.buffer);
   };
 
   JpegStream.prototype.getIR = function JpegStream_getIR(forceDataSchema) {
