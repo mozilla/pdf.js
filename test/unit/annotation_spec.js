@@ -166,7 +166,7 @@ describe('annotation', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor('red');
 
-      expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
+      expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
     });
 
     it('should set and get a transparent color', function() {
@@ -180,28 +180,28 @@ describe('annotation', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.4]);
 
-      expect(annotation.color).toEqual(new Uint8Array([102, 102, 102]));
+      expect(annotation.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
     });
 
     it('should set and get an RGB color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0, 0, 1]);
 
-      expect(annotation.color).toEqual(new Uint8Array([0, 0, 255]));
+      expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
     });
 
     it('should set and get a CMYK color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.1, 0.92, 0.84, 0.02]);
 
-      expect(annotation.color).toEqual(new Uint8Array([233, 59, 47]));
+      expect(annotation.color).toEqual(new Uint8ClampedArray([234, 59, 48]));
     });
 
     it('should not set and get an invalid color', function() {
       var annotation = new Annotation({ dict, ref, });
       annotation.setColor([0.4, 0.6]);
 
-      expect(annotation.color).toEqual(new Uint8Array([0, 0, 0]));
+      expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
     });
   });
 
