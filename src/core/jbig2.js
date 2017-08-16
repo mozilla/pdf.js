@@ -955,7 +955,7 @@ var Jbig2Image = (function Jbig2ImageClosure() {
     onPageInformation: function SimpleSegmentVisitor_onPageInformation(info) {
       this.currentPageInfo = info;
       var rowSize = (info.width + 7) >> 3;
-      var buffer = new Uint8Array(rowSize * info.height);
+      var buffer = new Uint8ClampedArray(rowSize * info.height);
       // The contents of ArrayBuffers are initialized to 0.
       // Fill the buffer with 0xFF only if info.defaultPixelValue is set
       if (info.defaultPixelValue) {
