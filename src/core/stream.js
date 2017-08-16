@@ -991,7 +991,7 @@ var JpxStream = (function JpxStreamClosure() {
     if (tileCount === 1) {
       this.buffer = jpxImage.tiles[0].items;
     } else {
-      var data = new Uint8Array(width * height * componentsCount);
+      var data = new Uint8ClampedArray(width * height * componentsCount);
 
       for (var k = 0; k < tileCount; k++) {
         var tileComponents = jpxImage.tiles[k];
