@@ -50,8 +50,8 @@ body {
     <select>
       <option value="auto" selected="selected">Automatic Zoom</option>
       <option value="page-actual">Actual Size</option>
-      <option value="page-fit">Fit Page</option>
-      <option value="page-width">Full Width</option>
+      <option value="page-fit">Page Fit</option>
+      <option value="page-width">Page Width</option>
       <option value="custom" class="custom-zoom" hidden></option>
       <option value="50">50%</option>
       <option value="75">75%</option>
@@ -75,6 +75,18 @@ body {
       <option value="1">Show thumbnails in sidebar</option>
       <option value="2">Show document outline in sidebar</option>
       <option value="3">Show attachments in sidebar</option>
+    </select>
+  </label>
+</div>
+</template>
+
+<template id="cursorToolOnLoad-template">
+<div class="settings-row">
+  <label>
+    <span></span>
+    <select>
+      <option value="0">Text selection tool</option>
+      <option value="1">Hand tool</option>
     </select>
   </label>
 </div>

@@ -21,13 +21,11 @@ limitations under the License.
 
     <title>PDF.js viewer</title>
 
-    <link rel="stylesheet" href="../../build/dist/web/pdf_viewer.css">
+    <link rel="stylesheet" href="../../node_modules/pdfjs-dist/web/pdf_viewer.css">
     <link rel="stylesheet" type="text/css" href="viewer.css">
 
-    <script src="../../build/dist/build/pdf.js"></script>
-    <script src="../../build/dist/web/pdf_viewer.js"></script>
-
-    <script src="viewer.js"></script>
+    <script src="../../node_modules/pdfjs-dist/build/pdf.js"></script>
+    <script src="../../node_modules/pdfjs-dist/web/pdf_viewer.js"></script>
   </head>
 
   <body>
@@ -72,5 +70,7 @@ limitations under the License.
       <button class="toolbarButton zoomOut" title="Zoom Out" id="zoomOut"></button>
       <button class="toolbarButton zoomIn" title="Zoom In" id="zoomIn"></button>
     </footer>
+
+     <script src="viewer.js"></script>
   </body>
 </html>

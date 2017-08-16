@@ -72,7 +72,7 @@ describe('custom canvas rendering', function() {
       canvasContext: canvasAndCtx.context,
       viewport,
     }).then(function() {
-      var { r, g, b, a } = getTopLeftPixel(canvasAndCtx.context);
+      var { r, g, b, a, } = getTopLeftPixel(canvasAndCtx.context);
       CanvasFactory.destroy(canvasAndCtx);
       expect(r).toEqual(255);
       expect(g).toEqual(255);
@@ -94,9 +94,9 @@ describe('custom canvas rendering', function() {
     page.render({
       canvasContext: canvasAndCtx.context,
       viewport,
-      background: 'rgba(255,0,0,1.0)'
+      background: 'rgba(255,0,0,1.0)',
     }).then(function() {
-      var { r, g, b, a } = getTopLeftPixel(canvasAndCtx.context);
+      var { r, g, b, a, } = getTopLeftPixel(canvasAndCtx.context);
       CanvasFactory.destroy(canvasAndCtx);
       expect(r).toEqual(255);
       expect(g).toEqual(0);

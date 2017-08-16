@@ -13,29 +13,9 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/function', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/ps_parser'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./ps_parser.js'));
-  } else {
-    factory((root.pdfjsCoreFunction = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCorePsParser);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, corePsParser) {
-
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isBool = sharedUtil.isBool;
-var isDict = corePrimitives.isDict;
-var isStream = corePrimitives.isStream;
-var PostScriptLexer = corePsParser.PostScriptLexer;
-var PostScriptParser = corePsParser.PostScriptParser;
+import { FormatError, info, isArray, isBool } from '../shared/util';
+import { isDict, isStream } from './primitives';
+import { PostScriptLexer, PostScriptParser } from './ps_parser';
 
 var PDFFunction = (function PDFFunctionClosure() {
   var CONSTRUCT_SAMPLED = 0;
@@ -89,7 +69,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var typeNum = dict.get('FunctionType');
       var typeFn = types[typeNum];
       if (!typeFn) {
-        error('Unknown type of function');
+        throw new FormatError('Unknown type of function');
       }
 
       return typeFn.call(this, fn, dict, xref);
@@ -148,7 +128,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var range = dict.getArray('Range');
 
       if (!domain || !range) {
-        error('No domain or range');
+        throw new FormatError('No domain or range');
       }
 
       var inputSize = domain.length / 2;
@@ -283,7 +263,8 @@ var PDFFunction = (function PDFFunctionClosure() {
       var n = dict.get('N');
 
       if (!isArray(c0) || !isArray(c1)) {
-        error('Illegal dictionary for interpolated function');
+        throw new FormatError(
+          'Illegal dictionary for interpolated function');
       }
 
       var length = c0.length;
@@ -317,12 +298,12 @@ var PDFFunction = (function PDFFunctionClosure() {
       var domain = dict.getArray('Domain');
 
       if (!domain) {
-        error('No domain');
+        throw new FormatError('No domain');
       }
 
       var inputSize = domain.length / 2;
       if (inputSize !== 1) {
-        error('Bad domain for stiched function');
+        throw new FormatError('Bad domain for stiched function');
       }
 
       var fnRefs = dict.get('Functions');
@@ -398,11 +379,11 @@ var PDFFunction = (function PDFFunctionClosure() {
       var range = dict.getArray('Range');
 
       if (!domain) {
-        error('No domain.');
+        throw new FormatError('No domain.');
       }
 
       if (!range) {
-        error('No range.');
+        throw new FormatError('No range.');
       }
 
       var lexer = new PostScriptLexer(fn);
@@ -480,7 +461,7 @@ var PDFFunction = (function PDFFunctionClosure() {
         }
         dest.set(output, destOffset);
       };
-    }
+    },
   };
 })();
 
@@ -508,19 +489,19 @@ var PostScriptStack = (function PostScriptStackClosure() {
   PostScriptStack.prototype = {
     push: function PostScriptStack_push(value) {
       if (this.stack.length >= MAX_STACK_SIZE) {
-        error('PostScript function stack overflow.');
+        throw new Error('PostScript function stack overflow.');
       }
       this.stack.push(value);
     },
     pop: function PostScriptStack_pop() {
       if (this.stack.length <= 0) {
-        error('PostScript function stack underflow.');
+        throw new Error('PostScript function stack underflow.');
       }
       return this.stack.pop();
     },
     copy: function PostScriptStack_copy(n) {
       if (this.stack.length + n >= MAX_STACK_SIZE) {
-        error('PostScript function stack overflow.');
+        throw new Error('PostScript function stack overflow.');
       }
       var stack = this.stack;
       for (var i = stack.length - n, j = n - 1; j >= 0; j--, i++) {
@@ -544,7 +525,7 @@ var PostScriptStack = (function PostScriptStackClosure() {
       for (i = c, j = r; i < j; i++, j--) {
         t = stack[i]; stack[i] = stack[j]; stack[j] = t;
       }
-    }
+    },
   };
   return PostScriptStack;
 })();
@@ -775,12 +756,11 @@ var PostScriptEvaluator = (function PostScriptEvaluatorClosure() {
             }
             break;
           default:
-            error('Unknown operator ' + operator);
-            break;
+            throw new FormatError(`Unknown operator ${operator}`);
         }
       }
       return stack.stack;
-    }
+    },
   };
   return PostScriptEvaluator;
 })();
@@ -901,7 +881,7 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
     },
     toString() {
       return this.parts.join('');
-    }
+    },
   };
 
   function buildAddOperation(num1, num2) {
@@ -1146,14 +1126,15 @@ var PostScriptCompiler = (function PostScriptCompilerClosure() {
         result.push(out.join(''));
       });
       return result.join('\n');
-    }
+    },
   };
 
   return PostScriptCompiler;
 })();
 
-exports.isPDFFunction = isPDFFunction;
-exports.PDFFunction = PDFFunction;
-exports.PostScriptEvaluator = PostScriptEvaluator;
-exports.PostScriptCompiler = PostScriptCompiler;
-}));
+export {
+  isPDFFunction,
+  PDFFunction,
+  PostScriptEvaluator,
+  PostScriptCompiler,
+};

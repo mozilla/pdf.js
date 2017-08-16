@@ -73,7 +73,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     // The temporary canvas is used in the WebGL context.
     currentCanvas = document.createElement('canvas');
     currentGL = currentCanvas.getContext('webgl',
-      { premultipliedalpha: false });
+      { premultipliedalpha: false, });
   }
 
   var smaskVertexShaderCode = '\
@@ -432,7 +432,7 @@ var WebGLUtils = (function WebGLUtilsClosure() {
     },
     composeSMask,
     drawFigures,
-    clear: cleanup
+    clear: cleanup,
   };
 })();
 

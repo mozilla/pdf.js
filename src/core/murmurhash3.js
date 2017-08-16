@@ -17,18 +17,6 @@
  * Hashes roughly 100 KB per millisecond on i7 3.4 GHz.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/murmurhash3', ['exports', 'pdfjs/shared/util'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'));
-  } else {
-    factory((root.pdfjsCoreMurmurHash3 = {}), root.pdfjsSharedUtil);
-  }
-}(this, function (exports, sharedUtil) {
-
 var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
   // Workaround for missing math precision in JS.
   var MASK_HIGH = 0xffff0000;
@@ -146,11 +134,12 @@ var MurmurHash3_64 = (function MurmurHash3_64Closure(seed) {
       }
 
       return str;
-    }
+    },
   };
 
   return MurmurHash3_64;
 })();
 
-exports.MurmurHash3_64 = MurmurHash3_64;
-}));
+export {
+  MurmurHash3_64,
+};

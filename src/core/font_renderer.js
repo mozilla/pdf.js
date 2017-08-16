@@ -13,31 +13,11 @@
  * limitations under the License.
  */
 
-'use strict';
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/font_renderer', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/stream', 'pdfjs/core/glyphlist', 'pdfjs/core/encodings',
-      'pdfjs/core/cff_parser'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./stream.js'),
-      require('./glyphlist.js'), require('./encodings.js'),
-      require('./cff_parser.js'));
-  } else {
-    factory((root.pdfjsCoreFontRenderer = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreStream, root.pdfjsCoreGlyphList, root.pdfjsCoreEncodings,
-      root.pdfjsCoreCFFParser);
-  }
-}(this, function (exports, sharedUtil, coreStream, coreGlyphList,
-                  coreEncodings, coreCFFParser) {
-
-var Util = sharedUtil.Util;
-var bytesToString = sharedUtil.bytesToString;
-var error = sharedUtil.error;
-var Stream = coreStream.Stream;
-var getGlyphsUnicode = coreGlyphList.getGlyphsUnicode;
-var StandardEncoding = coreEncodings.StandardEncoding;
-var CFFParser = coreCFFParser.CFFParser;
+import { bytesToString, FormatError, Util } from '../shared/util';
+import { CFFParser } from './cff_parser';
+import { getGlyphsUnicode } from './glyphlist';
+import { StandardEncoding } from './encodings';
+import { Stream } from './stream';
 
 var FontRendererFactory = (function FontRendererFactoryClosure() {
   function getLong(data, offset) {
@@ -60,7 +40,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       p = start + offset + 14;
       ranges = [];
       for (i = 0; i < segCount; i++, p += 2) {
-        ranges[i] = {end: getUshort(data, p)};
+        ranges[i] = { end: getUshort(data, p), };
       }
       p += 2;
       for (i = 0; i < segCount; i++, p += 2) {
@@ -90,13 +70,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         ranges.push({
           start: getLong(data, p),
           end: getLong(data, p + 4),
-          idDelta: getLong(data, p + 8) - getLong(data, p)
+          idDelta: getLong(data, p + 8) - getLong(data, p),
         });
         p += 12;
       }
       return ranges;
     }
-    error('not supported cmap: ' + format);
+    throw new FormatError(`unsupported cmap: ${format}`);
   }
 
   function parseCff(data, start, end, seacAnalysisEnabled) {
@@ -108,7 +88,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       glyphs: cff.charStrings.objects,
       subrs: (cff.topDict.privateDict && cff.topDict.privateDict.subrsIndex &&
               cff.topDict.privateDict.subrsIndex.objects),
-      gsubrs: cff.globalSubrIndex && cff.globalSubrIndex.objects
+      gsubrs: cff.globalSubrIndex && cff.globalSubrIndex.objects,
     };
   }
 
@@ -159,13 +139,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
 
   function compileGlyf(code, cmds, font) {
     function moveTo(x, y) {
-      cmds.push({cmd: 'moveTo', args: [x, y]});
+      cmds.push({ cmd: 'moveTo', args: [x, y], });
     }
     function lineTo(x, y) {
-      cmds.push({cmd: 'lineTo', args: [x, y]});
+      cmds.push({ cmd: 'lineTo', args: [x, y], });
     }
     function quadraticCurveTo(xa, ya, x, y) {
-      cmds.push({cmd: 'quadraticCurveTo', args: [xa, ya, x, y]});
+      cmds.push({ cmd: 'quadraticCurveTo', args: [xa, ya, x, y], });
     }
 
     var i = 0;
@@ -211,11 +191,11 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
         }
         var subglyph = font.glyphs[glyphIndex];
         if (subglyph) {
-          cmds.push({cmd: 'save'});
-          cmds.push({cmd: 'transform',
-                     args: [scaleX, scale01, scale10, scaleY, x, y]});
+          cmds.push({ cmd: 'save', });
+          cmds.push({ cmd: 'transform',
+                     args: [scaleX, scale01, scale10, scaleY, x, y], });
           compileGlyf(subglyph, cmds, font);
-          cmds.push({cmd: 'restore'});
+          cmds.push({ cmd: 'restore', });
         }
       } while ((flags & 0x20));
     } else {
@@ -287,7 +267,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
           var p = {
             flags: 1,
             x: (contour[0].x + contour[contour.length - 1].x) / 2,
-            y: (contour[0].y + contour[contour.length - 1].y) / 2
+            y: (contour[0].y + contour[contour.length - 1].y) / 2,
           };
           contour.unshift(p);
           contour.push(p);
@@ -317,13 +297,13 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
     var stems = 0;
 
     function moveTo(x, y) {
-      cmds.push({cmd: 'moveTo', args: [x, y]});
+      cmds.push({ cmd: 'moveTo', args: [x, y], });
     }
     function lineTo(x, y) {
-      cmds.push({cmd: 'lineTo', args: [x, y]});
+      cmds.push({ cmd: 'lineTo', args: [x, y], });
     }
     function bezierCurveTo(x1, y1, x2, y2, x, y) {
-      cmds.push({cmd: 'bezierCurveTo', args: [x1, y1, x2, y2, x, y]});
+      cmds.push({ cmd: 'bezierCurveTo', args: [x1, y1, x2, y2, x, y], });
     }
 
     function parse(code) {
@@ -443,7 +423,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
                 bezierCurveTo(xa, ya, xb, yb, x, y);
                 break;
               default:
-                error('unknown operator: 12 ' + v);
+                throw new FormatError(`unknown operator: 12 ${v}`);
             }
             break;
           case 14: // endchar
@@ -452,12 +432,12 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
               var bchar = stack.pop();
               y = stack.pop();
               x = stack.pop();
-              cmds.push({cmd: 'save'});
-              cmds.push({cmd: 'translate', args: [x, y]});
+              cmds.push({ cmd: 'save', });
+              cmds.push({ cmd: 'translate', args: [x, y], });
               var cmap = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[StandardEncoding[achar]]));
               compileCharString(font.glyphs[cmap.glyphId], cmds, font);
-              cmds.push({cmd: 'restore'});
+              cmds.push({ cmd: 'restore', });
 
               cmap = lookupCmap(font.cmap, String.fromCharCode(
                 font.glyphNameMap[StandardEncoding[bchar]]));
@@ -586,7 +566,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
             break;
           default:
             if (v < 32) {
-              error('unknown operator: ' + v);
+              throw new FormatError(`unknown operator: ${v}`);
             }
             if (v < 247) {
               stack.push(v - 139);
@@ -636,26 +616,26 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
       }
 
       var cmds = [];
-      cmds.push({cmd: 'save'});
-      cmds.push({cmd: 'transform', args: this.fontMatrix.slice()});
-      cmds.push({cmd: 'scale', args: ['size', '-size']});
+      cmds.push({ cmd: 'save', });
+      cmds.push({ cmd: 'transform', args: this.fontMatrix.slice(), });
+      cmds.push({ cmd: 'scale', args: ['size', '-size'], });
 
       this.compileGlyphImpl(code, cmds);
 
-      cmds.push({cmd: 'restore'});
+      cmds.push({ cmd: 'restore', });
 
       return cmds;
     },
 
     compileGlyphImpl() {
-      error('Children classes should implement this.');
+      throw new Error('Children classes should implement this.');
     },
 
     hasBuiltPath(unicode) {
       var cmap = lookupCmap(this.cmap, unicode);
       return (this.compiledGlyphs[cmap.glyphId] !== undefined &&
               this.compiledCharCodeToGlyphId[cmap.charCode] !== undefined);
-    }
+    },
   };
 
   function TrueTypeCompiled(glyphs, cmap, fontMatrix) {
@@ -669,7 +649,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   Util.inherit(TrueTypeCompiled, CompiledFont, {
     compileGlyphImpl(code, cmds) {
       compileGlyf(code, cmds, this);
-    }
+    },
   });
 
   function Type2Compiled(cffInfo, cmap, fontMatrix, glyphNameMap) {
@@ -691,7 +671,7 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
   Util.inherit(Type2Compiled, CompiledFont, {
     compileGlyphImpl(code, cmds) {
       compileCharString(code, cmds, this);
-    }
+    },
   });
 
 
@@ -731,9 +711,10 @@ var FontRendererFactory = (function FontRendererFactoryClosure() {
           parseGlyfTable(glyf, loca, indexToLocFormat), cmap, fontMatrix);
       }
       return new Type2Compiled(cff, cmap, font.fontMatrix, font.glyphNameMap);
-    }
+    },
   };
 })();
 
-exports.FontRendererFactory = FontRendererFactory;
-}));
+export {
+  FontRendererFactory,
+};

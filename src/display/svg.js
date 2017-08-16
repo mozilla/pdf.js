@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* globals __non_webpack_require__ */
 
 import {
   createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isArray,
-  isNum, OPS, Util, warn
+  isNodeJS, isNum, OPS, Util, warn
 } from '../shared/util';
 
 var SVGGraphics = function() {
@@ -28,7 +29,7 @@ if (typeof PDFJSDev === 'undefined' ||
 var SVG_DEFAULTS = {
   fontStyle: 'normal',
   fontWeight: 'normal',
-  fillColor: '#000000'
+  fillColor: '#000000',
 };
 
 var convertImgDataToPng = (function convertImgDataToPngClosure() {
@@ -97,6 +98,89 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
     return (b << 16) | a;
   }
 
+  /**
+   * @param {Uint8Array} literals The input data.
+   * @returns {Uint8Array} The DEFLATE-compressed data stream in zlib format.
+   *   This is the required format for compressed streams in the PNG format:
+   *   http://www.libpng.org/pub/png/spec/1.2/PNG-Compression.html
+   */
+  function deflateSync(literals) {
+    if (!isNodeJS()) {
+      // zlib is certainly not available outside of Node.js. We can either use
+      // the pako library for client-side DEFLATE compression, or use the canvas
+      // API of the browser to obtain a more optimal PNG file.
+      return deflateSyncUncompressed(literals);
+    }
+    try {
+      // NOTE: This implementation is far from perfect, but already way better
+      // than not applying any compression.
+      //
+      // A better algorithm will try to choose a good predictor/filter and
+      // then choose a suitable zlib compression strategy (e.g. 3,Z_RLE).
+      //
+      // Node v0.11.12 zlib.deflateSync is introduced (and returns a Buffer).
+      // Node v3.0.0   Buffer inherits from Uint8Array.
+      // Node v8.0.0   zlib.deflateSync accepts Uint8Array as input.
+      var input;
+        // eslint-disable-next-line no-undef
+      if (parseInt(process.versions.node) >= 8) {
+        input = literals;
+      } else {
+        // eslint-disable-next-line no-undef
+        input = new Buffer(literals);
+      }
+      var output = __non_webpack_require__('zlib')
+        .deflateSync(input, { level: 9, });
+      return output instanceof Uint8Array ? output : new Uint8Array(output);
+    } catch (e) {
+      warn('Not compressing PNG because zlib.deflateSync is unavailable: ' + e);
+    }
+
+    return deflateSyncUncompressed(literals);
+  }
+
+  // An implementation of DEFLATE with compression level 0 (Z_NO_COMPRESSION).
+  function deflateSyncUncompressed(literals) {
+    var len = literals.length;
+    var maxBlockLength = 0xFFFF;
+
+    var deflateBlocks = Math.ceil(len / maxBlockLength);
+    var idat = new Uint8Array(2 + len + deflateBlocks * 5 + 4);
+    var pi = 0;
+    idat[pi++] = 0x78; // compression method and flags
+    idat[pi++] = 0x9c; // flags
+
+    var pos = 0;
+    while (len > maxBlockLength) {
+      // writing non-final DEFLATE blocks type 0 and length of 65535
+      idat[pi++] = 0x00;
+      idat[pi++] = 0xff;
+      idat[pi++] = 0xff;
+      idat[pi++] = 0x00;
+      idat[pi++] = 0x00;
+      idat.set(literals.subarray(pos, pos + maxBlockLength), pi);
+      pi += maxBlockLength;
+      pos += maxBlockLength;
+      len -= maxBlockLength;
+    }
+
+    // writing non-final DEFLATE blocks type 0
+    idat[pi++] = 0x01;
+    idat[pi++] = len & 0xff;
+    idat[pi++] = len >> 8 & 0xff;
+    idat[pi++] = (~len & 0xffff) & 0xff;
+    idat[pi++] = (~len & 0xffff) >> 8 & 0xff;
+    idat.set(literals.subarray(pos), pi);
+    pi += literals.length - pos;
+
+    var adler = adler32(literals, 0, literals.length); // checksum
+    idat[pi++] = adler >> 24 & 0xff;
+    idat[pi++] = adler >> 16 & 0xff;
+    idat[pi++] = adler >> 8 & 0xff;
+    idat[pi++] = adler & 0xff;
+    return idat;
+  }
+
   function encode(imgData, kind, forceDataSchema) {
     var width = imgData.width;
     var height = imgData.height;
@@ -162,43 +246,7 @@ var convertImgDataToPng = (function convertImgDataToPngClosure() {
       0x00 // interlace method
     ]);
 
-    var len = literals.length;
-    var maxBlockLength = 0xFFFF;
-
-    var deflateBlocks = Math.ceil(len / maxBlockLength);
-    var idat = new Uint8Array(2 + len + deflateBlocks * 5 + 4);
-    var pi = 0;
-    idat[pi++] = 0x78; // compression method and flags
-    idat[pi++] = 0x9c; // flags
-
-    var pos = 0;
-    while (len > maxBlockLength) {
-      // writing non-final DEFLATE blocks type 0 and length of 65535
-      idat[pi++] = 0x00;
-      idat[pi++] = 0xff;
-      idat[pi++] = 0xff;
-      idat[pi++] = 0x00;
-      idat[pi++] = 0x00;
-      idat.set(literals.subarray(pos, pos + maxBlockLength), pi);
-      pi += maxBlockLength;
-      pos += maxBlockLength;
-      len -= maxBlockLength;
-    }
-
-    // writing non-final DEFLATE blocks type 0
-    idat[pi++] = 0x01;
-    idat[pi++] = len & 0xff;
-    idat[pi++] = len >> 8 & 0xff;
-    idat[pi++] = (~len & 0xffff) & 0xff;
-    idat[pi++] = (~len & 0xffff) >> 8 & 0xff;
-    idat.set(literals.subarray(pos), pi);
-    pi += literals.length - pos;
-
-    var adler = adler32(literals, 0, literals.length); // checksum
-    idat[pi++] = adler >> 24 & 0xff;
-    idat[pi++] = adler >> 16 & 0xff;
-    idat[pi++] = adler >> 8 & 0xff;
-    idat[pi++] = adler & 0xff;
+    var idat = deflateSync(literals);
 
     // PNG will consists: header, IHDR+data, IDAT+data, and IEND.
     var pngLength = PNG_HEADER.length + (CHUNK_WRAPPER_SIZE * 3) +
@@ -277,7 +325,7 @@ var SVGExtraState = (function SVGExtraStateClosure() {
     setCurrentPoint: function SVGExtraState_setCurrentPoint(x, y) {
       this.x = x;
       this.y = y;
-    }
+    },
   };
   return SVGExtraState;
 })();
@@ -290,7 +338,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     for (var x = 0; x < opListLen; x++) {
       if (opList[x].fn === 'save') {
-        opTree.push({'fnId': 92, 'fn': 'group', 'items': []});
+        opTree.push({ 'fnId': 92, 'fn': 'group', 'items': [], });
         tmp.push(opTree);
         opTree = opTree[opTree.length - 1].items;
         continue;
@@ -361,6 +409,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
     this.extraStack = [];
     this.commonObjs = commonObjs;
     this.objs = objs;
+    this.pendingClip = null;
     this.pendingEOFill = false;
 
     this.embedFonts = false;
@@ -389,6 +438,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
       this.transformMatrix = this.transformStack.pop();
       this.current = this.extraStack.pop();
 
+      this.pendingClip = null;
       this.tgrp = null;
     },
 
@@ -458,7 +508,11 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
       for (var x = 0; x < fnArrayLen; x++) {
         var fnId = fnArray[x];
-        opList.push({'fnId': fnId, 'fn': REVOPS[fnId], 'args': argsArray[x]});
+        opList.push({
+          'fnId': fnId,
+          'fn': REVOPS[fnId],
+          'args': argsArray[x],
+        });
       }
       return opListToTree(opList);
     },
@@ -799,9 +853,15 @@ SVGGraphics = (function SVGGraphicsClosure() {
     setMiterLimit: function SVGGraphics_setMiterLimit(limit) {
       this.current.miterLimit = limit;
     },
+    setStrokeAlpha: function SVGGraphics_setStrokeAlpha(strokeAlpha) {
+      this.current.strokeAlpha = strokeAlpha;
+    },
     setStrokeRGBColor: function SVGGraphics_setStrokeRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
       this.current.strokeColor = color;
+    },
+    setFillAlpha: function SVGGraphics_setFillAlpha(fillAlpha) {
+      this.current.fillAlpha = fillAlpha;
     },
     setFillRGBColor: function SVGGraphics_setFillRGBColor(r, g, b) {
       var color = Util.makeCssRgb(r, g, b);
@@ -870,16 +930,6 @@ SVGGraphics = (function SVGGraphicsClosure() {
         }
       }
       current.path.setAttributeNS(null, 'd', d.join(' '));
-      current.path.setAttributeNS(null, 'stroke-miterlimit',
-                                  pf(current.miterLimit));
-      current.path.setAttributeNS(null, 'stroke-linecap', current.lineCap);
-      current.path.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
-      current.path.setAttributeNS(null, 'stroke-width',
-                                  pf(current.lineWidth) + 'px');
-      current.path.setAttributeNS(null, 'stroke-dasharray',
-                                  current.dashArray.map(pf).join(' '));
-      current.path.setAttributeNS(null, 'stroke-dashoffset',
-                                  pf(current.dashPhase) + 'px');
       current.path.setAttributeNS(null, 'fill', 'none');
 
       this._ensureTransformGroup().appendChild(current.path);
@@ -890,9 +940,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.setCurrentPoint(x, y);
     },
 
-    endPath: function SVGGraphics_endPath() {},
-
-    clip: function SVGGraphics_clip(type) {
+    endPath: function SVGGraphics_endPath() {
+      if (!this.pendingClip) {
+        return;
+      }
       var current = this.current;
       // Add current path to clipping path
       var clipId = 'clippath' + clipCount;
@@ -901,17 +952,18 @@ SVGGraphics = (function SVGGraphicsClosure() {
       clipPath.setAttributeNS(null, 'id', clipId);
       clipPath.setAttributeNS(null, 'transform', pm(this.transformMatrix));
       var clipElement = current.element.cloneNode();
-      if (type === 'evenodd') {
+      if (this.pendingClip === 'evenodd') {
         clipElement.setAttributeNS(null, 'clip-rule', 'evenodd');
       } else {
         clipElement.setAttributeNS(null, 'clip-rule', 'nonzero');
       }
+      this.pendingClip = null;
       clipPath.appendChild(clipElement);
       this.defs.appendChild(clipPath);
 
       if (current.activeClipUrl) {
         // The previous clipping group content can go out of order -- resetting
-        // cached clipGroup's.
+        // cached clipGroups.
         current.clipGroup = null;
         this.extraStack.forEach(function (prev) {
           prev.clipGroup = null;
@@ -920,6 +972,10 @@ SVGGraphics = (function SVGGraphicsClosure() {
       current.activeClipUrl = 'url(#' + clipId + ')';
 
       this.tgrp = null;
+    },
+
+    clip: function SVGGraphics_clip(type) {
+      this.pendingClip = type;
     },
 
     closePath: function SVGGraphics_closePath() {
@@ -966,6 +1022,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
           case 'Font':
             this.setFont(value);
             break;
+          case 'CA':
+            this.setStrokeAlpha(value);
+            break;
+          case 'ca':
+            this.setFillAlpha(value);
+            break;
           default:
             warn('Unimplemented graphic state ' + key);
             break;
@@ -976,18 +1038,32 @@ SVGGraphics = (function SVGGraphicsClosure() {
     fill: function SVGGraphics_fill() {
       var current = this.current;
       current.element.setAttributeNS(null, 'fill', current.fillColor);
+      current.element.setAttributeNS(null, 'fill-opacity', current.fillAlpha);
     },
 
     stroke: function SVGGraphics_stroke() {
       var current = this.current;
+
       current.element.setAttributeNS(null, 'stroke', current.strokeColor);
+      current.element.setAttributeNS(null, 'stroke-opacity',
+                                     current.strokeAlpha);
+      current.element.setAttributeNS(null, 'stroke-miterlimit',
+                                     pf(current.miterLimit));
+      current.element.setAttributeNS(null, 'stroke-linecap', current.lineCap);
+      current.element.setAttributeNS(null, 'stroke-linejoin', current.lineJoin);
+      current.element.setAttributeNS(null, 'stroke-width',
+                                     pf(current.lineWidth) + 'px');
+      current.element.setAttributeNS(null, 'stroke-dasharray',
+                                     current.dashArray.map(pf).join(' '));
+      current.element.setAttributeNS(null, 'stroke-dashoffset',
+                                     pf(current.dashPhase) + 'px');
+
       current.element.setAttributeNS(null, 'fill', 'none');
     },
 
     eoFill: function SVGGraphics_eoFill() {
-      var current = this.current;
-      current.element.setAttributeNS(null, 'fill', current.fillColor);
-      current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.current.element.setAttributeNS(null, 'fill-rule', 'evenodd');
+      this.fill();
     },
 
     fillStroke: function SVGGraphics_fillStroke() {
@@ -1187,7 +1263,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
         }
       }
       return this.tgrp;
-    }
+    },
   };
   return SVGGraphics;
 })();

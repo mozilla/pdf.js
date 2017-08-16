@@ -29,7 +29,7 @@ limitations under the License.
       url = url[1];
       chrome.pageAction.setPopup({
         tabId: tabId,
-        popup: '/pageAction/popup.html?file=' + encodeURIComponent(url)
+        popup: '/pageAction/popup.html?file=' + encodeURIComponent(url),
       });
       chrome.pageAction.show(tabId);
     } else {

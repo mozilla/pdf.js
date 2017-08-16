@@ -119,7 +119,7 @@ var FontInspector = (function FontInspectorClosure() {
         download.href = url[1];
       } else if (fontObj.data) {
         url = URL.createObjectURL(new Blob([fontObj.data], {
-          type: fontObj.mimeType
+          type: fontObj.mimeType,
         }));
         download.href = url;
       }
@@ -154,7 +154,7 @@ var FontInspector = (function FontInspectorClosure() {
           resetSelection();
         }
       }, 2000);
-    }
+    },
   };
 })();
 
@@ -243,7 +243,7 @@ var StepperManager = (function StepperManagerClosure() {
     saveBreakPoints: function saveBreakPoints(pageIndex, bps) {
       breakPoints[pageIndex] = bps;
       sessionStorage.setItem('pdfjsBreakPoints', JSON.stringify(breakPoints));
-    }
+    },
   };
 })();
 
@@ -433,7 +433,7 @@ var Stepper = (function StepperClosure() {
           row.style.backgroundColor = null;
         }
       }
-    }
+    },
   };
   return Stepper;
 })();
@@ -497,7 +497,7 @@ var Stats = (function Stats() {
     cleanup() {
       stats = [];
       clear(this.panel);
-    }
+    },
   };
 })();
 
@@ -615,6 +615,6 @@ window.PDFBug = (function PDFBugClosure() {
           tools[j].panel.setAttribute('hidden', 'true');
         }
       }
-    }
+    },
   };
 })();

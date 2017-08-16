@@ -18,14 +18,14 @@
 
 if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
   alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist`');
+        '  `gulp dist-install`');
 }
 
 PDFJS.useOnlyCssZoom = true;
 PDFJS.disableTextLayer = true;
 PDFJS.maxImageSize = 1024 * 1024;
-PDFJS.workerSrc = '../../build/dist/build/pdf.worker.js';
-PDFJS.cMapUrl = '../../build/dist/cmaps/';
+PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
+PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
 PDFJS.cMapPacked = true;
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';
@@ -78,26 +78,28 @@ var PDFViewerApplication = {
       self.setTitleUsingMetadata(pdfDocument);
     }, function (exception) {
       var message = exception && exception.message;
-      var loadingErrorMessage = mozL10n.get('loading_error', null,
-        'An error occurred while loading the PDF.');
+      var l10n = self.l10n;
+      var loadingErrorMessage;
 
       if (exception instanceof PDFJS.InvalidPDFException) {
         // change error message also for other builds
-        loadingErrorMessage = mozL10n.get('invalid_file_error', null,
+        loadingErrorMessage = l10n.get('invalid_file_error', null,
           'Invalid or corrupted PDF file.');
       } else if (exception instanceof PDFJS.MissingPDFException) {
         // special message for missing PDFs
-        loadingErrorMessage = mozL10n.get('missing_file_error', null,
+        loadingErrorMessage = l10n.get('missing_file_error', null,
           'Missing PDF file.');
       } else if (exception instanceof PDFJS.UnexpectedResponseException) {
-        loadingErrorMessage = mozL10n.get('unexpected_response_error', null,
+        loadingErrorMessage = l10n.get('unexpected_response_error', null,
           'Unexpected server response.');
+      } else {
+        loadingErrorMessage = l10n.get('loading_error', null,
+          'An error occurred while loading the PDF.');
       }
 
-      var moreInfo = {
-        message: message
-      };
-      self.error(loadingErrorMessage, moreInfo);
+      loadingErrorMessage.then(function (msg) {
+        self.error(msg, {message: message});
+      });
       self.loadingBar.hide();
     });
   },
@@ -186,28 +188,29 @@ var PDFViewerApplication = {
   },
 
   error: function pdfViewError(message, moreInfo) {
-    var moreInfoText = mozL10n.get('error_version_info',
+    var l10n = this.l10n;
+    var moreInfoText = [l10n.get('error_version_info',
       {version: PDFJS.version || '?', build: PDFJS.build || '?'},
-      'PDF.js v{{version}} (build: {{build}})') + '\n';
+      'PDF.js v{{version}} (build: {{build}})')];
 
     if (moreInfo) {
-      moreInfoText +=
-        mozL10n.get('error_message', {message: moreInfo.message},
-          'Message: {{message}}');
+      moreInfoText.push(
+        l10n.get('error_message', {message: moreInfo.message},
+          'Message: {{message}}'));
       if (moreInfo.stack) {
-        moreInfoText += '\n' +
-        mozL10n.get('error_stack', {stack: moreInfo.stack},
-          'Stack: {{stack}}');
+        moreInfoText.push(
+          l10n.get('error_stack', {stack: moreInfo.stack},
+            'Stack: {{stack}}'));
       } else {
         if (moreInfo.filename) {
-          moreInfoText += '\n' +
-          mozL10n.get('error_file', {file: moreInfo.filename},
-            'File: {{file}}');
+          moreInfoText.push(
+            l10n.get('error_file', {file: moreInfo.filename},
+              'File: {{file}}'));
         }
         if (moreInfo.lineNumber) {
-          moreInfoText += '\n' +
-          mozL10n.get('error_line', {line: moreInfo.lineNumber},
-            'Line: {{line}}');
+          moreInfoText.push(
+            l10n.get('error_line', {line: moreInfo.lineNumber},
+              'Line: {{line}}'));
         }
       }
     }
@@ -239,7 +242,9 @@ var PDFViewerApplication = {
     };
     moreInfoButton.removeAttribute('hidden');
     lessInfoButton.setAttribute('hidden', 'true');
-    errorMoreInfo.value = moreInfoText;
+    Promise.all(moreInfoText).then(function (parts) {
+      errorMoreInfo.value = parts.join('\n');
+    });
   },
 
   progress: function pdfViewProgress(level) {
@@ -286,10 +291,13 @@ var PDFViewerApplication = {
     var linkService = new PDFJS.PDFLinkService();
     this.pdfLinkService = linkService;
 
+    this.l10n = PDFJS.NullL10n;
+
     var container = document.getElementById('viewerContainer');
     var pdfViewer = new PDFJS.PDFViewer({
       container: container,
-      linkService: linkService
+      linkService: linkService,
+      l10n: this.l10n,
     });
     this.pdfViewer = pdfViewer;
     linkService.setViewer(pdfViewer);

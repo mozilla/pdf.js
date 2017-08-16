@@ -43,12 +43,12 @@ class PDFPresentationMode {
   /**
    * @param {PDFPresentationModeOptions} options
    */
-  constructor(options) {
-    this.container = options.container;
-    this.viewer = options.viewer || options.container.firstElementChild;
-    this.pdfViewer = options.pdfViewer;
-    this.eventBus = options.eventBus;
-    var contextMenuItems = options.contextMenuItems || null;
+  constructor({ container, viewer = null, pdfViewer, eventBus,
+                contextMenuItems = null, }) {
+    this.container = container;
+    this.viewer = viewer || container.firstElementChild;
+    this.pdfViewer = pdfViewer;
+    this.eventBus = eventBus;
 
     this.active = false;
     this.args = null;
@@ -119,9 +119,9 @@ class PDFPresentationMode {
 
     evt.preventDefault();
 
-    var delta = normalizeWheelEventDelta(evt);
-    var currentTime = (new Date()).getTime();
-    var storedTime = this.mouseScrollTimeStamp;
+    let delta = normalizeWheelEventDelta(evt);
+    let currentTime = (new Date()).getTime();
+    let storedTime = this.mouseScrollTimeStamp;
 
     // If we've already switched page, avoid accidentally switching again.
     if (currentTime > storedTime &&
@@ -136,9 +136,9 @@ class PDFPresentationMode {
     this.mouseScrollDelta += delta;
 
     if (Math.abs(this.mouseScrollDelta) >= PAGE_SWITCH_THRESHOLD) {
-      var totalDelta = this.mouseScrollDelta;
+      let totalDelta = this.mouseScrollDelta;
       this._resetMouseScrollState();
-      var success = totalDelta > 0 ? this._goToPreviousPage()
+      let success = totalDelta > 0 ? this._goToPreviousPage()
                                    : this._goToNextPage();
       if (success) {
         this.mouseScrollTimeStamp = currentTime;
@@ -155,7 +155,7 @@ class PDFPresentationMode {
    * @private
    */
   _goToPreviousPage() {
-    var page = this.pdfViewer.currentPageNumber;
+    let page = this.pdfViewer.currentPageNumber;
     // If we're at the first page, we don't need to do anything.
     if (page <= 1) {
       return false;
@@ -168,7 +168,7 @@ class PDFPresentationMode {
    * @private
    */
   _goToNextPage() {
-    var page = this.pdfViewer.currentPageNumber;
+    let page = this.pdfViewer.currentPageNumber;
     // If we're at the last page, we don't need to do anything.
     if (page >= this.pdfViewer.pagesCount) {
       return false;
@@ -249,7 +249,7 @@ class PDFPresentationMode {
    * @private
    */
   _exit() {
-    var page = this.pdfViewer.currentPageNumber;
+    let page = this.pdfViewer.currentPageNumber;
     this.container.classList.remove(ACTIVE_SELECTOR);
 
     // Ensure that the correct page is scrolled into view when exiting
@@ -283,12 +283,17 @@ class PDFPresentationMode {
     if (evt.button === 0) {
       // Enable clicking of links in presentation mode. Note: only links
       // pointing to destinations in the current PDF document work.
-      var isInternalLink = (evt.target.href &&
+      let isInternalLink = (evt.target.href &&
                             evt.target.classList.contains('internalLink'));
       if (!isInternalLink) {
         // Unless an internal link was clicked, advance one page.
         evt.preventDefault();
-        this.pdfViewer.currentPageNumber += (evt.shiftKey ? -1 : 1);
+
+        if (evt.shiftKey) {
+          this._goToPreviousPage();
+        } else {
+          this._goToNextPage();
+        }
       }
     }
   }
@@ -373,10 +378,10 @@ class PDFPresentationMode {
         if (this.touchSwipeState === null) {
           return;
         }
-        var delta = 0;
-        var dx = this.touchSwipeState.endX - this.touchSwipeState.startX;
-        var dy = this.touchSwipeState.endY - this.touchSwipeState.startY;
-        var absAngle = Math.abs(Math.atan2(dy, dx));
+        let delta = 0;
+        let dx = this.touchSwipeState.endX - this.touchSwipeState.startX;
+        let dy = this.touchSwipeState.endY - this.touchSwipeState.startY;
+        let absAngle = Math.abs(Math.atan2(dy, dx));
         if (Math.abs(dx) > SWIPE_MIN_DISTANCE_THRESHOLD &&
             (absAngle <= SWIPE_ANGLE_THRESHOLD ||
              absAngle >= (Math.PI - SWIPE_ANGLE_THRESHOLD))) {

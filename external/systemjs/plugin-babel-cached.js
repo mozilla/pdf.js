@@ -26,7 +26,7 @@ function getDb() {
       var request = indexedDB.open(dbName, dbVersion);
       request.onupgradeneeded = function() {
         var db = request.result;
-        db.createObjectStore(dbCacheTable, {keyPath: 'address'});
+        db.createObjectStore(dbCacheTable, { keyPath: 'address', });
       };
       request.onsuccess = function() {
         var db = request.result;

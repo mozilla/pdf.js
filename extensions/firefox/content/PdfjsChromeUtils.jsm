@@ -117,7 +117,7 @@ var PdfjsChromeUtils = {
    * instruct the child to refresh its configuration and (possibly)
    * the module's registration.
    */
-  notifyChildOfSettingsChange() {
+  notifyChildOfSettingsChange(enabled) {
     if (Services.appinfo.processType ===
         Services.appinfo.PROCESS_TYPE_DEFAULT && this._ppmm) {
       // XXX kinda bad, we want to get the parent process mm associated
@@ -125,7 +125,8 @@ var PdfjsChromeUtils = {
       // manager, which means this is going to fire to every child process
       // we have open. Unfortunately I can't find a way to get at that
       // process specific mm from js.
-      this._ppmm.broadcastAsyncMessage("PDFJS:Child:refreshSettings", {});
+      this._ppmm.broadcastAsyncMessage("PDFJS:Child:updateSettings",
+                                       { enabled, });
     }
   },
 
@@ -197,7 +198,7 @@ var PdfjsChromeUtils = {
       query: aEvent.detail.query,
       caseSensitive: aEvent.detail.caseSensitive,
       highlightAll: aEvent.detail.highlightAll,
-      findPrevious: aEvent.detail.findPrevious
+      findPrevious: aEvent.detail.findPrevious,
     };
 
     let browser = aEvent.currentTarget.browser;
@@ -331,7 +332,7 @@ var PdfjsChromeUtils = {
       callback() {
         messageSent = true;
         sendMessage(true);
-      }
+      },
     }];
     notificationBox.appendNotification(data.message, "pdfjs-fallback", null,
                                        notificationBox.PRIORITY_INFO_LOW,
@@ -349,5 +350,5 @@ var PdfjsChromeUtils = {
       }
       sendMessage(false);
     });
-  }
+  },
 };

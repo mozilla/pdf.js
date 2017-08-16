@@ -13,34 +13,12 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/crypto', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'));
-  } else {
-    factory((root.pdfjsCoreCrypto = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream) {
-
-var PasswordException = sharedUtil.PasswordException;
-var PasswordResponses = sharedUtil.PasswordResponses;
-var bytesToString = sharedUtil.bytesToString;
-var warn = sharedUtil.warn;
-var error = sharedUtil.error;
-var assert = sharedUtil.assert;
-var isInt = sharedUtil.isInt;
-var stringToBytes = sharedUtil.stringToBytes;
-var utf8StringToString = sharedUtil.utf8StringToString;
-var Name = corePrimitives.Name;
-var isName = corePrimitives.isName;
-var isDict = corePrimitives.isDict;
-var DecryptStream = coreStream.DecryptStream;
+import {
+  bytesToString, FormatError, isInt, PasswordException, PasswordResponses,
+  stringToBytes, utf8StringToString, warn
+} from '../shared/util';
+import { isDict, isName, Name } from './primitives';
+import { DecryptStream } from './stream';
 
 var ARCFourCipher = (function ARCFourCipherClosure() {
   function ARCFourCipher(key) {
@@ -77,7 +55,7 @@ var ARCFourCipher = (function ARCFourCipherClosure() {
       this.a = a;
       this.b = b;
       return output;
-    }
+    },
   };
   ARCFourCipher.prototype.decryptBlock = ARCFourCipher.prototype.encryptBlock;
 
@@ -251,7 +229,7 @@ var Word64 = (function Word64Closure() {
     assign: function Word64_assign(word) {
       this.high = word.high;
       this.low = word.low;
-    }
+    },
   };
   return Word64;
 })();
@@ -645,7 +623,7 @@ var NullCipher = (function NullCipherClosure() {
   NullCipher.prototype = {
     decryptBlock: function NullCipher_decryptBlock(data) {
       return data;
-    }
+    },
   };
 
   return NullCipher;
@@ -1077,7 +1055,7 @@ var AES128Cipher = (function AES128CipherClosure() {
         output.set(result[i], j);
       }
       return output;
-    }
+    },
   };
 
   return AES128Cipher;
@@ -1509,7 +1487,7 @@ var AES256Cipher = (function AES256CipherClosure() {
         output.set(result[i], j);
       }
       return output;
-    }
+    },
   };
 
   return AES256Cipher;
@@ -1577,7 +1555,7 @@ var PDF17 = (function PDF17Closure() {
       return cipher.decryptBlock(userEncryption,
                                  false,
                                  new Uint8Array(16));
-    }
+    },
   };
   return PDF17;
 })();
@@ -1695,7 +1673,7 @@ var PDF20 = (function PDF20Closure() {
       return cipher.decryptBlock(userEncryption,
                                  false,
                                  new Uint8Array(16));
-    }
+    },
   };
   return PDF20;
 })();
@@ -1720,7 +1698,7 @@ var CipherTransform = (function CipherTransformClosure() {
       var data = stringToBytes(s);
       data = cipher.decryptBlock(data, true);
       return bytesToString(data);
-    }
+    },
   };
   return CipherTransform;
 })();
@@ -1880,14 +1858,14 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   function CipherTransformFactory(dict, fileId, password) {
     var filter = dict.get('Filter');
     if (!isName(filter, 'Standard')) {
-      error('unknown encryption method');
+      throw new FormatError('unknown encryption method');
     }
     this.dict = dict;
     var algorithm = dict.get('V');
     if (!isInt(algorithm) ||
         (algorithm !== 1 && algorithm !== 2 && algorithm !== 4 &&
         algorithm !== 5)) {
-      error('unsupported encryption algorithm');
+      throw new FormatError('unsupported encryption algorithm');
     }
     this.algorithm = algorithm;
     var keyLength = dict.get('Length');
@@ -1914,7 +1892,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
     }
     if (!isInt(keyLength) ||
         keyLength < 40 || (keyLength % 8) !== 0) {
-      error('invalid key length');
+      throw new FormatError('invalid key length');
     }
 
     // prepare keys
@@ -2019,7 +1997,9 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
   }
 
   function buildCipherConstructor(cf, name, num, gen, key) {
-    assert(isName(name), 'Invalid crypt filter name.');
+    if (!isName(name)) {
+      throw new FormatError('Invalid crypt filter name.');
+    }
     var cryptFilter = cf.get(name.name);
     var cfm;
     if (cryptFilter !== null && cryptFilter !== undefined) {
@@ -2045,7 +2025,7 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         return new AES256Cipher(key);
       };
     }
-    error('Unknown crypto method');
+    throw new FormatError('Unknown crypto method');
   }
 
   CipherTransformFactory.prototype = {
@@ -2064,20 +2044,21 @@ var CipherTransformFactory = (function CipherTransformFactoryClosure() {
         return new ARCFourCipher(key);
       };
       return new CipherTransform(cipherConstructor, cipherConstructor);
-    }
+    },
   };
 
   return CipherTransformFactory;
 })();
 
-exports.AES128Cipher = AES128Cipher;
-exports.AES256Cipher = AES256Cipher;
-exports.ARCFourCipher = ARCFourCipher;
-exports.CipherTransformFactory = CipherTransformFactory;
-exports.PDF17 = PDF17;
-exports.PDF20 = PDF20;
-exports.calculateMD5 = calculateMD5;
-exports.calculateSHA256 = calculateSHA256;
-exports.calculateSHA384 = calculateSHA384;
-exports.calculateSHA512 = calculateSHA512;
-}));
+export {
+  AES128Cipher,
+  AES256Cipher,
+  ARCFourCipher,
+  CipherTransformFactory,
+  PDF17,
+  PDF20,
+  calculateMD5,
+  calculateSHA256,
+  calculateSHA384,
+  calculateSHA512,
+};

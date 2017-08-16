@@ -13,51 +13,17 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'));
-  } else {
-    factory((root.pdfjsCoreParser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream) {
-
-var MissingDataException = sharedUtil.MissingDataException;
-var StreamType = sharedUtil.StreamType;
-var assert = sharedUtil.assert;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isInt = sharedUtil.isInt;
-var isNum = sharedUtil.isNum;
-var isString = sharedUtil.isString;
-var warn = sharedUtil.warn;
-var EOF = corePrimitives.EOF;
-var Cmd = corePrimitives.Cmd;
-var Dict = corePrimitives.Dict;
-var Name = corePrimitives.Name;
-var Ref = corePrimitives.Ref;
-var isEOF = corePrimitives.isEOF;
-var isCmd = corePrimitives.isCmd;
-var isDict = corePrimitives.isDict;
-var isName = corePrimitives.isName;
-var Ascii85Stream = coreStream.Ascii85Stream;
-var AsciiHexStream = coreStream.AsciiHexStream;
-var CCITTFaxStream = coreStream.CCITTFaxStream;
-var FlateStream = coreStream.FlateStream;
-var Jbig2Stream = coreStream.Jbig2Stream;
-var JpegStream = coreStream.JpegStream;
-var JpxStream = coreStream.JpxStream;
-var LZWStream = coreStream.LZWStream;
-var NullStream = coreStream.NullStream;
-var PredictorStream = coreStream.PredictorStream;
-var RunLengthStream = coreStream.RunLengthStream;
+import {
+  Ascii85Stream, AsciiHexStream, CCITTFaxStream, FlateStream, Jbig2Stream,
+  JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
+} from './stream';
+import {
+  assert, FormatError, info, isArray, isInt, isNum, isString,
+  MissingDataException, StreamType, warn
+} from '../shared/util';
+import {
+  Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
+} from './primitives';
 
 var MAX_LENGTH_TO_CACHE = 1000;
 
@@ -113,7 +79,7 @@ var Parser = (function ParserClosure() {
             }
             if (isEOF(this.buf1)) {
               if (!this.recoveryMode) {
-                error('End of file inside array');
+                throw new FormatError('End of file inside array');
               }
               return array;
             }
@@ -137,7 +103,7 @@ var Parser = (function ParserClosure() {
             }
             if (isEOF(this.buf1)) {
               if (!this.recoveryMode) {
-                error('End of file inside dictionary');
+                throw new FormatError('End of file inside dictionary');
               }
               return dict;
             }
@@ -382,7 +348,7 @@ var Parser = (function ParserClosure() {
       var dict = new Dict(this.xref);
       while (!isCmd(this.buf1, 'ID') && !isEOF(this.buf1)) {
         if (!isName(this.buf1)) {
-          error('Dictionary key must be a name object');
+          throw new FormatError('Dictionary key must be a name object');
         }
         var key = this.buf1.name;
         this.shift();
@@ -407,7 +373,7 @@ var Parser = (function ParserClosure() {
       var startPos = stream.pos, length, i, ii;
       if (filterName === 'DCTDecode' || filterName === 'DCT') {
         length = this.findDCTDecodeInlineStreamEnd(stream);
-      } else if (filterName === 'ASCII85Decide' || filterName === 'A85') {
+      } else if (filterName === 'ASCII85Decode' || filterName === 'A85') {
         length = this.findASCII85DecodeInlineStreamEnd(stream);
       } else if (filterName === 'ASCIIHexDecode' || filterName === 'AHx') {
         length = this.findASCIIHexDecodeInlineStreamEnd(stream);
@@ -516,7 +482,7 @@ var Parser = (function ParserClosure() {
           stream.pos += scanLength;
         }
         if (!found) {
-          error('Missing endstream');
+          throw new FormatError('Missing endstream');
         }
         length = skipped;
 
@@ -551,7 +517,7 @@ var Parser = (function ParserClosure() {
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
           filter = this.xref.fetchIfRef(filterArray[i]);
           if (!isName(filter)) {
-            error('Bad filter name: ' + filter);
+            throw new FormatError('Bad filter name: ' + filter);
           }
 
           params = null;
@@ -633,7 +599,7 @@ var Parser = (function ParserClosure() {
         warn('Invalid stream: \"' + ex + '\"');
         return new NullStream(stream);
       }
-    }
+    },
   };
 
   return Parser;
@@ -728,7 +694,8 @@ var Lexer = (function LexerClosure() {
         } while (ch === 0x0A || ch === 0x0D);
       }
       if (ch < 0x30 || ch > 0x39) { // '0' - '9'
-        error(`Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
+        throw new FormatError(
+          `Invalid number: ${String.fromCharCode(ch)} (charCode ${ch})`);
       }
 
       var baseValue = ch - 0x30; // '0'
@@ -1023,8 +990,7 @@ var Lexer = (function LexerClosure() {
           // containing try-catch statements, since we would otherwise attempt
           // to parse the *same* character over and over (fixes issue8061.pdf).
           this.nextChar();
-          error('Illegal character: ' + ch);
-          break;
+          throw new FormatError(`Illegal character: ${ch}`);
       }
 
       // command
@@ -1039,7 +1005,7 @@ var Lexer = (function LexerClosure() {
           break;
         }
         if (str.length === 128) {
-          error('Command token too long: ' + str.length);
+          throw new FormatError(`Command token too long: ${str.length}`);
         }
         str = possibleCommand;
         knownCommandFound = knownCommands && knownCommands[str] !== undefined;
@@ -1070,7 +1036,7 @@ var Lexer = (function LexerClosure() {
         }
         ch = this.nextChar();
       }
-    }
+    },
   };
 
   return Lexer;
@@ -1120,12 +1086,13 @@ var Linearization = {
       endFirst: getInt('E'),
       numPages: getInt('N'),
       mainXRefEntriesOffset: getInt('T'),
-      pageFirst: (linDict.has('P') ? getInt('P', true) : 0)
+      pageFirst: (linDict.has('P') ? getInt('P', true) : 0),
     };
-  }
+  },
 };
 
-exports.Lexer = Lexer;
-exports.Linearization = Linearization;
-exports.Parser = Parser;
-}));
+export {
+  Lexer,
+  Linearization,
+  Parser,
+};
