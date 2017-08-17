@@ -37,7 +37,8 @@ const EXPAND_DIVS_TIMEOUT = 300; // ms
  */
 class TextLayerBuilder {
   constructor({ textLayerDiv, eventBus, pageIndex, viewport,
-                findController = null, enhanceTextSelection = false, }) {
+                findController = null, enhanceTextSelection = false,
+                divBuilderHandler = null, }) {
     this.textLayerDiv = textLayerDiv;
     this.eventBus = eventBus || getGlobalEventBus();
     this.textContent = null;
@@ -52,7 +53,7 @@ class TextLayerBuilder {
     this.findController = findController;
     this.textLayerRenderTask = null;
     this.enhanceTextSelection = enhanceTextSelection;
-
+    this.divBuilderHandler = divBuilderHandler;
     this._bindMouse();
   }
 
@@ -98,6 +99,7 @@ class TextLayerBuilder {
       textContentItemsStr: this.textContentItemsStr,
       timeout,
       enhanceTextSelection: this.enhanceTextSelection,
+      divBuilderHandler: this.divBuilderHandler,
     });
     this.textLayerRenderTask.promise.then(() => {
       this.textLayerDiv.appendChild(textLayerFrag);

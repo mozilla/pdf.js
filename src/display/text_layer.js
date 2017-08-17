@@ -160,6 +160,10 @@ var renderTextLayer = (function renderTextLayerClosure() {
         m,
       });
     }
+
+    if (task._divBuilderHandler) {
+      task._divBuilderHandler(textDiv, geom);
+    }
   }
 
   function render(task) {
@@ -467,11 +471,13 @@ var renderTextLayer = (function renderTextLayerClosure() {
    * @param {PageViewport} viewport
    * @param {Array} textDivs
    * @param {boolean} enhanceTextSelection
+   * @param {function} divBuilderHandler
    * @private
    */
   function TextLayerRenderTask({ textContent, textContentStream, container,
                                  viewport, textDivs, textContentItemsStr,
-                                 enhanceTextSelection, }) {
+                                 enhanceTextSelection,
+                                 divBuilderHandler, }) {
     this._textContent = textContent;
     this._textContentStream = textContentStream;
     this._container = container;
@@ -490,6 +496,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
     this._capability = createPromiseCapability();
     this._renderTimer = null;
     this._bounds = [];
+    this._divBuilderHandler = divBuilderHandler;
   }
   TextLayerRenderTask.prototype = {
     get promise() {
@@ -679,6 +686,7 @@ var renderTextLayer = (function renderTextLayerClosure() {
       textDivs: renderParameters.textDivs,
       textContentItemsStr: renderParameters.textContentItemsStr,
       enhanceTextSelection: renderParameters.enhanceTextSelection,
+      divBuilderHandler: renderParameters.divBuilderHandler,
     });
     task._render(renderParameters.timeout);
     return task;
