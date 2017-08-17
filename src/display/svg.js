@@ -742,15 +742,23 @@ SVGGraphics = (function SVGGraphicsClosure() {
           x += -glyph * fontSize * 0.001;
           continue;
         }
-        current.xcoords.push(current.x + x * textHScale);
 
         var width = glyph.width;
         var character = glyph.fontChar;
         var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
         var charWidth = width * widthAdvanceScale + spacing * fontDirection;
-        x += charWidth;
 
+        if (!glyph.isInFont && !font.missingFile) {
+          x += charWidth;
+          // TODO: To assist with text selection, we should replace the missing
+          // character with a space character if charWidth is not zero.
+          // But we cannot just do "character = ' '", because the ' ' character
+          // might actually map to a different glyph.
+          continue;
+        }
+        current.xcoords.push(current.x + x * textHScale);
         current.tspan.textContent += character;
+        x += charWidth;
       }
       if (vertical) {
         current.y -= x * textHScale;
