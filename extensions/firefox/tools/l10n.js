@@ -94,27 +94,6 @@
     }
   }
 
-  function translateDocument() {
-    gLanguage = gExternalLocalizerServices.getLocale();
-
-    translateFragment();
-
-    gReadyState = "complete";
-
-    // fire a 'localized' DOM event
-    var evtObject = document.createEvent("Event");
-    evtObject.initEvent("localized", false, false);
-    evtObject.language = gLanguage;
-    window.dispatchEvent(evtObject);
-  }
-
-  window.addEventListener("DOMContentLoaded", function() {
-    if (gExternalLocalizerServices) {
-      translateDocument();
-    }
-    // ... else see setExternalLocalizerServices below
-  });
-
   // Public API
   document.mozL10n = {
     // get a localized string
@@ -143,15 +122,11 @@
 
     setExternalLocalizerServices(externalLocalizerServices) {
       gExternalLocalizerServices = externalLocalizerServices;
-
-      // ... in case if we missed DOMContentLoaded above.
-      if (window.document.readyState === "interactive" ||
-          window.document.readyState === "complete") {
-        translateDocument();
-      }
+      gLanguage = gExternalLocalizerServices.getLocale();
+      gReadyState = "complete";
     },
 
     // translate an element or document fragment
-    translate: translateFragment
+    translate: translateFragment,
   };
 })(this);

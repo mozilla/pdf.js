@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { createObjectURL, PDFDataRangeTransport, shadow } from './pdfjs';
+import '../extensions/firefox/tools/l10n';
+import { createObjectURL, PDFDataRangeTransport, shadow } from 'pdfjs-lib';
 import { BasePreferences } from './preferences';
 import { PDFViewerApplication } from './app';
 
@@ -74,10 +75,10 @@ var FirefoxCom = (function FirefoxComClosure() {
         action,
         data,
         sync: false,
-        responseExpected: !!callback
+        responseExpected: !!callback,
       });
       return request.dispatchEvent(sender);
-    }
+    },
   };
 })();
 
@@ -100,7 +101,7 @@ var DownloadManager = (function DownloadManagerClosure() {
         blobUrl,
         originalUrl: blobUrl,
         filename,
-        isAttachment: true
+        isAttachment: true,
       });
     },
 
@@ -118,7 +119,7 @@ var DownloadManager = (function DownloadManagerClosure() {
         originalUrl: url,
         filename,
       }, onResponse);
-    }
+    },
   };
 
   return DownloadManager;
@@ -141,6 +142,25 @@ class FirefoxPreferences extends BasePreferences {
   }
 }
 
+class MozL10n {
+  constructor(mozL10n) {
+    this.mozL10n = mozL10n;
+  }
+
+  getDirection() {
+    return Promise.resolve(this.mozL10n.getDirection());
+  }
+
+  get(property, args, fallback) {
+    return Promise.resolve(this.mozL10n.get(property, args, fallback));
+  }
+
+  translate(element) {
+    this.mozL10n.translate(element);
+    return Promise.resolve();
+  }
+}
+
 (function listenFindEvents() {
   var events = [
     'find',
@@ -159,7 +179,7 @@ class FirefoxPreferences extends BasePreferences {
       phraseSearch: true,
       caseSensitive: !!evt.detail.caseSensitive,
       highlightAll: !!evt.detail.highlightAll,
-      findPrevious: !!evt.detail.findPrevious
+      findPrevious: !!evt.detail.findPrevious,
     });
   };
 
@@ -250,6 +270,12 @@ PDFViewerApplication.externalServices = {
     return new FirefoxPreferences();
   },
 
+  createL10n() {
+    var mozL10n = document.mozL10n;
+    // TODO refactor mozL10n.setExternalLocalizerServices
+    return new MozL10n(mozL10n);
+  },
+
   get supportsIntegratedFind() {
     var support = FirefoxCom.requestSync('supportsIntegratedFind');
     return shadow(this, 'supportsIntegratedFind', support);
@@ -279,7 +305,7 @@ document.mozL10n.setExternalLocalizerServices({
 
   getStrings(key) {
     return FirefoxCom.requestSync('getStrings', key);
-  }
+  },
 });
 
 export {

@@ -17,16 +17,16 @@
 
 if (!PDFJS.PDFViewer || !PDFJS.getDocument) {
   alert('Please build the pdfjs-dist library using\n' +
-        '  `gulp dist`');
+        '  `gulp dist-install`');
 }
 
 // The workerSrc property shall be specified.
 //
-PDFJS.workerSrc = '../../build/dist/build/pdf.worker.js';
+PDFJS.workerSrc = '../../node_modules/pdfjs-dist/build/pdf.worker.js';
 
 // Some PDFs need external cmaps.
 //
-// PDFJS.cMapUrl = '../../build/dist/cmaps/';
+// PDFJS.cMapUrl = '../../node_modules/pdfjs-dist/cmaps/';
 // PDFJS.cMapPacked = true;
 
 var DEFAULT_URL = '../../web/compressed.tracemonkey-pldi-09.pdf';

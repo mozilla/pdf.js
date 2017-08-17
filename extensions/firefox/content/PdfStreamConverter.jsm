@@ -206,7 +206,7 @@ PdfDataListener.prototype = {
     if (this.errorCode) {
       value(null, this.errorCode);
     }
-  }
+  },
 };
 
 /**
@@ -221,7 +221,7 @@ class ChromeActions {
       firstPageInfo: false,
       streamTypesUsed: [],
       fontTypesUsed: [],
-      startAt: Date.now()
+      startAt: Date.now(),
     };
   }
 
@@ -309,7 +309,7 @@ class ChromeActions {
         onDataAvailable(aRequest, aContext, aDataInputStream, aOffset, aCount) {
           this.extListener.onDataAvailable(aRequest, aContext, aDataInputStream,
                                            aOffset, aCount);
-        }
+        },
       };
 
       channel.asyncOpen2(listener);
@@ -583,7 +583,7 @@ class RangedChromeActions extends ChromeActions {
           return;
         }
         this.headers[aHeader] = aValue;
-      }
+      },
     };
     if (originalRequest.visitRequestHeaders) {
       originalRequest.visitRequestHeaders(httpHeaderVisitor);
@@ -680,7 +680,7 @@ class RangedChromeActions extends ChromeActions {
           pdfjsLoadAction: "rangeProgress",
           loaded: evt.loaded,
         }, "*");
-      }
+      },
     });
   }
 
@@ -773,7 +773,8 @@ class RequestListener {
         response = function sendResponse(aResponse) {
           try {
             var listener = doc.createEvent("CustomEvent");
-            let detail = Cu.cloneInto({ response: aResponse }, doc.defaultView);
+            let detail = Cu.cloneInto({ response: aResponse, },
+                                      doc.defaultView);
             listener.initCustomEvent("pdf.js.response", true, false, detail);
             return message.dispatchEvent(listener);
           } catch (e) {
@@ -1006,7 +1007,7 @@ PdfStreamConverter.prototype = {
             domWindow.frameElement.className === "previewPluginContentFrame";
           PdfJsTelemetry.onEmbed(isObjectEmbed);
         }
-      }
+      },
     };
 
     // Keep the URL the same so the browser sees it as the same.
@@ -1041,5 +1042,5 @@ PdfStreamConverter.prototype = {
     }
     delete this.dataListener;
     delete this.binaryStream;
-  }
+  },
 };

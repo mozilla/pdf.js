@@ -145,18 +145,18 @@ WebBrowser.prototype = {
         'and CommandLine like \'%' + this.uniqStringId + '%\'"'];
       cmdKillAll = {
         file: 'wmic',
-        args: wmicPrefix.concat(['call', 'terminate'])
+        args: wmicPrefix.concat(['call', 'terminate']),
       };
       cmdCheckAllKilled = {
         file: 'wmic',
-        args: wmicPrefix.concat(['get', 'CommandLine'])
+        args: wmicPrefix.concat(['get', 'CommandLine']),
       };
       isAllKilled = function(exitCode, stdout) {
         return stdout.indexOf(this.uniqStringId) === -1;
       }.bind(this);
     } else {
-      cmdKillAll = {file: 'pkill', args: ['-f', this.uniqStringId]};
-      cmdCheckAllKilled = {file: 'pgrep', args: ['-f', this.uniqStringId]};
+      cmdKillAll = { file: 'pkill', args: ['-f', this.uniqStringId], };
+      cmdCheckAllKilled = { file: 'pgrep', args: ['-f', this.uniqStringId], };
       isAllKilled = function(pgrepStatus) {
         return pgrepStatus === 1; // "No process matched.", per man pgrep.
       };

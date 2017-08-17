@@ -108,7 +108,7 @@ function downloadManifestFiles(manifest, callback) {
     var linkfile = file + '.link';
     var url = fs.readFileSync(linkfile).toString();
     url = url.replace(/\s+$/, '');
-    return {file: file, url: url};
+    return { file: file, url: url, };
   });
 
   var i = 0;

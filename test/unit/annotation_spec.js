@@ -20,31 +20,12 @@ import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
   AnnotationType, stringToBytes, stringToUTF8String
 } from '../../src/shared/util';
-import { Dict, isRef, Name, Ref } from '../../src/core/primitives';
+import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Lexer, Parser } from '../../src/core/parser';
 import { StringStream } from '../../src/core/stream';
+import { XRefMock } from './test_utils';
 
 describe('annotation', function() {
-  function XRefMock(array) {
-    this.map = Object.create(null);
-    for (var elem in array) {
-      var obj = array[elem];
-      var ref = obj.ref, data = obj.data;
-      this.map[ref.toString()] = data;
-    }
-  }
-  XRefMock.prototype = {
-    fetch(ref) {
-      return this.map[ref.toString()];
-    },
-    fetchIfRef(obj) {
-      if (!isRef(obj)) {
-        return obj;
-      }
-      return this.fetch(obj);
-    },
-  };
-
   function PDFManagerMock(params) {
     this.docBaseUrl = params.docBaseUrl || null;
   }
@@ -705,7 +686,7 @@ describe('annotation', function() {
 
       expect(data.url).toBeUndefined();
       expect(data.unsafeUrl).toBeUndefined();
-      expect(data.dest).toEqual([{ num: 17, gen: 0, }, { name: 'XYZ' },
+      expect(data.dest).toEqual([{ num: 17, gen: 0, }, { name: 'XYZ', },
                                  0, 841.89, null]);
     });
   });
@@ -1085,11 +1066,11 @@ describe('annotation', function() {
       var expected = [
         {
           exportValue: 'foo_export',
-          displayValue: 'Foo'
+          displayValue: 'Foo',
         },
         {
           exportValue: 'bar_export',
-          displayValue: 'Bar'
+          displayValue: 'Bar',
         }
       ];
 
@@ -1118,11 +1099,11 @@ describe('annotation', function() {
       var expected = [
         {
           exportValue: 'Foo',
-          displayValue: 'Foo'
+          displayValue: 'Foo',
         },
         {
           exportValue: 'Bar',
-          displayValue: 'Bar'
+          displayValue: 'Bar',
         }
       ];
 
@@ -1148,8 +1129,8 @@ describe('annotation', function() {
         ['Value2', 'Description2'],
       ];
       var expected = [
-        { exportValue: 'Value1', displayValue: 'Description1' },
-        { exportValue: 'Value2', displayValue: 'Description2' },
+        { exportValue: 'Value1', displayValue: 'Description1', },
+        { exportValue: 'Value2', displayValue: 'Description2', },
       ];
 
       var parentDict = new Dict();

@@ -16,8 +16,10 @@
 
 'use strict';
 
-var pdfjsVersion = PDFJSDev.eval('BUNDLE_VERSION');
-var pdfjsBuild = PDFJSDev.eval('BUNDLE_BUILD');
+var pdfjsVersion =
+  typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : void 0;
+var pdfjsBuild =
+  typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_BUILD') : void 0;
 
 var pdfjsSharedUtil = require('./shared/util.js');
 var pdfjsDisplayGlobal = require('./display/global.js');
@@ -26,6 +28,11 @@ var pdfjsDisplayTextLayer = require('./display/text_layer.js');
 var pdfjsDisplayAnnotationLayer = require('./display/annotation_layer.js');
 var pdfjsDisplayDOMUtils = require('./display/dom_utils.js');
 var pdfjsDisplaySVG = require('./display/svg.js');
+
+if (typeof PDFJSDev === 'undefined' ||
+    !PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
+  require('./display/network.js');
+}
 
 exports.PDFJS = pdfjsDisplayGlobal.PDFJS;
 exports.build = pdfjsDisplayAPI.build;
@@ -57,3 +64,4 @@ exports.RenderingCancelledException =
   pdfjsDisplayDOMUtils.RenderingCancelledException;
 exports.getFilenameFromUrl = pdfjsDisplayDOMUtils.getFilenameFromUrl;
 exports.addLinkAttributes = pdfjsDisplayDOMUtils.addLinkAttributes;
+exports.StatTimer = pdfjsSharedUtil.StatTimer;

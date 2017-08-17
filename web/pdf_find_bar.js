@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-import { FindStates } from './pdf_find_controller';
-import { mozL10n } from './ui_utils';
+import { FindState } from './pdf_find_controller';
+import { NullL10n } from './ui_utils';
 
 /**
  * Creates a "search bar" given a set of DOM elements that act as controls
@@ -23,7 +23,7 @@ import { mozL10n } from './ui_utils';
  * is done by PDFFindController.
  */
 class PDFFindBar {
-  constructor(options) {
+  constructor(options, l10n = NullL10n) {
     this.opened = false;
 
     this.bar = options.bar || null;
@@ -38,6 +38,7 @@ class PDFFindBar {
     this.findNextButton = options.findNextButton || null;
     this.findController = options.findController || null;
     this.eventBus = options.eventBus;
+    this.l10n = l10n;
 
     if (this.findController === null) {
       throw new Error('PDFFindBar cannot be used without a ' +
@@ -102,29 +103,29 @@ class PDFFindBar {
   }
 
   updateUIState(state, previous, matchCount) {
-    var notFound = false;
-    var findMsg = '';
-    var status = '';
+    let notFound = false;
+    let findMsg = '';
+    let status = '';
 
     switch (state) {
-      case FindStates.FIND_FOUND:
+      case FindState.FOUND:
         break;
 
-      case FindStates.FIND_PENDING:
+      case FindState.PENDING:
         status = 'pending';
         break;
 
-      case FindStates.FIND_NOTFOUND:
-        findMsg = mozL10n.get('find_not_found', null, 'Phrase not found');
+      case FindState.NOT_FOUND:
+        findMsg = this.l10n.get('find_not_found', null, 'Phrase not found');
         notFound = true;
         break;
 
-      case FindStates.FIND_WRAPPED:
+      case FindState.WRAPPED:
         if (previous) {
-          findMsg = mozL10n.get('find_reached_top', null,
+          findMsg = this.l10n.get('find_reached_top', null,
             'Reached top of document, continued from bottom');
         } else {
-          findMsg = mozL10n.get('find_reached_bottom', null,
+          findMsg = this.l10n.get('find_reached_bottom', null,
             'Reached end of document, continued from top');
         }
         break;
@@ -137,10 +138,12 @@ class PDFFindBar {
     }
 
     this.findField.setAttribute('data-status', status);
-    this.findMsg.textContent = findMsg;
+    Promise.resolve(findMsg).then((msg) => {
+      this.findMsg.textContent = msg;
+      this._adjustWidth();
+    });
 
     this.updateResultsCount(matchCount);
-    this._adjustWidth();
   }
 
   updateResultsCount(matchCount) {
@@ -148,15 +151,18 @@ class PDFFindBar {
       return; // No UI control is provided.
     }
 
-    // If there are no matches, hide the counter.
     if (!matchCount) {
+      // If there are no matches, hide and reset the counter.
       this.findResultsCount.classList.add('hidden');
-      return;
+      this.findResultsCount.textContent = '';
+    } else {
+      // Update and show the match counter.
+      this.findResultsCount.textContent = matchCount.toLocaleString();
+      this.findResultsCount.classList.remove('hidden');
     }
-
-    // Create and show the match counter.
-    this.findResultsCount.textContent = matchCount.toLocaleString();
-    this.findResultsCount.classList.remove('hidden');
+    // Since `updateResultsCount` may be called from `PDFFindController`,
+    // ensure that the width of the findbar is always updated correctly.
+    this._adjustWidth();
   }
 
   open() {
@@ -203,8 +209,8 @@ class PDFFindBar {
     // wrapped). Here we detect and fix that.
     this.bar.classList.remove('wrapContainers');
 
-    var findbarHeight = this.bar.clientHeight;
-    var inputContainerHeight = this.bar.firstElementChild.clientHeight;
+    let findbarHeight = this.bar.clientHeight;
+    let inputContainerHeight = this.bar.firstElementChild.clientHeight;
 
     if (findbarHeight > inputContainerHeight) {
       // The findbar is taller than the input container, which means that

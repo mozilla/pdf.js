@@ -12,20 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* globals global, process, __pdfjsdev_webpack__ */
 
 import './compatibility';
+import { ReadableStream } from './streams_polyfill';
 
-var globalScope = (typeof window !== 'undefined') ? window :
-                  (typeof global !== 'undefined') ? global :
-                  (typeof self !== 'undefined') ? self : this;
+var globalScope =
+  (typeof window !== 'undefined' && window.Math === Math) ? window :
+  // eslint-disable-next-line no-undef
+  (typeof global !== 'undefined' && global.Math === Math) ? global :
+  (typeof self !== 'undefined' && self.Math === Math) ? self : this;
 
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 const NativeImageDecoding = {
   NONE: 'none',
   DECODE: 'decode',
-  DISPLAY: 'display'
+  DISPLAY: 'display',
 };
 
 var TextRenderingMode = {
@@ -38,13 +40,13 @@ var TextRenderingMode = {
   FILL_STROKE_ADD_TO_PATH: 6,
   ADD_TO_PATH: 7,
   FILL_STROKE_MASK: 3,
-  ADD_TO_PATH_FLAG: 4
+  ADD_TO_PATH_FLAG: 4,
 };
 
 var ImageKind = {
   GRAYSCALE_1BPP: 1,
   RGB_24BPP: 2,
-  RGBA_32BPP: 3
+  RGBA_32BPP: 3,
 };
 
 var AnnotationType = {
@@ -73,7 +75,7 @@ var AnnotationType = {
   TRAPNET: 23,
   WATERMARK: 24,
   THREED: 25,
-  REDACT: 26
+  REDACT: 26,
 };
 
 var AnnotationFlag = {
@@ -86,7 +88,7 @@ var AnnotationFlag = {
   READONLY: 0x40,
   LOCKED: 0x80,
   TOGGLENOVIEW: 0x100,
-  LOCKEDCONTENTS: 0x200
+  LOCKEDCONTENTS: 0x200,
 };
 
 var AnnotationFieldFlag = {
@@ -116,7 +118,7 @@ var AnnotationBorderStyleType = {
   DASHED: 2,
   BEVELED: 3,
   INSET: 4,
-  UNDERLINE: 5
+  UNDERLINE: 5,
 };
 
 var StreamType = {
@@ -129,7 +131,7 @@ var StreamType = {
   A85: 6,
   AHX: 7,
   CCF: 8,
-  RL: 9
+  RL: 9,
 };
 
 var FontType = {
@@ -143,13 +145,13 @@ var FontType = {
   TYPE3: 7,
   OPENTYPE: 8,
   TYPE0: 9,
-  MMTYPE1: 10
+  MMTYPE1: 10,
 };
 
 var VERBOSITY_LEVELS = {
   errors: 0,
   warnings: 1,
-  infos: 5
+  infos: 5,
 };
 
 var CMapCompressionType = {
@@ -252,7 +254,7 @@ var OPS = {
   paintImageXObjectRepeat: 88,
   paintImageMaskXObjectRepeat: 89,
   paintSolidColorImageMask: 90,
-  constructPath: 91
+  constructPath: 91,
 };
 
 var verbosity = VERBOSITY_LEVELS.warnings;
@@ -286,27 +288,13 @@ function deprecated(details) {
   console.log('Deprecated API usage: ' + details);
 }
 
-// Fatal errors that should trigger the fallback UI and halt execution by
-// throwing an exception.
-function error(msg) {
-  if (verbosity >= VERBOSITY_LEVELS.errors) {
-    console.log('Error: ' + msg);
-    console.log(backtrace());
-  }
+function unreachable(msg) {
   throw new Error(msg);
-}
-
-function backtrace() {
-  try {
-    throw new Error();
-  } catch (e) {
-    return e.stack ? e.stack.split('\n').slice(2).join('\n') : '';
-  }
 }
 
 function assert(cond, msg) {
   if (!cond) {
-    error(msg);
+    unreachable(msg);
   }
 }
 
@@ -316,7 +304,7 @@ var UNSUPPORTED_FEATURES = {
   javaScript: 'javaScript',
   smask: 'smask',
   shadingPattern: 'shadingPattern',
-  font: 'font'
+  font: 'font',
 };
 
 // Checks if URLs have the same origin. For non-HTTP based URLs, returns false.
@@ -374,7 +362,7 @@ function shadow(obj, prop, value) {
   Object.defineProperty(obj, prop, { value,
                                      enumerable: true,
                                      configurable: true,
-                                     writable: false });
+                                     writable: false, });
   return value;
 }
 
@@ -392,7 +380,7 @@ function getLookupTableFactory(initializer) {
 
 var PasswordResponses = {
   NEED_PASSWORD: 1,
-  INCORRECT_PASSWORD: 2
+  INCORRECT_PASSWORD: 2,
 };
 
 var PasswordException = (function PasswordExceptionClosure() {
@@ -495,6 +483,36 @@ var XRefParseException = (function XRefParseExceptionClosure() {
   XRefParseException.constructor = XRefParseException;
 
   return XRefParseException;
+})();
+
+/**
+ * Error caused during parsing PDF data.
+ */
+let FormatError = (function FormatErrorClosure() {
+  function FormatError(msg) {
+    this.message = msg;
+  }
+
+  FormatError.prototype = new Error();
+  FormatError.prototype.name = 'FormatError';
+  FormatError.constructor = FormatError;
+
+  return FormatError;
+})();
+
+/**
+ * Error used to indicate task cancellation.
+ */
+let AbortException = (function AbortExceptionClosure() {
+  function AbortException(msg) {
+    this.name = 'AbortException';
+    this.message = msg;
+  }
+
+  AbortException.prototype = new Error();
+  AbortException.constructor = AbortException;
+
+  return AbortException;
 })();
 
 var NullCharactersRegExp = /\x00/g;
@@ -1010,7 +1028,7 @@ var PageViewport = (function PageViewportClosure() {
      */
     convertToPdfPoint: function PageViewport_convertToPdfPoint(x, y) {
       return Util.applyInverseTransform([x, y], this.transform);
-    }
+    },
   };
   return PageViewport;
 })();
@@ -1089,11 +1107,8 @@ function isSpace(ch) {
 }
 
 function isNodeJS() {
-  // The if below protected by __pdfjsdev_webpack__ check from webpack parsing.
-  if (typeof __pdfjsdev_webpack__ === 'undefined') {
-    return typeof process === 'object' && process + '' === '[object process]';
-  }
-  return false;
+  // eslint-disable-next-line no-undef
+  return typeof process === 'object' && process + '' === '[object process]';
 }
 
 /**
@@ -1153,7 +1168,7 @@ var StatTimer = (function StatTimerClosure() {
       this.times.push({
         'name': name,
         'start': this.started[name],
-        'end': Date.now()
+        'end': Date.now(),
       });
       // Remove timer from started so it can be called again.
       delete this.started[name];
@@ -1176,14 +1191,14 @@ var StatTimer = (function StatTimerClosure() {
         out += rpad(span['name'], ' ', longest) + ' ' + duration + 'ms\n';
       }
       return out;
-    }
+    },
   };
   return StatTimer;
 })();
 
 var createBlob = function createBlob(data, contentType) {
   if (typeof Blob !== 'undefined') {
-    return new Blob([data], { type: contentType });
+    return new Blob([data], { type: contentType, });
   }
   throw new Error('The "Blob" constructor is not supported.');
 };
@@ -1213,49 +1228,91 @@ var createObjectURL = (function createObjectURLClosure() {
   };
 })();
 
+function resolveCall(fn, args, thisArg = null) {
+  if (!fn) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise((resolve, reject) => {
+    resolve(fn.apply(thisArg, args));
+  });
+}
+
+function wrapReason(reason) {
+  if (typeof reason !== 'object') {
+    return reason;
+  }
+  switch (reason.name) {
+    case 'AbortException':
+      return new AbortException(reason.message);
+    case 'MissingPDFException':
+      return new MissingPDFException(reason.message);
+    case 'UnexpectedResponseException':
+      return new UnexpectedResponseException(reason.message, reason.status);
+    default:
+      return new UnknownErrorException(reason.message, reason.details);
+  }
+}
+
+function resolveOrReject(capability, success, reason) {
+  if (success) {
+    capability.resolve();
+  } else {
+    capability.reject(reason);
+  }
+}
+
+function finalize(promise) {
+  return Promise.resolve(promise).catch(() => {});
+}
+
 function MessageHandler(sourceName, targetName, comObj) {
   this.sourceName = sourceName;
   this.targetName = targetName;
   this.comObj = comObj;
-  this.callbackIndex = 1;
+  this.callbackId = 1;
+  this.streamId = 1;
   this.postMessageTransfers = true;
-  var callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
-  var ah = this.actionHandler = Object.create(null);
+  this.streamSinks = Object.create(null);
+  this.streamControllers = Object.create(null);
+  let callbacksCapabilities = this.callbacksCapabilities = Object.create(null);
+  let ah = this.actionHandler = Object.create(null);
 
   this._onComObjOnMessage = (event) => {
-    var data = event.data;
+    let data = event.data;
     if (data.targetName !== this.sourceName) {
       return;
     }
-    if (data.isReply) {
-      var callbackId = data.callbackId;
+    if (data.stream) {
+      this._processStreamMessage(data);
+    } else if (data.isReply) {
+      let callbackId = data.callbackId;
       if (data.callbackId in callbacksCapabilities) {
-        var callback = callbacksCapabilities[callbackId];
+        let callback = callbacksCapabilities[callbackId];
         delete callbacksCapabilities[callbackId];
         if ('error' in data) {
-          callback.reject(data.error);
+          callback.reject(wrapReason(data.error));
         } else {
           callback.resolve(data.data);
         }
       } else {
-        error('Cannot resolve callback ' + callbackId);
+        throw new Error(`Cannot resolve callback ${callbackId}`);
       }
     } else if (data.action in ah) {
-      var action = ah[data.action];
+      let action = ah[data.action];
       if (data.callbackId) {
-        var sourceName = this.sourceName;
-        var targetName = data.sourceName;
+        let sourceName = this.sourceName;
+        let targetName = data.sourceName;
         Promise.resolve().then(function () {
           return action[0].call(action[1], data.data);
-        }).then(function (result) {
+        }).then((result) => {
           comObj.postMessage({
             sourceName,
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            data: result
+            data: result,
           });
-        }, function (reason) {
+        }, (reason) => {
           if (reason instanceof Error) {
             // Serialize error to avoid "DataCloneError"
             reason = reason + '';
@@ -1265,14 +1322,16 @@ function MessageHandler(sourceName, targetName, comObj) {
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            error: reason
+            error: reason,
           });
         });
+      } else if (data.streamId) {
+        this._createStreamSink(data);
       } else {
         action[0].call(action[1], data.data);
       }
     } else {
-      error('Unknown action from worker: ' + data.action);
+      throw new Error(`Unknown action from worker: ${data.action}`);
     }
   };
   comObj.addEventListener('message', this._onComObjOnMessage);
@@ -1282,15 +1341,15 @@ MessageHandler.prototype = {
   on(actionName, handler, scope) {
     var ah = this.actionHandler;
     if (ah[actionName]) {
-      error('There is already an actionName called "' + actionName + '"');
+      throw new Error(`There is already an actionName called "${actionName}"`);
     }
     ah[actionName] = [handler, scope];
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers
+   * @param {String} actionName - Action to call.
+   * @param {JSON} data - JSON data to send.
+   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers
    */
   send(actionName, data, transfers) {
     var message = {
@@ -1303,14 +1362,14 @@ MessageHandler.prototype = {
   },
   /**
    * Sends a message to the comObj to invoke the action with the supplied data.
-   * Expects that other side will callback with the response.
-   * @param {String} actionName Action to call.
-   * @param {JSON} data JSON data to send.
-   * @param {Array} [transfers] Optional list of transfers/ArrayBuffers.
+   * Expects that the other side will callback with the response.
+   * @param {String} actionName - Action to call.
+   * @param {JSON} data - JSON data to send.
+   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
    * @returns {Promise} Promise to be resolved with response data.
    */
   sendWithPromise(actionName, data, transfers) {
-    var callbackId = this.callbackIndex++;
+    var callbackId = this.callbackId++;
     var message = {
       sourceName: this.sourceName,
       targetName: this.targetName,
@@ -1328,9 +1387,247 @@ MessageHandler.prototype = {
     return capability.promise;
   },
   /**
+   * Sends a message to the comObj to invoke the action with the supplied data.
+   * Expect that the other side will callback to signal 'start_complete'.
+   * @param {String} actionName - Action to call.
+   * @param {JSON} data - JSON data to send.
+   * @param {Object} queueingStrategy - strategy to signal backpressure based on
+   *                 internal queue.
+   * @param {Array} [transfers] - Optional list of transfers/ArrayBuffers.
+   * @return {ReadableStream} ReadableStream to read data in chunks.
+   */
+  sendWithStream(actionName, data, queueingStrategy, transfers) {
+    let streamId = this.streamId++;
+    let sourceName = this.sourceName;
+    let targetName = this.targetName;
+
+    return new ReadableStream({
+      start: (controller) => {
+        let startCapability = createPromiseCapability();
+        this.streamControllers[streamId] = {
+          controller,
+          startCall: startCapability,
+          isClosed: false,
+        };
+        this.postMessage({
+          sourceName,
+          targetName,
+          action: actionName,
+          streamId,
+          data,
+          desiredSize: controller.desiredSize,
+        });
+        // Return Promise for Async process, to signal success/failure.
+        return startCapability.promise;
+      },
+
+      pull: (controller) => {
+        let pullCapability = createPromiseCapability();
+        this.streamControllers[streamId].pullCall = pullCapability;
+        this.postMessage({
+          sourceName,
+          targetName,
+          stream: 'pull',
+          streamId,
+          desiredSize: controller.desiredSize,
+        });
+        // Returning Promise will not call "pull"
+        // again until current pull is resolved.
+        return pullCapability.promise;
+      },
+
+      cancel: (reason) => {
+        let cancelCapability = createPromiseCapability();
+        this.streamControllers[streamId].cancelCall = cancelCapability;
+        this.streamControllers[streamId].isClosed = true;
+        this.postMessage({
+          sourceName,
+          targetName,
+          stream: 'cancel',
+          reason,
+          streamId,
+        });
+        // Return Promise to signal success or failure.
+        return cancelCapability.promise;
+      },
+    }, queueingStrategy);
+  },
+
+  _createStreamSink(data) {
+    let self = this;
+    let action = this.actionHandler[data.action];
+    let streamId = data.streamId;
+    let desiredSize = data.desiredSize;
+    let sourceName = this.sourceName;
+    let targetName = data.sourceName;
+    let capability = createPromiseCapability();
+
+    let sendStreamRequest = ({ stream, chunk, transfers,
+                               success, reason, }) => {
+      this.postMessage({ sourceName, targetName, stream, streamId,
+                         chunk, success, reason, }, transfers);
+    };
+
+    let streamSink = {
+      enqueue(chunk, size = 1, transfers) {
+        if (this.isCancelled) {
+          return;
+        }
+        let lastDesiredSize = this.desiredSize;
+        this.desiredSize -= size;
+        // Enqueue decreases the desiredSize property of sink,
+        // so when it changes from positive to negative,
+        // set ready as unresolved promise.
+        if (lastDesiredSize > 0 && this.desiredSize <= 0) {
+          this.sinkCapability = createPromiseCapability();
+          this.ready = this.sinkCapability.promise;
+        }
+        sendStreamRequest({ stream: 'enqueue', chunk, transfers, });
+      },
+
+      close() {
+        if (this.isCancelled) {
+          return;
+        }
+        sendStreamRequest({ stream: 'close', });
+        delete self.streamSinks[streamId];
+      },
+
+      error(reason) {
+        if (this.isCancelled) {
+          return;
+        }
+        this.isCancelled = true;
+        sendStreamRequest({ stream: 'error', reason, });
+      },
+
+      sinkCapability: capability,
+      onPull: null,
+      onCancel: null,
+      isCancelled: false,
+      desiredSize,
+      ready: null,
+    };
+
+    streamSink.sinkCapability.resolve();
+    streamSink.ready = streamSink.sinkCapability.promise;
+    this.streamSinks[streamId] = streamSink;
+    resolveCall(action[0], [data.data, streamSink], action[1]).then(() => {
+      sendStreamRequest({ stream: 'start_complete', success: true, });
+    }, (reason) => {
+      sendStreamRequest({ stream: 'start_complete', success: false, reason, });
+    });
+  },
+
+  _processStreamMessage(data) {
+    let sourceName = this.sourceName;
+    let targetName = data.sourceName;
+    let streamId = data.streamId;
+
+    let sendStreamResponse = ({ stream, success, reason, }) => {
+      this.comObj.postMessage({ sourceName, targetName, stream,
+                                success, streamId, reason, });
+    };
+
+    let deleteStreamController = () => {
+      // Delete streamController only when start, pull and
+      // cancel callbacks are resolved, to avoid "TypeError".
+      Promise.all([
+        this.streamControllers[data.streamId].startCall,
+        this.streamControllers[data.streamId].pullCall,
+        this.streamControllers[data.streamId].cancelCall
+      ].map(function(capability) {
+        return capability && finalize(capability.promise);
+      })).then(() => {
+        delete this.streamControllers[data.streamId];
+      });
+    };
+
+    switch (data.stream) {
+      case 'start_complete':
+        resolveOrReject(this.streamControllers[data.streamId].startCall,
+                        data.success, wrapReason(data.reason));
+        break;
+      case 'pull_complete':
+        resolveOrReject(this.streamControllers[data.streamId].pullCall,
+                        data.success, wrapReason(data.reason));
+        break;
+      case 'pull':
+        // Ignore any pull after close is called.
+        if (!this.streamSinks[data.streamId]) {
+          sendStreamResponse({ stream: 'pull_complete', success: true, });
+          break;
+        }
+        // Pull increases the desiredSize property of sink,
+        // so when it changes from negative to positive,
+        // set ready property as resolved promise.
+        if (this.streamSinks[data.streamId].desiredSize <= 0 &&
+            data.desiredSize > 0) {
+          this.streamSinks[data.streamId].sinkCapability.resolve();
+        }
+        // Reset desiredSize property of sink on every pull.
+        this.streamSinks[data.streamId].desiredSize = data.desiredSize;
+        resolveCall(this.streamSinks[data.streamId].onPull).then(() => {
+          sendStreamResponse({ stream: 'pull_complete', success: true, });
+        }, (reason) => {
+          sendStreamResponse({ stream: 'pull_complete',
+                               success: false, reason, });
+        });
+        break;
+      case 'enqueue':
+        assert(this.streamControllers[data.streamId],
+               'enqueue should have stream controller');
+        if (!this.streamControllers[data.streamId].isClosed) {
+          this.streamControllers[data.streamId].controller.enqueue(data.chunk);
+        }
+        break;
+      case 'close':
+        assert(this.streamControllers[data.streamId],
+               'close should have stream controller');
+        if (this.streamControllers[data.streamId].isClosed) {
+          break;
+        }
+        this.streamControllers[data.streamId].isClosed = true;
+        this.streamControllers[data.streamId].controller.close();
+        deleteStreamController();
+        break;
+      case 'error':
+        assert(this.streamControllers[data.streamId],
+               'error should have stream controller');
+        this.streamControllers[data.streamId].controller.
+          error(wrapReason(data.reason));
+        deleteStreamController();
+        break;
+      case 'cancel_complete':
+        resolveOrReject(this.streamControllers[data.streamId].cancelCall,
+                        data.success, wrapReason(data.reason));
+        deleteStreamController();
+        break;
+      case 'cancel':
+        if (!this.streamSinks[data.streamId]) {
+          break;
+        }
+        resolveCall(this.streamSinks[data.streamId].onCancel,
+                    [wrapReason(data.reason)]).then(() => {
+          sendStreamResponse({ stream: 'cancel_complete', success: true, });
+        }, (reason) => {
+          sendStreamResponse({ stream: 'cancel_complete',
+                               success: false, reason, });
+        });
+        this.streamSinks[data.streamId].sinkCapability.
+          reject(wrapReason(data.reason));
+        this.streamSinks[data.streamId].isCancelled = true;
+        delete this.streamSinks[data.streamId];
+        break;
+      default:
+        throw new Error('Unexpected stream case');
+    }
+  },
+
+  /**
    * Sends raw message to the comObj.
    * @private
-   * @param message {Object} Raw message.
+   * @param {Object} message - Raw message.
    * @param transfers List of transfers/ArrayBuffers, or undefined.
    */
   postMessage(message, transfers) {
@@ -1343,7 +1640,7 @@ MessageHandler.prototype = {
 
   destroy() {
     this.comObj.removeEventListener('message', this._onComObjOnMessage);
-  }
+  },
 };
 
 function loadJpegStream(id, imageUrl, objs) {
@@ -1371,6 +1668,7 @@ export {
   FontType,
   ImageKind,
   CMapCompressionType,
+  AbortException,
   InvalidPDFException,
   MessageHandler,
   MissingDataException,
@@ -1387,6 +1685,7 @@ export {
   UnknownErrorException,
   Util,
   XRefParseException,
+  FormatError,
   arrayByteLength,
   arraysToBytes,
   assert,
@@ -1395,7 +1694,6 @@ export {
   createPromiseCapability,
   createObjectURL,
   deprecated,
-  error,
   getLookupTableFactory,
   getVerbosityLevel,
   globalScope,
@@ -1419,6 +1717,7 @@ export {
   readUint16,
   readUint32,
   removeNullCharacters,
+  ReadableStream,
   setVerbosityLevel,
   shadow,
   string32,
@@ -1427,4 +1726,5 @@ export {
   stringToUTF8String,
   utf8StringToString,
   warn,
+  unreachable,
 };

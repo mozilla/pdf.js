@@ -13,58 +13,17 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/document', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives', 'pdfjs/core/stream', 'pdfjs/core/obj',
-      'pdfjs/core/parser', 'pdfjs/core/crypto', 'pdfjs/core/evaluator',
-      'pdfjs/core/annotation'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'),
-      require('./stream.js'), require('./obj.js'), require('./parser.js'),
-      require('./crypto.js'), require('./evaluator.js'),
-      require('./annotation.js'));
-  } else {
-    factory((root.pdfjsCoreDocument = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives, root.pdfjsCoreStream,
-      root.pdfjsCoreObj, root.pdfjsCoreParser, root.pdfjsCoreCrypto,
-      root.pdfjsCoreEvaluator, root.pdfjsCoreAnnotation);
-  }
-}(this, function (exports, sharedUtil, corePrimitives, coreStream, coreObj,
-                  coreParser, coreCrypto, coreEvaluator, coreAnnotation) {
-
-var OPS = sharedUtil.OPS;
-var MissingDataException = sharedUtil.MissingDataException;
-var Util = sharedUtil.Util;
-var assert = sharedUtil.assert;
-var error = sharedUtil.error;
-var info = sharedUtil.info;
-var isArray = sharedUtil.isArray;
-var isArrayBuffer = sharedUtil.isArrayBuffer;
-var isNum = sharedUtil.isNum;
-var isString = sharedUtil.isString;
-var shadow = sharedUtil.shadow;
-var stringToBytes = sharedUtil.stringToBytes;
-var stringToPDFString = sharedUtil.stringToPDFString;
-var warn = sharedUtil.warn;
-var isSpace = sharedUtil.isSpace;
-var Dict = corePrimitives.Dict;
-var isDict = corePrimitives.isDict;
-var isName = corePrimitives.isName;
-var isStream = corePrimitives.isStream;
-var NullStream = coreStream.NullStream;
-var Stream = coreStream.Stream;
-var StreamsSequenceStream = coreStream.StreamsSequenceStream;
-var Catalog = coreObj.Catalog;
-var ObjectLoader = coreObj.ObjectLoader;
-var XRef = coreObj.XRef;
-var Linearization = coreParser.Linearization;
-var calculateMD5 = coreCrypto.calculateMD5;
-var OperatorList = coreEvaluator.OperatorList;
-var PartialEvaluator = coreEvaluator.PartialEvaluator;
-var AnnotationFactory = coreAnnotation.AnnotationFactory;
+import { Catalog, ObjectLoader, XRef } from './obj';
+import { Dict, isDict, isName, isStream } from './primitives';
+import {
+  info, isArray, isArrayBuffer, isNum, isSpace, isString, MissingDataException,
+  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+} from '../shared/util';
+import { NullStream, Stream, StreamsSequenceStream } from './stream';
+import { OperatorList, PartialEvaluator } from './evaluator';
+import { AnnotationFactory } from './annotation';
+import { calculateMD5 } from './crypto';
+import { Linearization } from './parser';
 
 var Page = (function PageClosure() {
 
@@ -226,9 +185,8 @@ var Page = (function PageClosure() {
         this.resourcesPromise = this.pdfManager.ensure(this, 'resources');
       }
       return this.resourcesPromise.then(() => {
-        var objectLoader = new ObjectLoader(this.resources.map,
-                                            keys,
-                                            this.xref);
+        let objectLoader = new ObjectLoader(this.resources, keys, this.xref);
+
         return objectLoader.load();
       });
     },
@@ -311,7 +269,7 @@ var Page = (function PageClosure() {
     },
 
     extractTextContent({ handler, task, normalizeWhitespace,
-                         combineTextItems, }) {
+                         sink, combineTextItems, }) {
       var contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
       var resourcesPromise = this.loadResources([
@@ -339,6 +297,7 @@ var Page = (function PageClosure() {
           resources: this.resources,
           normalizeWhitespace,
           combineTextItems,
+          sink,
         });
       });
     },
@@ -368,7 +327,7 @@ var Page = (function PageClosure() {
         }
       }
       return shadow(this, 'annotations', annotations);
-    }
+    },
   };
 
   return Page;
@@ -393,9 +352,11 @@ var PDFDocument = (function PDFDocumentClosure() {
     } else if (isArrayBuffer(arg)) {
       stream = new Stream(arg);
     } else {
-      error('PDFDocument: Unknown argument type');
+      throw new Error('PDFDocument: Unknown argument type');
     }
-    assert(stream.length > 0, 'stream must have data');
+    if (stream.length <= 0) {
+      throw new Error('PDFDocument: stream must have data');
+    }
 
     this.pdfManager = pdfManager;
     this.stream = stream;
@@ -435,9 +396,9 @@ var PDFDocument = (function PDFDocumentClosure() {
         Producer: isString,
         CreationDate: isString,
         ModDate: isString,
-        Trapped: isName
+        Trapped: isName,
       });
-    }
+    },
   };
 
   PDFDocument.prototype = {
@@ -569,7 +530,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
           return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
                           fontCache, builtInCMapCache);
-        }
+        },
       };
       this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
     },
@@ -583,7 +544,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       var docInfo = {
         PDFFormatVersion: this.pdfFormatVersion,
         IsAcroFormPresent: !!this.acroForm,
-        IsXFAPresent: !!this.xfa
+        IsXFAPresent: !!this.xfa,
       };
       var infoDict;
       try {
@@ -642,12 +603,13 @@ var PDFDocument = (function PDFDocumentClosure() {
 
     cleanup: function PDFDocument_cleanup() {
       return this.catalog.cleanup();
-    }
+    },
   };
 
   return PDFDocument;
 })();
 
-exports.Page = Page;
-exports.PDFDocument = PDFDocument;
-}));
+export {
+  Page,
+  PDFDocument,
+};

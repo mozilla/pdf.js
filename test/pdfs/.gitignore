@@ -43,6 +43,7 @@
 !issue7580.pdf
 !issue7598.pdf
 !issue7665.pdf
+!issue7696.pdf
 !issue7835.pdf
 !issue7855.pdf
 !issue7872.pdf
@@ -52,6 +53,10 @@
 !issue8125.pdf
 !issue8372.pdf
 !issue8424.pdf
+!issue8480.pdf
+!issue8570.pdf
+!issue8697.pdf
+!issue8707.pdf
 !bad-PageLabels.pdf
 !filled-background.pdf
 !ArabicCIDTrueType.pdf
@@ -90,6 +95,7 @@
 !issue3879r.pdf
 !issue5686.pdf
 !issue3928.pdf
+!clippath.pdf
 !close-path-bug.pdf
 !issue6019.pdf
 !issue6621.pdf
@@ -189,6 +195,7 @@
 !issue6336.pdf
 !issue6387.pdf
 !issue6410.pdf
+!issue8586.pdf
 !gradientfill.pdf
 !bug903856.pdf
 !bug850854.pdf
@@ -266,6 +273,7 @@
 !issue6113.pdf
 !openoffice.pdf
 !issue7014.pdf
+!issue8187.pdf
 !annotation-link-text-popup.pdf
 !annotation-text-without-popup.pdf
 !annotation-underline.pdf
@@ -283,3 +291,4 @@
 !font_ascent_descent.pdf
 !issue8097_reduced.pdf
 !transparent.pdf
+!xobject-image.pdf

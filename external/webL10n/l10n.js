@@ -21,7 +21,8 @@
  */
 /*
   Additional modifications for PDF.js project:
-    - Disables language initialization on page loading;
+    - Disables language initialization on page loading.
+    - Disables document translation on page loading.
     - Removes consoleWarn and consoleLog and use console.log/warn directly.
     - Removes window._ assignment.
     - Remove compatibility code for OldIE.
@@ -998,7 +999,6 @@ document.webL10n = (function(window, document, undefined) {
       loadLocale(lang, function() {
         if (callback)
           callback();
-        translateFragment();
       });
     },
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createObjectURL, createValidAbsoluteUrl, PDFJS } from './pdfjs';
+import { createObjectURL, createValidAbsoluteUrl, PDFJS } from 'pdfjs-lib';
 
 if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
   throw new Error('Module "pdfjs-web/download_manager" shall not be used ' +
@@ -21,7 +21,7 @@ if (typeof PDFJSDev !== 'undefined' && !PDFJSDev.test('CHROME || GENERIC')) {
 }
 
 function download(blobUrl, filename) {
-  var a = document.createElement('a');
+  let a = document.createElement('a');
   if (a.click) {
     // Use a.click() if available. Otherwise, Chrome might show
     // "Unsafe JavaScript attempt to initiate a navigation change
@@ -49,36 +49,32 @@ function download(blobUrl, filename) {
         blobUrl.split('#')[0] === window.location.href.split('#')[0]) {
       // If _parent == self, then opening an identical URL with different
       // location hash will only cause a navigation, not a download.
-      var padCharacter = blobUrl.indexOf('?') === -1 ? '?' : '&';
+      let padCharacter = blobUrl.indexOf('?') === -1 ? '?' : '&';
       blobUrl = blobUrl.replace(/#|$/, padCharacter + '$&');
     }
     window.open(blobUrl, '_parent');
   }
 }
 
-function DownloadManager() {}
-
-DownloadManager.prototype = {
-  downloadUrl: function DownloadManager_downloadUrl(url, filename) {
+class DownloadManager {
+  downloadUrl(url, filename) {
     if (!createValidAbsoluteUrl(url, 'http://example.com')) {
       return; // restricted/invalid URL
     }
     download(url + '#pdfjs.action=download', filename);
-  },
+  }
 
-  downloadData: function DownloadManager_downloadData(data, filename,
-                                                      contentType) {
+  downloadData(data, filename, contentType) {
     if (navigator.msSaveBlob) { // IE10 and above
-      return navigator.msSaveBlob(new Blob([data], { type: contentType }),
+      return navigator.msSaveBlob(new Blob([data], { type: contentType, }),
                                   filename);
     }
-
-    var blobUrl = createObjectURL(data, contentType,
+    let blobUrl = createObjectURL(data, contentType,
                                   PDFJS.disableCreateObjectURL);
     download(blobUrl, filename);
-  },
+  }
 
-  download: function DownloadManager_download(blob, url, filename) {
+  download(blob, url, filename) {
     if (navigator.msSaveBlob) {
       // IE10 / IE11
       if (!navigator.msSaveBlob(blob, filename)) {
@@ -93,10 +89,10 @@ DownloadManager.prototype = {
       return;
     }
 
-    var blobUrl = URL.createObjectURL(blob);
+    let blobUrl = URL.createObjectURL(blob);
     download(blobUrl, filename);
   }
-};
+}
 
 export {
   DownloadManager,

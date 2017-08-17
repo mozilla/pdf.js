@@ -43,7 +43,7 @@ var PdfjsContentUtils = {
     if (!this._mm) {
       this._mm = Cc["@mozilla.org/childprocessmessagemanager;1"].
         getService(Ci.nsISyncMessageSender);
-      this._mm.addMessageListener("PDFJS:Child:refreshSettings", this);
+      this._mm.addMessageListener("PDFJS:Child:updateSettings", this);
 
 //#if !MOZCENTRAL
       // The signature of `Services.obs.addObserver` changed in Firefox 55,
@@ -62,7 +62,7 @@ var PdfjsContentUtils = {
 
   uninit() {
     if (this._mm) {
-      this._mm.removeMessageListener("PDFJS:Child:refreshSettings", this);
+      this._mm.removeMessageListener("PDFJS:Child:updateSettings", this);
       Services.obs.removeObserver(this, "quit-application");
     }
     this._mm = null;
@@ -76,44 +76,36 @@ var PdfjsContentUtils = {
 
   clearUserPref(aPrefName) {
     this._mm.sendSyncMessage("PDFJS:Parent:clearUserPref", {
-      name: aPrefName
+      name: aPrefName,
     });
   },
 
   setIntPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setIntPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
   setBoolPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setBoolPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
   setCharPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setCharPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
   },
 
   setStringPref(aPrefName, aPrefValue) {
     this._mm.sendSyncMessage("PDFJS:Parent:setStringPref", {
       name: aPrefName,
-      value: aPrefValue
+      value: aPrefValue,
     });
-  },
-
-  /*
-   * Forwards default app query to the parent where we check various
-   * handler app settings only available in the parent process.
-   */
-  isDefaultHandlerApp() {
-    return this._mm.sendSyncMessage("PDFJS:Parent:isDefaultHandlerApp")[0];
   },
 
   /*
@@ -145,15 +137,19 @@ var PdfjsContentUtils = {
 
   receiveMessage(aMsg) {
     switch (aMsg.name) {
-      case "PDFJS:Child:refreshSettings":
+      case "PDFJS:Child:updateSettings":
         // Only react to this if we are remote.
         if (Services.appinfo.processType ===
             Services.appinfo.PROCESS_TYPE_CONTENT) {
           let jsm = "resource://pdf.js/PdfJs.jsm";
           let pdfjs = Components.utils.import(jsm, {}).PdfJs;
-          pdfjs.updateRegistration();
+          if (aMsg.data.enabled) {
+            pdfjs.ensureRegistered();
+          } else {
+            pdfjs.ensureUnregistered();
+          }
         }
         break;
     }
-  }
+  },
 };

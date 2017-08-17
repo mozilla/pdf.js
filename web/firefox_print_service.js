@@ -15,7 +15,7 @@
 
 import { CSS_UNITS } from './ui_utils';
 import { PDFPrintServiceFactory } from './app';
-import { shadow } from './pdfjs';
+import { shadow } from 'pdfjs-lib';
 
 // Creates a placeholder with div and canvas with right size for the page.
 function composePage(pdfDocument, pageNumber, size, printContainer) {
@@ -49,7 +49,7 @@ function composePage(pdfDocument, pageNumber, size, printContainer) {
         canvasContext: ctx,
         transform: [PRINT_UNITS, 0, 0, PRINT_UNITS, 0, 0],
         viewport: pdfPage.getViewport(1, size.rotation),
-        intent: 'print'
+        intent: 'print',
       };
       return pdfPage.render(renderContext).promise;
     }).then(function() {
@@ -88,7 +88,7 @@ FirefoxPrintService.prototype = {
 
   destroy() {
     this.printContainer.textContent = '';
-  }
+  },
 };
 
 PDFPrintServiceFactory.instance = {
@@ -101,7 +101,7 @@ PDFPrintServiceFactory.instance = {
 
   createPrintService(pdfDocument, pagesOverview, printContainer) {
     return new FirefoxPrintService(pdfDocument, pagesOverview, printContainer);
-  }
+  },
 };
 
 export {

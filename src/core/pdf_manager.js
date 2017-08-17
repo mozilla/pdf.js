@@ -13,34 +13,13 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/pdf_manager', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/stream', 'pdfjs/core/chunked_stream', 'pdfjs/core/document'],
-      factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./stream.js'),
-      require('./chunked_stream.js'), require('./document.js'));
-  } else {
-    factory((root.pdfjsCorePdfManager = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreStream, root.pdfjsCoreChunkedStream,
-      root.pdfjsCoreDocument);
-  }
-}(this, function (exports, sharedUtil, coreStream, coreChunkedStream,
-                  coreDocument) {
-
-var warn = sharedUtil.warn;
-var createValidAbsoluteUrl = sharedUtil.createValidAbsoluteUrl;
-var shadow = sharedUtil.shadow;
-var NotImplementedException = sharedUtil.NotImplementedException;
-var MissingDataException = sharedUtil.MissingDataException;
-var createPromiseCapability = sharedUtil.createPromiseCapability;
-var Util = sharedUtil.Util;
-var Stream = coreStream.Stream;
-var ChunkedStreamManager = coreChunkedStream.ChunkedStreamManager;
-var PDFDocument = coreDocument.PDFDocument;
+import {
+  createPromiseCapability, createValidAbsoluteUrl, MissingDataException,
+  NotImplementedException, shadow, Util, warn
+} from '../shared/util';
+import { ChunkedStreamManager } from './chunked_stream';
+import { PDFDocument } from './document';
+import { Stream } from './stream';
 
 var BasePdfManager = (function BasePdfManagerClosure() {
   function BasePdfManager() {
@@ -115,7 +94,7 @@ var BasePdfManager = (function BasePdfManagerClosure() {
 
     terminate: function BasePdfManager_terminate() {
       return new NotImplementedException();
-    }
+    },
   };
 
   return BasePdfManager;
@@ -166,7 +145,7 @@ var LocalPdfManager = (function LocalPdfManagerClosure() {
 
     terminate: function LocalPdfManager_terminate() {
       return;
-    }
+    },
   });
 
   return LocalPdfManager;
@@ -186,7 +165,7 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
       url: args.url,
       length: args.length,
       disableAutoFetch: args.disableAutoFetch,
-      rangeChunkSize: args.rangeChunkSize
+      rangeChunkSize: args.rangeChunkSize,
     };
     this.streamManager = new ChunkedStreamManager(pdfNetworkStream, params);
     this.pdfDocument = new PDFDocument(this, this.streamManager.getStream());
@@ -240,12 +219,13 @@ var NetworkPdfManager = (function NetworkPdfManagerClosure() {
 
     terminate: function NetworkPdfManager_terminate() {
       this.streamManager.abort();
-    }
+    },
   });
 
   return NetworkPdfManager;
 })();
 
-exports.LocalPdfManager = LocalPdfManager;
-exports.NetworkPdfManager = NetworkPdfManager;
-}));
+export {
+  LocalPdfManager,
+  NetworkPdfManager,
+};

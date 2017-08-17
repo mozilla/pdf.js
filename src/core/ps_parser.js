@@ -13,23 +13,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/ps_parser', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/primitives'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'), require('./primitives.js'));
-  } else {
-    factory((root.pdfjsCorePsParser = {}), root.pdfjsSharedUtil,
-      root.pdfjsCorePrimitives);
-  }
-}(this, function (exports, sharedUtil, corePrimitives) {
-
-var error = sharedUtil.error;
-var isSpace = sharedUtil.isSpace;
-var EOF = corePrimitives.EOF;
+import { FormatError, isSpace } from '../shared/util';
+import { EOF } from './primitives';
 
 var PostScriptParser = (function PostScriptParserClosure() {
   function PostScriptParser(lexer) {
@@ -54,8 +39,8 @@ var PostScriptParser = (function PostScriptParserClosure() {
       if (this.accept(type)) {
         return true;
       }
-      error('Unexpected symbol: found ' + this.token.type + ' expected ' +
-        type + '.');
+      throw new FormatError(
+        `Unexpected symbol: found ${this.token.type} expected ${type}.`);
     },
     parse: function PostScriptParser_parse() {
       this.nextToken();
@@ -104,9 +89,9 @@ var PostScriptParser = (function PostScriptParserClosure() {
         this.operators[conditionLocation] = endOfTrue;
         this.operators[conditionLocation + 1] = 'jz';
       } else {
-        error('PS Function: error parsing conditional.');
+        throw new FormatError('PS Function: error parsing conditional.');
       }
-    }
+    },
   };
   return PostScriptParser;
 })();
@@ -117,7 +102,7 @@ var PostScriptTokenTypes = {
   NUMBER: 2,
   OPERATOR: 3,
   IF: 4,
-  IFELSE: 5
+  IFELSE: 5,
 };
 
 var PostScriptToken = (function PostScriptTokenClosure() {
@@ -226,14 +211,15 @@ var PostScriptLexer = (function PostScriptLexerClosure() {
       }
       var value = parseFloat(strBuf.join(''));
       if (isNaN(value)) {
-        error('Invalid floating point number: ' + value);
+        throw new FormatError(`Invalid floating point number: ${value}`);
       }
       return value;
-    }
+    },
   };
   return PostScriptLexer;
 })();
 
-exports.PostScriptLexer = PostScriptLexer;
-exports.PostScriptParser = PostScriptParser;
-}));
+export {
+  PostScriptLexer,
+  PostScriptParser,
+};

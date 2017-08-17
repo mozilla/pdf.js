@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { error, info, isArray, Util } from '../shared/util';
+import { FormatError, info, isArray, Util } from '../shared/util';
 import { WebGLUtils } from './webgl';
 
 var ShadingIRs = {};
@@ -41,9 +41,9 @@ ShadingIRs.RadialAxial = {
           grad.addColorStop(c[0], c[1]);
         }
         return grad;
-      }
+      },
     };
-  }
+  },
 };
 
 var createMeshCanvas = (function createMeshCanvasClosure() {
@@ -140,8 +140,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
         }
         break;
       default:
-        error('illigal figure');
-        break;
+        throw new Error('illegal figure');
     }
   }
 
@@ -174,7 +173,7 @@ var createMeshCanvas = (function createMeshCanvasClosure() {
       offsetX: -offsetX,
       offsetY: -offsetY,
       scaleX: 1 / scaleX,
-      scaleY: 1 / scaleY
+      scaleY: 1 / scaleY,
     };
 
     var paddedWidth = width + BORDER_SIZE * 2;
@@ -269,9 +268,9 @@ ShadingIRs.Mesh = {
                   temporaryPatternCanvas.scaleY);
 
         return ctx.createPattern(temporaryPatternCanvas.canvas, 'no-repeat');
-      }
+      },
     };
-  }
+  },
 };
 
 ShadingIRs.Dummy = {
@@ -280,15 +279,15 @@ ShadingIRs.Dummy = {
       type: 'Pattern',
       getPattern: function Dummy_fromIR_getPattern() {
         return 'hotpink';
-      }
+      },
     };
-  }
+  },
 };
 
 function getShadingPatternFromIR(raw) {
   var shadingIR = ShadingIRs[raw[0]];
   if (!shadingIR) {
-    error('Unknown IR type: ' + raw[0]);
+    throw new Error(`Unknown IR type: ${raw[0]}`);
   }
   return shadingIR.fromIR(raw);
 }
@@ -296,7 +295,7 @@ function getShadingPatternFromIR(raw) {
 var TilingPattern = (function TilingPatternClosure() {
   var PaintType = {
     COLORED: 1,
-    UNCOLORED: 2
+    UNCOLORED: 2,
   };
 
   var MAX_PATTERN_SIZE = 3000; // 10in @ 300dpi shall be enough
@@ -304,7 +303,7 @@ var TilingPattern = (function TilingPatternClosure() {
   function TilingPattern(IR, color, ctx, canvasGraphicsFactory, baseTransform) {
     this.operatorList = IR[2];
     this.matrix = IR[3] || [1, 0, 0, 1, 0, 0];
-    this.bbox = Util.normalizeRect(IR[4]);
+    this.bbox = IR[4];
     this.xstep = IR[5];
     this.ystep = IR[6];
     this.paintType = IR[7];
@@ -415,7 +414,7 @@ var TilingPattern = (function TilingPatternClosure() {
             context.strokeStyle = cssColor;
             break;
           default:
-            error('Unsupported paint type: ' + paintType);
+            throw new FormatError(`Unsupported paint type: ${paintType}`);
         }
       },
 
@@ -428,7 +427,7 @@ var TilingPattern = (function TilingPatternClosure() {
       this.scaleToContext();
 
       return ctx.createPattern(temporaryPatternCanvas, 'repeat');
-    }
+    },
   };
 
   return TilingPattern;

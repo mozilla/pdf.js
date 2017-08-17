@@ -13,28 +13,22 @@
  * limitations under the License.
  */
 
-'use strict';
+import {
+  info, log2, readUint16, readUint32, warn
+} from '../shared/util';
+import { ArithmeticDecoder } from './arithmetic_decoder';
 
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define('pdfjs/core/jpx', ['exports', 'pdfjs/shared/util',
-      'pdfjs/core/arithmetic_decoder'], factory);
-  } else if (typeof exports !== 'undefined') {
-    factory(exports, require('../shared/util.js'),
-      require('./arithmetic_decoder.js'));
-  } else {
-    factory((root.pdfjsCoreJpx = {}), root.pdfjsSharedUtil,
-      root.pdfjsCoreArithmeticDecoder);
+let JpxError = (function JpxErrorClosure() {
+  function JpxError(msg) {
+    this.message = 'JPX error: ' + msg;
   }
-}(this, function (exports, sharedUtil, coreArithmeticDecoder) {
 
-var info = sharedUtil.info;
-var warn = sharedUtil.warn;
-var error = sharedUtil.error;
-var log2 = sharedUtil.log2;
-var readUint16 = sharedUtil.readUint16;
-var readUint32 = sharedUtil.readUint32;
-var ArithmeticDecoder = coreArithmeticDecoder.ArithmeticDecoder;
+  JpxError.prototype = new Error();
+  JpxError.prototype.name = 'JpxError';
+  JpxError.constructor = JpxError;
+
+  return JpxError;
+})();
 
 var JpxImage = (function JpxImageClosure() {
   // Table E.1
@@ -42,7 +36,7 @@ var JpxImage = (function JpxImageClosure() {
     'LL': 0,
     'LH': 1,
     'HL': 1,
-    'HH': 2
+    'HH': 2,
   };
   function JpxImage() {
     this.failOnCorruptedImage = false;
@@ -75,7 +69,7 @@ var JpxImage = (function JpxImageClosure() {
           lbox = length - position + headerSize;
         }
         if (lbox < headerSize) {
-          error('JPX Error: Invalid box field size');
+          throw new JpxError('Invalid box field size');
         }
         var dataLength = lbox - headerSize;
         var jumpDataLength = true;
@@ -153,7 +147,7 @@ var JpxImage = (function JpxImageClosure() {
           return;
         }
       }
-      error('JPX Error: No size marker found in JPX stream');
+      throw new JpxError('No size marker found in JPX stream');
     },
     parseCodestream: function JpxImage_parseCodestream(data, start, end) {
       var context = {};
@@ -191,7 +185,7 @@ var JpxImage = (function JpxImageClosure() {
                   precision: (data[j] & 0x7F) + 1,
                   isSigned: !!(data[j] & 0x80),
                   XRsiz: data[j + 1],
-                  YRsiz: data[j + 1]
+                  YRsiz: data[j + 1],
                 };
                 calculateComponentDimensions(component, siz);
                 components.push(component);
@@ -328,7 +322,7 @@ var JpxImage = (function JpxImageClosure() {
                   var precinctsSize = data[j++];
                   precinctsSizes.push({
                     PPx: precinctsSize & 0xF,
-                    PPy: precinctsSize >> 4
+                    PPy: precinctsSize >> 4,
                   });
                 }
                 cod.precinctsSizes = precinctsSizes;
@@ -408,7 +402,7 @@ var JpxImage = (function JpxImageClosure() {
         }
       } catch (e) {
         if (doNotRecover || this.failOnCorruptedImage) {
-          error('JPX Error: ' + e.message);
+          throw new JpxError(e.message);
         } else {
           warn('JPX: Trying to recover from: ' + e.message);
         }
@@ -417,7 +411,7 @@ var JpxImage = (function JpxImageClosure() {
       this.width = context.SIZ.Xsiz - context.SIZ.XOsiz;
       this.height = context.SIZ.Ysiz - context.SIZ.YOsiz;
       this.componentsCount = context.SIZ.Csiz;
-    }
+    },
   };
   function calculateComponentDimensions(component, siz) {
     // Section B.2 Component mapping
@@ -543,7 +537,7 @@ var JpxImage = (function JpxImageClosure() {
           tbx0: codeblockWidth * i,
           tby0: codeblockHeight * j,
           tbx1: codeblockWidth * (i + 1),
-          tby1: codeblockHeight * (j + 1)
+          tby1: codeblockHeight * (j + 1),
         };
 
         codeblock.tbx0_ = Math.max(subband.tbx0, codeblock.tbx0);
@@ -587,7 +581,7 @@ var JpxImage = (function JpxImageClosure() {
             cbxMin: i,
             cbyMin: j,
             cbxMax: i,
-            cbyMax: j
+            cbyMax: j,
           };
         }
         codeblock.precinct = precinct;
@@ -597,7 +591,7 @@ var JpxImage = (function JpxImageClosure() {
       codeblockWidth: xcb_,
       codeblockHeight: ycb_,
       numcodeblockwide: cbx1 - cbx0 + 1,
-      numcodeblockhigh: cby1 - cby0 + 1
+      numcodeblockhigh: cby1 - cby0 + 1,
     };
     subband.codeblocks = codeblocks;
     subband.precincts = precincts;
@@ -620,7 +614,7 @@ var JpxImage = (function JpxImageClosure() {
     }
     return {
       layerNumber,
-      codeblocks: precinctCodeblocks
+      codeblocks: precinctCodeblocks,
     };
   }
   function LayerResolutionComponentPositionIterator(context) {
@@ -660,7 +654,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         r = 0;
       }
-      error('JPX Error: Out of packets');
+      throw new JpxError('Out of packets');
     };
   }
   function ResolutionLayerComponentPositionIterator(context) {
@@ -700,7 +694,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         l = 0;
       }
-      error('JPX Error: Out of packets');
+      throw new JpxError('Out of packets');
     };
   }
   function ResolutionPositionComponentLayerIterator(context) {
@@ -759,7 +753,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         p = 0;
       }
-      error('JPX Error: Out of packets');
+      throw new JpxError('Out of packets');
     };
   }
   function PositionComponentResolutionLayerIterator(context) {
@@ -806,7 +800,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         px = 0;
       }
-      error('JPX Error: Out of packets');
+      throw new JpxError('Out of packets');
     };
   }
   function ComponentPositionResolutionLayerIterator(context) {
@@ -852,7 +846,7 @@ var JpxImage = (function JpxImageClosure() {
         }
         py = 0;
       }
-      error('JPX Error: Out of packets');
+      throw new JpxError('Out of packets');
     };
   }
   function getPrecinctIndexIfExist(
@@ -903,7 +897,7 @@ var JpxImage = (function JpxImageClosure() {
           resolution.precinctParameters.numprecinctshigh);
         sizePerResolution[r] = {
           width: widthCurrentResolution,
-          height: heightCurrentResolution
+          height: heightCurrentResolution,
         };
         scale <<= 1;
       }
@@ -916,7 +910,7 @@ var JpxImage = (function JpxImageClosure() {
         minWidth: minWidthCurrentComponent,
         minHeight: minHeightCurrentComponent,
         maxNumWide: maxNumWideCurrentComponent,
-        maxNumHigh: maxNumHighCurrentComponent
+        maxNumHigh: maxNumHighCurrentComponent,
       };
     }
     return {
@@ -1032,7 +1026,7 @@ var JpxImage = (function JpxImageClosure() {
           new ComponentPositionResolutionLayerIterator(context);
         break;
       default:
-        error('JPX Error: Unsupported progression order ' + progressionOrder);
+        throw new JpxError(`Unsupported progression order ${progressionOrder}`);
     }
   }
   function parseTilePackets(context, data, offset, dataLength) {
@@ -1186,7 +1180,7 @@ var JpxImage = (function JpxImageClosure() {
         queue.push({
           codeblock,
           codingpasses,
-          dataLength: codedDataLength
+          dataLength: codedDataLength,
         });
       }
       alignToByte();
@@ -1203,7 +1197,7 @@ var JpxImage = (function JpxImageClosure() {
           data,
           start: offset + position,
           end: offset + position + packetItem.dataLength,
-          codingpasses: packetItem.codingpasses
+          codingpasses: packetItem.codingpasses,
         });
         position += packetItem.dataLength;
       }
@@ -1365,7 +1359,7 @@ var JpxImage = (function JpxImageClosure() {
       subbandCoefficients.push({
         width,
         height,
-        items: coefficients
+        items: coefficients,
       });
     }
 
@@ -1376,7 +1370,7 @@ var JpxImage = (function JpxImageClosure() {
       top: component.tcy0,
       width: result.width,
       height: result.height,
-      items: result.items
+      items: result.items,
     };
   }
   function transformComponents(context) {
@@ -1398,7 +1392,7 @@ var JpxImage = (function JpxImageClosure() {
         top: tile0.top,
         width: tile0.width,
         height: tile0.height,
-        items: out
+        items: out,
       };
 
       // Section G.2.2 Inverse multi component transform
@@ -1500,7 +1494,7 @@ var JpxImage = (function JpxImageClosure() {
         var level = {
           width,
           height,
-          items: []
+          items: [],
         };
         this.levels.push(level);
         width = Math.ceil(width / 2);
@@ -1546,7 +1540,7 @@ var JpxImage = (function JpxImageClosure() {
         level = this.levels[currentLevel];
         level.items[level.index] = value;
         return true;
-      }
+      },
     };
     return TagTree;
   })();
@@ -1627,7 +1621,7 @@ var JpxImage = (function JpxImageClosure() {
         level = this.levels[currentLevel];
         level.items[level.index] = value;
         return true;
-      }
+      },
     };
     return InclusionTree;
   })();
@@ -1969,9 +1963,9 @@ var JpxImage = (function JpxImageClosure() {
                      (decoder.readBit(contexts, UNIFORM_CONTEXT) << 1) |
                       decoder.readBit(contexts, UNIFORM_CONTEXT);
         if (symbol !== 0xA) {
-          error('JPX Error: Invalid segmentation symbol');
+          throw new JpxError('Invalid segmentation symbol');
         }
-      }
+      },
     };
 
     return BitModel;
@@ -2227,5 +2221,6 @@ var JpxImage = (function JpxImageClosure() {
   return JpxImage;
 })();
 
-exports.JpxImage = JpxImage;
-}));
+export {
+  JpxImage,
+};
