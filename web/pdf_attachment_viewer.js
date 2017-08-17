@@ -62,12 +62,12 @@ class PDFAttachmentViewer {
    * @private
    */
   _dispatchEvent(attachmentsCount) {
+    this._renderedCapability.resolve();
+
     this.eventBus.dispatch('attachmentsloaded', {
       source: this,
       attachmentsCount,
     });
-
-    this._renderedCapability.resolve();
   }
 
   /**

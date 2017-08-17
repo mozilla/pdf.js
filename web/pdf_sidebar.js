@@ -420,17 +420,31 @@ class PDFSidebar {
     });
 
     this.eventBus.on('attachmentsloaded', (evt) => {
-      let attachmentsCount = evt.attachmentsCount;
+      if (evt.attachmentsCount) {
+        this.attachmentsButton.disabled = false;
 
-      this.attachmentsButton.disabled = !attachmentsCount;
-
-      if (attachmentsCount) {
         this._showUINotification(SidebarView.ATTACHMENTS);
-      } else if (this.active === SidebarView.ATTACHMENTS) {
-        // If the attachment view was opened during document load, switch away
-        // from it if it turns out that the document has no attachments.
-        this.switchView(SidebarView.THUMBS);
+        return;
       }
+
+      // Attempt to avoid temporarily disabling, and switching away from, the
+      // attachment view for documents that do not contain proper attachments
+      // but *only* FileAttachment annotations. Hence we defer those operations
+      // slightly to allow time for parsing any FileAttachment annotations that
+      // may be present on the *initially* rendered page of the document.
+      Promise.resolve().then(() => {
+        if (this.attachmentsView.hasChildNodes()) {
+          // FileAttachment annotations were appended to the attachment view.
+          return;
+        }
+        this.attachmentsButton.disabled = true;
+
+        if (this.active === SidebarView.ATTACHMENTS) {
+          // If the attachment view was opened during document load, switch away
+          // from it if it turns out that the document has no attachments.
+          this.switchView(SidebarView.THUMBS);
+        }
+      });
     });
 
     // Update the thumbnailViewer, if visible, when exiting presentation mode.
