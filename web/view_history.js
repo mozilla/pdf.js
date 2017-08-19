@@ -73,25 +73,7 @@ class ViewHistory {
           PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         resolve(sessionStorage.getItem('pdfjs.history'));
       } else {
-        let value = localStorage.getItem('pdfjs.history');
-
-        // TODO: Remove this key-name conversion after a suitable time-frame.
-        // Note that we only remove the old 'database' entry if it looks like
-        // it was created by PDF.js, to avoid removing someone else's data.
-        if (!value) {
-          let databaseStr = localStorage.getItem('database');
-          if (databaseStr) {
-            try {
-              let database = JSON.parse(databaseStr);
-              if (typeof database.files[0].fingerprint === 'string') {
-                localStorage.setItem('pdfjs.history', databaseStr);
-                localStorage.removeItem('database');
-                value = databaseStr;
-              }
-            } catch (ex) { }
-          }
-        }
-        resolve(value);
+        resolve(localStorage.getItem('pdfjs.history'));
       }
     });
   }
