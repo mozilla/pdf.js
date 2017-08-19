@@ -398,12 +398,13 @@ var Parser = (function ParserClosure() {
         }
         adler32 = ((b % 65521) << 16) | (a % 65521);
 
-        if (this.imageCache.adler32 === adler32) {
+        let cacheEntry = this.imageCache[adler32];
+        if (cacheEntry !== undefined) {
           this.buf2 = Cmd.get('EI');
           this.shift();
 
-          this.imageCache[adler32].reset();
-          return this.imageCache[adler32];
+          cacheEntry.reset();
+          return cacheEntry;
         }
       }
 
