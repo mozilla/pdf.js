@@ -562,6 +562,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
             this.setTextMatrix(args[0], args[1], args[2],
                                args[3], args[4], args[5]);
             break;
+          case OPS.setTextRise:
+            this.setTextRise(args[0]);
+            break;
           case OPS.setLineWidth:
             this.setLineWidth(args[0]);
             break;
@@ -782,9 +785,17 @@ SVGGraphics = (function SVGGraphicsClosure() {
         current.tspan.setAttributeNS(null, 'fill', current.fillColor);
       }
 
+      // Include the text rise in the text matrix since the `pm` function
+      // creates the SVG element's `translate` entry (work on a copy to avoid
+      // altering the original text matrix).
+      let textMatrix = current.textMatrix;
+      if (current.textRise !== 0) {
+        textMatrix = textMatrix.slice();
+        textMatrix[5] += current.textRise;
+      }
+
       current.txtElement.setAttributeNS(null, 'transform',
-                                        pm(current.textMatrix) +
-                                        ' scale(1, -1)');
+                                        pm(textMatrix) + ' scale(1, -1)');
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
       current.txtgrp.appendChild(current.txtElement);
