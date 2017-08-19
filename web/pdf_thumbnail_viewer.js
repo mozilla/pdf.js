@@ -14,7 +14,7 @@
  */
 
 import {
-  getVisibleElements, NullL10n, scrollIntoView, watchScroll
+  getVisibleElements, isValidRotation, NullL10n, scrollIntoView, watchScroll
 } from './ui_utils';
 import { PDFThumbnailView } from './pdf_thumbnail_view';
 
@@ -95,11 +95,14 @@ class PDFThumbnailViewer {
   }
 
   set pagesRotation(rotation) {
-    if (!(typeof rotation === 'number' && rotation % 90 === 0)) {
+    if (!isValidRotation(rotation)) {
       throw new Error('Invalid thumbnails rotation angle.');
     }
     if (!this.pdfDocument) {
       return;
+    }
+    if (this._pagesRotation === rotation) {
+      return; // The rotation didn't change.
     }
     this._pagesRotation = rotation;
 

@@ -16,8 +16,8 @@
 import { createPromiseCapability, PDFJS } from 'pdfjs-lib';
 import {
   CSS_UNITS, DEFAULT_SCALE, DEFAULT_SCALE_VALUE, getVisibleElements,
-  MAX_AUTO_SCALE, NullL10n, RendererType, SCROLLBAR_PADDING, scrollIntoView,
-  UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
+  isValidRotation, MAX_AUTO_SCALE, NullL10n, RendererType, SCROLLBAR_PADDING,
+  scrollIntoView, UNKNOWN_SCALE, VERTICAL_PADDING, watchScroll
 } from './ui_utils';
 import { PDFRenderingQueue, RenderingStates } from './pdf_rendering_queue';
 import { AnnotationLayerBuilder } from './annotation_layer_builder';
@@ -271,20 +271,34 @@ class PDFViewer {
    * @param {number} rotation - The rotation of the pages (0, 90, 180, 270).
    */
   set pagesRotation(rotation) {
-    if (!(typeof rotation === 'number' && rotation % 90 === 0)) {
+    if (!isValidRotation(rotation)) {
       throw new Error('Invalid pages rotation angle.');
     }
     if (!this.pdfDocument) {
       return;
     }
+    if (this._pagesRotation === rotation) {
+      return; // The rotation didn't change.
+    }
     this._pagesRotation = rotation;
+
+    let pageNumber = this._currentPageNumber;
 
     for (let i = 0, ii = this._pages.length; i < ii; i++) {
       let pageView = this._pages[i];
       pageView.update(pageView.scale, rotation);
     }
+    // Prevent errors in case the rotation changes *before* the scale has been
+    // set to a non-default value.
+    if (this._currentScaleValue) {
+      this._setScale(this._currentScaleValue, true);
+    }
 
-    this._setScale(this._currentScaleValue, true);
+    this.eventBus.dispatch('rotationchanging', {
+      source: this,
+      pagesRotation: rotation,
+      pageNumber,
+    });
 
     if (this.defaultRenderingQueue) {
       this.update();

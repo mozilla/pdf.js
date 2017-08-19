@@ -1232,16 +1232,10 @@ let PDFViewerApplication = {
     if (!this.pdfDocument) {
       return;
     }
-    let { pdfViewer, pdfThumbnailViewer, } = this;
-    let pageNumber = pdfViewer.currentPageNumber;
-    let newRotation = (pdfViewer.pagesRotation + 360 + delta) % 360;
-
-    pdfViewer.pagesRotation = newRotation;
-    pdfThumbnailViewer.pagesRotation = newRotation;
-
-    this.forceRendering();
-    // Ensure that the active page doesn't change during rotation.
-    pdfViewer.currentPageNumber = pageNumber;
+    let newRotation = (this.pdfViewer.pagesRotation + 360 + delta) % 360;
+    this.pdfViewer.pagesRotation = newRotation;
+    // Note that the thumbnail viewer is updated, and rendering is triggered,
+    // in the 'rotationchanging' event handler.
   },
 
   requestPresentationMode() {
@@ -1266,6 +1260,7 @@ let PDFViewerApplication = {
     eventBus.on('updateviewarea', webViewerUpdateViewarea);
     eventBus.on('pagechanging', webViewerPageChanging);
     eventBus.on('scalechanging', webViewerScaleChanging);
+    eventBus.on('rotationchanging', webViewerRotationChanging);
     eventBus.on('sidebarviewchanged', webViewerSidebarViewChanged);
     eventBus.on('pagemode', webViewerPageMode);
     eventBus.on('namedaction', webViewerNamedAction);
@@ -1343,6 +1338,7 @@ let PDFViewerApplication = {
     eventBus.off('updateviewarea', webViewerUpdateViewarea);
     eventBus.off('pagechanging', webViewerPageChanging);
     eventBus.off('scalechanging', webViewerScaleChanging);
+    eventBus.off('rotationchanging', webViewerRotationChanging);
     eventBus.off('sidebarviewchanged', webViewerSidebarViewChanged);
     eventBus.off('pagemode', webViewerPageMode);
     eventBus.off('namedaction', webViewerNamedAction);
@@ -1924,6 +1920,14 @@ function webViewerScaleChanging(evt) {
   PDFViewerApplication.toolbar.setPageScale(evt.presetValue, evt.scale);
 
   PDFViewerApplication.pdfViewer.update();
+}
+
+function webViewerRotationChanging(evt) {
+  PDFViewerApplication.pdfThumbnailViewer.pagesRotation = evt.pagesRotation;
+
+  PDFViewerApplication.forceRendering();
+  // Ensure that the active page doesn't change during rotation.
+  PDFViewerApplication.pdfViewer.currentPageNumber = evt.pageNumber;
 }
 
 function webViewerPageChanging(evt) {
