@@ -14,8 +14,8 @@
  */
 
 import {
-  binarySearchFirstItem, EventBus, getPDFFileNameFromURL, waitOnEventOrTimeout,
-  WaitOnType
+  binarySearchFirstItem, EventBus, getPDFFileNameFromURL, isValidRotation,
+  waitOnEventOrTimeout, WaitOnType
 } from '../../web/ui_utils';
 import { createObjectURL, isNodeJS } from '../../src/shared/util';
 
@@ -258,6 +258,29 @@ describe('ui_utils', function() {
       eventBus.dispatch('test');
       eventBus.dispatch('test');
       expect(count).toEqual(2);
+    });
+  });
+
+  describe('isValidRotation', function() {
+    it('should reject non-integer angles', function() {
+      expect(isValidRotation()).toEqual(false);
+      expect(isValidRotation(null)).toEqual(false);
+      expect(isValidRotation(NaN)).toEqual(false);
+      expect(isValidRotation([90])).toEqual(false);
+      expect(isValidRotation('90')).toEqual(false);
+      expect(isValidRotation(90.5)).toEqual(false);
+    });
+
+    it('should reject non-multiple of 90 degree angles', function() {
+      expect(isValidRotation(45)).toEqual(false);
+      expect(isValidRotation(-123)).toEqual(false);
+    });
+
+    it('should accept valid angles', function() {
+      expect(isValidRotation(0)).toEqual(true);
+      expect(isValidRotation(90)).toEqual(true);
+      expect(isValidRotation(-270)).toEqual(true);
+      expect(isValidRotation(540)).toEqual(true);
     });
   });
 
