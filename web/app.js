@@ -15,9 +15,9 @@
 /* globals PDFBug, Stats */
 
 import {
-  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, MAX_SCALE,
-  MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta, parseQueryString,
-  ProgressBar, RendererType
+  animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, isValidRotation,
+  MAX_SCALE, MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
+  parseQueryString, ProgressBar, RendererType
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -948,6 +948,7 @@ let PDFViewerApplication = {
         zoom: DEFAULT_SCALE_VALUE,
         scrollLeft: '0',
         scrollTop: '0',
+        rotation: null,
         sidebarView: SidebarView.NONE,
       }).catch(() => { /* Unable to read from storage; ignoring errors. */ });
 
@@ -956,12 +957,14 @@ let PDFViewerApplication = {
         // Initialize the default values, from user preferences.
         let hash = this.viewerPrefs['defaultZoomValue'] ?
           ('zoom=' + this.viewerPrefs['defaultZoomValue']) : null;
+        let rotation = null;
         let sidebarView = this.viewerPrefs['sidebarViewOnLoad'];
 
         if (values.exists && this.viewerPrefs['showPreviousViewOnLoad']) {
           hash = 'page=' + values.page +
             '&zoom=' + (this.viewerPrefs['defaultZoomValue'] || values.zoom) +
             ',' + values.scrollLeft + ',' + values.scrollTop;
+          rotation = parseInt(values.rotation, 10);
           sidebarView = sidebarView || (values.sidebarView | 0);
         }
         if (pageMode && !this.viewerPrefs['disablePageMode']) {
@@ -970,13 +973,14 @@ let PDFViewerApplication = {
         }
         return {
           hash,
+          rotation,
           sidebarView,
         };
-      }).then(({ hash, sidebarView, }) => {
+      }).then(({ hash, rotation, sidebarView, }) => {
         initialParams.bookmark = this.initialBookmark;
         initialParams.hash = hash;
 
-        this.setInitialView(hash, { sidebarView, });
+        this.setInitialView(hash, { rotation, sidebarView, });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -1131,7 +1135,12 @@ let PDFViewerApplication = {
     });
   },
 
-  setInitialView(storedHash, { sidebarView, } = {}) {
+  setInitialView(storedHash, { rotation, sidebarView, } = {}) {
+    let setRotation = (angle) => {
+      if (isValidRotation(angle)) {
+        this.pdfViewer.pagesRotation = angle;
+      }
+    };
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
 
@@ -1139,6 +1148,8 @@ let PDFViewerApplication = {
       this.pdfLinkService.setHash(this.initialBookmark);
       this.initialBookmark = null;
     } else if (storedHash) {
+      setRotation(rotation);
+
       this.pdfLinkService.setHash(storedHash);
     }
 
@@ -1765,6 +1776,7 @@ function webViewerUpdateViewarea(evt) {
       'zoom': location.scale,
       'scrollLeft': location.left,
       'scrollTop': location.top,
+      'rotation': location.rotation,
     }).catch(function() { /* unable to write to storage */ });
   }
   let href =
