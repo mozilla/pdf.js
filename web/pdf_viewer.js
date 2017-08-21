@@ -732,6 +732,7 @@ class PDFViewer {
       scale: normalizedScaleValue,
       top: intTop,
       left: intLeft,
+      rotation: this._pagesRotation,
       pdfOpenParams,
     };
   }
