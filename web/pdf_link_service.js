@@ -76,6 +76,20 @@ class PDFLinkService {
   }
 
   /**
+   * @returns {number}
+   */
+  get rotation() {
+    return this.pdfViewer.pagesRotation;
+  }
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {
+    this.pdfViewer.pagesRotation = value;
+  }
+
+  /**
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   navigateTo(dest) {
@@ -414,6 +428,16 @@ class SimpleLinkService {
    * @param {number} value
    */
   set page(value) {}
+  /**
+   * @returns {number}
+   */
+  get rotation() {
+    return 0;
+  }
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {}
   /**
    * @param dest - The PDF destination object.
    */

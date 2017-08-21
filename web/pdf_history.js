@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { cloneObj, parseQueryString, waitOnEventOrTimeout } from './ui_utils';
+import {
+  cloneObj, isValidRotation, parseQueryString, waitOnEventOrTimeout
+} from './ui_utils';
 import { getGlobalEventBus } from './dom_events';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
@@ -49,7 +51,7 @@ function parseCurrentHash(linkService) {
   if (!(Number.isInteger(page) && page > 0 && page <= linkService.pagesCount)) {
     page = null;
   }
-  return { hash, page, };
+  return { hash, page, rotation: linkService.rotation, };
 }
 
 class PDFHistory {
@@ -62,6 +64,7 @@ class PDFHistory {
 
     this.initialized = false;
     this.initialBookmark = null;
+    this.initialRotation = null;
 
     this._boundEvents = Object.create(null);
     this._isViewerInPresentationMode = false;
@@ -99,6 +102,7 @@ class PDFHistory {
 
     this.initialized = true;
     this.initialBookmark = null;
+    this.initialRotation = null;
 
     this._popStateInProgress = false;
     this._blockHashChange = 0;
@@ -110,7 +114,7 @@ class PDFHistory {
     this._position = null;
 
     if (!this._isValidState(state) || resetHistory) {
-      let { hash, page, } = parseCurrentHash(this.linkService);
+      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
 
       if (!hash || reInitialized || resetHistory) {
         // Ensure that the browser history is reset on PDF document load.
@@ -119,7 +123,8 @@ class PDFHistory {
       }
       // Ensure that the browser history is initialized correctly when
       // the document hash is present on PDF document load.
-      this._pushOrReplaceState({ hash, page, }, /* forceReplace = */ true);
+      this._pushOrReplaceState({ hash, page, rotation, },
+                               /* forceReplace = */ true);
       return;
     }
 
@@ -128,6 +133,10 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+
+    if (destination.rotation !== undefined) {
+      this.initialRotation = destination.rotation;
+    }
     if (destination.dest) {
       this.initialBookmark = JSON.stringify(destination.dest);
 
@@ -188,6 +197,7 @@ class PDFHistory {
       dest: explicitDest,
       hash,
       page: pageNumber,
+      rotation: this.linkService.rotation,
     }, forceReplace);
 
     if (!this._popStateInProgress) {
@@ -402,6 +412,7 @@ class PDFHistory {
         `page=${location.pageNumber}` : location.pdfOpenParams.substring(1),
       page: this.linkService.page,
       first: location.pageNumber,
+      rotation: location.rotation,
     };
 
     if (this._popStateInProgress) {
@@ -459,8 +470,9 @@ class PDFHistory {
       // This case corresponds to the user changing the hash of the document.
       this._currentUid = this._uid;
 
-      let { hash, page, } = parseCurrentHash(this.linkService);
-      this._pushOrReplaceState({ hash, page, }, /* forceReplace */ true);
+      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
+      this._pushOrReplaceState({ hash, page, rotation, },
+                               /* forceReplace = */ true);
       return;
     }
     if (!this._isValidState(state)) {
@@ -497,6 +509,10 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+
+    if (isValidRotation(destination.rotation)) {
+      this.linkService.rotation = destination.rotation;
+    }
     if (destination.dest) {
       this.linkService.navigateTo(destination.dest);
     } else if (destination.hash) {
