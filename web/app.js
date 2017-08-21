@@ -935,6 +935,8 @@ let PDFViewerApplication = {
 
         if (this.pdfHistory.initialBookmark) {
           this.initialBookmark = this.pdfHistory.initialBookmark;
+
+          this.initialRotation = this.pdfHistory.initialRotation;
         }
       }
 
@@ -1145,6 +1147,9 @@ let PDFViewerApplication = {
     this.pdfSidebar.setInitialView(sidebarView);
 
     if (this.initialBookmark) {
+      setRotation(this.initialRotation);
+      delete this.initialRotation;
+
       this.pdfLinkService.setHash(this.initialBookmark);
       this.initialBookmark = null;
     } else if (storedHash) {
