@@ -14,9 +14,10 @@
  */
 
 import {
-  assert, createPromiseCapability, globalScope, isInt, MissingPDFException,
+  assert, createPromiseCapability, isInt, MissingPDFException,
   UnexpectedResponseException
 } from '../shared/util';
+import globalScope from '../shared/global_scope';
 import { setPDFNetworkStreamClass } from './api';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
