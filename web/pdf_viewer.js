@@ -581,20 +581,13 @@ class PDFViewer {
    * @param {ScrollPageIntoViewParameters} params
    */
   scrollPageIntoView(params) {
-    if (!this.pdfDocument) {
-      return;
-    }
     if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
         (arguments.length > 1 || typeof params === 'number')) {
-      console.warn('Call of scrollPageIntoView() with obsolete signature.');
-      let paramObj = {};
-      if (typeof params === 'number') {
-        paramObj.pageNumber = params; // pageNumber argument was found.
-      }
-      if (arguments[1] instanceof Array) {
-        paramObj.destArray = arguments[1]; // destArray argument was found.
-      }
-      params = paramObj;
+      console.error('Call of scrollPageIntoView() with obsolete signature.');
+      return;
+    }
+    if (!this.pdfDocument) {
+      return;
     }
     let pageNumber = params.pageNumber || 0;
     let dest = params.destArray || null;
