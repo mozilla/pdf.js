@@ -2966,6 +2966,14 @@
        "type": "eq",
        "about": "Inline image with ASCII85Decode filter."
     },
+    {  "id": "issue8798",
+       "file": "pdfs/issue8798.pdf",
+       "md5": "e9e60ea3f8f33850b0333fb04e074e64",
+       "rounds": 1,
+       "lastPage": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "issue8613",
        "file": "pdfs/issue8613.pdf",
        "md5": "bc7ad2db75710aa9916c5769e0c02123",

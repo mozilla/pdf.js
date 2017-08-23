@@ -147,10 +147,9 @@ var Parser = (function ParserClosure() {
      * Find the end of the stream by searching for the /EI\s/.
      * @returns {number} The inline stream length.
      */
-    findDefaultInlineStreamEnd:
-        function Parser_findDefaultInlineStreamEnd(stream) {
-      var E = 0x45, I = 0x49, SPACE = 0x20, LF = 0xA, CR = 0xD;
-      var startPos = stream.pos, state = 0, ch, i, n, followingBytes;
+    findDefaultInlineStreamEnd(stream) {
+      const E = 0x45, I = 0x49, SPACE = 0x20, LF = 0xA, CR = 0xD, n = 5;
+      let startPos = stream.pos, state = 0, ch, maybeEIPos;
       while ((ch = stream.getByte()) !== -1) {
         if (state === 0) {
           state = (ch === E) ? 1 : 0;
@@ -159,10 +158,10 @@ var Parser = (function ParserClosure() {
         } else {
           assert(state === 2);
           if (ch === SPACE || ch === LF || ch === CR) {
-            // Let's check the next five bytes are ASCII... just be sure.
-            n = 5;
-            followingBytes = stream.peekBytes(n);
-            for (i = 0; i < n; i++) {
+            maybeEIPos = stream.pos;
+            // Let's check the next `n` bytes are ASCII... just be sure.
+            let followingBytes = stream.peekBytes(n);
+            for (let i = 0; i < n; i++) {
               ch = followingBytes[i];
               if (ch !== LF && ch !== CR && (ch < SPACE || ch > 0x7F)) {
                 // Not a LF, CR, SPACE or any visible ASCII character, i.e.
@@ -177,6 +176,15 @@ var Parser = (function ParserClosure() {
           } else {
             state = 0;
           }
+        }
+      }
+
+      if (ch === -1) {
+        warn('findDefaultInlineStreamEnd: ' +
+             'Reached the end of the stream without finding a valid EI marker');
+        if (maybeEIPos) {
+          warn('... trying to recover by using the last "EI" occurrence.');
+          stream.skip(-(stream.pos - maybeEIPos)); // Reset the stream position.
         }
       }
       return ((stream.pos - 4) - startPos);
