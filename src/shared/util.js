@@ -16,12 +16,6 @@
 import './compatibility';
 import { ReadableStream } from './streams_polyfill';
 
-var globalScope =
-  (typeof window !== 'undefined' && window.Math === Math) ? window :
-  // eslint-disable-next-line no-undef
-  (typeof global !== 'undefined' && global.Math === Math) ? global :
-  (typeof self !== 'undefined' && self.Math === Math) ? self : this;
-
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 const NativeImageDecoding = {
@@ -1696,7 +1690,6 @@ export {
   deprecated,
   getLookupTableFactory,
   getVerbosityLevel,
-  globalScope,
   info,
   isArray,
   isArrayBuffer,

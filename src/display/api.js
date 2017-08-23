@@ -15,7 +15,7 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
+  assert, createPromiseCapability, deprecated, getVerbosityLevel,
   info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
   loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
   PageViewport, PasswordException, StatTimer, stringToBytes,
@@ -27,6 +27,7 @@ import {
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
+import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 

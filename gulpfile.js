@@ -1040,7 +1040,7 @@ gulp.task('lib', ['buildnumber'], function () {
   var buildLib = merge([
     gulp.src([
       'src/{core,display}/*.js',
-      'src/shared/{compatibility,util,streams_polyfill}.js',
+      'src/shared/{compatibility,util,streams_polyfill,global_scope}.js',
       'src/{pdf,pdf.worker}.js',
     ], { base: 'src/', }),
     gulp.src([
