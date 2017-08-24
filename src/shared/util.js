@@ -1483,6 +1483,7 @@ MessageHandler.prototype = {
         if (this.isCancelled) {
           return;
         }
+        this.isCancelled = true;
         sendStreamRequest({ stream: 'close', });
         delete self.streamSinks[streamId];
       },
