@@ -14,11 +14,11 @@
  */
 
 import {
-  assert, createPromiseCapability, isInt, MissingPDFException,
+  assert, createPromiseCapability, MissingPDFException,
   UnexpectedResponseException
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
-import { setPDFNetworkStreamClass } from './api';
+import { validateRangeRequestCapabilities } from './network_utils';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "./network" shall not ' +
@@ -352,56 +352,29 @@ function PDFNetworkStreamFullRequestReader(manager, options) {
 }
 
 PDFNetworkStreamFullRequestReader.prototype = {
-  _validateRangeRequestCapabilities: function
-      PDFNetworkStreamFullRequestReader_validateRangeRequestCapabilities() {
-
-    if (this._disableRange) {
-      return false;
-    }
-
-    var networkManager = this._manager;
-    if (!networkManager.isHttp) {
-      return false;
-    }
-    var fullRequestXhrId = this._fullRequestId;
-    var fullRequestXhr = networkManager.getRequestXhr(fullRequestXhrId);
-    if (fullRequestXhr.getResponseHeader('Accept-Ranges') !== 'bytes') {
-      return false;
-    }
-
-    var contentEncoding =
-      fullRequestXhr.getResponseHeader('Content-Encoding') || 'identity';
-    if (contentEncoding !== 'identity') {
-      return false;
-    }
-
-    var length = fullRequestXhr.getResponseHeader('Content-Length');
-    length = parseInt(length, 10);
-    if (!isInt(length)) {
-      return false;
-    }
-
-    this._contentLength = length; // setting right content length
-
-    if (length <= 2 * this._rangeChunkSize) {
-      // The file size is smaller than the size of two chunks, so it does
-      // not make any sense to abort the request and retry with a range
-      // request.
-      return false;
-    }
-
-    return true;
-  },
-
   _onHeadersReceived:
       function PDFNetworkStreamFullRequestReader_onHeadersReceived() {
+    var fullRequestXhrId = this._fullRequestId;
+    var fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
 
-    if (this._validateRangeRequestCapabilities()) {
+    let { allowRangeRequests, suggestedLength, } =
+      validateRangeRequestCapabilities({
+        getResponseHeader: (name) => {
+          return fullRequestXhr.getResponseHeader(name);
+        },
+        isHttp: this._manager.isHttp,
+        rangeChunkSize: this._rangeChunkSize,
+        disableRange: this._disableRange,
+      });
+
+    // Setting right content length.
+    this._contentLength = suggestedLength || this._contentLength;
+
+    if (allowRangeRequests) {
       this._isRangeSupported = true;
     }
 
     var networkManager = this._manager;
-    var fullRequestXhrId = this._fullRequestId;
     if (networkManager.isStreamingRequest(fullRequestXhrId)) {
       // We can continue fetching when progressive loading is enabled,
       // and we don't need the autoFetch feature.
@@ -593,8 +566,6 @@ PDFNetworkStreamRangeRequestReader.prototype = {
     this._close();
   },
 };
-
-setPDFNetworkStreamClass(PDFNetworkStream);
 
 export {
   PDFNetworkStream,
