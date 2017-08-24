@@ -126,7 +126,7 @@ class PDFSidebar {
    * @param {number} view - The sidebar view that should become visible,
    *                        must be one of the values in {SidebarView}.
    */
-  setInitialView(view) {
+  setInitialView(view = SidebarView.NONE) {
     if (this.isInitialViewSet) {
       return;
     }
