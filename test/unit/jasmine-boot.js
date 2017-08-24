@@ -43,6 +43,8 @@
 function initializePDFJS(callback) {
   Promise.all([
     'pdfjs/display/global',
+    'pdfjs/display/api',
+    'pdfjs/display/network',
     'pdfjs-test/unit/annotation_spec',
     'pdfjs-test/unit/api_spec',
     'pdfjs-test/unit/bidi_spec',
@@ -72,7 +74,11 @@ function initializePDFJS(callback) {
     return SystemJS.import(moduleName);
   })).then(function (modules) {
     var displayGlobal = modules[0];
+    var displayApi = modules[1];
+    var PDFNetworkStream = modules[2].PDFNetworkStream;
 
+    // Set network stream class for unit tests.
+    displayApi.setPDFNetworkStreamClass(PDFNetworkStream);
     // Configure the worker.
     displayGlobal.PDFJS.workerSrc = '../../build/generic/build/pdf.worker.js';
     // Opt-in to using the latest API.
