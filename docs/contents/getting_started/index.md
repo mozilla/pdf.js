@@ -68,7 +68,6 @@ $ cd pdf.js
 │   └── pdf.worker.js                      - core layer
 └── web/
     ├── cmaps/                             - character maps(required by core)
-    ├── compatibility.js                   - polyfills for missing features
     ├── compressed.tracemonkey-pldi-09.pdf - test pdf
     ├── debugger.js                        - helpful pdf debugging features
     ├── images/                            - images for the viewer and annotation icons
