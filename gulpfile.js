@@ -1327,6 +1327,9 @@ gulp.task('dist-pre',
       'worker-loader': '^0.8.0', // used in external/dist/webpack.json
     },
     browser: {
+      'fs': false,
+      'http': false,
+      'https': false,
       'node-ensure': false,
     },
     format: 'amd', // to not allow system.js to choose 'cjs'
