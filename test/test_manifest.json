@@ -2967,8 +2967,8 @@
        "about": "Inline image with ASCII85Decode filter."
     },
     {  "id": "issue8798",
-       "file": "pdfs/issue8798.pdf",
-       "md5": "e9e60ea3f8f33850b0333fb04e074e64",
+       "file": "pdfs/issue8798r.pdf",
+       "md5": "3a0e29f013d9edcceb5d852e37738a77",
        "rounds": 1,
        "lastPage": 1,
        "link": true,
