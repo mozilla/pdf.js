@@ -16,8 +16,8 @@
 
 import {
   animationStarted, DEFAULT_SCALE_VALUE, getPDFFileNameFromURL, MAX_SCALE,
-  MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta,
-  parseQueryString, ProgressBar, RendererType, UNKNOWN_SCALE
+  MIN_SCALE, noContextMenuHandler, normalizeWheelEventDelta, parseQueryString,
+  ProgressBar, RendererType
 } from './ui_utils';
 import {
   build, createBlob, getDocument, getFilenameFromUrl, InvalidPDFException,
@@ -649,7 +649,7 @@ let PDFViewerApplication = {
       });
     }
 
-    let parameters = Object.create(null), scale;
+    let parameters = Object.create(null);
     if (typeof file === 'string') { // URL
       this.setTitleUsingUrl(file);
       parameters.url = file;
@@ -666,14 +666,15 @@ let PDFViewerApplication = {
 
     if (args) {
       for (let prop in args) {
+        if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PDFJS_NEXT')) &&
+            !PDFJS.pdfjsNext && prop === 'scale') {
+          console.error('Call of open() with obsolete "scale" argument, ' +
+            'please use the "defaultZoomValue" preference instead.');
+          continue;
+        } else if (prop === 'length') {
+          this.pdfDocumentProperties.setFileSize(args[prop]);
+        }
         parameters[prop] = args[prop];
-      }
-
-      if (args.scale) {
-        scale = args.scale;
-      }
-      if (args.length) {
-        this.pdfDocumentProperties.setFileSize(args.length);
       }
     }
 
@@ -693,7 +694,7 @@ let PDFViewerApplication = {
     loadingTask.onUnsupportedFeature = this.fallback.bind(this);
 
     return loadingTask.promise.then((pdfDocument) => {
-      this.load(pdfDocument, scale);
+      this.load(pdfDocument);
     }, (exception) => {
       let message = exception && exception.message;
       let loadingErrorMessage;
@@ -879,8 +880,7 @@ let PDFViewerApplication = {
     }
   },
 
-  load(pdfDocument, scale) {
-    scale = scale || UNKNOWN_SCALE;
+  load(pdfDocument) {
     this.pdfDocument = pdfDocument;
 
     pdfDocument.getDownloadInfo().then(() => {
@@ -977,7 +977,7 @@ let PDFViewerApplication = {
           sidebarView,
         };
       }).then(({ hash, sidebarView, }) => {
-        this.setInitialView(hash, { sidebarView, scale, });
+        this.setInitialView(hash, { sidebarView, });
         initialParams.hash = hash;
 
         // Make all navigation keys work on document load,
@@ -1135,9 +1135,7 @@ let PDFViewerApplication = {
     });
   },
 
-  setInitialView(storedHash, options = {}) {
-    let { scale = 0, sidebarView = SidebarView.NONE, } = options;
-
+  setInitialView(storedHash, { sidebarView, } = {}) {
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
 
@@ -1150,9 +1148,6 @@ let PDFViewerApplication = {
       this.initialBookmark = null;
     } else if (storedHash) {
       this.pdfLinkService.setHash(storedHash);
-    } else if (scale) {
-      this.pdfViewer.currentScaleValue = scale;
-      this.page = 1;
     }
 
     // Ensure that the correct page number is displayed in the UI,
