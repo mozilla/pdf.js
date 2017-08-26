@@ -32,7 +32,7 @@ class AnnotationFactory {
    * @param {Object} idFactory
    * @returns {Annotation}
    */
-  create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory) {
     let dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
