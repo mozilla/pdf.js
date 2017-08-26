@@ -646,6 +646,15 @@ class WidgetAnnotation extends Annotation {
   hasFieldFlag(flag) {
     return !!(this.data.fieldFlags & flag);
   }
+
+  getOperatorList(evaluator, task, renderForms) {
+    // Do not render form elements on the canvas when interactive forms are
+    // enabled. The display layer is responsible for rendering them instead.
+    if (renderForms) {
+      return Promise.resolve(new OperatorList());
+    }
+    return super.getOperatorList(evaluator, task, renderForms);
+  }
 }
 
 class TextWidgetAnnotation extends WidgetAnnotation {
@@ -679,18 +688,11 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   }
 
   getOperatorList(evaluator, task, renderForms) {
+    if (renderForms || this.appearance) {
+      return super.getOperatorList(evaluator, task, renderForms);
+    }
+
     let operatorList = new OperatorList();
-
-    // Do not render form elements on the canvas when interactive forms are
-    // enabled. The display layer is responsible for rendering them instead.
-    if (renderForms) {
-      return Promise.resolve(operatorList);
-    }
-
-    if (this.appearance) {
-      return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                       renderForms);
-    }
 
     // Even if there is an appearance stream, ignore it. This is the
     // behaviour used by Adobe Reader.
@@ -756,22 +758,6 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       }
     }
   }
-
-  getOperatorList(evaluator, task, renderForms) {
-    let operatorList = new OperatorList();
-
-    // Do not render form elements on the canvas when interactive forms are
-    // enabled. The display layer is responsible for rendering them instead.
-    if (renderForms) {
-      return Promise.resolve(operatorList);
-    }
-
-    if (this.appearance) {
-      return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                       renderForms);
-    }
-    return Promise.resolve(operatorList);
-  }
 }
 
 class ChoiceWidgetAnnotation extends WidgetAnnotation {
@@ -813,19 +799,6 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // Process field flags for the display layer.
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
-  }
-
-  getOperatorList(evaluator, task, renderForms) {
-    let operatorList = new OperatorList();
-
-    // Do not render form elements on the canvas when interactive forms are
-    // enabled. The display layer is responsible for rendering them instead.
-    if (renderForms) {
-      return Promise.resolve(operatorList);
-    }
-
-    return Annotation.prototype.getOperatorList.call(this, evaluator, task,
-                                                     renderForms);
   }
 }
 
