@@ -38,7 +38,7 @@ class AnnotationElementFactory {
    * @param {AnnotationElementParameters} parameters
    * @returns {AnnotationElement}
    */
-  create(parameters) {
+  static create(parameters) {
     let subtype = parameters.data.annotationType;
 
     switch (subtype) {
@@ -974,14 +974,12 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   static render(parameters) {
-    let annotationElementFactory = new AnnotationElementFactory();
-
     for (let i = 0, ii = parameters.annotations.length; i < ii; i++) {
       let data = parameters.annotations[i];
       if (!data) {
         continue;
       }
-      let element = annotationElementFactory.create({
+      let element = AnnotationElementFactory.create({
         data,
         layer: parameters.div,
         page: parameters.page,

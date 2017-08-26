@@ -316,10 +316,9 @@ var Page = (function PageClosure() {
     get annotations() {
       var annotations = [];
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
-      var annotationFactory = new AnnotationFactory();
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = annotationFactory.create(this.xref, annotationRef,
+        var annotation = AnnotationFactory.create(this.xref, annotationRef,
                                                   this.pdfManager,
                                                   this.idFactory);
         if (annotation) {
