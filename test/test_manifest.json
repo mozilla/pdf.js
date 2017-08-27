@@ -2976,9 +2976,15 @@
     {  "id": "issue8798",
        "file": "pdfs/issue8798r.pdf",
        "md5": "3a0e29f013d9edcceb5d852e37738a77",
+       "link": false,
        "rounds": 1,
-       "lastPage": 1,
-       "link": true,
+       "type": "eq"
+    },
+    {  "id": "issue8823",
+       "file": "pdfs/issue8823.pdf",
+       "md5": "ad02d4aa374b315bf1766038d002d57a",
+       "link": false,
+       "rounds": 1,
        "type": "eq"
     },
     {  "id": "issue8613",
