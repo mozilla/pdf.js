@@ -29,7 +29,7 @@
     "systemjs-plugin-babel": "0.0.21",
     "ttest": "^1.1.0",
     "typogr": "^0.6.6",
-    "uglify-js": "^2.6.1",
+    "uglify-es": "^3.0.28",
     "vinyl-fs": "^2.4.4",
     "webpack": "^2.2.1",
     "webpack-stream": "^3.2.0",
