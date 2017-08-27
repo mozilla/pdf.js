@@ -6,6 +6,8 @@ PDF.js is community-driven and supported by Mozilla Labs. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
+---
+
 ## Contributing
 
 PDF.js is an open source project and always looking for more contributors. To
@@ -18,6 +20,8 @@ get involved, visit:
 + [Projects](https://github.com/mozilla/pdf.js/projects)
 
 Feel free to stop by #pdfjs on irc.mozilla.org for questions or guidance.
+
+---
 
 ## Getting Started
 
@@ -44,6 +48,8 @@ PDF.js is built into version 19+ of Firefox, however, one extension is still ava
 + Build Your Own - Get the code as explained below and issue `gulp chromium`. Then open
 Chrome, go to `Tools > Extension` and load the (unpackaged) extension from the
 directory `build/chromium`.
+
+---
 
 ## Getting the Code
 
@@ -77,6 +83,8 @@ It is also possible to view all test PDF files on the right side by opening:
 
 + http://localhost:8888/test/pdfs/?frame
 
+---
+
 ## Building PDF.js
 
 In order to bundle all `src/` files into two production scripts and build the generic
@@ -88,12 +96,16 @@ This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` di
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 
+---
+
 ## Using PDF.js in a web application
 
 To use PDF.js in a web application you can choose to use a pre-built version of the library
 or to build it from source. We supply pre-built versions for usage with NPM and Bower under
 the `pdfjs-dist` name. For more information and examples please refer to the
 [wiki page](https://github.com/mozilla/pdf.js/wiki/Setup-pdf.js-in-a-website) on this subject.
+
+---
 
 ## Learning
 
@@ -115,6 +127,8 @@ contributor Julian Viereck:
 More learning resources can be found at:
 
 + https://github.com/mozilla/pdf.js/wiki/Additional-Learning-Resources
+
+---
 
 ## Questions
 
