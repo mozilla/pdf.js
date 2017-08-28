@@ -841,7 +841,9 @@ let PDFViewerApplication = {
         errorMoreInfo.value = parts.join('\n');
       });
     } else {
-      console.error(message + '\n' + moreInfoText);
+      Promise.all(moreInfoText).then((parts) => {
+        console.error(message + '\n' + parts.join('\n'));
+      });
       this.fallback();
     }
   },
