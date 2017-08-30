@@ -725,14 +725,15 @@ describe('annotation', function() {
         { ref: annotationRef, data: annotationDict, }
       ]);
 
-      let annotation = annotationFactory.create(xref, annotationRef,
-                                                pdfManagerMock, idFactoryMock);
-      let data = annotation.data;
-      expect(data.annotationType).toEqual(AnnotationType.LINK);
+      annotationFactory.create(xref, annotationRef,
+                pdfManagerMock, idFactoryMock).then(function (annotation) {
+        let data = annotation.data;
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
 
-      expect(data.url).toBeUndefined();
-      expect(data.unsafeUrl).toBeUndefined();
-      expect(data.dest).toEqual('page.157');
+        expect(data.url).toBeUndefined();
+        expect(data.unsafeUrl).toBeUndefined();
+        expect(data.dest).toEqual('page.157');
+      });
     });
 
   });
