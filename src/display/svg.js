@@ -562,6 +562,9 @@ SVGGraphics = (function SVGGraphicsClosure() {
             this.setTextMatrix(args[0], args[1], args[2],
                                args[3], args[4], args[5]);
             break;
+          case OPS.setTextRise:
+            this.setTextRise(args[0]);
+            break;
           case OPS.setLineWidth:
             this.setLineWidth(args[0]);
             break;
@@ -742,15 +745,23 @@ SVGGraphics = (function SVGGraphicsClosure() {
           x += -glyph * fontSize * 0.001;
           continue;
         }
-        current.xcoords.push(current.x + x * textHScale);
 
         var width = glyph.width;
         var character = glyph.fontChar;
         var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
         var charWidth = width * widthAdvanceScale + spacing * fontDirection;
-        x += charWidth;
 
+        if (!glyph.isInFont && !font.missingFile) {
+          x += charWidth;
+          // TODO: To assist with text selection, we should replace the missing
+          // character with a space character if charWidth is not zero.
+          // But we cannot just do "character = ' '", because the ' ' character
+          // might actually map to a different glyph.
+          continue;
+        }
+        current.xcoords.push(current.x + x * textHScale);
         current.tspan.textContent += character;
+        x += charWidth;
       }
       if (vertical) {
         current.y -= x * textHScale;
@@ -774,9 +785,17 @@ SVGGraphics = (function SVGGraphicsClosure() {
         current.tspan.setAttributeNS(null, 'fill', current.fillColor);
       }
 
+      // Include the text rise in the text matrix since the `pm` function
+      // creates the SVG element's `translate` entry (work on a copy to avoid
+      // altering the original text matrix).
+      let textMatrix = current.textMatrix;
+      if (current.textRise !== 0) {
+        textMatrix = textMatrix.slice();
+        textMatrix[5] += current.textRise;
+      }
+
       current.txtElement.setAttributeNS(null, 'transform',
-                                        pm(current.textMatrix) +
-                                        ' scale(1, -1)');
+                                        pm(textMatrix) + ' scale(1, -1)');
       current.txtElement.setAttributeNS(XML_NS, 'xml:space', 'preserve');
       current.txtElement.appendChild(current.tspan);
       current.txtgrp.appendChild(current.txtElement);

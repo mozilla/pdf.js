@@ -14,9 +14,10 @@
  */
 
 import {
-  CMapCompressionType, createValidAbsoluteUrl, deprecated, globalScope,
+  CMapCompressionType, createValidAbsoluteUrl, deprecated,
   removeNullCharacters, stringToBytes, warn
 } from '../shared/util';
+import globalScope from '../shared/global_scope';
 
 var DEFAULT_LINK_REL = 'noopener noreferrer nofollow';
 

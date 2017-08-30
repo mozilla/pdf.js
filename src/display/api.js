@@ -15,8 +15,8 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
-  info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
+  assert, createPromiseCapability, deprecated, getVerbosityLevel,
+  info, InvalidPDFException, isArrayBuffer, isInt, isSameOrigin,
   loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
   PageViewport, PasswordException, StatTimer, stringToBytes,
   UnexpectedResponseException, UnknownErrorException, Util, warn
@@ -27,6 +27,7 @@ import {
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
+import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 
@@ -1182,7 +1183,7 @@ class LoopbackPort {
         cloned.set(value, result);
         return result;
       }
-      result = isArray(value) ? [] : {};
+      result = Array.isArray(value) ? [] : {};
       cloned.set(value, result); // adding to cache now for cyclic references
       // Cloning all value and object properties, however ignoring properties
       // defined via getter.

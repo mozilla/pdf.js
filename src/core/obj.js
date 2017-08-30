@@ -640,20 +640,32 @@ var Catalog = (function CatalogClosure() {
 
     var destDict = params.destDict;
     if (!isDict(destDict)) {
-      warn('Catalog_parseDestDictionary: "destDict" must be a dictionary.');
+      warn('parseDestDictionary: "destDict" must be a dictionary.');
       return;
     }
     var resultObj = params.resultObj;
     if (typeof resultObj !== 'object') {
-      warn('Catalog_parseDestDictionary: "resultObj" must be an object.');
+      warn('parseDestDictionary: "resultObj" must be an object.');
       return;
     }
     var docBaseUrl = params.docBaseUrl || null;
 
     var action = destDict.get('A'), url, dest;
+    if (!isDict(action) && destDict.has('Dest')) {
+      // A /Dest entry should *only* contain a Name or an Array, but some bad
+      // PDF generators ignore that and treat it as an /A entry.
+      action = destDict.get('Dest');
+    }
+
     if (isDict(action)) {
-      var linkType = action.get('S').name;
-      switch (linkType) {
+      let actionType = action.get('S');
+      if (!isName(actionType)) {
+        warn('parseDestDictionary: Invalid type in Action dictionary.');
+        return;
+      }
+      let actionName = actionType.name;
+
+      switch (actionName) {
         case 'URI':
           url = action.get('URI');
           if (isName(url)) {
@@ -748,11 +760,10 @@ var Catalog = (function CatalogClosure() {
           }
           /* falls through */
         default:
-          warn('Catalog_parseDestDictionary: Unrecognized link type "' +
-               linkType + '".');
+          warn(`parseDestDictionary: Unsupported Action type "${actionName}".`);
           break;
       }
-    } else if (destDict.has('Dest')) { // Simple destination link.
+    } else if (destDict.has('Dest')) { // Simple destination.
       dest = destDict.get('Dest');
     }
 
@@ -1186,10 +1197,21 @@ var XRef = (function XRefClosure() {
 
     readXRef: function XRef_readXRef(recoveryMode) {
       var stream = this.stream;
+      // Keep track of already parsed XRef tables, to prevent an infinite loop
+      // when parsing corrupt PDF files where e.g. the /Prev entries create a
+      // circular dependency between tables (fixes bug1393476.pdf).
+      let startXRefParsedCache = Object.create(null);
 
       try {
         while (this.startXRefQueue.length) {
           var startXRef = this.startXRefQueue[0];
+
+          if (startXRefParsedCache[startXRef]) {
+            warn('readXRef - skipping XRef table since it was already parsed.');
+            this.startXRefQueue.shift();
+            continue;
+          }
+          startXRefParsedCache[startXRef] = true;
 
           stream.pos = startXRef + stream.start;
 

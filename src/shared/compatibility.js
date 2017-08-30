@@ -21,11 +21,7 @@ if ((typeof PDFJSDev === 'undefined' ||
      !PDFJSDev.test('FIREFOX || MOZCENTRAL || CHROME')) &&
     (typeof PDFJS === 'undefined' || !PDFJS.compatibilityChecked)) {
 
-var globalScope =
-  (typeof window !== 'undefined' && window.Math === Math) ? window :
-  (typeof global !== 'undefined' && global.Math === Math) ? global :
-  (typeof self !== 'undefined' && self.Math === Math) ? self :
-  (typeof this !== 'undefined' && this.Math === Math) ? this : {};
+var globalScope = require('./global_scope');
 
 var userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
 var isAndroid = /Android/.test(userAgent);
@@ -53,6 +49,12 @@ PDFJS.compatibilityChecked = true;
 // Checking if the typed arrays are supported
 // Support: iOS<6.0 (subarray), IE<10, Android<4.0
 (function checkTypedArrayCompatibility() {
+  if (typeof Uint8ClampedArray === 'undefined') {
+    // Support: IE<11
+    globalScope.Uint8ClampedArray =
+      require('core-js/fn/typed/uint8-clamped-array');
+  }
+
   if (typeof Uint8Array !== 'undefined') {
     // Support: iOS<6.0
     if (typeof Uint8Array.prototype.subarray === 'undefined') {

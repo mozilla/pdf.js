@@ -16,12 +16,6 @@
 import './compatibility';
 import { ReadableStream } from './streams_polyfill';
 
-var globalScope =
-  (typeof window !== 'undefined' && window.Math === Math) ? window :
-  // eslint-disable-next-line no-undef
-  (typeof global !== 'undefined' && global.Math === Math) ? global :
-  (typeof self !== 'undefined' && self.Math === Math) ? self : this;
-
 var FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
 const NativeImageDecoding = {
@@ -1253,6 +1247,17 @@ function wrapReason(reason) {
   }
 }
 
+function makeReasonSerializable(reason) {
+  if (!(reason instanceof Error) ||
+      reason instanceof AbortException ||
+      reason instanceof MissingPDFException ||
+      reason instanceof UnexpectedResponseException ||
+      reason instanceof UnknownErrorException) {
+    return reason;
+  }
+  return new UnknownErrorException(reason.message, reason.toString());
+}
+
 function resolveOrReject(capability, success, reason) {
   if (success) {
     capability.resolve();
@@ -1313,16 +1318,12 @@ function MessageHandler(sourceName, targetName, comObj) {
             data: result,
           });
         }, (reason) => {
-          if (reason instanceof Error) {
-            // Serialize error to avoid "DataCloneError"
-            reason = reason + '';
-          }
           comObj.postMessage({
             sourceName,
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            error: reason,
+            error: makeReasonSerializable(reason),
           });
         });
       } else if (data.streamId) {
@@ -1489,6 +1490,7 @@ MessageHandler.prototype = {
         if (this.isCancelled) {
           return;
         }
+        this.isCancelled = true;
         sendStreamRequest({ stream: 'close', });
         delete self.streamSinks[streamId];
       },
@@ -1696,7 +1698,6 @@ export {
   deprecated,
   getLookupTableFactory,
   getVerbosityLevel,
-  globalScope,
   info,
   isArray,
   isArrayBuffer,

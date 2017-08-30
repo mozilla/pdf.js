@@ -108,6 +108,21 @@ describe('SVGGraphics', function () {
       });
     }
 
+    it('should fail require("zlib") unless in Node.js', function() {
+      function testFunc() {
+        __non_webpack_require__('zlib');
+      }
+      // Verifies that the script loader replaces __non_webpack_require__ with
+      // require.
+      expect(testFunc.toString()).toMatch(/\srequire\(["']zlib["']\)/);
+      if (isNodeJS()) {
+        expect(testFunc).not.toThrow();
+      } else {
+        // require not defined, require('zlib') not a module, etc.
+        expect(testFunc).toThrow();
+      }
+    });
+
     it('should produce a reasonably small svg:image', function(done) {
       if (!isNodeJS()) {
         pending('zlib.deflateSync is not supported in non-Node environments.');

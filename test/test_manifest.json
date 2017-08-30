@@ -820,6 +820,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1393476",
+       "file": "pdfs/bug1393476.pdf",
+       "md5": "163ee8727c77f27ee651eec777bb20a9",
+       "rounds": 1,
+       "link": true,
+       "type": "eq"
+    },
     {  "id": "bug1252420",
        "file": "pdfs/bug1252420.pdf",
        "md5": "f21c911b9b655972b06ef782a1fa6a17",
@@ -2966,6 +2973,20 @@
        "type": "eq",
        "about": "Inline image with ASCII85Decode filter."
     },
+    {  "id": "issue8798",
+       "file": "pdfs/issue8798r.pdf",
+       "md5": "3a0e29f013d9edcceb5d852e37738a77",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "issue8823",
+       "file": "pdfs/issue8823.pdf",
+       "md5": "ad02d4aa374b315bf1766038d002d57a",
+       "link": false,
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "issue8613",
        "file": "pdfs/issue8613.pdf",
        "md5": "bc7ad2db75710aa9916c5769e0c02123",
@@ -3617,6 +3638,13 @@
        "file": "pdfs/issue8097_reduced.pdf",
        "md5": "ced0e2d88cfd5b4d3a55d937ea288af1",
        "rounds": 1,
+       "type": "eq"
+    },
+    {  "id": "pr8491",
+       "file": "pdfs/pr8491.pdf",
+       "md5": "36ea2e28cd77e9e70731f574ab27cbe0",
+       "rounds": 1,
+       "link": true,
        "type": "eq"
     }
 ]

@@ -39,6 +39,23 @@
                           typeof crypto !== 'undefined' &&
                           typeof crypto.subtle !== 'undefined';
 
+  // When we create a bundle, webpack is run on the source and it will replace
+  // require with __webpack_require__. When we want to use the real require,
+  // __non_webpack_require__ has to be used.
+  // In this target, we don't create a bundle, so we have to replace the
+  // occurences of __non_webpack_require__ ourselves.
+  function babelPluginReplaceNonWebPackRequire(babel) {
+    return {
+      visitor: {
+        Identifier(path, state) {
+          if (path.node.name === '__non_webpack_require__') {
+            path.replaceWith(babel.types.identifier('require'));
+          }
+        },
+      },
+    };
+  }
+
   SystemJS.config({
     packages: {
       '': {
@@ -50,6 +67,7 @@
       'pdfjs-web': new URL('web', baseLocation).href,
       'pdfjs-test': new URL('test', baseLocation).href,
       'pdfjs-lib': new URL('src/pdf', baseLocation).href,
+      'core-js': new URL('node_modules/core-js', baseLocation).href,
     },
     meta: {
       '*': {
@@ -57,6 +75,7 @@
         esModule: true,
         babelOptions: {
           es2015: false,
+          plugins: [babelPluginReplaceNonWebPackRequire],
         },
       },
     },
