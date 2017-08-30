@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 
+import { assert, createPromiseCapability } from '../shared/util';
 import {
-  assert, createPromiseCapability, MissingPDFException,
-  UnexpectedResponseException
-} from '../shared/util';
+  createResponseStatusError, validateRangeRequestCapabilities
+} from './network_utils';
 import globalScope from '../shared/global_scope';
-import { validateRangeRequestCapabilities } from './network_utils';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
   throw new Error('Module "./network" shall not ' +
@@ -417,14 +416,7 @@ PDFNetworkStreamFullRequestReader.prototype = {
 
   _onError: function PDFNetworkStreamFullRequestReader_onError(status) {
     var url = this._url;
-    var exception;
-    if (status === 404 || status === 0 && /^file:/.test(url)) {
-      exception = new MissingPDFException('Missing PDF "' + url + '".');
-    } else {
-      exception = new UnexpectedResponseException(
-        'Unexpected server response (' + status +
-        ') while retrieving PDF "' + url + '".', status);
-    }
+    var exception = createResponseStatusError(status, url);
     this._storedError = exception;
     this._headersReceivedCapability.reject(exception);
     this._requests.forEach(function (requestCapability) {

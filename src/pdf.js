@@ -34,7 +34,10 @@ if (typeof PDFJSDev === 'undefined' ||
   if (pdfjsSharedUtil.isNodeJS()) {
     var PDFNodeStream = require('./display/node_stream.js').PDFNodeStream;
     pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNodeStream);
-  } else {
+  } else if (typeof Response !== 'undefined' && 'body' in Response.prototype) {
+    var PDFFetchStream = require('./display/fetch_stream.js').PDFFetchStream;
+    pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFFetchStream);
+   } else {
     var PDFNetworkStream = require('./display/network.js').PDFNetworkStream;
     pdfjsDisplayAPI.setPDFNetworkStreamClass(PDFNetworkStream);
   }

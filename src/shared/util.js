@@ -1247,6 +1247,17 @@ function wrapReason(reason) {
   }
 }
 
+function makeReasonSerializable(reason) {
+  if (!(reason instanceof Error) ||
+      reason instanceof AbortException ||
+      reason instanceof MissingPDFException ||
+      reason instanceof UnexpectedResponseException ||
+      reason instanceof UnknownErrorException) {
+    return reason;
+  }
+  return new UnknownErrorException(reason.message, reason.toString());
+}
+
 function resolveOrReject(capability, success, reason) {
   if (success) {
     capability.resolve();
@@ -1307,16 +1318,12 @@ function MessageHandler(sourceName, targetName, comObj) {
             data: result,
           });
         }, (reason) => {
-          if (reason instanceof Error) {
-            // Serialize error to avoid "DataCloneError"
-            reason = reason + '';
-          }
           comObj.postMessage({
             sourceName,
             targetName,
             isReply: true,
             callbackId: data.callbackId,
-            error: reason,
+            error: makeReasonSerializable(reason),
           });
         });
       } else if (data.streamId) {
