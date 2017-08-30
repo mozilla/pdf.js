@@ -80,7 +80,8 @@ function initializePDFJS(callback) {
     var PDFFetchStream = modules[3].PDFFetchStream;
 
     // Set network stream class for unit tests.
-    if (typeof Response !== 'undefined' && 'body' in Response.prototype) {
+    if (typeof Response !== 'undefined' && 'body' in Response.prototype &&
+        typeof ReadableStream !== 'undefined') {
       displayApi.setPDFNetworkStreamClass(PDFFetchStream);
     } else {
       displayApi.setPDFNetworkStreamClass(PDFNetworkStream);
