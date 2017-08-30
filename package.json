@@ -31,8 +31,8 @@
     "typogr": "^0.6.6",
     "uglify-es": "^3.0.28",
     "vinyl-fs": "^2.4.4",
-    "webpack": "^2.2.1",
-    "webpack-stream": "^3.2.0",
+    "webpack": "^3.5.5",
+    "webpack-stream": "^4.0.0",
     "wintersmith": "^2.0.0",
     "yargs": "^3.14.0"
   },
