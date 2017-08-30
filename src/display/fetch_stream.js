@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { assert, createPromiseCapability } from '../shared/util';
+import {
+  AbortException, assert, createPromiseCapability
+} from '../shared/util';
 import {
   createResponseStatusError, validateRangeRequestCapabilities,
   validateResponseStatus
@@ -95,8 +97,8 @@ class PDFFetchStreamReader {
       if (!validateResponseStatus(response.status, this._stream.isHttp)) {
         throw createResponseStatusError(response.status, url);
       }
-      this._headersCapability.resolve();
       this._reader = response.body.getReader();
+      this._headersCapability.resolve();
 
       let { allowRangeRequests, suggestedLength, } =
         validateRangeRequestCapabilities({
@@ -110,6 +112,12 @@ class PDFFetchStreamReader {
 
       this._contentLength = suggestedLength;
       this._isRangeSupported = allowRangeRequests;
+
+      // We need to stop reading when range is supported and streaming is
+      // disabled.
+      if (!this._isStreamingSupported && this._isRangeSupported) {
+        this.cancel(new AbortException('streaming is disabled'));
+      }
     }).catch(this._headersCapability.reject);
 
     this.onProgress = null;

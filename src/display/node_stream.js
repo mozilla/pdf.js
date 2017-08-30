@@ -19,7 +19,9 @@ let http = __non_webpack_require__('http');
 let https = __non_webpack_require__('https');
 let url = __non_webpack_require__('url');
 
-import { assert, createPromiseCapability } from '../shared/util';
+import {
+  AbortException, assert, createPromiseCapability
+} from '../shared/util';
 import { validateRangeRequestCapabilities } from './network_utils';
 
 class PDFNodeStream {
@@ -164,6 +166,12 @@ class BaseFullReader {
     readableStream.on('error', (reason) => {
       this._error(reason);
     });
+
+    // We need to stop reading when range is supported and streaming is
+    // disabled.
+    if (!this._isStreamingSupported && this._isRangeSupported) {
+      this._error(new AbortException('streaming is disabled'));
+    }
 
     // Destroy ReadableStream if already in errored state.
     if (this._errored) {
@@ -353,8 +361,6 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
 
-    this._setReadableStream(fs.createReadStream(this._url.path));
-
     fs.lstat(this._url.path, (error, stat) => {
       if (error) {
         this._errored = true;
@@ -364,6 +370,8 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
       }
       // Setting right content length.
       this._contentLength = stat.size;
+
+      this._setReadableStream(fs.createReadStream(this._url.path));
       this._headersCapability.resolve();
     });
   }
