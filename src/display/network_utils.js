@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { assert, isInt } from '../shared/util';
+import { assert, isInt, MissingPDFException, UnexpectedResponseException
+} from '../shared/util';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
                                             rangeChunkSize, disableRange, }) {
@@ -52,6 +53,24 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
   return returnValues;
 }
 
+function createResponseStatusError(status, url) {
+  if (status === 404 || status === 0 && /^file:/.test(url)) {
+    return new MissingPDFException('Missing PDF "' + url + '".');
+  }
+  return new UnexpectedResponseException(
+    'Unexpected server response (' + status +
+    ') while retrieving PDF "' + url + '".', status);
+}
+
+function validateResponseStatus(status, isHttp) {
+  if (!isHttp) {
+    return status === 0;
+  }
+  return status === 200 || status === 206;
+}
+
 export {
+  createResponseStatusError,
   validateRangeRequestCapabilities,
+  validateResponseStatus,
 };
