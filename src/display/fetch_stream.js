@@ -26,7 +26,7 @@ function createFetchOptions(headers, withCredentials) {
     method: 'GET',
     headers,
     mode: 'cors',
-    credentials: withCredentials ? 'omit' : 'include',
+    credentials: withCredentials ? 'include' : 'omit',
     redirect: 'follow',
   };
 }
