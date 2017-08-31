@@ -95,7 +95,7 @@ class AnnotationElementFactory {
 }
 
 class AnnotationElement {
-  constructor(parameters, isRenderable = true, ignoreBorder = false) {
+  constructor(parameters, isRenderable = false, ignoreBorder = false) {
     this.isRenderable = isRenderable;
     this.data = parameters.data;
     this.layer = parameters.layer;
@@ -250,6 +250,10 @@ class AnnotationElement {
 }
 
 class LinkAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    super(parameters, /* isRenderable = */ true);
+  }
+
   /**
    * Render the link annotation's HTML element in the empty container.
    *
@@ -902,7 +906,7 @@ class StrikeOutAnnotationElement extends AnnotationElement {
 
 class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    super(parameters, true);
+    super(parameters, /* isRenderable = */ true);
 
     let file = this.data.file;
     this.filename = getFilenameFromUrl(file.filename);
