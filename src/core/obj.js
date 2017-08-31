@@ -1346,16 +1346,21 @@ var XRef = (function XRefClosure() {
       var obj1 = parser.getObj();
       var obj2 = parser.getObj();
       var obj3 = parser.getObj();
-      if (!isInt(obj1) || parseInt(obj1, 10) !== num ||
-          !isInt(obj2) || parseInt(obj2, 10) !== gen ||
-          !isCmd(obj3)) {
+
+      if (!Number.isInteger(obj1)) {
+        obj1 = parseInt(obj1, 10);
+      }
+      if (!Number.isInteger(obj2)) {
+        obj2 = parseInt(obj2, 10);
+      }
+      if (obj1 !== num || obj2 !== gen || !isCmd(obj3)) {
         throw new FormatError('bad XRef entry');
       }
-      if (!isCmd(obj3, 'obj')) {
+      if (obj3.cmd !== 'obj') {
         // some bad PDFs use "obj1234" and really mean 1234
         if (obj3.cmd.indexOf('obj') === 0) {
           num = parseInt(obj3.cmd.substring(3), 10);
-          if (!isNaN(num)) {
+          if (!Number.isNaN(num)) {
             return num;
           }
         }
