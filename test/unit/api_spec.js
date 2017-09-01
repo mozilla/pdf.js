@@ -858,6 +858,85 @@ describe('api', function() {
         done.fail(reason);
       });
     });
+
+    describe('Cross-origin', function() {
+      var loadingTask;
+      function _checkCanLoad(expectSuccess, filename, options) {
+        if (isNodeJS()) {
+          pending('Cannot simulate cross-origin requests in Node.js');
+        }
+        var params = buildGetDocumentParams(filename, options);
+        var url = new URL(params.url);
+        if (url.hostname === 'localhost') {
+          url.hostname = '127.0.0.1';
+        } else if (params.url.hostname === '127.0.0.1') {
+          url.hostname = 'localhost';
+        } else {
+          pending('Can only run cross-origin test on localhost!');
+        }
+        params.url = url.href;
+        loadingTask = getDocument(params);
+        return loadingTask.promise.then(function(pdf) {
+          return pdf.destroy();
+        }).then(function() {
+          expect(expectSuccess).toEqual(true);
+        }, function(error) {
+          if (expectSuccess) {
+            // For ease of debugging.
+            expect(error).toEqual('There should not be any error');
+          }
+          expect(expectSuccess).toEqual(false);
+        });
+      }
+      function testCanLoad(filename, options) {
+        return _checkCanLoad(true, filename, options);
+      }
+      function testCannotLoad(filename, options) {
+        return _checkCanLoad(false, filename, options);
+      }
+      afterEach(function(done) {
+        if (loadingTask) {
+          loadingTask.destroy().then(done);
+        } else {
+          done();
+        }
+      });
+      it('server disallows cors', function(done) {
+        testCannotLoad('basicapi.pdf').then(done);
+      });
+      it('server allows cors without credentials, default withCredentials',
+          function(done) {
+        testCanLoad('basicapi.pdf?cors=withoutCredentials').then(done);
+      });
+      it('server allows cors without credentials, and withCredentials=false',
+          function(done) {
+        testCanLoad('basicapi.pdf?cors=withoutCredentials', {
+          withCredentials: false,
+        }).then(done);
+      });
+      it('server allows cors without credentials, but withCredentials=true',
+          function(done) {
+        testCannotLoad('basicapi.pdf?cors=withoutCredentials', {
+          withCredentials: true,
+        }).then(done);
+      });
+      it('server allows cors with credentials, and withCredentials=true',
+          function(done) {
+        testCanLoad('basicapi.pdf?cors=withCredentials', {
+          withCredentials: true,
+        }).then(done);
+      });
+      it('server allows cors with credentials, and withCredentials=false',
+          function(done) {
+        // The server supports even more than we need, so if the previous tests
+        // pass, then this should pass for sure.
+        // The only case where this test fails is when the server does not reply
+        // with the Access-Control-Allow-Origin header.
+        testCanLoad('basicapi.pdf?cors=withCredentials', {
+          withCredentials: false,
+        }).then(done);
+      });
+    });
   });
   describe('Page', function() {
     var loadingTask;
