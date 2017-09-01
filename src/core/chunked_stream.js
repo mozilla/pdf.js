@@ -14,7 +14,7 @@
  */
 
 import {
-  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj, isInt,
+  arrayByteLength, arraysToBytes, createPromiseCapability, isEmptyObj,
   MissingDataException
 } from '../shared/util';
 
@@ -518,7 +518,7 @@ var ChunkedStreamManager = (function ChunkedStreamManagerClosure() {
         } else {
           nextEmptyChunk = this.stream.nextEmptyChunk(endChunk);
         }
-        if (isInt(nextEmptyChunk)) {
+        if (Number.isInteger(nextEmptyChunk)) {
           this._requestChunks([nextEmptyChunk]);
         }
       }

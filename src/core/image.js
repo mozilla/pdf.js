@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  assert, FormatError, ImageKind, info, isArray, warn
-} from '../shared/util';
+import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
 import { DecodeStream, JpegStream } from './stream';
 import { isStream, Name } from './primitives';
 import { ColorSpace } from './colorspace';
@@ -199,7 +197,7 @@ var PDFImage = (function PDFImageClosure() {
       if (mask) {
         if (isStream(mask)) {
           maskPromise = handleImageData(mask, nativeDecoder);
-        } else if (isArray(mask)) {
+        } else if (Array.isArray(mask)) {
           maskPromise = Promise.resolve(mask);
         } else {
           warn('Unsupported mask format.');
@@ -408,7 +406,7 @@ var PDFImage = (function PDFImageClosure() {
             alphaBuf = resizeImageMask(alphaBuf, mask.bpc, sw, sh,
                                        width, height);
           }
-        } else if (isArray(mask)) {
+        } else if (Array.isArray(mask)) {
           // Color key mask: if any of the components are outside the range
           // then they should be painted.
           alphaBuf = new Uint8Array(width * height);

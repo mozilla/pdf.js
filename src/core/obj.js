@@ -15,9 +15,8 @@
 
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isArray, isBool, isInt, isString,
-  MissingDataException, shadow, stringToPDFString, stringToUTF8String, Util,
-  warn, XRefParseException
+  info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
+  stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -137,7 +136,7 @@ var Catalog = (function CatalogClosure() {
 
         var color = outlineDict.getArray('C'), rgbColor = blackColor;
         // We only need to parse the color when it's valid, and non-default.
-        if (isArray(color) && color.length === 3 &&
+        if (Array.isArray(color) && color.length === 3 &&
             (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {
           rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
         }
@@ -169,7 +168,7 @@ var Catalog = (function CatalogClosure() {
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
-      if (!isInt(obj)) {
+      if (!Number.isInteger(obj)) {
         throw new FormatError(
           'page count in top level pages object is not an integer');
       }
@@ -286,7 +285,7 @@ var Catalog = (function CatalogClosure() {
           prefix = p ? stringToPDFString(p) : '';
 
           var st = labelDict.get('St');
-          if (st && !(isInt(st) && st >= 1)) {
+          if (st && !(Number.isInteger(st) && st >= 1)) {
             throw new FormatError('Invalid start in PageLabel dictionary.');
           }
           currentIndex = st || 1;
@@ -508,7 +507,7 @@ var Catalog = (function CatalogClosure() {
           }
 
           var kids = currentNode.get('Kids');
-          if (!isArray(kids)) {
+          if (!Array.isArray(kids)) {
             capability.reject(new FormatError(
               'page dictionary kids object is not an array'));
             return;
@@ -708,7 +707,7 @@ var Catalog = (function CatalogClosure() {
               let baseUrl = url.split('#')[0];
               if (isString(remoteDest)) {
                 url = baseUrl + '#' + remoteDest;
-              } else if (isArray(remoteDest)) {
+              } else if (Array.isArray(remoteDest)) {
                 url = baseUrl + '#' + JSON.stringify(remoteDest);
               }
             }
@@ -779,7 +778,7 @@ var Catalog = (function CatalogClosure() {
       if (isName(dest)) {
         dest = dest.name;
       }
-      if (isString(dest) || isArray(dest)) {
+      if (isString(dest) || Array.isArray(dest)) {
         resultObj.dest = dest;
       }
     }
@@ -912,7 +911,7 @@ var XRef = (function XRefClosure() {
 
         var first = tableState.firstEntryNum;
         var count = tableState.entryCount;
-        if (!isInt(first) || !isInt(count)) {
+        if (!Number.isInteger(first) || !Number.isInteger(count)) {
           throw new FormatError(
             'Invalid XRef table: wrong types in subsection header');
         }
@@ -935,7 +934,7 @@ var XRef = (function XRefClosure() {
           }
 
           // Validate entry obj
-          if (!isInt(entry.offset) || !isInt(entry.gen) ||
+          if (!Number.isInteger(entry.offset) || !Number.isInteger(entry.gen) ||
               !(entry.free || entry.uncompressed)) {
             throw new FormatError(
               `Invalid entry in XRef subsection: ${first}, ${count}`);
@@ -1007,12 +1006,13 @@ var XRef = (function XRefClosure() {
         var first = entryRanges[0];
         var n = entryRanges[1];
 
-        if (!isInt(first) || !isInt(n)) {
+        if (!Number.isInteger(first) || !Number.isInteger(n)) {
           throw new FormatError(
             `Invalid XRef range fields: ${first}, ${n}`);
         }
-        if (!isInt(typeFieldWidth) || !isInt(offsetFieldWidth) ||
-            !isInt(generationFieldWidth)) {
+        if (!Number.isInteger(typeFieldWidth) ||
+            !Number.isInteger(offsetFieldWidth) ||
+            !Number.isInteger(generationFieldWidth)) {
           throw new FormatError(
             `Invalid XRef entry fields length: ${first}, ${n}`);
         }
@@ -1229,7 +1229,7 @@ var XRef = (function XRefClosure() {
 
             // Recursively get other XRefs 'XRefStm', if any
             obj = dict.get('XRefStm');
-            if (isInt(obj)) {
+            if (Number.isInteger(obj)) {
               var pos = obj;
               // ignore previously loaded xref streams
               // (possible infinite recursion)
@@ -1238,9 +1238,9 @@ var XRef = (function XRefClosure() {
                 this.startXRefQueue.push(pos);
               }
             }
-          } else if (isInt(obj)) {
+          } else if (Number.isInteger(obj)) {
             // Parse in-stream XRef
-            if (!isInt(parser.getObj()) ||
+            if (!Number.isInteger(parser.getObj()) ||
                 !isCmd(parser.getObj(), 'obj') ||
                 !isStream(obj = parser.getObj())) {
               throw new FormatError('Invalid XRef stream');
@@ -1258,7 +1258,7 @@ var XRef = (function XRefClosure() {
 
           // Recursively get previous dictionary, if any
           obj = dict.get('Prev');
-          if (isInt(obj)) {
+          if (Number.isInteger(obj)) {
             this.startXRefQueue.push(obj);
           } else if (isRef(obj)) {
             // The spec says Prev must not be a reference, i.e. "/Prev NNN"
@@ -1386,7 +1386,7 @@ var XRef = (function XRefClosure() {
       }
       var first = stream.dict.get('First');
       var n = stream.dict.get('N');
-      if (!isInt(first) || !isInt(n)) {
+      if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(
           'invalid first and n parameters for ObjStm stream');
       }
@@ -1396,13 +1396,13 @@ var XRef = (function XRefClosure() {
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
         num = parser.getObj();
-        if (!isInt(num)) {
+        if (!Number.isInteger(num)) {
           throw new FormatError(
             `invalid object number in the ObjStm stream: ${num}`);
         }
         nums.push(num);
         var offset = parser.getObj();
-        if (!isInt(offset)) {
+        if (!Number.isInteger(offset)) {
           throw new FormatError(
             `invalid object offset in the ObjStm stream: ${offset}`);
         }
@@ -1501,7 +1501,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
           continue;
         }
         var entries = obj.get(this._type);
-        if (isArray(entries)) {
+        if (Array.isArray(entries)) {
           for (i = 0, n = entries.length; i < n; i += 2) {
             dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
           }
@@ -1530,7 +1530,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
         }
 
         var kids = kidsOrEntries.get('Kids');
-        if (!isArray(kids)) {
+        if (!Array.isArray(kids)) {
           return null;
         }
 
@@ -1558,7 +1558,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
       // If we get here, then we have found the right entry. Now go through the
       // entries in the dictionary until we find the key we're looking for.
       var entries = kidsOrEntries.get(this._type);
-      if (isArray(entries)) {
+      if (Array.isArray(entries)) {
         // Perform a binary search to reduce the lookup time.
         l = 0;
         r = entries.length - 2;
@@ -1709,7 +1709,8 @@ var FileSpec = (function FileSpecClosure() {
  */
 let ObjectLoader = (function() {
   function mayHaveChildren(value) {
-    return isRef(value) || isDict(value) || isArray(value) || isStream(value);
+    return isRef(value) || isDict(value) || Array.isArray(value) ||
+           isStream(value);
   }
 
   function addChildren(node, nodesToVisit) {
@@ -1722,7 +1723,7 @@ let ObjectLoader = (function() {
           nodesToVisit.push(rawValue);
         }
       }
-    } else if (isArray(node)) {
+    } else if (Array.isArray(node)) {
       for (let i = 0, ii = node.length; i < ii; i++) {
         let value = node[i];
         if (mayHaveChildren(value)) {

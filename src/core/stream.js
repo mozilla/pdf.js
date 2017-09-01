@@ -14,7 +14,7 @@
  */
 
 import {
-  createObjectURL, FormatError, info, isArray, isInt, isSpace, shadow, Util
+  createObjectURL, FormatError, info, isSpace, shadow, Util
 } from '../shared/util';
 import { Dict, isDict, isStream } from './primitives';
 import { Jbig2Image } from './jbig2';
@@ -907,7 +907,7 @@ var JpegStream = (function JpegStreamClosure() {
 
     // Checking if values need to be transformed before conversion.
     var decodeArr = this.dict.getArray('Decode', 'D');
-    if (this.forceRGB && isArray(decodeArr)) {
+    if (this.forceRGB && Array.isArray(decodeArr)) {
       var bitsPerComponent = this.dict.get('BitsPerComponent') || 8;
       var decodeArrLength = decodeArr.length;
       var transform = new Int32Array(decodeArrLength);
@@ -927,7 +927,7 @@ var JpegStream = (function JpegStreamClosure() {
     // Fetching the 'ColorTransform' entry, if it exists.
     if (isDict(this.params)) {
       var colorTransform = this.params.get('ColorTransform');
-      if (isInt(colorTransform)) {
+      if (Number.isInteger(colorTransform)) {
         jpegImage.colorTransform = colorTransform;
       }
     }

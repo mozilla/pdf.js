@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { assert, isInt, MissingPDFException, UnexpectedResponseException
+import {
+  assert, MissingPDFException, UnexpectedResponseException
 } from '../shared/util';
 
 function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
@@ -35,17 +36,15 @@ function validateRangeRequestCapabilities({ getResponseHeader, isHttp,
     return returnValues;
   }
 
-  let length = getResponseHeader('Content-Length');
-  length = parseInt(length, 10);
-  if (!isInt(length)) {
+  let length = parseInt(getResponseHeader('Content-Length'), 10);
+  if (!Number.isInteger(length)) {
     return returnValues;
   }
 
   returnValues.suggestedLength = length;
   if (length <= 2 * rangeChunkSize) {
-    // The file size is smaller than the size of two chunks, so it does
-    // not make any sense to abort the request and retry with a range
-    // request.
+    // The file size is smaller than the size of two chunks, so it does not
+    // make any sense to abort the request and retry with a range request.
     return returnValues;
   }
 
