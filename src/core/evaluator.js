@@ -16,8 +16,8 @@
 import {
   AbortException, assert, CMapCompressionType, createPromiseCapability,
   FONT_IDENTITY_MATRIX, FormatError, getLookupTableFactory, IDENTITY_MATRIX,
-  ImageKind, info, isArray, isNum, isString, NativeImageDecoding, OPS,
-  TextRenderingMode, UNSUPPORTED_FEATURES, Util, warn
+  ImageKind, info, isNum, isString, NativeImageDecoding, OPS, TextRenderingMode,
+  UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
 import { CMapFactory, IdentityCMap } from './cmap';
 import { DecodeStream, JpegStream, Stream } from './stream';
@@ -1663,7 +1663,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var xObjStateManager = new StateManager(currentState);
 
               var matrix = xobj.dict.getArray('Matrix');
-              if (isArray(matrix) && matrix.length === 6) {
+              if (Array.isArray(matrix) && matrix.length === 6) {
                 xObjStateManager.transform(matrix);
               }
 
@@ -2089,7 +2089,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           for (i = 0, ii = widths.length; i < ii; i++) {
             start = xref.fetchIfRef(widths[i++]);
             code = xref.fetchIfRef(widths[i]);
-            if (isArray(code)) {
+            if (Array.isArray(code)) {
               for (j = 0, jj = code.length; j < jj; j++) {
                 glyphsWidths[start++] = xref.fetchIfRef(code[j]);
               }
@@ -2110,7 +2110,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             for (i = 0, ii = vmetrics.length; i < ii; i++) {
               start = xref.fetchIfRef(vmetrics[i++]);
               code = xref.fetchIfRef(vmetrics[i]);
-              if (isArray(code)) {
+              if (Array.isArray(code)) {
                 for (j = 0, jj = code.length; j < jj; j++) {
                   glyphsVMetrics[start++] = [
                     xref.fetchIfRef(code[j++]),
@@ -2258,7 +2258,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         if (!df) {
           throw new FormatError('Descendant fonts are not specified');
         }
-        dict = (isArray(df) ? this.xref.fetchIfRef(df[0]) : df);
+        dict = (Array.isArray(df) ? this.xref.fetchIfRef(df[0]) : df);
 
         type = dict.get('Subtype');
         if (!isName(type)) {
@@ -2283,7 +2283,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               hash.update(entry.name);
             } else if (isRef(entry)) {
               hash.update(entry.toString());
-            } else if (isArray(entry)) {
+            } else if (Array.isArray(entry)) {
               // 'Differences' array (fixes bug1157493.pdf).
               var diffLength = entry.length, diffBuf = new Array(diffLength);
 

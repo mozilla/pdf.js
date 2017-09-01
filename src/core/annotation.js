@@ -15,7 +15,7 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, isArray, OPS, stringToBytes, stringToPDFString, Util, warn
+  AnnotationType, OPS, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
@@ -236,7 +236,7 @@ class Annotation {
    * @param {Array} rectangle - The rectangle array with exactly four entries
    */
   setRectangle(rectangle) {
-    if (isArray(rectangle) && rectangle.length === 4) {
+    if (Array.isArray(rectangle) && rectangle.length === 4) {
       this.rectangle = Util.normalizeRect(rectangle);
     } else {
       this.rectangle = [0, 0, 0, 0];
@@ -254,7 +254,7 @@ class Annotation {
    */
   setColor(color) {
     let rgbColor = new Uint8Array(3); // Black in RGB color space (default)
-    if (!isArray(color)) {
+    if (!Array.isArray(color)) {
       this.color = rgbColor;
       return;
     }
@@ -308,7 +308,7 @@ class Annotation {
       }
     } else if (borderStyle.has('Border')) {
       let array = borderStyle.getArray('Border');
-      if (isArray(array) && array.length >= 3) {
+      if (Array.isArray(array) && array.length >= 3) {
         this.borderStyle.setHorizontalCornerRadius(array[0]);
         this.borderStyle.setVerticalCornerRadius(array[1]);
         this.borderStyle.setWidth(array[2]);
@@ -504,7 +504,7 @@ class AnnotationBorderStyle {
     // We validate the dash array, but we do not use it because CSS does not
     // allow us to change spacing of dashes. For more information, visit
     // http://www.w3.org/TR/css3-background/#the-border-style.
-    if (isArray(dashArray) && dashArray.length > 0) {
+    if (Array.isArray(dashArray) && dashArray.length > 0) {
       // According to the PDF specification: the elements in `dashArray`
       // shall be numbers that are nonnegative and not all equal to zero.
       let isValid = true;
@@ -775,11 +775,11 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     this.data.options = [];
 
     let options = Util.getInheritableProperty(params.dict, 'Opt');
-    if (isArray(options)) {
+    if (Array.isArray(options)) {
       let xref = params.xref;
       for (let i = 0, ii = options.length; i < ii; i++) {
         let option = xref.fetchIfRef(options[i]);
-        let isOptionArray = isArray(option);
+        let isOptionArray = Array.isArray(option);
 
         this.data.options[i] = {
           exportValue: isOptionArray ? xref.fetchIfRef(option[0]) : option,
@@ -791,7 +791,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
     // Determine the field value. In this case, it may be a string or an
     // array of strings. For convenience in the display layer, convert the
     // string to an array of one string as well.
-    if (!isArray(this.data.fieldValue)) {
+    if (!Array.isArray(this.data.fieldValue)) {
       this.data.fieldValue = [this.data.fieldValue];
     }
 

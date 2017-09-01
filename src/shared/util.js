@@ -1083,10 +1083,6 @@ function isString(v) {
   return typeof v === 'string';
 }
 
-function isArray(v) {
-  return v instanceof Array;
-}
-
 function isArrayBuffer(v) {
   return typeof v === 'object' && v !== null && v.byteLength !== undefined;
 }
@@ -1695,7 +1691,6 @@ export {
   getLookupTableFactory,
   getVerbosityLevel,
   info,
-  isArray,
   isArrayBuffer,
   isBool,
   isEmptyObj,

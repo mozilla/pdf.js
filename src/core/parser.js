@@ -18,8 +18,8 @@ import {
   JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, FormatError, info, isArray, isNum, isString, MissingDataException,
-  StreamType, warn
+  assert, FormatError, info, isNum, isString, MissingDataException, StreamType,
+  warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -384,7 +384,7 @@ var Parser = (function ParserClosure() {
       var filter = dict.get('Filter', 'F'), filterName;
       if (isName(filter)) {
         filterName = filter.name;
-      } else if (isArray(filter)) {
+      } else if (Array.isArray(filter)) {
         var filterZero = this.xref.fetchIfRef(filter[0]);
         if (isName(filterZero)) {
           filterName = filterZero.name;
@@ -527,14 +527,14 @@ var Parser = (function ParserClosure() {
       var filter = dict.get('Filter', 'F');
       var params = dict.get('DecodeParms', 'DP');
       if (isName(filter)) {
-        if (isArray(params)) {
+        if (Array.isArray(params)) {
           params = this.xref.fetchIfRef(params[0]);
         }
         return this.makeFilter(stream, filter.name, length, params);
       }
 
       var maybeLength = length;
-      if (isArray(filter)) {
+      if (Array.isArray(filter)) {
         var filterArray = filter;
         var paramsArray = params;
         for (var i = 0, ii = filterArray.length; i < ii; ++i) {
@@ -544,7 +544,7 @@ var Parser = (function ParserClosure() {
           }
 
           params = null;
-          if (isArray(paramsArray) && (i in paramsArray)) {
+          if (Array.isArray(paramsArray) && (i in paramsArray)) {
             params = this.xref.fetchIfRef(paramsArray[i]);
           }
           stream = this.makeFilter(stream, filter.name, maybeLength, params);
@@ -1077,7 +1077,7 @@ var Linearization = {
     }
     function getHints() {
       var hints = linDict.get('H'), hintsLength, item;
-      if (isArray(hints) &&
+      if (Array.isArray(hints) &&
           ((hintsLength = hints.length) === 2 || hintsLength === 4)) {
         for (var index = 0; index < hintsLength; index++) {
           if (!(Number.isInteger(item = hints[index]) && item > 0)) {

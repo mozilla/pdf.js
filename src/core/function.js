@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isArray, isBool } from '../shared/util';
+import { FormatError, info, isBool } from '../shared/util';
 import { isDict, isStream } from './primitives';
 import { PostScriptLexer, PostScriptParser } from './ps_parser';
 
@@ -96,7 +96,7 @@ var PDFFunction = (function PDFFunctionClosure() {
     },
 
     parseArray: function PDFFunction_parseArray(xref, fnObj) {
-      if (!isArray(fnObj)) {
+      if (!Array.isArray(fnObj)) {
         // not an array -- parsing as regular function
         return this.parse(xref, fnObj);
       }
@@ -262,7 +262,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var c1 = dict.getArray('C1') || [1];
       var n = dict.get('N');
 
-      if (!isArray(c0) || !isArray(c1)) {
+      if (!Array.isArray(c0) || !Array.isArray(c1)) {
         throw new FormatError(
           'Illegal dictionary for interpolated function');
       }
