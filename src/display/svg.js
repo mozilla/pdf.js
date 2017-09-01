@@ -15,8 +15,8 @@
 /* globals __non_webpack_require__ */
 
 import {
-  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isArray,
-  isNodeJS, isNum, OPS, Util, warn
+  createObjectURL, FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, isNodeJS,
+  isNum, OPS, Util, warn
 } from '../shared/util';
 
 var SVGGraphics = function() {
@@ -1199,12 +1199,12 @@ SVGGraphics = (function SVGGraphicsClosure() {
 
     paintFormXObjectBegin:
         function SVGGraphics_paintFormXObjectBegin(matrix, bbox) {
-      if (isArray(matrix) && matrix.length === 6) {
+      if (Array.isArray(matrix) && matrix.length === 6) {
         this.transform(matrix[0], matrix[1], matrix[2],
                        matrix[3], matrix[4], matrix[5]);
       }
 
-      if (isArray(bbox) && bbox.length === 4) {
+      if (Array.isArray(bbox) && bbox.length === 4) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
 

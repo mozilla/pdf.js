@@ -16,8 +16,8 @@
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream } from './primitives';
 import {
-  info, isArray, isArrayBuffer, isNum, isSpace, isString, MissingDataException,
-  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+  info, isArrayBuffer, isNum, isSpace, isString, MissingDataException, OPS,
+  shadow, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { OperatorList, PartialEvaluator } from './evaluator';
@@ -107,7 +107,7 @@ var Page = (function PageClosure() {
     get mediaBox() {
       var mediaBox = this.getInheritedPageProp('MediaBox', true);
       // Reset invalid media box to letter size.
-      if (!isArray(mediaBox) || mediaBox.length !== 4) {
+      if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
         return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
       }
       return shadow(this, 'mediaBox', mediaBox);
@@ -116,7 +116,7 @@ var Page = (function PageClosure() {
     get cropBox() {
       var cropBox = this.getInheritedPageProp('CropBox', true);
       // Reset invalid crop box to media box.
-      if (!isArray(cropBox) || cropBox.length !== 4) {
+      if (!Array.isArray(cropBox) || cropBox.length !== 4) {
         return shadow(this, 'cropBox', this.mediaBox);
       }
       return shadow(this, 'cropBox', cropBox);
@@ -161,7 +161,7 @@ var Page = (function PageClosure() {
     getContentStream: function Page_getContentStream() {
       var content = this.content;
       var stream;
-      if (isArray(content)) {
+      if (Array.isArray(content)) {
         // fetching items
         var xref = this.xref;
         var i, n = content.length;
@@ -413,7 +413,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         if (this.acroForm) {
           this.xfa = this.acroForm.get('XFA');
           var fields = this.acroForm.get('Fields');
-          if ((!fields || !isArray(fields) || fields.length === 0) &&
+          if ((!fields || !Array.isArray(fields) || fields.length === 0) &&
               !this.xfa) {
             // no fields and no XFA -- not a form (?)
             this.acroForm = null;
@@ -576,7 +576,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       var xref = this.xref, hash, fileID = '';
       var idArray = xref.trailer.get('ID');
 
-      if (idArray && isArray(idArray) && idArray[0] && isString(idArray[0]) &&
+      if (Array.isArray(idArray) && idArray[0] && isString(idArray[0]) &&
           idArray[0] !== EMPTY_FINGERPRINT) {
         hash = stringToBytes(idArray[0]);
       } else {

@@ -14,8 +14,8 @@
  */
 
 import {
-  FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isArray,
-  isLittleEndian, isNum, OPS, shadow, TextRenderingMode, Util, warn
+  FONT_IDENTITY_MATRIX, IDENTITY_MATRIX, ImageKind, info, isLittleEndian, isNum,
+  OPS, shadow, TextRenderingMode, Util, warn
 } from '../shared/util';
 import { getShadingPatternFromIR, TilingPattern } from './pattern_helper';
 import { WebGLUtils } from './webgl';
@@ -1727,13 +1727,13 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       this.save();
       this.baseTransformStack.push(this.baseTransform);
 
-      if (isArray(matrix) && matrix.length === 6) {
+      if (Array.isArray(matrix) && matrix.length === 6) {
         this.transform.apply(this, matrix);
       }
 
       this.baseTransform = this.ctx.mozCurrentTransform;
 
-      if (isArray(bbox) && bbox.length === 4) {
+      if (Array.isArray(bbox) && bbox.length === 4) {
         var width = bbox[2] - bbox[0];
         var height = bbox[3] - bbox[1];
         this.ctx.rect(bbox[0], bbox[1], width, height);
@@ -1896,7 +1896,7 @@ var CanvasGraphics = (function CanvasGraphicsClosure() {
       resetCtxToDefault(this.ctx);
       this.current = new CanvasExtraState();
 
-      if (isArray(rect) && rect.length === 4) {
+      if (Array.isArray(rect) && rect.length === 4) {
         var width = rect[2] - rect[0];
         var height = rect[3] - rect[1];
         this.ctx.rect(rect[0], rect[1], width, height);
