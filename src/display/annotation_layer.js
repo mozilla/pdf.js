@@ -388,8 +388,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     const TEXT_ALIGNMENT = ['left', 'center', 'right'];
     this.container.className = 'textWidgetAnnotation';
 
-    var element = null;
-    var font = null;
+    let element = null;
+    let font = null;
     if (this.renderInteractiveForms) {
       // NOTE: We cannot set the values using `element.value` below, since it
       //       prevents the AnnotationLayer rasterizer in `test/driver.js`
@@ -412,16 +412,16 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       if (this.data.comb) {
-        var fieldWidth = this.data.rect[2] - this.data.rect[0];
-        var combWidth = fieldWidth / this.data.maxLen;
+        let fieldWidth = this.data.rect[2] - this.data.rect[0];
+        let combWidth = fieldWidth / this.data.maxLen;
 
         element.classList.add('comb');
         element.style.letterSpacing = 'calc(' + combWidth + 'px - 1ch)';
       }
 
       if (this.data.fontRefName) {
-        var fonts = this.data.annotationFonts;
-        for (var f = 0; f < fonts.length; f++) {
+        let fonts = this.data.annotationFonts;
+        for (let f = 0; f < fonts.length; f++) {
           if (fonts[f].length >= 3 &&
               fonts[f][0] === this.data.fontRefName) {
             font = fonts[f][2];
@@ -460,7 +460,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
    */
   _setTextStyle(element, font) {
     // TODO: This duplicates some of the logic in CanvasGraphics.setFont().
-    var style = element.style;
+    let style = element.style;
 
     if (this.data.fontColor) {
       style.color = this.data.fontColor;
@@ -482,8 +482,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     style.fontStyle = (font.italic ? 'italic' : 'normal');
 
     // Use a reasonable default font if the font doesn't specify a fallback.
-    var fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
-    var fallbackName = font.fallbackName || 'Helvetica, sans-serif';
+    let fontFamily = font.loadedName ? '"' + font.loadedName + '", ' : '';
+    let fallbackName = font.fallbackName || 'Helvetica, sans-serif';
     style.fontFamily = fontFamily + fallbackName;
   }
 }
@@ -504,7 +504,7 @@ class CheckboxWidgetAnnotationElement extends WidgetAnnotationElement {
   render() {
     this.container.className = 'buttonWidgetAnnotation checkBox';
 
-    var element = document.createElement('input');
+    let element = document.createElement('input');
     element.name = encodeURIComponent(this.data.fieldName);
     element.disabled = this.data.readOnly;
     element.type = 'checkbox';
@@ -533,7 +533,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
   render() {
     this.container.className = 'buttonWidgetAnnotation radioButton';
 
-    var element = document.createElement('input');
+    let element = document.createElement('input');
     element.name = encodeURIComponent(this.data.fieldName);
     element.disabled = this.data.readOnly;
     element.type = 'radio';
@@ -562,11 +562,11 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
   render() {
     this.container.className = 'choiceWidgetAnnotation';
 
-    var selectElement = document.createElement('select');
+    let selectElement = document.createElement('select');
     selectElement.name = encodeURIComponent(this.data.fieldName);
     selectElement.disabled = this.data.readOnly;
 
-    var style = selectElement.style;
+    let style = selectElement.style;
 
     if (this.data.fontColor) {
       style.color = this.data.fontColor;
@@ -577,17 +577,17 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     if (this.data.fontRefName) {
-      var fonts = this.data.annotationFonts;
-      for (var f = 0; f < fonts.length; f++) {
+      let fonts = this.data.annotationFonts;
+      for (let f = 0; f < fonts.length; f++) {
         if (fonts[f].length >= 3 && fonts[f][0] === this.data.fontRefName) {
-          var font = fonts[f][2];
+          let font = fonts[f][2];
 
           style.fontWeight = font.black ? font.bold ? '900' :
                                'bold' : font.bold ? 'bold' : 'normal';
           style.fontStyle = font.italic ? 'italic' : 'normal';
-          var fontFamily = font.loadedName ? '"' +
+          let fontFamily = font.loadedName ? '"' +
                              font.loadedName + '", ' : '';
-          var fallbackName = font.fallbackName || 'Helvetica, sans-serif';
+          let fallbackName = font.fallbackName || 'Helvetica, sans-serif';
           style.fontFamily = fontFamily + fallbackName;
           break;
         }
@@ -604,10 +604,10 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     }
 
     // Insert the options into the choice field.
-    for (var i = 0, ii = this.data.options.length; i < ii; i++) {
-      var option = this.data.options[i];
+    for (let i = 0, ii = this.data.options.length; i < ii; i++) {
+      let option = this.data.options[i];
 
-      var optionElement = document.createElement('option');
+      let optionElement = document.createElement('option');
       optionElement.textContent = option.displayValue;
       optionElement.value = option.exportValue;
 

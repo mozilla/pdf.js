@@ -72,7 +72,7 @@ class AnnotationFactory {
         let fieldType = Util.getInheritableProperty(dict, 'FT');
         fieldType = isName(fieldType) ? fieldType.name : null;
 
-        var widget = new WidgetAnnotation(parameters);
+        let widget = new WidgetAnnotation(parameters);
 
         switch (fieldType) {
           case 'Tx':
@@ -677,12 +677,12 @@ class WidgetAnnotation extends Annotation {
       return Promise.resolve(this);
     }
 
-    var data = this.data;
-    var self = this;
+    let data = this.data;
+    let self = this;
 
-    var opList = new OperatorList();
-    var appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
-    var formFonts = params.pdfManager.pdfDocument.acroForm.get('DR');
+    let opList = new OperatorList();
+    let appearanceStream = new Stream(stringToBytes(data.defaultAppearance));
+    let formFonts = params.pdfManager.pdfDocument.acroForm.get('DR');
     opList.acroForm = params.pdfManager.pdfDocument.acroForm;
     return params.evaluator.getOperatorList({
       stream: appearanceStream,
@@ -690,10 +690,10 @@ class WidgetAnnotation extends Annotation {
       resources: formFonts,
       operatorList: opList,
     }).then(() => {
-      var a = opList.argsArray;
-      var i;
+      let a = opList.argsArray;
+      let i;
       for (i = 0; i < opList.fnArray.length; i++) {
-        var fn = opList.fnArray[i];
+        let fn = opList.fnArray[i];
         switch (fn | 0) {
           case OPS.setFont:
             data.annotationFonts = opList.acroForm.annotationFonts;
@@ -702,7 +702,7 @@ class WidgetAnnotation extends Annotation {
             break;
           case OPS.setGrayFill:
             if (a[i].length >= 1) {
-              var gray = Math.round(a[i][0] * 0x100);
+              let gray = Math.round(a[i][0] * 0x100);
               data.fontColor = Util.makeCssRgb(gray, gray, gray);
             }
 
