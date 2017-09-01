@@ -15,8 +15,7 @@
 
 import {
   AnnotationBorderStyleType, AnnotationFieldFlag, AnnotationFlag,
-  AnnotationType, isArray, isInt, OPS, stringToBytes, stringToPDFString, Util,
-  warn
+  AnnotationType, isArray, OPS, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
@@ -212,7 +211,7 @@ class Annotation {
    * @see {@link shared/util.js}
    */
   setFlags(flags) {
-    this.flags = (isInt(flags) && flags > 0) ? flags : 0;
+    this.flags = (Number.isInteger(flags) && flags > 0) ? flags : 0;
   }
 
   /**
@@ -575,7 +574,7 @@ class WidgetAnnotation extends Annotation {
     this.fieldResources = Util.getInheritableProperty(dict, 'DR') || Dict.empty;
 
     data.fieldFlags = Util.getInheritableProperty(dict, 'Ff');
-    if (!isInt(data.fieldFlags) || data.fieldFlags < 0) {
+    if (!Number.isInteger(data.fieldFlags) || data.fieldFlags < 0) {
       data.fieldFlags = 0;
     }
 
@@ -666,14 +665,14 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 
     // Determine the alignment of text in the field.
     let alignment = Util.getInheritableProperty(params.dict, 'Q');
-    if (!isInt(alignment) || alignment < 0 || alignment > 2) {
+    if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
       alignment = null;
     }
     this.data.textAlignment = alignment;
 
     // Determine the maximum length of text in the field.
     let maximumLength = Util.getInheritableProperty(params.dict, 'MaxLen');
-    if (!isInt(maximumLength) || maximumLength < 0) {
+    if (!Number.isInteger(maximumLength) || maximumLength < 0) {
       maximumLength = null;
     }
     this.data.maxLen = maximumLength;

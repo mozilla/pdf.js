@@ -817,7 +817,7 @@ var Util = (function UtilClosure() {
    * @return {string} The resulting Roman number.
    */
   Util.toRoman = function Util_toRoman(number, lowerCase) {
-    assert(isInt(number) && number > 0,
+    assert(Number.isInteger(number) && number > 0,
            'The number should be a positive integer.');
     var pos, romanBuf = [];
     // Thousands
@@ -1073,10 +1073,6 @@ function isEmptyObj(obj) {
 
 function isBool(v) {
   return typeof v === 'boolean';
-}
-
-function isInt(v) {
-  return typeof v === 'number' && ((v | 0) === v);
 }
 
 function isNum(v) {
@@ -1703,7 +1699,6 @@ export {
   isArrayBuffer,
   isBool,
   isEmptyObj,
-  isInt,
   isNum,
   isString,
   isSpace,

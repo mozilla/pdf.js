@@ -14,7 +14,7 @@
  */
 
 import {
-  createObjectURL, FormatError, info, isArray, isInt, isSpace, shadow, Util
+  createObjectURL, FormatError, info, isArray, isSpace, shadow, Util
 } from '../shared/util';
 import { Dict, isDict, isStream } from './primitives';
 import { Jbig2Image } from './jbig2';
@@ -927,7 +927,7 @@ var JpegStream = (function JpegStreamClosure() {
     // Fetching the 'ColorTransform' entry, if it exists.
     if (isDict(this.params)) {
       var colorTransform = this.params.get('ColorTransform');
-      if (isInt(colorTransform)) {
+      if (Number.isInteger(colorTransform)) {
         jpegImage.colorTransform = colorTransform;
       }
     }
