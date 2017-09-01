@@ -18,8 +18,8 @@ import {
   JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
 } from './stream';
 import {
-  assert, FormatError, info, isArray, isInt, isNum, isString,
-  MissingDataException, StreamType, warn
+  assert, FormatError, info, isArray, isNum, isString, MissingDataException,
+  StreamType, warn
 } from '../shared/util';
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
@@ -121,9 +121,9 @@ var Parser = (function ParserClosure() {
         }
       }
 
-      if (isInt(buf1)) { // indirect reference or integer
+      if (Number.isInteger(buf1)) { // indirect reference or integer
         var num = buf1;
-        if (isInt(this.buf1) && isCmd(this.buf2, 'R')) {
+        if (Number.isInteger(this.buf1) && isCmd(this.buf2, 'R')) {
           var ref = new Ref(num, this.buf1);
           this.shift();
           this.shift();
@@ -456,7 +456,7 @@ var Parser = (function ParserClosure() {
 
       // get length
       var length = dict.get('Length');
-      if (!isInt(length)) {
+      if (!Number.isInteger(length)) {
         info('Bad ' + length + ' attribute in stream');
         length = 0;
       }
@@ -1069,7 +1069,7 @@ var Linearization = {
   create: function LinearizationCreate(stream) {
     function getInt(name, allowZeroValue) {
       var obj = linDict.get(name);
-      if (isInt(obj) && (allowZeroValue ? obj >= 0 : obj > 0)) {
+      if (Number.isInteger(obj) && (allowZeroValue ? obj >= 0 : obj > 0)) {
         return obj;
       }
       throw new Error('The "' + name + '" parameter in the linearization ' +
@@ -1080,7 +1080,7 @@ var Linearization = {
       if (isArray(hints) &&
           ((hintsLength = hints.length) === 2 || hintsLength === 4)) {
         for (var index = 0; index < hintsLength; index++) {
-          if (!(isInt(item = hints[index]) && item > 0)) {
+          if (!(Number.isInteger(item = hints[index]) && item > 0)) {
             throw new Error('Hint (' + index +
                             ') in the linearization dictionary is invalid.');
           }
@@ -1095,7 +1095,8 @@ var Linearization = {
     var obj3 = parser.getObj();
     var linDict = parser.getObj();
     var obj, length;
-    if (!(isInt(obj1) && isInt(obj2) && isCmd(obj3, 'obj') && isDict(linDict) &&
+    if (!(Number.isInteger(obj1) && Number.isInteger(obj2) &&
+          isCmd(obj3, 'obj') && isDict(linDict) &&
           isNum(obj = linDict.get('Linearized')) && obj > 0)) {
       return null; // No valid linearization dictionary found.
     } else if ((length = getInt('L')) !== stream.length) {

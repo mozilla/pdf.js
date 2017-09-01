@@ -15,9 +15,8 @@
 
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isArray, isBool, isInt, isString,
-  MissingDataException, shadow, stringToPDFString, stringToUTF8String, Util,
-  warn, XRefParseException
+  info, InvalidPDFException, isArray, isBool, isString, MissingDataException,
+  shadow, stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -169,7 +168,7 @@ var Catalog = (function CatalogClosure() {
     },
     get numPages() {
       var obj = this.toplevelPagesDict.get('Count');
-      if (!isInt(obj)) {
+      if (!Number.isInteger(obj)) {
         throw new FormatError(
           'page count in top level pages object is not an integer');
       }
@@ -286,7 +285,7 @@ var Catalog = (function CatalogClosure() {
           prefix = p ? stringToPDFString(p) : '';
 
           var st = labelDict.get('St');
-          if (st && !(isInt(st) && st >= 1)) {
+          if (st && !(Number.isInteger(st) && st >= 1)) {
             throw new FormatError('Invalid start in PageLabel dictionary.');
           }
           currentIndex = st || 1;
@@ -912,7 +911,7 @@ var XRef = (function XRefClosure() {
 
         var first = tableState.firstEntryNum;
         var count = tableState.entryCount;
-        if (!isInt(first) || !isInt(count)) {
+        if (!Number.isInteger(first) || !Number.isInteger(count)) {
           throw new FormatError(
             'Invalid XRef table: wrong types in subsection header');
         }
@@ -935,7 +934,7 @@ var XRef = (function XRefClosure() {
           }
 
           // Validate entry obj
-          if (!isInt(entry.offset) || !isInt(entry.gen) ||
+          if (!Number.isInteger(entry.offset) || !Number.isInteger(entry.gen) ||
               !(entry.free || entry.uncompressed)) {
             throw new FormatError(
               `Invalid entry in XRef subsection: ${first}, ${count}`);
@@ -1007,12 +1006,13 @@ var XRef = (function XRefClosure() {
         var first = entryRanges[0];
         var n = entryRanges[1];
 
-        if (!isInt(first) || !isInt(n)) {
+        if (!Number.isInteger(first) || !Number.isInteger(n)) {
           throw new FormatError(
             `Invalid XRef range fields: ${first}, ${n}`);
         }
-        if (!isInt(typeFieldWidth) || !isInt(offsetFieldWidth) ||
-            !isInt(generationFieldWidth)) {
+        if (!Number.isInteger(typeFieldWidth) ||
+            !Number.isInteger(offsetFieldWidth) ||
+            !Number.isInteger(generationFieldWidth)) {
           throw new FormatError(
             `Invalid XRef entry fields length: ${first}, ${n}`);
         }
@@ -1229,7 +1229,7 @@ var XRef = (function XRefClosure() {
 
             // Recursively get other XRefs 'XRefStm', if any
             obj = dict.get('XRefStm');
-            if (isInt(obj)) {
+            if (Number.isInteger(obj)) {
               var pos = obj;
               // ignore previously loaded xref streams
               // (possible infinite recursion)
@@ -1238,9 +1238,9 @@ var XRef = (function XRefClosure() {
                 this.startXRefQueue.push(pos);
               }
             }
-          } else if (isInt(obj)) {
+          } else if (Number.isInteger(obj)) {
             // Parse in-stream XRef
-            if (!isInt(parser.getObj()) ||
+            if (!Number.isInteger(parser.getObj()) ||
                 !isCmd(parser.getObj(), 'obj') ||
                 !isStream(obj = parser.getObj())) {
               throw new FormatError('Invalid XRef stream');
@@ -1258,7 +1258,7 @@ var XRef = (function XRefClosure() {
 
           // Recursively get previous dictionary, if any
           obj = dict.get('Prev');
-          if (isInt(obj)) {
+          if (Number.isInteger(obj)) {
             this.startXRefQueue.push(obj);
           } else if (isRef(obj)) {
             // The spec says Prev must not be a reference, i.e. "/Prev NNN"
@@ -1386,7 +1386,7 @@ var XRef = (function XRefClosure() {
       }
       var first = stream.dict.get('First');
       var n = stream.dict.get('N');
-      if (!isInt(first) || !isInt(n)) {
+      if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(
           'invalid first and n parameters for ObjStm stream');
       }
@@ -1396,13 +1396,13 @@ var XRef = (function XRefClosure() {
       // read the object numbers to populate cache
       for (i = 0; i < n; ++i) {
         num = parser.getObj();
-        if (!isInt(num)) {
+        if (!Number.isInteger(num)) {
           throw new FormatError(
             `invalid object number in the ObjStm stream: ${num}`);
         }
         nums.push(num);
         var offset = parser.getObj();
-        if (!isInt(offset)) {
+        if (!Number.isInteger(offset)) {
           throw new FormatError(
             `invalid object offset in the ObjStm stream: ${offset}`);
         }

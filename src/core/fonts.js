@@ -15,8 +15,7 @@
 
 import {
   bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isArray,
-  isInt, isNum, isSpace, MissingDataException, readUint32, shadow, string32,
-  warn
+  isNum, isSpace, MissingDataException, readUint32, shadow, string32, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -291,7 +290,8 @@ var IdentityToUnicodeMap = (function IdentityToUnicodeMapClosure() {
     },
 
     charCodeOf(v) {
-      return (isInt(v) && v >= this.firstChar && v <= this.lastChar) ? v : -1;
+      return (Number.isInteger(v) &&
+              v >= this.firstChar && v <= this.lastChar) ? v : -1;
     },
 
     amend(map) {
