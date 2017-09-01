@@ -14,7 +14,7 @@
  */
 
 import {
-  bytesToString, FormatError, info, isArray, stringToBytes, Util, warn
+  bytesToString, FormatError, info, stringToBytes, Util, warn
 } from '../shared/util';
 import {
   ExpertCharset, ExpertSubsetCharset, ISOAdobeCharset
@@ -676,7 +676,7 @@ var CFFParser = (function CFFParserClosure() {
       }
       var privateOffset = parentDict.getByName('Private');
       // make sure the params are formatted correctly
-      if (!isArray(privateOffset) || privateOffset.length !== 2) {
+      if (!Array.isArray(privateOffset) || privateOffset.length !== 2) {
         parentDict.removeByName('Private');
         return;
       }
@@ -1037,12 +1037,13 @@ var CFFDict = (function CFFDictClosure() {
     };
     for (var i = 0, ii = layout.length; i < ii; ++i) {
       var entry = layout[i];
-      var key = isArray(entry[0]) ? (entry[0][0] << 8) + entry[0][1] : entry[0];
+      var key = Array.isArray(entry[0]) ?
+                (entry[0][0] << 8) + entry[0][1] : entry[0];
       tables.keyToNameMap[key] = entry[1];
       tables.nameToKeyMap[entry[1]] = key;
       tables.types[key] = entry[2];
       tables.defaults[key] = entry[3];
-      tables.opcodes[key] = isArray(entry[0]) ? entry[0] : [entry[0]];
+      tables.opcodes[key] = Array.isArray(entry[0]) ? entry[0] : [entry[0]];
       tables.order.push(key);
     }
     return tables;
@@ -1487,10 +1488,10 @@ var CFFCompiler = (function CFFCompilerClosure() {
         }
         var values = dict.values[key];
         var types = dict.types[key];
-        if (!isArray(types)) {
+        if (!Array.isArray(types)) {
           types = [types];
         }
-        if (!isArray(values)) {
+        if (!Array.isArray(values)) {
           values = [values];
         }
 

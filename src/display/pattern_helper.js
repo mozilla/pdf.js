@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isArray, Util } from '../shared/util';
+import { FormatError, info, Util } from '../shared/util';
 import { WebGLUtils } from './webgl';
 
 var ShadingIRs = {};
@@ -391,7 +391,7 @@ var TilingPattern = (function TilingPatternClosure() {
     },
 
     clipBbox: function clipBbox(graphics, bbox, x0, y0, x1, y1) {
-      if (isArray(bbox) && bbox.length === 4) {
+      if (Array.isArray(bbox) && bbox.length === 4) {
         var bboxWidth = x1 - x0;
         var bboxHeight = y1 - y0;
         graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);

@@ -14,8 +14,8 @@
  */
 
 import {
-  bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isArray,
-  isNum, isSpace, MissingDataException, readUint32, shadow, string32, warn
+  bytesToString, FONT_IDENTITY_MATRIX, FontType, FormatError, info, isNum,
+  isSpace, MissingDataException, readUint32, shadow, string32, warn
 } from '../shared/util';
 import {
   CFF, CFFCharset, CFFCompiler, CFFHeader, CFFIndex, CFFParser, CFFPrivateDict,
@@ -3250,7 +3250,7 @@ var Type1Font = (function Type1FontClosure() {
           continue;
         }
         var value = properties.privateData[field];
-        if (isArray(value)) {
+        if (Array.isArray(value)) {
           // All of the private dictionary array data in CFF must be stored as
           // "delta-encoded" numbers.
           for (var j = value.length - 1; j > 0; j--) {
