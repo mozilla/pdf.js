@@ -17,7 +17,6 @@ import {
   PostScriptCompiler, PostScriptEvaluator
 } from '../../src/core/function';
 import { PostScriptLexer, PostScriptParser } from '../../src/core/ps_parser';
-import { isArray } from '../../src/shared/util';
 import { StringStream } from '../../src/core/stream';
 
 describe('function', function() {
@@ -36,7 +35,7 @@ describe('function', function() {
             result.pass = true;
             for (var i = 0; i < expected.length; i++) {
               var a = actual[i], b = expected[i];
-              if (isArray(b)) {
+              if (Array.isArray(b)) {
                 if (a.length !== b.length) {
                   result.pass = false;
                   break;

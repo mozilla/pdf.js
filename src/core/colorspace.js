@@ -13,9 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  FormatError, info, isArray, isString, shadow, warn
-} from '../shared/util';
+import { FormatError, info, isString, shadow, warn } from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
 import { PDFFunction } from './function';
 
@@ -211,7 +209,7 @@ var ColorSpace = (function ColorSpaceClosure() {
   };
 
   ColorSpace.fromIR = function ColorSpace_fromIR(IR) {
-    var name = isArray(IR) ? IR[0] : IR;
+    var name = Array.isArray(IR) ? IR[0] : IR;
     var whitePoint, blackPoint, gamma;
 
     switch (name) {
@@ -289,7 +287,7 @@ var ColorSpace = (function ColorSpaceClosure() {
           throw new FormatError(`unrecognized colorspace ${cs.name}`);
       }
     }
-    if (isArray(cs)) {
+    if (Array.isArray(cs)) {
       var mode = xref.fetchIfRef(cs[0]).name;
       var numComps, params, alt, whitePoint, blackPoint, gamma;
 
@@ -357,7 +355,7 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Separation':
         case 'DeviceN':
           var name = xref.fetchIfRef(cs[1]);
-          numComps = isArray(name) ? name.length : 1;
+          numComps = Array.isArray(name) ? name.length : 1;
           alt = ColorSpace.parseToIR(cs[2], xref, res);
           var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
@@ -383,7 +381,7 @@ var ColorSpace = (function ColorSpaceClosure() {
    * @param {Number} n Number of components the color space has.
    */
   ColorSpace.isDefaultDecode = function ColorSpace_isDefaultDecode(decode, n) {
-    if (!isArray(decode)) {
+    if (!Array.isArray(decode)) {
       return true;
     }
 

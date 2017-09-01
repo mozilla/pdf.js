@@ -15,8 +15,8 @@
 
 import {
   bytesToString, createPromiseCapability, createValidAbsoluteUrl, FormatError,
-  info, InvalidPDFException, isArray, isBool, isString, MissingDataException,
-  shadow, stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
+  info, InvalidPDFException, isBool, isString, MissingDataException, shadow,
+  stringToPDFString, stringToUTF8String, Util, warn, XRefParseException
 } from '../shared/util';
 import {
   Dict, isCmd, isDict, isName, isRef, isRefsEqual, isStream, Ref, RefSet,
@@ -136,7 +136,7 @@ var Catalog = (function CatalogClosure() {
 
         var color = outlineDict.getArray('C'), rgbColor = blackColor;
         // We only need to parse the color when it's valid, and non-default.
-        if (isArray(color) && color.length === 3 &&
+        if (Array.isArray(color) && color.length === 3 &&
             (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {
           rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
         }
@@ -507,7 +507,7 @@ var Catalog = (function CatalogClosure() {
           }
 
           var kids = currentNode.get('Kids');
-          if (!isArray(kids)) {
+          if (!Array.isArray(kids)) {
             capability.reject(new FormatError(
               'page dictionary kids object is not an array'));
             return;
@@ -707,7 +707,7 @@ var Catalog = (function CatalogClosure() {
               let baseUrl = url.split('#')[0];
               if (isString(remoteDest)) {
                 url = baseUrl + '#' + remoteDest;
-              } else if (isArray(remoteDest)) {
+              } else if (Array.isArray(remoteDest)) {
                 url = baseUrl + '#' + JSON.stringify(remoteDest);
               }
             }
@@ -778,7 +778,7 @@ var Catalog = (function CatalogClosure() {
       if (isName(dest)) {
         dest = dest.name;
       }
-      if (isString(dest) || isArray(dest)) {
+      if (isString(dest) || Array.isArray(dest)) {
         resultObj.dest = dest;
       }
     }
@@ -1501,7 +1501,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
           continue;
         }
         var entries = obj.get(this._type);
-        if (isArray(entries)) {
+        if (Array.isArray(entries)) {
           for (i = 0, n = entries.length; i < n; i += 2) {
             dict[xref.fetchIfRef(entries[i])] = xref.fetchIfRef(entries[i + 1]);
           }
@@ -1530,7 +1530,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
         }
 
         var kids = kidsOrEntries.get('Kids');
-        if (!isArray(kids)) {
+        if (!Array.isArray(kids)) {
           return null;
         }
 
@@ -1558,7 +1558,7 @@ var NameOrNumberTree = (function NameOrNumberTreeClosure() {
       // If we get here, then we have found the right entry. Now go through the
       // entries in the dictionary until we find the key we're looking for.
       var entries = kidsOrEntries.get(this._type);
-      if (isArray(entries)) {
+      if (Array.isArray(entries)) {
         // Perform a binary search to reduce the lookup time.
         l = 0;
         r = entries.length - 2;
@@ -1709,7 +1709,8 @@ var FileSpec = (function FileSpecClosure() {
  */
 let ObjectLoader = (function() {
   function mayHaveChildren(value) {
-    return isRef(value) || isDict(value) || isArray(value) || isStream(value);
+    return isRef(value) || isDict(value) || Array.isArray(value) ||
+           isStream(value);
   }
 
   function addChildren(node, nodesToVisit) {
@@ -1722,7 +1723,7 @@ let ObjectLoader = (function() {
           nodesToVisit.push(rawValue);
         }
       }
-    } else if (isArray(node)) {
+    } else if (Array.isArray(node)) {
       for (let i = 0, ii = node.length; i < ii; i++) {
         let value = node[i];
         if (mayHaveChildren(value)) {

@@ -14,8 +14,6 @@
  */
 /* uses XRef */
 
-import { isArray } from '../shared/util';
-
 var EOF = {};
 
 var Name = (function NameClosure() {
@@ -117,7 +115,7 @@ var Dict = (function DictClosure() {
     getArray: function Dict_getArray(key1, key2, key3) {
       var value = this.get(key1, key2, key3);
       var xref = this.xref, suppressEncryption = this.suppressEncryption;
-      if (!isArray(value) || !xref) {
+      if (!Array.isArray(value) || !xref) {
         return value;
       }
       value = value.slice(); // Ensure that we don't modify the Dict data.
