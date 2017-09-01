@@ -16,7 +16,6 @@
 import {
   PRIVATE_USE_OFFSET_END, PRIVATE_USE_OFFSET_START, ProblematicCharRanges
 } from '../../src/core/fonts';
-import { isInt } from '../../src/shared/util';
 
 /**
  * Used to validate the entries in `ProblematicCharRanges`, and to ensure that
@@ -41,7 +40,7 @@ var checkProblematicCharRanges = function checkProblematicCharRanges() {
       lower: ProblematicCharRanges[i],
       upper: ProblematicCharRanges[i + 1],
     };
-    if (!isInt(limits.lower) || !isInt(limits.upper)) {
+    if (!Number.isInteger(limits.lower) || !Number.isInteger(limits.upper)) {
       throw new Error('Range endpoints must be integers: ' +
                       printRange(limits));
     }

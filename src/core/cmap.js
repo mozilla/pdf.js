@@ -14,8 +14,7 @@
  */
 
 import {
-  CMapCompressionType, FormatError, isInt, isString, MissingDataException, Util,
-  warn
+  CMapCompressionType, FormatError, isString, MissingDataException, Util, warn
 } from '../shared/util';
 import { isCmd, isEOF, isName, isStream } from './primitives';
 import { Lexer } from './parser';
@@ -370,11 +369,11 @@ var IdentityCMap = (function IdentityCMapClosure() {
     },
 
     lookup(code) {
-      return (isInt(code) && code <= 0xffff) ? code : undefined;
+      return (Number.isInteger(code) && code <= 0xffff) ? code : undefined;
     },
 
     contains(code) {
-      return isInt(code) && code <= 0xffff;
+      return Number.isInteger(code) && code <= 0xffff;
     },
 
     forEach(callback) {
@@ -384,7 +383,7 @@ var IdentityCMap = (function IdentityCMapClosure() {
     },
 
     charCodeOf(value) {
-      return (isInt(value) && value <= 0xffff) ? value : -1;
+      return (Number.isInteger(value) && value <= 0xffff) ? value : -1;
     },
 
     getMap() {
@@ -718,7 +717,7 @@ var CMapFactory = (function CMapFactoryClosure() {
   }
 
   function expectInt(obj) {
-    if (!isInt(obj)) {
+    if (!Number.isInteger(obj)) {
       throw new FormatError('Malformed CMap: expected int.');
     }
   }
@@ -757,8 +756,8 @@ var CMapFactory = (function CMapFactoryClosure() {
       expectString(obj);
       var high = strToInt(obj);
       obj = lexer.getObj();
-      if (isInt(obj) || isString(obj)) {
-        var dstLow = isInt(obj) ? String.fromCharCode(obj) : obj;
+      if (Number.isInteger(obj) || isString(obj)) {
+        var dstLow = Number.isInteger(obj) ? String.fromCharCode(obj) : obj;
         cMap.mapBfRange(low, high, dstLow);
       } else if (isCmd(obj, '[')) {
         obj = lexer.getObj();
@@ -839,7 +838,7 @@ var CMapFactory = (function CMapFactoryClosure() {
 
   function parseWMode(cMap, lexer) {
     var obj = lexer.getObj();
-    if (isInt(obj)) {
+    if (Number.isInteger(obj)) {
       cMap.vertical = !!obj;
     }
   }

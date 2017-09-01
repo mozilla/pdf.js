@@ -15,11 +15,11 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel,
-  info, InvalidPDFException, isArrayBuffer, isInt, isSameOrigin,
-  loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
-  PageViewport, PasswordException, StatTimer, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, Util, warn
+  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
+  MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
+  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
+  UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
@@ -1986,7 +1986,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, capability) {
-      if (!isInt(pageNumber) || pageNumber <= 0 || pageNumber > this.numPages) {
+      if (!Number.isInteger(pageNumber) ||
+          pageNumber <= 0 || pageNumber > this.numPages) {
         return Promise.reject(new Error('Invalid page request'));
       }
 
