@@ -623,6 +623,15 @@
        "annotations": true,
        "about": "Annotation with Rect array containing indirect objects."
     },
+    {  "id": "file_url_link",
+       "file": "pdfs/file_url_link.pdf",
+       "md5": "b0253c96c38d43bc49259bbf36db938a",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Annotation with (unsupported) file:// URL."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
