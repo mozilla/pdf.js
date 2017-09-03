@@ -111,18 +111,17 @@ class PDFLinkService {
         return;
       }
 
+      if (this.pdfHistory) {
+        // Update the browser history before scrolling the new destination into
+        // view, to be able to accurately capture the current document position.
+        this.pdfHistory.pushCurrentPosition();
+        this.pdfHistory.push({ namedDest, explicitDest, pageNumber, });
+      }
+
       this.pdfViewer.scrollPageIntoView({
         pageNumber,
         destArray: explicitDest,
       });
-
-      if (this.pdfHistory) { // Update the browsing history, if enabled.
-        this.pdfHistory.push({
-          dest: explicitDest,
-          hash: namedDest,
-          page: pageNumber,
-        });
-      }
     };
 
     new Promise((resolve, reject) => {
@@ -190,9 +189,6 @@ class PDFLinkService {
       }
       // borrowing syntax from "Parameters for Opening PDF Files"
       if ('nameddest' in params) {
-        if (this.pdfHistory) {
-          this.pdfHistory.updateNextHashParam(params.nameddest);
-        }
         this.navigateTo(params.nameddest);
         return;
       }
@@ -270,9 +266,6 @@ class PDFLinkService {
       } catch (ex) {}
 
       if (typeof dest === 'string' || isValidExplicitDestination(dest)) {
-        if (this.pdfHistory) {
-          this.pdfHistory.updateNextHashParam(dest);
-        }
         this.navigateTo(dest);
         return;
       }
