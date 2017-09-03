@@ -359,7 +359,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
    * @returns {string}
    */
   function pf(value) {
-    if (value === (value | 0)) { // integer number
+    if (Number.isInteger(value)) {
       return value.toString();
     }
     var s = value.toFixed(10);
