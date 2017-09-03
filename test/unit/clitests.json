@@ -17,6 +17,7 @@
     "murmurhash3_spec.js",
     "node_stream_spec.js",
     "parser_spec.js",
+    "pdf_history.js",
     "primitives_spec.js",
     "stream_spec.js",
     "type1_parser_spec.js",

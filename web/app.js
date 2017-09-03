@@ -89,7 +89,6 @@ const DefaultExternalServices = {
 
 let PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
-  initialDestination: null,
   initialized: false,
   fellback: false,
   appConfig: null,
@@ -931,21 +930,16 @@ let PDFViewerApplication = {
       if (!PDFJS.disableHistory && !this.isViewerEmbedded) {
         // The browsing history is only enabled when the viewer is standalone,
         // i.e. not when it is embedded in a web page.
-        if (!this.viewerPrefs['showPreviousViewOnLoad']) {
-          this.pdfHistory.clearHistoryState();
-        }
-        this.pdfHistory.initialize(this.documentFingerprint);
+        let resetHistory = !this.viewerPrefs['showPreviousViewOnLoad'];
+        this.pdfHistory.initialize(id, resetHistory);
 
-        if (this.pdfHistory.initialDestination) {
-          this.initialDestination = this.pdfHistory.initialDestination;
-        } else if (this.pdfHistory.initialBookmark) {
+        if (this.pdfHistory.initialBookmark) {
           this.initialBookmark = this.pdfHistory.initialBookmark;
         }
       }
 
       let initialParams = {
-        destination: this.initialDestination,
-        bookmark: this.initialBookmark,
+        bookmark: null,
         hash: null,
       };
       let storePromise = store.getMultiple({
@@ -979,8 +973,10 @@ let PDFViewerApplication = {
           sidebarView,
         };
       }).then(({ hash, sidebarView, }) => {
-        this.setInitialView(hash, { sidebarView, });
+        initialParams.bookmark = this.initialBookmark;
         initialParams.hash = hash;
+
+        this.setInitialView(hash, { sidebarView, });
 
         // Make all navigation keys work on document load,
         // unless the viewer is embedded in a web page.
@@ -991,14 +987,12 @@ let PDFViewerApplication = {
       }).then(() => {
         // For documents with different page sizes, once all pages are resolved,
         // ensure that the correct location becomes visible on load.
-        if (!initialParams.destination && !initialParams.bookmark &&
-            !initialParams.hash) {
+        if (!initialParams.bookmark && !initialParams.hash) {
           return;
         }
         if (pdfViewer.hasEqualPageSizes) {
           return;
         }
-        this.initialDestination = initialParams.destination;
         this.initialBookmark = initialParams.bookmark;
 
         pdfViewer.currentScaleValue = pdfViewer.currentScaleValue;
@@ -1141,12 +1135,8 @@ let PDFViewerApplication = {
     this.isInitialViewSet = true;
     this.pdfSidebar.setInitialView(sidebarView);
 
-    if (this.initialDestination) {
-      this.pdfLinkService.navigateTo(this.initialDestination);
-      this.initialDestination = null;
-    } else if (this.initialBookmark) {
+    if (this.initialBookmark) {
       this.pdfLinkService.setHash(this.initialBookmark);
-      this.pdfHistory.push({ hash: this.initialBookmark, }, true);
       this.initialBookmark = null;
     } else if (storedHash) {
       this.pdfLinkService.setHash(storedHash);
@@ -1787,10 +1777,6 @@ function webViewerUpdateViewarea(evt) {
   PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href =
     href;
 
-  // Update the current bookmark in the browsing history.
-  PDFViewerApplication.pdfHistory.updateCurrentBookmark(location.pdfOpenParams,
-                                                        location.pageNumber);
-
   // Show/hide the loading indicator in the page number input element.
   let currentPage =
     PDFViewerApplication.pdfViewer.getPageView(PDFViewerApplication.page - 1);
@@ -1814,16 +1800,14 @@ function webViewerResize() {
 }
 
 function webViewerHashchange(evt) {
-  if (PDFViewerApplication.pdfHistory.isHashChangeUnlocked) {
-    let hash = evt.hash;
-    if (!hash) {
-      return;
-    }
-    if (!PDFViewerApplication.isInitialViewSet) {
-      PDFViewerApplication.initialBookmark = hash;
-    } else {
-      PDFViewerApplication.pdfLinkService.setHash(hash);
-    }
+  let hash = evt.hash;
+  if (!hash) {
+    return;
+  }
+  if (!PDFViewerApplication.isInitialViewSet) {
+    PDFViewerApplication.initialBookmark = hash;
+  } else if (!PDFViewerApplication.pdfHistory.popStateInProgress) {
+    PDFViewerApplication.pdfLinkService.setHash(hash);
   }
 }
 
@@ -2274,23 +2258,6 @@ function webViewerKeyDown(evt) {
     if ((evt.keyCode >= 33 && evt.keyCode <= 40) ||
         (evt.keyCode === 32 && curElementTagName !== 'BUTTON')) {
       ensureViewerFocused = true;
-    }
-  }
-
-  if (cmd === 2) { // alt-key
-    switch (evt.keyCode) {
-      case 37: // left arrow
-        if (isViewerInPresentationMode) {
-          PDFViewerApplication.pdfHistory.back();
-          handled = true;
-        }
-        break;
-      case 39: // right arrow
-        if (isViewerInPresentationMode) {
-          PDFViewerApplication.pdfHistory.forward();
-          handled = true;
-        }
-        break;
     }
   }
 
