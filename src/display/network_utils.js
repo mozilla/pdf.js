@@ -61,10 +61,7 @@ function createResponseStatusError(status, url) {
     ') while retrieving PDF "' + url + '".', status);
 }
 
-function validateResponseStatus(status, isHttp) {
-  if (!isHttp) {
-    return status === 0;
-  }
+function validateResponseStatus(status) {
   return status === 200 || status === 206;
 }
 
