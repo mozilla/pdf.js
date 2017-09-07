@@ -358,6 +358,13 @@ class PDFHistory {
    * @private
    */
   _updateInternalState(destination, uid, removeTemporary = false) {
+    if (this._updateViewareaTimeout) {
+      // When updating `this._destination`, make sure that we always wait for
+      // the next 'updateviewarea' event before (potentially) attempting to
+      // push the current position to the browser history.
+      clearTimeout(this._updateViewareaTimeout);
+      this._updateViewareaTimeout = null;
+    }
     if (removeTemporary && destination && destination.temporary) {
       // When the `destination` comes from the browser history,
       // we no longer treat it as a *temporary* position.
