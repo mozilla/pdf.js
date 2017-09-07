@@ -189,6 +189,17 @@ class PDFHistory {
       hash,
       page: pageNumber,
     }, forceReplace);
+
+    if (!this._popStateInProgress) {
+      // Prevent the browser history from updating while the new destination is
+      // being scrolled into view, to avoid potentially inconsistent state.
+      this._popStateInProgress = true;
+      // We defer the resetting of `this._popStateInProgress`, to account for
+      // e.g. zooming occuring when the new destination is being navigated to.
+      Promise.resolve().then(() => {
+        this._popStateInProgress = false;
+      });
+    }
   }
 
   /**
