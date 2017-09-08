@@ -21,7 +21,7 @@ const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
 // Heuristic value used when adding the current position to the browser history.
 const POSITION_UPDATED_THRESHOLD = 50;
 // Heuristic value used when adding a temporary position to the browser history.
-const UPDATE_VIEWAREA_TIMEOUT = 2000; // milliseconds
+const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
 
 /**
  * @typedef {Object} PDFHistoryOptions
@@ -189,6 +189,17 @@ class PDFHistory {
       hash,
       page: pageNumber,
     }, forceReplace);
+
+    if (!this._popStateInProgress) {
+      // Prevent the browser history from updating while the new destination is
+      // being scrolled into view, to avoid potentially inconsistent state.
+      this._popStateInProgress = true;
+      // We defer the resetting of `this._popStateInProgress`, to account for
+      // e.g. zooming occuring when the new destination is being navigated to.
+      Promise.resolve().then(() => {
+        this._popStateInProgress = false;
+      });
+    }
   }
 
   /**
@@ -358,6 +369,13 @@ class PDFHistory {
    * @private
    */
   _updateInternalState(destination, uid, removeTemporary = false) {
+    if (this._updateViewareaTimeout) {
+      // When updating `this._destination`, make sure that we always wait for
+      // the next 'updateviewarea' event before (potentially) attempting to
+      // push the current position to the browser history.
+      clearTimeout(this._updateViewareaTimeout);
+      this._updateViewareaTimeout = null;
+    }
     if (removeTemporary && destination && destination.temporary) {
       // When the `destination` comes from the browser history,
       // we no longer treat it as a *temporary* position.
@@ -473,34 +491,6 @@ class PDFHistory {
       }).then(() => {
         this._blockHashChange--;
       });
-    }
-
-    // This case corresponds to navigation backwards in the browser history.
-    if (state.uid < this._currentUid && this._position && this._destination) {
-      let shouldGoBack = false;
-
-      if (this._destination.temporary) {
-        // If the `this._destination` contains a *temporary* position, always
-        // push the `this._position` to the browser history before moving back.
-        this._pushOrReplaceState(this._position);
-        shouldGoBack = true;
-      } else if (this._destination.page &&
-                 this._destination.page !== this._position.first &&
-                 this._destination.page !== this._position.page) {
-        // If the `page` of the `this._destination` is no longer visible,
-        // push the `this._position` to the browser history before moving back.
-        this._pushOrReplaceState(this._destination);
-        this._pushOrReplaceState(this._position);
-        shouldGoBack = true;
-      }
-      if (shouldGoBack) {
-        // After `window.history.back()`, we must not enter this block on the
-        // resulting 'popstate' event, since that may cause an infinite loop.
-        this._currentUid = state.uid;
-
-        window.history.back();
-        return;
-      }
     }
 
     // Navigate to the new destination.
