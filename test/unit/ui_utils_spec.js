@@ -14,7 +14,8 @@
  */
 
 import {
-  binarySearchFirstItem, EventBus, getPDFFileNameFromURL
+  binarySearchFirstItem, EventBus, getPDFFileNameFromURL, waitOnEventOrTimeout,
+  WaitOnType
 } from '../../web/ui_utils';
 import { createObjectURL, isNodeJS } from '../../src/shared/util';
 
@@ -257,6 +258,120 @@ describe('ui_utils', function() {
       eventBus.dispatch('test');
       eventBus.dispatch('test');
       expect(count).toEqual(2);
+    });
+  });
+
+  describe('waitOnEventOrTimeout', function() {
+    let eventBus;
+
+    beforeAll(function(done) {
+      eventBus = new EventBus();
+      done();
+    });
+
+    afterAll(function() {
+      eventBus = null;
+    });
+
+    it('should reject invalid parameters', function(done) {
+      let invalidTarget = waitOnEventOrTimeout({
+        target: 'window',
+        name: 'DOMContentLoaded',
+      }).then(function() {
+        throw new Error('Should reject invalid parameters.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+
+      let invalidName = waitOnEventOrTimeout({
+        target: eventBus,
+        name: '',
+      }).then(function() {
+        throw new Error('Should reject invalid parameters.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+
+      let invalidDelay = waitOnEventOrTimeout({
+        target: eventBus,
+        name: 'pagerendered',
+        delay: -1000,
+      }).then(function() {
+        throw new Error('Should reject invalid parameters.');
+      }, function(reason) {
+        expect(reason instanceof Error).toEqual(true);
+      });
+
+      Promise.all([invalidTarget, invalidName, invalidDelay]).then(done,
+                                                                   done.fail);
+    });
+
+    it('should resolve on event, using the DOM', function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      let button = document.createElement('button');
+
+      let buttonClicked = waitOnEventOrTimeout({
+        target: button,
+        name: 'click',
+        delay: 10000,
+      });
+      // Immediately dispatch the expected event.
+      button.click();
+
+      buttonClicked.then(function(type) {
+        expect(type).toEqual(WaitOnType.EVENT);
+        done();
+      }, done.fail);
+    });
+
+    it('should resolve on timeout, using the DOM', function(done) {
+      if (isNodeJS()) {
+        pending('Document in not supported in Node.js.');
+      }
+      let button = document.createElement('button');
+
+      let buttonClicked = waitOnEventOrTimeout({
+        target: button,
+        name: 'click',
+        delay: 10,
+      });
+      // Do *not* dispatch the event, and wait for the timeout.
+
+      buttonClicked.then(function(type) {
+        expect(type).toEqual(WaitOnType.TIMEOUT);
+        done();
+      }, done.fail);
+    });
+
+    it('should resolve on event, using the EventBus', function(done) {
+      let pageRendered = waitOnEventOrTimeout({
+        target: eventBus,
+        name: 'pagerendered',
+        delay: 10000,
+      });
+      // Immediately dispatch the expected event.
+      eventBus.dispatch('pagerendered');
+
+      pageRendered.then(function(type) {
+        expect(type).toEqual(WaitOnType.EVENT);
+        done();
+      }, done.fail);
+    });
+
+    it('should resolve on timeout, using the EventBus', function(done) {
+      let pageRendered = waitOnEventOrTimeout({
+        target: eventBus,
+        name: 'pagerendered',
+        delay: 10,
+      });
+      // Do *not* dispatch the event, and wait for the timeout.
+
+      pageRendered.then(function(type) {
+        expect(type).toEqual(WaitOnType.TIMEOUT);
+        done();
+      }, done.fail);
     });
   });
 });
