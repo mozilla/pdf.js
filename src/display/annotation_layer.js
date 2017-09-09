@@ -251,7 +251,9 @@ class AnnotationElement {
 
 class LinkAnnotationElement extends AnnotationElement {
   constructor(parameters) {
-    super(parameters, /* isRenderable = */ true);
+    let isRenderable = !!(parameters.data.url || parameters.data.dest ||
+                          parameters.data.action);
+    super(parameters, isRenderable);
   }
 
   /**
