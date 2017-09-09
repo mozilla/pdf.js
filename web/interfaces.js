@@ -31,6 +31,16 @@ class IPDFLinkService {
   set page(value) {}
 
   /**
+   * @returns {number}
+   */
+  get rotation() {}
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {}
+
+  /**
    * @param dest - The PDF destination object.
    */
   navigateTo(dest) {}
