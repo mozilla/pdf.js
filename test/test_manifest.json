@@ -3560,6 +3560,13 @@
        "type": "eq",
        "annotations": true
     },
+    {  "id": "annotation-square-circle",
+       "file": "pdfs/annotation-square-circle.pdf",
+       "md5": "cfd3c302f68d61e1d55ed9c7896046c3",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "annotation-fileattachment",
        "file": "pdfs/annotation-fileattachment.pdf",
        "md5": "d20ecee4b53c81b2dd44c8715a1b4a83",
