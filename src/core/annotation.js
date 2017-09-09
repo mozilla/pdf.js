@@ -81,6 +81,12 @@ class AnnotationFactory {
       case 'Line':
         return new LineAnnotation(parameters);
 
+      case 'Square':
+        return new SquareAnnotation(parameters);
+
+      case 'Circle':
+        return new CircleAnnotation(parameters);
+
       case 'Highlight':
         return new HighlightAnnotation(parameters);
 
@@ -883,6 +889,24 @@ class LineAnnotation extends Annotation {
     let dict = parameters.dict;
     this.data.lineCoordinates = Util.normalizeRect(dict.getArray('L'));
     this._preparePopup(dict);
+  }
+}
+
+class SquareAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.SQUARE;
+    this._preparePopup(parameters.dict);
+  }
+}
+
+class CircleAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.CIRCLE;
+    this._preparePopup(parameters.dict);
   }
 }
 

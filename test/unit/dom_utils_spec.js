@@ -14,11 +14,72 @@
  */
 
 import {
-  getFilenameFromUrl, isExternalLinkTargetSet, LinkTarget
+  DOMSVGFactory, getFilenameFromUrl, isExternalLinkTargetSet, LinkTarget
 } from '../../src/display/dom_utils';
+import { isNodeJS } from '../../src/shared/util';
 import { PDFJS } from '../../src/display/global';
 
 describe('dom_utils', function() {
+  describe('DOMSVGFactory', function() {
+    let svgFactory;
+
+    beforeAll(function (done) {
+      svgFactory = new DOMSVGFactory();
+      done();
+    });
+
+    afterAll(function () {
+      svgFactory = null;
+    });
+
+    it('`create` should throw an error if the dimensions are invalid',
+        function() {
+      // Invalid width.
+      expect(function() {
+        return svgFactory.create(-1, 0);
+      }).toThrow(new Error('Invalid SVG dimensions'));
+
+      // Invalid height.
+      expect(function() {
+        return svgFactory.create(0, -1);
+      }).toThrow(new Error('Invalid SVG dimensions'));
+    });
+
+    it('`create` should return an SVG element if the dimensions are valid',
+        function() {
+      if (isNodeJS()) {
+        pending('Document is not supported in Node.js.');
+      }
+
+      let svg = svgFactory.create(20, 40);
+
+      expect(svg instanceof SVGSVGElement).toBe(true);
+      expect(svg.getAttribute('version')).toBe('1.1');
+      expect(svg.getAttribute('width')).toBe('20px');
+      expect(svg.getAttribute('height')).toBe('40px');
+      expect(svg.getAttribute('preserveAspectRatio')).toBe('none');
+      expect(svg.getAttribute('viewBox')).toBe('0 0 20 40');
+    });
+
+    it('`createElement` should throw an error if the type is not a string',
+        function() {
+      expect(function() {
+        return svgFactory.createElement(true);
+      }).toThrow(new Error('Invalid SVG element type'));
+    });
+
+    it('`createElement` should return an SVG element if the type is valid',
+        function() {
+      if (isNodeJS()) {
+        pending('Document is not supported in Node.js.');
+      }
+
+      let svg = svgFactory.createElement('svg:rect');
+
+      expect(svg instanceof SVGRectElement).toBe(true);
+    });
+  });
+
   describe('getFilenameFromUrl', function() {
     it('should get the filename from an absolute URL', function() {
       var url = 'http://server.org/filename.pdf';

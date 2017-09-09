@@ -181,6 +181,8 @@
 .annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation,
 .annotationLayer .lineAnnotation svg line,
+.annotationLayer .squareAnnotation svg rect,
+.annotationLayer .circleAnnotation svg ellipse,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }

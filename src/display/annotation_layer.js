@@ -14,8 +14,8 @@
  */
 
 import {
-  addLinkAttributes, CustomStyle, getDefaultSetting, getFilenameFromUrl,
-  LinkTarget
+  addLinkAttributes, CustomStyle, DOMSVGFactory, getDefaultSetting,
+  getFilenameFromUrl, LinkTarget
 } from './dom_utils';
 import {
   AnnotationBorderStyleType, AnnotationType, stringToPDFString, Util, warn
@@ -31,6 +31,7 @@ import {
  * @property {DownloadManager} downloadManager
  * @property {string} imageResourcesPath
  * @property {boolean} renderInteractiveForms
+ * @property {Object} svgFactory
  */
 
 class AnnotationElementFactory {
@@ -73,6 +74,12 @@ class AnnotationElementFactory {
       case AnnotationType.LINE:
         return new LineAnnotationElement(parameters);
 
+      case AnnotationType.SQUARE:
+        return new SquareAnnotationElement(parameters);
+
+      case AnnotationType.CIRCLE:
+        return new CircleAnnotationElement(parameters);
+
       case AnnotationType.HIGHLIGHT:
         return new HighlightAnnotationElement(parameters);
 
@@ -105,6 +112,7 @@ class AnnotationElement {
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
     this.renderInteractiveForms = parameters.renderInteractiveForms;
+    this.svgFactory = parameters.svgFactory;
 
     if (isRenderable) {
       this.container = this._createContainer(ignoreBorder);
@@ -590,7 +598,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line'];
+    const IGNORE_TYPES = ['Line', 'Square', 'Circle'];
 
     this.container.className = 'popupAnnotation';
 
@@ -771,8 +779,6 @@ class LineAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    const SVG_NS = 'http://www.w3.org/2000/svg';
-
     this.container.className = 'lineAnnotation';
 
     // Create an invisible line with the same starting and ending coordinates
@@ -781,30 +787,122 @@ class LineAnnotationElement extends AnnotationElement {
     let data = this.data;
     let width = data.rect[2] - data.rect[0];
     let height = data.rect[3] - data.rect[1];
-
-    let svg = document.createElementNS(SVG_NS, 'svg:svg');
-    svg.setAttributeNS(null, 'version', '1.1');
-    svg.setAttributeNS(null, 'width', width + 'px');
-    svg.setAttributeNS(null, 'height', height + 'px');
-    svg.setAttributeNS(null, 'preserveAspectRatio', 'none');
-    svg.setAttributeNS(null, 'viewBox', '0 0 ' + width + ' ' + height);
+    let svg = this.svgFactory.create(width, height);
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    let line = document.createElementNS(SVG_NS, 'svg:line');
-    line.setAttributeNS(null, 'x1', data.rect[2] - data.lineCoordinates[0]);
-    line.setAttributeNS(null, 'y1', data.rect[3] - data.lineCoordinates[1]);
-    line.setAttributeNS(null, 'x2', data.rect[2] - data.lineCoordinates[2]);
-    line.setAttributeNS(null, 'y2', data.rect[3] - data.lineCoordinates[3]);
-    line.setAttributeNS(null, 'stroke-width', data.borderStyle.width);
-    line.setAttributeNS(null, 'stroke', 'transparent');
+    let line = this.svgFactory.createElement('svg:line');
+    line.setAttribute('x1', data.rect[2] - data.lineCoordinates[0]);
+    line.setAttribute('y1', data.rect[3] - data.lineCoordinates[1]);
+    line.setAttribute('x2', data.rect[2] - data.lineCoordinates[2]);
+    line.setAttribute('y2', data.rect[3] - data.lineCoordinates[3]);
+    line.setAttribute('stroke-width', data.borderStyle.width);
+    line.setAttribute('stroke', 'transparent');
 
     svg.appendChild(line);
     this.container.append(svg);
 
     // Create the popup ourselves so that we can bind it to the line instead
     // of to the entire container (which is the default).
-    this._createPopup(this.container, line, this.data);
+    this._createPopup(this.container, line, data);
+
+    return this.container;
+  }
+}
+
+class SquareAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the square annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof SquareAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'squareAnnotation';
+
+    // Create an invisible square with the same rectangle that acts as the
+    // trigger for the popup. Only the square itself should trigger the
+    // popup, not the entire container.
+    let data = this.data;
+    let width = data.rect[2] - data.rect[0];
+    let height = data.rect[3] - data.rect[1];
+    let svg = this.svgFactory.create(width, height);
+
+    // The browser draws half of the borders inside the square and half of
+    // the borders outside the square by default. This behavior cannot be
+    // changed programmatically, so correct for that here.
+    let borderWidth = data.borderStyle.width;
+    let square = this.svgFactory.createElement('svg:rect');
+    square.setAttribute('x', borderWidth / 2);
+    square.setAttribute('y', borderWidth / 2);
+    square.setAttribute('width', width - borderWidth);
+    square.setAttribute('height', height - borderWidth);
+    square.setAttribute('stroke-width', borderWidth);
+    square.setAttribute('stroke', 'transparent');
+    square.setAttribute('fill', 'none');
+
+    svg.appendChild(square);
+    this.container.append(svg);
+
+    // Create the popup ourselves so that we can bind it to the square instead
+    // of to the entire container (which is the default).
+    this._createPopup(this.container, square, data);
+
+    return this.container;
+  }
+}
+
+class CircleAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the circle annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof CircleAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'circleAnnotation';
+
+    // Create an invisible circle with the same ellipse that acts as the
+    // trigger for the popup. Only the circle itself should trigger the
+    // popup, not the entire container.
+    let data = this.data;
+    let width = data.rect[2] - data.rect[0];
+    let height = data.rect[3] - data.rect[1];
+    let svg = this.svgFactory.create(width, height);
+
+    // The browser draws half of the borders inside the circle and half of
+    // the borders outside the circle by default. This behavior cannot be
+    // changed programmatically, so correct for that here.
+    let borderWidth = data.borderStyle.width;
+    let circle = this.svgFactory.createElement('svg:ellipse');
+    circle.setAttribute('cx', width / 2);
+    circle.setAttribute('cy', height / 2);
+    circle.setAttribute('rx', (width / 2) - (borderWidth / 2));
+    circle.setAttribute('ry', (height / 2) - (borderWidth / 2));
+    circle.setAttribute('stroke-width', borderWidth);
+    circle.setAttribute('stroke', 'transparent');
+    circle.setAttribute('fill', 'none');
+
+    svg.appendChild(circle);
+    this.container.append(svg);
+
+    // Create the popup ourselves so that we can bind it to the circle instead
+    // of to the entire container (which is the default).
+    this._createPopup(this.container, circle, data);
 
     return this.container;
   }
@@ -995,6 +1093,7 @@ class AnnotationLayer {
         imageResourcesPath: parameters.imageResourcesPath ||
                             getDefaultSetting('imageResourcesPath'),
         renderInteractiveForms: parameters.renderInteractiveForms || false,
+        svgFactory: new DOMSVGFactory(),
       });
       if (element.isRenderable) {
         parameters.div.appendChild(element.render());
