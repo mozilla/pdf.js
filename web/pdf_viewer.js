@@ -159,7 +159,7 @@ class PDFViewer {
    * @param {number} val - The page number.
    */
   set currentPageNumber(val) {
-    if ((val | 0) !== val) { // Ensure that `val` is an integer.
+    if (!Number.isInteger(val)) {
       throw new Error('Invalid page number.');
     }
     if (!this.pdfDocument) {

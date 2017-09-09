@@ -450,7 +450,7 @@ class AnnotationBorderStyle {
    * @param {integer} width - The width
    */
   setWidth(width) {
-    if (width === (width | 0)) {
+    if (Number.isInteger(width)) {
       this.width = width;
     }
   }
@@ -537,7 +537,7 @@ class AnnotationBorderStyle {
    * @param {integer} radius - The horizontal corner radius
    */
   setHorizontalCornerRadius(radius) {
-    if (radius === (radius | 0)) {
+    if (Number.isInteger(radius)) {
       this.horizontalCornerRadius = radius;
     }
   }
@@ -550,7 +550,7 @@ class AnnotationBorderStyle {
    * @param {integer} radius - The vertical corner radius
    */
   setVerticalCornerRadius(radius) {
-    if (radius === (radius | 0)) {
+    if (Number.isInteger(radius)) {
       this.verticalCornerRadius = radius;
     }
   }
