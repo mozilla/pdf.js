@@ -324,7 +324,7 @@ var Type1CharString = (function Type1CharStringClosure() {
       var start = stackLength - howManyArgs;
       for (var i = start; i < stackLength; i++) {
         var value = this.stack[i];
-        if (value === (value | 0)) { // int
+        if (Number.isInteger(value)) {
           this.output.push(28, (value >> 8) & 0xff, value & 0xff);
         } else { // fixed point
           value = (65536 * value) | 0;
