@@ -15,7 +15,7 @@
 
 import '../external/webL10n/l10n';
 
-var webL10n = document.webL10n;
+let webL10n = document.webL10n;
 
 class GenericL10n {
   constructor(lang) {
