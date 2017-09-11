@@ -1,0 +1,2485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: display/api.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: display/api.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* globals requirejs, __non_webpack_require__ */
+
+import {
+  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
+  MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
+  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
+  UnknownErrorException, Util, warn
+} from '../shared/util';
+import {
+  DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
+  RenderingCancelledException
+} from './dom_utils';
+import { FontFaceObject, FontLoader } from './font_loader';
+import { CanvasGraphics } from './canvas';
+import globalScope from '../shared/global_scope';
+import { Metadata } from './metadata';
+import { PDFDataTransportStream } from './transport_stream';
+
+var DEFAULT_RANGE_CHUNK_SIZE = 65536; // 2^16 = 65536
+
+var isWorkerDisabled = false;
+var workerSrc;
+var isPostMessageTransfersDisabled = false;
+
+var pdfjsFilePath =
+  typeof PDFJSDev !== 'undefined' &amp;&amp;
+  PDFJSDev.test('PRODUCTION &amp;&amp; !(MOZCENTRAL || FIREFOX)') &amp;&amp;
+  typeof document !== 'undefined' &amp;&amp; document.currentScript ?
+    document.currentScript.src : null;
+
+var fakeWorkerFilesLoader = null;
+var useRequireEnsure = false;
+if (typeof PDFJSDev !== 'undefined' &amp;&amp;
+    PDFJSDev.test('GENERIC &amp;&amp; !SINGLE_FILE')) {
+  // For GENERIC build we need add support of different fake file loaders
+  // for different  frameworks.
+  if (typeof window === 'undefined') {
+    // node.js - disable worker and set require.ensure.
+    isWorkerDisabled = true;
+    if (typeof __non_webpack_require__.ensure === 'undefined') {
+      __non_webpack_require__.ensure = __non_webpack_require__('node-ensure');
+    }
+    useRequireEnsure = true;
+  } else if (typeof __non_webpack_require__ !== 'undefined' &amp;&amp;
+             typeof __non_webpack_require__.ensure === 'function') {
+    useRequireEnsure = true;
+  }
+  if (typeof requirejs !== 'undefined' &amp;&amp; requirejs.toUrl) {
+    workerSrc = requirejs.toUrl('pdfjs-dist/build/pdf.worker.js');
+  }
+  var dynamicLoaderSupported =
+    typeof requirejs !== 'undefined' &amp;&amp; requirejs.load;
+  fakeWorkerFilesLoader = useRequireEnsure ? (function (callback) {
+    __non_webpack_require__.ensure([], function () {
+      var worker;
+      if (typeof PDFJSDev !== 'undefined' &amp;&amp; PDFJSDev.test('LIB')) {
+        worker = __non_webpack_require__('../pdf.worker.js');
+      } else {
+        worker = __non_webpack_require__('./pdf.worker.js');
+      }
+      callback(worker.WorkerMessageHandler);
+    });
+  }) : dynamicLoaderSupported ? (function (callback) {
+    requirejs(['pdfjs-dist/build/pdf.worker'], function (worker) {
+      callback(worker.WorkerMessageHandler);
+    });
+  }) : null;
+}
+
+/** @type IPDFStream */
+var PDFNetworkStream;
+
+/**
+ * Sets PDFNetworkStream class to be used as alternative PDF data transport.
+ * @param {IPDFStream} cls - the PDF data transport.
+ */
+function setPDFNetworkStreamClass(cls) {
+  PDFNetworkStream = cls;
+}
+
+/**
+ * Document initialization / loading parameters object.
+ *
+ * @typedef {Object} DocumentInitParameters
+ * @property {string}     url   - The URL of the PDF.
+ * @property {TypedArray|Array|string} data - Binary PDF data. Use typed arrays
+ *   (Uint8Array) to improve the memory usage. If PDF data is BASE64-encoded,
+ *   use atob() to convert it to a binary string first.
+ * @property {Object}     httpHeaders - Basic authentication headers.
+ * @property {boolean}    withCredentials - Indicates whether or not cross-site
+ *   Access-Control requests should be made using credentials such as cookies
+ *   or authorization headers. The default is false.
+ * @property {string}     password - For decrypting password-protected PDFs.
+ * @property {TypedArray} initialData - A typed array with the first portion or
+ *   all of the pdf data. Used by the extension since some data is already
+ *   loaded before the switch to range requests.
+ * @property {number}     length - The PDF file length. It's used for progress
+ *   reports and range requests operations.
+ * @property {PDFDataRangeTransport} range
+ * @property {number}     rangeChunkSize - Optional parameter to specify
+ *   maximum number of bytes fetched per range request. The default value is
+ *   2^16 = 65536.
+ * @property {PDFWorker}  worker - The worker that will be used for the loading
+ *   and parsing of the PDF data.
+ * @property {string} docBaseUrl - (optional) The base URL of the document,
+ *   used when attempting to recover valid absolute URLs for annotations, and
+ *   outline items, that (incorrectly) only specify relative URLs.
+ * @property {boolean} disableNativeImageDecoder - (deprecated) Disable decoding
+ *   of certain (simple) JPEG images in the browser. This is useful for
+ *   environments without DOM image support, such as e.g. Node.js.
+ *   The default value is `false`.
+ * @property {string} nativeImageDecoderSupport - (optional) Strategy for
+ *   decoding certain (simple) JPEG images in the browser. This is useful for
+ *   environments without DOM image and canvas support, such as e.g. Node.js.
+ *   Valid values are 'decode', 'display' or 'none'; where 'decode' is intended
+ *   for browsers with full image/canvas support, 'display' for environments
+ *   with limited image support through stubs (useful for SVG conversion),
+ *   and 'none' where JPEG images will be decoded entirely by PDF.js.
+ *   The default value is 'decode'.
+ * @property {Object} CMapReaderFactory - (optional) The factory that will be
+ *   used when reading built-in CMap files. Providing a custom factory is useful
+ *   for environments without `XMLHttpRequest` support, such as e.g. Node.js.
+ *   The default value is {DOMCMapReaderFactory}.
+ * @property {boolean} stopAtErrors - (optional) Reject certain promises, e.g.
+ *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
+ *   PDF data cannot be successfully parsed, instead of attempting to recover
+ *   whatever possible of the data. The default value is `false`.
+ */
+
+/**
+ * @typedef {Object} PDFDocumentStats
+ * @property {Array} streamTypes - Used stream types in the document (an item
+ *   is set to true if specific stream ID was used in the document).
+ * @property {Array} fontTypes - Used font type in the document (an item is set
+ *   to true if specific font ID was used in the document).
+ */
+
+/**
+ * This is the main entry point for loading a PDF and interacting with it.
+ * NOTE: If a URL is used to fetch the PDF data a standard XMLHttpRequest(XHR)
+ * is used, which means it must follow the same origin rules that any XHR does
+ * e.g. No cross domain requests without CORS.
+ *
+ * @param {string|TypedArray|DocumentInitParameters|PDFDataRangeTransport} src
+ * Can be a url to where a PDF is located, a typed array (Uint8Array)
+ * already populated with data or parameter object.
+ *
+ * @param {PDFDataRangeTransport} pdfDataRangeTransport (deprecated) It is used
+ * if you want to manually serve range requests for data in the PDF.
+ *
+ * @param {function} passwordCallback (deprecated) It is used to request a
+ * password if wrong or no password was provided. The callback receives two
+ * parameters: function that needs to be called with new password and reason
+ * (see {PasswordResponses}).
+ *
+ * @param {function} progressCallback (deprecated) It is used to be able to
+ * monitor the loading progress of the PDF file (necessary to implement e.g.
+ * a loading bar). The callback receives an {Object} with the properties:
+ * {number} loaded and {number} total.
+ *
+ * @return {PDFDocumentLoadingTask}
+ */
+function getDocument(src, pdfDataRangeTransport,
+                     passwordCallback, progressCallback) {
+  var task = new PDFDocumentLoadingTask();
+
+  // Support of the obsolete arguments (for compatibility with API v1.0)
+  if (arguments.length > 1) {
+    deprecated('getDocument is called with pdfDataRangeTransport, ' +
+               'passwordCallback or progressCallback argument');
+  }
+  if (pdfDataRangeTransport) {
+    if (!(pdfDataRangeTransport instanceof PDFDataRangeTransport)) {
+      // Not a PDFDataRangeTransport instance, trying to add missing properties.
+      pdfDataRangeTransport = Object.create(pdfDataRangeTransport);
+      pdfDataRangeTransport.length = src.length;
+      pdfDataRangeTransport.initialData = src.initialData;
+      if (!pdfDataRangeTransport.abort) {
+        pdfDataRangeTransport.abort = function () {};
+      }
+    }
+    src = Object.create(src);
+    src.range = pdfDataRangeTransport;
+  }
+  task.onPassword = passwordCallback || null;
+  task.onProgress = progressCallback || null;
+
+  var source;
+  if (typeof src === 'string') {
+    source = { url: src, };
+  } else if (isArrayBuffer(src)) {
+    source = { data: src, };
+  } else if (src instanceof PDFDataRangeTransport) {
+    source = { range: src, };
+  } else {
+    if (typeof src !== 'object') {
+      throw new Error('Invalid parameter in getDocument, ' +
+                      'need either Uint8Array, string or a parameter object');
+    }
+    if (!src.url &amp;&amp; !src.data &amp;&amp; !src.range) {
+      throw new Error(
+        'Invalid parameter object: need either .data, .range or .url');
+    }
+
+    source = src;
+  }
+
+  var params = {};
+  var rangeTransport = null;
+  var worker = null;
+  var CMapReaderFactory = DOMCMapReaderFactory;
+
+  for (var key in source) {
+    if (key === 'url' &amp;&amp; typeof window !== 'undefined') {
+      // The full path is required in the 'url' field.
+      params[key] = new URL(source[key], window.location).href;
+      continue;
+    } else if (key === 'range') {
+      rangeTransport = source[key];
+      continue;
+    } else if (key === 'worker') {
+      worker = source[key];
+      continue;
+    } else if (key === 'data' &amp;&amp; !(source[key] instanceof Uint8Array)) {
+      // Converting string or array-like data to Uint8Array.
+      var pdfBytes = source[key];
+      if (typeof pdfBytes === 'string') {
+        params[key] = stringToBytes(pdfBytes);
+      } else if (typeof pdfBytes === 'object' &amp;&amp; pdfBytes !== null &amp;&amp;
+                 !isNaN(pdfBytes.length)) {
+        params[key] = new Uint8Array(pdfBytes);
+      } else if (isArrayBuffer(pdfBytes)) {
+        params[key] = new Uint8Array(pdfBytes);
+      } else {
+        throw new Error('Invalid PDF binary data: either typed array, ' +
+                        'string or array-like object is expected in the ' +
+                        'data property.');
+      }
+      continue;
+    } else if (key === 'CMapReaderFactory') {
+      CMapReaderFactory = source[key];
+      continue;
+    }
+    params[key] = source[key];
+  }
+
+  params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
+  params.ignoreErrors = params.stopAtErrors !== true;
+
+  if (params.disableNativeImageDecoder !== undefined) {
+    deprecated('parameter disableNativeImageDecoder, ' +
+      'use nativeImageDecoderSupport instead');
+  }
+  params.nativeImageDecoderSupport = params.nativeImageDecoderSupport ||
+    (params.disableNativeImageDecoder === true ? NativeImageDecoding.NONE :
+      NativeImageDecoding.DECODE);
+  if (params.nativeImageDecoderSupport !== NativeImageDecoding.DECODE &amp;&amp;
+      params.nativeImageDecoderSupport !== NativeImageDecoding.NONE &amp;&amp;
+      params.nativeImageDecoderSupport !== NativeImageDecoding.DISPLAY) {
+    warn('Invalid parameter nativeImageDecoderSupport: ' +
+      'need a state of enum {NativeImageDecoding}');
+    params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
+  }
+
+  if (!worker) {
+    // Worker was not provided -- creating and owning our own. If message port
+    // is specified in global settings, using it.
+    var workerPort = getDefaultSetting('workerPort');
+    worker = workerPort ? PDFWorker.fromPort(workerPort) : new PDFWorker();
+    task._worker = worker;
+  }
+  var docId = task.docId;
+  worker.promise.then(function () {
+    if (task.destroyed) {
+      throw new Error('Loading aborted');
+    }
+    return _fetchDocument(worker, params, rangeTransport, docId).then(
+        function (workerId) {
+      if (task.destroyed) {
+        throw new Error('Loading aborted');
+      }
+
+      let networkStream;
+      if (rangeTransport) {
+        networkStream = new PDFDataTransportStream(params, rangeTransport);
+      } else if (!params.data) {
+        networkStream = new PDFNetworkStream({
+          source: params,
+          disableRange: getDefaultSetting('disableRange'),
+        });
+      }
+
+      var messageHandler = new MessageHandler(docId, workerId, worker.port);
+      messageHandler.postMessageTransfers = worker.postMessageTransfers;
+      var transport = new WorkerTransport(messageHandler, task, networkStream,
+                                          CMapReaderFactory);
+      task._transport = transport;
+      messageHandler.send('Ready', null);
+    });
+  }).catch(task._capability.reject);
+
+  return task;
+}
+
+/**
+ * Starts fetching of specified PDF document/data.
+ * @param {PDFWorker} worker
+ * @param {Object} source
+ * @param {PDFDataRangeTransport} pdfDataRangeTransport
+ * @param {string} docId Unique document id, used as MessageHandler id.
+ * @returns {Promise} The promise, which is resolved when worker id of
+ *                    MessageHandler is known.
+ * @private
+ */
+function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
+  if (worker.destroyed) {
+    return Promise.reject(new Error('Worker was destroyed'));
+  }
+
+  source.disableAutoFetch = getDefaultSetting('disableAutoFetch');
+  source.disableStream = getDefaultSetting('disableStream');
+  source.chunkedViewerLoading = !!pdfDataRangeTransport;
+  if (pdfDataRangeTransport) {
+    source.length = pdfDataRangeTransport.length;
+    source.initialData = pdfDataRangeTransport.initialData;
+  }
+  return worker.messageHandler.sendWithPromise('GetDocRequest', {
+    docId,
+    source: {
+      data: source.data,
+      url: source.url,
+      password: source.password,
+      disableAutoFetch: source.disableAutoFetch,
+      rangeChunkSize: source.rangeChunkSize,
+      length: source.length,
+    },
+    maxImageSize: getDefaultSetting('maxImageSize'),
+    disableFontFace: getDefaultSetting('disableFontFace'),
+    disableCreateObjectURL: getDefaultSetting('disableCreateObjectURL'),
+    postMessageTransfers: getDefaultSetting('postMessageTransfers') &amp;&amp;
+                          !isPostMessageTransfersDisabled,
+    docBaseUrl: source.docBaseUrl,
+    nativeImageDecoderSupport: source.nativeImageDecoderSupport,
+    ignoreErrors: source.ignoreErrors,
+  }).then(function (workerId) {
+    if (worker.destroyed) {
+      throw new Error('Worker was destroyed');
+    }
+    return workerId;
+  });
+}
+
+/**
+ * PDF document loading operation.
+ * @class
+ * @alias PDFDocumentLoadingTask
+ */
+var PDFDocumentLoadingTask = (function PDFDocumentLoadingTaskClosure() {
+  var nextDocumentId = 0;
+
+  /** @constructs PDFDocumentLoadingTask */
+  function PDFDocumentLoadingTask() {
+    this._capability = createPromiseCapability();
+    this._transport = null;
+    this._worker = null;
+
+    /**
+     * Unique document loading task id -- used in MessageHandlers.
+     * @type {string}
+     */
+    this.docId = 'd' + (nextDocumentId++);
+
+    /**
+     * Shows if loading task is destroyed.
+     * @type {boolean}
+     */
+    this.destroyed = false;
+
+    /**
+     * Callback to request a password if wrong or no password was provided.
+     * The callback receives two parameters: function that needs to be called
+     * with new password and reason (see {PasswordResponses}).
+     */
+    this.onPassword = null;
+
+    /**
+     * Callback to be able to monitor the loading progress of the PDF file
+     * (necessary to implement e.g. a loading bar). The callback receives
+     * an {Object} with the properties: {number} loaded and {number} total.
+     */
+    this.onProgress = null;
+
+    /**
+     * Callback to when unsupported feature is used. The callback receives
+     * an {UNSUPPORTED_FEATURES} argument.
+     */
+    this.onUnsupportedFeature = null;
+  }
+
+  PDFDocumentLoadingTask.prototype =
+      /** @lends PDFDocumentLoadingTask.prototype */ {
+    /**
+     * @return {Promise}
+     */
+    get promise() {
+      return this._capability.promise;
+    },
+
+    /**
+     * Aborts all network requests and destroys worker.
+     * @return {Promise} A promise that is resolved after destruction activity
+     *                   is completed.
+     */
+    destroy() {
+      this.destroyed = true;
+
+      var transportDestroyed = !this._transport ? Promise.resolve() :
+        this._transport.destroy();
+      return transportDestroyed.then(() => {
+        this._transport = null;
+        if (this._worker) {
+          this._worker.destroy();
+          this._worker = null;
+        }
+      });
+    },
+
+    /**
+     * Registers callbacks to indicate the document loading completion.
+     *
+     * @param {function} onFulfilled The callback for the loading completion.
+     * @param {function} onRejected The callback for the loading failure.
+     * @return {Promise} A promise that is resolved after the onFulfilled or
+     *                   onRejected callback.
+     */
+    then: function PDFDocumentLoadingTask_then(onFulfilled, onRejected) {
+      return this.promise.then.apply(this.promise, arguments);
+    },
+  };
+
+  return PDFDocumentLoadingTask;
+})();
+
+/**
+ * Abstract class to support range requests file loading.
+ * @class
+ * @alias PDFDataRangeTransport
+ * @param {number} length
+ * @param {Uint8Array} initialData
+ */
+var PDFDataRangeTransport = (function pdfDataRangeTransportClosure() {
+  function PDFDataRangeTransport(length, initialData) {
+    this.length = length;
+    this.initialData = initialData;
+
+    this._rangeListeners = [];
+    this._progressListeners = [];
+    this._progressiveReadListeners = [];
+    this._readyCapability = createPromiseCapability();
+  }
+  PDFDataRangeTransport.prototype =
+      /** @lends PDFDataRangeTransport.prototype */ {
+    addRangeListener:
+        function PDFDataRangeTransport_addRangeListener(listener) {
+      this._rangeListeners.push(listener);
+    },
+
+    addProgressListener:
+        function PDFDataRangeTransport_addProgressListener(listener) {
+      this._progressListeners.push(listener);
+    },
+
+    addProgressiveReadListener:
+        function PDFDataRangeTransport_addProgressiveReadListener(listener) {
+      this._progressiveReadListeners.push(listener);
+    },
+
+    onDataRange: function PDFDataRangeTransport_onDataRange(begin, chunk) {
+      var listeners = this._rangeListeners;
+      for (var i = 0, n = listeners.length; i &lt; n; ++i) {
+        listeners[i](begin, chunk);
+      }
+    },
+
+    onDataProgress: function PDFDataRangeTransport_onDataProgress(loaded) {
+      this._readyCapability.promise.then(() => {
+        var listeners = this._progressListeners;
+        for (var i = 0, n = listeners.length; i &lt; n; ++i) {
+          listeners[i](loaded);
+        }
+      });
+    },
+
+    onDataProgressiveRead:
+        function PDFDataRangeTransport_onDataProgress(chunk) {
+      this._readyCapability.promise.then(() => {
+        var listeners = this._progressiveReadListeners;
+        for (var i = 0, n = listeners.length; i &lt; n; ++i) {
+          listeners[i](chunk);
+        }
+      });
+    },
+
+    transportReady: function PDFDataRangeTransport_transportReady() {
+      this._readyCapability.resolve();
+    },
+
+    requestDataRange:
+        function PDFDataRangeTransport_requestDataRange(begin, end) {
+      throw new Error('Abstract method PDFDataRangeTransport.requestDataRange');
+    },
+
+    abort: function PDFDataRangeTransport_abort() {
+    },
+  };
+  return PDFDataRangeTransport;
+})();
+
+/**
+ * Proxy to a PDFDocument in the worker thread. Also, contains commonly used
+ * properties that can be read synchronously.
+ * @class
+ * @alias PDFDocumentProxy
+ */
+var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
+  function PDFDocumentProxy(pdfInfo, transport, loadingTask) {
+    this.pdfInfo = pdfInfo;
+    this.transport = transport;
+    this.loadingTask = loadingTask;
+  }
+  PDFDocumentProxy.prototype = /** @lends PDFDocumentProxy.prototype */ {
+    /**
+     * @return {number} Total number of pages the PDF contains.
+     */
+    get numPages() {
+      return this.pdfInfo.numPages;
+    },
+    /**
+     * @return {string} A unique ID to identify a PDF. Not guaranteed to be
+     * unique.
+     */
+    get fingerprint() {
+      return this.pdfInfo.fingerprint;
+    },
+    /**
+     * @param {number} pageNumber The page number to get. The first page is 1.
+     * @return {Promise} A promise that is resolved with a {@link PDFPageProxy}
+     * object.
+     */
+    getPage: function PDFDocumentProxy_getPage(pageNumber) {
+      return this.transport.getPage(pageNumber);
+    },
+    /**
+     * @param {{num: number, gen: number}} ref The page reference. Must have
+     *   the 'num' and 'gen' properties.
+     * @return {Promise} A promise that is resolved with the page index that is
+     * associated with the reference.
+     */
+    getPageIndex: function PDFDocumentProxy_getPageIndex(ref) {
+      return this.transport.getPageIndex(ref);
+    },
+    /**
+     * @return {Promise} A promise that is resolved with a lookup table for
+     * mapping named destinations to reference numbers.
+     *
+     * This can be slow for large documents: use getDestination instead
+     */
+    getDestinations: function PDFDocumentProxy_getDestinations() {
+      return this.transport.getDestinations();
+    },
+    /**
+     * @param {string} id The named destination to get.
+     * @return {Promise} A promise that is resolved with all information
+     * of the given named destination.
+     */
+    getDestination: function PDFDocumentProxy_getDestination(id) {
+      return this.transport.getDestination(id);
+    },
+    /**
+     * @return {Promise} A promise that is resolved with:
+     *   an Array containing the pageLabels that correspond to the pageIndexes,
+     *   or `null` when no pageLabels are present in the PDF file.
+     */
+    getPageLabels: function PDFDocumentProxy_getPageLabels() {
+      return this.transport.getPageLabels();
+    },
+    /**
+     * @return {Promise} A promise that is resolved with a {string} containing
+     *   the PageMode name.
+     */
+    getPageMode() {
+      return this.transport.getPageMode();
+    },
+    /**
+     * @return {Promise} A promise that is resolved with a lookup table for
+     * mapping named attachments to their content.
+     */
+    getAttachments: function PDFDocumentProxy_getAttachments() {
+      return this.transport.getAttachments();
+    },
+    /**
+     * @return {Promise} A promise that is resolved with an array of all the
+     * JavaScript strings in the name tree.
+     */
+    getJavaScript: function PDFDocumentProxy_getJavaScript() {
+      return this.transport.getJavaScript();
+    },
+    /**
+     * @return {Promise} A promise that is resolved with an {Array} that is a
+     * tree outline (if it has one) of the PDF. The tree is in the format of:
+     * [
+     *  {
+     *   title: string,
+     *   bold: boolean,
+     *   italic: boolean,
+     *   color: rgb Uint8Array,
+     *   dest: dest obj,
+     *   url: string,
+     *   items: array of more items like this
+     *  },
+     *  ...
+     * ].
+     */
+    getOutline: function PDFDocumentProxy_getOutline() {
+      return this.transport.getOutline();
+    },
+    /**
+     * @return {Promise} A promise that is resolved with an {Object} that has
+     * info and metadata properties.  Info is an {Object} filled with anything
+     * available in the information dictionary and similarly metadata is a
+     * {Metadata} object with information from the metadata section of the PDF.
+     */
+    getMetadata: function PDFDocumentProxy_getMetadata() {
+      return this.transport.getMetadata();
+    },
+    /**
+     * @return {Promise} A promise that is resolved with a TypedArray that has
+     * the raw data from the PDF.
+     */
+    getData: function PDFDocumentProxy_getData() {
+      return this.transport.getData();
+    },
+    /**
+     * @return {Promise} A promise that is resolved when the document's data
+     * is loaded. It is resolved with an {Object} that contains the length
+     * property that indicates size of the PDF data in bytes.
+     */
+    getDownloadInfo: function PDFDocumentProxy_getDownloadInfo() {
+      return this.transport.downloadInfoCapability.promise;
+    },
+    /**
+     * @return {Promise} A promise this is resolved with current stats about
+     * document structures (see {@link PDFDocumentStats}).
+     */
+    getStats: function PDFDocumentProxy_getStats() {
+      return this.transport.getStats();
+    },
+    /**
+     * Cleans up resources allocated by the document, e.g. created @font-face.
+     */
+    cleanup: function PDFDocumentProxy_cleanup() {
+      this.transport.startCleanup();
+    },
+    /**
+     * Destroys current document instance and terminates worker.
+     */
+    destroy: function PDFDocumentProxy_destroy() {
+      return this.loadingTask.destroy();
+    },
+  };
+  return PDFDocumentProxy;
+})();
+
+/**
+ * Page getTextContent parameters.
+ *
+ * @typedef {Object} getTextContentParameters
+ * @property {boolean} normalizeWhitespace - replaces all occurrences of
+ *   whitespace with standard spaces (0x20). The default value is `false`.
+ * @property {boolean} disableCombineTextItems - do not attempt to combine
+ *   same line {@link TextItem}'s. The default value is `false`.
+ */
+
+/**
+ * Page text content.
+ *
+ * @typedef {Object} TextContent
+ * @property {array} items - array of {@link TextItem}
+ * @property {Object} styles - {@link TextStyles} objects, indexed by font name.
+ */
+
+/**
+ * Page text content part.
+ *
+ * @typedef {Object} TextItem
+ * @property {string} str - text content.
+ * @property {string} dir - text direction: 'ttb', 'ltr' or 'rtl'.
+ * @property {array} transform - transformation matrix.
+ * @property {number} width - width in device space.
+ * @property {number} height - height in device space.
+ * @property {string} fontName - font name used by pdf.js for converted font.
+ */
+
+/**
+ * Text style.
+ *
+ * @typedef {Object} TextStyle
+ * @property {number} ascent - font ascent.
+ * @property {number} descent - font descent.
+ * @property {boolean} vertical - text is in vertical mode.
+ * @property {string} fontFamily - possible font family
+ */
+
+/**
+ * Page annotation parameters.
+ *
+ * @typedef {Object} GetAnnotationsParameters
+ * @property {string} intent - Determines the annotations that will be fetched,
+ *                    can be either 'display' (viewable annotations) or 'print'
+ *                    (printable annotations).
+ *                    If the parameter is omitted, all annotations are fetched.
+ */
+
+/**
+ * Page render parameters.
+ *
+ * @typedef {Object} RenderParameters
+ * @property {Object} canvasContext - A 2D context of a DOM Canvas object.
+ * @property {PageViewport} viewport - Rendering viewport obtained by
+ *                                calling of PDFPage.getViewport method.
+ * @property {string} intent - Rendering intent, can be 'display' or 'print'
+ *                    (default value is 'display').
+ * @property {boolean} renderInteractiveForms - (optional) Whether or not
+ *                     interactive form elements are rendered in the display
+ *                     layer. If so, we do not render them on canvas as well.
+ * @property {Array}  transform - (optional) Additional transform, applied
+ *                    just before viewport transform.
+ * @property {Object} imageLayer - (optional) An object that has beginLayout,
+ *                    endLayout and appendImage functions.
+ * @property {function} continueCallback - (deprecated) A function that will be
+ *                      called each time the rendering is paused.  To continue
+ *                      rendering call the function that is the first argument
+ *                      to the callback.
+ * @property {Object} canvasFactory - (optional) The factory that will be used
+ *                    when creating canvases. The default value is
+ *                    {DOMCanvasFactory}.
+ * @property {Object} background - (optional) Background to use for the canvas.
+ *                    Can use any valid canvas.fillStyle: A DOMString parsed as
+ *                    CSS &lt;color> value, a CanvasGradient object (a linear or
+ *                    radial gradient) or a CanvasPattern object (a repetitive
+ *                    image). The default value is 'rgb(255,255,255)'.
+ */
+
+/**
+ * PDF page operator list.
+ *
+ * @typedef {Object} PDFOperatorList
+ * @property {Array} fnArray - Array containing the operator functions.
+ * @property {Array} argsArray - Array containing the arguments of the
+ *                               functions.
+ */
+
+/**
+ * Proxy to a PDFPage in the worker thread.
+ * @class
+ * @alias PDFPageProxy
+ */
+var PDFPageProxy = (function PDFPageProxyClosure() {
+  function PDFPageProxy(pageIndex, pageInfo, transport) {
+    this.pageIndex = pageIndex;
+    this.pageInfo = pageInfo;
+    this.transport = transport;
+    this.stats = new StatTimer();
+    this.stats.enabled = getDefaultSetting('enableStats');
+    this.commonObjs = transport.commonObjs;
+    this.objs = new PDFObjects();
+    this.cleanupAfterRender = false;
+    this.pendingCleanup = false;
+    this.intentStates = Object.create(null);
+    this.destroyed = false;
+  }
+  PDFPageProxy.prototype = /** @lends PDFPageProxy.prototype */ {
+    /**
+     * @return {number} Page number of the page. First page is 1.
+     */
+    get pageNumber() {
+      return this.pageIndex + 1;
+    },
+    /**
+     * @return {number} The number of degrees the page is rotated clockwise.
+     */
+    get rotate() {
+      return this.pageInfo.rotate;
+    },
+    /**
+     * @return {Object} The reference that points to this page. It has 'num' and
+     * 'gen' properties.
+     */
+    get ref() {
+      return this.pageInfo.ref;
+    },
+    /**
+     * @return {number} The default size of units in 1/72nds of an inch.
+     */
+    get userUnit() {
+      return this.pageInfo.userUnit;
+    },
+    /**
+     * @return {Array} An array of the visible portion of the PDF page in the
+     * user space units - [x1, y1, x2, y2].
+     */
+    get view() {
+      return this.pageInfo.view;
+    },
+    /**
+     * @param {number} scale The desired scale of the viewport.
+     * @param {number} rotate Degrees to rotate the viewport. If omitted this
+     * defaults to the page rotation.
+     * @return {PageViewport} Contains 'width' and 'height' properties
+     * along with transforms required for rendering.
+     */
+    getViewport: function PDFPageProxy_getViewport(scale, rotate) {
+      if (arguments.length &lt; 2) {
+        rotate = this.rotate;
+      }
+      return new PageViewport(this.view, scale, rotate, 0, 0);
+    },
+    /**
+     * @param {GetAnnotationsParameters} params - Annotation parameters.
+     * @return {Promise} A promise that is resolved with an {Array} of the
+     * annotation objects.
+     */
+    getAnnotations: function PDFPageProxy_getAnnotations(params) {
+      var intent = (params &amp;&amp; params.intent) || null;
+
+      if (!this.annotationsPromise || this.annotationsIntent !== intent) {
+        this.annotationsPromise = this.transport.getAnnotations(this.pageIndex,
+                                                                intent);
+        this.annotationsIntent = intent;
+      }
+      return this.annotationsPromise;
+    },
+    /**
+     * Begins the process of rendering a page to the desired context.
+     * @param {RenderParameters} params Page render parameters.
+     * @return {RenderTask} An object that contains the promise, which
+     *                      is resolved when the page finishes rendering.
+     */
+    render: function PDFPageProxy_render(params) {
+      var stats = this.stats;
+      stats.time('Overall');
+
+      // If there was a pending destroy cancel it so no cleanup happens during
+      // this call to render.
+      this.pendingCleanup = false;
+
+      var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
+      var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
+
+      if (!this.intentStates[renderingIntent]) {
+        this.intentStates[renderingIntent] = Object.create(null);
+      }
+      var intentState = this.intentStates[renderingIntent];
+
+      // If there's no displayReadyCapability yet, then the operatorList
+      // was never requested before. Make the request and create the promise.
+      if (!intentState.displayReadyCapability) {
+        intentState.receivingOperatorList = true;
+        intentState.displayReadyCapability = createPromiseCapability();
+        intentState.operatorList = {
+          fnArray: [],
+          argsArray: [],
+          lastChunk: false,
+        };
+
+        this.stats.time('Page Request');
+        this.transport.messageHandler.send('RenderPageRequest', {
+          pageIndex: this.pageNumber - 1,
+          intent: renderingIntent,
+          renderInteractiveForms: (params.renderInteractiveForms === true),
+        });
+      }
+
+      var complete = (error) => {
+        var i = intentState.renderTasks.indexOf(internalRenderTask);
+        if (i >= 0) {
+          intentState.renderTasks.splice(i, 1);
+        }
+
+        if (this.cleanupAfterRender) {
+          this.pendingCleanup = true;
+        }
+        this._tryCleanup();
+
+        if (error) {
+          internalRenderTask.capability.reject(error);
+        } else {
+          internalRenderTask.capability.resolve();
+        }
+        stats.timeEnd('Rendering');
+        stats.timeEnd('Overall');
+      };
+
+      var internalRenderTask = new InternalRenderTask(complete, params,
+                                                      this.objs,
+                                                      this.commonObjs,
+                                                      intentState.operatorList,
+                                                      this.pageNumber,
+                                                      canvasFactory);
+      internalRenderTask.useRequestAnimationFrame = renderingIntent !== 'print';
+      if (!intentState.renderTasks) {
+        intentState.renderTasks = [];
+      }
+      intentState.renderTasks.push(internalRenderTask);
+      var renderTask = internalRenderTask.task;
+
+      // Obsolete parameter support
+      if (params.continueCallback) {
+        deprecated('render is used with continueCallback parameter');
+        renderTask.onContinue = params.continueCallback;
+      }
+
+      intentState.displayReadyCapability.promise.then((transparency) => {
+        if (this.pendingCleanup) {
+          complete();
+          return;
+        }
+        stats.time('Rendering');
+        internalRenderTask.initializeGraphics(transparency);
+        internalRenderTask.operatorListChanged();
+      }).catch(complete);
+
+      return renderTask;
+    },
+
+    /**
+     * @return {Promise} A promise resolved with an {@link PDFOperatorList}
+     *   object that represents page's operator list.
+     */
+    getOperatorList: function PDFPageProxy_getOperatorList() {
+      function operatorListChanged() {
+        if (intentState.operatorList.lastChunk) {
+          intentState.opListReadCapability.resolve(intentState.operatorList);
+
+          var i = intentState.renderTasks.indexOf(opListTask);
+          if (i >= 0) {
+            intentState.renderTasks.splice(i, 1);
+          }
+        }
+      }
+
+      var renderingIntent = 'oplist';
+      if (!this.intentStates[renderingIntent]) {
+        this.intentStates[renderingIntent] = Object.create(null);
+      }
+      var intentState = this.intentStates[renderingIntent];
+      var opListTask;
+
+      if (!intentState.opListReadCapability) {
+        opListTask = {};
+        opListTask.operatorListChanged = operatorListChanged;
+        intentState.receivingOperatorList = true;
+        intentState.opListReadCapability = createPromiseCapability();
+        intentState.renderTasks = [];
+        intentState.renderTasks.push(opListTask);
+        intentState.operatorList = {
+          fnArray: [],
+          argsArray: [],
+          lastChunk: false,
+        };
+
+        this.transport.messageHandler.send('RenderPageRequest', {
+          pageIndex: this.pageIndex,
+          intent: renderingIntent,
+        });
+      }
+      return intentState.opListReadCapability.promise;
+    },
+
+    /**
+     * @param {getTextContentParameters} params - getTextContent parameters.
+     * @return {ReadableStream} ReadableStream to read textContent chunks.
+     */
+    streamTextContent(params = {}) {
+      const TEXT_CONTENT_CHUNK_SIZE = 100;
+      return this.transport.messageHandler.sendWithStream('GetTextContent', {
+        pageIndex: this.pageNumber - 1,
+        normalizeWhitespace: (params.normalizeWhitespace === true),
+        combineTextItems: (params.disableCombineTextItems !== true),
+      }, {
+        highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
+        size(textContent) {
+          return textContent.items.length;
+        },
+      });
+    },
+
+    /**
+     * @param {getTextContentParameters} params - getTextContent parameters.
+     * @return {Promise} That is resolved a {@link TextContent}
+     * object that represent the page text content.
+     */
+    getTextContent: function PDFPageProxy_getTextContent(params) {
+      params = params || {};
+      let readableStream = this.streamTextContent(params);
+
+      return new Promise(function(resolve, reject) {
+        function pump() {
+          reader.read().then(function({ value, done, }) {
+            if (done) {
+              resolve(textContent);
+              return;
+            }
+            Util.extendObj(textContent.styles, value.styles);
+            Util.appendToArray(textContent.items, value.items);
+            pump();
+          }, reject);
+        }
+
+        let reader = readableStream.getReader();
+        let textContent = {
+          items: [],
+          styles: Object.create(null),
+        };
+
+        pump();
+      });
+    },
+
+    /**
+     * Destroys page object.
+     */
+    _destroy: function PDFPageProxy_destroy() {
+      this.destroyed = true;
+      this.transport.pageCache[this.pageIndex] = null;
+
+      var waitOn = [];
+      Object.keys(this.intentStates).forEach(function(intent) {
+        if (intent === 'oplist') {
+          // Avoid errors below, since the renderTasks are just stubs.
+          return;
+        }
+        var intentState = this.intentStates[intent];
+        intentState.renderTasks.forEach(function(renderTask) {
+          var renderCompleted = renderTask.capability.promise.
+            catch(function () {}); // ignoring failures
+          waitOn.push(renderCompleted);
+          renderTask.cancel();
+        });
+      }, this);
+      this.objs.clear();
+      this.annotationsPromise = null;
+      this.pendingCleanup = false;
+      return Promise.all(waitOn);
+    },
+
+    /**
+     * Cleans up resources allocated by the page. (deprecated)
+     */
+    destroy() {
+      deprecated('page destroy method, use cleanup() instead');
+      this.cleanup();
+    },
+
+    /**
+     * Cleans up resources allocated by the page.
+     */
+    cleanup: function PDFPageProxy_cleanup() {
+      this.pendingCleanup = true;
+      this._tryCleanup();
+    },
+    /**
+     * For internal use only. Attempts to clean up if rendering is in a state
+     * where that's possible.
+     * @ignore
+     */
+    _tryCleanup: function PDFPageProxy_tryCleanup() {
+      if (!this.pendingCleanup ||
+          Object.keys(this.intentStates).some(function(intent) {
+            var intentState = this.intentStates[intent];
+            return (intentState.renderTasks.length !== 0 ||
+                    intentState.receivingOperatorList);
+          }, this)) {
+        return;
+      }
+
+      Object.keys(this.intentStates).forEach(function(intent) {
+        delete this.intentStates[intent];
+      }, this);
+      this.objs.clear();
+      this.annotationsPromise = null;
+      this.pendingCleanup = false;
+    },
+    /**
+     * For internal use only.
+     * @ignore
+     */
+    _startRenderPage: function PDFPageProxy_startRenderPage(transparency,
+                                                            intent) {
+      var intentState = this.intentStates[intent];
+      // TODO Refactor RenderPageRequest to separate rendering
+      // and operator list logic
+      if (intentState.displayReadyCapability) {
+        intentState.displayReadyCapability.resolve(transparency);
+      }
+    },
+    /**
+     * For internal use only.
+     * @ignore
+     */
+    _renderPageChunk: function PDFPageProxy_renderPageChunk(operatorListChunk,
+                                                            intent) {
+      var intentState = this.intentStates[intent];
+      var i, ii;
+      // Add the new chunk to the current operator list.
+      for (i = 0, ii = operatorListChunk.length; i &lt; ii; i++) {
+        intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
+        intentState.operatorList.argsArray.push(
+          operatorListChunk.argsArray[i]);
+      }
+      intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
+
+      // Notify all the rendering tasks there are more operators to be consumed.
+      for (i = 0; i &lt; intentState.renderTasks.length; i++) {
+        intentState.renderTasks[i].operatorListChanged();
+      }
+
+      if (operatorListChunk.lastChunk) {
+        intentState.receivingOperatorList = false;
+        this._tryCleanup();
+      }
+    },
+  };
+  return PDFPageProxy;
+})();
+
+class LoopbackPort {
+  constructor(defer) {
+    this._listeners = [];
+    this._defer = defer;
+    this._deferred = Promise.resolve(undefined);
+  }
+
+  postMessage(obj, transfers) {
+    function cloneValue(value) {
+      // Trying to perform a structured clone close to the spec, including
+      // transfers.
+      if (typeof value !== 'object' || value === null) {
+        return value;
+      }
+      if (cloned.has(value)) { // already cloned the object
+        return cloned.get(value);
+      }
+      var result;
+      var buffer;
+      if ((buffer = value.buffer) &amp;&amp; isArrayBuffer(buffer)) {
+        // We found object with ArrayBuffer (typed array).
+        var transferable = transfers &amp;&amp; transfers.indexOf(buffer) >= 0;
+        if (value === buffer) {
+          // Special case when we are faking typed arrays in compatibility.js.
+          result = value;
+        } else if (transferable) {
+          result = new value.constructor(buffer, value.byteOffset,
+                                         value.byteLength);
+        } else {
+          result = new value.constructor(value);
+        }
+        cloned.set(value, result);
+        return result;
+      }
+      result = Array.isArray(value) ? [] : {};
+      cloned.set(value, result); // adding to cache now for cyclic references
+      // Cloning all value and object properties, however ignoring properties
+      // defined via getter.
+      for (var i in value) {
+        var desc, p = value;
+        while (!(desc = Object.getOwnPropertyDescriptor(p, i))) {
+          p = Object.getPrototypeOf(p);
+        }
+        if (typeof desc.value === 'undefined' ||
+            typeof desc.value === 'function') {
+          continue;
+        }
+        result[i] = cloneValue(desc.value);
+      }
+      return result;
+    }
+
+    if (!this._defer) {
+      this._listeners.forEach(function (listener) {
+        listener.call(this, { data: obj, });
+      }, this);
+      return;
+    }
+
+    var cloned = new WeakMap();
+    var e = { data: cloneValue(obj), };
+    this._deferred.then(() => {
+      this._listeners.forEach(function (listener) {
+        listener.call(this, e);
+      }, this);
+    });
+  }
+
+  addEventListener(name, listener) {
+    this._listeners.push(listener);
+  }
+
+  removeEventListener(name, listener) {
+    var i = this._listeners.indexOf(listener);
+    this._listeners.splice(i, 1);
+  }
+
+  terminate() {
+    this._listeners = [];
+  }
+}
+
+/**
+ * PDF.js web worker abstraction, it controls instantiation of PDF documents and
+ * WorkerTransport for them.  If creation of a web worker is not possible,
+ * a "fake" worker will be used instead.
+ * @class
+ */
+var PDFWorker = (function PDFWorkerClosure() {
+  let nextFakeWorkerId = 0;
+
+  function getWorkerSrc() {
+    if (typeof workerSrc !== 'undefined') {
+      return workerSrc;
+    }
+    if (getDefaultSetting('workerSrc')) {
+      return getDefaultSetting('workerSrc');
+    }
+    if (typeof PDFJSDev !== 'undefined' &amp;&amp;
+        PDFJSDev.test('PRODUCTION &amp;&amp; !(MOZCENTRAL || FIREFOX)') &amp;&amp;
+        pdfjsFilePath) {
+      return pdfjsFilePath.replace(/(\.(?:min\.)?js)(\?.*)?$/i, '.worker$1$2');
+    }
+    throw new Error('No PDFJS.workerSrc specified');
+  }
+
+  let fakeWorkerFilesLoadedCapability;
+
+  // Loads worker code into main thread.
+  function setupFakeWorkerGlobal() {
+    var WorkerMessageHandler;
+    if (fakeWorkerFilesLoadedCapability) {
+      return fakeWorkerFilesLoadedCapability.promise;
+    }
+    fakeWorkerFilesLoadedCapability = createPromiseCapability();
+    // In the developer build load worker_loader which in turn loads all the
+    // other files and resolves the promise. In production only the
+    // pdf.worker.js file is needed.
+    if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
+      if (typeof SystemJS === 'object') {
+        SystemJS.import('pdfjs/core/worker').then((worker) => {
+          WorkerMessageHandler = worker.WorkerMessageHandler;
+          fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+        });
+      } else if (typeof require === 'function') {
+        var worker = require('../core/worker.js');
+        WorkerMessageHandler = worker.WorkerMessageHandler;
+        fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+      } else {
+        throw new Error(
+          'SystemJS or CommonJS must be used to load fake worker.');
+      }
+    } else if (PDFJSDev.test('SINGLE_FILE')) {
+      var pdfjsCoreWorker = require('../core/worker.js');
+      WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
+      fakeWorkerFilesLoadedCapability.resolve(WorkerMessageHandler);
+    } else {
+      var loader = fakeWorkerFilesLoader || function (callback) {
+        Util.loadScript(getWorkerSrc(), function () {
+          callback(window.pdfjsDistBuildPdfWorker.WorkerMessageHandler);
+        });
+      };
+      loader(fakeWorkerFilesLoadedCapability.resolve);
+    }
+    return fakeWorkerFilesLoadedCapability.promise;
+  }
+
+  function createCDNWrapper(url) {
+    // We will rely on blob URL's property to specify origin.
+    // We want this function to fail in case if createObjectURL or Blob do not
+    // exist or fail for some reason -- our Worker creation will fail anyway.
+    var wrapper = 'importScripts(\'' + url + '\');';
+    return URL.createObjectURL(new Blob([wrapper]));
+  }
+
+  let pdfWorkerPorts = new WeakMap();
+
+  function PDFWorker(name, port) {
+    if (port &amp;&amp; pdfWorkerPorts.has(port)) {
+      throw new Error('Cannot use more than one PDFWorker per port');
+    }
+
+    this.name = name;
+    this.destroyed = false;
+    this.postMessageTransfers = true;
+
+    this._readyCapability = createPromiseCapability();
+    this._port = null;
+    this._webWorker = null;
+    this._messageHandler = null;
+
+    if (port) {
+      pdfWorkerPorts.set(port, this);
+      this._initializeFromPort(port);
+      return;
+    }
+
+    this._initialize();
+  }
+
+  PDFWorker.prototype = /** @lends PDFWorker.prototype */ {
+    get promise() {
+      return this._readyCapability.promise;
+    },
+
+    get port() {
+      return this._port;
+    },
+
+    get messageHandler() {
+      return this._messageHandler;
+    },
+
+    _initializeFromPort: function PDFWorker_initializeFromPort(port) {
+      this._port = port;
+      this._messageHandler = new MessageHandler('main', 'worker', port);
+      this._messageHandler.on('ready', function () {
+        // Ignoring 'ready' event -- MessageHandler shall be already initialized
+        // and ready to accept the messages.
+      });
+      this._readyCapability.resolve();
+    },
+
+    _initialize: function PDFWorker_initialize() {
+      // If worker support isn't disabled explicit and the browser has worker
+      // support, create a new web worker and test if it/the browser fulfills
+      // all requirements to run parts of pdf.js in a web worker.
+      // Right now, the requirement is, that an Uint8Array is still an
+      // Uint8Array as it arrives on the worker. (Chrome added this with v.15.)
+      if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('SINGLE_FILE')) &amp;&amp;
+          !isWorkerDisabled &amp;&amp; !getDefaultSetting('disableWorker') &amp;&amp;
+          typeof Worker !== 'undefined') {
+        var workerSrc = getWorkerSrc();
+
+        try {
+          // Wraps workerSrc path into blob URL, if the former does not belong
+          // to the same origin.
+          if (typeof PDFJSDev !== 'undefined' &amp;&amp; PDFJSDev.test('GENERIC') &amp;&amp;
+              !isSameOrigin(window.location.href, workerSrc)) {
+            workerSrc = createCDNWrapper(
+              new URL(workerSrc, window.location).href);
+          }
+
+          // Some versions of FF can't create a worker on localhost, see:
+          // https://bugzilla.mozilla.org/show_bug.cgi?id=683280
+          var worker = new Worker(workerSrc);
+          var messageHandler = new MessageHandler('main', 'worker', worker);
+          var terminateEarly = () => {
+            worker.removeEventListener('error', onWorkerError);
+            messageHandler.destroy();
+            worker.terminate();
+            if (this.destroyed) {
+              this._readyCapability.reject(new Error('Worker was destroyed'));
+            } else {
+              // Fall back to fake worker if the termination is caused by an
+              // error (e.g. NetworkError / SecurityError).
+              this._setupFakeWorker();
+            }
+          };
+
+          var onWorkerError = () => {
+            if (!this._webWorker) {
+              // Worker failed to initialize due to an error. Clean up and fall
+              // back to the fake worker.
+              terminateEarly();
+            }
+          };
+          worker.addEventListener('error', onWorkerError);
+
+          messageHandler.on('test', (data) => {
+            worker.removeEventListener('error', onWorkerError);
+            if (this.destroyed) {
+              terminateEarly();
+              return; // worker was destroyed
+            }
+            var supportTypedArray = data &amp;&amp; data.supportTypedArray;
+            if (supportTypedArray) {
+              this._messageHandler = messageHandler;
+              this._port = worker;
+              this._webWorker = worker;
+              if (!data.supportTransfers) {
+                this.postMessageTransfers = false;
+                isPostMessageTransfersDisabled = true;
+              }
+              this._readyCapability.resolve();
+              // Send global setting, e.g. verbosity level.
+              messageHandler.send('configure', {
+                verbosity: getVerbosityLevel(),
+              });
+            } else {
+              this._setupFakeWorker();
+              messageHandler.destroy();
+              worker.terminate();
+            }
+          });
+
+          messageHandler.on('console_log', function (data) {
+            console.log.apply(console, data);
+          });
+          messageHandler.on('console_error', function (data) {
+            console.error.apply(console, data);
+          });
+
+          messageHandler.on('ready', (data) => {
+            worker.removeEventListener('error', onWorkerError);
+            if (this.destroyed) {
+              terminateEarly();
+              return; // worker was destroyed
+            }
+            try {
+              sendTest();
+            } catch (e) {
+              // We need fallback to a faked worker.
+              this._setupFakeWorker();
+            }
+          });
+
+          var sendTest = function () {
+            var postMessageTransfers =
+              getDefaultSetting('postMessageTransfers') &amp;&amp;
+              !isPostMessageTransfersDisabled;
+            var testObj = new Uint8Array([postMessageTransfers ? 255 : 0]);
+            // Some versions of Opera throw a DATA_CLONE_ERR on serializing the
+            // typed array. Also, checking if we can use transfers.
+            try {
+              messageHandler.send('test', testObj, [testObj.buffer]);
+            } catch (ex) {
+              info('Cannot use postMessage transfers');
+              testObj[0] = 0;
+              messageHandler.send('test', testObj);
+            }
+          };
+
+          // It might take time for worker to initialize (especially when AMD
+          // loader is used). We will try to send test immediately, and then
+          // when 'ready' message will arrive. The worker shall process only
+          // first received 'test'.
+          sendTest();
+          return;
+        } catch (e) {
+          info('The worker has been disabled.');
+        }
+      }
+      // Either workers are disabled, not supported or have thrown an exception.
+      // Thus, we fallback to a faked worker.
+      this._setupFakeWorker();
+    },
+
+    _setupFakeWorker: function PDFWorker_setupFakeWorker() {
+      if (!isWorkerDisabled &amp;&amp; !getDefaultSetting('disableWorker')) {
+        warn('Setting up fake worker.');
+        isWorkerDisabled = true;
+      }
+
+      setupFakeWorkerGlobal().then((WorkerMessageHandler) => {
+        if (this.destroyed) {
+          this._readyCapability.reject(new Error('Worker was destroyed'));
+          return;
+        }
+
+        // We cannot turn on proper fake port simulation (this includes
+        // structured cloning) when typed arrays are not supported. Relying
+        // on a chance that messages will be sent in proper order.
+        var isTypedArraysPresent = Uint8Array !== Float32Array;
+        var port = new LoopbackPort(isTypedArraysPresent);
+        this._port = port;
+
+        // All fake workers use the same port, making id unique.
+        var id = 'fake' + (nextFakeWorkerId++);
+
+        // If the main thread is our worker, setup the handling for the
+        // messages -- the main thread sends to it self.
+        var workerHandler = new MessageHandler(id + '_worker', id, port);
+        WorkerMessageHandler.setup(workerHandler, port);
+
+        var messageHandler = new MessageHandler(id, id + '_worker', port);
+        this._messageHandler = messageHandler;
+        this._readyCapability.resolve();
+      });
+    },
+
+    /**
+     * Destroys the worker instance.
+     */
+    destroy: function PDFWorker_destroy() {
+      this.destroyed = true;
+      if (this._webWorker) {
+        // We need to terminate only web worker created resource.
+        this._webWorker.terminate();
+        this._webWorker = null;
+      }
+      pdfWorkerPorts.delete(this._port);
+      this._port = null;
+      if (this._messageHandler) {
+        this._messageHandler.destroy();
+        this._messageHandler = null;
+      }
+    },
+  };
+
+  PDFWorker.fromPort = function (port) {
+    if (pdfWorkerPorts.has(port)) {
+      return pdfWorkerPorts.get(port);
+    }
+    return new PDFWorker(null, port);
+  };
+
+  return PDFWorker;
+})();
+
+/**
+ * For internal use only.
+ * @ignore
+ */
+var WorkerTransport = (function WorkerTransportClosure() {
+  function WorkerTransport(messageHandler, loadingTask, networkStream,
+                           CMapReaderFactory) {
+    this.messageHandler = messageHandler;
+    this.loadingTask = loadingTask;
+    this.commonObjs = new PDFObjects();
+    this.fontLoader = new FontLoader(loadingTask.docId);
+    this.CMapReaderFactory = new CMapReaderFactory({
+      baseUrl: getDefaultSetting('cMapUrl'),
+      isCompressed: getDefaultSetting('cMapPacked'),
+    });
+
+    this.destroyed = false;
+    this.destroyCapability = null;
+    this._passwordCapability = null;
+
+    this._networkStream = networkStream;
+    this._fullReader = null;
+    this._lastProgress = null;
+
+    this.pageCache = [];
+    this.pagePromises = [];
+    this.downloadInfoCapability = createPromiseCapability();
+
+    this.setupMessageHandler();
+  }
+  WorkerTransport.prototype = {
+    destroy: function WorkerTransport_destroy() {
+      if (this.destroyCapability) {
+        return this.destroyCapability.promise;
+      }
+
+      this.destroyed = true;
+      this.destroyCapability = createPromiseCapability();
+
+      if (this._passwordCapability) {
+        this._passwordCapability.reject(
+          new Error('Worker was destroyed during onPassword callback'));
+      }
+
+      var waitOn = [];
+      // We need to wait for all renderings to be completed, e.g.
+      // timeout/rAF can take a long time.
+      this.pageCache.forEach(function (page) {
+        if (page) {
+          waitOn.push(page._destroy());
+        }
+      });
+      this.pageCache = [];
+      this.pagePromises = [];
+      // We also need to wait for the worker to finish its long running tasks.
+      var terminated = this.messageHandler.sendWithPromise('Terminate', null);
+      waitOn.push(terminated);
+      Promise.all(waitOn).then(() => {
+        this.fontLoader.clear();
+        if (this._networkStream) {
+          this._networkStream.cancelAllRequests();
+        }
+
+        if (this.messageHandler) {
+          this.messageHandler.destroy();
+          this.messageHandler = null;
+        }
+        this.destroyCapability.resolve();
+      }, this.destroyCapability.reject);
+      return this.destroyCapability.promise;
+    },
+
+    setupMessageHandler: function WorkerTransport_setupMessageHandler() {
+      var messageHandler = this.messageHandler;
+      var loadingTask = this.loadingTask;
+
+      messageHandler.on('GetReader', function(data, sink) {
+        assert(this._networkStream);
+        this._fullReader = this._networkStream.getFullReader();
+        this._fullReader.onProgress = (evt) => {
+          this._lastProgress = {
+            loaded: evt.loaded,
+            total: evt.total,
+          };
+        };
+        sink.onPull = () => {
+          this._fullReader.read().then(function({ value, done, }) {
+            if (done) {
+              sink.close();
+              return;
+            }
+            assert(isArrayBuffer(value));
+            // Enqueue data chunk into sink, and transfer it
+            // to other side as `Transferable` object.
+            sink.enqueue(new Uint8Array(value), 1, [value]);
+          }).catch((reason) => {
+            sink.error(reason);
+          });
+        };
+
+        sink.onCancel = (reason) => {
+          this._fullReader.cancel(reason);
+        };
+      }, this);
+
+      messageHandler.on('ReaderHeadersReady', function(data) {
+        let headersCapability = createPromiseCapability();
+        let fullReader = this._fullReader;
+        fullReader.headersReady.then(() => {
+          // If stream or range are disabled, it's our only way to report
+          // loading progress.
+          if (!fullReader.isStreamingSupported ||
+              !fullReader.isRangeSupported) {
+            if (this._lastProgress) {
+              let loadingTask = this.loadingTask;
+              if (loadingTask.onProgress) {
+                loadingTask.onProgress(this._lastProgress);
+              }
+            }
+            fullReader.onProgress = (evt) => {
+              let loadingTask = this.loadingTask;
+              if (loadingTask.onProgress) {
+                loadingTask.onProgress({
+                  loaded: evt.loaded,
+                  total: evt.total,
+                });
+              }
+            };
+          }
+
+          headersCapability.resolve({
+            isStreamingSupported: fullReader.isStreamingSupported,
+            isRangeSupported: fullReader.isRangeSupported,
+            contentLength: fullReader.contentLength,
+          });
+        }, headersCapability.reject);
+
+        return headersCapability.promise;
+      }, this);
+
+      messageHandler.on('GetRangeReader', function(data, sink) {
+        assert(this._networkStream);
+        let _rangeReader =
+          this._networkStream.getRangeReader(data.begin, data.end);
+
+        sink.onPull = () => {
+          _rangeReader.read().then(function({ value, done, }) {
+            if (done) {
+              sink.close();
+              return;
+            }
+            assert(isArrayBuffer(value));
+            sink.enqueue(new Uint8Array(value), 1, [value]);
+          }).catch((reason) => {
+            sink.error(reason);
+          });
+        };
+
+        sink.onCancel = (reason) => {
+          _rangeReader.cancel(reason);
+        };
+      }, this);
+
+      messageHandler.on('GetDoc', function transportDoc(data) {
+        var pdfInfo = data.pdfInfo;
+        this.numPages = data.pdfInfo.numPages;
+        var loadingTask = this.loadingTask;
+        var pdfDocument = new PDFDocumentProxy(pdfInfo, this, loadingTask);
+        this.pdfDocument = pdfDocument;
+        loadingTask._capability.resolve(pdfDocument);
+      }, this);
+
+      messageHandler.on('PasswordRequest',
+                        function transportPasswordRequest(exception) {
+        this._passwordCapability = createPromiseCapability();
+
+        if (loadingTask.onPassword) {
+          var updatePassword = (password) => {
+            this._passwordCapability.resolve({
+              password,
+            });
+          };
+          loadingTask.onPassword(updatePassword, exception.code);
+        } else {
+          this._passwordCapability.reject(
+            new PasswordException(exception.message, exception.code));
+        }
+        return this._passwordCapability.promise;
+      }, this);
+
+      messageHandler.on('PasswordException',
+                        function transportPasswordException(exception) {
+        loadingTask._capability.reject(
+          new PasswordException(exception.message, exception.code));
+      }, this);
+
+      messageHandler.on('InvalidPDF', function transportInvalidPDF(exception) {
+        this.loadingTask._capability.reject(
+          new InvalidPDFException(exception.message));
+      }, this);
+
+      messageHandler.on('MissingPDF', function transportMissingPDF(exception) {
+        this.loadingTask._capability.reject(
+          new MissingPDFException(exception.message));
+      }, this);
+
+      messageHandler.on('UnexpectedResponse',
+                        function transportUnexpectedResponse(exception) {
+        this.loadingTask._capability.reject(
+          new UnexpectedResponseException(exception.message, exception.status));
+      }, this);
+
+      messageHandler.on('UnknownError',
+                        function transportUnknownError(exception) {
+        this.loadingTask._capability.reject(
+          new UnknownErrorException(exception.message, exception.details));
+      }, this);
+
+      messageHandler.on('DataLoaded', function transportPage(data) {
+        this.downloadInfoCapability.resolve(data);
+      }, this);
+
+      messageHandler.on('PDFManagerReady', function transportPage(data) {
+      }, this);
+
+      messageHandler.on('StartRenderPage', function transportRender(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+        var page = this.pageCache[data.pageIndex];
+
+        page.stats.timeEnd('Page Request');
+        page._startRenderPage(data.transparency, data.intent);
+      }, this);
+
+      messageHandler.on('RenderPageChunk', function transportRender(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+        var page = this.pageCache[data.pageIndex];
+
+        page._renderPageChunk(data.operatorList, data.intent);
+      }, this);
+
+      messageHandler.on('commonobj', function transportObj(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
+        var id = data[0];
+        var type = data[1];
+        if (this.commonObjs.hasData(id)) {
+          return;
+        }
+
+        switch (type) {
+          case 'Font':
+            var exportedData = data[2];
+
+            if ('error' in exportedData) {
+              var exportedError = exportedData.error;
+              warn('Error during font loading: ' + exportedError);
+              this.commonObjs.resolve(id, exportedError);
+              break;
+            }
+            var fontRegistry = null;
+            if (getDefaultSetting('pdfBug') &amp;&amp; globalScope.FontInspector &amp;&amp;
+                globalScope['FontInspector'].enabled) {
+              fontRegistry = {
+                registerFont(font, url) {
+                  globalScope['FontInspector'].fontAdded(font, url);
+                },
+              };
+            }
+            var font = new FontFaceObject(exportedData, {
+              isEvalSuported: getDefaultSetting('isEvalSupported'),
+              disableFontFace: getDefaultSetting('disableFontFace'),
+              fontRegistry,
+            });
+            var fontReady = (fontObjs) => {
+              this.commonObjs.resolve(id, font);
+            };
+
+            this.fontLoader.bind([font], fontReady);
+            break;
+          case 'FontPath':
+            this.commonObjs.resolve(id, data[2]);
+            break;
+          default:
+            throw new Error(`Got unknown common object type ${type}`);
+        }
+      }, this);
+
+      messageHandler.on('obj', function transportObj(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
+        var id = data[0];
+        var pageIndex = data[1];
+        var type = data[2];
+        var pageProxy = this.pageCache[pageIndex];
+        var imageData;
+        if (pageProxy.objs.hasData(id)) {
+          return;
+        }
+
+        switch (type) {
+          case 'JpegStream':
+            imageData = data[3];
+            loadJpegStream(id, imageData, pageProxy.objs);
+            break;
+          case 'Image':
+            imageData = data[3];
+            pageProxy.objs.resolve(id, imageData);
+
+            // heuristics that will allow not to store large data
+            var MAX_IMAGE_SIZE_TO_STORE = 8000000;
+            if (imageData &amp;&amp; 'data' in imageData &amp;&amp;
+                imageData.data.length > MAX_IMAGE_SIZE_TO_STORE) {
+              pageProxy.cleanupAfterRender = true;
+            }
+            break;
+          default:
+            throw new Error(`Got unknown object type ${type}`);
+        }
+      }, this);
+
+      messageHandler.on('DocProgress', function transportDocProgress(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
+        var loadingTask = this.loadingTask;
+        if (loadingTask.onProgress) {
+          loadingTask.onProgress({
+            loaded: data.loaded,
+            total: data.total,
+          });
+        }
+      }, this);
+
+      messageHandler.on('PageError', function transportError(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+
+        var page = this.pageCache[data.pageNum - 1];
+        var intentState = page.intentStates[data.intent];
+
+        if (intentState.displayReadyCapability) {
+          intentState.displayReadyCapability.reject(data.error);
+        } else {
+          throw new Error(data.error);
+        }
+
+        if (intentState.operatorList) {
+          // Mark operator list as complete.
+          intentState.operatorList.lastChunk = true;
+          for (var i = 0; i &lt; intentState.renderTasks.length; i++) {
+            intentState.renderTasks[i].operatorListChanged();
+          }
+        }
+      }, this);
+
+      messageHandler.on('UnsupportedFeature',
+          function transportUnsupportedFeature(data) {
+        if (this.destroyed) {
+          return; // Ignore any pending requests if the worker was terminated.
+        }
+        var featureId = data.featureId;
+        var loadingTask = this.loadingTask;
+        if (loadingTask.onUnsupportedFeature) {
+          loadingTask.onUnsupportedFeature(featureId);
+        }
+        _UnsupportedManager.notify(featureId);
+      }, this);
+
+      messageHandler.on('JpegDecode', function(data) {
+        if (this.destroyed) {
+          return Promise.reject(new Error('Worker was destroyed'));
+        }
+
+        if (typeof document === 'undefined') {
+          // Make sure that this code is not executing in node.js, as
+          // it's using DOM image, and there is no library to support that.
+          return Promise.reject(new Error('"document" is not defined.'));
+        }
+
+        var imageUrl = data[0];
+        var components = data[1];
+        if (components !== 3 &amp;&amp; components !== 1) {
+          return Promise.reject(
+            new Error('Only 3 components or 1 component can be returned'));
+        }
+
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.onload = function () {
+            var width = img.width;
+            var height = img.height;
+            var size = width * height;
+            var rgbaLength = size * 4;
+            var buf = new Uint8Array(size * components);
+            var tmpCanvas = document.createElement('canvas');
+            tmpCanvas.width = width;
+            tmpCanvas.height = height;
+            var tmpCtx = tmpCanvas.getContext('2d');
+            tmpCtx.drawImage(img, 0, 0);
+            var data = tmpCtx.getImageData(0, 0, width, height).data;
+            var i, j;
+
+            if (components === 3) {
+              for (i = 0, j = 0; i &lt; rgbaLength; i += 4, j += 3) {
+                buf[j] = data[i];
+                buf[j + 1] = data[i + 1];
+                buf[j + 2] = data[i + 2];
+              }
+            } else if (components === 1) {
+              for (i = 0, j = 0; i &lt; rgbaLength; i += 4, j++) {
+                buf[j] = data[i];
+              }
+            }
+            resolve({ data: buf, width, height, });
+          };
+          img.onerror = function () {
+            reject(new Error('JpegDecode failed to load image'));
+          };
+          img.src = imageUrl;
+        });
+      }, this);
+
+      messageHandler.on('FetchBuiltInCMap', function (data) {
+        if (this.destroyed) {
+          return Promise.reject(new Error('Worker was destroyed'));
+        }
+        return this.CMapReaderFactory.fetch({
+          name: data.name,
+        });
+      }, this);
+    },
+
+    getData: function WorkerTransport_getData() {
+      return this.messageHandler.sendWithPromise('GetData', null);
+    },
+
+    getPage: function WorkerTransport_getPage(pageNumber, capability) {
+      if (!Number.isInteger(pageNumber) ||
+          pageNumber &lt;= 0 || pageNumber > this.numPages) {
+        return Promise.reject(new Error('Invalid page request'));
+      }
+
+      var pageIndex = pageNumber - 1;
+      if (pageIndex in this.pagePromises) {
+        return this.pagePromises[pageIndex];
+      }
+      var promise = this.messageHandler.sendWithPromise('GetPage', {
+        pageIndex,
+      }).then((pageInfo) => {
+        if (this.destroyed) {
+          throw new Error('Transport destroyed');
+        }
+        var page = new PDFPageProxy(pageIndex, pageInfo, this);
+        this.pageCache[pageIndex] = page;
+        return page;
+      });
+      this.pagePromises[pageIndex] = promise;
+      return promise;
+    },
+
+    getPageIndex: function WorkerTransport_getPageIndexByRef(ref) {
+      return this.messageHandler.sendWithPromise('GetPageIndex', {
+        ref,
+      }).catch(function (reason) {
+        return Promise.reject(new Error(reason));
+      });
+    },
+
+    getAnnotations: function WorkerTransport_getAnnotations(pageIndex, intent) {
+      return this.messageHandler.sendWithPromise('GetAnnotations', {
+        pageIndex,
+        intent,
+      });
+    },
+
+    getDestinations: function WorkerTransport_getDestinations() {
+      return this.messageHandler.sendWithPromise('GetDestinations', null);
+    },
+
+    getDestination: function WorkerTransport_getDestination(id) {
+      return this.messageHandler.sendWithPromise('GetDestination', {
+        id,
+      });
+    },
+
+    getPageLabels: function WorkerTransport_getPageLabels() {
+      return this.messageHandler.sendWithPromise('GetPageLabels', null);
+    },
+
+    getPageMode() {
+      return this.messageHandler.sendWithPromise('GetPageMode', null);
+    },
+
+    getAttachments: function WorkerTransport_getAttachments() {
+      return this.messageHandler.sendWithPromise('GetAttachments', null);
+    },
+
+    getJavaScript: function WorkerTransport_getJavaScript() {
+      return this.messageHandler.sendWithPromise('GetJavaScript', null);
+    },
+
+    getOutline: function WorkerTransport_getOutline() {
+      return this.messageHandler.sendWithPromise('GetOutline', null);
+    },
+
+    getMetadata: function WorkerTransport_getMetadata() {
+      return this.messageHandler.sendWithPromise('GetMetadata', null).
+        then(function transportMetadata(results) {
+        return {
+          info: results[0],
+          metadata: (results[1] ? new Metadata(results[1]) : null),
+        };
+      });
+    },
+
+    getStats: function WorkerTransport_getStats() {
+      return this.messageHandler.sendWithPromise('GetStats', null);
+    },
+
+    startCleanup: function WorkerTransport_startCleanup() {
+      this.messageHandler.sendWithPromise('Cleanup', null).then(() => {
+        for (var i = 0, ii = this.pageCache.length; i &lt; ii; i++) {
+          var page = this.pageCache[i];
+          if (page) {
+            page.cleanup();
+          }
+        }
+        this.commonObjs.clear();
+        this.fontLoader.clear();
+      });
+    },
+  };
+  return WorkerTransport;
+
+})();
+
+/**
+ * A PDF document and page is built of many objects. E.g. there are objects
+ * for fonts, images, rendering code and such. These objects might get processed
+ * inside of a worker. The `PDFObjects` implements some basic functions to
+ * manage these objects.
+ * @ignore
+ */
+var PDFObjects = (function PDFObjectsClosure() {
+  function PDFObjects() {
+    this.objs = Object.create(null);
+  }
+
+  PDFObjects.prototype = {
+    /**
+     * Internal function.
+     * Ensures there is an object defined for `objId`.
+     */
+    ensureObj: function PDFObjects_ensureObj(objId) {
+      if (this.objs[objId]) {
+        return this.objs[objId];
+      }
+
+      var obj = {
+        capability: createPromiseCapability(),
+        data: null,
+        resolved: false,
+      };
+      this.objs[objId] = obj;
+
+      return obj;
+    },
+
+    /**
+     * If called *without* callback, this returns the data of `objId` but the
+     * object needs to be resolved. If it isn't, this function throws.
+     *
+     * If called *with* a callback, the callback is called with the data of the
+     * object once the object is resolved. That means, if you call this
+     * function and the object is already resolved, the callback gets called
+     * right away.
+     */
+    get: function PDFObjects_get(objId, callback) {
+      // If there is a callback, then the get can be async and the object is
+      // not required to be resolved right now
+      if (callback) {
+        this.ensureObj(objId).capability.promise.then(callback);
+        return null;
+      }
+
+      // If there isn't a callback, the user expects to get the resolved data
+      // directly.
+      var obj = this.objs[objId];
+
+      // If there isn't an object yet or the object isn't resolved, then the
+      // data isn't ready yet!
+      if (!obj || !obj.resolved) {
+        throw new Error(`Requesting object that isn't resolved yet ${objId}`);
+      }
+
+      return obj.data;
+    },
+
+    /**
+     * Resolves the object `objId` with optional `data`.
+     */
+    resolve: function PDFObjects_resolve(objId, data) {
+      var obj = this.ensureObj(objId);
+
+      obj.resolved = true;
+      obj.data = data;
+      obj.capability.resolve(data);
+    },
+
+    isResolved: function PDFObjects_isResolved(objId) {
+      var objs = this.objs;
+
+      if (!objs[objId]) {
+        return false;
+      }
+      return objs[objId].resolved;
+    },
+
+    hasData: function PDFObjects_hasData(objId) {
+      return this.isResolved(objId);
+    },
+
+    /**
+     * Returns the data of `objId` if object exists, null otherwise.
+     */
+    getData: function PDFObjects_getData(objId) {
+      var objs = this.objs;
+      if (!objs[objId] || !objs[objId].resolved) {
+        return null;
+      }
+      return objs[objId].data;
+    },
+
+    clear: function PDFObjects_clear() {
+      this.objs = Object.create(null);
+    },
+  };
+  return PDFObjects;
+})();
+
+/**
+ * Allows controlling of the rendering tasks.
+ * @class
+ * @alias RenderTask
+ */
+var RenderTask = (function RenderTaskClosure() {
+  function RenderTask(internalRenderTask) {
+    this._internalRenderTask = internalRenderTask;
+
+    /**
+     * Callback for incremental rendering -- a function that will be called
+     * each time the rendering is paused.  To continue rendering call the
+     * function that is the first argument to the callback.
+     * @type {function}
+     */
+    this.onContinue = null;
+  }
+
+  RenderTask.prototype = /** @lends RenderTask.prototype */ {
+    /**
+     * Promise for rendering task completion.
+     * @return {Promise}
+     */
+    get promise() {
+      return this._internalRenderTask.capability.promise;
+    },
+
+    /**
+     * Cancels the rendering task. If the task is currently rendering it will
+     * not be cancelled until graphics pauses with a timeout. The promise that
+     * this object extends will be rejected when cancelled.
+     */
+    cancel: function RenderTask_cancel() {
+      this._internalRenderTask.cancel();
+    },
+
+    /**
+     * Registers callbacks to indicate the rendering task completion.
+     *
+     * @param {function} onFulfilled The callback for the rendering completion.
+     * @param {function} onRejected The callback for the rendering failure.
+     * @return {Promise} A promise that is resolved after the onFulfilled or
+     *                   onRejected callback.
+     */
+    then: function RenderTask_then(onFulfilled, onRejected) {
+      return this.promise.then.apply(this.promise, arguments);
+    },
+  };
+
+  return RenderTask;
+})();
+
+/**
+ * For internal use only.
+ * @ignore
+ */
+var InternalRenderTask = (function InternalRenderTaskClosure() {
+  let canvasInRendering = new WeakMap();
+
+  function InternalRenderTask(callback, params, objs, commonObjs, operatorList,
+                              pageNumber, canvasFactory) {
+    this.callback = callback;
+    this.params = params;
+    this.objs = objs;
+    this.commonObjs = commonObjs;
+    this.operatorListIdx = null;
+    this.operatorList = operatorList;
+    this.pageNumber = pageNumber;
+    this.canvasFactory = canvasFactory;
+    this.running = false;
+    this.graphicsReadyCallback = null;
+    this.graphicsReady = false;
+    this.useRequestAnimationFrame = false;
+    this.cancelled = false;
+    this.capability = createPromiseCapability();
+    this.task = new RenderTask(this);
+    // caching this-bound methods
+    this._continueBound = this._continue.bind(this);
+    this._scheduleNextBound = this._scheduleNext.bind(this);
+    this._nextBound = this._next.bind(this);
+    this._canvas = params.canvasContext.canvas;
+  }
+
+  InternalRenderTask.prototype = {
+
+    initializeGraphics:
+        function InternalRenderTask_initializeGraphics(transparency) {
+
+      if (this._canvas) {
+        if (canvasInRendering.has(this._canvas)) {
+          throw new Error(
+            'Cannot use the same canvas during multiple render() operations. ' +
+            'Use different canvas or ensure previous operations were ' +
+            'cancelled or completed.');
+        }
+        canvasInRendering.set(this._canvas, this);
+      }
+
+      if (this.cancelled) {
+        return;
+      }
+      if (getDefaultSetting('pdfBug') &amp;&amp; globalScope.StepperManager &amp;&amp;
+          globalScope.StepperManager.enabled) {
+        this.stepper = globalScope.StepperManager.create(this.pageNumber - 1);
+        this.stepper.init(this.operatorList);
+        this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
+      }
+
+      var params = this.params;
+      this.gfx = new CanvasGraphics(params.canvasContext, this.commonObjs,
+                                    this.objs, this.canvasFactory,
+                                    params.imageLayer);
+
+      this.gfx.beginDrawing({
+        transform: params.transform,
+        viewport: params.viewport,
+        transparency,
+        background: params.background,
+      });
+      this.operatorListIdx = 0;
+      this.graphicsReady = true;
+      if (this.graphicsReadyCallback) {
+        this.graphicsReadyCallback();
+      }
+    },
+
+    cancel: function InternalRenderTask_cancel() {
+      this.running = false;
+      this.cancelled = true;
+      if (this._canvas) {
+        canvasInRendering.delete(this._canvas);
+      }
+
+      if ((typeof PDFJSDev !== 'undefined' &amp;&amp; PDFJSDev.test('PDFJS_NEXT')) ||
+          getDefaultSetting('pdfjsNext')) {
+        this.callback(new RenderingCancelledException(
+          'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
+      } else {
+        this.callback('cancelled');
+      }
+    },
+
+    operatorListChanged: function InternalRenderTask_operatorListChanged() {
+      if (!this.graphicsReady) {
+        if (!this.graphicsReadyCallback) {
+          this.graphicsReadyCallback = this._continueBound;
+        }
+        return;
+      }
+
+      if (this.stepper) {
+        this.stepper.updateOperatorList(this.operatorList);
+      }
+
+      if (this.running) {
+        return;
+      }
+      this._continue();
+    },
+
+    _continue: function InternalRenderTask__continue() {
+      this.running = true;
+      if (this.cancelled) {
+        return;
+      }
+      if (this.task.onContinue) {
+        this.task.onContinue(this._scheduleNextBound);
+      } else {
+        this._scheduleNext();
+      }
+    },
+
+    _scheduleNext: function InternalRenderTask__scheduleNext() {
+      if (this.useRequestAnimationFrame &amp;&amp; typeof window !== 'undefined') {
+        window.requestAnimationFrame(this._nextBound);
+      } else {
+        Promise.resolve(undefined).then(this._nextBound);
+      }
+    },
+
+    _next: function InternalRenderTask__next() {
+      if (this.cancelled) {
+        return;
+      }
+      this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList,
+                                        this.operatorListIdx,
+                                        this._continueBound,
+                                        this.stepper);
+      if (this.operatorListIdx === this.operatorList.argsArray.length) {
+        this.running = false;
+        if (this.operatorList.lastChunk) {
+          this.gfx.endDrawing();
+          if (this._canvas) {
+            canvasInRendering.delete(this._canvas);
+          }
+          this.callback();
+        }
+      }
+    },
+
+  };
+
+  return InternalRenderTask;
+})();
+
+/**
+ * (Deprecated) Global observer of unsupported feature usages. Use
+ * onUnsupportedFeature callback of the {PDFDocumentLoadingTask} instance.
+ */
+var _UnsupportedManager = (function UnsupportedManagerClosure() {
+  var listeners = [];
+  return {
+    listen(cb) {
+      deprecated('Global UnsupportedManager.listen is used: ' +
+                 ' use PDFDocumentLoadingTask.onUnsupportedFeature instead');
+      listeners.push(cb);
+    },
+    notify(featureId) {
+      for (var i = 0, ii = listeners.length; i &lt; ii; i++) {
+        listeners[i](featureId);
+      }
+    },
+  };
+})();
+
+var version, build;
+if (typeof PDFJSDev !== 'undefined') {
+  version = PDFJSDev.eval('BUNDLE_VERSION');
+  build = PDFJSDev.eval('BUNDLE_BUILD');
+}
+
+export {
+  getDocument,
+  LoopbackPort,
+  PDFDataRangeTransport,
+  PDFWorker,
+  PDFDocumentProxy,
+  PDFPageProxy,
+  setPDFNetworkStreamClass,
+  _UnsupportedManager,
+  version,
+  build,
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Externals</h3><ul><li><a href="external-Promise.html">Promise</a></li></ul><h3>Classes</h3><ul><li><a href="AnnotationBorderStyle.html">AnnotationBorderStyle</a></li><li><a href="PageViewport.html">PageViewport</a></li><li><a href="PDFDataRangeTransport.html">PDFDataRangeTransport</a></li><li><a href="PDFDocumentLoadingTask.html">PDFDocumentLoadingTask</a></li><li><a href="PDFDocumentProxy.html">PDFDocumentProxy</a></li><li><a href="PDFJS.html">PDFJS</a></li><li><a href="PDFPageProxy.html">PDFPageProxy</a></li><li><a href="PDFWorker.html">PDFWorker</a></li><li><a href="RenderTask.html">RenderTask</a></li></ul><h3>Global</h3><ul><li><a href="global.html#_UnsupportedManager">_UnsupportedManager</a></li><li><a href="global.html#AbortException">AbortException</a></li><li><a href="global.html#arrayByteLength">arrayByteLength</a></li><li><a href="global.html#arraysToBytes">arraysToBytes</a></li><li><a href="global.html#createPromiseCapability">createPromiseCapability</a></li><li><a href="global.html#createValidAbsoluteUrl">createValidAbsoluteUrl</a></li><li><a href="global.html#FormatError">FormatError</a></li><li><a href="global.html#getDocument">getDocument</a></li><li><a href="global.html#PDFNetworkStream">PDFNetworkStream</a></li><li><a href="global.html#setPDFNetworkStreamClass">setPDFNetworkStreamClass</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.4</a> on Mon Sep 11 2017 15:23:37 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

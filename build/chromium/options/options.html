@@ -1,0 +1,112 @@
+<!doctype html>
+<!--
+Copyright 2015 Mozilla Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<title>PDF.js viewer options</title>
+<style>
+/* TODO: Remove as much custom CSS as possible - crbug.com/446511 */
+body {
+  min-width: 400px; /* a page at the settings page is at least 400px wide */
+  margin: 14px 17px; /* already added by default in Chrome 40.0.2212.0 */
+}
+.settings-row {
+  margin: 0.65em 0;
+}
+</style>
+</head>
+<body>
+<div id="settings-boxes"></div>
+<button id="reset-button">Restore default settings</button>
+
+<template id="checkbox-template">
+<!-- Chromium's style: //src/extensions/renderer/resources/extension.css -->
+<div class="checkbox">
+  <label>
+    <input type="checkbox">
+    <span></span>
+  </label>
+</div>
+</template>
+
+<template id="defaultZoomValue-template">
+<div class="settings-row">
+  <label>
+    <span></span>
+    <select>
+      <option value="auto" selected="selected">Automatic Zoom</option>
+      <option value="page-actual">Actual Size</option>
+      <option value="page-fit">Page Fit</option>
+      <option value="page-width">Page Width</option>
+      <option value="custom" class="custom-zoom" hidden></option>
+      <option value="50">50%</option>
+      <option value="75">75%</option>
+      <option value="100">100%</option>
+      <option value="125">125%</option>
+      <option value="150">150%</option>
+      <option value="200">200%</option>
+      <option value="300">300%</option>
+      <option value="400">400%</option>
+    </select>
+  </label>
+</div>
+</template>
+
+<template id="sidebarViewOnLoad-template">
+<div class="settings-row">
+  <label>
+    <span></span>
+    <select>
+      <option value="0">Do not show sidebar</option>
+      <option value="1">Show thumbnails in sidebar</option>
+      <option value="2">Show document outline in sidebar</option>
+      <option value="3">Show attachments in sidebar</option>
+    </select>
+  </label>
+</div>
+</template>
+
+<template id="cursorToolOnLoad-template">
+<div class="settings-row">
+  <label>
+    <span></span>
+    <select>
+      <option value="0">Text selection tool</option>
+      <option value="1">Hand tool</option>
+    </select>
+  </label>
+</div>
+</template>
+
+<template id="externalLinkTarget-template">
+<div class="settings-row">
+  <label>
+    <span></span>
+    <select>
+      <option value="0">Default</option>
+      <option value="1">Current window/tab</option>
+      <option value="2">New window/tab</option>
+      <option value="3">Parent window/tab</option>
+      <option value="4">Top window/tab</option>
+    </select>
+  </label>
+</div>
+</template>
+
+<script src="options.js"></script>
+</body>
+</html>

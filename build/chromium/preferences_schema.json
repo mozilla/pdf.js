@@ -1,0 +1,138 @@
+{
+  "type": "object",
+  "properties": {
+    "showPreviousViewOnLoad": {
+      "title": "Show previous position of PDF upon load",
+      "description": "Whether to view PDF documents in the last page and position upon opening the viewer.",
+      "type": "boolean",
+      "default": true
+    },
+    "defaultZoomValue": {
+      "title": "Default zoom level",
+      "description": "Default zoom level of the viewer. Accepted values: 'auto', 'page-actual', 'page-width', 'page-height', 'page-fit', or a zoom level in percents.",
+      "type": "string",
+      "pattern": "|auto|page-actual|page-width|page-height|page-fit|[0-9]+\\.?[0-9]*(,[0-9]+\\.?[0-9]*){0,2}",
+      "default": ""
+    },
+    "sidebarViewOnLoad": {
+      "title": "Sidebar state on load",
+      "description": "Controls the state of the sidebar upon load.\n 0 = do not show sidebar.\n 1 = show thumbnails in sidebar.\n 2 = show document outline in sidebar.\n 3 = Show attachments in sidebar.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "default": 0
+    },
+    "enableHandToolOnLoad": {
+      "description": "Deprecated. Set cursorToolOnLoad to 1 to enable the hand tool by default.",
+      "type": "boolean",
+      "default": false
+    },
+    "cursorToolOnLoad": {
+      "title": "Cursor tool on load",
+      "description": "The cursor tool that is enabled upon load.\n 0 = Text selection tool.\n 1 = Hand tool.",
+      "type": "integer",
+      "enum": [
+        0,
+        1
+      ],
+      "default": 0
+    },
+    "enableWebGL": {
+      "title": "Enable WebGL",
+      "description": "Whether to enable WebGL.",
+      "type": "boolean",
+      "default": false
+    },
+    "pdfBugEnabled": {
+      "title": "Enable debugging tools",
+      "description": "Whether to enable debugging tools.",
+      "type": "boolean",
+      "default": false
+    },
+    "disableRange": {
+      "title": "Disable range requests",
+      "description": "Whether to disable range requests (not recommended).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableStream": {
+      "title": "Disable streaming for requests",
+      "description": "Whether to disable streaming for requests (not recommended).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableAutoFetch": {
+      "type": "boolean",
+      "default": false
+    },
+    "disableFontFace": {
+      "title": "Disable @font-face",
+      "description": "Whether to disable @font-face and fall back to canvas rendering (this is more resource-intensive).",
+      "type": "boolean",
+      "default": false
+    },
+    "disableTextLayer": {
+      "title": "Disable text selection layer",
+      "description": "Whether to disable the text selection layer.",
+      "type": "boolean",
+      "default": false
+    },
+    "useOnlyCssZoom": {
+      "type": "boolean",
+      "default": false
+    },
+    "externalLinkTarget": {
+      "title": "External links target window",
+      "description": "Controls how external links will be opened.\n 0 = default.\n 1 = replaces current window.\n 2 = new window/tab.\n 3 = parent.\n 4 = in top window.",
+      "type": "integer",
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "default": 0
+    },
+    "disablePageLabels": {
+      "type": "boolean",
+      "default": false
+    },
+    "disablePageMode": {
+      "type": "boolean",
+      "default": false
+    },
+    "disableTelemetry": {
+      "title": "Disable telemetry",
+      "type": "boolean",
+      "description": "Whether to prevent the extension from reporting the extension and browser version to the extension developers.",
+      "default": false
+    },
+    "enhanceTextSelection": {
+      "type": "boolean",
+      "default": false
+    },
+    "renderer": {
+      "type": "string",
+      "enum": [
+        "canvas",
+        "svg"
+      ],
+      "default": "canvas"
+    },
+    "renderInteractiveForms": {
+      "type": "boolean",
+      "default": false
+    },
+    "enablePrintAutoRotate": {
+      "title": "Automatically rotate printed pages",
+      "description": "When enabled, pages whose orientation differ from the first page are rotated when printed.",
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
