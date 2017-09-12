@@ -24,41 +24,6 @@ var StatTimer = pdfjsDistBuildPdf.StatTimer;
 /**
  * @class
  */
-var LinkServiceMock = (function LinkServiceMockClosure() {
-  function LinkServiceMock() {}
-
-  LinkServiceMock.prototype = {
-    get page() {
-      return 0;
-    },
-
-    set page(value) {},
-
-    navigateTo(dest) {},
-
-    getDestinationHash(dest) {
-      return '#';
-    },
-
-    getAnchorUrl(hash) {
-      return '#';
-    },
-
-    setHash(hash) {},
-
-    executeNamedAction(action) {},
-
-    onFileAttachmentAnnotation(params) {},
-
-    cachePageRef(pageNum, pageRef) {},
-  };
-
-  return LinkServiceMock;
-})();
-
-/**
- * @class
- */
 var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -230,7 +195,7 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
           div,
           annotations,
           page,
-          linkService: new LinkServiceMock(),
+          linkService: new PDFJS.SimpleLinkService(),
           renderInteractiveForms,
         };
         PDFJS.AnnotationLayer.render(parameters);
