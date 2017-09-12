@@ -51,9 +51,14 @@
   box-sizing: border-box;
   font-size: 9px;
   height: 100%;
+  margin: 0;
   padding: 0 3px;
   vertical-align: top;
   width: 100%;
+}
+
+.annotationLayer .choiceWidgetAnnotation select option {
+  padding: 0;
 }
 
 .annotationLayer .buttonWidgetAnnotation.radioButton input {
@@ -163,16 +168,19 @@
   padding: 0.6em;
   margin-left: 5px;
   cursor: pointer;
+  font: message-box;
   word-wrap: break-word;
 }
 
 .annotationLayer .popup h1 {
   font-size: 1em;
   border-bottom: 1px solid #000000;
+  margin: 0;
   padding-bottom: 0.2em;
 }
 
 .annotationLayer .popup p {
+  margin: 0;
   padding-top: 0.2em;
 }
 
