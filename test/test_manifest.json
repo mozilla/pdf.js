@@ -707,6 +707,14 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "pr8808",
+       "file": "pdfs/pr8808.pdf",
+       "md5": "bdac6051a98fd8dcfc5344b05fed06f4",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5599",
        "file": "pdfs/issue5599.pdf",
        "md5": "529a4a9409ac024aeb57a047210280fe",
