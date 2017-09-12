@@ -76,6 +76,20 @@ class PDFLinkService {
   }
 
   /**
+   * @returns {number}
+   */
+  get rotation() {
+    return this.pdfViewer.pagesRotation;
+  }
+
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {
+    this.pdfViewer.pagesRotation = value;
+  }
+
+  /**
    * @param {string|Array} dest - The named, or explicit, PDF destination.
    */
   navigateTo(dest) {
@@ -98,7 +112,7 @@ class PDFLinkService {
           });
           return;
         }
-      } else if ((destRef | 0) === destRef) { // Integer
+      } else if (Number.isInteger(destRef)) {
         pageNumber = destRef + 1;
       } else {
         console.error(`PDFLinkService.navigateTo: "${destRef}" is not ` +
@@ -359,9 +373,8 @@ function isValidExplicitDestination(dest) {
   }
   let page = dest[0];
   if (!(typeof page === 'object' &&
-        typeof page.num === 'number' && (page.num | 0) === page.num &&
-        typeof page.gen === 'number' && (page.gen | 0) === page.gen) &&
-      !(typeof page === 'number' && (page | 0) === page && page >= 0)) {
+        Number.isInteger(page.num) && Number.isInteger(page.gen)) &&
+      !(Number.isInteger(page) && page >= 0)) {
     return false;
   }
   let zoom = dest[1];
@@ -414,6 +427,16 @@ class SimpleLinkService {
    * @param {number} value
    */
   set page(value) {}
+  /**
+   * @returns {number}
+   */
+  get rotation() {
+    return 0;
+  }
+  /**
+   * @param {number} value
+   */
+  set rotation(value) {}
   /**
    * @param dest - The PDF destination object.
    */

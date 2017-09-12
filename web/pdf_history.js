@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-import { cloneObj, parseQueryString, waitOnEventOrTimeout } from './ui_utils';
+import {
+  cloneObj, isValidRotation, parseQueryString, waitOnEventOrTimeout
+} from './ui_utils';
 import { getGlobalEventBus } from './dom_events';
 
 // Heuristic value used when force-resetting `this._blockHashChange`.
@@ -21,7 +23,7 @@ const HASH_CHANGE_TIMEOUT = 1000; // milliseconds
 // Heuristic value used when adding the current position to the browser history.
 const POSITION_UPDATED_THRESHOLD = 50;
 // Heuristic value used when adding a temporary position to the browser history.
-const UPDATE_VIEWAREA_TIMEOUT = 2000; // milliseconds
+const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
 
 /**
  * @typedef {Object} PDFHistoryOptions
@@ -49,7 +51,7 @@ function parseCurrentHash(linkService) {
   if (!(Number.isInteger(page) && page > 0 && page <= linkService.pagesCount)) {
     page = null;
   }
-  return { hash, page, };
+  return { hash, page, rotation: linkService.rotation, };
 }
 
 class PDFHistory {
@@ -62,6 +64,7 @@ class PDFHistory {
 
     this.initialized = false;
     this.initialBookmark = null;
+    this.initialRotation = null;
 
     this._boundEvents = Object.create(null);
     this._isViewerInPresentationMode = false;
@@ -99,6 +102,7 @@ class PDFHistory {
 
     this.initialized = true;
     this.initialBookmark = null;
+    this.initialRotation = null;
 
     this._popStateInProgress = false;
     this._blockHashChange = 0;
@@ -110,7 +114,7 @@ class PDFHistory {
     this._position = null;
 
     if (!this._isValidState(state) || resetHistory) {
-      let { hash, page, } = parseCurrentHash(this.linkService);
+      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
 
       if (!hash || reInitialized || resetHistory) {
         // Ensure that the browser history is reset on PDF document load.
@@ -119,7 +123,8 @@ class PDFHistory {
       }
       // Ensure that the browser history is initialized correctly when
       // the document hash is present on PDF document load.
-      this._pushOrReplaceState({ hash, page, }, /* forceReplace = */ true);
+      this._pushOrReplaceState({ hash, page, rotation, },
+                               /* forceReplace = */ true);
       return;
     }
 
@@ -128,6 +133,10 @@ class PDFHistory {
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+
+    if (destination.rotation !== undefined) {
+      this.initialRotation = destination.rotation;
+    }
     if (destination.dest) {
       this.initialBookmark = JSON.stringify(destination.dest);
 
@@ -188,7 +197,19 @@ class PDFHistory {
       dest: explicitDest,
       hash,
       page: pageNumber,
+      rotation: this.linkService.rotation,
     }, forceReplace);
+
+    if (!this._popStateInProgress) {
+      // Prevent the browser history from updating while the new destination is
+      // being scrolled into view, to avoid potentially inconsistent state.
+      this._popStateInProgress = true;
+      // We defer the resetting of `this._popStateInProgress`, to account for
+      // e.g. zooming occuring when the new destination is being navigated to.
+      Promise.resolve().then(() => {
+        this._popStateInProgress = false;
+      });
+    }
   }
 
   /**
@@ -358,6 +379,13 @@ class PDFHistory {
    * @private
    */
   _updateInternalState(destination, uid, removeTemporary = false) {
+    if (this._updateViewareaTimeout) {
+      // When updating `this._destination`, make sure that we always wait for
+      // the next 'updateviewarea' event before (potentially) attempting to
+      // push the current position to the browser history.
+      clearTimeout(this._updateViewareaTimeout);
+      this._updateViewareaTimeout = null;
+    }
     if (removeTemporary && destination && destination.temporary) {
       // When the `destination` comes from the browser history,
       // we no longer treat it as a *temporary* position.
@@ -384,6 +412,7 @@ class PDFHistory {
         `page=${location.pageNumber}` : location.pdfOpenParams.substring(1),
       page: this.linkService.page,
       first: location.pageNumber,
+      rotation: location.rotation,
     };
 
     if (this._popStateInProgress) {
@@ -441,8 +470,9 @@ class PDFHistory {
       // This case corresponds to the user changing the hash of the document.
       this._currentUid = this._uid;
 
-      let { hash, page, } = parseCurrentHash(this.linkService);
-      this._pushOrReplaceState({ hash, page, }, /* forceReplace */ true);
+      let { hash, page, rotation, } = parseCurrentHash(this.linkService);
+      this._pushOrReplaceState({ hash, page, rotation, },
+                               /* forceReplace = */ true);
       return;
     }
     if (!this._isValidState(state)) {
@@ -475,38 +505,14 @@ class PDFHistory {
       });
     }
 
-    // This case corresponds to navigation backwards in the browser history.
-    if (state.uid < this._currentUid && this._position && this._destination) {
-      let shouldGoBack = false;
-
-      if (this._destination.temporary) {
-        // If the `this._destination` contains a *temporary* position, always
-        // push the `this._position` to the browser history before moving back.
-        this._pushOrReplaceState(this._position);
-        shouldGoBack = true;
-      } else if (this._destination.page &&
-                 this._destination.page !== this._position.first &&
-                 this._destination.page !== this._position.page) {
-        // If the `page` of the `this._destination` is no longer visible,
-        // push the `this._position` to the browser history before moving back.
-        this._pushOrReplaceState(this._destination);
-        this._pushOrReplaceState(this._position);
-        shouldGoBack = true;
-      }
-      if (shouldGoBack) {
-        // After `window.history.back()`, we must not enter this block on the
-        // resulting 'popstate' event, since that may cause an infinite loop.
-        this._currentUid = state.uid;
-
-        window.history.back();
-        return;
-      }
-    }
-
     // Navigate to the new destination.
     let destination = state.destination;
     this._updateInternalState(destination, state.uid,
                               /* removeTemporary = */ true);
+
+    if (isValidRotation(destination.rotation)) {
+      this.linkService.rotation = destination.rotation;
+    }
     if (destination.dest) {
       this.linkService.navigateTo(destination.dest);
     } else if (destination.hash) {

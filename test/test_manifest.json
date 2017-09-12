@@ -623,6 +623,15 @@
        "annotations": true,
        "about": "Annotation with Rect array containing indirect objects."
     },
+    {  "id": "file_url_link",
+       "file": "pdfs/file_url_link.pdf",
+       "md5": "b0253c96c38d43bc49259bbf36db938a",
+       "link": false,
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true,
+       "about": "Annotation with (unsupported) file:// URL."
+    },
     {  "id": "issue4934",
        "file": "pdfs/issue4934.pdf",
        "md5": "6099da44f677702ae65a648b51a2226d",
@@ -697,6 +706,14 @@
        "firstPage": 1,
        "lastPage": 1,
        "type": "load"
+    },
+    {  "id": "pr8808",
+       "file": "pdfs/pr8808.pdf",
+       "md5": "bdac6051a98fd8dcfc5344b05fed06f4",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
     },
     {  "id": "issue5599",
        "file": "pdfs/issue5599.pdf",
@@ -3547,6 +3564,13 @@
     {  "id": "annotation-line",
        "file": "pdfs/annotation-line.pdf",
        "md5": "fde60608be2748f10fb6522cba425ca1",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "annotation-square-circle",
+       "file": "pdfs/annotation-square-circle.pdf",
+       "md5": "cfd3c302f68d61e1d55ed9c7896046c3",
        "rounds": 1,
        "type": "eq",
        "annotations": true
