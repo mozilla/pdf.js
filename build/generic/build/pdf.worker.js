@@ -24629,8 +24629,8 @@ exports.getUnicodeForGlyph = getUnicodeForGlyph;
 "use strict";
 
 
-var pdfjsVersion = '1.9.556';
-var pdfjsBuild = '29df6913';
+var pdfjsVersion = '1.9.557';
+var pdfjsBuild = '714bfa4a';
 var pdfjsCoreWorker = __w_pdfjs_require__(62);
 exports.WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
 
@@ -25109,7 +25109,8 @@ var WorkerMessageHandler = {
           handler: handler,
           task: task,
           intent: data.intent,
-          renderInteractiveForms: data.renderInteractiveForms
+          renderInteractiveForms: data.renderInteractiveForms,
+          annotationsNotRendered: data.annotationsNotRendered
         }).then(function (operatorList) {
           finishWorkerTask(task);
           (0, _util.info)('page=' + pageNum + ' - getOperatorList: time=' + (Date.now() - start) + 'ms, len=' + operatorList.totalLength);
@@ -31220,6 +31221,11 @@ var Page = function PageClosure() {
   function isAnnotationRenderable(annotation, intent) {
     return intent === 'display' && annotation.viewable || intent === 'print' && annotation.printable;
   }
+  function isAnnotationRemoved(annotation, annotationsForRemoval) {
+    return annotationsForRemoval.some(function (itm) {
+      return itm === (annotation && annotation.data.annotationType);
+    });
+  }
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache, builtInCMapCache) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -31290,7 +31296,7 @@ var Page = function PageClosure() {
       }
       return (0, _util.shadow)(this, 'cropBox', cropBox);
     },
-    get userUnit() {
+    get buserUnit() {
       var obj = this.getPageProp('UserUnit');
       if (!(0, _util.isNum)(obj) || obj <= 0) {
         obj = DEFAULT_USER_UNIT;
@@ -31353,7 +31359,8 @@ var Page = function PageClosure() {
       var handler = _ref.handler,
           task = _ref.task,
           intent = _ref.intent,
-          renderInteractiveForms = _ref.renderInteractiveForms;
+          renderInteractiveForms = _ref.renderInteractiveForms,
+          annotationsNotRendered = _ref.annotationsNotRendered;
 
       var contentStreamPromise = this.pdfManager.ensure(this, 'getContentStream');
       var resourcesPromise = this.loadResources(['ExtGState', 'ColorSpace', 'Pattern', 'Shading', 'XObject', 'Font']);
@@ -31401,7 +31408,9 @@ var Page = function PageClosure() {
             ii,
             opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (isAnnotationRenderable(annotations[i], intent)) {
+          if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotations[i], annotationsNotRendered)) {
+            continue;
+          } else if (isAnnotationRenderable(annotations[i], intent)) {
             opListPromises.push(annotations[i].getOperatorList(partialEvaluator, task, renderInteractiveForms));
           }
         }

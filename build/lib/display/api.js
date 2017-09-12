@@ -445,7 +445,8 @@ var PDFPageProxy = function PDFPageProxyClosure() {
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
-          renderInteractiveForms: params.renderInteractiveForms === true
+          renderInteractiveForms: params.renderInteractiveForms === true,
+          annotationsNotRendered: params.annotationsNotRendered || []
         });
       }
       var complete = function complete(error) {
@@ -1581,8 +1582,8 @@ var _UnsupportedManager = function UnsupportedManagerClosure() {
 }();
 var version, build;
 {
-  exports.version = version = '1.9.556';
-  exports.build = build = '29df6913';
+  exports.version = version = '1.9.557';
+  exports.build = build = '714bfa4a';
 }
 exports.getDocument = getDocument;
 exports.LoopbackPort = LoopbackPort;

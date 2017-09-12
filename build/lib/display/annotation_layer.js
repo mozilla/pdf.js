@@ -739,6 +739,7 @@ var HighlightAnnotationElement = function (_AnnotationElement8) {
   _createClass(HighlightAnnotationElement, [{
     key: 'render',
     value: function render() {
+      console.log('HighlightAnnotationElement joshua 15');
       this.container.className = 'highlightAnnotation';
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
@@ -879,6 +880,7 @@ var AnnotationLayer = function () {
     value: function render(parameters) {
       for (var i = 0, ii = parameters.annotations.length; i < ii; i++) {
         var data = parameters.annotations[i];
+        continue;
         if (!data) {
           continue;
         }

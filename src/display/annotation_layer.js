@@ -923,6 +923,7 @@ class HighlightAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
+    console.log('HighlightAnnotationElement joshua 15');
     this.container.className = 'highlightAnnotation';
 
     if (!this.data.hasPopup) {
@@ -1080,6 +1081,7 @@ class AnnotationLayer {
   static render(parameters) {
     for (let i = 0, ii = parameters.annotations.length; i < ii; i++) {
       let data = parameters.annotations[i];
+      continue;
       if (!data) {
         continue;
       }

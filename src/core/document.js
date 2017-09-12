@@ -35,6 +35,12 @@ var Page = (function PageClosure() {
            (intent === 'print' && annotation.printable);
   }
 
+  function isAnnotationRemoved(annotation, annotationsForRemoval) {
+    return annotationsForRemoval.some((itm) =>
+      itm === (annotation && annotation.data.annotationType)
+    )
+  }
+
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
                 builtInCMapCache) {
     this.pdfManager = pdfManager;
@@ -122,7 +128,7 @@ var Page = (function PageClosure() {
       return shadow(this, 'cropBox', cropBox);
     },
 
-    get userUnit() {
+    get buserUnit() {
       var obj = this.getPageProp('UserUnit');
       if (!isNum(obj) || obj <= 0) {
         obj = DEFAULT_USER_UNIT;
@@ -191,7 +197,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+    getOperatorList({ handler, task, intent, renderInteractiveForms, annotationsNotRendered}) {
       var contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
       var resourcesPromise = this.loadResources([
@@ -244,12 +250,15 @@ var Page = (function PageClosure() {
           pageOpList.flush(true);
           return pageOpList;
         }
-
         // Collect the operator list promises for the annotations. Each promise
         // is resolved with the complete operator list for a single annotation.
         var i, ii, opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (isAnnotationRenderable(annotations[i], intent)) {
+          if (Array.isArray(annotationsNotRendered)
+            && isAnnotationRemoved(annotations[i],annotationsNotRendered)) {
+            continue;
+          }
+          else if (isAnnotationRenderable(annotations[i], intent)){
             opListPromises.push(annotations[i].getOperatorList(
               partialEvaluator, task, renderInteractiveForms));
           }

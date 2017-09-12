@@ -12421,7 +12421,8 @@ var PDFPageProxy = function PDFPageProxyClosure() {
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
-          renderInteractiveForms: params.renderInteractiveForms === true
+          renderInteractiveForms: params.renderInteractiveForms === true,
+          annotationsNotRendered: params.annotationsNotRendered || []
         });
       }
       var complete = function complete(error) {
@@ -13470,8 +13471,8 @@ var _UnsupportedManager = function UnsupportedManagerClosure() {
 }();
 var version, build;
 {
-  exports.version = version = '1.9.556';
-  exports.build = build = '29df6913';
+  exports.version = version = '1.9.557';
+  exports.build = build = '714bfa4a';
 }
 exports.getDocument = getDocument;
 exports.LoopbackPort = LoopbackPort;
@@ -27669,6 +27670,7 @@ var HighlightAnnotationElement = function (_AnnotationElement8) {
   _createClass(HighlightAnnotationElement, [{
     key: 'render',
     value: function render() {
+      console.log('HighlightAnnotationElement joshua 15');
       this.container.className = 'highlightAnnotation';
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
@@ -27809,6 +27811,7 @@ var AnnotationLayer = function () {
     value: function render(parameters) {
       for (var i = 0, ii = parameters.annotations.length; i < ii; i++) {
         var data = parameters.annotations[i];
+        continue;
         if (!data) {
           continue;
         }
@@ -29427,8 +29430,8 @@ exports.SVGGraphics = SVGGraphics;
 "use strict";
 
 
-var pdfjsVersion = '1.9.556';
-var pdfjsBuild = '29df6913';
+var pdfjsVersion = '1.9.557';
+var pdfjsBuild = '714bfa4a';
 var pdfjsSharedUtil = __w_pdfjs_require__(0);
 var pdfjsDisplayGlobal = __w_pdfjs_require__(98);
 var pdfjsDisplayAPI = __w_pdfjs_require__(55);
@@ -35290,8 +35293,8 @@ if (!_global_scope2.default.PDFJS) {
 }
 var PDFJS = _global_scope2.default.PDFJS;
 {
-  PDFJS.version = '1.9.556';
-  PDFJS.build = '29df6913';
+  PDFJS.version = '1.9.557';
+  PDFJS.build = '714bfa4a';
 }
 PDFJS.pdfBug = false;
 if (PDFJS.verbosity !== undefined) {
@@ -38517,7 +38520,8 @@ var WorkerMessageHandler = {
           handler: handler,
           task: task,
           intent: data.intent,
-          renderInteractiveForms: data.renderInteractiveForms
+          renderInteractiveForms: data.renderInteractiveForms,
+          annotationsNotRendered: data.annotationsNotRendered
         }).then(function (operatorList) {
           finishWorkerTask(task);
           (0, _util.info)('page=' + pageNum + ' - getOperatorList: time=' + (Date.now() - start) + 'ms, len=' + operatorList.totalLength);
@@ -38845,6 +38849,11 @@ var Page = function PageClosure() {
   function isAnnotationRenderable(annotation, intent) {
     return intent === 'display' && annotation.viewable || intent === 'print' && annotation.printable;
   }
+  function isAnnotationRemoved(annotation, annotationsForRemoval) {
+    return annotationsForRemoval.some(function (itm) {
+      return itm === (annotation && annotation.data.annotationType);
+    });
+  }
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache, builtInCMapCache) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
@@ -38915,7 +38924,7 @@ var Page = function PageClosure() {
       }
       return (0, _util.shadow)(this, 'cropBox', cropBox);
     },
-    get userUnit() {
+    get buserUnit() {
       var obj = this.getPageProp('UserUnit');
       if (!(0, _util.isNum)(obj) || obj <= 0) {
         obj = DEFAULT_USER_UNIT;
@@ -38978,7 +38987,8 @@ var Page = function PageClosure() {
       var handler = _ref.handler,
           task = _ref.task,
           intent = _ref.intent,
-          renderInteractiveForms = _ref.renderInteractiveForms;
+          renderInteractiveForms = _ref.renderInteractiveForms,
+          annotationsNotRendered = _ref.annotationsNotRendered;
 
       var contentStreamPromise = this.pdfManager.ensure(this, 'getContentStream');
       var resourcesPromise = this.loadResources(['ExtGState', 'ColorSpace', 'Pattern', 'Shading', 'XObject', 'Font']);
@@ -39026,7 +39036,9 @@ var Page = function PageClosure() {
             ii,
             opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (isAnnotationRenderable(annotations[i], intent)) {
+          if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotations[i], annotationsNotRendered)) {
+            continue;
+          } else if (isAnnotationRenderable(annotations[i], intent)) {
             opListPromises.push(annotations[i].getOperatorList(partialEvaluator, task, renderInteractiveForms));
           }
         }

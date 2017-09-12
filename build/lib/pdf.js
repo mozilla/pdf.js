@@ -14,8 +14,8 @@
  */
 'use strict';
 
-var pdfjsVersion = '1.9.556';
-var pdfjsBuild = '29df6913';
+var pdfjsVersion = '1.9.557';
+var pdfjsBuild = '714bfa4a';
 var pdfjsSharedUtil = require('./shared/util.js');
 var pdfjsDisplayGlobal = require('./display/global.js');
 var pdfjsDisplayAPI = require('./display/api.js');

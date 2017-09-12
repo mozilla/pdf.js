@@ -482,7 +482,8 @@ var WorkerMessageHandler = {
           handler: handler,
           task: task,
           intent: data.intent,
-          renderInteractiveForms: data.renderInteractiveForms
+          renderInteractiveForms: data.renderInteractiveForms,
+          annotationsNotRendered: data.annotationsNotRendered
         }).then(function (operatorList) {
           finishWorkerTask(task);
           (0, _util.info)('page=' + pageNum + ' - getOperatorList: time=' + (Date.now() - start) + 'ms, len=' + operatorList.totalLength);

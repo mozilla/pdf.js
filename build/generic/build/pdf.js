@@ -3067,7 +3067,8 @@ var PDFPageProxy = function PDFPageProxyClosure() {
         this.transport.messageHandler.send('RenderPageRequest', {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
-          renderInteractiveForms: params.renderInteractiveForms === true
+          renderInteractiveForms: params.renderInteractiveForms === true,
+          annotationsNotRendered: params.annotationsNotRendered || []
         });
       }
       var complete = function complete(error) {
@@ -4203,8 +4204,8 @@ var _UnsupportedManager = function UnsupportedManagerClosure() {
 }();
 var version, build;
 {
-  exports.version = version = '1.9.556';
-  exports.build = build = '29df6913';
+  exports.version = version = '1.9.557';
+  exports.build = build = '714bfa4a';
 }
 exports.getDocument = getDocument;
 exports.LoopbackPort = LoopbackPort;
@@ -5396,6 +5397,7 @@ var HighlightAnnotationElement = function (_AnnotationElement8) {
   _createClass(HighlightAnnotationElement, [{
     key: 'render',
     value: function render() {
+      console.log('HighlightAnnotationElement joshua 15');
       this.container.className = 'highlightAnnotation';
       if (!this.data.hasPopup) {
         this._createPopup(this.container, null, this.data);
@@ -5536,6 +5538,7 @@ var AnnotationLayer = function () {
     value: function render(parameters) {
       for (var i = 0, ii = parameters.annotations.length; i < ii; i++) {
         var data = parameters.annotations[i];
+        continue;
         if (!data) {
           continue;
         }
@@ -7155,8 +7158,8 @@ exports.SVGGraphics = SVGGraphics;
 "use strict";
 
 
-var pdfjsVersion = '1.9.556';
-var pdfjsBuild = '29df6913';
+var pdfjsVersion = '1.9.557';
+var pdfjsBuild = '714bfa4a';
 var pdfjsSharedUtil = __w_pdfjs_require__(0);
 var pdfjsDisplayGlobal = __w_pdfjs_require__(82);
 var pdfjsDisplayAPI = __w_pdfjs_require__(48);
@@ -13018,8 +13021,8 @@ if (!_global_scope2.default.PDFJS) {
 }
 var PDFJS = _global_scope2.default.PDFJS;
 {
-  PDFJS.version = '1.9.556';
-  PDFJS.build = '29df6913';
+  PDFJS.version = '1.9.557';
+  PDFJS.build = '714bfa4a';
 }
 PDFJS.pdfBug = false;
 if (PDFJS.verbosity !== undefined) {
