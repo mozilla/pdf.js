@@ -133,22 +133,47 @@ var rasterizeTextLayer = (function rasterizeTextLayerClosure() {
  * @class
  */
 var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
-  var SVG_NS = 'http://www.w3.org/2000/svg';
+  const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  var annotationLayerStylePromise = null;
+  /**
+   * For the reference tests, the entire annotation layer must be visible. To
+   * achieve this, we load the common styles as used by the viewer and extend
+   * them with a set of overrides to make all elements visible.
+   *
+   * Note that we cannot simply use `@import` to import the common styles in
+   * the overrides file because the browser does not resolve that when the
+   * styles are inserted via XHR. Therefore, we load and combine them here.
+   */
+  let styles = {
+    common: {
+      file: '../web/annotation_layer_builder.css',
+      promise: null,
+    },
+    overrides: {
+      file: './annotation_layer_builder_overrides.css',
+      promise: null,
+    },
+  };
+
   function getAnnotationLayerStyle() {
-    if (annotationLayerStylePromise) {
-      return annotationLayerStylePromise;
+    // Use the cached promises if they are available.
+    if (styles.common.promise && styles.overrides.promise) {
+      return Promise.all([styles.common.promise, styles.overrides.promise]);
     }
-    annotationLayerStylePromise = new Promise(function (resolve) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', './annotation_layer_test.css');
-      xhr.onload = function () {
-        resolve(xhr.responseText);
-      };
-      xhr.send(null);
-    });
-    return annotationLayerStylePromise;
+
+    // Load the style files and cache the results.
+    for (let key in styles) {
+      styles[key].promise = new Promise(function(resolve) {
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', styles[key].file);
+        xhr.onload = function() {
+          resolve(xhr.responseText);
+        };
+        xhr.send(null);
+      });
+    }
+
+    return Promise.all([styles.common.promise, styles.overrides.promise]);
   }
 
   function inlineAnnotationImages(images) {
@@ -196,8 +221,8 @@ var rasterizeAnnotationLayer = (function rasterizeAnnotationLayerClosure() {
       div.className = 'annotationLayer';
 
       // Rendering annotation layer as HTML.
-      stylePromise.then(function (styles) {
-        style.textContent = styles;
+      stylePromise.then(function (common, overrides) {
+        style.textContent = common + overrides;
 
         var annotation_viewport = viewport.clone({ dontFlip: true, });
         var parameters = {
