@@ -13,18 +13,19 @@
  * limitations under the License.
  */
 
+import { assert, deprecated } from '../shared/util';
+import { SimpleXMLParser } from './dom_utils';
+
 class Metadata {
   constructor(data) {
-    if (typeof data === 'string') {
-      // Ghostscript may produce invalid metadata, so try to repair that first.
-      data = this._repair(data);
+    assert(typeof data === 'string', 'Metadata: input is not a string');
 
-      // Convert the string to a DOM `Document`.
-      let parser = new DOMParser();
-      data = parser.parseFromString(data, 'application/xml');
-    } else if (!(data instanceof Document)) {
-      throw new Error('Metadata: input is not a string or `Document`');
-    }
+    // Ghostscript may produce invalid metadata, so try to repair that first.
+    data = this._repair(data);
+
+    // Convert the string to a DOM `Document`.
+    let parser = new SimpleXMLParser();
+    data = parser.parseFromString(data);
 
     this._metadata = Object.create(null);
 
@@ -90,8 +91,17 @@ class Metadata {
     return this._metadata[name] || null;
   }
 
+  getAll() {
+    return this._metadata;
+  }
+
   has(name) {
     return typeof this._metadata[name] !== 'undefined';
+  }
+
+  get metadata() {
+    deprecated('`metadata` getter; use `getAll()` instead.');
+    return this.getAll();
   }
 }
 
