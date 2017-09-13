@@ -131,6 +131,132 @@ class DOMSVGFactory {
   }
 }
 
+class SimpleDOMNode {
+  constructor(nodeName, nodeValue) {
+    this.nodeName = nodeName;
+    this.nodeValue = nodeValue;
+
+    Object.defineProperty(this, 'parentNode', { value: null, writable: true, });
+  }
+
+  get firstChild() {
+    return this.childNodes[0];
+  }
+
+  get nextSibling() {
+    let index = this.parentNode.childNodes.indexOf(this);
+    return this.parentNode.childNodes[index + 1];
+  }
+
+  get textContent() {
+    if (!this.childNodes) {
+      return this.nodeValue || '';
+    }
+    return this.childNodes.map(function(child) {
+      return child.textContent;
+    }).join('');
+  }
+
+  hasChildNodes() {
+    return this.childNodes && this.childNodes.length > 0;
+  }
+}
+
+class SimpleXMLParser {
+  parseFromString(data) {
+    let nodes = [];
+
+    // Remove all comments and processing instructions.
+    data = data.replace(/<\?[\s\S]*?\?>|<!--[\s\S]*?-->/g, '').trim();
+    data = data.replace(/<!DOCTYPE[^>\[]+(\[[^\]]+)?[^>]+>/g, '').trim();
+
+    // Extract all text nodes and replace them with a numeric index in
+    // the nodes.
+    data = data.replace(/>([^<][\s\S]*?)</g, (all, text) => {
+      let length = nodes.length;
+      let node = new SimpleDOMNode('#text', this._decodeXML(text));
+      nodes.push(node);
+      if (node.textContent.trim().length === 0) {
+        return '><'; // Ignore whitespace.
+      }
+      return '>' + length + ',<';
+    });
+
+    // Extract all CDATA nodes.
+    data = data.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,
+        function(all, text) {
+      let length = nodes.length;
+      let node = new SimpleDOMNode('#text', text);
+      nodes.push(node);
+      return length + ',';
+    });
+
+    // Until nodes without '<' and '>' content are present, replace them
+    // with a numeric index in the nodes.
+    let regex =
+      /<([\w\:]+)((?:[\s\w:=]|'[^']*'|"[^"]*")*)(?:\/>|>([\d,]*)<\/[^>]+>)/g;
+    let lastLength;
+    do {
+      lastLength = nodes.length;
+      data = data.replace(regex, function(all, name, attrs, data) {
+        let length = nodes.length;
+        let node = new SimpleDOMNode(name);
+        let children = [];
+        if (data) {
+          data = data.split(',');
+          data.pop();
+          data.forEach(function(child) {
+            let childNode = nodes[+child];
+            childNode.parentNode = node;
+            children.push(childNode);
+          });
+        }
+
+        node.childNodes = children;
+        nodes.push(node);
+        return length + ',';
+      });
+    } while (lastLength < nodes.length);
+
+    // We should only have one root index left, which will be last in the nodes.
+    return {
+      documentElement: nodes.pop(),
+    };
+  }
+
+  _decodeXML(text) {
+    if (text.indexOf('&') < 0) {
+      return text;
+    }
+
+    return text.replace(/&(#(x[0-9a-f]+|\d+)|\w+);/gi,
+        function(all, entityName, number) {
+      if (number) {
+        if (number[0] === 'x') {
+          number = parseInt(number.substring(1), 16);
+        } else {
+          number = +number;
+        }
+        return String.fromCharCode(number);
+      }
+
+      switch (entityName) {
+        case 'amp':
+          return '&';
+        case 'lt':
+          return '<';
+        case 'gt':
+          return '>';
+        case 'quot':
+          return '\"';
+        case 'apos':
+          return '\'';
+      }
+      return '&' + entityName + ';';
+    });
+  }
+}
+
 /**
  * Optimised CSS custom property getter/setter.
  * @class
@@ -353,4 +479,5 @@ export {
   DOMCanvasFactory,
   DOMCMapReaderFactory,
   DOMSVGFactory,
+  SimpleXMLParser,
 };
