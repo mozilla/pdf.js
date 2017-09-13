@@ -58,6 +58,12 @@ function DOMElement(name) {
 }
 
 DOMElement.prototype = {
+  getAttribute: function DOMElement_getAttribute(name) {
+    if (name in this.attributes) {
+      return this.attributes[name];
+    }
+    return null;
+  },
 
   getAttributeNS: function DOMElement_getAttributeNS(NS, name) {
     // Fast path
@@ -78,10 +84,14 @@ DOMElement.prototype = {
     return null;
   },
 
-  setAttributeNS: function DOMElement_setAttributeNS(NS, name, value) {
+  setAttribute: function DOMElement_setAttribute(name, value) {
     value = value || '';
     value = xmlEncode(value);
     this.attributes[name] = value;
+  },
+
+  setAttributeNS: function DOMElement_setAttributeNS(NS, name, value) {
+    this.setAttribute(name, value);
   },
 
   appendChild: function DOMElement_appendChild(element) {
