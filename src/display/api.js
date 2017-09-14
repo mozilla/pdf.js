@@ -357,6 +357,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     docBaseUrl: source.docBaseUrl,
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
+    isEvalSupported: getDefaultSetting('isEvalSupported'),
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
