@@ -1582,8 +1582,8 @@ var _UnsupportedManager = function UnsupportedManagerClosure() {
 }();
 var version, build;
 {
-  exports.version = version = '1.9.561';
-  exports.build = build = 'd40739eb';
+  exports.version = version = '1.9.562';
+  exports.build = build = 'df29c6d1';
 }
 exports.getDocument = getDocument;
 exports.LoopbackPort = LoopbackPort;

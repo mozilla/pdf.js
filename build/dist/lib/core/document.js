@@ -44,8 +44,8 @@ var Page = function PageClosure() {
     return intent === 'display' && annotation.viewable || intent === 'print' && annotation.printable;
   }
   function isAnnotationRemoved(annotationsForRemoval, annotation) {
-    if (!annotation || !annotation.data.annotationType || !annotation.data.fieldType) {
-      return false;
+    if (!annotation || !annotation.data.annotationType) {
+      return;
     }
     var data = annotation.data;
     return annotationsForRemoval.some(function (itm) {
@@ -234,6 +234,8 @@ var Page = function PageClosure() {
             ii,
             opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
+          console.log(annotations[i]);
+          console.log(isAnnotationRemoved(annotationsNotRendered, annotations[i]));
           if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
           } else if (isAnnotationRenderable(annotations[i], intent)) {

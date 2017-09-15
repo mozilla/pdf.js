@@ -37,9 +37,8 @@ var Page = (function PageClosure() {
 
   function isAnnotationRemoved(annotationsForRemoval, annotation) {
     if (!annotation
-      || !annotation.data.annotationType
-      || !annotation.data.fieldType) {
-      return false;
+      || !annotation.data.annotationType) {
+      return;
     }
     let data = annotation.data;
     return annotationsForRemoval.some((itm) =>
@@ -303,6 +302,8 @@ var Page = (function PageClosure() {
         // is resolved with the complete operator list for a single annotation.
         var i, ii, opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
+          console.log(annotations[i]);
+          console.log(isAnnotationRemoved(annotationsNotRendered, annotations[i]));
           if (Array.isArray(annotationsNotRendered)
             && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
