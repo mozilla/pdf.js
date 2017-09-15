@@ -14,6 +14,7 @@
     "evaluator_spec.js",
     "fonts_spec.js",
     "function_spec.js",
+    "metadata_spec.js",
     "murmurhash3_spec.js",
     "node_stream_spec.js",
     "parser_spec.js",
