@@ -302,8 +302,6 @@ var Page = (function PageClosure() {
         // is resolved with the complete operator list for a single annotation.
         var i, ii, opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          console.log(annotations[i]);
-          console.log(isAnnotationRemoved(annotationsNotRendered, annotations[i]));
           if (Array.isArray(annotationsNotRendered)
             && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
@@ -313,7 +311,6 @@ var Page = (function PageClosure() {
               partialEvaluator, task, renderInteractiveForms));
           }
         }
-
         return Promise.all(opListPromises).then(function(opLists) {
           pageOpList.addOp(OPS.beginAnnotations, []);
           for (i = 0, ii = opLists.length; i < ii; i++) {

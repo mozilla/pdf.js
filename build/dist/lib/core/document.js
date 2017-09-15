@@ -234,8 +234,6 @@ var Page = function PageClosure() {
             ii,
             opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          console.log(annotations[i]);
-          console.log(isAnnotationRemoved(annotationsNotRendered, annotations[i]));
           if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
           } else if (isAnnotationRenderable(annotations[i], intent)) {

@@ -13471,8 +13471,8 @@ var _UnsupportedManager = function UnsupportedManagerClosure() {
 }();
 var version, build;
 {
-  exports.version = version = '1.9.562';
-  exports.build = build = 'df29c6d1';
+  exports.version = version = '1.9.563';
+  exports.build = build = 'c2cc2200';
 }
 exports.getDocument = getDocument;
 exports.LoopbackPort = LoopbackPort;
@@ -29430,8 +29430,8 @@ exports.SVGGraphics = SVGGraphics;
 "use strict";
 
 
-var pdfjsVersion = '1.9.562';
-var pdfjsBuild = 'df29c6d1';
+var pdfjsVersion = '1.9.563';
+var pdfjsBuild = 'c2cc2200';
 var pdfjsSharedUtil = __w_pdfjs_require__(0);
 var pdfjsDisplayGlobal = __w_pdfjs_require__(98);
 var pdfjsDisplayAPI = __w_pdfjs_require__(55);
@@ -35293,8 +35293,8 @@ if (!_global_scope2.default.PDFJS) {
 }
 var PDFJS = _global_scope2.default.PDFJS;
 {
-  PDFJS.version = '1.9.562';
-  PDFJS.build = 'df29c6d1';
+  PDFJS.version = '1.9.563';
+  PDFJS.build = 'c2cc2200';
 }
 PDFJS.pdfBug = false;
 if (PDFJS.verbosity !== undefined) {
@@ -39040,8 +39040,6 @@ var Page = function PageClosure() {
             ii,
             opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          console.log(annotations[i]);
-          console.log(isAnnotationRemoved(annotationsNotRendered, annotations[i]));
           if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
           } else if (isAnnotationRenderable(annotations[i], intent)) {
