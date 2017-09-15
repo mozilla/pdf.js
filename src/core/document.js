@@ -35,10 +35,59 @@ var Page = (function PageClosure() {
            (intent === 'print' && annotation.printable);
   }
 
-  function isAnnotationRemoved(annotation, annotationsForRemoval) {
+  function isAnnotationRemoved(annotationsForRemoval, annotation) {
+    if (!annotation
+      || !annotation.data.annotationType
+      || !annotation.data.fieldType) {
+      return false;
+    }
+    let data = annotation.data;
     return annotationsForRemoval.some((itm) =>
-      itm === (annotation && annotation.data.annotationType)
-    )
+      (itm === data.annotationType)
+      || (itm === data.fieldType)
+      || (itm === 'STx' && data.annotationType === 20 && data.fieldType === 'Tx' && !data.multiLine)
+      || (itm === 'MTx' && data.annotationType === 20 && data.fieldType === 'Tx' && data.multiLine)
+      || (itm === 'ABtn' && data.annotationType === 20 && data.fieldType === 'Btn' && !data.radioButton && !data.checkBox)
+      || (itm === 'CBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.checkBox)
+      || (itm === 'RBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.radioButton)
+      || (itm === 'CCh' && data.annotationType === 20 && data.fieldType === 'Ch' && data.combo)
+      || (itm === 'LCh' && data.annotationType === 20 && data.fieldType === 'Ch' && !data.combo)
+    );
+    // return annotationsForRemoval.some((itm) => {
+    //     if (itm === data.annotationType || itm === data.fieldType) {
+    //       return true
+    //     } else if (data.annotationType === 20 && data.fieldType === 'Tx') {
+    //       switch (itm) {
+    //         case 'STx':
+    //           return !data.multiLine;
+    //         case 'MTx':
+    //           return data.multiLine;
+    //         default:
+    //           return false;
+    //       }
+    //     } else if (data.annotationType === 20 && data.fieldType === 'Btn') {
+    //       switch (itm) {
+    //         case 'ABtn':
+    //           return !data.radioButton && !data.checkBox;
+    //         case 'CBtn':
+    //           return data.checkBox;
+    //         case 'RBtn':
+    //           return data.radioButton;
+    //         default:
+    //           return false;
+    //       }
+    //     } else if (data.annotationType === 20 && data.fieldType === 'Ch') {
+    //       switch (itm) {
+    //         case 'CCh':
+    //           return data.combo;
+    //         case 'LCh':
+    //           return !data.combo;
+    //         default:
+    //           return false;
+    //       }
+    //     }
+    //   }
+    // );
   }
 
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
@@ -255,7 +304,7 @@ var Page = (function PageClosure() {
         var i, ii, opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
           if (Array.isArray(annotationsNotRendered)
-            && isAnnotationRemoved(annotations[i],annotationsNotRendered)) {
+            && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
           }
           else if (isAnnotationRenderable(annotations[i], intent)){

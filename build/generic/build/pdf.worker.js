@@ -24629,8 +24629,8 @@ exports.getUnicodeForGlyph = getUnicodeForGlyph;
 "use strict";
 
 
-var pdfjsVersion = '1.9.559';
-var pdfjsBuild = 'f07111b1';
+var pdfjsVersion = '1.9.561';
+var pdfjsBuild = 'd40739eb';
 var pdfjsCoreWorker = __w_pdfjs_require__(62);
 exports.WorkerMessageHandler = pdfjsCoreWorker.WorkerMessageHandler;
 
@@ -31221,9 +31221,13 @@ var Page = function PageClosure() {
   function isAnnotationRenderable(annotation, intent) {
     return intent === 'display' && annotation.viewable || intent === 'print' && annotation.printable;
   }
-  function isAnnotationRemoved(annotation, annotationsForRemoval) {
+  function isAnnotationRemoved(annotationsForRemoval, annotation) {
+    if (!annotation || !annotation.data.annotationType || !annotation.data.fieldType) {
+      return false;
+    }
+    var data = annotation.data;
     return annotationsForRemoval.some(function (itm) {
-      return itm === (annotation && annotation.data.annotationType);
+      return itm === data.annotationType || itm === data.fieldType || itm === 'STx' && data.annotationType === 20 && data.fieldType === 'Tx' && !data.multiLine || itm === 'MTx' && data.annotationType === 20 && data.fieldType === 'Tx' && data.multiLine || itm === 'ABtn' && data.annotationType === 20 && data.fieldType === 'Btn' && !data.radioButton && !data.checkBox || itm === 'CBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.checkBox || itm === 'RBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.radioButton || itm === 'CCh' && data.annotationType === 20 && data.fieldType === 'Ch' && data.combo || itm === 'LCh' && data.annotationType === 20 && data.fieldType === 'Ch' && !data.combo;
     });
   }
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache, builtInCMapCache) {
@@ -31408,7 +31412,7 @@ var Page = function PageClosure() {
             ii,
             opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotations[i], annotationsNotRendered)) {
+          if (Array.isArray(annotationsNotRendered) && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
             continue;
           } else if (isAnnotationRenderable(annotations[i], intent)) {
             opListPromises.push(annotations[i].getOperatorList(partialEvaluator, task, renderInteractiveForms));
