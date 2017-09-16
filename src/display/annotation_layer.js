@@ -92,6 +92,9 @@ class AnnotationElementFactory {
       case AnnotationType.STRIKEOUT:
         return new StrikeOutAnnotationElement(parameters);
 
+      case AnnotationType.STAMP:
+        return new StampAnnotationElement(parameters);
+
       case AnnotationType.FILEATTACHMENT:
         return new FileAttachmentAnnotationElement(parameters);
 
@@ -996,6 +999,30 @@ class StrikeOutAnnotationElement extends AnnotationElement {
    */
   render() {
     this.container.className = 'strikeoutAnnotation';
+
+    if (!this.data.hasPopup) {
+      this._createPopup(this.container, null, this.data);
+    }
+    return this.container;
+  }
+}
+
+class StampAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+  }
+
+  /**
+   * Render the stamp annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof StampAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = 'stampAnnotation';
 
     if (!this.data.hasPopup) {
       this._createPopup(this.container, null, this.data);
