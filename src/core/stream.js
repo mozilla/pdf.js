@@ -1748,8 +1748,9 @@ var CCITTFaxStream = (function CCITTFaxStreamClosure() {
     this.str = str;
     this.dict = str.dict;
 
-    params = params || Dict.empty;
-
+    if (!isDict(params)) {
+      params = Dict.empty;
+    }
     this.encoding = params.get('K') || 0;
     this.eoline = params.get('EndOfLine') || false;
     this.byteAlign = params.get('EncodedByteAlign') || false;
