@@ -1330,18 +1330,6 @@ let PDFViewerApplication = {
     window.addEventListener('hashchange', _boundEvents.windowHashChange);
     window.addEventListener('beforeprint', _boundEvents.windowBeforePrint);
     window.addEventListener('afterprint', _boundEvents.windowAfterPrint);
-    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-      _boundEvents.windowChange = (evt) => {
-        let files = evt.target.files;
-        if (!files || files.length === 0) {
-          return;
-        }
-        eventBus.dispatch('fileinputchange', {
-          fileInput: evt.target,
-        });
-      };
-      window.addEventListener('change', _boundEvents.windowChange);
-    }
   },
 
   unbindEvents() {
@@ -1396,10 +1384,6 @@ let PDFViewerApplication = {
     window.removeEventListener('hashchange', _boundEvents.windowHashChange);
     window.removeEventListener('beforeprint', _boundEvents.windowBeforePrint);
     window.removeEventListener('afterprint', _boundEvents.windowAfterPrint);
-    if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
-      window.removeEventListener('change', _boundEvents.windowChange);
-      _boundEvents.windowChange = null;
-    }
 
     _boundEvents.windowResize = null;
     _boundEvents.windowHashChange = null;
@@ -1492,6 +1476,16 @@ function webViewerInitialized() {
     } else {
       fileInput.value = null;
     }
+
+    fileInput.addEventListener('change', function(evt) {
+      let files = evt.target.files;
+      if (!files || files.length === 0) {
+        return;
+      }
+      PDFViewerApplication.eventBus.dispatch('fileinputchange', {
+        fileInput: evt.target,
+      });
+    });
   } else {
     appConfig.toolbar.openFile.setAttribute('hidden', 'true');
     appConfig.secondaryToolbar.openFileButton.setAttribute('hidden', 'true');
@@ -1859,8 +1853,10 @@ function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
 }
 function webViewerOpenFile() {
-  let openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
-  document.getElementById(openFileInputName).click();
+  if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
+    let openFileInputName = PDFViewerApplication.appConfig.openFileInputName;
+    document.getElementById(openFileInputName).click();
+  }
 }
 function webViewerPrint() {
   window.print();
