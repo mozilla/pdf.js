@@ -399,15 +399,17 @@ var PDFFunction = (function PDFFunctionClosure() {
       var range = IR[2];
       var code = IR[3];
 
-      var compiled = (new PostScriptCompiler()).compile(code, domain, range);
-      if (compiled) {
+      if (!!PDFJS.isEvalSupported) {
         // Compiled function consists of simple expressions such as addition,
         // subtraction, Math.max, and also contains 'var' and 'return'
         // statements. See the generation in the PostScriptCompiler below.
         // eslint-disable-next-line no-new-func
-        return new Function('src', 'srcOffset', 'dest', 'destOffset', compiled);
+        var compiled = new PostScriptCompiler().compile(code, domain, range);
+        if (compiled) {
+          return new Function('src', 'srcOffset', 'dest', 'destOffset', compiled);
+        }
       }
-
+  
       info('Unable to compile PS function');
 
       var numOutputs = range.length >> 1;
