@@ -1640,6 +1640,22 @@
        "lastPage": 1,
        "type": "load"
     },
+    {  "id": "issue8702-eq",
+       "file": "pdfs/issue8702.pdf",
+       "md5": "59d501ed1518d78ef6ee442cf824b0f6",
+       "rounds": 1,
+       "link": false,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue8702-text",
+       "file": "pdfs/issue8702.pdf",
+       "md5": "59d501ed1518d78ef6ee442cf824b0f6",
+       "rounds": 1,
+       "link": false,
+       "lastPage": 1,
+       "type": "text"
+    },
     {  "id": "pr4897",
        "file": "pdfs/pr4897.pdf",
        "md5": "26897633eea5e6d10345a130b1c1777c",
