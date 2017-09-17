@@ -948,52 +948,65 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             case OPS.paintXObject:
               // eagerly compile XForm objects
               var name = args[0].name;
-              if (!name) {
-                warn('XObject must be referred to by name.');
-                continue;
-              }
-              if (imageCache[name] !== undefined) {
+              if (name && imageCache[name] !== undefined) {
                 operatorList.addOp(imageCache[name].fn, imageCache[name].args);
                 args = null;
                 continue;
               }
 
-              var xobj = xobjs.get(name);
-              if (xobj) {
+              next(new Promise(function(resolveXObject, rejectXObject) {
+                if (!name) {
+                  throw new FormatError('XObject must be referred to by name.');
+                }
+
+                let xobj = xobjs.get(name);
+                if (!xobj) {
+                  operatorList.addOp(fn, args);
+                  resolveXObject();
+                  return;
+                }
                 if (!isStream(xobj)) {
                   throw new FormatError('XObject should be a stream');
                 }
 
-                var type = xobj.dict.get('Subtype');
+                let type = xobj.dict.get('Subtype');
                 if (!isName(type)) {
                   throw new FormatError('XObject should have a Name subtype');
                 }
 
                 if (type.name === 'Form') {
                   stateManager.save();
-                  next(self.buildFormXObject(resources, xobj, null,
-                                             operatorList, task,
-                                             stateManager.state.clone()).
-                    then(function () {
+                  self.buildFormXObject(resources, xobj, null, operatorList,
+                                        task, stateManager.state.clone()).
+                    then(function() {
                       stateManager.restore();
-                    }));
+                      resolveXObject();
+                    }, rejectXObject);
                   return;
                 } else if (type.name === 'Image') {
                   self.buildPaintImageXObject(resources, xobj, false,
-                    operatorList, name, imageCache);
-                  args = null;
-                  continue;
+                                              operatorList, name, imageCache);
                 } else if (type.name === 'PS') {
                   // PostScript XObjects are unused when viewing documents.
                   // See section 4.7.1 of Adobe's PDF reference.
                   info('Ignored XObject subtype PS');
-                  continue;
                 } else {
                   throw new FormatError(
                     `Unhandled XObject subtype ${type.name}`);
                 }
-              }
-              break;
+                resolveXObject();
+              }).catch(function(reason) {
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the XObject -- sending unsupported feature
+                  // notification and allow rendering to continue.
+                  self.handler.send('UnsupportedFeature',
+                    { featureId: UNSUPPORTED_FEATURES.unknown, });
+                  warn(`getOperatorList - ignoring XObject: "${reason}".`);
+                  return;
+                }
+                throw reason;
+              }));
+              return;
             case OPS.setFont:
               var fontSize = args[1];
               // eagerly collect all fonts
@@ -1666,73 +1679,93 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var name = args[0].name;
-              if (name in skipEmptyXObjs) {
+              if (name && skipEmptyXObjs[name] !== undefined) {
                 break;
               }
 
-              var xobj = xobjs.get(name);
-              if (!xobj) {
-                break;
-              }
-              if (!isStream(xobj)) {
-                throw new FormatError('XObject should be a stream');
-              }
-
-              var type = xobj.dict.get('Subtype');
-              if (!isName(type)) {
-                throw new FormatError('XObject should have a Name subtype');
-              }
-
-              if (type.name !== 'Form') {
-                skipEmptyXObjs[name] = true;
-                break;
-              }
-
-              // Use a new `StateManager` to prevent incorrect positioning of
-              // textItems *after* the Form XObject, since errors in the data
-              // can otherwise prevent `restore` operators from being executed.
-              // NOTE: This is only an issue when `options.ignoreErrors = true`.
-              var currentState = stateManager.state.clone();
-              var xObjStateManager = new StateManager(currentState);
-
-              var matrix = xobj.dict.getArray('Matrix');
-              if (Array.isArray(matrix) && matrix.length === 6) {
-                xObjStateManager.transform(matrix);
-              }
-
-              // Enqueue the `textContent` chunk before parsing the /Form
-              // XObject.
-              enqueueChunk();
-              let sinkWrapper = {
-                enqueueInvoked: false,
-
-                enqueue(chunk, size) {
-                  this.enqueueInvoked = true;
-                  sink.enqueue(chunk, size);
-                },
-
-                get desiredSize() {
-                  return sink.desiredSize;
-                },
-
-                get ready() {
-                  return sink.ready;
-                },
-              };
-
-              next(self.getTextContent({
-                stream: xobj,
-                task,
-                resources: xobj.dict.get('Resources') || resources,
-                stateManager: xObjStateManager,
-                normalizeWhitespace,
-                combineTextItems,
-                sink: sinkWrapper,
-                seenStyles,
-              }).then(function() {
-                if (!sinkWrapper.enqueueInvoked) {
-                  skipEmptyXObjs[name] = true;
+              next(new Promise(function(resolveXObject, rejectXObject) {
+                if (!name) {
+                  throw new FormatError('XObject must be referred to by name.');
                 }
+
+                let xobj = xobjs.get(name);
+                if (!xobj) {
+                  resolveXObject();
+                  return;
+                }
+                if (!isStream(xobj)) {
+                  throw new FormatError('XObject should be a stream');
+                }
+
+                let type = xobj.dict.get('Subtype');
+                if (!isName(type)) {
+                  throw new FormatError('XObject should have a Name subtype');
+                }
+
+                if (type.name !== 'Form') {
+                  skipEmptyXObjs[name] = true;
+                  resolveXObject();
+                  return;
+                }
+
+                // Use a new `StateManager` to prevent incorrect positioning of
+                // textItems *after* the Form XObject, since errors in the data
+                // can otherwise prevent `restore` operators from executing.
+                // NOTE: Only an issue when `options.ignoreErrors === true`.
+                let currentState = stateManager.state.clone();
+                let xObjStateManager = new StateManager(currentState);
+
+                let matrix = xobj.dict.getArray('Matrix');
+                if (Array.isArray(matrix) && matrix.length === 6) {
+                  xObjStateManager.transform(matrix);
+                }
+
+                // Enqueue the `textContent` chunk before parsing the /Form
+                // XObject.
+                enqueueChunk();
+                let sinkWrapper = {
+                  enqueueInvoked: false,
+
+                  enqueue(chunk, size) {
+                    this.enqueueInvoked = true;
+                    sink.enqueue(chunk, size);
+                  },
+
+                  get desiredSize() {
+                    return sink.desiredSize;
+                  },
+
+                  get ready() {
+                    return sink.ready;
+                  },
+                };
+
+                self.getTextContent({
+                  stream: xobj,
+                  task,
+                  resources: xobj.dict.get('Resources') || resources,
+                  stateManager: xObjStateManager,
+                  normalizeWhitespace,
+                  combineTextItems,
+                  sink: sinkWrapper,
+                  seenStyles,
+                }).then(function() {
+                  if (!sinkWrapper.enqueueInvoked) {
+                    skipEmptyXObjs[name] = true;
+                  }
+                  resolveXObject();
+                }, rejectXObject);
+              }).catch(function(reason) {
+                if (reason instanceof AbortException) {
+                  return;
+                }
+                if (self.options.ignoreErrors) {
+                  // Error(s) in the XObject -- allow text-extraction to
+                  // continue.
+                  warn(`getTextContent - ignoring XObject: "${reason}".`);
+                  return;
+                }
+                throw reason;
               }));
               return;
             case OPS.setGState:
