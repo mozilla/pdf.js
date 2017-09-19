@@ -28,9 +28,10 @@ import { CipherTransformFactory } from './crypto';
 import { ColorSpace } from './colorspace';
 
 var Catalog = (function CatalogClosure() {
-  function Catalog(pdfManager, xref, pageFactory) {
+  function Catalog(pdfManager, xref, pageFactory, classFactory) {
     this.pdfManager = pdfManager;
     this.xref = xref;
+    this.classFactory = classFactory;
     this.catDict = xref.getCatalogObj();
     if (!isDict(this.catDict)) {
       throw new FormatError('catalog object is not a dictionary');

@@ -75,7 +75,7 @@ var PDFImage = (function PDFImageClosure() {
   }
 
   function PDFImage({ xref, res, image, smask = null, mask = null,
-                      isMask = false, }) {
+                      isMask = false, classFactory, }) {
     this.image = image;
     var dict = image.dict;
     if (dict.has('Filter')) {
@@ -138,7 +138,7 @@ var PDFImage = (function PDFImageClosure() {
                             'color components not supported.');
         }
       }
-      this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
+      this.colorSpace = ColorSpace.parse(colorSpace, xref, res, classFactory);
       this.numComps = this.colorSpace.numComps;
     }
 
@@ -165,6 +165,7 @@ var PDFImage = (function PDFImageClosure() {
         xref,
         res,
         image: smask,
+        classFactory,
       });
     } else if (mask) {
       if (isStream(mask)) {
@@ -177,6 +178,7 @@ var PDFImage = (function PDFImageClosure() {
             res,
             image: mask,
             isMask: true,
+            classFactory,
           });
         }
       } else {
@@ -190,7 +192,7 @@ var PDFImage = (function PDFImageClosure() {
    * with a PDFImage when the image is ready to be used.
    */
   PDFImage.buildImage = function({ handler, xref, res, image,
-                                   nativeDecoder = null, }) {
+                                   nativeDecoder = null, classFactory, }) {
     var imagePromise = handleImageData(image, nativeDecoder);
     var smaskPromise;
     var maskPromise;
@@ -224,13 +226,13 @@ var PDFImage = (function PDFImageClosure() {
           image: imageData,
           smask: smaskData,
           mask: maskData,
+          classFactory,
         });
       });
   };
 
   PDFImage.createMask = function({ imgArray, width, height,
                                    imageIsFromDecodeStream, inverseDecode, }) {
-
     // |imgArray| might not contain full data for every pixel of the mask, so
     // we need to distinguish between |computedLength| and |actualLength|.
     // In particular, if inverseDecode is true, then the array we return must

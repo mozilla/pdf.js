@@ -26,20 +26,17 @@ let IsEvalSupportedCached = {
 };
 
 var PDFFunction = (function PDFFunctionClosure() {
-  var CONSTRUCT_SAMPLED = 0;
-  var CONSTRUCT_INTERPOLATED = 2;
-  var CONSTRUCT_STICHED = 3;
-  var CONSTRUCT_POSTSCRIPT = 4;
+  const CONSTRUCT_SAMPLED = 0;
+  const CONSTRUCT_INTERPOLATED = 2;
+  const CONSTRUCT_STICHED = 3;
+  const CONSTRUCT_POSTSCRIPT = 4;
 
-  let isEvalSupported = true;
+  function PDFFunction({ isEvalSupported = true, }) {
+    this.isEvalSupported = isEvalSupported !== false;
+  }
 
-  return {
-    setIsEvalSupported(support = true) {
-      isEvalSupported = support !== false;
-    },
-
-    getSampleArray: function PDFFunction_getSampleArray(size, outputSize, bps,
-                                                       str) {
+  PDFFunction.prototype = {
+    getSampleArray(size, outputSize, bps, str) {
       var i, ii;
       var length = 1;
       for (i = 0, ii = size.length; i < ii; i++) {
@@ -68,7 +65,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return array;
     },
 
-    getIR: function PDFFunction_getIR(xref, fn) {
+    getIR(xref, fn) {
       var dict = fn.dict;
       if (!dict) {
         dict = fn;
@@ -89,7 +86,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return typeFn.call(this, fn, dict, xref);
     },
 
-    fromIR: function PDFFunction_fromIR(IR) {
+    fromIR(IR) {
       var type = IR[0];
       switch (type) {
         case CONSTRUCT_SAMPLED:
@@ -104,12 +101,12 @@ var PDFFunction = (function PDFFunctionClosure() {
       }
     },
 
-    parse: function PDFFunction_parse(xref, fn) {
+    parse(xref, fn) {
       var IR = this.getIR(xref, fn);
       return this.fromIR(IR);
     },
 
-    parseArray: function PDFFunction_parseArray(xref, fnObj) {
+    parseArray(xref, fnObj) {
       if (!Array.isArray(fnObj)) {
         // not an array -- parsing as regular function
         return this.parse(xref, fnObj);
@@ -118,7 +115,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var fnArray = [];
       for (var j = 0, jj = fnObj.length; j < jj; j++) {
         var obj = xref.fetchIfRef(fnObj[j]);
-        fnArray.push(PDFFunction.parse(xref, obj));
+        fnArray.push(this.parse(xref, obj));
       }
       return function (src, srcOffset, dest, destOffset) {
         for (var i = 0, ii = fnArray.length; i < ii; i++) {
@@ -127,7 +124,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructSampled: function PDFFunction_constructSampled(str, dict) {
+    constructSampled(str, dict) {
       function toMultiArray(arr) {
         var inputLength = arr.length;
         var out = [];
@@ -185,7 +182,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       ];
     },
 
-    constructSampledFromIR: function PDFFunction_constructSampledFromIR(IR) {
+    constructSampledFromIR(IR) {
       // See chapter 3, page 109 of the PDF reference
       function interpolate(x, xmin, xmax, ymin, ymax) {
         return ymin + ((x - xmin) * ((ymax - ymin) / (xmax - xmin)));
@@ -270,8 +267,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructInterpolated: function PDFFunction_constructInterpolated(str,
-                                                                      dict) {
+    constructInterpolated(str, dict) {
       var c0 = dict.getArray('C0') || [0];
       var c1 = dict.getArray('C1') || [1];
       var n = dict.get('N');
@@ -290,8 +286,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return [CONSTRUCT_INTERPOLATED, c0, diff, n];
     },
 
-    constructInterpolatedFromIR:
-      function PDFFunction_constructInterpolatedFromIR(IR) {
+    constructInterpolatedFromIR(IR) {
       var c0 = IR[1];
       var diff = IR[2];
       var n = IR[3];
@@ -308,7 +303,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructStiched: function PDFFunction_constructStiched(fn, dict, xref) {
+    constructStiched(fn, dict, xref) {
       var domain = dict.getArray('Domain');
 
       if (!domain) {
@@ -323,7 +318,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var fnRefs = dict.get('Functions');
       var fns = [];
       for (var i = 0, ii = fnRefs.length; i < ii; ++i) {
-        fns.push(PDFFunction.getIR(xref, xref.fetchIfRef(fnRefs[i])));
+        fns.push(this.getIR(xref, xref.fetchIfRef(fnRefs[i])));
       }
 
       var bounds = dict.getArray('Bounds');
@@ -332,7 +327,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       return [CONSTRUCT_STICHED, domain, bounds, encode, fns];
     },
 
-    constructStichedFromIR: function PDFFunction_constructStichedFromIR(IR) {
+    constructStichedFromIR(IR) {
       var domain = IR[1];
       var bounds = IR[2];
       var encode = IR[3];
@@ -341,7 +336,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       var tmpBuf = new Float32Array(1);
 
       for (var i = 0, ii = fnsIR.length; i < ii; i++) {
-        fns.push(PDFFunction.fromIR(fnsIR[i]));
+        fns.push(this.fromIR(fnsIR[i]));
       }
 
       return function constructStichedFromIRResult(src, srcOffset,
@@ -387,8 +382,7 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
 
-    constructPostScript: function PDFFunction_constructPostScript(fn, dict,
-                                                                  xref) {
+    constructPostScript(fn, dict, xref) {
       var domain = dict.getArray('Domain');
       var range = dict.getArray('Range');
 
@@ -407,13 +401,12 @@ var PDFFunction = (function PDFFunctionClosure() {
       return [CONSTRUCT_POSTSCRIPT, domain, range, code];
     },
 
-    constructPostScriptFromIR: function PDFFunction_constructPostScriptFromIR(
-                                          IR) {
+    constructPostScriptFromIR(IR) {
       var domain = IR[1];
       var range = IR[2];
       var code = IR[3];
 
-      if (isEvalSupported && IsEvalSupportedCached.value) {
+      if (this.isEvalSupported && IsEvalSupportedCached.value) {
         let compiled = (new PostScriptCompiler()).compile(code, domain, range);
         if (compiled) {
           // Compiled function consists of simple expressions such as addition,
@@ -479,6 +472,8 @@ var PDFFunction = (function PDFFunctionClosure() {
       };
     },
   };
+
+  return PDFFunction;
 })();
 
 function isPDFFunction(v) {

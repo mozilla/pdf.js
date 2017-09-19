@@ -36,8 +36,8 @@ var Page = (function PageClosure() {
            (intent === 'print' && annotation.printable);
   }
 
-  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
-                builtInCMapCache) {
+  function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
+                  builtInCMapCache, classFactory, }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -45,6 +45,7 @@ var Page = (function PageClosure() {
     this.ref = ref;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
+    this.classFactory = classFactory;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -215,6 +216,7 @@ var Page = (function PageClosure() {
         fontCache: this.fontCache,
         builtInCMapCache: this.builtInCMapCache,
         options: this.evaluatorOptions,
+        classFactory: this.classFactory,
       });
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -290,6 +292,7 @@ var Page = (function PageClosure() {
           fontCache: this.fontCache,
           builtInCMapCache: this.builtInCMapCache,
           options: this.evaluatorOptions,
+          classFactory: this.classFactory,
         });
 
         return partialEvaluator.getTextContent({
@@ -361,6 +364,19 @@ var PDFDocument = (function PDFDocumentClosure() {
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
+
+    let pdfFunction = null;
+    this.classFactory = {
+      getPDFFunction() {
+        if (!pdfFunction) {
+          let evaluatorOptions = pdfManager.evaluatorOptions;
+          pdfFunction = new PDFFunction({
+            isEvalSupported: evaluatorOptions.isEvalSupported,
+          });
+        }
+        return pdfFunction;
+      },
+    };
   }
 
   function find(stream, needle, limit, backwards) {
@@ -528,14 +544,20 @@ var PDFDocument = (function PDFDocumentClosure() {
       this.xref.parse(recoveryMode);
       var pageFactory = {
         createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
-          return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
-                          fontCache, builtInCMapCache);
+          return new Page({
+            pdfManager: this.pdfManager,
+            xref: this.xref,
+            pageIndex,
+            pageDict: dict,
+            ref,
+            fontCache,
+            builtInCMapCache,
+            classFactory: this.classFactory,
+          });
         },
       };
-      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
-
-      let evaluatorOptions = this.pdfManager.evaluatorOptions;
-      PDFFunction.setIsEvalSupported(evaluatorOptions.isEvalSupported);
+      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory,
+                                 this.classFactory);
     },
     get numPages() {
       var linearization = this.linearization;
