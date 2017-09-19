@@ -818,6 +818,12 @@
        "type": "eq",
        "forms": true
     },
+    {  "id": "jbig2_symbol_offset",
+       "file": "pdfs/jbig2_symbol_offset.pdf",
+       "md5": "6b22a0f838008fa4d8cb5b40ba095c48",
+       "rounds": 1,
+       "type": "eq"
+    },
     {  "id": "bug1046314",
        "file": "pdfs/bug1046314.pdf",
        "md5": "fc658439f44cd2dd27c8bee7e7a8344e",
