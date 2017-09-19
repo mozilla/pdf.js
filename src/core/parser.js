@@ -528,7 +528,8 @@ var Parser = (function ParserClosure() {
       var params = dict.get('DecodeParms', 'DP');
       if (isName(filter)) {
         if (Array.isArray(params)) {
-          params = this.xref.fetchIfRef(params[0]);
+          warn('/DecodeParms should not contain an Array, ' +
+               'when /Filter contains a Name.');
         }
         return this.makeFilter(stream, filter.name, length, params);
       }
