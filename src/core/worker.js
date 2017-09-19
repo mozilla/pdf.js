@@ -602,6 +602,7 @@ var WorkerMessageHandler = {
         disableFontFace: data.disableFontFace,
         nativeImageDecoderSupport: data.nativeImageDecoderSupport,
         ignoreErrors: data.ignoreErrors,
+        isEvalSupported: data.isEvalSupported,
       };
 
       getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {

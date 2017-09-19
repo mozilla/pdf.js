@@ -115,6 +115,9 @@ class AnnotationFactory {
       case 'StrikeOut':
         return Promise.resolve(new StrikeOutAnnotation(parameters));
 
+      case 'Stamp':
+        return new StampAnnotation(parameters);
+
       case 'FileAttachment':
         return Promise.resolve(new FileAttachmentAnnotation(parameters));
 
@@ -1015,6 +1018,15 @@ class StrikeOutAnnotation extends Annotation {
     super(parameters);
 
     this.data.annotationType = AnnotationType.STRIKEOUT;
+    this._preparePopup(parameters.dict);
+  }
+}
+
+class StampAnnotation extends Annotation {
+  constructor(parameters) {
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.STAMP;
     this._preparePopup(parameters.dict);
   }
 }

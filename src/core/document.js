@@ -23,6 +23,7 @@ import { OperatorList, PartialEvaluator } from './evaluator';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
 import { Linearization } from './parser';
+import { PDFFunction } from './function';
 
 var Page = (function PageClosure() {
 
@@ -614,6 +615,9 @@ var PDFDocument = (function PDFDocumentClosure() {
         },
       };
       this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
+
+      let evaluatorOptions = this.pdfManager.evaluatorOptions;
+      PDFFunction.setIsEvalSupported(evaluatorOptions.isEvalSupported);
     },
     get numPages() {
       var linearization = this.linearization;

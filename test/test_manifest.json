@@ -698,6 +698,22 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "issue8895",
+       "file": "pdfs/issue8895.pdf",
+       "md5": "098658008fc2bf7d433fd0d6d468a9e1",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
+    {  "id": "issue6289",
+       "file": "pdfs/issue6289.pdf",
+       "md5": "0869f3d147c734ec484ffd492104095d",
+       "rounds": 1,
+       "link": true,
+       "lastPage": 1,
+       "type": "eq"
+    },
     {  "id": "issue5509",
        "file": "pdfs/issue5509.pdf",
        "md5": "1975ef8db7355b1d691bc79d0749574b",
@@ -3571,6 +3587,13 @@
     {  "id": "annotation-square-circle",
        "file": "pdfs/annotation-square-circle.pdf",
        "md5": "cfd3c302f68d61e1d55ed9c7896046c3",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
+    {  "id": "annotation-stamp",
+       "file": "pdfs/annotation-stamp.pdf",
+       "md5": "0a04d7ce1ad103cb3c033d26855d6ec7",
        "rounds": 1,
        "type": "eq",
        "annotations": true
