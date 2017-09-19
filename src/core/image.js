@@ -75,7 +75,7 @@ var PDFImage = (function PDFImageClosure() {
   }
 
   function PDFImage({ xref, res, image, smask = null, mask = null,
-                      isMask = false, }) {
+                      isMask = false, pdfFunctionFactory, }) {
     this.image = image;
     var dict = image.dict;
     if (dict.has('Filter')) {
@@ -138,7 +138,8 @@ var PDFImage = (function PDFImageClosure() {
                             'color components not supported.');
         }
       }
-      this.colorSpace = ColorSpace.parse(colorSpace, xref, res);
+      this.colorSpace = ColorSpace.parse(colorSpace, xref, res,
+                                         pdfFunctionFactory);
       this.numComps = this.colorSpace.numComps;
     }
 
@@ -165,6 +166,7 @@ var PDFImage = (function PDFImageClosure() {
         xref,
         res,
         image: smask,
+        pdfFunctionFactory,
       });
     } else if (mask) {
       if (isStream(mask)) {
@@ -177,6 +179,7 @@ var PDFImage = (function PDFImageClosure() {
             res,
             image: mask,
             isMask: true,
+            pdfFunctionFactory,
           });
         }
       } else {
@@ -190,7 +193,8 @@ var PDFImage = (function PDFImageClosure() {
    * with a PDFImage when the image is ready to be used.
    */
   PDFImage.buildImage = function({ handler, xref, res, image,
-                                   nativeDecoder = null, }) {
+                                   nativeDecoder = null,
+                                   pdfFunctionFactory, }) {
     var imagePromise = handleImageData(image, nativeDecoder);
     var smaskPromise;
     var maskPromise;
@@ -224,13 +228,13 @@ var PDFImage = (function PDFImageClosure() {
           image: imageData,
           smask: smaskData,
           mask: maskData,
+          pdfFunctionFactory,
         });
       });
   };
 
   PDFImage.createMask = function({ imgArray, width, height,
                                    imageIsFromDecodeStream, inverseDecode, }) {
-
     // |imgArray| might not contain full data for every pixel of the mask, so
     // we need to distinguish between |computedLength| and |actualLength|.
     // In particular, if inverseDecode is true, then the array we return must
