@@ -63,7 +63,7 @@ var COMMON_WEB_FILES = [
 var MOZCENTRAL_DIFF_FILE = 'mozcentral.diff';
 
 var REPO = 'git@github.com:mozilla/pdf.js.git';
-var DIST_REPO_URL = 'https://github.com/mozilla/pdfjs-dist';
+var DIST_REPO_URL = 'https://github.com/macroplant/pdfjs-dist';
 
 var builder = require('./external/builder/builder.js');
 
@@ -1116,41 +1116,41 @@ gulp.task('botmakeref', ['generic', 'components'], function (done) {
   makeRef(done, true);
 });
 
-gulp.task('baseline', function (done) {
-  console.log();
-  console.log('### Creating baseline environment');
-
-  var baselineCommit = process.env['BASELINE'];
-  if (!baselineCommit) {
-    done(new Error('Missing baseline commit. Specify the BASELINE variable.'));
-    return;
-  }
-
-  var initializeCommand = 'git fetch origin';
-  if (!checkDir(BASELINE_DIR)) {
-    mkdirp.sync(BASELINE_DIR);
-    initializeCommand = 'git clone ../../ .';
-  }
-
-  var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
-  exec(initializeCommand, { cwd: workingDirectory, }, function (error) {
-    if (error) {
-      done(new Error('Baseline clone/fetch failed.'));
-      return;
-    }
-
-    exec('git checkout ' + baselineCommit, { cwd: workingDirectory, },
-        function (error) {
-      if (error) {
-        done(new Error('Baseline commit checkout failed.'));
-        return;
-      }
-
-      console.log('Baseline commit "' + baselineCommit + '" checked out.');
-      done();
-    });
-  });
-});
+// gulp.task('baseline', function (done) {
+//   console.log();
+//   console.log('### Creating baseline environment');
+//
+//   var baselineCommit = process.env['BASELINE'];
+//   if (!baselineCommit) {
+//     done(new Error('Missing baseline commit. Specify the BASELINE variable.'));
+//     return;
+//   }
+//
+//   var initializeCommand = 'git fetch origin';
+//   if (!checkDir(BASELINE_DIR)) {
+//     mkdirp.sync(BASELINE_DIR);
+//     initializeCommand = 'git clone ../../ .';
+//   }
+//
+//   var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
+//   exec(initializeCommand, { cwd: workingDirectory, }, function (error) {
+//     if (error) {
+//       done(new Error('Baseline clone/fetch failed.'));
+//       return;
+//     }
+//
+//     exec('git checkout ' + baselineCommit, { cwd: workingDirectory, },
+//         function (error) {
+//       if (error) {
+//         done(new Error('Baseline commit checkout failed.'));
+//         return;
+//       }
+//
+//       console.log('Baseline commit "' + baselineCommit + '" checked out.');
+//       done();
+//     });
+//   });
+// });
 
 gulp.task('unittestcli', ['lib'], function (done) {
   var args = ['JASMINE_CONFIG_PATH=test/unit/clitests.json'];
@@ -1272,23 +1272,23 @@ gulp.task('wintersmith', ['gh-pages-prepare'], function (done) {
   });
 });
 
-gulp.task('gh-pages-git', ['gh-pages-prepare', 'wintersmith'], function () {
-  var VERSION = getVersionJSON().version;
-  var reason = process.env['PDFJS_UPDATE_REASON'];
-
-  safeSpawnSync('git', ['init'], { cwd: GH_PAGES_DIR, });
-  safeSpawnSync('git', ['remote', 'add', 'origin', REPO],
-                { cwd: GH_PAGES_DIR, });
-  safeSpawnSync('git', ['add', '-A'], { cwd: GH_PAGES_DIR, });
-  safeSpawnSync('git', [
-    'commit', '-am', 'gh-pages site created via gulpfile.js script',
-    '-m', 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '')
-  ], { cwd: GH_PAGES_DIR, });
-  safeSpawnSync('git', ['branch', '-m', 'gh-pages'], { cwd: GH_PAGES_DIR, });
-
-  console.log();
-  console.log('Website built in ' + GH_PAGES_DIR);
-});
+// gulp.task('gh-pages-git', ['gh-pages-prepare', 'wintersmith'], function () {
+//   var VERSION = getVersionJSON().version;
+//   var reason = process.env['PDFJS_UPDATE_REASON'];
+//
+//   safeSpawnSync('git', ['init'], { cwd: GH_PAGES_DIR, });
+//   safeSpawnSync('git', ['remote', 'add', 'origin', REPO],
+//                 { cwd: GH_PAGES_DIR, });
+//   safeSpawnSync('git', ['add', '-A'], { cwd: GH_PAGES_DIR, });
+//   safeSpawnSync('git', [
+//     'commit', '-am', 'gh-pages site created via gulpfile.js script',
+//     '-m', 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '')
+//   ], { cwd: GH_PAGES_DIR, });
+//   safeSpawnSync('git', ['branch', '-m', 'gh-pages'], { cwd: GH_PAGES_DIR, });
+//
+//   console.log();
+//   console.log('Website built in ' + GH_PAGES_DIR);
+// });
 
 gulp.task('web', ['gh-pages-prepare', 'wintersmith', 'gh-pages-git']);
 
@@ -1302,7 +1302,7 @@ gulp.task('dist-pre',
 
   rimraf.sync(DIST_DIR);
   mkdirp.sync(DIST_DIR);
-  safeSpawnSync('git', ['clone', '--depth', '1', DIST_REPO_URL, DIST_DIR]);
+  //safeSpawnSync('git', ['clone', '--depth', '1', DIST_REPO_URL, DIST_DIR]);
 
   console.log();
   console.log('### Overwriting all files');
@@ -1401,84 +1401,84 @@ gulp.task('dist-install', ['dist-pre'], function () {
   safeSpawnSync('npm', ['install', distPath], opts);
 });
 
-gulp.task('dist-repo-git', ['dist-pre'], function () {
-  var VERSION = getVersionJSON().version;
+// gulp.task('dist-repo-git', ['dist-pre'], function () {
+//   var VERSION = getVersionJSON().version;
+//
+//   console.log();
+//   console.log('### Committing changes');
+//
+//   var reason = process.env['PDFJS_UPDATE_REASON'];
+//   var message = 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '');
+//   safeSpawnSync('git', ['add', '*'], { cwd: DIST_DIR, });
+//   safeSpawnSync('git', ['commit', '-am', message], { cwd: DIST_DIR, });
+//   safeSpawnSync('git', ['tag', '-a', 'v' + VERSION, '-m', message],
+//                 { cwd: DIST_DIR, });
+//
+//   console.log();
+//   console.log('Done. Push with');
+//   console.log('  cd ' + DIST_DIR + '; ' +
+//               'git push --tags ' + DIST_REPO_URL + ' master');
+//   console.log();
+// });
 
-  console.log();
-  console.log('### Committing changes');
+// gulp.task('dist', ['dist-repo-git']);
 
-  var reason = process.env['PDFJS_UPDATE_REASON'];
-  var message = 'PDF.js version ' + VERSION + (reason ? ' - ' + reason : '');
-  safeSpawnSync('git', ['add', '*'], { cwd: DIST_DIR, });
-  safeSpawnSync('git', ['commit', '-am', message], { cwd: DIST_DIR, });
-  safeSpawnSync('git', ['tag', '-a', 'v' + VERSION, '-m', message],
-                { cwd: DIST_DIR, });
+// gulp.task('mozcentralbaseline', ['baseline'], function (done) {
+//   console.log();
+//   console.log('### Creating mozcentral baseline environment');
+//
+//   // Create a mozcentral build.
+//   rimraf.sync(BASELINE_DIR + BUILD_DIR);
+//
+//   var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
+//   safeSpawnSync('gulp', ['mozcentral'],
+//                 { env: process.env, cwd: workingDirectory, stdio: 'inherit', });
+//
+//   // Copy the mozcentral build to the mozcentral baseline directory.
+//   rimraf.sync(MOZCENTRAL_BASELINE_DIR);
+//   mkdirp.sync(MOZCENTRAL_BASELINE_DIR);
+//
+//   gulp.src([BASELINE_DIR + BUILD_DIR + 'mozcentral/**/*'])
+//       .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+//       .on('end', function () {
+//         // Commit the mozcentral baseline.
+//         safeSpawnSync('git', ['init'], { cwd: MOZCENTRAL_BASELINE_DIR, });
+//         safeSpawnSync('git', ['add', '.'], { cwd: MOZCENTRAL_BASELINE_DIR, });
+//         safeSpawnSync('git', ['commit', '-m', '"mozcentral baseline"'],
+//                       { cwd: MOZCENTRAL_BASELINE_DIR, });
+//         done();
+//       });
+// });
 
-  console.log();
-  console.log('Done. Push with');
-  console.log('  cd ' + DIST_DIR + '; ' +
-              'git push --tags ' + DIST_REPO_URL + ' master');
-  console.log();
-});
-
-gulp.task('dist', ['dist-repo-git']);
-
-gulp.task('mozcentralbaseline', ['baseline'], function (done) {
-  console.log();
-  console.log('### Creating mozcentral baseline environment');
-
-  // Create a mozcentral build.
-  rimraf.sync(BASELINE_DIR + BUILD_DIR);
-
-  var workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
-  safeSpawnSync('gulp', ['mozcentral'],
-                { env: process.env, cwd: workingDirectory, stdio: 'inherit', });
-
-  // Copy the mozcentral build to the mozcentral baseline directory.
-  rimraf.sync(MOZCENTRAL_BASELINE_DIR);
-  mkdirp.sync(MOZCENTRAL_BASELINE_DIR);
-
-  gulp.src([BASELINE_DIR + BUILD_DIR + 'mozcentral/**/*'])
-      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
-      .on('end', function () {
-        // Commit the mozcentral baseline.
-        safeSpawnSync('git', ['init'], { cwd: MOZCENTRAL_BASELINE_DIR, });
-        safeSpawnSync('git', ['add', '.'], { cwd: MOZCENTRAL_BASELINE_DIR, });
-        safeSpawnSync('git', ['commit', '-m', '"mozcentral baseline"'],
-                      { cwd: MOZCENTRAL_BASELINE_DIR, });
-        done();
-      });
-});
-
-gulp.task('mozcentraldiff', ['mozcentral', 'mozcentralbaseline'],
-    function (done) {
-  console.log();
-  console.log('### Creating mozcentral diff');
-
-  // Create the diff between the current mozcentral build and the
-  // baseline mozcentral build, which both exist at this point.
-  // The mozcentral baseline directory is a Git repository, so we
-  // remove all files and copy the current mozcentral build files
-  // into it to create the diff.
-  rimraf.sync(MOZCENTRAL_BASELINE_DIR + '*');
-
-  gulp.src([BUILD_DIR + 'mozcentral/**/*'])
-      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
-      .on('end', function () {
-        safeSpawnSync('git', ['add', '-A'], { cwd: MOZCENTRAL_BASELINE_DIR, });
-        var diff = safeSpawnSync('git',
-          ['diff', '--binary', '--cached', '--unified=8'],
-          { cwd: MOZCENTRAL_BASELINE_DIR, }).stdout;
-
-        createStringSource(MOZCENTRAL_DIFF_FILE, diff)
-          .pipe(gulp.dest(BUILD_DIR))
-          .on('end', function () {
-            console.log('Result diff can be found at ' + BUILD_DIR +
-                        MOZCENTRAL_DIFF_FILE);
-            done();
-          });
-      });
-});
+// gulp.task('mozcentraldiff', ['mozcentral', 'mozcentralbaseline'],
+//     function (done) {
+//   console.log();
+//   console.log('### Creating mozcentral diff');
+//
+//   // Create the diff between the current mozcentral build and the
+//   // baseline mozcentral build, which both exist at this point.
+//   // The mozcentral baseline directory is a Git repository, so we
+//   // remove all files and copy the current mozcentral build files
+//   // into it to create the diff.
+//   rimraf.sync(MOZCENTRAL_BASELINE_DIR + '*');
+//
+//   gulp.src([BUILD_DIR + 'mozcentral/**/*'])
+//       .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
+//       .on('end', function () {
+//         safeSpawnSync('git', ['add', '-A'], { cwd: MOZCENTRAL_BASELINE_DIR, });
+//         var diff = safeSpawnSync('git',
+//           ['diff', '--binary', '--cached', '--unified=8'],
+//           { cwd: MOZCENTRAL_BASELINE_DIR, }).stdout;
+//
+//         createStringSource(MOZCENTRAL_DIFF_FILE, diff)
+//           .pipe(gulp.dest(BUILD_DIR))
+//           .on('end', function () {
+//             console.log('Result diff can be found at ' + BUILD_DIR +
+//                         MOZCENTRAL_DIFF_FILE);
+//             done();
+//           });
+//       });
+// });
 
 gulp.task('externaltest', function () {
   gutil.log('Running test-fixtures.js');

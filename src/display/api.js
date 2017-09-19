@@ -749,6 +749,8 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
  * @property {boolean} renderInteractiveForms - (optional) Whether or not
  *                     interactive form elements are rendered in the display
  *                     layer. If so, we do not render them on canvas as well.
+ * @property {Array} annotationsNotRendered - (optional) annotations not
+ *                    rendered during page rendering.
  * @property {Array}  transform - (optional) Additional transform, applied
  *                    just before viewport transform.
  * @property {Object} imageLayer - (optional) An object that has beginLayout,
@@ -869,7 +871,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
       // If there was a pending destroy cancel it so no cleanup happens during
       // this call to render.
       this.pendingCleanup = false;
-
       var renderingIntent = (params.intent === 'print' ? 'print' : 'display');
       var canvasFactory = params.canvasFactory || new DOMCanvasFactory();
 
@@ -894,6 +895,7 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
           pageIndex: this.pageNumber - 1,
           intent: renderingIntent,
           renderInteractiveForms: (params.renderInteractiveForms === true),
+          annotationsNotRendered: (params.annotationsNotRendered || []),
         });
       }
 

@@ -36,6 +36,60 @@ var Page = (function PageClosure() {
            (intent === 'print' && annotation.printable);
   }
 
+  function isAnnotationRemoved(annotationsForRemoval, annotation) {
+    if (!annotation
+      || !annotation.data.annotationType) {
+      return;
+    }
+    let data = annotation.data;
+    return annotationsForRemoval.some((itm) =>
+      (itm === data.annotationType)
+      || (itm === data.fieldType)
+      || (itm === 'STx' && data.annotationType === 20 && data.fieldType === 'Tx' && !data.multiLine)
+      || (itm === 'MTx' && data.annotationType === 20 && data.fieldType === 'Tx' && data.multiLine)
+      || (itm === 'ABtn' && data.annotationType === 20 && data.fieldType === 'Btn' && !data.radioButton && !data.checkBox)
+      || (itm === 'CBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.checkBox)
+      || (itm === 'RBtn' && data.annotationType === 20 && data.fieldType === 'Btn' && data.radioButton)
+      || (itm === 'CCh' && data.annotationType === 20 && data.fieldType === 'Ch' && data.combo)
+      || (itm === 'LCh' && data.annotationType === 20 && data.fieldType === 'Ch' && !data.combo)
+    );
+    // return annotationsForRemoval.some((itm) => {
+    //     if (itm === data.annotationType || itm === data.fieldType) {
+    //       return true
+    //     } else if (data.annotationType === 20 && data.fieldType === 'Tx') {
+    //       switch (itm) {
+    //         case 'STx':
+    //           return !data.multiLine;
+    //         case 'MTx':
+    //           return data.multiLine;
+    //         default:
+    //           return false;
+    //       }
+    //     } else if (data.annotationType === 20 && data.fieldType === 'Btn') {
+    //       switch (itm) {
+    //         case 'ABtn':
+    //           return !data.radioButton && !data.checkBox;
+    //         case 'CBtn':
+    //           return data.checkBox;
+    //         case 'RBtn':
+    //           return data.radioButton;
+    //         default:
+    //           return false;
+    //       }
+    //     } else if (data.annotationType === 20 && data.fieldType === 'Ch') {
+    //       switch (itm) {
+    //         case 'CCh':
+    //           return data.combo;
+    //         case 'LCh':
+    //           return !data.combo;
+    //         default:
+    //           return false;
+    //       }
+    //     }
+    //   }
+    // );
+  }
+
   function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
                 builtInCMapCache) {
     this.pdfManager = pdfManager;
@@ -123,7 +177,7 @@ var Page = (function PageClosure() {
       return shadow(this, 'cropBox', cropBox);
     },
 
-    get userUnit() {
+    get buserUnit() {
       var obj = this.getPageProp('UserUnit');
       if (!isNum(obj) || obj <= 0) {
         obj = DEFAULT_USER_UNIT;
@@ -192,7 +246,7 @@ var Page = (function PageClosure() {
       });
     },
 
-    getOperatorList({ handler, task, intent, renderInteractiveForms, }) {
+    getOperatorList({ handler, task, intent, renderInteractiveForms, annotationsNotRendered}) {
       var contentStreamPromise = this.pdfManager.ensure(this,
                                                         'getContentStream');
       var resourcesPromise = this.loadResources([
@@ -245,17 +299,19 @@ var Page = (function PageClosure() {
           pageOpList.flush(true);
           return pageOpList;
         }
-
         // Collect the operator list promises for the annotations. Each promise
         // is resolved with the complete operator list for a single annotation.
         var i, ii, opListPromises = [];
         for (i = 0, ii = annotations.length; i < ii; i++) {
-          if (isAnnotationRenderable(annotations[i], intent)) {
+          if (Array.isArray(annotationsNotRendered)
+            && isAnnotationRemoved(annotationsNotRendered, annotations[i])) {
+            continue;
+          }
+          else if (isAnnotationRenderable(annotations[i], intent)){
             opListPromises.push(annotations[i].getOperatorList(
               partialEvaluator, task, renderInteractiveForms));
           }
         }
-
         return Promise.all(opListPromises).then(function(opLists) {
           pageOpList.addOp(OPS.beginAnnotations, []);
           for (i = 0, ii = opLists.length; i < ii; i++) {
