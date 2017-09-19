@@ -3693,5 +3693,11 @@
        "rounds": 1,
        "link": true,
        "type": "eq"
+    },
+    {  "id": "ccitt_EndOfBlock_false",
+       "file": "pdfs/ccitt_EndOfBlock_false.pdf",
+       "md5": "ce718efe601cd7491dd00651b4790329",
+       "rounds": 1,
+       "type": "eq"
     }
 ]
