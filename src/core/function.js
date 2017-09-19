@@ -13,9 +13,17 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isBool } from '../shared/util';
+import {
+  FormatError, info, isBool, isEvalSupported, shadow
+} from '../shared/util';
 import { isDict, isStream } from './primitives';
 import { PostScriptLexer, PostScriptParser } from './ps_parser';
+
+let IsEvalSupportedCached = {
+  get value() {
+    return shadow(this, 'value', isEvalSupported());
+  },
+};
 
 var PDFFunction = (function PDFFunctionClosure() {
   var CONSTRUCT_SAMPLED = 0;
@@ -23,7 +31,13 @@ var PDFFunction = (function PDFFunctionClosure() {
   var CONSTRUCT_STICHED = 3;
   var CONSTRUCT_POSTSCRIPT = 4;
 
+  let isEvalSupported = true;
+
   return {
+    setIsEvalSupported(support = true) {
+      isEvalSupported = support !== false;
+    },
+
     getSampleArray: function PDFFunction_getSampleArray(size, outputSize, bps,
                                                        str) {
       var i, ii;
@@ -399,15 +413,17 @@ var PDFFunction = (function PDFFunctionClosure() {
       var range = IR[2];
       var code = IR[3];
 
-      var compiled = (new PostScriptCompiler()).compile(code, domain, range);
-      if (compiled) {
-        // Compiled function consists of simple expressions such as addition,
-        // subtraction, Math.max, and also contains 'var' and 'return'
-        // statements. See the generation in the PostScriptCompiler below.
-        // eslint-disable-next-line no-new-func
-        return new Function('src', 'srcOffset', 'dest', 'destOffset', compiled);
+      if (isEvalSupported && IsEvalSupportedCached.value) {
+        let compiled = (new PostScriptCompiler()).compile(code, domain, range);
+        if (compiled) {
+          // Compiled function consists of simple expressions such as addition,
+          // subtraction, Math.max, and also contains 'var' and 'return'
+          // statements. See the generation in the PostScriptCompiler below.
+          // eslint-disable-next-line no-new-func
+          return new Function('src', 'srcOffset', 'dest', 'destOffset',
+                              compiled);
+        }
       }
-
       info('Unable to compile PS function');
 
       var numOutputs = range.length >> 1;

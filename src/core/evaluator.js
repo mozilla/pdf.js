@@ -54,6 +54,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     disableFontFace: false,
     nativeImageDecoderSupport: NativeImageDecoding.DECODE,
     ignoreErrors: false,
+    isEvalSupported: true,
   };
 
   function NativeImageDecoder(xref, resources, handler, forceDataSchema) {

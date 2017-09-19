@@ -1085,22 +1085,22 @@ gulp.task('publish', ['generic'], function (done) {
     });
 });
 
-gulp.task('test', ['generic'], function () {
+gulp.task('test', ['generic', 'components'], function () {
   return streamqueue({ objectMode: true, },
     createTestSource('unit'), createTestSource('browser'));
 });
 
-gulp.task('bottest', ['generic'], function () {
+gulp.task('bottest', ['generic', 'components'], function () {
   return streamqueue({ objectMode: true, },
     createTestSource('unit'), createTestSource('font'),
     createTestSource('browser (no reftest)'));
 });
 
-gulp.task('browsertest', ['generic'], function () {
+gulp.task('browsertest', ['generic', 'components'], function () {
   return createTestSource('browser');
 });
 
-gulp.task('unittest', ['generic'], function () {
+gulp.task('unittest', ['generic', 'components'], function () {
   return createTestSource('unit');
 });
 
@@ -1108,11 +1108,11 @@ gulp.task('fonttest', function () {
   return createTestSource('font');
 });
 
-gulp.task('makeref', ['generic'], function (done) {
+gulp.task('makeref', ['generic', 'components'], function (done) {
   makeRef(done);
 });
 
-gulp.task('botmakeref', ['generic'], function (done) {
+gulp.task('botmakeref', ['generic', 'components'], function (done) {
   makeRef(done, true);
 });
 
