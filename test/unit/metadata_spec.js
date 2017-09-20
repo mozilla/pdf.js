@@ -16,15 +16,37 @@
 import { Metadata } from '../../src/display/metadata';
 
 describe('metadata', function() {
-  describe('incorrect_xmp', function() {
-    it('should fix the incorrect XMP data', function() {
-      var invalidXMP = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
-        '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
-        '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
-        '<dc:title>\\376\\377\\000P\\000D\\000F\\000&</dc:title>' +
-        '</rdf:Description></rdf:RDF></x:xmpmeta>';
-      var meta = new Metadata(invalidXMP);
-      expect(meta.get('dc:title')).toEqual('PDF&');
-    });
+  it('should handle valid metadata', function() {
+    var validData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+      '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
+      '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
+      '<dc:title><rdf:Alt><rdf:li xml:lang="x-default">Foo bar baz</rdf:li>' +
+      '</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>';
+    var metadata = new Metadata(validData);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('Foo bar baz');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({ 'dc:title': 'Foo bar baz', });
+  });
+
+  it('should repair and handle invalid metadata', function() {
+    var invalidData = '<x:xmpmeta xmlns:x=\'adobe:ns:meta/\'>' +
+      '<rdf:RDF xmlns:rdf=\'http://www.w3.org/1999/02/22-rdf-syntax-ns#\'>' +
+      '<rdf:Description xmlns:dc=\'http://purl.org/dc/elements/1.1/\'>' +
+      '<dc:title>\\376\\377\\000P\\000D\\000F\\000&</dc:title>' +
+      '</rdf:Description></rdf:RDF></x:xmpmeta>';
+    var metadata = new Metadata(invalidData);
+
+    expect(metadata.has('dc:title')).toBeTruthy();
+    expect(metadata.has('dc:qux')).toBeFalsy();
+
+    expect(metadata.get('dc:title')).toEqual('PDF&');
+    expect(metadata.get('dc:qux')).toEqual(null);
+
+    expect(metadata.getAll()).toEqual({ 'dc:title': 'PDF&', });
   });
 });

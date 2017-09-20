@@ -9,9 +9,6 @@
 
 var fs = require('fs');
 
-// HACK adding DOMParser to read XMP metadata.
-global.DOMParser = require('./domparsermock.js').DOMParserMock;
-
 // Run `gulp dist-install` to generate 'pdfjs-dist' npm package files.
 var pdfjsLib = require('pdfjs-dist');
 
@@ -34,7 +31,7 @@ pdfjsLib.getDocument(pdfPath).then(function (doc) {
     console.log();
     if (data.metadata) {
       console.log('## Metadata');
-      console.log(JSON.stringify(data.metadata.metadata, null, 2));
+      console.log(JSON.stringify(data.metadata.getAll(), null, 2));
       console.log();
     }
   });

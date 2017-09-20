@@ -13,43 +13,49 @@
  * limitations under the License.
  */
 
-function fixMetadata(meta) {
-  return meta.replace(/>\\376\\377([^<]+)/g, function(all, codes) {
-    var bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
-                              function(code, d1, d2, d3) {
-      return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
-    });
-    var chars = '';
-    for (var i = 0; i < bytes.length; i += 2) {
-      var code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
-      chars += (code >= 32 && code < 127 && code !== 60 && code !== 62 &&
-        code !== 38) ? String.fromCharCode(code) :
-        '&#x' + (0x10000 + code).toString(16).substring(1) + ';';
-    }
-    return '>' + chars;
-  });
-}
+import { assert, deprecated } from '../shared/util';
+import { SimpleXMLParser } from './dom_utils';
 
-function Metadata(meta) {
-  if (typeof meta === 'string') {
-    // Ghostscript produces invalid metadata
-    meta = fixMetadata(meta);
+class Metadata {
+  constructor(data) {
+    assert(typeof data === 'string', 'Metadata: input is not a string');
 
-    var parser = new DOMParser();
-    meta = parser.parseFromString(meta, 'application/xml');
-  } else if (!(meta instanceof Document)) {
-    throw new Error('Metadata: Invalid metadata object');
+    // Ghostscript may produce invalid metadata, so try to repair that first.
+    data = this._repair(data);
+
+    // Convert the string to a DOM `Document`.
+    let parser = new SimpleXMLParser();
+    data = parser.parseFromString(data);
+
+    this._metadata = Object.create(null);
+
+    this._parse(data);
   }
 
-  this.metaDocument = meta;
-  this.metadata = Object.create(null);
-  this.parse();
-}
+  _repair(data) {
+    return data.replace(/>\\376\\377([^<]+)/g, function(all, codes) {
+      let bytes = codes.replace(/\\([0-3])([0-7])([0-7])/g,
+          function(code, d1, d2, d3) {
+        return String.fromCharCode(d1 * 64 + d2 * 8 + d3 * 1);
+      });
 
-Metadata.prototype = {
-  parse: function Metadata_parse() {
-    var doc = this.metaDocument;
-    var rdf = doc.documentElement;
+      let chars = '';
+      for (let i = 0, ii = bytes.length; i < ii; i += 2) {
+        let code = bytes.charCodeAt(i) * 256 + bytes.charCodeAt(i + 1);
+        if (code >= 32 && code < 127 && code !== 60 && code !== 62 &&
+            code !== 38) {
+          chars += String.fromCharCode(code);
+        } else {
+          chars += '&#x' + (0x10000 + code).toString(16).substring(1) + ';';
+        }
+      }
+
+      return '>' + chars;
+    });
+  }
+
+  _parse(domDocument) {
+    let rdf = domDocument.documentElement;
 
     if (rdf.nodeName.toLowerCase() !== 'rdf:rdf') { // Wrapped in <xmpmeta>
       rdf = rdf.firstChild;
@@ -58,36 +64,46 @@ Metadata.prototype = {
       }
     }
 
-    var nodeName = (rdf) ? rdf.nodeName.toLowerCase() : null;
+    let nodeName = rdf ? rdf.nodeName.toLowerCase() : null;
     if (!rdf || nodeName !== 'rdf:rdf' || !rdf.hasChildNodes()) {
       return;
     }
 
-    var children = rdf.childNodes, desc, entry, name, i, ii, length, iLength;
-    for (i = 0, length = children.length; i < length; i++) {
-      desc = children[i];
+    let children = rdf.childNodes;
+    for (let i = 0, ii = children.length; i < ii; i++) {
+      let desc = children[i];
       if (desc.nodeName.toLowerCase() !== 'rdf:description') {
         continue;
       }
 
-      for (ii = 0, iLength = desc.childNodes.length; ii < iLength; ii++) {
-        if (desc.childNodes[ii].nodeName.toLowerCase() !== '#text') {
-          entry = desc.childNodes[ii];
-          name = entry.nodeName.toLowerCase();
-          this.metadata[name] = entry.textContent.trim();
+      for (let j = 0, jj = desc.childNodes.length; j < jj; j++) {
+        if (desc.childNodes[j].nodeName.toLowerCase() !== '#text') {
+          let entry = desc.childNodes[j];
+          let name = entry.nodeName.toLowerCase();
+
+          this._metadata[name] = entry.textContent.trim();
         }
       }
     }
-  },
+  }
 
-  get: function Metadata_get(name) {
-    return this.metadata[name] || null;
-  },
+  get(name) {
+    return this._metadata[name] || null;
+  }
 
-  has: function Metadata_has(name) {
-    return typeof this.metadata[name] !== 'undefined';
-  },
-};
+  getAll() {
+    return this._metadata;
+  }
+
+  has(name) {
+    return typeof this._metadata[name] !== 'undefined';
+  }
+
+  get metadata() {
+    deprecated('`metadata` getter; use `getAll()` instead.');
+    return this.getAll();
+  }
+}
 
 export {
   Metadata,
