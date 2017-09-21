@@ -57,7 +57,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isEvalSupported: true,
   };
 
-  function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
+  function NativeImageDecoder({ xref, resources, handler,
+                                forceDataSchema = false, }) {
     this.xref = xref;
     this.resources = resources;
     this.handler = handler;
@@ -86,8 +87,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * Checks if the image can be decoded and displayed by the browser without any
    * further processing such as color space conversions.
    */
-  NativeImageDecoder.isSupported =
-      function NativeImageDecoder_isSupported(image, xref, res) {
+  NativeImageDecoder.isSupported = function(image, xref, res) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
@@ -99,8 +99,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   /**
    * Checks if the image can be decoded by the browser.
    */
-  NativeImageDecoder.isDecodable =
-      function NativeImageDecoder_isDecodable(image, xref, res) {
+  NativeImageDecoder.isDecodable = function(image, xref, res) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
@@ -368,11 +367,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var bitStrideLength = (width + 7) >> 3;
         var imgArray = image.getBytes(bitStrideLength * height);
         var decode = dict.getArray('Decode', 'D');
-        var inverseDecode = (!!decode && decode[0] > 0);
 
-        imgData = PDFImage.createMask(imgArray, width, height,
-                                      image instanceof DecodeStream,
-                                      inverseDecode);
+        imgData = PDFImage.createMask({
+          imgArray,
+          width,
+          height,
+          imageIsFromDecodeStream: image instanceof DecodeStream,
+          inverseDecode: (!!decode && decode[0] > 0),
+        });
         imgData.cached = true;
         args = [imgData];
         operatorList.addOp(OPS.paintImageMaskXObject, args);
@@ -392,8 +394,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Inlining small images into the queue as RGB data
       if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
-        var imageObj = new PDFImage(this.xref, resources, image,
-                                    inline, null, null);
+        let imageObj = new PDFImage({
+          xref: this.xref,
+          res: resources,
+          image,
+        });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
@@ -429,12 +434,21 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (nativeImageDecoderSupport === NativeImageDecoding.DECODE &&
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
-        nativeImageDecoder = new NativeImageDecoder(this.xref, resources,
-          this.handler, this.options.forceDataSchema);
+        nativeImageDecoder = new NativeImageDecoder({
+          xref: this.xref,
+          resources,
+          handler: this.handler,
+          forceDataSchema: this.options.forceDataSchema,
+        });
       }
 
-      PDFImage.buildImage(this.handler, this.xref, resources, image, inline,
-                          nativeImageDecoder).then((imageObj) => {
+      PDFImage.buildImage({
+        handler: this.handler,
+        xref: this.xref,
+        res: resources,
+        image,
+        nativeDecoder: nativeImageDecoder,
+      }).then((imageObj) => {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
