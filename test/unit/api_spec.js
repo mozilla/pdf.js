@@ -790,9 +790,6 @@ describe('api', function() {
       });
     });
     it('gets metadata', function(done) {
-      if (isNodeJS()) {
-        pending('Document is not supported in Node.js.');
-      }
       var promise = doc.getMetadata();
       promise.then(function(metadata) {
         expect(metadata.info['Title']).toEqual('Basic API Test');

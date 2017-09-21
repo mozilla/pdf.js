@@ -867,6 +867,13 @@
        "link": false,
        "type": "eq"
     },
+    {  "id": "bug1392647",
+       "file": "pdfs/bug1392647.pdf",
+       "md5": "9770ea476630ca7d560b7c39430f8850",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "hudsonsurvey",
        "file": "pdfs/hudsonsurvey.pdf",
        "md5": "bf0e6576a7b6c2fe7485bce1b78e006f",
@@ -3692,6 +3699,12 @@
        "md5": "36ea2e28cd77e9e70731f574ab27cbe0",
        "rounds": 1,
        "link": true,
+       "type": "eq"
+    },
+    {  "id": "ccitt_EndOfBlock_false",
+       "file": "pdfs/ccitt_EndOfBlock_false.pdf",
+       "md5": "ce718efe601cd7491dd00651b4790329",
+       "rounds": 1,
        "type": "eq"
     }
 ]
