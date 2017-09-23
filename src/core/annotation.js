@@ -90,6 +90,9 @@ class AnnotationFactory {
       case 'PolyLine':
         return new PolylineAnnotation(parameters);
 
+      case 'Polygon':
+        return new PolygonAnnotation(parameters);
+
       case 'Highlight':
         return new HighlightAnnotation(parameters);
 
@@ -937,6 +940,15 @@ class PolylineAnnotation extends Annotation {
     }
 
     this._preparePopup(dict);
+  }
+}
+
+class PolygonAnnotation extends PolylineAnnotation {
+  constructor(parameters) {
+    // Polygons are specific forms of polylines, so reuse their logic.
+    super(parameters);
+
+    this.data.annotationType = AnnotationType.POLYGON;
   }
 }
 
