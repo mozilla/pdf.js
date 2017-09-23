@@ -83,6 +83,9 @@ class AnnotationElementFactory {
       case AnnotationType.POLYLINE:
         return new PolylineAnnotationElement(parameters);
 
+      case AnnotationType.POLYGON:
+        return new PolygonAnnotationElement(parameters);
+
       case AnnotationType.HIGHLIGHT:
         return new HighlightAnnotationElement(parameters);
 
@@ -604,7 +607,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line', 'Square', 'Circle', 'PolyLine'];
+    const IGNORE_TYPES = ['Line', 'Square', 'Circle', 'PolyLine', 'Polygon'];
 
     this.container.className = 'popupAnnotation';
 
@@ -919,6 +922,9 @@ class PolylineAnnotationElement extends AnnotationElement {
     let isRenderable = !!(parameters.data.hasPopup ||
                           parameters.data.title || parameters.data.contents);
     super(parameters, isRenderable, /* ignoreBorder = */ true);
+
+    this.containerClassName = 'polylineAnnotation';
+    this.svgElementName = 'svg:polyline';
   }
 
   /**
@@ -929,7 +935,7 @@ class PolylineAnnotationElement extends AnnotationElement {
    * @returns {HTMLSectionElement}
    */
   render() {
-    this.container.className = 'polylineAnnotation';
+    this.container.className = this.containerClassName;
 
     // Create an invisible polyline with the same points that acts as the
     // trigger for the popup. Only the polyline itself should trigger the
@@ -953,7 +959,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     points = points.join(' ');
 
     let borderWidth = data.borderStyle.width;
-    let polyline = this.svgFactory.createElement('svg:polyline');
+    let polyline = this.svgFactory.createElement(this.svgElementName);
     polyline.setAttribute('points', points);
     polyline.setAttribute('stroke-width', borderWidth);
     polyline.setAttribute('stroke', 'transparent');
@@ -967,6 +973,16 @@ class PolylineAnnotationElement extends AnnotationElement {
     this._createPopup(this.container, polyline, data);
 
     return this.container;
+  }
+}
+
+class PolygonAnnotationElement extends PolylineAnnotationElement {
+  constructor(parameters) {
+    // Polygons are specific forms of polylines, so reuse their logic.
+    super(parameters);
+
+    this.containerClassName = 'polygonAnnotation';
+    this.svgElementName = 'svg:polygon';
   }
 }
 
