@@ -552,8 +552,9 @@ var Jbig2Image = (function Jbig2ImageClosure() {
             (rdh >> 1) + rdy, false, refinementAt,
             decodingContext);
         }
-        var offsetT = t - ((referenceCorner & 1) ? 0 : symbolHeight);
-        var offsetS = currentS - ((referenceCorner & 2) ? symbolWidth : 0);
+        var offsetT = t - ((referenceCorner & 1) ? 0 : (symbolHeight - 1));
+        var offsetS = currentS -
+          ((referenceCorner & 2) ? (symbolWidth - 1) : 0);
         var s2, t2, symbolRow;
         if (transposed) {
           // Place Symbol Bitmap from T1,S1
