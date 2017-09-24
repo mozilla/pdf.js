@@ -3660,6 +3660,13 @@
        "type": "eq",
        "forms": true
     },
+    {  "id": "annotation-polyline-polygon",
+       "file": "pdfs/annotation-polyline-polygon.pdf",
+       "md5": "e68611602f58c8ca70cc40575ba3b04e",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
+    },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
        "md5": "8961cb55149495989a80bf0487e0f076",
