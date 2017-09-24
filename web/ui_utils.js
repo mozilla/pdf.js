@@ -25,6 +25,13 @@ const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
 
+const PresentationModeState = {
+  UNKNOWN: 0,
+  NORMAL: 1,
+  CHANGING: 2,
+  FULLSCREEN: 3,
+};
+
 const RendererType = {
   CANVAS: 'canvas',
   SVG: 'svg',
@@ -661,6 +668,7 @@ export {
   VERTICAL_PADDING,
   isValidRotation,
   cloneObj,
+  PresentationModeState,
   RendererType,
   mozL10n,
   NullL10n,
