@@ -80,6 +80,12 @@ class AnnotationElementFactory {
       case AnnotationType.CIRCLE:
         return new CircleAnnotationElement(parameters);
 
+      case AnnotationType.POLYLINE:
+        return new PolylineAnnotationElement(parameters);
+
+      case AnnotationType.POLYGON:
+        return new PolygonAnnotationElement(parameters);
+
       case AnnotationType.HIGHLIGHT:
         return new HighlightAnnotationElement(parameters);
 
@@ -601,7 +607,7 @@ class PopupAnnotationElement extends AnnotationElement {
   render() {
     // Do not render popup annotations for parent elements with these types as
     // they create the popups themselves (because of custom trigger divs).
-    const IGNORE_TYPES = ['Line', 'Square', 'Circle'];
+    const IGNORE_TYPES = ['Line', 'Square', 'Circle', 'PolyLine', 'Polygon'];
 
     this.container.className = 'popupAnnotation';
 
@@ -908,6 +914,75 @@ class CircleAnnotationElement extends AnnotationElement {
     this._createPopup(this.container, circle, data);
 
     return this.container;
+  }
+}
+
+class PolylineAnnotationElement extends AnnotationElement {
+  constructor(parameters) {
+    let isRenderable = !!(parameters.data.hasPopup ||
+                          parameters.data.title || parameters.data.contents);
+    super(parameters, isRenderable, /* ignoreBorder = */ true);
+
+    this.containerClassName = 'polylineAnnotation';
+    this.svgElementName = 'svg:polyline';
+  }
+
+  /**
+   * Render the polyline annotation's HTML element in the empty container.
+   *
+   * @public
+   * @memberof PolylineAnnotationElement
+   * @returns {HTMLSectionElement}
+   */
+  render() {
+    this.container.className = this.containerClassName;
+
+    // Create an invisible polyline with the same points that acts as the
+    // trigger for the popup. Only the polyline itself should trigger the
+    // popup, not the entire container.
+    let data = this.data;
+    let width = data.rect[2] - data.rect[0];
+    let height = data.rect[3] - data.rect[1];
+    let svg = this.svgFactory.create(width, height);
+
+    // Convert the vertices array to a single points string that the SVG
+    // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
+    // calculated from a bottom left origin, so transform the polyline
+    // coordinates to a top left origin for the SVG element.
+    let vertices = data.vertices;
+    let points = [];
+    for (let i = 0, ii = vertices.length; i < ii; i++) {
+      let x = vertices[i].x - data.rect[0];
+      let y = data.rect[3] - vertices[i].y;
+      points.push(x + ',' + y);
+    }
+    points = points.join(' ');
+
+    let borderWidth = data.borderStyle.width;
+    let polyline = this.svgFactory.createElement(this.svgElementName);
+    polyline.setAttribute('points', points);
+    polyline.setAttribute('stroke-width', borderWidth);
+    polyline.setAttribute('stroke', 'transparent');
+    polyline.setAttribute('fill', 'none');
+
+    svg.appendChild(polyline);
+    this.container.append(svg);
+
+    // Create the popup ourselves so that we can bind it to the polyline
+    // instead of to the entire container (which is the default).
+    this._createPopup(this.container, polyline, data);
+
+    return this.container;
+  }
+}
+
+class PolygonAnnotationElement extends PolylineAnnotationElement {
+  constructor(parameters) {
+    // Polygons are specific forms of polylines, so reuse their logic.
+    super(parameters);
+
+    this.containerClassName = 'polygonAnnotation';
+    this.svgElementName = 'svg:polygon';
   }
 }
 
