@@ -1348,6 +1348,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var width = 0;
         var height = 0;
         var glyphs = font.charsToGlyphs(chars);
+        var splitSpaces = true;
         for (var i = 0; i < glyphs.length; i++) {
           var glyph = glyphs[i];
           var glyphWidth = null;
@@ -1388,6 +1389,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           textState.translateTextMatrix(tx, ty);
 
           textChunk.str.push(glyphUnicode);
+
+          if ((glyph.isSpace || glyphUnicode === ' ') &&
+              !combineTextItems && splitSpaces) {
+            if (!font.vertical) {
+              textChunk.lastAdvanceWidth = width;
+              textChunk.width += width;
+            } else {
+              textChunk.lastAdvanceHeight = height;
+              textChunk.height += Math.abs(height);
+            }
+
+            flushTextContentItem();
+            textChunk = ensureTextContentItem();
+
+            width = 0;
+            height = 0;
+          }
         }
 
         if (!font.vertical) {
@@ -1604,7 +1622,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                       textContentItem.width += offset;
                     }
                   }
-                  if (breakTextRun) {
+                  if (breakTextRun ||
+                      (advance > 0 && !combineTextItems)) {
                     flushTextContentItem();
                   } else if (advance > 0) {
                     addFakeSpaces(advance, textContentItem.str);
