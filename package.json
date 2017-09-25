@@ -36,6 +36,9 @@
     "wintersmith": "^2.0.0",
     "yargs": "^3.14.0"
   },
+  "engines": {
+    "node": "^6.11.1"
+  },
   "scripts": {
     "test": "gulp lint unittestcli externaltest"
   },
