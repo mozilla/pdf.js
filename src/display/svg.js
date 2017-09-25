@@ -754,7 +754,7 @@ SVGGraphics = (function SVGGraphicsClosure() {
         var character = glyph.fontChar;
         var spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
         if (glyph.isSpace || glyph.fontChar === ' ') {
-          if (lastWasSpace) {
+          if (lastWasSpace || i === 0 || (i === glyphsLength - 1)) {
             doubleSpace = true;
           }
           lastWasSpace = true;
