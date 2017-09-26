@@ -106,8 +106,12 @@ function getViewerConfiguration() {
     sidebar: {
       // Divs (and sidebar button)
       mainContainer: document.getElementById('mainContainer'),
+      sidebarContainer: document.getElementById('sidebarContainer'),
+      sidebarContent: document.getElementById('sidebarContent'),
+      toolbarSidebar: document.getElementById('toolbarSidebar'),
       outerContainer: document.getElementById('outerContainer'),
       toggleButton: document.getElementById('sidebarToggle'),
+      resizer: document.getElementById('sidebarResizer'),
       // Buttons
       thumbnailButton: document.getElementById('viewThumbnail'),
       outlineButton: document.getElementById('viewOutline'),

@@ -175,6 +175,16 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   right: 0px;
 }
 
+#sidebarResizer {
+  width: 5px;
+  right: -5px;
+  top: 0;
+  bottom: 0;
+  position: absolute;
+  z-index: 999;
+  cursor: col-resize;
+}
+
 #mainContainer {
   position: absolute;
   top: 0;

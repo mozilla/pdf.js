@@ -77,6 +77,9 @@ class PDFSidebar {
     this.outerContainer = options.outerContainer;
     this.eventBus = options.eventBus;
     this.toggleButton = options.toggleButton;
+    this.toolbarSidebar = options.toolbarSidebar;
+    this.sidebarContainer = options.sidebarContainer;
+    this.sidebarContent = options.sidebarContent;
 
     this.thumbnailButton = options.thumbnailButton;
     this.outlineButton = options.outlineButton;
@@ -86,11 +89,14 @@ class PDFSidebar {
     this.outlineView = options.outlineView;
     this.attachmentsView = options.attachmentsView;
 
+    this.resizer = options.resizer;
+
     this.disableNotification = options.disableNotification || false;
 
     this.l10n = l10n;
 
     this._addEventListeners();
+    this._addResizerListeners();
   }
 
   reset() {
@@ -452,6 +458,71 @@ class PDFSidebar {
       if (!evt.active && !evt.switchInProgress && this.isThumbnailViewVisible) {
         this._updateThumbnailViewer();
       }
+    });
+  }
+
+  resize(width) {
+    // Less than 200px is too small.
+    if (width < 200) {
+      return;
+    }
+
+    // This is the media query in viewer.css, which
+    // sets #mainContainer left to 0 on small screens.
+    // We don't want to override that.
+    var mql = window.matchMedia('all and (max-width: 840px');
+    if (!mql.matches) {
+      this.mainContainer.style.left = width + 'px';
+    }
+
+    this.toolbarSidebar.style.width = width + 'px';
+    this.sidebarContainer.style.width = width + 'px';
+    this.sidebarContent.style.width = width + 'px';
+
+    // These children have padding, account for those.
+    for (let i = 0; i < this.sidebarContent.children.length; ++i) {
+      var child = this.sidebarContent.children[i];
+      const style = window.getComputedStyle(child);
+      const padding =
+            parseInt(style.getPropertyValue('padding-left')) +
+            parseInt(style.getPropertyValue('padding-right'));
+      child.style.width = String(width - padding) + 'px';
+    }
+  }
+
+  resetSize() {
+    this.mainContainer.style.left = '';
+    this.toolbarSidebar.style.width = '';
+    this.sidebarContainer.style.width = '';
+    this.sidebarContent.style.width = '';
+    for (let i = 0; i < this.sidebarContent.children.length; ++i) {
+      var child = this.sidebarContent.children[i];
+      child.style.width = '';
+    }
+  }
+
+  _addResizerListeners() {
+    var that = this;
+
+    function onmousemove(evt) {
+      that.resize(evt.clientX);
+    }
+
+    function onmouseup(evt) {
+      document.removeEventListener('mousemove', onmousemove);
+      document.removeEventListener('mouseup', onmouseup);
+    }
+
+    // This media query controls appearance of sidebar on smaller displays.
+    // Reset size on activation/deactivation so sidebar doesn't look ridiculous.
+    var mql = window.matchMedia('all and (max-width: 840px');
+    mql.addListener(() => {
+      that.resetSize();
+    });
+
+    this.resizer.addEventListener('mousedown', (evt) => {
+      document.addEventListener('mousemove', onmousemove);
+      document.addEventListener('mouseup', onmouseup);
     });
   }
 }
