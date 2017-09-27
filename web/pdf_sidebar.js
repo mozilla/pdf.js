@@ -462,8 +462,7 @@ class PDFSidebar {
   }
 
   resize(width) {
-    // Less than 200px is too small.
-    if (width < 200) {
+    if (width < 200 || width > this.mainContainer.offsetWidth) {
       return;
     }
 
