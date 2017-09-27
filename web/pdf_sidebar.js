@@ -509,18 +509,29 @@ class PDFSidebar {
     }
 
     function onmouseup(evt) {
+      // Defer pdf resize event until now.
+      that.eventBus.dispatch('resize');
+      that.mainContainer.style.transitionProperty = '';
+
       document.removeEventListener('mousemove', onmousemove);
       document.removeEventListener('mouseup', onmouseup);
     }
 
     // This media query controls appearance of sidebar on smaller displays.
-    // Reset size on activation/deactivation so sidebar doesn't look ridiculous.
+    // Reset size on activation/deactivation so sidebar doesn't look
+    // ridiculous.
     var mql = window.matchMedia('all and (max-width: 840px');
     mql.addListener(() => {
       that.resetSize();
     });
 
+
     this.resizer.addEventListener('mousedown', (evt) => {
+      // We want to disable transition animation so make drag resize animate
+      // smoothly. But end of transition animation triggers mainContainer (pdf
+      // container) resize, so we'll have to trigger this event ourselves. See
+      // onmouseup().
+      this.mainContainer.style.transitionProperty = 'none';
       document.addEventListener('mousemove', onmousemove);
       document.addEventListener('mouseup', onmouseup);
     });
