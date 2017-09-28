@@ -15,11 +15,11 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
-  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
-  MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
-  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
-  UnknownErrorException, Util, warn
+  AbortException, assert, createPromiseCapability, deprecated,
+  getVerbosityLevel, info, InvalidPDFException, isArrayBuffer, isSameOrigin,
+  loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
+  PageViewport, PasswordException, StatTimer, stringToBytes,
+  UnexpectedResponseException, UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
@@ -1382,7 +1382,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           var messageHandler = new MessageHandler('main', 'worker', worker);
           var terminateEarly = () => {
             worker.removeEventListener('error', onWorkerError);
-            messageHandler.destroy();
+            messageHandler.close(new Error('Worker was terminated'));
             worker.terminate();
             if (this.destroyed) {
               this._readyCapability.reject(new Error('Worker was destroyed'));
@@ -1424,7 +1424,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               });
             } else {
               this._setupFakeWorker();
-              messageHandler.destroy();
+              messageHandler.close(new Error('Worker was terminated'));
               worker.terminate();
             }
           });
@@ -1527,7 +1527,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       pdfWorkerPorts.delete(this._port);
       this._port = null;
       if (this._messageHandler) {
-        this._messageHandler.destroy();
+        this._messageHandler.close(new AbortException('Worker was destroyed'));
         this._messageHandler = null;
       }
     },
@@ -1607,7 +1607,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
 
         if (this.messageHandler) {
-          this.messageHandler.destroy();
+          this.messageHandler.close(new AbortException('Worker was destroyed'));
           this.messageHandler = null;
         }
         this.destroyCapability.resolve();
