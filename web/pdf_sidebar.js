@@ -14,6 +14,7 @@
  */
 
 import { NullL10n } from './ui_utils';
+import { PDFSidebarResizer } from './pdf_sidebar_resizer';
 import { RenderingStates } from './pdf_rendering_queue';
 
 const UI_NOTIFICATION_CLASS = 'pdfSidebarNotification';
@@ -74,6 +75,7 @@ class PDFSidebar {
     this.pdfOutlineViewer = options.pdfOutlineViewer;
 
     this.mainContainer = options.mainContainer;
+    this.viewerContainer = options.viewerContainer;
     this.outerContainer = options.outerContainer;
     this.eventBus = options.eventBus;
     this.toggleButton = options.toggleButton;
@@ -89,14 +91,24 @@ class PDFSidebar {
     this.outlineView = options.outlineView;
     this.attachmentsView = options.attachmentsView;
 
-    this.resizer = options.resizer;
+    this.setWidth = function(width) {
+      var ret = options.setWidth(width);
+      this.eventBus.dispatch('sidebarresize');
+      return ret;
+    };
+
+    this.pdfSidebarResizer = new PDFSidebarResizer({
+      pdfSidebar: this,
+      mainContainer: this.mainContainer,
+      resizer: options.resizer,
+      eventBus: this.eventBus,
+    });
 
     this.disableNotification = options.disableNotification || false;
 
     this.l10n = l10n;
 
     this._addEventListeners();
-    this._addResizerListeners();
   }
 
   reset() {
@@ -410,6 +422,13 @@ class PDFSidebar {
       this.switchView(SidebarView.ATTACHMENTS);
     });
 
+    this.eventBus.on('resize', (evt) => {
+      const maxWidth = this.mainContainer.offsetWidth / 2;
+      if (this.width > maxWidth) {
+        this.setWidth(Math.max(200, maxWidth) + 'px');
+      }
+    });
+
     // Disable/enable views.
     this.eventBus.on('outlineloaded', (evt) => {
       let outlineCount = evt.outlineCount;
@@ -461,79 +480,8 @@ class PDFSidebar {
     });
   }
 
-  resize(width) {
-    if (width < 200 || width > this.mainContainer.offsetWidth) {
-      return;
-    }
-
-    // This is the media query in viewer.css, which
-    // sets #mainContainer left to 0 on small screens.
-    // We don't want to override that.
-    var mql = window.matchMedia('all and (max-width: 840px');
-    if (!mql.matches) {
-      this.mainContainer.style.left = width + 'px';
-    }
-
-    this.toolbarSidebar.style.width = width + 'px';
-    this.sidebarContainer.style.width = width + 'px';
-    this.sidebarContent.style.width = width + 'px';
-
-    // These children have padding, account for those.
-    for (let i = 0; i < this.sidebarContent.children.length; ++i) {
-      var child = this.sidebarContent.children[i];
-      const style = window.getComputedStyle(child);
-      const padding =
-            parseInt(style.getPropertyValue('padding-left')) +
-            parseInt(style.getPropertyValue('padding-right'));
-      child.style.width = String(width - padding) + 'px';
-    }
-  }
-
-  resetSize() {
-    this.mainContainer.style.left = '';
-    this.toolbarSidebar.style.width = '';
-    this.sidebarContainer.style.width = '';
-    this.sidebarContent.style.width = '';
-    for (let i = 0; i < this.sidebarContent.children.length; ++i) {
-      var child = this.sidebarContent.children[i];
-      child.style.width = '';
-    }
-  }
-
-  _addResizerListeners() {
-    var that = this;
-
-    function onmousemove(evt) {
-      that.resize(evt.clientX);
-    }
-
-    function onmouseup(evt) {
-      // Defer pdf resize event until now.
-      that.eventBus.dispatch('resize');
-      that.mainContainer.style.transitionProperty = '';
-
-      document.removeEventListener('mousemove', onmousemove);
-      document.removeEventListener('mouseup', onmouseup);
-    }
-
-    // This media query controls appearance of sidebar on smaller displays.
-    // Reset size on activation/deactivation so sidebar doesn't look
-    // ridiculous.
-    var mql = window.matchMedia('all and (max-width: 840px');
-    mql.addListener(() => {
-      that.resetSize();
-    });
-
-
-    this.resizer.addEventListener('mousedown', (evt) => {
-      // We want to disable transition animation so make drag resize animate
-      // smoothly. But end of transition animation triggers mainContainer (pdf
-      // container) resize, so we'll have to trigger this event ourselves. See
-      // onmouseup().
-      this.mainContainer.style.transitionProperty = 'none';
-      document.addEventListener('mousemove', onmousemove);
-      document.addEventListener('mouseup', onmouseup);
-    });
+  get width() {
+    return this.sidebarContainer.offsetWidth;
   }
 }
 

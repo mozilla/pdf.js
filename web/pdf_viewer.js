@@ -114,6 +114,8 @@ class PDFViewer {
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
     this.renderer = options.renderer || RendererType.CANVAS;
     this.l10n = options.l10n || NullL10n;
+    this.setMainContainerLeft = options.setMainContainerLeft || (() => {});
+    this.setMainContainerRight = options.setMainContainerRight || (() => {});
 
     this.defaultRenderingQueue = !options.renderingQueue;
     if (this.defaultRenderingQueue) {

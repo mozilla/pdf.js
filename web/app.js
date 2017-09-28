@@ -95,6 +95,7 @@ let PDFViewerApplication = {
   pdfDocument: null,
   pdfLoadingTask: null,
   printService: null,
+  deferUpdate: false,
   /** @type {PDFViewer} */
   pdfViewer: null,
   /** @type {PDFThumbnailViewer} */
@@ -324,6 +325,8 @@ let PDFViewerApplication = {
         enhanceTextSelection: this.viewerPrefs['enhanceTextSelection'],
         renderInteractiveForms: this.viewerPrefs['renderInteractiveForms'],
         enablePrintAutoRotate: this.viewerPrefs['enablePrintAutoRotate'],
+        setMainContainerLeft: appConfig.setMainContainerLeft,
+        setMainContainerRight: appConfig.setMainContainerRight,
       });
       pdfRenderingQueue.setViewer(this.pdfViewer);
       pdfLinkService.setViewer(this.pdfViewer);
@@ -1270,6 +1273,7 @@ let PDFViewerApplication = {
     _boundEvents.afterPrint = this.afterPrint.bind(this);
 
     eventBus.on('resize', webViewerResize);
+    eventBus.on('sidebarresize', webViewerSidebarResize);
     eventBus.on('hashchange', webViewerHashchange);
     eventBus.on('beforeprint', _boundEvents.beforePrint);
     eventBus.on('afterprint', _boundEvents.afterPrint);
@@ -1300,6 +1304,9 @@ let PDFViewerApplication = {
     eventBus.on('documentproperties', webViewerDocumentProperties);
     eventBus.on('find', webViewerFind);
     eventBus.on('findfromurlhash', webViewerFindFromUrlHash);
+    eventBus.on('deferupdate', webViewerDeferUpdate);
+    eventBus.on('resumeupdate', webViewerResumeUpdate);
+
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       eventBus.on('fileinputchange', webViewerFileInputChange);
     }
@@ -1336,6 +1343,7 @@ let PDFViewerApplication = {
     let { eventBus, _boundEvents, } = this;
 
     eventBus.off('resize', webViewerResize);
+    eventBus.off('sidebarresize', webViewerSidebarResize);
     eventBus.off('hashchange', webViewerHashchange);
     eventBus.off('beforeprint', _boundEvents.beforePrint);
     eventBus.off('afterprint', _boundEvents.afterPrint);
@@ -1366,6 +1374,9 @@ let PDFViewerApplication = {
     eventBus.off('documentproperties', webViewerDocumentProperties);
     eventBus.off('find', webViewerFind);
     eventBus.off('findfromurlhash', webViewerFindFromUrlHash);
+    eventBus.off('deferupdate', webViewerDeferUpdate);
+    eventBus.off('resumeupdate', webViewerResumeUpdate);
+
     if (typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) {
       eventBus.off('fileinputchange', webViewerFileInputChange);
     }
@@ -1580,9 +1591,9 @@ function webViewerInitialized() {
     appConfig.toolbar.viewFind.classList.add('hidden');
   }
 
-  appConfig.sidebar.mainContainer.addEventListener('transitionend',
+  appConfig.mainContainer.addEventListener('transitionend',
     function(evt) {
-      if (evt.target === /* mainContainer */ this) {
+      if (evt.target === /* mainContainer, id == viewerContainer */ this) {
         PDFViewerApplication.eventBus.dispatch('resize');
       }
     }, true);
@@ -1795,7 +1806,7 @@ function webViewerUpdateViewarea(evt) {
 
 function webViewerResize() {
   let { pdfDocument, pdfViewer, } = PDFViewerApplication;
-  if (!pdfDocument) {
+  if (!pdfDocument || PDFViewerApplication.deferUpdate) {
     return;
   }
   let currentScaleValue = pdfViewer.currentScaleValue;
@@ -1806,6 +1817,12 @@ function webViewerResize() {
     pdfViewer.currentScaleValue = currentScaleValue;
   }
   pdfViewer.update();
+}
+
+function webViewerSidebarResize() {
+  const width = PDFViewerApplication.pdfSidebar.width;
+  PDFViewerApplication.appConfig.setMainContainerLeft(width + 'px');
+  PDFViewerApplication.appConfig.setMainContainerRight(width + 'px');
 }
 
 function webViewerHashchange(evt) {
@@ -1929,6 +1946,18 @@ function webViewerFindFromUrlHash(evt) {
     highlightAll: true,
     findPrevious: false,
   });
+}
+
+function webViewerDeferUpdate(evt) {
+  PDFViewerApplication.deferUpdate = true;
+  PDFViewerApplication.appConfig.mainContainer.style.transitionProperty =
+    'none';
+}
+
+function webViewerResumeUpdate(evt) {
+  PDFViewerApplication.deferUpdate = false;
+  PDFViewerApplication.appConfig.mainContainer.style.transitionProperty = '';
+  webViewerResize();
 }
 
 function webViewerScaleChanging(evt) {

@@ -143,25 +143,25 @@ select {
 
 #sidebarContainer {
   position: absolute;
-  top: 0;
+  top: 32px;
   bottom: 0;
+  z-index: 100;
   width: 200px;
   visibility: hidden;
   -webkit-transition-duration: 200ms;
   -webkit-transition-timing-function: ease;
   transition-duration: 200ms;
   transition-timing-function: ease;
-
 }
 html[dir='ltr'] #sidebarContainer {
   -webkit-transition-property: left;
   transition-property: left;
-  left: -200px;
+  left: calc(-100%);
 }
 html[dir='rtl'] #sidebarContainer {
   -webkit-transition-property: right;
   transition-property: right;
-  right: -200px;
+  right: calc(-100%);
 }
 
 #outerContainer.sidebarMoving > #sidebarContainer,
@@ -192,21 +192,8 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #sidebarContainer {
   bottom: 0;
   left: 0;
   min-width: 320px;
-  -webkit-transition-duration: 200ms;
-  -webkit-transition-timing-function: ease;
-  transition-duration: 200ms;
-  transition-timing-function: ease;
 }
-html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
-  -webkit-transition-property: left;
-  transition-property: left;
-  left: 200px;
-}
-html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
-  -webkit-transition-property: right;
-  transition-property: right;
-  right: 200px;
-}
+
 
 #sidebarContent {
   top: 32px;
@@ -214,7 +201,7 @@ html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   position: absolute;
-  width: 200px;
+  width: 100%;
   background-color: hsla(0,0%,0%,.1);
 }
 html[dir='ltr'] #sidebarContent {
@@ -235,12 +222,40 @@ html[dir='rtl'] #sidebarContent {
   bottom: 0;
   left: 0;
   outline: none;
+  -webkit-transition-duration: 200ms;
+  -webkit-transition-timing-function: ease;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
 }
 html[dir='ltr'] #viewerContainer {
   box-shadow: inset 1px 0 0 hsla(0,0%,100%,.05);
 }
 html[dir='rtl'] #viewerContainer {
   box-shadow: inset -1px 0 0 hsla(0,0%,100%,.05);
+}
+/* It's important that we maintain the following order of specificity
+ * on the rules that affect left/right property (depending on value
+ * html[dir]) of viewerContainer. The selectors in decreasing order of
+ * specificity:
+ * 1. The media query rules for @media all and (max-width: 840px)
+ *    html[dir='ltr'] #outerContainer.sidebarOpen #mainContainer
+ *      div#viewerContainer
+ * 2. The mutating rules set by setMainContainerLeft
+ *    html[dir="ltr"] #outerContainer.sidebarOpen #mainContainer
+ *      #viewerContainer
+ * 3. The default rules below
+ *    html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer
+ * And the same for the corresponding rtl rules.
+ */
+html[dir='ltr'] #outerContainer.sidebarOpen #viewerContainer {
+  -webkit-transition-property: left;
+  transition-property: left;
+  left: 200px;
+}
+html[dir='rtl'] #outerContainer.sidebarOpen #viewerContainer {
+  -webkit-transition-property: right;
+  transition-property: right;
+  right: 200px;
 }
 
 .toolbar {
@@ -256,7 +271,7 @@ html[dir='rtl'] #viewerContainer {
 }
 
 #toolbarSidebar {
-  width: 200px;
+  width: 100%;
   height: 32px;
   background-color: #424242; /* fallback */
   background-image: url(images/texture.png),
@@ -1128,7 +1143,8 @@ html[dir='rtl'] .verticalToolbarSeparator {
 
 #thumbnailView {
   position: absolute;
-  width: 120px;
+  width: 100%;
+  box-sizing: border-box;
   top: 0;
   bottom: 0;
   padding: 10px 40px 0;
@@ -1202,7 +1218,8 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 #outlineView,
 #attachmentsView {
   position: absolute;
-  width: 192px;
+  width: 100%;
+  box-sizing: border-box;
   top: 0;
   bottom: 0;
   overflow: auto;
@@ -1904,10 +1921,10 @@ html[dir='rtl'] #documentPropertiesOverlay .row > * {
     background-color: hsla(0,0%,0%,.7);
   }
 
-  html[dir='ltr'] #outerContainer.sidebarOpen > #mainContainer {
+  html[dir='ltr'] #outerContainer.sidebarOpen #mainContainer div#viewerContainer {
     left: 0px;
   }
-  html[dir='rtl'] #outerContainer.sidebarOpen > #mainContainer {
+  html[dir='rtl'] #outerContainer.sidebarOpen #mainContainer div#viewerContainer {
     right: 0px;
   }
 

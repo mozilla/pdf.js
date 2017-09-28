@@ -16,6 +16,8 @@
 
 'use strict';
 
+import { cssPropertyMutator } from './inject_css';
+
 let DEFAULT_URL = 'compressed.tracemonkey-pldi-09.pdf';
 
 if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME')) {
@@ -58,6 +60,16 @@ function getViewerConfiguration() {
   return {
     appContainer: document.body,
     mainContainer: document.getElementById('viewerContainer'),
+    // The rules below are ugly because we need sufficient specificity
+    // for the rules to take effect.
+    setMainContainerLeft: cssPropertyMutator(
+      'html[dir="ltr"] #outerContainer.sidebarOpen #mainContainer ' +
+      '#viewerContainer',
+      'left'),
+    setMainContainerRight: cssPropertyMutator(
+      'html[dir="rtl"] #outerContainer.sidebarOpen #mainContainer ' +
+      '#viewerContainer',
+      'right'),
     viewerContainer: document.getElementById('viewer'),
     eventBus: null, // using global event bus with DOM events
     toolbar: {
@@ -106,6 +118,7 @@ function getViewerConfiguration() {
     sidebar: {
       // Divs (and sidebar button)
       mainContainer: document.getElementById('mainContainer'),
+      viewerContainer: document.getElementById('viewerContainer'),
       sidebarContainer: document.getElementById('sidebarContainer'),
       sidebarContent: document.getElementById('sidebarContent'),
       toolbarSidebar: document.getElementById('toolbarSidebar'),
@@ -120,6 +133,8 @@ function getViewerConfiguration() {
       thumbnailView: document.getElementById('thumbnailView'),
       outlineView: document.getElementById('outlineView'),
       attachmentsView: document.getElementById('attachmentsView'),
+      // Mutators
+      setWidth: cssPropertyMutator('#sidebarContainer', 'width'),
     },
     findBar: {
       bar: document.getElementById('findbar'),
