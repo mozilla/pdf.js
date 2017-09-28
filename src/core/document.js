@@ -37,7 +37,7 @@ var Page = (function PageClosure() {
   }
 
   function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
-                  builtInCMapCache, classFactory, }) {
+                  builtInCMapCache, pdfFunctionFactory, }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -45,7 +45,7 @@ var Page = (function PageClosure() {
     this.ref = ref;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
-    this.classFactory = classFactory;
+    this.pdfFunctionFactory = pdfFunctionFactory;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -216,7 +216,7 @@ var Page = (function PageClosure() {
         fontCache: this.fontCache,
         builtInCMapCache: this.builtInCMapCache,
         options: this.evaluatorOptions,
-        classFactory: this.classFactory,
+        pdfFunctionFactory: this.pdfFunctionFactory,
       });
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -292,7 +292,7 @@ var Page = (function PageClosure() {
           fontCache: this.fontCache,
           builtInCMapCache: this.builtInCMapCache,
           options: this.evaluatorOptions,
-          classFactory: this.classFactory,
+          pdfFunctionFactory: this.pdfFunctionFactory,
         });
 
         return partialEvaluator.getTextContent({
@@ -365,9 +365,9 @@ var PDFDocument = (function PDFDocumentClosure() {
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
 
-    let pdfFunction = null;
-    this.classFactory = {
-      getPDFFunction() {
+    let self = this, pdfFunction = null;
+    this.pdfFunctionFactory = {
+      _getInstance() {
         if (!pdfFunction) {
           let evaluatorOptions = pdfManager.evaluatorOptions;
           pdfFunction = new PDFFunction({
@@ -375,6 +375,22 @@ var PDFDocument = (function PDFDocumentClosure() {
           });
         }
         return pdfFunction;
+      },
+
+      create(fn) {
+        return this._getInstance().parse(self.xref, fn);
+      },
+
+      createFromArray(fnArray) {
+        return this._getInstance().parseArray(self.xref, fnArray);
+      },
+
+      createFromIR(IR) {
+        return this._getInstance().fromIR(IR);
+      },
+
+      parseToIR(fn) {
+        return this._getInstance().getIR(self.xref, fn);
       },
     };
   }
@@ -552,12 +568,12 @@ var PDFDocument = (function PDFDocumentClosure() {
             ref,
             fontCache,
             builtInCMapCache,
-            classFactory: this.classFactory,
+            pdfFunctionFactory: this.pdfFunctionFactory,
           });
         },
       };
       this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory,
-                                 this.classFactory);
+                                 this.pdfFunctionFactory);
     },
     get numPages() {
       var linearization = this.linearization;
