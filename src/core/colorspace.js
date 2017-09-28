@@ -15,7 +15,6 @@
 
 import { FormatError, info, isString, shadow, warn } from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
-import { PDFFunction } from './function';
 
 var ColorSpace = (function ColorSpaceClosure() {
   /**
@@ -200,12 +199,12 @@ var ColorSpace = (function ColorSpaceClosure() {
     usesZeroToOneRange: true,
   };
 
-  ColorSpace.parse = function ColorSpace_parse(cs, xref, res) {
-    let IR = ColorSpace.parseToIR(cs, xref, res);
-    return ColorSpace.fromIR(IR);
+  ColorSpace.parse = function(cs, xref, res, classFactory) {
+    let IR = ColorSpace.parseToIR(cs, xref, res, classFactory);
+    return ColorSpace.fromIR(IR, classFactory);
   };
 
-  ColorSpace.fromIR = function ColorSpace_fromIR(IR) {
+  ColorSpace.fromIR = function(IR, classFactory) {
     var name = Array.isArray(IR) ? IR[0] : IR;
     var whitePoint, blackPoint, gamma;
 
@@ -230,21 +229,21 @@ var ColorSpace = (function ColorSpaceClosure() {
       case 'PatternCS':
         var basePatternCS = IR[1];
         if (basePatternCS) {
-          basePatternCS = ColorSpace.fromIR(basePatternCS);
+          basePatternCS = ColorSpace.fromIR(basePatternCS, classFactory);
         }
         return new PatternCS(basePatternCS);
       case 'IndexedCS':
         var baseIndexedCS = IR[1];
         var hiVal = IR[2];
         var lookup = IR[3];
-        return new IndexedCS(ColorSpace.fromIR(baseIndexedCS), hiVal, lookup);
+        return new IndexedCS(ColorSpace.fromIR(baseIndexedCS, classFactory),
+                             hiVal, lookup);
       case 'AlternateCS':
         var numComps = IR[1];
         var alt = IR[2];
         var tintFnIR = IR[3];
-
-        return new AlternateCS(numComps, ColorSpace.fromIR(alt),
-                               PDFFunction.fromIR(tintFnIR));
+        return new AlternateCS(numComps, ColorSpace.fromIR(alt, classFactory),
+                               classFactory.getPDFFunction().fromIR(tintFnIR));
       case 'LabCS':
         whitePoint = IR[1];
         blackPoint = IR[2];
@@ -255,7 +254,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   };
 
-  ColorSpace.parseToIR = function ColorSpace_parseToIR(cs, xref, res) {
+  ColorSpace.parseToIR = function(cs, xref, res, classFactory) {
     if (isName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
@@ -317,10 +316,10 @@ var ColorSpace = (function ColorSpaceClosure() {
           numComps = dict.get('N');
           alt = dict.get('Alternate');
           if (alt) {
-            var altIR = ColorSpace.parseToIR(alt, xref, res);
+            var altIR = ColorSpace.parseToIR(alt, xref, res, classFactory);
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
-            var altCS = ColorSpace.fromIR(altIR);
+            var altCS = ColorSpace.fromIR(altIR, classFactory);
             if (altCS.numComps === numComps) {
               return altIR;
             }
@@ -337,12 +336,14 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Pattern':
           var basePatternCS = cs[1] || null;
           if (basePatternCS) {
-            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res);
+            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res,
+                                                 classFactory);
           }
           return ['PatternCS', basePatternCS];
         case 'Indexed':
         case 'I':
-          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res);
+          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res,
+                                                   classFactory);
           var hiVal = xref.fetchIfRef(cs[2]) + 1;
           var lookup = xref.fetchIfRef(cs[3]);
           if (isStream(lookup)) {
@@ -353,8 +354,9 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'DeviceN':
           var name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = ColorSpace.parseToIR(cs[2], xref, res);
-          var tintFnIR = PDFFunction.getIR(xref, xref.fetchIfRef(cs[3]));
+          alt = ColorSpace.parseToIR(cs[2], xref, res, classFactory);
+          let tintFnIR =
+            classFactory.getPDFFunction().getIR(xref, xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
           params = xref.fetchIfRef(cs[1]);

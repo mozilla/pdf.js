@@ -16,9 +16,32 @@
 import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Stream, StringStream } from '../../src/core/stream';
 import { ColorSpace } from '../../src/core/colorspace';
+import { PDFFunction } from '../../src/core/function';
 import { XRefMock } from './test_utils';
 
 describe('colorspace', function () {
+  let classFactory;
+
+  beforeAll(function(done) {
+    let pdfFunction = null;
+    classFactory = {
+      getPDFFunction() {
+        if (!pdfFunction) {
+          pdfFunction = new PDFFunction({
+            isEvalSupported: true,
+          });
+        }
+        return pdfFunction;
+      },
+    };
+    done();
+  });
+
+  afterAll(function(done) {
+    classFactory = null;
+    done();
+  });
+
   describe('ColorSpace', function () {
     it('should be true if decode is not an array', function () {
       expect(ColorSpace.isDefaultDecode('string', 0)).toBeTruthy();
@@ -54,7 +77,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8Array(4 * 4 * 3);
@@ -92,7 +115,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8Array(3 * 3 * 3);
@@ -126,7 +149,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -169,7 +192,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -208,7 +231,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
@@ -251,7 +274,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
@@ -298,7 +321,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8Array(4 * 4 * 3);
@@ -348,7 +371,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -395,7 +418,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([
         27, 25, 50,
@@ -445,7 +468,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([2, 2, 0, 1]);
       let testDest = new Uint8Array(3 * 3 * 3);
@@ -497,7 +520,7 @@ describe('colorspace', function () {
       }]);
       let res = new Dict();
 
-      let colorSpace = ColorSpace.parse(cs, xref, res);
+      let colorSpace = ColorSpace.parse(cs, xref, res, classFactory);
 
       let testSrc = new Uint8Array([27, 25, 50, 31]);
       let testDest = new Uint8Array(3 * 3 * 3);

@@ -38,12 +38,12 @@ import {
   getSerifFonts, getStdFontMap, getSymbolsFonts
 } from './standard_fonts';
 import { getTilingPatternIR, Pattern } from './pattern';
-import { isPDFFunction, PDFFunction } from './function';
 import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
 import { ColorSpace } from './colorspace';
 import { getGlyphsUnicode } from './glyphlist';
 import { getMetrics } from './metrics';
+import { isPDFFunction } from './function';
 import { MurmurHash3_64 } from './murmurhash3';
 import { PDFImage } from './image';
 
@@ -57,22 +57,26 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isEvalSupported: true,
   };
 
-  function NativeImageDecoder(xref, resources, handler, forceDataSchema) {
+  function NativeImageDecoder({ xref, resources, handler,
+                                forceDataSchema = false, classFactory, }) {
     this.xref = xref;
     this.resources = resources;
     this.handler = handler;
     this.forceDataSchema = forceDataSchema;
+    this.classFactory = classFactory;
   }
   NativeImageDecoder.prototype = {
     canDecode(image) {
       return image instanceof JpegStream &&
-             NativeImageDecoder.isDecodable(image, this.xref, this.resources);
+             NativeImageDecoder.isDecodable(image, this.xref, this.resources,
+                                            this.classFactory);
     },
     decode(image) {
       // For natively supported JPEGs send them to the main thread for decoding.
       var dict = image.dict;
       var colorSpace = dict.get('ColorSpace', 'CS');
-      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources);
+      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
+                                    this.classFactory);
       var numComps = colorSpace.numComps;
       var decodePromise = this.handler.sendWithPromise('JpegDecode',
         [image.getIR(this.forceDataSchema), numComps]);
@@ -86,32 +90,33 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * Checks if the image can be decoded and displayed by the browser without any
    * further processing such as color space conversions.
    */
-  NativeImageDecoder.isSupported =
-      function NativeImageDecoder_isSupported(image, xref, res) {
+  NativeImageDecoder.isSupported = function(image, xref, res, classFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
+                              classFactory);
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
   /**
    * Checks if the image can be decoded by the browser.
    */
-  NativeImageDecoder.isDecodable =
-      function NativeImageDecoder_isDecodable(image, xref, res) {
+  NativeImageDecoder.isDecodable = function(image, xref, res, classFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res);
+    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
+                              classFactory);
     return (cs.numComps === 1 || cs.numComps === 3) &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
 
   function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
-                              fontCache, builtInCMapCache, options = null, }) {
+                              fontCache, builtInCMapCache, options = null,
+                              classFactory, }) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
@@ -120,6 +125,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
+    this.classFactory = classFactory;
 
     this.fetchBuiltInCMap = (name) => {
       var cachedCMap = this.builtInCMapCache[name];
@@ -303,12 +309,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         };
 
         var groupSubtype = group.get('S');
-        var colorSpace;
+        var colorSpace = null;
         if (isName(groupSubtype, 'Transparency')) {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
-          colorSpace = (group.has('CS') ?
-            ColorSpace.parse(group.get('CS'), this.xref, resources) : null);
+          if (group.has('CS')) {
+            colorSpace = ColorSpace.parse(group.get('CS'), this.xref, resources,
+                                          this.classFactory);
+          }
         }
 
         if (smask && smask.backdrop) {
@@ -368,11 +376,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         var bitStrideLength = (width + 7) >> 3;
         var imgArray = image.getBytes(bitStrideLength * height);
         var decode = dict.getArray('Decode', 'D');
-        var inverseDecode = (!!decode && decode[0] > 0);
 
-        imgData = PDFImage.createMask(imgArray, width, height,
-                                      image instanceof DecodeStream,
-                                      inverseDecode);
+        imgData = PDFImage.createMask({
+          imgArray,
+          width,
+          height,
+          imageIsFromDecodeStream: image instanceof DecodeStream,
+          inverseDecode: (!!decode && decode[0] > 0),
+        });
         imgData.cached = true;
         args = [imgData];
         operatorList.addOp(OPS.paintImageMaskXObject, args);
@@ -392,8 +403,12 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Inlining small images into the queue as RGB data
       if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
-        var imageObj = new PDFImage(this.xref, resources, image,
-                                    inline, null, null);
+        let imageObj = new PDFImage({
+          xref: this.xref,
+          res: resources,
+          image,
+          classFactory: this.classFactory,
+        });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
         imgData = imageObj.createImageData(/* forceRGBA = */ true);
@@ -410,7 +425,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
-          NativeImageDecoder.isSupported(image, this.xref, resources)) {
+          NativeImageDecoder.isSupported(image, this.xref, resources,
+                                         this.classFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
         this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
@@ -429,12 +445,23 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (nativeImageDecoderSupport === NativeImageDecoding.DECODE &&
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
-        nativeImageDecoder = new NativeImageDecoder(this.xref, resources,
-          this.handler, this.options.forceDataSchema);
+        nativeImageDecoder = new NativeImageDecoder({
+          xref: this.xref,
+          resources,
+          handler: this.handler,
+          forceDataSchema: this.options.forceDataSchema,
+          classFactory: this.classFactory,
+        });
       }
 
-      PDFImage.buildImage(this.handler, this.xref, resources, image, inline,
-                          nativeImageDecoder).then((imageObj) => {
+      PDFImage.buildImage({
+        handler: this.handler,
+        xref: this.xref,
+        res: resources,
+        image,
+        nativeDecoder: nativeImageDecoder,
+        classFactory: this.classFactory,
+      }).then((imageObj) => {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
           [imgData.data.buffer]);
@@ -465,7 +492,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // we will build a map of integer values in range 0..255 to be fast.
       var transferObj = smask.get('TR');
       if (isPDFFunction(transferObj)) {
-        var transferFn = PDFFunction.parse(this.xref, transferObj);
+        let transferFn =
+          this.classFactory.getPDFFunction().parse(this.xref, transferObj);
         var transferMap = new Uint8Array(256);
         var tmp = new Float32Array(1);
         for (var i = 0; i < 256; i++) {
@@ -851,7 +879,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           var shading = dict.get('Shading');
           var matrix = dict.getArray('Matrix');
           pattern = Pattern.parseShading(shading, matrix, this.xref, resources,
-                                         this.handler);
+                                         this.handler, this.classFactory);
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
         }
@@ -1026,11 +1054,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
             case OPS.setFillColorSpace:
               stateManager.state.fillColorSpace =
-                ColorSpace.parse(args[0], xref, resources);
+                ColorSpace.parse(args[0], xref, resources, self.classFactory);
               continue;
             case OPS.setStrokeColorSpace:
               stateManager.state.strokeColorSpace =
-                ColorSpace.parse(args[0], xref, resources);
+                ColorSpace.parse(args[0], xref, resources, self.classFactory);
               continue;
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
@@ -1103,7 +1131,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               }
 
               var shadingFill = Pattern.parseShading(shading, null, xref,
-                resources, self.handler);
+                resources, self.handler, self.classFactory);
               var patternIR = shadingFill.getIR();
               args = [patternIR];
               fn = OPS.shadingFill;
