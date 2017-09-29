@@ -44,7 +44,7 @@ var Pattern = (function PatternClosure() {
     },
   };
 
-  Pattern.parseShading = function({ shading, matrix, xref, res, handler,
+  Pattern.parseShading = function({ shading, matrix = null, res, handler,
                                     pdfFunctionFactory, colorSpaceFactory, }) {
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
@@ -54,14 +54,14 @@ var Pattern = (function PatternClosure() {
         case ShadingType.AXIAL:
         case ShadingType.RADIAL:
           // Both radial and axial shadings are handled by RadialAxial shading.
-          return new Shadings.RadialAxial({ dict, matrix, xref, res,
+          return new Shadings.RadialAxial({ dict, matrix, res,
                                             pdfFunctionFactory,
                                             colorSpaceFactory, });
         case ShadingType.FREE_FORM_MESH:
         case ShadingType.LATTICE_FORM_MESH:
         case ShadingType.COONS_PATCH_MESH:
         case ShadingType.TENSOR_PATCH_MESH:
-          return new Shadings.Mesh({ shading, matrix, xref, res,
+          return new Shadings.Mesh({ shading, matrix, res,
                                      pdfFunctionFactory, colorSpaceFactory, });
         default:
           throw new FormatError('Unsupported ShadingType: ' + type);
@@ -88,7 +88,7 @@ Shadings.SMALL_NUMBER = 1e-6;
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
 Shadings.RadialAxial = (function RadialAxialClosure() {
-  function RadialAxial({ dict, matrix, xref, res, pdfFunctionFactory,
+  function RadialAxial({ dict, matrix, res, pdfFunctionFactory,
                          colorSpaceFactory, }) {
     this.matrix = matrix;
     this.coordsArr = dict.getArray('Coords');
@@ -712,7 +712,7 @@ Shadings.Mesh = (function MeshClosure() {
     }
   }
 
-  function Mesh({ shading, matrix, xref, res, pdfFunctionFactory,
+  function Mesh({ shading, matrix, res, pdfFunctionFactory,
                   colorSpaceFactory, }) {
     if (!isStream(shading)) {
       throw new FormatError('Mesh data is not a stream');

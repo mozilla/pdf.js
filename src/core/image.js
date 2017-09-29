@@ -73,8 +73,8 @@ var PDFImage = (function PDFImageClosure() {
     return dest;
   }
 
-  function PDFImage({ xref, res, image, smask = null, mask = null,
-                      isMask = false, colorSpaceFactory, }) {
+  function PDFImage({ res, image, smask = null, mask = null, isMask = false,
+                      colorSpaceFactory, }) {
     this.image = image;
     var dict = image.dict;
     if (dict.has('Filter')) {
@@ -161,7 +161,6 @@ var PDFImage = (function PDFImageClosure() {
 
     if (smask) {
       this.smask = new PDFImage({
-        xref,
         res,
         image: smask,
         colorSpaceFactory,
@@ -173,7 +172,6 @@ var PDFImage = (function PDFImageClosure() {
           warn('Ignoring /Mask in image without /ImageMask.');
         } else {
           this.mask = new PDFImage({
-            xref,
             res,
             image: mask,
             isMask: true,
@@ -190,8 +188,8 @@ var PDFImage = (function PDFImageClosure() {
    * Handles processing of image data and returns the Promise that is resolved
    * with a PDFImage when the image is ready to be used.
    */
-  PDFImage.buildImage = function({ handler, xref, res, image,
-                                   nativeDecoder = null, colorSpaceFactory, }) {
+  PDFImage.buildImage = function({ handler, res, image, nativeDecoder = null,
+                                   colorSpaceFactory, }) {
     var imagePromise = handleImageData(image, nativeDecoder);
     var smaskPromise;
     var maskPromise;
@@ -220,7 +218,6 @@ var PDFImage = (function PDFImageClosure() {
     return Promise.all([imagePromise, smaskPromise, maskPromise]).then(
       function([imageData, smaskData, maskData]) {
         return new PDFImage({
-          xref,
           res,
           image: imageData,
           smask: smaskData,

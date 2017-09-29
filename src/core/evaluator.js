@@ -56,9 +56,8 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     isEvalSupported: true,
   };
 
-  function NativeImageDecoder({ xref, resources, handler,
+  function NativeImageDecoder({ resources, handler,
                                 forceDataSchema = false, colorSpaceFactory, }) {
-    this.xref = xref;
     this.resources = resources;
     this.handler = handler;
     this.forceDataSchema = forceDataSchema;
@@ -67,7 +66,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   NativeImageDecoder.prototype = {
     canDecode(image) {
       return image instanceof JpegStream &&
-             NativeImageDecoder.isDecodable(image, this.xref, this.resources,
+             NativeImageDecoder.isDecodable(image, this.resources,
                                             this.colorSpaceFactory);
     },
     decode(image) {
@@ -88,8 +87,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * Checks if the image can be decoded and displayed by the browser without any
    * further processing such as color space conversions.
    */
-  NativeImageDecoder.isSupported = function(image, xref, res,
-                                            colorSpaceFactory) {
+  NativeImageDecoder.isSupported = function(image, res, colorSpaceFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
@@ -102,8 +100,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   /**
    * Checks if the image can be decoded by the browser.
    */
-  NativeImageDecoder.isDecodable = function(image, xref, res,
-                                            colorSpaceFactory) {
+  NativeImageDecoder.isDecodable = function(image, res, colorSpaceFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
@@ -405,7 +402,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (inline && !softMask && !mask && !(image instanceof JpegStream) &&
           (w + h) < SMALL_IMAGE_DIMENSIONS) {
         let imageObj = new PDFImage({
-          xref: this.xref,
           res: resources,
           image,
           colorSpaceFactory: this.colorSpaceFactory,
@@ -426,7 +422,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
-          NativeImageDecoder.isSupported(image, this.xref, resources,
+          NativeImageDecoder.isSupported(image, resources,
                                          this.colorSpaceFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
@@ -447,7 +443,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           (image instanceof JpegStream || mask instanceof JpegStream ||
            softMask instanceof JpegStream)) {
         nativeImageDecoder = new NativeImageDecoder({
-          xref: this.xref,
           resources,
           handler: this.handler,
           forceDataSchema: this.options.forceDataSchema,
@@ -457,7 +452,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
       PDFImage.buildImage({
         handler: this.handler,
-        xref: this.xref,
         res: resources,
         image,
         nativeDecoder: nativeImageDecoder,
@@ -885,7 +879,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           pattern = Pattern.parseShading({
             shading,
             matrix,
-            xref: this.xref,
             res: resources,
             handler: this.handler,
             pdfFunctionFactory: this.pdfFunctionFactory,
@@ -1156,8 +1149,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
               var shadingFill = Pattern.parseShading({
                 shading,
-                matrix: null,
-                xref,
                 res: resources,
                 handler: self.handler,
                 pdfFunctionFactory: self.pdfFunctionFactory,
