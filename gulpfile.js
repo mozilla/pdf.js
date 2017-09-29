@@ -168,17 +168,7 @@ function createWebpackConfig(defines, output) {
     },
     // Avoid shadowing actual Node.js variables with polyfills, by disabling
     // polyfills/mocks - https://webpack.js.org/configuration/node/
-    node: {
-      console: false,
-      global: false,
-      process: false,
-      __filename: false,
-      __dirname: false,
-      Buffer: false,
-      setImmediate: false,
-    },
-    // If we upgrade to Webpack 3.0+, the above can be replaced with:
-    // node: false,
+    node: false,
   };
 }
 
