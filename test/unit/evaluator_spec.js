@@ -17,6 +17,8 @@ import { Dict, Name } from '../../src/core/primitives';
 import { FormatError, OPS } from '../../src/shared/util';
 import { OperatorList, PartialEvaluator } from '../../src/core/evaluator';
 import { Stream, StringStream } from '../../src/core/stream';
+import { ColorSpaceFactory } from '../../src/core/colorspace';
+import { PDFFunctionFactory } from '../../src/core/function';
 import { WorkerTask } from '../../src/core/worker';
 import { XRefMock } from './test_utils';
 
@@ -56,11 +58,22 @@ describe('evaluator', function() {
   var partialEvaluator;
 
   beforeAll(function(done) {
+    let xref = new XRefMock();
+    let pdfFunctionFactory = new PDFFunctionFactory({
+      xref,
+    });
+    let colorSpaceFactory = new ColorSpaceFactory({
+      xref,
+      pdfFunctionFactory,
+    });
+
     partialEvaluator = new PartialEvaluator({
       pdfManager: new PdfManagerMock(),
-      xref: new XRefMock(),
+      xref,
       handler: new HandlerMock(),
       pageIndex: 0,
+      colorSpaceFactory,
+      pdfFunctionFactory,
     });
     done();
   });

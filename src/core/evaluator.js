@@ -40,7 +40,6 @@ import {
 import { getTilingPatternIR, Pattern } from './pattern';
 import { Lexer, Parser } from './parser';
 import { bidi } from './bidi';
-import { ColorSpace } from './colorspace';
 import { getGlyphsUnicode } from './glyphlist';
 import { getMetrics } from './metrics';
 import { isPDFFunction } from './function';
@@ -58,26 +57,24 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
   };
 
   function NativeImageDecoder({ xref, resources, handler,
-                                forceDataSchema = false,
-                                pdfFunctionFactory, }) {
+                                forceDataSchema = false, colorSpaceFactory, }) {
     this.xref = xref;
     this.resources = resources;
     this.handler = handler;
     this.forceDataSchema = forceDataSchema;
-    this.pdfFunctionFactory = pdfFunctionFactory;
+    this.colorSpaceFactory = colorSpaceFactory;
   }
   NativeImageDecoder.prototype = {
     canDecode(image) {
       return image instanceof JpegStream &&
              NativeImageDecoder.isDecodable(image, this.xref, this.resources,
-                                            this.pdfFunctionFactory);
+                                            this.colorSpaceFactory);
     },
     decode(image) {
       // For natively supported JPEGs send them to the main thread for decoding.
       var dict = image.dict;
-      var colorSpace = dict.get('ColorSpace', 'CS');
-      colorSpace = ColorSpace.parse(colorSpace, this.xref, this.resources,
-                                    this.pdfFunctionFactory);
+      let colorSpace = this.colorSpaceFactory.create({
+        cs: dict.get('ColorSpace', 'CS'), res: this.resources, });
       var numComps = colorSpace.numComps;
       var decodePromise = this.handler.sendWithPromise('JpegDecode',
         [image.getIR(this.forceDataSchema), numComps]);
@@ -92,13 +89,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * further processing such as color space conversions.
    */
   NativeImageDecoder.isSupported = function(image, xref, res,
-                                            pdfFunctionFactory) {
+                                            colorSpaceFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
-                              pdfFunctionFactory);
+    let cs = colorSpaceFactory.create({ cs: dict.get('ColorSpace', 'CS'),
+                                        res, });
     return (cs.name === 'DeviceGray' || cs.name === 'DeviceRGB') &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
@@ -106,20 +103,20 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
    * Checks if the image can be decoded by the browser.
    */
   NativeImageDecoder.isDecodable = function(image, xref, res,
-                                            pdfFunctionFactory) {
+                                            colorSpaceFactory) {
     var dict = image.dict;
     if (dict.has('DecodeParms') || dict.has('DP')) {
       return false;
     }
-    var cs = ColorSpace.parse(dict.get('ColorSpace', 'CS'), xref, res,
-                              pdfFunctionFactory);
+    let cs = colorSpaceFactory.create({ cs: dict.get('ColorSpace', 'CS'),
+                                        res, });
     return (cs.numComps === 1 || cs.numComps === 3) &&
            cs.isDefaultDecode(dict.getArray('Decode', 'D'));
   };
 
   function PartialEvaluator({ pdfManager, xref, handler, pageIndex, idFactory,
                               fontCache, builtInCMapCache, options = null,
-                              pdfFunctionFactory, }) {
+                              pdfFunctionFactory, colorSpaceFactory, }) {
     this.pdfManager = pdfManager;
     this.xref = xref;
     this.handler = handler;
@@ -129,6 +126,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
     this.builtInCMapCache = builtInCMapCache;
     this.options = options || DefaultPartialEvaluatorOptions;
     this.pdfFunctionFactory = pdfFunctionFactory;
+    this.colorSpaceFactory = colorSpaceFactory;
 
     this.fetchBuiltInCMap = (name) => {
       var cachedCMap = this.builtInCMapCache[name];
@@ -317,13 +315,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           groupOptions.isolated = (group.get('I') || false);
           groupOptions.knockout = (group.get('K') || false);
           if (group.has('CS')) {
-            colorSpace = ColorSpace.parse(group.get('CS'), this.xref, resources,
-                                          this.pdfFunctionFactory);
+            colorSpace = this.colorSpaceFactory.create({ cs: group.get('CS'),
+                                                         res: resources, });
           }
         }
 
         if (smask && smask.backdrop) {
-          colorSpace = colorSpace || ColorSpace.singletons.rgb;
+          colorSpace = colorSpace || this.colorSpaceFactory.rgb;
           smask.backdrop = colorSpace.getRgb(smask.backdrop, 0);
         }
 
@@ -410,7 +408,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           xref: this.xref,
           res: resources,
           image,
-          pdfFunctionFactory: this.pdfFunctionFactory,
+          colorSpaceFactory: this.colorSpaceFactory,
         });
         // We force the use of RGBA_32BPP images here, because we can't handle
         // any other kind.
@@ -429,7 +427,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       if (nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
           !softMask && !mask && image instanceof JpegStream &&
           NativeImageDecoder.isSupported(image, this.xref, resources,
-                                         this.pdfFunctionFactory)) {
+                                         this.colorSpaceFactory)) {
         // These JPEGs don't need any more processing so we can just send it.
         operatorList.addOp(OPS.paintJpegXObject, args);
         this.handler.send('obj', [objId, this.pageIndex, 'JpegStream',
@@ -453,7 +451,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
           resources,
           handler: this.handler,
           forceDataSchema: this.options.forceDataSchema,
-          pdfFunctionFactory: this.pdfFunctionFactory,
+          colorSpaceFactory: this.colorSpaceFactory,
         });
       }
 
@@ -463,7 +461,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         res: resources,
         image,
         nativeDecoder: nativeImageDecoder,
-        pdfFunctionFactory: this.pdfFunctionFactory,
+        colorSpaceFactory: this.colorSpaceFactory,
       }).then((imageObj) => {
         var imgData = imageObj.createImageData(/* forceRGBA = */ false);
         this.handler.send('obj', [objId, this.pageIndex, 'Image', imgData],
@@ -891,6 +889,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
             res: resources,
             handler: this.handler,
             pdfFunctionFactory: this.pdfFunctionFactory,
+            colorSpaceFactory: this.colorSpaceFactory,
           });
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
@@ -907,7 +906,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
       // Ensure that `resources`/`initialState` is correctly initialized,
       // even if the provided parameter is e.g. `null`.
       resources = resources || Dict.empty;
-      initialState = initialState || new EvalState();
+      initialState = initialState || new EvalState(this.colorSpaceFactory);
 
       if (!operatorList) {
         throw new Error('getOperatorList: missing "operatorList" parameter');
@@ -1079,13 +1078,11 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
 
             case OPS.setFillColorSpace:
               stateManager.state.fillColorSpace =
-                ColorSpace.parse(args[0], xref, resources,
-                                 self.pdfFunctionFactory);
+                self.colorSpaceFactory.create({ cs: args[0], res: resources, });
               continue;
             case OPS.setStrokeColorSpace:
               stateManager.state.strokeColorSpace =
-                ColorSpace.parse(args[0], xref, resources,
-                                 self.pdfFunctionFactory);
+                self.colorSpaceFactory.create({ cs: args[0], res: resources, });
               continue;
             case OPS.setFillColor:
               cs = stateManager.state.fillColorSpace;
@@ -1098,32 +1095,32 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               fn = OPS.setStrokeRGBColor;
               break;
             case OPS.setFillGray:
-              stateManager.state.fillColorSpace = ColorSpace.singletons.gray;
-              args = ColorSpace.singletons.gray.getRgb(args, 0);
+              stateManager.state.fillColorSpace = self.colorSpaceFactory.gray;
+              args = self.colorSpaceFactory.gray.getRgb(args, 0);
               fn = OPS.setFillRGBColor;
               break;
             case OPS.setStrokeGray:
-              stateManager.state.strokeColorSpace = ColorSpace.singletons.gray;
-              args = ColorSpace.singletons.gray.getRgb(args, 0);
+              stateManager.state.strokeColorSpace = self.colorSpaceFactory.gray;
+              args = self.colorSpaceFactory.gray.getRgb(args, 0);
               fn = OPS.setStrokeRGBColor;
               break;
             case OPS.setFillCMYKColor:
-              stateManager.state.fillColorSpace = ColorSpace.singletons.cmyk;
-              args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+              stateManager.state.fillColorSpace = self.colorSpaceFactory.cmyk;
+              args = self.colorSpaceFactory.cmyk.getRgb(args, 0);
               fn = OPS.setFillRGBColor;
               break;
             case OPS.setStrokeCMYKColor:
-              stateManager.state.strokeColorSpace = ColorSpace.singletons.cmyk;
-              args = ColorSpace.singletons.cmyk.getRgb(args, 0);
+              stateManager.state.strokeColorSpace = self.colorSpaceFactory.cmyk;
+              args = self.colorSpaceFactory.cmyk.getRgb(args, 0);
               fn = OPS.setStrokeRGBColor;
               break;
             case OPS.setFillRGBColor:
-              stateManager.state.fillColorSpace = ColorSpace.singletons.rgb;
-              args = ColorSpace.singletons.rgb.getRgb(args, 0);
+              stateManager.state.fillColorSpace = self.colorSpaceFactory.rgb;
+              args = self.colorSpaceFactory.rgb.getRgb(args, 0);
               break;
             case OPS.setStrokeRGBColor:
-              stateManager.state.strokeColorSpace = ColorSpace.singletons.rgb;
-              args = ColorSpace.singletons.rgb.getRgb(args, 0);
+              stateManager.state.strokeColorSpace = self.colorSpaceFactory.rgb;
+              args = self.colorSpaceFactory.rgb.getRgb(args, 0);
               break;
             case OPS.setFillColorN:
               cs = stateManager.state.fillColorSpace;
@@ -1164,6 +1161,7 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 res: resources,
                 handler: self.handler,
                 pdfFunctionFactory: self.pdfFunctionFactory,
+                colorSpaceFactory: self.colorSpaceFactory,
               });
               var patternIR = shadingFill.getIR();
               args = [patternIR];
@@ -2874,12 +2872,12 @@ var TextState = (function TextStateClosure() {
 })();
 
 var EvalState = (function EvalStateClosure() {
-  function EvalState() {
+  function EvalState(colorSpaceFactory) {
     this.ctm = new Float32Array(IDENTITY_MATRIX);
     this.font = null;
     this.textRenderingMode = TextRenderingMode.FILL;
-    this.fillColorSpace = ColorSpace.singletons.gray;
-    this.strokeColorSpace = ColorSpace.singletons.gray;
+    this.fillColorSpace = colorSpaceFactory.gray;
+    this.strokeColorSpace = colorSpaceFactory.gray;
   }
   EvalState.prototype = {
     clone: function CanvasExtraState_clone() {

@@ -15,33 +15,53 @@
 
 import { Dict, Name, Ref } from '../../src/core/primitives';
 import { Stream, StringStream } from '../../src/core/stream';
-import { ColorSpace } from '../../src/core/colorspace';
+import { ColorSpaceFactory } from '../../src/core/colorspace';
 import { PDFFunctionFactory } from '../../src/core/function';
 import { XRefMock } from './test_utils';
 
 describe('colorspace', function () {
   describe('ColorSpace', function () {
+    let colorSpaceFactory;
+
+    beforeAll(function(done) {
+      let xref = new XRefMock();
+      let pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      done();
+    });
+
+    afterAll(function() {
+      colorSpaceFactory = null;
+    });
+
     it('should be true if decode is not an array', function () {
-      expect(ColorSpace.isDefaultDecode('string', 0)).toBeTruthy();
+      expect(colorSpaceFactory.isDefaultDecode('string', 0)).toBeTruthy();
     });
     it('should be true if length of decode array is not correct',
         function () {
-      expect(ColorSpace.isDefaultDecode([0], 1)).toBeTruthy();
-      expect(ColorSpace.isDefaultDecode([0, 1, 0], 1)).toBeTruthy();
+      expect(colorSpaceFactory.isDefaultDecode([0], 1)).toBeTruthy();
+      expect(colorSpaceFactory.isDefaultDecode([0, 1, 0], 1)).toBeTruthy();
     });
     it('should be true if decode map matches the default decode map',
         function () {
-      expect(ColorSpace.isDefaultDecode([], 0)).toBeTruthy();
+      expect(colorSpaceFactory.isDefaultDecode([], 0)).toBeTruthy();
 
-      expect(ColorSpace.isDefaultDecode([0, 0], 1)).toBeFalsy();
-      expect(ColorSpace.isDefaultDecode([0, 1], 1)).toBeTruthy();
+      expect(colorSpaceFactory.isDefaultDecode([0, 0], 1)).toBeFalsy();
+      expect(colorSpaceFactory.isDefaultDecode([0, 1], 1)).toBeTruthy();
 
-      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 0, 1], 3)).toBeTruthy();
-      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 1, 1], 3)).toBeFalsy();
-
-      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 0, 1, 0, 1], 4))
+      expect(colorSpaceFactory.isDefaultDecode([0, 1, 0, 1, 0, 1], 3))
         .toBeTruthy();
-      expect(ColorSpace.isDefaultDecode([1, 0, 0, 1, 0, 1, 0, 1], 4))
+      expect(colorSpaceFactory.isDefaultDecode([0, 1, 0, 1, 1, 1], 3))
+        .toBeFalsy();
+
+      expect(colorSpaceFactory.isDefaultDecode([0, 1, 0, 1, 0, 1, 0, 1], 4))
+        .toBeTruthy();
+      expect(colorSpaceFactory.isDefaultDecode([1, 0, 0, 1, 0, 1, 0, 1], 4))
         .toBeFalsy();
     });
   });
@@ -58,7 +78,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8Array(4 * 4 * 3);
@@ -99,7 +123,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8Array(3 * 3 * 3);
@@ -136,7 +164,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -182,7 +214,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -224,7 +260,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
@@ -270,7 +310,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([
         27, 125, 250, 128,
@@ -320,7 +364,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([27, 125, 250, 131]);
       let testDest = new Uint8Array(4 * 4 * 3);
@@ -373,7 +421,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([
         27, 125, 250,
@@ -423,7 +475,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([
         27, 25, 50,
@@ -476,7 +532,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([2, 2, 0, 1]);
       let testDest = new Uint8Array(3 * 3 * 3);
@@ -531,7 +591,11 @@ describe('colorspace', function () {
       let pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      let colorSpace = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+      let colorSpaceFactory = new ColorSpaceFactory({
+        xref,
+        pdfFunctionFactory,
+      });
+      let colorSpace = colorSpaceFactory.create({ cs, res, });
 
       let testSrc = new Uint8Array([27, 25, 50, 31]);
       let testDest = new Uint8Array(3 * 3 * 3);

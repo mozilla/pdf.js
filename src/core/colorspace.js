@@ -18,17 +18,49 @@ import {
 } from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
 
-var ColorSpace = (function ColorSpaceClosure() {
-  function ColorSpace() {
-    throw new Error('should not call ColorSpace constructor');
+class ColorSpaceFactory {
+  constructor({ xref, pdfFunctionFactory, }) {
+    this.xref = xref;
+    this.pdfFunctionFactory = pdfFunctionFactory;
   }
 
-  ColorSpace.parse = function(cs, xref, res, pdfFunctionFactory) {
-    let IR = ColorSpace.parseToIR(cs, xref, res, pdfFunctionFactory);
-    return ColorSpace.fromIR(IR, pdfFunctionFactory);
+  create({ cs, res, }) {
+    return ColorSpace.parse({
+      cs,
+      res,
+      xref: this.xref,
+      pdfFunctionFactory: this.pdfFunctionFactory,
+    });
+  }
+
+  isDefaultDecode(decode, n) {
+    return ColorSpace.isDefaultDecode(decode, n);
+  }
+
+  get gray() {
+    return ColorSpace.singletons.gray;
+  }
+
+  get rgb() {
+    return ColorSpace.singletons.rgb;
+  }
+
+  get cmyk() {
+    return ColorSpace.singletons.cmyk;
+  }
+}
+
+var ColorSpace = (function ColorSpaceClosure() {
+  function ColorSpace() {
+    throw new Error('Cannot initialize ColorSpace.');
+  }
+
+  ColorSpace.parse = function({ cs, res, xref, pdfFunctionFactory, }) {
+    let IR = this.parseToIR({ cs, res, xref, pdfFunctionFactory, });
+    return this.fromIR({ IR, xref, pdfFunctionFactory, });
   };
 
-  ColorSpace.fromIR = function(IR, pdfFunctionFactory) {
+  ColorSpace.fromIR = function({ IR, xref, pdfFunctionFactory, }) {
     var name = Array.isArray(IR) ? IR[0] : IR;
     var whitePoint, blackPoint, gamma;
 
@@ -53,22 +85,23 @@ var ColorSpace = (function ColorSpaceClosure() {
       case 'PatternCS':
         var basePatternCS = IR[1];
         if (basePatternCS) {
-          basePatternCS = ColorSpace.fromIR(basePatternCS, pdfFunctionFactory);
+          basePatternCS = this.fromIR({ IR: basePatternCS,
+                                        xref, pdfFunctionFactory, });
         }
         return new PatternCS(basePatternCS);
       case 'IndexedCS':
         var baseIndexedCS = IR[1];
         var hiVal = IR[2];
         var lookup = IR[3];
-        return new IndexedCS(ColorSpace.fromIR(baseIndexedCS,
-                                               pdfFunctionFactory),
-                             hiVal, lookup);
+        baseIndexedCS = this.fromIR({ IR: baseIndexedCS,
+                                      xref, pdfFunctionFactory, });
+        return new IndexedCS(baseIndexedCS, hiVal, lookup);
       case 'AlternateCS':
         var numComps = IR[1];
         var alt = IR[2];
         var tintFnIR = IR[3];
-        return new AlternateCS(numComps, ColorSpace.fromIR(alt,
-                                                           pdfFunctionFactory),
+        let altCS = this.fromIR({ IR: alt, xref, pdfFunctionFactory, });
+        return new AlternateCS(numComps, altCS,
                                pdfFunctionFactory.createFromIR(tintFnIR));
       case 'LabCS':
         whitePoint = IR[1];
@@ -80,7 +113,7 @@ var ColorSpace = (function ColorSpaceClosure() {
     }
   };
 
-  ColorSpace.parseToIR = function(cs, xref, res, pdfFunctionFactory) {
+  ColorSpace.parseToIR = function({ cs, res, xref, pdfFunctionFactory, }) {
     if (isName(cs)) {
       var colorSpaces = res.get('ColorSpace');
       if (isDict(colorSpaces)) {
@@ -142,11 +175,11 @@ var ColorSpace = (function ColorSpaceClosure() {
           numComps = dict.get('N');
           alt = dict.get('Alternate');
           if (alt) {
-            var altIR = ColorSpace.parseToIR(alt, xref, res,
-                                             pdfFunctionFactory);
+            let altIR = this.parseToIR({ cs: alt, res,
+                                         xref, pdfFunctionFactory, });
             // Parse the /Alternate CS to ensure that the number of components
             // are correct, and also (indirectly) that it is not a PatternCS.
-            var altCS = ColorSpace.fromIR(altIR, pdfFunctionFactory);
+            let altCS = this.fromIR({ IR: altIR, xref, pdfFunctionFactory, });
             if (altCS.numComps === numComps) {
               return altIR;
             }
@@ -163,14 +196,14 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'Pattern':
           var basePatternCS = cs[1] || null;
           if (basePatternCS) {
-            basePatternCS = ColorSpace.parseToIR(basePatternCS, xref, res,
-                                                 pdfFunctionFactory);
+            basePatternCS = this.parseToIR({ cs: basePatternCS, res,
+                                             xref, pdfFunctionFactory, });
           }
           return ['PatternCS', basePatternCS];
         case 'Indexed':
         case 'I':
-          var baseIndexedCS = ColorSpace.parseToIR(cs[1], xref, res,
-                                                   pdfFunctionFactory);
+          var baseIndexedCS = this.parseToIR({ cs: cs[1], res,
+                                               xref, pdfFunctionFactory, });
           var hiVal = xref.fetchIfRef(cs[2]) + 1;
           var lookup = xref.fetchIfRef(cs[3]);
           if (isStream(lookup)) {
@@ -181,7 +214,8 @@ var ColorSpace = (function ColorSpaceClosure() {
         case 'DeviceN':
           var name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          alt = ColorSpace.parseToIR(cs[2], xref, res, pdfFunctionFactory);
+          alt = this.parseToIR({ cs: cs[2], res,
+                                 xref, pdfFunctionFactory, });
           let tintFnIR = pdfFunctionFactory.createIR(xref.fetchIfRef(cs[3]));
           return ['AlternateCS', numComps, alt, tintFnIR];
         case 'Lab':
@@ -1279,5 +1313,5 @@ var LabCS = (function LabCSClosure() {
 })();
 
 export {
-  ColorSpace,
+  ColorSpaceFactory,
 };

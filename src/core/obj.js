@@ -25,12 +25,12 @@ import {
 import { Lexer, Parser } from './parser';
 import { ChunkedStream } from './chunked_stream';
 import { CipherTransformFactory } from './crypto';
-import { ColorSpace } from './colorspace';
 
 var Catalog = (function CatalogClosure() {
-  function Catalog(pdfManager, xref, pageFactory) {
+  function Catalog({ pdfManager, xref, pageFactory, colorSpaceFactory, }) {
     this.pdfManager = pdfManager;
     this.xref = xref;
+    this.colorSpaceFactory = colorSpaceFactory;
     this.catDict = xref.getCatalogObj();
     if (!isDict(this.catDict)) {
       throw new FormatError('catalog object is not a dictionary');
@@ -138,7 +138,7 @@ var Catalog = (function CatalogClosure() {
         // We only need to parse the color when it's valid, and non-default.
         if (Array.isArray(color) && color.length === 3 &&
             (color[0] !== 0 || color[1] !== 0 || color[2] !== 0)) {
-          rgbColor = ColorSpace.singletons.rgb.getRgb(color, 0);
+          rgbColor = this.colorSpaceFactory.rgb.getRgb(color, 0);
         }
         var outlineItem = {
           dest: data.dest,

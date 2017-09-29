@@ -19,7 +19,6 @@ import {
 } from '../shared/util';
 import { Catalog, FileSpec, ObjectLoader } from './obj';
 import { Dict, isDict, isName, isRef, isStream } from './primitives';
-import { ColorSpace } from './colorspace';
 import { OperatorList } from './evaluator';
 import { Stream } from './stream';
 
@@ -31,7 +30,7 @@ class AnnotationFactory {
    * @param {Object} idFactory
    * @returns {Annotation}
    */
-  static create(xref, ref, pdfManager, idFactory) {
+  static create(xref, ref, pdfManager, idFactory, colorSpaceFactory) {
     let dict = xref.fetchIfRef(ref);
     if (!isDict(dict)) {
       return;
@@ -50,6 +49,7 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
+      colorSpaceFactory,
     };
 
     switch (subtype) {
@@ -152,6 +152,7 @@ function getTransformMatrix(rect, bbox, matrix) {
 class Annotation {
   constructor(params) {
     let dict = params.dict;
+    this.colorSpaceFactory = params.colorSpaceFactory;
 
     this.setFlags(dict.get('F'));
     this.setRectangle(dict.getArray('Rect'));
@@ -280,17 +281,17 @@ class Annotation {
         break;
 
       case 1: // Convert grayscale to RGB
-        ColorSpace.singletons.gray.getRgbItem(color, 0, rgbColor, 0);
+        this.colorSpaceFactory.gray.getRgbItem(color, 0, rgbColor, 0);
         this.color = rgbColor;
         break;
 
       case 3: // Convert RGB percentages to RGB
-        ColorSpace.singletons.rgb.getRgbItem(color, 0, rgbColor, 0);
+        this.colorSpaceFactory.rgb.getRgbItem(color, 0, rgbColor, 0);
         this.color = rgbColor;
         break;
 
       case 4: // Convert CMYK to RGB
-        ColorSpace.singletons.cmyk.getRgbItem(color, 0, rgbColor, 0);
+        this.colorSpaceFactory.cmyk.getRgbItem(color, 0, rgbColor, 0);
         this.color = rgbColor;
         break;
 

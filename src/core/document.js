@@ -23,6 +23,7 @@ import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { OperatorList, PartialEvaluator } from './evaluator';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
+import { ColorSpaceFactory } from './colorspace';
 import { Linearization } from './parser';
 import { PDFFunctionFactory } from './function';
 
@@ -37,7 +38,7 @@ var Page = (function PageClosure() {
   }
 
   function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
-                  builtInCMapCache, pdfFunctionFactory, }) {
+                  builtInCMapCache, pdfFunctionFactory, colorSpaceFactory, }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -46,6 +47,7 @@ var Page = (function PageClosure() {
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
     this.pdfFunctionFactory = pdfFunctionFactory;
+    this.colorSpaceFactory = colorSpaceFactory;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -217,6 +219,7 @@ var Page = (function PageClosure() {
         builtInCMapCache: this.builtInCMapCache,
         options: this.evaluatorOptions,
         pdfFunctionFactory: this.pdfFunctionFactory,
+        colorSpaceFactory: this.colorSpaceFactory,
       });
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -293,6 +296,7 @@ var Page = (function PageClosure() {
           builtInCMapCache: this.builtInCMapCache,
           options: this.evaluatorOptions,
           pdfFunctionFactory: this.pdfFunctionFactory,
+          colorSpaceFactory: this.colorSpaceFactory,
         });
 
         return partialEvaluator.getTextContent({
@@ -324,7 +328,8 @@ var Page = (function PageClosure() {
         var annotationRef = annotationRefs[i];
         var annotation = AnnotationFactory.create(this.xref, annotationRef,
                                                   this.pdfManager,
-                                                  this.idFactory);
+                                                  this.idFactory,
+                                                  this.colorSpaceFactory);
         if (annotation) {
           annotations.push(annotation);
         }
@@ -369,6 +374,10 @@ var PDFDocument = (function PDFDocumentClosure() {
     this.pdfFunctionFactory = new PDFFunctionFactory({
       xref: this.xref,
       isEvalSupported: evaluatorOptions.isEvalSupported,
+    });
+    this.colorSpaceFactory = new ColorSpaceFactory({
+      xref: this.xref,
+      pdfFunctionFactory: this.pdfFunctionFactory,
     });
   }
 
@@ -546,10 +555,16 @@ var PDFDocument = (function PDFDocumentClosure() {
             fontCache,
             builtInCMapCache,
             pdfFunctionFactory: this.pdfFunctionFactory,
+            colorSpaceFactory: this.colorSpaceFactory,
           });
         },
       };
-      this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
+      this.catalog = new Catalog({
+        pdfManager: this.pdfManager,
+        xref: this.xref,
+        pageFactory,
+        colorSpaceFactory: this.colorSpaceFactory,
+      });
     },
     get numPages() {
       var linearization = this.linearization;

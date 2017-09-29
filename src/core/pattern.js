@@ -18,7 +18,6 @@ import {
   assert, FormatError, info, MissingDataException, unreachable,
   UNSUPPORTED_FEATURES, Util, warn
 } from '../shared/util';
-import { ColorSpace } from './colorspace';
 import { isStream } from './primitives';
 
 var ShadingType = {
@@ -46,7 +45,7 @@ var Pattern = (function PatternClosure() {
   };
 
   Pattern.parseShading = function({ shading, matrix, xref, res, handler,
-                                    pdfFunctionFactory, }) {
+                                    pdfFunctionFactory, colorSpaceFactory, }) {
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
 
@@ -56,13 +55,14 @@ var Pattern = (function PatternClosure() {
         case ShadingType.RADIAL:
           // Both radial and axial shadings are handled by RadialAxial shading.
           return new Shadings.RadialAxial({ dict, matrix, xref, res,
-                                            pdfFunctionFactory, });
+                                            pdfFunctionFactory,
+                                            colorSpaceFactory, });
         case ShadingType.FREE_FORM_MESH:
         case ShadingType.LATTICE_FORM_MESH:
         case ShadingType.COONS_PATCH_MESH:
         case ShadingType.TENSOR_PATCH_MESH:
           return new Shadings.Mesh({ shading, matrix, xref, res,
-                                     pdfFunctionFactory, });
+                                     pdfFunctionFactory, colorSpaceFactory, });
         default:
           throw new FormatError('Unsupported ShadingType: ' + type);
       }
@@ -88,13 +88,14 @@ Shadings.SMALL_NUMBER = 1e-6;
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
 Shadings.RadialAxial = (function RadialAxialClosure() {
-  function RadialAxial({ dict, matrix, xref, res, pdfFunctionFactory, }) {
+  function RadialAxial({ dict, matrix, xref, res, pdfFunctionFactory,
+                         colorSpaceFactory, }) {
     this.matrix = matrix;
     this.coordsArr = dict.getArray('Coords');
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
-    var cs = dict.get('ColorSpace', 'CS');
-    cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+    let cs = colorSpaceFactory.create({ cs: dict.get('ColorSpace', 'CS'),
+                                        res, });
     this.cs = cs;
 
     var t0 = 0.0, t1 = 1.0;
@@ -711,7 +712,8 @@ Shadings.Mesh = (function MeshClosure() {
     }
   }
 
-  function Mesh({ shading, matrix, xref, res, pdfFunctionFactory, }) {
+  function Mesh({ shading, matrix, xref, res, pdfFunctionFactory,
+                  colorSpaceFactory, }) {
     if (!isStream(shading)) {
       throw new FormatError('Mesh data is not a stream');
     }
@@ -720,8 +722,8 @@ Shadings.Mesh = (function MeshClosure() {
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
     this.bbox = dict.getArray('BBox');
-    var cs = dict.get('ColorSpace', 'CS');
-    cs = ColorSpace.parse(cs, xref, res, pdfFunctionFactory);
+    let cs = colorSpaceFactory.create({ cs: dict.get('ColorSpace', 'CS'),
+                                        res, });
     this.cs = cs;
     this.background = dict.has('Background') ?
       cs.getRgb(dict.get('Background'), 0) : null;

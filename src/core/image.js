@@ -16,7 +16,6 @@
 import { assert, FormatError, ImageKind, info, warn } from '../shared/util';
 import { DecodeStream, JpegStream } from './stream';
 import { isStream, Name } from './primitives';
-import { ColorSpace } from './colorspace';
 import { JpxImage } from './jpx';
 
 var PDFImage = (function PDFImageClosure() {
@@ -75,7 +74,7 @@ var PDFImage = (function PDFImageClosure() {
   }
 
   function PDFImage({ xref, res, image, smask = null, mask = null,
-                      isMask = false, pdfFunctionFactory, }) {
+                      isMask = false, colorSpaceFactory, }) {
     this.image = image;
     var dict = image.dict;
     if (dict.has('Filter')) {
@@ -138,8 +137,7 @@ var PDFImage = (function PDFImageClosure() {
                             'color components not supported.');
         }
       }
-      this.colorSpace = ColorSpace.parse(colorSpace, xref, res,
-                                         pdfFunctionFactory);
+      this.colorSpace = colorSpaceFactory.create({ cs: colorSpace, res, });
       this.numComps = this.colorSpace.numComps;
     }
 
@@ -147,7 +145,7 @@ var PDFImage = (function PDFImageClosure() {
     this.needsDecode = false;
     if (this.decode &&
         ((this.colorSpace && !this.colorSpace.isDefaultDecode(this.decode)) ||
-         (isMask && !ColorSpace.isDefaultDecode(this.decode, 1)))) {
+         (isMask && !colorSpaceFactory.isDefaultDecode(this.decode, 1)))) {
       this.needsDecode = true;
       // Do some preprocessing to avoid more math.
       var max = (1 << bitsPerComponent) - 1;
@@ -166,7 +164,7 @@ var PDFImage = (function PDFImageClosure() {
         xref,
         res,
         image: smask,
-        pdfFunctionFactory,
+        colorSpaceFactory,
       });
     } else if (mask) {
       if (isStream(mask)) {
@@ -179,7 +177,7 @@ var PDFImage = (function PDFImageClosure() {
             res,
             image: mask,
             isMask: true,
-            pdfFunctionFactory,
+            colorSpaceFactory,
           });
         }
       } else {
@@ -193,8 +191,7 @@ var PDFImage = (function PDFImageClosure() {
    * with a PDFImage when the image is ready to be used.
    */
   PDFImage.buildImage = function({ handler, xref, res, image,
-                                   nativeDecoder = null,
-                                   pdfFunctionFactory, }) {
+                                   nativeDecoder = null, colorSpaceFactory, }) {
     var imagePromise = handleImageData(image, nativeDecoder);
     var smaskPromise;
     var maskPromise;
@@ -228,7 +225,7 @@ var PDFImage = (function PDFImageClosure() {
           image: imageData,
           smask: smaskData,
           mask: maskData,
-          pdfFunctionFactory,
+          colorSpaceFactory,
         });
       });
   };
