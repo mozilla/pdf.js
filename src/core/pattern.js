@@ -45,8 +45,8 @@ var Pattern = (function PatternClosure() {
     },
   };
 
-  Pattern.parseShading = function(shading, matrix, xref, res, handler,
-                                  pdfFunctionFactory) {
+  Pattern.parseShading = function({ shading, matrix, xref, res, handler,
+                                    pdfFunctionFactory, }) {
     var dict = isStream(shading) ? shading.dict : shading;
     var type = dict.get('ShadingType');
 
@@ -55,14 +55,14 @@ var Pattern = (function PatternClosure() {
         case ShadingType.AXIAL:
         case ShadingType.RADIAL:
           // Both radial and axial shadings are handled by RadialAxial shading.
-          return new Shadings.RadialAxial(dict, matrix, xref, res,
-                                          pdfFunctionFactory);
+          return new Shadings.RadialAxial({ dict, matrix, xref, res,
+                                            pdfFunctionFactory, });
         case ShadingType.FREE_FORM_MESH:
         case ShadingType.LATTICE_FORM_MESH:
         case ShadingType.COONS_PATCH_MESH:
         case ShadingType.TENSOR_PATCH_MESH:
-          return new Shadings.Mesh(shading, matrix, xref, res,
-                                   pdfFunctionFactory);
+          return new Shadings.Mesh({ shading, matrix, xref, res,
+                                     pdfFunctionFactory, });
         default:
           throw new FormatError('Unsupported ShadingType: ' + type);
       }
@@ -88,7 +88,7 @@ Shadings.SMALL_NUMBER = 1e-6;
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes
 Shadings.RadialAxial = (function RadialAxialClosure() {
-  function RadialAxial(dict, matrix, xref, res, pdfFunctionFactory) {
+  function RadialAxial({ dict, matrix, xref, res, pdfFunctionFactory, }) {
     this.matrix = matrix;
     this.coordsArr = dict.getArray('Coords');
     this.shadingType = dict.get('ShadingType');
@@ -711,11 +711,11 @@ Shadings.Mesh = (function MeshClosure() {
     }
   }
 
-  function Mesh(stream, matrix, xref, res, pdfFunctionFactory) {
-    if (!isStream(stream)) {
+  function Mesh({ shading, matrix, xref, res, pdfFunctionFactory, }) {
+    if (!isStream(shading)) {
       throw new FormatError('Mesh data is not a stream');
     }
-    var dict = stream.dict;
+    var dict = shading.dict;
     this.matrix = matrix;
     this.shadingType = dict.get('ShadingType');
     this.type = 'Pattern';
@@ -742,7 +742,7 @@ Shadings.Mesh = (function MeshClosure() {
       colorSpace: cs,
       numComps: fn ? 1 : cs.numComps,
     };
-    var reader = new MeshStreamReader(stream, decodeContext);
+    var reader = new MeshStreamReader(shading, decodeContext);
 
     var patchMesh = false;
     switch (this.shadingType) {
@@ -805,7 +805,7 @@ Shadings.Dummy = (function DummyClosure() {
   return Dummy;
 })();
 
-function getTilingPatternIR(operatorList, dict, args) {
+function getTilingPatternIR({ operatorList, dict, args, }) {
   let matrix = dict.getArray('Matrix');
   let bbox = Util.normalizeRect(dict.getArray('BBox'));
   let xstep = dict.get('XStep');

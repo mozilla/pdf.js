@@ -527,9 +527,13 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         operatorList: tilingOpList,
       }).then(function() {
         return getTilingPatternIR({
-          fnArray: tilingOpList.fnArray,
-          argsArray: tilingOpList.argsArray,
-        }, patternDict, args);
+          operatorList: {
+            fnArray: tilingOpList.fnArray,
+            argsArray: tilingOpList.argsArray,
+          },
+          dict: patternDict,
+          args,
+        });
       }).then(function(tilingPatternIR) {
         // Add the dependencies to the parent operator list so they are
         // resolved before the sub operator list is executed synchronously.
@@ -880,8 +884,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
         } else if (typeNum === SHADING_PATTERN) {
           var shading = dict.get('Shading');
           var matrix = dict.getArray('Matrix');
-          pattern = Pattern.parseShading(shading, matrix, this.xref, resources,
-                                         this.handler, this.pdfFunctionFactory);
+          pattern = Pattern.parseShading({
+            shading,
+            matrix,
+            xref: this.xref,
+            res: resources,
+            handler: this.handler,
+            pdfFunctionFactory: this.pdfFunctionFactory,
+          });
           operatorList.addOp(fn, pattern.getIR());
           return Promise.resolve();
         }
@@ -1147,8 +1157,14 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
                 throw new FormatError('No shading object found');
               }
 
-              var shadingFill = Pattern.parseShading(shading, null, xref,
-                resources, self.handler, self.pdfFunctionFactory);
+              var shadingFill = Pattern.parseShading({
+                shading,
+                matrix: null,
+                xref,
+                res: resources,
+                handler: self.handler,
+                pdfFunctionFactory: self.pdfFunctionFactory,
+              });
               var patternIR = shadingFill.getIR();
               args = [patternIR];
               fn = OPS.shadingFill;
