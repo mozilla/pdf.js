@@ -13,192 +13,15 @@
  * limitations under the License.
  */
 
-import { FormatError, info, isString, shadow, warn } from '../shared/util';
+import {
+  FormatError, info, isString, shadow, Util, warn
+} from '../shared/util';
 import { isDict, isName, isStream } from './primitives';
 
 var ColorSpace = (function ColorSpaceClosure() {
-  /**
-   * Resizes an RGB image with 3 components.
-   * @param {TypedArray} src - The source buffer.
-   * @param {Number} bpc - Number of bits per component.
-   * @param {Number} w1 - Original width.
-   * @param {Number} h1 - Original height.
-   * @param {Number} w2 - New width.
-   * @param {Number} h2 - New height.
-   * @param {Number} alpha01 - Size reserved for the alpha channel.
-   * @param {TypedArray} dest - The destination buffer.
-   */
-  function resizeRgbImage(src, bpc, w1, h1, w2, h2, alpha01, dest) {
-    var COMPONENTS = 3;
-    alpha01 = alpha01 !== 1 ? 0 : alpha01;
-    var xRatio = w1 / w2;
-    var yRatio = h1 / h2;
-    var i, j, py, newIndex = 0, oldIndex;
-    var xScaled = new Uint16Array(w2);
-    var w1Scanline = w1 * COMPONENTS;
-
-    for (i = 0; i < w2; i++) {
-      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
-    }
-    for (i = 0; i < h2; i++) {
-      py = Math.floor(i * yRatio) * w1Scanline;
-      for (j = 0; j < w2; j++) {
-        oldIndex = py + xScaled[j];
-        dest[newIndex++] = src[oldIndex++];
-        dest[newIndex++] = src[oldIndex++];
-        dest[newIndex++] = src[oldIndex++];
-        newIndex += alpha01;
-      }
-    }
-  }
-
-  // Constructor should define this.numComps, this.defaultColor, this.name
   function ColorSpace() {
     throw new Error('should not call ColorSpace constructor');
   }
-
-  ColorSpace.prototype = {
-    /**
-     * Converts the color value to the RGB color. The color components are
-     * located in the src array starting from the srcOffset. Returns the array
-     * of the rgb components, each value ranging from [0,255].
-     */
-    getRgb(src, srcOffset) {
-      var rgb = new Uint8Array(3);
-      this.getRgbItem(src, srcOffset, rgb, 0);
-      return rgb;
-    },
-
-    /**
-     * Converts the color value to the RGB color, similar to the getRgb method.
-     * The result placed into the dest array starting from the destOffset.
-     */
-    getRgbItem(src, srcOffset, dest, destOffset) {
-      throw new Error('Should not call ColorSpace.getRgbItem');
-    },
-
-    /**
-     * Converts the specified number of the color values to the RGB colors.
-     * The colors are located in the src array starting from the srcOffset.
-     * The result is placed into the dest array starting from the destOffset.
-     * The src array items shall be in [0,2^bits) range, the dest array items
-     * will be in [0,255] range. alpha01 indicates how many alpha components
-     * there are in the dest array; it will be either 0 (RGB array) or 1 (RGBA
-     * array).
-     */
-    getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
-      throw new Error('Should not call ColorSpace.getRgbBuffer');
-    },
-
-    /**
-     * Determines the number of bytes required to store the result of the
-     * conversion done by the getRgbBuffer method. As in getRgbBuffer,
-     * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
-     */
-    getOutputLength(inputLength, alpha01) {
-      throw new Error('Should not call ColorSpace.getOutputLength');
-    },
-
-    /**
-     * Returns true if source data will be equal the result/output data.
-     */
-    isPassthrough(bits) {
-      return false;
-    },
-
-    /**
-     * Fills in the RGB colors in the destination buffer.  alpha01 indicates
-     * how many alpha components there are in the dest array; it will be either
-     * 0 (RGB array) or 1 (RGBA array).
-     */
-    fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight,
-            bpc, comps, alpha01) {
-      var count = originalWidth * originalHeight;
-      var rgbBuf = null;
-      var numComponentColors = 1 << bpc;
-      var needsResizing = originalHeight !== height || originalWidth !== width;
-      var i, ii;
-
-      if (this.isPassthrough(bpc)) {
-        rgbBuf = comps;
-      } else if (this.numComps === 1 && count > numComponentColors &&
-                 this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
-        // Optimization: create a color map when there is just one component and
-        // we are converting more colors than the size of the color map. We
-        // don't build the map if the colorspace is gray or rgb since those
-        // methods are faster than building a map. This mainly offers big speed
-        // ups for indexed and alternate colorspaces.
-        //
-        // TODO it may be worth while to cache the color map. While running
-        // testing I never hit a cache so I will leave that out for now (perhaps
-        // we are reparsing colorspaces too much?).
-        var allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
-                                   new Uint16Array(numComponentColors);
-        var key;
-        for (i = 0; i < numComponentColors; i++) {
-          allColors[i] = i;
-        }
-        var colorMap = new Uint8Array(numComponentColors * 3);
-        this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc,
-                          /* alpha01 = */ 0);
-
-        var destPos, rgbPos;
-        if (!needsResizing) {
-          // Fill in the RGB values directly into |dest|.
-          destPos = 0;
-          for (i = 0; i < count; ++i) {
-            key = comps[i] * 3;
-            dest[destPos++] = colorMap[key];
-            dest[destPos++] = colorMap[key + 1];
-            dest[destPos++] = colorMap[key + 2];
-            destPos += alpha01;
-          }
-        } else {
-          rgbBuf = new Uint8Array(count * 3);
-          rgbPos = 0;
-          for (i = 0; i < count; ++i) {
-            key = comps[i] * 3;
-            rgbBuf[rgbPos++] = colorMap[key];
-            rgbBuf[rgbPos++] = colorMap[key + 1];
-            rgbBuf[rgbPos++] = colorMap[key + 2];
-          }
-        }
-      } else {
-        if (!needsResizing) {
-          // Fill in the RGB values directly into |dest|.
-          this.getRgbBuffer(comps, 0, width * actualHeight, dest, 0, bpc,
-                            alpha01);
-        } else {
-          rgbBuf = new Uint8Array(count * 3);
-          this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc,
-                            /* alpha01 = */ 0);
-        }
-      }
-
-      if (rgbBuf) {
-        if (needsResizing) {
-          resizeRgbImage(rgbBuf, bpc, originalWidth, originalHeight,
-                         width, height, alpha01, dest);
-        } else {
-          rgbPos = 0;
-          destPos = 0;
-          for (i = 0, ii = width * actualHeight; i < ii; i++) {
-            dest[destPos++] = rgbBuf[rgbPos++];
-            dest[destPos++] = rgbBuf[rgbPos++];
-            dest[destPos++] = rgbBuf[rgbPos++];
-            destPos += alpha01;
-          }
-        }
-      }
-    },
-
-    /**
-     * True if the colorspace has components in the default range of [0, 1].
-     * This should be true for all colorspaces except for lab color spaces
-     * which are [0,100], [-128, 127], [-128, 127].
-     */
-    usesZeroToOneRange: true,
-  };
 
   ColorSpace.parse = function(cs, xref, res, pdfFunctionFactory) {
     let IR = ColorSpace.parseToIR(cs, xref, res, pdfFunctionFactory);
@@ -415,6 +238,201 @@ var ColorSpace = (function ColorSpaceClosure() {
   return ColorSpace;
 })();
 
+var BaseAbstractCS = (function BaseAbstractCSClosure() {
+  /**
+   * Resizes an RGB image with 3 components.
+   * @param {TypedArray} src - The source buffer.
+   * @param {Number} bpc - Number of bits per component.
+   * @param {Number} w1 - Original width.
+   * @param {Number} h1 - Original height.
+   * @param {Number} w2 - New width.
+   * @param {Number} h2 - New height.
+   * @param {Number} alpha01 - Size reserved for the alpha channel.
+   * @param {TypedArray} dest - The destination buffer.
+   */
+  function resizeRgbImage(src, bpc, w1, h1, w2, h2, alpha01, dest) {
+    var COMPONENTS = 3;
+    alpha01 = alpha01 !== 1 ? 0 : alpha01;
+    var xRatio = w1 / w2;
+    var yRatio = h1 / h2;
+    var i, j, py, newIndex = 0, oldIndex;
+    var xScaled = new Uint16Array(w2);
+    var w1Scanline = w1 * COMPONENTS;
+
+    for (i = 0; i < w2; i++) {
+      xScaled[i] = Math.floor(i * xRatio) * COMPONENTS;
+    }
+    for (i = 0; i < h2; i++) {
+      py = Math.floor(i * yRatio) * w1Scanline;
+      for (j = 0; j < w2; j++) {
+        oldIndex = py + xScaled[j];
+        dest[newIndex++] = src[oldIndex++];
+        dest[newIndex++] = src[oldIndex++];
+        dest[newIndex++] = src[oldIndex++];
+        newIndex += alpha01;
+      }
+    }
+  }
+
+  // Constructor should define this.numComps, this.defaultColor, this.name
+  function BaseAbstractCS() {
+    throw new Error('Cannot initialize BaseAbstractCS.');
+  }
+
+  BaseAbstractCS.prototype = {
+    /**
+     * Converts the color value to the RGB color. The color components are
+     * located in the src array starting from the srcOffset. Returns the array
+     * of the rgb components, each value ranging from [0,255].
+     */
+    getRgb(src, srcOffset) {
+      var rgb = new Uint8Array(3);
+      this.getRgbItem(src, srcOffset, rgb, 0);
+      return rgb;
+    },
+
+    /**
+     * Converts the color value to the RGB color, similar to the getRgb method.
+     * The result placed into the dest array starting from the destOffset.
+     */
+    getRgbItem(src, srcOffset, dest, destOffset) {
+      throw new Error('Should not call BaseAbstractCS.getRgbItem');
+    },
+
+    /**
+     * Converts the specified number of the color values to the RGB colors.
+     * The colors are located in the src array starting from the srcOffset.
+     * The result is placed into the dest array starting from the destOffset.
+     * The src array items shall be in [0,2^bits) range, the dest array items
+     * will be in [0,255] range. alpha01 indicates how many alpha components
+     * there are in the dest array; it will be either 0 (RGB array) or 1 (RGBA
+     * array).
+     */
+    getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+      throw new Error('Should not call BaseAbstractCS.getRgbBuffer');
+    },
+
+    /**
+     * Determines the number of bytes required to store the result of the
+     * conversion done by the getRgbBuffer method. As in getRgbBuffer,
+     * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
+     */
+    getOutputLength(inputLength, alpha01) {
+      throw new Error('Should not call BaseAbstractCS.getOutputLength');
+    },
+
+    /**
+     * Returns true if source data will be equal the result/output data.
+     */
+    isPassthrough(bits) {
+      return false;
+    },
+
+    /**
+     * Fills in the RGB colors in the destination buffer.  alpha01 indicates
+     * how many alpha components there are in the dest array; it will be either
+     * 0 (RGB array) or 1 (RGBA array).
+     */
+    fillRgb(dest, originalWidth, originalHeight, width, height, actualHeight,
+            bpc, comps, alpha01) {
+      var count = originalWidth * originalHeight;
+      var rgbBuf = null;
+      var numComponentColors = 1 << bpc;
+      var needsResizing = originalHeight !== height || originalWidth !== width;
+      var i, ii;
+
+      if (this.isPassthrough(bpc)) {
+        rgbBuf = comps;
+      } else if (this.numComps === 1 && count > numComponentColors &&
+                 this.name !== 'DeviceGray' && this.name !== 'DeviceRGB') {
+        // Optimization: create a color map when there is just one component and
+        // we are converting more colors than the size of the color map. We
+        // don't build the map if the colorspace is gray or rgb since those
+        // methods are faster than building a map. This mainly offers big speed
+        // ups for indexed and alternate colorspaces.
+        //
+        // TODO it may be worth while to cache the color map. While running
+        // testing I never hit a cache so I will leave that out for now (perhaps
+        // we are reparsing colorspaces too much?).
+        var allColors = bpc <= 8 ? new Uint8Array(numComponentColors) :
+                                   new Uint16Array(numComponentColors);
+        var key;
+        for (i = 0; i < numComponentColors; i++) {
+          allColors[i] = i;
+        }
+        var colorMap = new Uint8Array(numComponentColors * 3);
+        this.getRgbBuffer(allColors, 0, numComponentColors, colorMap, 0, bpc,
+                          /* alpha01 = */ 0);
+
+        var destPos, rgbPos;
+        if (!needsResizing) {
+          // Fill in the RGB values directly into |dest|.
+          destPos = 0;
+          for (i = 0; i < count; ++i) {
+            key = comps[i] * 3;
+            dest[destPos++] = colorMap[key];
+            dest[destPos++] = colorMap[key + 1];
+            dest[destPos++] = colorMap[key + 2];
+            destPos += alpha01;
+          }
+        } else {
+          rgbBuf = new Uint8Array(count * 3);
+          rgbPos = 0;
+          for (i = 0; i < count; ++i) {
+            key = comps[i] * 3;
+            rgbBuf[rgbPos++] = colorMap[key];
+            rgbBuf[rgbPos++] = colorMap[key + 1];
+            rgbBuf[rgbPos++] = colorMap[key + 2];
+          }
+        }
+      } else {
+        if (!needsResizing) {
+          // Fill in the RGB values directly into |dest|.
+          this.getRgbBuffer(comps, 0, width * actualHeight, dest, 0, bpc,
+                            alpha01);
+        } else {
+          rgbBuf = new Uint8Array(count * 3);
+          this.getRgbBuffer(comps, 0, count, rgbBuf, 0, bpc,
+                            /* alpha01 = */ 0);
+        }
+      }
+
+      if (rgbBuf) {
+        if (needsResizing) {
+          resizeRgbImage(rgbBuf, bpc, originalWidth, originalHeight,
+                         width, height, alpha01, dest);
+        } else {
+          rgbPos = 0;
+          destPos = 0;
+          for (i = 0, ii = width * actualHeight; i < ii; i++) {
+            dest[destPos++] = rgbBuf[rgbPos++];
+            dest[destPos++] = rgbBuf[rgbPos++];
+            dest[destPos++] = rgbBuf[rgbPos++];
+            destPos += alpha01;
+          }
+        }
+      }
+    },
+
+    /**
+     * Checks if the `decodeMap` matches the default one for a color space,
+     * see also `ColorSpace.isDefaultDecode`.
+     */
+    isDefaultDecode(decodeMap) {
+      throw new Error('Should not call BaseAbstractCS.getRgbBuffer');
+    },
+
+    /**
+     * True if the colorspace has components in the default range of [0, 1].
+     * This should be true for all colorspaces except for lab color spaces
+     * which are [0,100], [-128, 127], [-128, 127].
+     */
+    usesZeroToOneRange: true,
+  };
+
+  return BaseAbstractCS;
+})();
+
 /**
  * Alternate color space handles both Separation and DeviceN color spaces.  A
  * Separation color space is actually just a DeviceN with one color component.
@@ -434,13 +452,13 @@ var AlternateCS = (function AlternateCSClosure() {
     this.tmpBuf = new Float32Array(base.numComps);
   }
 
-  AlternateCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+  Util.inherit(AlternateCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       var tmpBuf = this.tmpBuf;
       this.tintFn(src, srcOffset, tmpBuf, 0);
       this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var tintFn = this.tintFn;
       var base = this.base;
@@ -476,18 +494,17 @@ var AlternateCS = (function AlternateCSClosure() {
         base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return this.base.getOutputLength(inputLength *
                                        this.base.numComps / this.numComps,
                                        alpha01);
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true,
-  };
+  });
 
   return AlternateCS;
 })();
@@ -529,13 +546,13 @@ var IndexedCS = (function IndexedCSClosure() {
     }
   }
 
-  IndexedCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+  Util.inherit(IndexedCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       var numComps = this.base.numComps;
       var start = src[srcOffset] * numComps;
       this.base.getRgbBuffer(this.lookup, start, 1, dest, destOffset, 8, 0);
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var base = this.base;
       var numComps = base.numComps;
@@ -548,18 +565,18 @@ var IndexedCS = (function IndexedCSClosure() {
         destOffset += outputDelta;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return this.base.getOutputLength(inputLength * this.base.numComps,
                                        alpha01);
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       // indexed color maps shouldn't be changed
       return true;
     },
-    usesZeroToOneRange: true,
-  };
+  });
+
   return IndexedCS;
 })();
 
@@ -570,13 +587,13 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
     this.defaultColor = new Float32Array(this.numComps);
   }
 
-  DeviceGrayCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+  Util.inherit(DeviceGrayCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       var c = (src[srcOffset] * 255) | 0;
       c = c < 0 ? 0 : c > 255 ? 255 : c;
       dest[destOffset] = dest[destOffset + 1] = dest[destOffset + 2] = c;
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var scale = 255 / ((1 << bits) - 1);
       var j = srcOffset, q = destOffset;
@@ -588,16 +605,16 @@ var DeviceGrayCS = (function DeviceGrayCSClosure() {
         q += alpha01;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return inputLength * (3 + alpha01);
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true,
-  };
+  });
+
   return DeviceGrayCS;
 })();
 
@@ -607,8 +624,8 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
     this.numComps = 3;
     this.defaultColor = new Float32Array(this.numComps);
   }
-  DeviceRgbCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+
+  Util.inherit(DeviceRgbCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       var r = (src[srcOffset] * 255) | 0;
       var g = (src[srcOffset + 1] * 255) | 0;
@@ -617,6 +634,7 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
       dest[destOffset + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
       dest[destOffset + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       if (bits === 8 && alpha01 === 0) {
         dest.set(src.subarray(srcOffset, srcOffset + count * 3), destOffset);
@@ -631,18 +649,20 @@ var DeviceRgbCS = (function DeviceRgbCSClosure() {
         q += alpha01;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return (inputLength * (3 + alpha01) / 3) | 0;
     },
+
     isPassthrough(bits) {
       return bits === 8;
     },
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true,
-  };
+  });
+
   return DeviceRgbCS;
 })();
 
@@ -698,11 +718,12 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
     // Set the fourth component to the maximum value for a black color.
     this.defaultColor[3] = 1;
   }
-  DeviceCmykCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+
+  Util.inherit(DeviceCmykCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       convertToRgb(src, srcOffset, 1, dest, destOffset);
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var scale = 1 / ((1 << bits) - 1);
       for (var i = 0; i < count; i++) {
@@ -711,16 +732,15 @@ var DeviceCmykCS = (function DeviceCmykCSClosure() {
         destOffset += 3 + alpha01;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return (inputLength / 4 * (3 + alpha01)) | 0;
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true,
-  };
+  });
 
   return DeviceCmykCS;
 })();
@@ -792,11 +812,11 @@ var CalGrayCS = (function CalGrayCSClosure() {
     dest[destOffset + 2] = val;
   }
 
-  CalGrayCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+  Util.inherit(CalGrayCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var scale = 1 / ((1 << bits) - 1);
 
@@ -806,16 +826,16 @@ var CalGrayCS = (function CalGrayCSClosure() {
         destOffset += 3 + alpha01;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return inputLength * (3 + alpha01);
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true,
-  };
+  });
+
   return CalGrayCS;
 })();
 
@@ -1085,11 +1105,11 @@ var CalRGBCS = (function CalRGBCSClosure() {
     dest[destOffset + 2] = Math.round(sB * 255);
   }
 
-  CalRGBCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+  Util.inherit(CalRGBCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       convertToRgb(this, src, srcOffset, dest, destOffset, 1);
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var scale = 1 / ((1 << bits) - 1);
 
@@ -1099,16 +1119,16 @@ var CalRGBCS = (function CalRGBCSClosure() {
         destOffset += 3 + alpha01;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return (inputLength * (3 + alpha01) / 3) | 0;
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       return ColorSpace.isDefaultDecode(decodeMap, this.numComps);
     },
-    usesZeroToOneRange: true,
-  };
+  });
+
   return CalRGBCS;
 })();
 
@@ -1228,11 +1248,11 @@ var LabCS = (function LabCSClosure() {
     dest[destOffset + 2] = b <= 0 ? 0 : b >= 1 ? 255 : Math.sqrt(b) * 255 | 0;
   }
 
-  LabCS.prototype = {
-    getRgb: ColorSpace.prototype.getRgb,
+  Util.inherit(LabCS, BaseAbstractCS, {
     getRgbItem(src, srcOffset, dest, destOffset) {
       convertToRgb(this, src, srcOffset, false, dest, destOffset);
     },
+
     getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
       var maxVal = (1 << bits) - 1;
       for (var i = 0; i < count; i++) {
@@ -1241,18 +1261,20 @@ var LabCS = (function LabCSClosure() {
         destOffset += 3 + alpha01;
       }
     },
+
     getOutputLength(inputLength, alpha01) {
       return (inputLength * (3 + alpha01) / 3) | 0;
     },
-    isPassthrough: ColorSpace.prototype.isPassthrough,
-    fillRgb: ColorSpace.prototype.fillRgb,
+
     isDefaultDecode(decodeMap) {
       // XXX: Decoding is handled with the lab conversion because of the strange
       // ranges that are used.
       return true;
     },
+
     usesZeroToOneRange: false,
-  };
+  });
+
   return LabCS;
 })();
 
