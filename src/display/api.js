@@ -1890,17 +1890,14 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
       }, this);
 
-      messageHandler.on('UnsupportedFeature',
-          function transportUnsupportedFeature(data) {
+      messageHandler.on('UnsupportedFeature', function(data) {
         if (this.destroyed) {
           return; // Ignore any pending requests if the worker was terminated.
         }
-        var featureId = data.featureId;
-        var loadingTask = this.loadingTask;
+        let loadingTask = this.loadingTask;
         if (loadingTask.onUnsupportedFeature) {
-          loadingTask.onUnsupportedFeature(featureId);
+          loadingTask.onUnsupportedFeature(data.featureId);
         }
-        _UnsupportedManager.notify(featureId);
       }, this);
 
       messageHandler.on('JpegDecode', function(data) {
@@ -2380,26 +2377,6 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
   return InternalRenderTask;
 })();
 
-/**
- * (Deprecated) Global observer of unsupported feature usages. Use
- * onUnsupportedFeature callback of the {PDFDocumentLoadingTask} instance.
- */
-var _UnsupportedManager = (function UnsupportedManagerClosure() {
-  var listeners = [];
-  return {
-    listen(cb) {
-      deprecated('Global UnsupportedManager.listen is used: ' +
-                 ' use PDFDocumentLoadingTask.onUnsupportedFeature instead');
-      listeners.push(cb);
-    },
-    notify(featureId) {
-      for (var i = 0, ii = listeners.length; i < ii; i++) {
-        listeners[i](featureId);
-      }
-    },
-  };
-})();
-
 var version, build;
 if (typeof PDFJSDev !== 'undefined') {
   version = PDFJSDev.eval('BUNDLE_VERSION');
@@ -2414,7 +2391,6 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   setPDFNetworkStreamClass,
-  _UnsupportedManager,
   version,
   build,
 };
