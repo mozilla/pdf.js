@@ -1064,14 +1064,6 @@ var PDFPageProxy = (function PDFPageProxyClosure() {
     },
 
     /**
-     * Cleans up resources allocated by the page. (deprecated)
-     */
-    destroy() {
-      deprecated('page destroy method, use cleanup() instead');
-      this.cleanup();
-    },
-
-    /**
      * Cleans up resources allocated by the page.
      */
     cleanup: function PDFPageProxy_cleanup() {
