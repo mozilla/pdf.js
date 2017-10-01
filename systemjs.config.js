@@ -74,7 +74,7 @@
         scriptLoad: false,
         esModule: true,
         babelOptions: {
-          es2015: false,
+          env: false,
           plugins: [babelPluginReplaceNonWebPackRequire],
         },
       },
