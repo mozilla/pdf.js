@@ -800,10 +800,6 @@ var Util = (function UtilClosure() {
     return result;
   };
 
-  Util.sign = function Util_sign(num) {
-    return num < 0 ? -1 : 1;
-  };
-
   var ROMAN_NUMBER_MAP = [
     '', 'C', 'CC', 'CCC', 'CD', 'D', 'DC', 'DCC', 'DCCC', 'CM',
     '', 'X', 'XX', 'XXX', 'XL', 'L', 'LX', 'LXX', 'LXXX', 'XC',
