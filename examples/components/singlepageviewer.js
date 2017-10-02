@@ -36,7 +36,7 @@ var container = document.getElementById('viewerContainer');
 
 // pdfLinkService not used since single page viewer
 
-var pdfSinglePageViewer = new PDFJS.PDFViewer({
+var pdfSinglePageViewer = new PDFJS.PDFSinglePageViewer({
   container: container,
 });
 
