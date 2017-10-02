@@ -120,10 +120,6 @@ function setPDFNetworkStreamClass(cls) {
  * @property {string} docBaseUrl - (optional) The base URL of the document,
  *   used when attempting to recover valid absolute URLs for annotations, and
  *   outline items, that (incorrectly) only specify relative URLs.
- * @property {boolean} disableNativeImageDecoder - (deprecated) Disable decoding
- *   of certain (simple) JPEG images in the browser. This is useful for
- *   environments without DOM image support, such as e.g. Node.js.
- *   The default value is `false`.
  * @property {string} nativeImageDecoderSupport - (optional) Strategy for
  *   decoding certain (simple) JPEG images in the browser. This is useful for
  *   environments without DOM image and canvas support, such as e.g. Node.js.
@@ -262,13 +258,8 @@ function getDocument(src, pdfDataRangeTransport,
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.ignoreErrors = params.stopAtErrors !== true;
 
-  if (params.disableNativeImageDecoder !== undefined) {
-    deprecated('parameter disableNativeImageDecoder, ' +
-      'use nativeImageDecoderSupport instead');
-  }
   params.nativeImageDecoderSupport = params.nativeImageDecoderSupport ||
-    (params.disableNativeImageDecoder === true ? NativeImageDecoding.NONE :
-      NativeImageDecoding.DECODE);
+                                     NativeImageDecoding.DECODE;
   if (params.nativeImageDecoderSupport !== NativeImageDecoding.DECODE &&
       params.nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
       params.nativeImageDecoderSupport !== NativeImageDecoding.DISPLAY) {
