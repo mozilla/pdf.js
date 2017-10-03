@@ -40,6 +40,7 @@
 !issue7446.pdf
 !issue7492.pdf
 !issue7544.pdf
+!issue7507.pdf
 !issue7580.pdf
 !issue7598.pdf
 !issue7665.pdf
@@ -200,6 +201,7 @@
 !issue6387.pdf
 !issue6410.pdf
 !issue8586.pdf
+!jbig2_symbol_offset.pdf
 !gradientfill.pdf
 !bug903856.pdf
 !bug850854.pdf
@@ -291,6 +293,7 @@
 !annotation-text-widget.pdf
 !annotation-choice-widget.pdf
 !annotation-button-widget.pdf
+!annotation-polyline-polygon.pdf
 !zero_descent.pdf
 !operator-in-TJ-array.pdf
 !issue7878.pdf

@@ -281,8 +281,44 @@ describe('cmap', function() {
       done.fail('No CMap should be loaded');
     }, function (reason) {
       expect(reason instanceof Error).toEqual(true);
-      expect(reason.message).toEqual(
-        'Unable to load CMap at: nullAdobe-Japan1-1');
+      expect(reason.message).toEqual('CMap baseUrl must be specified, ' +
+        'see "PDFJS.cMapUrl" (and also "PDFJS.cMapPacked").');
+      done();
+    });
+  });
+
+  it('attempts to load a built-in CMap with inconsistent API parameters',
+      function(done) {
+    function tmpFetchBuiltInCMap(name) {
+      let CMapReaderFactory;
+      if (isNodeJS()) {
+        CMapReaderFactory = new NodeCMapReaderFactory({
+          baseUrl: cMapUrl.node,
+          isCompressed: false,
+        });
+      } else {
+        CMapReaderFactory = new DOMCMapReaderFactory({
+          baseUrl: cMapUrl.dom,
+          isCompressed: false,
+        });
+      }
+      return CMapReaderFactory.fetch({
+        name,
+      });
+    }
+
+    let cmapPromise = CMapFactory.create({
+      encoding: Name.get('Adobe-Japan1-1'),
+      fetchBuiltInCMap: tmpFetchBuiltInCMap,
+      useCMap: null,
+    });
+    cmapPromise.then(function () {
+      done.fail('No CMap should be loaded');
+    }, function (reason) {
+      expect(reason instanceof Error).toEqual(true);
+      let message = reason.message;
+      expect(message.startsWith('Unable to load CMap at: ')).toEqual(true);
+      expect(message.endsWith('/external/bcmaps/Adobe-Japan1-1')).toEqual(true);
       done();
     });
   });

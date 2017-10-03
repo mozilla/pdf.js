@@ -14,10 +14,11 @@
  */
 
 import {
-  arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
-  InvalidPDFException, isNodeJS, MessageHandler, MissingPDFException,
-  PasswordException, setVerbosityLevel, UnexpectedResponseException,
-  UnknownErrorException, UNSUPPORTED_FEATURES, warn, XRefParseException
+  AbortException, arrayByteLength, arraysToBytes, assert,
+  createPromiseCapability, info, InvalidPDFException, isNodeJS, MessageHandler,
+  MissingPDFException, PasswordException, setVerbosityLevel,
+  UnexpectedResponseException, UnknownErrorException, UNSUPPORTED_FEATURES,
+  warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
 import { Ref } from './primitives';
@@ -363,6 +364,15 @@ var WorkerMessageHandler = {
     var terminated = false;
     var cancelXHRs = null;
     var WorkerTasks = [];
+
+    let apiVersion = docParams.apiVersion;
+    let workerVersion =
+      typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
+    // The `apiVersion !== null` check is needed to avoid errors during testing.
+    if (apiVersion !== null && apiVersion !== workerVersion) {
+      throw new Error(`The API version "${apiVersion}" does not match ` +
+                      `the Worker version "${workerVersion}".`);
+    }
 
     var docId = docParams.docId;
     var docBaseUrl = docParams.docBaseUrl;
@@ -835,7 +845,7 @@ var WorkerMessageHandler = {
       return Promise.all(waitOn).then(function () {
         // Notice that even if we destroying handler, resolved response promise
         // must be sent back.
-        handler.destroy();
+        handler.close(new AbortException('Worker was terminated'));
         handler = null;
       });
     });

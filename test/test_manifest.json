@@ -684,6 +684,13 @@
        "link": false,
        "type": "load"
     },
+    {  "id": "issue7507",
+       "file": "pdfs/issue7507.pdf",
+       "md5": "f7aeaafe0c89b94436e94eaa63307303",
+       "rounds": 1,
+       "link": false,
+       "type": "eq"
+    },
     {  "id": "issue5501",
        "file": "pdfs/issue5501.pdf",
        "md5": "55a60699728fc92f491a2d7d490474e4",
@@ -817,6 +824,12 @@
        "rounds": 1,
        "type": "eq",
        "forms": true
+    },
+    {  "id": "jbig2_symbol_offset",
+       "file": "pdfs/jbig2_symbol_offset.pdf",
+       "md5": "6b22a0f838008fa4d8cb5b40ba095c48",
+       "rounds": 1,
+       "type": "eq"
     },
     {  "id": "bug1046314",
        "file": "pdfs/bug1046314.pdf",
@@ -3653,6 +3666,13 @@
        "rounds": 1,
        "type": "eq",
        "forms": true
+    },
+    {  "id": "annotation-polyline-polygon",
+       "file": "pdfs/annotation-polyline-polygon.pdf",
+       "md5": "e68611602f58c8ca70cc40575ba3b04e",
+       "rounds": 1,
+       "type": "eq",
+       "annotations": true
     },
     {  "id": "issue6108",
        "file": "pdfs/issue6108.pdf",
