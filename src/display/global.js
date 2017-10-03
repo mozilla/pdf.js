@@ -14,10 +14,6 @@
  */
 
 import {
-  _UnsupportedManager, getDocument, LoopbackPort, PDFDataRangeTransport,
-  PDFWorker
-} from './api';
-import {
   addLinkAttributes, CustomStyle, DEFAULT_LINK_REL, getFilenameFromUrl,
   isExternalLinkTargetSet, isValidUrl, LinkTarget
 } from './dom_utils';
@@ -28,6 +24,9 @@ import {
   removeNullCharacters, setVerbosityLevel, shadow, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS, warn
 } from '../shared/util';
+import {
+  getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
+} from './api';
 import { AnnotationLayer } from './annotation_layer';
 import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
@@ -301,8 +300,6 @@ PDFJS.renderTextLayer = renderTextLayer;
 PDFJS.Metadata = Metadata;
 
 PDFJS.SVGGraphics = SVGGraphics;
-
-PDFJS.UnsupportedManager = _UnsupportedManager;
 
 export {
   globalScope,
