@@ -360,8 +360,9 @@ class PDFNodeStreamRangeReader extends BaseRangeReader {
 class PDFNodeStreamFsFullReader extends BaseFullReader {
   constructor(stream) {
     super(stream);
+    let path = decodeURI(this._url.path);
 
-    fs.lstat(this._url.path, (error, stat) => {
+    fs.lstat(path, (error, stat) => {
       if (error) {
         this._errored = true;
         this._reason = error;
@@ -371,7 +372,7 @@ class PDFNodeStreamFsFullReader extends BaseFullReader {
       // Setting right content length.
       this._contentLength = stat.size;
 
-      this._setReadableStream(fs.createReadStream(this._url.path));
+      this._setReadableStream(fs.createReadStream(path));
       this._headersCapability.resolve();
     });
   }
@@ -382,7 +383,7 @@ class PDFNodeStreamFsRangeReader extends BaseRangeReader {
     super(stream);
 
     this._setReadableStream(
-      fs.createReadStream(this._url.path, { start, end: end - 1, }));
+      fs.createReadStream(decodeURI(this._url.path), { start, end: end - 1, }));
   }
 }
 

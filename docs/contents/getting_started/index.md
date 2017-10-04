@@ -57,6 +57,13 @@ $ cd pdf.js
   </div>
 </div>
 
+## Including via a CDN
+
+PDF.js is hosted on several free CDNs:
+ - https://www.jsdelivr.com/package/npm/pdfjs-dist
+ - https://cdnjs.com/libraries/pdf.js
+ - https://unpkg.com/pdfjs-dist/
+
 ## File Layout Overview
 
 ### Prebuilt
