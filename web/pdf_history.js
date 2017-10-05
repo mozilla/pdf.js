@@ -109,7 +109,7 @@ class PDFHistory {
     this._currentHash = getCurrentHash();
     this._numPositionUpdates = 0;
 
-    this._currentUid = this._uid = 0;
+    this._uid = this._maxUid = 0;
     this._destination = null;
     this._position = null;
 
@@ -245,7 +245,7 @@ class PDFHistory {
       return;
     }
     let state = window.history.state;
-    if (this._isValidState(state) && state.uid < (this._uid - 1)) {
+    if (this._isValidState(state) && state.uid < this._maxUid) {
       window.history.forward();
     }
   }
@@ -266,7 +266,7 @@ class PDFHistory {
     let shouldReplace = forceReplace || !this._destination;
     let newState = {
       fingerprint: this.fingerprint,
-      uid: shouldReplace ? this._currentUid : this._uid,
+      uid: shouldReplace ? this._uid : (this._uid + 1),
       destination,
     };
 
@@ -286,6 +286,8 @@ class PDFHistory {
         window.history.replaceState(newState, '', document.URL);
       }
     } else {
+      this._maxUid = this._uid;
+
       if (typeof PDFJSDev !== 'undefined' &&
           PDFJSDev.test('FIREFOX || MOZCENTRAL')) {
         // Providing the third argument causes a SecurityError for file:// URLs.
@@ -392,8 +394,7 @@ class PDFHistory {
       delete destination.temporary;
     }
     this._destination = destination;
-    this._currentUid = uid;
-    this._uid = this._currentUid + 1;
+    this._uid = uid;
     // This should always be reset when `this._destination` is updated.
     this._numPositionUpdates = 0;
   }
@@ -468,7 +469,7 @@ class PDFHistory {
         (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('CHROME') &&
          state.chromecomState && !this._isValidState(state))) {
       // This case corresponds to the user changing the hash of the document.
-      this._currentUid = this._uid;
+      this._uid++;
 
       let { hash, page, rotation, } = parseCurrentHash(this.linkService);
       this._pushOrReplaceState({ hash, page, rotation, },
