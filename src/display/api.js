@@ -2260,14 +2260,8 @@ var InternalRenderTask = (function InternalRenderTaskClosure() {
       if (this._canvas) {
         canvasInRendering.delete(this._canvas);
       }
-
-      if ((typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PDFJS_NEXT')) ||
-          getDefaultSetting('pdfjsNext')) {
-        this.callback(new RenderingCancelledException(
-          'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
-      } else {
-        this.callback('cancelled');
-      }
+      this.callback(new RenderingCancelledException(
+        'Rendering cancelled, page ' + this.pageNumber, 'canvas'));
     },
 
     operatorListChanged: function InternalRenderTask_operatorListChanged() {
