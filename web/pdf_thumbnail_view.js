@@ -303,9 +303,7 @@ class PDFThumbnailView {
         this.renderTask = null;
       }
 
-      if (((typeof PDFJSDev === 'undefined' ||
-            !PDFJSDev.test('PDFJS_NEXT')) && error === 'cancelled') ||
-          error instanceof RenderingCancelledException) {
+      if (error instanceof RenderingCancelledException) {
         renderCapability.resolve(undefined);
         return;
       }
