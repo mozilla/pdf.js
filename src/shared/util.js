@@ -1628,33 +1628,8 @@ MessageHandler.prototype = {
     }
   },
 
-  close(reason) {
+  destroy() {
     this.comObj.removeEventListener('message', this._onComObjOnMessage);
-
-    // Reject all promises and streams.
-    for (let i in this.callbacksCapabilities) {
-      const callbackCapability = this.callbacksCapabilities[i];
-      callbackCapability.reject(reason);
-    }
-    for (let i in this.streamSinks) {
-      const sink = this.streamSinks[i];
-      sink.sinkCapability.reject(reason);
-    }
-    for (let i in this.streamControllers) {
-      const controller = this.streamControllers[i];
-      if (!controller.isClosed) {
-        controller.controller.error(reason);
-      }
-      if (controller.startCall) {
-        controller.startCall.reject(reason);
-      }
-      if (controller.pullCall) {
-        controller.pullCall.reject(reason);
-      }
-      if (controller.cancelCall) {
-        controller.cancelCall.reject(reason);
-      }
-    }
   },
 };
 
