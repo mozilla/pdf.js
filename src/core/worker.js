@@ -14,11 +14,10 @@
  */
 
 import {
-  AbortException, arrayByteLength, arraysToBytes, assert,
-  createPromiseCapability, info, InvalidPDFException, isNodeJS, MessageHandler,
-  MissingPDFException, PasswordException, setVerbosityLevel,
-  UnexpectedResponseException, UnknownErrorException, UNSUPPORTED_FEATURES,
-  warn, XRefParseException
+  arrayByteLength, arraysToBytes, assert, createPromiseCapability, info,
+  InvalidPDFException, isNodeJS, MessageHandler, MissingPDFException,
+  PasswordException, setVerbosityLevel, UnexpectedResponseException,
+  UnknownErrorException, UNSUPPORTED_FEATURES, warn, XRefParseException
 } from '../shared/util';
 import { LocalPdfManager, NetworkPdfManager } from './pdf_manager';
 import { Ref } from './primitives';
@@ -842,7 +841,7 @@ var WorkerMessageHandler = {
       return Promise.all(waitOn).then(function () {
         // Notice that even if we destroying handler, resolved response promise
         // must be sent back.
-        handler.close(new AbortException('Worker was terminated'));
+        handler.destroy();
         handler = null;
       });
     });
