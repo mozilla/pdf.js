@@ -41,6 +41,7 @@ class AnnotationLayerBuilder {
     this.l10n = l10n;
 
     this.div = null;
+    this._cancelled = false;
   }
 
   /**
@@ -49,6 +50,10 @@ class AnnotationLayerBuilder {
    */
   render(viewport, intent = 'display') {
     this.pdfPage.getAnnotations({ intent, }).then((annotations) => {
+      if (this._cancelled) {
+        return;
+      }
+
       let parameters = {
         viewport: viewport.clone({ dontFlip: true, }),
         div: this.div,
@@ -78,6 +83,10 @@ class AnnotationLayerBuilder {
         this.l10n.translate(this.div);
       }
     });
+  }
+
+  cancel() {
+    this._cancelled = true;
   }
 
   hide() {
