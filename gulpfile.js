@@ -56,6 +56,7 @@ var GH_PAGES_DIR = BUILD_DIR + 'gh-pages/';
 var SRC_DIR = 'src/';
 var LIB_DIR = BUILD_DIR + 'lib/';
 var DIST_DIR = BUILD_DIR + 'dist/';
+var MOCHITEST_DIR = BUILD_DIR + 'firefox-build/';
 var COMMON_WEB_FILES = [
   'web/images/*.{png,svg,gif,cur}',
   'web/debugger.js'
@@ -1477,4 +1478,44 @@ gulp.task('externaltest', function () {
   gutil.log('Running test-fixtures_esprima.js');
   safeSpawnSync('node', ['external/builder/test-fixtures_esprima.js'],
                 { stdio: 'inherit', });
+});
+
+gulp.task('download-firefox-artifact', function () {
+  gutil.log('Running download-firefox-artifact');
+  var downloaderPath =
+    path.resolve(__dirname, 'extensions/firefox/download-firefox-artifact');
+  safeSpawnSync(downloaderPath, [], { stdio: 'inherit', });
+});
+
+function linkMochitestFiles() {
+  return new Promise(function (resolve, reject) {
+    // 'vinyl' because web/viewer.html needs its BOM.
+    vinyl.src([BUILD_DIR + 'mozcentral/**/*'],
+              { base: BUILD_DIR + 'mozcentral/', stripBOM: false, })
+        .pipe(gulp.dest(MOCHITEST_DIR))
+        .on('end', function () {
+      resolve();
+    });
+  });
+}
+
+gulp.task('install-mozcentral', ['mozcentral'], function () {
+  return linkMochitestFiles();
+});
+
+gulp.task('prepare-mochitest', ['download-firefox-artifact', 'mozcentral'],
+    function () {
+  return linkMochitestFiles().then(function () {
+    safeSpawnSync('./mach', ['build'],
+                  { stdio: 'inherit', cwd: MOCHITEST_DIR, });
+  });
+});
+
+gulp.task('mochitest', ['install-mozcentral'], function () {
+  var attemptsParam = process.env['ATTEMPTS'];
+  var attempts = attemptsParam ? parseInt(attemptsParam, 10) : 1;
+  do {
+    safeSpawnSync('./mach', ['test', 'browser/extensions/pdfjs/'],
+                  { stdio: 'inherit', cwd: MOCHITEST_DIR, });
+  } while (--attempts > 0);
 });

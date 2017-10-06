@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+ROOT=`dirname $0`
+FIREFOX_PATH="$ROOT/../../build/firefox-build"
+
+# check that mercurial is installed
+if [ -z "`command -v hg`" ]; then
+  echo >&2 "mercurial is required for mochitests, use 'brew install mercurial' on MacOS";
+  exit 1;
+fi
+
+if [ -d "$FIREFOX_PATH" ]; then
+    # convert path to absolute path
+    FIREFOX_PATH=$(cd "$ROOT/../../build/firefox-build"; pwd)
+
+    # If we already have Firefox locally, just update it
+    cd "$FIREFOX_PATH";
+
+    if [ -n "`hg status`" ]; then
+        read -p "There are local changes to Firefox which will be overwritten. Are you sure? [Y/n] " -r
+        if [[ $REPLY == "n" ]]; then
+            exit 0;
+        fi
+
+        # If the mochitest dir has been symlinked, remove it as revert
+        # does not follow symlinks.
+        if [ -h "$FIREFOX_PATH/devtools/client/debugger/new/test/mochitest" ]; then
+           rm "$FIREFOX_PATH/devtools/client/debugger/new/test/mochitest";
+        fi
+
+        hg revert -a
+    fi
+
+    hg pull
+    hg update -C
+else
+    echo "Downloading Firefox source code, requires about 10-30min depending on connection"
+    hg clone https://hg.mozilla.org/mozilla-central/ "$FIREFOX_PATH"
+    # if somebody cancels (ctrl-c) out of the long download don't continue
+    if [ $? -ne 0 ]; then
+        exit 1;
+    fi
+    cd "$FIREFOX_PATH"
+
+    # Make an artifact build so it builds much faster
+    echo "
+ac_add_options --enable-artifact-builds
+mk_add_options MOZ_OBJDIR=./objdir-frontend
+" > .mozconfig
+fi
