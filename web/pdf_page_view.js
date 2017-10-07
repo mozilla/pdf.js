@@ -136,7 +136,7 @@ class PDFPageView {
   }
 
   reset(keepZoomLayer = false, keepAnnotations = false) {
-    this.cancelRendering();
+    this.cancelRendering(keepAnnotations);
 
     let div = this.div;
     div.style.width = Math.floor(this.viewport.width) + 'px';
@@ -159,7 +159,8 @@ class PDFPageView {
       // Hide the annotation layer until all elements are resized
       // so they are not displayed on the already resized page.
       this.annotationLayer.hide();
-    } else {
+    } else if (this.annotationLayer) {
+      this.annotationLayer.cancel();
       this.annotationLayer = null;
     }
 
@@ -240,7 +241,7 @@ class PDFPageView {
     this.reset(/* keepZoomLayer = */ true, /* keepAnnotations = */ true);
   }
 
-  cancelRendering() {
+  cancelRendering(keepAnnotations = false) {
     if (this.paintTask) {
       this.paintTask.cancel();
       this.paintTask = null;
@@ -251,6 +252,10 @@ class PDFPageView {
     if (this.textLayer) {
       this.textLayer.cancel();
       this.textLayer = null;
+    }
+    if (!keepAnnotations && this.annotationLayer) {
+      this.annotationLayer.cancel();
+      this.annotationLayer = null;
     }
   }
 
