@@ -1818,7 +1818,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               };
             }
             var font = new FontFaceObject(exportedData, {
-              isEvalSuported: getDefaultSetting('isEvalSupported'),
+              isEvalSupported: getDefaultSetting('isEvalSupported'),
               disableFontFace: getDefaultSetting('disableFontFace'),
               fontRegistry,
             });
