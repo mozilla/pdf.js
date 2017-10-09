@@ -13,10 +13,36 @@
  * limitations under the License.
  */
 
-import { isDestsEqual } from '../../web/pdf_history';
+import { isDestArraysEqual, isDestHashesEqual } from '../../web/pdf_history';
 
 describe('pdf_history', function() {
-  describe('isDestsEqual', function() {
+  describe('isDestHashesEqual', function() {
+    it('should reject non-equal destination hashes', function() {
+      expect(isDestHashesEqual(null, 'page.157')).toEqual(false);
+      expect(isDestHashesEqual('title.0', 'page.157')).toEqual(false);
+      expect(isDestHashesEqual('page=1&zoom=auto', 'page.157')).toEqual(false);
+
+      expect(isDestHashesEqual('nameddest-page.157', 'page.157')).
+        toEqual(false);
+      expect(isDestHashesEqual('page.157', 'nameddest=page.157')).
+        toEqual(false);
+
+      let destArrayString = JSON.stringify(
+        [{ num: 3757, gen: 0, }, { name: 'XYZ', }, 92.918, 748.972, null]);
+      expect(isDestHashesEqual(destArrayString, 'page.157')).toEqual(false);
+      expect(isDestHashesEqual('page.157', destArrayString)).toEqual(false);
+    });
+
+    it('should accept equal destination hashes', function() {
+      expect(isDestHashesEqual('page.157', 'page.157')).toEqual(true);
+      expect(isDestHashesEqual('nameddest=page.157', 'page.157')).toEqual(true);
+
+      expect(isDestHashesEqual('nameddest=page.157&zoom=100', 'page.157')).
+        toEqual(true);
+    });
+  });
+
+  describe('isDestArraysEqual', function() {
     let firstDest = [{ num: 1, gen: 0, }, { name: 'XYZ', }, 0, 375, null];
     let secondDest = [{ num: 5, gen: 0, }, { name: 'XYZ', }, 0, 375, null];
     let thirdDest = [{ num: 1, gen: 0, }, { name: 'XYZ', }, 750, 0, null];
@@ -24,22 +50,22 @@ describe('pdf_history', function() {
     let fifthDest = [{ gen: 0, num: 1, }, { name: 'XYZ', }, 0, 375, null];
 
     it('should reject non-equal destination arrays', function() {
-      expect(isDestsEqual(firstDest, undefined)).toEqual(false);
-      expect(isDestsEqual(firstDest, [1, 2, 3, 4, 5])).toEqual(false);
+      expect(isDestArraysEqual(firstDest, undefined)).toEqual(false);
+      expect(isDestArraysEqual(firstDest, [1, 2, 3, 4, 5])).toEqual(false);
 
-      expect(isDestsEqual(firstDest, secondDest)).toEqual(false);
-      expect(isDestsEqual(firstDest, thirdDest)).toEqual(false);
-      expect(isDestsEqual(firstDest, fourthDest)).toEqual(false);
+      expect(isDestArraysEqual(firstDest, secondDest)).toEqual(false);
+      expect(isDestArraysEqual(firstDest, thirdDest)).toEqual(false);
+      expect(isDestArraysEqual(firstDest, fourthDest)).toEqual(false);
     });
 
     it('should accept equal destination arrays', function() {
-      expect(isDestsEqual(firstDest, firstDest)).toEqual(true);
-      expect(isDestsEqual(firstDest, fifthDest)).toEqual(true);
+      expect(isDestArraysEqual(firstDest, firstDest)).toEqual(true);
+      expect(isDestArraysEqual(firstDest, fifthDest)).toEqual(true);
 
       let firstDestCopy = firstDest.slice();
       expect(firstDest).not.toBe(firstDestCopy);
 
-      expect(isDestsEqual(firstDest, firstDestCopy)).toEqual(true);
+      expect(isDestArraysEqual(firstDest, firstDestCopy)).toEqual(true);
     });
   });
 });
