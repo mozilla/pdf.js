@@ -177,8 +177,8 @@ class PDFHistory {
 
     let forceReplace = false;
     if (this._destination &&
-        (this._destination.hash === hash ||
-         isDestsEqual(this._destination.dest, explicitDest))) {
+        (isDestHashesEqual(this._destination.hash, hash) ||
+         isDestArraysEqual(this._destination.dest, explicitDest))) {
       // When the new destination is identical to `this._destination`, and
       // its `page` is undefined, replace the current browser history entry.
       // NOTE: This can only occur if `this._destination` was set either:
@@ -555,7 +555,21 @@ class PDFHistory {
   }
 }
 
-function isDestsEqual(firstDest, secondDest) {
+function isDestHashesEqual(destHash, pushHash) {
+  if (typeof destHash !== 'string' || typeof pushHash !== 'string') {
+    return false;
+  }
+  if (destHash === pushHash) {
+    return true;
+  }
+  let { nameddest, } = parseQueryString(destHash);
+  if (nameddest === pushHash) {
+    return true;
+  }
+  return false;
+}
+
+function isDestArraysEqual(firstDest, secondDest) {
   function isEntryEqual(first, second) {
     if (typeof first !== typeof second) {
       return false;
@@ -593,5 +607,6 @@ function isDestsEqual(firstDest, secondDest) {
 
 export {
   PDFHistory,
-  isDestsEqual,
+  isDestHashesEqual,
+  isDestArraysEqual,
 };
