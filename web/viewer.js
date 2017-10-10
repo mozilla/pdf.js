@@ -117,6 +117,10 @@ function getViewerConfiguration() {
       outlineView: document.getElementById('outlineView'),
       attachmentsView: document.getElementById('attachmentsView'),
     },
+    sidebarResizer: {
+      outerContainer: document.getElementById('outerContainer'),
+      resizer: document.getElementById('sidebarResizer'),
+    },
     findBar: {
       bar: document.getElementById('findbar'),
       toggleButton: document.getElementById('viewFind'),
