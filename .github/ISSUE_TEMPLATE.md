@@ -1,4 +1,4 @@
-Attach (reccomened) or Link to PDF file here:
+Attach (recommended) or Link to PDF file here:
 
 Configuration:
 - Web browser and its version:
