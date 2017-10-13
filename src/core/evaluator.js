@@ -919,7 +919,6 @@ var PartialEvaluator = (function PartialEvaluatorClosure() {
               var name = args[0].name;
               if (!name) {
                 warn('XObject must be referred to by name.');
-                continue;
               }
               if (imageCache[name] !== undefined) {
                 operatorList.addOp(imageCache[name].fn, imageCache[name].args);
