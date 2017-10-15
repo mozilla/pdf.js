@@ -1160,7 +1160,8 @@ gulp.task('lint', function (done) {
   console.log('### Linting JS files');
 
   // Ensure that we lint the Firefox specific *.jsm files too.
-  var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.'];
+  var options = ['node_modules/eslint/bin/eslint', '--ext', '.js,.jsm', '.',
+                 '--report-unused-disable-directives'];
   var esLintProcess = spawn('node', options, { stdio: 'inherit', });
   esLintProcess.on('close', function (code) {
     if (code !== 0) {
