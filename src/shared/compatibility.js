@@ -1195,35 +1195,7 @@ PDFJS.compatibilityChecked = true;
   if (globalScope.WeakMap) {
     return;
   }
-
-  var id = 0;
-  function WeakMap() {
-    this.id = '$weakmap' + (id++);
-  }
-  WeakMap.prototype = {
-    has(obj) {
-      if ((typeof obj !== 'object' && typeof obj !== 'function') ||
-          obj === null) {
-        return false;
-      }
-      return !!Object.getOwnPropertyDescriptor(obj, this.id);
-    },
-    get(obj) {
-      return this.has(obj) ? obj[this.id] : undefined;
-    },
-    set(obj, value) {
-      Object.defineProperty(obj, this.id, {
-        value,
-        enumerable: false,
-        configurable: true,
-      });
-    },
-    delete(obj) {
-      delete obj[this.id];
-    },
-  };
-
-  globalScope.WeakMap = WeakMap;
+  globalScope.WeakMap = require('core-js/fn/weak-map');
 })();
 
 // Polyfill from https://github.com/Polymer/URL
