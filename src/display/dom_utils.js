@@ -14,8 +14,7 @@
  */
 
 import {
-  assert, CMapCompressionType, createValidAbsoluteUrl, deprecated,
-  removeNullCharacters, stringToBytes, warn
+  assert, CMapCompressionType, removeNullCharacters, stringToBytes, warn
 } from '../shared/util';
 import globalScope from '../shared/global_scope';
 
@@ -464,18 +463,11 @@ function isExternalLinkTargetSet() {
   }
 }
 
-function isValidUrl(url, allowRelative) {
-  deprecated('isValidUrl(), please use createValidAbsoluteUrl() instead.');
-  var baseUrl = allowRelative ? 'http://example.com' : null;
-  return createValidAbsoluteUrl(url, baseUrl) !== null;
-}
-
 export {
   CustomStyle,
   RenderingCancelledException,
   addLinkAttributes,
   isExternalLinkTargetSet,
-  isValidUrl,
   getFilenameFromUrl,
   LinkTarget,
   getDefaultSetting,
