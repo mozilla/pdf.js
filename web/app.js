@@ -633,11 +633,6 @@ let PDFViewerApplication = {
    *                      is opened.
    */
   open(file, args) {
-    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-        (arguments.length > 2 || typeof args === 'number')) {
-      return Promise.reject(
-        new Error('Call of open() with obsolete signature.'));
-    }
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       return this.close().then(() => {
@@ -667,12 +662,7 @@ let PDFViewerApplication = {
 
     if (args) {
       for (let prop in args) {
-        if ((typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PDFJS_NEXT')) &&
-            !PDFJS.pdfjsNext && prop === 'scale') {
-          console.error('Call of open() with obsolete "scale" argument, ' +
-            'please use the "defaultZoomValue" preference instead.');
-          continue;
-        } else if (prop === 'length') {
+        if (prop === 'length') {
           this.pdfDocumentProperties.setFileSize(args[prop]);
         }
         parameters[prop] = args[prop];

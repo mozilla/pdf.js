@@ -601,11 +601,6 @@ class BaseViewer {
    * @param {ScrollPageIntoViewParameters} params
    */
   scrollPageIntoView(params) {
-    if ((typeof PDFJSDev === 'undefined' || PDFJSDev.test('GENERIC')) &&
-        (arguments.length > 1 || typeof params === 'number')) {
-      console.error('Call of scrollPageIntoView() with obsolete signature.');
-      return;
-    }
     if (!this.pdfDocument) {
       return;
     }
