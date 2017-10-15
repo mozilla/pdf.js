@@ -684,7 +684,7 @@ describe('api', function() {
     it('gets javascript', function(done) {
       var promise = doc.getJavaScript();
       promise.then(function (data) {
-        expect(data).toEqual([]);
+        expect(data).toEqual(null);
         done();
       }).catch(function (reason) {
         done.fail(reason);
