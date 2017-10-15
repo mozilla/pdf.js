@@ -18,11 +18,11 @@ import {
   isExternalLinkTargetSet, isValidUrl, LinkTarget
 } from './dom_utils';
 import {
-  createBlob, createObjectURL, createPromiseCapability, deprecated,
-  getVerbosityLevel, InvalidPDFException, isLittleEndian,
-  MissingPDFException, OPS, PageViewport, PasswordException, PasswordResponses,
-  removeNullCharacters, setVerbosityLevel, shadow, UnexpectedResponseException,
-  UnknownErrorException, UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS, warn
+  createBlob, createObjectURL, createPromiseCapability, getVerbosityLevel,
+  InvalidPDFException, isLittleEndian, MissingPDFException, OPS, PageViewport,
+  PasswordException, PasswordResponses, removeNullCharacters, setVerbosityLevel,
+  shadow, UnexpectedResponseException, UnknownErrorException,
+  UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS
 } from '../shared/util';
 import {
   getDocument, LoopbackPort, PDFDataRangeTransport, PDFWorker
@@ -246,40 +246,6 @@ PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
  * @var {boolean}
  */
 PDFJS.pdfjsNext = (PDFJS.pdfjsNext === undefined) ? false : PDFJS.pdfjsNext;
-
-if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('MOZCENTRAL')) {
-  var savedOpenExternalLinksInNewWindow = PDFJS.openExternalLinksInNewWindow;
-  delete PDFJS.openExternalLinksInNewWindow;
-  Object.defineProperty(PDFJS, 'openExternalLinksInNewWindow', {
-    get() {
-      return PDFJS.externalLinkTarget === LinkTarget.BLANK;
-    },
-    set(value) {
-      if (value) {
-        deprecated('PDFJS.openExternalLinksInNewWindow, please use ' +
-          '"PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK" instead.');
-      }
-      if (PDFJS.externalLinkTarget !== LinkTarget.NONE) {
-        warn('PDFJS.externalLinkTarget is already initialized');
-        return;
-      }
-      PDFJS.externalLinkTarget = value ? LinkTarget.BLANK : LinkTarget.NONE;
-    },
-    enumerable: true,
-    configurable: true,
-  });
-  if (savedOpenExternalLinksInNewWindow) {
-    /**
-     * (Deprecated) Opens external links in a new window if enabled.
-     * The default behavior opens external links in the PDF.js window.
-     *
-     * NOTE: This property has been deprecated, please use
-     *       `PDFJS.externalLinkTarget = PDFJS.LinkTarget.BLANK` instead.
-     * @var {boolean}
-     */
-    PDFJS.openExternalLinksInNewWindow = savedOpenExternalLinksInNewWindow;
-  }
-}
 
 PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
