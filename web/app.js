@@ -1037,10 +1037,12 @@ let PDFViewerApplication = {
         return;
       }
       pdfDocument.getJavaScript().then((javaScript) => {
-        if (javaScript.length) {
-          console.warn('Warning: JavaScript is not supported');
-          this.fallback(UNSUPPORTED_FEATURES.javaScript);
+        if (!javaScript) {
+          return;
         }
+        console.warn('Warning: JavaScript is not supported');
+        this.fallback(UNSUPPORTED_FEATURES.javaScript);
+
         // Hack to support auto printing.
         let regex = /\bprint\s*\(/;
         for (let i = 0, ii = javaScript.length; i < ii; i++) {

@@ -574,10 +574,10 @@ var PDFDocumentProxy = (function PDFDocumentProxyClosure() {
       return this.transport.getAttachments();
     },
     /**
-     * @return {Promise} A promise that is resolved with an array of all the
-     * JavaScript strings in the name tree.
+     * @return {Promise} A promise that is resolved with an {Array} of all the
+     * JavaScript strings in the name tree, or `null` if no JavaScript exists.
      */
-    getJavaScript: function PDFDocumentProxy_getJavaScript() {
+    getJavaScript() {
       return this.transport.getJavaScript();
     },
     /**
