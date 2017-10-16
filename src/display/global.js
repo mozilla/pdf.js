@@ -240,13 +240,6 @@ PDFJS.externalLinkRel = (PDFJS.externalLinkRel === undefined ?
 PDFJS.isEvalSupported = (PDFJS.isEvalSupported === undefined ?
                          true : PDFJS.isEvalSupported);
 
-/**
- * Opt-in to backwards incompatible API changes. NOTE:
- * If the `PDFJS_NEXT` build flag is set, it will override this setting.
- * @var {boolean}
- */
-PDFJS.pdfjsNext = (PDFJS.pdfjsNext === undefined) ? false : PDFJS.pdfjsNext;
-
 PDFJS.getDocument = getDocument;
 PDFJS.LoopbackPort = LoopbackPort;
 PDFJS.PDFDataRangeTransport = PDFDataRangeTransport;
