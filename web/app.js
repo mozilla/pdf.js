@@ -55,13 +55,11 @@ function configure(PDFJS) {
   }
   if (typeof PDFJSDev === 'undefined' || !PDFJSDev.test('PRODUCTION')) {
     PDFJS.cMapUrl = '../external/bcmaps/';
-    PDFJS.cMapPacked = true;
     PDFJS.workerSrc = '../src/worker_loader.js';
-    PDFJS.pdfjsNext = true;
   } else {
     PDFJS.cMapUrl = '../web/cmaps/';
-    PDFJS.cMapPacked = true;
   }
+  PDFJS.cMapPacked = true;
 }
 
 const DefaultExternalServices = {
