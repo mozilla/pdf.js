@@ -371,7 +371,7 @@ var Catalog = (function CatalogClosure() {
       var xref = this.xref;
       var obj = this.catDict.get('Names');
 
-      var javaScript = [];
+      let javaScript = null;
       function appendIfJavaScriptDict(jsDict) {
         var type = jsDict.get('S');
         if (!isName(type, 'JavaScript')) {
@@ -382,6 +382,9 @@ var Catalog = (function CatalogClosure() {
           js = bytesToString(js.getBytes());
         } else if (!isString(js)) {
           return;
+        }
+        if (!javaScript) {
+          javaScript = [];
         }
         javaScript.push(stringToPDFString(js));
       }
@@ -407,6 +410,9 @@ var Catalog = (function CatalogClosure() {
           // but is supported by many PDF readers/writers (including Adobe's).
           var action = openactionDict.get('N');
           if (isName(action, 'Print')) {
+            if (!javaScript) {
+              javaScript = [];
+            }
             javaScript.push('print({});');
           }
         } else {
