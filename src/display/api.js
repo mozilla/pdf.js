@@ -15,11 +15,11 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  AbortException, assert, createPromiseCapability, deprecated,
-  getVerbosityLevel, info, InvalidPDFException, isArrayBuffer, isSameOrigin,
-  loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
-  PageViewport, PasswordException, StatTimer, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, Util, warn
+  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
+  MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
+  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
+  UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
@@ -1382,7 +1382,7 @@ var PDFWorker = (function PDFWorkerClosure() {
           var messageHandler = new MessageHandler('main', 'worker', worker);
           var terminateEarly = () => {
             worker.removeEventListener('error', onWorkerError);
-            messageHandler.close(new Error('Worker was terminated'));
+            messageHandler.destroy();
             worker.terminate();
             if (this.destroyed) {
               this._readyCapability.reject(new Error('Worker was destroyed'));
@@ -1424,7 +1424,7 @@ var PDFWorker = (function PDFWorkerClosure() {
               });
             } else {
               this._setupFakeWorker();
-              messageHandler.close(new Error('Worker was terminated'));
+              messageHandler.destroy();
               worker.terminate();
             }
           });
@@ -1527,7 +1527,7 @@ var PDFWorker = (function PDFWorkerClosure() {
       pdfWorkerPorts.delete(this._port);
       this._port = null;
       if (this._messageHandler) {
-        this._messageHandler.close(new AbortException('Worker was destroyed'));
+        this._messageHandler.destroy();
         this._messageHandler = null;
       }
     },
@@ -1607,7 +1607,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
         }
 
         if (this.messageHandler) {
-          this.messageHandler.close(new AbortException('Worker was destroyed'));
+          this.messageHandler.destroy();
           this.messageHandler = null;
         }
         this.destroyCapability.resolve();
@@ -1818,7 +1818,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               };
             }
             var font = new FontFaceObject(exportedData, {
-              isEvalSuported: getDefaultSetting('isEvalSupported'),
+              isEvalSupported: getDefaultSetting('isEvalSupported'),
               disableFontFace: getDefaultSetting('disableFontFace'),
               fontRegistry,
             });

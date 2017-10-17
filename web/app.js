@@ -1047,10 +1047,18 @@ let PDFViewerApplication = {
         return;
       }
       pdfDocument.getJavaScript().then((javaScript) => {
-        if (javaScript.length) {
+        if (javaScript.length === 0) {
+          return;
+        }
+        javaScript.some((js) => {
+          if (!js) { // Don't warn/fallback for empty JavaScript actions.
+            return false;
+          }
           console.warn('Warning: JavaScript is not supported');
           this.fallback(UNSUPPORTED_FEATURES.javaScript);
-        }
+          return true;
+        });
+
         // Hack to support auto printing.
         let regex = /\bprint\s*\(/;
         for (let i = 0, ii = javaScript.length; i < ii; i++) {

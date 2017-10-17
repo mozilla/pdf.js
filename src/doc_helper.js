@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* eslint-disable strict */
 
 /*
  NOTE: This file is created as a helper to assist with JSDoc html files.

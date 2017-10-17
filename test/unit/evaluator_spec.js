@@ -14,9 +14,9 @@
  */
 
 import { Dict, Name } from '../../src/core/primitives';
+import { FormatError, OPS } from '../../src/shared/util';
 import { OperatorList, PartialEvaluator } from '../../src/core/evaluator';
 import { Stream, StringStream } from '../../src/core/stream';
-import { OPS } from '../../src/shared/util';
 import { WorkerTask } from '../../src/core/worker';
 import { XRefMock } from './test_utils';
 
@@ -48,6 +48,8 @@ describe('evaluator', function() {
       operatorList: result,
     }).then(function() {
       callback(result);
+    }, function(reason) {
+      callback(reason);
     });
   }
 
@@ -229,9 +231,9 @@ describe('evaluator', function() {
     it('should skip paintXObject if name is missing', function(done) {
       var stream = new StringStream('/ Do');
       runOperatorListCheck(partialEvaluator, stream, new ResourcesMock(),
-          function (result) {
-        expect(result.argsArray).toEqual([]);
-        expect(result.fnArray).toEqual([]);
+          function(result) {
+        expect(result instanceof FormatError).toEqual(true);
+        expect(result.message).toEqual('XObject must be referred to by name.');
         done();
       });
     });
