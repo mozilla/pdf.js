@@ -150,6 +150,10 @@ var Type1CharString = (function Type1CharStringClosure() {
                 break;
               }
               subrNumber = this.stack.pop();
+              if (!subrs[subrNumber]) {
+                error = true;
+                break;
+              }
               error = this.convert(subrs[subrNumber], subrs,
                                    seacAnalysisEnabled);
               break;
@@ -503,6 +507,15 @@ var Type1Parser = (function Type1ParserClosure() {
       return token;
     },
 
+    readCharStrings: function Type1Parser_readCharStrings(bytes, lenIV) {
+      if (lenIV === -1) {
+        // This isn't in the spec, but Adobe's tx program handles -1
+        // as plain text.
+        return bytes;
+      }
+      return decrypt(bytes, CHAR_STRS_ENCRYPT_KEY, lenIV);
+    },
+
     /*
      * Returns an object containing a Subrs array and a CharStrings
      * array extracted from and eexec encrypted block of data
@@ -548,7 +561,7 @@ var Type1Parser = (function Type1ParserClosure() {
               this.getToken(); // read in 'RD' or '-|'
               data = stream.makeSubStream(stream.pos, length);
               lenIV = program.properties.privateData['lenIV'];
-              encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY, lenIV);
+              encoded = this.readCharStrings(data.getBytes(), lenIV);
               // Skip past the required space and binary data.
               stream.skip(length);
               this.nextChar();
@@ -571,7 +584,7 @@ var Type1Parser = (function Type1ParserClosure() {
               this.getToken(); // read in 'RD' or '-|'
               data = stream.makeSubStream(stream.pos, length);
               lenIV = program.properties.privateData['lenIV'];
-              encoded = decrypt(data.getBytes(), CHAR_STRS_ENCRYPT_KEY, lenIV);
+              encoded = this.readCharStrings(data.getBytes(), lenIV);
               // Skip past the required space and binary data.
               stream.skip(length);
               this.nextChar();
