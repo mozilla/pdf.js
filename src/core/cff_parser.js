@@ -413,26 +413,7 @@ var CFFParser = (function CFFParserClosure() {
       var names = [];
       for (var i = 0, ii = index.count; i < ii; ++i) {
         var name = index.get(i);
-        // OTS doesn't allow names to be over 127 characters.
-        var length = Math.min(name.length, 127);
-        var data = [];
-        // OTS also only permits certain characters in the name.
-        for (var j = 0; j < length; ++j) {
-          var c = name[j];
-          if (j === 0 && c === 0) {
-            data[j] = c;
-            continue;
-          }
-          if ((c < 33 || c > 126) || c === 91 /* [ */ || c === 93 /* ] */ ||
-              c === 40 /* ( */ || c === 41 /* ) */ || c === 123 /* { */ ||
-              c === 125 /* } */ || c === 60 /* < */ || c === 62 /* > */ ||
-              c === 47 /* / */ || c === 37 /* % */ || c === 35 /* # */) {
-            data[j] = 95;
-            continue;
-          }
-          data[j] = c;
-        }
-        names.push(bytesToString(data));
+        names.push(bytesToString(name));
       }
       return names;
     },
@@ -1413,7 +1394,27 @@ var CFFCompiler = (function CFFCompilerClosure() {
     compileNameIndex: function CFFCompiler_compileNameIndex(names) {
       var nameIndex = new CFFIndex();
       for (var i = 0, ii = names.length; i < ii; ++i) {
-        nameIndex.add(stringToBytes(names[i]));
+        var name = names[i];
+        // OTS doesn't allow names to be over 127 characters.
+        var length = Math.min(name.length, 127);
+        var sanitizedName = new Array(length);
+        for (var j = 0; j < length; j++) {
+          // OTS requires chars to be between a range and not certain other
+          // chars.
+          var char = name[j];
+          if (char < '!' || char > '~' || char === '[' || char === ']' ||
+              char === '(' || char === ')' || char === '{' || char === '}' ||
+              char === '<' || char === '>' || char === '/' || char === '%') {
+            char = '_';
+          }
+          sanitizedName[j] = char;
+        }
+        sanitizedName = sanitizedName.join('');
+
+        if (sanitizedName === '') {
+          sanitizedName = 'Bad_Font_Name';
+        }
+        nameIndex.add(stringToBytes(sanitizedName));
       }
       return this.compileIndex(nameIndex);
     },
