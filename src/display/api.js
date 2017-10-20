@@ -223,13 +223,9 @@ function getDocument(src) {
   params.rangeChunkSize = params.rangeChunkSize || DEFAULT_RANGE_CHUNK_SIZE;
   params.ignoreErrors = params.stopAtErrors !== true;
 
-  params.nativeImageDecoderSupport = params.nativeImageDecoderSupport ||
-                                     NativeImageDecoding.DECODE;
-  if (params.nativeImageDecoderSupport !== NativeImageDecoding.DECODE &&
-      params.nativeImageDecoderSupport !== NativeImageDecoding.NONE &&
-      params.nativeImageDecoderSupport !== NativeImageDecoding.DISPLAY) {
-    warn('Invalid parameter nativeImageDecoderSupport: ' +
-      'need a state of enum {NativeImageDecoding}');
+  const nativeImageDecoderValues = Object.values(NativeImageDecoding);
+  if (params.nativeImageDecoderSupport === undefined ||
+      !nativeImageDecoderValues.includes(params.nativeImageDecoderSupport)) {
     params.nativeImageDecoderSupport = NativeImageDecoding.DECODE;
   }
 

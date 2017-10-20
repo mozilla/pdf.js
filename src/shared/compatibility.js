@@ -839,6 +839,25 @@ PDFJS.compatibilityChecked = true;
   };
 })();
 
+// Provides support for Object.values in legacy browsers.
+// Support: IE.
+(function checkObjectValues() {
+  if (Object.values) {
+    return;
+  }
+  Object.values = require('core-js/fn/object/values');
+})();
+
+// Provides support for Array.prototype.includes in legacy browsers.
+// Support: IE.
+(function checkArrayIncludes() {
+  if (Array.prototype.includes) {
+    return;
+  }
+  Array.prototype.includes = require('core-js/fn/array/includes');
+})();
+
+
 // Provides support for Number.isNaN in legacy browsers.
 // Support: IE.
 (function checkNumberIsNaN() {
