@@ -72,7 +72,7 @@ describe('network', function() {
     var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
     if (!m || m[1] < 9) {
       expect(true).toEqual(true);
-      done();
+      pending('Streaming not supported by user agent');
       return;
     }
 
