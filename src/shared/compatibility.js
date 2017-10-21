@@ -845,9 +845,7 @@ PDFJS.compatibilityChecked = true;
   if (Number.isNaN) {
     return;
   }
-  Number.isNaN = function(value) {
-    return typeof value === 'number' && isNaN(value);
-  };
+  Number.isNaN = require('core-js/fn/number/is-nan');
 })();
 
 // Provides support for Number.isInteger in legacy browsers.
@@ -856,10 +854,7 @@ PDFJS.compatibilityChecked = true;
   if (Number.isInteger) {
     return;
   }
-  Number.isInteger = function(value) {
-    return typeof value === 'number' && isFinite(value) &&
-           Math.floor(value) === value;
-  };
+  Number.isInteger = require('core-js/fn/number/is-integer');
 })();
 
 (function checkPromise() {
