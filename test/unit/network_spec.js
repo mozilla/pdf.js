@@ -71,9 +71,7 @@ describe('network', function() {
     // TODO enable for other browsers, e.g. when fetch/streams API is supported.
     var m = /Mozilla\/5.0.*?rv:(\d+).*? Gecko/.exec(userAgent);
     if (!m || m[1] < 9) {
-      expect(true).toEqual(true);
       pending('Streaming not supported by user agent');
-      return;
     }
 
     var stream = new PDFNetworkStream({
