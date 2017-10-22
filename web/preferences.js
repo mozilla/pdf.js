@@ -15,7 +15,7 @@
 
 import { cloneObj } from './ui_utils';
 
-var defaultPreferences = null;
+let defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
     if (typeof PDFJSDev !== 'undefined' && PDFJSDev.test('PRODUCTION')) {
@@ -23,7 +23,7 @@ function getDefaultPreferences() {
         PDFJSDev.json('$ROOT/web/default_preferences.json'));
     } else {
       defaultPreferences = new Promise(function (resolve) {
-        var xhr = new XMLHttpRequest();
+        let xhr = new XMLHttpRequest();
         xhr.open('GET', 'default_preferences.json');
         xhr.onload = xhr.onerror = function loaded() {
           try {
@@ -130,8 +130,8 @@ class BasePreferences {
       } else if (value === undefined) {
         throw new Error('Set preference: no value is specified.');
       }
-      var valueType = typeof value;
-      var defaultType = typeof this.defaults[name];
+      let valueType = typeof value;
+      let defaultType = typeof this.defaults[name];
 
       if (valueType !== defaultType) {
         if (valueType === 'number' && defaultType === 'string') {
@@ -158,12 +158,12 @@ class BasePreferences {
    */
   get(name) {
     return this._initializedPromise.then(() => {
-      var defaultValue = this.defaults[name];
+      let defaultValue = this.defaults[name];
 
       if (defaultValue === undefined) {
         throw new Error(`Get preference: "${name}" is undefined.`);
       } else {
-        var prefValue = this.prefs[name];
+        let prefValue = this.prefs[name];
 
         if (prefValue !== undefined) {
           return prefValue;
