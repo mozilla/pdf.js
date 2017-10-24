@@ -31,6 +31,7 @@
 !issue7101.pdf
 !issue7115.pdf
 !issue7180.pdf
+!issue7769.pdf
 !issue7200.pdf
 !issue7229.pdf
 !issue7403.pdf
@@ -40,6 +41,7 @@
 !issue7446.pdf
 !issue7492.pdf
 !issue7544.pdf
+!issue7507.pdf
 !issue7580.pdf
 !issue7598.pdf
 !issue7665.pdf
@@ -56,7 +58,10 @@
 !issue8480.pdf
 !issue8570.pdf
 !issue8697.pdf
+!issue8702.pdf
 !issue8707.pdf
+!issue8798r.pdf
+!issue8823.pdf
 !bad-PageLabels.pdf
 !filled-background.pdf
 !ArabicCIDTrueType.pdf
@@ -87,6 +92,7 @@
 !simpletype3font.pdf
 !sizes.pdf
 !javauninstall-7r.pdf
+!file_url_link.pdf
 !multiple-filters-length-zero.pdf
 !non-embedded-NuptialScript.pdf
 !issue3205r.pdf
@@ -110,6 +116,7 @@
 !issue4630.pdf
 !issue4909.pdf
 !issue5084.pdf
+!issue8960_reduced.pdf
 !issue5202.pdf
 !issue5280.pdf
 !issue5677.pdf
@@ -142,6 +149,7 @@
 !pr6531_2.pdf
 !pr7352.pdf
 !bug900822.pdf
+!bug1392647.pdf
 !issue918.pdf
 !issue1905.pdf
 !issue2833.pdf
@@ -196,6 +204,7 @@
 !issue6387.pdf
 !issue6410.pdf
 !issue8586.pdf
+!jbig2_symbol_offset.pdf
 !gradientfill.pdf
 !bug903856.pdf
 !bug850854.pdf
@@ -281,10 +290,13 @@
 !annotation-squiggly.pdf
 !annotation-highlight.pdf
 !annotation-line.pdf
+!annotation-square-circle.pdf
+!annotation-stamp.pdf
 !annotation-fileattachment.pdf
 !annotation-text-widget.pdf
 !annotation-choice-widget.pdf
 !annotation-button-widget.pdf
+!annotation-polyline-polygon.pdf
 !zero_descent.pdf
 !operator-in-TJ-array.pdf
 !issue7878.pdf
@@ -292,3 +304,4 @@
 !issue8097_reduced.pdf
 !transparent.pdf
 !xobject-image.pdf
+!ccitt_EndOfBlock_false.pdf

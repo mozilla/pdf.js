@@ -23,17 +23,16 @@ import {
 } from './dom_utils';
 import {
   createBlob, createObjectURL, createPromiseCapability, deprecated,
-  getVerbosityLevel, globalScope, InvalidPDFException, isLittleEndian,
+  getVerbosityLevel, InvalidPDFException, isLittleEndian,
   MissingPDFException, OPS, PageViewport, PasswordException, PasswordResponses,
   removeNullCharacters, setVerbosityLevel, shadow, UnexpectedResponseException,
   UnknownErrorException, UNSUPPORTED_FEATURES, Util, VERBOSITY_LEVELS, warn
 } from '../shared/util';
 import { AnnotationLayer } from './annotation_layer';
+import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { renderTextLayer } from './text_layer';
 import { SVGGraphics } from './svg';
-
-var isWorker = (typeof window === 'undefined');
 
 // The global PDFJS object is now deprecated and will not be supported in
 // the future. The members below are maintained for backward  compatibility
@@ -305,6 +304,5 @@ PDFJS.UnsupportedManager = _UnsupportedManager;
 
 export {
   globalScope,
-  isWorker,
   PDFJS,
 };

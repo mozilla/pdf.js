@@ -11,3 +11,4 @@ node/
 .idea/
 pdf.js-deploy/
 pdf.js.iml
+package-lock.json

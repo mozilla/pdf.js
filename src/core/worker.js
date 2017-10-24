@@ -364,6 +364,15 @@ var WorkerMessageHandler = {
     var cancelXHRs = null;
     var WorkerTasks = [];
 
+    let apiVersion = docParams.apiVersion;
+    let workerVersion =
+      typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
+    // The `apiVersion !== null` check is needed to avoid errors during testing.
+    if (apiVersion !== null && apiVersion !== workerVersion) {
+      throw new Error(`The API version "${apiVersion}" does not match ` +
+                      `the Worker version "${workerVersion}".`);
+    }
+
     var docId = docParams.docId;
     var docBaseUrl = docParams.docBaseUrl;
     var workerHandlerName = docParams.docId + '_worker';
@@ -602,6 +611,7 @@ var WorkerMessageHandler = {
         disableFontFace: data.disableFontFace,
         nativeImageDecoderSupport: data.nativeImageDecoderSupport,
         ignoreErrors: data.ignoreErrors,
+        isEvalSupported: data.isEvalSupported,
       };
 
       getPdfManager(data, evaluatorOptions).then(function (newPdfManager) {

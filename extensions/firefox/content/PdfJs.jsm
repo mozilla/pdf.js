@@ -30,6 +30,10 @@ const PREF_PREVIOUS_ACTION = PREF_PREFIX + ".previousHandler.preferredAction";
 const PREF_PREVIOUS_ASK = PREF_PREFIX +
                           ".previousHandler.alwaysAskBeforeHandling";
 const PREF_DISABLED_PLUGIN_TYPES = "plugin.disable_full_page_plugin_for_types";
+const PREF_ENABLED_CACHE_STATE = PREF_PREFIX + ".enabledCache.state";
+const PREF_ENABLED_CACHE_INITIALIZED = PREF_PREFIX +
+                                       ".enabledCache.initialized";
+const PREF_APP_UPDATE_POSTUPDATE = "app.update.postupdate";
 const TOPIC_PDFJS_HANDLER_CHANGED = "pdfjs:handlerChanged";
 const TOPIC_PLUGINS_LIST_UPDATED = "plugins-list-updated";
 const TOPIC_PLUGIN_INFO_UPDATED = "plugin-info-updated";
@@ -171,7 +175,7 @@ var PdfJs = {
   },
 
   updateRegistration: function updateRegistration() {
-    if (this.enabled) {
+    if (this.checkEnabled()) {
       this.ensureRegistered();
     } else {
       this.ensureUnregistered();
@@ -250,26 +254,7 @@ var PdfJs = {
                                         false);
   },
 
-  // nsIObserver
-  observe: function observe(aSubject, aTopic, aData) {
-    if (Services.appinfo.processType !==
-        Services.appinfo.PROCESS_TYPE_DEFAULT) {
-      throw new Error("Only the parent process should be observing PDF " +
-                      "handler changes.");
-    }
-
-    this.updateRegistration();
-    let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
-    let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
-    PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
-  },
-
-  /**
-   * pdf.js is only enabled if it is both selected as the pdf viewer and if the
-   * global switch enabling it is true.
-   * @return {boolean} Whether or not it's enabled.
-   */
-  get enabled() {
+  _isEnabled: function _isEnabled() {
     var disabled = getBoolPref(PREF_DISABLED, true);
     if (disabled) {
       return false;
@@ -307,6 +292,47 @@ var PdfJs = {
 
     // Use pdf.js if pdf plugin is not present or disabled
     return !enabledPluginFound;
+  },
+
+  checkEnabled: function checkEnabled() {
+    let isEnabled = this._isEnabled();
+    // This will be updated any time we observe a dependency changing, since
+    // updateRegistration internally calls enabled.
+    Services.prefs.setBoolPref(PREF_ENABLED_CACHE_STATE, isEnabled);
+    return isEnabled;
+  },
+
+  // nsIObserver
+  observe: function observe(aSubject, aTopic, aData) {
+    if (Services.appinfo.processType !==
+        Services.appinfo.PROCESS_TYPE_DEFAULT) {
+      throw new Error("Only the parent process should be observing PDF " +
+                      "handler changes.");
+    }
+
+    this.updateRegistration();
+    let jsm = "resource://pdf.js/PdfjsChromeUtils.jsm";
+    let PdfjsChromeUtils = Components.utils.import(jsm, {}).PdfjsChromeUtils;
+    PdfjsChromeUtils.notifyChildOfSettingsChange(this.enabled);
+  },
+
+  /**
+   * pdf.js is only enabled if it is both selected as the pdf viewer and if the
+   * global switch enabling it is true.
+   * @return {boolean} Whether or not it's enabled.
+   */
+  get enabled() {
+    if (!Services.prefs.getBoolPref(PREF_ENABLED_CACHE_INITIALIZED, false)) {
+      // If we just updated, and the cache hasn't been initialized, then we
+      // can't assume a default state, and need to synchronously initialize
+      // PdfJs
+      if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_POSTUPDATE)) {
+        this.checkEnabled();
+      }
+
+      Services.prefs.setBoolPref(PREF_ENABLED_CACHE_INITIALIZED, true);
+    }
+    return Services.prefs.getBoolPref(PREF_ENABLED_CACHE_STATE, true);
   },
 
   ensureRegistered: function ensureRegistered() {

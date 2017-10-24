@@ -15,11 +15,11 @@
 /* globals requirejs, __non_webpack_require__ */
 
 import {
-  assert, createPromiseCapability, deprecated, getVerbosityLevel, globalScope,
-  info, InvalidPDFException, isArray, isArrayBuffer, isInt, isSameOrigin,
-  loadJpegStream, MessageHandler, MissingPDFException, NativeImageDecoding,
-  PageViewport, PasswordException, StatTimer, stringToBytes,
-  UnexpectedResponseException, UnknownErrorException, Util, warn
+  assert, createPromiseCapability, deprecated, getVerbosityLevel, info,
+  InvalidPDFException, isArrayBuffer, isSameOrigin, loadJpegStream,
+  MessageHandler, MissingPDFException, NativeImageDecoding, PageViewport,
+  PasswordException, StatTimer, stringToBytes, UnexpectedResponseException,
+  UnknownErrorException, Util, warn
 } from '../shared/util';
 import {
   DOMCanvasFactory, DOMCMapReaderFactory, getDefaultSetting,
@@ -27,6 +27,7 @@ import {
 } from './dom_utils';
 import { FontFaceObject, FontLoader } from './font_loader';
 import { CanvasGraphics } from './canvas';
+import globalScope from '../shared/global_scope';
 import { Metadata } from './metadata';
 import { PDFDataTransportStream } from './transport_stream';
 
@@ -330,6 +331,8 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   if (worker.destroyed) {
     return Promise.reject(new Error('Worker was destroyed'));
   }
+  let apiVersion =
+    typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('BUNDLE_VERSION') : null;
 
   source.disableAutoFetch = getDefaultSetting('disableAutoFetch');
   source.disableStream = getDefaultSetting('disableStream');
@@ -340,6 +343,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
   }
   return worker.messageHandler.sendWithPromise('GetDocRequest', {
     docId,
+    apiVersion,
     source: {
       data: source.data,
       url: source.url,
@@ -356,6 +360,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
     docBaseUrl: source.docBaseUrl,
     nativeImageDecoderSupport: source.nativeImageDecoderSupport,
     ignoreErrors: source.ignoreErrors,
+    isEvalSupported: getDefaultSetting('isEvalSupported'),
   }).then(function (workerId) {
     if (worker.destroyed) {
       throw new Error('Worker was destroyed');
@@ -1182,7 +1187,7 @@ class LoopbackPort {
         cloned.set(value, result);
         return result;
       }
-      result = isArray(value) ? [] : {};
+      result = Array.isArray(value) ? [] : {};
       cloned.set(value, result); // adding to cache now for cyclic references
       // Cloning all value and object properties, however ignoring properties
       // defined via getter.
@@ -1813,7 +1818,7 @@ var WorkerTransport = (function WorkerTransportClosure() {
               };
             }
             var font = new FontFaceObject(exportedData, {
-              isEvalSuported: getDefaultSetting('isEvalSupported'),
+              isEvalSupported: getDefaultSetting('isEvalSupported'),
               disableFontFace: getDefaultSetting('disableFontFace'),
               fontRegistry,
             });
@@ -1985,7 +1990,8 @@ var WorkerTransport = (function WorkerTransportClosure() {
     },
 
     getPage: function WorkerTransport_getPage(pageNumber, capability) {
-      if (!isInt(pageNumber) || pageNumber <= 0 || pageNumber > this.numPages) {
+      if (!Number.isInteger(pageNumber) ||
+          pageNumber <= 0 || pageNumber > this.numPages) {
         return Promise.reject(new Error('Invalid page request'));
       }
 

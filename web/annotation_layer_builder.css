@@ -51,9 +51,18 @@
   box-sizing: border-box;
   font-size: 9px;
   height: 100%;
+  margin: 0;
   padding: 0 3px;
   vertical-align: top;
   width: 100%;
+}
+
+.annotationLayer .choiceWidgetAnnotation select option {
+  padding: 0;
+}
+
+.annotationLayer .buttonWidgetAnnotation.radioButton input {
+  border-radius: 50%;
 }
 
 .annotationLayer .textWidgetAnnotation textarea {
@@ -87,6 +96,38 @@
   border: 1px solid transparent;
 }
 
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after,
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
+  background-color: #000;
+  content: '';
+  display: block;
+  position: absolute;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before,
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
+  height: 80%;
+  left: 45%;
+  width: 1px;
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:before {
+  transform: rotate(45deg);
+}
+
+.annotationLayer .buttonWidgetAnnotation.checkBox input:checked:after {
+  transform: rotate(-45deg);
+}
+
+.annotationLayer .buttonWidgetAnnotation.radioButton input:checked:before {
+  border-radius: 50%;
+  height: 50%;
+  left: 30%;
+  top: 20%;
+  width: 50%;
+}
+
 .annotationLayer .textWidgetAnnotation input.comb {
   font-family: monospace;
   padding-left: 2px;
@@ -109,6 +150,7 @@
   -moz-appearance: none;
   -ms-appearance: none;
   appearance: none;
+  padding: 0;
 }
 
 .annotationLayer .popupWrapper {
@@ -126,16 +168,19 @@
   padding: 0.6em;
   margin-left: 5px;
   cursor: pointer;
+  font: message-box;
   word-wrap: break-word;
 }
 
 .annotationLayer .popup h1 {
   font-size: 1em;
   border-bottom: 1px solid #000000;
+  margin: 0;
   padding-bottom: 0.2em;
 }
 
 .annotationLayer .popup p {
+  margin: 0;
   padding-top: 0.2em;
 }
 
@@ -144,6 +189,11 @@
 .annotationLayer .squigglyAnnotation,
 .annotationLayer .strikeoutAnnotation,
 .annotationLayer .lineAnnotation svg line,
+.annotationLayer .squareAnnotation svg rect,
+.annotationLayer .circleAnnotation svg ellipse,
+.annotationLayer .polylineAnnotation svg polyline,
+.annotationLayer .polygonAnnotation svg polygon,
+.annotationLayer .stampAnnotation,
 .annotationLayer .fileAttachmentAnnotation {
   cursor: pointer;
 }

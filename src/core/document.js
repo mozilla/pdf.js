@@ -16,14 +16,15 @@
 import { Catalog, ObjectLoader, XRef } from './obj';
 import { Dict, isDict, isName, isStream } from './primitives';
 import {
-  info, isArray, isArrayBuffer, isNum, isSpace, isString, MissingDataException,
-  OPS, shadow, stringToBytes, stringToPDFString, Util, warn
+  info, isArrayBuffer, isNum, isSpace, isString, MissingDataException, OPS,
+  shadow, stringToBytes, stringToPDFString, Util, warn
 } from '../shared/util';
 import { NullStream, Stream, StreamsSequenceStream } from './stream';
 import { OperatorList, PartialEvaluator } from './evaluator';
 import { AnnotationFactory } from './annotation';
 import { calculateMD5 } from './crypto';
 import { Linearization } from './parser';
+import { PDFFunctionFactory } from './function';
 
 var Page = (function PageClosure() {
 
@@ -35,8 +36,8 @@ var Page = (function PageClosure() {
            (intent === 'print' && annotation.printable);
   }
 
-  function Page(pdfManager, xref, pageIndex, pageDict, ref, fontCache,
-                builtInCMapCache) {
+  function Page({ pdfManager, xref, pageIndex, pageDict, ref, fontCache,
+                  builtInCMapCache, pdfFunctionFactory, }) {
     this.pdfManager = pdfManager;
     this.pageIndex = pageIndex;
     this.pageDict = pageDict;
@@ -44,6 +45,7 @@ var Page = (function PageClosure() {
     this.ref = ref;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
+    this.pdfFunctionFactory = pdfFunctionFactory;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.resourcesPromise = null;
 
@@ -107,7 +109,7 @@ var Page = (function PageClosure() {
     get mediaBox() {
       var mediaBox = this.getInheritedPageProp('MediaBox', true);
       // Reset invalid media box to letter size.
-      if (!isArray(mediaBox) || mediaBox.length !== 4) {
+      if (!Array.isArray(mediaBox) || mediaBox.length !== 4) {
         return shadow(this, 'mediaBox', LETTER_SIZE_MEDIABOX);
       }
       return shadow(this, 'mediaBox', mediaBox);
@@ -116,7 +118,7 @@ var Page = (function PageClosure() {
     get cropBox() {
       var cropBox = this.getInheritedPageProp('CropBox', true);
       // Reset invalid crop box to media box.
-      if (!isArray(cropBox) || cropBox.length !== 4) {
+      if (!Array.isArray(cropBox) || cropBox.length !== 4) {
         return shadow(this, 'cropBox', this.mediaBox);
       }
       return shadow(this, 'cropBox', cropBox);
@@ -161,7 +163,7 @@ var Page = (function PageClosure() {
     getContentStream: function Page_getContentStream() {
       var content = this.content;
       var stream;
-      if (isArray(content)) {
+      if (Array.isArray(content)) {
         // fetching items
         var xref = this.xref;
         var i, n = content.length;
@@ -214,6 +216,7 @@ var Page = (function PageClosure() {
         fontCache: this.fontCache,
         builtInCMapCache: this.builtInCMapCache,
         options: this.evaluatorOptions,
+        pdfFunctionFactory: this.pdfFunctionFactory,
       });
 
       var dataPromises = Promise.all([contentStreamPromise, resourcesPromise]);
@@ -289,6 +292,7 @@ var Page = (function PageClosure() {
           fontCache: this.fontCache,
           builtInCMapCache: this.builtInCMapCache,
           options: this.evaluatorOptions,
+          pdfFunctionFactory: this.pdfFunctionFactory,
         });
 
         return partialEvaluator.getTextContent({
@@ -316,10 +320,9 @@ var Page = (function PageClosure() {
     get annotations() {
       var annotations = [];
       var annotationRefs = this.getInheritedPageProp('Annots') || [];
-      var annotationFactory = new AnnotationFactory();
       for (var i = 0, n = annotationRefs.length; i < n; ++i) {
         var annotationRef = annotationRefs[i];
-        var annotation = annotationFactory.create(this.xref, annotationRef,
+        var annotation = AnnotationFactory.create(this.xref, annotationRef,
                                                   this.pdfManager,
                                                   this.idFactory);
         if (annotation) {
@@ -361,6 +364,12 @@ var PDFDocument = (function PDFDocumentClosure() {
     this.pdfManager = pdfManager;
     this.stream = stream;
     this.xref = new XRef(stream, pdfManager);
+
+    let evaluatorOptions = pdfManager.evaluatorOptions;
+    this.pdfFunctionFactory = new PDFFunctionFactory({
+      xref: this.xref,
+      isEvalSupported: evaluatorOptions.isEvalSupported,
+    });
   }
 
   function find(stream, needle, limit, backwards) {
@@ -414,7 +423,7 @@ var PDFDocument = (function PDFDocumentClosure() {
         if (this.acroForm) {
           this.xfa = this.acroForm.get('XFA');
           var fields = this.acroForm.get('Fields');
-          if ((!fields || !isArray(fields) || fields.length === 0) &&
+          if ((!fields || !Array.isArray(fields) || fields.length === 0) &&
               !this.xfa) {
             // no fields and no XFA -- not a form (?)
             this.acroForm = null;
@@ -528,8 +537,16 @@ var PDFDocument = (function PDFDocumentClosure() {
       this.xref.parse(recoveryMode);
       var pageFactory = {
         createPage: (pageIndex, dict, ref, fontCache, builtInCMapCache) => {
-          return new Page(this.pdfManager, this.xref, pageIndex, dict, ref,
-                          fontCache, builtInCMapCache);
+          return new Page({
+            pdfManager: this.pdfManager,
+            xref: this.xref,
+            pageIndex,
+            pageDict: dict,
+            ref,
+            fontCache,
+            builtInCMapCache,
+            pdfFunctionFactory: this.pdfFunctionFactory,
+          });
         },
       };
       this.catalog = new Catalog(this.pdfManager, this.xref, pageFactory);
@@ -577,7 +594,7 @@ var PDFDocument = (function PDFDocumentClosure() {
       var xref = this.xref, hash, fileID = '';
       var idArray = xref.trailer.get('ID');
 
-      if (idArray && isArray(idArray) && idArray[0] && isString(idArray[0]) &&
+      if (Array.isArray(idArray) && idArray[0] && isString(idArray[0]) &&
           idArray[0] !== EMPTY_FINGERPRINT) {
         hash = stringToBytes(idArray[0]);
       } else {
