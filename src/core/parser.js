@@ -14,8 +14,8 @@
  */
 
 import {
-  Ascii85Stream, AsciiHexStream, CCITTFaxStream, FlateStream, Jbig2Stream,
-  JpegStream, JpxStream, LZWStream, NullStream, PredictorStream, RunLengthStream
+  Ascii85Stream, AsciiHexStream, FlateStream, JpegStream, JpxStream, LZWStream,
+  NullStream, PredictorStream, RunLengthStream
 } from './stream';
 import {
   assert, FormatError, info, isNum, isString, MissingDataException, StreamType,
@@ -24,6 +24,8 @@ import {
 import {
   Cmd, Dict, EOF, isCmd, isDict, isEOF, isName, Name, Ref
 } from './primitives';
+import { CCITTFaxStream } from './ccitt_stream';
+import { Jbig2Stream } from './jbig2_stream';
 
 var MAX_LENGTH_TO_CACHE = 1000;
 
